@@ -86,6 +86,13 @@ test("converts both operation protocols into provider structured-output schemas"
     "insert_deck_slide_after",
   ]);
   assert.equal(JSON.stringify(artifactFormat.schema).includes("nextSource"), false);
+  const actionTypes = workspaceFormat.schema.properties.actions.items.anyOf
+    .map((action) => action.properties.type.const);
+  assert.deepEqual(actionTypes, ["patch_artifact", "create_artifact"]);
+  const createAction = workspaceFormat.schema.properties.actions.items.anyOf
+    .find((action) => action.properties.type.const === "create_artifact");
+  assert.deepEqual(Object.keys(createAction.properties).sort(), ["detail", "edits", "kind", "summary", "title", "type"]);
+  assert.equal(JSON.stringify(createAction).includes("nextSource"), false);
 });
 
 test("accepts strict artifact-aware section, row, and slide operations", () => {
@@ -182,7 +189,10 @@ test("builds a bounded workspace request with coordinated file instructions", ()
     ],
   });
   assert.match(buildAgentInstructions(workspaceRequest), /coordinated, reviewable outcome/);
-  assert.match(buildAgentInstructions(workspaceRequest), /1-4 source-operation patches/);
+  assert.match(buildAgentInstructions(workspaceRequest), /1-4 actions/);
+  assert.match(buildAgentInstructions(workspaceRequest), /create_artifact/);
+  assert.match(buildAgentInstructions(workspaceRequest), /Never provide an id, filename, extension, language, source, or nextSource/);
+  assert.match(buildAgentInstructions(workspaceRequest), /Item,Value/);
   assert.match(buildAgentInstructions(workspaceRequest), /find and replace/);
   assert.match(buildAgentInstructions(workspaceRequest), /Markdown by exact heading/);
   assert.match(buildAgentInstructions(workspaceRequest), /rejects missing, ambiguous, type-incompatible/);
@@ -238,8 +248,9 @@ test("requires one to four complete file patches in a workspace plan", () => {
   }).success, false);
 });
 
-test("requires one to four bounded workspace operation patches", () => {
+test("requires one to four bounded patch-or-create workspace actions", () => {
   const filePatch = {
+    type: "patch_artifact",
     artifactId: "report",
     summary: "Align the conclusion",
     detail: "One exact sentence changes.",
@@ -248,11 +259,29 @@ test("requires one to four bounded workspace operation patches", () => {
   assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
     summary: "Coordinate the workspace",
     detail: "The report and deck use one conclusion.",
-    patches: [filePatch, { ...filePatch, artifactId: "deck" }],
+    actions: [filePatch, { ...filePatch, artifactId: "deck" }],
   }).success, true);
+  const creation = {
+    type: "create_artifact",
+    kind: "slides",
+    title: "Board Briefing",
+    summary: "Create the briefing",
+    detail: "The new deck starts from Rune's deterministic template.",
+    edits: [{ type: "replace_deck_slide", title: "Board Briefing", slide: "# Board Briefing\n\nReview." }],
+  };
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Create from context",
+    detail: "One new presentation is proposed.",
+    actions: [creation],
+  }).success, true);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Reject model-owned identity",
+    detail: "Rune must own generated metadata.",
+    actions: [{ ...creation, id: "model-id", name: "model.deck.md", source: "# bypass" }],
+  }).success, false);
   assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
     summary: "No changes",
     detail: "Nothing changes.",
-    patches: [],
+    actions: [],
   }).success, false);
 });

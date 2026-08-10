@@ -1073,10 +1073,26 @@ textarea:focus-visible {
 }
 
 .patch-copy .patch-file-label strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   overflow: hidden;
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.new-file-badge {
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #dcece2;
+  color: #287352;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 
 .patch-file-label small {

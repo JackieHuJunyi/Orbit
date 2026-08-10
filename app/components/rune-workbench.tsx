@@ -48,7 +48,6 @@ import {
   detectArtifact,
   normalizeWorkspaceArtifacts,
   planLocalChange,
-  planLocalWorkspaceChange,
   parseDataSource,
   quickCommands,
   validateArtifact,
@@ -56,6 +55,7 @@ import {
   type ArtifactKind,
   type WorkspaceArtifact,
 } from "../lib/workspace";
+import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
 import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
 import { findChartReferences, resolveChartModel } from "../lib/charts";
 import { isDeckMarkdownArtifact } from "../lib/deck";
@@ -71,8 +71,9 @@ import {
 import {
   captureWorkspaceSourceRevision,
   createLineDiffPreview,
-  prepareWorkspacePatch,
+  prepareWorkspaceMutation,
   workspaceMatchesSourceRevision,
+  type ArtifactCreationChange,
   type ArtifactSourcePatch,
   type WorkspaceSourceRevision,
 } from "../lib/patches";
@@ -104,6 +105,7 @@ type PendingChange = {
   summary: string;
   detail: string;
   patches: ArtifactSourcePatch[];
+  creations: ArtifactCreationChange[];
 };
 
 type PendingExport = {
@@ -114,7 +116,13 @@ type PendingExport = {
 
 type RemoteFilePlan = ArtifactSourcePatch & { operationCount: number };
 type RemoteSinglePlan = Omit<RemoteFilePlan, "artifactId">;
-type RemoteWorkspacePlan = { summary: string; detail: string; patches: RemoteFilePlan[] };
+type RemoteCreationPlan = ArtifactCreationChange & { operationCount: number };
+type RemoteWorkspacePlan = {
+  summary: string;
+  detail: string;
+  patches: RemoteFilePlan[];
+  creations: RemoteCreationPlan[];
+};
 
 type RemoteAgentResponse = {
   error?: string;
@@ -138,16 +146,34 @@ function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
 function isRemoteWorkspacePlan(value: unknown): value is RemoteWorkspacePlan {
   if (!value || typeof value !== "object") return false;
   const plan = value as RemoteWorkspacePlan;
-  return typeof plan.summary === "string"
-    && typeof plan.detail === "string"
-    && Array.isArray(plan.patches)
-    && plan.patches.length > 0
+  const patchesValid = Array.isArray(plan.patches)
     && plan.patches.every((patch) => typeof patch.artifactId === "string"
       && typeof patch.nextSource === "string"
       && typeof patch.summary === "string"
       && typeof patch.detail === "string"
       && Number.isInteger(patch.operationCount)
       && patch.operationCount > 0);
+  const creationsValid = Array.isArray(plan.creations)
+    && plan.creations.every((creation) => {
+      const artifact = creation.artifact;
+      return Boolean(artifact)
+        && typeof artifact.id === "string"
+        && typeof artifact.name === "string"
+        && ["document", "data", "slides"].includes(artifact.kind)
+        && typeof artifact.language === "string"
+        && typeof artifact.source === "string"
+        && typeof creation.summary === "string"
+        && typeof creation.detail === "string"
+        && Number.isInteger(creation.operationCount)
+        && creation.operationCount > 0;
+    });
+  const actionCount = (plan.patches?.length ?? 0) + (plan.creations?.length ?? 0);
+  return typeof plan.summary === "string"
+    && typeof plan.detail === "string"
+    && patchesValid
+    && creationsValid
+    && actionCount > 0
+    && actionCount <= 4;
 }
 
 function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }) {
@@ -217,6 +243,7 @@ export function RuneWorkbench() {
   const [fileRailOpen, setFileRailOpen] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+  const [pendingReviewId, setPendingReviewId] = useState("");
   const [newArtifactOpen, setNewArtifactOpen] = useState(false);
   const [newArtifactError, setNewArtifactError] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
@@ -269,10 +296,33 @@ export function RuneWorkbench() {
     () => Array.from({ length: selectedArtifact?.source.split("\n").length ?? 1 }, (_, index) => index + 1).join("\n"),
     [selectedArtifact?.source],
   );
-  const pendingStats = useMemo(() => pendingChange?.patches.flatMap((patch) => {
-    const artifact = artifacts.find((item) => item.id === patch.artifactId);
-    return artifact ? [{ artifact, patch, ...getDiffStats(artifact.source, patch.nextSource) }] : [];
-  }) ?? [], [artifacts, pendingChange]);
+  const pendingStats = useMemo(() => {
+    if (!pendingChange) return [];
+    const patches = pendingChange.patches.flatMap((patch) => {
+      const artifact = artifacts.find((item) => item.id === patch.artifactId);
+      return artifact ? [{
+        artifact,
+        patch,
+        beforeSource: artifact.source,
+        isCreation: false,
+        ...getDiffStats(artifact.source, patch.nextSource),
+      }] : [];
+    });
+    const creations = pendingChange.creations.map((creation) => ({
+      artifact: creation.artifact,
+      patch: {
+        artifactId: creation.artifact.id,
+        summary: creation.summary,
+        detail: creation.detail,
+        nextSource: creation.artifact.source,
+        operationCount: creation.operationCount,
+      },
+      beforeSource: "",
+      isCreation: true,
+      ...getDiffStats("", creation.artifact.source),
+    }));
+    return [...patches, ...creations];
+  }, [artifacts, pendingChange]);
   const pendingTotals = useMemo(() => pendingStats.reduce(
     (total, patch) => ({
       additions: total.additions + patch.additions,
@@ -280,13 +330,17 @@ export function RuneWorkbench() {
     }),
     { additions: 0, removals: 0 },
   ), [pendingStats]);
-  const pendingOperationCount = pendingChange?.patches.reduce(
-    (total, patch) => total + (patch.operationCount ?? 0),
-    0,
-  ) ?? 0;
-  const selectedPendingStat = pendingStats.find((patch) => patch.artifact.id === selectedArtifact?.id);
+  const pendingOperationCount = pendingChange
+    ? [...pendingChange.patches, ...pendingChange.creations].reduce(
+      (total, change) => total + (change.operationCount ?? 0),
+      0,
+    )
+    : 0;
+  const selectedPendingStat = pendingStats.find((change) => change.artifact.id === pendingReviewId)
+    ?? pendingStats.find((change) => change.artifact.id === selectedArtifact?.id)
+    ?? pendingStats[0];
   const selectedDiffPreview = useMemo(() => selectedPendingStat
-    ? createLineDiffPreview(selectedPendingStat.artifact.source, selectedPendingStat.patch.nextSource)
+    ? createLineDiffPreview(selectedPendingStat.beforeSource, selectedPendingStat.patch.nextSource)
     : [], [selectedPendingStat]);
   const artifactCreationDisabled = !hydrated
     || agentState === "planning"
@@ -571,7 +625,8 @@ export function RuneWorkbench() {
           setPendingChange({ prompt: instruction, provider: "openai", scope, baseRevision: targetRevision, ...payload.plan });
           setAgentMode("openai");
           setPrompt("");
-          setNotice(`Model prepared ${payload.plan.patches.length} coordinated patches${payload.model ? ` · ${payload.model}` : ""}`);
+          const changeCount = payload.plan.patches.length + payload.plan.creations.length;
+          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"}${payload.model ? ` · ${payload.model}` : ""}`);
           setAgentState("idle");
           return;
         }
@@ -584,6 +639,7 @@ export function RuneWorkbench() {
             summary: payload.plan.summary,
             detail: payload.plan.detail,
             patches: [{ artifactId: targetArtifact.id, ...payload.plan }],
+            creations: [],
           });
           setAgentMode("openai");
           setPrompt("");
@@ -601,9 +657,10 @@ export function RuneWorkbench() {
 
     try {
       if (scope === "workspace") {
-        const localPlan = planLocalWorkspaceChange(targetArtifacts, instruction);
+        const localPlan = planLocalWorkspaceAgentChange(targetArtifacts, instruction);
         setPendingChange({ prompt: instruction, provider: "local", scope, baseRevision: targetRevision, ...localPlan });
-        setNotice(`${fallbackNotice} · ${localPlan.patches.length} files coordinated`);
+        const changeCount = localPlan.patches.length + localPlan.creations.length;
+        setNotice(`${fallbackNotice} · ${changeCount} ${changeCount === 1 ? "file" : "files"} prepared`);
       } else {
         const localPlan = planLocalChange(targetArtifact, instruction);
         setPendingChange({
@@ -614,6 +671,7 @@ export function RuneWorkbench() {
           summary: localPlan.summary,
           detail: localPlan.detail,
           patches: [{ artifactId: targetArtifact.id, ...localPlan }],
+          creations: [],
         });
         setNotice(fallbackNotice);
       }
@@ -651,7 +709,11 @@ export function RuneWorkbench() {
       return;
     }
 
-    const prepared = prepareWorkspacePatch(artifacts, pendingChange.patches);
+    const prepared = prepareWorkspaceMutation(
+      artifacts,
+      pendingChange.patches,
+      pendingChange.creations,
+    );
     if (prepared.errors.length) {
       setAgentError(prepared.errors.slice(0, 3).join(" "));
       setNotice("Nothing applied — the complete workspace did not pass validation");
@@ -672,8 +734,9 @@ export function RuneWorkbench() {
       nextCheckpoints = appendCheckpoint(nextCheckpoints, checkpoint);
     });
 
+    const nextSelectedId = pendingChange.creations[0]?.artifact.id ?? selectedId;
     try {
-      persistDeviceWorkspace(prepared.nextArtifacts, selectedId, nextCheckpoints);
+      persistDeviceWorkspace(prepared.nextArtifacts, nextSelectedId, nextCheckpoints);
     } catch {
       setSaveState("error");
       setAgentError("Device storage is full, so Rune kept every source unchanged.");
@@ -682,12 +745,17 @@ export function RuneWorkbench() {
     }
 
     setArtifacts(prepared.nextArtifacts);
+    setSelectedId(nextSelectedId);
     setCheckpoints(nextCheckpoints);
     setSaveState("saved");
     setSavedAt("just now");
     setPendingChange(null);
     setAgentError("");
-    setNotice(`${targetArtifacts.length} ${targetArtifacts.length === 1 ? "file" : "files"} applied atomically — checkpoints are ready`);
+    const changeCount = pendingChange.patches.length + pendingChange.creations.length;
+    const creationNotice = pendingChange.creations.length
+      ? ` · ${pendingChange.creations.length} new ${pendingChange.creations.length === 1 ? "file" : "files"}`
+      : " · checkpoints are ready";
+    setNotice(`${changeCount} ${changeCount === 1 ? "file change" : "file changes"} applied atomically${creationNotice}${directoryHandle ? " · Push when ready" : ""}`);
   }
 
   function undoLastAgentChange() {
@@ -1118,27 +1186,27 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace" : "file"} patch · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
+                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
-                  <div className="diff-summary"><span>{pendingChange.patches.length} {pendingChange.patches.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
+                  <div className="diff-summary"><span>{pendingStats.length} {pendingStats.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
                   <div className="patch-file-list" aria-label="Files in proposed patch">
-                    {pendingStats.map(({ artifact, patch, additions, removals }) => (
+                    {pendingStats.map(({ artifact, patch, additions, removals, isCreation }) => (
                       <button
                         key={artifact.id}
-                        className={`patch-file-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
-                        onClick={() => selectArtifact(artifact.id)}
+                        className={`patch-file-row ${artifact.id === selectedPendingStat?.artifact.id ? "active" : ""}`}
+                        onClick={() => setPendingReviewId(artifact.id)}
                         aria-label={`Review ${artifact.name}`}
                       >
                         <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={13} /></span>
-                        <span className="patch-file-label"><strong>{artifact.name}</strong><small>{patch.summary}{patch.operationCount ? ` · ${patch.operationCount} typed ${patch.operationCount === 1 ? "op" : "ops"}` : ""}</small></span>
+                        <span className="patch-file-label"><strong>{artifact.name}{isCreation && <em className="new-file-badge">New file</em>}</strong><small>{patch.summary}{patch.operationCount ? ` · ${patch.operationCount} typed ${patch.operationCount === 1 ? "op" : "ops"}` : ""}</small></span>
                         <span className="patch-file-diff"><b>+{additions}</b><i>−{removals}</i></span>
                       </button>
                     ))}
                   </div>
                   {selectedPendingStat ? (
                     <div className="patch-source-diff" aria-label={`Source diff for ${selectedPendingStat.artifact.name}`}>
-                      <div className="patch-source-diff-header"><span>Source diff</span><strong>{selectedPendingStat.artifact.name}</strong></div>
+                      <div className="patch-source-diff-header"><span>{selectedPendingStat.isCreation ? "New source diff" : "Source diff"}</span><strong>{selectedPendingStat.artifact.name}</strong></div>
                       <pre>{selectedDiffPreview.map((line, index) => (
                         <code className={line.kind} key={`${line.kind}-${index}`}><span>{line.kind === "addition" ? "+" : line.kind === "removal" ? "−" : " "}</span>{line.text || " "}</code>
                       ))}</pre>
@@ -1148,7 +1216,7 @@ export function RuneWorkbench() {
                   )}
                 </div>
                 <div className="patch-actions">
-                  <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> {pendingChange.patches.length > 1 ? "Apply all" : "Apply"}</button>
+                  <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> {pendingStats.length > 1 ? "Apply all" : "Apply"}</button>
                   <button className="icon-button small" onClick={() => setPendingChange(null)} aria-label="Discard proposed patch" title="Discard"><X /></button>
                 </div>
               </div>
@@ -1236,7 +1304,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.13</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.14</span></div>
       </footer>
 
       {newArtifactOpen && (

@@ -10,6 +10,13 @@ export type ArtifactSourcePatch = {
   operationCount?: number;
 };
 
+export type ArtifactCreationChange = {
+  artifact: WorkspaceArtifact;
+  summary: string;
+  detail: string;
+  operationCount?: number;
+};
+
 export type PreparedWorkspacePatch = {
   nextArtifacts: WorkspaceArtifact[];
   errors: string[];
@@ -112,10 +119,20 @@ export function prepareWorkspacePatch(
   artifacts: WorkspaceArtifact[],
   patches: ArtifactSourcePatch[],
 ): PreparedWorkspacePatch {
+  return prepareWorkspaceMutation(artifacts, patches, []);
+}
+
+export function prepareWorkspaceMutation(
+  artifacts: WorkspaceArtifact[],
+  patches: ArtifactSourcePatch[],
+  creations: ArtifactCreationChange[],
+): PreparedWorkspacePatch {
   const errors: string[] = [];
   const patchByArtifact = new Map<string, ArtifactSourcePatch>();
 
-  if (!patches.length) errors.push("The plan does not contain any file changes.");
+  const actionCount = patches.length + creations.length;
+  if (!actionCount) errors.push("The plan does not contain any file changes.");
+  if (actionCount > 4) errors.push("A workspace plan is limited to four file changes.");
   patches.forEach((patch) => {
     const artifact = artifacts.find((item) => item.id === patch.artifactId);
     if (!artifact) {
@@ -133,10 +150,30 @@ export function prepareWorkspacePatch(
     patchByArtifact.set(patch.artifactId, patch);
   });
 
-  const nextArtifacts = artifacts.map((artifact) => {
+  const patchedArtifacts = artifacts.map((artifact) => {
     const source = patchByArtifact.get(artifact.id)?.nextSource;
     return source == null ? artifact : { ...artifact, source };
   });
+
+  const ids = new Set(artifacts.map((artifact) => artifact.id));
+  const names = new Set(artifacts.map((artifact) => artifact.name.normalize("NFKC").toLocaleLowerCase("en-US")));
+  const createdArtifacts: WorkspaceArtifact[] = [];
+  creations.forEach(({ artifact }) => {
+    const normalizedName = artifact.name.normalize("NFKC").toLocaleLowerCase("en-US");
+    if (ids.has(artifact.id)) {
+      errors.push(`Duplicate artifact id: ${artifact.id}`);
+    } else {
+      ids.add(artifact.id);
+    }
+    if (names.has(normalizedName)) {
+      errors.push(`Duplicate artifact name: ${artifact.name}`);
+    } else {
+      names.add(normalizedName);
+    }
+    createdArtifacts.push(artifact);
+  });
+
+  const nextArtifacts = [...patchedArtifacts, ...createdArtifacts];
 
   errors.push(...validateWorkspaceArtifacts(nextArtifacts));
 

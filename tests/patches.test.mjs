@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   captureWorkspaceSourceRevision,
   createLineDiffPreview,
+  prepareWorkspaceMutation,
   prepareWorkspacePatch,
   validateWorkspaceArtifacts,
   workspaceMatchesSourceRevision,
@@ -62,6 +63,62 @@ test("prepares multiple valid sources without mutating the current workspace", (
   assert.notEqual(result.nextArtifacts, defaultArtifacts);
   assert.deepEqual(defaultArtifacts.map((item) => item.source), originalSources);
   assert.match(result.nextArtifacts.find((item) => item.id === document.id)?.source ?? "", /Coordinated review note/);
+});
+
+test("prepares existing patches and new artifacts as one atomic workspace mutation", () => {
+  const document = artifact("document");
+  const creation = {
+    artifact: {
+      id: "new-brief",
+      name: "new-brief.md",
+      kind: "document",
+      language: "Markdown",
+      source: "# New brief\n\nVisible workspace context.\n",
+    },
+    summary: "Create a brief",
+    detail: "Add one Rune-owned source.",
+  };
+  const result = prepareWorkspaceMutation(defaultArtifacts, [{
+    artifactId: document.id,
+    summary: "Update the report",
+    detail: "Append a coordinated note.",
+    nextSource: `${document.source}\n\n> Coordinated with the new brief.`,
+  }], [creation]);
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.nextArtifacts.length, defaultArtifacts.length + 1);
+  assert.match(result.nextArtifacts.find((item) => item.id === document.id).source, /Coordinated with/);
+  assert.equal(result.nextArtifacts.at(-1).name, "new-brief.md");
+  assert.equal(defaultArtifacts.some((item) => item.id === "new-brief"), false);
+});
+
+test("rejects duplicate creation identity and invalid created bindings without partial changes", () => {
+  const document = artifact("document");
+  const result = prepareWorkspaceMutation(defaultArtifacts, [{
+    artifactId: document.id,
+    summary: "Update the report",
+    detail: "This valid patch must still remain unapplied.",
+    nextSource: `${document.source}\n\n> Must remain atomic.`,
+  }], [
+    {
+      artifact: { ...document, source: "# Duplicate id\n" },
+      summary: "Duplicate identity",
+      detail: "This must be rejected.",
+    },
+    {
+      artifact: {
+        id: "broken-binding",
+        name: "broken-binding.md",
+        kind: "document",
+        language: "Markdown",
+        source: '# Broken\n\n{{ metric("missing_created_metric") }}',
+      },
+      summary: "Invalid binding",
+      detail: "This must also be rejected.",
+    },
+  ]);
+  assert.match(result.errors.join(" "), /Duplicate artifact id/);
+  assert.match(result.errors.join(" "), /unresolved metric missing_created_metric/);
+  assert.equal(result.nextArtifacts, defaultArtifacts);
 });
 
 test("rejects duplicate, unknown, and unchanged file entries atomically", () => {

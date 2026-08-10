@@ -8,6 +8,7 @@ import {
   type AgentSourceOperation,
   type AgentWorkspaceOperationPlan,
 } from "./agent-contract.ts";
+import { prepareArtifactCreation } from "./artifact-creation.ts";
 import { isDeckMarkdownArtifact } from "./deck.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
@@ -428,24 +429,54 @@ export function compileAgentWorkspaceOperations(
   const errors: string[] = [];
   const seen = new Set<string>();
   const compiledPatches: AgentCompiledWorkspacePatch["patches"] = [];
+  const compiledCreations: AgentCompiledWorkspacePatch["creations"] = [];
+  let workingArtifacts = artifacts;
 
-  operationPlan.patches.forEach((patch) => {
-    if (seen.has(patch.artifactId)) {
-      errors.push(`${patch.artifactId}: the operation plan contains duplicate file patches.`);
+  operationPlan.actions.forEach((action) => {
+    if (action.type === "create_artifact") {
+      const prepared = prepareArtifactCreation(workingArtifacts, {
+        kind: action.kind,
+        title: action.title,
+      });
+      if (!prepared.artifact || prepared.errors.length) {
+        prepared.errors.forEach((error) => errors.push(`${action.title}: ${error}`));
+        return;
+      }
+      const compiled = compileAgentOperationPatch(prepared.artifact, action);
+      if (!compiled.plan) {
+        compiled.errors.forEach((error) => errors.push(`${prepared.artifact?.name ?? action.title}: ${error}`));
+        return;
+      }
+      const artifact = { ...prepared.artifact, kind: action.kind, source: compiled.plan.nextSource };
+      compiledCreations.push({
+        artifact,
+        summary: action.summary,
+        detail: action.detail,
+        operationCount: compiled.plan.operationCount,
+      });
+      workingArtifacts = [...workingArtifacts, artifact];
       return;
     }
-    seen.add(patch.artifactId);
-    const artifact = artifacts.find((candidate) => candidate.id === patch.artifactId);
+
+    if (seen.has(action.artifactId)) {
+      errors.push(`${action.artifactId}: the operation plan contains duplicate file patches.`);
+      return;
+    }
+    seen.add(action.artifactId);
+    const artifact = artifacts.find((candidate) => candidate.id === action.artifactId);
     if (!artifact) {
-      errors.push(`${patch.artifactId}: the operation plan references an unknown artifact.`);
+      errors.push(`${action.artifactId}: the operation plan references an unknown artifact.`);
       return;
     }
-    const compiled = compileAgentOperationPatch(artifact, patch);
+    const compiled = compileAgentOperationPatch(artifact, action);
     if (!compiled.plan) {
-      compiled.errors.forEach((error) => errors.push(`${patch.artifactId}: ${error}`));
+      compiled.errors.forEach((error) => errors.push(`${action.artifactId}: ${error}`));
       return;
     }
-    compiledPatches.push({ artifactId: patch.artifactId, ...compiled.plan });
+    compiledPatches.push({ artifactId: action.artifactId, ...compiled.plan });
+    workingArtifacts = workingArtifacts.map((candidate) => candidate.id === action.artifactId
+      ? { ...candidate, source: compiled.plan?.nextSource ?? candidate.source }
+      : candidate);
   });
 
   if (errors.length) return { errors: [...new Set(errors)] };
@@ -453,6 +484,7 @@ export function compileAgentWorkspaceOperations(
     summary: operationPlan.summary,
     detail: operationPlan.detail,
     patches: compiledPatches,
+    creations: compiledCreations,
   });
   return plan.success
     ? { plan: plan.data, errors: [] }

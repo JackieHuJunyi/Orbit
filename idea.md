@@ -1348,3 +1348,17 @@ Identity 也必须在创建时稳定。标题保留 Unicode 可读性，filename
 交互继续沿用 Rune 的信任模型。New dialog 有 radio semantics、初始输入焦点、Tab focus trap、Escape cancel、source preview 和明确的本地写入说明。确认时先把完整 next workspace、selected id 与 checkpoint map 一次写入 localStorage，成功后才更新 React；quota 或 validation 失败时 dialog 保持可见，当前 workspace 对象不变。若已经连接真实目录，新文件只进入 device workspace，必须由用户明确 Push 才写到目录，从而不把“New”偷偷升级成外部文件副作用。
 
 这一步同时为真正 AI Native 的下一阶段建立创建边界。未来 workspace Agent 可以返回受限的 `create_artifact` plan，但模型不应自行决定任意 id、扩展名、隐藏 metadata 或直接写状态；它只需要给出 kind、title 与受限初始内容，Rune 仍复用同一 identity factory、full-workspace validation、concrete preview 和 atomic persistence。下一步应让 Agent 能从现有报告或数据创建一份新的 Deck/Document，而不是要求 workspace 预先存在所有目标文件。
+
+## 18. Workspace Agent 创建文件：意图不是写权限
+
+v0.14 把上一节留下的边界真正闭合了。此前 Workspace Agent 最多只能修改已经存在的 4 个文件，所以“根据当前报告做一份董事会演示”必须先由用户手工 New 一个空 Deck，再要求 Agent 填充。这不是 AI Native workflow：用户仍在替 Agent 准备目标容器。反过来，让模型直接返回一个带任意 `id`、文件名、扩展名、language 和完整 source 的对象虽然省代码，却等于重新引入 v0.11 已经移除的整文件生成问题，还会让模型绕过 v0.13 的命名、模板和持久化合同。
+
+新的 workspace provider contract 因此不是“允许模型创建文件”，而是允许模型提出两类受限动作：`patch_artifact` 指向请求中已有且唯一的 artifact；`create_artifact` 只包含 `document | data | slides`、最多 80 字符的 title、说明和 1–8 个 typed edits。两者合计最多 4 个动作。创建动作没有 `artifactId`、name、extension、language、source 或 `nextSource` 字段；Structured Outputs 在 provider 边界就排除它们。System instruction 同时把三个精确初始模板告诉模型：`# {title}` Markdown、`Item,Value` CSV、严格 frontmatter 加同名 cover slide 的 Deck Markdown。模型只需要针对这些可见锚点表达 section、row、slide 或 exact-text operation，不需要猜 Rune 的内部身份规则。
+
+服务端编译时先把 kind/title 送进 v0.13 的同一 identity/template factory，再把 typed edits 顺序应用到生成的 canonical source。重复标题会在真实 evolving identity set 上得到确定性的 `-2`、`-3`，而不是由模型协调；创建后的完整 artifact 才进入响应。一个计划可以同时修改旧报告并创建新演示，但确认前它们只是内存中的 concrete mutation。最终 safety gate 把 patched originals 与 creations 合成完整 next workspace，统一检查 adapter、只读 SQL、Deck raw HTML、metric/chart dependency、重复 id/name 和动作上限；任一 created file 不合法，已有文件的有效 patch 也不会泄漏成部分结果。
+
+Review UI 也没有把 creation 伪装成“Agent 已经做完”。新文件带明确的 `New file` 标记，并以空 source 为 before-side 展示真实增删行；用户可以在同一列表切换现有 patch 与 creation，再整体 Apply 或 Discard。确认时仍先比较规划开始时捕获的整个 workspace revision。已有文件逐一写入 pre-change checkpoint；新文件没有旧 source，因此不制造虚假的 checkpoint。随后完整 workspace、selected id 和 checkpoint map 只写一次 localStorage，成功后才交换 React state并打开第一个新文件；连接目录时仍只提示显式 Push，Agent Create 不获得外部文件系统副作用。
+
+生产环境没有配置模型密钥时也不能退化成无法验证的按钮。确定性 local workspace planner 现在能从可见 artifact 名称建立 context-aware Document、Data index 或 Deck，其中快捷命令“根据当前报告新建一份演示”会生成一份可解析的多页 Deck，并走相同 factory、diff、whole-workspace mutation 和 atomic apply。这不是用模板假装智能，而是把 provider 能力的安全与交互骨架在零服务成本路径上持续可测。真正的模型只替换“从上下文决定 title 与 edits”这一段，不能替换 identity、compiler、review 或 persistence。
+
+这轮仍刻意不允许 create Query/Chart、让同一计划再次 patch 刚创建的 artifact、模型定义自有模板、自动 Push 到目录，或跨会话后台执行。Query/Chart 的创建需要先证明 schema-aware intent 不会产生空壳；同计划对新文件的全部编辑已经可以放进 creation action，没有第二次定位的必要；自动外部写入则会改变权限模型。下一步更有价值的是给新文档/Deck 的结构节点稳定 identity、让 Agent 能引用明确的 selected source range，或为一次 create-from-context 建立可重复 eval，而不是扩大模型可写字段。

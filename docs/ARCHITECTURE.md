@@ -42,11 +42,27 @@ type AgentSourceOperation =
   | { type: "replace_deck_slide"; title: string; slide: string }
   | { type: "insert_deck_slide_after"; title: string; slide: string };
 
-type AgentOperationPatch = {
+type AgentPatchAction = {
+  type: "patch_artifact";
   artifactId: string;
   summary: string;
   detail: string;
   edits: AgentSourceOperation[]; // 1–8, applied in order
+};
+
+type AgentCreateAction = {
+  type: "create_artifact";
+  kind: "document" | "data" | "slides";
+  title: string;
+  summary: string;
+  detail: string;
+  edits: AgentSourceOperation[]; // targets Rune's deterministic initial template
+};
+
+type AgentWorkspacePlan = {
+  summary: string;
+  detail: string;
+  actions: Array<AgentPatchAction | AgentCreateAction>; // 1–4 total
 };
 
 type ArtifactSourcePatch = {
@@ -57,28 +73,38 @@ type ArtifactSourcePatch = {
   operationCount?: number;
 };
 
-type WorkspacePatch = {
+type ArtifactCreationChange = {
+  artifact: WorkspaceArtifact; // identity, metadata, and source compiled by Rune
+  summary: string;
+  detail: string;
+  operationCount?: number;
+};
+
+type WorkspaceMutation = {
   summary: string;
   detail: string;
   patches: ArtifactSourcePatch[];
+  creations: ArtifactCreationChange[];
 };
 ```
 
-Rune applies each operation sequentially to the exact source sent with the request. Markdown sections resolve one exact heading and include its nested subsections until the next heading at the same or a higher level. Data rows resolve one exact typed key in an existing column, accept only flat JSON cells, and preserve CSV versus JSON plus JSON array versus single-object shape. Deck slides resolve one exact `#`/`##` title; inserted or replacement fragments must be complete slides without a `---` separator. The `replace_text` fallback still requires one exact, non-empty, unique literal in the evolving revision. Missing or repeated targets, artifact/operation mismatch, malformed fragments, duplicate keys, no-ops, cancelling sequences, foreign/duplicate artifact ids, or output above 120,000 characters reject the complete model plan. Only then does the server produce `nextSource` and run the artifact or whole-workspace safety gate before responding.
+Rune applies each operation sequentially to the exact source sent with the request. Markdown sections resolve one exact heading and include its nested subsections until the next heading at the same or a higher level. Data rows resolve one exact typed key in an existing column, accept only flat JSON cells, and preserve CSV versus JSON plus JSON array versus single-object shape. Deck slides resolve one exact `#`/`##` title; inserted or replacement fragments must be complete slides without a `---` separator. The `replace_text` fallback still requires one exact, non-empty, unique literal in the evolving revision. A create action first passes only `kind` and `title` through Rune's shared identity/template factory, then runs its typed edits against that exact starter source. The provider cannot send id, filename, extension, language, `source`, or `nextSource`, and cannot patch a just-created file in the same plan. Missing or repeated targets, artifact/operation mismatch, malformed fragments, duplicate keys, no-ops, cancelling sequences, foreign/duplicate artifact ids, incompatible template edits, or output above 120,000 characters reject the complete model plan. Only then does the server produce concrete patches/creations and run the whole-workspace safety gate before responding.
 
-The UI previews every affected file, its operation count, line-change counts, and a bounded concrete source diff before accept/reject. Applying repeats the transaction boundary client-side: the captured workspace source revision must still match, ids must exist and be unique, every source must actually change, each changed adapter must validate, and the complete next workspace must compile without unresolved metric or chart bindings. Rune then creates a pre-change checkpoint for every target and performs one local persistence write before swapping UI state. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
+The UI previews every affected file, its operation count, line-change counts, and a bounded concrete source diff before accept/reject. New files are explicitly marked and diffed from empty source. Applying repeats the transaction boundary client-side: the captured workspace source revision must still match, patch ids must still exist and be unique, creation ids/names must still be new, every existing source must actually change, each adapter must validate, and the complete next workspace must compile without unresolved metric or chart bindings. Rune creates a pre-change checkpoint for every patched target, appends new artifacts, and performs one local persistence write before swapping UI state and selecting the first created file. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
 
 ## Agent provider boundary
 
-`POST /api/agent` is the only model-facing surface in v0. File scope sends one artifact and requires a schema-conformant `summary`, `detail`, and 1–8 discriminated operations. Workspace scope sends 2–6 canonical artifacts within a 180,000-character envelope and requires a top-level rationale plus 1–4 operation patches whose ids belong to that request. Provider instructions prefer section operations for documents, row operations for CSV/flat JSON, and slide operations for Deck Markdown; SQL, Chart JSON, legacy semantic HTML, frontmatter, and precise inline edits use `replace_text`. String fields are bounded from 200 to 16,000 characters by role, rows carry explicit JSON-compatible scalar types, and provider output is capped at 8,000 tokens. Line numbers, regular expressions, arbitrary JSON paths, and provider-authored `nextSource` are intentionally excluded. Duplicate or foreign ids are rejected before compilation. The workbench receives only the compiled concrete patch and never applies it automatically.
+`POST /api/agent` is the only model-facing surface in v0. File scope sends one artifact and requires a schema-conformant `summary`, `detail`, and 1–8 discriminated operations. Workspace scope sends 2–6 canonical artifacts within a 180,000-character envelope and requires a top-level rationale plus 1–4 discriminated `patch_artifact`/`create_artifact` actions. Patch ids must belong to that request and cannot repeat. Creation is limited to Markdown documents, CSV data tables, and Deck Markdown presentations; the provider supplies a bounded title and 1–8 edits against an explicitly documented template, while Rune deterministically supplies collision-safe identity, extension, language metadata, and initial source. Provider instructions prefer section operations for documents, row operations for CSV/flat JSON, and slide operations for Deck Markdown; SQL, Chart JSON, legacy semantic HTML, frontmatter, and precise inline edits use `replace_text`. String fields are bounded from 80 to 16,000 characters by role, rows carry explicit JSON-compatible scalar types, and provider output is capped at 8,000 tokens. Line numbers, regular expressions, arbitrary JSON paths, provider-authored source/metadata, and direct state writes are intentionally excluded. The workbench receives only the compiled concrete mutation and never applies it automatically.
 
-The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to deterministic file/workspace planners when it is not. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
+The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to deterministic file/workspace planners when it is not. The local workspace planner can also create a context-aware document, data index, or presentation through the same factory and review transaction, so the hosted no-key path demonstrates the creation boundary rather than silently bypassing it. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
 
 ## Local artifact creation boundary
 
 Creating a blank Office-core artifact follows the same source-first rule as import and Agent writes. The user chooses Document, Data table, or Presentation and supplies a bounded title. A deterministic factory produces the smallest valid canonical source: one Markdown heading, an empty `Item,Value` CSV schema, or strict Deck Markdown frontmatter plus one cover slide. Unicode titles stay readable, while filenames and ids are normalized, portable, bounded, case-insensitively collision-safe, and protected from reserved device names. The workspace is capped at 50 artifacts to match the folder port.
 
-Creation is prepared from the current workspace, validated through every adapter and dependency compiler, and only then persisted. The dialog exposes the exact resulting filename, language, and complete initial source; its title field receives initial focus, its type choices use radio semantics, focus is trapped, and Escape cancels. Confirmation writes the complete next workspace to device storage before React state changes, selects the new artifact, and leaves a connected source folder untouched until the user explicitly Pushes. Invalid titles, an invalid current workspace, name/id conflicts that cannot be resolved, or storage failure produce no partial artifact. This factory is intentionally provider-neutral so a future Agent create-file plan can compile through the same identity, validation, preview, and persistence boundary.
+Creation is prepared from the current workspace, validated through every adapter and dependency compiler, and only then persisted. The dialog exposes the exact resulting filename, language, and complete initial source; its title field receives initial focus, its type choices use radio semantics, focus is trapped, and Escape cancels. Confirmation writes the complete next workspace to device storage before React state changes, selects the new artifact, and leaves a connected source folder untouched until the user explicitly Pushes. Invalid titles, an invalid current workspace, name/id conflicts that cannot be resolved, or storage failure produce no partial artifact.
+
+Workspace Agent creation uses the same factory rather than a parallel model-owned path. The compiler prepares the template against the evolving workspace identity set, runs the action's typed edits against that source, and returns the resolved artifact only after schema validation. Multiple same-title create actions therefore receive deterministic suffixes, and mixed patch/create plans still enter one full-workspace transaction. Human New and Agent Create differ only before review: the dialog starts from the minimal template, while the Agent proposes bounded edits to it. Both end at the same canonical artifact, dependency validation, atomic persistence, folder-Push boundary, and later Office export path.
 
 ## Shared metrics and lineage
 
@@ -132,7 +158,7 @@ The npm wrapper is pinned to a stable version, and matching worker/Wasm binaries
 
 ## Checkpoint log
 
-Device history is an append-only, per-artifact list of source snapshots. Applying a file or workspace Agent patch records every affected pre-change source before the atomic write; ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
+Device history is an append-only, per-artifact list of source snapshots. Applying a file or workspace Agent mutation records every patched pre-change source before the atomic write; a newly created artifact has no prior source to checkpoint. ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
 
 ## User-owned folder storage port
 
@@ -153,9 +179,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 9. v0.11 replaces model-authored complete files with bounded exact source operations compiled against a captured workspace revision.
 10. v0.12 adds artifact-aware Markdown section, typed data-row, and Deck slide operations while retaining exact-text fallback.
 11. v0.13 adds deterministic blank Markdown/CSV/Deck creation behind an accessible atomic device transaction.
-12. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-13. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-14. D1/R2 remain undeclared until durable hosted projects or assets are required.
+12. v0.14 lets the Workspace Agent create those same Office-core artifacts through Rune-owned identity/templates, concrete diff review, and mixed atomic workspace mutations.
+13. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+14. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+15. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -166,7 +193,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - CSV and JSON parsing is local and must expose validation errors rather than guessing silently.
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
-- Agent provider output contains only bounded discriminated source operations; artifact-type mismatch, missing or ambiguous heading/key/title, duplicate key/cell, nested JSON, Deck separator injection, repeated-file, cancelling, oversized, stale-revision, or downstream-invalid plans produce no workspace write.
+- Agent provider output contains only bounded discriminated patch/create actions and source operations. It cannot author creation identity, filenames, extensions, language metadata, complete source, or state writes; artifact/template mismatch, missing or ambiguous heading/key/title, duplicate key/cell, nested JSON, Deck separator injection, repeated-file, identity collision, cancelling, oversized, stale-revision, or downstream-invalid plans produce no workspace write.
 - Blank creation accepts only bounded single-line titles and deterministic Office-core templates; generated identity is portable and collision-safe, the complete next workspace validates before persistence, and a failed device write leaves React state unchanged.
 - OOXML import rejects oversized/unsafe ZIP parts, path traversal, DTD/entity declarations, invalid output adapters, and partial device writes; binary input never leaves the browser.
 - Import confirmation rejects stale workspace context and keeps quota failures inside the open review instead of partially updating React or device state.
@@ -182,7 +209,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 | --- | --- | --- |
 | Foundation | Blank creation plus five live artifact editors | Deterministic source templates, client adapters, and local persistence |
 | Trust | Multi-file patch review, atomic apply, persistent checkpoints | Local revision log |
-| Intelligence | Provider-backed artifact-aware operations compiled into reviewed concrete patches | Agent API and deterministic semantic-operation fixtures |
+| Intelligence | Provider-backed artifact-aware patch/create actions compiled into reviewed concrete workspace mutations | Agent API, shared creation factory, and deterministic semantic-operation fixtures |
 | Data loop | SQL, shared metrics, and reusable charts | DuckDB-Wasm and dependency graph |
 | Presentation source | Deck Markdown compiler and legacy HTML bridge | No hosted infrastructure |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
@@ -191,4 +218,4 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 ## Quality gates
 
-Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. Blank creation fixtures must prove all three canonical templates validate, Unicode identity remains readable, filename/id collisions resolve case-insensitively, unsafe titles and workspace limits fail without mutation, and the shipped client exposes the atomic accessible flow. OOXML import uses generated ZIP fixtures for all three package families and hostile-input boundaries; Office export must be byte-deterministic, well-formed, pass Rune import round-trips, keep generated slide shapes within the declared canvas, and open through an independent installed Office/Quick Look handler during release QA. Standalone HTML must resolve all workspace bindings, reject executable/external content, stay byte-deterministic, and render through an independent system HTML handler. Agent operation fixtures must cover ordered exact fallbacks; unique/missing/ambiguous Markdown headings, typed CSV/JSON keys, and Deck titles; flat-JSON and slide-fragment boundaries; artifact mismatches; no-ops, cancellation, size limits, foreign/duplicate targets, stale workspace revisions; one document-data-Deck atomic plan; and the unchanged downstream validation gate. Review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior needs deterministic eval fixtures before it becomes a default path.
+Every milestone needs a production build, typecheck, unit coverage for parsers and mutation application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. Blank creation fixtures must prove all three canonical templates validate, Unicode identity remains readable, filename/id collisions resolve case-insensitively, unsafe titles and workspace limits fail without mutation, and the shipped client exposes the atomic accessible flow. Agent creation fixtures additionally prove Structured Outputs expose only kind/title/typed edits, all three template families compile, same-title identities resolve deterministically, incompatible edits and model-authored metadata fail, mixed patch/create mutations are atomic, unsafe created bindings/Deck markup reach the unchanged downstream safety gate, and the no-key local path creates a reviewable presentation from visible workspace context. OOXML import uses generated ZIP fixtures for all three package families and hostile-input boundaries; Office export must be byte-deterministic, well-formed, pass Rune import round-trips, keep generated slide shapes within the declared canvas, and open through an independent installed Office/Quick Look handler during release QA. Standalone HTML must resolve all workspace bindings, reject executable/external content, stay byte-deterministic, and render through an independent system HTML handler. Agent operation fixtures must cover ordered exact fallbacks; unique/missing/ambiguous Markdown headings, typed CSV/JSON keys, and Deck titles; flat-JSON and slide-fragment boundaries; artifact mismatches; no-ops, cancellation, size limits, foreign/duplicate targets, stale workspace revisions; one document-data-Deck atomic plan; and the unchanged downstream validation gate. Review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior needs deterministic eval fixtures before it becomes a default path.

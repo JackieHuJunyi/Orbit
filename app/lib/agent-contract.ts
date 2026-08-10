@@ -79,13 +79,25 @@ export const AgentOperationPatchSchema = z.object({
 }).strict();
 
 export const AgentFileOperationPatchSchema = AgentOperationPatchSchema.extend({
+  type: z.literal("patch_artifact"),
   artifactId: z.string().min(1).max(120),
 }).strict();
+
+export const AgentArtifactCreationOperationSchema = AgentOperationPatchSchema.extend({
+  type: z.literal("create_artifact"),
+  kind: z.enum(["document", "data", "slides"]),
+  title: z.string().trim().min(1).max(80),
+}).strict();
+
+export const AgentWorkspaceActionSchema = z.discriminatedUnion("type", [
+  AgentFileOperationPatchSchema,
+  AgentArtifactCreationOperationSchema,
+]);
 
 export const AgentWorkspaceOperationPlanSchema = z.object({
   summary: z.string().min(1).max(160),
   detail: z.string().min(1).max(500),
-  patches: z.array(AgentFileOperationPatchSchema).min(1).max(4),
+  actions: z.array(AgentWorkspaceActionSchema).min(1).max(4),
 }).strict();
 
 export const AgentCompiledPatchSchema = AgentPatchSchema.extend({
@@ -96,10 +108,29 @@ export const AgentCompiledFilePatchSchema = AgentCompiledPatchSchema.extend({
   artifactId: z.string().min(1).max(120),
 });
 
+export const AgentCompiledArtifactCreationSchema = z.object({
+  artifact: z.object({
+    id: z.string().min(1).max(120),
+    name: z.string().min(1).max(240),
+    kind: z.enum(["document", "data", "slides"]),
+    language: z.string().min(1).max(80),
+    source: z.string().min(1).max(120_000),
+  }).strict(),
+  summary: z.string().min(1).max(160),
+  detail: z.string().min(1).max(500),
+  operationCount: z.number().int().min(1).max(8),
+}).strict();
+
 export const AgentCompiledWorkspacePatchSchema = z.object({
   summary: z.string().min(1).max(160),
   detail: z.string().min(1).max(500),
-  patches: z.array(AgentCompiledFilePatchSchema).min(1).max(4),
+  patches: z.array(AgentCompiledFilePatchSchema).max(4),
+  creations: z.array(AgentCompiledArtifactCreationSchema).max(4),
+}).strict().superRefine((plan, context) => {
+  const actionCount = plan.patches.length + plan.creations.length;
+  if (actionCount < 1 || actionCount > 4) {
+    context.addIssue({ code: "custom", message: "A compiled workspace plan needs one to four actions." });
+  }
 });
 
 const AgentArtifactSchema = z.object({
@@ -134,6 +165,7 @@ export type AgentPatch = z.infer<typeof AgentPatchSchema>;
 export type AgentWorkspacePatch = z.infer<typeof AgentWorkspacePatchSchema>;
 export type AgentSourceOperation = z.infer<typeof AgentSourceOperationSchema>;
 export type AgentOperationPatch = z.infer<typeof AgentOperationPatchSchema>;
+export type AgentWorkspaceAction = z.infer<typeof AgentWorkspaceActionSchema>;
 export type AgentWorkspaceOperationPlan = z.infer<typeof AgentWorkspaceOperationPlanSchema>;
 export type AgentCompiledPatch = z.infer<typeof AgentCompiledPatchSchema>;
 export type AgentCompiledWorkspacePatch = z.infer<typeof AgentCompiledWorkspacePatchSchema>;
@@ -160,9 +192,10 @@ export function buildAgentInstructions(request: AgentRequest) {
     const rules = [...new Set((request.workspaceArtifacts ?? []).map(ruleForArtifact))];
     return [
       "You are Rune's workspace editing agent.",
-      "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources.",
-      "Return one top-level summary and detail plus 1-4 source-operation patches; use only artifactId values present in workspaceArtifacts and never include an unchanged file.",
-      "Every patch needs its own short summary, concrete detail, artifactId, and 1-8 ordered edits. Choose only operations allowed for that artifact: replace_text, replace_markdown_section, insert_markdown_section_after, upsert_data_row, replace_deck_slide, or insert_deck_slide_after.",
+      "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources, including a new Office-core artifact when the instruction asks for one.",
+      "Return one top-level summary and detail plus 1-4 actions. Use patch_artifact only with artifactId values present in workspaceArtifacts and never patch an unchanged file. Use create_artifact only for document, data, or slides, and provide only kind, title, summary, detail, and ordered edits. Never provide an id, filename, extension, language, source, or nextSource for a new artifact; Rune owns its identity and initial template.",
+      "Every action needs its own short summary, concrete detail, and 1-8 ordered edits. Choose only operations allowed for that artifact: replace_text, replace_markdown_section, insert_markdown_section_after, upsert_data_row, replace_deck_slide, or insert_deck_slide_after.",
+      "Rune creates new documents from '# {title}\\n\\n', new data tables from 'Item,Value\\n', and new presentations from strict Deck Markdown with a cover slide titled {title}. Target those exact templates with the action's edits. Put all edits for a new file in its create_artifact action; do not patch a newly created file in the same plan.",
       "Semantic operations identify Markdown by exact heading, data by exact typed key column/value, and Deck slides by exact title. replace_text uses exact find and replace fields; copy enough surrounding source to make find unique. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies operations sequentially and rejects missing, ambiguous, type-incompatible, or invalid targets.",
       "Keep cross-file facts, metric bindings, provenance, and narrative consistent. Never claim that a patch was already applied.",
       ...rules,

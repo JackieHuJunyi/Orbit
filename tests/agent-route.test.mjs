@@ -135,14 +135,16 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
   globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
     summary: "Align the workspace",
     detail: "Three artifact-aware operations create one reviewed result.",
-    patches: [
+    actions: [
       {
+        type: "patch_artifact",
         artifactId: "report",
         summary: "Align the report",
         detail: "One Markdown section changes.",
         edits: [{ type: "replace_markdown_section", heading: "Report", body: "Shared conclusion." }],
       },
       {
+        type: "patch_artifact",
         artifactId: "data",
         summary: "Align the data",
         detail: "One typed row changes.",
@@ -154,6 +156,7 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
         }],
       },
       {
+        type: "patch_artifact",
         artifactId: "deck",
         summary: "Align the deck",
         detail: "One slide changes.",
@@ -178,6 +181,120 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
   assert.match(payload.plan.patches[1].nextSource, /APAC,48/);
   assert.match(payload.plan.patches[2].nextSource, /Shared conclusion/);
   assert.ok(payload.plan.patches.every((patch) => !("edits" in patch)));
+  assert.deepEqual(payload.plan.creations, []);
+});
+
+test("creates a new Deck through Rune-owned identity, template compilation, and review output", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  const workspaceArtifacts = [
+    requestBody().artifact,
+    {
+      id: "data",
+      name: "data.csv",
+      kind: "data",
+      language: "CSV / JSON",
+      source: "Region,Revenue\nAPAC,42\nEMEA,31",
+    },
+  ];
+  let providerRequest;
+  globalThis.fetch = async (_input, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(providerResponse({
+      summary: "Create a presentation from workspace context",
+      detail: "One new Deck is prepared without model-authored file metadata.",
+      actions: [{
+        type: "create_artifact",
+        kind: "slides",
+        title: "Board Review",
+        summary: "Create the board review",
+        detail: "Replace the cover and insert a supporting slide.",
+        edits: [
+          { type: "replace_deck_slide", title: "Board Review", slide: "# Board Review\n\nShared workspace context." },
+          { type: "insert_deck_slide_after", title: "Board Review", slide: "## Decision\n\nProceed." },
+        ],
+      }],
+    })), { status: 200, headers: { "content-type": "application/json" } });
+  };
+
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.deepEqual(payload.plan.patches, []);
+  assert.equal(payload.plan.creations.length, 1);
+  assert.deepEqual({
+    id: payload.plan.creations[0].artifact.id,
+    name: payload.plan.creations[0].artifact.name,
+    kind: payload.plan.creations[0].artifact.kind,
+    language: payload.plan.creations[0].artifact.language,
+  }, {
+    id: "board-review",
+    name: "board-review.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+  });
+  assert.match(payload.plan.creations[0].artifact.source, /## Decision/);
+  assert.equal(payload.plan.creations[0].operationCount, 2);
+  assert.equal("edits" in payload.plan.creations[0], false);
+
+  const actionVariants = providerRequest.text.format.schema.properties.actions.items.anyOf;
+  assert.deepEqual(actionVariants.map((action) => action.properties.type.const), ["patch_artifact", "create_artifact"]);
+  const creationSchema = actionVariants.find((action) => action.properties.type.const === "create_artifact");
+  const creationJson = JSON.stringify(creationSchema);
+  assert.equal(/artifactId|nextSource|"id"|"name"|"language"|"source"/.test(creationJson), false);
+  assert.match(providerRequest.input[0].content, /Rune owns its identity and initial template/);
+});
+
+test("rejects model-authored creation metadata and unsafe created sources", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  const workspaceArtifacts = [
+    requestBody().artifact,
+    { id: "data", name: "data.csv", kind: "data", language: "CSV / JSON", source: "Item,Value\nA,1" },
+  ];
+  const baseCreation = {
+    type: "create_artifact",
+    kind: "slides",
+    title: "Unsafe Deck",
+    summary: "Create a deck",
+    detail: "The request must remain bounded.",
+    edits: [{
+      type: "replace_deck_slide",
+      title: "Unsafe Deck",
+      slide: "# Unsafe Deck\n\n<script>alert(1)</script>",
+    }],
+  };
+
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Bypass Rune identity",
+    detail: "The strict provider contract must reject extra metadata.",
+    actions: [{ ...baseCreation, id: "model-id", name: "model.deck.md", source: "# bypass" }],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+  const metadataResponse = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+  }));
+  assert.equal(metadataResponse.status, 502);
+  assert.equal((await metadataResponse.json()).plan, undefined);
+
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Create unsafe markup",
+    detail: "The full-workspace safety gate must reject it.",
+    actions: [baseCreation],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+  const unsafeResponse = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+  }));
+  assert.equal(unsafeResponse.status, 502);
+  const unsafePayload = await unsafeResponse.json();
+  assert.match(unsafePayload.error, /workspace safety gate/i);
+  assert.match(unsafePayload.details.join(" "), /raw HTML/i);
+  assert.equal(unsafePayload.plan, undefined);
 });
 
 test("rejects an ambiguous provider anchor before returning a review patch", async () => {

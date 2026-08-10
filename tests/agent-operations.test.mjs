@@ -12,7 +12,7 @@ import {
   compileAgentWorkspaceOperations,
 } from "../app/lib/agent-operations.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
-import { prepareWorkspacePatch } from "../app/lib/patches.ts";
+import { prepareWorkspaceMutation, prepareWorkspacePatch } from "../app/lib/patches.ts";
 import { defaultArtifacts, parseDataSource } from "../app/lib/workspace.ts";
 
 function documentArtifact(source, id = "report") {
@@ -388,14 +388,16 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
   const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
     summary: "Coordinate the workspace",
     detail: "The review, operating row, and board slide receive one reviewable update.",
-    patches: [
+    actions: [
       {
+        type: "patch_artifact",
         artifactId: document.id,
         summary: "Update the summary",
         detail: "One Markdown section changes.",
         edits: [{ type: "replace_markdown_section", heading: "Summary", body: "Shared result." }],
       },
       {
+        type: "patch_artifact",
         artifactId: data.id,
         summary: "Update APAC",
         detail: "One typed data row changes.",
@@ -407,6 +409,7 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
         }],
       },
       {
+        type: "patch_artifact",
         artifactId: deck.id,
         summary: "Update results",
         detail: "One Deck slide changes.",
@@ -425,9 +428,132 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
   assert.match(prepared.nextArtifacts.find((artifact) => artifact.id === "briefing").source, /Shared result/);
 });
 
+test("compiles document, data, and Deck creations from Rune-owned templates", () => {
+  const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
+    summary: "Create three Office-core artifacts",
+    detail: "Every new file starts from a deterministic Rune template and bounded typed edits.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "document",
+        title: "Launch Brief",
+        summary: "Create the brief",
+        detail: "Fill the initial Markdown section.",
+        edits: [{
+          type: "replace_markdown_section",
+          heading: "Launch Brief",
+          body: "## Context\n\nVisible workspace facts only.",
+        }],
+      },
+      {
+        type: "create_artifact",
+        kind: "data",
+        title: "Launch Metrics",
+        summary: "Create the data table",
+        detail: "Replace the starter columns with a visible typed table.",
+        edits: [{
+          type: "replace_text",
+          find: "Item,Value\n",
+          replace: "Region,Revenue\nAPAC,48\nEMEA,31\n",
+        }],
+      },
+      {
+        type: "create_artifact",
+        kind: "slides",
+        title: "Launch Review",
+        summary: "Create the presentation",
+        detail: "Refine the cover and insert one complete slide.",
+        edits: [
+          { type: "replace_deck_slide", title: "Launch Review", slide: "# Launch Review\n\nA visible-source narrative." },
+          { type: "insert_deck_slide_after", title: "Launch Review", slide: "## Decision\n\nProceed with review." },
+        ],
+      },
+    ],
+  });
+  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, operationPlan);
+  assert.deepEqual(compiled.errors, []);
+  assert.equal(compiled.plan.patches.length, 0);
+  assert.deepEqual(compiled.plan.creations.map((creation) => creation.operationCount), [1, 1, 2]);
+  assert.deepEqual(compiled.plan.creations.map((creation) => creation.artifact.name), [
+    "launch-brief.md",
+    "launch-metrics.csv",
+    "launch-review.deck.md",
+  ]);
+  const prepared = prepareWorkspaceMutation(defaultArtifacts, compiled.plan.patches, compiled.plan.creations);
+  assert.deepEqual(prepared.errors, []);
+  assert.equal(prepared.nextArtifacts.length, defaultArtifacts.length + 3);
+  assert.match(prepared.nextArtifacts.at(-1).source, /## Decision/);
+});
+
+test("resolves repeated creation titles and rejects incompatible creation operations", () => {
+  const creation = {
+    type: "create_artifact",
+    kind: "document",
+    title: "Shared Brief",
+    summary: "Create a brief",
+    detail: "Fill the deterministic document template.",
+    edits: [{ type: "replace_markdown_section", heading: "Shared Brief", body: "Visible context." }],
+  };
+  const repeated = compileAgentWorkspaceOperations(defaultArtifacts, {
+    summary: "Create two briefs",
+    detail: "Rune must resolve both identities without model-authored ids.",
+    actions: [creation, creation],
+  });
+  assert.deepEqual(repeated.errors, []);
+  assert.deepEqual(repeated.plan.creations.map((item) => item.artifact.id), ["shared-brief", "shared-brief-2"]);
+  assert.deepEqual(repeated.plan.creations.map((item) => item.artifact.name), ["shared-brief.md", "shared-brief-2.md"]);
+
+  const incompatible = compileAgentWorkspaceOperations(defaultArtifacts, {
+    summary: "Use the wrong operation",
+    detail: "A data template cannot accept a Markdown section edit.",
+    actions: [{
+      ...creation,
+      kind: "data",
+      title: "Wrong Table",
+    }],
+  });
+  assert.equal(incompatible.plan, undefined);
+  assert.match(incompatible.errors.join(" "), /only supports Markdown documents/i);
+});
+
+test("keeps mixed patch-and-create plans atomic at the full-workspace safety gate", () => {
+  const report = defaultArtifacts.find((artifact) => artifact.kind === "document");
+  assert.ok(report);
+  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, AgentWorkspaceOperationPlanSchema.parse({
+    summary: "Update the report and create a deck",
+    detail: "One existing source and one Rune-owned new source form a single transaction.",
+    actions: [
+      {
+        type: "patch_artifact",
+        artifactId: report.id,
+        summary: "Add a launch note",
+        detail: "Append one exact visible note.",
+        edits: [{ type: "replace_text", find: "## Next actions", replace: "## Launch note\n\nShared context.\n\n## Next actions" }],
+      },
+      {
+        type: "create_artifact",
+        kind: "slides",
+        title: "Unsafe Briefing",
+        summary: "Create an unsafe deck",
+        detail: "The final safety gate must reject raw HTML.",
+        edits: [{
+          type: "replace_deck_slide",
+          title: "Unsafe Briefing",
+          slide: "# Unsafe Briefing\n\n<script>alert(1)</script>",
+        }],
+      },
+    ],
+  }));
+  assert.deepEqual(compiled.errors, []);
+  const prepared = prepareWorkspaceMutation(defaultArtifacts, compiled.plan.patches, compiled.plan.creations);
+  assert.match(prepared.errors.join(" "), /raw HTML/i);
+  assert.equal(prepared.nextArtifacts, defaultArtifacts);
+});
+
 test("rejects foreign and duplicate workspace files", () => {
   const artifacts = [documentArtifact("# Report\n\nOld.")];
   const patch = {
+    type: "patch_artifact",
     artifactId: "report",
     summary: "Update report",
     detail: "One exact sentence changes.",
@@ -436,11 +562,11 @@ test("rejects foreign and duplicate workspace files", () => {
   const plan = AgentWorkspaceOperationPlanSchema.parse({
     summary: "Coordinate the workspace",
     detail: "One canonical source changes.",
-    patches: [patch],
+    actions: [patch],
   });
   const invalid = compileAgentWorkspaceOperations(artifacts, {
     ...plan,
-    patches: [plan.patches[0], plan.patches[0], { ...plan.patches[0], artifactId: "foreign" }],
+    actions: [plan.actions[0], plan.actions[0], { ...plan.actions[0], artifactId: "foreign" }],
   });
   assert.equal(invalid.plan, undefined);
   assert.match(invalid.errors.join(" "), /duplicate file patches/i);
@@ -455,14 +581,16 @@ test("keeps compiled exact fallbacks behind the existing whole-workspace safety 
   const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
     summary: "Attempt an unsafe coordinated change",
     detail: "The downstream transaction must reject both compiled files.",
-    patches: [
+    actions: [
       {
+        type: "patch_artifact",
         artifactId: query.id,
         summary: "Mutate data",
         detail: "This operation must not pass the read-only query gate.",
         edits: [{ type: "replace_text", find: "SELECT", replace: "DELETE" }],
       },
       {
+        type: "patch_artifact",
         artifactId: slides.id,
         summary: "Inject markup",
         detail: "This operation must not pass the Deck compiler gate.",

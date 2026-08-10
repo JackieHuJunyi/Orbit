@@ -13,7 +13,7 @@ import {
   compileAgentOperationPatch,
   compileAgentWorkspaceOperations,
 } from "../../lib/agent-operations.ts";
-import { prepareWorkspacePatch } from "../../lib/patches.ts";
+import { prepareWorkspaceMutation } from "../../lib/patches.ts";
 import { validateArtifact } from "../../lib/workspace.ts";
 
 const DEFAULT_MODEL = "gpt-5.6";
@@ -69,7 +69,9 @@ export async function POST(request: Request) {
         return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
       const allowedIds = new Set(parsed.data.workspaceArtifacts?.map((artifact) => artifact.id));
-      const patchIds = operationPlan.data.patches.map((patch) => patch.artifactId);
+      const patchIds = operationPlan.data.actions.flatMap((action) => (
+        action.type === "patch_artifact" ? [action.artifactId] : []
+      ));
       if (new Set(patchIds).size !== patchIds.length || patchIds.some((id) => !allowedIds.has(id))) {
         return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
@@ -84,7 +86,11 @@ export async function POST(request: Request) {
       if (!workspacePlan.success) {
         return Response.json({ error: "The model returned an invalid compiled workspace patch." }, { status: 502 });
       }
-      const prepared = prepareWorkspacePatch(parsed.data.workspaceArtifacts ?? [], workspacePlan.data.patches);
+      const prepared = prepareWorkspaceMutation(
+        parsed.data.workspaceArtifacts ?? [],
+        workspacePlan.data.patches,
+        workspacePlan.data.creations,
+      );
       if (prepared.errors.length) {
         return Response.json({
           error: "The compiled model operations did not pass Rune's workspace safety gate.",
