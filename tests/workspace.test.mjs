@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   defaultArtifacts,
+  detectArtifact,
+  normalizeWorkspaceArtifacts,
   parseDataSource,
   planLocalChange,
   validateArtifact,
@@ -37,6 +39,25 @@ test("plans data changes as a reviewable next source", () => {
   assert.notEqual(plan.nextSource, artifact.source);
   assert.match(plan.nextSource, /Margin/);
   assert.match(plan.nextSource, /39\.1%/);
+});
+
+test("ships a DuckDB query artifact with a deterministic local plan", () => {
+  const query = defaultArtifacts.find((item) => item.kind === "query");
+  assert.ok(query);
+  assert.match(query.source, /FROM workspace_data/);
+  assert.deepEqual(validateArtifact(query), []);
+  const plan = planLocalChange(query, "汇总季度收入");
+  assert.match(plan.nextSource, /SUM\("Q2 Revenue"\)/);
+  assert.match(plan.summary, /Summarize the quarter/);
+});
+
+test("recognizes imported SQL and migrates older device workspaces", () => {
+  const imported = detectArtifact("analysis.sql", "SELECT * FROM workspace_data;");
+  assert.equal(imported?.kind, "query");
+  const oldDocument = { ...defaultArtifacts[0], source: "# Preserved draft" };
+  const restored = normalizeWorkspaceArtifacts([oldDocument]);
+  assert.equal(restored.find((item) => item.id === oldDocument.id)?.source, "# Preserved draft");
+  assert.ok(restored.some((item) => item.kind === "query"));
 });
 
 test("keeps slide scripts out of the trusted preview contract", () => {

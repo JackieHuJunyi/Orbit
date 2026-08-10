@@ -39,11 +39,13 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
-test("renders all three canonical artifact modes", async () => {
+test("renders all four canonical artifact modes", async () => {
   const response = await render();
   const html = await response.text();
   assert.match(html, /q2-review\.md/);
   assert.match(html, /CSV \/ JSON/);
+  assert.match(html, /regional-analysis\.sql/);
+  assert.match(html, /DuckDB SQL/);
   assert.match(html, /board-briefing\.html/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);

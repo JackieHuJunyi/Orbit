@@ -1171,12 +1171,13 @@ Rune v0 不承诺替代 Word、Excel 或 PowerPoint，而是证明同一个工�
   → 继续迭代
 ```
 
-首版同时提供三种 artifact adapter：
+首版现在提供四种 artifact adapter：
 
 | 模式 | Canonical source | 首版 runtime | 现在验证什么 |
 | --- | --- | --- | --- |
 | Document | GFM Markdown | React/HTML document renderer | 文本 source 与成品文档可以同步工作 |
 | Data | CSV 或 JSON | 本地 parser + grid | 结构化数据可被人和 Agent 直接理解 |
+| Query | DuckDB SQL | Browser Worker + DuckDB-Wasm | AI 写出的分析可以真实执行并验证，而不是只生成公式文本 |
 | Slides | 受约束的 semantic HTML | sandboxed browser frame | 浏览器可以成为演示文稿 runtime |
 
 Slides 首版仍使用 `.html`，但只鼓励语义化 section、设计 token 和少量布局类；后续会把它提升为 Deck AST，并让 HTML 与 PPTX 都由同一个 AST 编译，避免任意 CSS 逐渐退化成另一个 PPT。
@@ -1185,13 +1186,13 @@ Slides 首版仍使用 `.html`，但只鼓励语义化 section、设计 token �
 
 ColaMD 最值得复用的不是 Electron 或 Milkdown 本身，而是三个产品原则：文件仍然是用户拥有的 source of truth；外部 Agent 改文件后界面立即更新；AI 的活动和修改需要被用户看见。
 
-Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace，并在后续阶段加入 patch、diff、checkpoint、accept/reject。ColaMD 的同目录监听很适合桌面端；Rune 现在采用 Web-first、本地优先的 adapter 边界，未来再增加 File System Access API 或 Tauri/Electron shell，而不把文件系统能力耦合进 renderer。
+Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint 与安全 restore；ColaMD 的同目录监听仍很适合未来桌面端。Rune 现在采用 Web-first、本地优先的 adapter 边界，未来再增加 File System Access API 或 Tauri/Electron shell，而不把文件系统能力耦合进 renderer。
 
 ## 3. 基础设施决策
 
 - Web-first：先用 React + vinext 建立可分享、可部署、Cloudflare Worker 兼容的产品壳。
 - Local-first：草稿默认保存在当前设备，不为首版引入数据库、账号或持续服务成本。
-- Adapter-first：编辑器只依赖统一的 Artifact 接口；Markdown、Data、Slides 各自负责 parse、validate、render。
+- Adapter-first：编辑器只依赖统一的 Artifact 接口；Markdown、Data、Query、Slides 各自负责 parse、validate、render。
 - Provider-agnostic：Agent UI 与模型供应商解耦；没有模型密钥时也可用确定性的本地操作演示完整交互。
 - Safe preview：Markdown 不执行任意 HTML，Slides HTML 在 sandboxed iframe 中运行。
 - Progressive persistence：设备草稿 → 浏览器文件系统 → Git workspace → 协作后端，按真实需求逐级增加。
@@ -1201,10 +1202,20 @@ Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 work
 
 ## 4. 近期里程碑
 
-1. Foundation：三种 artifact 可切换、可编辑、可实时预览、可在设备上保存。
+1. Foundation：四种 artifact 可切换、可编辑、可实时预览、可在设备上保存。
 2. Agent loop：自然语言指令生成结构化 patch，展示 diff 后再应用。
 3. Data workflow：CSV/JSON 导入、schema inference、SQL transformation 与 chart binding。
 4. Workspace graph：文档和演示可引用同一份数据或 metric，并显示 lineage。
 5. Compatibility：按使用频率加入 DOCX/XLSX/PPTX 的 semantic import/export。
 
 判断每一阶段是否值得继续的标准不是功能数量，而是用户完成一次“数据 → 分析 → 文档 → 演示”的时间是否显著下降、以及用户是否愿意接受 Agent 的修改。
+
+## 5. SQL runtime 与 checkpoint 的已验证实现
+
+2026-08-11 的实现把 Data workflow 从“规划项”推进到了可运行的纵向切片：`.sql` 本身是可读、可下载、可被 Agent 修改的 canonical source；打开 Query artifact 时才懒加载 DuckDB-Wasm；CSV/JSON 会在浏览器 Worker 内变成统一表 `workspace_data`；SQL 结果回到同一个 Grid renderer。默认示例已经用真实 DuckDB 内核回归测试，不只是 mock parser。
+
+首版刻意收紧三个边界：只接受单条 `SELECT` 或 `WITH`，把查询包成 subquery 以保证只读语义，界面最多展示 500 行。这个约束既降低浏览器内存风险，也给 Agent 明确、可验证的输出协议。大文件阶段再按阈值切到远程 worker，而不改变 `.sql → result table` 的 artifact contract。
+
+Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用前保存旧 source，⌘S 保存人工节点，restore 前先保存当前 source，因此恢复动作本身也可逆。每个 artifact 最多保留最近 24 个不同 source，并受 50 万字符预算约束；超过 20 万字符的单文件先要求导出，不冒险挤爆 localStorage。连续重复版本会去重，损坏条目会被忽略，容量失败会明确显示。这个模型成本为零，但已经建立了以后迁移到 Git commit、operation log 或 CRDT snapshot 所需的 revision 边界。
+
+这一轮没有引入账号、D1 或 R2。新增运行成本只有首次打开 SQL 时下载固定版本的 Wasm 二进制；用户数据不需要离开浏览器。等到真实用户需要跨设备同步，再把 checkpoint port 接到持久后端，比现在预建协作基础设施更符合低成本原则。

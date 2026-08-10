@@ -8,3 +8,6 @@
 - 2026-08-11 — Linked reports and slides to named metrics derived from the same canonical CSV source.
 - 2026-08-11 — Added live lineage indicators so users can see which data source compiles each artifact.
 - 2026-08-11 — Added a provider-neutral Agent endpoint with schema-validated OpenAI patches and a deterministic local fallback.
+- 2026-08-11 — Added a read-only DuckDB SQL artifact that runs canonical CSV/JSON data inside the browser and renders a bounded live grid.
+- 2026-08-11 — Replaced transient undo state with persistent per-artifact checkpoints for Agent writes, manual saves, and safe restores.
+- 2026-08-11 — Upgraded the runtime dependency floor and added typechecking so the production dependency audit is clear.

@@ -39,3 +39,18 @@ test("rejects oversized or empty agent inputs before provider calls", () => {
   assert.equal(AgentRequestSchema.safeParse({ ...request, prompt: "" }).success, false);
   assert.equal(AgentRequestSchema.safeParse({ ...request, prompt: "x".repeat(2_001) }).success, false);
 });
+
+test("constrains query patches to read-only DuckDB SQL", () => {
+  const queryRequest = AgentRequestSchema.parse({
+    ...request,
+    artifact: {
+      id: "analysis",
+      name: "analysis.sql",
+      kind: "query",
+      language: "DuckDB SQL",
+      source: "SELECT * FROM workspace_data;",
+    },
+  });
+  assert.match(buildAgentInstructions(queryRequest), /read-only DuckDB/);
+  assert.match(buildAgentInstructions(queryRequest), /workspace_data/);
+});

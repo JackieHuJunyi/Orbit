@@ -15,6 +15,7 @@ Workbench UI
   └─ Artifact registry
        ├─ Markdown adapter → document preview
        ├─ Data adapter     → parsed grid
+       ├─ Query adapter    → DuckDB-Wasm result grid
        └─ Slides adapter   → sandboxed HTML runtime
 ```
 
@@ -44,11 +45,21 @@ The UI may preview a patch, accept or reject it, validate the next source, creat
 
 ## Shared metrics and lineage
 
-Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}`. The dependency compiler derives metrics from the canonical CSV/JSON artifact and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count; the next evolution is a persisted dependency graph that also covers SQL, charts, and user-defined metrics.
+Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}`. The dependency compiler derives metrics from the canonical CSV/JSON artifact and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count. SQL artifacts now expose the canonical data → `workspace_data` → query lineage; the next evolution is a persisted dependency graph that also covers charts and user-defined metrics.
+
+## Browser-local SQL runtime
+
+The Query adapter treats `.sql` as canonical source and lazily starts DuckDB-Wasm only when a query preview is opened. Before each run, the first canonical CSV/JSON artifact is registered inside the browser worker and materialized as `workspace_data`. Rune accepts one `SELECT` or `WITH` statement, wraps it as a subquery, and requests at most 501 rows so the UI can display 500 and report truncation. Queries are serialized to avoid races while source is changing.
+
+The npm wrapper is pinned to a stable version, and matching worker/Wasm binaries are loaded from a version-pinned CDN URL. This keeps the deployed application small and infrastructure-free while rows remain inside the browser. A future offline distribution can serve the same pinned binaries from an asset origin without changing the query contract.
+
+## Checkpoint log
+
+Device history is an append-only, per-artifact list of source snapshots. Applying an Agent patch records the pre-change source; ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
 
 ## Persistence ladder
 
-1. v0 stores non-sensitive drafts in browser storage and offers reset/export affordances.
+1. v0 stores non-sensitive drafts and bounded checkpoint history in browser storage and offers reset/export affordances.
 2. v1 adds File System Access API with a storage port; a desktop shell can implement the same port later.
 3. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
 4. D1/R2 remain undeclared until durable hosted projects or assets are required.
@@ -60,6 +71,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - Markdown is rendered as React elements and does not execute embedded HTML.
 - Slide source runs in an iframe with a restrictive sandbox and no same-origin access.
 - CSV and JSON parsing is local and must expose validation errors rather than guessing silently.
+- SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Provider keys belong in server-side secrets; they are never committed or stored in browser drafts.
 - Imported files will receive size, MIME, and formula-injection checks before export features ship.
 
@@ -67,13 +79,13 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
-| Foundation | Three live artifact editors | Client adapters and local persistence |
-| Trust | Patch preview, undo, checkpoints | Revision log |
+| Foundation | Four live artifact editors | Client adapters and local persistence |
+| Trust | Patch preview, undo, persistent device checkpoints | Local revision log |
 | Intelligence | Provider-backed structured actions | Agent API and eval fixtures |
-| Data loop | SQL, charts, shared metrics | DuckDB-Wasm and dependency graph |
+| Data loop | SQL and shared metrics; charts next | DuckDB-Wasm and dependency graph |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
 | Compatibility | Office import/export | Isolated conversion workers |
 
 ## Quality gates
 
-Every milestone needs a production build, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. Provider-backed behavior also needs deterministic eval fixtures before it becomes a default path.
+Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. Provider-backed behavior also needs deterministic eval fixtures before it becomes a default path.

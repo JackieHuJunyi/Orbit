@@ -33,6 +33,7 @@ import {
   artifactStats,
   cloneDefaultArtifacts,
   detectArtifact,
+  normalizeWorkspaceArtifacts,
   planLocalChange,
   quickCommands,
   validateArtifact,
@@ -40,6 +41,15 @@ import {
   type WorkspaceArtifact,
 } from "../lib/workspace";
 import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
+import {
+  appendCheckpoint,
+  canCheckpointSource,
+  createCheckpoint,
+  normalizeCheckpointMap,
+  type CheckpointMap,
+  type CheckpointReason,
+  type WorkspaceCheckpoint,
+} from "../lib/checkpoints";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_IMPORT_SIZE = 2 * 1024 * 1024;
@@ -73,6 +83,7 @@ function isRemotePlan(value: RemoteAgentResponse["plan"]): value is Required<Non
 function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }) {
   if (kind === "document") return <FileText size={size} aria-hidden="true" />;
   if (kind === "data") return <TableProperties size={size} aria-hidden="true" />;
+  if (kind === "query") return <Database size={size} aria-hidden="true" />;
   return <Presentation size={size} aria-hidden="true" />;
 }
 
@@ -86,14 +97,29 @@ function getDiffStats(before: string, after: string) {
   return { additions, removals };
 }
 
+function checkpointReasonLabel(reason: CheckpointReason) {
+  return { agent: "Agent", manual: "Manual", restore: "Restore safety" }[reason];
+}
+
+function checkpointTime(createdAt: string) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    .format(new Date(createdAt));
+}
+
+function persistDeviceWorkspace(artifacts: WorkspaceArtifact[], selectedId: string, checkpoints: CheckpointMap) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId, checkpoints }));
+}
+
 function downloadArtifact(artifact: WorkspaceArtifact) {
   const mime = artifact.kind === "document"
     ? "text/markdown"
-    : artifact.name.endsWith(".json")
-      ? "application/json"
-      : artifact.kind === "data"
-        ? "text/csv"
-        : "text/html";
+    : artifact.kind === "query"
+      ? "application/sql"
+      : artifact.name.endsWith(".json")
+        ? "application/json"
+        : artifact.kind === "data"
+          ? "text/csv"
+          : "text/html";
   const url = URL.createObjectURL(new Blob([artifact.source], { type: `${mime};charset=utf-8` }));
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -106,7 +132,7 @@ export function RuneWorkbench() {
   const [artifacts, setArtifacts] = useState<WorkspaceArtifact[]>(() => cloneDefaultArtifacts());
   const [selectedId, setSelectedId] = useState("q2-review");
   const [hydrated, setHydrated] = useState(false);
-  const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
+  const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [savedAt, setSavedAt] = useState("just now");
   const [fileRailOpen, setFileRailOpen] = useState(true);
   const [prompt, setPrompt] = useState("");
@@ -114,12 +140,15 @@ export function RuneWorkbench() {
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
-  const [history, setHistory] = useState<Record<string, string[]>>({});
+  const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [notice, setNotice] = useState("Local workspace ready");
   const gutterRef = useRef<HTMLPreElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
+  const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
+  const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
   const bindingState = useMemo(
     () => selectedArtifact ? compileArtifactSource(selectedArtifact.source, artifacts) : null,
     [artifacts, selectedArtifact],
@@ -147,12 +176,16 @@ export function RuneWorkbench() {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored) as { artifacts?: WorkspaceArtifact[]; selectedId?: string };
-          if (Array.isArray(parsed.artifacts) && parsed.artifacts.length) {
-            setArtifacts(parsed.artifacts);
-            setSelectedId(parsed.selectedId ?? parsed.artifacts[0].id);
-            setNotice("Restored the latest device draft");
-          }
+          const parsed = JSON.parse(stored) as { artifacts?: unknown; selectedId?: unknown; checkpoints?: unknown };
+          const restoredArtifacts = normalizeWorkspaceArtifacts(parsed.artifacts);
+          const restoredId = typeof parsed.selectedId === "string"
+            && restoredArtifacts.some((artifact) => artifact.id === parsed.selectedId)
+            ? parsed.selectedId
+            : restoredArtifacts[0].id;
+          setArtifacts(restoredArtifacts);
+          setSelectedId(restoredId);
+          setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
+          setNotice("Restored the latest device draft");
         }
       } catch {
         setNotice("Started a fresh local workspace");
@@ -166,25 +199,44 @@ export function RuneWorkbench() {
   useEffect(() => {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId }));
-      setSaveState("saved");
-      setSavedAt(new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
+      try {
+        persistDeviceWorkspace(artifacts, selectedId, checkpoints);
+        setSaveState("saved");
+        setSavedAt(new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
+      } catch {
+        setSaveState("error");
+        setNotice("Device storage is full — download the source before leaving");
+      }
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [artifacts, hydrated, selectedId]);
+  }, [artifacts, checkpoints, hydrated, selectedId]);
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") return;
       event.preventDefault();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId }));
-      setSaveState("saved");
-      setSavedAt("just now");
-      setNotice("Checkpoint saved on this device");
+      const artifact = artifacts.find((item) => item.id === selectedId) ?? artifacts[0];
+      if (!artifact) return;
+      if (!canCheckpointSource(artifact.source)) {
+        setNotice("This source is too large for device checkpoint history");
+        return;
+      }
+      const checkpoint = createCheckpoint(artifact, "Manual checkpoint", "manual");
+      const next = appendCheckpoint(checkpoints, checkpoint);
+      try {
+        persistDeviceWorkspace(artifacts, selectedId, next);
+        setCheckpoints(next);
+        setSaveState("saved");
+        setSavedAt("just now");
+        setNotice(next === checkpoints ? "Current source is already checkpointed" : "Manual checkpoint saved on this device");
+      } catch {
+        setSaveState("error");
+        setNotice("Device storage is full — checkpoint was not saved");
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [artifacts, selectedId]);
+  }, [artifacts, checkpoints, selectedId]);
 
   if (!selectedArtifact) return null;
 
@@ -202,6 +254,44 @@ export function RuneWorkbench() {
       artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact
     )));
     if (pendingChange?.artifactId === selectedArtifact.id) setPendingChange(null);
+  }
+
+  function saveManualCheckpoint() {
+    if (!canCheckpointSource(selectedArtifact.source)) {
+      setNotice("This source is too large for device checkpoint history");
+      return;
+    }
+    const checkpoint = createCheckpoint(selectedArtifact, "Manual checkpoint", "manual");
+    const next = appendCheckpoint(checkpoints, checkpoint);
+    try {
+      persistDeviceWorkspace(artifacts, selectedId, next);
+      setCheckpoints(next);
+      setSaveState("saved");
+      setSavedAt("just now");
+      setNotice(next === checkpoints ? "Current source is already checkpointed" : "Manual checkpoint saved on this device");
+    } catch {
+      setSaveState("error");
+      setNotice("Device storage is full — checkpoint was not saved");
+    }
+  }
+
+  function restoreCheckpoint(checkpoint: WorkspaceCheckpoint) {
+    if (checkpoint.artifactId !== selectedArtifact.id || checkpoint.source === selectedArtifact.source) {
+      setNotice("That checkpoint already matches the current source");
+      return;
+    }
+    if (!canCheckpointSource(selectedArtifact.source)) {
+      setNotice("Download this large source before restoring an older checkpoint");
+      return;
+    }
+    const safetyCheckpoint = createCheckpoint(
+      selectedArtifact,
+      `Before restoring ${checkpoint.label}`,
+      "restore",
+    );
+    setCheckpoints((current) => appendCheckpoint(current, safetyCheckpoint));
+    updateSource(checkpoint.source);
+    setNotice(`Restored checkpoint · ${checkpoint.label}`);
   }
 
   async function runAgent(nextPrompt = prompt) {
@@ -255,22 +345,26 @@ export function RuneWorkbench() {
 
   function applyPendingChange() {
     if (!pendingChange || pendingChange.artifactId !== selectedArtifact.id) return;
-    setHistory((current) => ({
-      ...current,
-      [selectedArtifact.id]: [...(current[selectedArtifact.id] ?? []), selectedArtifact.source].slice(-20),
-    }));
+    if (!canCheckpointSource(selectedArtifact.source)) {
+      setAgentError("This source is too large for safe device history. Download it before applying an Agent patch.");
+      setNotice("Patch held for review — a safety checkpoint is required");
+      return;
+    }
+    const checkpoint = createCheckpoint(
+      selectedArtifact,
+      `Before agent patch · ${pendingChange.summary}`,
+      "agent",
+    );
+    setCheckpoints((current) => appendCheckpoint(current, checkpoint));
     updateSource(pendingChange.nextSource);
     setPendingChange(null);
     setNotice("Patch applied — undo remains available");
   }
 
   function undoLastAgentChange() {
-    const stack = history[selectedArtifact.id] ?? [];
-    const previous = stack.at(-1);
-    if (previous == null) return;
-    updateSource(previous);
-    setHistory((current) => ({ ...current, [selectedArtifact.id]: stack.slice(0, -1) }));
-    setNotice("Restored the previous checkpoint");
+    const previous = [...selectedCheckpoints].reverse().find((checkpoint) => checkpoint.source !== selectedArtifact.source);
+    if (!previous) return;
+    restoreCheckpoint(previous);
   }
 
   function resetWorkspace() {
@@ -279,7 +373,8 @@ export function RuneWorkbench() {
     setSaveState("saving");
     setArtifacts(defaults);
     setSelectedId(defaults[0].id);
-    setHistory({});
+    setCheckpoints({});
+    setHistoryOpen(false);
     setPendingChange(null);
     localStorage.removeItem(STORAGE_KEY);
     setNotice("Sample workspace restored");
@@ -296,7 +391,7 @@ export function RuneWorkbench() {
     const source = await file.text();
     const artifact = detectArtifact(file.name, source);
     if (!artifact) {
-      setNotice("Choose a Markdown, CSV, JSON, or HTML file");
+      setNotice("Choose a Markdown, CSV, JSON, SQL, or HTML file");
       return;
     }
     setArtifacts((current) => [...current, artifact]);
@@ -331,9 +426,9 @@ export function RuneWorkbench() {
           <div className="project-name"><span className="project-dot" /> Q2 operating review</div>
         </div>
         <div className="topbar-actions">
-          <div className={`save-indicator ${saveState}`} title={`Last saved ${savedAt}`}>
+          <div className={`save-indicator ${saveState}`} title={saveState === "error" ? "Device storage is full" : `Last saved ${savedAt}`}>
             {saveState === "saved" ? <Check /> : <CircleDot />}
-            <span>{saveState === "saved" ? "Saved on device" : "Saving"}</span>
+            <span>{saveState === "saved" ? "Saved on device" : saveState === "error" ? "Storage full" : "Saving"}</span>
           </div>
           <button className="button ghost-button" onClick={() => importRef.current?.click()}>
             <Upload aria-hidden="true" /> Import
@@ -341,7 +436,7 @@ export function RuneWorkbench() {
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
             <Download />
           </button>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".md,.markdown,.csv,.json,.html,.htm" onChange={importFile} />
+          <input ref={importRef} className="visually-hidden" type="file" accept=".md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} />
         </div>
       </header>
 
@@ -398,14 +493,48 @@ export function RuneWorkbench() {
             <div className="pane-actions">
               <span className="language-badge"><Code2 aria-hidden="true" /> {selectedArtifact.language}</span>
               <button
+                className={`history-trigger ${historyOpen ? "active" : ""}`}
+                onClick={() => setHistoryOpen((open) => !open)}
+                aria-expanded={historyOpen}
+                aria-label="Show saved checkpoints"
+                title="Checkpoint history"
+              ><History /><span>{selectedCheckpoints.length}</span></button>
+              <button
                 className="icon-button small"
                 onClick={undoLastAgentChange}
-                disabled={!(history[selectedArtifact.id]?.length)}
-                aria-label="Undo last agent change"
-                title="Undo agent change"
+                disabled={!selectedCheckpoints.some((checkpoint) => checkpoint.source !== selectedArtifact.source)}
+                aria-label="Restore latest different checkpoint"
+                title="Restore latest checkpoint"
               ><Undo2 /></button>
             </div>
           </header>
+
+          {historyOpen && (
+            <section className="checkpoint-panel" aria-label="Checkpoint history">
+              <div className="checkpoint-panel-header">
+                <div><span className="overline">Device history</span><strong>{selectedCheckpoints.length} checkpoint{selectedCheckpoints.length === 1 ? "" : "s"}</strong></div>
+                <button className="button checkpoint-save" onClick={saveManualCheckpoint}><Check aria-hidden="true" /> Save current</button>
+              </div>
+              {selectedCheckpoints.length ? (
+                <div className="checkpoint-list">
+                  {[...selectedCheckpoints].reverse().map((checkpoint) => {
+                    const current = checkpoint.source === selectedArtifact.source;
+                    return (
+                      <div className={`checkpoint-row ${current ? "current" : ""}`} key={checkpoint.id}>
+                        <span className="checkpoint-node" aria-hidden="true" />
+                        <div><strong>{checkpoint.label}</strong><small>{checkpointReasonLabel(checkpoint.reason)} · {checkpointTime(checkpoint.createdAt)}</small></div>
+                        {current
+                          ? <span className="checkpoint-current">Current</span>
+                          : <button onClick={() => restoreCheckpoint(checkpoint)}>Restore</button>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="checkpoint-empty">Apply an Agent patch or press ⌘S to capture the current source.</p>
+              )}
+            </section>
+          )}
 
           <div className="editor-wrap">
             <pre ref={gutterRef} className="line-gutter" aria-hidden="true">{lineNumbers}</pre>
@@ -472,6 +601,7 @@ export function RuneWorkbench() {
               <div><span className="overline">Compiled output</span><strong>Live preview</strong></div>
             </div>
             <div className="preview-actions">
+              {selectedArtifact.kind === "query" && canonicalDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> 1 source</span>}
               {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {bindingState.references.length} live</span>}
               {validationErrors.length ? (
                 <span className="validation-badge error"><X aria-hidden="true" /> {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}</span>
@@ -481,6 +611,17 @@ export function RuneWorkbench() {
             </div>
           </header>
           <div className="preview-body">
+            {selectedArtifact.kind === "query" && canonicalDataArtifact && (
+              <div className="lineage-strip query-lineage">
+                <TableProperties aria-hidden="true" />
+                <span>{canonicalDataArtifact.name}</span>
+                <ChevronRight aria-hidden="true" />
+                <span>workspace_data</span>
+                <ChevronRight aria-hidden="true" />
+                <span>{selectedArtifact.name}</span>
+                <strong>Browser-local SQL</strong>
+              </div>
+            )}
             {!!bindingState?.references.length && (
               <div className="lineage-strip">
                 <Database aria-hidden="true" />

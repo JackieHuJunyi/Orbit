@@ -10,7 +10,7 @@ export const AgentRequestSchema = z.object({
   artifact: z.object({
     id: z.string().min(1).max(120),
     name: z.string().min(1).max(240),
-    kind: z.enum(["document", "data", "slides"]),
+    kind: z.enum(["document", "data", "query", "slides"]),
     language: z.string().min(1).max(80),
     source: z.string().min(1).max(100_000),
   }),
@@ -24,6 +24,7 @@ export type AgentRequest = z.infer<typeof AgentRequestSchema>;
 const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
   document: "Return valid GitHub-Flavored Markdown. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
   data: "Return valid CSV or JSON matching the input format. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
+  query: "Return one read-only DuckDB SELECT or WITH query. Read the canonical source through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid.",
   slides: "Return one complete semantic HTML document. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
 };
 

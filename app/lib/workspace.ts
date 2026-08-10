@@ -1,6 +1,7 @@
 import Papa from "papaparse";
+import { validateReadQuery } from "./sql.ts";
 
-export type ArtifactKind = "document" | "data" | "slides";
+export type ArtifactKind = "document" | "data" | "query" | "slides";
 
 export type WorkspaceArtifact = {
   id: string;
@@ -57,6 +58,16 @@ APAC,1840000,1540000,1120000,148
 North America,1560000,1490000,1010000,121
 Europe,970000,920000,690000,84
 LATAM,450000,340000,315000,39`;
+
+const querySource = `-- workspace_data is rebuilt from regional-revenue.csv before every run.
+SELECT
+  Region,
+  "Q2 Revenue" AS q2_revenue,
+  "Q1 Revenue" AS q1_revenue,
+  ROUND(("Q2 Revenue" - Cost) / "Q2 Revenue" * 100, 1) AS margin_pct,
+  Customers
+FROM workspace_data
+ORDER BY "Q2 Revenue" DESC;`;
 
 const slidesSource = `<!doctype html>
 <html lang="en">
@@ -136,6 +147,13 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
     source: dataSource,
   },
   {
+    id: "regional-analysis",
+    name: "regional-analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: querySource,
+  },
+  {
     id: "board-briefing",
     name: "board-briefing.html",
     kind: "slides",
@@ -147,11 +165,35 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
 export const quickCommands: Record<ArtifactKind, string[]> = {
   document: ["把摘要压缩成三条要点", "补充下一步行动"],
   data: ["按收入从高到低排序", "增加利润率列"],
+  query: ["计算利润率并排序", "汇总季度收入"],
   slides: ["把主题改成深色", "新增一页结论"],
 };
 
 export function cloneDefaultArtifacts(): WorkspaceArtifact[] {
   return defaultArtifacts.map((artifact) => ({ ...artifact }));
+}
+
+export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[] {
+  const restored: WorkspaceArtifact[] = [];
+  const seen = new Set<string>();
+  if (Array.isArray(value)) {
+    value.forEach((entry) => {
+      if (!entry || typeof entry !== "object") return;
+      const candidate = entry as Partial<WorkspaceArtifact>;
+      if (typeof candidate.id !== "string"
+        || typeof candidate.name !== "string"
+        || typeof candidate.language !== "string"
+        || typeof candidate.source !== "string"
+        || !["document", "data", "query", "slides"].includes(candidate.kind ?? "")
+        || seen.has(candidate.id)) return;
+      seen.add(candidate.id);
+      restored.push(candidate as WorkspaceArtifact);
+    });
+  }
+  cloneDefaultArtifacts().forEach((artifact) => {
+    if (!seen.has(artifact.id)) restored.push(artifact);
+  });
+  return restored;
 }
 
 function normalizeJsonRows(value: unknown): Array<Record<string, DataCell>> {
@@ -209,6 +251,7 @@ export function parseDataSource(source: string): ParsedData {
 export function validateArtifact(artifact: WorkspaceArtifact): string[] {
   if (!artifact.source.trim()) return ["The source is empty."];
   if (artifact.kind === "data") return parseDataSource(artifact.source).errors;
+  if (artifact.kind === "query") return validateReadQuery(artifact.source);
   if (artifact.kind === "slides") {
     const errors: string[] = [];
     if (!/<main[\s>]/i.test(artifact.source)) errors.push("Slides need a <main> element.");
@@ -227,6 +270,9 @@ export function artifactStats(artifact: WorkspaceArtifact): string {
   if (artifact.kind === "slides") {
     const slides = artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
     return `${slides} slides · ${artifact.source.length.toLocaleString()} chars`;
+  }
+  if (artifact.kind === "query") {
+    return `SQL · ${artifact.source.split("\n").length} lines`;
   }
   const words = artifact.source.trim() ? artifact.source.trim().split(/\s+/).length : 0;
   return `${words} words · ${artifact.source.split("\n").length} lines`;
@@ -338,10 +384,36 @@ function planSlides(source: string, prompt: string): LocalPlan {
   throw new Error("Try changing the theme to dark or adding a conclusion slide.");
 }
 
+function planQuery(prompt: string): LocalPlan {
+  if (/利润率|margin|排序|sort/i.test(prompt)) {
+    return {
+      nextSource: querySource,
+      summary: "Calculate margin and rank every region by Q2 revenue",
+      detail: "The query reads only workspace_data and returns a deterministic regional view.",
+    };
+  }
+
+  if (/汇总|季度|summary|total|总计/i.test(prompt)) {
+    return {
+      nextSource: `SELECT
+  SUM("Q2 Revenue") AS total_q2_revenue,
+  SUM("Q1 Revenue") AS total_q1_revenue,
+  ROUND((SUM("Q2 Revenue") / SUM("Q1 Revenue") - 1) * 100, 1) AS qoq_growth_pct,
+  SUM(Customers) AS customers
+FROM workspace_data;`,
+      summary: "Summarize the quarter from the canonical workspace data",
+      detail: "One aggregate row is computed locally from revenue and customer columns.",
+    };
+  }
+
+  throw new Error("Try calculating margin and ranking regions, or summarizing quarterly revenue.");
+}
+
 export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
   if (!prompt.trim()) throw new Error("Describe the change you want Rune to make.");
   if (artifact.kind === "document") return planDocument(artifact.source, prompt);
   if (artifact.kind === "data") return planData(artifact.source, prompt);
+  if (artifact.kind === "query") return planQuery(prompt);
   return planSlides(artifact.source, prompt);
 }
 
@@ -353,6 +425,9 @@ export function detectArtifact(name: string, source: string): WorkspaceArtifact 
   }
   if (extension === "csv" || extension === "json") {
     return { ...common, kind: "data", language: extension === "json" ? "JSON" : "CSV" };
+  }
+  if (extension === "sql") {
+    return { ...common, kind: "query", language: "DuckDB SQL" };
   }
   if (extension === "html" || extension === "htm") {
     return { ...common, kind: "slides", language: "Semantic HTML" };
