@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -33,6 +34,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /q2-review\.md/);
   assert.match(html, /Rune Agent/);
   assert.match(html, /Open folder/);
+  assert.match(html, /\.docx,\.xlsx,\.pptx/);
   assert.match(html, /Live preview/);
   assert.match(html, /metrics compiled live/);
   assert.match(html, /Q2 revenue by region/);
@@ -53,7 +55,14 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.5/);
+  assert.match(html, /Rune v0\.6/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
+});
+
+test("keeps the Office compatibility parser out of the initial client bundle", async () => {
+  const manifestUrl = new URL("../dist/client/.vite/manifest.json", import.meta.url);
+  const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
+  assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-import.ts"));
 });

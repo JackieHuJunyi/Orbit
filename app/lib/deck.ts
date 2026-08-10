@@ -97,7 +97,7 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
     body = body.slice(match[0].length);
   }
   if (!body.trim()) return { errors: [`Slide ${index + 1} is empty.`] };
-  if (/<\/?[a-z][^>]*>/i.test(body)) return { errors: [`Slide ${index + 1} contains raw HTML; use Deck Markdown instead.`] };
+  if (/(^|[^\\])<\/?[a-z][^>]*>/i.test(body)) return { errors: [`Slide ${index + 1} contains raw HTML; use Deck Markdown instead.`] };
   if (!/^#{1,2}\s+\S/m.test(body)) return { errors: [`Slide ${index + 1} needs a # or ## heading.`] };
   return { slide: { layout, eyebrow, source: body }, errors: [] };
 }
@@ -131,7 +131,7 @@ function escapeHtml(value: string) {
 
 function compileInline(source: string) {
   const tokens: string[] = [];
-  const protectedSource = source.replace(chartTokenPattern, (token) => {
+  const protectedSource = source.replace(/\\([<>-])/g, "$1").replace(chartTokenPattern, (token) => {
     const placeholder = `RUNECHARTTOKEN${tokens.length}END`;
     tokens.push(token);
     return placeholder;

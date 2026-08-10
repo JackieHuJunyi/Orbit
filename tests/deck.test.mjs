@@ -62,6 +62,17 @@ test("escapes frontmatter and eyebrow text in compiled HTML", () => {
   assert.match(compiled.html ?? "", /&lt;img src=x&gt;/);
 });
 
+test("keeps an escaped horizontal rule as slide text instead of a slide boundary", () => {
+  const source = deckArtifact().source.replace(
+    "A shared story compiled from the same source as the operating data and written report.",
+    "\\---",
+  );
+  const parsed = parseDeckSource(source);
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(parsed.deck?.slides.length, 3);
+  assert.match(compileDeckSource(source).html ?? "", /<p>---<\/p>/);
+});
+
 test("keeps legacy semantic HTML decks valid", () => {
   const legacy = {
     id: "legacy-deck",

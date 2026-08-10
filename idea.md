@@ -1207,7 +1207,7 @@ Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 work
 2. Agent loop：自然语言指令生成结构化 patch，展示 diff 后再应用。
 3. Data workflow：CSV/JSON 导入、schema inference、SQL transformation 与 chart binding。
 4. Workspace graph：文档和演示可引用同一份数据或 metric，并显示 lineage。
-5. Compatibility：按使用频率加入 DOCX/XLSX/PPTX 的 semantic import/export。
+5. Compatibility：已加入 DOCX/XLSX/PPTX 的 semantic import；下一步按使用频率补 export 与 fidelity diagnostics。
 
 判断每一阶段是否值得继续的标准不是功能数量，而是用户完成一次“数据 → 分析 → 文档 → 演示”的时间是否显著下降、以及用户是否愿意接受 Agent 的修改。
 
@@ -1252,3 +1252,18 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 编译顺序保持可解释：先从 canonical Data 解析 named metrics，再解析/验证 Deck Markdown，随后由确定性 compiler 生成布局、设计 token 与自动页码，最后把 chart reference 替换成经过转义的静态图表 HTML。用户文本始终 HTML-escape；runtime 继续使用没有 `allow-scripts` 的 iframe。这样既保留 Overleaf 式“左侧 source、右侧成品”的即时反馈，又让 presentation source 能被 Git diff、Agent patch、目录同步和 checkpoint 直接理解。
 
 旧 semantic `.html` 没有被破坏：导入、目录识别、验证和 sandbox preview 都继续保留，已有浏览器草稿也不会因默认格式迁移而丢失。但它只是兼容 bridge；新演示统一走 `.deck.md`。这一边界不增加服务端、数据库或常驻成本，同时为后续 layout diagnostics、主题包、Deck AST operation、PPTX/PDF export 建立了稳定入口。
+
+## 10. Office Open XML semantic import
+
+2026-08-11 的下一轮实现第一次接通了旧 Office 世界与 Rune canonical source。现代 DOCX、XLSX、PPTX 本质上都是由关系和 XML parts 组成的 ZIP package；WordprocessingML 把正文组织成 paragraph/run/text 和 table，SpreadsheetML 用 workbook/sheet/shared strings 表达工作簿，PresentationML 则把每一页拆成独立 slide part。([ECMA-376][14])([WordprocessingML 结构][15])([SpreadsheetML 结构][16])([PresentationML 结构][17]) 因此首版不需要上传文件或运行 LibreOffice server，只在用户点击 Import 后 lazy-load ZIP/XML adapter，就能在浏览器里完成 semantic extraction。
+
+具体合同是：DOCX 的 paragraph、heading style、bold/italic/strike run、外链、编号和 table 转成 Markdown；XLSX 的每个可见 worksheet 分别转成 CSV，并处理 shared/inline string、boolean、number、常见日期格式与 formula cached value，以 `= + - @` 开头的文本会加 apostrophe 并提示，避免下载 CSV 后触发公式解释；PPTX 按 presentation relationship 顺序提取 title/body placeholder、bullet 和 table，生成经过验证的 Deck Markdown，再走现有 compiler 变成 HTML。导入多个 worksheet 时是一笔 workspace transaction：先解决 ID/name 冲突，再验证所有 adapter 与依赖图，最后只写一次 localStorage；任一 sheet、deck 或存储步骤失败，当前 workspace 保持不变。
+
+这里必须明确“semantic fidelity”的边界。DOCX 图片/评论、XLSX hidden sheet/实时公式、PPTX 图片/图表/动画/master styling 都不会被伪装成已成功转换；界面会给出 omission warning。旧二进制 `.doc/.xls/.ppt`、宏格式和像素级 round trip 也不在首版合同里。安全上，压缩文件限制 12 MB，并限制 entry 数、单 XML part、总展开 XML、输出字符、Word block、worksheet/row/column/cell 与 slide 数；path traversal、DTD/entity 和无效 adapter 输出会在写入前拒绝。
+
+这个实现新增的生产成本仍为零：原文件和解析结果都留在浏览器，转换依赖单独成为约 100 KB 的动态 chunk，普通用户不会为兼容层支付首屏下载成本。下一步如果真实 12 MB 文件产生 UI 卡顿，可以把相同的 package port 搬到 Web Worker；如果用户需要更高 fidelity，再按格式引入专门 converter，而不改变 `Office input → canonical source → Rune renderer` 的产品模型。
+
+[14]: https://ecma-international.org/publications-and-standards/standards/ecma-376/ "ECMA-376 Office Open XML"
+[15]: https://learn.microsoft.com/en-us/office/open-xml/word/structure-of-a-wordprocessingml-document "Structure of a WordprocessingML document"
+[16]: https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/structure-of-a-spreadsheetml-document "Structure of a SpreadsheetML document"
+[17]: https://learn.microsoft.com/en-us/office/open-xml/presentation/structure-of-a-presentationml-document "Structure of a PresentationML document"

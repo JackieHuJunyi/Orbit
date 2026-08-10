@@ -63,6 +63,7 @@ import {
   prepareWorkspacePatch,
   type ArtifactSourcePatch,
 } from "../lib/patches";
+import { prepareWorkspaceImport } from "../lib/imports";
 import {
   chooseWorkspaceDirectory,
   readWorkspaceDirectory,
@@ -73,7 +74,9 @@ import {
 } from "../lib/directory-workspace";
 
 const STORAGE_KEY = "rune-workspace-v0";
-const MAX_IMPORT_SIZE = 2 * 1024 * 1024;
+const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
+const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
+const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
 
 type PendingChange = {
   prompt: string;
@@ -643,21 +646,42 @@ export function RuneWorkbench() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (file.size > MAX_IMPORT_SIZE) {
-      setNotice("Import is limited to 2 MB in this prototype");
+    const officeFile = OFFICE_IMPORT_PATTERN.test(file.name);
+    const limit = officeFile ? MAX_OFFICE_IMPORT_BYTES : MAX_SOURCE_IMPORT_BYTES;
+    if (file.size > limit) {
+      setNotice(officeFile ? "Office import is limited to 12 MB per file" : "Source import is limited to 2 MB per file");
       return;
     }
-    const source = await file.text();
-    const artifact = detectArtifact(file.name, source);
-    if (!artifact) {
-      setNotice("Choose a Markdown, CSV, JSON, SQL, or HTML file");
-      return;
+    setNotice(officeFile ? `Converting ${file.name} locally…` : `Reading ${file.name} locally…`);
+    try {
+      let incoming: WorkspaceArtifact[];
+      let warnings: string[] = [];
+      if (officeFile) {
+        const { convertOfficeFile } = await import("../lib/office-import");
+        const result = convertOfficeFile(file.name, await file.arrayBuffer());
+        incoming = result.artifacts;
+        warnings = result.warnings;
+      } else {
+        const source = await file.text();
+        const artifact = detectArtifact(file.name, source);
+        if (!artifact) throw new Error("Choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, DOCX, XLSX, or PPTX.");
+        incoming = [artifact];
+      }
+      const prepared = prepareWorkspaceImport(artifacts, incoming);
+      if (prepared.errors.length) throw new Error(prepared.errors[0]);
+      const firstImported = prepared.importedArtifacts[0];
+      persistDeviceWorkspace(prepared.nextArtifacts, firstImported.id, checkpoints);
+      setArtifacts(prepared.nextArtifacts);
+      setSaveState("saved");
+      setSavedAt("just now");
+      setSelectedId(firstImported.id);
+      setPendingChange(null);
+      const warning = warnings[0] ? ` · ${warnings[0]}` : "";
+      const extraWarnings = warnings.length > 1 ? ` (+${warnings.length - 1} more)` : "";
+      setNotice(`Imported ${prepared.importedArtifacts.length} readable source ${prepared.importedArtifacts.length === 1 ? "artifact" : "artifacts"} from ${file.name}${warning}${extraWarnings}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Rune could not import that file");
     }
-    setArtifacts((current) => [...current, artifact]);
-    setSaveState("saving");
-    setSelectedId(artifact.id);
-    setPendingChange(null);
-    setNotice(`Imported ${file.name} locally`);
   }
 
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -709,7 +733,7 @@ export function RuneWorkbench() {
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
             <Download />
           </button>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} />
+          <input ref={importRef} className="visually-hidden" type="file" accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} />
         </div>
       </header>
 
@@ -977,7 +1001,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.5</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.6</span></div>
       </footer>
     </main>
   );
