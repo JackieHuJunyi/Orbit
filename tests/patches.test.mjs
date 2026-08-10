@@ -101,3 +101,15 @@ test("rejects unresolved cross-file metric bindings atomically", () => {
   assert.match(result.errors.join(" "), /unresolved metric not_defined/);
   assert.equal(result.nextArtifacts, defaultArtifacts);
 });
+
+test("rejects data changes that would break a chart binding", () => {
+  const data = artifact("data");
+  const result = prepareWorkspacePatch(defaultArtifacts, [{
+    artifactId: data.id,
+    summary: "Rename the chart value column",
+    detail: "The chart must block this incompatible schema change.",
+    nextSource: data.source.replace("Q2 Revenue", "Q2 Sales"),
+  }]);
+  assert.match(result.errors.join(" "), /Value column not found: Q2 Revenue/);
+  assert.equal(result.nextArtifacts, defaultArtifacts);
+});

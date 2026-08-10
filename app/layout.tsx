@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
   const title = "Rune — AI-native artifact workspace";
-  const description = "Create documents, data views, and presentations from readable source with an agent-native workflow.";
+  const description = "Create documents, data views, reusable charts, and presentations from readable source with an agent-native workflow.";
 
   return {
     metadataBase: new URL(origin),

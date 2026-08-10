@@ -60,6 +60,17 @@ test("recognizes imported SQL and migrates older device workspaces", () => {
   const restored = normalizeWorkspaceArtifacts([oldDocument]);
   assert.equal(restored.find((item) => item.id === oldDocument.id)?.source, "# Preserved draft");
   assert.ok(restored.some((item) => item.kind === "query"));
+  assert.ok(restored.some((item) => item.kind === "chart"));
+});
+
+test("recognizes and plans validated Chart JSON artifacts", () => {
+  const chart = defaultArtifacts.find((item) => item.kind === "chart");
+  assert.ok(chart);
+  assert.deepEqual(validateArtifact(chart), []);
+  assert.equal(detectArtifact("growth.chart.json", chart.source)?.kind, "chart");
+  const plan = planLocalChange(chart, "改成紫色强调");
+  assert.match(plan.nextSource, /#8267ce/);
+  assert.deepEqual(validateArtifact({ ...chart, source: plan.nextSource }), []);
 });
 
 test("keeps slide scripts out of the trusted preview contract", () => {
@@ -83,8 +94,11 @@ test("compiles document and slide metrics from the shared CSV source", () => {
   assert.match(documentResult.source, /\$4\.82M/);
   assert.match(documentResult.source, /\+12\.4%/);
   assert.doesNotMatch(documentResult.source, /\{\{\s*metric/);
-  assert.ok(findMetricReferences(slides.source).length >= 5);
+  assert.ok(findMetricReferences(slides.source).length >= 4);
   assert.deepEqual(slidesResult.unresolved, []);
+  assert.deepEqual(documentResult.chartReferences, ["regional-revenue-chart"]);
+  assert.deepEqual(slidesResult.chartReferences, ["regional-revenue-chart"]);
+  assert.deepEqual(documentResult.unresolvedCharts, []);
 });
 
 test("recompiles every artifact when the canonical data changes", () => {

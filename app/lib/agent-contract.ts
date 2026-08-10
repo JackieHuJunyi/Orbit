@@ -19,7 +19,7 @@ export const AgentWorkspacePatchSchema = z.object({
 const AgentArtifactSchema = z.object({
   id: z.string().min(1).max(120),
   name: z.string().min(1).max(240),
-  kind: z.enum(["document", "data", "query", "slides"]),
+  kind: z.enum(["document", "data", "query", "chart", "slides"]),
   language: z.string().min(1).max(80),
   source: z.string().min(1).max(100_000),
 });
@@ -52,6 +52,7 @@ const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
   document: "Return valid GitHub-Flavored Markdown. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
   data: "Return valid CSV or JSON matching the input format. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
   query: "Return one read-only DuckDB SELECT or WITH query. Read the canonical source through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid.",
+  chart: "Return one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing data artifact id and exact column names; keep mark as bar, color as a six-digit hex value, and maxItems between 1 and 20.",
   slides: "Return one complete semantic HTML document. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
 };
 

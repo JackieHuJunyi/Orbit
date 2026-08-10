@@ -12,3 +12,4 @@
 - 2026-08-11 — Replaced transient undo state with persistent per-artifact checkpoints for Agent writes, manual saves, and safe restores.
 - 2026-08-11 — Upgraded the runtime dependency floor and added typechecking so the production dependency audit is clear.
 - 2026-08-11 — Added reviewable multi-artifact Agent plans with whole-workspace validation, atomic apply, and a safety checkpoint for every changed source.
+- 2026-08-11 — Added a validated Chart JSON artifact whose live model compiles from canonical data into both Markdown reports and sandboxed HTML slides.

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart3,
   Bot,
   Check,
   CheckCircle2,
@@ -36,6 +37,7 @@ import {
   normalizeWorkspaceArtifacts,
   planLocalChange,
   planLocalWorkspaceChange,
+  parseDataSource,
   quickCommands,
   validateArtifact,
   workspaceQuickCommands,
@@ -43,6 +45,7 @@ import {
   type WorkspaceArtifact,
 } from "../lib/workspace";
 import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
+import { findChartReferences, resolveChartModel } from "../lib/charts";
 import {
   appendCheckpoint,
   canCheckpointSource,
@@ -108,6 +111,7 @@ function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }
   if (kind === "document") return <FileText size={size} aria-hidden="true" />;
   if (kind === "data") return <TableProperties size={size} aria-hidden="true" />;
   if (kind === "query") return <Database size={size} aria-hidden="true" />;
+  if (kind === "chart") return <BarChart3 size={size} aria-hidden="true" />;
   return <Presentation size={size} aria-hidden="true" />;
 }
 
@@ -174,18 +178,26 @@ export function RuneWorkbench() {
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
+  const selectedChartResolution = useMemo(
+    () => selectedArtifact?.kind === "chart"
+      ? resolveChartModel(selectedArtifact, artifacts, parseDataSource)
+      : null,
+    [artifacts, selectedArtifact],
+  );
   const bindingState = useMemo(
     () => selectedArtifact ? compileArtifactSource(selectedArtifact.source, artifacts) : null,
     [artifacts, selectedArtifact],
   );
   const validationErrors = useMemo(
     () => selectedArtifact
-      ? [
+      ? [...new Set([
           ...validateArtifact(selectedArtifact),
           ...(bindingState?.unresolved.map((key) => `Unresolved metric: ${key}`) ?? []),
-        ]
+          ...(bindingState?.unresolvedCharts.map((key) => `Unresolved chart: ${key}`) ?? []),
+          ...(selectedChartResolution?.errors ?? []),
+        ])]
       : ["No artifact selected."],
-    [bindingState?.unresolved, selectedArtifact],
+    [bindingState?.unresolved, bindingState?.unresolvedCharts, selectedArtifact, selectedChartResolution?.errors],
   );
   const lineNumbers = useMemo(
     () => Array.from({ length: selectedArtifact?.source.split("\n").length ?? 1 }, (_, index) => index + 1).join("\n"),
@@ -586,7 +598,9 @@ export function RuneWorkbench() {
             <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}</span></div>
             <nav className="artifact-list">
               {artifacts.map((artifact) => {
-                const referenceCount = findMetricReferences(artifact.source).length;
+                const metricReferenceCount = findMetricReferences(artifact.source).length;
+                const chartReferenceCount = findChartReferences(artifact.source).length;
+                const referenceCount = metricReferenceCount + chartReferenceCount;
                 return (
                   <button
                     key={artifact.id}
@@ -771,6 +785,8 @@ export function RuneWorkbench() {
             </div>
             <div className="preview-actions">
               {selectedArtifact.kind === "query" && canonicalDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> 1 source</span>}
+              {selectedArtifact.kind === "chart" && selectedChartResolution?.model && <span className="binding-badge chart"><TableProperties aria-hidden="true" /> 1 source</span>}
+              {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}
               {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {bindingState.references.length} live</span>}
               {validationErrors.length ? (
                 <span className="validation-badge error"><X aria-hidden="true" /> {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}</span>
@@ -780,6 +796,15 @@ export function RuneWorkbench() {
             </div>
           </header>
           <div className="preview-body">
+            {selectedArtifact.kind === "chart" && selectedChartResolution?.model && (
+              <div className="lineage-strip chart-lineage">
+                <TableProperties aria-hidden="true" />
+                <span>{selectedChartResolution.model.sourceArtifactName}</span>
+                <ChevronRight aria-hidden="true" />
+                <span>{selectedArtifact.name}</span>
+                <strong>{selectedChartResolution.model.data.length} marks compiled live</strong>
+              </div>
+            )}
             {selectedArtifact.kind === "query" && canonicalDataArtifact && (
               <div className="lineage-strip query-lineage">
                 <TableProperties aria-hidden="true" />
@@ -800,6 +825,15 @@ export function RuneWorkbench() {
                 <strong>{bindingState.references.length} metrics compiled live</strong>
               </div>
             )}
+            {!!bindingState?.chartReferences.length && (
+              <div className="lineage-strip chart-lineage">
+                <BarChart3 aria-hidden="true" />
+                <span>{bindingState.chartReferences.map((id) => artifacts.find((artifact) => artifact.id === id)?.name ?? id).join(", ")}</span>
+                <ChevronRight aria-hidden="true" />
+                <span>{selectedArtifact.name}</span>
+                <strong>{bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""} compiled live</strong>
+              </div>
+            )}
             <div className="preview-scroll"><ArtifactPreview artifact={selectedArtifact} artifacts={artifacts} /></div>
           </div>
         </section>
@@ -807,7 +841,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}<span>UTF-8</span><span>Rune v0.2</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.3</span></div>
       </footer>
     </main>
   );

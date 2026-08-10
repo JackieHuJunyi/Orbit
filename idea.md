@@ -1171,13 +1171,14 @@ Rune v0 不承诺替代 Word、Excel 或 PowerPoint，而是证明同一个工�
   → 继续迭代
 ```
 
-首版现在提供四种 artifact adapter：
+首版现在提供五种 artifact adapter：
 
 | 模式 | Canonical source | 首版 runtime | 现在验证什么 |
 | --- | --- | --- | --- |
 | Document | GFM Markdown | React/HTML document renderer | 文本 source 与成品文档可以同步工作 |
 | Data | CSV 或 JSON | 本地 parser + grid | 结构化数据可被人和 Agent 直接理解 |
 | Query | DuckDB SQL | Browser Worker + DuckDB-Wasm | AI 写出的分析可以真实执行并验证，而不是只生成公式文本 |
+| Chart | 受约束的 `.chart.json` | 本地 projection + React/static HTML | 同一份数据视图可同时进入报告和演示 |
 | Slides | 受约束的 semantic HTML | sandboxed browser frame | 浏览器可以成为演示文稿 runtime |
 
 Slides 首版仍使用 `.html`，但只鼓励语义化 section、设计 token 和少量布局类；后续会把它提升为 Deck AST，并让 HTML 与 PPTX 都由同一个 AST 编译，避免任意 CSS 逐渐退化成另一个 PPT。
@@ -1192,7 +1193,7 @@ Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 work
 
 - Web-first：先用 React + vinext 建立可分享、可部署、Cloudflare Worker 兼容的产品壳。
 - Local-first：草稿默认保存在当前设备，不为首版引入数据库、账号或持续服务成本。
-- Adapter-first：编辑器只依赖统一的 Artifact 接口；Markdown、Data、Query、Slides 各自负责 parse、validate、render。
+- Adapter-first：编辑器只依赖统一的 Artifact 接口；Markdown、Data、Query、Chart、Slides 各自负责 parse、validate、render。
 - Provider-agnostic：Agent UI 与模型供应商解耦；没有模型密钥时也可用确定性的本地操作演示完整交互。
 - Safe preview：Markdown 不执行任意 HTML，Slides HTML 在 sandboxed iframe 中运行。
 - Progressive persistence：设备草稿 → 浏览器文件系统 → Git workspace → 协作后端，按真实需求逐级增加。
@@ -1202,7 +1203,7 @@ Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 work
 
 ## 4. 近期里程碑
 
-1. Foundation：四种 artifact 可切换、可编辑、可实时预览、可在设备上保存。
+1. Foundation：五种 artifact 可切换、可编辑、可实时预览、可在设备上保存。
 2. Agent loop：自然语言指令生成结构化 patch，展示 diff 后再应用。
 3. Data workflow：CSV/JSON 导入、schema inference、SQL transformation 与 chart binding。
 4. Workspace graph：文档和演示可引用同一份数据或 metric，并显示 lineage。
@@ -1227,3 +1228,11 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 这里最重要的工程决定不是“让模型一次返回更多文本”，而是建立事务边界。应用前会验证目标 ID 存在且不重复、source 确实变化、SQL 仍是只读查询、Slides 不含脚本、各 adapter 能解析，并用完整的 next workspace 重新编译所有 metric binding。任何一个检查失败，返回的 next workspace 就不可用；本地存储容量不足同样会让整次操作保持零写入。只有全部通过后，系统才为每个受影响 artifact 保存 pre-change checkpoint，并用一次持久化写入替换 workspace。
 
 这个边界使“数据 → 分析 → 报告 → 演示”真正能由一个意图协调，同时没有引入协作服务器、数据库或新的常驻成本。当前确定性 fallback 已经能同步季度 SQL 汇总、报告摘要和结论页；配置模型后仍复用同一份 schema、review UI 和事务验证器。未来把完整 source 替换升级为 range/AST operation、加入 revision hash 或 Git commit 时，不需要改变用户对“先审查、后原子应用、每个文件可恢复”的信任模型。
+
+## 7. 可复用 Chart artifact 与跨成品编译
+
+2026-08-11 的后续实现补上了 Data workflow 中缺失的可视化层。Chart 不是保存在文档或 PPT 里的截图，也不是让 Agent 任意生成的一段 JavaScript，而是一份严格、版本化、可读的 `.chart.json`：它只声明 data artifact ID、精确的 category/value 列、bar mark、排序、数字格式、颜色 token 与最多 20 个 marks。浏览器本地把这份 spec 与 CSV/JSON 投影成同一个 chart model，不上传行数据，也不增加服务端图表基础设施。
+
+报告和演示现在都用 `{{ chart("regional-revenue-chart") }}` 引用同一个 artifact。Markdown renderer 把 model 变成 React 元素；Slides compiler 则把同一 model 转成经过转义的静态 HTML，再交给无脚本 sandbox。标题、描述与数据标签在两条渲染路径都不能变成可执行 markup。用户直接打开 Chart artifact 时仍能左侧编辑 JSON、右侧看 live chart，并让 File Agent 生成受 schema 约束的修改。
+
+这也把 workspace transaction 的价值从“同时改多个文件”提升成“保护依赖图”。如果 Data patch 重命名了图表正在使用的列，完整 next workspace 会重新编译所有 Chart 并拒绝整笔写入；文档或演示引用不存在的 chart 同样不能应用。成本仍为零，但已经形成 `CSV/JSON → Chart model → Markdown/HTML` 的稳定 compiler boundary，未来加入 line/area/scatter、SQL result source 或 PPTX export 时只扩展 spec 与 renderer，不改变引用协议。

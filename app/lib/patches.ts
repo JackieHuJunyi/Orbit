@@ -1,5 +1,6 @@
 import { compileArtifactSource } from "./bindings.ts";
-import { validateArtifact, type WorkspaceArtifact } from "./workspace.ts";
+import { resolveChartModel } from "./charts.ts";
+import { parseDataSource, validateArtifact, type WorkspaceArtifact } from "./workspace.ts";
 
 export type ArtifactSourcePatch = {
   artifactId: string;
@@ -102,7 +103,14 @@ export function prepareWorkspacePatch(
   nextArtifacts.forEach((artifact) => {
     const compiled = compileArtifactSource(artifact.source, nextArtifacts);
     compiled.unresolved.forEach((key) => errors.push(`${artifact.name}: unresolved metric ${key}.`));
+    compiled.unresolvedCharts.forEach((key) => errors.push(`${artifact.name}: unresolved chart ${key}.`));
   });
 
-  return { nextArtifacts: errors.length ? artifacts : nextArtifacts, errors };
+  nextArtifacts.filter((artifact) => artifact.kind === "chart").forEach((artifact) => {
+    const resolution = resolveChartModel(artifact, nextArtifacts, parseDataSource);
+    resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
+  });
+
+  const uniqueErrors = [...new Set(errors)];
+  return { nextArtifacts: uniqueErrors.length ? artifacts : nextArtifacts, errors: uniqueErrors };
 }

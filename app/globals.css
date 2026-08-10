@@ -14,6 +14,7 @@
   --document: #ed6847;
   --data: #2a8c69;
   --query: #3676d1;
+  --chart: #c77b2c;
   --slides: #8267ce;
   --blue: #3676d1;
   --danger: #b4473d;
@@ -470,6 +471,7 @@ textarea:focus-visible {
 .artifact-icon.document { background: var(--document); }
 .artifact-icon.data { background: var(--data); }
 .artifact-icon.query { background: var(--query); }
+.artifact-icon.chart { background: var(--chart); }
 .artifact-icon.slides { background: var(--slides); }
 
 .artifact-label {
@@ -1305,6 +1307,12 @@ textarea:focus-visible {
   color: #356eae;
 }
 
+.binding-badge.chart {
+  border-color: #ead5b9;
+  background: #fbf2e7;
+  color: #9a5f24;
+}
+
 .preview-body {
   display: flex;
   min-height: 0;
@@ -1358,6 +1366,11 @@ textarea:focus-visible {
 
 .query-lineage strong {
   color: var(--query);
+}
+
+.chart-lineage svg:first-child,
+.chart-lineage strong {
+  color: var(--chart);
 }
 
 .empty-preview {
@@ -1517,6 +1530,133 @@ textarea:focus-visible {
 
 .markdown-body input[type="checkbox"] {
   accent-color: var(--accent);
+}
+
+.chart-stage {
+  min-height: 100%;
+  padding: clamp(24px, 5vw, 64px);
+  background-color: #e2ded5;
+  background-image: radial-gradient(circle at 20% 10%, rgba(255,255,255,.55), transparent 36%);
+}
+
+.chart-card {
+  width: min(780px, 100%);
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid #d4cec1;
+  border-radius: 14px;
+  background: #fffefb;
+  box-shadow: 0 22px 55px rgba(46, 48, 44, .12);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.chart-card.embedded {
+  width: 100%;
+  margin: 26px 0 32px;
+  padding: 22px;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(46, 48, 44, .08);
+}
+
+.chart-card figcaption {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.chart-card figcaption > div {
+  display: grid;
+  gap: 5px;
+}
+
+.chart-card figcaption span {
+  color: var(--chart-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.chart-card figcaption strong {
+  font-size: clamp(20px, 3vw, 34px);
+  letter-spacing: -.04em;
+}
+
+.chart-card figcaption p {
+  max-width: 260px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.chart-bars {
+  display: grid;
+  gap: 13px;
+}
+
+.chart-bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(120px, 3fr) auto;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+}
+
+.chart-bar-row > span {
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-bar-row > strong {
+  min-width: 62px;
+  color: #344039;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.chart-bar-track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ece8df;
+}
+
+.chart-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--chart-accent);
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
+}
+
+.chart-card footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 10px;
+  border-top: 1px solid #e8e3d9;
+  color: var(--subtle);
+  font-size: 8px;
+}
+
+.embedded-chart-error {
+  margin: 20px 0;
+  padding: 14px;
+  border: 1px solid #e7bcb5;
+  border-radius: 8px;
+  background: #fff0ed;
+  color: #8d3e35;
+  font-family: var(--font-sans);
+  font-size: 10px;
 }
 
 .data-stage {
@@ -1886,7 +2026,8 @@ textarea:focus-visible {
   }
 
   .document-stage,
-  .data-stage {
+  .data-stage,
+  .chart-stage {
     padding: 12px;
   }
 
@@ -1900,6 +2041,25 @@ textarea:focus-visible {
 
   .data-summary span:nth-child(2) {
     display: none;
+  }
+
+  .chart-card {
+    padding: 20px;
+  }
+
+  .chart-card figcaption {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .chart-card figcaption p {
+    text-align: left;
+  }
+
+  .chart-bar-row {
+    grid-template-columns: 72px minmax(80px, 1fr) 54px;
+    gap: 8px;
   }
 
   .statusbar-right span:nth-child(2) {

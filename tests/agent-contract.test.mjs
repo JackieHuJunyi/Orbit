@@ -56,6 +56,21 @@ test("constrains query patches to read-only DuckDB SQL", () => {
   assert.match(buildAgentInstructions(queryRequest), /workspace_data/);
 });
 
+test("constrains chart patches to the strict data-bound JSON contract", () => {
+  const chartRequest = AgentRequestSchema.parse({
+    ...request,
+    artifact: {
+      id: "revenue-chart",
+      name: "revenue.chart.json",
+      kind: "chart",
+      language: "Chart JSON",
+      source: '{"version":1,"title":"Revenue","description":"","source":"data","mark":"bar","category":"Region","value":"Revenue","sort":"descending","format":"currency","color":"#ff5c35","maxItems":8}',
+    },
+  });
+  assert.match(buildAgentInstructions(chartRequest), /strict Chart JSON/);
+  assert.match(buildAgentInstructions(chartRequest), /six-digit hex/);
+});
+
 test("builds a bounded workspace request with coordinated file instructions", () => {
   const workspaceRequest = AgentRequestSchema.parse({
     ...request,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -14,6 +14,12 @@ import {
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
 import { compileArtifactSource } from "../lib/bindings";
+import {
+  renderChartReferencesToHtml,
+  resolveChartModel,
+  tokenizeChartReferences,
+  type ChartModel,
+} from "../lib/charts";
 import type { QueryCell, WorkspaceQueryResult } from "../lib/duckdb-client";
 
 type GridCell = DataCell | QueryCell;
@@ -27,7 +33,41 @@ function EmptyPreview({ message }: { message: string }) {
   );
 }
 
-function DocumentPreview({ source }: { source: string }) {
+function ChartFigure({ model, embedded = false }: { model: ChartModel; embedded?: boolean }) {
+  return (
+    <figure
+      className={`chart-card ${embedded ? "embedded" : ""}`}
+      style={{ "--chart-accent": model.spec.color } as CSSProperties}
+      aria-label={model.spec.title}
+    >
+      <figcaption>
+        <div><span>Live chart</span><strong>{model.spec.title}</strong></div>
+        <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
+      </figcaption>
+      <div className="chart-bars">
+        {model.data.map((datum, index) => (
+          <div className="chart-bar-row" key={`${datum.label}-${index}`}>
+            <span title={datum.label}>{datum.label}</span>
+            <div className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></div>
+            <strong>{datum.formatted}</strong>
+          </div>
+        ))}
+      </div>
+      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks</span></footer>
+    </figure>
+  );
+}
+
+function EmbeddedChart({ chartId, artifacts }: { chartId: string; artifacts: WorkspaceArtifact[] }) {
+  const chartArtifact = artifacts.find((artifact) => artifact.id === chartId && artifact.kind === "chart");
+  if (!chartArtifact) return <div className="embedded-chart-error">Chart not found · {chartId}</div>;
+  const resolution = resolveChartModel(chartArtifact, artifacts, parseDataSource);
+  if (!resolution.model) return <div className="embedded-chart-error">Chart unavailable · {resolution.errors[0]}</div>;
+  return <ChartFigure model={resolution.model} embedded />;
+}
+
+function DocumentPreview({ source, artifacts }: { source: string; artifacts: WorkspaceArtifact[] }) {
+  const parts = tokenizeChartReferences(source);
   return (
     <div className="document-stage">
       <article className="document-paper">
@@ -36,7 +76,13 @@ function DocumentPreview({ source }: { source: string }) {
           <span>Live compilation</span>
         </div>
         <div className="markdown-body">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{source}</ReactMarkdown>
+          {parts.map((part, index) => (
+            <Fragment key={`${part.type}-${index}`}>
+              {part.type === "source"
+                ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.value}</ReactMarkdown>
+                : <EmbeddedChart chartId={part.value} artifacts={artifacts} />}
+            </Fragment>
+          ))}
         </div>
       </article>
     </div>
@@ -172,14 +218,26 @@ function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?:
   );
 }
 
-function SlidesPreview({ source }: { source: string }) {
+function ChartPreview({ artifact, artifacts }: { artifact: WorkspaceArtifact; artifacts: WorkspaceArtifact[] }) {
+  const resolution = resolveChartModel(artifact, artifacts, parseDataSource);
+  if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? "The chart could not compile."} />;
+  return <div className="chart-stage"><ChartFigure model={resolution.model} /></div>;
+}
+
+function SlidesPreview({ source, artifacts }: { source: string; artifacts: WorkspaceArtifact[] }) {
   const slideCount = source.match(/<section[\s>]/gi)?.length ?? 0;
+  const renderedSource = renderChartReferencesToHtml(source, (chartArtifactId) => {
+    const chartArtifact = artifacts.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
+    return chartArtifact
+      ? resolveChartModel(chartArtifact, artifacts, parseDataSource)
+      : { errors: [`Chart not found: ${chartArtifactId}`] };
+  });
   return (
     <div className="slides-stage">
       <div className="slides-stage-meta"><span>{slideCount} slides</span><span>Sandboxed HTML runtime</span></div>
       <iframe
         className="slides-frame"
-        srcDoc={source}
+        srcDoc={renderedSource}
         sandbox=""
         title="Rendered presentation preview"
       />
@@ -190,10 +248,11 @@ function SlidesPreview({ source }: { source: string }) {
 export function ArtifactPreview({ artifact, artifacts }: { artifact: WorkspaceArtifact; artifacts: WorkspaceArtifact[] }) {
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
   const compiled = compileArtifactSource(artifact.source, artifacts);
-  if (artifact.kind === "document") return <DocumentPreview source={compiled.source} />;
+  if (artifact.kind === "document") return <DocumentPreview source={compiled.source} artifacts={artifacts} />;
   if (artifact.kind === "data") return <DataPreview source={artifact.source} />;
   if (artifact.kind === "query") {
     return <QueryPreview source={artifact.source} dataArtifact={artifacts.find((item) => item.kind === "data")} />;
   }
-  return <SlidesPreview source={compiled.source} />;
+  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} />;
+  return <SlidesPreview source={compiled.source} artifacts={artifacts} />;
 }

@@ -1,7 +1,8 @@
 import Papa from "papaparse";
+import { parseChartSource } from "./charts.ts";
 import { validateReadQuery } from "./sql.ts";
 
-export type ArtifactKind = "document" | "data" | "query" | "slides";
+export type ArtifactKind = "document" | "data" | "query" | "chart" | "slides";
 
 export type WorkspaceArtifact = {
   id: string;
@@ -46,6 +47,10 @@ Revenue reached **{{ metric("total_revenue") }}**, up **{{ metric("qoq_growth") 
 - Gross margin improved 2.8 points as infrastructure costs normalized.
 - Enterprise retention held above 96%.
 
+## Revenue by region
+
+{{ chart("regional-revenue-chart") }}
+
 ## Decisions
 
 | Decision | Owner | Due |
@@ -74,6 +79,20 @@ SELECT
   Customers
 FROM workspace_data
 ORDER BY "Q2 Revenue" DESC;`;
+
+const chartSource = `{
+  "version": 1,
+  "title": "Q2 revenue by region",
+  "description": "Canonical regional revenue, sorted high to low",
+  "source": "regional-revenue",
+  "mark": "bar",
+  "category": "Region",
+  "value": "Q2 Revenue",
+  "sort": "descending",
+  "format": "currency",
+  "color": "#ff5c35",
+  "maxItems": 8
+}`;
 
 const slidesSource = `<!doctype html>
 <html lang="en">
@@ -124,12 +143,7 @@ const slidesSource = `<!doctype html>
     <section class="slide" data-layout="split">
       <div class="split">
         <div><p class="eyebrow">Regional signal</p><h2>{{ metric("top_region") }} is now the growth engine.</h2><p class="lede">Partner distribution created a repeatable acquisition channel.</p></div>
-        <div class="bars">
-          <div class="bar"><span>APAC</span><div class="track"><div class="fill" style="width:100%"></div></div><b>{{ metric("region.apac.revenue") }}</b></div>
-          <div class="bar"><span>N. America</span><div class="track"><div class="fill" style="width:85%"></div></div><b>{{ metric("region.north_america.revenue") }}</b></div>
-          <div class="bar"><span>Europe</span><div class="track"><div class="fill" style="width:53%"></div></div><b>{{ metric("region.europe.revenue") }}</b></div>
-          <div class="bar"><span>LATAM</span><div class="track"><div class="fill" style="width:24%"></div></div><b>{{ metric("region.latam.revenue") }}</b></div>
-        </div>
+        <div>{{ chart("regional-revenue-chart") }}</div>
       </div>
       <span class="number">03 / 03</span>
     </section>
@@ -160,6 +174,13 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
     source: querySource,
   },
   {
+    id: "regional-revenue-chart",
+    name: "regional-revenue.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: chartSource,
+  },
+  {
     id: "board-briefing",
     name: "board-briefing.html",
     kind: "slides",
@@ -172,6 +193,7 @@ export const quickCommands: Record<ArtifactKind, string[]> = {
   document: ["把摘要压缩成三条要点", "补充下一步行动"],
   data: ["按收入从高到低排序", "增加利润率列"],
   query: ["计算利润率并排序", "汇总季度收入"],
+  chart: ["保持数据源顺序", "改成紫色强调"],
   slides: ["把主题改成深色", "新增一页结论"],
 };
 
@@ -195,7 +217,7 @@ export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[]
         || typeof candidate.name !== "string"
         || typeof candidate.language !== "string"
         || typeof candidate.source !== "string"
-        || !["document", "data", "query", "slides"].includes(candidate.kind ?? "")
+        || !["document", "data", "query", "chart", "slides"].includes(candidate.kind ?? "")
         || seen.has(candidate.id)) return;
       seen.add(candidate.id);
       restored.push(candidate as WorkspaceArtifact);
@@ -263,6 +285,7 @@ export function validateArtifact(artifact: WorkspaceArtifact): string[] {
   if (!artifact.source.trim()) return ["The source is empty."];
   if (artifact.kind === "data") return parseDataSource(artifact.source).errors;
   if (artifact.kind === "query") return validateReadQuery(artifact.source);
+  if (artifact.kind === "chart") return parseChartSource(artifact.source).errors;
   if (artifact.kind === "slides") {
     const errors: string[] = [];
     if (!/<main[\s>]/i.test(artifact.source)) errors.push("Slides need a <main> element.");
@@ -284,6 +307,10 @@ export function artifactStats(artifact: WorkspaceArtifact): string {
   }
   if (artifact.kind === "query") {
     return `SQL · ${artifact.source.split("\n").length} lines`;
+  }
+  if (artifact.kind === "chart") {
+    const parsed = parseChartSource(artifact.source);
+    return parsed.spec ? `${parsed.spec.mark} chart · ${parsed.spec.maxItems} marks max` : "Invalid chart JSON";
   }
   const words = artifact.source.trim() ? artifact.source.trim().split(/\s+/).length : 0;
   return `${words} words · ${artifact.source.split("\n").length} lines`;
@@ -429,11 +456,32 @@ FROM workspace_data;`,
   throw new Error("Try calculating margin and ranking regions, or summarizing quarterly revenue.");
 }
 
+function planChart(source: string, prompt: string): LocalPlan {
+  const parsed = parseChartSource(source);
+  if (!parsed.spec) throw new Error(parsed.errors[0] ?? "The chart specification is invalid.");
+  if (/顺序|source order|原始/i.test(prompt)) {
+    return {
+      nextSource: JSON.stringify({ ...parsed.spec, sort: "source" }, null, 2),
+      summary: "Use the canonical data source order",
+      detail: "Only the chart sort policy changes; fields and data stay untouched.",
+    };
+  }
+  if (/紫色|purple|violet/i.test(prompt)) {
+    return {
+      nextSource: JSON.stringify({ ...parsed.spec, color: "#8267ce" }, null, 2),
+      summary: "Use the presentation accent for this chart",
+      detail: "The chart remains data-bound; only its validated color token changes.",
+    };
+  }
+  throw new Error("Try keeping source order or changing the chart accent to purple.");
+}
+
 export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
   if (!prompt.trim()) throw new Error("Describe the change you want Rune to make.");
   if (artifact.kind === "document") return planDocument(artifact.source, prompt);
   if (artifact.kind === "data") return planData(artifact.source, prompt);
   if (artifact.kind === "query") return planQuery(prompt);
+  if (artifact.kind === "chart") return planChart(artifact.source, prompt);
   return planSlides(artifact.source, prompt);
 }
 
@@ -473,6 +521,9 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
 export function detectArtifact(name: string, source: string): WorkspaceArtifact | null {
   const extension = name.split(".").pop()?.toLowerCase();
   const common = { id: `import-${Date.now()}`, name, source };
+  if (name.toLowerCase().endsWith(".chart.json")) {
+    return { ...common, kind: "chart", language: "Chart JSON" };
+  }
   if (extension === "md" || extension === "markdown") {
     return { ...common, kind: "document", language: "Markdown" };
   }

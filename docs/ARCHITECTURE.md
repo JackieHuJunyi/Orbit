@@ -11,11 +11,12 @@ Workbench UI
   ├─ Workspace state and persistence
   ├─ Agent command surface
   ├─ Dependency compiler
-  │    └─ shared data → named metrics → document / slides
+  │    └─ shared data → named metrics / chart models → document / slides
   └─ Artifact registry
        ├─ Markdown adapter → document preview
        ├─ Data adapter     → parsed grid
        ├─ Query adapter    → DuckDB-Wasm result grid
+       ├─ Chart adapter    → validated JSON + local semantic bar view
        └─ Slides adapter   → sandboxed HTML runtime
 ```
 
@@ -40,7 +41,7 @@ type WorkspacePatch = {
 };
 ```
 
-The UI previews every affected file, its line-change counts, and a bounded concrete source diff before accept/reject. Applying is a transaction: ids must exist and be unique, every source must actually change, each changed adapter must validate, and the complete next workspace must compile without unresolved metric bindings. Rune then creates a pre-change checkpoint for every target and performs one local persistence write before swapping UI state. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
+The UI previews every affected file, its line-change counts, and a bounded concrete source diff before accept/reject. Applying is a transaction: ids must exist and be unique, every source must actually change, each changed adapter must validate, and the complete next workspace must compile without unresolved metric or chart bindings. Rune then creates a pre-change checkpoint for every target and performs one local persistence write before swapping UI state. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
 
 ## Agent provider boundary
 
@@ -50,7 +51,13 @@ The current adapter uses the OpenAI Responses API with Structured Outputs when `
 
 ## Shared metrics and lineage
 
-Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}`. The dependency compiler derives metrics from the canonical CSV/JSON artifact and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count. SQL artifacts now expose the canonical data → `workspace_data` → query lineage; the next evolution is a persisted dependency graph that also covers charts and user-defined metrics.
+Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}` or a reusable view with `{{ chart("regional-revenue-chart") }}`. The dependency compiler derives metrics and chart models from canonical CSV/JSON and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count. SQL and Chart artifacts expose their canonical lineage; the next evolution is a persisted dependency graph for user-defined query outputs and metrics.
+
+## Declarative chart runtime
+
+A `.chart.json` artifact is a strict, versioned view contract: title, description, data artifact id, exact category/value columns, one bounded mark, sort policy, number format, validated color token, and a 1–20 mark limit. It contains no code. The local compiler parses the referenced CSV/JSON, validates every row, sorts and formats values deterministically, and produces one shared chart model.
+
+Markdown renders that model as React elements. Slides compile the same model into escaped static HTML before assigning `srcDoc`; labels and titles cannot become markup, and the iframe remains scriptless. Whole-workspace patch validation recompiles every chart after a data or schema edit, so renaming a bound column cannot silently break downstream reports or decks.
 
 ## Browser-local SQL runtime
 
@@ -77,6 +84,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - Slide source runs in an iframe with a restrictive sandbox and no same-origin access.
 - CSV and JSON parsing is local and must expose validation errors rather than guessing silently.
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
+- Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
 - Provider keys belong in server-side secrets; they are never committed or stored in browser drafts.
 - Imported files will receive size, MIME, and formula-injection checks before export features ship.
 
@@ -84,10 +92,10 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
-| Foundation | Four live artifact editors | Client adapters and local persistence |
+| Foundation | Five live artifact editors | Client adapters and local persistence |
 | Trust | Multi-file patch review, atomic apply, persistent checkpoints | Local revision log |
 | Intelligence | Provider-backed structured actions | Agent API and eval fixtures |
-| Data loop | SQL and shared metrics; charts next | DuckDB-Wasm and dependency graph |
+| Data loop | SQL, shared metrics, and reusable charts | DuckDB-Wasm and dependency graph |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
 | Compatibility | Office import/export | Isolated conversion workers |
 

@@ -1,4 +1,5 @@
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
+import { findChartReferences } from "./charts.ts";
 
 export type WorkspaceMetric = {
   key: string;
@@ -12,6 +13,8 @@ export type CompiledArtifact = {
   source: string;
   references: string[];
   unresolved: string[];
+  chartReferences: string[];
+  unresolvedCharts: string[];
   metrics: Record<string, WorkspaceMetric>;
 };
 
@@ -101,10 +104,16 @@ export function compileArtifactSource(source: string, artifacts: WorkspaceArtifa
   const metrics = deriveWorkspaceMetrics(artifacts);
   const references = findMetricReferences(source);
   const unresolved = references.filter((reference) => !metrics[reference]);
+  const chartReferences = findChartReferences(source);
+  const unresolvedCharts = chartReferences.filter((reference) => (
+    !artifacts.some((artifact) => artifact.id === reference && artifact.kind === "chart")
+  ));
   return {
     source: source.replace(metricPattern, (_token, key: string) => metrics[key]?.formatted ?? `⚠ ${key}`),
     references,
     unresolved,
+    chartReferences,
+    unresolvedCharts,
     metrics,
   };
 }
