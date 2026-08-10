@@ -7,6 +7,7 @@ export type ArtifactSourcePatch = {
   summary: string;
   detail: string;
   nextSource: string;
+  operationCount?: number;
 };
 
 export type PreparedWorkspacePatch = {
@@ -14,10 +15,25 @@ export type PreparedWorkspacePatch = {
   errors: string[];
 };
 
+export type WorkspaceSourceRevision = Array<Pick<WorkspaceArtifact, "id" | "source">>;
+
 export type PatchDiffLine = {
   kind: "context" | "addition" | "removal";
   text: string;
 };
+
+export function captureWorkspaceSourceRevision(artifacts: WorkspaceArtifact[]): WorkspaceSourceRevision {
+  return artifacts.map(({ id, source }) => ({ id, source }));
+}
+
+export function workspaceMatchesSourceRevision(
+  artifacts: WorkspaceArtifact[],
+  revision: WorkspaceSourceRevision,
+) {
+  return artifacts.length === revision.length
+    && artifacts.every((artifact, index) => artifact.id === revision[index]?.id
+      && artifact.source === revision[index]?.source);
+}
 
 export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): string[] {
   const errors: string[] = [];

@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { zodTextFormat } from "openai/helpers/zod";
 
 import {
+  AgentCompiledPatchSchema,
+  AgentOperationPatchSchema,
   AgentPatchSchema,
   AgentRequestSchema,
   AgentWorkspacePatchSchema,
+  AgentWorkspaceOperationPlanSchema,
   buildAgentInput,
   buildAgentInstructions,
 } from "../app/lib/agent-contract.ts";
@@ -27,13 +31,50 @@ test("accepts a bounded artifact request and preserves metric context", () => {
   assert.match(buildAgentInput(parsed), /total_revenue/);
 });
 
-test("requires a complete reviewable patch", () => {
+test("keeps a complete compiled source as the internal review contract", () => {
   assert.equal(AgentPatchSchema.safeParse({ summary: "Shorten it" }).success, false);
   assert.equal(AgentPatchSchema.safeParse({
     summary: "Shorten the conclusion",
     detail: "Only the conclusion changes.",
     nextSource: "# Report\n\nA concise conclusion.",
   }).success, true);
+});
+
+test("requires bounded exact operations from the model instead of nextSource", () => {
+  const operationPlan = {
+    summary: "Shorten the conclusion",
+    detail: "Only the exact conclusion sentence changes.",
+    edits: [{ find: "A verbose conclusion.", replace: "A concise conclusion." }],
+  };
+  assert.equal(AgentOperationPatchSchema.safeParse(operationPlan).success, true);
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    summary: operationPlan.summary,
+    detail: operationPlan.detail,
+    nextSource: "# Model-authored whole file",
+  }).success, false);
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    ...operationPlan,
+    edits: [{ find: "", replace: "Cannot anchor this." }],
+  }).success, false);
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    ...operationPlan,
+    edits: Array.from({ length: 9 }, () => operationPlan.edits[0]),
+  }).success, false);
+  assert.equal(AgentCompiledPatchSchema.safeParse({
+    summary: operationPlan.summary,
+    detail: operationPlan.detail,
+    nextSource: "# Report\n\nA concise conclusion.",
+    operationCount: 1,
+  }).success, true);
+});
+
+test("converts both operation protocols into provider structured-output schemas", () => {
+  const artifactFormat = zodTextFormat(AgentOperationPatchSchema, "artifact_operations");
+  const workspaceFormat = zodTextFormat(AgentWorkspaceOperationPlanSchema, "workspace_operations");
+  assert.equal(artifactFormat.type, "json_schema");
+  assert.equal(artifactFormat.name, "artifact_operations");
+  assert.equal(workspaceFormat.type, "json_schema");
+  assert.equal(workspaceFormat.name, "workspace_operations");
 });
 
 test("rejects oversized or empty agent inputs before provider calls", () => {
@@ -74,7 +115,7 @@ test("constrains chart patches to the strict data-bound JSON contract", () => {
 test("keeps Deck Markdown model output out of the raw HTML runtime", () => {
   const deck = defaultDeckRequest();
   assert.match(buildAgentInstructions(deck), /complete Deck Markdown/);
-  assert.match(buildAgentInstructions(deck), /Never return raw HTML/);
+  assert.match(buildAgentInstructions(deck), /Never introduce raw HTML/);
   assert.match(buildAgentInstructions(deck), /manual slide numbers/);
 });
 
@@ -107,7 +148,9 @@ test("builds a bounded workspace request with coordinated file instructions", ()
     ],
   });
   assert.match(buildAgentInstructions(workspaceRequest), /coordinated, reviewable outcome/);
-  assert.match(buildAgentInstructions(workspaceRequest), /1-4 complete file patches/);
+  assert.match(buildAgentInstructions(workspaceRequest), /1-4 source-operation patches/);
+  assert.match(buildAgentInstructions(workspaceRequest), /find and replace/);
+  assert.match(buildAgentInstructions(workspaceRequest), /rejects missing or ambiguous anchors/);
   assert.match(buildAgentInput(workspaceRequest), /workspaceArtifacts/);
   assert.match(buildAgentInput(workspaceRequest), /selectedArtifactId/);
 });
@@ -157,5 +200,24 @@ test("requires one to four complete file patches in a workspace plan", () => {
     summary: "Too many changes",
     detail: "Five files change.",
     patches: Array.from({ length: 5 }, (_, index) => ({ ...filePatch, artifactId: `file-${index}` })),
+  }).success, false);
+});
+
+test("requires one to four bounded workspace operation patches", () => {
+  const filePatch = {
+    artifactId: "report",
+    summary: "Align the conclusion",
+    detail: "One exact sentence changes.",
+    edits: [{ find: "Old conclusion", replace: "Shared conclusion" }],
+  };
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Coordinate the workspace",
+    detail: "The report and deck use one conclusion.",
+    patches: [filePatch, { ...filePatch, artifactId: "deck" }],
+  }).success, true);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "No changes",
+    detail: "Nothing changes.",
+    patches: [],
   }).success, false);
 });

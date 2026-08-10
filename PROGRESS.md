@@ -20,3 +20,4 @@
 - 2026-08-11 — Added deterministic browser-local Markdown→DOCX, CSV/JSON→XLSX, and Deck Markdown→PPTX export with fidelity review before download.
 - 2026-08-11 — Exported shared Chart artifacts into DOCX semantic bar tables and PPTX native vector snapshots from current workspace data.
 - 2026-08-11 — Added reviewable standalone Deck HTML export with compiled metrics, current-data charts, no external assets, and print-to-PDF pagination.
+- 2026-08-11 — Replaced model-authored whole files with bounded exact source operations compiled against the current reviewed workspace revision.

@@ -1316,3 +1316,13 @@ v0.10 直接补上目标链条里 `PPTX → Deck Markdown → standalone HTML` �
 “standalone”在这里是安全合同，不只是把 CSS 放进同一文件。输出不得含 script、iframe、object、embed、外链 stylesheet，也不得残留任何 `src` 或 `href` 外部资源属性；Deck 用户文本仍在 compiler 层统一 escape，最终边界再扫描完整文档，任一未解析 metric/chart token 或可执行/外部内容都会中止导出。文件在 UTF-8 编码后限制 2 MB，避免大量图表标签或未来 renderer 变化绕过 source 上限。相同 workspace context 产生逐字节相同的输出，测试覆盖恶意 metadata、缺失依赖、超限结果和 determinism，并由系统 Quick Look 的独立 HTML handler 实际渲染默认 deck 与 chart-first deck，避免只用 Rune 自己的 preview 自证。
 
 交互上，HTML 与 Office 共用一份 export result 和 review dialog，而不是再造一条隐蔽下载路径。prepare 阶段只 lazy-load 对应 adapter，在内存里保存 bytes、文件名、MIME、fidelity notes 和开始时的 workspace 对象；review 明确说明文件没有 live binding、Agent、checkpoint 或 editor controls。用户确认才建立一次 object URL，取消不写设备；若期间 editing、Pull、reset 等替换 workspace，旧结果会被拒绝并要求重新生成。这既把 v0.7/v0.8 建立的“先审查、后产生副作用”原则扩展到开放 Web 格式，也为后续 PDF adapter 留出清晰路径：近期可以零服务地使用浏览器 print-to-PDF，只有真实需求证明跨浏览器排版不够稳定时，才考虑专门 PDF renderer。
+
+## 15. Revision-bound Agent source operations
+
+v0.11 处理的是 AI Native 编辑器最容易被普通“聊天框 + 生成全文”掩盖的问题：此前即使只把报告中的一句结论缩短，模型也必须重新输出完整 `nextSource`。这不仅浪费输出 token，还扩大了遗漏未修改段落、悄悄移除 metric/chart binding、覆盖用户并发编辑的概率。多文件 workspace 计划会把这个问题放大四倍。Review 和 checkpoint 能降低写入后的损失，却不应成为低质量变更协议的借口；模型输出本身应该只描述它真正想改变的最小 source surface。
+
+新的 provider contract 因此不再接受模型编写的完整文件，而是每个文件 1–8 个按顺序执行的 `{ find, replace }`。`find` 必须是当前步骤 source 中精确出现一次的非空字面量，模型需要复制足够上下文使其唯一；`replace` 是精确替换，空字符串表示删除。这里刻意不用行号，因为前一个 edit 会改变后续行号；也不用 regex，因为转义、匹配范围和 catastrophic pattern 会形成另一套不透明语言。字面锚点可以直接解释给用户，也能在 Markdown、CSV/JSON、SQL、Chart JSON、Deck Markdown 和旧 semantic HTML 之间复用。单个锚点限 8,000 字符、replacement 限 16,000 字符、最终 source 限 120,000 字符，provider 输出预算从 16,000 降到 8,000 tokens。
+
+编译器在服务端对请求携带的精确 source revision 顺序应用 operations。找不到、出现多次、find/replace 相同、多个 edit 最终互相抵消、目标 artifact 重复或越界，都会拒绝整个计划；任何一个 workspace 文件失败也不会返回其他文件的部分结果。成功后才生成现有 review UI 所需的完整 `nextSource`、具体 diff 和 operation count，并先在服务端执行 artifact 或 whole-workspace safety gate。客户端同时捕获规划开始时每个 artifact 的 `id + source` revision；模型等待期间发生编辑、Pull、reset 或另一笔 Agent 写入，旧 review 即使已经生成也不能确认。确认时会再次执行原有 adapter parse、只读 SQL、Deck raw-HTML、Chart dependency、metric binding、checkpoint 和单次 localStorage transaction，operations 没有获得绕过安全门的特权。
+
+这一步还不是最终的 Markdown AST、table cell 或 slide-node operation，但它是兼容所有可读 source 的稳定中间层，也让后续 typed operations 有清晰落点：例如 `replace_section(heading)`、`upsert_row(key)`、`replace_slide(id)` 最终仍可编译成同一份 concrete patch 和 review transaction。当前实现不增加数据库、队列、协作服务或客户端依赖，只缩小模型输出与误改半径；真正需要 CRDT 时，也可以把这些已验证 operations 写入 operation log，而不必从“整文件覆盖”重新设计信任模型。

@@ -1,12 +1,20 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import {
-  AgentPatchSchema,
+  AgentCompiledPatchSchema,
+  AgentCompiledWorkspacePatchSchema,
+  AgentOperationPatchSchema,
   AgentRequestSchema,
-  AgentWorkspacePatchSchema,
+  AgentWorkspaceOperationPlanSchema,
   buildAgentInput,
   buildAgentInstructions,
 } from "../../lib/agent-contract.ts";
+import {
+  compileAgentOperationPatch,
+  compileAgentWorkspaceOperations,
+} from "../../lib/agent-operations.ts";
+import { prepareWorkspacePatch } from "../../lib/patches.ts";
+import { validateArtifact } from "../../lib/workspace.ts";
 
 const DEFAULT_MODEL = "gpt-5.6";
 
@@ -45,10 +53,10 @@ export async function POST(request: Request) {
       ],
       text: {
         format: workspaceScope
-          ? zodTextFormat(AgentWorkspacePatchSchema, "workspace_patch")
-          : zodTextFormat(AgentPatchSchema, "artifact_patch"),
+          ? zodTextFormat(AgentWorkspaceOperationPlanSchema, "workspace_operations")
+          : zodTextFormat(AgentOperationPatchSchema, "artifact_operations"),
       },
-      max_output_tokens: 16_000,
+      max_output_tokens: 8_000,
     });
 
     if (!response.output_parsed) {
@@ -56,21 +64,60 @@ export async function POST(request: Request) {
     }
 
     if (workspaceScope) {
-      const workspacePlan = AgentWorkspacePatchSchema.safeParse(response.output_parsed);
-      if (!workspacePlan.success) {
-        return Response.json({ error: "The model returned an invalid workspace patch." }, { status: 502 });
+      const operationPlan = AgentWorkspaceOperationPlanSchema.safeParse(response.output_parsed);
+      if (!operationPlan.success) {
+        return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
       const allowedIds = new Set(parsed.data.workspaceArtifacts?.map((artifact) => artifact.id));
-      const patchIds = workspacePlan.data.patches.map((patch) => patch.artifactId);
+      const patchIds = operationPlan.data.patches.map((patch) => patch.artifactId);
       if (new Set(patchIds).size !== patchIds.length || patchIds.some((id) => !allowedIds.has(id))) {
-        return Response.json({ error: "The model returned an invalid workspace patch." }, { status: 502 });
+        return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
+      }
+      const compiled = compileAgentWorkspaceOperations(parsed.data.workspaceArtifacts ?? [], operationPlan.data);
+      if (!compiled.plan || compiled.errors.length) {
+        return Response.json({
+          error: "The model returned source operations that do not match the current workspace revision.",
+          details: compiled.errors.slice(0, 3),
+        }, { status: 502 });
+      }
+      const workspacePlan = AgentCompiledWorkspacePatchSchema.safeParse(compiled.plan);
+      if (!workspacePlan.success) {
+        return Response.json({ error: "The model returned an invalid compiled workspace patch." }, { status: 502 });
+      }
+      const prepared = prepareWorkspacePatch(parsed.data.workspaceArtifacts ?? [], workspacePlan.data.patches);
+      if (prepared.errors.length) {
+        return Response.json({
+          error: "The compiled model operations did not pass Rune's workspace safety gate.",
+          details: prepared.errors.slice(0, 3),
+        }, { status: 502 });
       }
       return Response.json({ provider: "openai", model, plan: workspacePlan.data });
     }
 
-    const artifactPlan = AgentPatchSchema.safeParse(response.output_parsed);
+    const operationPlan = AgentOperationPatchSchema.safeParse(response.output_parsed);
+    if (!operationPlan.success) {
+      return Response.json({ error: "The model returned an invalid artifact operation plan." }, { status: 502 });
+    }
+    const compiled = compileAgentOperationPatch(parsed.data.artifact.source, operationPlan.data);
+    if (!compiled.plan || compiled.errors.length) {
+      return Response.json({
+        error: "The model returned source operations that do not match the current artifact revision.",
+        details: compiled.errors.slice(0, 3),
+      }, { status: 502 });
+    }
+    const artifactPlan = AgentCompiledPatchSchema.safeParse(compiled.plan);
     if (!artifactPlan.success) {
-      return Response.json({ error: "The model returned an invalid artifact patch." }, { status: 502 });
+      return Response.json({ error: "The model returned an invalid compiled artifact patch." }, { status: 502 });
+    }
+    const validationErrors = validateArtifact({
+      ...parsed.data.artifact,
+      source: artifactPlan.data.nextSource,
+    });
+    if (validationErrors.length) {
+      return Response.json({
+        error: "The compiled model operations did not pass Rune's artifact safety gate.",
+        details: validationErrors.slice(0, 3),
+      }, { status: 502 });
     }
     return Response.json({
       provider: "openai",

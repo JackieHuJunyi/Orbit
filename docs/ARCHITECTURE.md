@@ -29,14 +29,27 @@ Workbench UI
 
 An artifact adapter owns its default source, source language, validation, display metadata, and preview. The workbench owns selection, persistence, history, and agent actions. This boundary lets us extend SQL, charts, Deck Markdown, Office import, or a desktop filesystem without rewriting the shell.
 
-Agent operations currently use this provider-neutral contract:
+The provider-facing contract is a bounded, source-native operation plan:
 
 ```ts
+type AgentSourceOperation = {
+  find: string;    // exact, non-empty, unique in the source at this step
+  replace: string; // exact replacement; empty means deletion
+};
+
+type AgentOperationPatch = {
+  artifactId: string;
+  summary: string;
+  detail: string;
+  edits: AgentSourceOperation[]; // 1–8, applied in order
+};
+
 type ArtifactSourcePatch = {
   artifactId: string;
   summary: string;
   detail: string;
-  nextSource: string;
+  nextSource: string; // compiled by Rune, never authored by the provider
+  operationCount?: number;
 };
 
 type WorkspacePatch = {
@@ -46,11 +59,11 @@ type WorkspacePatch = {
 };
 ```
 
-The UI previews every affected file, its line-change counts, and a bounded concrete source diff before accept/reject. Applying is a transaction: ids must exist and be unique, every source must actually change, each changed adapter must validate, and the complete next workspace must compile without unresolved metric or chart bindings. Rune then creates a pre-change checkpoint for every target and performs one local persistence write before swapping UI state. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
+Rune applies each operation sequentially to the exact source sent with the request. `find` must occur exactly once in the evolving revision; a missing anchor, repeated anchor, no-op, cancelling sequence, foreign/duplicate artifact id, or output above 120,000 characters rejects the complete model plan. Only then does the server produce `nextSource` and run the artifact or whole-workspace safety gate before responding. The UI previews every affected file, its operation count, line-change counts, and a bounded concrete source diff before accept/reject. Applying repeats the transaction boundary client-side: the captured workspace source revision must still match, ids must exist and be unique, every source must actually change, each changed adapter must validate, and the complete next workspace must compile without unresolved metric or chart bindings. Rune then creates a pre-change checkpoint for every target and performs one local persistence write before swapping UI state. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
 
 ## Agent provider boundary
 
-`POST /api/agent` is the only model-facing surface in v0. File scope sends one source and requires a schema-conformant `summary`, `detail`, and `nextSource`. Workspace scope sends 2–6 canonical sources within a 180,000-character envelope and requires a top-level rationale plus 1–4 complete file patches whose ids belong to that request. Duplicate or foreign ids are rejected again at the route boundary. The workbench still turns either response into a pending patch; it never applies model output automatically.
+`POST /api/agent` is the only model-facing surface in v0. File scope sends one source and requires a schema-conformant `summary`, `detail`, and 1–8 exact operations. Workspace scope sends 2–6 canonical sources within a 180,000-character envelope and requires a top-level rationale plus 1–4 operation patches whose ids belong to that request. Each `find` and `replace` field is bounded to 8,000 and 16,000 characters respectively, while provider output is capped at 8,000 tokens. Line numbers and regular expressions are intentionally excluded because they are unstable across edits and harder to verify than literal source anchors. Duplicate or foreign ids are rejected before compilation. The workbench receives only the compiled concrete patch and never applies it automatically.
 
 The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to deterministic file/workspace planners when it is not. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
 
@@ -124,9 +137,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 6. v0.8 adds deterministic semantic DOCX/XLSX/PPTX export behind a review-before-download handoff.
 7. v0.9 carries a shared Chart artifact into DOCX as a semantic bar table and PPTX as an editable native-vector snapshot.
 8. v0.10 compiles Deck Markdown, current metrics, and charts into a reviewed standalone scriptless HTML handoff with print pagination.
-9. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-10. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-11. D1/R2 remain undeclared until durable hosted projects or assets are required.
+9. v0.11 replaces model-authored complete files with bounded exact source operations compiled against a captured workspace revision.
+10. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+11. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+12. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -137,6 +151,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - CSV and JSON parsing is local and must expose validation errors rather than guessing silently.
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
+- Agent provider output contains only bounded literal source operations; missing, ambiguous, repeated-file, cancelling, oversized, stale-revision, or downstream-invalid plans produce no workspace write.
 - OOXML import rejects oversized/unsafe ZIP parts, path traversal, DTD/entity declarations, invalid output adapters, and partial device writes; binary input never leaves the browser.
 - Import confirmation rejects stale workspace context and keeps quota failures inside the open review instead of partially updating React or device state.
 - Office export sanitizes XML characters, restricts hyperlink schemes, writes spreadsheet text as values rather than formulas, resolves chart snapshots only through validated workspace artifacts, rejects stale review context, and caps generated package bytes.
@@ -151,7 +166,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 | --- | --- | --- |
 | Foundation | Five live artifact editors | Client adapters and local persistence |
 | Trust | Multi-file patch review, atomic apply, persistent checkpoints | Local revision log |
-| Intelligence | Provider-backed structured actions | Agent API and eval fixtures |
+| Intelligence | Provider-backed exact source operations compiled into reviewed patches | Agent API and deterministic operation fixtures |
 | Data loop | SQL, shared metrics, and reusable charts | DuckDB-Wasm and dependency graph |
 | Presentation source | Deck Markdown compiler and legacy HTML bridge | No hosted infrastructure |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
@@ -160,4 +175,4 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 ## Quality gates
 
-Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. OOXML import uses generated ZIP fixtures for all three package families and hostile-input boundaries; Office export must be byte-deterministic, well-formed, pass Rune import round-trips, keep generated slide shapes within the declared canvas, and open through an independent installed Office/Quick Look handler during release QA. Standalone HTML must resolve all workspace bindings, reject executable/external content, stay byte-deterministic, and render through an independent system HTML handler. Review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior needs deterministic eval fixtures before it becomes a default path.
+Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. OOXML import uses generated ZIP fixtures for all three package families and hostile-input boundaries; Office export must be byte-deterministic, well-formed, pass Rune import round-trips, keep generated slide shapes within the declared canvas, and open through an independent installed Office/Quick Look handler during release QA. Standalone HTML must resolve all workspace bindings, reject executable/external content, stay byte-deterministic, and render through an independent system HTML handler. Agent operation fixtures must cover ordered edits, ambiguity, missing anchors, no-ops, cancellation, size limits, foreign/duplicate targets, stale workspace revisions, and the unchanged downstream validation gate. Review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior needs deterministic eval fixtures before it becomes a default path.

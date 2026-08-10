@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createLineDiffPreview, prepareWorkspacePatch, validateWorkspaceArtifacts } from "../app/lib/patches.ts";
+import {
+  captureWorkspaceSourceRevision,
+  createLineDiffPreview,
+  prepareWorkspacePatch,
+  validateWorkspaceArtifacts,
+  workspaceMatchesSourceRevision,
+} from "../app/lib/patches.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 
 function artifact(kind) {
@@ -22,6 +28,16 @@ test("shows the concrete source lines in a bounded diff preview", () => {
   const truncated = createLineDiffPreview("before", Array.from({ length: 30 }, (_, index) => `line ${index}`).join("\n"), 6);
   assert.ok(truncated.some((line) => /omitted/.test(line.text)));
   assert.ok(truncated.length <= 8);
+});
+
+test("binds a pending Agent review to the exact workspace source revision", () => {
+  const revision = captureWorkspaceSourceRevision(defaultArtifacts);
+  assert.equal(workspaceMatchesSourceRevision(defaultArtifacts, revision), true);
+  assert.equal(workspaceMatchesSourceRevision(defaultArtifacts.map((item) => ({ ...item })), revision), true);
+  assert.equal(workspaceMatchesSourceRevision(defaultArtifacts.map((item, index) => index === 0
+    ? { ...item, source: `${item.source}\nEdited while the model was planning.` }
+    : item), revision), false);
+  assert.equal(workspaceMatchesSourceRevision([...defaultArtifacts].reverse(), revision), false);
 });
 
 test("prepares multiple valid sources without mutating the current workspace", () => {

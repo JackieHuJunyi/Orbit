@@ -62,9 +62,12 @@ import {
   type WorkspaceCheckpoint,
 } from "../lib/checkpoints";
 import {
+  captureWorkspaceSourceRevision,
   createLineDiffPreview,
   prepareWorkspacePatch,
+  workspaceMatchesSourceRevision,
   type ArtifactSourcePatch,
+  type WorkspaceSourceRevision,
 } from "../lib/patches";
 import {
   prepareWorkspaceImportReview,
@@ -90,6 +93,7 @@ type PendingChange = {
   prompt: string;
   provider: "openai" | "local";
   scope: "artifact" | "workspace";
+  baseRevision: WorkspaceSourceRevision;
   summary: string;
   detail: string;
   patches: ArtifactSourcePatch[];
@@ -101,7 +105,7 @@ type PendingExport = {
   result: ArtifactExportResult;
 };
 
-type RemoteFilePlan = ArtifactSourcePatch;
+type RemoteFilePlan = ArtifactSourcePatch & { operationCount: number };
 type RemoteSinglePlan = Omit<RemoteFilePlan, "artifactId">;
 type RemoteWorkspacePlan = { summary: string; detail: string; patches: RemoteFilePlan[] };
 
@@ -118,7 +122,9 @@ function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
     value && typeof value === "object"
     && typeof (value as RemoteSinglePlan).nextSource === "string"
     && typeof (value as RemoteSinglePlan).summary === "string"
-    && typeof (value as RemoteSinglePlan).detail === "string",
+    && typeof (value as RemoteSinglePlan).detail === "string"
+    && Number.isInteger((value as RemoteSinglePlan).operationCount)
+    && (value as RemoteSinglePlan).operationCount > 0
   );
 }
 
@@ -132,7 +138,9 @@ function isRemoteWorkspacePlan(value: unknown): value is RemoteWorkspacePlan {
     && plan.patches.every((patch) => typeof patch.artifactId === "string"
       && typeof patch.nextSource === "string"
       && typeof patch.summary === "string"
-      && typeof patch.detail === "string");
+      && typeof patch.detail === "string"
+      && Number.isInteger(patch.operationCount)
+      && patch.operationCount > 0);
 }
 
 function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }) {
@@ -263,6 +271,10 @@ export function RuneWorkbench() {
     }),
     { additions: 0, removals: 0 },
   ), [pendingStats]);
+  const pendingOperationCount = pendingChange?.patches.reduce(
+    (total, patch) => total + (patch.operationCount ?? 0),
+    0,
+  ) ?? 0;
   const selectedPendingStat = pendingStats.find((patch) => patch.artifact.id === selectedArtifact?.id);
   const selectedDiffPreview = useMemo(() => selectedPendingStat
     ? createLineDiffPreview(selectedPendingStat.artifact.source, selectedPendingStat.patch.nextSource)
@@ -502,6 +514,7 @@ export function RuneWorkbench() {
     if (!instruction || agentState === "planning") return;
     const targetArtifact = selectedArtifact;
     const targetArtifacts = artifacts;
+    const targetRevision = captureWorkspaceSourceRevision(targetArtifacts);
     const scope = agentScope;
     setAgentState("planning");
     setAgentError("");
@@ -539,7 +552,7 @@ export function RuneWorkbench() {
         const payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
 
         if (response.ok && scope === "workspace" && isRemoteWorkspacePlan(payload.plan)) {
-          setPendingChange({ prompt: instruction, provider: "openai", scope, ...payload.plan });
+          setPendingChange({ prompt: instruction, provider: "openai", scope, baseRevision: targetRevision, ...payload.plan });
           setAgentMode("openai");
           setPrompt("");
           setNotice(`Model prepared ${payload.plan.patches.length} coordinated patches${payload.model ? ` · ${payload.model}` : ""}`);
@@ -551,6 +564,7 @@ export function RuneWorkbench() {
             prompt: instruction,
             provider: "openai",
             scope,
+            baseRevision: targetRevision,
             summary: payload.plan.summary,
             detail: payload.plan.detail,
             patches: [{ artifactId: targetArtifact.id, ...payload.plan }],
@@ -572,7 +586,7 @@ export function RuneWorkbench() {
     try {
       if (scope === "workspace") {
         const localPlan = planLocalWorkspaceChange(targetArtifacts, instruction);
-        setPendingChange({ prompt: instruction, provider: "local", scope, ...localPlan });
+        setPendingChange({ prompt: instruction, provider: "local", scope, baseRevision: targetRevision, ...localPlan });
         setNotice(`${fallbackNotice} · ${localPlan.patches.length} files coordinated`);
       } else {
         const localPlan = planLocalChange(targetArtifact, instruction);
@@ -580,6 +594,7 @@ export function RuneWorkbench() {
           prompt: instruction,
           provider: "local",
           scope,
+          baseRevision: targetRevision,
           summary: localPlan.summary,
           detail: localPlan.detail,
           patches: [{ artifactId: targetArtifact.id, ...localPlan }],
@@ -599,6 +614,11 @@ export function RuneWorkbench() {
 
   function applyPendingChange() {
     if (!pendingChange) return;
+    if (!workspaceMatchesSourceRevision(artifacts, pendingChange.baseRevision)) {
+      setAgentError("The workspace changed while this Agent plan was being prepared. Discard it and plan again from the current source revision.");
+      setNotice("Patch held for review — workspace source revision changed");
+      return;
+    }
     const targetArtifacts = pendingChange.patches.flatMap((patch) => {
       const artifact = artifacts.find((item) => item.id === patch.artifactId);
       return artifact ? [artifact] : [];
@@ -1038,7 +1058,7 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace" : "file"} patch · {pendingChange.provider === "openai" ? "Model" : "Local"}</span>
+                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace" : "file"} patch · {pendingChange.provider === "openai" ? `${pendingOperationCount} exact source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   <div className="diff-summary"><span>{pendingChange.patches.length} {pendingChange.patches.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
@@ -1051,7 +1071,7 @@ export function RuneWorkbench() {
                         aria-label={`Review ${artifact.name}`}
                       >
                         <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={13} /></span>
-                        <span className="patch-file-label"><strong>{artifact.name}</strong><small>{patch.summary}</small></span>
+                        <span className="patch-file-label"><strong>{artifact.name}</strong><small>{patch.summary}{patch.operationCount ? ` · ${patch.operationCount} exact ${patch.operationCount === 1 ? "op" : "ops"}` : ""}</small></span>
                         <span className="patch-file-diff"><b>+{additions}</b><i>−{removals}</i></span>
                       </button>
                     ))}
@@ -1156,7 +1176,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.10</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.11</span></div>
       </footer>
 
       {pendingImport && (

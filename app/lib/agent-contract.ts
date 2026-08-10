@@ -16,6 +16,41 @@ export const AgentWorkspacePatchSchema = z.object({
   patches: z.array(AgentFilePatchSchema).min(1).max(4),
 });
 
+export const AgentSourceOperationSchema = z.object({
+  find: z.string().min(1).max(8_000),
+  replace: z.string().max(16_000),
+}).strict();
+
+export const AgentOperationPatchSchema = z.object({
+  summary: z.string().min(1).max(160),
+  detail: z.string().min(1).max(500),
+  edits: z.array(AgentSourceOperationSchema).min(1).max(8),
+}).strict();
+
+export const AgentFileOperationPatchSchema = AgentOperationPatchSchema.extend({
+  artifactId: z.string().min(1).max(120),
+}).strict();
+
+export const AgentWorkspaceOperationPlanSchema = z.object({
+  summary: z.string().min(1).max(160),
+  detail: z.string().min(1).max(500),
+  patches: z.array(AgentFileOperationPatchSchema).min(1).max(4),
+}).strict();
+
+export const AgentCompiledPatchSchema = AgentPatchSchema.extend({
+  operationCount: z.number().int().min(1).max(8),
+});
+
+export const AgentCompiledFilePatchSchema = AgentCompiledPatchSchema.extend({
+  artifactId: z.string().min(1).max(120),
+});
+
+export const AgentCompiledWorkspacePatchSchema = z.object({
+  summary: z.string().min(1).max(160),
+  detail: z.string().min(1).max(500),
+  patches: z.array(AgentCompiledFilePatchSchema).min(1).max(4),
+});
+
 const AgentArtifactSchema = z.object({
   id: z.string().min(1).max(120),
   name: z.string().min(1).max(240),
@@ -46,17 +81,22 @@ export const AgentRequestSchema = z.object({
 
 export type AgentPatch = z.infer<typeof AgentPatchSchema>;
 export type AgentWorkspacePatch = z.infer<typeof AgentWorkspacePatchSchema>;
+export type AgentSourceOperation = z.infer<typeof AgentSourceOperationSchema>;
+export type AgentOperationPatch = z.infer<typeof AgentOperationPatchSchema>;
+export type AgentWorkspaceOperationPlan = z.infer<typeof AgentWorkspaceOperationPlanSchema>;
+export type AgentCompiledPatch = z.infer<typeof AgentCompiledPatchSchema>;
+export type AgentCompiledWorkspacePatch = z.infer<typeof AgentCompiledWorkspacePatchSchema>;
 export type AgentRequest = z.infer<typeof AgentRequestSchema>;
 
 const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
-  document: "Return valid GitHub-Flavored Markdown. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
-  data: "Return valid CSV or JSON matching the input format. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
-  query: "Return one read-only DuckDB SELECT or WITH query. Read the canonical source through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid.",
-  chart: "Return one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing data artifact id and exact column names; keep mark as bar, color as a six-digit hex value, and maxItems between 1 and 20.",
-  slides: "Return one complete semantic HTML document. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
+  document: "The resulting source must be valid GitHub-Flavored Markdown. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
+  data: "The resulting source must remain valid CSV or JSON in the input format. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
+  query: "The resulting source must be one read-only DuckDB SELECT or WITH query. Read the canonical source through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid.",
+  chart: "The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing data artifact id and exact column names; keep mark as bar, color as a six-digit hex value, and maxItems between 1 and 20.",
+  slides: "The resulting source must remain one complete semantic HTML document. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
 };
 
-const deckMarkdownRule = "Return complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter; slides separated by ---; and only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never return raw HTML or manual slide numbers.";
+const deckMarkdownRule = "The resulting source must remain complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter; slides separated by ---; and only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never introduce raw HTML or manual slide numbers.";
 
 function ruleForArtifact(artifact: AgentRequest["artifact"]) {
   return artifact.kind === "slides" && artifact.language === "Deck Markdown"
@@ -70,8 +110,9 @@ export function buildAgentInstructions(request: AgentRequest) {
     return [
       "You are Rune's workspace editing agent.",
       "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources.",
-      "Return one top-level summary and detail plus 1-4 complete file patches; use only artifactId values present in workspaceArtifacts and never include an unchanged file.",
-      "Every patch needs its own short summary, concrete detail, artifactId, and complete nextSource without Markdown fences.",
+      "Return one top-level summary and detail plus 1-4 source-operation patches; use only artifactId values present in workspaceArtifacts and never include an unchanged file.",
+      "Every patch needs its own short summary, concrete detail, artifactId, and 1-8 ordered edits. Every edit has find and replace: find must copy an exact non-empty substring that occurs exactly once in that file at that step, and replace is its exact replacement.",
+      "Use enough surrounding source in find to make the anchor unique and keep both fields as small as possible. To insert, retain the anchor inside replace plus the new content; an empty replace deletes the anchor. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies edits sequentially and rejects missing or ambiguous anchors.",
       "Keep cross-file facts, metric bindings, provenance, and narrative consistent. Never claim that a patch was already applied.",
       ...rules,
     ].join(" ");
@@ -79,8 +120,9 @@ export function buildAgentInstructions(request: AgentRequest) {
   return [
     "You are Rune's artifact editing agent.",
     "Plan one conservative, reviewable edit to the selected canonical source.",
-    "Return a short summary, a concrete detail sentence, and the complete next source.",
-    "Never wrap nextSource in Markdown fences and never claim that the change was already applied.",
+    "Return a short summary, a concrete detail sentence, and 1-8 ordered edits. Every edit has find and replace: find must copy an exact non-empty substring that occurs exactly once in the source at that step, and replace is its exact replacement.",
+    "Use enough surrounding source in find to make the anchor unique and keep both fields as small as possible. To insert, retain the anchor inside replace plus the new content; an empty replace deletes the anchor. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies edits sequentially and rejects missing or ambiguous anchors.",
+    "Never claim that the change was already applied.",
     "Do not change unrelated content. Do not remove provenance or metric bindings silently.",
     ruleForArtifact(request.artifact),
   ].join(" ");
