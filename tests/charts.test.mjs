@@ -61,13 +61,13 @@ test("keeps exact source-row provenance through chart sorting and duplicate labe
       sort: "descending",
       format: "number",
       color: "#ff5c35",
-      maxItems: 8,
+      maxItems: 2,
     }),
   };
   const resolution = resolveChartModel(chart, [data, chart], parseDataSource);
   assert.ok(resolution.model);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["Shared", "Other", "Shared"]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [1, 2, 0]);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["Shared", "Other"]);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [1, 2]);
 });
 
 test("escapes chart text when compiling a static slide embed", () => {

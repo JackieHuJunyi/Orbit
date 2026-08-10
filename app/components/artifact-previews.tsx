@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
+import { Fragment, useEffect, useState, type CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -24,9 +24,11 @@ import {
 import { compileDeckSource, isDeckMarkdownArtifact } from "../lib/deck";
 import type { QueryCell, WorkspaceQueryResult } from "../lib/duckdb-client";
 import {
+  deriveDataPreviewSourceTargets,
   derivePreviewSourceTargets,
   previewTargetIsActive,
-  resolveDataRowPreviewTargets,
+  resolveDataPreviewSourceTargets,
+  type DataCellPreviewSourceTarget,
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
@@ -58,12 +60,18 @@ function ChartFigure({
   embedded?: boolean;
   onTargetSource?: PreviewTargetHandler;
 }) {
-  const sourceRows = resolveDataRowPreviewTargets(model.sourceArtifactId, artifacts);
+  const sourceTargets = resolveDataPreviewSourceTargets(model.sourceArtifactId, artifacts);
+  const cellsByCoordinate = new Map(sourceTargets?.cells.map((target) => (
+    [`${target.rowIndex}\u0000${target.column}`, target] as const
+  )));
   const rows = model.data.map((datum) => ({
     datum,
-    target: sourceRows?.targets.find((target) => target.index === datum.sourceRowIndex),
+    categoryTarget: cellsByCoordinate.get(`${datum.sourceRowIndex}\u0000${model.spec.category}`),
+    valueTarget: cellsByCoordinate.get(`${datum.sourceRowIndex}\u0000${model.spec.value}`),
   }));
-  const hasTargetableRows = Boolean(onTargetSource && sourceRows && rows.some((row) => row.target));
+  const hasTargetableCells = Boolean(onTargetSource && sourceTargets && rows.some((row) => (
+    row.categoryTarget || row.valueTarget
+  )));
   return (
     <figure
       className={`chart-card ${embedded ? "embedded" : ""}`}
@@ -75,34 +83,62 @@ function ChartFigure({
         <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
       </figcaption>
       <div className="chart-bars">
-        {rows.map(({ datum, target }) => {
-          const openSource = sourceRows && target && onTargetSource
+        {rows.map(({ datum, categoryTarget, valueTarget }) => {
+          const openCategory = sourceTargets && categoryTarget && onTargetSource
             ? () => onTargetSource(
-                sourceRows.artifact,
-                target,
-                `${model.spec.title} · ${datum.label}`,
+                sourceTargets.artifact,
+                categoryTarget,
+                `${model.spec.title} · category ${datum.label}`,
+              )
+            : undefined;
+          const openValue = sourceTargets && valueTarget && onTargetSource
+            ? () => onTargetSource(
+                sourceTargets.artifact,
+                valueTarget,
+                `${model.spec.title} · value ${datum.formatted}`,
               )
             : undefined;
           return (
             <div
-              className={`chart-bar-row ${openSource ? "preview-chart-target" : ""}`.trim()}
+              className="chart-bar-row"
               data-chart-source-row={datum.sourceRowIndex}
               key={datum.sourceRowIndex}
-              role={openSource ? "button" : undefined}
-              tabIndex={openSource ? 0 : undefined}
-              aria-label={openSource ? `Open ${target?.label} in ${sourceRows?.artifact.name} as Agent context` : undefined}
-              title={openSource ? `Open canonical row in ${sourceRows?.artifact.name}` : undefined}
-              onClick={openSource}
-              onKeyDown={openSource ? (event) => activateTargetFromKeyboard(event, openSource) : undefined}
             >
-              <span title={datum.label}>{datum.label}</span>
-              <div className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></div>
-              <strong>{datum.formatted}</strong>
+              {openCategory ? (
+                <button
+                  className="chart-source-cell chart-category-cell"
+                  data-chart-source-cell="category"
+                  type="button"
+                  aria-label={`Open ${categoryTarget?.label} in ${sourceTargets?.artifact.name} as Agent context`}
+                  title={`Open exact ${model.spec.category} source cell in ${sourceTargets?.artifact.name}`}
+                  onClick={openCategory}
+                >
+                  <span title={datum.label}>{datum.label}</span>
+                </button>
+              ) : <span title={datum.label}>{datum.label}</span>}
+              {openValue ? (
+                <button
+                  className="chart-source-cell chart-value-cell"
+                  data-chart-source-cell="value"
+                  type="button"
+                  aria-label={`Open ${valueTarget?.label} in ${sourceTargets?.artifact.name} as Agent context`}
+                  title={`Open exact ${model.spec.value} source cell in ${sourceTargets?.artifact.name}`}
+                  onClick={openValue}
+                >
+                  <span className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></span>
+                  <strong>{datum.formatted}</strong>
+                </button>
+              ) : (
+                <>
+                  <div className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></div>
+                  <strong>{datum.formatted}</strong>
+                </>
+              )}
             </div>
           );
         })}
       </div>
-      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks{hasTargetableRows ? " · Click a bar to open its canonical data row" : ""}</span></footer>
+      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks{hasTargetableCells ? " · Click a label or bar to open its exact source cell" : ""}</span></footer>
     </figure>
   );
 }
@@ -144,23 +180,6 @@ function MarkdownSource({
       ))}
     </>
   );
-}
-
-function activateTargetFromContainer(
-  event: MouseEvent<HTMLElement>,
-  activate?: () => void,
-) {
-  if (!activate || (event.target as HTMLElement).closest("a, button, input")) return;
-  activate();
-}
-
-function activateTargetFromKeyboard(
-  event: KeyboardEvent<HTMLElement>,
-  activate?: () => void,
-) {
-  if (!activate || (event.key !== "Enter" && event.key !== " ")) return;
-  event.preventDefault();
-  activate();
 }
 
 function DocumentPreview({
@@ -218,6 +237,7 @@ function ResultGrid({
   badges,
   footnote,
   rowTargets,
+  cellTargets,
   targetArtifact,
   activeSelection,
   onTargetSource,
@@ -227,6 +247,7 @@ function ResultGrid({
   badges: Array<{ icon: "rows" | "columns" | "format" | "time"; label: string }>;
   footnote: string;
   rowTargets?: PreviewSourceTarget[];
+  cellTargets?: DataCellPreviewSourceTarget[];
   targetArtifact?: WorkspaceArtifact;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
@@ -237,6 +258,9 @@ function ResultGrid({
     format: <Braces aria-hidden="true" />,
     time: <Clock3 aria-hidden="true" />,
   };
+  const cellsByCoordinate = new Map(cellTargets?.map((target) => (
+    [`${target.rowIndex}:${target.columnIndex}`, target] as const
+  )));
 
   return (
     <div className="data-stage">
@@ -257,22 +281,54 @@ function ResultGrid({
               const activate = target && targetArtifact && onTargetSource
                 ? () => onTargetSource(targetArtifact, target)
                 : undefined;
-              const selectable = Boolean(activate);
               const active = Boolean(target && previewTargetIsActive(target, activeSelection));
               return (
               <tr
-                className={`${selectable ? "preview-data-target" : ""} ${active ? "active" : ""}`.trim() || undefined}
+                className={`${activate ? "preview-data-target" : ""} ${active ? "active" : ""}`.trim() || undefined}
                 key={rowIndex}
-                tabIndex={selectable ? 0 : undefined}
-                aria-label={selectable ? `Select ${target?.label} in canonical source for Agent context` : undefined}
-                onClick={activate ? (event) => activateTargetFromContainer(event, activate) : undefined}
-                onKeyDown={activate ? (event) => activateTargetFromKeyboard(event, activate) : undefined}
               >
-                <th className="row-index">{rowIndex + 1}</th>
+                <th className="row-index">
+                  {activate ? (
+                    <button
+                      type="button"
+                      data-preview-source-target={target?.kind}
+                      aria-label={`Select ${target?.label} in canonical source for Agent context`}
+                      aria-pressed={active}
+                      title="Select the complete canonical row"
+                      onClick={activate}
+                    >
+                      {rowIndex + 1}
+                    </button>
+                  ) : rowIndex + 1}
+                </th>
                 {columns.map((column, columnIndex) => {
                   const value = row[columnIndex];
                   const numeric = typeof value === "number";
-                  return <td key={`${column}-${columnIndex}`} className={numeric ? "numeric" : undefined}>{value == null ? "—" : String(value)}</td>;
+                  const cellTarget = cellsByCoordinate.get(`${rowIndex}:${columnIndex}`);
+                  const activateCell = cellTarget && targetArtifact && onTargetSource
+                    ? () => onTargetSource(targetArtifact, cellTarget)
+                    : undefined;
+                  const cellActive = Boolean(cellTarget && previewTargetIsActive(cellTarget, activeSelection));
+                  const displayValue = value == null ? "—" : String(value);
+                  return (
+                    <td
+                      key={`${column}-${columnIndex}`}
+                      className={`${numeric ? "numeric" : ""} ${activateCell ? "preview-data-cell" : ""} ${cellActive ? "active" : ""}`.trim() || undefined}
+                    >
+                      {activateCell ? (
+                        <button
+                          type="button"
+                          data-preview-source-target={cellTarget?.kind}
+                          aria-label={`Select ${cellTarget?.label} in canonical source for Agent context`}
+                          aria-pressed={cellActive}
+                          title={`Select the exact ${column} source cell`}
+                          onClick={activateCell}
+                        >
+                          {displayValue}
+                        </button>
+                      ) : displayValue}
+                    </td>
+                  );
                 })}
               </tr>
               );
@@ -288,12 +344,14 @@ function ResultGrid({
 
 function DataPreview({
   artifact,
-  targets,
+  rowTargets,
+  cellTargets,
   activeSelection,
   onTargetSource,
 }: {
   artifact: WorkspaceArtifact;
-  targets: PreviewSourceTarget[];
+  rowTargets: PreviewSourceTarget[];
+  cellTargets: DataCellPreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
 }) {
@@ -308,10 +366,13 @@ function DataPreview({
         { icon: "columns", label: `${parsed.columns.length} columns` },
         { icon: "format", label: parsed.format },
       ]}
-      footnote={onTargetSource && targets.length
-        ? "Parsed locally — click a row to bind exact Agent context."
-        : "Parsed locally — no rows left this device."}
-      rowTargets={targets}
+      footnote={onTargetSource && cellTargets.length
+        ? "Parsed locally — click a cell for exact Agent context, or a row number for the full record."
+        : onTargetSource && rowTargets.length
+          ? "Parsed locally — click a row number to bind the full record as Agent context."
+          : "Parsed locally — no targetable rows left this device."}
+      rowTargets={rowTargets}
+      cellTargets={cellTargets}
       targetArtifact={artifact}
       activeSelection={activeSelection}
       onTargetSource={onTargetSource}
@@ -465,9 +526,12 @@ export function ArtifactPreview({
 }) {
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
   const compiled = compileArtifactSource(artifact.source, artifacts);
+  if (artifact.kind === "data") {
+    const targets = deriveDataPreviewSourceTargets(artifact);
+    return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
+  }
   const targets = derivePreviewSourceTargets(artifact);
   if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
-  if (artifact.kind === "data") return <DataPreview artifact={artifact} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
   if (artifact.kind === "query") {
     return <QueryPreview source={artifact.source} dataArtifact={artifacts.find((item) => item.kind === "data")} />;
   }

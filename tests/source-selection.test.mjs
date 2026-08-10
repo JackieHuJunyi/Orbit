@@ -51,6 +51,32 @@ test("offers format-preserving exact-text fallbacks for selected data and code",
   assert.equal(sourceOutsideSelectionIsUnchanged(source, plan.nextSource, selection), true);
 });
 
+test("scales one exact unquoted CSV or JSON numeric cell without widening selection", () => {
+  const csv = "Region,Revenue\nAPAC,1840000\nEMEA,970000\n";
+  const start = csv.indexOf("1840000");
+  const selection = { start, end: start + "1840000".length };
+  const plan = planLocalSelectionChange({
+    id: "data",
+    name: "data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: csv,
+  }, selection, "把选中数值乘以 1.1");
+  assert.equal(plan.nextSource, "Region,Revenue\nAPAC,2024000\nEMEA,970000\n");
+  assert.equal(sourceOutsideSelectionIsUnchanged(csv, plan.nextSource, selection), true);
+
+  assert.throws(
+    () => planLocalSelectionChange({
+      id: "data",
+      name: "data.json",
+      kind: "data",
+      language: "CSV / JSON",
+      source: `[{"Revenue":"1,840,000"}]`,
+    }, { start: 12, end: 23 }, "把选中数值乘以 1.1"),
+    /one unquoted CSV or JSON number/i,
+  );
+});
+
 test("rejects collapsed, stale, oversized, unsupported, and no-op selection plans", () => {
   const source = "One concise sentence.";
   assert.match(sourceSelectionError(source, { start: 2, end: 2 }), /does not match/);

@@ -2,13 +2,25 @@ import { parseDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
 import type { SourceSelection } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
-export type PreviewSourceTargetKind = "document-section" | "data-row" | "deck-slide";
+export type PreviewSourceTargetKind = "document-section" | "data-row" | "data-cell" | "deck-slide";
 
 export type PreviewSourceTarget = SourceSelection & {
   id: string;
   index: number;
   kind: PreviewSourceTargetKind;
   label: string;
+};
+
+export type DataCellPreviewSourceTarget = PreviewSourceTarget & {
+  kind: "data-cell";
+  rowIndex: number;
+  columnIndex: number;
+  column: string;
+};
+
+export type DataPreviewSourceTargets = {
+  rows: PreviewSourceTarget[];
+  cells: DataCellPreviewSourceTarget[];
 };
 
 export type ResolvedPreviewSourceTarget = {
@@ -19,6 +31,10 @@ export type ResolvedPreviewSourceTarget = {
 export type ResolvedDataRowPreviewTargets = {
   artifact: WorkspaceArtifact;
   targets: PreviewSourceTarget[];
+};
+
+export type ResolvedDataPreviewSourceTargets = DataPreviewSourceTargets & {
+  artifact: WorkspaceArtifact;
 };
 
 type SourceLine = {
@@ -133,6 +149,25 @@ function csvRecordRanges(source: string): SourceSelection[] {
   return records;
 }
 
+function csvCellRanges(source: string, record: SourceSelection): Array<SourceSelection | null> {
+  const ranges: Array<SourceSelection | null> = [];
+  let start = record.start;
+  let quoted = false;
+  for (let index = record.start; index < record.end; index += 1) {
+    const character = source[index];
+    if (character === '"') {
+      if (quoted && source[index + 1] === '"') index += 1;
+      else quoted = !quoted;
+      continue;
+    }
+    if (character !== "," || quoted) continue;
+    ranges.push(trimRange(source, start, index));
+    start = index + 1;
+  }
+  ranges.push(trimRange(source, start, record.end));
+  return ranges;
+}
+
 function jsonValueEnd(source: string, start: number, limit: number) {
   const first = source[start];
   if (first === '"') {
@@ -167,7 +202,7 @@ function jsonValueEnd(source: string, start: number, limit: number) {
     return -1;
   }
   let index = start;
-  while (index < limit && source[index] !== "," && source[index] !== "]") index += 1;
+  while (index < limit && source[index] !== "," && source[index] !== "]" && source[index] !== "}") index += 1;
   return index;
 }
 
@@ -192,24 +227,114 @@ function jsonRowRanges(source: string): SourceSelection[] {
   return ranges;
 }
 
+function skipJsonWhitespace(source: string, index: number, limit: number) {
+  while (index < limit && /\s/u.test(source[index])) index += 1;
+  return index;
+}
+
+function jsonObjectValueRanges(source: string, row: SourceSelection): Map<string, SourceSelection> | null {
+  let index = skipJsonWhitespace(source, row.start, row.end);
+  if (source[index] !== "{") return null;
+  index += 1;
+  const ranges = new Map<string, SourceSelection>();
+  while (index < row.end) {
+    index = skipJsonWhitespace(source, index, row.end);
+    if (source[index] === "}") return ranges;
+    if (source[index] !== '"') return null;
+    const keyEnd = jsonValueEnd(source, index, row.end);
+    if (keyEnd < 0) return null;
+    let key: string;
+    try {
+      key = JSON.parse(source.slice(index, keyEnd)) as string;
+    } catch {
+      return null;
+    }
+    if (ranges.has(key)) return null;
+    index = skipJsonWhitespace(source, keyEnd, row.end);
+    if (source[index] !== ":") return null;
+    index = skipJsonWhitespace(source, index + 1, row.end);
+    const valueEnd = jsonValueEnd(source, index, row.end);
+    if (valueEnd < 0) return null;
+    const range = trimRange(source, index, valueEnd);
+    if (!range) return null;
+    ranges.set(key, range);
+    index = skipJsonWhitespace(source, valueEnd, row.end);
+    if (source[index] === ",") {
+      index += 1;
+      continue;
+    }
+    if (source[index] === "}") return ranges;
+    return null;
+  }
+  return null;
+}
+
 function dataRowLabel(row: Record<string, DataCell> | undefined, firstColumn: string | undefined, index: number) {
   const value = firstColumn ? row?.[firstColumn] : undefined;
   const suffix = value == null || value === "" ? "" : ` · ${boundedLabel(String(value), "")}`;
   return `Row ${index + 1}${suffix}`;
 }
 
-function dataTargets(source: string): PreviewSourceTarget[] {
+function dataCellLabel(rowIndex: number, columnIndex: number, column: string) {
+  return `Row ${rowIndex + 1} · ${boundedLabel(column, `Column ${columnIndex + 1}`)}`;
+}
+
+function dataTargets(source: string): DataPreviewSourceTargets {
   const parsed = parseDataSource(source);
-  if (parsed.errors.length || !parsed.rows.length) return [];
+  if (parsed.errors.length || !parsed.rows.length) return { rows: [], cells: [] };
   const ranges = parsed.format === "JSON" ? jsonRowRanges(source) : csvRecordRanges(source).slice(1);
-  if (ranges.length !== parsed.rows.length) return [];
-  return ranges.map((range, index) => ({
+  if (ranges.length !== parsed.rows.length) return { rows: [], cells: [] };
+  const rows = ranges.map((range, index) => ({
     ...range,
     id: `data-row:${index}:${range.start}`,
     index,
     kind: "data-row" as const,
     label: dataRowLabel(parsed.rows[index], parsed.columns[0], index),
   }));
+  const cells: DataCellPreviewSourceTarget[] = [];
+
+  if (parsed.format === "CSV") {
+    const cellRanges = ranges.map((range) => csvCellRanges(source, range));
+    if (cellRanges.some((record) => record.length !== parsed.columns.length)) return { rows, cells: [] };
+    cellRanges.forEach((record, rowIndex) => {
+      record.forEach((range, columnIndex) => {
+        if (!range) return;
+        const column = parsed.columns[columnIndex];
+        cells.push({
+          ...range,
+          id: `data-cell:${rowIndex}:${columnIndex}:${range.start}`,
+          index: rowIndex,
+          kind: "data-cell",
+          label: dataCellLabel(rowIndex, columnIndex, column),
+          rowIndex,
+          columnIndex,
+          column,
+        });
+      });
+    });
+  } else {
+    ranges.forEach((rowRange, rowIndex) => {
+      const first = source[skipJsonWhitespace(source, rowRange.start, rowRange.end)];
+      const valueRanges = first === "{" ? jsonObjectValueRanges(source, rowRange) : null;
+      parsed.columns.forEach((column, columnIndex) => {
+        const range = valueRanges?.get(column)
+          ?? (first !== "{" && column === "value" ? rowRange : null);
+        if (!range) return;
+        cells.push({
+          ...range,
+          id: `data-cell:${rowIndex}:${columnIndex}:${range.start}`,
+          index: rowIndex,
+          kind: "data-cell",
+          label: dataCellLabel(rowIndex, columnIndex, column),
+          rowIndex,
+          columnIndex,
+          column,
+        });
+      });
+    });
+  }
+
+  return { rows, cells };
 }
 
 function deckTargets(source: string): PreviewSourceTarget[] {
@@ -244,9 +369,14 @@ function deckTargets(source: string): PreviewSourceTarget[] {
 export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
   if (!artifact.source.trim()) return [];
   if (artifact.kind === "document") return documentTargets(artifact.source);
-  if (artifact.kind === "data") return dataTargets(artifact.source);
+  if (artifact.kind === "data") return dataTargets(artifact.source).rows;
   if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return deckTargets(artifact.source);
   return [];
+}
+
+export function deriveDataPreviewSourceTargets(artifact: WorkspaceArtifact): DataPreviewSourceTargets {
+  if (artifact.kind !== "data" || !artifact.source.trim()) return { rows: [], cells: [] };
+  return dataTargets(artifact.source);
 }
 
 export function previewTargetIsActive(target: PreviewSourceTarget, selection?: SourceSelection | null) {
@@ -269,8 +399,31 @@ export function resolveDataRowPreviewTargets(
   artifactId: string,
   artifacts: WorkspaceArtifact[],
 ): ResolvedDataRowPreviewTargets | null {
+  const resolved = resolveDataPreviewSourceTargets(artifactId, artifacts);
+  return resolved ? { artifact: resolved.artifact, targets: resolved.rows } : null;
+}
+
+export function resolveDataCellPreviewTarget(
+  artifactId: string,
+  sourceRowIndex: number,
+  column: string,
+  artifacts: WorkspaceArtifact[],
+): ResolvedPreviewSourceTarget | null {
+  if (!Number.isInteger(sourceRowIndex) || sourceRowIndex < 0 || !column) return null;
+  const resolved = resolveDataPreviewSourceTargets(artifactId, artifacts);
+  if (!resolved) return null;
+  const target = resolved.cells.find((candidate) => (
+    candidate.rowIndex === sourceRowIndex && candidate.column === column
+  ));
+  return target ? { artifact: resolved.artifact, target } : null;
+}
+
+export function resolveDataPreviewSourceTargets(
+  artifactId: string,
+  artifacts: WorkspaceArtifact[],
+): ResolvedDataPreviewSourceTargets | null {
   const artifact = artifacts.find((candidate) => candidate.id === artifactId && candidate.kind === "data");
   if (!artifact) return null;
-  const targets = derivePreviewSourceTargets(artifact).filter((candidate) => candidate.kind === "data-row");
-  return targets.length ? { artifact, targets } : null;
+  const targets = deriveDataPreviewSourceTargets(artifact);
+  return targets.rows.length ? { artifact, ...targets } : null;
 }

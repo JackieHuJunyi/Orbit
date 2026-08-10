@@ -7,7 +7,7 @@ import type { ArtifactKind, LocalPlan, WorkspaceArtifact } from "./workspace.ts"
 
 export const selectionQuickCommands: Record<ArtifactKind, string[]> = {
   document: ["把选中内容压缩成一句话", "把选中内容改成三条要点"],
-  data: ["把选中内容转成大写", "去掉选中内容两端空格"],
+  data: ["把选中数值乘以 1.1", "把选中内容转成大写"],
   query: ["把选中内容转成大写", "去掉选中内容两端空格"],
   chart: ["把选中内容转成大写", "去掉选中内容两端空格"],
   slides: ["把选中内容压缩成一句话", "把选中内容改成三条要点"],
@@ -58,6 +58,17 @@ function bulletSelection(value: string) {
   return units.slice(0, 3).map((unit) => `- ${unit.replace(/^[-*+]\s+/, "")}`).join("\n");
 }
 
+function scaleNumericSelection(value: string) {
+  const normalized = value.trim();
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/iu.test(normalized)) {
+    throw new Error("Select one unquoted CSV or JSON number before multiplying it by 1.1.");
+  }
+  const number = Number(normalized);
+  const scaled = number * 1.1;
+  if (!Number.isFinite(scaled)) throw new Error("The selected number cannot be scaled safely.");
+  return Number(scaled.toPrecision(15)).toString();
+}
+
 export function planLocalSelectionChange(
   artifact: WorkspaceArtifact,
   selection: SourceSelection,
@@ -73,7 +84,11 @@ export function planLocalSelectionChange(
   let replacement: string;
   let summary: string;
   let detail: string;
-  if (/大写|uppercase/i.test(instruction)) {
+  if (/乘以\s*1\.1|multiply(?:\s+it)?\s+by\s+1\.1/i.test(instruction)) {
+    replacement = `${parts.leading}${scaleNumericSelection(parts.core)}${parts.trailing}`;
+    summary = "Scale the selected numeric source by 1.1";
+    detail = "Only the exact unquoted CSV or JSON number changes; the complete artifact and its dependencies are revalidated before Apply.";
+  } else if (/大写|uppercase/i.test(instruction)) {
     replacement = artifact.source.slice(selection.start, selection.end).toLocaleUpperCase();
     summary = "Uppercase the selected source";
     detail = "Only the exact selected characters change case; surrounding source stays byte-for-byte equivalent.";
@@ -90,7 +105,7 @@ export function planLocalSelectionChange(
     summary = "Condense the selected source";
     detail = "Only the exact selected source range is reduced to one concise statement.";
   } else {
-    throw new Error("Try condensing the selection, turning it into points, uppercasing it, or trimming its edges.");
+    throw new Error("Try condensing the selection, turning it into points, multiplying one number by 1.1, uppercasing it, or trimming its edges.");
   }
 
   const nextSource = replaceSourceSelection(artifact.source, selection, replacement);

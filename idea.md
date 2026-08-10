@@ -1404,3 +1404,17 @@ v0.16 有意不让 Chart mark 变成 target，因为柱形是派生结果，不�
 Deck iframe、standalone HTML、DOCX 和 PPTX 中的 chart 仍是静态交付副本。为了让演示里的柱形可点而给 `sandbox=""` 注入脚本，会破坏此前建立的无脚本边界；Office 文件也没有 Rune runtime。当前更诚实的体验是在编辑 workbench 的 React chart 上提供 provenance，导出物保持 frozen snapshot。未来若需要交互式分享，应单独定义带可信 runtime 与只读 provenance payload 的发布格式，而不是悄悄改变现有 standalone 合同。
 
 这轮也没有声称解决 SQL result provenance。Query 可能聚合、join、filter，一行结果可能来自多行甚至多个 source，单个 `sourceRowIndex` 不够表达。下一步可以让 DuckDB query adapter返回 bounded provenance set，或先实现 column/cell-level data target，让 Chart mark 精确到 category/value cells；只有能够证明 lineage 时才扩展 target。这个原则比“所有东西都能点”更重要：视觉对象可以帮助用户指向，但写入权限必须始终落在可验证的 canonical source 上。
+
+## 22. Cell-level context：表格不是一组行，而是一组可指向的事实
+
+v0.17 让图表能够回到产生它的数据行，已经解决了“这个柱形来自哪条记录”，却还没有解决用户更常见的意图：“把这个数改成 190 万”或“只统一这个状态值”。整行 selection 会把同一记录里的客户数、成本和地区名也交给 Agent；即使 prefix/suffix proof 能保证行外不变，行内的权限仍然比人的指向更大。一个要替代 Excel 的 AI Native 表格不能只把 row 当成最小对象，可见 cell 必须成为与 Markdown section、Deck slide 同等级的一等上下文。
+
+这里不能用 `String(value)` 去原文搜索。CSV 中的 `"Line one, exact\nLine two"` 同时包含逗号、换行与引号语法，相同文本也可能出现在多个列；JSON 的字符串值带引号，数字/boolean/null 没有引号，嵌套 object 又有自己的括号层级。v0.18 因此把 cell target 定义为 lexical source token，而不是解析后的 display value。CSV scanner 在完整 record range 内继续维护 quote 与 `""` escape 状态，只在引号外的逗号处分列；JSON scanner 逐个解析 object key，并用 string escape 与嵌套栈找到对应 value 的完整范围。选中 quoted CSV 或 JSON string 时，语法引号也留在 selection 内，让任何 replacement 都必须继续生成合法 canonical source。
+
+cell target 仍然只在可以证明时存在。空 CSV 字段没有非空 range，JSON 中缺失的 property 根本没有 source token，primitive array 的合成 `row` 序号也只是 UI 列；这些位置不伪造 collapsed selection。JSON duplicate key 更危险：`{"Region":"old","Region":"new"}` 的 parser 通常采用最后一个值，但用户看到的单元格无法说明应该授权哪一个 lexical occurrence，所以该 object 只保留完整 row target，不产生任何 cell capability。row 数量与 parser 结果、CSV field 数与 columns 不一致时也整体拒绝 cell map。失败仍然是只读或退回用户显式点击行号，而不是猜测。
+
+表格交互据此分成两个清楚的权限层级：每个可证明的非空 cell 是原生 button，click、Enter 或 Space 只选择该 value token；固定行号也是 button，但明确表示选择完整 canonical record。这样用户仍能说“整理这一行”，也可以把权限缩到一个值。零密钥路径新增“把选中数值乘以 1.1”的确定性动作，让默认收入 cell 可以实际走完选择、具体 patch、依赖重编译和 review，而不是只展示一个不可验证的高亮；它只接受单个未加引号的有限数字，格式不明确时直接拒绝。激活继续复用原生 textarea range、Selection Agent、双重 outside-selection proof、concrete diff、checkpoint、dependency recompile 与 atomic write，没有新增 cell mutation back door。cell 的 row/column metadata 只用于当前 revision 的定位和可访问标签，不进入持久化文档模型。
+
+图表血缘也从 row-level 收紧到 field-level。chart compiler 已经保存排序与 `maxItems` 之前的 `sourceRowIndex`；v0.18 再把它与严格 spec 中的 `category`、`value` column 组合。点击 APAC label 会选择 Region cell，点击 bar 或格式化金额会选择 Q2 Revenue cell，即使两个 label 都叫 `Shared`，也由原始 row index 区分。DOM 的 label、宽度、格式化金额和 `data-chart-source-row` 继续只是展示与测试信号，真正 target 只能由当前 data artifact 的 cell compiler 产生。独立 Chart 与报告内 React chart 使用相同原生按钮，Deck/HTML/DOCX/PPTX frozen snapshot 仍不获得脚本权限。
+
+这一步让“我看到的这个值”成为可证明的最小 Agent capability，但还没有把表格变成隐藏 spreadsheet model，也没有声称每个空格都可编辑。下一步可以增加 schema-aware column operation、显式的空 cell insertion target，或让 selection review 显示 `artifact → row → column` breadcrumb；更大的未解问题仍是 SQL provenance，因为 aggregate/join result cell 可能对应一个 source set 而不是单个 token。Rune 应先让 DuckDB adapter产出有界、可验证的 lineage set，再决定是否允许 query result 反向导航，不能把本轮的一对一 cell contract错误套到多对一计算结果上。
