@@ -33,6 +33,8 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /q2-review\.md/);
   assert.match(html, /Rune Agent/);
   assert.match(html, /Live preview/);
+  assert.match(html, /metrics compiled live/);
+  assert.match(html, /linked metrics/);
   assert.match(html, /Saved on device/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
@@ -40,9 +42,9 @@ test("server-renders the Rune artifact workbench", async () => {
 test("renders all three canonical artifact modes", async () => {
   const response = await render();
   const html = await response.text();
-  assert.match(html, /Markdown/);
+  assert.match(html, /q2-review\.md/);
   assert.match(html, /CSV \/ JSON/);
-  assert.match(html, /Semantic HTML/);
+  assert.match(html, /board-briefing\.html/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
 });

@@ -580,6 +580,7 @@ textarea:focus-visible {
 
 .language-badge,
 .validation-badge,
+.binding-badge,
 .local-planner-badge {
   display: inline-flex;
   align-items: center;
@@ -905,11 +906,72 @@ textarea:focus-visible {
   color: var(--danger);
 }
 
+.preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.binding-badge {
+  height: 25px;
+  padding: 0 8px;
+  border: 1px solid #d6cfee;
+  background: #f2effb;
+  color: #6e57af;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.binding-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
 .preview-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-scroll {
   min-height: 0;
   flex: 1;
   overflow: auto;
   overscroll-behavior: contain;
+}
+
+.lineage-strip {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-bottom: 1px solid #cbc8bf;
+  background: #eceae3;
+  color: #667068;
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.lineage-strip svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  color: var(--data);
+}
+
+.lineage-strip svg:nth-of-type(2) {
+  color: #a4aaa5;
+}
+
+.lineage-strip strong {
+  margin-left: auto;
+  color: #6e57af;
+  font-family: var(--font-sans);
+  font-size: 8px;
+  white-space: nowrap;
 }
 
 .empty-preview {

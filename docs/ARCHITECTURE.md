@@ -10,6 +10,8 @@ The first release is a local-first vertical slice, not an Office compatibility s
 Workbench UI
   ├─ Workspace state and persistence
   ├─ Agent command surface
+  ├─ Dependency compiler
+  │    └─ shared data → named metrics → document / slides
   └─ Artifact registry
        ├─ Markdown adapter → document preview
        ├─ Data adapter     → parsed grid
@@ -35,6 +37,10 @@ type ArtifactPatch = {
 ```
 
 The UI may preview a patch, accept or reject it, validate the next source, create a checkpoint, and only then persist it. Model providers never write workspace state directly.
+
+## Shared metrics and lineage
+
+Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}`. The dependency compiler derives metrics from the canonical CSV/JSON artifact and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count; the next evolution is a persisted dependency graph that also covers SQL, charts, and user-defined metrics.
 
 ## Persistence ladder
 

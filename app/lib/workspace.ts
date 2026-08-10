@@ -31,11 +31,11 @@ const documentSource = `# Q2 Business Review
 
 ## Executive summary
 
-Revenue reached **$4.82M**, up **12.4% quarter over quarter**. APAC led growth while the enterprise segment produced the strongest expansion.
+Revenue reached **{{ metric("total_revenue") }}**, up **{{ metric("qoq_growth") }} quarter over quarter**. **{{ metric("top_region") }}** led growth while gross margin reached **{{ metric("gross_margin") }}**.
 
 ## What changed
 
-- APAC revenue grew 19% after the partner launch.
+- The leading region contributed {{ metric("region.apac.revenue") }} after the partner launch.
 - Gross margin improved 2.8 points as infrastructure costs normalized.
 - Enterprise retention held above 96%.
 
@@ -98,20 +98,20 @@ const slidesSource = `<!doctype html>
       <p class="eyebrow">The quarter at a glance</p>
       <h2>Momentum with healthier economics.</h2>
       <div class="metric-grid">
-        <div class="metric"><strong>$4.82M</strong><span>Q2 revenue</span></div>
-        <div class="metric"><strong>+12.4%</strong><span>Quarter over quarter</span></div>
-        <div class="metric"><strong>96.2%</strong><span>Enterprise retention</span></div>
+        <div class="metric"><strong>{{ metric("total_revenue") }}</strong><span>Q2 revenue</span></div>
+        <div class="metric"><strong>{{ metric("qoq_growth") }}</strong><span>Quarter over quarter</span></div>
+        <div class="metric"><strong>{{ metric("gross_margin") }}</strong><span>Gross margin</span></div>
       </div>
       <span class="number">02 / 03</span>
     </section>
     <section class="slide" data-layout="split">
       <div class="split">
-        <div><p class="eyebrow">Regional signal</p><h2>APAC is now the growth engine.</h2><p class="lede">Partner distribution created a repeatable acquisition channel.</p></div>
+        <div><p class="eyebrow">Regional signal</p><h2>{{ metric("top_region") }} is now the growth engine.</h2><p class="lede">Partner distribution created a repeatable acquisition channel.</p></div>
         <div class="bars">
-          <div class="bar"><span>APAC</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.84</b></div>
-          <div class="bar"><span>N. America</span><div class="track"><div class="fill" style="width:85%"></div></div><b>1.56</b></div>
-          <div class="bar"><span>Europe</span><div class="track"><div class="fill" style="width:53%"></div></div><b>0.97</b></div>
-          <div class="bar"><span>LATAM</span><div class="track"><div class="fill" style="width:24%"></div></div><b>0.45</b></div>
+          <div class="bar"><span>APAC</span><div class="track"><div class="fill" style="width:100%"></div></div><b>{{ metric("region.apac.revenue") }}</b></div>
+          <div class="bar"><span>N. America</span><div class="track"><div class="fill" style="width:85%"></div></div><b>{{ metric("region.north_america.revenue") }}</b></div>
+          <div class="bar"><span>Europe</span><div class="track"><div class="fill" style="width:53%"></div></div><b>{{ metric("region.europe.revenue") }}</b></div>
+          <div class="bar"><span>LATAM</span><div class="track"><div class="fill" style="width:24%"></div></div><b>{{ metric("region.latam.revenue") }}</b></div>
         </div>
       </div>
       <span class="number">03 / 03</span>
@@ -241,7 +241,7 @@ function insertAfterTitle(source: string, block: string): string {
 
 function planDocument(source: string, prompt: string): LocalPlan {
   if (/三条|要点|summary|摘要/i.test(prompt)) {
-    const block = `## Executive summary\n\n- Revenue reached **$4.82M**, with broad-based quarter-over-quarter growth.\n- APAC became the leading growth engine after the partner launch.\n- Margin and enterprise retention improved together, increasing confidence in Q3.`;
+    const block = `## Executive summary\n\n- Revenue reached **{{ metric("total_revenue") }}**, with **{{ metric("qoq_growth") }}** quarter-over-quarter growth.\n- **{{ metric("top_region") }}** became the leading growth engine after the partner launch.\n- Gross margin reached **{{ metric("gross_margin") }}**, increasing confidence in Q3.`;
     const pattern = /## Executive summary[\s\S]*?(?=\n## |$)/i;
     return {
       nextSource: pattern.test(source) ? source.replace(pattern, block) : insertAfterTitle(source, block),

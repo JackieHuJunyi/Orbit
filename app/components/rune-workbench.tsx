@@ -14,6 +14,7 @@ import {
   FolderOpen,
   History,
   LayoutGrid,
+  Link2,
   PanelLeftClose,
   PanelLeftOpen,
   Play,
@@ -37,6 +38,7 @@ import {
   type ArtifactKind,
   type WorkspaceArtifact,
 } from "../lib/workspace";
+import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_IMPORT_SIZE = 2 * 1024 * 1024;
@@ -97,9 +99,18 @@ export function RuneWorkbench() {
   const importRef = useRef<HTMLInputElement>(null);
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
+  const bindingState = useMemo(
+    () => selectedArtifact ? compileArtifactSource(selectedArtifact.source, artifacts) : null,
+    [artifacts, selectedArtifact],
+  );
   const validationErrors = useMemo(
-    () => selectedArtifact ? validateArtifact(selectedArtifact) : ["No artifact selected."],
-    [selectedArtifact],
+    () => selectedArtifact
+      ? [
+          ...validateArtifact(selectedArtifact),
+          ...(bindingState?.unresolved.map((key) => `Unresolved metric: ${key}`) ?? []),
+        ]
+      : ["No artifact selected."],
+    [bindingState?.unresolved, selectedArtifact],
   );
   const lineNumbers = useMemo(
     () => Array.from({ length: selectedArtifact?.source.split("\n").length ?? 1 }, (_, index) => index + 1).join("\n"),
@@ -298,17 +309,20 @@ export function RuneWorkbench() {
             </div>
             <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}</span></div>
             <nav className="artifact-list">
-              {artifacts.map((artifact) => (
-                <button
-                  key={artifact.id}
-                  className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
-                  onClick={() => selectArtifact(artifact.id)}
-                >
-                  <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
-                  <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}</small></span>
-                  {artifact.id === selectedArtifact.id && <span className="active-notch" />}
-                </button>
-              ))}
+              {artifacts.map((artifact) => {
+                const referenceCount = findMetricReferences(artifact.source).length;
+                return (
+                  <button
+                    key={artifact.id}
+                    className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
+                    onClick={() => selectArtifact(artifact.id)}
+                  >
+                    <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
+                    <span className="artifact-label"><strong>{artifact.name}</strong><small>{referenceCount ? `${referenceCount} live bindings` : artifact.language}</small></span>
+                    {artifact.id === selectedArtifact.id && <span className="active-notch" />}
+                  </button>
+                );
+              })}
             </nav>
             <div className="file-rail-spacer" />
             <div className="workspace-note">
@@ -401,19 +415,33 @@ export function RuneWorkbench() {
               <span className="preview-mark"><FileCode2 aria-hidden="true" /></span>
               <div><span className="overline">Compiled output</span><strong>Live preview</strong></div>
             </div>
-            {validationErrors.length ? (
-              <span className="validation-badge error"><X aria-hidden="true" /> {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}</span>
-            ) : (
-              <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> Valid</span>
-            )}
+            <div className="preview-actions">
+              {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {bindingState.references.length} live</span>}
+              {validationErrors.length ? (
+                <span className="validation-badge error"><X aria-hidden="true" /> {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}</span>
+              ) : (
+                <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> Valid</span>
+              )}
+            </div>
           </header>
-          <div className="preview-body"><ArtifactPreview artifact={selectedArtifact} /></div>
+          <div className="preview-body">
+            {!!bindingState?.references.length && (
+              <div className="lineage-strip">
+                <Database aria-hidden="true" />
+                <span>{artifacts.find((artifact) => artifact.kind === "data")?.name ?? "workspace data"}</span>
+                <ChevronRight aria-hidden="true" />
+                <span>{selectedArtifact.name}</span>
+                <strong>{bindingState.references.length} metrics compiled live</strong>
+              </div>
+            )}
+            <div className="preview-scroll"><ArtifactPreview artifact={selectedArtifact} artifacts={artifacts} /></div>
+          </div>
         </section>
       </div>
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span><span>UTF-8</span><span>Rune v0.1</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}<span>UTF-8</span><span>Rune v0.2</span></div>
       </footer>
     </main>
   );

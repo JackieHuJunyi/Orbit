@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AlertTriangle, Braces, CheckCircle2, Columns3, Rows3 } from "lucide-react";
 import { parseDataSource, type WorkspaceArtifact } from "../lib/workspace";
+import { compileArtifactSource } from "../lib/bindings";
 
 function EmptyPreview({ message }: { message: string }) {
   return (
@@ -83,9 +84,10 @@ function SlidesPreview({ source }: { source: string }) {
   );
 }
 
-export function ArtifactPreview({ artifact }: { artifact: WorkspaceArtifact }) {
+export function ArtifactPreview({ artifact, artifacts }: { artifact: WorkspaceArtifact; artifacts: WorkspaceArtifact[] }) {
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
-  if (artifact.kind === "document") return <DocumentPreview source={artifact.source} />;
+  const compiled = compileArtifactSource(artifact.source, artifacts);
+  if (artifact.kind === "document") return <DocumentPreview source={compiled.source} />;
   if (artifact.kind === "data") return <DataPreview source={artifact.source} />;
-  return <SlidesPreview source={artifact.source} />;
+  return <SlidesPreview source={compiled.source} />;
 }

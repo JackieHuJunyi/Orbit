@@ -7,6 +7,11 @@ import {
   planLocalChange,
   validateArtifact,
 } from "../app/lib/workspace.ts";
+import {
+  compileArtifactSource,
+  deriveWorkspaceMetrics,
+  findMetricReferences,
+} from "../app/lib/bindings.ts";
 
 test("parses the sample CSV without sending data anywhere", () => {
   const artifact = defaultArtifacts.find((item) => item.kind === "data");
@@ -43,4 +48,30 @@ test("keeps slide scripts out of the trusted preview contract", () => {
     source: "<main><section>Safe</section><script>alert(1)</script></main>",
   };
   assert.match(validateArtifact(artifact)[0], /Scripts are blocked/);
+});
+
+test("compiles document and slide metrics from the shared CSV source", () => {
+  const document = defaultArtifacts.find((item) => item.kind === "document");
+  const slides = defaultArtifacts.find((item) => item.kind === "slides");
+  assert.ok(document);
+  assert.ok(slides);
+  const documentResult = compileArtifactSource(document.source, defaultArtifacts);
+  const slidesResult = compileArtifactSource(slides.source, defaultArtifacts);
+  assert.match(documentResult.source, /\$4\.82M/);
+  assert.match(documentResult.source, /\+12\.4%/);
+  assert.doesNotMatch(documentResult.source, /\{\{\s*metric/);
+  assert.ok(findMetricReferences(slides.source).length >= 5);
+  assert.deepEqual(slidesResult.unresolved, []);
+});
+
+test("recompiles every artifact when the canonical data changes", () => {
+  const changed = defaultArtifacts.map((artifact) => artifact.kind === "data"
+    ? { ...artifact, source: artifact.source.replace("APAC,1840000", "APAC,2840000") }
+    : artifact);
+  const metrics = deriveWorkspaceMetrics(changed);
+  assert.equal(metrics.total_revenue.formatted, "$5.82M");
+  const document = changed.find((item) => item.kind === "document");
+  assert.ok(document);
+  assert.match(compileArtifactSource(document.source, changed).source, /\$5\.82M/);
+  assert.match(document.source, /metric\("total_revenue"\)/);
 });
