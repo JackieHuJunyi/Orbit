@@ -10,11 +10,10 @@ import {
   ShieldCheck,
   TableProperties,
   TriangleAlert,
-  X,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
 import { createImportSourcePreview } from "../lib/imports";
 import type { ArtifactKind, WorkspaceArtifact } from "../lib/workspace";
+import { ReviewDialog } from "./review-dialog";
 
 function ArtifactIcon({ kind }: { kind: ArtifactKind }) {
   if (kind === "document") return <FileText aria-hidden="true" />;
@@ -43,73 +42,26 @@ export function ImportReviewDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const dialogRef = useRef<HTMLElement>(null);
-  const cancelRef = useRef(onCancel);
   const uniqueWarnings = [...new Set(warnings)];
 
-  useEffect(() => {
-    cancelRef.current = onCancel;
-  }, [onCancel]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const focusableSelector = "button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
-    const focusables = dialog ? [...dialog.querySelectorAll<HTMLElement>(focusableSelector)] : [];
-    focusables[0]?.focus();
-
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        cancelRef.current();
-        return;
-      }
-      if (event.key !== "Tab" || !dialog) return;
-      const current = [...dialog.querySelectorAll<HTMLElement>(focusableSelector)];
-      if (!current.length) return;
-      const first = current[0];
-      const last = current[current.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previousFocus?.focus();
-    };
-  }, []);
-
   return (
-    <div className="import-review-backdrop">
-      <section
-        ref={dialogRef}
-        className="import-review-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="import-review-title"
-        aria-describedby="import-review-description"
-      >
-        <header className="import-review-header">
-          <div>
-            <span className="import-review-kicker"><ShieldCheck aria-hidden="true" /> Local conversion · no upload</span>
-            <h2 id="import-review-title">Review imported sources</h2>
-            <p id="import-review-description">
-              <strong>{sourceName}</strong> produced {artifacts.length} readable {artifacts.length === 1 ? "artifact" : "artifacts"}. Nothing is written until you confirm.
-            </p>
-          </div>
-          <button className="icon-button" onClick={onCancel} aria-label="Cancel import review" title="Cancel import"><X /></button>
-        </header>
-
-        <div className="import-review-body" role="region" aria-label="Import details" tabIndex={0}>
+    <ReviewDialog
+      dialogId="import-review"
+      kicker={<><ShieldCheck aria-hidden="true" /> Local conversion · no upload</>}
+      title="Review imported sources"
+      description={<><strong>{sourceName}</strong> produced {artifacts.length} readable {artifacts.length === 1 ? "artifact" : "artifacts"}. Nothing is written until you confirm.</>}
+      detailsLabel="Import details"
+      onCancel={onCancel}
+      footer={(
+        <>
+          <div><ShieldCheck aria-hidden="true" /> One atomic device write after confirmation</div>
+          <span>
+            <button className="button ghost-button" onClick={onCancel}>Cancel</button>
+            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> Import {artifacts.length} {artifacts.length === 1 ? "source" : "sources"}</button>
+          </span>
+        </>
+      )}
+    >
           {uniqueWarnings.length ? (
             <section className="import-warning-panel" aria-labelledby="import-warning-title">
               <div className="import-warning-heading">
@@ -143,16 +95,6 @@ export function ImportReviewDialog({
               );
             })}
           </div>
-        </div>
-
-        <footer className="import-review-actions">
-          <div><ShieldCheck aria-hidden="true" /> One atomic device write after confirmation</div>
-          <span>
-            <button className="button ghost-button" onClick={onCancel}>Cancel</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> Import {artifacts.length} {artifacts.length === 1 ? "source" : "sources"}</button>
-          </span>
-        </footer>
-      </section>
-    </div>
+    </ReviewDialog>
   );
 }

@@ -11,6 +11,7 @@ import {
   Database,
   Download,
   FileCode2,
+  FileOutput,
   FileText,
   FolderOpen,
   History,
@@ -33,6 +34,7 @@ import {
 import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactPreview } from "./artifact-previews";
 import { ImportReviewDialog } from "./import-review-dialog";
+import { OfficeExportDialog } from "./office-export-dialog";
 import {
   artifactStats,
   cloneDefaultArtifacts,
@@ -77,6 +79,7 @@ import {
   type DirectoryReadResult,
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
+import type { OfficeExportResult } from "../lib/office-export";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -90,6 +93,12 @@ type PendingChange = {
   summary: string;
   detail: string;
   patches: ArtifactSourcePatch[];
+};
+
+type PendingOfficeExport = {
+  sourceArtifactName: string;
+  baseArtifacts: WorkspaceArtifact[];
+  result: OfficeExportResult;
 };
 
 type RemoteFilePlan = ArtifactSourcePatch;
@@ -132,6 +141,13 @@ function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }
   if (kind === "query") return <Database size={size} aria-hidden="true" />;
   if (kind === "chart") return <BarChart3 size={size} aria-hidden="true" />;
   return <Presentation size={size} aria-hidden="true" />;
+}
+
+function officeExportType(artifact: WorkspaceArtifact): "DOCX" | "XLSX" | "PPTX" | null {
+  if (artifact.kind === "document") return "DOCX";
+  if (artifact.kind === "data") return "XLSX";
+  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return "PPTX";
+  return null;
 }
 
 function getDiffStats(before: string, after: string) {
@@ -189,6 +205,9 @@ export function RuneWorkbench() {
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
   const [importError, setImportError] = useState("");
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
+  const [pendingOfficeExport, setPendingOfficeExport] = useState<PendingOfficeExport | null>(null);
+  const [officeExportError, setOfficeExportError] = useState("");
+  const [officeExportState, setOfficeExportState] = useState<"idle" | "preparing">("idle");
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
@@ -201,8 +220,10 @@ export function RuneWorkbench() {
   const gutterRef = useRef<HTMLPreElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
+  const officeExportInFlightRef = useRef(false);
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
+  const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
   const selectedChartResolution = useMemo(
@@ -654,7 +675,7 @@ export function RuneWorkbench() {
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || importInFlightRef.current || pendingImport) return;
+    if (!file || importInFlightRef.current || officeExportInFlightRef.current || pendingImport || pendingOfficeExport || officeExportState === "preparing") return;
     const officeFile = OFFICE_IMPORT_PATTERN.test(file.name);
     const limit = officeFile ? MAX_OFFICE_IMPORT_BYTES : MAX_SOURCE_IMPORT_BYTES;
     if (file.size > limit) {
@@ -730,6 +751,62 @@ export function RuneWorkbench() {
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
+  async function prepareOfficeExport() {
+    if (!selectedOfficeExportType || officeExportState === "preparing" || pendingOfficeExport || pendingImport || importInFlightRef.current || officeExportInFlightRef.current) return;
+    const targetArtifact = selectedArtifact;
+    const baseArtifacts = artifacts;
+    officeExportInFlightRef.current = true;
+    setOfficeExportState("preparing");
+    setOfficeExportError("");
+    setNotice(`Preparing ${selectedOfficeExportType} locally from ${targetArtifact.name}…`);
+    try {
+      const compiled = targetArtifact.kind === "document" || targetArtifact.kind === "slides"
+        ? compileArtifactSource(targetArtifact.source, baseArtifacts)
+        : null;
+      if (compiled?.unresolved.length) throw new Error(`Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before Office export.`);
+      const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
+      const { exportOfficeArtifact } = await import("../lib/office-export");
+      const result = exportOfficeArtifact(exportArtifact);
+      setPendingOfficeExport({ sourceArtifactName: targetArtifact.name, baseArtifacts, result });
+      setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Rune could not prepare that Office export");
+    } finally {
+      officeExportInFlightRef.current = false;
+      setOfficeExportState("idle");
+    }
+  }
+
+  function cancelOfficeExport() {
+    if (!pendingOfficeExport) return;
+    const fileName = pendingOfficeExport.result.fileName;
+    setPendingOfficeExport(null);
+    setOfficeExportError("");
+    setNotice(`Office export cancelled — ${fileName} was not downloaded`);
+  }
+
+  function confirmOfficeExport() {
+    if (!pendingOfficeExport) return;
+    if (artifacts !== pendingOfficeExport.baseArtifacts) {
+      setOfficeExportError("The workspace changed while this Office package was being generated. Cancel and export it again to review fresh output.");
+      setNotice("Office export held for review — workspace context changed");
+      return;
+    }
+    const { result } = pendingOfficeExport;
+    const bytes = new Uint8Array(result.bytes).buffer;
+    const url = URL.createObjectURL(new Blob([bytes], { type: result.mimeType }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = result.fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+    setPendingOfficeExport(null);
+    setOfficeExportError("");
+    setNotice(`Downloaded ${result.fileName} · semantic ${result.targetType.toUpperCase()} export`);
+  }
+
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
@@ -759,7 +836,7 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? "Saved on device" : saveState === "error" ? "Storage full" : "Saving"}</span>
           </div>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || Boolean(pendingImport)}>
+          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || officeExportState === "preparing" || Boolean(pendingImport) || Boolean(pendingOfficeExport)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} Import
           </button>
           <button
@@ -776,10 +853,21 @@ export function RuneWorkbench() {
               <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing"} aria-label={`Push source files to ${directoryHandle.name}`} title="Push workspace files"><Save /></button>
             </>
           )}
+          {selectedOfficeExportType && (
+            <button
+              className="icon-button"
+              onClick={() => void prepareOfficeExport()}
+              disabled={!hydrated || officeExportState === "preparing" || importState === "reading" || Boolean(pendingImport) || Boolean(pendingOfficeExport)}
+              aria-label={`Export ${selectedArtifact.name} as ${selectedOfficeExportType}`}
+              title={`Export as ${selectedOfficeExportType}`}
+            >
+              {officeExportState === "preparing" ? <LoaderCircle className="agent-spinner" /> : <FileOutput />}
+            </button>
+          )}
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
             <Download />
           </button>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || Boolean(pendingImport)} />
+          <input ref={importRef} className="visually-hidden" type="file" accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || officeExportState === "preparing" || Boolean(pendingImport) || Boolean(pendingOfficeExport)} />
         </div>
       </header>
 
@@ -799,7 +887,7 @@ export function RuneWorkbench() {
           <aside className="file-rail" aria-label="Workspace files">
             <div className="file-rail-header">
               <div><span className="overline">Workspace</span><strong>Q2 review</strong></div>
-              <button className="tiny-icon-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || Boolean(pendingImport)} aria-label="Import a source file" title="Import file">+</button>
+              <button className="tiny-icon-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || officeExportState === "preparing" || Boolean(pendingImport) || Boolean(pendingOfficeExport)} aria-label="Import a source file" title="Import file">+</button>
             </div>
             <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}</span></div>
             <nav className="artifact-list">
@@ -1047,7 +1135,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.7</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.8</span></div>
       </footer>
 
       {pendingImport && (
@@ -1058,6 +1146,15 @@ export function RuneWorkbench() {
           error={importError}
           onCancel={cancelPendingImport}
           onConfirm={applyPendingImport}
+        />
+      )}
+      {pendingOfficeExport && (
+        <OfficeExportDialog
+          sourceName={pendingOfficeExport.sourceArtifactName}
+          result={pendingOfficeExport.result}
+          error={officeExportError}
+          onCancel={cancelOfficeExport}
+          onConfirm={confirmOfficeExport}
         />
       )}
     </main>

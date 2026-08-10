@@ -55,7 +55,8 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.7/);
+  assert.match(html, /Rune v0\.8/);
+  assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
 });
@@ -65,6 +66,8 @@ test("keeps the Office compatibility parser out of the initial client bundle", a
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
   assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-import.ts"));
+  assert.equal(manifest["app/lib/office-export.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-export.ts"));
 });
 
 test("ships a review-before-write import surface in the client", async () => {
@@ -75,4 +78,6 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Nothing is written until you confirm/);
   assert.match(clientSource, /One atomic device write after confirmation/);
   assert.match(clientSource, /aria-modal/);
+  assert.match(clientSource, /Review Office export/);
+  assert.match(clientSource, /No workspace or device draft changes/);
 });

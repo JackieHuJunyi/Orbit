@@ -1277,3 +1277,19 @@ Review surface 会列出每个生成文件的最终名称、canonical language�
 事务完整性也覆盖转换期间的并发变化。Import 在 device draft hydrate 之前不可用，同一时刻只允许一个 FileReader/OOXML converter；pending transaction 通过 base workspace 对象身份检测 editing、folder pull 或 reset 导致的上下文替换。若上下文已经改变，确认会要求重新导入；若 localStorage quota 写入失败，review 保持打开且 React workspace 不变。取消同样不产生 checkpoint，因为没有任何现有 source 被改写。这样把“看到了什么”和“最终写入什么”锁在同一笔可审查操作里，同时仍然不新增服务器、账号、数据库或常驻运行成本。
 
 这个模式也为后续 export 提供了对称设计：先生成并预览 export plan/fidelity report，再让用户下载二进制结果。若真实大文件测试表明主线程转换造成卡顿，可以把第一阶段移入 Web Worker，而 review transaction 和确认写入合同无需改变。
+
+## 12. Deterministic semantic Office export
+
+v0.8 把 Rune 的兼容边界从“旧 Office 文件可以进来”推进成“canonical source 也可以交付给仍在 Office 生态里的同事”。这里没有引入 Pandoc、LibreOffice server、SheetJS 或 PPTX SaaS；现有 `fflate` 足以把确定性的 XML parts 组装成标准 OOXML ZIP。Microsoft 的一手文档确认了最小图：DOCX 以 main document part 和 `document/body/paragraph/run/text` 为核心；XLSX 至少需要 workbook 和一个 worksheet；PPTX 则必须具备 presentation、slide、slide layout、slide master 与 theme。([创建 Word 文档][18])([创建 Spreadsheet][19])([创建 Presentation][20]) 这使三种导出可以继续遵循 `canonical source → isolated adapter → disposable binary`，而不是让二进制格式重新成为 source of truth。
+
+具体实现是：Markdown 的 heading、paragraph、quote、bold/italic/strike、code、HTTP/mailto link、ordered/bullet list 和 table 生成 DOCX 的 styles、numbering、relationship 与 main document parts；CSV/JSON 先经过现有 canonical parser，再把 column 和 typed value 写成带 frozen header、autofilter 与基础 Rune style 的单 worksheet XLSX；Deck Markdown 先验证 AST 并解析 slide order、eyebrow、title、body、bullet 和 table，再生成 16:9 slide parts，以及 PowerPoint 要求的 layout/master/theme relationship graph。文档和演示里的 workspace metric 在导出前编译成当前值，所以接收者不会看到 `{{ metric(...) }}` template token；live chart 因没有稳定的可编辑 OOXML 对应物，会被明确列为 fidelity note 而不是偷偷栅格化或伪造成数据图表。
+
+安全与可复现性也是 export contract 的一部分。XML 1.0 非法字符会被替换，文本统一 entity escape，Word hyperlink 只允许 HTTP、HTTPS 和 mailto；XLSX 所有字符串都写成 `inlineStr`，即使以 `= + - @` 开头也不会生成 formula node。ZIP entry 名由实现固定、输出文件名经过跨平台清洗、ZIP timestamp 固定到同一 epoch，因此相同 source 会得到逐字节相同的 package。DOCX 限 200,000 字符/10,000 blocks，XLSX 限 2,000,000 source 字符/10,000 rows/256 columns/50,000 cells，PPTX 继承 120,000 字符/40 slides，最终三种 ZIP 都限制 12 MB。
+
+下载也沿用 v0.7 的信任模型。浏览器先 lazy-load exporter，在内存里生成 bytes、MIME、最终文件名和完整 fidelity notes，然后展示可键盘操作的 review；用户确认才创建一次 object URL，取消不触发下载，也不改 workspace、checkpoint 或 localStorage。若生成期间 workspace 引用发生变化，旧 package 不能确认。Importer 和 exporter 互相独立又能 round-trip：测试会把每个生成包重新送入 Rune importer，检查语义、XML well-formed 与 deterministic bytes；本轮还使用这台机器已安装的 Microsoft Office/Quick Look handler 成功渲染了 DOCX、XLSX 和 PPTX，避免只用自己的 parser 自证正确。
+
+首版明确不是像素级 round-trip。Word comments/media/page design、Excel formulas/charts/source formatting、PowerPoint animation/notes/live chart/master 精确复刻都仍是 fidelity note。下一步应根据真实分享场景决定先补 PDF、图表静态图片嵌入，还是把大文件 generation 搬进 Worker；三者都不会改变 canonical source 与 review-before-download 合同。
+
+[18]: https://learn.microsoft.com/en-us/office/open-xml/word/how-to-create-a-word-processing-document-by-providing-a-file-name "Create a word processing document"
+[19]: https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/how-to-create-a-spreadsheet-document-by-providing-a-file-name "Create a spreadsheet document"
+[20]: https://learn.microsoft.com/en-us/office/open-xml/presentation/how-to-create-a-presentation-document-by-providing-a-file-name "Create a presentation document"
