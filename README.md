@@ -4,7 +4,7 @@ Rune is an AI-native workspace for documents, data, and presentations. It keeps 
 
 ## Status
 
-The project has a working local-first vertical slice: five live artifact modes, shared metric and chart bindings, browser-local SQL, semantic Office Open XML import/export, portable standalone Deck HTML, persistent device checkpoints, revision-bound Agent source operations, reviewable atomic patches, and explicit sync with user-owned source folders. Product reasoning lives in [`idea.md`](idea.md), architectural contracts in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and one-line milestones in [`PROGRESS.md`](PROGRESS.md).
+The project has a working local-first vertical slice: five live artifact modes, shared metric and chart bindings, browser-local SQL, semantic Office Open XML import/export, portable standalone Deck HTML, persistent device checkpoints, artifact-aware Agent operations, reviewable atomic patches, and explicit sync with user-owned source folders. Product reasoning lives in [`idea.md`](idea.md), architectural contracts in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and one-line milestones in [`PROGRESS.md`](PROGRESS.md).
 
 ## Development
 
@@ -15,7 +15,7 @@ npm run dev
 
 Then open the local URL printed by the development server.
 
-Rune always includes deterministic local planners for file and workspace actions. To enable model-generated reviewable patches, copy `.env.example` to `.env.local`, set `OPENAI_API_KEY` in that local file, and optionally choose `OPENAI_MODEL`. Keys stay server-side and must never be committed. The model returns at most eight exact `find → replace` source operations per file instead of resending whole files; Rune rejects missing or ambiguous anchors and compiles valid operations into the concrete diff shown in review. Workspace plans can update up to four canonical sources, but nothing is written unless the source revision is still current, the complete next workspace validates, and every changed file has a safety checkpoint.
+Rune always includes deterministic local planners for file and workspace actions. To enable model-generated reviewable patches, copy `.env.example` to `.env.local`, set `OPENAI_API_KEY` in that local file, and optionally choose `OPENAI_MODEL`. Keys stay server-side and must never be committed. Instead of resending whole files, the model returns at most eight typed operations per file: replace or insert a Markdown section by heading, upsert a typed CSV/flat-JSON row by unique key, replace or insert a Deck slide by title, or use an exact `find → replace` fallback for precise inline and structural edits. Rune rejects missing, ambiguous, or artifact-incompatible targets and compiles valid operations into the concrete diff shown in review. Workspace plans can update up to four canonical sources, but nothing is written unless the source revision is still current, the complete next workspace validates, and every changed file has a safety checkpoint.
 
 Opening a `.sql` artifact lazily downloads a version-pinned DuckDB-Wasm runtime. CSV/JSON rows and query execution stay in the browser; the hosted app does not need a database for this workflow.
 

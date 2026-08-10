@@ -1326,3 +1326,13 @@ v0.11 处理的是 AI Native 编辑器最容易被普通“聊天框 + 生成全
 编译器在服务端对请求携带的精确 source revision 顺序应用 operations。找不到、出现多次、find/replace 相同、多个 edit 最终互相抵消、目标 artifact 重复或越界，都会拒绝整个计划；任何一个 workspace 文件失败也不会返回其他文件的部分结果。成功后才生成现有 review UI 所需的完整 `nextSource`、具体 diff 和 operation count，并先在服务端执行 artifact 或 whole-workspace safety gate。客户端同时捕获规划开始时每个 artifact 的 `id + source` revision；模型等待期间发生编辑、Pull、reset 或另一笔 Agent 写入，旧 review 即使已经生成也不能确认。确认时会再次执行原有 adapter parse、只读 SQL、Deck raw-HTML、Chart dependency、metric binding、checkpoint 和单次 localStorage transaction，operations 没有获得绕过安全门的特权。
 
 这一步还不是最终的 Markdown AST、table cell 或 slide-node operation，但它是兼容所有可读 source 的稳定中间层，也让后续 typed operations 有清晰落点：例如 `replace_section(heading)`、`upsert_row(key)`、`replace_slide(id)` 最终仍可编译成同一份 concrete patch 和 review transaction。当前实现不增加数据库、队列、协作服务或客户端依赖，只缩小模型输出与误改半径；真正需要 CRDT 时，也可以把这些已验证 operations 写入 operation log，而不必从“整文件覆盖”重新设计信任模型。
+
+## 16. Artifact-aware semantic operations across the three suites
+
+v0.11 的字面锚点已经解决整文件覆盖，但遇到结构性任务仍然过于脆弱：重写一个 Markdown 小节需要模型复制足够长的旧正文，修改 CSV 单元格需要正确引用整行，替换演示页还必须带上恰好唯一的 slide source。内容越长、重复句越多，`find` 越容易因为格式化或并发修改失效。AI Native 编辑器应该让模型表达“改哪个结构”，再由可信的本地代码决定“具体哪些字节变化”，而不是要求模型模拟文本编辑器。
+
+v0.12 因此在同一份严格 discriminated union 中加入三组语义操作。Markdown document 可以按 exact heading 替换该节正文，或在该节之后插入一个自带 heading 的完整新节；section 边界延伸到下一个同级或更高层 heading，因此嵌套子节会和父节一起被替换。CSV 与 JSON data 可以用 `keyColumn + typed keyValue` 定位唯一行，再写入显式的 typed cells；字符串、数字、布尔和 null 不再通过模型猜测 CSV 文本类型，序列化保留 CSV/JSON 格式以及 JSON array/single-object shape。Deck Markdown 可以按第一个 `#`/`##` title 替换一页，或在其后插入一页；fragment 必须是一张完整 slide，不能携带 `---` 去注入额外页面。对 SQL、Chart JSON、旧 semantic HTML、Deck frontmatter 和精确 inline 修改，`replace_text` 继续作为通用回退。
+
+这些操作仍然只是一种 provider plan，不是写入权限。服务端把 heading、typed key 或 slide title 对请求中的当前 artifact source 做唯一解析，按顺序编译成完整 `nextSource`；任何找不到、重复、类型不兼容、未知 column、duplicate key/cell、nested JSON、无 heading slide 或 separator injection 都让整份 workspace plan 失败。编译结果继续经过 adapter validation、只读 SQL、Deck raw-HTML、Chart/metric dependency 和 whole-workspace safety gate。UI 仍只展示 concrete per-file diff 与 operation count，确认时仍检查 captured revision、建立每个文件的 checkpoint，并执行一次 localStorage transaction。因此语义能力没有绕开 v0.11 的 review-before-write 信任边界。
+
+边界是刻意保守的。Heading、key 和 slide title 当前必须唯一；JSON 只支持 object 或 object array 的扁平 scalar cells；没有任意 JSONPath、嵌套对象 mutation、模糊标题、正则匹配或模型定义的 parser。这样的限制让失败明确、实现无新依赖、生产服务成本仍为零，也避免把格式知识复制进另一个隐藏数据模型。后续可以给 Markdown/Deck AST 节点分配稳定 ID、增加 table cell/column operation，或在真实协作需求出现后把已验证 operation 写入 CRDT log；这些演进都可以继续编译到现有 concrete patch、review 和事务安全层，而无需重写用户信任模型。

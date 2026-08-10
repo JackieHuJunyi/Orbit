@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     if (!operationPlan.success) {
       return Response.json({ error: "The model returned an invalid artifact operation plan." }, { status: 502 });
     }
-    const compiled = compileAgentOperationPatch(parsed.data.artifact.source, operationPlan.data);
+    const compiled = compileAgentOperationPatch(parsed.data.artifact, operationPlan.data);
     if (!compiled.plan || compiled.errors.length) {
       return Response.json({
         error: "The model returned source operations that do not match the current artifact revision.",

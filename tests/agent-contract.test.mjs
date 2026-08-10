@@ -40,11 +40,11 @@ test("keeps a complete compiled source as the internal review contract", () => {
   }).success, true);
 });
 
-test("requires bounded exact operations from the model instead of nextSource", () => {
+test("requires bounded typed operations from the model instead of nextSource", () => {
   const operationPlan = {
     summary: "Shorten the conclusion",
     detail: "Only the exact conclusion sentence changes.",
-    edits: [{ find: "A verbose conclusion.", replace: "A concise conclusion." }],
+    edits: [{ type: "replace_text", find: "A verbose conclusion.", replace: "A concise conclusion." }],
   };
   assert.equal(AgentOperationPatchSchema.safeParse(operationPlan).success, true);
   assert.equal(AgentOperationPatchSchema.safeParse({
@@ -54,7 +54,7 @@ test("requires bounded exact operations from the model instead of nextSource", (
   }).success, false);
   assert.equal(AgentOperationPatchSchema.safeParse({
     ...operationPlan,
-    edits: [{ find: "", replace: "Cannot anchor this." }],
+    edits: [{ type: "replace_text", find: "", replace: "Cannot anchor this." }],
   }).success, false);
   assert.equal(AgentOperationPatchSchema.safeParse({
     ...operationPlan,
@@ -75,6 +75,40 @@ test("converts both operation protocols into provider structured-output schemas"
   assert.equal(artifactFormat.name, "artifact_operations");
   assert.equal(workspaceFormat.type, "json_schema");
   assert.equal(workspaceFormat.name, "workspace_operations");
+  const operationTypes = artifactFormat.schema.properties.edits.items.anyOf
+    .map((operation) => operation.properties.type.const);
+  assert.deepEqual(operationTypes, [
+    "replace_text",
+    "replace_markdown_section",
+    "insert_markdown_section_after",
+    "upsert_data_row",
+    "replace_deck_slide",
+    "insert_deck_slide_after",
+  ]);
+  assert.equal(JSON.stringify(artifactFormat.schema).includes("nextSource"), false);
+});
+
+test("accepts strict artifact-aware section, row, and slide operations", () => {
+  const base = { summary: "Semantic edit", detail: "Target one stable artifact structure." };
+  const operations = [
+    { type: "replace_markdown_section", heading: "Conclusion", body: "A concise result." },
+    { type: "insert_markdown_section_after", heading: "Summary", section: "## Risks\n\nOne risk." },
+    {
+      type: "upsert_data_row",
+      keyColumn: "Quarter",
+      keyValue: "Q2",
+      cells: [{ column: "Revenue", value: 42.5 }, { column: "Approved", value: true }],
+    },
+    { type: "replace_deck_slide", title: "Results", slide: "# Results\n\nImproved." },
+    { type: "insert_deck_slide_after", title: "Results", slide: "# Outlook\n\nDurable." },
+  ];
+  operations.forEach((operation) => {
+    assert.equal(AgentOperationPatchSchema.safeParse({ ...base, edits: [operation] }).success, true);
+  });
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    ...base,
+    edits: [{ ...operations[0], find: "unexpected" }],
+  }).success, false);
 });
 
 test("rejects oversized or empty agent inputs before provider calls", () => {
@@ -150,7 +184,8 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.match(buildAgentInstructions(workspaceRequest), /coordinated, reviewable outcome/);
   assert.match(buildAgentInstructions(workspaceRequest), /1-4 source-operation patches/);
   assert.match(buildAgentInstructions(workspaceRequest), /find and replace/);
-  assert.match(buildAgentInstructions(workspaceRequest), /rejects missing or ambiguous anchors/);
+  assert.match(buildAgentInstructions(workspaceRequest), /Markdown by exact heading/);
+  assert.match(buildAgentInstructions(workspaceRequest), /rejects missing, ambiguous, type-incompatible/);
   assert.match(buildAgentInput(workspaceRequest), /workspaceArtifacts/);
   assert.match(buildAgentInput(workspaceRequest), /selectedArtifactId/);
 });
@@ -208,7 +243,7 @@ test("requires one to four bounded workspace operation patches", () => {
     artifactId: "report",
     summary: "Align the conclusion",
     detail: "One exact sentence changes.",
-    edits: [{ find: "Old conclusion", replace: "Shared conclusion" }],
+    edits: [{ type: "replace_text", find: "Old conclusion", replace: "Shared conclusion" }],
   };
   assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
     summary: "Coordinate the workspace",

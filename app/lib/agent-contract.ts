@@ -16,10 +16,61 @@ export const AgentWorkspacePatchSchema = z.object({
   patches: z.array(AgentFilePatchSchema).min(1).max(4),
 });
 
-export const AgentSourceOperationSchema = z.object({
+export const AgentExactTextOperationSchema = z.object({
+  type: z.literal("replace_text"),
   find: z.string().min(1).max(8_000),
   replace: z.string().max(16_000),
 }).strict();
+
+export const AgentMarkdownSectionOperationSchema = z.object({
+  type: z.literal("replace_markdown_section"),
+  heading: z.string().min(1).max(200),
+  body: z.string().max(16_000),
+}).strict();
+
+export const AgentMarkdownSectionInsertOperationSchema = z.object({
+  type: z.literal("insert_markdown_section_after"),
+  heading: z.string().min(1).max(200),
+  section: z.string().min(1).max(16_000),
+}).strict();
+
+export const AgentDataCellValueSchema = z.union([
+  z.string().max(4_000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+export const AgentDataRowOperationSchema = z.object({
+  type: z.literal("upsert_data_row"),
+  keyColumn: z.string().min(1).max(200),
+  keyValue: z.union([z.string().min(1).max(1_000), z.number(), z.boolean()]),
+  cells: z.array(z.object({
+    column: z.string().min(1).max(200),
+    value: AgentDataCellValueSchema,
+  }).strict()).min(1).max(32),
+}).strict();
+
+export const AgentDeckSlideOperationSchema = z.object({
+  type: z.literal("replace_deck_slide"),
+  title: z.string().min(1).max(200),
+  slide: z.string().min(1).max(16_000),
+}).strict();
+
+export const AgentDeckSlideInsertOperationSchema = z.object({
+  type: z.literal("insert_deck_slide_after"),
+  title: z.string().min(1).max(200),
+  slide: z.string().min(1).max(16_000),
+}).strict();
+
+export const AgentSourceOperationSchema = z.discriminatedUnion("type", [
+  AgentExactTextOperationSchema,
+  AgentMarkdownSectionOperationSchema,
+  AgentMarkdownSectionInsertOperationSchema,
+  AgentDataRowOperationSchema,
+  AgentDeckSlideOperationSchema,
+  AgentDeckSlideInsertOperationSchema,
+]);
 
 export const AgentOperationPatchSchema = z.object({
   summary: z.string().min(1).max(160),
@@ -89,14 +140,14 @@ export type AgentCompiledWorkspacePatch = z.infer<typeof AgentCompiledWorkspaceP
 export type AgentRequest = z.infer<typeof AgentRequestSchema>;
 
 const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
-  document: "The resulting source must be valid GitHub-Flavored Markdown. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
-  data: "The resulting source must remain valid CSV or JSON in the input format. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
-  query: "The resulting source must be one read-only DuckDB SELECT or WITH query. Read the canonical source through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid.",
-  chart: "The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing data artifact id and exact column names; keep mark as bar, color as a six-digit hex value, and maxItems between 1 and 20.",
-  slides: "The resulting source must remain one complete semantic HTML document. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
+  document: "The resulting source must be valid GitHub-Flavored Markdown. Prefer replace_markdown_section or insert_markdown_section_after for section work; use replace_text only for a precise inline edit. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
+  data: "The resulting source must remain valid CSV or flat object JSON in the input format. Prefer upsert_data_row with an existing unique key column and typed cell values; use replace_text only for a precise structural edit. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
+  query: "Use only replace_text. The resulting source must be one read-only DuckDB SELECT or WITH query. Read the canonical source through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid.",
+  chart: "Use only replace_text. The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing data artifact id and exact column names; keep mark as bar, color as a six-digit hex value, and maxItems between 1 and 20.",
+  slides: "For legacy semantic HTML use only replace_text. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
 };
 
-const deckMarkdownRule = "The resulting source must remain complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter; slides separated by ---; and only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never introduce raw HTML or manual slide numbers.";
+const deckMarkdownRule = "The resulting source must remain complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter. Prefer replace_deck_slide or insert_deck_slide_after for slide work; use replace_text only for frontmatter or a precise inline edit. A slide operation's slide field contains one complete slide without a --- separator. Keep only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never introduce raw HTML or manual slide numbers.";
 
 function ruleForArtifact(artifact: AgentRequest["artifact"]) {
   return artifact.kind === "slides" && artifact.language === "Deck Markdown"
@@ -111,8 +162,8 @@ export function buildAgentInstructions(request: AgentRequest) {
       "You are Rune's workspace editing agent.",
       "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources.",
       "Return one top-level summary and detail plus 1-4 source-operation patches; use only artifactId values present in workspaceArtifacts and never include an unchanged file.",
-      "Every patch needs its own short summary, concrete detail, artifactId, and 1-8 ordered edits. Every edit has find and replace: find must copy an exact non-empty substring that occurs exactly once in that file at that step, and replace is its exact replacement.",
-      "Use enough surrounding source in find to make the anchor unique and keep both fields as small as possible. To insert, retain the anchor inside replace plus the new content; an empty replace deletes the anchor. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies edits sequentially and rejects missing or ambiguous anchors.",
+      "Every patch needs its own short summary, concrete detail, artifactId, and 1-8 ordered edits. Choose only operations allowed for that artifact: replace_text, replace_markdown_section, insert_markdown_section_after, upsert_data_row, replace_deck_slide, or insert_deck_slide_after.",
+      "Semantic operations identify Markdown by exact heading, data by exact typed key column/value, and Deck slides by exact title. replace_text uses exact find and replace fields; copy enough surrounding source to make find unique. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies operations sequentially and rejects missing, ambiguous, type-incompatible, or invalid targets.",
       "Keep cross-file facts, metric bindings, provenance, and narrative consistent. Never claim that a patch was already applied.",
       ...rules,
     ].join(" ");
@@ -120,8 +171,8 @@ export function buildAgentInstructions(request: AgentRequest) {
   return [
     "You are Rune's artifact editing agent.",
     "Plan one conservative, reviewable edit to the selected canonical source.",
-    "Return a short summary, a concrete detail sentence, and 1-8 ordered edits. Every edit has find and replace: find must copy an exact non-empty substring that occurs exactly once in the source at that step, and replace is its exact replacement.",
-    "Use enough surrounding source in find to make the anchor unique and keep both fields as small as possible. To insert, retain the anchor inside replace plus the new content; an empty replace deletes the anchor. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies edits sequentially and rejects missing or ambiguous anchors.",
+    "Return a short summary, a concrete detail sentence, and 1-8 ordered edits. Choose only operations allowed for this artifact: replace_text, replace_markdown_section, insert_markdown_section_after, upsert_data_row, replace_deck_slide, or insert_deck_slide_after.",
+    "Semantic operations identify Markdown by exact heading, data by exact typed key column/value, and Deck slides by exact title. replace_text uses exact find and replace fields; copy enough surrounding source to make find unique. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune applies operations sequentially and rejects missing, ambiguous, type-incompatible, or invalid targets.",
     "Never claim that the change was already applied.",
     "Do not change unrelated content. Do not remove provenance or metric bindings silently.",
     ruleForArtifact(request.artifact),

@@ -1058,7 +1058,7 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace" : "file"} patch · {pendingChange.provider === "openai" ? `${pendingOperationCount} exact source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
+                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace" : "file"} patch · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   <div className="diff-summary"><span>{pendingChange.patches.length} {pendingChange.patches.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
@@ -1176,7 +1176,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.11</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.12</span></div>
       </footer>
 
       {pendingImport && (

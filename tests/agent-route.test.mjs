@@ -73,7 +73,7 @@ function requestBody(overrides = {}) {
   };
 }
 
-test("compiles provider operations into the existing concrete Agent response", async () => {
+test("compiles a provider Markdown-section operation into the concrete Agent response", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   process.env.OPENAI_MODEL = "gpt-5.6";
   let providerRequest;
@@ -81,8 +81,8 @@ test("compiles provider operations into the existing concrete Agent response", a
     providerRequest = JSON.parse(String(init?.body));
     return new Response(JSON.stringify(providerResponse({
       summary: "Shorten the conclusion",
-      detail: "One exact sentence changes.",
-      edits: [{ find: "Old conclusion.", replace: "Concise conclusion." }],
+      detail: "One Markdown section changes.",
+      edits: [{ type: "replace_markdown_section", heading: "Report", body: "Concise conclusion." }],
     })), { status: 200, headers: { "content-type": "application/json" } });
   };
 
@@ -99,15 +99,31 @@ test("compiles provider operations into the existing concrete Agent response", a
   assert.equal(providerRequest.max_output_tokens, 8_000);
   assert.equal(providerRequest.text.format.name, "artifact_operations");
   assert.deepEqual(Object.keys(providerRequest.text.format.schema.properties).sort(), ["detail", "edits", "summary"]);
-  assert.deepEqual(Object.keys(providerRequest.text.format.schema.properties.edits.items.properties).sort(), ["find", "replace"]);
+  const operationTypes = providerRequest.text.format.schema.properties.edits.items.anyOf
+    .map((operation) => operation.properties.type.const);
+  assert.deepEqual(operationTypes, [
+    "replace_text",
+    "replace_markdown_section",
+    "insert_markdown_section_after",
+    "upsert_data_row",
+    "replace_deck_slide",
+    "insert_deck_slide_after",
+  ]);
   assert.equal("nextSource" in providerRequest.text.format.schema.properties, false);
-  assert.match(providerRequest.input[0].content, /exact source operations|ordered edits/i);
+  assert.match(providerRequest.input[0].content, /Markdown by exact heading|ordered edits/i);
 });
 
-test("compiles a coordinated workspace operation plan without partial files", async () => {
+test("compiles a coordinated document-data-Deck operation plan without partial files", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [
     requestBody().artifact,
+    {
+      id: "data",
+      name: "data.csv",
+      kind: "data",
+      language: "CSV / JSON",
+      source: "Region,Revenue\nAPAC,42\nEMEA,31",
+    },
     {
       id: "deck",
       name: "deck.deck.md",
@@ -117,14 +133,37 @@ test("compiles a coordinated workspace operation plan without partial files", as
     },
   ];
   globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
-    summary: "Align both conclusions",
-    detail: "Two exact operations create one shared statement.",
-    patches: workspaceArtifacts.map((artifact) => ({
-      artifactId: artifact.id,
-      summary: `Align ${artifact.id}`,
-      detail: "One exact sentence changes.",
-      edits: [{ find: "Old conclusion.", replace: "Shared conclusion." }],
-    })),
+    summary: "Align the workspace",
+    detail: "Three artifact-aware operations create one reviewed result.",
+    patches: [
+      {
+        artifactId: "report",
+        summary: "Align the report",
+        detail: "One Markdown section changes.",
+        edits: [{ type: "replace_markdown_section", heading: "Report", body: "Shared conclusion." }],
+      },
+      {
+        artifactId: "data",
+        summary: "Align the data",
+        detail: "One typed row changes.",
+        edits: [{
+          type: "upsert_data_row",
+          keyColumn: "Region",
+          keyValue: "APAC",
+          cells: [{ column: "Revenue", value: 48 }],
+        }],
+      },
+      {
+        artifactId: "deck",
+        summary: "Align the deck",
+        detail: "One slide changes.",
+        edits: [{
+          type: "replace_deck_slide",
+          title: "Old conclusion.",
+          slide: "# Shared conclusion.\n\nAligned result.",
+        }],
+      },
+    ],
   })), { status: 200, headers: { "content-type": "application/json" } });
 
   const response = await POST(new Request("http://localhost/api/agent", {
@@ -134,8 +173,10 @@ test("compiles a coordinated workspace operation plan without partial files", as
   }));
   assert.equal(response.status, 200);
   const payload = await response.json();
-  assert.deepEqual(payload.plan.patches.map((patch) => patch.operationCount), [1, 1]);
-  assert.ok(payload.plan.patches.every((patch) => /Shared conclusion/.test(patch.nextSource)));
+  assert.deepEqual(payload.plan.patches.map((patch) => patch.operationCount), [1, 1, 1]);
+  assert.match(payload.plan.patches[0].nextSource, /Shared conclusion/);
+  assert.match(payload.plan.patches[1].nextSource, /APAC,48/);
+  assert.match(payload.plan.patches[2].nextSource, /Shared conclusion/);
   assert.ok(payload.plan.patches.every((patch) => !("edits" in patch)));
 });
 
@@ -144,7 +185,7 @@ test("rejects an ambiguous provider anchor before returning a review patch", asy
   globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
     summary: "Ambiguous edit",
     detail: "This cannot identify one exact target.",
-    edits: [{ find: "repeat", replace: "changed" }],
+    edits: [{ type: "replace_text", find: "repeat", replace: "changed" }],
   })), { status: 200, headers: { "content-type": "application/json" } });
 
   const response = await POST(new Request("http://localhost/api/agent", {
@@ -161,12 +202,36 @@ test("rejects an ambiguous provider anchor before returning a review patch", asy
   assert.equal(payload.plan, undefined);
 });
 
+test("rejects a semantic operation that is incompatible with the artifact kind", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Wrong operation type",
+    detail: "A data-row operation cannot target a Markdown document.",
+    edits: [{
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "id", value: 1 }],
+    }],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody()),
+  }));
+  assert.equal(response.status, 502);
+  const payload = await response.json();
+  assert.match(payload.details.join(" "), /upsert_data_row only supports/i);
+  assert.equal(payload.plan, undefined);
+});
+
 test("rejects a compiled operation that fails the artifact safety gate", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
     summary: "Mutate workspace data",
     detail: "The read-only query boundary must reject this operation.",
-    edits: [{ find: "SELECT", replace: "DELETE" }],
+    edits: [{ type: "replace_text", find: "SELECT", replace: "DELETE" }],
   })), { status: 200, headers: { "content-type": "application/json" } });
 
   const response = await POST(new Request("http://localhost/api/agent", {
