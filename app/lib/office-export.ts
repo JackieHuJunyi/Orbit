@@ -1,6 +1,7 @@
 import { strToU8, zipSync } from "fflate";
 import { resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
+import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_OFFICE_EXPORT_SOURCE_CHARS = 2_000_000;
@@ -10,14 +11,7 @@ const MAX_DOCX_EXPORT_SOURCE_CHARS = 200_000;
 const MAX_DOCX_EXPORT_BLOCKS = 10_000;
 
 type OfficeExportKind = "docx" | "xlsx" | "pptx";
-
-export type OfficeExportResult = {
-  bytes: Uint8Array;
-  fileName: string;
-  mimeType: string;
-  warnings: string[];
-  targetType: OfficeExportKind;
-};
+export type OfficeExportResult = ArtifactExportResult<OfficeExportKind>;
 
 type MarkdownBlock =
   | { type: "heading"; level: number; source: string }
@@ -74,17 +68,6 @@ function xmlText(value: string) {
 
 function xmlAttribute(value: string) {
   return xmlText(value).replaceAll('"', "&quot;").replaceAll("'", "&apos;");
-}
-
-function packageBaseName(name: string) {
-  const cleaned = name
-    .replace(/\.(?:deck\.md|markdown|md|csv|json)$/i, "")
-    .normalize("NFKC")
-    .replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-")
-    .replace(/^\.+|\.+$/g, "")
-    .trim()
-    .slice(0, 96) || "rune-export";
-  return /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(cleaned) ? `rune-${cleaned}` : cleaned;
 }
 
 function zipPackage(parts: Record<string, string>) {
@@ -397,7 +380,7 @@ function exportDocx(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[])
   }).join("") || "<w:p/>";
   warnings.add("DOCX export preserves semantic structure; page layout, comments, and advanced Word styling are not generated.");
   const hyperlinkRelationships = context.relationships.map((relationship) => `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/hyperlink" Target="${xmlAttribute(relationship.target)}" TargetMode="External"/>`).join("");
-  const title = packageBaseName(artifact.name);
+  const title = safeExportBaseName(artifact.name);
   const parts = {
     "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     "_rels/.rels": rootRelationships("word/document.xml"),
@@ -447,7 +430,7 @@ function exportXlsx(artifact: WorkspaceArtifact): OfficeExportResult {
   if (parsed.columns.length > 256) throw new Error("XLSX export is limited to 256 columns.");
   if (parsed.rows.length > 10_000) throw new Error("XLSX export is limited to 10,000 data rows.");
   if ((parsed.rows.length + 1) * parsed.columns.length > 50_000) throw new Error("XLSX export is limited to 50,000 cells.");
-  const title = packageBaseName(artifact.name);
+  const title = safeExportBaseName(artifact.name);
   const sheetName = (title.replace(/[:\\/?*\[\]]/g, "-").replace(/^'+|'+$/g, "").slice(0, 31) || "Rune data");
   const allRows: DataCell[][] = [
     parsed.columns,
@@ -638,7 +621,7 @@ function exportPptx(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[])
     warnings.add("Live Rune charts are exported as editable native PowerPoint text and vector shapes using the current workspace data; the live data binding is not retained.");
   }
   warnings.add("PPTX export preserves slide order, text, bullets, tables, and current-data chart snapshots; animation, speaker notes, and exact master styling are not generated.");
-  const title = packageBaseName(artifact.name);
+  const title = safeExportBaseName(artifact.name);
   const slideOverrides = models.map((_model, index) => `<Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("");
   const slideRelationships = models.map((_model, index) => `<Relationship Id="rId${index + 2}" Type="${OFFICE_RELATIONSHIPS}/slide" Target="slides/slide${index + 1}.xml"/>`).join("");
   const slideIds = models.map((_model, index) => `<p:sldId id="${256 + index}" r:id="rId${index + 2}"/>`).join("");

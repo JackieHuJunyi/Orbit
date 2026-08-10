@@ -1306,3 +1306,13 @@ DOCX 采用语义优先的三列表：category、relative bar、formatted value�
 
 [21]: https://learn.microsoft.com/en-us/office/open-xml/presentation/structure-of-a-presentationml-document "Structure of a PresentationML document"
 [22]: https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.presentation.shapeproperties?view=openxml-3.0.1 "ShapeProperties class"
+
+## 14. Portable scriptless HTML handoff
+
+v0.10 直接补上目标链条里 `PPTX → Deck Markdown → standalone HTML` 的最后一段。Rune 早已把 Deck Markdown 编译成 iframe 内的 HTML 预览，但预览仍依附 workbench：离开应用就没有完整文档，也不适合发给没有 Rune 的人。为这个问题先建分享服务、账号、数据库和静态资源托管，会把一个“交付文件”的需求错误地升级成协作基础设施。更小且更可逆的答案是把当前已验证的 Deck、metric 和 Chart model 冻结成一个普通浏览器就能打开的单文件 `.html`。
+
+导出流水线保持单向且可解释：从确认时的 canonical workspace 编译所有 `metric(...)`，验证 Deck AST，再用相同的严格 Chart JSON schema 从当前 CSV/JSON 构建 model，最后复用预览 compiler 和静态 chart renderer。最终文件内联 Rune theme、布局、页码与图表样式，并加入 print CSS，让每张 16:9 slide 在打印或“另存为 PDF”时独占一页。模板和图表引用只在交付副本中变成当前值，原 `.deck.md`、数据文件和 Chart artifact 均不改写；因此 Git diff、Agent patch、checkpoint 与目录同步仍只面对可读 source，而接收者拿到的是明确标注为 frozen snapshot 的成品。
+
+“standalone”在这里是安全合同，不只是把 CSS 放进同一文件。输出不得含 script、iframe、object、embed、外链 stylesheet，也不得残留任何 `src` 或 `href` 外部资源属性；Deck 用户文本仍在 compiler 层统一 escape，最终边界再扫描完整文档，任一未解析 metric/chart token 或可执行/外部内容都会中止导出。文件在 UTF-8 编码后限制 2 MB，避免大量图表标签或未来 renderer 变化绕过 source 上限。相同 workspace context 产生逐字节相同的输出，测试覆盖恶意 metadata、缺失依赖、超限结果和 determinism，并由系统 Quick Look 的独立 HTML handler 实际渲染默认 deck 与 chart-first deck，避免只用 Rune 自己的 preview 自证。
+
+交互上，HTML 与 Office 共用一份 export result 和 review dialog，而不是再造一条隐蔽下载路径。prepare 阶段只 lazy-load 对应 adapter，在内存里保存 bytes、文件名、MIME、fidelity notes 和开始时的 workspace 对象；review 明确说明文件没有 live binding、Agent、checkpoint 或 editor controls。用户确认才建立一次 object URL，取消不写设备；若期间 editing、Pull、reset 等替换 workspace，旧结果会被拒绝并要求重新生成。这既把 v0.7/v0.8 建立的“先审查、后产生副作用”原则扩展到开放 Web 格式，也为后续 PDF adapter 留出清晰路径：近期可以零服务地使用浏览器 print-to-PDF，只有真实需求证明跨浏览器排版不够稳定时，才考虑专门 PDF renderer。

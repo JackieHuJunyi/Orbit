@@ -19,3 +19,4 @@
 - 2026-08-11 — Added a keyboard-accessible import review transaction that exposes every generated source preview and fidelity warning before one atomic device write.
 - 2026-08-11 — Added deterministic browser-local Markdown→DOCX, CSV/JSON→XLSX, and Deck Markdown→PPTX export with fidelity review before download.
 - 2026-08-11 — Exported shared Chart artifacts into DOCX semantic bar tables and PPTX native vector snapshots from current workspace data.
+- 2026-08-11 — Added reviewable standalone Deck HTML export with compiled metrics, current-data charts, no external assets, and print-to-PDF pagination.

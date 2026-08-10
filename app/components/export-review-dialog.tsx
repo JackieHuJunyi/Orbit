@@ -4,10 +4,11 @@ import {
   Check,
   ChevronRight,
   FileArchive,
+  FileCode2,
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
-import type { OfficeExportResult } from "../lib/office-export";
+import type { ArtifactExportResult } from "../lib/export-contract";
 import { ReviewDialog } from "./review-dialog";
 
 function readableBytes(bytes: number) {
@@ -16,7 +17,7 @@ function readableBytes(bytes: number) {
   return `${(bytes / 1_048_576).toFixed(1)} MB`;
 }
 
-export function OfficeExportDialog({
+export function ExportReviewDialog({
   sourceName,
   result,
   error,
@@ -24,48 +25,52 @@ export function OfficeExportDialog({
   onConfirm,
 }: {
   sourceName: string;
-  result: OfficeExportResult;
+  result: ArtifactExportResult;
   error?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const target = result.targetType.toUpperCase();
+  const office = result.targetType !== "html";
+  const reviewTitle = office ? "Review Office export" : "Review HTML export";
+  const descriptor = office ? "deterministic OOXML ZIP" : "self-contained scriptless file";
   return (
     <ReviewDialog
-      dialogId="office-export-review"
+      dialogId="artifact-export-review"
       kicker={<><ShieldCheck aria-hidden="true" /> Browser-local export · no upload</>}
-      title="Review Office export"
-      description={<><strong>{sourceName}</strong> will become a semantic <strong>{result.targetType.toUpperCase()}</strong> file after you confirm the download.</>}
-      detailsLabel="Office export details"
+      title={reviewTitle}
+      description={<><strong>{sourceName}</strong> will become a {office ? "semantic" : "standalone"} <strong>{target}</strong> file after you confirm the download.</>}
+      detailsLabel={`${target} export details`}
       onCancel={onCancel}
       footer={(
         <>
           <div><ShieldCheck aria-hidden="true" /> No workspace or device draft changes</div>
           <span>
             <button className="button ghost-button" onClick={onCancel}>Cancel</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> Download {result.targetType.toUpperCase()}</button>
+            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> Download {target}</button>
           </span>
         </>
       )}
     >
-      <div className="office-export-route" aria-label="Office export route">
+      <div className="office-export-route" aria-label={`${target} export route`}>
         <span>{sourceName}</span>
         <ChevronRight aria-hidden="true" />
         <strong>{result.fileName}</strong>
       </div>
 
-      <section className="office-export-summary" aria-label="Generated Office package">
-        <span className="office-export-icon"><FileArchive aria-hidden="true" /></span>
+      <section className="office-export-summary" aria-label={`Generated ${target} file`}>
+        <span className="office-export-icon">{office ? <FileArchive aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
         <div>
           <strong>{result.fileName}</strong>
-          <small>{result.targetType.toUpperCase()} · {readableBytes(result.bytes.length)} · deterministic OOXML ZIP</small>
+          <small>{target} · {readableBytes(result.bytes.length)} · {descriptor}</small>
         </div>
         <span className="office-export-ready">Ready</span>
       </section>
 
-      <section className="import-warning-panel" aria-labelledby="office-export-warning-title">
+      <section className="import-warning-panel" aria-labelledby="artifact-export-warning-title">
         <div className="import-warning-heading">
           <TriangleAlert aria-hidden="true" />
-          <h3 id="office-export-warning-title">Fidelity notes</h3>
+          <h3 id="artifact-export-warning-title">Fidelity notes</h3>
           <span>{result.warnings.length}</span>
         </div>
         <ul>{result.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
@@ -75,7 +80,7 @@ export function OfficeExportDialog({
 
       <div className="office-export-contract">
         <div><span>01</span><strong>Canonical source</strong><p>Rune exports the validated source and any referenced current workspace data.</p></div>
-        <div><span>02</span><strong>Standard package</strong><p>The download uses standard Office Open XML parts and relationships.</p></div>
+        <div><span>02</span><strong>{office ? "Standard package" : "Portable output"}</strong><p>{office ? "The download uses standard Office Open XML parts and relationships." : "The download contains its layout, theme, metrics, and charts without external assets."}</p></div>
         <div><span>03</span><strong>Explicit handoff</strong><p>The browser starts one local download only after your confirmation.</p></div>
       </div>
     </ReviewDialog>
