@@ -26,6 +26,30 @@ function packageParts(bytes) {
   return parts;
 }
 
+function assertPptSlideBounds(parts) {
+  Object.entries(parts)
+    .filter(([path]) => /^ppt\/slides\/slide\d+\.xml$/.test(path))
+    .forEach(([path, bytes]) => {
+      const document = new DOMParser().parseFromString(strFromU8(bytes), "application/xml");
+      const transforms = [
+        ...Array.from(document.getElementsByTagName("a:xfrm")),
+        ...Array.from(document.getElementsByTagName("p:xfrm")),
+      ];
+      transforms.forEach((transform) => {
+        const offset = transform.getElementsByTagName("a:off")[0];
+        const extent = transform.getElementsByTagName("a:ext")[0];
+        if (!offset || !extent) return;
+        const x = Number(offset.getAttribute("x"));
+        const y = Number(offset.getAttribute("y"));
+        const width = Number(extent.getAttribute("cx"));
+        const height = Number(extent.getAttribute("cy"));
+        assert.ok(x >= 0 && y >= 0 && width >= 0 && height >= 0, `${path} shape geometry must be non-negative`);
+        assert.ok(x + width <= 12_192_000, `${path} shape must fit the 16:9 slide width`);
+        assert.ok(y + height <= 6_858_000, `${path} shape must fit the 16:9 slide height`);
+      });
+    });
+}
+
 test("exports Markdown as deterministic semantic DOCX and imports it back", () => {
   const artifact = {
     id: "export-report",
@@ -102,12 +126,12 @@ test("exports CSV values as deterministic formula-safe XLSX and imports them bac
 test("exports Deck Markdown as deterministic semantic PPTX and imports it back", () => {
   const artifact = defaultArtifacts.find((candidate) => candidate.kind === "slides");
   assert.ok(artifact);
-  const first = exportOfficeArtifact(artifact);
-  const second = exportOfficeArtifact(artifact);
+  const first = exportOfficeArtifact(artifact, defaultArtifacts);
+  const second = exportOfficeArtifact(artifact, defaultArtifacts);
   assert.equal(first.targetType, "pptx");
   assert.equal(first.fileName, "board-briefing.pptx");
   assert.deepEqual(first.bytes, second.bytes);
-  assert.match(first.warnings.join(" "), /live charts/i);
+  assert.match(first.warnings.join(" "), /editable native PowerPoint text and vector shapes/i);
   const parts = packageParts(first.bytes);
   [
     "[Content_Types].xml",
@@ -117,6 +141,16 @@ test("exports Deck Markdown as deterministic semantic PPTX and imports it back",
     "ppt/theme/theme1.xml",
     "ppt/slides/slide1.xml",
   ].forEach((path) => assert.ok(parts[path], `${path} should exist`));
+  assertPptSlideBounds(parts);
+  const slideXml = Object.entries(parts)
+    .filter(([path]) => /^ppt\/slides\/slide\d+\.xml$/.test(path))
+    .map(([, bytes]) => strFromU8(bytes))
+    .join("\n");
+  assert.match(slideXml, /Q2 revenue by region/);
+  assert.match(slideXml, /Q2 revenue by region bar 1/);
+  assert.match(slideXml, /APAC/);
+  assert.match(slideXml, /\$1\.84M/);
+  assert.doesNotMatch(slideXml, /Chart omitted/);
 
   const imported = convertOfficeFile(first.fileName, first.bytes);
   const roundTrip = imported.artifacts[0];
@@ -155,21 +189,30 @@ test("exports compiled workspace metrics instead of canonical template tokens", 
   const compiled = compileArtifactSource(document.source, defaultArtifacts);
   assert.deepEqual(compiled.unresolved, []);
   assert.doesNotMatch(compiled.source, /\{\{\s*metric/);
-  const exported = exportOfficeArtifact({ ...document, source: compiled.source });
+  const exported = exportOfficeArtifact({ ...document, source: compiled.source }, defaultArtifacts);
   const parts = packageParts(exported.bytes);
   const documentXml = strFromU8(parts["word/document.xml"]);
   assert.doesNotMatch(documentXml, /\{\{\s*metric/);
   assert.match(documentXml, /\$4\.82M/);
+  assert.match(documentXml, /Q2 revenue by region/);
+  assert.match(documentXml, /APAC/);
+  assert.match(documentXml, /\$1\.84M/);
+  assert.match(documentXml, /█/);
+  assert.doesNotMatch(documentXml, /Chart omitted/);
+  assert.match(exported.warnings.join(" "), /semantic bar table/i);
 
   const compiledDeck = compileArtifactSource(deck.source, defaultArtifacts);
   assert.deepEqual(compiledDeck.unresolved, []);
-  const pptx = exportOfficeArtifact({ ...deck, source: compiledDeck.source });
+  const pptx = exportOfficeArtifact({ ...deck, source: compiledDeck.source }, defaultArtifacts);
   const slideXml = Object.entries(packageParts(pptx.bytes))
     .filter(([path]) => /^ppt\/slides\/slide\d+\.xml$/.test(path))
     .map(([, bytes]) => strFromU8(bytes))
     .join("\n");
   assert.doesNotMatch(slideXml, /\{\{\s*metric/);
   assert.match(slideXml, /\$4\.82M/);
+  assert.match(slideXml, /Q2 revenue by region/);
+  assert.match(slideXml, /North America/);
+  assert.match(slideXml, /Q2 revenue by region track 1/);
 });
 
 test("keeps unsafe Markdown links out of Office relationships", () => {
@@ -197,4 +240,110 @@ test("sanitizes cross-platform Office filenames", () => {
   };
   assert.equal(exportOfficeArtifact(document).fileName, "rune-CON.docx");
   assert.equal(exportOfficeArtifact({ ...document, name: "quarter:review?.md" }).fileName, "quarter-review-.docx");
+});
+
+test("keeps hostile chart snapshot text inside escaped Office text nodes", () => {
+  const data = {
+    id: "hostile-data",
+    name: "hostile-data.csv",
+    kind: "data",
+    language: "CSV",
+    source: "Region,Revenue\nA&B<region>,42\n",
+  };
+  const chart = {
+    id: "hostile-chart",
+    name: "hostile.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "<script>alert & review</script>",
+      description: "Current <unsafe> label",
+      source: data.id,
+      mark: "bar",
+      category: "Region",
+      value: "Revenue",
+      sort: "source",
+      format: "number",
+      color: "#ff5c35",
+      maxItems: 8,
+    }),
+  };
+  const document = {
+    id: "hostile-document",
+    name: "hostile.md",
+    kind: "document",
+    language: "Markdown",
+    source: '# Chart\n\n{{ chart("hostile-chart") }}\n',
+  };
+  const deck = {
+    id: "hostile-deck",
+    name: "hostile.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Hostile chart proof
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Safe slide
+
+{{ chart("hostile-chart") }}
+`,
+  };
+  const workspace = [document, data, chart, deck];
+  const docxXml = Object.values(packageParts(exportOfficeArtifact(document, workspace).bytes)).map((bytes) => strFromU8(bytes)).join("\n");
+  const pptxXml = Object.values(packageParts(exportOfficeArtifact(deck, workspace).bytes)).map((bytes) => strFromU8(bytes)).join("\n");
+  assert.doesNotMatch(docxXml, /<script>/i);
+  assert.doesNotMatch(pptxXml, /<script>/i);
+  assert.match(pptxXml, /&lt;script&gt;alert &amp; review&lt;\/script&gt;/);
+  assert.match(pptxXml, /A&amp;B&lt;region&gt;/);
+});
+
+test("keeps a 20-mark chart snapshot inside a content slide", () => {
+  const rows = Array.from({ length: 20 }, (_, index) => `Region ${index + 1},${20 - index}`).join("\n");
+  const data = {
+    id: "full-chart-data",
+    name: "full-chart-data.csv",
+    kind: "data",
+    language: "CSV",
+    source: `Region,Value\n${rows}\n`,
+  };
+  const chart = {
+    id: "full-chart",
+    name: "full-chart.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({ version: 1, title: "Twenty marks", description: "Bounded layout proof", source: data.id, mark: "bar", category: "Region", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 20 }),
+  };
+  const deck = {
+    id: "full-chart-deck",
+    name: "full-chart.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Full chart proof
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: content -->
+
+# Full chart
+
+All twenty marks stay inside the slide canvas.
+
+{{ chart("full-chart") }}
+`,
+  };
+  const parts = packageParts(exportOfficeArtifact(deck, [deck, data, chart]).bytes);
+  assertPptSlideBounds(parts);
+  const slideXml = strFromU8(parts["ppt/slides/slide1.xml"]);
+  assert.match(slideXml, /Region 20/);
+  assert.match(slideXml, /Twenty marks bar 20/);
 });

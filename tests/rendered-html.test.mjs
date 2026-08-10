@@ -55,7 +55,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.8/);
+  assert.match(html, /Rune v0\.9/);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
@@ -80,4 +80,6 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /aria-modal/);
   assert.match(clientSource, /Review Office export/);
   assert.match(clientSource, /No workspace or device draft changes/);
+  assert.match(clientSource, /semantic bar table/);
+  assert.match(clientSource, /editable native PowerPoint text and vector shapes/);
 });

@@ -1293,3 +1293,16 @@ v0.8 把 Rune 的兼容边界从“旧 Office 文件可以进来”推进成“c
 [18]: https://learn.microsoft.com/en-us/office/open-xml/word/how-to-create-a-word-processing-document-by-providing-a-file-name "Create a word processing document"
 [19]: https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/how-to-create-a-spreadsheet-document-by-providing-a-file-name "Create a spreadsheet document"
 [20]: https://learn.microsoft.com/en-us/office/open-xml/presentation/how-to-create-a-presentation-document-by-providing-a-file-name "Create a presentation document"
+
+## 13. Shared chart snapshots across the Office boundary
+
+v0.9 解决 v0.8 最明显的交付断点：报告与演示虽然都能引用同一份 `.chart.json`，导出 Office 时却只能显示 omission note。直接生成 Office 原生 chart part 看似更“正统”，实际上会额外复制 chart cache、embedded workbook、style/color parts 和 relationship graph，并制造一个看似仍与 Rune 数据相连、实则已经脱离 canonical CSV/JSON 的第二份模型。首版更诚实的合同是 **current-data snapshot**：导出开始时用现有严格 Chart schema 解析当前 workspace data，保留 title、description、排序后的 label、formatted value、ratio 和 color，但明确告诉接收者这个 Office 副本不再 live。
+
+DOCX 采用语义优先的三列表：category、relative bar、formatted value。bar 由带 Rune accent 的可选中文字和浅色 cell shading 构成，因此无需字体栅格化、图片 relationship 或 Canvas，也能在 Word 中直接复制标签和值；重新导入 Rune 时仍会成为可读 Markdown table。PPTX 则采用视觉优先的原生 shape tree：chart title/description、每行 label/value 是 text shape，track 与 bar 是带 `xfrm`、preset geometry 和 solid fill 的 rectangle shape。Microsoft 的 PresentationML 结构文档明确允许 slide shape tree 包含 shape、picture 和 table，Shape Properties 也把 transform、preset geometry、solid fill 与 outline 定义为标准子元素。([PresentationML structure][21])([Shape Properties][22]) 这意味着图表可以缩放和编辑，而不需要 PNG、SVG fallback 或第三方渲染服务。
+
+布局合同同样受限而明确。单独一行的 chart directive 才会生成 snapshot；inline directive 保留 omission marker，提醒作者把图表独占一行。DOCX 可以顺序容纳多个 chart table；PPTX 每页只放第一个 chart，并在 chart 与 table 同页时优先 chart，全部通过 fidelity notes 暴露。split layout 把正文放左半、图表放右半，其他 layout 把图表放在正文下方。最多 20 个 marks 沿用 Chart schema；所有 shape 的 `x/y/cx/cy` 都在测试中验证不越过 16:9 canvas。
+
+这个增强没有增加依赖、服务器、上传或持久化状态。相同 source 与 workspace context 仍生成逐字节相同的 OOXML；workspace 在 review 期间变化仍会拒绝旧 package。自动测试检查 DOCX/PPTX 中的 title、label、formatted value、bar geometry、XML well-formed、Rune import round-trip 和 slide bounds；独立 QA 又用本机 Microsoft Office Quick Look 实际渲染了 Word bar table 与 chart-first PowerPoint，确认 track、bar、label 和 value 都可见且没有越界。下一步如果真实用户要求在 Office 中继续编辑数据，应设计显式的 embedded-workbook export mode，而不是悄悄把静态快照伪装成 live chart。
+
+[21]: https://learn.microsoft.com/en-us/office/open-xml/presentation/structure-of-a-presentationml-document "Structure of a PresentationML document"
+[22]: https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.presentation.shapeproperties?view=openxml-3.0.1 "ShapeProperties class"

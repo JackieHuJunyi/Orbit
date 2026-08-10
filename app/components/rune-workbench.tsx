@@ -764,9 +764,10 @@ export function RuneWorkbench() {
         ? compileArtifactSource(targetArtifact.source, baseArtifacts)
         : null;
       if (compiled?.unresolved.length) throw new Error(`Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before Office export.`);
+      if (compiled?.unresolvedCharts.length) throw new Error(`Resolve ${compiled.unresolvedCharts.length} missing chart ${compiled.unresolvedCharts.length === 1 ? "reference" : "references"} before Office export.`);
       const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
       const { exportOfficeArtifact } = await import("../lib/office-export");
-      const result = exportOfficeArtifact(exportArtifact);
+      const result = exportOfficeArtifact(exportArtifact, baseArtifacts);
       setPendingOfficeExport({ sourceArtifactName: targetArtifact.name, baseArtifacts, result });
       setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
     } catch (error) {
@@ -1135,7 +1136,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.8</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.9</span></div>
       </footer>
 
       {pendingImport && (

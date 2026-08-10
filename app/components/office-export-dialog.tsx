@@ -74,7 +74,7 @@ export function OfficeExportDialog({
       {error && <div className="import-review-error" role="alert">{error}</div>}
 
       <div className="office-export-contract">
-        <div><span>01</span><strong>Canonical source</strong><p>Rune exports the validated source currently open in this workspace.</p></div>
+        <div><span>01</span><strong>Canonical source</strong><p>Rune exports the validated source and any referenced current workspace data.</p></div>
         <div><span>02</span><strong>Standard package</strong><p>The download uses standard Office Open XML parts and relationships.</p></div>
         <div><span>03</span><strong>Explicit handoff</strong><p>The browser starts one local download only after your confirmation.</p></div>
       </div>
