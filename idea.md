@@ -1336,3 +1336,15 @@ v0.12 因此在同一份严格 discriminated union 中加入三组语义操作�
 这些操作仍然只是一种 provider plan，不是写入权限。服务端把 heading、typed key 或 slide title 对请求中的当前 artifact source 做唯一解析，按顺序编译成完整 `nextSource`；任何找不到、重复、类型不兼容、未知 column、duplicate key/cell、nested JSON、无 heading slide 或 separator injection 都让整份 workspace plan 失败。编译结果继续经过 adapter validation、只读 SQL、Deck raw-HTML、Chart/metric dependency 和 whole-workspace safety gate。UI 仍只展示 concrete per-file diff 与 operation count，确认时仍检查 captured revision、建立每个文件的 checkpoint，并执行一次 localStorage transaction。因此语义能力没有绕开 v0.11 的 review-before-write 信任边界。
 
 边界是刻意保守的。Heading、key 和 slide title 当前必须唯一；JSON 只支持 object 或 object array 的扁平 scalar cells；没有任意 JSONPath、嵌套对象 mutation、模糊标题、正则匹配或模型定义的 parser。这样的限制让失败明确、实现无新依赖、生产服务成本仍为零，也避免把格式知识复制进另一个隐藏数据模型。后续可以给 Markdown/Deck AST 节点分配稳定 ID、增加 table cell/column operation，或在真实协作需求出现后把已验证 operation 写入 CRDT log；这些演进都可以继续编译到现有 concrete patch、review 和事务安全层，而无需重写用户信任模型。
+
+## 17. Blank artifact creation as the beginning of a real workspace
+
+到 v0.12，Rune 已经可以编辑、导入、导出、同步和让 Agent 修改五类 artifact，但一个最基础的产品动作仍然缺失：用户不能直接从空白开始。文件栏里的 `+` 实际打开 Import，意味着创建一份新报告仍要先去 Finder 或其他编辑器写 `.md`；创建新表格或演示更依赖用户记住 CSV header 与 Deck frontmatter。这会让产品停留在“优秀的示例 workspace viewer”，而不是能够替代 Word、Excel、PowerPoint 起点的编辑器。继续增加 Agent operation 而不补这个入口，会把内部智能建立在不完整的人工工作流上。
+
+v0.13 把 New 定义为 canonical-source transaction，而不是文档对象向导。用户选择 Document、Data table 或 Presentation，输入一个最多 80 字符的单行标题；界面立即展示最终 filename、language 和完整初始 source。Document 只有一个 Markdown heading，Data 只有 `Item,Value` 两列且零行，Presentation 只有严格 version/theme/ratio/lang frontmatter 和一张 cover slide。没有隐藏 block tree、sheet model 或 slide JSON，创建结果从第一字节起就能直接交给 Agent、Git、folder sync、preview 和 Office export。
+
+Identity 也必须在创建时稳定。标题保留 Unicode 可读性，filename/id 则经过 NFKC/NFKD 规范化、portable slug、Windows reserved-name 防护和长度限制；同名比较不区分大小写，冲突通过确定性 `-2`、`-3` 后缀解决。Import 与 New 现在共用同一个 conflict resolver，避免两条入口逐渐产生不同命名规则。完整 next workspace 会重新跑 artifact validation、metric/chart binding 和 Chart source resolution；最多 50 个 artifact，与真实目录 port 的上限一致。
+
+交互继续沿用 Rune 的信任模型。New dialog 有 radio semantics、初始输入焦点、Tab focus trap、Escape cancel、source preview 和明确的本地写入说明。确认时先把完整 next workspace、selected id 与 checkpoint map 一次写入 localStorage，成功后才更新 React；quota 或 validation 失败时 dialog 保持可见，当前 workspace 对象不变。若已经连接真实目录，新文件只进入 device workspace，必须由用户明确 Push 才写到目录，从而不把“New”偷偷升级成外部文件副作用。
+
+这一步同时为真正 AI Native 的下一阶段建立创建边界。未来 workspace Agent 可以返回受限的 `create_artifact` plan，但模型不应自行决定任意 id、扩展名、隐藏 metadata 或直接写状态；它只需要给出 kind、title 与受限初始内容，Rune 仍复用同一 identity factory、full-workspace validation、concrete preview 和 atomic persistence。下一步应让 Agent 能从现有报告或数据创建一份新的 Deck/Document，而不是要求 workspace 预先存在所有目标文件。

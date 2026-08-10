@@ -22,3 +22,4 @@
 - 2026-08-11 — Added reviewable standalone Deck HTML export with compiled metrics, current-data charts, no external assets, and print-to-PDF pagination.
 - 2026-08-11 — Replaced model-authored whole files with bounded exact source operations compiled against the current reviewed workspace revision.
 - 2026-08-11 — Added artifact-aware Agent operations for Markdown sections, typed CSV/JSON rows, and Deck slides while retaining exact-text fallback.
+- 2026-08-11 — Added accessible blank Markdown, CSV, and Deck creation with collision-safe identity, full-workspace validation, and atomic device persistence.

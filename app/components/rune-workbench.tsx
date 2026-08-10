@@ -11,6 +11,7 @@ import {
   Database,
   Download,
   FileCode2,
+  FilePlus2,
   FileOutput,
   FileText,
   FolderOpen,
@@ -35,6 +36,12 @@ import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from
 import { ArtifactPreview } from "./artifact-previews";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
+import { NewArtifactDialog } from "./new-artifact-dialog";
+import {
+  commitPreparedArtifactCreation,
+  prepareArtifactCreation,
+  type ArtifactCreationInput,
+} from "../lib/artifact-creation";
 import {
   artifactStats,
   cloneDefaultArtifacts,
@@ -210,6 +217,8 @@ export function RuneWorkbench() {
   const [fileRailOpen, setFileRailOpen] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+  const [newArtifactOpen, setNewArtifactOpen] = useState(false);
+  const [newArtifactError, setNewArtifactError] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
   const [importError, setImportError] = useState("");
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
@@ -279,6 +288,13 @@ export function RuneWorkbench() {
   const selectedDiffPreview = useMemo(() => selectedPendingStat
     ? createLineDiffPreview(selectedPendingStat.artifact.source, selectedPendingStat.patch.nextSource)
     : [], [selectedPendingStat]);
+  const artifactCreationDisabled = !hydrated
+    || agentState === "planning"
+    || importState === "reading"
+    || exportState !== "idle"
+    || Boolean(pendingChange)
+    || Boolean(pendingImport)
+    || Boolean(pendingExport);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -688,9 +704,45 @@ export function RuneWorkbench() {
     setSelectedId(defaults[0].id);
     setCheckpoints({});
     setHistoryOpen(false);
+    setNewArtifactOpen(false);
+    setNewArtifactError("");
     setPendingChange(null);
     localStorage.removeItem(STORAGE_KEY);
     setNotice("Sample workspace restored");
+  }
+
+  function openNewArtifact() {
+    setNewArtifactError("");
+    setNewArtifactOpen(true);
+  }
+
+  function createNewArtifact(input: ArtifactCreationInput) {
+    setNewArtifactError("");
+    const prepared = prepareArtifactCreation(artifacts, input);
+    if (!prepared.artifact || prepared.errors.length) {
+      setNewArtifactError(prepared.errors[0] ?? "Rune could not create that artifact.");
+      return;
+    }
+    const commit = commitPreparedArtifactCreation(
+      prepared,
+      (nextArtifacts, nextSelectedId) => persistDeviceWorkspace(nextArtifacts, nextSelectedId, checkpoints),
+    );
+    if (!commit.committed) {
+      setSaveState("error");
+      setNewArtifactError(commit.error);
+      setNotice("Nothing created — atomic device persistence failed");
+      return;
+    }
+    setArtifacts(prepared.nextArtifacts);
+    setSelectedId(prepared.artifact.id);
+    setHistoryOpen(false);
+    setPendingChange(null);
+    setAgentError("");
+    setSaveState("saved");
+    setSavedAt("just now");
+    setNewArtifactOpen(false);
+    setNewArtifactError("");
+    setNotice(`Created ${prepared.artifact.name} on this device${directoryHandle ? " · Push when ready" : ""}`);
   }
 
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
@@ -866,6 +918,13 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? "Saved on device" : saveState === "error" ? "Storage full" : "Saving"}</span>
           </div>
+          <button
+            className="button ghost-button"
+            onClick={openNewArtifact}
+            disabled={artifactCreationDisabled}
+          >
+            <FilePlus2 aria-hidden="true" /> New
+          </button>
           <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} Import
           </button>
@@ -916,6 +975,7 @@ export function RuneWorkbench() {
         <aside className="activity-rail" aria-label="Rune sections">
           <div className="activity-group">
             <button className="activity-button active" aria-label="Workspace" title="Workspace"><FolderOpen /></button>
+            <button className="activity-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label="New artifact" title="New artifact"><FilePlus2 /></button>
             <button className="activity-button" aria-label="Agent" title="Agent"><Sparkles /></button>
             <button className="activity-button" aria-label="Data graph" title="Data graph"><Database /></button>
           </div>
@@ -928,7 +988,7 @@ export function RuneWorkbench() {
           <aside className="file-rail" aria-label="Workspace files">
             <div className="file-rail-header">
               <div><span className="overline">Workspace</span><strong>Q2 review</strong></div>
-              <button className="tiny-icon-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} aria-label="Import a source file" title="Import file">+</button>
+              <button className="tiny-icon-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label="Create a new artifact" title="New artifact">+</button>
             </div>
             <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}</span></div>
             <nav className="artifact-list">
@@ -1071,7 +1131,7 @@ export function RuneWorkbench() {
                         aria-label={`Review ${artifact.name}`}
                       >
                         <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={13} /></span>
-                        <span className="patch-file-label"><strong>{artifact.name}</strong><small>{patch.summary}{patch.operationCount ? ` · ${patch.operationCount} exact ${patch.operationCount === 1 ? "op" : "ops"}` : ""}</small></span>
+                        <span className="patch-file-label"><strong>{artifact.name}</strong><small>{patch.summary}{patch.operationCount ? ` · ${patch.operationCount} typed ${patch.operationCount === 1 ? "op" : "ops"}` : ""}</small></span>
                         <span className="patch-file-diff"><b>+{additions}</b><i>−{removals}</i></span>
                       </button>
                     ))}
@@ -1176,9 +1236,21 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.12</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.13</span></div>
       </footer>
 
+      {newArtifactOpen && (
+        <NewArtifactDialog
+          artifacts={artifacts}
+          error={newArtifactError}
+          onCancel={() => {
+            setNewArtifactOpen(false);
+            setNewArtifactError("");
+            setNotice("New artifact cancelled — the workspace is unchanged");
+          }}
+          onCreate={createNewArtifact}
+        />
+      )}
       {pendingImport && (
         <ImportReviewDialog
           sourceName={pendingImport.sourceName}

@@ -36,7 +36,8 @@ export function ReviewDialog({
     document.body.style.overflow = "hidden";
     const focusableSelector = "button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
     const focusables = dialog ? [...dialog.querySelectorAll<HTMLElement>(focusableSelector)] : [];
-    focusables[0]?.focus();
+    const initialFocus = dialog?.querySelector<HTMLElement>("[data-dialog-initial-focus]") ?? focusables[0];
+    initialFocus?.focus();
 
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {

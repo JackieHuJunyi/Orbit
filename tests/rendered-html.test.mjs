@@ -41,6 +41,8 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /chart-card embedded/);
   assert.match(html, /linked metrics/);
   assert.match(html, /Saved on device/);
+  assert.match(html, /> New</);
+  assert.match(html, /aria-label="Create a new artifact"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
@@ -55,7 +57,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.12/);
+  assert.match(html, /Rune v0\.13/);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
@@ -89,4 +91,11 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /editable native PowerPoint text and vector shapes/);
   assert.match(clientSource, /typed source/);
   assert.match(clientSource, /workspace source revision changed/);
+  assert.match(clientSource, /Create a new artifact/);
+  assert.match(clientSource, /Start from readable source/);
+  assert.match(clientSource, /One atomic device write · no upload/);
+  assert.match(clientSource, /Nothing created — atomic device persistence failed/);
+  assert.match(clientSource, /Document/);
+  assert.match(clientSource, /Data table/);
+  assert.match(clientSource, /Presentation/);
 });

@@ -74,6 +74,12 @@ The UI previews every affected file, its operation count, line-change counts, an
 
 The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to deterministic file/workspace planners when it is not. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
 
+## Local artifact creation boundary
+
+Creating a blank Office-core artifact follows the same source-first rule as import and Agent writes. The user chooses Document, Data table, or Presentation and supplies a bounded title. A deterministic factory produces the smallest valid canonical source: one Markdown heading, an empty `Item,Value` CSV schema, or strict Deck Markdown frontmatter plus one cover slide. Unicode titles stay readable, while filenames and ids are normalized, portable, bounded, case-insensitively collision-safe, and protected from reserved device names. The workspace is capped at 50 artifacts to match the folder port.
+
+Creation is prepared from the current workspace, validated through every adapter and dependency compiler, and only then persisted. The dialog exposes the exact resulting filename, language, and complete initial source; its title field receives initial focus, its type choices use radio semantics, focus is trapped, and Escape cancels. Confirmation writes the complete next workspace to device storage before React state changes, selects the new artifact, and leaves a connected source folder untouched until the user explicitly Pushes. Invalid titles, an invalid current workspace, name/id conflicts that cannot be resolved, or storage failure produce no partial artifact. This factory is intentionally provider-neutral so a future Agent create-file plan can compile through the same identity, validation, preview, and persistence boundary.
+
 ## Shared metrics and lineage
 
 Markdown and Deck Markdown can reference a named value with `{{ metric("total_revenue") }}` or a reusable view with `{{ chart("regional-revenue-chart") }}`. The dependency compiler derives metrics and chart models from canonical CSV/JSON and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count. SQL and Chart artifacts expose their canonical lineage; the next evolution is a persisted dependency graph for user-defined query outputs and metrics. Imported legacy semantic HTML keeps the same binding syntax for compatibility.
@@ -146,9 +152,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 8. v0.10 compiles Deck Markdown, current metrics, and charts into a reviewed standalone scriptless HTML handoff with print pagination.
 9. v0.11 replaces model-authored complete files with bounded exact source operations compiled against a captured workspace revision.
 10. v0.12 adds artifact-aware Markdown section, typed data-row, and Deck slide operations while retaining exact-text fallback.
-11. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-12. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-13. D1/R2 remain undeclared until durable hosted projects or assets are required.
+11. v0.13 adds deterministic blank Markdown/CSV/Deck creation behind an accessible atomic device transaction.
+12. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+13. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+14. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -160,6 +167,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
 - Agent provider output contains only bounded discriminated source operations; artifact-type mismatch, missing or ambiguous heading/key/title, duplicate key/cell, nested JSON, Deck separator injection, repeated-file, cancelling, oversized, stale-revision, or downstream-invalid plans produce no workspace write.
+- Blank creation accepts only bounded single-line titles and deterministic Office-core templates; generated identity is portable and collision-safe, the complete next workspace validates before persistence, and a failed device write leaves React state unchanged.
 - OOXML import rejects oversized/unsafe ZIP parts, path traversal, DTD/entity declarations, invalid output adapters, and partial device writes; binary input never leaves the browser.
 - Import confirmation rejects stale workspace context and keeps quota failures inside the open review instead of partially updating React or device state.
 - Office export sanitizes XML characters, restricts hyperlink schemes, writes spreadsheet text as values rather than formulas, resolves chart snapshots only through validated workspace artifacts, rejects stale review context, and caps generated package bytes.
@@ -172,7 +180,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
-| Foundation | Five live artifact editors | Client adapters and local persistence |
+| Foundation | Blank creation plus five live artifact editors | Deterministic source templates, client adapters, and local persistence |
 | Trust | Multi-file patch review, atomic apply, persistent checkpoints | Local revision log |
 | Intelligence | Provider-backed artifact-aware operations compiled into reviewed concrete patches | Agent API and deterministic semantic-operation fixtures |
 | Data loop | SQL, shared metrics, and reusable charts | DuckDB-Wasm and dependency graph |
@@ -183,4 +191,4 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 ## Quality gates
 
-Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. OOXML import uses generated ZIP fixtures for all three package families and hostile-input boundaries; Office export must be byte-deterministic, well-formed, pass Rune import round-trips, keep generated slide shapes within the declared canvas, and open through an independent installed Office/Quick Look handler during release QA. Standalone HTML must resolve all workspace bindings, reject executable/external content, stay byte-deterministic, and render through an independent system HTML handler. Agent operation fixtures must cover ordered exact fallbacks; unique/missing/ambiguous Markdown headings, typed CSV/JSON keys, and Deck titles; flat-JSON and slide-fragment boundaries; artifact mismatches; no-ops, cancellation, size limits, foreign/duplicate targets, stale workspace revisions; one document-data-Deck atomic plan; and the unchanged downstream validation gate. Review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior needs deterministic eval fixtures before it becomes a default path.
+Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. Blank creation fixtures must prove all three canonical templates validate, Unicode identity remains readable, filename/id collisions resolve case-insensitively, unsafe titles and workspace limits fail without mutation, and the shipped client exposes the atomic accessible flow. OOXML import uses generated ZIP fixtures for all three package families and hostile-input boundaries; Office export must be byte-deterministic, well-formed, pass Rune import round-trips, keep generated slide shapes within the declared canvas, and open through an independent installed Office/Quick Look handler during release QA. Standalone HTML must resolve all workspace bindings, reject executable/external content, stay byte-deterministic, and render through an independent system HTML handler. Agent operation fixtures must cover ordered exact fallbacks; unique/missing/ambiguous Markdown headings, typed CSV/JSON keys, and Deck titles; flat-JSON and slide-fragment boundaries; artifact mismatches; no-ops, cancellation, size limits, foreign/duplicate targets, stale workspace revisions; one document-data-Deck atomic plan; and the unchanged downstream validation gate. Review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior needs deterministic eval fixtures before it becomes a default path.
