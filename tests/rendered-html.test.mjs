@@ -32,6 +32,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Artifact workspace/);
   assert.match(html, /q2-review\.md/);
   assert.match(html, /Rune Agent/);
+  assert.match(html, /Open folder/);
   assert.match(html, /Live preview/);
   assert.match(html, /metrics compiled live/);
   assert.match(html, /Q2 revenue by region/);

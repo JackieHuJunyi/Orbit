@@ -1187,7 +1187,7 @@ Slides 首版仍使用 `.html`，但只鼓励语义化 section、设计 token �
 
 ColaMD 最值得复用的不是 Electron 或 Milkdown 本身，而是三个产品原则：文件仍然是用户拥有的 source of truth；外部 Agent 改文件后界面立即更新；AI 的活动和修改需要被用户看见。
 
-Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint 与安全 restore；ColaMD 的同目录监听仍很适合未来桌面端。Rune 现在采用 Web-first、本地优先的 adapter 边界，未来再增加 File System Access API 或 Tauri/Electron shell，而不把文件系统能力耦合进 renderer。
+Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint、安全 restore 与 File System Access storage port；ColaMD 的自动同目录监听仍更适合未来桌面端。Rune 现在采用 Web-first、本地优先的 adapter 边界，浏览器用显式 Pull/Push，未来 Tauri/Electron shell 再实现 watching，而不把文件系统能力耦合进 renderer。
 
 ## 3. 基础设施决策
 
@@ -1236,3 +1236,11 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 报告和演示现在都用 `{{ chart("regional-revenue-chart") }}` 引用同一个 artifact。Markdown renderer 把 model 变成 React 元素；Slides compiler 则把同一 model 转成经过转义的静态 HTML，再交给无脚本 sandbox。标题、描述与数据标签在两条渲染路径都不能变成可执行 markup。用户直接打开 Chart artifact 时仍能左侧编辑 JSON、右侧看 live chart，并让 File Agent 生成受 schema 约束的修改。
 
 这也把 workspace transaction 的价值从“同时改多个文件”提升成“保护依赖图”。如果 Data patch 重命名了图表正在使用的列，完整 next workspace 会重新编译所有 Chart 并拒绝整笔写入；文档或演示引用不存在的 chart 同样不能应用。成本仍为零，但已经形成 `CSV/JSON → Chart model → Markdown/HTML` 的稳定 compiler boundary，未来加入 line/area/scatter、SQL result source 或 PPTX export 时只扩展 spec 与 renderer，不改变引用协议。
+
+## 8. 用户拥有的真实目录与 storage port
+
+2026-08-11 的下一步实现把“source of truth 属于用户”从下载按钮推进成 workspace 级文件系统合同。支持 File System Access API 的浏览器可以连接一个真实目录：每个 artifact 继续使用原来的 `.md`、`.csv/.json`、`.sql`、`.chart.json`、`.html` 文件；额外的 `rune.workspace.json` 只保存 version、顺序、ID、kind、文件名和 language，不保存正文，也不是新的私有内容格式。没有 manifest 的目录也能按扩展名扫描并生成稳定 ID。
+
+浏览器版本刻意采用显式同步。Pull 先读取最多 50 个文件，并执行单文件 2 MB、总计 8 MB、文件名安全、唯一 ID/name、adapter parse、metric/chart dependency 等完整验证；只有用户确认后，才为当前每个 artifact 建 pre-pull checkpoint，并用一次 localStorage 写入替换设备 workspace。Push 同样需要确认，只覆盖同名 artifact 文件，不删除无关文件，最后写 manifest。由于浏览器文件 API 没有跨文件 transaction，中断的 Push 会报告停在哪个文件，而不会伪装成原子成功。
+
+这个选择比首版直接引入云盘、账号或 Git server 更符合低成本原则，也比静默 auto-save 更尊重本地文件。目录 handle 只在当前 session 保留，刷新后需要重新授权；这既符合浏览器权限模型，也让产品先验证“用户是否真的希望外部 Agent 与 Rune 共享目录”。未来桌面 shell 可以复用同一 manifest/validation/storage port，再补 watching、临时文件 + atomic rename 和 Git commit，而 renderer、Agent patch 与 dependency compiler 无需变化。

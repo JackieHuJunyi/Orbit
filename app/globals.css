@@ -217,6 +217,32 @@ textarea:focus-visible {
   background: var(--panel);
 }
 
+.folder-button {
+  max-width: 150px;
+}
+
+.folder-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-button.connected {
+  border-color: #bfd5c5;
+  background: #edf7f0;
+  color: #2a7653;
+}
+
+.folder-button.error {
+  border-color: #e7c2bc;
+  background: #fff0ed;
+  color: var(--danger);
+}
+
+.folder-button.syncing svg {
+  animation: agent-spin .9s linear infinite;
+}
+
 .primary-button {
   background: var(--forest);
   color: #fff;

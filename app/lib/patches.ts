@@ -19,6 +19,34 @@ export type PatchDiffLine = {
   text: string;
 };
 
+export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): string[] {
+  const errors: string[] = [];
+  if (!artifacts.length) return ["The workspace does not contain any artifacts."];
+  const ids = new Set<string>();
+  const names = new Set<string>();
+
+  artifacts.forEach((artifact) => {
+    if (ids.has(artifact.id)) errors.push(`Duplicate artifact id: ${artifact.id}`);
+    if (names.has(artifact.name)) errors.push(`Duplicate artifact name: ${artifact.name}`);
+    ids.add(artifact.id);
+    names.add(artifact.name);
+    validateArtifact(artifact).forEach((error) => errors.push(`${artifact.name}: ${error}`));
+  });
+
+  artifacts.forEach((artifact) => {
+    const compiled = compileArtifactSource(artifact.source, artifacts);
+    compiled.unresolved.forEach((key) => errors.push(`${artifact.name}: unresolved metric ${key}.`));
+    compiled.unresolvedCharts.forEach((key) => errors.push(`${artifact.name}: unresolved chart ${key}.`));
+  });
+
+  artifacts.filter((artifact) => artifact.kind === "chart").forEach((artifact) => {
+    const resolution = resolveChartModel(artifact, artifacts, parseDataSource);
+    resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
+  });
+
+  return [...new Set(errors)];
+}
+
 export function createLineDiffPreview(
   before: string,
   after: string,
@@ -94,22 +122,7 @@ export function prepareWorkspacePatch(
     return source == null ? artifact : { ...artifact, source };
   });
 
-  patchByArtifact.forEach((_, artifactId) => {
-    const artifact = nextArtifacts.find((item) => item.id === artifactId);
-    if (!artifact) return;
-    validateArtifact(artifact).forEach((error) => errors.push(`${artifact.name}: ${error}`));
-  });
-
-  nextArtifacts.forEach((artifact) => {
-    const compiled = compileArtifactSource(artifact.source, nextArtifacts);
-    compiled.unresolved.forEach((key) => errors.push(`${artifact.name}: unresolved metric ${key}.`));
-    compiled.unresolvedCharts.forEach((key) => errors.push(`${artifact.name}: unresolved chart ${key}.`));
-  });
-
-  nextArtifacts.filter((artifact) => artifact.kind === "chart").forEach((artifact) => {
-    const resolution = resolveChartModel(artifact, nextArtifacts, parseDataSource);
-    resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
-  });
+  errors.push(...validateWorkspaceArtifacts(nextArtifacts));
 
   const uniqueErrors = [...new Set(errors)];
   return { nextArtifacts: uniqueErrors.length ? artifacts : nextArtifacts, errors: uniqueErrors };

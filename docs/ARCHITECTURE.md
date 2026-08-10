@@ -69,12 +69,19 @@ The npm wrapper is pinned to a stable version, and matching worker/Wasm binaries
 
 Device history is an append-only, per-artifact list of source snapshots. Applying a file or workspace Agent patch records every affected pre-change source before the atomic write; ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
 
+## User-owned folder storage port
+
+The optional File System Access adapter maps each artifact to its existing readable filename and writes one `rune.workspace.json` manifest containing only version, order, ids, kinds, names, and languages. Source never moves into the manifest. A folder without a manifest can be scanned by supported extension and receives stable filename-derived ids; hidden files, subdirectories, and unsupported formats are ignored.
+
+Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune parses every source, validates unique identity, recompiles metrics and charts, and only then offers to replace device state. An accepted Pull first checkpoints every current artifact and uses one local persistence write, so a bad or oversized folder cannot partially replace the editor. Push is deliberately manual and confirmed: matching filenames may be overwritten, unrelated files are never deleted, and the manifest is written last. Browser filesystem writes do not provide a cross-file transaction, so an interrupted Push reports the exact file where it stopped and never claims atomicity.
+
 ## Persistence ladder
 
 1. v0 stores non-sensitive drafts and bounded checkpoint history in browser storage and offers reset/export affordances.
-2. v1 adds File System Access API with a storage port; a desktop shell can implement the same port later.
-3. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-4. D1/R2 remain undeclared until durable hosted projects or assets are required.
+2. v0.4 adds a session-scoped File System Access port with explicit validated Pull and confirmed Push.
+3. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+4. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+5. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -85,6 +92,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - CSV and JSON parsing is local and must expose validation errors rather than guessing silently.
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
+- Folder manifests reject hidden/path-like names, duplicate identity, missing sources, oversized payloads, and invalid dependency graphs before Pull.
 - Provider keys belong in server-side secrets; they are never committed or stored in browser drafts.
 - Imported files will receive size, MIME, and formula-injection checks before export features ship.
 

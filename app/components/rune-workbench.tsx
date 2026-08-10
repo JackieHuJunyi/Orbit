@@ -22,6 +22,8 @@ import {
   Play,
   Presentation,
   RotateCcw,
+  RefreshCw,
+  Save,
   Sparkles,
   TableProperties,
   Undo2,
@@ -60,6 +62,14 @@ import {
   prepareWorkspacePatch,
   type ArtifactSourcePatch,
 } from "../lib/patches";
+import {
+  chooseWorkspaceDirectory,
+  readWorkspaceDirectory,
+  supportsDirectoryWorkspace,
+  writeWorkspaceDirectory,
+  type DirectoryReadResult,
+  type DirectoryWorkspaceHandle,
+} from "../lib/directory-workspace";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_IMPORT_SIZE = 2 * 1024 * 1024;
@@ -171,6 +181,8 @@ export function RuneWorkbench() {
   const [agentScope, setAgentScope] = useState<"artifact" | "workspace">("artifact");
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [directoryHandle, setDirectoryHandle] = useState<DirectoryWorkspaceHandle | null>(null);
+  const [directoryState, setDirectoryState] = useState<"disconnected" | "syncing" | "connected" | "error">("disconnected");
   const [notice, setNotice] = useState("Local workspace ready");
   const gutterRef = useRef<HTMLPreElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -319,6 +331,113 @@ export function RuneWorkbench() {
     } catch {
       setSaveState("error");
       setNotice("Device storage is full — checkpoint was not saved");
+    }
+  }
+
+  function checkpointWorkspaceBeforeFolderPull() {
+    const oversized = artifacts.find((artifact) => !canCheckpointSource(artifact.source));
+    if (oversized) throw new Error(`${oversized.name} is too large for a safe pre-pull checkpoint.`);
+    let next = checkpoints;
+    const timestamp = Date.now();
+    artifacts.forEach((artifact, index) => {
+      next = appendCheckpoint(next, createCheckpoint(
+        artifact,
+        "Before folder pull",
+        "manual",
+        new Date(timestamp + index),
+      ));
+    });
+    return next;
+  }
+
+  function applyDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
+    if (result.errors.length) throw new Error(result.errors[0]);
+    if (!result.artifacts.length) throw new Error("The selected folder does not contain a Rune workspace yet.");
+    if (!window.confirm(`Replace this device draft with ${result.artifacts.length} validated source files from “${handle.name}”? A checkpoint of every current file will be kept.`)) {
+      setNotice("Folder pull cancelled — the device draft is unchanged");
+      return false;
+    }
+    const nextCheckpoints = checkpointWorkspaceBeforeFolderPull();
+    const nextSelectedId = result.artifacts.some((artifact) => artifact.id === selectedId)
+      ? selectedId
+      : result.artifacts[0].id;
+    persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints);
+    setArtifacts(result.artifacts);
+    setSelectedId(nextSelectedId);
+    setCheckpoints(nextCheckpoints);
+    setPendingChange(null);
+    setHistoryOpen(false);
+    setSaveState("saved");
+    setSavedAt("just now");
+    setDirectoryHandle(handle);
+    setDirectoryState("connected");
+    setNotice(`Pulled ${result.artifacts.length} source files from ${handle.name} · ${result.source}`);
+    return true;
+  }
+
+  async function connectWorkspaceFolder() {
+    if (directoryState === "syncing") return;
+    if (!supportsDirectoryWorkspace()) {
+      setDirectoryState("error");
+      setNotice("Folder workspaces require a browser with the File System Access API");
+      return;
+    }
+    setDirectoryState("syncing");
+    setAgentError("");
+    try {
+      const handle = await chooseWorkspaceDirectory();
+      const result = await readWorkspaceDirectory(handle);
+      if (result.errors.length) throw new Error(result.errors[0]);
+      if (result.source === "empty") {
+        if (!window.confirm(`“${handle.name}” has no supported source files. Write the current Rune workspace there? Existing unrelated files will stay untouched.`)) {
+          setDirectoryState(directoryHandle ? "connected" : "disconnected");
+          setNotice("Folder connection cancelled");
+          return;
+        }
+        await writeWorkspaceDirectory(handle, artifacts);
+        setDirectoryHandle(handle);
+        setDirectoryState("connected");
+        setNotice(`Connected ${handle.name} · wrote ${artifacts.length} readable source files`);
+        return;
+      }
+      if (!applyDirectoryWorkspace(handle, result)) setDirectoryState(directoryHandle ? "connected" : "disconnected");
+    } catch (error) {
+      if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "AbortError") {
+        setDirectoryState(directoryHandle ? "connected" : "disconnected");
+        setNotice("Folder picker cancelled");
+        return;
+      }
+      setDirectoryState("error");
+      setNotice(error instanceof Error ? error.message : "Rune could not connect that folder");
+    }
+  }
+
+  async function pullWorkspaceFolder() {
+    if (!directoryHandle || directoryState === "syncing") return;
+    setDirectoryState("syncing");
+    try {
+      const result = await readWorkspaceDirectory(directoryHandle);
+      if (!applyDirectoryWorkspace(directoryHandle, result)) setDirectoryState("connected");
+    } catch (error) {
+      setDirectoryState("error");
+      setNotice(error instanceof Error ? error.message : "Rune could not pull that folder");
+    }
+  }
+
+  async function pushWorkspaceFolder() {
+    if (!directoryHandle || directoryState === "syncing") return;
+    if (!window.confirm(`Write ${artifacts.length} current source files to “${directoryHandle.name}”? Files with the same names will be overwritten; unrelated files will stay untouched.`)) {
+      setNotice("Folder push cancelled");
+      return;
+    }
+    setDirectoryState("syncing");
+    try {
+      const written = await writeWorkspaceDirectory(directoryHandle, artifacts);
+      setDirectoryState("connected");
+      setNotice(`Pushed ${written.length - 1} source files and rune.workspace.json to ${directoryHandle.name}`);
+    } catch (error) {
+      setDirectoryState("error");
+      setNotice(error instanceof Error ? error.message : "Rune could not push that folder");
     }
   }
 
@@ -570,6 +689,20 @@ export function RuneWorkbench() {
           <button className="button ghost-button" onClick={() => importRef.current?.click()}>
             <Upload aria-hidden="true" /> Import
           </button>
+          <button
+            className={`button ghost-button folder-button ${directoryState}`}
+            onClick={() => void connectWorkspaceFolder()}
+            disabled={directoryState === "syncing"}
+            title={directoryHandle ? `Connected to ${directoryHandle.name}` : "Connect a folder workspace"}
+          >
+            <FolderOpen aria-hidden="true" /> <span>{directoryHandle?.name ?? "Open folder"}</span>
+          </button>
+          {directoryHandle && (
+            <>
+              <button className="icon-button" onClick={() => void pullWorkspaceFolder()} disabled={directoryState === "syncing"} aria-label={`Pull source files from ${directoryHandle.name}`} title="Pull folder changes"><RefreshCw /></button>
+              <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing"} aria-label={`Push source files to ${directoryHandle.name}`} title="Push workspace files"><Save /></button>
+            </>
+          )}
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
             <Download />
           </button>
@@ -841,7 +974,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.3</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.4</span></div>
       </footer>
     </main>
   );

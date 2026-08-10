@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createLineDiffPreview, prepareWorkspacePatch } from "../app/lib/patches.ts";
+import { createLineDiffPreview, prepareWorkspacePatch, validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 
 function artifact(kind) {
@@ -112,4 +112,10 @@ test("rejects data changes that would break a chart binding", () => {
   }]);
   assert.match(result.errors.join(" "), /Value column not found: Q2 Revenue/);
   assert.equal(result.nextArtifacts, defaultArtifacts);
+});
+
+test("validates duplicate workspace identity before filesystem or Agent replacement", () => {
+  const duplicate = [...defaultArtifacts, { ...defaultArtifacts[0], name: "copy.md" }];
+  assert.match(validateWorkspaceArtifacts(duplicate).join(" "), /Duplicate artifact id/);
+  assert.deepEqual(validateWorkspaceArtifacts(defaultArtifacts), []);
 });
