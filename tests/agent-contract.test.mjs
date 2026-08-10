@@ -31,6 +31,46 @@ test("accepts a bounded artifact request and preserves metric context", () => {
   assert.match(buildAgentInput(parsed), /total_revenue/);
 });
 
+test("binds Selection Agent context to one exact non-empty source range", () => {
+  const source = "# Report\n\nA long conclusion that should become concise.\n\nKeep this paragraph.";
+  const start = source.indexOf("A long conclusion");
+  const end = source.indexOf("\n\nKeep");
+  const parsed = AgentRequestSchema.parse({
+    ...request,
+    scope: "selection",
+    artifact: { ...request.artifact, source },
+    selection: { start, end },
+  });
+  assert.match(buildAgentInstructions(parsed), /source-selection editing agent/i);
+  assert.match(buildAgentInstructions(parsed), /rejects any result that crosses the selected range/i);
+  const input = JSON.parse(buildAgentInput(parsed));
+  assert.deepEqual(input.selection, {
+    start,
+    end,
+    selectedSource: "A long conclusion that should become concise.",
+  });
+  assert.equal(input.artifact.source, source);
+  assert.equal(input.workspaceArtifacts, undefined);
+});
+
+test("rejects missing, collapsed, stale, oversized, or misplaced source selections", () => {
+  const base = { ...request, scope: "selection" };
+  assert.equal(AgentRequestSchema.safeParse(base).success, false);
+  assert.equal(AgentRequestSchema.safeParse({ ...base, selection: { start: 2, end: 2 } }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({ ...base, selection: { start: 0, end: request.artifact.source.length + 1 } }).success, false);
+  const largeSource = "x".repeat(16_001);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...base,
+    artifact: { ...request.artifact, source: largeSource },
+    selection: { start: 0, end: largeSource.length },
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "artifact",
+    selection: { start: 0, end: 1 },
+  }).success, false);
+});
+
 test("keeps a complete compiled source as the internal review contract", () => {
   assert.equal(AgentPatchSchema.safeParse({ summary: "Shorten it" }).success, false);
   assert.equal(AgentPatchSchema.safeParse({

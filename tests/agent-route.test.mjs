@@ -113,6 +113,79 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   assert.match(providerRequest.input[0].content, /Markdown by exact heading|ordered edits/i);
 });
 
+test("returns a Selection Agent patch only when every compiled change stays in range", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  const source = "# Report\n\nOld conclusion.\n\nKeep this paragraph.";
+  const start = source.indexOf("Old conclusion.");
+  const end = start + "Old conclusion.".length;
+  let providerRequest;
+  globalThis.fetch = async (_input, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(providerResponse({
+      summary: "Shorten the selected conclusion",
+      detail: "Only the exact selected sentence changes.",
+      edits: [{ type: "replace_text", find: "Old conclusion.", replace: "Concise conclusion." }],
+    })), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      scope: "selection",
+      artifact: { ...requestBody().artifact, source },
+      selection: { start, end },
+    })),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.plan.nextSource, "# Report\n\nConcise conclusion.\n\nKeep this paragraph.");
+  assert.match(providerRequest.input[0].content, /source-selection editing agent/i);
+  const providerInput = JSON.parse(providerRequest.input[1].content);
+  assert.deepEqual(providerInput.selection, { start, end, selectedSource: "Old conclusion." });
+});
+
+test("rejects a valid typed operation when its concrete effect crosses the selection", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  const source = "# Report\n\nSelected sentence.\n\nOutside sentence.";
+  const start = source.indexOf("Selected sentence.");
+  const end = start + "Selected sentence.".length;
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Change outside the selection",
+    detail: "The range gate must reject this otherwise valid edit.",
+    edits: [{ type: "replace_text", find: "Outside sentence.", replace: "Illicit outside change." }],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      scope: "selection",
+      artifact: { ...requestBody().artifact, source },
+      selection: { start, end },
+    })),
+  }));
+  assert.equal(response.status, 502);
+  const payload = await response.json();
+  assert.match(payload.error, /crossed the selected source range/i);
+  assert.match(payload.details.join(" "), /cross the selected source range/i);
+  assert.equal(payload.plan, undefined);
+});
+
+test("rejects stale or empty selection offsets before contacting the provider", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerCalled = false;
+  globalThis.fetch = async () => {
+    providerCalled = true;
+    return new Response(JSON.stringify(providerResponse({})), { status: 200 });
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({ scope: "selection", selection: { start: 3, end: 3 } })),
+  }));
+  assert.equal(response.status, 400);
+  assert.equal(providerCalled, false);
+});
+
 test("compiles a coordinated document-data-Deck operation plan without partial files", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [

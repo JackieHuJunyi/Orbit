@@ -12,6 +12,7 @@ import {
 import {
   compileAgentOperationPatch,
   compileAgentWorkspaceOperations,
+  validateCompiledSelectionPatch,
 } from "../../lib/agent-operations.ts";
 import { prepareWorkspaceMutation } from "../../lib/patches.ts";
 import { validateArtifact } from "../../lib/workspace.ts";
@@ -114,6 +115,19 @@ export async function POST(request: Request) {
     const artifactPlan = AgentCompiledPatchSchema.safeParse(compiled.plan);
     if (!artifactPlan.success) {
       return Response.json({ error: "The model returned an invalid compiled artifact patch." }, { status: 502 });
+    }
+    if (parsed.data.scope === "selection" && parsed.data.selection) {
+      const selectionErrors = validateCompiledSelectionPatch(
+        parsed.data.artifact,
+        parsed.data.selection,
+        artifactPlan.data.nextSource,
+      );
+      if (selectionErrors.length) {
+        return Response.json({
+          error: "The compiled model operations crossed the selected source range.",
+          details: selectionErrors,
+        }, { status: 502 });
+      }
     }
     const validationErrors = validateArtifact({
       ...parsed.data.artifact,

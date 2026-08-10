@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sourceSelectionError } from "./source-selection.ts";
 
 export const AgentPatchSchema = z.object({
   summary: z.string().min(1).max(160),
@@ -141,13 +142,31 @@ const AgentArtifactSchema = z.object({
   source: z.string().min(1).max(100_000),
 });
 
+export const AgentSourceSelectionSchema = z.object({
+  start: z.number().int().min(0).max(100_000),
+  end: z.number().int().min(1).max(100_000),
+}).strict();
+
 export const AgentRequestSchema = z.object({
-  scope: z.enum(["artifact", "workspace"]).default("artifact"),
+  scope: z.enum(["selection", "artifact", "workspace"]).default("artifact"),
   artifact: AgentArtifactSchema,
+  selection: AgentSourceSelectionSchema.optional(),
   workspaceArtifacts: z.array(AgentArtifactSchema).min(2).max(6).optional(),
   prompt: z.string().trim().min(1).max(2_000),
   metrics: z.record(z.string(), z.string().max(200)).default({}),
 }).superRefine((request, context) => {
+  if (request.scope === "selection") {
+    if (!request.selection) {
+      context.addIssue({ code: "custom", message: "Selection scope requires exact source offsets." });
+      return;
+    }
+    const selectionError = sourceSelectionError(request.artifact.source, request.selection);
+    if (selectionError) context.addIssue({ code: "custom", message: selectionError });
+    return;
+  }
+  if (request.selection) {
+    context.addIssue({ code: "custom", message: "Source offsets are only accepted in selection scope." });
+  }
   if (request.scope !== "workspace") return;
   const workspace = request.workspaceArtifacts ?? [];
   if (!workspace.some((artifact) => artifact.id === request.artifact.id)) {
@@ -164,6 +183,7 @@ export const AgentRequestSchema = z.object({
 export type AgentPatch = z.infer<typeof AgentPatchSchema>;
 export type AgentWorkspacePatch = z.infer<typeof AgentWorkspacePatchSchema>;
 export type AgentSourceOperation = z.infer<typeof AgentSourceOperationSchema>;
+export type AgentSourceSelection = z.infer<typeof AgentSourceSelectionSchema>;
 export type AgentOperationPatch = z.infer<typeof AgentOperationPatchSchema>;
 export type AgentWorkspaceAction = z.infer<typeof AgentWorkspaceActionSchema>;
 export type AgentWorkspaceOperationPlan = z.infer<typeof AgentWorkspaceOperationPlanSchema>;
@@ -201,6 +221,16 @@ export function buildAgentInstructions(request: AgentRequest) {
       ...rules,
     ].join(" ");
   }
+  if (request.scope === "selection") {
+    return [
+      "You are Rune's source-selection editing agent.",
+      "Plan one conservative, reviewable edit whose complete effect stays inside selectedSource. The selection offsets are bound to the supplied artifact revision. Do not change, delete, or insert anything before selection.start or after selection.end.",
+      "Return a short summary, a concrete detail sentence, and 1-8 ordered edits. Prefer replace_text with an exact anchor entirely inside selectedSource. A semantic Markdown section, data row, or Deck slide operation is allowed only when the complete structure it changes is inside selectedSource.",
+      "Semantic operations identify Markdown by exact heading, data by exact typed key column/value, and Deck slides by exact title. Never use line numbers, regular expressions, nextSource, or an unchanged complete-file copy. Rune compiles against the full current source and rejects any result that crosses the selected range.",
+      "Never claim that the change was already applied. Preserve provenance and metric/chart bindings unless the user explicitly selected and asked to change them.",
+      ruleForArtifact(request.artifact),
+    ].join(" ");
+  }
   return [
     "You are Rune's artifact editing agent.",
     "Plan one conservative, reviewable edit to the selected canonical source.",
@@ -213,10 +243,17 @@ export function buildAgentInstructions(request: AgentRequest) {
 }
 
 export function buildAgentInput(request: AgentRequest) {
+  const selection = request.scope === "selection" && request.selection
+    ? {
+        ...request.selection,
+        selectedSource: request.artifact.source.slice(request.selection.start, request.selection.end),
+      }
+    : undefined;
   return JSON.stringify({
     instruction: request.prompt,
     selectedArtifactId: request.artifact.id,
-    artifact: request.scope === "artifact" ? request.artifact : undefined,
+    artifact: request.scope === "workspace" ? undefined : request.artifact,
+    selection,
     workspaceArtifacts: request.scope === "workspace" ? request.workspaceArtifacts : undefined,
     compiledWorkspaceMetrics: request.metrics,
   });

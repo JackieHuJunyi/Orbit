@@ -57,7 +57,8 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.14/);
+  assert.match(html, /Rune v0\.15/);
+  assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
@@ -102,4 +103,9 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /New source diff/);
   assert.match(clientSource, /Workspace Briefing/);
   assert.match(clientSource, /根据当前报告新建一份演示/);
+  assert.match(clientSource, /把选中内容压缩成一句话/);
+  assert.match(clientSource, /Nothing outside the selected source may change/);
+  assert.match(clientSource, /selection-confined patch/);
+  assert.match(clientSource, /Selection Agent is limited to/);
+  assert.match(clientSource, /selection boundary verification failed/);
 });

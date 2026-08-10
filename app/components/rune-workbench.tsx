@@ -32,7 +32,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactPreview } from "./artifact-previews";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
@@ -56,6 +56,7 @@ import {
   type WorkspaceArtifact,
 } from "../lib/workspace";
 import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
+import { planLocalSelectionChange, selectionQuickCommands } from "../lib/local-selection-agent";
 import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
 import { findChartReferences, resolveChartModel } from "../lib/charts";
 import { isDeckMarkdownArtifact } from "../lib/deck";
@@ -91,16 +92,30 @@ import {
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import {
+  MAX_AGENT_SELECTION_CHARS,
+  sourceOutsideSelectionIsUnchanged,
+  sourceSelectionError,
+  type SourceSelection,
+} from "../lib/source-selection";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
 const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
 
+type AgentScope = "selection" | "artifact" | "workspace";
+
+type ActiveSourceSelection = SourceSelection & {
+  artifactId: string;
+  sourceRevision: string;
+};
+
 type PendingChange = {
   prompt: string;
   provider: "openai" | "local";
-  scope: "artifact" | "workspace";
+  scope: AgentScope;
+  selection?: SourceSelection;
   baseRevision: WorkspaceSourceRevision;
   summary: string;
   detail: string;
@@ -244,6 +259,7 @@ export function RuneWorkbench() {
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [pendingReviewId, setPendingReviewId] = useState("");
+  const [sourceSelection, setSourceSelection] = useState<ActiveSourceSelection | null>(null);
   const [newArtifactOpen, setNewArtifactOpen] = useState(false);
   const [newArtifactError, setNewArtifactError] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
@@ -255,7 +271,7 @@ export function RuneWorkbench() {
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
-  const [agentScope, setAgentScope] = useState<"artifact" | "workspace">("artifact");
+  const [agentScope, setAgentScope] = useState<AgentScope>("artifact");
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [directoryHandle, setDirectoryHandle] = useState<DirectoryWorkspaceHandle | null>(null);
@@ -270,6 +286,19 @@ export function RuneWorkbench() {
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
+  const currentSourceSelection = sourceSelection?.artifactId === selectedArtifact?.id
+    && sourceSelection.sourceRevision === selectedArtifact?.source
+    ? sourceSelection
+    : null;
+  const currentSelectionError = currentSourceSelection && selectedArtifact
+    ? sourceSelectionError(selectedArtifact.source, currentSourceSelection)
+    : "Select source text in the editor first.";
+  const validSourceSelection = currentSourceSelection && !currentSelectionError
+    ? { start: currentSourceSelection.start, end: currentSourceSelection.end }
+    : null;
+  const selectedCharacterCount = validSourceSelection
+    ? validSourceSelection.end - validSourceSelection.start
+    : 0;
   const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
   const selectedChartResolution = useMemo(
     () => selectedArtifact?.kind === "chart"
@@ -422,6 +451,8 @@ export function RuneWorkbench() {
   function selectArtifact(id: string) {
     setSaveState("saving");
     setSelectedId(id);
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
     setAgentError("");
     setNotice("Switched artifact context");
   }
@@ -431,7 +462,37 @@ export function RuneWorkbench() {
     setArtifacts((current) => current.map((artifact) => (
       artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact
     )));
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
     if (pendingChange) setPendingChange(null);
+  }
+
+  function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
+    const start = event.currentTarget.selectionStart;
+    const end = event.currentTarget.selectionEnd;
+    if (start >= end) {
+      setSourceSelection(null);
+      if (agentScope === "selection") {
+        setAgentScope("artifact");
+        setNotice("Selection cleared · Current-file Agent scope enabled");
+      }
+      return;
+    }
+    const nextSelection: ActiveSourceSelection = {
+      artifactId: selectedArtifact.id,
+      sourceRevision: selectedArtifact.source,
+      start,
+      end,
+    };
+    setSourceSelection(nextSelection);
+    setAgentError("");
+    if (end - start > MAX_AGENT_SELECTION_CHARS) {
+      if (agentScope === "selection") setAgentScope("artifact");
+      setNotice(`Selection Agent is limited to ${MAX_AGENT_SELECTION_CHARS.toLocaleString()} characters`);
+      return;
+    }
+    if (agentState !== "planning") setAgentScope("selection");
+    setNotice(`${(end - start).toLocaleString()} source characters selected · Selection Agent ready`);
   }
 
   function saveManualCheckpoint() {
@@ -483,6 +544,8 @@ export function RuneWorkbench() {
     persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints);
     setArtifacts(result.artifacts);
     setSelectedId(nextSelectedId);
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setPendingChange(null);
     setHistoryOpen(false);
@@ -582,21 +645,29 @@ export function RuneWorkbench() {
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
     if (!instruction || agentState === "planning") return;
+    const scope = agentScope;
+    const targetSelection = scope === "selection" ? validSourceSelection : null;
+    if (scope === "selection" && !targetSelection) {
+      setAgentError(currentSelectionError);
+      setNotice("Selection Agent needs a current non-empty source selection");
+      return;
+    }
     const targetArtifact = selectedArtifact;
     const targetArtifacts = artifacts;
     const targetRevision = captureWorkspaceSourceRevision(targetArtifacts);
-    const scope = agentScope;
     setAgentState("planning");
     setAgentError("");
     setPendingChange(null);
     setNotice(scope === "workspace"
-      ? "Agent is coordinating a reviewable workspace patch"
-      : "Agent is planning a reviewable file patch");
+      ? "Agent is coordinating a reviewable workspace change"
+      : scope === "selection"
+        ? "Agent is planning a patch confined to the selected source"
+        : "Agent is planning a reviewable file patch");
 
     const metrics = Object.fromEntries(
       Object.entries(bindingState?.metrics ?? {}).map(([key, metric]) => [key, metric.formatted]),
     );
-    const remoteEligible = scope === "artifact"
+    const remoteEligible = scope !== "workspace"
       ? targetArtifact.source.length <= 100_000
       : targetArtifacts.length >= 2
         && targetArtifacts.length <= 6
@@ -604,7 +675,9 @@ export function RuneWorkbench() {
         && targetArtifacts.reduce((total, artifact) => total + artifact.source.length, 0) <= 180_000;
     let fallbackNotice = remoteEligible
       ? "Local patch ready · model provider unavailable"
-      : "Local patch ready · workspace exceeds the model context safety limit";
+      : scope === "workspace"
+        ? "Local patch ready · workspace exceeds the model context safety limit"
+        : "Local patch ready · file exceeds the model context safety limit";
 
     if (remoteEligible) {
       try {
@@ -614,6 +687,7 @@ export function RuneWorkbench() {
           body: JSON.stringify({
             scope,
             artifact: targetArtifact,
+            selection: scope === "selection" ? targetSelection : undefined,
             workspaceArtifacts: scope === "workspace" ? targetArtifacts : undefined,
             prompt: instruction,
             metrics,
@@ -630,11 +704,12 @@ export function RuneWorkbench() {
           setAgentState("idle");
           return;
         }
-        if (response.ok && scope === "artifact" && isRemoteSinglePlan(payload.plan)) {
+        if (response.ok && scope !== "workspace" && isRemoteSinglePlan(payload.plan)) {
           setPendingChange({
             prompt: instruction,
             provider: "openai",
             scope,
+            selection: scope === "selection" ? targetSelection ?? undefined : undefined,
             baseRevision: targetRevision,
             summary: payload.plan.summary,
             detail: payload.plan.detail,
@@ -643,7 +718,7 @@ export function RuneWorkbench() {
           });
           setAgentMode("openai");
           setPrompt("");
-          setNotice(`Model prepared a file patch${payload.model ? ` · ${payload.model}` : ""}`);
+          setNotice(`${scope === "selection" ? "Model prepared a selection-confined patch" : "Model prepared a file patch"}${payload.model ? ` · ${payload.model}` : ""}`);
           setAgentState("idle");
           return;
         }
@@ -662,15 +737,23 @@ export function RuneWorkbench() {
         const changeCount = localPlan.patches.length + localPlan.creations.length;
         setNotice(`${fallbackNotice} · ${changeCount} ${changeCount === 1 ? "file" : "files"} prepared`);
       } else {
-        const localPlan = planLocalChange(targetArtifact, instruction);
+        const localPlan = scope === "selection" && targetSelection
+          ? planLocalSelectionChange(targetArtifact, targetSelection, instruction)
+          : planLocalChange(targetArtifact, instruction);
+        const localPatch = { artifactId: targetArtifact.id, ...localPlan };
+        if (scope === "selection") {
+          const prepared = prepareWorkspaceMutation(targetArtifacts, [localPatch], []);
+          if (prepared.errors.length) throw new Error(prepared.errors[0]);
+        }
         setPendingChange({
           prompt: instruction,
           provider: "local",
           scope,
+          selection: scope === "selection" ? targetSelection ?? undefined : undefined,
           baseRevision: targetRevision,
           summary: localPlan.summary,
           detail: localPlan.detail,
-          patches: [{ artifactId: targetArtifact.id, ...localPlan }],
+          patches: [localPatch],
           creations: [],
         });
         setNotice(fallbackNotice);
@@ -702,6 +785,20 @@ export function RuneWorkbench() {
       setNotice("Patch held for review — workspace context changed");
       return;
     }
+    if (pendingChange.scope === "selection") {
+      const target = targetArtifacts[0];
+      const patch = pendingChange.patches[0];
+      if (!pendingChange.selection
+        || !target
+        || !patch
+        || pendingChange.patches.length !== 1
+        || pendingChange.creations.length !== 0
+        || !sourceOutsideSelectionIsUnchanged(target.source, patch.nextSource, pendingChange.selection)) {
+        setAgentError("The proposed patch is not confined to the exact source selection used for this plan.");
+        setNotice("Nothing applied — selection boundary verification failed");
+        return;
+      }
+    }
     const oversized = targetArtifacts.find((artifact) => !canCheckpointSource(artifact.source));
     if (oversized) {
       setAgentError(`${oversized.name} is too large for safe device history. Download it before applying this patch.`);
@@ -727,7 +824,11 @@ export function RuneWorkbench() {
       if (!artifact) return;
       const checkpoint = createCheckpoint(
         artifact,
-        `${pendingChange.scope === "workspace" ? "Before workspace patch" : "Before agent patch"} · ${patch.summary}`,
+        `${pendingChange.scope === "workspace"
+          ? "Before workspace patch"
+          : pendingChange.scope === "selection"
+            ? "Before selection patch"
+            : "Before agent patch"} · ${patch.summary}`,
         "agent",
         new Date(checkpointTimestamp + index),
       );
@@ -746,6 +847,8 @@ export function RuneWorkbench() {
 
     setArtifacts(prepared.nextArtifacts);
     setSelectedId(nextSelectedId);
+    setSourceSelection(null);
+    if (pendingChange.scope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setSaveState("saved");
     setSavedAt("just now");
@@ -770,6 +873,8 @@ export function RuneWorkbench() {
     setSaveState("saving");
     setArtifacts(defaults);
     setSelectedId(defaults[0].id);
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints({});
     setHistoryOpen(false);
     setNewArtifactOpen(false);
@@ -803,6 +908,8 @@ export function RuneWorkbench() {
     }
     setArtifacts(prepared.nextArtifacts);
     setSelectedId(prepared.artifact.id);
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
     setHistoryOpen(false);
     setPendingChange(null);
     setAgentError("");
@@ -885,6 +992,8 @@ export function RuneWorkbench() {
     const warningCount = pendingImport.warnings.length;
     setArtifacts(pendingImport.nextArtifacts);
     setSelectedId(firstImported.id);
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
     setSaveState("saved");
     setSavedAt("just now");
     setPendingImport(null);
@@ -1144,6 +1253,7 @@ export function RuneWorkbench() {
               className="source-editor"
               value={selectedArtifact.source}
               onChange={(event) => updateSource(event.target.value)}
+              onSelect={captureSourceSelection}
               onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }}
               spellCheck={false}
               aria-label={`Edit ${selectedArtifact.name} source`}
@@ -1152,10 +1262,10 @@ export function RuneWorkbench() {
 
           <div className="agent-dock">
             <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? "Coordinates canonical sources" : "Plans a patch before writing"}</small></div></div>
+              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? "Coordinates canonical sources" : agentScope === "selection" ? `${selectedCharacterCount.toLocaleString()} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
               <div className="agent-controls">
                 <div className="agent-scope-switch" role="group" aria-label="Agent change scope">
-                  {(["artifact", "workspace"] as const).map((scope) => (
+                  {(["selection", "artifact", "workspace"] as const).map((scope) => (
                     <button
                       key={scope}
                       className={agentScope === scope ? "active" : ""}
@@ -1163,12 +1273,16 @@ export function RuneWorkbench() {
                         setAgentScope(scope);
                         setPendingChange(null);
                         setAgentError("");
-                        setNotice(scope === "workspace" ? "Workspace Agent scope enabled" : "Current-file Agent scope enabled");
+                        setNotice(scope === "workspace"
+                          ? "Workspace Agent scope enabled"
+                          : scope === "selection"
+                            ? `${selectedCharacterCount.toLocaleString()} selected characters bound to Agent scope`
+                            : "Current-file Agent scope enabled");
                       }}
-                      disabled={agentState === "planning"}
+                      disabled={agentState === "planning" || (scope === "selection" && !validSourceSelection)}
                       aria-pressed={agentScope === scope}
                     >
-                      {scope === "artifact" ? "File" : "Workspace"}
+                      {scope === "selection" ? "Selection" : scope === "artifact" ? "File" : "Workspace"}
                     </button>
                   ))}
                 </div>
@@ -1177,7 +1291,11 @@ export function RuneWorkbench() {
             </div>
 
             <div className="quick-commands" aria-label="Suggested commands">
-              {(agentScope === "workspace" ? workspaceQuickCommands : quickCommands[selectedArtifact.kind]).map((command) => (
+              {(agentScope === "selection"
+                ? selectionQuickCommands[selectedArtifact.kind]
+                : agentScope === "workspace"
+                  ? workspaceQuickCommands
+                  : quickCommands[selectedArtifact.kind]).map((command) => (
                 <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning"}>{command}</button>
               ))}
             </div>
@@ -1186,7 +1304,7 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
+                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : pendingChange.scope === "selection" ? "selection-confined patch" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   <div className="diff-summary"><span>{pendingStats.length} {pendingStats.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
@@ -1230,13 +1348,13 @@ export function RuneWorkbench() {
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 onKeyDown={onPromptKeyDown}
-                placeholder={agentScope === "workspace" ? "Ask Rune to coordinate this workspace…" : `Ask Rune to change ${selectedArtifact.name}…`}
+                placeholder={agentScope === "workspace" ? "Ask Rune to coordinate this workspace…" : agentScope === "selection" ? `Ask Rune to change only these ${selectedCharacterCount.toLocaleString()} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
                 rows={1}
-                aria-label={agentScope === "workspace" ? "Describe a workspace change" : "Describe an artifact change"}
+                aria-label={agentScope === "workspace" ? "Describe a workspace change" : agentScope === "selection" ? "Describe a selected-source change" : "Describe an artifact change"}
               />
-              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning"} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
+              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || (agentScope === "selection" && !validSourceSelection)} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
-            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? "All files validate and apply atomically" : "Every write is reviewable and undoable"}</p>
+            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? "All files validate and apply atomically" : agentScope === "selection" ? "Nothing outside the selected source may change" : "Every write is reviewable and undoable"}</p>
           </div>
         </section>
 
@@ -1304,7 +1422,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.14</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.15</span></div>
       </footer>
 
       {newArtifactOpen && (

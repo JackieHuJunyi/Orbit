@@ -10,6 +10,7 @@ import {
   applyAgentSourceOperations,
   compileAgentOperationPatch,
   compileAgentWorkspaceOperations,
+  validateCompiledSelectionPatch,
 } from "../app/lib/agent-operations.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { prepareWorkspaceMutation, prepareWorkspacePatch } from "../app/lib/patches.ts";
@@ -70,6 +71,29 @@ test("compiles one exact-text fallback into a concrete review source", () => {
   assert.equal(compiled.plan?.nextSource, "# Report\n\nThe conclusion is concise.\n\nEnd.");
   assert.match(artifact.source, /unnecessarily verbose/);
   assert.equal("edits" in (compiled.plan ?? {}), false);
+});
+
+test("accepts compiled edits inside an exact selection and rejects every outside change", () => {
+  const artifact = documentArtifact("# Report\n\nSelected conclusion.\n\nUntouched ending.");
+  const start = artifact.source.indexOf("Selected conclusion.");
+  const end = start + "Selected conclusion.".length;
+  const selection = { start, end };
+  const inside = compileAgentOperationPatch(artifact, operationPlan({
+    type: "replace_text",
+    find: "Selected conclusion.",
+    replace: "Concise conclusion.",
+  }));
+  assert.deepEqual(inside.errors, []);
+  assert.deepEqual(validateCompiledSelectionPatch(artifact, selection, inside.plan.nextSource), []);
+
+  const outside = compileAgentOperationPatch(artifact, operationPlan({
+    type: "replace_text",
+    find: "Untouched ending.",
+    replace: "Changed outside selection.",
+  }));
+  assert.deepEqual(outside.errors, []);
+  assert.match(validateCompiledSelectionPatch(artifact, selection, outside.plan.nextSource).join(" "), /cross the selected source range/i);
+  assert.match(validateCompiledSelectionPatch(artifact, { start: end, end: end }, inside.plan.nextSource).join(" "), /does not match the current artifact revision/i);
 });
 
 test("applies ordered exact-text fallbacks against the evolving revision", () => {

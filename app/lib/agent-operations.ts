@@ -5,11 +5,13 @@ import {
   type AgentCompiledPatch,
   type AgentCompiledWorkspacePatch,
   type AgentOperationPatch,
+  type AgentSourceSelection,
   type AgentSourceOperation,
   type AgentWorkspaceOperationPlan,
 } from "./agent-contract.ts";
 import { prepareArtifactCreation } from "./artifact-creation.ts";
 import { isDeckMarkdownArtifact } from "./deck.ts";
+import { sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_COMPILED_AGENT_SOURCE_CHARS = 120_000;
@@ -420,6 +422,22 @@ export function compileAgentOperationPatch(
   return plan.success
     ? { plan: plan.data, errors: [] }
     : { errors: ["The compiled Agent patch exceeds Rune's bounded review contract."] };
+}
+
+export function validateCompiledSelectionPatch(
+  artifact: WorkspaceArtifact,
+  selection: AgentSourceSelection,
+  nextSource: string,
+): string[] {
+  if (selection.start < 0
+    || selection.start >= selection.end
+    || selection.end > artifact.source.length) {
+    return ["The selected source range does not match the current artifact revision."];
+  }
+  if (!sourceOutsideSelectionIsUnchanged(artifact.source, nextSource, selection)) {
+    return ["The compiled source operations cross the selected source range."];
+  }
+  return [];
 }
 
 export function compileAgentWorkspaceOperations(

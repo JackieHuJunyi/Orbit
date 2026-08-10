@@ -1362,3 +1362,17 @@ Review UI 也没有把 creation 伪装成“Agent 已经做完”。新文件带
 生产环境没有配置模型密钥时也不能退化成无法验证的按钮。确定性 local workspace planner 现在能从可见 artifact 名称建立 context-aware Document、Data index 或 Deck，其中快捷命令“根据当前报告新建一份演示”会生成一份可解析的多页 Deck，并走相同 factory、diff、whole-workspace mutation 和 atomic apply。这不是用模板假装智能，而是把 provider 能力的安全与交互骨架在零服务成本路径上持续可测。真正的模型只替换“从上下文决定 title 与 edits”这一段，不能替换 identity、compiler、review 或 persistence。
 
 这轮仍刻意不允许 create Query/Chart、让同一计划再次 patch 刚创建的 artifact、模型定义自有模板、自动 Push 到目录，或跨会话后台执行。Query/Chart 的创建需要先证明 schema-aware intent 不会产生空壳；同计划对新文件的全部编辑已经可以放进 creation action，没有第二次定位的必要；自动外部写入则会改变权限模型。下一步更有价值的是给新文档/Deck 的结构节点稳定 identity、让 Agent 能引用明确的 selected source range，或为一次 create-from-context 建立可重复 eval，而不是扩大模型可写字段。
+
+## 19. Selection Agent：把人的指向变成可证明的写入边界
+
+v0.15 补的是 File 与 Workspace 两种 scope 之间最常见、也最接近真实写作的动作：用户已经指着一句话、一个 CSV 单元格值或一段 slide source 说“只改这里”。只有 File scope 时，Agent 即使理解了指代，技术合同仍允许它改完整文件；只有 Workspace scope 时，误改半径更大。把 selection 只当 prompt 中的一段引用也不够，因为“请只改这段”仍是自然语言愿望，不是可以在写入前验证的约束。AI Native 编辑器应该把人的光标和选区提升为一等上下文，同时把“选区之外不得变化”变成机器可证明的规则。
+
+选区坐标采用 textarea 原生的 UTF-16 `selectionStart`/`selectionEnd`，而不是行号、DOM Range 或重新计算的 code-point index。行号会被前序 operation 改写，DOM Range 与 canonical source 没有稳定映射，code point 又和浏览器控件报告的 offset 不一致。请求同时绑定 `artifactId`、完整 source revision 和半开区间 `[start, end)`；空选区、越界、超过 16,000 个 code units、revision 已变化，以及恰好切开 emoji surrogate pair 的范围都会在 provider 调用前失败。16,000 的限制既控制模型上下文和本地替换成本，也让“选了整份超长文件”不能伪装成精确 selection。
+
+模型获得完整 artifact 作为结构上下文，同时明确获得 `start`、`end` 和 `selectedSource`，但它没有新的直接写入 API，仍只能返回现有的 section、typed row、slide 或 exact-text operation。这样不会复制第二套编辑语言，也允许模型在选中的 Markdown section 内使用结构操作。服务端先把 operation 顺序编译成完整 `nextSource`，再验证原 source 的精确 prefix 与 suffix 在结果中逐字不变；因此一个语义操作即使本身合法，只要实际范围跨过 selection 边界，整个请求也会失败。这里比较的是 canonical source，不依赖模型声称自己改了哪里。
+
+客户端确认时重复同一条证明。Review 保存规划时的 source revision 与 selection；Apply 先要求只有一个 patch、没有 creation，再检查选区外 prefix/suffix，之后才建立 pre-change checkpoint，并进入既有 adapter validation、metric/chart dependency、完整 workspace 编译和单次 localStorage transaction。即使网络响应或内存中的 pending review 被篡改，第二道边界也会在任何持久化之前拒绝。选区能力因此缩小了模型权限，却没有削弱 v0.11–v0.14 已建立的 concrete diff、review-before-write、checkpoint 和 atomic apply。
+
+交互保持接近普通编辑器：在左侧 source textarea 选中文字会自动切到 Selection scope，并显示绑定字符数；键盘原生 Shift 选区同样有效。Document/Slides 提供“压缩成一句”和“三个要点”，Data/Query/Chart 提供“转大写”和“去除两端空白”的零密钥快捷命令；本地 planner 也必须生成具体 patch 并通过完整 workspace safety gate，不能因为没有 provider 就绕过 review。编辑 source、切换 artifact、Pull、reset、New、import 或成功 Apply 都会使旧选区失效，避免把屏幕上的旧高亮误当作当前 revision 的权限。
+
+这轮刻意没有把 selection 持久化、做跨文件多选、在 revision 变化后 fuzzy rebase，或把它伪装成稳定 AST node。当前选区是一次短生命周期的精确 source capability：简单、可解释、失败安全。下一步若真实使用表明用户常常反复引用同一段，可以给 Markdown block、data row 和 slide 分配稳定 identity，再让 selection 升级为可重定位的结构引用；在那之前，宁可让过期选区明确失败，也不猜测用户还想改哪一段。
