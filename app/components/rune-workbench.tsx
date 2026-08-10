@@ -35,8 +35,10 @@ import {
   detectArtifact,
   normalizeWorkspaceArtifacts,
   planLocalChange,
+  planLocalWorkspaceChange,
   quickCommands,
   validateArtifact,
+  workspaceQuickCommands,
   type ArtifactKind,
   type WorkspaceArtifact,
 } from "../lib/workspace";
@@ -50,34 +52,56 @@ import {
   type CheckpointReason,
   type WorkspaceCheckpoint,
 } from "../lib/checkpoints";
+import {
+  createLineDiffPreview,
+  prepareWorkspacePatch,
+  type ArtifactSourcePatch,
+} from "../lib/patches";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_IMPORT_SIZE = 2 * 1024 * 1024;
 
 type PendingChange = {
-  artifactId: string;
   prompt: string;
   provider: "openai" | "local";
-  nextSource: string;
+  scope: "artifact" | "workspace";
   summary: string;
   detail: string;
+  patches: ArtifactSourcePatch[];
 };
+
+type RemoteFilePlan = ArtifactSourcePatch;
+type RemoteSinglePlan = Omit<RemoteFilePlan, "artifactId">;
+type RemoteWorkspacePlan = { summary: string; detail: string; patches: RemoteFilePlan[] };
 
 type RemoteAgentResponse = {
   error?: string;
   code?: string;
   provider?: string;
   model?: string;
-  plan?: { nextSource?: string; summary?: string; detail?: string };
+  plan?: unknown;
 };
 
-function isRemotePlan(value: RemoteAgentResponse["plan"]): value is Required<NonNullable<RemoteAgentResponse["plan"]>> {
+function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
   return Boolean(
-    value
-    && typeof value.nextSource === "string"
-    && typeof value.summary === "string"
-    && typeof value.detail === "string",
+    value && typeof value === "object"
+    && typeof (value as RemoteSinglePlan).nextSource === "string"
+    && typeof (value as RemoteSinglePlan).summary === "string"
+    && typeof (value as RemoteSinglePlan).detail === "string",
   );
+}
+
+function isRemoteWorkspacePlan(value: unknown): value is RemoteWorkspacePlan {
+  if (!value || typeof value !== "object") return false;
+  const plan = value as RemoteWorkspacePlan;
+  return typeof plan.summary === "string"
+    && typeof plan.detail === "string"
+    && Array.isArray(plan.patches)
+    && plan.patches.length > 0
+    && plan.patches.every((patch) => typeof patch.artifactId === "string"
+      && typeof patch.nextSource === "string"
+      && typeof patch.summary === "string"
+      && typeof patch.detail === "string");
 }
 
 function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }) {
@@ -140,6 +164,7 @@ export function RuneWorkbench() {
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
+  const [agentScope, setAgentScope] = useState<"artifact" | "workspace">("artifact");
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [notice, setNotice] = useState("Local workspace ready");
@@ -166,10 +191,21 @@ export function RuneWorkbench() {
     () => Array.from({ length: selectedArtifact?.source.split("\n").length ?? 1 }, (_, index) => index + 1).join("\n"),
     [selectedArtifact?.source],
   );
-  const diffStats = useMemo(() => {
-    if (!pendingChange || !selectedArtifact) return null;
-    return getDiffStats(selectedArtifact.source, pendingChange.nextSource);
-  }, [pendingChange, selectedArtifact]);
+  const pendingStats = useMemo(() => pendingChange?.patches.flatMap((patch) => {
+    const artifact = artifacts.find((item) => item.id === patch.artifactId);
+    return artifact ? [{ artifact, patch, ...getDiffStats(artifact.source, patch.nextSource) }] : [];
+  }) ?? [], [artifacts, pendingChange]);
+  const pendingTotals = useMemo(() => pendingStats.reduce(
+    (total, patch) => ({
+      additions: total.additions + patch.additions,
+      removals: total.removals + patch.removals,
+    }),
+    { additions: 0, removals: 0 },
+  ), [pendingStats]);
+  const selectedPendingStat = pendingStats.find((patch) => patch.artifact.id === selectedArtifact?.id);
+  const selectedDiffPreview = useMemo(() => selectedPendingStat
+    ? createLineDiffPreview(selectedPendingStat.artifact.source, selectedPendingStat.patch.nextSource)
+    : [], [selectedPendingStat]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -243,7 +279,6 @@ export function RuneWorkbench() {
   function selectArtifact(id: string) {
     setSaveState("saving");
     setSelectedId(id);
-    setPendingChange(null);
     setAgentError("");
     setNotice("Switched artifact context");
   }
@@ -253,7 +288,7 @@ export function RuneWorkbench() {
     setArtifacts((current) => current.map((artifact) => (
       artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact
     )));
-    if (pendingChange?.artifactId === selectedArtifact.id) setPendingChange(null);
+    if (pendingChange) setPendingChange(null);
   }
 
   function saveManualCheckpoint() {
@@ -298,67 +333,157 @@ export function RuneWorkbench() {
     const instruction = nextPrompt.trim();
     if (!instruction || agentState === "planning") return;
     const targetArtifact = selectedArtifact;
+    const targetArtifacts = artifacts;
+    const scope = agentScope;
     setAgentState("planning");
     setAgentError("");
-    setNotice("Agent is planning a reviewable patch");
+    setPendingChange(null);
+    setNotice(scope === "workspace"
+      ? "Agent is coordinating a reviewable workspace patch"
+      : "Agent is planning a reviewable file patch");
+
+    const metrics = Object.fromEntries(
+      Object.entries(bindingState?.metrics ?? {}).map(([key, metric]) => [key, metric.formatted]),
+    );
+    const remoteEligible = scope === "artifact"
+      ? targetArtifact.source.length <= 100_000
+      : targetArtifacts.length >= 2
+        && targetArtifacts.length <= 6
+        && targetArtifacts.every((artifact) => artifact.source.length <= 100_000)
+        && targetArtifacts.reduce((total, artifact) => total + artifact.source.length, 0) <= 180_000;
+    let fallbackNotice = remoteEligible
+      ? "Local patch ready · model provider unavailable"
+      : "Local patch ready · workspace exceeds the model context safety limit";
+
+    if (remoteEligible) {
+      try {
+        const response = await fetch("/api/agent", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            scope,
+            artifact: targetArtifact,
+            workspaceArtifacts: scope === "workspace" ? targetArtifacts : undefined,
+            prompt: instruction,
+            metrics,
+          }),
+        });
+        const payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
+
+        if (response.ok && scope === "workspace" && isRemoteWorkspacePlan(payload.plan)) {
+          setPendingChange({ prompt: instruction, provider: "openai", scope, ...payload.plan });
+          setAgentMode("openai");
+          setPrompt("");
+          setNotice(`Model prepared ${payload.plan.patches.length} coordinated patches${payload.model ? ` · ${payload.model}` : ""}`);
+          setAgentState("idle");
+          return;
+        }
+        if (response.ok && scope === "artifact" && isRemoteSinglePlan(payload.plan)) {
+          setPendingChange({
+            prompt: instruction,
+            provider: "openai",
+            scope,
+            summary: payload.plan.summary,
+            detail: payload.plan.detail,
+            patches: [{ artifactId: targetArtifact.id, ...payload.plan }],
+          });
+          setAgentMode("openai");
+          setPrompt("");
+          setNotice(`Model prepared a file patch${payload.model ? ` · ${payload.model}` : ""}`);
+          setAgentState("idle");
+          return;
+        }
+        fallbackNotice = payload.code === "MODEL_UNCONFIGURED"
+          ? "Local patch ready · model provider not configured"
+          : "Local patch ready · model provider unavailable";
+      } catch {
+        fallbackNotice = "Local patch ready · network fallback active";
+      }
+    }
 
     try {
-      const metrics = Object.fromEntries(
-        Object.entries(bindingState?.metrics ?? {}).map(([key, metric]) => [key, metric.formatted]),
-      );
-      const response = await fetch("/api/agent", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ artifact: targetArtifact, prompt: instruction, metrics }),
-      });
-      const payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
-
-      if (response.ok && isRemotePlan(payload.plan)) {
-        setPendingChange({ artifactId: targetArtifact.id, prompt: instruction, provider: "openai", ...payload.plan });
-        setAgentMode("openai");
-        setPrompt("");
-        setNotice(`Model prepared a patch for review${payload.model ? ` · ${payload.model}` : ""}`);
-        return;
+      if (scope === "workspace") {
+        const localPlan = planLocalWorkspaceChange(targetArtifacts, instruction);
+        setPendingChange({ prompt: instruction, provider: "local", scope, ...localPlan });
+        setNotice(`${fallbackNotice} · ${localPlan.patches.length} files coordinated`);
+      } else {
+        const localPlan = planLocalChange(targetArtifact, instruction);
+        setPendingChange({
+          prompt: instruction,
+          provider: "local",
+          scope,
+          summary: localPlan.summary,
+          detail: localPlan.detail,
+          patches: [{ artifactId: targetArtifact.id, ...localPlan }],
+        });
+        setNotice(fallbackNotice);
       }
-
-      const localPlan = planLocalChange(targetArtifact, instruction);
-      setPendingChange({ artifactId: targetArtifact.id, prompt: instruction, provider: "local", ...localPlan });
       setAgentMode("local");
       setPrompt("");
-      setNotice(payload.code === "MODEL_UNCONFIGURED" ? "Local patch ready · model provider not configured" : "Local patch ready · model provider unavailable");
     } catch (error) {
-      try {
-        const localPlan = planLocalChange(targetArtifact, instruction);
-        setPendingChange({ artifactId: targetArtifact.id, prompt: instruction, provider: "local", ...localPlan });
-        setAgentMode("local");
-        setPrompt("");
-        setNotice("Local patch ready · network fallback active");
-      } catch (localError) {
-        setPendingChange(null);
-        setAgentError(localError instanceof Error ? localError.message : error instanceof Error ? error.message : "Rune could not plan that change.");
-        setNotice("Agent needs a more specific instruction");
-      }
+      setPendingChange(null);
+      setAgentError(error instanceof Error ? error.message : "Rune could not plan that change.");
+      setNotice("Agent needs a more specific instruction");
     } finally {
       setAgentState("idle");
     }
   }
 
   function applyPendingChange() {
-    if (!pendingChange || pendingChange.artifactId !== selectedArtifact.id) return;
-    if (!canCheckpointSource(selectedArtifact.source)) {
-      setAgentError("This source is too large for safe device history. Download it before applying an Agent patch.");
-      setNotice("Patch held for review — a safety checkpoint is required");
+    if (!pendingChange) return;
+    const targetArtifacts = pendingChange.patches.flatMap((patch) => {
+      const artifact = artifacts.find((item) => item.id === patch.artifactId);
+      return artifact ? [artifact] : [];
+    });
+    if (targetArtifacts.length !== pendingChange.patches.length) {
+      setAgentError("The plan references a file that is no longer in this workspace.");
+      setNotice("Patch held for review — workspace context changed");
       return;
     }
-    const checkpoint = createCheckpoint(
-      selectedArtifact,
-      `Before agent patch · ${pendingChange.summary}`,
-      "agent",
-    );
-    setCheckpoints((current) => appendCheckpoint(current, checkpoint));
-    updateSource(pendingChange.nextSource);
+    const oversized = targetArtifacts.find((artifact) => !canCheckpointSource(artifact.source));
+    if (oversized) {
+      setAgentError(`${oversized.name} is too large for safe device history. Download it before applying this patch.`);
+      setNotice("Patch held for review — every changed file needs a safety checkpoint");
+      return;
+    }
+
+    const prepared = prepareWorkspacePatch(artifacts, pendingChange.patches);
+    if (prepared.errors.length) {
+      setAgentError(prepared.errors.slice(0, 3).join(" "));
+      setNotice("Nothing applied — the complete workspace did not pass validation");
+      return;
+    }
+
+    let nextCheckpoints = checkpoints;
+    const checkpointTimestamp = Date.now();
+    pendingChange.patches.forEach((patch, index) => {
+      const artifact = artifacts.find((item) => item.id === patch.artifactId);
+      if (!artifact) return;
+      const checkpoint = createCheckpoint(
+        artifact,
+        `${pendingChange.scope === "workspace" ? "Before workspace patch" : "Before agent patch"} · ${patch.summary}`,
+        "agent",
+        new Date(checkpointTimestamp + index),
+      );
+      nextCheckpoints = appendCheckpoint(nextCheckpoints, checkpoint);
+    });
+
+    try {
+      persistDeviceWorkspace(prepared.nextArtifacts, selectedId, nextCheckpoints);
+    } catch {
+      setSaveState("error");
+      setAgentError("Device storage is full, so Rune kept every source unchanged.");
+      setNotice("Nothing applied — atomic persistence failed");
+      return;
+    }
+
+    setArtifacts(prepared.nextArtifacts);
+    setCheckpoints(nextCheckpoints);
+    setSaveState("saved");
+    setSavedAt("just now");
     setPendingChange(null);
-    setNotice("Patch applied — undo remains available");
+    setAgentError("");
+    setNotice(`${targetArtifacts.length} ${targetArtifacts.length === 1 ? "file" : "files"} applied atomically — checkpoints are ready`);
   }
 
   function undoLastAgentChange() {
@@ -550,27 +675,71 @@ export function RuneWorkbench() {
 
           <div className="agent-dock">
             <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>Plans a patch before writing</small></div></div>
-              <span className={`local-planner-badge ${agentMode}`}>{agentMode === "openai" ? "Model connected" : "Local fallback"}</span>
+              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? "Coordinates canonical sources" : "Plans a patch before writing"}</small></div></div>
+              <div className="agent-controls">
+                <div className="agent-scope-switch" role="group" aria-label="Agent change scope">
+                  {(["artifact", "workspace"] as const).map((scope) => (
+                    <button
+                      key={scope}
+                      className={agentScope === scope ? "active" : ""}
+                      onClick={() => {
+                        setAgentScope(scope);
+                        setPendingChange(null);
+                        setAgentError("");
+                        setNotice(scope === "workspace" ? "Workspace Agent scope enabled" : "Current-file Agent scope enabled");
+                      }}
+                      disabled={agentState === "planning"}
+                      aria-pressed={agentScope === scope}
+                    >
+                      {scope === "artifact" ? "File" : "Workspace"}
+                    </button>
+                  ))}
+                </div>
+                <span className={`local-planner-badge ${agentMode}`}>{agentMode === "openai" ? "Model connected" : "Local fallback"}</span>
+              </div>
             </div>
 
             <div className="quick-commands" aria-label="Suggested commands">
-              {quickCommands[selectedArtifact.kind].map((command) => (
+              {(agentScope === "workspace" ? workspaceQuickCommands : quickCommands[selectedArtifact.kind]).map((command) => (
                 <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning"}>{command}</button>
               ))}
             </div>
 
-            {pendingChange && pendingChange.artifactId === selectedArtifact.id && diffStats && (
+            {pendingChange && (
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed patch · {pendingChange.provider === "openai" ? "Model" : "Local"}</span>
+                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace" : "file"} patch · {pendingChange.provider === "openai" ? "Model" : "Local"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
-                  <div className="diff-summary"><span className="additions">+{diffStats.additions}</span><span className="removals">−{diffStats.removals}</span><span>changed lines</span></div>
+                  <div className="diff-summary"><span>{pendingChange.patches.length} {pendingChange.patches.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
+                  <div className="patch-file-list" aria-label="Files in proposed patch">
+                    {pendingStats.map(({ artifact, patch, additions, removals }) => (
+                      <button
+                        key={artifact.id}
+                        className={`patch-file-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
+                        onClick={() => selectArtifact(artifact.id)}
+                        aria-label={`Review ${artifact.name}`}
+                      >
+                        <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={13} /></span>
+                        <span className="patch-file-label"><strong>{artifact.name}</strong><small>{patch.summary}</small></span>
+                        <span className="patch-file-diff"><b>+{additions}</b><i>−{removals}</i></span>
+                      </button>
+                    ))}
+                  </div>
+                  {selectedPendingStat ? (
+                    <div className="patch-source-diff" aria-label={`Source diff for ${selectedPendingStat.artifact.name}`}>
+                      <div className="patch-source-diff-header"><span>Source diff</span><strong>{selectedPendingStat.artifact.name}</strong></div>
+                      <pre>{selectedDiffPreview.map((line, index) => (
+                        <code className={line.kind} key={`${line.kind}-${index}`}><span>{line.kind === "addition" ? "+" : line.kind === "removal" ? "−" : " "}</span>{line.text || " "}</code>
+                      ))}</pre>
+                    </div>
+                  ) : (
+                    <p className="patch-review-hint">Select a changed file to inspect its source diff.</p>
+                  )}
                 </div>
                 <div className="patch-actions">
-                  <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> Apply</button>
+                  <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> {pendingChange.patches.length > 1 ? "Apply all" : "Apply"}</button>
                   <button className="icon-button small" onClick={() => setPendingChange(null)} aria-label="Discard proposed patch" title="Discard"><X /></button>
                 </div>
               </div>
@@ -584,13 +753,13 @@ export function RuneWorkbench() {
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 onKeyDown={onPromptKeyDown}
-                placeholder={`Ask Rune to change ${selectedArtifact.name}…`}
+                placeholder={agentScope === "workspace" ? "Ask Rune to coordinate this workspace…" : `Ask Rune to change ${selectedArtifact.name}…`}
                 rows={1}
-                aria-label="Describe an artifact change"
+                aria-label={agentScope === "workspace" ? "Describe a workspace change" : "Describe an artifact change"}
               />
               <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning"} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
-            <p className="agent-hint">⌘ Enter to plan · Every write is reviewable and undoable</p>
+            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? "All files validate and apply atomically" : "Every write is reviewable and undoable"}</p>
           </div>
         </section>
 

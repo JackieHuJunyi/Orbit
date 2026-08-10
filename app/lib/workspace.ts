@@ -26,6 +26,12 @@ export type LocalPlan = {
   detail: string;
 };
 
+export type LocalWorkspacePlan = {
+  summary: string;
+  detail: string;
+  patches: Array<LocalPlan & { artifactId: string }>;
+};
+
 const documentSource = `# Q2 Business Review
 
 > **Live source** · Updated from the same workspace as the data and board deck.
@@ -168,6 +174,11 @@ export const quickCommands: Record<ArtifactKind, string[]> = {
   query: ["计算利润率并排序", "汇总季度收入"],
   slides: ["把主题改成深色", "新增一页结论"],
 };
+
+export const workspaceQuickCommands = [
+  "同步季度结论到报告和演示",
+  "让分析、报告和演示保持一致",
+];
 
 export function cloneDefaultArtifacts(): WorkspaceArtifact[] {
   return defaultArtifacts.map((artifact) => ({ ...artifact }));
@@ -372,12 +383,21 @@ function planSlides(source: string, prompt: string): LocalPlan {
   }
 
   if (/结论|conclusion|summary slide|新增.*页/i.test(prompt)) {
-    const slideCount = (source.match(/<section[\s>]/gi)?.length ?? 0) + 1;
-    const conclusion = `    <section class="slide" data-layout="conclusion">\n      <p class="eyebrow">Decision</p>\n      <h2>Scale the repeatable channel, protect the margin.</h2>\n      <p class="lede">Fund APAC partner growth while standardizing the revenue model used by every artifact.</p>\n      <span class="number">0${slideCount} / 0${slideCount}</span>\n    </section>\n`;
+    const conclusionPattern = /<section class="slide" data-layout="conclusion">[\s\S]*?<\/section>/i;
+    const hasConclusion = conclusionPattern.test(source);
+    const slideCount = (source.match(/<section[\s>]/gi)?.length ?? 0) + (hasConclusion ? 0 : 1);
+    const totalLabel = String(slideCount).padStart(2, "0");
+    const conclusion = `    <section class="slide" data-layout="conclusion">\n      <p class="eyebrow">Decision</p>\n      <h2>Scale the repeatable channel, protect the margin.</h2>\n      <p class="lede">Fund APAC partner growth while standardizing the revenue model used by every artifact.</p>\n      <span class="number">${totalLabel} / ${totalLabel}</span>\n    </section>\n`;
+    const withConclusion = hasConclusion
+      ? source.replace(conclusionPattern, conclusion.trim())
+      : source.replace(/\s*<\/main>/i, `\n${conclusion}  </main>`);
     return {
-      nextSource: source.replace(/\s*<\/main>/i, `\n${conclusion}  </main>`),
-      summary: "Add a decision-led conclusion slide",
-      detail: "A semantic section is inserted before the deck closes.",
+      nextSource: withConclusion.replace(
+        /(<span class="number">\s*\d+\s*\/\s*)\d+(\s*<\/span>)/gi,
+        `$1${totalLabel}$2`,
+      ),
+      summary: hasConclusion ? "Refresh the decision-led conclusion slide" : "Add a decision-led conclusion slide",
+      detail: hasConclusion ? "The existing conclusion section is replaced in place." : "A semantic section is inserted before the deck closes.",
     };
   }
 
@@ -415,6 +435,39 @@ export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): Lo
   if (artifact.kind === "data") return planData(artifact.source, prompt);
   if (artifact.kind === "query") return planQuery(prompt);
   return planSlides(artifact.source, prompt);
+}
+
+export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt: string): LocalWorkspacePlan {
+  const instruction = prompt.trim();
+  if (!instruction) throw new Error("Describe the workspace outcome you want Rune to coordinate.");
+  if (!/同步|一致|workspace|all artifacts|所有|全局|报告|演示/i.test(instruction)) {
+    throw new Error("Try synchronizing the quarterly conclusion across the report and presentation.");
+  }
+
+  const patches: LocalWorkspacePlan["patches"] = [];
+  const document = artifacts.find((artifact) => artifact.kind === "document");
+  const query = artifacts.find((artifact) => artifact.kind === "query");
+  const slides = artifacts.find((artifact) => artifact.kind === "slides");
+
+  if (document) {
+    const plan = planDocument(document.source, "把摘要压缩成三条要点");
+    if (plan.nextSource !== document.source) patches.push({ artifactId: document.id, ...plan });
+  }
+  if (query && /分析|query|sql|一致|所有|全局/i.test(instruction)) {
+    const plan = planQuery("汇总季度收入");
+    if (plan.nextSource !== query.source) patches.push({ artifactId: query.id, ...plan });
+  }
+  if (slides) {
+    const plan = planSlides(slides.source, "新增一页结论");
+    if (plan.nextSource !== slides.source) patches.push({ artifactId: slides.id, ...plan });
+  }
+
+  if (patches.length < 2) throw new Error("Rune needs at least a report and presentation to coordinate this workspace action.");
+  return {
+    summary: `Synchronize the quarterly narrative across ${patches.length} artifacts`,
+    detail: "Each canonical source changes independently, then the complete workspace is validated and applied as one transaction.",
+    patches,
+  };
 }
 
 export function detectArtifact(name: string, source: string): WorkspaceArtifact | null {

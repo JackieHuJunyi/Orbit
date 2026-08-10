@@ -3,6 +3,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import {
   AgentPatchSchema,
   AgentRequestSchema,
+  AgentWorkspacePatchSchema,
   buildAgentInput,
   buildAgentInstructions,
 } from "../../lib/agent-contract.ts";
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   const client = new OpenAI({ apiKey });
 
   try {
+    const workspaceScope = parsed.data.scope === "workspace";
     const response = await client.responses.parse({
       model,
       store: false,
@@ -42,7 +44,9 @@ export async function POST(request: Request) {
         { role: "user", content: buildAgentInput(parsed.data) },
       ],
       text: {
-        format: zodTextFormat(AgentPatchSchema, "artifact_patch"),
+        format: workspaceScope
+          ? zodTextFormat(AgentWorkspacePatchSchema, "workspace_patch")
+          : zodTextFormat(AgentPatchSchema, "artifact_patch"),
       },
       max_output_tokens: 16_000,
     });
@@ -51,10 +55,27 @@ export async function POST(request: Request) {
       return Response.json({ error: "The model did not return a usable patch." }, { status: 502 });
     }
 
+    if (workspaceScope) {
+      const workspacePlan = AgentWorkspacePatchSchema.safeParse(response.output_parsed);
+      if (!workspacePlan.success) {
+        return Response.json({ error: "The model returned an invalid workspace patch." }, { status: 502 });
+      }
+      const allowedIds = new Set(parsed.data.workspaceArtifacts?.map((artifact) => artifact.id));
+      const patchIds = workspacePlan.data.patches.map((patch) => patch.artifactId);
+      if (new Set(patchIds).size !== patchIds.length || patchIds.some((id) => !allowedIds.has(id))) {
+        return Response.json({ error: "The model returned an invalid workspace patch." }, { status: 502 });
+      }
+      return Response.json({ provider: "openai", model, plan: workspacePlan.data });
+    }
+
+    const artifactPlan = AgentPatchSchema.safeParse(response.output_parsed);
+    if (!artifactPlan.success) {
+      return Response.json({ error: "The model returned an invalid artifact patch." }, { status: 502 });
+    }
     return Response.json({
       provider: "openai",
       model,
-      plan: response.output_parsed,
+      plan: artifactPlan.data,
     });
   } catch {
     return Response.json(

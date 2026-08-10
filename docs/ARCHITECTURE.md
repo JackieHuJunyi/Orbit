@@ -23,25 +23,30 @@ Workbench UI
 
 An artifact adapter owns its default source, source language, validation, display metadata, and preview. The workbench owns selection, persistence, history, and agent actions. This boundary lets us add SQL, charts, Deck DSL, DOCX import, or a desktop filesystem without rewriting the shell.
 
-Agent operations should converge on this contract:
+Agent operations currently use this provider-neutral contract:
 
 ```ts
-type ArtifactPatch = {
+type ArtifactSourcePatch = {
   artifactId: string;
-  baseRevision: string;
-  operations: Array<
-    | { type: "replace-range"; from: number; to: number; text: string }
-    | { type: "replace-source"; source: string }
-  >;
-  rationale: string;
+  summary: string;
+  detail: string;
+  nextSource: string;
+};
+
+type WorkspacePatch = {
+  summary: string;
+  detail: string;
+  patches: ArtifactSourcePatch[];
 };
 ```
 
-The UI may preview a patch, accept or reject it, validate the next source, create a checkpoint, and only then persist it. Model providers never write workspace state directly.
+The UI previews every affected file, its line-change counts, and a bounded concrete source diff before accept/reject. Applying is a transaction: ids must exist and be unique, every source must actually change, each changed adapter must validate, and the complete next workspace must compile without unresolved metric bindings. Rune then creates a pre-change checkpoint for every target and performs one local persistence write before swapping UI state. Any failure keeps the whole current workspace unchanged. Model providers never write workspace state directly.
 
 ## Agent provider boundary
 
-`POST /api/agent` is the only model-facing surface in v0. It validates a bounded artifact request, sends canonical source plus compiled metric context, and requires a schema-conformant `summary`, `detail`, and `nextSource`. The workbench still turns that response into a pending patch; it never applies model output automatically. The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to the deterministic local planner when it is not. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
+`POST /api/agent` is the only model-facing surface in v0. File scope sends one source and requires a schema-conformant `summary`, `detail`, and `nextSource`. Workspace scope sends 2–6 canonical sources within a 180,000-character envelope and requires a top-level rationale plus 1–4 complete file patches whose ids belong to that request. Duplicate or foreign ids are rejected again at the route boundary. The workbench still turns either response into a pending patch; it never applies model output automatically.
+
+The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to deterministic file/workspace planners when it is not. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
 
 ## Shared metrics and lineage
 
@@ -55,7 +60,7 @@ The npm wrapper is pinned to a stable version, and matching worker/Wasm binaries
 
 ## Checkpoint log
 
-Device history is an append-only, per-artifact list of source snapshots. Applying an Agent patch records the pre-change source; ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
+Device history is an append-only, per-artifact list of source snapshots. Applying a file or workspace Agent patch records every affected pre-change source before the atomic write; ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
 
 ## Persistence ladder
 
@@ -80,7 +85,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Four live artifact editors | Client adapters and local persistence |
-| Trust | Patch preview, undo, persistent device checkpoints | Local revision log |
+| Trust | Multi-file patch review, atomic apply, persistent checkpoints | Local revision log |
 | Intelligence | Provider-backed structured actions | Agent API and eval fixtures |
 | Data loop | SQL and shared metrics; charts next | DuckDB-Wasm and dependency graph |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |

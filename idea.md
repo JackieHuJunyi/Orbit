@@ -1219,3 +1219,11 @@ Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 work
 Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用前保存旧 source，⌘S 保存人工节点，restore 前先保存当前 source，因此恢复动作本身也可逆。每个 artifact 最多保留最近 24 个不同 source，并受 50 万字符预算约束；超过 20 万字符的单文件先要求导出，不冒险挤爆 localStorage。连续重复版本会去重，损坏条目会被忽略，容量失败会明确显示。这个模型成本为零，但已经建立了以后迁移到 Git commit、operation log 或 CRDT snapshot 所需的 revision 边界。
 
 这一轮没有引入账号、D1 或 R2。新增运行成本只有首次打开 SQL 时下载固定版本的 Wasm 二进制；用户数据不需要离开浏览器。等到真实用户需要跨设备同步，再把 checkpoint port 接到持久后端，比现在预建协作基础设施更符合低成本原则。
+
+## 6. Project Agent 的原子多文件修改
+
+2026-08-11 的下一次实现把“Project Agent 能同时创建/修改多个文件”从愿景推进成可操作闭环。Agent 现在有 File 与 Workspace 两个 scope：File 仍生成单个完整 source；Workspace 可以针对当前 2–6 个 canonical artifacts 返回最多 4 个带 `artifactId` 的完整 source patch。模型输出只进入 pending review，用户可以逐个切换文件查看摘要、增删行统计与真实 source diff，再决定整体接受或放弃。
+
+这里最重要的工程决定不是“让模型一次返回更多文本”，而是建立事务边界。应用前会验证目标 ID 存在且不重复、source 确实变化、SQL 仍是只读查询、Slides 不含脚本、各 adapter 能解析，并用完整的 next workspace 重新编译所有 metric binding。任何一个检查失败，返回的 next workspace 就不可用；本地存储容量不足同样会让整次操作保持零写入。只有全部通过后，系统才为每个受影响 artifact 保存 pre-change checkpoint，并用一次持久化写入替换 workspace。
+
+这个边界使“数据 → 分析 → 报告 → 演示”真正能由一个意图协调，同时没有引入协作服务器、数据库或新的常驻成本。当前确定性 fallback 已经能同步季度 SQL 汇总、报告摘要和结论页；配置模型后仍复用同一份 schema、review UI 和事务验证器。未来把完整 source 替换升级为 range/AST operation、加入 revision hash 或 Git commit 时，不需要改变用户对“先审查、后原子应用、每个文件可恢复”的信任模型。
