@@ -1,5 +1,6 @@
 import Papa from "papaparse";
 import { parseChartSource } from "./charts.ts";
+import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { validateReadQuery } from "./sql.ts";
 
 export type ArtifactKind = "document" | "data" | "query" | "chart" | "slides";
@@ -94,62 +95,43 @@ const chartSource = `{
   "maxItems": 8
 }`;
 
-const slidesSource = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root { --ink: #18211c; --muted: #627068; --paper: #f4f1e8; --accent: #ff5c35; --line: #d8d4c8; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #dad7cf; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-    .deck { display: grid; gap: 32px; padding: 32px; }
-    .slide { position: relative; width: min(1120px, 100%); aspect-ratio: 16 / 9; margin: auto; padding: 8%; overflow: hidden; background: var(--paper); border-radius: 10px; box-shadow: 0 18px 50px rgba(24,33,28,.14); }
-    .eyebrow { margin: 0 0 20px; color: var(--accent); font-size: 15px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-    h1 { max-width: 850px; margin: 0; font-size: clamp(42px, 6vw, 82px); line-height: .98; letter-spacing: -.055em; }
-    h2 { margin: 0 0 28px; font-size: clamp(34px, 4.2vw, 64px); line-height: 1; letter-spacing: -.045em; }
-    .lede { max-width: 690px; margin-top: 28px; color: var(--muted); font-size: clamp(18px, 2vw, 28px); line-height: 1.45; }
-    .number { position: absolute; right: 7%; bottom: 6%; color: var(--muted); font-size: 14px; }
-    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 42px; }
-    .metric { padding: 26px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.38); }
-    .metric strong { display: block; font-size: clamp(28px, 4vw, 54px); letter-spacing: -.05em; }
-    .metric span { color: var(--muted); font-size: 14px; }
-    .split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 7%; align-items: center; height: 100%; }
-    .bars { display: grid; gap: 16px; }
-    .bar { display: grid; grid-template-columns: 112px 1fr 52px; gap: 12px; align-items: center; color: var(--muted); }
-    .track { height: 12px; overflow: hidden; border-radius: 999px; background: var(--line); }
-    .fill { height: 100%; border-radius: inherit; background: var(--accent); }
-    @media (max-width: 700px) { .metric-grid { gap: 8px; } .metric { padding: 14px; } .slide { border-radius: 4px; } }
-  </style>
-</head>
-<body>
-  <main class="deck">
-    <section class="slide" data-layout="cover">
-      <p class="eyebrow">Q2 · Board Briefing</p>
-      <h1>Growth became more durable.</h1>
-      <p class="lede">A shared story compiled from the same source as the operating data and written report.</p>
-      <span class="number">01 / 03</span>
-    </section>
-    <section class="slide" data-layout="metrics">
-      <p class="eyebrow">The quarter at a glance</p>
-      <h2>Momentum with healthier economics.</h2>
-      <div class="metric-grid">
-        <div class="metric"><strong>{{ metric("total_revenue") }}</strong><span>Q2 revenue</span></div>
-        <div class="metric"><strong>{{ metric("qoq_growth") }}</strong><span>Quarter over quarter</span></div>
-        <div class="metric"><strong>{{ metric("gross_margin") }}</strong><span>Gross margin</span></div>
-      </div>
-      <span class="number">02 / 03</span>
-    </section>
-    <section class="slide" data-layout="split">
-      <div class="split">
-        <div><p class="eyebrow">Regional signal</p><h2>{{ metric("top_region") }} is now the growth engine.</h2><p class="lede">Partner distribution created a repeatable acquisition channel.</p></div>
-        <div>{{ chart("regional-revenue-chart") }}</div>
-      </div>
-      <span class="number">03 / 03</span>
-    </section>
-  </main>
-</body>
-</html>`;
+const slidesSource = `---
+version: 1
+title: Q2 Board Briefing
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: cover -->
+<!-- eyebrow: Q2 · Board Briefing -->
+
+# Growth became more durable.
+
+A shared story compiled from the same source as the operating data and written report.
+
+---
+
+<!-- layout: metrics -->
+<!-- eyebrow: The quarter at a glance -->
+
+# Momentum with healthier economics.
+
+| Q2 revenue | Quarter over quarter | Gross margin |
+| --- | --- | --- |
+| **{{ metric("total_revenue") }}** | **{{ metric("qoq_growth") }}** | **{{ metric("gross_margin") }}** |
+
+---
+
+<!-- layout: split -->
+<!-- eyebrow: Regional signal -->
+
+# {{ metric("top_region") }} is now the growth engine.
+
+Partner distribution created a repeatable acquisition channel.
+
+{{ chart("regional-revenue-chart") }}
+`;
 
 export const defaultArtifacts: WorkspaceArtifact[] = [
   {
@@ -182,9 +164,9 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
   },
   {
     id: "board-briefing",
-    name: "board-briefing.html",
+    name: "board-briefing.deck.md",
     kind: "slides",
-    language: "Semantic HTML",
+    language: "Deck Markdown",
     source: slidesSource,
   },
 ];
@@ -287,6 +269,7 @@ export function validateArtifact(artifact: WorkspaceArtifact): string[] {
   if (artifact.kind === "query") return validateReadQuery(artifact.source);
   if (artifact.kind === "chart") return parseChartSource(artifact.source).errors;
   if (artifact.kind === "slides") {
+    if (isDeckMarkdownArtifact(artifact)) return parseDeckSource(artifact.source).errors;
     const errors: string[] = [];
     if (!/<main[\s>]/i.test(artifact.source)) errors.push("Slides need a <main> element.");
     if (!/<section[\s>]/i.test(artifact.source)) errors.push("Add at least one <section> slide.");
@@ -302,7 +285,9 @@ export function artifactStats(artifact: WorkspaceArtifact): string {
     return `${parsed.rows.length} rows · ${parsed.columns.length} columns`;
   }
   if (artifact.kind === "slides") {
-    const slides = artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
+    const slides = isDeckMarkdownArtifact(artifact)
+      ? compileDeckSource(artifact.source).slideCount
+      : artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
     return `${slides} slides · ${artifact.source.length.toLocaleString()} chars`;
   }
   if (artifact.kind === "query") {
@@ -394,7 +379,31 @@ function planData(source: string, prompt: string): LocalPlan {
   throw new Error("Try sorting by revenue or adding a margin column in this local prototype.");
 }
 
-function planSlides(source: string, prompt: string): LocalPlan {
+function planDeckSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
+  const source = artifact.source;
+  if (/深色|dark|night/i.test(prompt)) {
+    return {
+      nextSource: source.replace(/^theme:\s*(?:rune|rune-dark)\s*$/m, "theme: rune-dark"),
+      summary: "Switch the deck compiler to the Rune night theme",
+      detail: "Only the validated frontmatter theme changes; slide content stays untouched.",
+    };
+  }
+  if (/结论|conclusion|summary slide|新增.*页/i.test(prompt)) {
+    const block = `---\n\n<!-- layout: conclusion -->\n<!-- eyebrow: Decision -->\n\n# Scale the repeatable channel, protect the margin.\n\nFund APAC partner growth while standardizing the revenue model used by every artifact.`;
+    const conclusionPattern = /\n---\s*\n\s*<!--\s*layout:\s*conclusion\s*-->[\s\S]*?(?=\n---\s*(?:\n|$)|$)/i;
+    const hasConclusion = conclusionPattern.test(source);
+    return {
+      nextSource: hasConclusion ? source.replace(conclusionPattern, `\n${block}`) : `${source.trim()}\n\n${block}\n`,
+      summary: hasConclusion ? "Refresh the decision-led conclusion slide" : "Add a decision-led conclusion slide",
+      detail: "The Deck Markdown compiler owns layout and slide numbering.",
+    };
+  }
+  throw new Error("Try changing the theme to dark or adding a conclusion slide.");
+}
+
+function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
+  if (isDeckMarkdownArtifact(artifact)) return planDeckSlides(artifact, prompt);
+  const source = artifact.source;
   if (/深色|dark|night/i.test(prompt)) {
     const themed = source
       .replace(/--ink:\s*#[0-9a-f]{3,8}/i, "--ink: #f5f1e8")
@@ -482,7 +491,7 @@ export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): Lo
   if (artifact.kind === "data") return planData(artifact.source, prompt);
   if (artifact.kind === "query") return planQuery(prompt);
   if (artifact.kind === "chart") return planChart(artifact.source, prompt);
-  return planSlides(artifact.source, prompt);
+  return planSlides(artifact, prompt);
 }
 
 export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt: string): LocalWorkspacePlan {
@@ -506,7 +515,7 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
     if (plan.nextSource !== query.source) patches.push({ artifactId: query.id, ...plan });
   }
   if (slides) {
-    const plan = planSlides(slides.source, "新增一页结论");
+    const plan = planSlides(slides, "新增一页结论");
     if (plan.nextSource !== slides.source) patches.push({ artifactId: slides.id, ...plan });
   }
 
@@ -523,6 +532,9 @@ export function detectArtifact(name: string, source: string): WorkspaceArtifact 
   const common = { id: `import-${Date.now()}`, name, source };
   if (name.toLowerCase().endsWith(".chart.json")) {
     return { ...common, kind: "chart", language: "Chart JSON" };
+  }
+  if (name.toLowerCase().endsWith(".deck.md")) {
+    return { ...common, kind: "slides", language: "Deck Markdown" };
   }
   if (extension === "md" || extension === "markdown") {
     return { ...common, kind: "document", language: "Markdown" };

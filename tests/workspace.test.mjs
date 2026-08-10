@@ -16,6 +16,7 @@ import {
   findMetricReferences,
 } from "../app/lib/bindings.ts";
 import { prepareWorkspacePatch } from "../app/lib/patches.ts";
+import { compileDeckSource } from "../app/lib/deck.ts";
 
 test("parses the sample CSV without sending data anywhere", () => {
   const artifact = defaultArtifacts.find((item) => item.kind === "data");
@@ -125,7 +126,10 @@ test("coordinates analysis, report, and slides as one valid local workspace plan
   assert.deepEqual(prepared.errors, []);
   assert.match(prepared.nextArtifacts.find((artifact) => artifact.kind === "query")?.source ?? "", /SUM\("Q2 Revenue"\)/);
   const nextSlides = prepared.nextArtifacts.find((artifact) => artifact.kind === "slides")?.source ?? "";
-  assert.match(nextSlides, /data-layout="conclusion"/);
-  assert.match(nextSlides, /01 \/ 04/);
-  assert.match(nextSlides, /04 \/ 04/);
+  assert.match(nextSlides, /layout: conclusion/);
+  const compiledDeck = compileDeckSource(nextSlides);
+  assert.equal(compiledDeck.slideCount, 4);
+  assert.match(compiledDeck.html ?? "", /data-layout="conclusion"/);
+  assert.match(compiledDeck.html ?? "", /01 \/ 04/);
+  assert.match(compiledDeck.html ?? "", /04 \/ 04/);
 });

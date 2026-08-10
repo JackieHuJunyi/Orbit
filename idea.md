@@ -1179,9 +1179,9 @@ Rune v0 不承诺替代 Word、Excel 或 PowerPoint，而是证明同一个工�
 | Data | CSV 或 JSON | 本地 parser + grid | 结构化数据可被人和 Agent 直接理解 |
 | Query | DuckDB SQL | Browser Worker + DuckDB-Wasm | AI 写出的分析可以真实执行并验证，而不是只生成公式文本 |
 | Chart | 受约束的 `.chart.json` | 本地 projection + React/static HTML | 同一份数据视图可同时进入报告和演示 |
-| Slides | 受约束的 semantic HTML | sandboxed browser frame | 浏览器可以成为演示文稿 runtime |
+| Slides | 受约束的 `.deck.md` | escaped static HTML + sandboxed browser frame | 文本化演示源可以安全编译成浏览器 runtime |
 
-Slides 首版仍使用 `.html`，但只鼓励语义化 section、设计 token 和少量布局类；后续会把它提升为 Deck AST，并让 HTML 与 PPTX 都由同一个 AST 编译，避免任意 CSS 逐渐退化成另一个 PPT。
+Slides 已从任意 `.html` 源迁移到 Deck Markdown：严格 frontmatter、`---` 分页、受控 layout/eyebrow metadata 和有限 Markdown block 共同形成首个可版本化 Deck AST 边界。HTML 现在是编译产物，不是默认 canonical source；旧 `.html` 仍可导入并运行在无脚本 sandbox 中，作为迁移兼容层。未来 HTML、PPTX 与 PDF 都应从同一个 deck model 生成，避免任意 CSS 逐渐退化成另一个 PPT。
 
 ## 2. 从 ColaMD 借鉴什么
 
@@ -1195,7 +1195,7 @@ Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 work
 - Local-first：草稿默认保存在当前设备，不为首版引入数据库、账号或持续服务成本。
 - Adapter-first：编辑器只依赖统一的 Artifact 接口；Markdown、Data、Query、Chart、Slides 各自负责 parse、validate、render。
 - Provider-agnostic：Agent UI 与模型供应商解耦；没有模型密钥时也可用确定性的本地操作演示完整交互。
-- Safe preview：Markdown 不执行任意 HTML，Slides HTML 在 sandboxed iframe 中运行。
+- Safe preview：Markdown 不执行任意 HTML；Deck Markdown 拒绝 raw HTML、转义文本并编译到无脚本 iframe，旧 Slides HTML 只走 sandboxed 兼容路径。
 - Progressive persistence：设备草稿 → 浏览器文件系统 → Git workspace → 协作后端，按真实需求逐级增加。
 - Git-shaped trust：所有 Agent 写入最终都应表达成 patch，并进入可撤销 checkpoint。
 
@@ -1225,7 +1225,7 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 
 2026-08-11 的下一次实现把“Project Agent 能同时创建/修改多个文件”从愿景推进成可操作闭环。Agent 现在有 File 与 Workspace 两个 scope：File 仍生成单个完整 source；Workspace 可以针对当前 2–6 个 canonical artifacts 返回最多 4 个带 `artifactId` 的完整 source patch。模型输出只进入 pending review，用户可以逐个切换文件查看摘要、增删行统计与真实 source diff，再决定整体接受或放弃。
 
-这里最重要的工程决定不是“让模型一次返回更多文本”，而是建立事务边界。应用前会验证目标 ID 存在且不重复、source 确实变化、SQL 仍是只读查询、Slides 不含脚本、各 adapter 能解析，并用完整的 next workspace 重新编译所有 metric binding。任何一个检查失败，返回的 next workspace 就不可用；本地存储容量不足同样会让整次操作保持零写入。只有全部通过后，系统才为每个受影响 artifact 保存 pre-change checkpoint，并用一次持久化写入替换 workspace。
+这里最重要的工程决定不是“让模型一次返回更多文本”，而是建立事务边界。应用前会验证目标 ID 存在且不重复、source 确实变化、SQL 仍是只读查询、Deck Markdown 符合受限语法（旧 Slides HTML 仍不得含脚本）、各 adapter 能解析，并用完整的 next workspace 重新编译所有 metric binding。任何一个检查失败，返回的 next workspace 就不可用；本地存储容量不足同样会让整次操作保持零写入。只有全部通过后，系统才为每个受影响 artifact 保存 pre-change checkpoint，并用一次持久化写入替换 workspace。
 
 这个边界使“数据 → 分析 → 报告 → 演示”真正能由一个意图协调，同时没有引入协作服务器、数据库或新的常驻成本。当前确定性 fallback 已经能同步季度 SQL 汇总、报告摘要和结论页；配置模型后仍复用同一份 schema、review UI 和事务验证器。未来把完整 source 替换升级为 range/AST operation、加入 revision hash 或 Git commit 时，不需要改变用户对“先审查、后原子应用、每个文件可恢复”的信任模型。
 
@@ -1235,12 +1235,20 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 
 报告和演示现在都用 `{{ chart("regional-revenue-chart") }}` 引用同一个 artifact。Markdown renderer 把 model 变成 React 元素；Slides compiler 则把同一 model 转成经过转义的静态 HTML，再交给无脚本 sandbox。标题、描述与数据标签在两条渲染路径都不能变成可执行 markup。用户直接打开 Chart artifact 时仍能左侧编辑 JSON、右侧看 live chart，并让 File Agent 生成受 schema 约束的修改。
 
-这也把 workspace transaction 的价值从“同时改多个文件”提升成“保护依赖图”。如果 Data patch 重命名了图表正在使用的列，完整 next workspace 会重新编译所有 Chart 并拒绝整笔写入；文档或演示引用不存在的 chart 同样不能应用。成本仍为零，但已经形成 `CSV/JSON → Chart model → Markdown/HTML` 的稳定 compiler boundary，未来加入 line/area/scatter、SQL result source 或 PPTX export 时只扩展 spec 与 renderer，不改变引用协议。
+这也把 workspace transaction 的价值从“同时改多个文件”提升成“保护依赖图”。如果 Data patch 重命名了图表正在使用的列，完整 next workspace 会重新编译所有 Chart 并拒绝整笔写入；文档或演示引用不存在的 chart 同样不能应用。成本仍为零，但已经形成 `CSV/JSON → Chart model → Markdown/Deck Markdown → HTML runtime` 的稳定 compiler boundary，未来加入 line/area/scatter、SQL result source 或 PPTX export 时只扩展 spec 与 renderer，不改变引用协议。
 
 ## 8. 用户拥有的真实目录与 storage port
 
-2026-08-11 的下一步实现把“source of truth 属于用户”从下载按钮推进成 workspace 级文件系统合同。支持 File System Access API 的浏览器可以连接一个真实目录：每个 artifact 继续使用原来的 `.md`、`.csv/.json`、`.sql`、`.chart.json`、`.html` 文件；额外的 `rune.workspace.json` 只保存 version、顺序、ID、kind、文件名和 language，不保存正文，也不是新的私有内容格式。没有 manifest 的目录也能按扩展名扫描并生成稳定 ID。
+2026-08-11 的下一步实现把“source of truth 属于用户”从下载按钮推进成 workspace 级文件系统合同。支持 File System Access API 的浏览器可以连接一个真实目录：每个 artifact 继续使用原来的 `.md`、`.csv/.json`、`.sql`、`.chart.json`、`.deck.md` 文件，旧 `.html` 仍可识别；额外的 `rune.workspace.json` 只保存 version、顺序、ID、kind、文件名和 language，不保存正文，也不是新的私有内容格式。没有 manifest 的目录也能按扩展名扫描并生成稳定 ID。
 
 浏览器版本刻意采用显式同步。Pull 先读取最多 50 个文件，并执行单文件 2 MB、总计 8 MB、文件名安全、唯一 ID/name、adapter parse、metric/chart dependency 等完整验证；只有用户确认后，才为当前每个 artifact 建 pre-pull checkpoint，并用一次 localStorage 写入替换设备 workspace。Push 同样需要确认，只覆盖同名 artifact 文件，不删除无关文件，最后写 manifest。由于浏览器文件 API 没有跨文件 transaction，中断的 Push 会报告停在哪个文件，而不会伪装成原子成功。
 
 这个选择比首版直接引入云盘、账号或 Git server 更符合低成本原则，也比静默 auto-save 更尊重本地文件。目录 handle 只在当前 session 保留，刷新后需要重新授权；这既符合浏览器权限模型，也让产品先验证“用户是否真的希望外部 Agent 与 Rune 共享目录”。未来桌面 shell 可以复用同一 manifest/validation/storage port，再补 watching、临时文件 + atomic rename 和 Git commit，而 renderer、Agent patch 与 dependency compiler 无需变化。
+
+## 9. Deck Markdown 与安全演示编译器
+
+2026-08-11 的下一轮实现把演示从“人和 Agent 直接写完整 HTML/CSS”推进成真正的 artifact-as-code。默认演示现在是 `board-briefing.deck.md`：frontmatter 只接受 `version: 1`、标题、`rune/rune-dark` 主题、16:9 比例和受限语言；最多 40 页、12 万字符；每页用 `---` 分隔，并只接受 cover/content/metrics/split/conclusion 布局、eyebrow、标题、段落、列表、表格、强调、代码和已有 metric/chart binding。模型合同也明确禁止 raw HTML 和人工页码。
+
+编译顺序保持可解释：先从 canonical Data 解析 named metrics，再解析/验证 Deck Markdown，随后由确定性 compiler 生成布局、设计 token 与自动页码，最后把 chart reference 替换成经过转义的静态图表 HTML。用户文本始终 HTML-escape；runtime 继续使用没有 `allow-scripts` 的 iframe。这样既保留 Overleaf 式“左侧 source、右侧成品”的即时反馈，又让 presentation source 能被 Git diff、Agent patch、目录同步和 checkpoint 直接理解。
+
+旧 semantic `.html` 没有被破坏：导入、目录识别、验证和 sandbox preview 都继续保留，已有浏览器草稿也不会因默认格式迁移而丢失。但它只是兼容 bridge；新演示统一走 `.deck.md`。这一边界不增加服务端、数据库或常驻成本，同时为后续 layout diagnostics、主题包、Deck AST operation、PPTX/PDF export 建立了稳定入口。

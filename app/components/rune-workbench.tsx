@@ -48,6 +48,7 @@ import {
 } from "../lib/workspace";
 import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
 import { findChartReferences, resolveChartModel } from "../lib/charts";
+import { isDeckMarkdownArtifact } from "../lib/deck";
 import {
   appendCheckpoint,
   canCheckpointSource,
@@ -153,6 +154,8 @@ function downloadArtifact(artifact: WorkspaceArtifact) {
     ? "text/markdown"
     : artifact.kind === "query"
       ? "application/sql"
+      : artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
+        ? "text/markdown"
       : artifact.name.endsWith(".json")
         ? "application/json"
         : artifact.kind === "data"
@@ -706,7 +709,7 @@ export function RuneWorkbench() {
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
             <Download />
           </button>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} />
+          <input ref={importRef} className="visually-hidden" type="file" accept=".deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} />
         </div>
       </header>
 
@@ -741,7 +744,7 @@ export function RuneWorkbench() {
                     onClick={() => selectArtifact(artifact.id)}
                   >
                     <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
-                    <span className="artifact-label"><strong>{artifact.name}</strong><small>{referenceCount ? `${referenceCount} live bindings` : artifact.language}</small></span>
+                    <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${referenceCount} live bindings` : ""}</small></span>
                     {artifact.id === selectedArtifact.id && <span className="active-notch" />}
                   </button>
                 );
@@ -974,7 +977,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.4</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.5</span></div>
       </footer>
     </main>
   );

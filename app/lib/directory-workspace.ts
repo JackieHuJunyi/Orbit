@@ -104,7 +104,7 @@ export function parseWorkspaceManifest(source: string): { manifest?: WorkspaceMa
 
 function stableArtifactId(name: string, usedIds: Set<string>) {
   const base = name.toLowerCase()
-    .replace(/\.(chart\.)?(md|markdown|csv|json|sql|html|htm)$/i, "")
+    .replace(/\.(?:chart\.json|deck\.md|md|markdown|csv|json|sql|html|htm)$/i, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || "artifact";
   let id = base;

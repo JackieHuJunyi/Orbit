@@ -71,6 +71,26 @@ test("constrains chart patches to the strict data-bound JSON contract", () => {
   assert.match(buildAgentInstructions(chartRequest), /six-digit hex/);
 });
 
+test("keeps Deck Markdown model output out of the raw HTML runtime", () => {
+  const deck = defaultDeckRequest();
+  assert.match(buildAgentInstructions(deck), /complete Deck Markdown/);
+  assert.match(buildAgentInstructions(deck), /Never return raw HTML/);
+  assert.match(buildAgentInstructions(deck), /manual slide numbers/);
+});
+
+function defaultDeckRequest() {
+  return AgentRequestSchema.parse({
+    ...request,
+    artifact: {
+      id: "deck",
+      name: "deck.deck.md",
+      kind: "slides",
+      language: "Deck Markdown",
+      source: "---\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n<!-- layout: cover -->\n\n# Deck",
+    },
+  });
+}
+
 test("builds a bounded workspace request with coordinated file instructions", () => {
   const workspaceRequest = AgentRequestSchema.parse({
     ...request,

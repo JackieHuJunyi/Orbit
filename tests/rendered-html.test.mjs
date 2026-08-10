@@ -51,7 +51,9 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /DuckDB SQL/);
   assert.match(html, /regional-revenue\.chart\.json/);
   assert.match(html, /Chart JSON/);
-  assert.match(html, /board-briefing\.html/);
+  assert.match(html, /board-briefing\.deck\.md/);
+  assert.match(html, /Deck Markdown/);
+  assert.match(html, /Rune v0\.5/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
 });

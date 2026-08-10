@@ -68,7 +68,7 @@ test("rejects duplicate, unknown, and unchanged file entries atomically", () => 
   assert.equal(result.nextArtifacts, defaultArtifacts);
 });
 
-test("rejects unsafe SQL or slide HTML without exposing a partial next workspace", () => {
+test("rejects unsafe SQL or raw Deck HTML without exposing a partial next workspace", () => {
   const query = artifact("query");
   const slides = artifact("slides");
   const result = prepareWorkspacePatch(defaultArtifacts, [
@@ -82,11 +82,14 @@ test("rejects unsafe SQL or slide HTML without exposing a partial next workspace
       artifactId: slides.id,
       summary: "Unsafe slide",
       detail: "This must also be rejected.",
-      nextSource: "<main><section>Slide</section><script>alert(1)</script></main>",
+      nextSource: slides.source.replace(
+        "# Growth became more durable.",
+        "# Growth became more durable.\n\n<script>alert(1)</script>",
+      ),
     },
   ]);
   assert.match(result.errors.join(" "), /read-only|SELECT|WITH/i);
-  assert.match(result.errors.join(" "), /Scripts are blocked/);
+  assert.match(result.errors.join(" "), /raw HTML/);
   assert.equal(result.nextArtifacts, defaultArtifacts);
 });
 

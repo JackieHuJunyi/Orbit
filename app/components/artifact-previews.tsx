@@ -20,6 +20,7 @@ import {
   tokenizeChartReferences,
   type ChartModel,
 } from "../lib/charts";
+import { compileDeckSource, isDeckMarkdownArtifact } from "../lib/deck";
 import type { QueryCell, WorkspaceQueryResult } from "../lib/duckdb-client";
 
 type GridCell = DataCell | QueryCell;
@@ -224,9 +225,12 @@ function ChartPreview({ artifact, artifacts }: { artifact: WorkspaceArtifact; ar
   return <div className="chart-stage"><ChartFigure model={resolution.model} /></div>;
 }
 
-function SlidesPreview({ source, artifacts }: { source: string; artifacts: WorkspaceArtifact[] }) {
-  const slideCount = source.match(/<section[\s>]/gi)?.length ?? 0;
-  const renderedSource = renderChartReferencesToHtml(source, (chartArtifactId) => {
+function SlidesPreview({ artifact, source, artifacts }: { artifact: WorkspaceArtifact; source: string; artifacts: WorkspaceArtifact[] }) {
+  const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source) : null;
+  if (deckCompilation?.errors.length) return <EmptyPreview message={deckCompilation.errors[0]} />;
+  const runtimeSource = deckCompilation?.html ?? source;
+  const slideCount = deckCompilation?.slideCount ?? source.match(/<section[\s>]/gi)?.length ?? 0;
+  const renderedSource = renderChartReferencesToHtml(runtimeSource, (chartArtifactId) => {
     const chartArtifact = artifacts.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
     return chartArtifact
       ? resolveChartModel(chartArtifact, artifacts, parseDataSource)
@@ -234,7 +238,7 @@ function SlidesPreview({ source, artifacts }: { source: string; artifacts: Works
   });
   return (
     <div className="slides-stage">
-      <div className="slides-stage-meta"><span>{slideCount} slides</span><span>Sandboxed HTML runtime</span></div>
+      <div className="slides-stage-meta"><span>{slideCount} slides</span><span>{deckCompilation ? "Deck Markdown → sandboxed HTML" : "Legacy sandboxed HTML"}</span></div>
       <iframe
         className="slides-frame"
         srcDoc={renderedSource}
@@ -254,5 +258,5 @@ export function ArtifactPreview({ artifact, artifacts }: { artifact: WorkspaceAr
     return <QueryPreview source={artifact.source} dataArtifact={artifacts.find((item) => item.kind === "data")} />;
   }
   if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} />;
-  return <SlidesPreview source={compiled.source} artifacts={artifacts} />;
+  return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} />;
 }

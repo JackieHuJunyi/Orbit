@@ -56,9 +56,17 @@ const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
   slides: "Return one complete semantic HTML document. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
 };
 
+const deckMarkdownRule = "Return complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter; slides separated by ---; and only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never return raw HTML or manual slide numbers.";
+
+function ruleForArtifact(artifact: AgentRequest["artifact"]) {
+  return artifact.kind === "slides" && artifact.language === "Deck Markdown"
+    ? deckMarkdownRule
+    : kindRules[artifact.kind];
+}
+
 export function buildAgentInstructions(request: AgentRequest) {
   if (request.scope === "workspace") {
-    const rules = [...new Set((request.workspaceArtifacts ?? []).map((artifact) => kindRules[artifact.kind]))];
+    const rules = [...new Set((request.workspaceArtifacts ?? []).map(ruleForArtifact))];
     return [
       "You are Rune's workspace editing agent.",
       "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources.",
@@ -74,7 +82,7 @@ export function buildAgentInstructions(request: AgentRequest) {
     "Return a short summary, a concrete detail sentence, and the complete next source.",
     "Never wrap nextSource in Markdown fences and never claim that the change was already applied.",
     "Do not change unrelated content. Do not remove provenance or metric bindings silently.",
-    kindRules[request.artifact.kind],
+    ruleForArtifact(request.artifact),
   ].join(" ");
 }
 

@@ -17,12 +17,12 @@ Workbench UI
        ├─ Data adapter     → parsed grid
        ├─ Query adapter    → DuckDB-Wasm result grid
        ├─ Chart adapter    → validated JSON + local semantic bar view
-       └─ Slides adapter   → sandboxed HTML runtime
+       └─ Slides adapter   → Deck Markdown compiler → sandboxed HTML runtime
 ```
 
 ## Stable contracts
 
-An artifact adapter owns its default source, source language, validation, display metadata, and preview. The workbench owns selection, persistence, history, and agent actions. This boundary lets us add SQL, charts, Deck DSL, DOCX import, or a desktop filesystem without rewriting the shell.
+An artifact adapter owns its default source, source language, validation, display metadata, and preview. The workbench owns selection, persistence, history, and agent actions. This boundary lets us extend SQL, charts, Deck Markdown, Office import, or a desktop filesystem without rewriting the shell.
 
 Agent operations currently use this provider-neutral contract:
 
@@ -51,13 +51,19 @@ The current adapter uses the OpenAI Responses API with Structured Outputs when `
 
 ## Shared metrics and lineage
 
-Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}` or a reusable view with `{{ chart("regional-revenue-chart") }}`. The dependency compiler derives metrics and chart models from canonical CSV/JSON and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count. SQL and Chart artifacts expose their canonical lineage; the next evolution is a persisted dependency graph for user-defined query outputs and metrics.
+Markdown and Deck Markdown can reference a named value with `{{ metric("total_revenue") }}` or a reusable view with `{{ chart("regional-revenue-chart") }}`. The dependency compiler derives metrics and chart models from canonical CSV/JSON and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count. SQL and Chart artifacts expose their canonical lineage; the next evolution is a persisted dependency graph for user-defined query outputs and metrics. Imported legacy semantic HTML keeps the same binding syntax for compatibility.
 
 ## Declarative chart runtime
 
 A `.chart.json` artifact is a strict, versioned view contract: title, description, data artifact id, exact category/value columns, one bounded mark, sort policy, number format, validated color token, and a 1–20 mark limit. It contains no code. The local compiler parses the referenced CSV/JSON, validates every row, sorts and formats values deterministically, and produces one shared chart model.
 
-Markdown renders that model as React elements. Slides compile the same model into escaped static HTML before assigning `srcDoc`; labels and titles cannot become markup, and the iframe remains scriptless. Whole-workspace patch validation recompiles every chart after a data or schema edit, so renaming a bound column cannot silently break downstream reports or decks.
+Markdown renders that model as React elements. Deck Markdown first compiles into escaped static HTML, then the Slides adapter replaces chart references with the same escaped chart model before assigning `srcDoc`; labels and titles cannot become markup, and the iframe remains scriptless. Whole-workspace patch validation recompiles every chart after a data or schema edit, so renaming a bound column cannot silently break downstream reports or decks.
+
+## Deck Markdown compiler
+
+The canonical presentation format is `.deck.md`. Its frontmatter is a strict `version: 1`, `title`, `theme`, `ratio`, and `lang` contract; slides are separated by `---`; optional `layout` and `eyebrow` comments are validated against bounded values. The body supports headings, paragraphs, lists, tables, inline emphasis/code, and metric/chart references. Decks are limited to 120,000 source characters and 40 slides.
+
+The compiler owns the 16:9 frame, design tokens, layout classes, and page numbers. It HTML-escapes source text and rejects raw HTML before compilation, so Agent output cannot introduce a second arbitrary web runtime. Existing `.html` decks are still detected as `Semantic HTML` and rendered inside the same no-script sandbox; this is a migration bridge, not the preferred source contract.
 
 ## Browser-local SQL runtime
 
@@ -79,16 +85,17 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 
 1. v0 stores non-sensitive drafts and bounded checkpoint history in browser storage and offers reset/export affordances.
 2. v0.4 adds a session-scoped File System Access port with explicit validated Pull and confirmed Push.
-3. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-4. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-5. D1/R2 remain undeclared until durable hosted projects or assets are required.
+3. v0.5 makes bounded Deck Markdown the canonical presentation source while preserving a sandboxed legacy HTML bridge.
+4. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+5. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+6. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
 ## Security boundaries
 
 - Markdown is rendered as React elements and does not execute embedded HTML.
-- Slide source runs in an iframe with a restrictive sandbox and no same-origin access.
+- Deck Markdown rejects raw HTML, validates layout metadata, and escapes user text before entering a restrictive no-script iframe; legacy HTML receives only the sandboxed compatibility path.
 - CSV and JSON parsing is local and must expose validation errors rather than guessing silently.
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
@@ -104,6 +111,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 | Trust | Multi-file patch review, atomic apply, persistent checkpoints | Local revision log |
 | Intelligence | Provider-backed structured actions | Agent API and eval fixtures |
 | Data loop | SQL, shared metrics, and reusable charts | DuckDB-Wasm and dependency graph |
+| Presentation source | Deck Markdown compiler and legacy HTML bridge | No hosted infrastructure |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
 | Compatibility | Office import/export | Isolated conversion workers |
 
