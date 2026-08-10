@@ -39,6 +39,9 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /metrics compiled live/);
   assert.match(html, /Q2 revenue by region/);
   assert.match(html, /chart-card embedded/);
+  assert.match(html, /Click a section for Agent/);
+  assert.match(html, /data-preview-source-target="document-section"/);
+  assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /linked metrics/);
   assert.match(html, /Saved on device/);
   assert.match(html, /> New</);
@@ -57,7 +60,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.15/);
+  assert.match(html, /Rune v0\.16/);
   assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
@@ -108,4 +111,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /selection-confined patch/);
   assert.match(clientSource, /Selection Agent is limited to/);
   assert.match(clientSource, /selection boundary verification failed/);
+  assert.match(clientSource, /selected from preview · Selection Agent ready/);
+  assert.match(clientSource, /click a row to bind exact Agent context/);
+  assert.match(clientSource, /Select a slide as Agent context/);
+  assert.match(clientSource, /Preview target is too large or no longer matches the current source/);
 });

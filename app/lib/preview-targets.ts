@@ -1,0 +1,244 @@
+import { parseDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
+import type { SourceSelection } from "./source-selection.ts";
+import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
+
+export type PreviewSourceTargetKind = "document-section" | "data-row" | "deck-slide";
+
+export type PreviewSourceTarget = SourceSelection & {
+  id: string;
+  index: number;
+  kind: PreviewSourceTargetKind;
+  label: string;
+};
+
+type SourceLine = {
+  start: number;
+  end: number;
+  text: string;
+};
+
+function sourceLines(source: string): SourceLine[] {
+  const lines: SourceLine[] = [];
+  let start = 0;
+  while (start < source.length) {
+    const newline = source.indexOf("\n", start);
+    const rawEnd = newline < 0 ? source.length : newline;
+    const contentEnd = rawEnd > start && source[rawEnd - 1] === "\r" ? rawEnd - 1 : rawEnd;
+    lines.push({ start, end: newline < 0 ? source.length : newline + 1, text: source.slice(start, contentEnd) });
+    if (newline < 0) break;
+    start = newline + 1;
+  }
+  return lines;
+}
+
+function boundedLabel(value: string, fallback: string) {
+  const readable = value
+    .replace(/\{\{[^}]+\}\}/g, "live value")
+    .replace(/[*_`~\[\]<>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!readable) return fallback;
+  return readable.length > 72 ? `${readable.slice(0, 69).trimEnd()}…` : readable;
+}
+
+function trimRange(source: string, start: number, end: number): SourceSelection | null {
+  while (start < end && /\s/u.test(source[start])) start += 1;
+  while (end > start && /\s/u.test(source[end - 1])) end -= 1;
+  return start < end ? { start, end } : null;
+}
+
+function documentTargets(source: string): PreviewSourceTarget[] {
+  const headings: Array<{ start: number; label: string }> = [];
+  let fence: { marker: "`" | "~"; length: number } | null = null;
+
+  sourceLines(source).forEach((line) => {
+    const fenceMatch = line.text.match(/^\s{0,3}(`{3,}|~{3,})/u);
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0] as "`" | "~";
+      if (!fence) fence = { marker, length: fenceMatch[1].length };
+      else if (fence.marker === marker && fenceMatch[1].length >= fence.length) fence = null;
+      return;
+    }
+    if (fence) return;
+    const heading = line.text.match(/^\s{0,3}#{1,6}[\t ]+(.+?)[\t ]*#*[\t ]*$/u);
+    if (heading) headings.push({ start: line.start, label: boundedLabel(heading[1], "Untitled section") });
+  });
+
+  if (!headings.length) {
+    const range = trimRange(source, 0, source.length);
+    return range ? [{ ...range, id: `document-section:0:${range.start}`, index: 0, kind: "document-section", label: "Document body" }] : [];
+  }
+
+  const targets: PreviewSourceTarget[] = [];
+  const preamble = trimRange(source, 0, headings[0].start);
+  if (preamble) {
+    targets.push({ ...preamble, id: `document-section:0:${preamble.start}`, index: 0, kind: "document-section", label: "Document preamble" });
+  }
+  headings.forEach((heading, headingIndex) => {
+    const end = headings[headingIndex + 1]?.start ?? source.length;
+    const range = trimRange(source, heading.start, end);
+    if (!range) return;
+    const index = targets.length;
+    targets.push({ ...range, id: `document-section:${index}:${range.start}`, index, kind: "document-section", label: heading.label });
+  });
+  return targets;
+}
+
+function csvRecordRanges(source: string): SourceSelection[] {
+  const records: SourceSelection[] = [];
+  const hasValue = (range: SourceSelection) => {
+    const cells = [""];
+    let quoted = false;
+    for (let index = range.start; index < range.end; index += 1) {
+      const character = source[index];
+      if (character === '"') {
+        if (quoted && source[index + 1] === '"') {
+          cells[cells.length - 1] += '"';
+          index += 1;
+        } else quoted = !quoted;
+      } else if (character === "," && !quoted) cells.push("");
+      else cells[cells.length - 1] += character;
+    }
+    return cells.some((cell) => cell.trim().length > 0);
+  };
+  const append = (from: number, to: number) => {
+    const range = trimRange(source, from, to);
+    if (range && hasValue(range)) records.push(range);
+  };
+  let start = 0;
+  let quoted = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    if (character === '"') {
+      if (quoted && source[index + 1] === '"') index += 1;
+      else quoted = !quoted;
+      continue;
+    }
+    if (quoted || (character !== "\n" && character !== "\r")) continue;
+    append(start, index);
+    if (character === "\r" && source[index + 1] === "\n") index += 1;
+    start = index + 1;
+  }
+  append(start, source.length);
+  return records;
+}
+
+function jsonValueEnd(source: string, start: number, limit: number) {
+  const first = source[start];
+  if (first === '"') {
+    let escaped = false;
+    for (let index = start + 1; index < limit; index += 1) {
+      const character = source[index];
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') return index + 1;
+    }
+    return -1;
+  }
+  if (first === "{" || first === "[") {
+    const stack = [first === "{" ? "}" : "]"];
+    let quoted = false;
+    let escaped = false;
+    for (let index = start + 1; index < limit; index += 1) {
+      const character = source[index];
+      if (quoted) {
+        if (escaped) escaped = false;
+        else if (character === "\\") escaped = true;
+        else if (character === '"') quoted = false;
+        continue;
+      }
+      if (character === '"') quoted = true;
+      else if (character === "{" || character === "[") stack.push(character === "{" ? "}" : "]");
+      else if (character === stack[stack.length - 1]) {
+        stack.pop();
+        if (!stack.length) return index + 1;
+      }
+    }
+    return -1;
+  }
+  let index = start;
+  while (index < limit && source[index] !== "," && source[index] !== "]") index += 1;
+  return index;
+}
+
+function jsonRowRanges(source: string): SourceSelection[] {
+  const top = trimRange(source, 0, source.length);
+  if (!top) return [];
+  if (source[top.start] !== "[") return source[top.start] === "{" ? [top] : [];
+  const ranges: SourceSelection[] = [];
+  let index = top.start + 1;
+  while (index < top.end) {
+    while (index < top.end && /\s/u.test(source[index])) index += 1;
+    if (source[index] === "]") break;
+    const end = jsonValueEnd(source, index, top.end);
+    if (end < 0) return [];
+    const range = trimRange(source, index, end);
+    if (range) ranges.push(range);
+    index = end;
+    while (index < top.end && /\s/u.test(source[index])) index += 1;
+    if (source[index] === ",") index += 1;
+    else if (source[index] !== "]") return [];
+  }
+  return ranges;
+}
+
+function dataRowLabel(row: Record<string, DataCell> | undefined, firstColumn: string | undefined, index: number) {
+  const value = firstColumn ? row?.[firstColumn] : undefined;
+  const suffix = value == null || value === "" ? "" : ` · ${boundedLabel(String(value), "")}`;
+  return `Row ${index + 1}${suffix}`;
+}
+
+function dataTargets(source: string): PreviewSourceTarget[] {
+  const parsed = parseDataSource(source);
+  if (parsed.errors.length || !parsed.rows.length) return [];
+  const ranges = parsed.format === "JSON" ? jsonRowRanges(source) : csvRecordRanges(source).slice(1);
+  if (ranges.length !== parsed.rows.length) return [];
+  return ranges.map((range, index) => ({
+    ...range,
+    id: `data-row:${index}:${range.start}`,
+    index,
+    kind: "data-row" as const,
+    label: dataRowLabel(parsed.rows[index], parsed.columns[0], index),
+  }));
+}
+
+function deckTargets(source: string): PreviewSourceTarget[] {
+  const parsed = parseDeckSource(source);
+  if (!parsed.deck) return [];
+  const lines = sourceLines(source);
+  const closingIndex = lines.findIndex((line, index) => index > 0 && line.text.trim() === "---");
+  if (closingIndex < 0) return [];
+  const separators = lines.slice(closingIndex + 1).filter((line) => line.text.trim() === "---");
+  const ranges: SourceSelection[] = [];
+  let start = lines[closingIndex].end;
+  separators.forEach((separator) => {
+    const range = trimRange(source, start, separator.start);
+    if (range) ranges.push(range);
+    start = separator.end;
+  });
+  const finalRange = trimRange(source, start, source.length);
+  if (finalRange) ranges.push(finalRange);
+  if (ranges.length !== parsed.deck.slides.length) return [];
+  return ranges.map((range, index) => {
+    const heading = source.slice(range.start, range.end).match(/^#{1,2}[\t ]+(.+?)[\t ]*#*[\t ]*$/mu);
+    return {
+      ...range,
+      id: `deck-slide:${index}:${range.start}`,
+      index,
+      kind: "deck-slide" as const,
+      label: boundedLabel(heading?.[1] ?? "", `Slide ${index + 1}`),
+    };
+  });
+}
+
+export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
+  if (!artifact.source.trim()) return [];
+  if (artifact.kind === "document") return documentTargets(artifact.source);
+  if (artifact.kind === "data") return dataTargets(artifact.source);
+  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return deckTargets(artifact.source);
+  return [];
+}
+
+export function previewTargetIsActive(target: PreviewSourceTarget, selection?: SourceSelection | null) {
+  return Boolean(selection && target.start === selection.start && target.end === selection.end);
+}

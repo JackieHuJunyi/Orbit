@@ -92,6 +92,7 @@ import {
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import type { PreviewSourceTarget } from "../lib/preview-targets";
 import {
   MAX_AGENT_SELECTION_CHARS,
   sourceOutsideSelectionIsUnchanged,
@@ -278,6 +279,8 @@ export function RuneWorkbench() {
   const [directoryState, setDirectoryState] = useState<"disconnected" | "syncing" | "connected" | "error">("disconnected");
   const [notice, setNotice] = useState("Local workspace ready");
   const gutterRef = useRef<HTMLPreElement>(null);
+  const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
+  const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
   const exportInFlightRef = useRef(false);
@@ -470,6 +473,8 @@ export function RuneWorkbench() {
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
     const start = event.currentTarget.selectionStart;
     const end = event.currentTarget.selectionEnd;
+    const previewTarget = previewSelectionNoticeRef.current;
+    previewSelectionNoticeRef.current = null;
     if (start >= end) {
       setSourceSelection(null);
       if (agentScope === "selection") {
@@ -492,7 +497,42 @@ export function RuneWorkbench() {
       return;
     }
     if (agentState !== "planning") setAgentScope("selection");
-    setNotice(`${(end - start).toLocaleString()} source characters selected · Selection Agent ready`);
+    const previewLabel = previewTarget?.start === start && previewTarget.end === end
+      ? previewTarget.label
+      : "";
+    setNotice(previewLabel
+      ? `${previewLabel} selected from preview · Selection Agent ready`
+      : `${(end - start).toLocaleString()} source characters selected · Selection Agent ready`);
+  }
+
+  function focusPreviewTarget(target: PreviewSourceTarget) {
+    previewSelectionNoticeRef.current = null;
+    const error = sourceSelectionError(selectedArtifact.source, target);
+    if (error) {
+      setSourceSelection(null);
+      if (agentScope === "selection") setAgentScope("artifact");
+      setAgentError(error);
+      setNotice("Preview target is too large or no longer matches the current source");
+      return;
+    }
+    const selection: ActiveSourceSelection = {
+      artifactId: selectedArtifact.id,
+      sourceRevision: selectedArtifact.source,
+      start: target.start,
+      end: target.end,
+    };
+    setSourceSelection(selection);
+    setAgentScope("selection");
+    setPendingChange(null);
+    setAgentError("");
+    setNotice(`${target.label} selected from preview · Selection Agent ready`);
+    previewSelectionNoticeRef.current = target;
+    window.requestAnimationFrame(() => {
+      const editor = sourceEditorRef.current;
+      if (!editor) return;
+      editor.focus();
+      editor.setSelectionRange(target.start, target.end, "forward");
+    });
   }
 
   function saveManualCheckpoint() {
@@ -1250,6 +1290,7 @@ export function RuneWorkbench() {
           <div className="editor-wrap">
             <pre ref={gutterRef} className="line-gutter" aria-hidden="true">{lineNumbers}</pre>
             <textarea
+              ref={sourceEditorRef}
               className="source-editor"
               value={selectedArtifact.source}
               onChange={(event) => updateSource(event.target.value)}
@@ -1415,14 +1456,21 @@ export function RuneWorkbench() {
                 <strong>{bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""} compiled live</strong>
               </div>
             )}
-            <div className="preview-scroll"><ArtifactPreview artifact={selectedArtifact} artifacts={artifacts} /></div>
+            <div className="preview-scroll">
+              <ArtifactPreview
+                artifact={selectedArtifact}
+                artifacts={artifacts}
+                activeSelection={validSourceSelection}
+                onTargetSource={focusPreviewTarget}
+              />
+            </div>
           </div>
         </section>
       </div>
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.15</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.16</span></div>
       </footer>
 
       {newArtifactOpen && (

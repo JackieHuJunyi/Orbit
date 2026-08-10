@@ -25,3 +25,4 @@
 - 2026-08-11 — Added accessible blank Markdown, CSV, and Deck creation with collision-safe identity, full-workspace validation, and atomic device persistence.
 - 2026-08-11 — Let the Workspace Agent create reviewed Markdown, CSV, and Deck artifacts through Rune-owned templates, identity, and atomic mixed-file mutations.
 - 2026-08-11 — Bound Agent edits to exact source selections with UTF-16 revision checks, server/client confinement proofs, local fallbacks, and the existing reviewed atomic apply path.
+- 2026-08-11 — Mapped rendered Markdown sections, CSV/JSON rows, and Deck slides back to exact canonical selections that activate the same confined Agent workflow.

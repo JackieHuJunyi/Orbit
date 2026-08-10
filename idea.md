@@ -1376,3 +1376,17 @@ v0.15 补的是 File 与 Workspace 两种 scope 之间最常见、也最接近�
 交互保持接近普通编辑器：在左侧 source textarea 选中文字会自动切到 Selection scope，并显示绑定字符数；键盘原生 Shift 选区同样有效。Document/Slides 提供“压缩成一句”和“三个要点”，Data/Query/Chart 提供“转大写”和“去除两端空白”的零密钥快捷命令；本地 planner 也必须生成具体 patch 并通过完整 workspace safety gate，不能因为没有 provider 就绕过 review。编辑 source、切换 artifact、Pull、reset、New、import 或成功 Apply 都会使旧选区失效，避免把屏幕上的旧高亮误当作当前 revision 的权限。
 
 这轮刻意没有把 selection 持久化、做跨文件多选、在 revision 变化后 fuzzy rebase，或把它伪装成稳定 AST node。当前选区是一次短生命周期的精确 source capability：简单、可解释、失败安全。下一步若真实使用表明用户常常反复引用同一段，可以给 Markdown block、data row 和 slide 分配稳定 identity，再让 selection 升级为可重定位的结构引用；在那之前，宁可让过期选区明确失败，也不猜测用户还想改哪一段。
+
+## 20. Preview-to-source targeting：让“我看到的这里”成为精确上下文
+
+v0.15 让用户在左侧源码中选一段并把 Agent 权限限制在其中，但真实的 Word、Excel、PowerPoint 工作方式通常从右侧成品开始：人先看到一段结论、一行数据或某张 slide，再决定“改这里”。如果必须先回到源码里寻找对应字符，左源右预览就仍然是两个并排窗口，而不是一个 AI Native 编辑器。更危险的捷径是把点击到的 DOM 文本或 iframe 坐标直接塞进 prompt；编译后的 metric、chart、Markdown 标签和 layout 已经改变了文本与层级，它们没有资格代表 canonical source offset。
+
+v0.16 因此把 preview target 定义为一种本地、短生命周期的 source map。它只有 `kind + index + label + [start,end)`，从当前 artifact revision 重新推导，不写进 Markdown、CSV/JSON 或 Deck，也不进入 localStorage。点击 target 后，Rune 只做一件有权威性的事：把原生 textarea 设到这段 UTF-16 range，并启用 v0.15 的 Selection scope。后续 provider input、operation compile、prefix/suffix 证明、diff review、checkpoint 和 atomic apply 完全不变。右侧预览负责帮助人指向，左侧 canonical source 仍负责定义权限。
+
+三类 source map 不能共用一个草率的“按行切割”。Markdown 以 fenced-code-aware heading scanner 找到可见 section；每个 heading 到下一个可见 heading 是一个不重叠 target，因此 code fence 里的 `##` 不会制造假段落。CSV scanner 维护 quote 状态，允许一个 record 跨多行、处理 `""` 转义和 CRLF，并与 parser 的 greedy-empty row 行为对齐。JSON scanner 从顶层 array 逐个读取完整 value，跟踪 string escape 与嵌套 `{}`/`[]`，所以字符串里的括号不会提前截断。Deck 则先通过严格 parser，再从 frontmatter closing delimiter 之后切出 slide，target 保留 layout/eyebrow metadata，却不包含 `---` separator。
+
+交互也遵守“看得见、可撤销”。文档在 paper metadata 下显示可横向滚动、键盘可操作的 section outline，并继续把完整 Markdown 一次编译，避免为了点击能力破坏跨段 reference 等语义；数据表每一行支持 click、Enter 和 Space；演示因为 iframe 保持 `sandbox=""` 且禁止脚本，不注入 postMessage bridge，而是在 iframe 外显示带标题的 slide target strip。激活后左侧立即获得真实 selection highlight，Selection scope 与字符数随之更新。超过 16,000 字符或已经不匹配当前 revision 的 target 会明确失败，不能退化成 File scope 后悄悄扩大权限。
+
+这项能力还刻意拒绝三种假映射。SQL result row 是 query 的派生结果，不一定对应 SQL source 的一段字符；Chart mark 对应数据 artifact，而不是当前 Chart JSON 的一个连续 range；legacy semantic HTML iframe 也没有经过可证明的 source target compiler。因此它们暂时不显示可点击 target。这样的缺口比错误地告诉用户“只会改这里”更诚实，未来可以通过 lineage-aware cross-artifact targeting 让 chart bar 指向数据行，或让 query result 指向可追踪的 provenance record，而不是把屏幕坐标伪装成 source identity。
+
+当前 target 仍不是稳定结构 ID：在 heading 前插入文字、格式化 JSON 或重新排序 CSV 后 offset 会变化，旧 target 立即失效并重新计算。这与一次编辑意图的生命周期相符，也保持零新依赖、零服务成本。下一步若要支持评论、长期引用或协作，应把 Markdown block、data row 和 Deck slide 的稳定 identity 设计成可选 metadata 或独立 operation log；在那之前，preview-to-source map 已经把视觉浏览与可证明的 Agent 权限接通，而没有引入第二套文档模型。
