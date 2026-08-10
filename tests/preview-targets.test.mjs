@@ -3,7 +3,10 @@ import test from "node:test";
 import {
   derivePreviewSourceTargets,
   previewTargetIsActive,
+  resolveDataRowPreviewTarget,
 } from "../app/lib/preview-targets.ts";
+import { resolveChartModel } from "../app/lib/charts.ts";
+import { parseDataSource } from "../app/lib/workspace.ts";
 
 function artifact(kind, language, name, source) {
   return { id: "target", kind, language, name, source };
@@ -98,4 +101,34 @@ test("returns no visual targets for invalid data, invalid Deck source, or legacy
   assert.deepEqual(derivePreviewSourceTargets(artifact("data", "CSV / JSON", "broken.json", "[{")), []);
   assert.deepEqual(derivePreviewSourceTargets(artifact("slides", "Deck Markdown", "broken.deck.md", "# No frontmatter")), []);
   assert.deepEqual(derivePreviewSourceTargets(artifact("slides", "Semantic HTML", "legacy.html", "<main><section>Legacy</section></main>")), []);
+});
+
+test("resolves a sorted chart datum back to its exact canonical data row", () => {
+  const data = artifact("data", "CSV / JSON", "regions.csv", "Region,Revenue\nLow,10\nHigh,30\nMid,20");
+  data.id = "regions";
+  const chart = artifact("chart", "Chart JSON", "revenue.chart.json", JSON.stringify({
+    version: 1,
+    title: "Revenue",
+    description: "",
+    source: "regions",
+    mark: "bar",
+    category: "Region",
+    value: "Revenue",
+    sort: "descending",
+    format: "number",
+    color: "#ff5c35",
+    maxItems: 8,
+  }));
+  chart.id = "revenue-chart";
+  const model = resolveChartModel(chart, [data, chart], parseDataSource).model;
+  assert.ok(model);
+  assert.equal(model.data[0].label, "High");
+  assert.equal(model.data[0].sourceRowIndex, 1);
+
+  const resolved = resolveDataRowPreviewTarget(model.sourceArtifactId, model.data[0].sourceRowIndex, [data, chart]);
+  assert.ok(resolved);
+  assert.equal(resolved.artifact.id, "regions");
+  assert.equal(data.source.slice(resolved.target.start, resolved.target.end), "High,30");
+  assert.equal(resolveDataRowPreviewTarget("missing", 0, [data, chart]), null);
+  assert.equal(resolveDataRowPreviewTarget("regions", -1, [data, chart]), null);
 });

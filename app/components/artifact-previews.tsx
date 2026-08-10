@@ -26,12 +26,17 @@ import type { QueryCell, WorkspaceQueryResult } from "../lib/duckdb-client";
 import {
   derivePreviewSourceTargets,
   previewTargetIsActive,
+  resolveDataRowPreviewTargets,
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
 
 type GridCell = DataCell | QueryCell;
-type PreviewTargetHandler = (target: PreviewSourceTarget) => void;
+type PreviewTargetHandler = (
+  artifact: WorkspaceArtifact,
+  target: PreviewSourceTarget,
+  viaLabel?: string,
+) => void;
 
 function EmptyPreview({ message }: { message: string }) {
   return (
@@ -42,7 +47,23 @@ function EmptyPreview({ message }: { message: string }) {
   );
 }
 
-function ChartFigure({ model, embedded = false }: { model: ChartModel; embedded?: boolean }) {
+function ChartFigure({
+  model,
+  artifacts,
+  embedded = false,
+  onTargetSource,
+}: {
+  model: ChartModel;
+  artifacts: WorkspaceArtifact[];
+  embedded?: boolean;
+  onTargetSource?: PreviewTargetHandler;
+}) {
+  const sourceRows = resolveDataRowPreviewTargets(model.sourceArtifactId, artifacts);
+  const rows = model.data.map((datum) => ({
+    datum,
+    target: sourceRows?.targets.find((target) => target.index === datum.sourceRowIndex),
+  }));
+  const hasTargetableRows = Boolean(onTargetSource && sourceRows && rows.some((row) => row.target));
   return (
     <figure
       className={`chart-card ${embedded ? "embedded" : ""}`}
@@ -54,28 +75,63 @@ function ChartFigure({ model, embedded = false }: { model: ChartModel; embedded?
         <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
       </figcaption>
       <div className="chart-bars">
-        {model.data.map((datum, index) => (
-          <div className="chart-bar-row" key={`${datum.label}-${index}`}>
-            <span title={datum.label}>{datum.label}</span>
-            <div className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></div>
-            <strong>{datum.formatted}</strong>
-          </div>
-        ))}
+        {rows.map(({ datum, target }) => {
+          const openSource = sourceRows && target && onTargetSource
+            ? () => onTargetSource(
+                sourceRows.artifact,
+                target,
+                `${model.spec.title} · ${datum.label}`,
+              )
+            : undefined;
+          return (
+            <div
+              className={`chart-bar-row ${openSource ? "preview-chart-target" : ""}`.trim()}
+              data-chart-source-row={datum.sourceRowIndex}
+              key={datum.sourceRowIndex}
+              role={openSource ? "button" : undefined}
+              tabIndex={openSource ? 0 : undefined}
+              aria-label={openSource ? `Open ${target?.label} in ${sourceRows?.artifact.name} as Agent context` : undefined}
+              title={openSource ? `Open canonical row in ${sourceRows?.artifact.name}` : undefined}
+              onClick={openSource}
+              onKeyDown={openSource ? (event) => activateTargetFromKeyboard(event, openSource) : undefined}
+            >
+              <span title={datum.label}>{datum.label}</span>
+              <div className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></div>
+              <strong>{datum.formatted}</strong>
+            </div>
+          );
+        })}
       </div>
-      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks</span></footer>
+      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks{hasTargetableRows ? " · Click a bar to open its canonical data row" : ""}</span></footer>
     </figure>
   );
 }
 
-function EmbeddedChart({ chartId, artifacts }: { chartId: string; artifacts: WorkspaceArtifact[] }) {
+function EmbeddedChart({
+  chartId,
+  artifacts,
+  onTargetSource,
+}: {
+  chartId: string;
+  artifacts: WorkspaceArtifact[];
+  onTargetSource?: PreviewTargetHandler;
+}) {
   const chartArtifact = artifacts.find((artifact) => artifact.id === chartId && artifact.kind === "chart");
   if (!chartArtifact) return <div className="embedded-chart-error">Chart not found · {chartId}</div>;
   const resolution = resolveChartModel(chartArtifact, artifacts, parseDataSource);
   if (!resolution.model) return <div className="embedded-chart-error">Chart unavailable · {resolution.errors[0]}</div>;
-  return <ChartFigure model={resolution.model} embedded />;
+  return <ChartFigure model={resolution.model} artifacts={artifacts} embedded onTargetSource={onTargetSource} />;
 }
 
-function MarkdownSource({ source, artifacts }: { source: string; artifacts: WorkspaceArtifact[] }) {
+function MarkdownSource({
+  source,
+  artifacts,
+  onTargetSource,
+}: {
+  source: string;
+  artifacts: WorkspaceArtifact[];
+  onTargetSource?: PreviewTargetHandler;
+}) {
   const parts = tokenizeChartReferences(source);
   return (
     <>
@@ -83,7 +139,7 @@ function MarkdownSource({ source, artifacts }: { source: string; artifacts: Work
         <Fragment key={`${part.type}-${index}`}>
           {part.type === "source"
             ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.value}</ReactMarkdown>
-            : <EmbeddedChart chartId={part.value} artifacts={artifacts} />}
+            : <EmbeddedChart chartId={part.value} artifacts={artifacts} onTargetSource={onTargetSource} />}
         </Fragment>
       ))}
     </>
@@ -92,21 +148,19 @@ function MarkdownSource({ source, artifacts }: { source: string; artifacts: Work
 
 function activateTargetFromContainer(
   event: MouseEvent<HTMLElement>,
-  target: PreviewSourceTarget,
-  onTargetSource?: PreviewTargetHandler,
+  activate?: () => void,
 ) {
-  if (!onTargetSource || (event.target as HTMLElement).closest("a, button, input")) return;
-  onTargetSource(target);
+  if (!activate || (event.target as HTMLElement).closest("a, button, input")) return;
+  activate();
 }
 
 function activateTargetFromKeyboard(
   event: KeyboardEvent<HTMLElement>,
-  target: PreviewSourceTarget,
-  onTargetSource?: PreviewTargetHandler,
+  activate?: () => void,
 ) {
-  if (!onTargetSource || (event.key !== "Enter" && event.key !== " ")) return;
+  if (!activate || (event.key !== "Enter" && event.key !== " ")) return;
   event.preventDefault();
-  onTargetSource(target);
+  activate();
 }
 
 function DocumentPreview({
@@ -142,7 +196,7 @@ function DocumentPreview({
                   type="button"
                   aria-label={`Select ${target.label} in canonical source for Agent context`}
                   aria-pressed={active}
-                  onClick={() => onTargetSource(target)}
+                  onClick={() => onTargetSource(artifact, target)}
                 >
                   <MousePointer2 aria-hidden="true" /> <span>{target.label}</span>
                 </button>
@@ -151,7 +205,7 @@ function DocumentPreview({
           </nav>
         )}
         <div className="markdown-body">
-          <MarkdownSource source={compiled.source} artifacts={artifacts} />
+          <MarkdownSource source={compiled.source} artifacts={artifacts} onTargetSource={onTargetSource} />
         </div>
       </article>
     </div>
@@ -164,6 +218,7 @@ function ResultGrid({
   badges,
   footnote,
   rowTargets,
+  targetArtifact,
   activeSelection,
   onTargetSource,
 }: {
@@ -172,6 +227,7 @@ function ResultGrid({
   badges: Array<{ icon: "rows" | "columns" | "format" | "time"; label: string }>;
   footnote: string;
   rowTargets?: PreviewSourceTarget[];
+  targetArtifact?: WorkspaceArtifact;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
 }) {
@@ -198,7 +254,10 @@ function ResultGrid({
           <tbody>
             {rows.map((row, rowIndex) => {
               const target = rowTargets?.[rowIndex];
-              const selectable = Boolean(target && onTargetSource);
+              const activate = target && targetArtifact && onTargetSource
+                ? () => onTargetSource(targetArtifact, target)
+                : undefined;
+              const selectable = Boolean(activate);
               const active = Boolean(target && previewTargetIsActive(target, activeSelection));
               return (
               <tr
@@ -206,8 +265,8 @@ function ResultGrid({
                 key={rowIndex}
                 tabIndex={selectable ? 0 : undefined}
                 aria-label={selectable ? `Select ${target?.label} in canonical source for Agent context` : undefined}
-                onClick={target ? (event) => activateTargetFromContainer(event, target, onTargetSource) : undefined}
-                onKeyDown={target ? (event) => activateTargetFromKeyboard(event, target, onTargetSource) : undefined}
+                onClick={activate ? (event) => activateTargetFromContainer(event, activate) : undefined}
+                onKeyDown={activate ? (event) => activateTargetFromKeyboard(event, activate) : undefined}
               >
                 <th className="row-index">{rowIndex + 1}</th>
                 {columns.map((column, columnIndex) => {
@@ -253,6 +312,7 @@ function DataPreview({
         ? "Parsed locally — click a row to bind exact Agent context."
         : "Parsed locally — no rows left this device."}
       rowTargets={targets}
+      targetArtifact={artifact}
       activeSelection={activeSelection}
       onTargetSource={onTargetSource}
     />
@@ -320,10 +380,18 @@ function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?:
   );
 }
 
-function ChartPreview({ artifact, artifacts }: { artifact: WorkspaceArtifact; artifacts: WorkspaceArtifact[] }) {
+function ChartPreview({
+  artifact,
+  artifacts,
+  onTargetSource,
+}: {
+  artifact: WorkspaceArtifact;
+  artifacts: WorkspaceArtifact[];
+  onTargetSource?: PreviewTargetHandler;
+}) {
   const resolution = resolveChartModel(artifact, artifacts, parseDataSource);
   if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? "The chart could not compile."} />;
-  return <div className="chart-stage"><ChartFigure model={resolution.model} /></div>;
+  return <div className="chart-stage"><ChartFigure model={resolution.model} artifacts={artifacts} onTargetSource={onTargetSource} /></div>;
 }
 
 function SlidesPreview({
@@ -364,7 +432,7 @@ function SlidesPreview({
                 key={target.id}
                 type="button"
                 aria-pressed={active}
-                onClick={() => onTargetSource(target)}
+                onClick={() => onTargetSource(artifact, target)}
                 title={`Select ${target.label} in canonical source`}
               >
                 <span>{String(target.index + 1).padStart(2, "0")}</span>
@@ -403,6 +471,6 @@ export function ArtifactPreview({
   if (artifact.kind === "query") {
     return <QueryPreview source={artifact.source} dataArtifact={artifacts.find((item) => item.kind === "data")} />;
   }
-  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} />;
+  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} onTargetSource={onTargetSource} />;
   return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
 }

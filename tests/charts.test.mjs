@@ -32,8 +32,42 @@ test("projects canonical CSV rows into a sorted local chart model", () => {
   assert.ok(resolution.model);
   assert.equal(resolution.model.sourceArtifactName, "regional-revenue.csv");
   assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["APAC", "North America", "Europe", "LATAM"]);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [0, 1, 2, 3]);
   assert.equal(resolution.model.data[0].formatted, "$1.84M");
   assert.equal(resolution.model.data[0].ratio, 1);
+});
+
+test("keeps exact source-row provenance through chart sorting and duplicate labels", () => {
+  const data = {
+    id: "data",
+    name: "data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Revenue\nShared,10\nShared,30\nOther,20",
+  };
+  const chart = {
+    id: "chart",
+    name: "chart.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "Revenue",
+      description: "",
+      source: "data",
+      mark: "bar",
+      category: "Region",
+      value: "Revenue",
+      sort: "descending",
+      format: "number",
+      color: "#ff5c35",
+      maxItems: 8,
+    }),
+  };
+  const resolution = resolveChartModel(chart, [data, chart], parseDataSource);
+  assert.ok(resolution.model);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["Shared", "Other", "Shared"]);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [1, 2, 0]);
 });
 
 test("escapes chart text when compiling a static slide embed", () => {

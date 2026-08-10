@@ -2286,6 +2286,21 @@ textarea:focus-visible {
   font-size: 10px;
 }
 
+.chart-bar-row.preview-chart-target {
+  margin: -4px -7px;
+  padding: 4px 7px;
+  border-radius: 7px;
+  cursor: pointer;
+  outline: 0;
+  transition: background .15s ease, box-shadow .15s ease;
+}
+
+.chart-bar-row.preview-chart-target:hover,
+.chart-bar-row.preview-chart-target:focus-visible {
+  background: color-mix(in srgb, var(--chart-accent) 8%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--chart-accent) 72%, transparent);
+}
+
 .chart-bar-row > span {
   overflow: hidden;
   color: var(--muted);

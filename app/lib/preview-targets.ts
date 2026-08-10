@@ -11,6 +11,16 @@ export type PreviewSourceTarget = SourceSelection & {
   label: string;
 };
 
+export type ResolvedPreviewSourceTarget = {
+  artifact: WorkspaceArtifact;
+  target: PreviewSourceTarget;
+};
+
+export type ResolvedDataRowPreviewTargets = {
+  artifact: WorkspaceArtifact;
+  targets: PreviewSourceTarget[];
+};
+
 type SourceLine = {
   start: number;
   end: number;
@@ -241,4 +251,26 @@ export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): Preview
 
 export function previewTargetIsActive(target: PreviewSourceTarget, selection?: SourceSelection | null) {
   return Boolean(selection && target.start === selection.start && target.end === selection.end);
+}
+
+export function resolveDataRowPreviewTarget(
+  artifactId: string,
+  sourceRowIndex: number,
+  artifacts: WorkspaceArtifact[],
+): ResolvedPreviewSourceTarget | null {
+  if (!Number.isInteger(sourceRowIndex) || sourceRowIndex < 0) return null;
+  const resolved = resolveDataRowPreviewTargets(artifactId, artifacts);
+  if (!resolved) return null;
+  const target = resolved.targets.find((candidate) => candidate.index === sourceRowIndex);
+  return target ? { artifact: resolved.artifact, target } : null;
+}
+
+export function resolveDataRowPreviewTargets(
+  artifactId: string,
+  artifacts: WorkspaceArtifact[],
+): ResolvedDataRowPreviewTargets | null {
+  const artifact = artifacts.find((candidate) => candidate.id === artifactId && candidate.kind === "data");
+  if (!artifact) return null;
+  const targets = derivePreviewSourceTargets(artifact).filter((candidate) => candidate.kind === "data-row");
+  return targets.length ? { artifact, targets } : null;
 }

@@ -1390,3 +1390,17 @@ v0.16 因此把 preview target 定义为一种本地、短生命周期的 source
 这项能力还刻意拒绝三种假映射。SQL result row 是 query 的派生结果，不一定对应 SQL source 的一段字符；Chart mark 对应数据 artifact，而不是当前 Chart JSON 的一个连续 range；legacy semantic HTML iframe 也没有经过可证明的 source target compiler。因此它们暂时不显示可点击 target。这样的缺口比错误地告诉用户“只会改这里”更诚实，未来可以通过 lineage-aware cross-artifact targeting 让 chart bar 指向数据行，或让 query result 指向可追踪的 provenance record，而不是把屏幕坐标伪装成 source identity。
 
 当前 target 仍不是稳定结构 ID：在 heading 前插入文字、格式化 JSON 或重新排序 CSV 后 offset 会变化，旧 target 立即失效并重新计算。这与一次编辑意图的生命周期相符，也保持零新依赖、零服务成本。下一步若要支持评论、长期引用或协作，应把 Markdown block、data row 和 Deck slide 的稳定 identity 设计成可选 metadata 或独立 operation log；在那之前，preview-to-source map 已经把视觉浏览与可证明的 Agent 权限接通，而没有引入第二套文档模型。
+
+## 21. Chart-to-row provenance：派生视图也要能回到事实
+
+v0.16 有意不让 Chart mark 变成 target，因为柱形是派生结果，不属于当前 `.chart.json` 的某段连续 source。这个保守决定是正确的，但也暴露了数据产品的核心断点：用户在报告里看到 APAC 柱形异常，真正想编辑的是 `regional-revenue.csv` 中产生它的那一行。如果只能手工打开数据文件再搜索，lineage strip 只是说明文字，不是可操作的数据血缘。AI Native Office 应该允许人从成品一路回到事实，同时不能把“看起来相同”误当成 identity。
+
+最容易犯的错误是用 bar label 反查 category column。分类值可以重复，图表还可能排序、截断、格式化；两个 `Shared` label 没有任何理由被猜成同一行。v0.17 在 chart compiler 读取每行时就记录零基 `sourceRowIndex`，然后把它与 label/value 一起经过 sort 和 `maxItems`。显示顺序可以从 `[0,1,2]` 变成 `[1,2,0]`，但每个 datum 的 provenance 不变。重复 label 因而完全不影响定位，也不需要给 CSV 注入隐藏 id。
+
+点击时，Rune 使用 chart model 的 `sourceArtifactId + sourceRowIndex`，在当前 workspace 中重新取得引用的数据 artifact，再运行 v0.16 的 CSV/JSON target compiler。只有对应 index 仍然产生一个 exact `data-row` range 时，这根柱形才获得交互；data source 缺失、parser error、row mapping 数量不一致或 index 越界都会让它保持普通只读 mark。HTML 上的 `data-chart-source-row` 只用于可观察性和测试，不是权限来源；label、排序位置、bar 宽度更不会参与 source resolution。
+
+成功激活后是一次显式的跨 artifact 导航：workbench 切到真实 CSV/JSON 文件，等待 textarea 呈现新 revision，再选择精确 row range，并启用 Selection Agent。报告中的 embedded React chart 与独立 Chart preview 都支持 click、Enter 和 Space，footer 明确提示可以打开 canonical row。之后的 prompt 只看这行 selection，provider operations 仍要通过服务端与客户端 prefix/suffix proof、完整 data parser、chart dependency recompile、diff review、checkpoint 和 atomic persistence。因此“从图表改数据”没有变成图表直接写数据。
+
+Deck iframe、standalone HTML、DOCX 和 PPTX 中的 chart 仍是静态交付副本。为了让演示里的柱形可点而给 `sandbox=""` 注入脚本，会破坏此前建立的无脚本边界；Office 文件也没有 Rune runtime。当前更诚实的体验是在编辑 workbench 的 React chart 上提供 provenance，导出物保持 frozen snapshot。未来若需要交互式分享，应单独定义带可信 runtime 与只读 provenance payload 的发布格式，而不是悄悄改变现有 standalone 合同。
+
+这轮也没有声称解决 SQL result provenance。Query 可能聚合、join、filter，一行结果可能来自多行甚至多个 source，单个 `sourceRowIndex` 不够表达。下一步可以让 DuckDB query adapter返回 bounded provenance set，或先实现 column/cell-level data target，让 Chart mark 精确到 category/value cells；只有能够证明 lineage 时才扩展 target。这个原则比“所有东西都能点”更重要：视觉对象可以帮助用户指向，但写入权限必须始终落在可验证的 canonical source 上。

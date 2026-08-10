@@ -505,9 +505,21 @@ export function RuneWorkbench() {
       : `${(end - start).toLocaleString()} source characters selected · Selection Agent ready`);
   }
 
-  function focusPreviewTarget(target: PreviewSourceTarget) {
+  function focusPreviewTarget(
+    targetArtifact: WorkspaceArtifact,
+    target: PreviewSourceTarget,
+    viaLabel?: string,
+  ) {
     previewSelectionNoticeRef.current = null;
-    const error = sourceSelectionError(selectedArtifact.source, target);
+    const currentTargetArtifact = artifacts.find((artifact) => artifact.id === targetArtifact.id);
+    if (!currentTargetArtifact) {
+      setSourceSelection(null);
+      if (agentScope === "selection") setAgentScope("artifact");
+      setAgentError("The preview target artifact is no longer in this workspace.");
+      setNotice("Preview target is too large or no longer matches the current source");
+      return;
+    }
+    const error = sourceSelectionError(currentTargetArtifact.source, target);
     if (error) {
       setSourceSelection(null);
       if (agentScope === "selection") setAgentScope("artifact");
@@ -515,23 +527,31 @@ export function RuneWorkbench() {
       setNotice("Preview target is too large or no longer matches the current source");
       return;
     }
+    const contextLabel = viaLabel ? `${target.label} · via ${viaLabel}` : target.label;
+    const changesArtifact = currentTargetArtifact.id !== selectedArtifact.id;
     const selection: ActiveSourceSelection = {
-      artifactId: selectedArtifact.id,
-      sourceRevision: selectedArtifact.source,
+      artifactId: currentTargetArtifact.id,
+      sourceRevision: currentTargetArtifact.source,
       start: target.start,
       end: target.end,
     };
+    if (changesArtifact) setSelectedId(currentTargetArtifact.id);
     setSourceSelection(selection);
     setAgentScope("selection");
     setPendingChange(null);
+    setHistoryOpen(false);
     setAgentError("");
-    setNotice(`${target.label} selected from preview · Selection Agent ready`);
-    previewSelectionNoticeRef.current = target;
-    window.requestAnimationFrame(() => {
+    setNotice(`${contextLabel} selected from preview · Selection Agent ready`);
+    previewSelectionNoticeRef.current = { ...target, label: contextLabel };
+    const focusSelection = () => {
       const editor = sourceEditorRef.current;
       if (!editor) return;
       editor.focus();
       editor.setSelectionRange(target.start, target.end, "forward");
+    };
+    window.requestAnimationFrame(() => {
+      if (changesArtifact) window.requestAnimationFrame(focusSelection);
+      else focusSelection();
     });
   }
 
@@ -1470,7 +1490,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.16</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.17</span></div>
       </footer>
 
       {newArtifactOpen && (

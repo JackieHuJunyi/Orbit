@@ -34,6 +34,7 @@ export type ChartDatum = {
   value: number;
   formatted: string;
   ratio: number;
+  sourceRowIndex: number;
 };
 
 export type ChartModel = {
@@ -119,13 +120,13 @@ export function resolveChartModel(
   if (!parsedData.columns.includes(spec.value)) errors.push(`Value column not found: ${spec.value}`);
   if (errors.length) return { errors };
 
-  const rows: Array<{ label: string; value: number }> = [];
+  const rows: Array<{ label: string; value: number; sourceRowIndex: number }> = [];
   parsedData.rows.forEach((row, index) => {
     const label = String(row[spec.category] ?? "").trim();
     const value = toFiniteNumber(row[spec.value]);
     if (!label) errors.push(`Row ${index + 1} has an empty ${spec.category} value.`);
     if (value == null) errors.push(`Row ${index + 1} has a non-numeric ${spec.value} value.`);
-    if (label && value != null) rows.push({ label, value });
+    if (label && value != null) rows.push({ label, value, sourceRowIndex: index });
   });
   if (errors.length) return { errors };
   if (!rows.length) return { errors: ["The chart data source has no rows."] };
