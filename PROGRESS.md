@@ -4,3 +4,4 @@
 - 2026-08-11 — Built the first local-first workbench with live Markdown, CSV/JSON, and sandboxed HTML artifact previews.
 - 2026-08-11 — Added reviewable local Agent patches, undo checkpoints, import, download, validation, and device persistence.
 - 2026-08-11 — Added a product-specific Rune social card and host-aware sharing metadata.
+- 2026-08-11 — Connected the validated Rune source to its private Sites project for repeatable deployments.
