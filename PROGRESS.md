@@ -16,3 +16,4 @@
 - 2026-08-11 — Added explicit browser folder Pull/Push for real source files, with a readable manifest, bounded validation, and pre-pull checkpoints.
 - 2026-08-11 — Made bounded Deck Markdown the canonical presentation source and compiled it into escaped, automatically numbered, sandboxed HTML while retaining legacy deck compatibility.
 - 2026-08-11 — Added atomic browser-local semantic import from DOCX to Markdown, visible XLSX sheets to CSV, and PPTX to compiled Deck Markdown with explicit fidelity warnings.
+- 2026-08-11 — Added a keyboard-accessible import review transaction that exposes every generated source preview and fidelity warning before one atomic device write.

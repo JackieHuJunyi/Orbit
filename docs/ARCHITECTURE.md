@@ -71,7 +71,9 @@ The compiler owns the 16:9 frame, design tokens, layout classes, and page number
 
 Modern `.docx`, `.xlsx`, and `.pptx` files are Open XML ZIP packages. Rune lazily loads a small package/XML adapter only after the user chooses one, extracts XML parts while ignoring media bytes, and never uploads the original file. DOCX paragraphs, heading styles, run emphasis, links, numbering, and tables become Markdown. Every visible XLSX worksheet becomes an independent CSV artifact with shared/inline strings, booleans, numbers, common date formats, and cached formula values. Ordered PPTX slides use placeholder titles, body paragraphs, bullets, and tables to produce validated Deck Markdown, which then follows the normal escaped HTML compiler path.
 
-This is intentionally semantic, not round-trip or pixel fidelity. Images and comments in DOCX, hidden sheets and live formulas in XLSX, and images/charts/animation/master styling in PPTX produce explicit warnings or are omitted; legacy binary `.doc/.xls/.ppt` and macro-enabled formats are outside this adapter. A batch import resolves duplicate names/ids, validates every new artifact plus the complete dependency graph, and performs one device-persistence write before swapping UI state. Any parse, validation, or quota failure keeps the previous workspace object unchanged.
+This is intentionally semantic, not round-trip or pixel fidelity. Images and comments in DOCX, hidden sheets and live formulas in XLSX, and images/charts/animation/master styling in PPTX produce explicit warnings or are omitted; legacy binary `.doc/.xls/.ppt` and macro-enabled formats are outside this adapter. A batch import resolves duplicate names/ids and validates every new artifact plus the complete dependency graph, but remains a pending transaction. The review surface lists every generated filename, all fidelity warnings, and at most 12 lines/1,600 characters from each source. The full validated sources remain in memory and are not written until the user confirms.
+
+The pending transaction retains the exact base workspace object. Import is disabled before device hydration and conversion is single-flight; if editing, folder pull, reset, or another operation replaces the artifact array while conversion runs, confirmation rejects the stale transaction. Confirmation performs one device-persistence write before swapping UI state. Cancel, parse failure, stale context, validation failure, or quota failure keeps the previous workspace object unchanged and never exposes a partial batch.
 
 The compressed file limit is 12 MB. Package reads allow at most 2,000 entries, 6 MB per XML part, and 24 MB expanded XML in total; DTD/entity declarations and path traversal are rejected. Output is capped at 200,000 characters per artifact and 500,000 across one workbook, with additional semantic limits of 10,000 Word blocks, 10 worksheets, 10,000 rows, 256 columns, 50,000 spreadsheet cells, and 40 slides. Large-file conversion can move behind the same port into a Web Worker later without changing its output contract.
 
@@ -97,9 +99,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 2. v0.4 adds a session-scoped File System Access port with explicit validated Pull and confirmed Push.
 3. v0.5 makes bounded Deck Markdown the canonical presentation source while preserving a sandboxed legacy HTML bridge.
 4. v0.6 adds lazy, browser-local semantic import from modern Word, Excel, and PowerPoint Open XML packages.
-5. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-6. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-7. D1/R2 remain undeclared until durable hosted projects or assets are required.
+5. v0.7 makes every import a review-before-write transaction with complete fidelity notes and bounded source previews.
+6. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+7. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+8. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -111,6 +114,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - SQL runs in a dedicated browser worker; the preview accepts one read-only query and bounds visible results to 500 rows.
 - Chart JSON is strict and code-free; text is React-escaped or HTML-escaped before document and slide rendering.
 - OOXML import rejects oversized/unsafe ZIP parts, path traversal, DTD/entity declarations, invalid output adapters, and partial device writes; binary input never leaves the browser.
+- Import confirmation rejects stale workspace context and keeps quota failures inside the open review instead of partially updating React or device state.
 - Folder manifests reject hidden/path-like names, duplicate identity, missing sources, oversized payloads, and invalid dependency graphs before Pull.
 - Provider keys belong in server-side secrets; they are never committed or stored in browser drafts.
 - XLSX import reads cached formula values and prefixes formula-leading text with an apostrophe before it becomes CSV; future generated CSV/XLSX export must reuse this injection boundary.
@@ -130,4 +134,4 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 ## Quality gates
 
-Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. OOXML behavior uses generated ZIP fixtures for all three package families and hostile-input boundaries. Provider-backed behavior also needs deterministic eval fixtures before it becomes a default path.
+Every milestone needs a production build, typecheck, unit coverage for parsers and patch application, one end-to-end golden workspace, accessible keyboard operation, and a one-sentence entry in `PROGRESS.md`. OOXML behavior uses generated ZIP fixtures for all three package families and hostile-input boundaries; import review tests also cover stale context, warning deduplication, and bounded previews. Provider-backed behavior also needs deterministic eval fixtures before it becomes a default path.

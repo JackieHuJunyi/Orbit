@@ -51,6 +51,12 @@ button {
   color: inherit;
 }
 
+.button:disabled,
+.tiny-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
 button:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--accent);
@@ -1184,6 +1190,279 @@ textarea:focus-visible {
   gap: 5px;
 }
 
+.import-review-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(16, 24, 19, .62);
+  backdrop-filter: blur(5px);
+}
+
+.import-review-dialog {
+  display: grid;
+  width: min(920px, calc(100vw - 32px));
+  max-height: min(790px, calc(100vh - 32px));
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: 16px;
+  background: #f6f5ef;
+  box-shadow: 0 28px 90px rgba(9, 15, 11, .34);
+}
+
+.import-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.import-review-header > div {
+  min-width: 0;
+}
+
+.import-review-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #277553;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.import-review-kicker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.import-review-header h2 {
+  margin: 7px 0 5px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  letter-spacing: -.025em;
+}
+
+.import-review-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.import-review-header p strong {
+  color: #455149;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.import-review-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 24px 22px;
+}
+
+.import-review-body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.import-warning-panel,
+.import-review-clear,
+.import-review-error {
+  margin-bottom: 14px;
+  border-radius: 10px;
+}
+
+.import-warning-panel {
+  padding: 12px 14px;
+  border: 1px solid #ead7b4;
+  background: #fff8e9;
+}
+
+.import-warning-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #76531e;
+}
+
+.import-warning-heading svg {
+  width: 15px;
+  height: 15px;
+}
+
+.import-warning-heading h3 {
+  margin: 0;
+  font-size: 11px;
+}
+
+.import-warning-heading span {
+  display: grid;
+  min-width: 19px;
+  height: 19px;
+  place-items: center;
+  margin-left: auto;
+  border-radius: 999px;
+  background: #f1dfbd;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.import-warning-panel ul {
+  display: grid;
+  gap: 5px;
+  margin: 9px 0 0;
+  padding-left: 18px;
+  color: #765f38;
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.import-review-clear {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid #cce0d2;
+  background: #eff8f2;
+  color: #2a704f;
+  font-size: 10px;
+}
+
+.import-review-clear svg {
+  width: 15px;
+  height: 15px;
+}
+
+.import-review-error {
+  padding: 10px 12px;
+  border: 1px solid #edc7c1;
+  background: #fff0ed;
+  color: #8d3e35;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.import-review-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 12px;
+}
+
+.import-review-file {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d8d7cf;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.import-review-file > header {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 10px 11px;
+  border-bottom: 1px solid #e7e5dd;
+}
+
+.import-review-file .artifact-icon {
+  width: 29px;
+  height: 29px;
+  border-radius: 8px;
+}
+
+.import-review-file .artifact-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.import-review-file header > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.import-review-file header strong {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-review-file header small {
+  color: var(--subtle);
+  font-size: 9px;
+}
+
+.import-review-file pre {
+  min-height: 132px;
+  max-height: 190px;
+  margin: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  background: #fbfcfa;
+}
+
+.import-review-file code {
+  color: #4f5b53;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.45;
+  white-space: pre;
+}
+
+.import-review-file > p {
+  margin: 0;
+  padding: 7px 11px;
+  border-top: 1px solid #ebe9e2;
+  color: var(--subtle);
+  font-size: 8px;
+}
+
+.import-review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.import-review-actions > div,
+.import-review-actions > span {
+  display: flex;
+  align-items: center;
+}
+
+.import-review-actions > div {
+  gap: 6px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.import-review-actions > div svg {
+  width: 14px;
+  height: 14px;
+  color: #277553;
+}
+
+.import-review-actions > span {
+  gap: 8px;
+}
+
 .agent-error {
   padding: 7px 9px;
   border-left: 3px solid var(--danger);
@@ -2049,6 +2328,47 @@ textarea:focus-visible {
   .patch-actions {
     grid-column: 2;
     justify-content: flex-start;
+  }
+
+  .import-review-backdrop {
+    padding: 8px;
+  }
+
+  .import-review-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    border-radius: 12px;
+  }
+
+  .import-review-header,
+  .import-review-body {
+    padding-inline: 15px;
+  }
+
+  .import-review-header {
+    gap: 10px;
+  }
+
+  .import-review-header h2 {
+    font-size: 21px;
+  }
+
+  .import-review-files {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .import-review-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .import-review-actions > div {
+    justify-content: center;
+  }
+
+  .import-review-actions > span {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
   }
 
   .document-stage,

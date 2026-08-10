@@ -1267,3 +1267,13 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 [15]: https://learn.microsoft.com/en-us/office/open-xml/word/structure-of-a-wordprocessingml-document "Structure of a WordprocessingML document"
 [16]: https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/structure-of-a-spreadsheetml-document "Structure of a SpreadsheetML document"
 [17]: https://learn.microsoft.com/en-us/office/open-xml/presentation/structure-of-a-presentationml-document "Structure of a PresentationML document"
+
+## 11. Import review as a trust boundary
+
+v0.6 证明了 Office 文件可以低成本转成 Rune canonical source，但“adapter 验证通过后立即写入”仍然不符合产品最重要的承诺：所有有损或 Agent-like transformation 都应该先可见、再应用。v0.7 因此把 import 拆成两个明确阶段。第一阶段只在内存中建立 pending transaction，保存原文件名、导入开始时的 workspace 引用、冲突解决后的 artifact batch、完整 fidelity warning 和验证后的 next workspace；第二阶段必须由用户点击确认才执行唯一一次设备写入。
+
+Review surface 会列出每个生成文件的最终名称、canonical language、行数和字符数，并显示最多 12 行/1,600 字符的 source preview。这个上限只约束 DOM 渲染，不截断真正待导入的 source；即使 XLSX 生成十个 worksheet，也能快速判断 sheet 是否正确拆分、CSV header 是否合理、PPTX 是否形成预期的 Deck Markdown。所有 omission warning 都直接展开，而不是只把第一条塞进短暂状态栏。弹层使用 `role="dialog"`、modal semantics、初始 focus、Tab 循环和 Escape 取消，让 review gate 不依赖鼠标。
+
+事务完整性也覆盖转换期间的并发变化。Import 在 device draft hydrate 之前不可用，同一时刻只允许一个 FileReader/OOXML converter；pending transaction 通过 base workspace 对象身份检测 editing、folder pull 或 reset 导致的上下文替换。若上下文已经改变，确认会要求重新导入；若 localStorage quota 写入失败，review 保持打开且 React workspace 不变。取消同样不产生 checkpoint，因为没有任何现有 source 被改写。这样把“看到了什么”和“最终写入什么”锁在同一笔可审查操作里，同时仍然不新增服务器、账号、数据库或常驻运行成本。
+
+这个模式也为后续 export 提供了对称设计：先生成并预览 export plan/fidelity report，再让用户下载二进制结果。若真实大文件测试表明主线程转换造成卡顿，可以把第一阶段移入 Web Worker，而 review transaction 和确认写入合同无需改变。

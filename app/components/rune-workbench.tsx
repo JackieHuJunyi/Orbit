@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactPreview } from "./artifact-previews";
+import { ImportReviewDialog } from "./import-review-dialog";
 import {
   artifactStats,
   cloneDefaultArtifacts,
@@ -63,7 +64,11 @@ import {
   prepareWorkspacePatch,
   type ArtifactSourcePatch,
 } from "../lib/patches";
-import { prepareWorkspaceImport } from "../lib/imports";
+import {
+  prepareWorkspaceImportReview,
+  validateWorkspaceImportReview,
+  type WorkspaceImportReview,
+} from "../lib/imports";
 import {
   chooseWorkspaceDirectory,
   readWorkspaceDirectory,
@@ -181,6 +186,9 @@ export function RuneWorkbench() {
   const [fileRailOpen, setFileRailOpen] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+  const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
+  const [importError, setImportError] = useState("");
+  const [importState, setImportState] = useState<"idle" | "reading">("idle");
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
@@ -192,6 +200,7 @@ export function RuneWorkbench() {
   const [notice, setNotice] = useState("Local workspace ready");
   const gutterRef = useRef<HTMLPreElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const importInFlightRef = useRef(false);
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
@@ -645,13 +654,17 @@ export function RuneWorkbench() {
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file || importInFlightRef.current || pendingImport) return;
     const officeFile = OFFICE_IMPORT_PATTERN.test(file.name);
     const limit = officeFile ? MAX_OFFICE_IMPORT_BYTES : MAX_SOURCE_IMPORT_BYTES;
     if (file.size > limit) {
       setNotice(officeFile ? "Office import is limited to 12 MB per file" : "Source import is limited to 2 MB per file");
       return;
     }
+    const baseArtifacts = artifacts;
+    importInFlightRef.current = true;
+    setImportState("reading");
+    setImportError("");
     setNotice(officeFile ? `Converting ${file.name} locally…` : `Reading ${file.name} locally…`);
     try {
       let incoming: WorkspaceArtifact[];
@@ -667,21 +680,54 @@ export function RuneWorkbench() {
         if (!artifact) throw new Error("Choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, DOCX, XLSX, or PPTX.");
         incoming = [artifact];
       }
-      const prepared = prepareWorkspaceImport(artifacts, incoming);
+      const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, file.name, warnings);
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
-      const firstImported = prepared.importedArtifacts[0];
-      persistDeviceWorkspace(prepared.nextArtifacts, firstImported.id, checkpoints);
-      setArtifacts(prepared.nextArtifacts);
-      setSaveState("saved");
-      setSavedAt("just now");
-      setSelectedId(firstImported.id);
-      setPendingChange(null);
-      const warning = warnings[0] ? ` · ${warnings[0]}` : "";
-      const extraWarnings = warnings.length > 1 ? ` (+${warnings.length - 1} more)` : "";
-      setNotice(`Imported ${prepared.importedArtifacts.length} readable source ${prepared.importedArtifacts.length === 1 ? "artifact" : "artifacts"} from ${file.name}${warning}${extraWarnings}`);
+      if (!prepared.review) throw new Error("Rune could not prepare an import review.");
+      setPendingImport(prepared.review);
+      setNotice(`Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} before importing ${file.name}`);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Rune could not import that file");
+    } finally {
+      importInFlightRef.current = false;
+      setImportState("idle");
     }
+  }
+
+  function cancelPendingImport() {
+    if (!pendingImport) return;
+    const sourceName = pendingImport.sourceName;
+    setPendingImport(null);
+    setImportError("");
+    setNotice(`Import cancelled — ${sourceName} did not change the workspace`);
+  }
+
+  function applyPendingImport() {
+    if (!pendingImport) return;
+    const contextErrors = validateWorkspaceImportReview(artifacts, pendingImport);
+    if (contextErrors.length) {
+      setImportError(contextErrors[0]);
+      setNotice("Import held for review — workspace context changed");
+      return;
+    }
+    const firstImported = pendingImport.importedArtifacts[0];
+    try {
+      persistDeviceWorkspace(pendingImport.nextArtifacts, firstImported.id, checkpoints);
+    } catch {
+      setSaveState("error");
+      setImportError("Device storage is full, so Rune kept every source unchanged. Download or remove drafts, then try again.");
+      setNotice("Nothing imported — atomic persistence failed");
+      return;
+    }
+    const importedCount = pendingImport.importedArtifacts.length;
+    const sourceName = pendingImport.sourceName;
+    const warningCount = pendingImport.warnings.length;
+    setArtifacts(pendingImport.nextArtifacts);
+    setSelectedId(firstImported.id);
+    setSaveState("saved");
+    setSavedAt("just now");
+    setPendingImport(null);
+    setImportError("");
+    setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -713,8 +759,8 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? "Saved on device" : saveState === "error" ? "Storage full" : "Saving"}</span>
           </div>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()}>
-            <Upload aria-hidden="true" /> Import
+          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || Boolean(pendingImport)}>
+            {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} Import
           </button>
           <button
             className={`button ghost-button folder-button ${directoryState}`}
@@ -733,7 +779,7 @@ export function RuneWorkbench() {
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
             <Download />
           </button>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} />
+          <input ref={importRef} className="visually-hidden" type="file" accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || Boolean(pendingImport)} />
         </div>
       </header>
 
@@ -753,7 +799,7 @@ export function RuneWorkbench() {
           <aside className="file-rail" aria-label="Workspace files">
             <div className="file-rail-header">
               <div><span className="overline">Workspace</span><strong>Q2 review</strong></div>
-              <button className="tiny-icon-button" onClick={() => importRef.current?.click()} aria-label="Import a source file" title="Import file">+</button>
+              <button className="tiny-icon-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || Boolean(pendingImport)} aria-label="Import a source file" title="Import file">+</button>
             </div>
             <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}</span></div>
             <nav className="artifact-list">
@@ -1001,8 +1047,19 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.6</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.7</span></div>
       </footer>
+
+      {pendingImport && (
+        <ImportReviewDialog
+          sourceName={pendingImport.sourceName}
+          artifacts={pendingImport.importedArtifacts}
+          warnings={pendingImport.warnings}
+          error={importError}
+          onCancel={cancelPendingImport}
+          onConfirm={applyPendingImport}
+        />
+      )}
     </main>
   );
 }

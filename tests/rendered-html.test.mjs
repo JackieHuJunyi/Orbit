@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -55,7 +55,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.6/);
+  assert.match(html, /Rune v0\.7/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
 });
@@ -65,4 +65,14 @@ test("keeps the Office compatibility parser out of the initial client bundle", a
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
   assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-import.ts"));
+});
+
+test("ships a review-before-write import surface in the client", async () => {
+  const assetsUrl = new URL("../dist/client/assets/", import.meta.url);
+  const files = (await readdir(assetsUrl)).filter((name) => name.endsWith(".js"));
+  const clientSource = (await Promise.all(files.map((name) => readFile(new URL(name, assetsUrl), "utf8")))).join("\n");
+  assert.match(clientSource, /Review imported sources/);
+  assert.match(clientSource, /Nothing is written until you confirm/);
+  assert.match(clientSource, /One atomic device write after confirmation/);
+  assert.match(clientSource, /aria-modal/);
 });
