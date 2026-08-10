@@ -38,6 +38,10 @@ type ArtifactPatch = {
 
 The UI may preview a patch, accept or reject it, validate the next source, create a checkpoint, and only then persist it. Model providers never write workspace state directly.
 
+## Agent provider boundary
+
+`POST /api/agent` is the only model-facing surface in v0. It validates a bounded artifact request, sends canonical source plus compiled metric context, and requires a schema-conformant `summary`, `detail`, and `nextSource`. The workbench still turns that response into a pending patch; it never applies model output automatically. The current adapter uses the OpenAI Responses API with Structured Outputs when `OPENAI_API_KEY` is configured and falls back to the deterministic local planner when it is not. `OPENAI_MODEL` is an environment choice rather than an editor dependency, so another provider can implement the same contract later.
+
 ## Shared metrics and lineage
 
 Markdown and semantic HTML can reference a named value with `{{ metric("total_revenue") }}`. The dependency compiler derives metrics from the canonical CSV/JSON artifact and substitutes only at render time, so sources stay readable and one data change recompiles every dependent artifact. Each compiled view exposes its source artifact and reference count; the next evolution is a persisted dependency graph that also covers SQL, charts, and user-defined metrics.

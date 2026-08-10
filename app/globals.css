@@ -706,6 +706,12 @@ textarea:focus-visible {
   text-transform: uppercase;
 }
 
+.local-planner-badge.openai {
+  border-color: #bed9c8;
+  background: #edf7f0;
+  color: #277553;
+}
+
 .quick-commands {
   display: flex;
   gap: 6px;
@@ -730,6 +736,11 @@ textarea:focus-visible {
 .quick-commands button:hover {
   border-color: #bdb7aa;
   color: var(--ink);
+}
+
+.quick-commands button:disabled {
+  cursor: wait;
+  opacity: .45;
 }
 
 .patch-card {
@@ -858,6 +869,15 @@ textarea:focus-visible {
   width: 13px;
   height: 13px;
   fill: currentColor;
+}
+
+.run-button .agent-spinner {
+  fill: none;
+  animation: agent-spin .9s linear infinite;
+}
+
+@keyframes agent-spin {
+  to { transform: rotate(360deg); }
 }
 
 .agent-hint {

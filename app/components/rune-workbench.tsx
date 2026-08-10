@@ -15,6 +15,7 @@ import {
   History,
   LayoutGrid,
   Link2,
+  LoaderCircle,
   PanelLeftClose,
   PanelLeftOpen,
   Play,
@@ -46,10 +47,28 @@ const MAX_IMPORT_SIZE = 2 * 1024 * 1024;
 type PendingChange = {
   artifactId: string;
   prompt: string;
+  provider: "openai" | "local";
   nextSource: string;
   summary: string;
   detail: string;
 };
+
+type RemoteAgentResponse = {
+  error?: string;
+  code?: string;
+  provider?: string;
+  model?: string;
+  plan?: { nextSource?: string; summary?: string; detail?: string };
+};
+
+function isRemotePlan(value: RemoteAgentResponse["plan"]): value is Required<NonNullable<RemoteAgentResponse["plan"]>> {
+  return Boolean(
+    value
+    && typeof value.nextSource === "string"
+    && typeof value.summary === "string"
+    && typeof value.detail === "string",
+  );
+}
 
 function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }) {
   if (kind === "document") return <FileText size={size} aria-hidden="true" />;
@@ -93,6 +112,8 @@ export function RuneWorkbench() {
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [agentError, setAgentError] = useState("");
+  const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
+  const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
   const [history, setHistory] = useState<Record<string, string[]>>({});
   const [notice, setNotice] = useState("Local workspace ready");
   const gutterRef = useRef<HTMLPreElement>(null);
@@ -183,17 +204,52 @@ export function RuneWorkbench() {
     if (pendingChange?.artifactId === selectedArtifact.id) setPendingChange(null);
   }
 
-  function runAgent(nextPrompt = prompt) {
+  async function runAgent(nextPrompt = prompt) {
+    const instruction = nextPrompt.trim();
+    if (!instruction || agentState === "planning") return;
+    const targetArtifact = selectedArtifact;
+    setAgentState("planning");
+    setAgentError("");
+    setNotice("Agent is planning a reviewable patch");
+
     try {
-      const plan = planLocalChange(selectedArtifact, nextPrompt);
-      setPendingChange({ artifactId: selectedArtifact.id, prompt: nextPrompt, ...plan });
-      setAgentError("");
+      const metrics = Object.fromEntries(
+        Object.entries(bindingState?.metrics ?? {}).map(([key, metric]) => [key, metric.formatted]),
+      );
+      const response = await fetch("/api/agent", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ artifact: targetArtifact, prompt: instruction, metrics }),
+      });
+      const payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
+
+      if (response.ok && isRemotePlan(payload.plan)) {
+        setPendingChange({ artifactId: targetArtifact.id, prompt: instruction, provider: "openai", ...payload.plan });
+        setAgentMode("openai");
+        setPrompt("");
+        setNotice(`Model prepared a patch for review${payload.model ? ` · ${payload.model}` : ""}`);
+        return;
+      }
+
+      const localPlan = planLocalChange(targetArtifact, instruction);
+      setPendingChange({ artifactId: targetArtifact.id, prompt: instruction, provider: "local", ...localPlan });
+      setAgentMode("local");
       setPrompt("");
-      setNotice("Agent prepared a patch for review");
+      setNotice(payload.code === "MODEL_UNCONFIGURED" ? "Local patch ready · model provider not configured" : "Local patch ready · model provider unavailable");
     } catch (error) {
-      setPendingChange(null);
-      setAgentError(error instanceof Error ? error.message : "Rune could not plan that change.");
-      setNotice("Agent needs a more specific instruction");
+      try {
+        const localPlan = planLocalChange(targetArtifact, instruction);
+        setPendingChange({ artifactId: targetArtifact.id, prompt: instruction, provider: "local", ...localPlan });
+        setAgentMode("local");
+        setPrompt("");
+        setNotice("Local patch ready · network fallback active");
+      } catch (localError) {
+        setPendingChange(null);
+        setAgentError(localError instanceof Error ? localError.message : error instanceof Error ? error.message : "Rune could not plan that change.");
+        setNotice("Agent needs a more specific instruction");
+      }
+    } finally {
+      setAgentState("idle");
     }
   }
 
@@ -253,7 +309,7 @@ export function RuneWorkbench() {
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
-      runAgent();
+      void runAgent();
     }
   }
 
@@ -366,12 +422,12 @@ export function RuneWorkbench() {
           <div className="agent-dock">
             <div className="agent-title-row">
               <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>Plans a patch before writing</small></div></div>
-              <span className="local-planner-badge">Local planner</span>
+              <span className={`local-planner-badge ${agentMode}`}>{agentMode === "openai" ? "Model connected" : "Local fallback"}</span>
             </div>
 
             <div className="quick-commands" aria-label="Suggested commands">
               {quickCommands[selectedArtifact.kind].map((command) => (
-                <button key={command} onClick={() => runAgent(command)}>{command}</button>
+                <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning"}>{command}</button>
               ))}
             </div>
 
@@ -379,7 +435,7 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed patch</span>
+                  <span className="overline">Proposed patch · {pendingChange.provider === "openai" ? "Model" : "Local"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   <div className="diff-summary"><span className="additions">+{diffStats.additions}</span><span className="removals">−{diffStats.removals}</span><span>changed lines</span></div>
@@ -403,7 +459,7 @@ export function RuneWorkbench() {
                 rows={1}
                 aria-label="Describe an artifact change"
               />
-              <button className="run-button" onClick={() => runAgent()} disabled={!prompt.trim()} aria-label="Plan change" title="Plan change (⌘ Enter)"><Play /></button>
+              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning"} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
             <p className="agent-hint">⌘ Enter to plan · Every write is reviewable and undoable</p>
           </div>

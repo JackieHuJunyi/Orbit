@@ -4,7 +4,7 @@ Rune is an AI-native workspace for documents, data, and presentations. It keeps 
 
 ## Status
 
-The project is in its foundation milestone. Product reasoning lives in [`idea.md`](idea.md), architectural contracts in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and one-line milestones in [`PROGRESS.md`](PROGRESS.md).
+The project has a working local-first vertical slice. Product reasoning lives in [`idea.md`](idea.md), architectural contracts in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and one-line milestones in [`PROGRESS.md`](PROGRESS.md).
 
 ## Development
 
@@ -14,6 +14,8 @@ npm run dev
 ```
 
 Then open the local URL printed by the development server.
+
+Rune always includes a deterministic local planner. To enable model-generated reviewable patches, copy `.env.example` to `.env.local`, set `OPENAI_API_KEY` in that local file, and optionally choose `OPENAI_MODEL`. Keys stay server-side and must never be committed.
 
 ## Checks
 
