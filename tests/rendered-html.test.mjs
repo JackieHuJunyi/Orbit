@@ -69,7 +69,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.25/);
+  assert.match(html, /Rune v0\.26/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -90,6 +90,10 @@ test("keeps the Office compatibility parser out of the initial client bundle", a
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/html-export.ts"));
   assert.equal(manifest["app/lib/pdf-export.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/pdf-export.ts"));
+  assert.equal(manifest["app/lib/agent-evidence.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/agent-evidence.ts"));
+  assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/query-preflight.ts"));
 });
 
 test("ships a review-before-write import surface in the client", async () => {
@@ -154,4 +158,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Temporary Workspace Agent context pins cleared/);
   assert.match(clientSource, /workspaceDependencies/);
   assert.match(clientSource, /workspacePinnedArtifactIds/);
+  assert.match(clientSource, /A configured model can inspect/);
+  assert.match(clientSource, /bounded local Query/);
+  assert.match(clientSource, /evidence is not persisted/);
+  assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);
+  assert.match(clientSource, /Runtime preflight passed/);
+  assert.match(clientSource, /Query runtime preflight failed/);
 });

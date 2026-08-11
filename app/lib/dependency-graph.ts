@@ -50,6 +50,14 @@ function plural(count: number, singular: string) {
   return `${count} ${singular}${count === 1 ? "" : "s"}`;
 }
 
+export function workspaceAgentContextFitsSourceLimits(artifacts: WorkspaceArtifact[]) {
+  return artifacts.length >= 2
+    && artifacts.length <= MAX_WORKSPACE_AGENT_ARTIFACTS
+    && artifacts.every((artifact) => artifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS)
+    && artifacts.reduce((total, artifact) => total + artifact.source.length, 0)
+      <= MAX_WORKSPACE_AGENT_CONTEXT_CHARS;
+}
+
 export function buildWorkspaceDependencyGraph(
   artifacts: WorkspaceArtifact[],
 ): WorkspaceDependencyGraph {

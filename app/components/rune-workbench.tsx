@@ -104,11 +104,14 @@ import {
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
+import type { QueryMutationPreflight } from "../lib/query-preflight";
 import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
+  MAX_WORKSPACE_AGENT_ARTIFACT_CHARS,
   MAX_WORKSPACE_AGENT_PINS,
   buildWorkspaceDependencyGraph,
   selectWorkspaceAgentContext,
+  workspaceAgentContextFitsSourceLimits,
   workspaceAgentContextIsClosed,
   type WorkspaceDependencyGraph,
   type WorkspaceDependencyKind,
@@ -143,6 +146,7 @@ type PendingChange = {
   detail: string;
   patches: ArtifactSourcePatch[];
   creations: ArtifactCreationChange[];
+  queryPreflight?: QueryMutationPreflight;
 };
 
 type PendingExport = {
@@ -167,6 +171,7 @@ type RemoteAgentResponse = {
   provider?: string;
   model?: string;
   plan?: unknown;
+  queryArtifactIds?: string[];
 };
 
 function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
@@ -482,6 +487,8 @@ export function RuneWorkbench() {
     ),
     [artifacts, dependencyGraph, selectedArtifact?.id, workspacePinnedArtifactIds],
   );
+  const workspaceAgentQueryCount = workspaceAgentContext
+    .filter((artifact) => artifact.kind === "query").length;
   const validationErrors = useMemo(
     () => selectedArtifact
       ? [...new Set([
@@ -953,14 +960,11 @@ export function RuneWorkbench() {
         : [],
     );
     const remoteEligible = scope !== "workspace"
-      ? targetArtifact.source.length <= 100_000
-      : targetWorkspaceContext.length >= 2
-        && targetWorkspaceContext.length <= 6
+      ? targetArtifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS
+      : workspaceAgentContextFitsSourceLimits(targetWorkspaceContext)
         && targetWorkspaceContextClosed
         && targetWorkspaceContextResolved
-        && targetWorkspacePinsIncluded
-        && targetWorkspaceContext.every((artifact) => artifact.source.length <= 100_000)
-        && targetWorkspaceContext.reduce((total, artifact) => total + artifact.source.length, 0) <= 180_000;
+        && targetWorkspacePinsIncluded;
     let fallbackNotice = remoteEligible
       ? "Local patch ready · model provider unavailable"
       : scope === "workspace"
@@ -975,34 +979,115 @@ export function RuneWorkbench() {
                 : "Local patch ready · graph context exceeds the model safety limit"
         : "Local patch ready · file exceeds the model context safety limit";
 
+    async function preflightQueryChanges(
+      patches: ArtifactSourcePatch[],
+      creations: ArtifactCreationChange[],
+    ) {
+      const changesQuery = patches.some((patch) => (
+        targetArtifacts.find((artifact) => artifact.id === patch.artifactId)?.kind === "query"
+      )) || creations.some((creation) => creation.artifact.kind === "query");
+      if (!changesQuery) return undefined;
+      const [{ preflightAgentQueryMutation }, { runWorkspaceQuerySnapshot }] = await Promise.all([
+        import("../lib/query-preflight"),
+        import("../lib/duckdb-client"),
+      ]);
+      try {
+        return await preflightAgentQueryMutation(
+          targetArtifacts,
+          patches,
+          creations,
+          runWorkspaceQuerySnapshot,
+        ) ?? undefined;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "The proposed Query could not run.";
+        throw new Error(`Query runtime preflight failed · ${message}`);
+      }
+    }
+
     if (remoteEligible) {
       try {
-        const response = await fetch("/api/agent", {
+        const remoteRequest = {
+          scope,
+          artifact: targetArtifact,
+          selection: scope === "selection" ? targetSelection : undefined,
+          workspaceArtifacts: scope === "workspace" ? targetWorkspaceContext : undefined,
+          workspaceDependencies: scope === "workspace" ? targetWorkspaceDependencies : undefined,
+          workspacePinnedArtifactIds: scope === "workspace" ? targetWorkspacePinnedArtifactIds : undefined,
+          prompt: instruction,
+          metrics,
+        };
+        const sendRemoteRequest = (body: typeof remoteRequest & { queryEvidence?: unknown }) => fetch("/api/agent", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            scope,
-            artifact: targetArtifact,
-            selection: scope === "selection" ? targetSelection : undefined,
-            workspaceArtifacts: scope === "workspace" ? targetWorkspaceContext : undefined,
-            workspaceDependencies: scope === "workspace" ? targetWorkspaceDependencies : undefined,
-            workspacePinnedArtifactIds: scope === "workspace" ? targetWorkspacePinnedArtifactIds : undefined,
-            prompt: instruction,
-            metrics,
-          }),
+          body: JSON.stringify(body),
         });
-        const payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
+        let response = await sendRemoteRequest(remoteRequest);
+        let payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
+        let queryEvidenceCount = 0;
+
+        if (scope === "workspace"
+          && response.status === 428
+          && payload.code === "QUERY_EVIDENCE_REQUIRED") {
+          const expectedQueryIds = targetWorkspaceContext
+            .filter((artifact) => artifact.kind === "query")
+            .map((artifact) => artifact.id);
+          if (!payload.queryArtifactIds
+            || payload.queryArtifactIds.length !== expectedQueryIds.length
+            || payload.queryArtifactIds.some((artifactId, index) => artifactId !== expectedQueryIds[index])) {
+            throw new Error("The model provider requested stale Query evidence.");
+          }
+          setNotice(`Agent is inspecting ${expectedQueryIds.length} current Query ${expectedQueryIds.length === 1 ? "result" : "results"} locally`);
+          const [{ collectWorkspaceAgentQueryEvidence }, { runWorkspaceQuerySnapshot }] = await Promise.all([
+            import("../lib/agent-evidence"),
+            import("../lib/duckdb-client"),
+          ]);
+          const queryEvidence = await collectWorkspaceAgentQueryEvidence(
+            targetWorkspaceContext,
+            runWorkspaceQuerySnapshot,
+          );
+          queryEvidenceCount = queryEvidence.length;
+          response = await sendRemoteRequest({ ...remoteRequest, queryEvidence });
+          payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
+        }
 
         if (response.ok && scope === "workspace" && isRemoteWorkspacePlan(payload.plan)) {
-          setPendingChange({ prompt: instruction, provider: "openai", scope, baseRevision: targetRevision, ...payload.plan });
+          let queryPreflight: QueryMutationPreflight | undefined;
+          try {
+            queryPreflight = await preflightQueryChanges(payload.plan.patches, payload.plan.creations);
+          } catch (error) {
+            setPendingChange(null);
+            setAgentError(error instanceof Error ? error.message : "The proposed Query failed runtime preflight.");
+            setNotice("Nothing proposed — Query runtime preflight failed; every source stayed unchanged");
+            setAgentState("idle");
+            return;
+          }
+          setPendingChange({
+            prompt: instruction,
+            provider: "openai",
+            scope,
+            baseRevision: targetRevision,
+            ...payload.plan,
+            queryPreflight,
+          });
           setAgentMode("openai");
           setPrompt("");
           const changeCount = payload.plan.patches.length + payload.plan.creations.length;
-          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}${payload.model ? ` · ${payload.model}` : ""}`);
+          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${queryEvidenceCount ? ` · inspected ${queryEvidenceCount} Query ${queryEvidenceCount === 1 ? "result" : "results"}` : ""}${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}${payload.model ? ` · ${payload.model}` : ""}`);
           setAgentState("idle");
           return;
         }
         if (response.ok && scope !== "workspace" && isRemoteSinglePlan(payload.plan)) {
+          const patches = [{ artifactId: targetArtifact.id, ...payload.plan }];
+          let queryPreflight: QueryMutationPreflight | undefined;
+          try {
+            queryPreflight = await preflightQueryChanges(patches, []);
+          } catch (error) {
+            setPendingChange(null);
+            setAgentError(error instanceof Error ? error.message : "The proposed Query failed runtime preflight.");
+            setNotice("Nothing proposed — Query runtime preflight failed; every source stayed unchanged");
+            setAgentState("idle");
+            return;
+          }
           setPendingChange({
             prompt: instruction,
             provider: "openai",
@@ -1011,8 +1096,9 @@ export function RuneWorkbench() {
             baseRevision: targetRevision,
             summary: payload.plan.summary,
             detail: payload.plan.detail,
-            patches: [{ artifactId: targetArtifact.id, ...payload.plan }],
+            patches,
             creations: [],
+            queryPreflight,
           });
           setAgentMode("openai");
           setPrompt("");
@@ -1031,7 +1117,15 @@ export function RuneWorkbench() {
     try {
       if (scope === "workspace") {
         const localPlan = planLocalWorkspaceAgentChange(targetArtifacts, instruction, targetWorkspaceContext);
-        setPendingChange({ prompt: instruction, provider: "local", scope, baseRevision: targetRevision, ...localPlan });
+        const queryPreflight = await preflightQueryChanges(localPlan.patches, localPlan.creations);
+        setPendingChange({
+          prompt: instruction,
+          provider: "local",
+          scope,
+          baseRevision: targetRevision,
+          ...localPlan,
+          queryPreflight,
+        });
         const changeCount = localPlan.patches.length + localPlan.creations.length;
         setNotice(`${fallbackNotice} · ${changeCount} ${changeCount === 1 ? "file" : "files"} prepared`);
       } else {
@@ -1043,6 +1137,7 @@ export function RuneWorkbench() {
           const prepared = prepareWorkspaceMutation(targetArtifacts, [localPatch], []);
           if (prepared.errors.length) throw new Error(prepared.errors[0]);
         }
+        const queryPreflight = await preflightQueryChanges([localPatch], []);
         setPendingChange({
           prompt: instruction,
           provider: "local",
@@ -1053,6 +1148,7 @@ export function RuneWorkbench() {
           detail: localPlan.detail,
           patches: [localPatch],
           creations: [],
+          queryPreflight,
         });
         setNotice(fallbackNotice);
       }
@@ -1060,8 +1156,11 @@ export function RuneWorkbench() {
       setPrompt("");
     } catch (error) {
       setPendingChange(null);
-      setAgentError(error instanceof Error ? error.message : "Rune could not plan that change.");
-      setNotice("Agent needs a more specific instruction");
+      const message = error instanceof Error ? error.message : "Rune could not plan that change.";
+      setAgentError(message);
+      setNotice(message.startsWith("Query runtime preflight failed")
+        ? "Nothing proposed — Query runtime preflight failed; every source stayed unchanged"
+        : "Agent needs a more specific instruction");
     } finally {
       setAgentState("idle");
     }
@@ -1698,6 +1797,12 @@ export function RuneWorkbench() {
               ))}
             </div>
 
+            {agentScope === "workspace" && workspaceAgentQueryCount > 0 && (
+              <p className="agent-evidence-hint">
+                A configured model can inspect {workspaceAgentQueryCount} bounded local Query {workspaceAgentQueryCount === 1 ? "result" : "results"} after you ask; evidence is not persisted.
+              </p>
+            )}
+
             {pendingChange && (
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
@@ -1705,6 +1810,15 @@ export function RuneWorkbench() {
                   <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : pendingChange.scope === "selection" ? "selection-confined patch" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
+                  {pendingChange.queryPreflight && (
+                    <div className="runtime-preflight" aria-label="Runtime preflight passed">
+                      <CheckCircle2 aria-hidden="true" />
+                      <span>
+                        <strong>Runtime preflight passed</strong>
+                        <small>{pendingChange.queryPreflight.queryCount} proposed {pendingChange.queryPreflight.queryCount === 1 ? "Query" : "Queries"} executed locally against exact Data revision · {pendingChange.queryPreflight.scalarConsumerCount} scalar {pendingChange.queryPreflight.scalarConsumerCount === 1 ? "consumer" : "consumers"} · {pendingChange.queryPreflight.chartConsumerCount} {pendingChange.queryPreflight.chartConsumerCount === 1 ? "chart" : "charts"} · {pendingChange.queryPreflight.queryNames.join(", ")}</small>
+                      </span>
+                    </div>
+                  )}
                   <div className="diff-summary"><span>{pendingStats.length} {pendingStats.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
                   <div className="patch-file-list" aria-label="Files in proposed patch">
                     {pendingStats.map(({ artifact, patch, additions, removals, isCreation }) => (
@@ -1840,7 +1954,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.25</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.26</span></div>
       </footer>
 
       {newArtifactOpen && (

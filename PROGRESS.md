@@ -35,3 +35,4 @@
 - 2026-08-11 — Bound each new Query to an exact Data artifact in readable SQL while preserving a visible legacy fallback for older files.
 - 2026-08-11 — Let reports and Decks compile exact one-row Query outputs into revision-bound scalar metrics across preview, graph, Agent context, and export.
 - 2026-08-11 — Added reviewed browser-local PDF export for Markdown Documents and Decks with embedded Unicode text and current Query/Chart snapshots.
+- 2026-08-11 — Let the Workspace Agent inspect bounded current Query results and required every proposed SQL change to pass local runtime/downstream preflight before review.

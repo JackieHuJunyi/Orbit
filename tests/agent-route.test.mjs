@@ -73,6 +73,50 @@ function requestBody(overrides = {}) {
   };
 }
 
+function queryWorkspaceBody(overrides = {}) {
+  const data = {
+    id: "data",
+    name: "data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Item,Value\nRevenue,42",
+  };
+  const query = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+  };
+  return requestBody({
+    scope: "workspace",
+    artifact: query,
+    workspaceArtifacts: [data, query],
+    workspaceDependencies: [{
+      fromArtifactId: "data",
+      toArtifactId: "analysis",
+      kind: "query",
+      references: ["data"],
+    }],
+    workspacePinnedArtifactIds: [],
+    ...overrides,
+  });
+}
+
+function exactQueryEvidence() {
+  return [{
+    queryArtifactId: "analysis",
+    dataArtifactId: "data",
+    status: "ready",
+    columns: ["total"],
+    rows: [[42]],
+    visibleResultRowCount: 1,
+    totalColumnCount: 1,
+    resultTruncated: false,
+    evidenceTruncated: false,
+  }];
+}
+
 test("compiles a provider Markdown-section operation into the concrete Agent response", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   process.env.OPENAI_MODEL = "gpt-5.6";
@@ -277,6 +321,93 @@ test("rejects incomplete or fabricated workspace dependency context before conta
   assert.equal(providerCalled, false);
 });
 
+test("returns provider configuration status before requesting browser Query evidence", async () => {
+  delete process.env.OPENAI_API_KEY;
+  let providerCalled = false;
+  globalThis.fetch = async () => {
+    providerCalled = true;
+    throw new Error("provider must not be called");
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(queryWorkspaceBody()),
+  }));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, "MODEL_UNCONFIGURED");
+  assert.equal(providerCalled, false);
+});
+
+test("requires exact current Query evidence before a configured Workspace model call", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerCalled = false;
+  globalThis.fetch = async () => {
+    providerCalled = true;
+    throw new Error("provider must not be called during the evidence handshake");
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(queryWorkspaceBody()),
+  }));
+  assert.equal(response.status, 428);
+  const payload = await response.json();
+  assert.equal(payload.code, "QUERY_EVIDENCE_REQUIRED");
+  assert.deepEqual(payload.queryArtifactIds, ["analysis"]);
+  assert.equal(providerCalled, false);
+});
+
+test("passes exact bounded Query evidence to the model after the handshake", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerRequest;
+  globalThis.fetch = async (_input, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(providerResponse({
+      summary: "Clarify the total alias",
+      detail: "One exact SQL token changes.",
+      actions: [{
+        type: "patch_artifact",
+        artifactId: "analysis",
+        summary: "Clarify the alias",
+        detail: "The result remains one scalar row.",
+        edits: [{ type: "replace_text", find: "AS total", replace: "AS total_value" }],
+      }],
+    })), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(queryWorkspaceBody({ queryEvidence: exactQueryEvidence() })),
+  }));
+  assert.equal(response.status, 200);
+  assert.ok(providerRequest);
+  const modelInput = JSON.parse(providerRequest.input[1].content);
+  assert.deepEqual(modelInput.currentQueryEvidence, exactQueryEvidence());
+  assert.match(providerRequest.input[0].content, /advisory evidence/i);
+  assert.match((await response.json()).plan.patches[0].nextSource, /AS total_value/);
+});
+
+test("rejects stale or fabricated Query/Data evidence before contacting the provider", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerCalled = false;
+  globalThis.fetch = async () => {
+    providerCalled = true;
+    throw new Error("provider must not be called");
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(queryWorkspaceBody({
+      queryEvidence: [{ ...exactQueryEvidence()[0], dataArtifactId: "fabricated-data" }],
+    })),
+  }));
+  assert.equal(response.status, 400);
+  const payload = await response.json();
+  assert.equal(payload.code, "QUERY_EVIDENCE_INVALID");
+  assert.match(payload.details.join(" "), /wrong Data/i);
+  assert.equal(providerCalled, false);
+});
+
 test("compiles a coordinated document-data-Deck operation plan without partial files", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [
@@ -353,6 +484,17 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
         references: ["data"],
       }],
       workspacePinnedArtifactIds: ["data", "deck"],
+      queryEvidence: [{
+        queryArtifactId: "analysis",
+        dataArtifactId: "data",
+        status: "ready",
+        columns: ["Region", "Revenue"],
+        rows: [["APAC", 42], ["EMEA", 31]],
+        visibleResultRowCount: 2,
+        totalColumnCount: 2,
+        resultTruncated: false,
+        evidenceTruncated: false,
+      }],
     })),
   }));
   assert.equal(response.status, 200);

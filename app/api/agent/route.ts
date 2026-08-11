@@ -26,6 +26,7 @@ import {
   parseMetricBindings,
   queryMetricReferenceKey,
 } from "../../lib/bindings.ts";
+import { validateAgentQueryEvidenceContext } from "../../lib/agent-evidence.ts";
 
 const DEFAULT_MODEL = "gpt-5.6";
 
@@ -76,6 +77,30 @@ export async function POST(request: Request) {
       { error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" },
       { status: 503 },
     );
+  }
+
+  if (parsed.data.scope === "workspace") {
+    const workspace = parsed.data.workspaceArtifacts ?? [];
+    const queryArtifactIds = workspace
+      .filter((artifact) => artifact.kind === "query")
+      .map((artifact) => artifact.id);
+    if (queryArtifactIds.length && parsed.data.queryEvidence === undefined) {
+      return Response.json({
+        error: "Current Query results are required before the model can plan this workspace change.",
+        code: "QUERY_EVIDENCE_REQUIRED",
+        queryArtifactIds,
+      }, { status: 428 });
+    }
+    if (parsed.data.queryEvidence !== undefined) {
+      const evidenceErrors = validateAgentQueryEvidenceContext(workspace, parsed.data.queryEvidence);
+      if (evidenceErrors.length) {
+        return Response.json({
+          error: "The Query evidence context is stale or invalid.",
+          code: "QUERY_EVIDENCE_INVALID",
+          details: evidenceErrors.slice(0, 3),
+        }, { status: 400 });
+      }
+    }
   }
 
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;

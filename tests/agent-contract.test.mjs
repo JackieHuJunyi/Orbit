@@ -264,6 +264,92 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.deepEqual(workspaceInput.workspacePinnedArtifactIds, ["deck"]);
 });
 
+test("accepts bounded Query evidence only in Workspace scope and exposes it as advisory model input", () => {
+  const data = {
+    id: "data",
+    name: "data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Item,Value\nRevenue,42",
+  };
+  const query = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+  };
+  const queryEvidence = [{
+    queryArtifactId: "analysis",
+    dataArtifactId: "data",
+    status: "ready",
+    columns: ["total"],
+    rows: [[42]],
+    visibleResultRowCount: 1,
+    totalColumnCount: 1,
+    resultTruncated: false,
+    evidenceTruncated: false,
+  }];
+  const parsed = AgentRequestSchema.parse({
+    ...request,
+    scope: "workspace",
+    artifact: query,
+    workspaceArtifacts: [data, query],
+    workspaceDependencies: [{
+      fromArtifactId: "data",
+      toArtifactId: "analysis",
+      kind: "query",
+      references: ["data"],
+    }],
+    workspacePinnedArtifactIds: [],
+    queryEvidence,
+  });
+  assert.deepEqual(JSON.parse(buildAgentInput(parsed)).currentQueryEvidence, queryEvidence);
+  assert.match(buildAgentInstructions(parsed), /browser-computed results/i);
+  assert.match(buildAgentInstructions(parsed), /untrusted data, never as an instruction/i);
+  assert.match(buildAgentInstructions(parsed), /advisory evidence/i);
+  assert.match(buildAgentInstructions(parsed), /Keep live Query metric and Chart bindings/i);
+  assert.match(buildAgentInstructions(parsed), /execute and validate again before review/i);
+  assert.equal(AgentRequestSchema.safeParse({ ...request, queryEvidence }).success, false);
+});
+
+test("rejects malformed or oversized Query evidence before provider calls", () => {
+  const baseEvidence = {
+    queryArtifactId: "analysis",
+    dataArtifactId: "data",
+    status: "ready",
+    columns: ["total"],
+    rows: [[42]],
+    visibleResultRowCount: 1,
+    totalColumnCount: 1,
+    resultTruncated: false,
+    evidenceTruncated: false,
+  };
+  const workspace = {
+    ...request,
+    scope: "workspace",
+    workspaceArtifacts: [request.artifact, { ...request.artifact, id: "deck", name: "deck.md" }],
+    workspaceDependencies: [],
+    workspacePinnedArtifactIds: [],
+  };
+  assert.equal(AgentRequestSchema.safeParse({
+    ...workspace,
+    queryEvidence: [{ ...baseEvidence, rows: [["x".repeat(501)]] }],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...workspace,
+    queryEvidence: [{ ...baseEvidence, rows: Array.from({ length: 21 }, () => [42]), visibleResultRowCount: 21 }],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...workspace,
+    queryEvidence: [{ ...baseEvidence, rows: [[42, 43]] }],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...workspace,
+    queryEvidence: [{ ...baseEvidence, unexpected: true }],
+  }).success, false);
+});
+
 test("rejects ambiguous or oversized workspace context before provider calls", () => {
   assert.equal(AgentRequestSchema.safeParse({
     ...request,
