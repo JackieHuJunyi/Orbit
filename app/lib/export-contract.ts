@@ -1,4 +1,4 @@
-export type ArtifactExportKind = "docx" | "xlsx" | "pptx" | "html";
+export type ArtifactExportKind = "docx" | "xlsx" | "pptx" | "html" | "pdf";
 
 export type ArtifactExportResult<Target extends ArtifactExportKind = ArtifactExportKind> = {
   bytes: Uint8Array;

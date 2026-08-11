@@ -410,7 +410,7 @@ export function RuneWorkbench() {
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const [exportError, setExportError] = useState("");
-  const [exportState, setExportState] = useState<"idle" | "office" | "html">("idle");
+  const [exportState, setExportState] = useState<"idle" | "office" | "html" | "pdf">("idle");
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
@@ -431,6 +431,7 @@ export function RuneWorkbench() {
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
+  const selectedPdfExport = Boolean(selectedArtifact?.kind === "document" || selectedHtmlExport);
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const currentSourceSelection = sourceSelection?.artifactId === selectedArtifact?.id
     && sourceSelection.sourceRevision === selectedArtifact?.source
@@ -1299,8 +1300,12 @@ export function RuneWorkbench() {
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
-  async function prepareExport(destination: "office" | "html") {
-    const targetType = destination === "office" ? selectedOfficeExportType : selectedHtmlExport ? "HTML" : null;
+  async function prepareExport(destination: "office" | "html" | "pdf") {
+    const targetType = destination === "office"
+      ? selectedOfficeExportType
+      : destination === "html"
+        ? selectedHtmlExport ? "HTML" : null
+        : selectedPdfExport ? "PDF" : null;
     if (!targetType || exportState !== "idle" || pendingExport || pendingImport || importInFlightRef.current || exportInFlightRef.current) return;
     const targetArtifact = selectedArtifact;
     const baseArtifacts = artifacts;
@@ -1343,9 +1348,12 @@ export function RuneWorkbench() {
         const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
         const { exportOfficeArtifact } = await import("../lib/office-export");
         result = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
-      } else {
+      } else if (destination === "html") {
         const { exportDeckHtml } = await import("../lib/html-export");
         result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots);
+      } else {
+        const { exportPdfArtifact } = await import("../lib/pdf-export");
+        result = await exportPdfArtifact(targetArtifact, baseArtifacts, querySnapshots);
       }
       setPendingExport({ sourceArtifactName: targetArtifact.name, baseArtifacts, result });
       setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
@@ -1384,7 +1392,11 @@ export function RuneWorkbench() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
     setPendingExport(null);
     setExportError("");
-    const exportLabel = result.targetType === "html" ? "standalone HTML" : `semantic ${result.targetType.toUpperCase()}`;
+    const exportLabel = result.targetType === "html"
+      ? "standalone HTML"
+      : result.targetType === "pdf"
+        ? "fixed PDF"
+        : `semantic ${result.targetType.toUpperCase()}`;
     setNotice(`Downloaded ${result.fileName} · ${exportLabel} export`);
   }
 
@@ -1461,6 +1473,17 @@ export function RuneWorkbench() {
               title="Export as standalone HTML"
             >
               {exportState === "html" ? <LoaderCircle className="agent-spinner" /> : <FileCode2 />}
+            </button>
+          )}
+          {selectedPdfExport && (
+            <button
+              className="icon-button"
+              onClick={() => void prepareExport("pdf")}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || Boolean(pendingImport) || Boolean(pendingExport)}
+              aria-label={`Export ${selectedArtifact.name} as PDF`}
+              title="Export as fixed PDF"
+            >
+              {exportState === "pdf" ? <LoaderCircle className="agent-spinner" /> : <FileText />}
             </button>
           )}
           <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
@@ -1817,7 +1840,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.24</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.25</span></div>
       </footer>
 
       {newArtifactOpen && (

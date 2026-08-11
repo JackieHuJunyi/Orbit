@@ -14,7 +14,7 @@ const MAX_DOCX_EXPORT_BLOCKS = 10_000;
 type OfficeExportKind = "docx" | "xlsx" | "pptx";
 export type OfficeExportResult = ArtifactExportResult<OfficeExportKind>;
 
-type MarkdownBlock =
+export type MarkdownBlock =
   | { type: "heading"; level: number; source: string }
   | { type: "paragraph" | "quote"; source: string }
   | { type: "list"; ordered: boolean; level: number; source: string }
@@ -217,7 +217,7 @@ function startsMarkdownBlock(lines: string[], index: number) {
     || (line.includes("|") && isTableDivider(next));
 }
 
-function parseMarkdownBlocks(source: string): MarkdownBlock[] {
+export function parseMarkdownBlocks(source: string): MarkdownBlock[] {
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
   const blocks: MarkdownBlock[] = [];
   let index = 0;

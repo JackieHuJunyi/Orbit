@@ -69,11 +69,12 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.24/);
+  assert.match(html, /Rune v0\.25/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
+  assert.match(html, /Export q2-review\.md as PDF/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
 });
@@ -87,6 +88,8 @@ test("keeps the Office compatibility parser out of the initial client bundle", a
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-export.ts"));
   assert.equal(manifest["app/lib/html-export.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/html-export.ts"));
+  assert.equal(manifest["app/lib/pdf-export.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/pdf-export.ts"));
 });
 
 test("ships a review-before-write import surface in the client", async () => {
@@ -99,9 +102,12 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /aria-modal/);
   assert.match(clientSource, /Review Office export/);
   assert.match(clientSource, /Review HTML export/);
+  assert.match(clientSource, /Review PDF export/);
   assert.match(clientSource, /No workspace or device draft changes/);
   assert.match(clientSource, /self-contained scriptless file/);
   assert.match(clientSource, /Export as standalone HTML/);
+  assert.match(clientSource, /Export as fixed PDF/);
+  assert.match(clientSource, /fixed-layout PDF/);
   assert.match(clientSource, /semantic bar table/);
   assert.match(clientSource, /editable native PowerPoint text and vector shapes/);
   assert.match(clientSource, /typed source/);

@@ -34,3 +34,4 @@
 - 2026-08-11 — Made revision-bound Query output a Chart source across live previews, dependency context, exact-cell provenance, and frozen Office/HTML exports.
 - 2026-08-11 — Bound each new Query to an exact Data artifact in readable SQL while preserving a visible legacy fallback for older files.
 - 2026-08-11 — Let reports and Decks compile exact one-row Query outputs into revision-bound scalar metrics across preview, graph, Agent context, and export.
+- 2026-08-11 — Added reviewed browser-local PDF export for Markdown Documents and Decks with embedded Unicode text and current Query/Chart snapshots.

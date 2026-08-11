@@ -1508,3 +1508,21 @@ dependency graph 为每组 scalar reference 增加 `Query → consumer` 的 `que
 默认 workspace 新增 `regional-summary.sql`，用一行聚合输出总收入、环比、毛利率、APAC 收入和客户数；报告与 Deck 的数值 KPI 已迁移到这份 Query，`top_region` 则故意保留为 legacy compatibility 示例。完整默认闭包因此多了一个真实上游文件。为了仍允许用户在默认六文件链之外 pin 一份独立材料，Workspace Agent 文件上限从 6 提到 7、pin 上限从 5 提到 6，总字符上限仍保持 180,000；这是一项显式 capability 调整，而不是放宽 provider 可见性的通用理由。
 
 这一轮仍没有引入 hosted compute、多表 JOIN、文本 scalar 或用户自定义脚本 formatter。numeric-only 与 exactly-one-row 是为了先把 cardinality、revision 和失败语义做实；文本标签仍可暂时使用兼容 metric，集合结果应继续用 Chart 或表格。下一步若支持 text scalar，应先定义空值、locale 与 escaping 合同；若支持多 Data Query，则必须先把 relation-qualified revision/provenance set 纳入 snapshot 和 graph。Rune 先保证每个可见数字都能回答“来自哪份 SQL、哪一列、哪一版 Data”，再扩大表达能力。
+
+## 29. Direct PDF：把“可预览”推进到可确定交付
+
+v0.10 的 standalone HTML 已经能让 Deck 离开 Rune，并通过浏览器打印成 PDF，但“先导出 HTML、再打开、再选择打印机和边距”仍不是一条确定的产品交付链。不同浏览器、字体和打印设置会改变分页，Document 甚至没有对应路径。对报告和董事会演示来说，PDF 不是另一个可编辑 source，而是最常见的冻结交付物；如果 Rune 只能把最后一步交给用户手工拼接，三件套闭环就仍缺一环。v0.25 因此让 Markdown Document 和 Deck Markdown 都能直接生成 PDF，并复用现有 fidelity review，而不是增加一个 hosted conversion service。
+
+两种 artifact 需要两个不同且明确的页面合同。Document 使用 A4，编译 headings、paragraphs、quotes、lists、code、bounded tables、header/footer 和 page number，并在空间不足时创建新页。Deck 不尝试重新分页正文，而是严格保持一张 source slide 对应一张 960×540 的 16:9 PDF page，继续使用 cover、metrics、split、content 和 conclusion 的 Rune 视觉语义。Data 没有被勉强塞进分页 PDF：可编辑、可计算的表格交付仍由 values-only XLSX 承担，直到我们能定义一套真正可审查的 print-area、重复表头和宽表分页合同。
+
+PDF 也必须遵守同一份事实证据。准备导出时，workbench 收集目标中 Query scalar 和 Query-backed Chart 所需 Query 的并集，用当前 Query source 与显式 Data source 重新执行并生成 revision-bound snapshot；missing、pending、stale、truncated、multi-row 或 nonnumeric scalar 都 fail closed。Chart resolver 只接受这些确切 snapshot，并把 bar、track、label 和 formatted value 画成本地 vector geometry。最终文件没有 DuckDB worker、live binding 或第二份数据表，但它能说明自己冻结的是哪一次当前 workspace 编译结果。
+
+字体是浏览器 PDF 中不能假装不存在的兼容边界。只使用 PDF 内建字体会让中文报表报错或出现方框，只依赖系统字体又会让接收方结果不确定。Rune 因此随应用分发 OFL 1.1 的 Unifont WOFF2：普通 Latin 文本使用标准 PDF 字体，包含中文或其他非 WinAnsi 字符的 text run 使用内嵌 Unicode font；接收方不需要联网，也不需要安装字体。字体文件先验证 WOFF2 header 并限制为 4 MB，不支持的字符被替换成可见问号并进入 fidelity warning，绝不悄悄输出黑框。这个选择优先保证可读与可携带，未来可以在不改变 export contract 的前提下换成更精细的 CJK typography 或更小的 subset pipeline。
+
+确定性不是一句“本地生成”就自动成立。PDF metadata 的 creation/modification date 被固定，writer 输入只来自 canonical source、明确的 workspace artifacts、snapshot bytes 和版本化字体；相同输入必须生成相同 bytes。最终文件限制为 12 MB，source 限制 200,000 字符。导出结果继续绑定准备时的完整 artifacts object：用户在 review 打开后编辑、Pull、Reset 或替换 workspace，确认下载会被拒绝，必须重新生成。Cancel 不写 source、localStorage、checkpoint 或 folder；Confirm 只创建一次浏览器 object URL。
+
+固定页面也意味着必须诚实描述 fidelity。Markdown link 保留可读 label 但不生成 active annotation，image 变成带 alt text 的可见 marker；Document 宽表最多展示八列，Deck 宽表最多六列、八行；超长 cell、slide text 或超出 frame 的 block 会显式截断或省略并记录 warning。Deck animation、speaker notes、editable shapes，Document comments、track changes，以及所有 live runtime 都不属于这份 PDF。这里不做“像 Office 一样什么都支持”的承诺，而是让每一项损失在下载前可见，让 fixed handoff 和 editable Office export 各自承担清楚的用途。
+
+安全边界同样保持窄。PDF adapter 只接受经过现有 validation 的 Markdown Document 或 Deck Markdown；不会解释 raw HTML、远程图片、附件、表单或脚本，也不会产生外部资源引用、JavaScript、encryption 或 AcroForm。Release QA 不只让 pdf-lib 读取自己的输出，而是用独立 parser 检查 page count/geometry/security flags，再由 Poppler 把每一页 rasterize，逐页检查 overlap、clipping、乱码和黑框。默认报告验证 A4 分页与两张 current-data chart，默认 Deck 验证四张固定 16:9 slide。这样 PDF 成为一条可测试的兼容 port，而不是浏览器打印菜单的别名。
+
+这一轮仍没有新增数据库、队列、对象存储、账号或后台 renderer；字体是随静态应用发布的版本化 asset，PDF bytes 只存在于准备导出后的内存和用户确认的本地下载。未来若加入 image embedding、active links、accessible tagging、page templates 或 desktop-native font discovery，仍应沿用当前三条约束：canonical source 不变、current evidence 可证明、任何 fidelity loss 在 handoff 前可见。先把确定交付做实，再扩大视觉兼容面。

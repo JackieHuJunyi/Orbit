@@ -5,6 +5,7 @@ import {
   ChevronRight,
   FileArchive,
   FileCode2,
+  FileText,
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
@@ -31,15 +32,17 @@ export function ExportReviewDialog({
   onConfirm: () => void;
 }) {
   const target = result.targetType.toUpperCase();
-  const office = result.targetType !== "html";
-  const reviewTitle = office ? "Review Office export" : "Review HTML export";
-  const descriptor = office ? "deterministic OOXML ZIP" : "self-contained scriptless file";
+  const office = ["docx", "xlsx", "pptx"].includes(result.targetType);
+  const pdf = result.targetType === "pdf";
+  const reviewTitle = office ? "Review Office export" : pdf ? "Review PDF export" : "Review HTML export";
+  const descriptor = office ? "deterministic OOXML ZIP" : pdf ? "fixed-layout PDF" : "self-contained scriptless file";
+  const outputKind = office ? "semantic" : pdf ? "fixed-layout" : "standalone";
   return (
     <ReviewDialog
       dialogId="artifact-export-review"
       kicker={<><ShieldCheck aria-hidden="true" /> Browser-local export · no upload</>}
       title={reviewTitle}
-      description={<><strong>{sourceName}</strong> will become a {office ? "semantic" : "standalone"} <strong>{target}</strong> file after you confirm the download.</>}
+      description={<><strong>{sourceName}</strong> will become a {outputKind} <strong>{target}</strong> file after you confirm the download.</>}
       detailsLabel={`${target} export details`}
       onCancel={onCancel}
       footer={(
@@ -59,7 +62,7 @@ export function ExportReviewDialog({
       </div>
 
       <section className="office-export-summary" aria-label={`Generated ${target} file`}>
-        <span className="office-export-icon">{office ? <FileArchive aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
+        <span className="office-export-icon">{office ? <FileArchive aria-hidden="true" /> : pdf ? <FileText aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
         <div>
           <strong>{result.fileName}</strong>
           <small>{target} · {readableBytes(result.bytes.length)} · {descriptor}</small>
@@ -80,7 +83,7 @@ export function ExportReviewDialog({
 
       <div className="office-export-contract">
         <div><span>01</span><strong>Canonical source</strong><p>Rune exports the validated source and any referenced current workspace data.</p></div>
-        <div><span>02</span><strong>{office ? "Standard package" : "Portable output"}</strong><p>{office ? "The download uses standard Office Open XML parts and relationships." : "The download contains its layout, theme, metrics, and charts without external assets."}</p></div>
+        <div><span>02</span><strong>{office ? "Standard package" : "Portable output"}</strong><p>{office ? "The download uses standard Office Open XML parts and relationships." : pdf ? "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF." : "The download contains its layout, theme, metrics, and charts without external assets."}</p></div>
         <div><span>03</span><strong>Explicit handoff</strong><p>The browser starts one local download only after your confirmation.</p></div>
       </div>
     </ReviewDialog>
