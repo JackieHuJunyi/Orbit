@@ -3,8 +3,13 @@ import path from "node:path";
 import test from "node:test";
 
 import * as duckdb from "@duckdb/duckdb-wasm/blocking";
-import { buildBoundedQuery } from "../app/lib/sql.ts";
-import { defaultArtifacts } from "../app/lib/workspace.ts";
+import {
+  QUERY_PROVENANCE_COLUMN,
+  buildBoundedQuery,
+  buildQueryLineagePlan,
+  expandQueryLineageColumns,
+} from "../app/lib/sql.ts";
+import { defaultArtifacts, parseDataSource } from "../app/lib/workspace.ts";
 
 test("executes the golden workspace query in DuckDB-Wasm", async () => {
   const data = defaultArtifacts.find((artifact) => artifact.kind === "data");
@@ -29,6 +34,49 @@ test("executes the golden workspace query in DuckDB-Wasm", async () => {
     assert.equal(result.numRows, 4);
     assert.equal(first.Region, "APAC");
     assert.equal(first.margin_pct, 39.1);
+  } finally {
+    connection.close();
+  }
+});
+
+test("preserves canonical parser row identity through filter, sort, aliases, and derived cells", async () => {
+  const source = "Region,Revenue\nShared,10\n,,\nShared,30\nOther,20";
+  const parsed = parseDataSource(source);
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(parsed.rows.length, 3);
+  const plan = buildQueryLineagePlan(`SELECT Region, Revenue AS amount,
+    ROUND(CAST(Revenue AS DOUBLE) * 1.1, 1) AS projected
+  FROM workspace_data
+  WHERE Revenue >= 20
+  ORDER BY Revenue DESC`);
+  assert.ok(plan);
+
+  const dist = path.resolve("node_modules/@duckdb/duckdb-wasm/dist");
+  const database = await duckdb.createDuckDB({
+    mvp: { mainModule: path.join(dist, "duckdb-mvp.wasm"), mainWorker: "" },
+    eh: { mainModule: path.join(dist, "duckdb-eh.wasm"), mainWorker: "" },
+  }, new duckdb.VoidLogger(), duckdb.NODE_RUNTIME);
+  await database.instantiate(() => {});
+  database.open({});
+  const canonicalRows = parsed.rows.map((row, index) => ({ ...row, __rune_import_order__: index }));
+  database.registerFileText("canonical.json", JSON.stringify(canonicalRows));
+  const connection = database.connect();
+
+  try {
+    connection.query(`CREATE TABLE workspace_data AS
+      SELECT Region, Revenue FROM read_json_auto('canonical.json', format = 'array')
+      ORDER BY __rune_import_order__`);
+    const result = connection.query(buildBoundedQuery(plan.sql));
+    const rows = result.toArray().map((row) => row.toJSON());
+    assert.deepEqual(rows.map((row) => Number(row[QUERY_PROVENANCE_COLUMN])), [1, 2]);
+    assert.deepEqual(rows.map((row) => [row.Region, Number(row.amount), Number(String(row.projected))]), [
+      ["Shared", 30, 33],
+      ["Other", 20, 22],
+    ]);
+    assert.deepEqual(
+      expandQueryLineageColumns(plan.projections, parsed.columns),
+      ["Region", "Revenue", null],
+    );
   } finally {
     connection.close();
   }

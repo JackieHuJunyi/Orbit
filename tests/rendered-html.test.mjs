@@ -66,7 +66,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.18/);
+  assert.match(html, /Rune v0\.19/);
   assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
@@ -128,4 +128,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Preview target is too large or no longer matches the current source/);
   assert.match(clientSource, /The preview target artifact is no longer in this workspace/);
   assert.match(clientSource, /Open exact/);
+  assert.match(clientSource, /result row numbers and direct fields, when present, open canonical source; derived cells stay read-only/);
+  assert.match(clientSource, /this query shape stays read-only because no one-to-one lineage was proven/);
+  assert.match(clientSource, /Query result/);
 });

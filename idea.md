@@ -1418,3 +1418,17 @@ cell target 仍然只在可以证明时存在。空 CSV 字段没有非空 range
 图表血缘也从 row-level 收紧到 field-level。chart compiler 已经保存排序与 `maxItems` 之前的 `sourceRowIndex`；v0.18 再把它与严格 spec 中的 `category`、`value` column 组合。点击 APAC label 会选择 Region cell，点击 bar 或格式化金额会选择 Q2 Revenue cell，即使两个 label 都叫 `Shared`，也由原始 row index 区分。DOM 的 label、宽度、格式化金额和 `data-chart-source-row` 继续只是展示与测试信号，真正 target 只能由当前 data artifact 的 cell compiler 产生。独立 Chart 与报告内 React chart 使用相同原生按钮，Deck/HTML/DOCX/PPTX frozen snapshot 仍不获得脚本权限。
 
 这一步让“我看到的这个值”成为可证明的最小 Agent capability，但还没有把表格变成隐藏 spreadsheet model，也没有声称每个空格都可编辑。下一步可以增加 schema-aware column operation、显式的空 cell insertion target，或让 selection review 显示 `artifact → row → column` breadcrumb；更大的未解问题仍是 SQL provenance，因为 aggregate/join result cell 可能对应一个 source set 而不是单个 token。Rune 应先让 DuckDB adapter产出有界、可验证的 lineage set，再决定是否允许 query result 反向导航，不能把本轮的一对一 cell contract错误套到多对一计算结果上。
+
+## 23. Proof-safe SQL result lineage：只在能证明一对一时允许回写上下文
+
+v0.18 已经让原始表格和图表精确到 cell，但 Query 仍是断开的派生视图。最诱人的实现是拿结果值或列名回到 CSV/JSON 中搜索；这在重复金额、别名、排序、格式化、过滤和空值存在时都会产生假血缘。更危险的是 aggregate、join 或 window result：一个可见单元格可能来自多行、多列甚至多个 relation，硬塞一个 `sourceRowIndex` 会把“看起来像来源”伪装成 Agent 的真实写入权限。v0.19 因此不追求让所有查询都可点，而是先定义一条可机械证明的窄通道；任何证明失败都只影响导航能力，不影响 SQL 本身的只读执行。
+
+第一条证明发生在数据进入 DuckDB 之前。Rune 先用现有 `parseDataSource` 得到 canonical columns 与 rows，再给每一条解析成功的记录附加一个碰撞安全的临时 import-order 字段，以 JSON 形式装载并按该字段建立 `workspace_data`。这样 DuckDB 的 `rowid` 与 Rune cell compiler 使用的 parser row index 完全一致，即使 CSV 原文里存在会被 greedy parser 跳过的空记录，也不会把结果误指到下一行。临时字段不会出现在用户表、query result 或持久化 source 中。没有列的 source 会先要求用户定义 schema；大小写不唯一的列 identity、用户声明的 `rowid` 或保留 provenance 名称则关闭血缘能力，但查询仍照常运行。
+
+第二条证明由一个保守、quote-aware、parenthesis-depth-aware 的 SELECT compiler 完成。它只接受以单个 `workspace_data` 为 relation、保持逐行语义的顶层 SELECT，并在查询的第一列注入带 relation qualifier 的隐藏 `rowid AS __rune_source_row_index__`。WHERE、ORDER BY、LIMIT/OFFSET 和确定性的 scalar expression 可以保留，因为它们不会把一个输出行扩成多个来源；CTE、DISTINCT、GROUP BY/HAVING、aggregate、JOIN 或逗号 relation、set operation、pivot/unpivot、sample、window/QUALIFY、subquery 与未知 row-expanding function 都停留在 read-only。这里采用有限白名单是刻意的：DuckDB 新增函数不应该自动扩大 Rune 的写入能力。
+
+第三条证明落在 projection，而不是显示值。compiler 按 SELECT projection 顺序区分直接字段、qualified/unqualified star 与 derived expression；运行后再检查可见结果列数是否与展开后的投影严格一致。直接字段映射到同一 source row 的精确 column cell，别名不改变它的身份；算术、CASE、CAST、ROUND 等计算列即使逐行执行，也只显示结果，不获得 target。结果行号只有在隐藏 rowid 合法、范围内且整套 projection arity 证明通过时才可以打开 canonical record。这样 `Revenue AS amount` 能回到 Revenue cell，而 `Revenue * 1.1 AS forecast` 永远不会把计算值冒充原始事实。
+
+Query preview 还必须绑定完整 revision。ready/error state 同时保存 query source、data artifact id 与 data source；任一侧编辑后，旧结果立即变回 loading，并由新执行重新建立血缘，不能把旧 rowid 套到新数据上。点击可证明的 result cell 或 row number 后，Rune 通过当前数据 artifact 的 lexical target map 导航到真实 CSV/JSON token，再复用 Selection Agent 的 prefix/suffix proof、review、checkpoint 与 atomic write。所有未证明形状仍然可以得到 DuckDB 结果，但 footer 会明确说明 read-only，而不是让不可点击看起来像故障。
+
+这轮没有把 aggregate 或 join 粗暴降格成“永远不能有血缘”，只是拒绝在缺少集合语义时假装完成。未来可以为聚合单元格返回有界 provenance set，并把它呈现为“查看 8 个来源”而不是单一写入 target；join 则需要 relation-qualified artifact/row/column identity、cardinality 上限和明确的歧义 UI。只有这些集合在 query revision、data revisions 和 parser identity 上都可验证后，才应该扩大 Agent capability。v0.19 选择的窄边界让 SQL result 第一次接入视觉到事实的完整链路，同时保持最重要的不变量：派生视图可以帮助人指向，但永远不能自行发明 canonical source。

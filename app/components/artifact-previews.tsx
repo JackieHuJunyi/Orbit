@@ -32,6 +32,7 @@ import {
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
+import { queryLineageRevisionMatches } from "../lib/sql";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (
@@ -238,7 +239,9 @@ function ResultGrid({
   footnote,
   rowTargets,
   cellTargets,
+  cellTargetRows,
   targetArtifact,
+  targetViaLabel,
   activeSelection,
   onTargetSource,
 }: {
@@ -246,9 +249,11 @@ function ResultGrid({
   rows: GridCell[][];
   badges: Array<{ icon: "rows" | "columns" | "format" | "time"; label: string }>;
   footnote: string;
-  rowTargets?: PreviewSourceTarget[];
+  rowTargets?: Array<PreviewSourceTarget | undefined>;
   cellTargets?: DataCellPreviewSourceTarget[];
+  cellTargetRows?: Array<Array<PreviewSourceTarget | null | undefined>>;
   targetArtifact?: WorkspaceArtifact;
+  targetViaLabel?: string;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
 }) {
@@ -279,7 +284,7 @@ function ResultGrid({
             {rows.map((row, rowIndex) => {
               const target = rowTargets?.[rowIndex];
               const activate = target && targetArtifact && onTargetSource
-                ? () => onTargetSource(targetArtifact, target)
+                ? () => onTargetSource(targetArtifact, target, targetViaLabel)
                 : undefined;
               const active = Boolean(target && previewTargetIsActive(target, activeSelection));
               return (
@@ -304,9 +309,11 @@ function ResultGrid({
                 {columns.map((column, columnIndex) => {
                   const value = row[columnIndex];
                   const numeric = typeof value === "number";
-                  const cellTarget = cellsByCoordinate.get(`${rowIndex}:${columnIndex}`);
+                  const cellTarget = cellTargetRows
+                    ? cellTargetRows[rowIndex]?.[columnIndex]
+                    : cellsByCoordinate.get(`${rowIndex}:${columnIndex}`);
                   const activateCell = cellTarget && targetArtifact && onTargetSource
-                    ? () => onTargetSource(targetArtifact, cellTarget)
+                    ? () => onTargetSource(targetArtifact, cellTarget, targetViaLabel)
                     : undefined;
                   const cellActive = Boolean(cellTarget && previewTargetIsActive(cellTarget, activeSelection));
                   const displayValue = value == null ? "—" : String(value);
@@ -321,7 +328,7 @@ function ResultGrid({
                           data-preview-source-target={cellTarget?.kind}
                           aria-label={`Select ${cellTarget?.label} in canonical source for Agent context`}
                           aria-pressed={cellActive}
-                          title={`Select the exact ${column} source cell`}
+                          title={`Select the exact canonical source cell · ${cellTarget?.label}`}
                           onClick={activateCell}
                         >
                           {displayValue}
@@ -382,17 +389,32 @@ function DataPreview({
 
 type QueryState =
   | { status: "loading"; result?: undefined; error?: undefined }
-  | { status: "ready"; result: WorkspaceQueryResult; error?: undefined }
-  | { status: "error"; result?: undefined; error: string };
+  | { status: "ready"; result: WorkspaceQueryResult; error?: undefined; querySource: string; dataArtifactId: string; dataSource: string }
+  | { status: "error"; result?: undefined; error: string; querySource: string; dataArtifactId: string; dataSource: string };
 
-function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?: WorkspaceArtifact }) {
+function QueryPreview({
+  artifact,
+  dataArtifact,
+  onTargetSource,
+}: {
+  artifact: WorkspaceArtifact;
+  dataArtifact?: WorkspaceArtifact;
+  onTargetSource?: PreviewTargetHandler;
+}) {
   const [state, setState] = useState<QueryState>({ status: "loading" });
+  const source = artifact.source;
 
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
       if (!dataArtifact) {
-        setState({ status: "error", error: "Add a CSV or JSON artifact before running SQL." });
+        setState({
+          status: "error",
+          error: "Add a CSV or JSON artifact before running SQL.",
+          querySource: source,
+          dataArtifactId: "",
+          dataSource: "",
+        });
         return;
       }
       setState({ status: "loading" });
@@ -401,11 +423,25 @@ function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?:
         : "CSV";
       void import("../lib/duckdb-client")
         .then(({ runWorkspaceQuery }) => runWorkspaceQuery(source, dataArtifact.source, dataFormat))
-        .then((result) => { if (active) setState({ status: "ready", result }); })
+        .then((result) => {
+          if (active) setState({
+            status: "ready",
+            result,
+            querySource: source,
+            dataArtifactId: dataArtifact.id,
+            dataSource: dataArtifact.source,
+          });
+        })
         .catch((error: unknown) => {
           if (!active) return;
           const message = error instanceof Error ? error.message : "DuckDB could not run this query.";
-          setState({ status: "error", error: message.replace(/^Error:\s*/i, "") });
+          setState({
+            status: "error",
+            error: message.replace(/^Error:\s*/i, ""),
+            querySource: source,
+            dataArtifactId: dataArtifact.id,
+            dataSource: dataArtifact.source,
+          });
         });
     }, 350);
 
@@ -415,7 +451,13 @@ function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?:
     };
   }, [dataArtifact, source]);
 
-  if (state.status === "loading") {
+  const stateIsCurrent = state.status === "loading" || queryLineageRevisionMatches(
+    state,
+    source,
+    dataArtifact?.id ?? "",
+    dataArtifact?.source ?? "",
+  );
+  if (state.status === "loading" || !stateIsCurrent) {
     return (
       <div className="query-loading" role="status">
         <span><LoaderCircle aria-hidden="true" /></span>
@@ -427,6 +469,19 @@ function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?:
   if (state.status === "error") return <EmptyPreview message={state.error} />;
 
   const { result } = state;
+  const sourceTargets = dataArtifact ? deriveDataPreviewSourceTargets(dataArtifact) : { rows: [], cells: [] };
+  const rowsByIndex = new Map(sourceTargets.rows.map((target) => [target.index, target] as const));
+  const cellsByCoordinate = new Map(sourceTargets.cells.map((target) => (
+    [`${target.rowIndex}\u0000${target.column}`, target] as const
+  )));
+  const rowTargets = result.sourceRowIndices.map((sourceRowIndex) => (
+    sourceRowIndex == null ? undefined : rowsByIndex.get(sourceRowIndex)
+  ));
+  const cellTargetRows = result.cellLineage.map((row) => row.map((lineage) => (
+    lineage
+      ? cellsByCoordinate.get(`${lineage.sourceRowIndex}\u0000${lineage.sourceColumn}`) ?? null
+      : null
+  )));
   return (
     <ResultGrid
       columns={result.columns}
@@ -436,7 +491,12 @@ function QueryPreview({ source, dataArtifact }: { source: string; dataArtifact?:
         { icon: "columns", label: `${result.columns.length} columns` },
         { icon: "time", label: `${Math.max(1, Math.round(result.elapsedMs))} ms` },
       ]}
-      footnote={`${result.engine} · workspace_data stayed in this browser${result.truncated ? " · preview limited to 500 rows" : ""}.`}
+      footnote={`${result.engine} · workspace_data stayed in this browser${result.lineageMode === "direct" ? " · result row numbers and direct fields, when present, open canonical source; derived cells stay read-only" : " · this query shape stays read-only because no one-to-one lineage was proven"}${result.truncated ? " · preview limited to 500 rows" : ""}.`}
+      rowTargets={rowTargets}
+      cellTargetRows={cellTargetRows}
+      targetArtifact={dataArtifact}
+      targetViaLabel={`Query result · ${artifact.name}`}
+      onTargetSource={onTargetSource}
     />
   );
 }
@@ -533,7 +593,7 @@ export function ArtifactPreview({
   const targets = derivePreviewSourceTargets(artifact);
   if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
   if (artifact.kind === "query") {
-    return <QueryPreview source={artifact.source} dataArtifact={artifacts.find((item) => item.kind === "data")} />;
+    return <QueryPreview artifact={artifact} dataArtifact={artifacts.find((item) => item.kind === "data")} onTargetSource={onTargetSource} />;
   }
   if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} onTargetSource={onTargetSource} />;
   return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
