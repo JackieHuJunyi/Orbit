@@ -8,6 +8,11 @@ import {
   type WorkspaceQuerySnapshot,
 } from "./query-snapshot.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
+import {
+  formatCompactCurrency,
+  formatCompactNumber,
+  formatFixedPercent,
+} from "./number-format.ts";
 
 export const ChartSpecSchema = z.object({
   version: z.literal(1),
@@ -105,19 +110,9 @@ function toFiniteNumber(value: unknown) {
 }
 
 function formatChartValue(value: number, format: ChartSpec["format"]) {
-  if (format === "currency") {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 2,
-    }).format(value);
-  }
-  if (format === "percent") return `${value.toFixed(1)}%`;
-  return new Intl.NumberFormat("en-US", {
-    notation: Math.abs(value) >= 10_000 ? "compact" : "standard",
-    maximumFractionDigits: 2,
-  }).format(value);
+  if (format === "currency") return formatCompactCurrency(value);
+  if (format === "percent") return formatFixedPercent(value);
+  return formatCompactNumber(value);
 }
 
 export function resolveChartModel(

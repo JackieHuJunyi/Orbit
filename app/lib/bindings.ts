@@ -6,6 +6,12 @@ import {
 } from "./query-snapshot.ts";
 import { inferQueryOutputColumns } from "./sql.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
+import {
+  formatCompactCurrency,
+  formatDeterministicNumber,
+  formatFixedPercent,
+  formatInteger,
+} from "./number-format.ts";
 
 export const QUERY_METRIC_FORMATS = ["currency", "number", "percent"] as const;
 
@@ -82,17 +88,11 @@ function numeric(row: Record<string, DataCell>, column?: string) {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: "compact",
-    maximumFractionDigits: 2,
-  }).format(value);
+  return formatCompactCurrency(value);
 }
 
 function formatPercent(value: number, showSign = false) {
-  const sign = showSign && value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(1)}%`;
+  return formatFixedPercent(value, showSign);
 }
 
 function slug(value: string) {
@@ -276,7 +276,7 @@ export function deriveWorkspaceMetrics(artifacts: WorkspaceArtifact[]): Record<s
     { key: "qoq_growth", label: "Quarter-over-quarter growth", value: qoqGrowth, formatted: formatPercent(qoqGrowth, true), sourceArtifactId: dataArtifact.id },
     { key: "gross_margin", label: "Gross margin", value: grossMargin, formatted: formatPercent(grossMargin), sourceArtifactId: dataArtifact.id },
     { key: "top_region", label: "Top region", value: topRegion, formatted: topRegion, sourceArtifactId: dataArtifact.id },
-    { key: "total_customers", label: "Customers", value: totalCustomers, formatted: Math.round(totalCustomers).toLocaleString("en-US"), sourceArtifactId: dataArtifact.id },
+    { key: "total_customers", label: "Customers", value: totalCustomers, formatted: formatInteger(totalCustomers), sourceArtifactId: dataArtifact.id },
   ];
 
   if (regionColumn) {
@@ -352,7 +352,7 @@ function queryMetricNumber(value: unknown) {
 function formatQueryMetric(value: number, format: QueryMetricFormat) {
   if (format === "currency") return formatCurrency(value);
   if (format === "percent") return formatPercent(value);
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+  return formatDeterministicNumber(value);
 }
 
 function resolveQueryMetricReference(

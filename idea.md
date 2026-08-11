@@ -1564,3 +1564,17 @@ v0.27 因此把 `Query mutation preflight` 提升为 `runtime impact preflight`�
 这里仍然区分 Agent proposal 和人的直接编辑。人在 source textarea 输入时需要即时、可恢复的 compiler feedback，不能每个 keystroke 都启动两次 DuckDB；preview coordinator 会像以前一样按 revision 显示 loading/error。Agent 是离散、可审阅的事务，因此有条件在 review 前支付一次完整 impact cost。未来若增加批量粘贴 review、spreadsheet formula editor 或自动修复循环，可以复用这条 proposed-workspace port，而不是把昂贵运行时塞进所有编辑事件。
 
 v0.27 没有引入多 Data JOIN、hosted compute、结果缓存或新的持久 graph。impact set 每次都从 proposed canonical source 解析，snapshot 仍只活在一次预检 promise 中；没有 Data/Query 变化的文档、Deck 和 Chart-only Agent plan完全不加载 DuckDB。这个里程碑把“Excel 那一层的数据变化会影响 Word/PPT”从 UI 上的 live preview 提升成 Agent transaction 的可证明不变量：AI 不仅要改三种 source，还必须在用户看到 diff 前证明这些 source 编译成的是同一个仍可运行的事实世界。
+
+## 32. Hydration 也是编译合同：显示文本不能由运行环境决定
+
+v0.27 的真实浏览器运行暴露了一个单元测试很容易漏掉、但对 source-first 编辑器非常关键的问题：同一份 `970000`，Cloudflare/服务端的 compact `Intl.NumberFormat` 输出 `$970K`，本地浏览器却输出 `$970.00K`。两边都符合各自的 ICU 实现，数据、Chart schema 和 React 组件也都没有错，但 SSR HTML 与客户端首次 render 的文本不同，React 只能抛出 hydration mismatch 并重建整棵预览树。对普通营销页这也许只是闪烁；对 Rune 来说，重建会让 source target、选择范围和运行证据的首屏身份失去可信的共同基线。
+
+问题的本质不是“指定 `en-US` 就够了”。locale 固定了语言规则，却没有固定不同 JS/ICU 版本对 compact notation、significant digits、minimum fraction digits 和 trailing zeros 的组合解释。只要服务端、浏览器、sandboxed HTML 和导出器各自调用环境 formatter，所谓 deterministic compiler 就仍留着一个不可审查的 ambient input。把服务端结果塞进 hydration snapshot 只能掩盖首屏，Deck HTML、DOCX/PPTX/PDF 和后续客户端重编仍可能产生不同文案。
+
+v0.27.1 因此增加一个很小但明确的 Rune-owned display compiler。普通数字由十进制 `toFixed` 后去尾零并按三位分组；compact 值显式选择 K/M/B/T、最多两位小数，并在四舍五入跨过 1000 时提升单位；货币符号与负号位置固定；百分比固定保留一位。它不读取 `navigator.language`、服务器 locale、时区或 ICU 数据。`$970K`、`$1.84M`、`-$1.2K`、`10K` 和 `30.0%` 因而是源值与版本化 formatter 的纯函数，而不是部署环境的意见。
+
+这条 formatter 同时服务 legacy metric、Query scalar、Data/Query Chart、React preview、Deck static HTML、Office/PDF snapshot、文件大小和字符计数。最后两项看似无关，却同样可能出现在 SSR 首屏；去掉无参数 `toLocaleString()` 是为了不留下下一处同类 hydration 断点。格式字符串仍然只是 projection，不进入 CSV、JSON、SQL 或 Markdown canonical source，也不参与 provenance 和数值比较。
+
+回归不能只断言“Node 输出了什么”。新增 fixture 明确规定边界值、负数、单位提升、尾零和非有限值；默认 golden workspace 同时断言服务端 HTML 包含 `$970K` 且不含 `$970.00K`。客户端 bundle 与服务端都导入同一份无 `Intl.NumberFormat` 的实现，因此跨运行时一致性来自代码共享与算法确定性，而不是测试机恰好和生产浏览器使用同一 ICU。
+
+未来若需要人民币、欧元、中文万/亿、会计负数或用户 locale，应该把 format/locale 变成 Chart 或 workspace 中可读、可 diff、可迁移的显式 source contract，再由 Rune compiler 实现和版本化；不能重新退回 ambient browser locale。AI Native 编辑器要求模型、预览和交付看到同一份事实，而“这个事实最后显示成什么文字”也是编译结果的一部分。

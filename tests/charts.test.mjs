@@ -37,6 +37,7 @@ test("projects canonical CSV rows into a sorted local chart model", () => {
   assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["APAC", "North America", "Europe", "LATAM"]);
   assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [0, 1, 2, 3]);
   assert.equal(resolution.model.data[0].formatted, "$1.84M");
+  assert.equal(resolution.model.data[2].formatted, "$970K");
   assert.equal(resolution.model.data[0].ratio, 1);
 });
 

@@ -3,6 +3,7 @@ import { parseChartSource, validateChartSourceBinding } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { formatQueryDataSourceDirective, parseQueryDataSourceDirective } from "./query-source.ts";
 import { validateReadQuery } from "./sql.ts";
+import { formatInteger } from "./number-format.ts";
 
 export type ArtifactKind = "document" | "data" | "query" | "chart" | "slides";
 
@@ -364,7 +365,7 @@ export function artifactStats(artifact: WorkspaceArtifact): string {
     const slides = isDeckMarkdownArtifact(artifact)
       ? compileDeckSource(artifact.source).slideCount
       : artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
-    return `${slides} slides · ${artifact.source.length.toLocaleString()} chars`;
+    return `${slides} slides · ${formatInteger(artifact.source.length)} chars`;
   }
   if (artifact.kind === "query") {
     return `SQL · ${artifact.source.split("\n").length} lines`;

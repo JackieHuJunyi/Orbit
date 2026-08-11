@@ -12,6 +12,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { createImportSourcePreview } from "../lib/imports";
+import { formatInteger } from "../lib/number-format";
 import type { ArtifactKind, WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
 
@@ -24,7 +25,7 @@ function ArtifactIcon({ kind }: { kind: ArtifactKind }) {
 }
 
 function readableNumber(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
+  return formatInteger(value);
 }
 
 export function ImportReviewDialog({

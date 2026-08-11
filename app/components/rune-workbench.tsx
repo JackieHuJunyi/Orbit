@@ -123,6 +123,7 @@ import {
   sourceSelectionError,
   type SourceSelection,
 } from "../lib/source-selection";
+import { formatInteger } from "../lib/number-format";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -695,7 +696,7 @@ export function RuneWorkbench() {
     setAgentError("");
     if (end - start > MAX_AGENT_SELECTION_CHARS) {
       if (agentScope === "selection") setAgentScope("artifact");
-      setNotice(`Selection Agent is limited to ${MAX_AGENT_SELECTION_CHARS.toLocaleString()} characters`);
+      setNotice(`Selection Agent is limited to ${formatInteger(MAX_AGENT_SELECTION_CHARS)} characters`);
       return;
     }
     if (agentState !== "planning") setAgentScope("selection");
@@ -704,7 +705,7 @@ export function RuneWorkbench() {
       : "";
     setNotice(previewLabel
       ? `${previewLabel} selected from preview · Selection Agent ready`
-      : `${(end - start).toLocaleString()} source characters selected · Selection Agent ready`);
+      : `${formatInteger(end - start)} source characters selected · Selection Agent ready`);
   }
 
   function focusPreviewTarget(
@@ -1763,7 +1764,7 @@ export function RuneWorkbench() {
 
           <div className="agent-dock">
             <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? `${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}` : agentScope === "selection" ? `${selectedCharacterCount.toLocaleString()} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
+              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? `${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}` : agentScope === "selection" ? `${formatInteger(selectedCharacterCount)} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
               <div className="agent-controls">
                 <div className="agent-scope-switch" role="group" aria-label="Agent change scope">
                   {(["selection", "artifact", "workspace"] as const).map((scope) => (
@@ -1777,7 +1778,7 @@ export function RuneWorkbench() {
                         setNotice(scope === "workspace"
                           ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}`
                           : scope === "selection"
-                            ? `${selectedCharacterCount.toLocaleString()} selected characters bound to Agent scope`
+                            ? `${formatInteger(selectedCharacterCount)} selected characters bound to Agent scope`
                             : "Current-file Agent scope enabled");
                       }}
                       disabled={agentState === "planning" || (scope === "selection" && !validSourceSelection)}
@@ -1865,7 +1866,7 @@ export function RuneWorkbench() {
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 onKeyDown={onPromptKeyDown}
-                placeholder={agentScope === "workspace" ? `Ask Rune to coordinate these ${workspaceAgentContext.length} context sources…` : agentScope === "selection" ? `Ask Rune to change only these ${selectedCharacterCount.toLocaleString()} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
+                placeholder={agentScope === "workspace" ? `Ask Rune to coordinate these ${workspaceAgentContext.length} context sources…` : agentScope === "selection" ? `Ask Rune to change only these ${formatInteger(selectedCharacterCount)} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
                 rows={1}
                 aria-label={agentScope === "workspace" ? "Describe a workspace change" : agentScope === "selection" ? "Describe a selected-source change" : "Describe an artifact change"}
               />
@@ -1958,7 +1959,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.27</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.27.1</span></div>
       </footer>
 
       {newArtifactOpen && (

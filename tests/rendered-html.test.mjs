@@ -38,6 +38,8 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Live preview/);
   assert.match(html, /metrics compiled live/);
   assert.match(html, /Q2 revenue by region/);
+  assert.match(html, />\$970K</);
+  assert.doesNotMatch(html, /\$970\.00K/);
   assert.match(html, /chart-card embedded/);
   assert.match(html, /data-chart-source-row="0"/);
   assert.match(html, /data-chart-source-cell="category"/);
@@ -69,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.27/);
+  assert.match(html, /Rune v0\.27\.1/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
