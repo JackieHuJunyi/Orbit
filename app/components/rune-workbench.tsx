@@ -21,6 +21,7 @@ import {
   LoaderCircle,
   PanelLeftClose,
   PanelLeftOpen,
+  Pin,
   Play,
   Presentation,
   RotateCcw,
@@ -93,6 +94,7 @@ import {
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import {
+  MAX_WORKSPACE_AGENT_PINS,
   buildWorkspaceDependencyGraph,
   selectWorkspaceAgentContext,
   workspaceAgentContextIsClosed,
@@ -217,17 +219,22 @@ function DependencyGraphRail({
   artifacts,
   graph,
   contextArtifacts,
+  pinnedArtifactIds,
   selectedArtifactId,
+  onClearPins,
   onSelect,
 }: {
   artifacts: WorkspaceArtifact[];
   graph: WorkspaceDependencyGraph;
   contextArtifacts: WorkspaceArtifact[];
+  pinnedArtifactIds: string[];
   selectedArtifactId: string;
+  onClearPins: () => void;
   onSelect: (artifactId: string) => void;
 }) {
   const artifactById = new Map(artifacts.map((artifact) => [artifact.id, artifact] as const));
   const contextIds = new Set(contextArtifacts.map((artifact) => artifact.id));
+  const pinnedIds = new Set(pinnedArtifactIds);
   const connectedIds = new Set(graph.edges.flatMap((edge) => [edge.fromArtifactId, edge.toArtifactId]));
   const unlinkedArtifacts = artifacts.filter((artifact) => !connectedIds.has(artifact.id));
   return (
@@ -237,19 +244,24 @@ function DependencyGraphRail({
         <span className="dependency-count" aria-label={`${graph.edges.length} dependency edges`}>{graph.edges.length}</span>
       </div>
       <section className="graph-context-card" aria-label="Workspace Agent context pack">
-        <div><span>Agent context</span><strong>{contextArtifacts.length} / {artifacts.length}</strong></div>
-        <p>Current bindings choose a bounded, revision-live context pack.</p>
+        <div className="graph-context-heading">
+          <span>Agent context</span>
+          <span><strong>{contextArtifacts.length} / {artifacts.length}</strong>{pinnedArtifactIds.length > 0 && <button type="button" onClick={onClearPins}>Clear pins</button>}</span>
+        </div>
+        <p>Current bindings and temporary pins choose a bounded, revision-live context pack.</p>
         <nav aria-label="Artifacts in Agent context">
           {contextArtifacts.map((artifact) => (
             <button
               type="button"
               key={artifact.id}
-              className={artifact.id === selectedArtifactId ? "active" : undefined}
+              className={`${artifact.id === selectedArtifactId ? "active" : ""} ${pinnedIds.has(artifact.id) ? "pinned" : ""}`.trim() || undefined}
               onClick={() => onSelect(artifact.id)}
               aria-current={artifact.id === selectedArtifactId ? "page" : undefined}
+              aria-label={`Open ${artifact.name}${pinnedIds.has(artifact.id) ? ", manually pinned in Agent context" : ""}`}
             >
               <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={11} /></span>
               <span>{artifact.name}</span>
+              {pinnedIds.has(artifact.id) && <Pin className="context-pin-marker" aria-hidden="true" />}
             </button>
           ))}
         </nav>
@@ -310,7 +322,7 @@ function DependencyGraphRail({
       <div className="file-rail-spacer" />
       <div className="workspace-note graph-note">
         <Database aria-hidden="true" />
-        <div><strong>No hidden graph state</strong><span>Every edge is recompiled from readable source.</span></div>
+        <div><strong>No hidden graph state</strong><span>Edges recompile from source; pins last only for this session.</span></div>
       </div>
     </aside>
   );
@@ -374,6 +386,7 @@ export function RuneWorkbench() {
   const [savedAt, setSavedAt] = useState("just now");
   const [fileRailOpen, setFileRailOpen] = useState(true);
   const [railView, setRailView] = useState<"workspace" | "graph">("workspace");
+  const [workspacePinnedArtifactIds, setWorkspacePinnedArtifactIds] = useState<string[]>([]);
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [pendingReviewId, setPendingReviewId] = useState("");
@@ -440,8 +453,9 @@ export function RuneWorkbench() {
       artifacts,
       dependencyGraph,
       selectedArtifact?.id ?? artifacts[0]?.id ?? "",
+      { pinnedArtifactIds: workspacePinnedArtifactIds },
     ),
-    [artifacts, dependencyGraph, selectedArtifact?.id],
+    [artifacts, dependencyGraph, selectedArtifact?.id, workspacePinnedArtifactIds],
   );
   const validationErrors = useMemo(
     () => selectedArtifact
@@ -590,6 +604,29 @@ export function RuneWorkbench() {
     setNotice("Switched artifact context");
   }
 
+  function toggleWorkspaceContextPin(artifactId: string) {
+    const artifact = artifacts.find((item) => item.id === artifactId);
+    if (!artifact) return;
+    if (workspacePinnedArtifactIds.includes(artifactId)) {
+      setWorkspacePinnedArtifactIds((current) => current.filter((id) => id !== artifactId));
+      setNotice(`${artifact.name} removed from temporary Agent context pins`);
+      return;
+    }
+    if (workspacePinnedArtifactIds.length >= MAX_WORKSPACE_AGENT_PINS) {
+      setNotice(`Workspace Agent supports up to ${MAX_WORKSPACE_AGENT_PINS} temporary context pins`);
+      return;
+    }
+    setWorkspacePinnedArtifactIds((current) => [...current, artifactId]);
+    setAgentError("");
+    setNotice(`${artifact.name} pinned for the next Workspace Agent plan`);
+  }
+
+  function clearWorkspaceContextPins() {
+    if (!workspacePinnedArtifactIds.length) return;
+    setWorkspacePinnedArtifactIds([]);
+    setNotice("Temporary Workspace Agent context pins cleared");
+  }
+
   function updateSource(source: string) {
     setSaveState("saving");
     setArtifacts((current) => current.map((artifact) => (
@@ -734,6 +771,7 @@ export function RuneWorkbench() {
     persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints);
     setArtifacts(result.artifacts);
     setSelectedId(nextSelectedId);
+    setWorkspacePinnedArtifactIds([]);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
@@ -845,6 +883,10 @@ export function RuneWorkbench() {
     const targetArtifact = selectedArtifact;
     const targetArtifacts = artifacts;
     const targetWorkspaceContext = scope === "workspace" ? workspaceAgentContext : [];
+    const targetWorkspaceContextIds = new Set(targetWorkspaceContext.map((artifact) => artifact.id));
+    const targetWorkspacePinnedArtifactIds = scope === "workspace"
+      ? workspacePinnedArtifactIds.filter((artifactId) => targetWorkspaceContextIds.has(artifactId))
+      : [];
     const targetWorkspaceGraph = scope === "workspace"
       ? buildWorkspaceDependencyGraph(targetWorkspaceContext)
       : null;
@@ -860,12 +902,14 @@ export function RuneWorkbench() {
       || workspaceAgentContextIsClosed(dependencyGraph, targetWorkspaceContext);
     const targetWorkspaceContextResolved = scope !== "workspace"
       || targetWorkspaceGraph?.issues.length === 0;
+    const targetWorkspacePinsIncluded = scope !== "workspace"
+      || targetWorkspacePinnedArtifactIds.length === workspacePinnedArtifactIds.length;
     const targetRevision = captureWorkspaceSourceRevision(targetArtifacts);
     setAgentState("planning");
     setAgentError("");
     setPendingChange(null);
     setNotice(scope === "workspace"
-      ? `Agent is coordinating ${targetWorkspaceContext.length} graph-related sources`
+      ? `Agent is coordinating ${targetWorkspaceContext.length} context sources${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}`
       : scope === "selection"
         ? "Agent is planning a patch confined to the selected source"
         : "Agent is planning a reviewable file patch");
@@ -886,6 +930,7 @@ export function RuneWorkbench() {
         && targetWorkspaceContext.length <= 6
         && targetWorkspaceContextClosed
         && targetWorkspaceContextResolved
+        && targetWorkspacePinsIncluded
         && targetWorkspaceContext.every((artifact) => artifact.source.length <= 100_000)
         && targetWorkspaceContext.reduce((total, artifact) => total + artifact.source.length, 0) <= 180_000;
     let fallbackNotice = remoteEligible
@@ -895,9 +940,11 @@ export function RuneWorkbench() {
           ? "Local patch ready · graph context needs at least two sources for the model"
           : !targetWorkspaceContextClosed
             ? "Local patch ready · graph context could not include every upstream source"
-            : !targetWorkspaceContextResolved
-              ? "Local patch ready · graph context contains an unresolved dependency"
-              : "Local patch ready · graph context exceeds the model safety limit"
+            : !targetWorkspacePinsIncluded
+              ? "Local patch ready · a temporary pin could not fit in model context"
+              : !targetWorkspaceContextResolved
+                ? "Local patch ready · graph context contains an unresolved dependency"
+                : "Local patch ready · graph context exceeds the model safety limit"
         : "Local patch ready · file exceeds the model context safety limit";
 
     if (remoteEligible) {
@@ -911,6 +958,7 @@ export function RuneWorkbench() {
             selection: scope === "selection" ? targetSelection : undefined,
             workspaceArtifacts: scope === "workspace" ? targetWorkspaceContext : undefined,
             workspaceDependencies: scope === "workspace" ? targetWorkspaceDependencies : undefined,
+            workspacePinnedArtifactIds: scope === "workspace" ? targetWorkspacePinnedArtifactIds : undefined,
             prompt: instruction,
             metrics,
           }),
@@ -922,7 +970,7 @@ export function RuneWorkbench() {
           setAgentMode("openai");
           setPrompt("");
           const changeCount = payload.plan.patches.length + payload.plan.creations.length;
-          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${payload.model ? ` · ${payload.model}` : ""}`);
+          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}${payload.model ? ` · ${payload.model}` : ""}`);
           setAgentState("idle");
           return;
         }
@@ -954,7 +1002,7 @@ export function RuneWorkbench() {
 
     try {
       if (scope === "workspace") {
-        const localPlan = planLocalWorkspaceAgentChange(targetArtifacts, instruction);
+        const localPlan = planLocalWorkspaceAgentChange(targetArtifacts, instruction, targetWorkspaceContext);
         setPendingChange({ prompt: instruction, provider: "local", scope, baseRevision: targetRevision, ...localPlan });
         const changeCount = localPlan.patches.length + localPlan.creations.length;
         setNotice(`${fallbackNotice} · ${changeCount} ${changeCount === 1 ? "file" : "files"} prepared`);
@@ -1095,6 +1143,7 @@ export function RuneWorkbench() {
     setSaveState("saving");
     setArtifacts(defaults);
     setSelectedId(defaults[0].id);
+    setWorkspacePinnedArtifactIds([]);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints({});
@@ -1405,7 +1454,9 @@ export function RuneWorkbench() {
             artifacts={artifacts}
             graph={dependencyGraph}
             contextArtifacts={workspaceAgentContext}
+            pinnedArtifactIds={workspacePinnedArtifactIds}
             selectedArtifactId={selectedArtifact.id}
+            onClearPins={clearWorkspaceContextPins}
             onSelect={selectArtifact}
           />
         ) : (
@@ -1414,26 +1465,50 @@ export function RuneWorkbench() {
               <div><span className="overline">Workspace</span><strong>Q2 review</strong></div>
               <button className="tiny-icon-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label="Create a new artifact" title="New artifact">+</button>
             </div>
-            <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}</span></div>
+            <div className="artifact-group-label"><span>Artifacts</span><span>{artifacts.length}{workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}</span></div>
             <nav className="artifact-list">
               {artifacts.map((artifact) => {
                 const metricReferenceCount = findMetricReferences(artifact.source).length;
                 const chartReferenceCount = findChartReferences(artifact.source).length;
                 const referenceCount = metricReferenceCount + chartReferenceCount;
+                const pinned = workspacePinnedArtifactIds.includes(artifact.id);
+                const inAgentContext = workspaceAgentContext.some((contextArtifact) => contextArtifact.id === artifact.id);
                 return (
-                  <button
+                  <div
+                    className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""}`.trim()}
+                    data-agent-context={inAgentContext ? "true" : undefined}
                     key={artifact.id}
-                    className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
-                    onClick={() => selectArtifact(artifact.id)}
                   >
-                    <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
-                    <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${referenceCount} live bindings` : ""}</small></span>
-                    {artifact.id === selectedArtifact.id && <span className="active-notch" />}
-                  </button>
+                    <button
+                      className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
+                      onClick={() => selectArtifact(artifact.id)}
+                    >
+                      <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
+                      <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${referenceCount} live bindings` : ""}</small></span>
+                      {artifact.id === selectedArtifact.id && <span className="active-notch" />}
+                    </button>
+                    <button
+                      type="button"
+                      className={`artifact-context-pin ${pinned ? "active" : ""}`.trim()}
+                      aria-label={`${pinned ? "Remove" : "Pin"} ${artifact.name} ${pinned ? "from" : "in"} Workspace Agent context`}
+                      aria-pressed={pinned}
+                      title={pinned ? "Remove temporary Agent context pin" : "Keep this file in the next Workspace Agent context"}
+                      onClick={() => toggleWorkspaceContextPin(artifact.id)}
+                    >
+                      <Pin aria-hidden="true" />
+                    </button>
+                  </div>
                 );
               })}
             </nav>
             <div className="file-rail-spacer" />
+            {workspacePinnedArtifactIds.length > 0 && (
+              <div className="context-pin-summary">
+                <Pin aria-hidden="true" />
+                <span><strong>{workspacePinnedArtifactIds.length} temporary {workspacePinnedArtifactIds.length === 1 ? "pin" : "pins"}</strong><small>Included with required upstream sources.</small></span>
+                <button type="button" onClick={clearWorkspaceContextPins}>Clear</button>
+              </div>
+            )}
             <div className="workspace-note">
               <LayoutGrid aria-hidden="true" />
               <div><strong>One workspace</strong><span>Every artifact stays readable to people and agents.</span></div>
@@ -1510,7 +1585,7 @@ export function RuneWorkbench() {
 
           <div className="agent-dock">
             <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? `${workspaceAgentContext.length} graph-related sources in context` : agentScope === "selection" ? `${selectedCharacterCount.toLocaleString()} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
+              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? `${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}` : agentScope === "selection" ? `${selectedCharacterCount.toLocaleString()} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
               <div className="agent-controls">
                 <div className="agent-scope-switch" role="group" aria-label="Agent change scope">
                   {(["selection", "artifact", "workspace"] as const).map((scope) => (
@@ -1522,7 +1597,7 @@ export function RuneWorkbench() {
                         setPendingChange(null);
                         setAgentError("");
                         setNotice(scope === "workspace"
-                          ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} graph-related sources`
+                          ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}`
                           : scope === "selection"
                             ? `${selectedCharacterCount.toLocaleString()} selected characters bound to Agent scope`
                             : "Current-file Agent scope enabled");
@@ -1597,13 +1672,13 @@ export function RuneWorkbench() {
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 onKeyDown={onPromptKeyDown}
-                placeholder={agentScope === "workspace" ? `Ask Rune to coordinate these ${workspaceAgentContext.length} related sources…` : agentScope === "selection" ? `Ask Rune to change only these ${selectedCharacterCount.toLocaleString()} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
+                placeholder={agentScope === "workspace" ? `Ask Rune to coordinate these ${workspaceAgentContext.length} context sources…` : agentScope === "selection" ? `Ask Rune to change only these ${selectedCharacterCount.toLocaleString()} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
                 rows={1}
                 aria-label={agentScope === "workspace" ? "Describe a workspace change" : agentScope === "selection" ? "Describe a selected-source change" : "Describe an artifact change"}
               />
               <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || (agentScope === "selection" && !validSourceSelection)} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
-            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? `${workspaceAgentContext.length} context files · full workspace validates atomically` : agentScope === "selection" ? "Nothing outside the selected source may change" : "Every write is reviewable and undoable"}</p>
+            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? `${workspaceAgentContext.length} context files${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""} · full workspace validates atomically` : agentScope === "selection" ? "Nothing outside the selected source may change" : "Every write is reviewable and undoable"}</p>
           </div>
         </section>
 
@@ -1678,7 +1753,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.20</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.21</span></div>
       </footer>
 
       {newArtifactOpen && (

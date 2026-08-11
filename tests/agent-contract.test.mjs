@@ -233,6 +233,7 @@ test("builds a bounded workspace request with coordinated file instructions", ()
       kind: "metric",
       references: ["total_revenue"],
     }],
+    workspacePinnedArtifactIds: ["deck"],
   });
   assert.match(buildAgentInstructions(workspaceRequest), /coordinated, reviewable outcome/);
   assert.match(buildAgentInstructions(workspaceRequest), /1-4 actions/);
@@ -243,6 +244,7 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.match(buildAgentInstructions(workspaceRequest), /Markdown by exact heading/);
   assert.match(buildAgentInstructions(workspaceRequest), /rejects missing, ambiguous, type-incompatible/);
   assert.match(buildAgentInstructions(workspaceRequest), /bounded context pack selected from the current dependency graph/);
+  assert.match(buildAgentInstructions(workspaceRequest), /deliberately included across otherwise disconnected components/);
   const workspaceInput = JSON.parse(buildAgentInput(workspaceRequest));
   assert.equal(workspaceInput.selectedArtifactId, "report");
   assert.equal(workspaceInput.workspaceArtifacts.length, 2);
@@ -252,6 +254,7 @@ test("builds a bounded workspace request with coordinated file instructions", ()
     kind: "metric",
     references: ["total_revenue"],
   }]);
+  assert.deepEqual(workspaceInput.workspacePinnedArtifactIds, ["deck"]);
 });
 
 test("rejects ambiguous or oversized workspace context before provider calls", () => {
@@ -294,16 +297,33 @@ test("rejects ambiguous or oversized workspace context before provider calls", (
     scope: "workspace",
     workspaceArtifacts,
     workspaceDependencies: [{ ...dependency, toArtifactId: "foreign" }],
+    workspacePinnedArtifactIds: [],
   }).success, false);
   assert.equal(AgentRequestSchema.safeParse({
     ...request,
     scope: "workspace",
     workspaceArtifacts,
     workspaceDependencies: [dependency, dependency],
+    workspacePinnedArtifactIds: [],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "workspace",
+    workspaceArtifacts,
+    workspaceDependencies: [],
+    workspacePinnedArtifactIds: ["deck", "deck"],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "workspace",
+    workspaceArtifacts,
+    workspaceDependencies: [],
+    workspacePinnedArtifactIds: ["foreign"],
   }).success, false);
   assert.equal(AgentRequestSchema.safeParse({
     ...request,
     workspaceDependencies: [],
+    workspacePinnedArtifactIds: [],
   }).success, false);
 });
 

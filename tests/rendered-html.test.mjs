@@ -66,8 +66,9 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.20/);
+  assert.match(html, /Rune v0\.21/);
   assert.match(html, /aria-label="Data graph"/);
+  assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Compiled output/);
@@ -133,8 +134,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /this query shape stays read-only because no one-to-one lineage was proven/);
   assert.match(clientSource, /Query result/);
   assert.match(clientSource, /Dependency graph/);
-  assert.match(clientSource, /Current bindings choose a bounded, revision-live context pack/);
+  assert.match(clientSource, /Current bindings and temporary pins choose a bounded, revision-live context pack/);
   assert.match(clientSource, /No hidden graph state/);
-  assert.match(clientSource, /graph-related sources in context/);
+  assert.match(clientSource, /pins last only for this session/);
+  assert.match(clientSource, /Temporary Workspace Agent context pins cleared/);
   assert.match(clientSource, /workspaceDependencies/);
+  assert.match(clientSource, /workspacePinnedArtifactIds/);
 });

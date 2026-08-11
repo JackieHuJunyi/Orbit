@@ -35,3 +35,23 @@ test("keeps existing deterministic workspace coordination available", () => {
   assert.equal(plan.patches.length, 3);
   assert.deepEqual(plan.creations, []);
 });
+
+test("uses the explicit context pack while retaining full-workspace creation identity", () => {
+  const context = defaultArtifacts.filter((artifact) => ["q2-review", "board-briefing"].includes(artifact.id));
+  const coordinated = planLocalWorkspaceAgentChange(
+    defaultArtifacts,
+    "让报告和演示保持一致",
+    context,
+  );
+  assert.deepEqual(coordinated.patches.map((patch) => patch.artifactId), ["q2-review", "board-briefing"]);
+
+  const created = planLocalWorkspaceAgentChange(
+    defaultArtifacts,
+    "根据 pin 的上下文创建一份新文档",
+    context,
+  );
+  assert.equal(created.creations.length, 1);
+  assert.match(created.creations[0].artifact.source, /q2-review\.md/);
+  assert.match(created.creations[0].artifact.source, /board-briefing\.deck\.md/);
+  assert.doesNotMatch(created.creations[0].artifact.source, /regional-revenue\.csv/);
+});

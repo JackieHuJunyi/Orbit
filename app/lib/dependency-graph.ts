@@ -10,6 +10,7 @@ export const WORKSPACE_DEPENDENCY_KINDS = [
 ] as const;
 
 export const MAX_WORKSPACE_AGENT_ARTIFACTS = 6;
+export const MAX_WORKSPACE_AGENT_PINS = MAX_WORKSPACE_AGENT_ARTIFACTS - 1;
 export const MAX_WORKSPACE_AGENT_ARTIFACT_CHARS = 100_000;
 export const MAX_WORKSPACE_AGENT_CONTEXT_CHARS = 180_000;
 export const MAX_WORKSPACE_DEPENDENCY_REFERENCES = 16;
@@ -172,7 +173,7 @@ export function buildWorkspaceDependencyGraph(
 function orderedGraphCandidates(
   artifacts: WorkspaceArtifact[],
   graph: WorkspaceDependencyGraph,
-  selectedArtifactId: string,
+  rootArtifactIds: string[],
 ) {
   const artifactById = new Map(artifacts.map((artifact) => [artifact.id, artifact] as const));
   const order = new Map(artifacts.map((artifact, index) => [artifact.id, index] as const));
@@ -187,10 +188,13 @@ function orderedGraphCandidates(
     neighbors.set(edge.toArtifactId, to);
   });
 
-  const selected = artifactById.get(selectedArtifactId) ?? artifacts[0];
-  if (!selected) return [];
-  const queued = new Set([selected.id]);
-  const queue = [selected.id];
+  const roots = [...new Set(rootArtifactIds)].flatMap((artifactId) => {
+    const artifact = artifactById.get(artifactId);
+    return artifact ? [artifact] : [];
+  });
+  if (!roots.length && artifacts[0]) roots.push(artifacts[0]);
+  const queued = new Set(roots.map((artifact) => artifact.id));
+  const queue = roots.map((artifact) => artifact.id);
   const ids: string[] = [];
   while (queue.length) {
     const id = queue.shift();
@@ -214,12 +218,23 @@ export function selectWorkspaceAgentContext(
   artifacts: WorkspaceArtifact[],
   graph: WorkspaceDependencyGraph,
   selectedArtifactId: string,
-  limit = MAX_WORKSPACE_AGENT_ARTIFACTS,
+  options: {
+    limit?: number;
+    pinnedArtifactIds?: string[];
+  } = {},
 ) {
-  const candidates = orderedGraphCandidates(artifacts, graph, selectedArtifactId);
-  if (!candidates.length) return [];
-  const requestedLimit = Number.isFinite(limit) ? Math.floor(limit) : MAX_WORKSPACE_AGENT_ARTIFACTS;
+  const selected = artifacts.find((artifact) => artifact.id === selectedArtifactId) ?? artifacts[0];
+  if (!selected) return [];
+  const requestedLimit = Number.isFinite(options.limit)
+    ? Math.floor(options.limit ?? MAX_WORKSPACE_AGENT_ARTIFACTS)
+    : MAX_WORKSPACE_AGENT_ARTIFACTS;
   const safeLimit = Math.min(MAX_WORKSPACE_AGENT_ARTIFACTS, Math.max(1, requestedLimit));
+  const requestedPins = new Set(options.pinnedArtifactIds ?? []);
+  const pinnedArtifacts = artifacts
+    .filter((artifact) => artifact.id !== selected.id && requestedPins.has(artifact.id))
+    .slice(0, Math.min(MAX_WORKSPACE_AGENT_PINS, Math.max(0, safeLimit - 1)));
+  const rootArtifactIds = [selected.id, ...pinnedArtifacts.map((artifact) => artifact.id)];
+  const candidates = orderedGraphCandidates(artifacts, graph, rootArtifactIds);
   const artifactById = new Map(artifacts.map((artifact) => [artifact.id, artifact] as const));
   const incoming = new Map<string, Set<string>>();
   graph.edges.forEach((edge) => {
@@ -239,16 +254,18 @@ export function selectWorkspaceAgentContext(
     }
     return closure;
   };
-  const selected = candidates[0];
-  const selectedClosure = closureFor(selected.id);
-  const selectedClosureArtifacts = artifacts.filter((artifact) => selectedClosure.has(artifact.id));
-  const selectedClosureFits = selectedClosureArtifacts.length <= safeLimit
-    && selectedClosureArtifacts.every((artifact) => (
+  const requiredClosure = new Set<string>();
+  rootArtifactIds.forEach((artifactId) => {
+    closureFor(artifactId).forEach((requiredId) => requiredClosure.add(requiredId));
+  });
+  const requiredClosureArtifacts = artifacts.filter((artifact) => requiredClosure.has(artifact.id));
+  const requiredClosureFits = requiredClosureArtifacts.length <= safeLimit
+    && requiredClosureArtifacts.every((artifact) => (
       artifact.id === selected.id || artifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS
     ))
-    && selectedClosureArtifacts.reduce((total, artifact) => total + artifact.source.length, 0)
+    && requiredClosureArtifacts.reduce((total, artifact) => total + artifact.source.length, 0)
       <= MAX_WORKSPACE_AGENT_CONTEXT_CHARS;
-  const selectedIds = selectedClosureFits ? selectedClosure : new Set([selected.id]);
+  const selectedIds = requiredClosureFits ? requiredClosure : new Set(rootArtifactIds);
   let characterCount = artifacts.reduce((total, artifact) => (
     selectedIds.has(artifact.id) ? total + artifact.source.length : total
   ), 0);

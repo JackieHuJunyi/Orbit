@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   MAX_WORKSPACE_AGENT_ARTIFACTS,
+  MAX_WORKSPACE_AGENT_PINS,
   buildWorkspaceDependencyGraph,
   dependencyEdgesForContext,
   selectWorkspaceAgentContext,
@@ -110,6 +111,70 @@ test("does not pad an isolated selection with unrelated workspace artifacts", ()
     selectWorkspaceAgentContext(workspace, graph, "selected-notes").map((artifact) => artifact.id),
     ["selected-notes"],
   );
+});
+
+test("adds explicit pins and their upstream closure without padding other components", () => {
+  const isolated = {
+    id: "isolated-brief",
+    name: "isolated-brief.md",
+    kind: "document",
+    language: "Markdown",
+    source: "# Independent brief",
+  };
+  const unrelated = {
+    id: "unrelated-brief",
+    name: "unrelated-brief.md",
+    kind: "document",
+    language: "Markdown",
+    source: "# Unrelated brief",
+  };
+  const workspace = [...defaultArtifacts, isolated, unrelated];
+  const graph = buildWorkspaceDependencyGraph(workspace);
+  const context = selectWorkspaceAgentContext(workspace, graph, "q2-review", {
+    pinnedArtifactIds: [isolated.id],
+  });
+  assert.equal(MAX_WORKSPACE_AGENT_PINS, 5);
+  assert.deepEqual(context.map((artifact) => artifact.id), [
+    "q2-review",
+    "regional-revenue",
+    "regional-analysis",
+    "regional-revenue-chart",
+    "board-briefing",
+    "isolated-brief",
+  ]);
+  assert.equal(context.some((artifact) => artifact.id === unrelated.id), false);
+  assert.equal(workspaceAgentContextIsClosed(graph, context), true);
+});
+
+test("keeps every explicit root visible when a pinned upstream closure cannot fit", () => {
+  const selected = {
+    id: "selected",
+    name: "selected.md",
+    kind: "document",
+    language: "Markdown",
+    source: "# Selected",
+  };
+  const pinned = {
+    id: "pinned-report",
+    name: "pinned-report.md",
+    kind: "document",
+    language: "Markdown",
+    source: "# Pinned\n\n{{ metric(\"total_revenue\") }}",
+  };
+  const oversizedData = {
+    id: "data",
+    name: "data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: `Item,Value\n${"x".repeat(100_001)},1`,
+  };
+  const workspace = [selected, pinned, oversizedData];
+  const graph = buildWorkspaceDependencyGraph(workspace);
+  const context = selectWorkspaceAgentContext(workspace, graph, selected.id, {
+    pinnedArtifactIds: [pinned.id],
+  });
+  assert.deepEqual(context.map((artifact) => artifact.id), [selected.id, pinned.id]);
+  assert.equal(workspaceAgentContextIsClosed(graph, context), false);
 });
 
 test("reports unresolved graph intent without inventing dependency nodes", () => {

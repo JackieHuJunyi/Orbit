@@ -1446,3 +1446,17 @@ v0.20 把已有事实收敛成一个纯函数图谱，而不是新建数据库�
 这个边界把 Data graph 从装饰升级为成本与权限控制面：小 workspace 的行为不变，大 workspace 不再因为总文件数超过 6 就必然失去模型能力，而 provider 只支付与当前关系相符的 source token。没有新增 D1、R2、账号、embedding、向量库或后台索引；刷新和编辑后图谱由同一份可读文件立即重建。它也刻意不声称理解自然语言中的隐式关系：两个没有 metric/chart/query binding 的 Markdown 文件仍是 unlinked，不能仅凭相似标题自动连边。
 
 下一步可以在不改变安全合同的前提下增加用户显式 pin/context set，让一次跨越无绑定文件的任务也可审查；更重要的是把 user-defined metric 与 Query output 变成正式 dependency source，这样 `CSV → SQL → Chart → Report/Deck` 会进入同一张图。目前图谱不是持久评论系统、稳定 node identity 或协作 CRDT，也不会用 embedding 猜测依赖。Rune 先证明显式 source relationship 足以同时改善可解释性、token 成本和模型权限，再决定哪些隐式关系值得引入。
+
+## 25. Explicit context pins：让用户补充意图，但不让模型自行扩大视野
+
+v0.20 的 dependency graph 解决了“已经写进 source 的关系如何进入 Agent context”，却故意不猜自然语言里的隐式关系。这个保守选择会产生一个真实断点：两份独立 Markdown 简报可能没有 metric、query 或 chart binding，但用户仍然会提出“把这两份文档合并成一个董事会版本”；一份 CSV 和一份没有显式 binding 的新 Deck 也可能需要共同参与一次创建任务。如果 Rune 因为图上没有边就只能使用单文件模型，用户会被迫往正文里添加虚假 token；如果 Rune 自动用标题相似度、embedding 或最近打开记录补齐，又会把概率相关性伪装成权限。
+
+v0.21 因此把 **pin** 定义成一次由用户明确授予的短生命周期 context capability。Workspace 文件列表中的每个 artifact 都有独立的原生 pin button；按下后，该文件成为 selected artifact 之外的 required root。最多允许五个 pin，加上当前文件后仍受六文件模型包上限约束。Data graph 的 context card 会同时显示自动纳入与手动 pin 的文件，并允许一次清空；文件列表、Agent identity、planning notice 和模型完成提示都显示 pin 数量，用户不必从不可见请求中猜模型究竟看到了什么。
+
+pin 不是一条新的 dependency edge。真实 edge 继续只能从 metric、`workspace_data`、Chart source 和 chart embed 的可读 source 编译；pin 只说明“这次任务也需要看这个 root”。选包算法对 selected 与所有 pin 求 upstream closure 的并集，再从这些 root 的 connected components 中按确定性顺序补足相关文件，最后恢复原 workspace 顺序。一个被 pin 的 report 如果依赖 Data 和 Chart，这些 source 必须整体进入；若闭包超过六文件、单文件 100,000 字符或总计 180,000 字符，Rune 会保留 required roots 的可见性并关闭 provider path，而不是悄悄丢掉某个 pin 后声称模型拥有完整上下文。
+
+服务端不能只相信一个任意的六文件数组。请求现在必须显式携带 `workspacePinnedArtifactIds` 和内部 dependency edges；API 从收到的 canonical sources 重新编图、拒绝 unresolved upstream、逐边比较，然后以 selected id 与 pin ids 重新运行同一个 context selector。任何既不在 selected component、也不能从某个 pin root 到达的 disconnected artifact 都会在 provider 调用前失败。这样显式 pin 可以跨图，但不能被客户端借来给无解释的 padding 打掩护。provider instructions 同时说明 pin 是 intentional context，不等于必须修改每个 pinned file。
+
+无模型密钥时也不能退回旧的“读取整个 workspace”语义。确定性 local planner 现在同时接收完整 workspace 与选中的 context pack：前者只负责创建时的 collision-safe identity 和最终安全校验，后者决定内容综合或同步时真正可见、可修改的文件。无论 provider 还是 local plan，Apply 仍然绑定规划开始时的完整 workspace revision，在所有真实 artifact 上执行 adapter、binding、identity 与 dependency validation；pin 改变模型读权限，不改变写入事务的否决范围。
+
+这些 pin 不写入 localStorage、checkpoint、folder manifest、source、Git 或 dependency graph；刷新即消失，Folder Pull 和 Reset 也会清空。短生命周期是产品语义而不是暂时偷懒：用户表达的是“本次请求需要这些材料”，并未声明永久架构关系。未来若高频工作流确实需要稳定 context set，应设计一个可读、可审查、可版本化的 workspace source artifact，而不是悄悄把 pin 持久化为隐藏 UI 状态。下一条更重要的数据链路仍是 Query output 和 user-defined metric 成为正式 dependency source，让真正有长期语义的 `CSV → SQL → Chart → Report/Deck` 关系继续回到 canonical files，而不是依赖手工 pin。

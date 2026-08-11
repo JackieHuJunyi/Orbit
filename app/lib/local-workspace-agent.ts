@@ -61,7 +61,11 @@ Use the canonical files above to refine this narrative without copying hidden st
 `;
 }
 
-function planLocalCreation(artifacts: WorkspaceArtifact[], kind: CreatableArtifactKind): LocalWorkspaceAgentPlan {
+function planLocalCreation(
+  artifacts: WorkspaceArtifact[],
+  contextArtifacts: WorkspaceArtifact[],
+  kind: CreatableArtifactKind,
+): LocalWorkspaceAgentPlan {
   const title = kind === "slides"
     ? "Workspace Briefing"
     : kind === "data"
@@ -73,7 +77,7 @@ function planLocalCreation(artifacts: WorkspaceArtifact[], kind: CreatableArtifa
   }
   const artifact = {
     ...prepared.artifact,
-    source: contextualSource(prepared.artifact, artifacts),
+    source: contextualSource(prepared.artifact, contextArtifacts),
   };
   const creation: ArtifactCreationChange = {
     artifact,
@@ -93,8 +97,9 @@ function planLocalCreation(artifacts: WorkspaceArtifact[], kind: CreatableArtifa
 export function planLocalWorkspaceAgentChange(
   artifacts: WorkspaceArtifact[],
   prompt: string,
+  contextArtifacts = artifacts,
 ): LocalWorkspaceAgentPlan {
   const kind = requestedCreationKind(prompt.trim());
-  if (kind) return planLocalCreation(artifacts, kind);
-  return { ...planLocalWorkspaceChange(artifacts, prompt), creations: [] };
+  if (kind) return planLocalCreation(artifacts, contextArtifacts, kind);
+  return { ...planLocalWorkspaceChange(contextArtifacts, prompt), creations: [] };
 }

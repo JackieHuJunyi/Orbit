@@ -470,6 +470,11 @@ textarea:focus-visible {
   padding: 0 7px;
 }
 
+.artifact-row-shell {
+  position: relative;
+  min-width: 0;
+}
+
 .artifact-row {
   position: relative;
   display: grid;
@@ -477,19 +482,59 @@ textarea:focus-visible {
   grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  padding: 8px;
+  padding: 8px 38px 8px 8px;
   border-radius: 8px;
   background: transparent;
   text-align: left;
 }
 
-.artifact-row:hover {
+.artifact-row:hover,
+.artifact-row-shell:focus-within .artifact-row {
   background: rgba(255, 255, 255, .52);
 }
 
 .artifact-row.active {
   background: #fff;
   box-shadow: 0 1px 0 rgba(31, 36, 32, .04), 0 3px 12px rgba(31, 36, 32, .05);
+}
+
+.artifact-context-pin {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  z-index: 1;
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: rgba(247, 246, 241, .9);
+  color: var(--subtle);
+  opacity: .42;
+  transform: translateY(-50%);
+}
+
+.artifact-row-shell:hover .artifact-context-pin,
+.artifact-context-pin:focus-visible,
+.artifact-context-pin.active {
+  opacity: 1;
+}
+
+.artifact-context-pin:hover {
+  border-color: #cfd6d0;
+  color: var(--ink);
+}
+
+.artifact-context-pin.active {
+  border-color: #b9d1c0;
+  background: #edf6f0;
+  color: #277553;
+}
+
+.artifact-context-pin svg {
+  width: 11px;
+  height: 11px;
 }
 
 .artifact-icon {
@@ -538,6 +583,51 @@ textarea:focus-visible {
 
 .file-rail-spacer {
   flex: 1;
+}
+
+.context-pin-summary {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  margin: 7px 10px 0;
+  padding: 8px;
+  border: 1px solid #cfd9d2;
+  border-radius: 8px;
+  background: #f3f8f4;
+  color: #277553;
+}
+
+.context-pin-summary > svg {
+  width: 13px;
+  height: 13px;
+}
+
+.context-pin-summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.context-pin-summary strong {
+  font-size: 8px;
+}
+
+.context-pin-summary small {
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.context-pin-summary button {
+  padding: 3px 5px;
+  border-radius: 5px;
+  color: #277553;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.context-pin-summary button:hover {
+  background: #e2efe6;
 }
 
 .workspace-note {
@@ -628,6 +718,24 @@ textarea:focus-visible {
   font-size: 9px;
 }
 
+.graph-context-heading > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.graph-context-heading button {
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #277553;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.graph-context-heading button:hover {
+  background: #e5f0e8;
+}
+
 .graph-context-card p,
 .dependency-empty {
   margin: 0;
@@ -664,6 +772,18 @@ textarea:focus-visible {
   color: #277553;
 }
 
+.graph-context-card nav button.pinned {
+  border-color: #b9d1c0;
+  background: #edf6f0;
+  color: #277553;
+}
+
+.graph-context-card nav .context-pin-marker {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+}
+
 .graph-context-card .artifact-icon,
 .dependency-endpoint .artifact-icon {
   width: 17px;
@@ -672,7 +792,7 @@ textarea:focus-visible {
   border-radius: 5px;
 }
 
-.graph-context-card nav button > span:last-child,
+.graph-context-card nav button > span:nth-child(2),
 .dependency-endpoint > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;

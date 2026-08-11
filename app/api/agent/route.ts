@@ -19,6 +19,7 @@ import { validateArtifact } from "../../lib/workspace.ts";
 import {
   buildWorkspaceDependencyGraph,
   dependencyEdgesForContext,
+  selectWorkspaceAgentContext,
 } from "../../lib/dependency-graph.ts";
 
 const DEFAULT_MODEL = "gpt-5.6";
@@ -47,6 +48,13 @@ export async function POST(request: Request) {
     const graph = buildWorkspaceDependencyGraph(workspace);
     if (graph.issues.length) {
       return Response.json({ error: "The workspace dependency context is incomplete or invalid." }, { status: 400 });
+    }
+    const expectedContext = selectWorkspaceAgentContext(workspace, graph, parsed.data.artifact.id, {
+      pinnedArtifactIds: parsed.data.workspacePinnedArtifactIds ?? [],
+    });
+    if (expectedContext.length !== workspace.length
+      || expectedContext.some((artifact, index) => artifact.id !== workspace[index]?.id)) {
+      return Response.json({ error: "The workspace context contains an unpinned disconnected artifact." }, { status: 400 });
     }
     const expected = dependencyEdgesForContext(graph, workspace)
       .map(dependencySignature)

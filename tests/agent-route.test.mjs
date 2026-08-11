@@ -215,10 +215,25 @@ test("rejects incomplete or fabricated workspace dependency context before conta
         kind: "metric",
         references: ["invented"],
       }],
+      workspacePinnedArtifactIds: ["data"],
     })),
   }));
   assert.equal(response.status, 400);
   assert.match((await response.json()).error, /dependency context is stale or invalid/i);
+  assert.equal(providerCalled, false);
+
+  const unpinnedResponse = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      scope: "workspace",
+      workspaceArtifacts,
+      workspaceDependencies: [],
+      workspacePinnedArtifactIds: [],
+    })),
+  }));
+  assert.equal(unpinnedResponse.status, 400);
+  assert.match((await unpinnedResponse.json()).error, /unpinned disconnected artifact/i);
   assert.equal(providerCalled, false);
 
   const incompleteArtifact = {
@@ -233,6 +248,7 @@ test("rejects incomplete or fabricated workspace dependency context before conta
       artifact: incompleteArtifact,
       workspaceArtifacts: [incompleteArtifact, workspaceArtifacts[1]],
       workspaceDependencies: [],
+      workspacePinnedArtifactIds: ["data"],
     })),
   }));
   assert.equal(incompleteResponse.status, 400);
@@ -315,6 +331,7 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
         kind: "query",
         references: ["data"],
       }],
+      workspacePinnedArtifactIds: ["data", "deck"],
     })),
   }));
   assert.equal(response.status, 200);
@@ -362,7 +379,7 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
   const response = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [] })),
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [], workspacePinnedArtifactIds: ["data"] })),
   }));
   assert.equal(response.status, 200);
   const payload = await response.json();
@@ -418,7 +435,7 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
   const metadataResponse = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [] })),
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [], workspacePinnedArtifactIds: ["data"] })),
   }));
   assert.equal(metadataResponse.status, 502);
   assert.equal((await metadataResponse.json()).plan, undefined);
@@ -431,7 +448,7 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
   const unsafeResponse = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [] })),
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [], workspacePinnedArtifactIds: ["data"] })),
   }));
   assert.equal(unsafeResponse.status, 502);
   const unsafePayload = await unsafeResponse.json();
