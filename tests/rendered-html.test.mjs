@@ -69,7 +69,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.26/);
+  assert.match(html, /Rune v0\.27/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -162,6 +162,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /bounded local Query/);
   assert.match(clientSource, /evidence is not persisted/);
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);
-  assert.match(clientSource, /Runtime preflight passed/);
-  assert.match(clientSource, /Query runtime preflight failed/);
+  assert.match(clientSource, /Runtime impact preflight passed/);
+  assert.match(clientSource, /Runtime impact preflight failed/);
+  assert.match(clientSource, /impacted.*Queries.*executed locally/);
+  assert.match(clientSource, /legacy metric/);
 });

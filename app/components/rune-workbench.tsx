@@ -104,7 +104,7 @@ import {
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
-import type { QueryMutationPreflight } from "../lib/query-preflight";
+import type { RuntimeImpactPreflight } from "../lib/query-preflight";
 import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
   MAX_WORKSPACE_AGENT_ARTIFACT_CHARS,
@@ -146,7 +146,7 @@ type PendingChange = {
   detail: string;
   patches: ArtifactSourcePatch[];
   creations: ArtifactCreationChange[];
-  queryPreflight?: QueryMutationPreflight;
+  runtimePreflight?: RuntimeImpactPreflight;
 };
 
 type PendingExport = {
@@ -979,28 +979,32 @@ export function RuneWorkbench() {
                 : "Local patch ready · graph context exceeds the model safety limit"
         : "Local patch ready · file exceeds the model context safety limit";
 
-    async function preflightQueryChanges(
+    async function preflightRuntimeImpact(
       patches: ArtifactSourcePatch[],
       creations: ArtifactCreationChange[],
     ) {
-      const changesQuery = patches.some((patch) => (
-        targetArtifacts.find((artifact) => artifact.id === patch.artifactId)?.kind === "query"
-      )) || creations.some((creation) => creation.artifact.kind === "query");
-      if (!changesQuery) return undefined;
-      const [{ preflightAgentQueryMutation }, { runWorkspaceQuerySnapshot }] = await Promise.all([
-        import("../lib/query-preflight"),
-        import("../lib/duckdb-client"),
-      ]);
+      const changesRuntimeSource = patches.some((patch) => (
+        ["data", "query"].includes(
+          targetArtifacts.find((artifact) => artifact.id === patch.artifactId)?.kind ?? "",
+        )
+      )) || creations.some((creation) => ["data", "query"].includes(creation.artifact.kind));
+      if (!changesRuntimeSource) return undefined;
+      const { preflightAgentRuntimeImpact } = await import("../lib/query-preflight");
+      let queryRuntime: Promise<typeof import("../lib/duckdb-client")> | null = null;
       try {
-        return await preflightAgentQueryMutation(
+        return await preflightAgentRuntimeImpact(
           targetArtifacts,
           patches,
           creations,
-          runWorkspaceQuerySnapshot,
+          async (queryArtifact, dataArtifact) => {
+            queryRuntime ??= import("../lib/duckdb-client");
+            const { runWorkspaceQuerySnapshot } = await queryRuntime;
+            return runWorkspaceQuerySnapshot(queryArtifact, dataArtifact);
+          },
         ) ?? undefined;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "The proposed Query could not run.";
-        throw new Error(`Query runtime preflight failed · ${message}`);
+        const message = error instanceof Error ? error.message : "The proposed runtime impact could not be verified.";
+        throw new Error(`Runtime impact preflight failed · ${message}`);
       }
     }
 
@@ -1051,13 +1055,13 @@ export function RuneWorkbench() {
         }
 
         if (response.ok && scope === "workspace" && isRemoteWorkspacePlan(payload.plan)) {
-          let queryPreflight: QueryMutationPreflight | undefined;
+          let runtimePreflight: RuntimeImpactPreflight | undefined;
           try {
-            queryPreflight = await preflightQueryChanges(payload.plan.patches, payload.plan.creations);
+            runtimePreflight = await preflightRuntimeImpact(payload.plan.patches, payload.plan.creations);
           } catch (error) {
             setPendingChange(null);
-            setAgentError(error instanceof Error ? error.message : "The proposed Query failed runtime preflight.");
-            setNotice("Nothing proposed — Query runtime preflight failed; every source stayed unchanged");
+            setAgentError(error instanceof Error ? error.message : "The proposed runtime impact failed preflight.");
+            setNotice("Nothing proposed — runtime impact preflight failed; every source stayed unchanged");
             setAgentState("idle");
             return;
           }
@@ -1067,7 +1071,7 @@ export function RuneWorkbench() {
             scope,
             baseRevision: targetRevision,
             ...payload.plan,
-            queryPreflight,
+            runtimePreflight,
           });
           setAgentMode("openai");
           setPrompt("");
@@ -1078,13 +1082,13 @@ export function RuneWorkbench() {
         }
         if (response.ok && scope !== "workspace" && isRemoteSinglePlan(payload.plan)) {
           const patches = [{ artifactId: targetArtifact.id, ...payload.plan }];
-          let queryPreflight: QueryMutationPreflight | undefined;
+          let runtimePreflight: RuntimeImpactPreflight | undefined;
           try {
-            queryPreflight = await preflightQueryChanges(patches, []);
+            runtimePreflight = await preflightRuntimeImpact(patches, []);
           } catch (error) {
             setPendingChange(null);
-            setAgentError(error instanceof Error ? error.message : "The proposed Query failed runtime preflight.");
-            setNotice("Nothing proposed — Query runtime preflight failed; every source stayed unchanged");
+            setAgentError(error instanceof Error ? error.message : "The proposed runtime impact failed preflight.");
+            setNotice("Nothing proposed — runtime impact preflight failed; every source stayed unchanged");
             setAgentState("idle");
             return;
           }
@@ -1098,7 +1102,7 @@ export function RuneWorkbench() {
             detail: payload.plan.detail,
             patches,
             creations: [],
-            queryPreflight,
+            runtimePreflight,
           });
           setAgentMode("openai");
           setPrompt("");
@@ -1117,14 +1121,14 @@ export function RuneWorkbench() {
     try {
       if (scope === "workspace") {
         const localPlan = planLocalWorkspaceAgentChange(targetArtifacts, instruction, targetWorkspaceContext);
-        const queryPreflight = await preflightQueryChanges(localPlan.patches, localPlan.creations);
+        const runtimePreflight = await preflightRuntimeImpact(localPlan.patches, localPlan.creations);
         setPendingChange({
           prompt: instruction,
           provider: "local",
           scope,
           baseRevision: targetRevision,
           ...localPlan,
-          queryPreflight,
+          runtimePreflight,
         });
         const changeCount = localPlan.patches.length + localPlan.creations.length;
         setNotice(`${fallbackNotice} · ${changeCount} ${changeCount === 1 ? "file" : "files"} prepared`);
@@ -1137,7 +1141,7 @@ export function RuneWorkbench() {
           const prepared = prepareWorkspaceMutation(targetArtifacts, [localPatch], []);
           if (prepared.errors.length) throw new Error(prepared.errors[0]);
         }
-        const queryPreflight = await preflightQueryChanges([localPatch], []);
+        const runtimePreflight = await preflightRuntimeImpact([localPatch], []);
         setPendingChange({
           prompt: instruction,
           provider: "local",
@@ -1148,7 +1152,7 @@ export function RuneWorkbench() {
           detail: localPlan.detail,
           patches: [localPatch],
           creations: [],
-          queryPreflight,
+          runtimePreflight,
         });
         setNotice(fallbackNotice);
       }
@@ -1158,8 +1162,8 @@ export function RuneWorkbench() {
       setPendingChange(null);
       const message = error instanceof Error ? error.message : "Rune could not plan that change.";
       setAgentError(message);
-      setNotice(message.startsWith("Query runtime preflight failed")
-        ? "Nothing proposed — Query runtime preflight failed; every source stayed unchanged"
+      setNotice(message.startsWith("Runtime impact preflight failed")
+        ? "Nothing proposed — runtime impact preflight failed; every source stayed unchanged"
         : "Agent needs a more specific instruction");
     } finally {
       setAgentState("idle");
@@ -1810,12 +1814,12 @@ export function RuneWorkbench() {
                   <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : pendingChange.scope === "selection" ? "selection-confined patch" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
-                  {pendingChange.queryPreflight && (
-                    <div className="runtime-preflight" aria-label="Runtime preflight passed">
+                  {pendingChange.runtimePreflight && (
+                    <div className="runtime-preflight" aria-label="Runtime impact preflight passed">
                       <CheckCircle2 aria-hidden="true" />
                       <span>
-                        <strong>Runtime preflight passed</strong>
-                        <small>{pendingChange.queryPreflight.queryCount} proposed {pendingChange.queryPreflight.queryCount === 1 ? "Query" : "Queries"} executed locally against exact Data revision · {pendingChange.queryPreflight.scalarConsumerCount} scalar {pendingChange.queryPreflight.scalarConsumerCount === 1 ? "consumer" : "consumers"} · {pendingChange.queryPreflight.chartConsumerCount} {pendingChange.queryPreflight.chartConsumerCount === 1 ? "chart" : "charts"} · {pendingChange.queryPreflight.queryNames.join(", ")}</small>
+                        <strong>Runtime impact preflight passed</strong>
+                        <small>{pendingChange.runtimePreflight.dataCount > 0 ? `${pendingChange.runtimePreflight.dataCount} proposed Data ${pendingChange.runtimePreflight.dataCount === 1 ? "source" : "sources"} · ` : ""}{pendingChange.runtimePreflight.queryCount > 0 ? `${pendingChange.runtimePreflight.queryCount} impacted ${pendingChange.runtimePreflight.queryCount === 1 ? "Query" : "Queries"} executed locally` : "no SQL execution required"} · {pendingChange.runtimePreflight.legacyMetricConsumerCount} legacy metric {pendingChange.runtimePreflight.legacyMetricConsumerCount === 1 ? "consumer" : "consumers"} · {pendingChange.runtimePreflight.scalarConsumerCount} SQL scalar {pendingChange.runtimePreflight.scalarConsumerCount === 1 ? "consumer" : "consumers"} · {pendingChange.runtimePreflight.chartConsumerCount} {pendingChange.runtimePreflight.chartConsumerCount === 1 ? "chart" : "charts"} · {[...pendingChange.runtimePreflight.dataNames, ...pendingChange.runtimePreflight.queryNames].join(", ")}</small>
                       </span>
                     </div>
                   )}
@@ -1954,7 +1958,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.26</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.27</span></div>
       </footer>
 
       {newArtifactOpen && (

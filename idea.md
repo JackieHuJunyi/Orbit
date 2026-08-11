@@ -1546,3 +1546,21 @@ v0.25 让 Query 的结果进入 preview 和导出，却没有真正进入 Worksp
 这次实现没有声称已经完成自动 self-repair。模型收到的是“修改前”的 current evidence；如果它提出的 SQL preflight 失败，Rune 会给用户具体错误并拒绝进入 review，但不会在后台把错误和 proposed source 再发给模型进行第二轮无界循环。视觉输出也还没有截图或 layout critic。v0.26 做的是更基础、也更可验证的一步：把当前结果作为受限 inspection port，把 proposed SQL 的真实 runtime 和 downstream compiler 作为 review 前的硬 gate。后续若增加一次或多次自动修复，必须复用同一 revision、预算、次数、privacy 与 review 合同，而不是绕开它。
 
 成本边界保持不变：没有 hosted compute、数据库、队列、结果缓存服务或新的 production secret；DuckDB 仍按需 dynamic import，并用既有串行 queue 避免 worker race。默认无 key 的 owner-only Sites 部署继续秒级进入 local fallback。新增复杂度集中在两个可单测模块：`agent-evidence` 负责 bounded observation 与 context identity，`query-preflight` 负责 proposed workspace runtime/downstream proof。Rune 由此第一次让 Agent 不只“读 artifact source”，还要在 diff 出现前面对 artifact compiler 的实际反馈；这是从聊天式生成器走向可验证创作系统的一小步，但也是后续自动 inspect/fix loop 必须站稳的地基。
+
+## 31. Runtime impact graph：Data 改动也必须证明整个下游仍然成立
+
+v0.26 解决了“模型改 SQL，但 SQL 其实跑不起来”的直接问题，却把 runtime gate 触发条件绑定在 Query source 是否变化。对三件套来说，这仍然不是完整的数据闭环：Agent 只把 CSV 中一个数值改成文本、增加一列、调整行顺序或创建另一份 Data 时，SQL source 可以一个字节都不变，DuckDB 的类型推断、aggregate cardinality、scalar metric 和 Chart value 却可能全部改变。原有 whole-workspace validation 能证明列名和引用 identity 仍存在，但不执行 SQL，无法证明当前数据值真的满足运行语义。一个 Data diff 若能进入 review、Apply 后才让报告和 Deck 显示错误，用户仍然承担了本该由编译器先发现的影响。
+
+v0.27 因此把 `Query mutation preflight` 提升为 `runtime impact preflight`。根节点不再只有 changed Query，也包括每一份 proposed Data。Rune 先用普通 `prepareWorkspaceMutation` 构造完整 proposed workspace，验证 CSV/JSON parser、artifact identity、read-only SQL、metric syntax、Chart schema 和所有静态 dependency；只有这一步成功才计算运行集合。这样直接 Data Chart 已经因为 nonnumeric value 失效时，会在下载 DuckDB 之前被完整 workspace gate 拒绝，不用启动 worker 来重复证明一个更早就知道的失败。
+
+运行集合必须来自 source identity，而不能粗暴执行目录里所有 `.sql`。每一份 directly changed Query 一定进入集合；除此之外，Rune 对 proposed workspace 中每个 Query 重新运行 `resolveQueryDataArtifact`，只有 resolved Data id 属于 changed Data 集合时才加入。显式 `-- rune:data "artifact-id"` 因此保持顺序无关；旧的 directive-free Query 继续按 proposed workspace 的第一份 Data 兼容解析。新建但尚未被任何 Query/Chart/legacy metric 引用的 Data 只需要完成 parser 和 whole-workspace validation，不会借“安全检查”扩大本地 SQL 执行范围。
+
+每个 impacted Query 都必须用 proposed Query source 和 proposed resolved Data source 生成 snapshot，随后再用 `workspaceQuerySnapshotIsCurrent` 做双 revision proof。runner 报错、返回旧 Query source、接错 Data 或执行期间 revision 漂移都会让整条 impact graph 失败。Query 本身超过 preview 的 500 行仍可以作为独立只读结果存在；但只要下游 scalar 或 Chart 需要完整集合，既有 consumer compiler 会按自己的更强合同拒绝 truncation，而不是让 preflight 另造一套不一致规则。
+
+下游验证现在覆盖四类消费者。若 changed Data 是 proposed workspace 的 canonical first Data，Rune 会重新编译每个一参数 legacy metric consumer，并记录精确 artifact/metric 数；所有引用 impacted Query 的三参数 scalar 都用同一 snapshot 验证 exactly-one-row、unique column 与 finite number；以 changed Data 为 source 的直接 Chart 用 proposed rows 验证 category/value；以 impacted Query 为 source 的 Chart 则验证 snapshot current、truncation、schema、label 和 numeric value。Document/Deck 中的 chart embed 继续通过其 Chart artifact 间接受保护，不需要为同一 visual 重复运行 SQL。
+
+审阅界面不再只说“某条 SQL 运行成功”。`Runtime impact preflight passed` 会显示 proposed Data 数、实际执行的 impacted Query 数、legacy metric、SQL scalar 和 Chart consumer 数，以及涉及的 Data/Query 文件名。默认 `regional-revenue.csv` 的本地“增加利润率列”动作在无 provider key 的 Sites 上也会触发完整闭环：一份 Data change → 两份 Query execution → 七个 SQL scalar binding → 两张 direct/Query Chart → report/deck 依赖继续成立，之后 diff 才出现。失败则没有 `pendingChange`，也不会创建 checkpoint、写 localStorage、写 folder 或替换 React state。
+
+这里仍然区分 Agent proposal 和人的直接编辑。人在 source textarea 输入时需要即时、可恢复的 compiler feedback，不能每个 keystroke 都启动两次 DuckDB；preview coordinator 会像以前一样按 revision 显示 loading/error。Agent 是离散、可审阅的事务，因此有条件在 review 前支付一次完整 impact cost。未来若增加批量粘贴 review、spreadsheet formula editor 或自动修复循环，可以复用这条 proposed-workspace port，而不是把昂贵运行时塞进所有编辑事件。
+
+v0.27 没有引入多 Data JOIN、hosted compute、结果缓存或新的持久 graph。impact set 每次都从 proposed canonical source 解析，snapshot 仍只活在一次预检 promise 中；没有 Data/Query 变化的文档、Deck 和 Chart-only Agent plan完全不加载 DuckDB。这个里程碑把“Excel 那一层的数据变化会影响 Word/PPT”从 UI 上的 live preview 提升成 Agent transaction 的可证明不变量：AI 不仅要改三种 source，还必须在用户看到 diff 前证明这些 source 编译成的是同一个仍可运行的事实世界。
