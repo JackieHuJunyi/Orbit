@@ -21,7 +21,7 @@ test("compiles canonical data, query, metric, chart, and embed dependencies", ()
     edge.label,
   ]), [
     ["regional-revenue", "q2-review", "metric", "5 metrics"],
-    ["regional-revenue", "regional-analysis", "query", "workspace_data"],
+    ["regional-revenue", "regional-analysis", "query", "workspace_data · regional-revenue"],
     ["regional-revenue", "regional-revenue-chart", "chart-data", "Region → Q2 Revenue"],
     ["regional-revenue", "board-briefing", "metric", "4 metrics"],
     ["regional-analysis", "regional-margin-chart", "chart-query", "query output · Region → margin_pct"],
@@ -29,6 +29,31 @@ test("compiles canonical data, query, metric, chart, and embed dependencies", ()
     ["regional-revenue-chart", "board-briefing", "chart-embed", "chart embed"],
     ["regional-margin-chart", "q2-review", "chart-embed", "chart embed"],
     ["regional-margin-chart", "board-briefing", "chart-embed", "chart embed"],
+  ]);
+});
+
+test("keeps an explicitly bound Query on its Data artifact when workspace order changes", () => {
+  const decoy = {
+    id: "decoy-data",
+    name: "decoy.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Q2 Revenue,Q1 Revenue,Cost,Customers\nWrong,1,1,1,1",
+  };
+  const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
+  const query = defaultArtifacts.find((artifact) => artifact.id === "regional-analysis");
+  const chart = defaultArtifacts.find((artifact) => artifact.id === "regional-margin-chart");
+  assert.ok(data && query && chart);
+  const workspace = [decoy, data, query, chart];
+  const graph = buildWorkspaceDependencyGraph(workspace);
+  const queryEdge = graph.edges.find((edge) => edge.kind === "query" && edge.toArtifactId === "regional-analysis");
+  assert.equal(queryEdge?.fromArtifactId, "regional-revenue");
+  assert.deepEqual(queryEdge?.references, ["regional-revenue"]);
+  const context = selectWorkspaceAgentContext(workspace, graph, "regional-margin-chart");
+  assert.deepEqual(context.map((artifact) => artifact.id), [
+    "regional-revenue",
+    "regional-analysis",
+    "regional-margin-chart",
   ]);
 });
 

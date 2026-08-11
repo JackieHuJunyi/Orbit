@@ -1,6 +1,7 @@
 import Papa from "papaparse";
 import { parseChartSource, validateChartSourceBinding } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
+import { formatQueryDataSourceDirective, parseQueryDataSourceDirective } from "./query-source.ts";
 import { validateReadQuery } from "./sql.ts";
 
 export type ArtifactKind = "document" | "data" | "query" | "chart" | "slides";
@@ -75,7 +76,7 @@ North America,1560000,1490000,1010000,121
 Europe,970000,920000,690000,84
 LATAM,450000,340000,315000,39`;
 
-const querySource = `-- workspace_data is rebuilt from regional-revenue.csv before every run.
+const querySource = `${formatQueryDataSourceDirective("regional-revenue")}
 SELECT
   Region,
   "Q2 Revenue" AS q2_revenue,
@@ -323,7 +324,9 @@ export function parseDataSource(source: string): ParsedData {
 export function validateArtifact(artifact: WorkspaceArtifact): string[] {
   if (!artifact.source.trim()) return ["The source is empty."];
   if (artifact.kind === "data") return parseDataSource(artifact.source).errors;
-  if (artifact.kind === "query") return validateReadQuery(artifact.source);
+  if (artifact.kind === "query") {
+    return [...parseQueryDataSourceDirective(artifact.source).errors, ...validateReadQuery(artifact.source)];
+  }
   if (artifact.kind === "chart") return parseChartSource(artifact.source).errors;
   if (artifact.kind === "slides") {
     if (isDeckMarkdownArtifact(artifact)) return parseDeckSource(artifact.source).errors;
@@ -497,18 +500,28 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
   throw new Error("Try changing the theme to dark or adding a conclusion slide.");
 }
 
-function planQuery(prompt: string): LocalPlan {
+function planQuery(source: string, prompt: string): LocalPlan {
+  const binding = parseQueryDataSourceDirective(source);
+  if (binding.errors.length) throw new Error(binding.errors[0]);
+  const prefix = binding.artifactId ? `${formatQueryDataSourceDirective(binding.artifactId)}\n` : "";
   if (/利润率|margin|排序|sort/i.test(prompt)) {
     return {
-      nextSource: querySource,
+      nextSource: `${prefix}SELECT
+  Region,
+  "Q2 Revenue" AS q2_revenue,
+  "Q1 Revenue" AS q1_revenue,
+  ROUND(("Q2 Revenue" - Cost) / "Q2 Revenue" * 100, 1) AS margin_pct,
+  Customers
+FROM workspace_data
+ORDER BY "Q2 Revenue" DESC;`,
       summary: "Calculate margin and rank every region by Q2 revenue",
-      detail: "The query reads only workspace_data and returns a deterministic regional view.",
+      detail: "The query preserves its explicit Data binding and returns a deterministic regional view.",
     };
   }
 
   if (/汇总|季度|summary|total|总计/i.test(prompt)) {
     return {
-      nextSource: `SELECT
+      nextSource: `${prefix}SELECT
   SUM("Q2 Revenue") AS total_q2_revenue,
   SUM("Q1 Revenue") AS total_q1_revenue,
   ROUND((SUM("Q2 Revenue") / SUM("Q1 Revenue") - 1) * 100, 1) AS qoq_growth_pct,
@@ -546,7 +559,7 @@ export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): Lo
   if (!prompt.trim()) throw new Error("Describe the change you want Rune to make.");
   if (artifact.kind === "document") return planDocument(artifact.source, prompt);
   if (artifact.kind === "data") return planData(artifact.source, prompt);
-  if (artifact.kind === "query") return planQuery(prompt);
+  if (artifact.kind === "query") return planQuery(artifact.source, prompt);
   if (artifact.kind === "chart") return planChart(artifact.source, prompt);
   return planSlides(artifact, prompt);
 }
@@ -568,7 +581,7 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
     if (plan.nextSource !== document.source) patches.push({ artifactId: document.id, ...plan });
   }
   if (query && /分析|query|sql|一致|所有|全局/i.test(instruction)) {
-    const plan = planQuery("计算利润率并排序");
+    const plan = planQuery(query.source, "计算利润率并排序");
     if (plan.nextSource !== query.source) patches.push({ artifactId: query.id, ...plan });
   }
   if (slides) {

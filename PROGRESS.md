@@ -32,3 +32,4 @@
 - 2026-08-11 — Compiled a navigable live dependency graph from canonical bindings and used its upstream-closed component as bounded Workspace Agent context.
 - 2026-08-11 — Added session-only context pins so users can deliberately bridge disconnected files while preserving upstream closure and exact server verification.
 - 2026-08-11 — Made revision-bound Query output a Chart source across live previews, dependency context, exact-cell provenance, and frozen Office/HTML exports.
+- 2026-08-11 — Bound each new Query to an exact Data artifact in readable SQL while preserving a visible legacy fallback for older files.

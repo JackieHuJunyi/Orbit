@@ -1,5 +1,6 @@
 import { deriveWorkspaceMetrics, findMetricReferences } from "./bindings.ts";
 import { findChartReferences, parseChartSource } from "./charts.ts";
+import { resolveQueryDataArtifact } from "./query-source.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const WORKSPACE_DEPENDENCY_KINDS = [
@@ -85,20 +86,23 @@ export function buildWorkspaceDependencyGraph(
     }
 
     if (artifact.kind === "query") {
-      if (canonicalData) {
+      const resolution = resolveQueryDataArtifact(artifact, artifacts);
+      if (resolution.artifact) {
         addEdge({
-          fromArtifactId: canonicalData.id,
+          fromArtifactId: resolution.artifact.id,
           toArtifactId: artifact.id,
           kind: "query",
-          label: "workspace_data",
-          references: [canonicalData.id],
+          label: resolution.explicit
+            ? `workspace_data · ${resolution.artifact.id}`
+            : "workspace_data · first Data (legacy)",
+          references: [resolution.artifact.id],
         });
       } else {
         issues.push({
           artifactId: artifact.id,
           kind: "query",
-          target: "workspace_data",
-          message: "Query has no canonical data source.",
+          target: resolution.artifactId ?? "workspace_data",
+          message: resolution.errors[0] ?? "Query has no Data source.",
         });
       }
     }

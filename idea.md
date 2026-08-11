@@ -1476,3 +1476,19 @@ workspace safety gate 又不能在每次键入 Chart JSON 或应用 Agent patch 
 导出不能依赖某个 preview 恰好已经打开。准备 DOCX、PPTX 或 standalone HTML 时，Rune 会从目标的 chart references 收集 Query source，使用同一 DuckDB path 对当前 revision 重新执行，拒绝截断，再把这些 snapshot 显式传给 Office/HTML chart compiler。最终包中的表格或 vector bars 是确定性的 frozen handoff，不包含 worker、脚本或 live binding；导出 review 仍绑定完整 workspace reference，编辑后不能下载旧文件。这样线上 preview 和离线交付共享同一计算语义，却不会把 ephemeral execution state 偷渡进 source。
 
 这一轮没有增加 hosted compute、数据库或新的 production service，DuckDB 仍只在需要 Query consumer 时 lazy-load。长期可以把 user-defined metric 也建模为显式 Query output binding，或为多 Data/JOIN 引入 relation-qualified provenance set；但那需要先定义 cardinality、集合导航和多 source revision 合同。现在的窄实现先证明了一件更重要的事：SQL 可以成为 Rune 的可复用视图层，同时保持 canonical files、运行时证据、Agent 权限和导出快照四者边界清楚。
+
+## 27. Explicit Query Data binding：文件顺序不应该决定分析事实
+
+v0.22 完成了 `Data → SQL → Chart → Document/Deck`，却继承了最早 demo 的一个隐藏前提：`workspace_data` 永远由 workspace 中第一份 Data artifact 构建。只有一份 CSV 时这很方便；一旦用户导入第二个 worksheet、Folder Pull 按 manifest 重排，或 Workspace Agent 创建另一张表，同一段没有变化的 SQL 就可能改读另一份数据。preview、Query-backed Chart、导出和 Agent graph 甚至可能一起“自洽地出错”，因为它们都遵守同一个错误的顺序假设。可读文件如果不能说明自己的输入是谁，就还不是真正的 artifact-as-code。
+
+最直接的方案是把每个 Data 都注册成 SQL table name，但 artifact id 可能包含 Unicode、标点和未来的重命名语义，DuckDB identifier quoting 又会和 Rune identity 混在一起；更复杂的 `JOIN` 还需要多 source lineage。v0.23 先选择更窄的 source header：Query 第一条非空行可以写 `-- rune:data "regional-revenue"`，正文继续只读稳定的 `workspace_data`。artifact id 使用 JSON quoted string，因此 Unicode 和转义有确定语法；directive 仍是普通 SQL comment，文件离开 Rune 后可以直接交给 DuckDB。它只声明“装载哪份 Data”，不发明新的查询语言。
+
+parser 对这行采取 fail-closed 合同。directive 必须是第一条非空行、只能出现一次、id 必须是 1–120 个可见字符的 quoted string；未加引号、放在普通注释之后、重复、控制字符、找不到目标或目标不是 Data 都产生明确错误。`validateArtifact` 负责语法，whole-workspace safety gate 负责 identity resolution。Agent instruction 要求保留已有 directive；只有 Workspace scope 能从可见 context 中选择另一个真实 Data id。模型不能因为看到一个相似文件名就发明 binding，任何无效修改仍在 concrete review 应用前被完整 workspace 否决。
+
+同一个 resolver 现在服务所有运行路径。Query preview 为每个需要执行的 Query 单独解析 Data，不再把一份全局 canonical Data 传给全部任务；revision key 同时包含 Query source、resolved Data id/source 和 resolution errors。两个 Query 可以各自读取不同 CSV，并继续通过串行 DuckDB queue 避免 worker race。Query preview 的 row/cell target、Query-backed Chart 的 snapshot current check、category/value provenance、DOCX/PPTX/HTML export 的重执行都使用 snapshot 中那份确切 Data。`runWorkspaceQuerySnapshot` 还会拒绝调用者传入与 directive 不同的 artifact，避免组件接错线后“执行成功”。
+
+dependency graph 也从顺序推断升级成 identity edge。显式 Query 产生 `bound Data → Query`，再通过已有 `Query → Chart → consumer` 形成 upstream closure；Workspace Agent request 在客户端和服务端都会从 source 重编这条边，所以缺失 bound Data 的 context 不能到达 provider。File order 仍用于 UI 和兼容语义，但不会改变新 Query 的事实来源。lineage strip 明确显示 `Explicit Data binding`；旧 SQL 则显示 `Legacy first-Data binding`，用户能区分稳定合同和兼容回退，而不是让两者看起来同样可靠。
+
+兼容不能靠静默重写用户 SQL。已经导入、同步或保存在设备上的 directive-free Query 继续读取第一份 Data，已有 source byte 不变；只有新的默认 Query 和本地 planner 生成的后续版本使用或保留显式 directive。这个回退仍进入 graph、snapshot revision 和完整校验，因此不会比旧版更危险，只是会在 UI 中诚实标注顺序依赖。缺失或错误的显式 target 不会降级到第一份 Data，因为那会把拼写错误变成另一份看似正常的结果。
+
+这一轮没有新增数据库、索引、manifest metadata 或 hosted service，binding 只存在于已经可 diff 的 `.sql`。它也没有假装解决多表 JOIN：当前每个 Query 仍只装载一个 `workspace_data`，从而保留一对一 lineage 的安全边界。下一步可以让 user-defined metric 从显式 Query output 读取一个 scalar，逐步移除 metrics 对第一份 Data 的最后一处硬编码；只有在 relation-qualified provenance set 设计完成后，才应该让一条 Query 同时绑定多份 Data。

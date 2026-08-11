@@ -17,6 +17,7 @@ import {
 } from "../app/lib/bindings.ts";
 import { prepareWorkspacePatch, validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { compileDeckSource } from "../app/lib/deck.ts";
+import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 
 test("parses the sample CSV without sending data anywhere", () => {
   const artifact = defaultArtifacts.find((item) => item.kind === "data");
@@ -48,6 +49,11 @@ test("ships a DuckDB query artifact with a deterministic local plan", () => {
   const query = defaultArtifacts.find((item) => item.kind === "query");
   assert.ok(query);
   assert.match(query.source, /FROM workspace_data/);
+  assert.deepEqual(parseQueryDataSourceDirective(query.source), {
+    artifactId: "regional-revenue",
+    explicit: true,
+    errors: [],
+  });
   assert.deepEqual(validateArtifact(query), []);
   const plan = planLocalChange(query, "汇总季度收入");
   assert.match(plan.nextSource, /SUM\("Q2 Revenue"\)/);

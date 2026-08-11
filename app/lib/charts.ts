@@ -7,6 +7,7 @@ import {
   workspaceQuerySnapshotIsCurrent,
   type WorkspaceQuerySnapshot,
 } from "./query-snapshot.ts";
+import { resolveQueryDataArtifact } from "./query-source.ts";
 
 export const ChartSpecSchema = z.object({
   version: z.literal(1),
@@ -147,8 +148,9 @@ export function resolveChartModel(
       sourceColumn: column,
     });
   } else {
-    const canonicalData = artifacts.find((artifact) => artifact.kind === "data");
-    if (!canonicalData) return { errors: ["A Query-backed Chart needs a canonical Data artifact."] };
+    const dataResolution = resolveQueryDataArtifact(sourceArtifact, artifacts);
+    if (!dataResolution.artifact) return { errors: dataResolution.errors };
+    const canonicalData = dataResolution.artifact;
     const snapshot = querySnapshots.find((candidate) => candidate.queryArtifactId === sourceArtifact.id);
     if (!snapshot) return { errors: [`Query source is still running: ${sourceArtifact.id}`] };
     if (!workspaceQuerySnapshotIsCurrent(snapshot, sourceArtifact, canonicalData)) {
@@ -241,8 +243,9 @@ export function validateChartSourceBinding(
   }
   const queryErrors = validateReadQuery(sourceArtifact.source);
   if (queryErrors.length) return queryErrors.map((error) => `Query source: ${error}`);
-  const canonicalData = artifacts.find((artifact) => artifact.kind === "data");
-  if (!canonicalData) return ["A Query-backed Chart needs a canonical Data artifact."];
+  const dataResolution = resolveQueryDataArtifact(sourceArtifact, artifacts);
+  if (!dataResolution.artifact) return dataResolution.errors.map((error) => `Query source: ${error}`);
+  const canonicalData = dataResolution.artifact;
   const parsedData = parseData(canonicalData.source);
   if (parsedData.errors.length) return parsedData.errors.map((error) => `Data source: ${error}`);
   const output = inferQueryOutputColumns(sourceArtifact.source, parsedData.columns);

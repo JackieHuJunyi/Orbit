@@ -14,6 +14,7 @@ import {
   type WorkspaceQueryResult,
   type WorkspaceQuerySnapshot,
 } from "./query-snapshot.ts";
+import { parseQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 
 export type { QueryCell, WorkspaceQueryResult, WorkspaceQuerySnapshot } from "./query-snapshot.ts";
@@ -169,6 +170,11 @@ export async function runWorkspaceQuerySnapshot(
 ): Promise<WorkspaceQuerySnapshot> {
   if (queryArtifact.kind !== "query") throw new Error("Choose a Query artifact as the derived chart source.");
   if (dataArtifact.kind !== "data") throw new Error("Add a canonical CSV or JSON artifact before running SQL.");
+  const binding = parseQueryDataSourceDirective(queryArtifact.source);
+  if (binding.errors.length) throw new Error(binding.errors[0]);
+  if (binding.artifactId && binding.artifactId !== dataArtifact.id) {
+    throw new Error(`Query ${queryArtifact.name} is bound to Data artifact ${binding.artifactId}, not ${dataArtifact.id}.`);
+  }
   const dataFormat = dataArtifact.source.trim().startsWith("[") || dataArtifact.source.trim().startsWith("{")
     ? "JSON"
     : "CSV";

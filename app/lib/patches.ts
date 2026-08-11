@@ -1,5 +1,6 @@
 import { compileArtifactSource } from "./bindings.ts";
 import { validateChartSourceBinding } from "./charts.ts";
+import { resolveQueryDataArtifact } from "./query-source.ts";
 import { parseDataSource, validateArtifact, type WorkspaceArtifact } from "./workspace.ts";
 
 export type ArtifactSourcePatch = {
@@ -54,6 +55,13 @@ export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): stri
     ids.add(artifact.id);
     names.add(artifact.name);
     validateArtifact(artifact).forEach((error) => errors.push(`${artifact.name}: ${error}`));
+  });
+
+  artifacts.filter((artifact) => artifact.kind === "query").forEach((artifact) => {
+    const resolution = resolveQueryDataArtifact(artifact, artifacts);
+    if (resolution.explicit) {
+      resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
+    }
   });
 
   artifacts.forEach((artifact) => {

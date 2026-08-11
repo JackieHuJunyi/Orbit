@@ -166,6 +166,18 @@ test("rejects unsafe SQL or raw Deck HTML without exposing a partial next worksp
   assert.equal(result.nextArtifacts, defaultArtifacts);
 });
 
+test("rejects a Query whose explicit Data binding is missing", () => {
+  const query = artifact("query");
+  const result = prepareWorkspacePatch(defaultArtifacts, [{
+    artifactId: query.id,
+    summary: "Change the Query source",
+    detail: "The missing Data reference must block the transaction.",
+    nextSource: query.source.replace('"regional-revenue"', '"missing-data"'),
+  }]);
+  assert.match(result.errors.join(" "), /Query Data source not found: missing-data/i);
+  assert.equal(result.nextArtifacts, defaultArtifacts);
+});
+
 test("rejects unresolved cross-file metric bindings atomically", () => {
   const document = artifact("document");
   const result = prepareWorkspacePatch(defaultArtifacts, [{

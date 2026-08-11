@@ -99,6 +99,23 @@ test("projects a revision-bound Query result into a Chart without inventing cell
   assert.deepEqual(resolution.model.data.map((datum) => datum.valueProvenance), [null, null, null, null]);
 });
 
+test("keeps a Query-backed Chart on its explicit Data source after workspace reordering", () => {
+  const chart = defaultArtifacts.find((artifact) => artifact.id === "regional-margin-chart");
+  assert.ok(chart);
+  const decoy = {
+    id: "decoy-data",
+    name: "decoy.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Q2 Revenue,Q1 Revenue,Cost,Customers\nWrong,1,1,1,1",
+  };
+  const workspace = [decoy, ...defaultArtifacts];
+  assert.deepEqual(validateChartSourceBinding(chart, workspace, parseDataSource), []);
+  const resolution = resolveChartModel(chart, workspace, parseDataSource, [defaultQuerySnapshot()]);
+  assert.deepEqual(resolution.errors, []);
+  assert.equal(resolution.model?.data[0].categoryProvenance?.artifactId, "regional-revenue");
+});
+
 test("rejects missing, stale, truncated, or schema-drifting Query chart snapshots", () => {
   const chart = defaultArtifacts.find((artifact) => artifact.id === "regional-margin-chart");
   assert.ok(chart);

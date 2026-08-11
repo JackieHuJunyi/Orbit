@@ -30,6 +30,7 @@ import type {
   QueryCell,
   WorkspaceQuerySnapshot,
 } from "../lib/query-snapshot";
+import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
   deriveDataPreviewSourceTargets,
   derivePreviewSourceTargets,
@@ -67,36 +68,46 @@ function usePreviewQueryRuntime(
     const query = artifacts.find((candidate) => candidate.id === queryId && candidate.kind === "query");
     return query ? [query] : [];
   }), [artifacts, requiredQueryIds]);
-  const dataArtifact = artifacts.find((candidate) => candidate.kind === "data");
+  const queryBindings = useMemo(() => queryArtifacts.map((query) => ({
+    query,
+    resolution: resolveQueryDataArtifact(query, artifacts),
+  })), [artifacts, queryArtifacts]);
   const revisionKey = useMemo(() => JSON.stringify({
-    data: dataArtifact ? [dataArtifact.id, dataArtifact.source] : null,
-    queries: queryArtifacts.map((query) => [query.id, query.source]),
-  }), [dataArtifact, queryArtifacts]);
+    queries: queryBindings.map(({ query, resolution }) => [
+      query.id,
+      query.source,
+      resolution.artifact?.id ?? null,
+      resolution.artifact?.source ?? null,
+      resolution.errors,
+    ]),
+  }), [queryBindings]);
   const [runtime, setRuntime] = useState<{ revisionKey: string; entries: QueryRuntime }>({
     revisionKey: "",
     entries: {},
   });
 
   useEffect(() => {
-    if (!queryArtifacts.length) return;
+    if (!queryBindings.length) return;
     let active = true;
     const timer = window.setTimeout(() => {
-      if (!dataArtifact) {
-        setRuntime({
-          revisionKey,
-          entries: Object.fromEntries(queryArtifacts.map((query) => [query.id, {
-            status: "error",
-            error: "Add a CSV or JSON artifact before running SQL.",
-          }])),
-        });
+      const blockedEntries = queryBindings.flatMap(({ query, resolution }) => (
+        resolution.artifact ? [] : [[query.id, {
+          status: "error" as const,
+          error: resolution.errors[0] ?? "Add a CSV or JSON artifact before running SQL.",
+        }] as const]
+      ));
+      const runnableBindings = queryBindings.filter(({ resolution }) => Boolean(resolution.artifact));
+      if (!runnableBindings.length) {
+        setRuntime({ revisionKey, entries: Object.fromEntries(blockedEntries) });
         return;
       }
       void import("../lib/duckdb-client")
-        .then(async ({ runWorkspaceQuerySnapshot }) => Promise.all(queryArtifacts.map(async (query) => {
+        .then(async ({ runWorkspaceQuerySnapshot }) => Promise.all(runnableBindings.map(async ({ query, resolution }) => {
+          if (!resolution.artifact) throw new Error("The Query Data source changed before execution.");
           try {
             return [query.id, {
               status: "ready",
-              snapshot: await runWorkspaceQuerySnapshot(query, dataArtifact),
+              snapshot: await runWorkspaceQuerySnapshot(query, resolution.artifact),
             }] as const;
           } catch (error) {
             return [query.id, {
@@ -108,7 +119,7 @@ function usePreviewQueryRuntime(
           }
         })))
         .then((entries) => {
-          if (active) setRuntime({ revisionKey, entries: Object.fromEntries(entries) });
+          if (active) setRuntime({ revisionKey, entries: Object.fromEntries([...blockedEntries, ...entries]) });
         })
         .catch((error: unknown) => {
           if (!active) return;
@@ -117,7 +128,10 @@ function usePreviewQueryRuntime(
             : "DuckDB could not load in this browser.";
           setRuntime({
             revisionKey,
-            entries: Object.fromEntries(queryArtifacts.map((query) => [query.id, { status: "error", error: message }])),
+            entries: Object.fromEntries([
+              ...blockedEntries,
+              ...runnableBindings.map(({ query }) => [query.id, { status: "error", error: message }] as const),
+            ]),
           });
         });
     }, 350);
@@ -125,13 +139,13 @@ function usePreviewQueryRuntime(
       active = false;
       window.clearTimeout(timer);
     };
-  }, [dataArtifact, queryArtifacts, revisionKey]);
+  }, [queryBindings, revisionKey]);
 
-  if (!queryArtifacts.length) return {};
+  if (!queryBindings.length) return {};
   if (runtime.revisionKey !== revisionKey) {
-    return Object.fromEntries(queryArtifacts.map((query) => [query.id, { status: "loading" }]));
+    return Object.fromEntries(queryBindings.map(({ query }) => [query.id, { status: "loading" }]));
   }
-  return Object.fromEntries(queryArtifacts.map((query) => [
+  return Object.fromEntries(queryBindings.map(({ query }) => [
     query.id,
     runtime.entries[query.id] ?? { status: "loading" },
   ]));
@@ -534,7 +548,7 @@ function QueryPreview({
       <div className="query-loading" role="status">
         <span><LoaderCircle aria-hidden="true" /></span>
         <strong>Running locally</strong>
-        <p>Loading the canonical dataset into DuckDB-Wasm…</p>
+        <p>Loading the bound Data artifact into DuckDB-Wasm…</p>
       </div>
     );
   }
@@ -563,7 +577,7 @@ function QueryPreview({
         { icon: "columns", label: `${result.columns.length} columns` },
         { icon: "time", label: `${Math.max(1, Math.round(result.elapsedMs))} ms` },
       ]}
-      footnote={`${result.engine} · workspace_data stayed in this browser${result.lineageMode === "direct" ? " · result row numbers and direct fields, when present, open canonical source; derived cells stay read-only" : " · this query shape stays read-only because no one-to-one lineage was proven"}${result.truncated ? " · preview limited to 500 rows" : ""}.`}
+      footnote={`${result.engine} · ${dataArtifact?.name ?? "workspace_data"} stayed in this browser${result.lineageMode === "direct" ? " · result row numbers and direct fields, when present, open canonical source; derived cells stay read-only" : " · this query shape stays read-only because no one-to-one lineage was proven"}${result.truncated ? " · preview limited to 500 rows" : ""}.`}
       rowTargets={rowTargets}
       cellTargetRows={cellTargetRows}
       targetArtifact={dataArtifact}
@@ -670,7 +684,8 @@ export function ArtifactPreview({
   const targets = derivePreviewSourceTargets(artifact);
   if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
   if (artifact.kind === "query") {
-    return <QueryPreview artifact={artifact} dataArtifact={artifacts.find((item) => item.kind === "data")} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
+    const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
+    return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
   }
   if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />;
   return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;

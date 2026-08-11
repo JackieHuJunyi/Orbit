@@ -174,8 +174,11 @@ test("constrains query patches to read-only DuckDB SQL", () => {
       source: "SELECT * FROM workspace_data;",
     },
   });
-  assert.match(buildAgentInstructions(queryRequest), /read-only DuckDB/);
-  assert.match(buildAgentInstructions(queryRequest), /workspace_data/);
+  const instructions = buildAgentInstructions(queryRequest);
+  assert.match(instructions, /read-only DuckDB/);
+  assert.match(instructions, /workspace_data/);
+  assert.match(instructions, /-- rune:data/);
+  assert.match(instructions, /exact existing Data artifact id/);
 });
 
 test("constrains chart patches to the strict Data-or-Query JSON contract", () => {

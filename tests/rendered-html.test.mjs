@@ -68,7 +68,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.22/);
+  assert.match(html, /Rune v0\.23/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -135,6 +135,9 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /result row numbers and direct fields, when present, open canonical source; derived cells stay read-only/);
   assert.match(clientSource, /this query shape stays read-only because no one-to-one lineage was proven/);
   assert.match(clientSource, /Query result/);
+  assert.match(clientSource, /-- rune:data/);
+  assert.match(clientSource, /Explicit Data binding/);
+  assert.match(clientSource, /Legacy first-Data binding/);
   assert.match(clientSource, /Dependency graph/);
   assert.match(clientSource, /Current bindings and temporary pins choose a bounded, revision-live context pack/);
   assert.match(clientSource, /No hidden graph state/);
