@@ -7,7 +7,7 @@ import {
   rgb,
 } from "pdf-lib";
 import { compileArtifactSource } from "./bindings.ts";
-import { resolveChartModel, type ChartModel } from "./charts.ts";
+import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
@@ -365,6 +365,46 @@ function drawPdfChart(
   const descriptionFont = fontForText(description, context);
   const descriptionLines = wrapText(description, descriptionFont, { size: 6.5, maxWidth: box.width - 24, maxLines: 2 });
   drawLines(page, descriptionLines.lines, descriptionFont, box.x + 12, box.y + box.height - 36, 6.5, 8, theme.muted);
+  if (model.spec.mark === "line") {
+    const plotX = box.x + 20;
+    const plotWidth = Math.max(40, box.width - 40);
+    const plotBottom = box.y + 35;
+    const plotTop = box.y + box.height - 58;
+    const plotHeight = Math.max(30, plotTop - plotBottom);
+    [0, 0.5, 1].forEach((position) => {
+      const y = plotBottom + position * plotHeight;
+      page.drawLine({ start: { x: plotX, y }, end: { x: plotX + plotWidth, y }, thickness: 0.5, color: theme.line });
+    });
+    const points = chartLinePoints(model).map((point) => ({
+      point,
+      x: plotX + point.x * plotWidth,
+      y: plotTop - point.y * plotHeight,
+    }));
+    points.slice(1).forEach((current, index) => {
+      page.drawLine({
+        start: { x: points[index].x, y: points[index].y },
+        end: { x: current.x, y: current.y },
+        thickness: 2.2,
+        color: hexColor(model.spec.color),
+      });
+    });
+    const labelStep = Math.max(1, Math.ceil(points.length / 8));
+    points.forEach(({ point, x, y }, index) => {
+      page.drawCircle({ x, y, size: 3.5, color: theme.paper, borderColor: hexColor(model.spec.color), borderWidth: 1.7 });
+      if (index % labelStep !== 0 && index !== points.length - 1) return;
+      const label = safeText(point.datum.label, context.supported, context.warnings);
+      const value = safeText(point.datum.formatted, context.supported, context.warnings);
+      const labelFont = fontForText(label, context);
+      const valueFont = fontForText(value, context);
+      const columnWidth = Math.min(72, plotWidth / Math.min(points.length, 8));
+      const labelLine = wrapText(label, labelFont, { size: 5.5, maxWidth: columnWidth, maxLines: 1 }).lines[0];
+      const valueLine = wrapText(value, valueFont, { size: 5.5, maxWidth: columnWidth, maxLines: 1 }).lines[0];
+      const labelX = Math.max(box.x + 4, Math.min(box.x + box.width - columnWidth - 4, x - columnWidth / 2));
+      page.drawText(labelLine, { x: labelX, y: box.y + 13, size: 5.5, font: labelFont, color: theme.muted });
+      page.drawText(valueLine, { x: labelX, y: Math.min(plotTop + 6, y + 7), size: 5.5, font: valueFont, color: theme.ink });
+    });
+    return;
+  }
   const rowsTop = box.y + box.height - 55;
   const rowHeight = Math.min(19, (box.height - 68) / Math.max(model.data.length, 1));
   const labelWidth = Math.min(90, box.width * 0.24);

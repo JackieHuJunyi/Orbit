@@ -90,3 +90,44 @@ test("fails closed for unsupported artifacts, pending Query bindings, and invali
     /200,000 source characters/i,
   );
 });
+
+test("freezes line charts into deterministic vector Document and Deck PDFs", async () => {
+  const data = { id: "trend-data", name: "trend.csv", kind: "data", language: "CSV / JSON", source: "Month,Value\nJan,10\nFeb,30\nMar,20\n" };
+  const chart = {
+    id: "trend-chart",
+    name: "trend.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({ version: 1, title: "Monthly trend", description: "Ordered source values", source: data.id, mark: "line", category: "Month", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 8 }),
+  };
+  const document = { id: "trend-report", name: "trend.md", kind: "document", language: "Markdown", source: '# Trend\n\n{{ chart("trend-chart") }}\n' };
+  const deck = {
+    id: "trend-deck",
+    name: "trend.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Trend PDF
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Monthly trend
+
+{{ chart("trend-chart") }}
+`,
+  };
+  const workspace = [document, data, chart, deck];
+  const firstDocument = await exportPdfArtifact(document, workspace, [], fontBytes);
+  const secondDocument = await exportPdfArtifact(document, workspace, [], fontBytes);
+  assert.deepEqual(firstDocument.bytes, secondDocument.bytes);
+  assert.equal((await PDFDocument.load(firstDocument.bytes)).getPageCount(), 1);
+  assert.match(firstDocument.warnings.join(" "), /vector snapshots/i);
+
+  const firstDeck = await exportPdfArtifact(deck, workspace, [], fontBytes);
+  const secondDeck = await exportPdfArtifact(deck, workspace, [], fontBytes);
+  assert.deepEqual(firstDeck.bytes, secondDeck.bytes);
+  assert.equal((await PDFDocument.load(firstDeck.bytes)).getPageCount(), 1);
+});

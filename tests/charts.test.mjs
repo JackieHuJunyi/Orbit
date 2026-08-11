@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  chartLinePoints,
   chartQuerySourceIdsForArtifact,
   findChartReferences,
   parseChartSource,
@@ -27,6 +28,68 @@ test("parses the bounded Chart JSON contract", () => {
   assert.equal(parsed.spec?.mark, "bar");
   assert.equal(parseChartSource('{"version":1,"title":"x"}').spec, undefined);
   assert.match(parseChartSource('{"version":1,"title":"x"}').errors.join(" "), /source|mark|category|value/i);
+  assert.equal(parseChartSource(chartArtifact().source.replace('"bar"', '"line"')).spec?.mark, "line");
+  assert.match(parseChartSource(chartArtifact().source.replace('"bar"', '"scatter"')).errors.join(" "), /bar|line/i);
+});
+
+test("normalizes ordered line points across negative, zero, and positive values", () => {
+  const data = {
+    id: "trend-data",
+    name: "trend.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Change\nJan,-10\nFeb,0\nMar,20",
+  };
+  const chart = {
+    id: "trend-chart",
+    name: "trend.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly change",
+      description: "Ordered source trend",
+      source: data.id,
+      mark: "line",
+      category: "Month",
+      value: "Change",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
+  };
+  const resolution = resolveChartModel(chart, [data, chart], parseDataSource);
+  assert.deepEqual(resolution.errors, []);
+  assert.ok(resolution.model);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.position), [0, 1 / 3, 1]);
+  assert.deepEqual(resolution.model.data.map((datum) => datum.ratio), [0.5, 0, 1]);
+  const points = chartLinePoints(resolution.model);
+  assert.deepEqual(points.map(({ x }) => x), [0, 0.5, 1]);
+  assert.ok(Math.abs(points[0].y - 1) < Number.EPSILON);
+  assert.ok(Math.abs(points[1].y - 2 / 3) < Number.EPSILON);
+  assert.ok(Math.abs(points[2].y) < Number.EPSILON);
+  const html = renderChartModelHtml(resolution.model);
+  assert.match(html, /rune-line-chart/);
+  assert.match(html, /<polyline class="rune-line-series"/);
+  assert.equal((html.match(/<circle /g) ?? []).length, 3);
+  assert.match(html, /Jan: -10/);
+  assert.doesNotMatch(html, /<script/i);
+});
+
+test("centers a one-point or flat line series without fabricating a range", () => {
+  const data = { id: "flat", name: "flat.csv", kind: "data", language: "CSV / JSON", source: "Period,Value\nA,4\nB,4" };
+  const chart = {
+    id: "flat-chart",
+    name: "flat.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({ version: 1, title: "Flat", description: "", source: data.id, mark: "line", category: "Period", value: "Value", sort: "source", format: "number", color: "#ff5c35", maxItems: 8 }),
+  };
+  const model = resolveChartModel(chart, [data, chart], parseDataSource).model;
+  assert.ok(model);
+  assert.deepEqual(model.data.map((datum) => datum.position), [0.5, 0.5]);
+  assert.deepEqual(chartLinePoints(model).map(({ y }) => y), [0.5, 0.5]);
 });
 
 test("projects canonical CSV rows into a sorted local chart model", () => {

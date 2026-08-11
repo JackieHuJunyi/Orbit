@@ -2792,6 +2792,116 @@ textarea:focus-visible {
   box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
 }
 
+.chart-line-shell {
+  display: grid;
+  gap: 8px;
+}
+
+.chart-line-plot {
+  position: relative;
+  min-height: 170px;
+}
+
+.chart-line-plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 170px;
+  overflow: visible;
+}
+
+.chart-line-grid line {
+  stroke: #e8e3d9;
+  stroke-width: 1;
+}
+
+.chart-line-series {
+  fill: none;
+  stroke: var(--chart-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 8;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-line-point {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #344039;
+  cursor: default;
+}
+
+button.chart-line-point {
+  cursor: pointer;
+}
+
+.chart-line-point i {
+  position: absolute;
+  inset: 3px;
+  border: 3px solid var(--chart-accent);
+  border-radius: 999px;
+  background: #fffefb;
+  box-shadow: 0 1px 5px rgba(24,33,28,.16);
+}
+
+.chart-line-point span {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 2;
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: #17211b;
+  color: #fffefb;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.chart-line-point:hover span,
+.chart-line-point:focus-visible span {
+  opacity: 1;
+}
+
+.chart-line-point:focus-visible {
+  border-radius: 999px;
+  outline: 2px solid color-mix(in srgb, var(--chart-accent) 78%, #26352c);
+  outline-offset: 3px;
+}
+
+.chart-line-labels {
+  display: grid;
+  gap: 5px;
+  padding: 0 1%;
+}
+
+.chart-line-labels > span,
+.chart-line-labels .chart-category-cell {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-line-labels .chart-category-cell {
+  margin: -4px -2px;
+  padding: 4px 2px;
+}
+
+.chart-line-labels .chart-category-cell span {
+  text-align: center;
+}
+
 .chart-card footer {
   display: flex;
   justify-content: space-between;

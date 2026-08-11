@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from "fflate";
-import { resolveChartModel, type ChartModel } from "./charts.ts";
+import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
@@ -333,13 +333,19 @@ function docxChartCell(source: string, context: DocxContext, width: number, opti
 
 function docxChart(model: ChartModel, context: DocxContext) {
   const color = model.spec.color.slice(1).toUpperCase();
-  const header = `<w:tr>${docxChartCell(model.spec.category, context, 2500)}${docxChartCell("Relative bar", context, 3600)}${docxChartCell(model.spec.value, context, 1900)}</w:tr>`;
-  const rows = model.data.map((datum) => {
-    const blocks = datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12)));
-    return `<w:tr>${docxChartCell(datum.label, context, 2500)}${docxChartCell(blocks, context, 3600, { barColor: color, track: true })}${docxChartCell(datum.formatted, context, 1900)}</w:tr>`;
+  const header = `<w:tr>${docxChartCell(model.spec.category, context, 2500)}${docxChartCell(model.spec.mark === "line" ? "Trend" : "Relative bar", context, 3600)}${docxChartCell(model.spec.value, context, 1900)}</w:tr>`;
+  const rows = model.data.map((datum, index) => {
+    const previous = model.data[index - 1];
+    const trend = !previous ? "Start" : datum.value > previous.value ? "↑ Increase" : datum.value < previous.value ? "↓ Decrease" : "→ No change";
+    const visual = model.spec.mark === "line"
+      ? docxChartCell(trend, context, 3600, { barColor: color })
+      : docxChartCell(datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12))), context, 3600, { barColor: color, track: true });
+    return `<w:tr>${docxChartCell(datum.label, context, 2500)}${visual}${docxChartCell(datum.formatted, context, 1900)}</w:tr>`;
   }).join("");
   context.warnings.add(`Live Rune charts are exported as static current-data snapshots from ${model.sourceArtifactName}; Office files do not retain the live data binding.`);
-  context.warnings.add("DOCX chart snapshots use a readable semantic bar table so labels and values remain selectable and importable.");
+  context.warnings.add(model.spec.mark === "line"
+    ? "DOCX line-chart snapshots use a readable semantic trend table so labels, direction, and values remain selectable and importable."
+    : "DOCX bar-chart snapshots use a readable semantic bar table so labels and values remain selectable and importable.");
   const description = model.spec.description ? docxParagraph(model.spec.description, context, { style: "Quote" }) : "";
   return `${docxParagraph(model.spec.title, context, { style: "Heading3" })}${description}<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="8000" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2500"/><w:gridCol w:w="3600"/><w:gridCol w:w="1900"/></w:tblGrid>${header}${rows}</w:tbl>`;
 }
@@ -538,6 +544,19 @@ function pptSolidShape(id: number, name: string, geometry: { x: number; y: numbe
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr></p:sp>`;
 }
 
+function pptLineShape(id: number, name: string, start: { x: number; y: number }, end: { x: number; y: number }, color: string, width = 28_000) {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  const cx = Math.max(1, Math.abs(end.x - start.x));
+  const cy = Math.max(1, Math.abs(end.y - start.y));
+  const flip = start.y > end.y ? ' flipV="1"' : "";
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm${flip}><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:noFill/><a:ln w="${width}" cap="rnd"><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln></p:spPr></p:sp>`;
+}
+
+function pptPointShape(id: number, name: string, center: { x: number; y: number }, diameter: number, color: string) {
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${Math.round(center.x - diameter / 2)}" y="${Math.round(center.y - diameter / 2)}"/><a:ext cx="${diameter}" cy="${diameter}"/></a:xfrm><a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="24000"><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"/></a:solidFill></a:ln></p:spPr></p:sp>`;
+}
+
 function pptChartShapes(startId: number, model: ChartModel, geometry: { x: number; y: number; cx: number; cy: number }) {
   let nextId = startId;
   const shapes: string[] = [];
@@ -550,6 +569,42 @@ function pptChartShapes(startId: number, model: ChartModel, geometry: { x: numbe
   }
   const rowsY = geometry.y + titleHeight + descriptionHeight + 100_000;
   const rowsHeight = Math.max(1, geometry.cy - titleHeight - descriptionHeight - 100_000);
+  if (model.spec.mark === "line") {
+    const plotX = geometry.x + 160_000;
+    const plotY = rowsY + 120_000;
+    const plotWidth = Math.max(500_000, geometry.cx - 320_000);
+    const plotHeight = Math.max(500_000, rowsHeight - 640_000);
+    [0, 0.5, 1].forEach((position, index) => {
+      const y = Math.round(plotY + position * plotHeight);
+      shapes.push(pptLineShape(nextId++, `${model.spec.title} grid ${index + 1}`, { x: plotX, y }, { x: plotX + plotWidth, y }, "E9E7DF", 9_000));
+    });
+    const points = chartLinePoints(model).map((point) => ({
+      point,
+      x: Math.round(plotX + point.x * plotWidth),
+      y: Math.round(plotY + point.y * plotHeight),
+    }));
+    points.slice(1).forEach((current, index) => {
+      const previous = points[index];
+      shapes.push(pptLineShape(nextId++, `${model.spec.title} line segment ${index + 1}`, previous, current, color));
+    });
+    const labelWidth = Math.max(260_000, Math.min(1_100_000, Math.floor(plotWidth / Math.max(2, model.data.length) * 1.35)));
+    points.forEach(({ point, x, y }, index) => {
+      shapes.push(pptPointShape(nextId++, `${model.spec.title} point ${index + 1}`, { x, y }, 105_000, color));
+      shapes.push(pptShape(nextId++, `${model.spec.title} value ${index + 1}`, [{ text: point.datum.formatted, bullet: false, level: 0 }], {
+        x: Math.max(geometry.x, Math.min(geometry.x + geometry.cx - labelWidth, x - Math.floor(labelWidth / 2))),
+        y: Math.max(rowsY, y - 230_000),
+        cx: labelWidth,
+        cy: 180_000,
+      }, { size: 700, bold: true, color: "17211B", compact: true, alignment: "ctr" }));
+      shapes.push(pptShape(nextId++, `${model.spec.title} category ${index + 1}`, [{ text: point.datum.label, bullet: false, level: 0 }], {
+        x: Math.max(geometry.x, Math.min(geometry.x + geometry.cx - labelWidth, x - Math.floor(labelWidth / 2))),
+        y: plotY + plotHeight + 80_000,
+        cx: labelWidth,
+        cy: 220_000,
+      }, { size: 700, color: "455149", compact: true, alignment: "ctr" }));
+    });
+    return { xml: shapes.join(""), nextId };
+  }
   const rowHeight = Math.max(1, Math.floor(rowsHeight / Math.max(1, model.data.length)));
   const labelWidth = Math.floor(geometry.cx * 0.25);
   const valueWidth = Math.floor(geometry.cx * 0.2);

@@ -357,3 +357,49 @@ All twenty marks stay inside the slide canvas.
   assert.match(slideXml, /Region 20/);
   assert.match(slideXml, /Twenty marks bar 20/);
 });
+
+test("freezes line charts as semantic DOCX trends and native PPTX vector lines", () => {
+  const data = { id: "trend-data", name: "trend.csv", kind: "data", language: "CSV / JSON", source: "Month,Value\nJan,10\nFeb,30\nMar,20\n" };
+  const chart = {
+    id: "trend-chart",
+    name: "trend.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({ version: 1, title: "Monthly trend", description: "Ordered source values", source: data.id, mark: "line", category: "Month", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 8 }),
+  };
+  const document = { id: "trend-report", name: "trend.md", kind: "document", language: "Markdown", source: '# Trend\n\n{{ chart("trend-chart") }}\n' };
+  const deck = {
+    id: "trend-deck",
+    name: "trend.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Trend review
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Monthly trend
+
+{{ chart("trend-chart") }}
+`,
+  };
+  const workspace = [document, data, chart, deck];
+  const docx = exportOfficeArtifact(document, workspace);
+  const docxXml = strFromU8(packageParts(docx.bytes)["word/document.xml"]);
+  assert.match(docxXml, /Trend/);
+  assert.match(docxXml, /Increase/);
+  assert.match(docxXml, /Decrease/);
+  assert.match(docx.warnings.join(" "), /semantic trend table/i);
+
+  const pptx = exportOfficeArtifact(deck, workspace);
+  const parts = packageParts(pptx.bytes);
+  assertPptSlideBounds(parts);
+  const slideXml = strFromU8(parts["ppt/slides/slide1.xml"]);
+  assert.match(slideXml, /Monthly trend line segment 1/);
+  assert.match(slideXml, /Monthly trend line segment 2/);
+  assert.match(slideXml, /Monthly trend point 3/);
+  assert.doesNotMatch(slideXml, /Monthly trend bar 1/);
+});

@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.29/);
+  assert.match(html, /Rune v0\.30/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -124,6 +124,9 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Export as fixed PDF/);
   assert.match(clientSource, /fixed-layout PDF/);
   assert.match(clientSource, /semantic bar table/);
+  assert.match(clientSource, /chart-line-point/);
+  assert.match(clientSource, /Click a label or/);
+  assert.match(clientSource, /point.*open its exact source cell/);
   assert.match(clientSource, /editable native PowerPoint text and vector shapes/);
   assert.match(clientSource, /typed source/);
   assert.match(clientSource, /workspace source revision changed/);

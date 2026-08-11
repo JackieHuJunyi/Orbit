@@ -1616,3 +1616,21 @@ Selection scope 也不获得例外权限。CSV header rename 如果 serializer �
 这一能力还让新建 Data 的模型路径更 source-native。Rune 的空表模板仍是 `Item,Value`；模型可以先精确 rename 两个 starter columns，再按 row 或 column operation 填入数据，而不必用一段完整 CSV replacement 夺回文件作者权。所有结果继续经过同一个 `parseDataSource`、flat JSON gate、120,000 字符输出上限、concrete diff、revision check、checkpoint 和 atomic persistence transaction。没有新增 npm dependency、数据库、后台 worker 或服务器状态，复杂度集中在已有 `agent-operations` compiler 和 Structured Output schema。
 
 v0.29 仍不是 Excel formula engine。列值由模型作为有界、显式 scalar 提议，Rune 可以证明它们与每个当前 key 一一对应、类型可序列化、下游仍可运行，却不能证明 `0.34` 真的是 source 中 Revenue 与 Cost 的正确商。当前 instruction 要求 derived value 只能来自可见 source；真正可重算的公式应继续写进 DuckDB SQL，并通过 Query/Chart/metric binding消费。未来若需要公式列，可以定义可读的 Data transform artifact 或受限 expression AST，让公式成为 canonical source，而不是把 Excel 式隐藏公式塞回 CSV cell。先把列级结构操作做成可验证原语，才能在不牺牲 source-first 原则的前提下逐步接近 AI Native spreadsheet。
+
+## 35. 折线图不是另一个组件：它必须共享同一条 source、血缘和交付链
+
+到 v0.29 为止，Rune 的 Chart artifact 已经证明一份可读 `.chart.json` 能跨越 Data、SQL、Markdown、Deck、Office 和 PDF，但视觉语法仍只有 `bar`。柱状图适合地区、产品或渠道之间的离散比较，却无法诚实表达月份、版本或实验轮次的有序变化。如果 AI 为“展示最近六个月趋势”生成一串柱子，文件虽然合法，意图却被降格；如果允许模型直接写 SVG/HTML，又会重新打开任意代码、不可审查布局和多运行时不一致的问题。v0.30 因此不是在 React 页面里临时加一条 polyline，而是把 `line` 纳入原有严格 Chart compiler 的完整边界。
+
+source 合同只扩大一个枚举：`mark` 从字面量 `bar` 变成 `bar | line`，其余 source identity、category/value column、sort、format、color 和 1–20 mark 上限全部不变。折线顺序明确来自 Chart 的 post-sort rows：`sort: source` 保留 canonical Data 或 Query result 的顺序，ascending/descending 则是作者显式选择的 value order。Rune 不尝试把 `Jan`、`2026-Q2` 或任意字符串偷偷解析成日期，也不按标签相似度重排；Agent instruction 要求只有在 source 顺序或显式 sort 具有序列意义时才使用 line。这样顺序仍是 source 中可读、可 diff 的决定，而不是 renderer 的猜测。
+
+折线几何也需要确定的失败与退化语义。compiler 继续先拒绝空 category、非数值或非 finite value，再对 maxItems 截断后的可见序列计算 minimum/maximum。每个 point 的横坐标按序列均匀分布，纵坐标按 `(value - min) / (max - min)` 归一化；负数、零和正数可以出现在同一范围内。全部值相等时所有点稳定放在中线，单点放在水平与垂直中心，而不是除以零、制造虚假的斜率或依赖 SVG 的异常行为。bar 继续使用绝对值相对最大值的旧 ratio，两个 mark 共享数据与格式化模型，但不偷换彼此的几何语义。
+
+血缘能力没有因为 SVG 出现而改变。每个 line datum 和 bar datum 一样，在 sort 与 truncation 之前记录 canonical source row，并分别携带 category/value cell provenance。React 折线只把 compiler 给出的 normalized position 投影成只读 SVG path；覆盖在 point 上的原生 button 仍解析到确切 value token，下面的 label button 解析到确切 category token。Query 派生值没有 cell lineage 时 point 仍可见但只读。DOM/SVG 坐标、可见 label、格式化数字和 point index 都不是写权限，点击后仍进入同一个 Selection revision、server/client confinement、review、checkpoint 和 atomic Apply 边界。
+
+Deck 与 standalone HTML 复用同一组 point geometry，生成 inline、scriptless SVG。title、description、label 和 value 继续 escape；颜色只能来自六位 hex schema；最终 standalone boundary 仍拒绝 script、iframe、外链资源以及 `src`/`href`。这使折线可以在 sandboxed slide、下载的单文件 HTML 和浏览器打印中保持相同形状，却不会加入事件桥、第三方 chart runtime 或网络字体。SSR 的 React 视图与静态 SVG 都读取 Rune-owned deterministic number strings，所以此前修复的 hydration 合同不会因新 mark 回退到 ambient locale。
+
+Office 需要按目标格式承认自己的语义边界。DOCX 不适合用大量 drawing shape 模拟一个难以编辑的图，因此 line snapshot 变成可选择的 semantic trend table：每行保留 category、精确 formatted value，并相对前一行写出 Start、Increase、Decrease 或 No change；fidelity review 明确它是当前数据的静态趋势表。PPTX 则真正生成 native DrawingML line segments、point circles、category labels 和 values，所有 shape 仍经过 16:9 canvas bounds 验证，接收者可以在 PowerPoint 中继续移动或改色。bar 的 semantic table 与 track/rectangle path 保持原样，两种 mark 不互相伪装。
+
+PDF 同样使用本地 vector line 和 circles，不截图、不启动 headless browser。Document 的 A4 chart box 与 Deck 的固定 16:9 frame 都从同一 normalized points 生成；密集序列最多显示一组有界标签，但全部 1–20 个 point 仍进入 vector path。相同 source、Data/Query snapshot 和 bundled font 继续产生逐字节相同的文件，Query-backed line chart 也必须先重跑并绑定 exact Query/Data revisions。预览是否曾经打开，不影响 frozen handoff 的正确性。
+
+v0.30 仍故意只有单 series、单 category、单 numeric value、单 color，没有连续时间轴、双 Y 轴、堆叠、面积、散点、missing-value interpolation 或图例布局。多 series 不是简单增加一个数组：它需要定义列组 identity、颜色序列、point-level provenance、空值连接策略、Office legend 和窄屏可读性。scatter 还需要独立 numeric X contract，而不能把 category position 冒充连续尺度。Rune 先证明第二种 mark 能在不分叉 source、运行时、Agent 权限和六种交付面之间语义的情况下落地，再用真实需求决定下一种图表；这比引入一个功能很多但边界不可控的通用 chart library 更符合 AI Native 编辑器的长期成本结构。

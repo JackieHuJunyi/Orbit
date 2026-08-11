@@ -16,6 +16,7 @@ import {
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
 import { compileArtifactSource, queryMetricSourceIdsForArtifact } from "../lib/bindings";
 import {
+  chartLinePoints,
   chartQuerySourceIdsForArtifact,
   parseChartSource,
   renderChartReferencesToHtml,
@@ -223,6 +224,10 @@ function ChartFigure({
   const hasTargetableCells = Boolean(onTargetSource && rows.some((row) => (
     row.categorySource || row.valueSource
   )));
+  const lineRows = chartLinePoints(model).map((point, index) => ({ ...rows[index], point }));
+  const linePolyline = lineRows.map(({ point }) => (
+    `${50 + point.x * 900},${24 + point.y * 172}`
+  )).join(" ");
   return (
     <figure
       className={`chart-card ${embedded ? "embedded" : ""}`}
@@ -233,7 +238,85 @@ function ChartFigure({
         <div><span>Live chart{model.sourceArtifactKind === "query" ? " · Query output" : ""}</span><strong>{model.spec.title}</strong></div>
         <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
       </figcaption>
-      <div className="chart-bars">
+      {model.spec.mark === "line" ? (
+        <div className="chart-line-shell">
+          <div className="chart-line-plot">
+            <svg viewBox="0 0 1000 220" aria-hidden="true" focusable="false">
+              <g className="chart-line-grid">
+                <line x1="50" y1="24" x2="950" y2="24" />
+                <line x1="50" y1="110" x2="950" y2="110" />
+                <line x1="50" y1="196" x2="950" y2="196" />
+              </g>
+              <polyline className="chart-line-series" points={linePolyline} />
+            </svg>
+            {lineRows.map(({ datum, point, valueSource }) => {
+              const openValue = valueSource && onTargetSource
+                ? () => onTargetSource(
+                    valueSource.sourceTargets.artifact,
+                    valueSource.target,
+                    `${model.spec.title} · value ${datum.formatted}`,
+                  )
+                : undefined;
+              const pointStyle = {
+                left: `${5 + point.x * 90}%`,
+                top: `${10.9 + point.y * 78.2}%`,
+              };
+              return openValue ? (
+                <button
+                  className="chart-line-point chart-source-cell"
+                  data-chart-source-cell="value"
+                  data-chart-source-row={datum.sourceRowIndex}
+                  key={datum.sourceRowIndex}
+                  style={pointStyle}
+                  type="button"
+                  aria-label={`Open ${valueSource?.target.label} in ${valueSource?.sourceTargets.artifact.name} as Agent context`}
+                  title={`Open exact ${valueSource?.target.column} source cell in ${valueSource?.sourceTargets.artifact.name}`}
+                  onClick={openValue}
+                >
+                  <i aria-hidden="true" />
+                  <span>{datum.formatted}</span>
+                </button>
+              ) : (
+                <div
+                  className="chart-line-point"
+                  data-chart-source-row={datum.sourceRowIndex}
+                  key={datum.sourceRowIndex}
+                  style={pointStyle}
+                  title={`${datum.label}: ${datum.formatted}`}
+                >
+                  <i aria-hidden="true" />
+                  <span>{datum.formatted}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="chart-line-labels" style={{ gridTemplateColumns: `repeat(${model.data.length}, minmax(0, 1fr))` }}>
+            {lineRows.map(({ datum, categorySource }) => {
+              const openCategory = categorySource && onTargetSource
+                ? () => onTargetSource(
+                    categorySource.sourceTargets.artifact,
+                    categorySource.target,
+                    `${model.spec.title} · category ${datum.label}`,
+                  )
+                : undefined;
+              return openCategory ? (
+                <button
+                  className="chart-source-cell chart-category-cell"
+                  data-chart-source-cell="category"
+                  data-chart-source-row={datum.sourceRowIndex}
+                  key={datum.sourceRowIndex}
+                  type="button"
+                  aria-label={`Open ${categorySource?.target.label} in ${categorySource?.sourceTargets.artifact.name} as Agent context`}
+                  title={`Open exact ${categorySource?.target.column} source cell in ${categorySource?.sourceTargets.artifact.name}`}
+                  onClick={openCategory}
+                >
+                  <span>{datum.label}</span>
+                </button>
+              ) : <span key={datum.sourceRowIndex} title={datum.label}>{datum.label}</span>;
+            })}
+          </div>
+        </div>
+      ) : <div className="chart-bars">
         {rows.map(({ datum, categorySource, valueSource }) => {
           const openCategory = categorySource && onTargetSource
             ? () => onTargetSource(
@@ -288,8 +371,8 @@ function ChartFigure({
             </div>
           );
         })}
-      </div>
-      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks{hasTargetableCells ? " · Click a label or bar to open its exact source cell" : ""}</span></footer>
+      </div>}
+      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks{hasTargetableCells ? ` · Click a label or ${model.spec.mark === "line" ? "point" : "bar"} to open its exact source cell` : ""}</span></footer>
     </figure>
   );
 }

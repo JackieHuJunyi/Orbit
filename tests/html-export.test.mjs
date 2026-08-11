@@ -112,3 +112,41 @@ lang: en
   };
   assert.throws(() => exportDeckHtml(deck, [deck, data, chart]), /exceeds Rune's 2 MB export limit/i);
 });
+
+test("exports a scriptless line chart with deterministic SVG geometry", () => {
+  const data = { id: "trend-data", name: "trend.csv", kind: "data", language: "CSV / JSON", source: "Month,Value\nJan,10\nFeb,30\nMar,20\n" };
+  const chart = {
+    id: "trend-chart",
+    name: "trend.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({ version: 1, title: "Monthly trend", description: "", source: data.id, mark: "line", category: "Month", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 8 }),
+  };
+  const deck = {
+    id: "trend-deck",
+    name: "trend.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Trend export
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Trend
+
+{{ chart("trend-chart") }}
+`,
+  };
+  const first = exportDeckHtml(deck, [deck, data, chart]);
+  const second = exportDeckHtml(deck, [deck, data, chart]);
+  assert.deepEqual(first.bytes, second.bytes);
+  const html = new TextDecoder().decode(first.bytes);
+  assert.match(html, /rune-line-chart/);
+  assert.match(html, /<polyline class="rune-line-series"/);
+  assert.equal((html.match(/<circle /g) ?? []).length, 3);
+  assert.match(html, /Jan: 10/);
+  assert.doesNotMatch(html, /<script\b/i);
+});

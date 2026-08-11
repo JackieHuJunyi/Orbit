@@ -40,3 +40,4 @@
 - 2026-08-12 — Replaced runtime-dependent compact number formatting so SSR, browser hydration, live previews, and exports render identical metric and chart text.
 - 2026-08-12 — Added one bounded compiler-guided model repair for failed Data/SQL proposals before the unchanged reviewed runtime-impact gate.
 - 2026-08-12 — Added keyed Data-column upsert and rename operations for CSV/flat JSON behind the existing atomic runtime-impact review boundary.
+- 2026-08-12 — Added source-first line Charts with exact point provenance and deterministic React, HTML, Office, and PDF rendering.

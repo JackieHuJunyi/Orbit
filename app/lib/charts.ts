@@ -19,7 +19,7 @@ export const ChartSpecSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().max(240).default(""),
   source: z.string().trim().min(1).max(120),
-  mark: z.literal("bar"),
+  mark: z.enum(["bar", "line"]),
   category: z.string().trim().min(1).max(120),
   value: z.string().trim().min(1).max(120),
   sort: z.enum(["source", "ascending", "descending"]).default("descending"),
@@ -48,6 +48,7 @@ export type ChartDatum = {
   value: number;
   formatted: string;
   ratio: number;
+  position: number;
   sourceRowIndex: number;
   categoryProvenance: ChartCellProvenance | null;
   valueProvenance: ChartCellProvenance | null;
@@ -71,6 +72,12 @@ export type ChartModel = {
 export type ChartResolution = {
   model?: ChartModel;
   errors: string[];
+};
+
+export type ChartLinePoint = {
+  datum: ChartDatum;
+  x: number;
+  y: number;
 };
 
 export type ChartSourcePart =
@@ -204,6 +211,9 @@ export function resolveChartModel(
   if (spec.sort === "descending") chartRows.sort((left, right) => right.value - left.value);
   const visibleRows = chartRows.slice(0, spec.maxItems);
   const maximum = Math.max(...visibleRows.map((row) => Math.abs(row.value)), 0) || 1;
+  const minimumValue = Math.min(...visibleRows.map((row) => row.value));
+  const maximumValue = Math.max(...visibleRows.map((row) => row.value));
+  const valueRange = maximumValue - minimumValue;
   return {
     model: {
       chartArtifactId: chartArtifact.id,
@@ -215,10 +225,20 @@ export function resolveChartModel(
         ...row,
         formatted: formatChartValue(row.value, spec.format),
         ratio: Math.abs(row.value) / maximum,
+        position: valueRange ? (row.value - minimumValue) / valueRange : 0.5,
       })),
     },
     errors: [],
   };
+}
+
+export function chartLinePoints(model: ChartModel): ChartLinePoint[] {
+  const denominator = model.data.length - 1;
+  return model.data.map((datum, index) => ({
+    datum,
+    x: denominator > 0 ? index / denominator : 0.5,
+    y: 1 - datum.position,
+  }));
 }
 
 export function validateChartSourceBinding(
@@ -298,6 +318,26 @@ function escapeHtml(value: string) {
 }
 
 export function renderChartModelHtml(model: ChartModel): string {
+  if (model.spec.mark === "line") {
+    const points = chartLinePoints(model);
+    const plotPoints = points.map((point) => (
+      `${(50 + point.x * 900).toFixed(2)},${(24 + point.y * 172).toFixed(2)}`
+    )).join(" ");
+    const circles = points.map((point) => {
+      const x = (50 + point.x * 900).toFixed(2);
+      const y = (24 + point.y * 172).toFixed(2);
+      return `<circle cx="${x}" cy="${y}" r="7"><title>${escapeHtml(`${point.datum.label}: ${point.datum.formatted}`)}</title></circle>`;
+    }).join("");
+    const labels = model.data.map((datum) => `<div><span>${escapeHtml(datum.label)}</span><strong>${escapeHtml(datum.formatted)}</strong></div>`).join("");
+    return `<figure class="rune-embedded-chart rune-line-chart" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
+  <style>
+    .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-line-plot{display:block;width:100%;height:auto;overflow:visible}.rune-line-grid line{stroke:rgba(98,112,104,.16);stroke-width:1}.rune-line-series{fill:none;stroke:var(--rune-chart-accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.rune-line-points circle{fill:#fff;stroke:var(--rune-chart-accent);stroke-width:5;vector-effect:non-scaling-stroke}.rune-line-labels{display:grid;grid-template-columns:repeat(var(--rune-line-count),minmax(0,1fr));gap:6px;margin-top:4px}.rune-line-labels div{display:grid;gap:2px;min-width:0;text-align:center}.rune-line-labels span{overflow:hidden;color:#627068;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.rune-line-labels strong{color:#18211c;font-size:10px;font-variant-numeric:tabular-nums}
+  </style>
+  <figcaption><strong>${escapeHtml(model.spec.title)}</strong><span>${escapeHtml(model.spec.description || `${model.spec.value} by ${model.spec.category}`)}</span></figcaption>
+  <svg class="rune-line-plot" viewBox="0 0 1000 220" role="img" aria-label="${escapeHtml(`${model.spec.title} line chart`)}"><title>${escapeHtml(model.spec.title)}</title><g class="rune-line-grid"><line x1="50" y1="24" x2="950" y2="24"/><line x1="50" y1="110" x2="950" y2="110"/><line x1="50" y1="196" x2="950" y2="196"/></g><polyline class="rune-line-series" points="${plotPoints}"/><g class="rune-line-points">${circles}</g></svg>
+  <div class="rune-line-labels" style="--rune-line-count:${model.data.length}">${labels}</div>
+</figure>`;
+  }
   const rows = model.data.map((datum) => `<div class="rune-chart-row">
     <span>${escapeHtml(datum.label)}</span>
     <div class="rune-chart-track"><i style="width:${(datum.ratio * 100).toFixed(2)}%"></i></div>
