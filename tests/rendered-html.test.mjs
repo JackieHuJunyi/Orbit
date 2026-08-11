@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.32/);
+  assert.match(html, /Rune v0\.33/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -152,6 +152,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /\[["'`]data["'`],\s*["'`]query["'`],\s*["'`]chart["'`]\]/);
   assert.match(clientSource, /New file/);
   assert.match(clientSource, /New source diff/);
+  assert.match(clientSource, /Transaction map/);
+  assert.match(clientSource, /Sources in proposed transaction/);
+  assert.match(clientSource, /Proposed source dependency changes/);
+  assert.match(clientSource, /Input and validated nodes remain unchanged/);
   assert.match(clientSource, /Workspace Briefing/);
   assert.match(clientSource, /根据当前报告新建一份演示/);
   assert.match(clientSource, /根据收入数据创建分析、图表和报告/);
@@ -199,4 +203,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /repaired once from local compiler feedback/);
   assert.match(clientSource, /impacted.*Queries.*executed locally/);
   assert.match(clientSource, /legacy metric/);
+});
+
+test("keeps an expanded transaction review scrollable inside the source pane", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(styles, /\.agent-dock\s*\{[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto;/s);
+  assert.match(styles, /\.transaction-edge-list\s*\{[^}]*max-height:\s*170px;[^}]*overflow:\s*auto;/s);
 });

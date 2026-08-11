@@ -1218,7 +1218,10 @@ textarea:focus-visible {
 .agent-dock {
   z-index: 2;
   display: grid;
+  min-height: 0;
   gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 14px 10px;
   border-top: 1px solid var(--line-strong);
   background: #f2f0e9;
@@ -1445,6 +1448,243 @@ textarea:focus-visible {
 
 .runtime-repair small {
   color: #516c79;
+}
+
+.transaction-review-map {
+  margin-top: 5px;
+  overflow: hidden;
+  border: 1px solid #d5dfd7;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .78);
+}
+
+.transaction-review-map > summary {
+  display: grid;
+  min-height: 37px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.transaction-review-map > summary::-webkit-details-marker {
+  display: none;
+}
+
+.transaction-review-map > summary:focus-visible {
+  outline: 3px solid rgba(39, 117, 83, .18);
+  outline-offset: -3px;
+}
+
+.transaction-review-map > summary > svg {
+  width: 15px;
+  height: 15px;
+  color: #376e54;
+}
+
+.transaction-review-map > summary > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.patch-copy .transaction-review-map > summary strong {
+  font-size: 9px;
+}
+
+.transaction-review-map > summary small {
+  overflow: hidden;
+  color: var(--subtle);
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-edge-count {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e6f0e9;
+  color: #287352;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.transaction-review-content {
+  display: grid;
+  gap: 6px;
+  padding: 7px;
+  border-top: 1px solid #e0e7e2;
+  background: #f9fbf9;
+}
+
+.transaction-node-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.transaction-node-list > span {
+  min-width: 0;
+}
+
+.transaction-node {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 19px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 27px;
+  padding: 3px 5px;
+  border: 1px solid #d9dfda;
+  border-radius: 6px;
+  background: #fff;
+  color: #46534a;
+  text-align: left;
+}
+
+button.transaction-node {
+  cursor: pointer;
+}
+
+button.transaction-node:hover,
+.transaction-node.active {
+  border-color: #92b7a0;
+  box-shadow: inset 2px 0 0 #287352;
+}
+
+.transaction-node .artifact-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+
+.transaction-node-name {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-node-status {
+  padding: 2px 4px;
+  border-radius: 999px;
+  background: #edf0ed;
+  color: var(--subtle);
+  font-size: 6px;
+  font-style: normal;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.transaction-node-status.created {
+  background: #dcece2;
+  color: #287352;
+}
+
+.transaction-node-status.edited {
+  background: #fff0e9;
+  color: #b54a2e;
+}
+
+.transaction-node-status.validated {
+  background: #e9f1f7;
+  color: #315f73;
+}
+
+.transaction-node-status.input {
+  background: #f0eee8;
+  color: #766f61;
+}
+
+.transaction-edge-list {
+  display: grid;
+  max-height: 170px;
+  gap: 3px;
+  overflow: auto;
+}
+
+.transaction-edge-list > p {
+  padding: 6px;
+  border: 1px dashed #d6ddd8;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.transaction-edge {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+}
+
+.transaction-node.compact {
+  grid-template-columns: 17px minmax(0, 1fr);
+  min-height: 23px;
+  padding: 2px 4px;
+  background: #fff;
+}
+
+.transaction-node.compact .artifact-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.transaction-edge-relation {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 12px minmax(0, 1fr) 9px;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  border-radius: 5px;
+  background: #eef2ef;
+  color: #68726b;
+  font-size: 6px;
+}
+
+.transaction-edge-relation > svg {
+  width: 9px;
+  height: 9px;
+}
+
+.transaction-edge-relation > span {
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-edge.added .transaction-edge-relation {
+  background: #e5f3e9;
+  color: #287352;
+}
+
+.transaction-edge.removed .transaction-edge-relation {
+  background: #fff0ed;
+  color: #a3463c;
+  text-decoration: line-through;
+}
+
+.transaction-edge.updated .transaction-edge-relation {
+  background: #e9f1f7;
+  color: #315f73;
+}
+
+.transaction-review-note {
+  padding-top: 5px;
+  border-top: 1px solid #e4e9e5;
+  color: var(--subtle) !important;
+  font-size: 7px !important;
 }
 
 .diff-summary {

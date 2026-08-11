@@ -43,3 +43,4 @@
 - 2026-08-12 — Added source-first line Charts with exact point provenance and deterministic React, HTML, Office, and PDF rendering.
 - 2026-08-12 — Completed source-bound Query/Chart creation for people and Agents, including runtime-safe optional embedding into Markdown reports or Decks.
 - 2026-08-12 — Added ordered Agent creation handles and a no-key one-review Data → Query → Chart → report/deck workflow without exposing generated ids.
+- 2026-08-12 — Added a source-derived transaction map that exposes changed bindings, exact inputs, and validated downstream consumers before atomic Apply.

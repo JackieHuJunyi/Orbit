@@ -38,6 +38,7 @@ import { ArtifactPreview } from "./artifact-previews";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
+import { TransactionReviewMap } from "./transaction-review-map";
 import {
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
@@ -119,6 +120,7 @@ import {
   type WorkspaceDependencyKind,
 } from "../lib/dependency-graph";
 import type { PreviewSourceTarget } from "../lib/preview-targets";
+import { buildWorkspaceTransactionReview } from "../lib/transaction-review";
 import {
   MAX_AGENT_SELECTION_CHARS,
   sourceOutsideSelectionIsUnchanged,
@@ -578,6 +580,12 @@ export function RuneWorkbench() {
       0,
     )
     : 0;
+  const pendingTransactionReview = useMemo(
+    () => pendingChange
+      ? buildWorkspaceTransactionReview(artifacts, pendingChange.patches, pendingChange.creations)
+      : null,
+    [artifacts, pendingChange],
+  );
   const selectedPendingStat = pendingStats.find((change) => change.artifact.id === pendingReviewId)
     ?? pendingStats.find((change) => change.artifact.id === selectedArtifact?.id)
     ?? pendingStats[0];
@@ -1948,6 +1956,13 @@ export function RuneWorkbench() {
                       </span>
                     </div>
                   )}
+                  {pendingTransactionReview && !pendingTransactionReview.errors.length && (
+                    <TransactionReviewMap
+                      review={pendingTransactionReview}
+                      activeArtifactId={selectedPendingStat?.artifact.id ?? ""}
+                      onSelect={setPendingReviewId}
+                    />
+                  )}
                   <div className="diff-summary"><span>{pendingStats.length} {pendingStats.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
                   <div className="patch-file-list" aria-label="Files in proposed patch">
                     {pendingStats.map(({ artifact, patch, additions, removals, isCreation }) => (
@@ -2083,7 +2098,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.32</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.33</span></div>
       </footer>
 
       {newArtifactOpen && (

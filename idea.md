@@ -1672,3 +1672,21 @@ v0.31 补齐了五类创建，却仍把最重要的工作流切成多轮：先�
 无密钥模式不能只展示协议而无法完成同样的用户任务。新的 Workspace 快捷指令“根据收入数据创建分析、图表和报告”会从显式 context pack 选择一份有效 Data，由 Rune 自己顺序创建并绑定 Query、Chart 与 Markdown report；若指令同时要求演示，第四个 creation 会加入 Deck，并复用同一 Chart。这个 deterministic planner 不伪造 provider handles，因为所有 identity 本来就由本地 Rune 代码持有，但它产生与远端编译器同形的 concrete creation batch，进入相同的 runtime preflight、review、revision check 和单次 device persistence。由此，默认没有 API key 的产品也能直接演示“一句话产生可继续编辑的完整 source chain”，而不是退回单文件 demo。
 
 v0.32 仍保持明确上限：一次最多四个 action，只支持向 Document/Deck 追加整个 Chart，不支持在同一计划 patch 刚创建的 artifact、前向 handle、任意位置插入、Query scalar handle、多个 Data relation、任意 DAG 或后台自动 Apply。若真实使用证明“同时创建两份数据、三份查询、多个成品”是高频需求，下一步应先把 review 从平面文件列表升级为可折叠 transaction graph，并定义 action budget 与分阶段 commit 语义；不能只把上限从 4 改成 40。当前版本选择最小但完整的核心链，新增的复杂度只在 Zod contract、顺序 compiler 和 deterministic local planner，不增加数据库、队列、常驻 worker、production secret 或第三方 workflow engine。
+
+## 38. 审核不是文件清单：把一次 AI 修改重新编译成可解释的事务图
+
+v0.32 让一句话第一次可以产生 `Data → Query → Chart → Report/Deck` 的完整 source chain，但原有审核卡仍按文件逐行排列。用户能看到四份 diff，却必须自己打开 SQL、Chart JSON 和 Markdown 才能回答三个最重要的问题：这张图到底读取哪份数据、报告新增了哪条 live binding、改动一份 Data 会让哪些未修改文件重新面对运行时验证。平面列表能证明“改了什么文本”，不能直接表达“这些改动为何必须作为一个原子事务被一起批准”。v0.33 因而没有增加模型权限，而是把已经存在的 source relationship 变成审核本身的一部分。
+
+事务图不能复用 provider 的 action-local handle、summary 或自然语言 rationale。handle 在服务端编译后已经完成使命，rationale 也只是未经证明的解释；若 UI 直接画模型声称的依赖，就可能展示一张与最终 canonical source 不一致的漂亮假图。Rune 现在分别对 current workspace 和完整 proposed workspace 运行同一个 dependency compiler，只读取 Query directive、metric binding、Chart source 和 chart embed。审核图是 canonical source 的另一份编译产物，和左侧长期 Data graph 共用六类 edge grammar，却没有持久化第二份图状态。
+
+仅把 proposed graph 画出来仍然不够。删除 `{{ chart(...) }}` 后，那条边已经不在 proposed source 中；若审核只看未来图，“解除关系”反而会完全消失。v0.33 因此对 current/proposed edge 取 union，以 source id、consumer id 和 dependency kind 作为稳定关系 identity：只在 proposed 出现的是 `added`，只在 current 出现的是 `removed`，两边 identity 相同但字段/引用合同变化的是 `updated`，完全相同的是 `retained`。例如 Chart 从 `Revenue` 改读 `Cost` 不会伪装成无变化；旧 `Region → Revenue` 与新 `Region → Cost` 会同时出现在一条 updated relation 上。
+
+聚焦范围也必须有方向。若新 Query 读取默认 `regional-revenue.csv`，对整张图做无向连通遍历会把这份 Data 已有的两条 Query、两张 Chart、报告和 Deck 全部拉进来，看起来像十几份文件都被新建事务影响。实际上 Data 没变，那些兄弟消费者没有风险。Rune 只从 changed roots 向上遍历其精确输入，再独立向下遍历其消费者：新建 Query 的共享 Data 只是 `Input`，不会以它为新 root 扩散到无关兄弟；若 Data 本身被修改，它就是 root，所有 Query、Chart、scalar、Document/Deck 下游才会进入 `Validated` 集合。这个有向闭包同时避免漏报真实影响和制造虚假爆炸。
+
+节点只有四种状态。`New` 与 `Edited` 是本次会写入的 canonical source，点击仍然只切换现有 bounded concrete diff；`Input` 是保持 byte-for-byte 不变但解释 changed source 所必需的上游；`Validated` 是未被写入、却因 changed root 而进入完整 proposed workspace 或 runtime downstream proof 的消费者。图不会把 Input/Validated 变成可编辑 target，也不会改变 revision、checkpoint 或 Apply 权限。无跨文件 binding 的单文件 patch 仍诚实显示为一个节点和零条边，而不是为“看起来像 Agent”发明依赖。
+
+静态事务图与运行时证据必须相邻但不能混为一谈。图证明的是 source contract：哪份 Query 指向哪份 Data、Chart 选择哪些字段、成品嵌入哪张 Chart；原有 runtime preflight 卡证明的是这次 proposed revision 实际执行了哪些 Query，以及多少 legacy metric、SQL scalar 和 Chart consumer 通过本地 compiler。绿色图不意味着模型的商业结论正确，`Validated` 也不意味着用户已经 Apply。任一 graph/compiler/runtime 错误仍会在 pending review 出现前失败关闭。
+
+交互使用原生 `details/summary`，多文件或有依赖的事务默认展开，键盘可以折叠；节点与 edge list 都有明确的 ARIA label。没有引入 canvas layout、第三方 graph 库或 DOM 连线坐标，因为这些只会增加初始 bundle 与无障碍成本，却不能增强 source truth。当前最多四个 changed action，纵向 edge list 已足以完整呈现；未来若 action budget 真正扩大，再考虑分层布局、节点折叠和分阶段 commit，而不是提前把审核变成不可读的流程设计器。
+
+v0.33 仍不支持文件删除、部分 Apply、跨阶段回滚、多人 approval 或持久 audit log，也没有把四 action 上限提高。事务图只是当前原子提议的可解释投影，关闭 review 后不会留在 localStorage、folder manifest 或 Git。这个限制是有意的：先证明用户能在一次批准前看懂完整 source chain，再决定是否需要更大 transaction、staged commit 或 CRDT。AI Native Office 的信任基础不是“AI 一次改得更多”，而是每次改动都能同时回答文本差异、依赖变化和运行时影响。
