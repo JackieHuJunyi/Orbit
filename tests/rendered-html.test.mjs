@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.30/);
+  assert.match(html, /Rune v0\.31/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -105,6 +105,8 @@ test("ships exactly one compiler-guided repair request site before the repeated 
   assert.match(source, /preflightRuntimeImpact\(\s*replacementPlan\.patches,\s*replacementPlan\.creations/);
   assert.match(source, /Automatic repair stopped after one attempt/);
   assert.match(source, /Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged/);
+  assert.match(source, /\["document", "data", "query", "chart", "slides"\]\.includes\(artifact\.kind\)/);
+  assert.match(source, /creation\.operationCount >= 0[\s\S]*creation\.operationCount <= 8/);
 });
 
 test("ships a review-before-write import surface in the client", async () => {
@@ -136,7 +138,18 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Nothing created — atomic device persistence failed/);
   assert.match(clientSource, /Document/);
   assert.match(clientSource, /Data table/);
+  assert.match(clientSource, /SQL analysis/);
+  assert.match(clientSource, /Live chart/);
   assert.match(clientSource, /Presentation/);
+  assert.match(clientSource, /Source binding/);
+  assert.match(clientSource, /Data or Query source/);
+  assert.match(clientSource, /Category field/);
+  assert.match(clientSource, /Value field/);
+  assert.match(clientSource, /Embed in · optional/);
+  assert.match(clientSource, /Create reusable Chart only/);
+  assert.match(clientSource, /and embedded it in/);
+  assert.match(clientSource, /Verifying live source/);
+  assert.match(clientSource, /\[["'`]data["'`],\s*["'`]query["'`],\s*["'`]chart["'`]\]/);
   assert.match(clientSource, /New file/);
   assert.match(clientSource, /New source diff/);
   assert.match(clientSource, /Workspace Briefing/);

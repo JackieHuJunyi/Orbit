@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { prepareArtifactCreation } from "../app/lib/artifact-creation.ts";
 import { AgentOperationPatchSchema } from "../app/lib/agent-contract.ts";
 import { compileAgentOperationPatch } from "../app/lib/agent-operations.ts";
 import { preflightAgentRuntimeImpact } from "../app/lib/query-preflight.ts";
@@ -29,7 +30,7 @@ function currentSnapshot(query, data, fixture) {
   });
 }
 
-test("skips runtime impact work when an Agent plan changes neither Data nor Query", async () => {
+test("skips runtime impact work when an Agent plan changes neither Data, Query, nor Chart", async () => {
   let called = false;
   const report = defaultArtifacts.find((artifact) => artifact.id === "q2-review");
   assert.ok(report);
@@ -288,6 +289,120 @@ test("validates a new disconnected Data source without running unrelated Queries
     dataNames: ["supplement.csv"],
     queryNames: [],
   });
+});
+
+test("executes a newly created Query against its exact bound Data source", async () => {
+  const prepared = prepareArtifactCreation(defaultArtifacts, {
+    kind: "query",
+    title: "Regional Detail",
+    sourceArtifactId: "regional-revenue",
+  });
+  assert.deepEqual(prepared.errors, []);
+  const creation = {
+    artifact: prepared.artifact,
+    summary: "Create bound Query",
+    detail: "The starter Query reads one exact Data artifact.",
+  };
+  const calls = [];
+  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [], [creation], async (query, data) => {
+    calls.push([query.id, data.id]);
+    return createWorkspaceQuerySnapshot(query, data, {
+      columns: ["Region", "Q2 Revenue", "Q1 Revenue", "Cost", "Customers"],
+      rows: [["APAC", 1840000, 1540000, 1120000, 148]],
+      truncated: false,
+      sourceRowIndices: [0],
+      cellLineage: [[
+        { sourceRowIndex: 0, sourceColumn: "Region" },
+        { sourceRowIndex: 0, sourceColumn: "Q2 Revenue" },
+        { sourceRowIndex: 0, sourceColumn: "Q1 Revenue" },
+        { sourceRowIndex: 0, sourceColumn: "Cost" },
+        { sourceRowIndex: 0, sourceColumn: "Customers" },
+      ]],
+    });
+  });
+  assert.deepEqual(calls, [["regional-detail", "regional-revenue"]]);
+  assert.deepEqual(result, {
+    dataCount: 0,
+    queryCount: 1,
+    legacyMetricConsumerCount: 0,
+    scalarConsumerCount: 0,
+    chartConsumerCount: 0,
+    dataNames: [],
+    queryNames: ["regional-detail.sql"],
+  });
+});
+
+test("runtime-validates a newly created direct or Query-backed Chart before review", async () => {
+  const direct = prepareArtifactCreation(defaultArtifacts, {
+    kind: "chart",
+    title: "Customer Comparison",
+    sourceArtifactId: "regional-revenue",
+    category: "Region",
+    value: "Customers",
+    mark: "bar",
+    format: "number",
+  });
+  assert.deepEqual(direct.errors, []);
+  let directRunnerCalled = false;
+  const directImpact = await preflightAgentRuntimeImpact(defaultArtifacts, [], [{
+    artifact: direct.artifact,
+    summary: "Create direct Chart",
+    detail: "Bind exact Data fields.",
+  }], async () => {
+    directRunnerCalled = true;
+    throw new Error("A direct Data Chart must not start DuckDB.");
+  });
+  assert.equal(directRunnerCalled, false);
+  assert.equal(directImpact.chartConsumerCount, 1);
+  assert.equal(directImpact.queryCount, 0);
+
+  const queryBacked = prepareArtifactCreation(defaultArtifacts, {
+    kind: "chart",
+    title: "Query Customers",
+    sourceArtifactId: "regional-analysis",
+    category: "Region",
+    value: "Customers",
+    mark: "line",
+    format: "number",
+  });
+  assert.deepEqual(queryBacked.errors, []);
+  const calls = [];
+  const queryImpact = await preflightAgentRuntimeImpact(defaultArtifacts, [], [{
+    artifact: queryBacked.artifact,
+    summary: "Create Query Chart",
+    detail: "Bind exact Query output fields.",
+  }], async (query, data) => {
+    calls.push([query.id, data.id]);
+    return currentSnapshot(query, data, defaultQuerySnapshot());
+  });
+  assert.deepEqual(calls, [["regional-analysis", "regional-revenue"]]);
+  assert.equal(queryImpact.queryCount, 1);
+  assert.equal(queryImpact.chartConsumerCount, 2);
+});
+
+test("rejects a new Query-backed Chart whose selected value fails at runtime", async () => {
+  const prepared = prepareArtifactCreation(defaultArtifacts, {
+    kind: "chart",
+    title: "Query Customers",
+    sourceArtifactId: "regional-analysis",
+    category: "Region",
+    value: "Customers",
+    mark: "bar",
+    format: "number",
+  });
+  assert.deepEqual(prepared.errors, []);
+  const fixture = defaultQuerySnapshot();
+  await assert.rejects(preflightAgentRuntimeImpact(defaultArtifacts, [], [{
+    artifact: prepared.artifact,
+    summary: "Create Query Chart",
+    detail: "Runtime values must remain numeric.",
+  }], async (query, data) => currentSnapshot(query, data, {
+    ...fixture,
+    result: {
+      ...fixture.result,
+      rows: fixture.result.rows.map((row) => [...row.slice(0, 4), "not numeric"]),
+    },
+  })), /query-customers\.chart\.json.*non-numeric/i);
 });
 
 test("runs the shipped local Data quick action through the complete impact graph", async () => {

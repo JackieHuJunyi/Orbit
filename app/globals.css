@@ -2028,6 +2028,65 @@ textarea:focus-visible {
   line-height: 1.4;
 }
 
+.new-artifact-binding {
+  display: grid;
+  gap: 8px;
+  padding: 13px !important;
+  border: 1px solid #d9ded9 !important;
+  border-radius: 11px;
+  background: #f8faf8;
+}
+
+.new-artifact-binding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.new-artifact-binding-grid label {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.new-artifact-binding-grid label.wide {
+  grid-column: 1 / -1;
+}
+
+.new-artifact-binding-grid label > span {
+  color: #526158;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.new-artifact-binding-grid select {
+  width: 100%;
+  height: 38px;
+  min-width: 0;
+  padding: 0 32px 0 10px;
+  border: 1px solid #d3d5ce;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: 500 10px/1 var(--font-sans);
+}
+
+.new-artifact-binding-grid select:focus {
+  border-color: #579272;
+  outline: 3px solid rgba(39, 117, 83, .12);
+}
+
+.new-artifact-binding-grid select:disabled {
+  background: #f0f1ed;
+  color: var(--subtle);
+}
+
+.new-artifact-binding > small {
+  color: var(--subtle);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
 .new-artifact-preview {
   overflow: hidden;
   border: 1px solid #d2ddd5;
@@ -3428,6 +3487,14 @@ button.chart-line-point {
 
   .new-artifact-types {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .new-artifact-binding-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .new-artifact-binding-grid label.wide {
+    grid-column: auto;
   }
 
   .import-review-actions {

@@ -41,3 +41,4 @@
 - 2026-08-12 — Added one bounded compiler-guided model repair for failed Data/SQL proposals before the unchanged reviewed runtime-impact gate.
 - 2026-08-12 — Added keyed Data-column upsert and rename operations for CSV/flat JSON behind the existing atomic runtime-impact review boundary.
 - 2026-08-12 — Added source-first line Charts with exact point provenance and deterministic React, HTML, Office, and PDF rendering.
+- 2026-08-12 — Completed source-bound Query/Chart creation for people and Agents, including runtime-safe optional embedding into Markdown reports or Decks.

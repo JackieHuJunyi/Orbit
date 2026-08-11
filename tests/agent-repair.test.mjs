@@ -51,5 +51,22 @@ test("includes Rune-owned creation identity and refuses non-runtime or unknown f
     [{ artifactId: "report", summary: "Bad", detail: "Not runtime", nextSource: "# Changed" }],
     [],
     "failed",
-  ), /Data or Query/i);
+  ), /Data, Query, or Chart/i);
+});
+
+test("keeps a failed Query-backed Chart creation available for one bounded repair", () => {
+  const creation = {
+    artifact: {
+      id: "revenue-chart",
+      name: "revenue-chart.chart.json",
+      kind: "chart",
+      language: "Chart JSON",
+      source: '{"version":1,"title":"Revenue","description":"","source":"analysis","mark":"bar","category":"Item","value":"total","sort":"descending","format":"number","color":"#ff5c35","maxItems":8}',
+    },
+    summary: "Create revenue Chart",
+    detail: "The selected Query field failed runtime numeric validation.",
+  };
+  const repair = buildAgentRuntimeRepair(artifacts, [], [creation], "total is not numeric");
+  assert.equal(repair.proposedArtifacts[0].kind, "chart");
+  assert.equal(repair.proposedArtifacts[0].isCreation, true);
 });

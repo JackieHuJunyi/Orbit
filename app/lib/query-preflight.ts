@@ -33,23 +33,36 @@ export async function preflightAgentRuntimeImpact(
 ): Promise<RuntimeImpactPreflight | null> {
   const changedDataIds = new Set<string>();
   const changedQueryIds = new Set<string>();
+  const changedChartIds = new Set<string>();
   patches.forEach((patch) => {
     const kind = artifacts.find((artifact) => artifact.id === patch.artifactId)?.kind;
     if (kind === "data") changedDataIds.add(patch.artifactId);
     if (kind === "query") changedQueryIds.add(patch.artifactId);
+    if (kind === "chart") changedChartIds.add(patch.artifactId);
   });
   creations.forEach(({ artifact }) => {
     if (artifact.kind === "data") changedDataIds.add(artifact.id);
     if (artifact.kind === "query") changedQueryIds.add(artifact.id);
+    if (artifact.kind === "chart") changedChartIds.add(artifact.id);
   });
-  if (!changedDataIds.size && !changedQueryIds.size) return null;
+  if (!changedDataIds.size && !changedQueryIds.size && !changedChartIds.size) return null;
 
   const prepared = prepareWorkspaceMutation(artifacts, patches, creations);
   if (prepared.errors.length) throw new Error(prepared.errors[0]);
   const changedData = prepared.nextArtifacts.filter((artifact) => changedDataIds.has(artifact.id));
+  const changedChartQueryIds = new Set<string>();
+  prepared.nextArtifacts
+    .filter((artifact) => artifact.kind === "chart" && changedChartIds.has(artifact.id))
+    .forEach((artifact) => {
+      const sourceId = parseChartSource(artifact.source).spec?.source;
+      if (prepared.nextArtifacts.some((candidate) => candidate.id === sourceId && candidate.kind === "query")) {
+        changedChartQueryIds.add(sourceId ?? "");
+      }
+    });
   const impactedQueries = prepared.nextArtifacts.filter((artifact) => {
     if (artifact.kind !== "query") return false;
     if (changedQueryIds.has(artifact.id)) return true;
+    if (changedChartQueryIds.has(artifact.id)) return true;
     const resolution = resolveQueryDataArtifact(artifact, prepared.nextArtifacts);
     return Boolean(resolution.artifact && changedDataIds.has(resolution.artifact.id));
   });
@@ -105,7 +118,9 @@ export async function preflightAgentRuntimeImpact(
   let chartConsumerCount = 0;
   for (const chartArtifact of prepared.nextArtifacts.filter((artifact) => artifact.kind === "chart")) {
     const spec = parseChartSource(chartArtifact.source).spec;
-    if (!spec || (!impactedQueryIds.has(spec.source) && !changedDataIds.has(spec.source))) continue;
+    if (!spec || (!changedChartIds.has(chartArtifact.id)
+      && !impactedQueryIds.has(spec.source)
+      && !changedDataIds.has(spec.source))) continue;
     chartConsumerCount += 1;
     const resolution = resolveChartModel(
       chartArtifact,

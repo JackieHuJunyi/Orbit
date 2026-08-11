@@ -85,7 +85,14 @@ export type ChartSourcePart =
   | { type: "chart"; value: string };
 
 function chartReferencePattern() {
-  return /\{\{\s*chart\(["']([a-z0-9_.-]+)["']\)\s*\}\}/gi;
+  return /\{\{\s*chart\(["']([\p{L}\p{N}_.-]+)["']\)\s*\}\}/giu;
+}
+
+export function formatChartReference(artifactId: string) {
+  if (!/^[\p{L}\p{N}_.-]+$/u.test(artifactId)) {
+    throw new Error("A Chart binding id may contain only letters, numbers, dots, underscores, or hyphens.");
+  }
+  return `{{ chart(${JSON.stringify(artifactId)}) }}`;
 }
 
 export function parseChartSource(source: string): { spec?: ChartSpec; errors: string[] } {

@@ -1634,3 +1634,23 @@ Office 需要按目标格式承认自己的语义边界。DOCX 不适合用大�
 PDF 同样使用本地 vector line 和 circles，不截图、不启动 headless browser。Document 的 A4 chart box 与 Deck 的固定 16:9 frame 都从同一 normalized points 生成；密集序列最多显示一组有界标签，但全部 1–20 个 point 仍进入 vector path。相同 source、Data/Query snapshot 和 bundled font 继续产生逐字节相同的文件，Query-backed line chart 也必须先重跑并绑定 exact Query/Data revisions。预览是否曾经打开，不影响 frozen handoff 的正确性。
 
 v0.30 仍故意只有单 series、单 category、单 numeric value、单 color，没有连续时间轴、双 Y 轴、堆叠、面积、散点、missing-value interpolation 或图例布局。多 series 不是简单增加一个数组：它需要定义列组 identity、颜色序列、point-level provenance、空值连接策略、Office legend 和窄屏可读性。scatter 还需要独立 numeric X contract，而不能把 category position 冒充连续尺度。Rune 先证明第二种 mark 能在不分叉 source、运行时、Agent 权限和六种交付面之间语义的情况下落地，再用真实需求决定下一种图表；这比引入一个功能很多但边界不可控的通用 chart library 更符合 AI Native 编辑器的长期成本结构。
+
+## 36. 创建也是依赖编译：补齐 Data → SQL → Chart → Report/Deck 的入口
+
+v0.30 已经能编辑、执行、追踪和导出完整的 `Data → SQL → Chart → Document/Deck` 链，却有一个会直接阻断新用户的产品矛盾：默认 workspace 里有 Query 和 Chart，所以能力看起来完整；但 **New** 和 Workspace Agent 实际只能创建 Document、Data、Presentation。用户从一张刚导入的 CSV 开始时，必须先在 Rune 外部手写 `.sql` 或 `.chart.json` 再导入，AI 也只能修改已有分析文件。这不是少两个按钮，而是把最重要的 source-first 分析入口留成了 demo fixture。v0.31 因而把“创建”从三种空白模板提升为五类 artifact 的依赖编译器。
+
+Query 创建不接受一个含糊的“使用当前数据”开关。用户必须从当前 workspace 选择一份精确 Data artifact，Rune 随即生成 collision-safe `.sql` identity、第一行 JSON-quoted `-- rune:data "artifact-id"` 和最小的 `SELECT * FROM workspace_data;`。文件顺序改变不会改读另一份表，Unicode source id 也有确定转义。Chart 创建同样要求一份精确 Data 或 Query、一个 category、一个 value、`bar | line` 与 `number | currency | percent`；Rune 再生成完整 strict `.chart.json`。Data source 的全部字段和能够从当前行证明为 numeric 的字段会在 UI 中显示，Query source 则只暴露保守静态 output compiler 能证明的列。默认值可以帮助开始，但最终 source id 与列名始终由用户可见、由 schema 精确保存，而不是由 UI 猜测后隐藏。
+
+这五类创建继续共用一个 identity/template factory。Document、Data 和 Deck 保留既有最小 source；Query 与 Chart 的输入被建模为 discriminated creation contract，缺失 source、错误 kind、invented id、unknown/ambiguous field、非法 mark/format 都在 artifact 出现前失败。factory 生成的 source 仍要经过完整 `validateWorkspaceArtifacts`，所以一个静态字段存在但 direct Data value 非数值的 Chart 不能被创建成“稍后再说”的坏文件。对 Query-backed Chart，静态阶段只证明 schema；真正的值仍属于 runtime evidence，不能被解析器伪造。
+
+人类创建 Chart 时可以选择暂不消费它，也可以在同一个确认动作里选择一份 Markdown Document 或 Deck Markdown。后一种路径不是把图表画面复制进正文：Rune 先创建可复用 `.chart.json`，再向目标 source 追加一个普通 `{{ chart("id") }}`。Document 得到一个可读二级标题，Deck 得到一个受限 `layout: split` slide；两者随后与 Chart creation 一起进入同一个 full-workspace mutation。目标已有相同绑定、目标不是 canonical Markdown/Deck、Chart 无效或任何 downstream compiler 报错时，整个操作都不写入。成功前先为被修改的 consumer 建立 manual checkpoint，然后只调用一次 device persistence；连接文件夹仍需用户显式 Push。这样“创建并嵌入”是一个可撤销的 source transaction，而不是两个可能中途失败的 UI side effect。
+
+Chart reference grammar 同时从 ASCII-only id 扩展为 Unicode letter/number 加 `._-`，并由一个 formatter 生成 JSON-quoted binding。此前中文标题可以产生中文 artifact id，却无法被旧正则识别为 chart reference；这会让看似成功的创建在嵌入后变成 unresolved text。v0.31 用同一条 id grammar 服务 formatter、parser、dependency graph 和 compiler，并保留对现有 ASCII binding 的完全兼容。控制字符、空白和任意括号/引号仍不能进入 id，因此扩大语言支持没有扩大模板注入面。
+
+Workspace Agent 的 Structured Output 也不再只有一个宽泛 `kind` 枚举。Document/Data/Deck creation 只携带 title；Query 必须额外携带一个可见 Data id；Chart 必须携带可见 Data/Query id 与精确字段、mark、format。Rune 仍独占 id、filename、extension、language 和完整 initial source。若 typed template 已经满足“新建一份读取这张表的 Query”或“按这两个字段画柱状图”，creation 可以有 0 个 edit；模型不需要制造一次无意义 replace 来证明自己参与过。若需要改 SQL projection、Chart description 或颜色，0–8 个 typed edits 仍在 Rune-owned template 上顺序编译。模型不能引用同一计划中刚创建的文件，因为碰撞后的真实 id 尚未暴露；新的依赖链必须跨一次已审阅创建再继续，这比允许模型猜 slug 更诚实。
+
+运行时安全门也随创建能力扩大。此前 preflight 只由 changed Data/Query 触发，因此单独新建或修改一个 Query-backed Chart 可能通过静态 schema，却在 Review 后才发现选择的列实际包含字符串。现在 changed/new Chart 本身也是 impact root：direct Data Chart 直接用 proposed workspace 的 canonical rows 验证，不启动 DuckDB；Query-backed Chart 将其精确 Query 加入 execution set，取得绑定当前 Query/Data revisions 的 snapshot，再验证所有受影响 Chart consumer。失败的 Chart creation 可以进入既有的一次 bounded repair feedback，但仍必须用完整 replacement plan 重新通过 server compiler 和第二次本地 preflight。没有 preview、pending review、checkpoint 或 device write 能绕过这条证据边界。
+
+无密钥路径也使用同一合同。本地 Workspace Agent 能从显式 context pack 选择 Data 创建 Query，或选择 Data/Query 的静态字段创建 Chart；收入、比例和趋势等窄关键词只决定可见的 format/mark starter，不扩大 context，也不读隐藏结果。创建 identity 仍对完整 workspace 做碰撞解析，最终 transaction 仍让完整 workspace 的 downstream consumer 保留否决权。v0.31 没有增加数据库、服务端执行器、通用可视化库或后台 Agent；它只是终于让已经存在的五种 canonical source 能从零进入同一条低基础设施编译链。
+
+这还不是完整的“数据建模向导”。Query 仍绑定一份 Data，Chart 仍是单 series，用户仍需在创建后的 SQL source 中表达聚合、筛选与 alias；Agent 也不能在一个未审阅计划里创建 Data、Query、Chart 和报告并猜测所有生成 id。下一步若要缩短多步分析，应设计一种 Rune-owned transaction reference（例如 action-local symbolic handle），让后续 creation/patch 能引用同一计划中尚未分配的 identity，并在编译时统一解析、在 review 中完整展开。那应是一套显式、可证明的依赖规划协议，而不是放开模型直接写 id。

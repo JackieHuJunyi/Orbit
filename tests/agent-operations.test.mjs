@@ -12,8 +12,10 @@ import {
   compileAgentWorkspaceOperations,
   validateCompiledSelectionPatch,
 } from "../app/lib/agent-operations.ts";
+import { parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { prepareWorkspaceMutation, prepareWorkspacePatch } from "../app/lib/patches.ts";
+import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { defaultArtifacts, parseDataSource } from "../app/lib/workspace.ts";
 
 function documentArtifact(source, id = "report") {
@@ -674,6 +676,141 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
   assert.deepEqual(prepared.errors, []);
   assert.equal(prepared.nextArtifacts.length, defaultArtifacts.length + 3);
   assert.match(prepared.nextArtifacts.at(-1).source, /## Decision/);
+});
+
+test("compiles zero-edit Query and Chart creations from exact visible bindings", () => {
+  const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
+    summary: "Create source-first analysis artifacts",
+    detail: "Rune owns both file identities and complete typed starter sources.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Regional Detail",
+        sourceArtifactId: "regional-revenue",
+        summary: "Create a bound Query",
+        detail: "Read the complete exact Data source through workspace_data.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Regional Margin",
+        sourceArtifactId: "regional-analysis",
+        category: "Region",
+        value: "margin_pct",
+        mark: "bar",
+        format: "percent",
+        summary: "Create a bound Chart",
+        detail: "Use exact current Query output fields.",
+        edits: [],
+      },
+    ],
+  });
+  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, operationPlan);
+  assert.deepEqual(compiled.errors, []);
+  assert.deepEqual(compiled.plan.creations.map((creation) => creation.operationCount), [0, 0]);
+  assert.deepEqual(compiled.plan.creations.map((creation) => creation.artifact.name), [
+    "regional-detail.sql",
+    "regional-margin-2.chart.json",
+  ]);
+  assert.deepEqual(parseQueryDataSourceDirective(compiled.plan.creations[0].artifact.source), {
+    artifactId: "regional-revenue",
+    explicit: true,
+    errors: [],
+  });
+  assert.deepEqual(parseChartSource(compiled.plan.creations[1].artifact.source).spec, {
+    version: 1,
+    title: "Regional Margin",
+    description: "",
+    source: "regional-analysis",
+    mark: "bar",
+    category: "Region",
+    value: "margin_pct",
+    sort: "descending",
+    format: "percent",
+    color: "#ff5c35",
+    maxItems: 8,
+  });
+  const prepared = prepareWorkspaceMutation(defaultArtifacts, [], compiled.plan.creations);
+  assert.deepEqual(prepared.errors, []);
+});
+
+test("rejects invented or same-plan creation sources before identity guessing", () => {
+  const invented = compileAgentWorkspaceOperations(defaultArtifacts, {
+    summary: "Invent a binding",
+    detail: "The model must not invent source identities.",
+    actions: [{
+      type: "create_artifact",
+      kind: "query",
+      title: "Unsafe Query",
+      sourceArtifactId: "invented-data",
+      summary: "Create unsafe Query",
+      detail: "This source is not visible.",
+      edits: [],
+    }],
+  });
+  assert.equal(invented.plan, undefined);
+  assert.match(invented.errors.join(" "), /exact existing artifacts from visible context/i);
+
+  const samePlan = compileAgentWorkspaceOperations(defaultArtifacts, {
+    summary: "Guess a generated identity",
+    detail: "A dependent creation must wait until Rune exposes the generated id.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "data",
+        title: "Forecast Data",
+        summary: "Create Data",
+        detail: "Use the typed starter source.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Forecast Query",
+        sourceArtifactId: "forecast-data",
+        summary: "Create Query",
+        detail: "This guesses a same-plan id.",
+        edits: [],
+      },
+    ],
+  });
+  assert.equal(samePlan.plan, undefined);
+  assert.match(samePlan.errors.join(" "), /exact existing artifacts from visible context/i);
+
+  const samePlanEmbed = compileAgentWorkspaceOperations(defaultArtifacts, {
+    summary: "Guess a generated Chart identity",
+    detail: "A patch must not bind to a Chart before Rune has exposed its actual id.",
+    actions: [
+      {
+        type: "patch_artifact",
+        artifactId: "q2-review",
+        summary: "Embed a guessed Chart",
+        detail: "This patch guesses the id produced by a later creation.",
+        edits: [{
+          type: "replace_text",
+          find: "## Next actions",
+          replace: "## Forecast\n\n{{ chart(\"forecast-chart\") }}\n\n## Next actions",
+        }],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Forecast Chart",
+        sourceArtifactId: "regional-revenue",
+        category: "Region",
+        value: "Q2 Revenue",
+        mark: "line",
+        format: "currency",
+        summary: "Create the Chart",
+        detail: "Use one exact visible Data source.",
+        edits: [],
+      },
+    ],
+  });
+  assert.equal(samePlanEmbed.plan, undefined);
+  assert.match(samePlanEmbed.errors.join(" "), /patch cannot reference.*same-plan creation/i);
 });
 
 test("resolves repeated creation titles and rejects incompatible creation operations", () => {

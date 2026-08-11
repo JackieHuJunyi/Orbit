@@ -70,6 +70,7 @@ import {
   parseChartSource,
   validateChartSourceBinding,
 } from "../lib/charts";
+import { prepareChartEmbedding } from "../lib/chart-embedding";
 import { isDeckMarkdownArtifact } from "../lib/deck";
 import {
   appendCheckpoint,
@@ -130,6 +131,31 @@ const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
 const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
+
+async function preflightRuntimeMutation(
+  artifacts: WorkspaceArtifact[],
+  patches: ArtifactSourcePatch[],
+  creations: ArtifactCreationChange[],
+) {
+  const changesRuntimeSource = patches.some((patch) => (
+    ["data", "query", "chart"].includes(
+      artifacts.find((artifact) => artifact.id === patch.artifactId)?.kind ?? "",
+    )
+  )) || creations.some((creation) => ["data", "query", "chart"].includes(creation.artifact.kind));
+  if (!changesRuntimeSource) return undefined;
+  const { preflightAgentRuntimeImpact } = await import("../lib/query-preflight");
+  let queryRuntime: Promise<typeof import("../lib/duckdb-client")> | null = null;
+  return await preflightAgentRuntimeImpact(
+    artifacts,
+    patches,
+    creations,
+    async (queryArtifact, dataArtifact) => {
+      queryRuntime ??= import("../lib/duckdb-client");
+      const { runWorkspaceQuerySnapshot } = await queryRuntime;
+      return runWorkspaceQuerySnapshot(queryArtifact, dataArtifact);
+    },
+  ) ?? undefined;
+}
 
 type AgentScope = "selection" | "artifact" | "workspace";
 
@@ -205,13 +231,14 @@ function isRemoteWorkspacePlan(value: unknown): value is RemoteWorkspacePlan {
       return Boolean(artifact)
         && typeof artifact.id === "string"
         && typeof artifact.name === "string"
-        && ["document", "data", "slides"].includes(artifact.kind)
+        && ["document", "data", "query", "chart", "slides"].includes(artifact.kind)
         && typeof artifact.language === "string"
         && typeof artifact.source === "string"
         && typeof creation.summary === "string"
         && typeof creation.detail === "string"
         && Number.isInteger(creation.operationCount)
-        && creation.operationCount > 0;
+        && creation.operationCount >= 0
+        && creation.operationCount <= 8;
     });
   const actionCount = (plan.patches?.length ?? 0) + (plan.creations?.length ?? 0);
   return typeof plan.summary === "string"
@@ -987,25 +1014,8 @@ export function RuneWorkbench() {
       patches: ArtifactSourcePatch[],
       creations: ArtifactCreationChange[],
     ) {
-      const changesRuntimeSource = patches.some((patch) => (
-        ["data", "query"].includes(
-          targetArtifacts.find((artifact) => artifact.id === patch.artifactId)?.kind ?? "",
-        )
-      )) || creations.some((creation) => ["data", "query"].includes(creation.artifact.kind));
-      if (!changesRuntimeSource) return undefined;
-      const { preflightAgentRuntimeImpact } = await import("../lib/query-preflight");
-      let queryRuntime: Promise<typeof import("../lib/duckdb-client")> | null = null;
       try {
-        return await preflightAgentRuntimeImpact(
-          targetArtifacts,
-          patches,
-          creations,
-          async (queryArtifact, dataArtifact) => {
-            queryRuntime ??= import("../lib/duckdb-client");
-            const { runWorkspaceQuerySnapshot } = await queryRuntime;
-            return runWorkspaceQuerySnapshot(queryArtifact, dataArtifact);
-          },
-        ) ?? undefined;
+        return await preflightRuntimeMutation(targetArtifacts, patches, creations);
       } catch (error) {
         const message = error instanceof Error ? error.message : "The proposed runtime impact could not be verified.";
         throw new Error(`Runtime impact preflight failed · ${message}`);
@@ -1345,16 +1355,67 @@ export function RuneWorkbench() {
     setNewArtifactOpen(true);
   }
 
-  function createNewArtifact(input: ArtifactCreationInput) {
+  async function createNewArtifact(input: ArtifactCreationInput, embedArtifactId?: string) {
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
       setNewArtifactError(prepared.errors[0] ?? "Rune could not create that artifact.");
       return;
     }
+    let nextArtifacts = prepared.nextArtifacts;
+    let nextCheckpoints = checkpoints;
+    let embeddedTargetName = "";
+    const creation: ArtifactCreationChange = {
+      artifact: prepared.artifact,
+      summary: `Create ${prepared.artifact.name}`,
+      detail: "Create one exact source-bound canonical artifact.",
+    };
+    let embeddingPatches: ArtifactSourcePatch[] = [];
+    if (input.kind === "chart" && embedArtifactId) {
+      const embedding = prepareChartEmbedding(
+        prepared.nextArtifacts,
+        prepared.artifact.id,
+        embedArtifactId,
+      );
+      if (!embedding.artifactId || embedding.nextSource == null || embedding.errors.length) {
+        setNewArtifactError(embedding.errors[0] ?? "Rune could not prepare that Chart embedding.");
+        return;
+      }
+      const target = artifacts.find((artifact) => artifact.id === embedding.artifactId);
+      if (!target) {
+        setNewArtifactError("The selected Chart destination is no longer available.");
+        return;
+      }
+      embeddingPatches = [{
+          artifactId: embedding.artifactId,
+          summary: `Embed ${prepared.artifact.name}`,
+          detail: "Append one live Chart binding to the selected canonical source.",
+          nextSource: embedding.nextSource,
+        }];
+      const mutation = prepareWorkspaceMutation(artifacts, embeddingPatches, [creation]);
+      if (mutation.errors.length) {
+        setNewArtifactError(mutation.errors[0]);
+        return;
+      }
+      nextArtifacts = mutation.nextArtifacts;
+      embeddedTargetName = target.name;
+      nextCheckpoints = appendCheckpoint(
+        nextCheckpoints,
+        createCheckpoint(target, `Before embedding ${prepared.artifact.name}`, "manual"),
+      );
+    }
+    try {
+      setNotice(`Verifying ${prepared.artifact.name} against its live sources…`);
+      await preflightRuntimeMutation(artifacts, embeddingPatches, [creation]);
+    } catch (runtimeError) {
+      const message = runtimeError instanceof Error ? runtimeError.message : "The new source could not be verified.";
+      setNewArtifactError(`Runtime verification failed · ${message}`);
+      setNotice("Nothing created — live source verification failed");
+      return;
+    }
     const commit = commitPreparedArtifactCreation(
-      prepared,
-      (nextArtifacts, nextSelectedId) => persistDeviceWorkspace(nextArtifacts, nextSelectedId, checkpoints),
+      { ...prepared, nextArtifacts },
+      (committedArtifacts, nextSelectedId) => persistDeviceWorkspace(committedArtifacts, nextSelectedId, nextCheckpoints),
     );
     if (!commit.committed) {
       setSaveState("error");
@@ -1362,18 +1423,19 @@ export function RuneWorkbench() {
       setNotice("Nothing created — atomic device persistence failed");
       return;
     }
-    setArtifacts(prepared.nextArtifacts);
+    setArtifacts(nextArtifacts);
     setSelectedId(prepared.artifact.id);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setHistoryOpen(false);
     setPendingChange(null);
     setAgentError("");
+    setCheckpoints(nextCheckpoints);
     setSaveState("saved");
     setSavedAt("just now");
     setNewArtifactOpen(false);
     setNewArtifactError("");
-    setNotice(`Created ${prepared.artifact.name} on this device${directoryHandle ? " · Push when ready" : ""}`);
+    setNotice(`Created ${prepared.artifact.name}${embeddedTargetName ? ` and embedded it in ${embeddedTargetName}` : ""} on this device${directoryHandle ? " · Push when ready" : ""}`);
   }
 
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
@@ -2021,7 +2083,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.30</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.31</span></div>
       </footer>
 
       {newArtifactOpen && (

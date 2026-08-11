@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { planLocalWorkspaceAgentChange } from "../app/lib/local-workspace-agent.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
+import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 
 test("prepares a new context-aware presentation without mutating the current workspace", () => {
@@ -28,6 +30,26 @@ test("uses the same collision-safe identity factory for repeated local creation 
   const second = planLocalWorkspaceAgentChange(next, "create another new deck");
   assert.equal(second.creations[0].artifact.id, "workspace-briefing-2");
   assert.equal(second.creations[0].artifact.name, "workspace-briefing-2.deck.md");
+});
+
+test("creates source-bound Query and Chart starters in the offline Workspace Agent", () => {
+  const queryPlan = planLocalWorkspaceAgentChange(defaultArtifacts, "根据数据新建一个 SQL 查询分析");
+  assert.equal(queryPlan.creations[0].artifact.name, "workspace-analysis.sql");
+  assert.deepEqual(parseQueryDataSourceDirective(queryPlan.creations[0].artifact.source), {
+    artifactId: "regional-revenue",
+    explicit: true,
+    errors: [],
+  });
+  assert.deepEqual(prepareWorkspaceMutation(defaultArtifacts, [], queryPlan.creations).errors, []);
+
+  const chartPlan = planLocalWorkspaceAgentChange(defaultArtifacts, "根据收入数据新建一个图表");
+  assert.equal(chartPlan.creations[0].artifact.name, "workspace-chart.chart.json");
+  const spec = parseChartSource(chartPlan.creations[0].artifact.source).spec;
+  assert.equal(spec.source, "regional-revenue");
+  assert.equal(spec.category, "Region");
+  assert.equal(spec.value, "Q2 Revenue");
+  assert.equal(spec.format, "currency");
+  assert.deepEqual(prepareWorkspaceMutation(defaultArtifacts, [], chartPlan.creations).errors, []);
 });
 
 test("keeps existing deterministic workspace coordination available", () => {

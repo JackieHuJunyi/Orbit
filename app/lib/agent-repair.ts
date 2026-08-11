@@ -26,8 +26,8 @@ export const AgentRuntimeRepairSchema = z.object({
     !== repair.proposedArtifacts.length) {
     context.addIssue({ code: "custom", message: "Runtime repair artifact ids must be unique." });
   }
-  if (!repair.proposedArtifacts.some((artifact) => ["data", "query"].includes(artifact.kind))) {
-    context.addIssue({ code: "custom", message: "Runtime repair requires a proposed Data or Query source." });
+  if (!repair.proposedArtifacts.some((artifact) => ["data", "query", "chart"].includes(artifact.kind))) {
+    context.addIssue({ code: "custom", message: "Runtime repair requires a proposed Data, Query, or Chart source." });
   }
 });
 

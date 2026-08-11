@@ -697,11 +697,72 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
   assert.equal("edits" in payload.plan.creations[0], false);
 
   const actionVariants = providerRequest.text.format.schema.properties.actions.items.anyOf;
-  assert.deepEqual(actionVariants.map((action) => action.properties.type.const), ["patch_artifact", "create_artifact"]);
-  const creationSchema = actionVariants.find((action) => action.properties.type.const === "create_artifact");
-  const creationJson = JSON.stringify(creationSchema);
-  assert.equal(/artifactId|nextSource|"id"|"name"|"language"|"source"/.test(creationJson), false);
-  assert.match(providerRequest.input[0].content, /Rune owns its identity and initial template/);
+  assert.deepEqual(actionVariants.map((action) => action.properties.type.const), ["patch_artifact", "create_artifact", "create_artifact", "create_artifact"]);
+  const creationSchemas = actionVariants.filter((action) => action.properties.type.const === "create_artifact");
+  assert.deepEqual(creationSchemas.map((action) => action.properties.kind), [
+    { type: "string", enum: ["document", "data", "slides"] },
+    { type: "string", const: "query" },
+    { type: "string", const: "chart" },
+  ]);
+  creationSchemas.forEach((schema) => {
+    const keys = Object.keys(schema.properties);
+    ["artifactId", "nextSource", "id", "name", "language", "source"].forEach((key) => assert.equal(keys.includes(key), false));
+  });
+  assert.match(providerRequest.input[0].content, /Rune owns its identity and initial source/);
+});
+
+test("creates typed Query and Chart sources from exact visible Agent bindings", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Create two source-first analysis artifacts",
+    detail: "Both files use Rune-owned identities and exact visible bindings.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Detail Analysis",
+        sourceArtifactId: "data",
+        summary: "Create bound Query",
+        detail: "Read the exact visible Data source.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Total Analysis",
+        sourceArtifactId: "analysis",
+        category: "total",
+        value: "total",
+        mark: "bar",
+        format: "number",
+        summary: "Create bound Chart",
+        detail: "Use the exact current Query output field.",
+        edits: [],
+      },
+    ],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(queryWorkspaceBody({
+      prompt: "Create a Query and Chart from the visible analysis context.",
+      queryEvidence: exactQueryEvidence(),
+    })),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.deepEqual(payload.plan.patches, []);
+  assert.deepEqual(payload.plan.creations.map((creation) => ({
+    name: creation.artifact.name,
+    kind: creation.artifact.kind,
+    operationCount: creation.operationCount,
+  })), [
+    { name: "detail-analysis.sql", kind: "query", operationCount: 0 },
+    { name: "total-analysis.chart.json", kind: "chart", operationCount: 0 },
+  ]);
+  assert.match(payload.plan.creations[0].artifact.source, /-- rune:data "data"/);
+  assert.match(payload.plan.creations[1].artifact.source, /"source": "analysis"/);
 });
 
 test("rejects model-authored creation metadata and unsafe created sources", async () => {

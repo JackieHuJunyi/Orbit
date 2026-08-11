@@ -289,13 +289,24 @@ test("converts both operation protocols into provider structured-output schemas"
     "insert_deck_slide_after",
   ]);
   assert.equal(JSON.stringify(artifactFormat.schema).includes("nextSource"), false);
-  const actionTypes = workspaceFormat.schema.properties.actions.items.anyOf
-    .map((action) => action.properties.type.const);
-  assert.deepEqual(actionTypes, ["patch_artifact", "create_artifact"]);
-  const createAction = workspaceFormat.schema.properties.actions.items.anyOf
-    .find((action) => action.properties.type.const === "create_artifact");
-  assert.deepEqual(Object.keys(createAction.properties).sort(), ["detail", "edits", "kind", "summary", "title", "type"]);
-  assert.equal(JSON.stringify(createAction).includes("nextSource"), false);
+  const actions = workspaceFormat.schema.properties.actions.items.anyOf;
+  const actionTypes = actions.map((action) => action.properties.type.const);
+  assert.deepEqual(actionTypes, ["patch_artifact", "create_artifact", "create_artifact", "create_artifact"]);
+  const createActions = actions.filter((action) => action.properties.type.const === "create_artifact");
+  assert.deepEqual(createActions.map((action) => action.properties.kind), [
+    { type: "string", enum: ["document", "data", "slides"] },
+    { type: "string", const: "query" },
+    { type: "string", const: "chart" },
+  ]);
+  assert.deepEqual(Object.keys(createActions[0].properties).sort(), ["detail", "edits", "kind", "summary", "title", "type"]);
+  assert.deepEqual(Object.keys(createActions[1].properties).sort(), ["detail", "edits", "kind", "sourceArtifactId", "summary", "title", "type"]);
+  assert.deepEqual(Object.keys(createActions[2].properties).sort(), ["category", "detail", "edits", "format", "kind", "mark", "sourceArtifactId", "summary", "title", "type", "value"]);
+  createActions.forEach((action) => {
+    const keys = Object.keys(action.properties);
+    ["artifactId", "id", "name", "language", "source", "nextSource"].forEach((key) => {
+      assert.equal(keys.includes(key), false);
+    });
+  });
 });
 
 test("accepts strict artifact-aware section, row, and slide operations", () => {
@@ -434,6 +445,9 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.match(buildAgentInstructions(workspaceRequest), /create_artifact/);
   assert.match(buildAgentInstructions(workspaceRequest), /Never provide an id, filename, extension, language, source, or nextSource/);
   assert.match(buildAgentInstructions(workspaceRequest), /Item,Value/);
+  assert.match(buildAgentInstructions(workspaceRequest), /explicit -- rune:data directive/);
+  assert.match(buildAgentInstructions(workspaceRequest), /strict Chart JSON/);
+  assert.match(buildAgentInstructions(workspaceRequest), /0-8 edits/);
   assert.match(buildAgentInstructions(workspaceRequest), /find and replace/);
   assert.match(buildAgentInstructions(workspaceRequest), /Markdown by exact heading/);
   assert.match(buildAgentInstructions(workspaceRequest), /rejects missing, ambiguous, type-incompatible/);
@@ -657,6 +671,47 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
     detail: "One new presentation is proposed.",
     actions: [creation],
   }).success, true);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Create typed analysis sources",
+    detail: "Exact visible bindings are required even with zero source edits.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Analysis",
+        sourceArtifactId: "data",
+        summary: "Create Query",
+        detail: "Bind one visible Data source.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Analysis Chart",
+        sourceArtifactId: "analysis",
+        category: "Region",
+        value: "Revenue",
+        mark: "bar",
+        format: "currency",
+        summary: "Create Chart",
+        detail: "Bind exact output fields.",
+        edits: [],
+      },
+    ],
+  }).success, true);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Reject incomplete Chart",
+    detail: "Typed binding fields are mandatory.",
+    actions: [{
+      type: "create_artifact",
+      kind: "chart",
+      title: "Incomplete Chart",
+      sourceArtifactId: "data",
+      summary: "Create Chart",
+      detail: "Missing exact fields.",
+      edits: [],
+    }],
+  }).success, false);
   assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
     summary: "Reject model-owned identity",
     detail: "Rune must own generated metadata.",

@@ -4,11 +4,14 @@ import test from "node:test";
 import {
   MAX_ARTIFACT_TITLE_CHARS,
   MAX_WORKSPACE_ARTIFACTS,
+  artifactCreationSourceOptions,
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
 } from "../app/lib/artifact-creation.ts";
+import { parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
+import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { parseDataSource } from "../app/lib/workspace.ts";
 
 test("creates a readable blank Markdown document without mutating the workspace", () => {
@@ -49,6 +52,138 @@ test("creates strict Deck Markdown that compiles from one readable cover slide",
   assert.equal(parsed.deck.frontmatter.title, "Board Narrative");
   assert.equal(parsed.deck.slides.length, 1);
   assert.match(parsed.deck.slides[0].source, /^# Board Narrative/);
+});
+
+test("creates an explicit Query from one exact Data source", () => {
+  const data = {
+    id: "regional-sales",
+    name: "regional-sales.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Revenue\nAPAC,1840000\nEurope,970000\n",
+  };
+  const prepared = prepareArtifactCreation([data], {
+    kind: "query",
+    title: "Revenue Analysis",
+    sourceArtifactId: data.id,
+  });
+  assert.deepEqual(prepared.errors, []);
+  assert.deepEqual({
+    id: prepared.artifact.id,
+    name: prepared.artifact.name,
+    kind: prepared.artifact.kind,
+    language: prepared.artifact.language,
+  }, {
+    id: "revenue-analysis",
+    name: "revenue-analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+  });
+  assert.deepEqual(parseQueryDataSourceDirective(prepared.artifact.source), {
+    artifactId: data.id,
+    explicit: true,
+    errors: [],
+  });
+  assert.match(prepared.artifact.source, /SELECT \*\nFROM workspace_data;/);
+  assert.deepEqual(validateWorkspaceArtifacts(prepared.nextArtifacts), []);
+});
+
+test("discovers exact source fields and creates Data- or Query-backed Chart JSON", () => {
+  const data = {
+    id: "regional-sales",
+    name: "regional-sales.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Revenue\nAPAC,1840000\nEurope,970000\n",
+  };
+  const query = prepareArtifactCreation([data], {
+    kind: "query",
+    title: "Revenue Analysis",
+    sourceArtifactId: data.id,
+  }).artifact;
+  const workspace = [data, query];
+  assert.deepEqual(artifactCreationSourceOptions(workspace, "query"), [{
+    artifactId: data.id,
+    name: data.name,
+    kind: "data",
+    columns: ["Region", "Revenue"],
+    numericColumns: ["Revenue"],
+  }]);
+  assert.deepEqual(artifactCreationSourceOptions(workspace, "chart").map((option) => ({
+    artifactId: option.artifactId,
+    columns: option.columns,
+  })), [
+    { artifactId: data.id, columns: ["Region", "Revenue"] },
+    { artifactId: query.id, columns: ["Region", "Revenue"] },
+  ]);
+
+  const direct = prepareArtifactCreation(workspace, {
+    kind: "chart",
+    title: "Regional Revenue",
+    sourceArtifactId: data.id,
+    category: "Region",
+    value: "Revenue",
+    mark: "bar",
+    format: "currency",
+  });
+  assert.deepEqual(direct.errors, []);
+  assert.equal(direct.artifact.name, "regional-revenue.chart.json");
+  assert.deepEqual(parseChartSource(direct.artifact.source).spec, {
+    version: 1,
+    title: "Regional Revenue",
+    description: "",
+    source: data.id,
+    mark: "bar",
+    category: "Region",
+    value: "Revenue",
+    sort: "descending",
+    format: "currency",
+    color: "#ff5c35",
+    maxItems: 8,
+  });
+
+  const queryBacked = prepareArtifactCreation(workspace, {
+    kind: "chart",
+    title: "Revenue Trend",
+    sourceArtifactId: query.id,
+    category: "Region",
+    value: "Revenue",
+    mark: "line",
+    format: "number",
+  });
+  assert.deepEqual(queryBacked.errors, []);
+  assert.equal(parseChartSource(queryBacked.artifact.source).spec.sort, "source");
+});
+
+test("rejects invented creation sources and fields without partial artifacts", () => {
+  const data = {
+    id: "regional-sales",
+    name: "regional-sales.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Revenue\nAPAC,1840000\n",
+  };
+  const missingQuerySource = prepareArtifactCreation([data], {
+    kind: "query",
+    title: "Unsafe Query",
+    sourceArtifactId: "invented-data",
+  });
+  assert.equal(missingQuerySource.artifact, undefined);
+  assert.equal(missingQuerySource.nextArtifacts[0], data);
+  assert.match(missingQuerySource.errors[0], /existing Data source/i);
+
+  const inventedChartField = prepareArtifactCreation([data], {
+    kind: "chart",
+    title: "Unsafe Chart",
+    sourceArtifactId: data.id,
+    category: "Region",
+    value: "Profit",
+    mark: "bar",
+    format: "number",
+  });
+  assert.equal(inventedChartField.artifact, undefined);
+  assert.equal(inventedChartField.nextArtifacts[0], data);
+  assert.match(inventedChartField.errors[0], /exact value field/i);
 });
 
 test("resolves filename and id collisions case-insensitively", () => {
