@@ -186,6 +186,60 @@ test("rejects stale or empty selection offsets before contacting the provider", 
   assert.equal(providerCalled, false);
 });
 
+test("rejects incomplete or fabricated workspace dependency context before contacting the provider", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerCalled = false;
+  globalThis.fetch = async () => {
+    providerCalled = true;
+    return new Response(JSON.stringify(providerResponse({})), { status: 200 });
+  };
+  const workspaceArtifacts = [
+    requestBody().artifact,
+    {
+      id: "data",
+      name: "data.csv",
+      kind: "data",
+      language: "CSV / JSON",
+      source: "Item,Value\nRevenue,42",
+    },
+  ];
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      scope: "workspace",
+      workspaceArtifacts,
+      workspaceDependencies: [{
+        fromArtifactId: "data",
+        toArtifactId: "report",
+        kind: "metric",
+        references: ["invented"],
+      }],
+    })),
+  }));
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /dependency context is stale or invalid/i);
+  assert.equal(providerCalled, false);
+
+  const incompleteArtifact = {
+    ...requestBody().artifact,
+    source: "# Report\n\n{{ chart(\"omitted-chart\") }}",
+  };
+  const incompleteResponse = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      scope: "workspace",
+      artifact: incompleteArtifact,
+      workspaceArtifacts: [incompleteArtifact, workspaceArtifacts[1]],
+      workspaceDependencies: [],
+    })),
+  }));
+  assert.equal(incompleteResponse.status, 400);
+  assert.match((await incompleteResponse.json()).error, /dependency context is incomplete or invalid/i);
+  assert.equal(providerCalled, false);
+});
+
 test("compiles a coordinated document-data-Deck operation plan without partial files", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [
@@ -203,6 +257,13 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
       kind: "slides",
       language: "Deck Markdown",
       source: "---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Old conclusion.",
+    },
+    {
+      id: "analysis",
+      name: "analysis.sql",
+      kind: "query",
+      language: "DuckDB SQL",
+      source: "SELECT Region, Revenue FROM workspace_data",
     },
   ];
   globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
@@ -245,7 +306,16 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
   const response = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+    body: JSON.stringify(requestBody({
+      scope: "workspace",
+      workspaceArtifacts,
+      workspaceDependencies: [{
+        fromArtifactId: "data",
+        toArtifactId: "analysis",
+        kind: "query",
+        references: ["data"],
+      }],
+    })),
   }));
   assert.equal(response.status, 200);
   const payload = await response.json();
@@ -292,7 +362,7 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
   const response = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [] })),
   }));
   assert.equal(response.status, 200);
   const payload = await response.json();
@@ -348,7 +418,7 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
   const metadataResponse = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [] })),
   }));
   assert.equal(metadataResponse.status, 502);
   assert.equal((await metadataResponse.json()).plan, undefined);
@@ -361,7 +431,7 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
   const unsafeResponse = await POST(new Request("http://localhost/api/agent", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts })),
+    body: JSON.stringify(requestBody({ scope: "workspace", workspaceArtifacts, workspaceDependencies: [] })),
   }));
   assert.equal(unsafeResponse.status, 502);
   const unsafePayload = await unsafeResponse.json();

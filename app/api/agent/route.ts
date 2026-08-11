@@ -16,6 +16,10 @@ import {
 } from "../../lib/agent-operations.ts";
 import { prepareWorkspaceMutation } from "../../lib/patches.ts";
 import { validateArtifact } from "../../lib/workspace.ts";
+import {
+  buildWorkspaceDependencyGraph,
+  dependencyEdgesForContext,
+} from "../../lib/dependency-graph.ts";
 
 const DEFAULT_MODEL = "gpt-5.6";
 
@@ -30,6 +34,27 @@ export async function POST(request: Request) {
   const parsed = AgentRequestSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json({ error: "The artifact request is invalid." }, { status: 400 });
+  }
+
+  if (parsed.data.scope === "workspace") {
+    const workspace = parsed.data.workspaceArtifacts ?? [];
+    const dependencySignature = ({ fromArtifactId, toArtifactId, kind, references }: {
+      fromArtifactId: string;
+      toArtifactId: string;
+      kind: string;
+      references: string[];
+    }) => JSON.stringify([fromArtifactId, toArtifactId, kind, references]);
+    const graph = buildWorkspaceDependencyGraph(workspace);
+    if (graph.issues.length) {
+      return Response.json({ error: "The workspace dependency context is incomplete or invalid." }, { status: 400 });
+    }
+    const expected = dependencyEdgesForContext(graph, workspace)
+      .map(dependencySignature)
+      .sort();
+    const supplied = (parsed.data.workspaceDependencies ?? []).map(dependencySignature).sort();
+    if (expected.length !== supplied.length || expected.some((edge, index) => edge !== supplied[index])) {
+      return Response.json({ error: "The workspace dependency context is stale or invalid." }, { status: 400 });
+    }
   }
 
   const apiKey = process.env.OPENAI_API_KEY;

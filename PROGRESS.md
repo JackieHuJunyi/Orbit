@@ -29,3 +29,4 @@
 - 2026-08-11 — Preserved exact source-row provenance through chart sorting and let standalone or embedded chart marks open their canonical data row as confined Agent context.
 - 2026-08-11 — Mapped visible CSV/JSON cells and chart category/value marks to exact canonical value tokens while retaining full-row selection as an explicit fallback.
 - 2026-08-11 — Carried canonical row identity through conservative DuckDB SELECTs so direct query fields open exact source cells while derived or ambiguous results stay read-only.
+- 2026-08-11 — Compiled a navigable live dependency graph from canonical bindings and used its upstream-closed component as bounded Workspace Agent context.

@@ -92,6 +92,13 @@ import {
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import {
+  buildWorkspaceDependencyGraph,
+  selectWorkspaceAgentContext,
+  workspaceAgentContextIsClosed,
+  type WorkspaceDependencyGraph,
+  type WorkspaceDependencyKind,
+} from "../lib/dependency-graph";
 import type { PreviewSourceTarget } from "../lib/preview-targets";
 import {
   MAX_AGENT_SELECTION_CHARS,
@@ -200,6 +207,115 @@ function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }
   return <Presentation size={size} aria-hidden="true" />;
 }
 
+function DependencyKindIcon({ kind }: { kind: WorkspaceDependencyKind }) {
+  if (kind === "query") return <Database aria-hidden="true" />;
+  if (kind === "chart-data" || kind === "chart-embed") return <BarChart3 aria-hidden="true" />;
+  return <Link2 aria-hidden="true" />;
+}
+
+function DependencyGraphRail({
+  artifacts,
+  graph,
+  contextArtifacts,
+  selectedArtifactId,
+  onSelect,
+}: {
+  artifacts: WorkspaceArtifact[];
+  graph: WorkspaceDependencyGraph;
+  contextArtifacts: WorkspaceArtifact[];
+  selectedArtifactId: string;
+  onSelect: (artifactId: string) => void;
+}) {
+  const artifactById = new Map(artifacts.map((artifact) => [artifact.id, artifact] as const));
+  const contextIds = new Set(contextArtifacts.map((artifact) => artifact.id));
+  const connectedIds = new Set(graph.edges.flatMap((edge) => [edge.fromArtifactId, edge.toArtifactId]));
+  const unlinkedArtifacts = artifacts.filter((artifact) => !connectedIds.has(artifact.id));
+  return (
+    <aside className="file-rail dependency-rail" aria-label="Workspace dependency graph">
+      <div className="file-rail-header">
+        <div><span className="overline">Live context</span><strong>Dependency graph</strong></div>
+        <span className="dependency-count" aria-label={`${graph.edges.length} dependency edges`}>{graph.edges.length}</span>
+      </div>
+      <section className="graph-context-card" aria-label="Workspace Agent context pack">
+        <div><span>Agent context</span><strong>{contextArtifacts.length} / {artifacts.length}</strong></div>
+        <p>Current bindings choose a bounded, revision-live context pack.</p>
+        <nav aria-label="Artifacts in Agent context">
+          {contextArtifacts.map((artifact) => (
+            <button
+              type="button"
+              key={artifact.id}
+              className={artifact.id === selectedArtifactId ? "active" : undefined}
+              onClick={() => onSelect(artifact.id)}
+              aria-current={artifact.id === selectedArtifactId ? "page" : undefined}
+            >
+              <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={11} /></span>
+              <span>{artifact.name}</span>
+            </button>
+          ))}
+        </nav>
+      </section>
+      <div className="artifact-group-label"><span>Source → consumer</span><span>{graph.edges.length}</span></div>
+      <div className="dependency-edge-list" role="list" aria-label="Live artifact dependencies">
+        {graph.edges.map((edge) => {
+          const source = artifactById.get(edge.fromArtifactId);
+          const consumer = artifactById.get(edge.toArtifactId);
+          if (!source || !consumer) return null;
+          const active = source.id === selectedArtifactId || consumer.id === selectedArtifactId;
+          return (
+            <div
+              className={`dependency-edge ${active ? "active" : ""}`.trim()}
+              data-agent-context={contextIds.has(source.id) && contextIds.has(consumer.id) ? "true" : undefined}
+              key={`${edge.fromArtifactId}-${edge.toArtifactId}-${edge.kind}`}
+              role="listitem"
+            >
+              <button type="button" className="dependency-endpoint" onClick={() => onSelect(source.id)} aria-label={`Open dependency source ${source.name}`}>
+                <span className={`artifact-icon ${source.kind}`}><ArtifactIcon kind={source.kind} size={11} /></span>
+                <span>{source.name}</span>
+              </button>
+              <div className={`dependency-relation ${edge.kind}`} title={edge.references.join(", ")}>
+                <DependencyKindIcon kind={edge.kind} />
+                <span>{edge.label}</span>
+                <ChevronRight aria-hidden="true" />
+              </div>
+              <button type="button" className="dependency-endpoint" onClick={() => onSelect(consumer.id)} aria-label={`Open dependency consumer ${consumer.name}`}>
+                <span className={`artifact-icon ${consumer.kind}`}><ArtifactIcon kind={consumer.kind} size={11} /></span>
+                <span>{consumer.name}</span>
+              </button>
+            </div>
+          );
+        })}
+        {!graph.edges.length && <p className="dependency-empty">Add a metric, query, or chart binding to create the first live edge.</p>}
+      </div>
+      {!!graph.issues.length && (
+        <section className="dependency-issues" aria-label="Unresolved dependencies">
+          <span className="overline">Needs attention · {graph.issues.length}</span>
+          {graph.issues.map((issue) => {
+            const artifact = artifactById.get(issue.artifactId);
+            return (
+              <button type="button" key={`${issue.artifactId}-${issue.kind}-${issue.target}`} onClick={() => onSelect(issue.artifactId)}>
+                <X aria-hidden="true" /><span>{artifact?.name ?? issue.artifactId}</span><small>{issue.message}</small>
+              </button>
+            );
+          })}
+        </section>
+      )}
+      {!!unlinkedArtifacts.length && (
+        <section className="unlinked-artifacts" aria-label="Unlinked artifacts">
+          <span className="overline">Unlinked</span>
+          <div>{unlinkedArtifacts.map((artifact) => (
+            <button type="button" key={artifact.id} onClick={() => onSelect(artifact.id)}>{artifact.name}</button>
+          ))}</div>
+        </section>
+      )}
+      <div className="file-rail-spacer" />
+      <div className="workspace-note graph-note">
+        <Database aria-hidden="true" />
+        <div><strong>No hidden graph state</strong><span>Every edge is recompiled from readable source.</span></div>
+      </div>
+    </aside>
+  );
+}
+
 function officeExportType(artifact: WorkspaceArtifact): "DOCX" | "XLSX" | "PPTX" | null {
   if (artifact.kind === "document") return "DOCX";
   if (artifact.kind === "data") return "XLSX";
@@ -257,6 +373,7 @@ export function RuneWorkbench() {
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [savedAt, setSavedAt] = useState("just now");
   const [fileRailOpen, setFileRailOpen] = useState(true);
+  const [railView, setRailView] = useState<"workspace" | "graph">("workspace");
   const [prompt, setPrompt] = useState("");
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [pendingReviewId, setPendingReviewId] = useState("");
@@ -280,6 +397,7 @@ export function RuneWorkbench() {
   const [notice, setNotice] = useState("Local workspace ready");
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
@@ -312,6 +430,18 @@ export function RuneWorkbench() {
   const bindingState = useMemo(
     () => selectedArtifact ? compileArtifactSource(selectedArtifact.source, artifacts) : null,
     [artifacts, selectedArtifact],
+  );
+  const dependencyGraph = useMemo(
+    () => buildWorkspaceDependencyGraph(artifacts),
+    [artifacts],
+  );
+  const workspaceAgentContext = useMemo(
+    () => selectWorkspaceAgentContext(
+      artifacts,
+      dependencyGraph,
+      selectedArtifact?.id ?? artifacts[0]?.id ?? "",
+    ),
+    [artifacts, dependencyGraph, selectedArtifact?.id],
   );
   const validationErrors = useMemo(
     () => selectedArtifact
@@ -714,29 +844,60 @@ export function RuneWorkbench() {
     }
     const targetArtifact = selectedArtifact;
     const targetArtifacts = artifacts;
+    const targetWorkspaceContext = scope === "workspace" ? workspaceAgentContext : [];
+    const targetWorkspaceGraph = scope === "workspace"
+      ? buildWorkspaceDependencyGraph(targetWorkspaceContext)
+      : null;
+    const targetWorkspaceDependencies = scope === "workspace"
+      ? (targetWorkspaceGraph?.edges ?? []).map((edge) => ({
+          fromArtifactId: edge.fromArtifactId,
+          toArtifactId: edge.toArtifactId,
+          kind: edge.kind,
+          references: edge.references,
+        }))
+      : [];
+    const targetWorkspaceContextClosed = scope !== "workspace"
+      || workspaceAgentContextIsClosed(dependencyGraph, targetWorkspaceContext);
+    const targetWorkspaceContextResolved = scope !== "workspace"
+      || targetWorkspaceGraph?.issues.length === 0;
     const targetRevision = captureWorkspaceSourceRevision(targetArtifacts);
     setAgentState("planning");
     setAgentError("");
     setPendingChange(null);
     setNotice(scope === "workspace"
-      ? "Agent is coordinating a reviewable workspace change"
+      ? `Agent is coordinating ${targetWorkspaceContext.length} graph-related sources`
       : scope === "selection"
         ? "Agent is planning a patch confined to the selected source"
         : "Agent is planning a reviewable file patch");
 
+    const metricEntries = Object.entries(bindingState?.metrics ?? {});
+    const metricSourceId = metricEntries[0]?.[1].sourceArtifactId;
+    const contextContainsMetricSource = scope !== "workspace"
+      || !metricSourceId
+      || targetWorkspaceContext.some((artifact) => artifact.id === metricSourceId);
     const metrics = Object.fromEntries(
-      Object.entries(bindingState?.metrics ?? {}).map(([key, metric]) => [key, metric.formatted]),
+      contextContainsMetricSource
+        ? metricEntries.map(([key, metric]) => [key, metric.formatted])
+        : [],
     );
     const remoteEligible = scope !== "workspace"
       ? targetArtifact.source.length <= 100_000
-      : targetArtifacts.length >= 2
-        && targetArtifacts.length <= 6
-        && targetArtifacts.every((artifact) => artifact.source.length <= 100_000)
-        && targetArtifacts.reduce((total, artifact) => total + artifact.source.length, 0) <= 180_000;
+      : targetWorkspaceContext.length >= 2
+        && targetWorkspaceContext.length <= 6
+        && targetWorkspaceContextClosed
+        && targetWorkspaceContextResolved
+        && targetWorkspaceContext.every((artifact) => artifact.source.length <= 100_000)
+        && targetWorkspaceContext.reduce((total, artifact) => total + artifact.source.length, 0) <= 180_000;
     let fallbackNotice = remoteEligible
       ? "Local patch ready · model provider unavailable"
       : scope === "workspace"
-        ? "Local patch ready · workspace exceeds the model context safety limit"
+        ? targetWorkspaceContext.length < 2
+          ? "Local patch ready · graph context needs at least two sources for the model"
+          : !targetWorkspaceContextClosed
+            ? "Local patch ready · graph context could not include every upstream source"
+            : !targetWorkspaceContextResolved
+              ? "Local patch ready · graph context contains an unresolved dependency"
+              : "Local patch ready · graph context exceeds the model safety limit"
         : "Local patch ready · file exceeds the model context safety limit";
 
     if (remoteEligible) {
@@ -748,7 +909,8 @@ export function RuneWorkbench() {
             scope,
             artifact: targetArtifact,
             selection: scope === "selection" ? targetSelection : undefined,
-            workspaceArtifacts: scope === "workspace" ? targetArtifacts : undefined,
+            workspaceArtifacts: scope === "workspace" ? targetWorkspaceContext : undefined,
+            workspaceDependencies: scope === "workspace" ? targetWorkspaceDependencies : undefined,
             prompt: instruction,
             metrics,
           }),
@@ -760,7 +922,7 @@ export function RuneWorkbench() {
           setAgentMode("openai");
           setPrompt("");
           const changeCount = payload.plan.patches.length + payload.plan.creations.length;
-          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"}${payload.model ? ` · ${payload.model}` : ""}`);
+          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${payload.model ? ` · ${payload.model}` : ""}`);
           setAgentState("idle");
           return;
         }
@@ -1211,17 +1373,42 @@ export function RuneWorkbench() {
       <div className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"}`}>
         <aside className="activity-rail" aria-label="Rune sections">
           <div className="activity-group">
-            <button className="activity-button active" aria-label="Workspace" title="Workspace"><FolderOpen /></button>
+            <button
+              className={`activity-button ${railView === "workspace" ? "active" : ""}`.trim()}
+              onClick={() => { setRailView("workspace"); setFileRailOpen(true); }}
+              aria-label="Workspace files"
+              aria-pressed={railView === "workspace"}
+              title="Workspace files"
+            ><FolderOpen /></button>
             <button className="activity-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label="New artifact" title="New artifact"><FilePlus2 /></button>
-            <button className="activity-button" aria-label="Agent" title="Agent"><Sparkles /></button>
-            <button className="activity-button" aria-label="Data graph" title="Data graph"><Database /></button>
+            <button
+              className="activity-button"
+              onClick={() => { promptRef.current?.focus(); setNotice("Agent composer focused"); }}
+              aria-label="Focus Rune Agent"
+              title="Focus Rune Agent"
+            ><Sparkles /></button>
+            <button
+              className={`activity-button ${railView === "graph" ? "active" : ""}`.trim()}
+              onClick={() => { setRailView("graph"); setFileRailOpen(true); }}
+              aria-label="Data graph"
+              aria-pressed={railView === "graph"}
+              title="Data graph"
+            ><Database /></button>
           </div>
           <div className="activity-group">
             <button className="activity-button" onClick={resetWorkspace} aria-label="Reset sample workspace" title="Reset sample"><RotateCcw /></button>
           </div>
         </aside>
 
-        {fileRailOpen && (
+        {fileRailOpen && (railView === "graph" ? (
+          <DependencyGraphRail
+            artifacts={artifacts}
+            graph={dependencyGraph}
+            contextArtifacts={workspaceAgentContext}
+            selectedArtifactId={selectedArtifact.id}
+            onSelect={selectArtifact}
+          />
+        ) : (
           <aside className="file-rail" aria-label="Workspace files">
             <div className="file-rail-header">
               <div><span className="overline">Workspace</span><strong>Q2 review</strong></div>
@@ -1253,7 +1440,7 @@ export function RuneWorkbench() {
             </div>
             <div className="local-badge"><span className="pulse-dot" /> Local-first prototype</div>
           </aside>
-        )}
+        ))}
 
         <section className="source-pane" aria-label="Source editor">
           <header className="pane-header">
@@ -1323,7 +1510,7 @@ export function RuneWorkbench() {
 
           <div className="agent-dock">
             <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? "Coordinates canonical sources" : agentScope === "selection" ? `${selectedCharacterCount.toLocaleString()} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
+              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>Rune Agent</strong><small>{agentScope === "workspace" ? `${workspaceAgentContext.length} graph-related sources in context` : agentScope === "selection" ? `${selectedCharacterCount.toLocaleString()} characters bound to this revision` : "Plans a patch before writing"}</small></div></div>
               <div className="agent-controls">
                 <div className="agent-scope-switch" role="group" aria-label="Agent change scope">
                   {(["selection", "artifact", "workspace"] as const).map((scope) => (
@@ -1335,7 +1522,7 @@ export function RuneWorkbench() {
                         setPendingChange(null);
                         setAgentError("");
                         setNotice(scope === "workspace"
-                          ? "Workspace Agent scope enabled"
+                          ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} graph-related sources`
                           : scope === "selection"
                             ? `${selectedCharacterCount.toLocaleString()} selected characters bound to Agent scope`
                             : "Current-file Agent scope enabled");
@@ -1406,16 +1593,17 @@ export function RuneWorkbench() {
             <div className="agent-composer">
               <Sparkles className="composer-spark" aria-hidden="true" />
               <textarea
+                ref={promptRef}
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 onKeyDown={onPromptKeyDown}
-                placeholder={agentScope === "workspace" ? "Ask Rune to coordinate this workspace…" : agentScope === "selection" ? `Ask Rune to change only these ${selectedCharacterCount.toLocaleString()} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
+                placeholder={agentScope === "workspace" ? `Ask Rune to coordinate these ${workspaceAgentContext.length} related sources…` : agentScope === "selection" ? `Ask Rune to change only these ${selectedCharacterCount.toLocaleString()} characters…` : `Ask Rune to change ${selectedArtifact.name}…`}
                 rows={1}
                 aria-label={agentScope === "workspace" ? "Describe a workspace change" : agentScope === "selection" ? "Describe a selected-source change" : "Describe an artifact change"}
               />
               <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || (agentScope === "selection" && !validSourceSelection)} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
-            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? "All files validate and apply atomically" : agentScope === "selection" ? "Nothing outside the selected source may change" : "Every write is reviewable and undoable"}</p>
+            <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? `${workspaceAgentContext.length} context files · full workspace validates atomically` : agentScope === "selection" ? "Nothing outside the selected source may change" : "Every write is reviewable and undoable"}</p>
           </div>
         </section>
 
@@ -1490,7 +1678,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.19</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.20</span></div>
       </footer>
 
       {newArtifactOpen && (

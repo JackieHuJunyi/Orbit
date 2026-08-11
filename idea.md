@@ -1432,3 +1432,17 @@ v0.18 已经让原始表格和图表精确到 cell，但 Query 仍是断开的�
 Query preview 还必须绑定完整 revision。ready/error state 同时保存 query source、data artifact id 与 data source；任一侧编辑后，旧结果立即变回 loading，并由新执行重新建立血缘，不能把旧 rowid 套到新数据上。点击可证明的 result cell 或 row number 后，Rune 通过当前数据 artifact 的 lexical target map 导航到真实 CSV/JSON token，再复用 Selection Agent 的 prefix/suffix proof、review、checkpoint 与 atomic write。所有未证明形状仍然可以得到 DuckDB 结果，但 footer 会明确说明 read-only，而不是让不可点击看起来像故障。
 
 这轮没有把 aggregate 或 join 粗暴降格成“永远不能有血缘”，只是拒绝在缺少集合语义时假装完成。未来可以为聚合单元格返回有界 provenance set，并把它呈现为“查看 8 个来源”而不是单一写入 target；join 则需要 relation-qualified artifact/row/column identity、cardinality 上限和明确的歧义 UI。只有这些集合在 query revision、data revisions 和 parser identity 上都可验证后，才应该扩大 Agent capability。v0.19 选择的窄边界让 SQL result 第一次接入视觉到事实的完整链路，同时保持最重要的不变量：派生视图可以帮助人指向，但永远不能自行发明 canonical source。
+
+## 24. Workspace context graph：让模型看到关系，而不是吞下整个目录
+
+v0.19 之前，Rune 已经分别知道 metric 来自第一份 Data、Query 读取 `workspace_data`、Chart JSON 指向某个 Data id、文档和 Deck 又嵌入哪些 Chart，但这些关系只散落在 preview badge、validation 和各自 compiler 里。左侧 activity rail 的 Data graph 甚至还是一个没有行为的按钮。更实质的问题在 Agent 边界：Workspace scope 直接把全部 artifact 交给 provider，所以第七个文件出现后，整条模型路径只能退回本地规则。把上限简单提高到 20 或 50 既增加 token 成本，也会把与当前意图无关的文件扩大成模型权限；这不是可扩展的 AI Native workspace。
+
+v0.20 把已有事实收敛成一个纯函数图谱，而不是新建数据库或把 graph metadata 写进 manifest。每次 source revision 都重新编译四类有向边：canonical Data → metric consumer、canonical Data → Query、Chart 指定的 Data → Chart、Chart → 使用 `{{ chart(...) }}` 的 consumer。edge 只包含 artifact identity、kind 和已经存在于 source 的 reference names，不复制数据值。无效 Chart JSON、缺失 Data、未解析 metric/chart id 会成为显式 issue；Rune 不为一个拼错的 id 制造 ghost node。用户打开 Data graph 后可以用原生 button 从边的 source 或 consumer 进入真实 artifact，当前文件和 Agent context 都有可见状态。
+
+图谱同时解决大 workspace 的模型上下文，但“相关”不能只用无向距离粗略截断。Rune 从当前 artifact 探索其 connected component，却按有向依赖执行 **upstream closure**：一个 report、deck、chart 或 query 只有在它已知的上游 source 全部能进入包时才可发送。没有关系的文件不会为了凑够数量被塞进去；selected artifact 的依赖闭包若装不下，也不会偷偷丢掉一个 source 后继续调用模型。包最多 6 个 artifact，非 selected 单文件最多 100,000 字符，总计最多 180,000 字符，并最终恢复原 workspace 顺序，确保“第一份 Data”在 metric compiler 与 `workspace_data` 中的语义不会因 context packing 改变。
+
+图谱不是客户端可以任意声称的 prompt hint。请求只携带 context 内部的边；compiled metric values 也只有在其 canonical Data 已进入包时才能同行。API 会从随请求发送的 canonical sources 独立重编译，拒绝 unresolved upstream，并逐边精确比较；省略、伪造、过期、端点不属于 context 或重复 edge 都会在 provider 调用前失败。即使图谱和模型 plan 都合法，服务端只能编译这几个文件的 typed operations，不能直接写状态。浏览器 Apply 仍绑定规划开始时的完整 50-file workspace revision，并在真实全量 workspace 上重跑 adapter、metric、Chart 和 identity validation；因此被 context cap 省略的 downstream consumer 仍然可以否决一个破坏它的 Data patch。
+
+这个边界把 Data graph 从装饰升级为成本与权限控制面：小 workspace 的行为不变，大 workspace 不再因为总文件数超过 6 就必然失去模型能力，而 provider 只支付与当前关系相符的 source token。没有新增 D1、R2、账号、embedding、向量库或后台索引；刷新和编辑后图谱由同一份可读文件立即重建。它也刻意不声称理解自然语言中的隐式关系：两个没有 metric/chart/query binding 的 Markdown 文件仍是 unlinked，不能仅凭相似标题自动连边。
+
+下一步可以在不改变安全合同的前提下增加用户显式 pin/context set，让一次跨越无绑定文件的任务也可审查；更重要的是把 user-defined metric 与 Query output 变成正式 dependency source，这样 `CSV → SQL → Chart → Report/Deck` 会进入同一张图。目前图谱不是持久评论系统、稳定 node identity 或协作 CRDT，也不会用 embedding 猜测依赖。Rune 先证明显式 source relationship 足以同时改善可解释性、token 成本和模型权限，再决定哪些隐式关系值得引入。

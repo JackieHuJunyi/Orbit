@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WORKSPACE_DEPENDENCY_KINDS } from "./dependency-graph.ts";
 import { sourceSelectionError } from "./source-selection.ts";
 
 export const AgentPatchSchema = z.object({
@@ -142,6 +143,13 @@ const AgentArtifactSchema = z.object({
   source: z.string().min(1).max(100_000),
 });
 
+export const AgentWorkspaceDependencySchema = z.object({
+  fromArtifactId: z.string().min(1).max(120),
+  toArtifactId: z.string().min(1).max(120),
+  kind: z.enum(WORKSPACE_DEPENDENCY_KINDS),
+  references: z.array(z.string().min(1).max(200)).max(16),
+}).strict();
+
 export const AgentSourceSelectionSchema = z.object({
   start: z.number().int().min(0).max(100_000),
   end: z.number().int().min(1).max(100_000),
@@ -152,9 +160,13 @@ export const AgentRequestSchema = z.object({
   artifact: AgentArtifactSchema,
   selection: AgentSourceSelectionSchema.optional(),
   workspaceArtifacts: z.array(AgentArtifactSchema).min(2).max(6).optional(),
+  workspaceDependencies: z.array(AgentWorkspaceDependencySchema).max(32).optional(),
   prompt: z.string().trim().min(1).max(2_000),
   metrics: z.record(z.string(), z.string().max(200)).default({}),
 }).superRefine((request, context) => {
+  if (request.scope !== "workspace" && request.workspaceDependencies !== undefined) {
+    context.addIssue({ code: "custom", message: "Workspace dependencies are only accepted in workspace scope." });
+  }
   if (request.scope === "selection") {
     if (!request.selection) {
       context.addIssue({ code: "custom", message: "Selection scope requires exact source offsets." });
@@ -168,6 +180,9 @@ export const AgentRequestSchema = z.object({
     context.addIssue({ code: "custom", message: "Source offsets are only accepted in selection scope." });
   }
   if (request.scope !== "workspace") return;
+  if (request.workspaceDependencies === undefined) {
+    context.addIssue({ code: "custom", message: "Workspace scope requires an explicit dependency context." });
+  }
   const workspace = request.workspaceArtifacts ?? [];
   if (!workspace.some((artifact) => artifact.id === request.artifact.id)) {
     context.addIssue({ code: "custom", message: "The selected artifact must be part of the workspace." });
@@ -178,6 +193,18 @@ export const AgentRequestSchema = z.object({
   if (workspace.reduce((total, artifact) => total + artifact.source.length, 0) > 180_000) {
     context.addIssue({ code: "custom", message: "The workspace source context is too large." });
   }
+  const workspaceIds = new Set(workspace.map((artifact) => artifact.id));
+  const dependencyKeys = new Set<string>();
+  (request.workspaceDependencies ?? []).forEach((dependency) => {
+    if (!workspaceIds.has(dependency.fromArtifactId) || !workspaceIds.has(dependency.toArtifactId)) {
+      context.addIssue({ code: "custom", message: "Workspace dependency endpoints must belong to the supplied context." });
+    }
+    const key = `${dependency.fromArtifactId}\u0000${dependency.toArtifactId}\u0000${dependency.kind}`;
+    if (dependencyKeys.has(key)) {
+      context.addIssue({ code: "custom", message: "Workspace dependencies must be unique." });
+    }
+    dependencyKeys.add(key);
+  });
 });
 
 export type AgentPatch = z.infer<typeof AgentPatchSchema>;
@@ -212,7 +239,7 @@ export function buildAgentInstructions(request: AgentRequest) {
     const rules = [...new Set((request.workspaceArtifacts ?? []).map(ruleForArtifact))];
     return [
       "You are Rune's workspace editing agent.",
-      "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources, including a new Office-core artifact when the instruction asks for one.",
+      "Plan one coordinated, reviewable outcome across the smallest useful set of canonical sources, including a new Office-core artifact when the instruction asks for one. workspaceArtifacts is a bounded context pack selected from the current dependency graph, and workspaceDependencies lists source-to-consumer edges inside that pack. Do not assume omitted workspace files do not exist; Rune revalidates the complete workspace before applying anything.",
       "Return one top-level summary and detail plus 1-4 actions. Use patch_artifact only with artifactId values present in workspaceArtifacts and never patch an unchanged file. Use create_artifact only for document, data, or slides, and provide only kind, title, summary, detail, and ordered edits. Never provide an id, filename, extension, language, source, or nextSource for a new artifact; Rune owns its identity and initial template.",
       "Every action needs its own short summary, concrete detail, and 1-8 ordered edits. Choose only operations allowed for that artifact: replace_text, replace_markdown_section, insert_markdown_section_after, upsert_data_row, replace_deck_slide, or insert_deck_slide_after.",
       "Rune creates new documents from '# {title}\\n\\n', new data tables from 'Item,Value\\n', and new presentations from strict Deck Markdown with a cover slide titled {title}. Target those exact templates with the action's edits. Put all edits for a new file in its create_artifact action; do not patch a newly created file in the same plan.",
@@ -255,6 +282,7 @@ export function buildAgentInput(request: AgentRequest) {
     artifact: request.scope === "workspace" ? undefined : request.artifact,
     selection,
     workspaceArtifacts: request.scope === "workspace" ? request.workspaceArtifacts : undefined,
+    workspaceDependencies: request.scope === "workspace" ? request.workspaceDependencies : undefined,
     compiledWorkspaceMetrics: request.metrics,
   });
 }

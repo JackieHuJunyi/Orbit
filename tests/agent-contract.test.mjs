@@ -227,6 +227,12 @@ test("builds a bounded workspace request with coordinated file instructions", ()
         source: "<main><section>Quarterly conclusion</section></main>",
       },
     ],
+    workspaceDependencies: [{
+      fromArtifactId: "report",
+      toArtifactId: "deck",
+      kind: "metric",
+      references: ["total_revenue"],
+    }],
   });
   assert.match(buildAgentInstructions(workspaceRequest), /coordinated, reviewable outcome/);
   assert.match(buildAgentInstructions(workspaceRequest), /1-4 actions/);
@@ -236,11 +242,24 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.match(buildAgentInstructions(workspaceRequest), /find and replace/);
   assert.match(buildAgentInstructions(workspaceRequest), /Markdown by exact heading/);
   assert.match(buildAgentInstructions(workspaceRequest), /rejects missing, ambiguous, type-incompatible/);
-  assert.match(buildAgentInput(workspaceRequest), /workspaceArtifacts/);
-  assert.match(buildAgentInput(workspaceRequest), /selectedArtifactId/);
+  assert.match(buildAgentInstructions(workspaceRequest), /bounded context pack selected from the current dependency graph/);
+  const workspaceInput = JSON.parse(buildAgentInput(workspaceRequest));
+  assert.equal(workspaceInput.selectedArtifactId, "report");
+  assert.equal(workspaceInput.workspaceArtifacts.length, 2);
+  assert.deepEqual(workspaceInput.workspaceDependencies, [{
+    fromArtifactId: "report",
+    toArtifactId: "deck",
+    kind: "metric",
+    references: ["total_revenue"],
+  }]);
 });
 
 test("rejects ambiguous or oversized workspace context before provider calls", () => {
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "workspace",
+    workspaceArtifacts: [request.artifact, { ...request.artifact, id: "deck", name: "deck.md" }],
+  }).success, false);
   assert.equal(AgentRequestSchema.safeParse({
     ...request,
     scope: "workspace",
@@ -261,6 +280,30 @@ test("rejects ambiguous or oversized workspace context before provider calls", (
     scope: "workspace",
     artifact: largeArtifact,
     workspaceArtifacts: [largeArtifact, { ...largeArtifact, id: "large-deck", name: "large-deck.md" }],
+  }).success, false);
+
+  const workspaceArtifacts = [request.artifact, { ...request.artifact, id: "deck", name: "deck.md" }];
+  const dependency = {
+    fromArtifactId: "report",
+    toArtifactId: "deck",
+    kind: "metric",
+    references: ["total_revenue"],
+  };
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "workspace",
+    workspaceArtifacts,
+    workspaceDependencies: [{ ...dependency, toArtifactId: "foreign" }],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "workspace",
+    workspaceArtifacts,
+    workspaceDependencies: [dependency, dependency],
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    workspaceDependencies: [],
   }).success, false);
 });
 
