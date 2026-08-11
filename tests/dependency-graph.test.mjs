@@ -20,11 +20,14 @@ test("compiles canonical data, query, metric, chart, and embed dependencies", ()
     edge.kind,
     edge.label,
   ]), [
-    ["regional-revenue", "q2-review", "metric", "5 metrics"],
+    ["regional-revenue", "q2-review", "metric", "1 metric"],
     ["regional-revenue", "regional-analysis", "query", "workspace_data · regional-revenue"],
+    ["regional-revenue", "regional-summary", "query", "workspace_data · regional-revenue"],
     ["regional-revenue", "regional-revenue-chart", "chart-data", "Region → Q2 Revenue"],
-    ["regional-revenue", "board-briefing", "metric", "4 metrics"],
+    ["regional-revenue", "board-briefing", "metric", "1 metric"],
     ["regional-analysis", "regional-margin-chart", "chart-query", "query output · Region → margin_pct"],
+    ["regional-summary", "q2-review", "query-metric", "4 scalar metrics"],
+    ["regional-summary", "board-briefing", "query-metric", "3 scalar metrics"],
     ["regional-revenue-chart", "q2-review", "chart-embed", "chart embed"],
     ["regional-revenue-chart", "board-briefing", "chart-embed", "chart embed"],
     ["regional-margin-chart", "q2-review", "chart-embed", "chart embed"],
@@ -73,6 +76,7 @@ test("selects a deterministic dependency-first Agent context instead of the whol
     "q2-review",
     "regional-revenue",
     "regional-analysis",
+    "regional-summary",
     "regional-revenue-chart",
     "regional-margin-chart",
     "board-briefing",
@@ -82,7 +86,7 @@ test("selects a deterministic dependency-first Agent context instead of the whol
   assert.equal(workspaceAgentContextIsClosed(graph, context), true);
   assert.deepEqual(
     dependencyEdgesForContext(graph, context).map((edge) => edge.kind).sort(),
-    ["chart-data", "chart-embed", "chart-embed", "chart-embed", "chart-embed", "chart-query", "metric", "metric", "query"],
+    ["chart-data", "chart-embed", "chart-embed", "chart-embed", "chart-embed", "chart-query", "metric", "metric", "query", "query", "query-metric", "query-metric"],
   );
 });
 
@@ -162,11 +166,12 @@ test("adds explicit pins and their upstream closure without padding other compon
   const context = selectWorkspaceAgentContext(workspace, graph, "q2-review", {
     pinnedArtifactIds: [isolated.id],
   });
-  assert.equal(MAX_WORKSPACE_AGENT_PINS, 5);
+  assert.equal(MAX_WORKSPACE_AGENT_PINS, 6);
   assert.deepEqual(context.map((artifact) => artifact.id), [
     "q2-review",
     "regional-revenue",
     "regional-analysis",
+    "regional-summary",
     "regional-revenue-chart",
     "regional-margin-chart",
     "isolated-brief",

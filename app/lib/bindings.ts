@@ -1,5 +1,15 @@
-import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 import { findChartReferences } from "./charts.ts";
+import { resolveQueryDataArtifact } from "./query-source.ts";
+import {
+  workspaceQuerySnapshotIsCurrent,
+  type WorkspaceQuerySnapshot,
+} from "./query-snapshot.ts";
+import { inferQueryOutputColumns } from "./sql.ts";
+import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
+
+export const QUERY_METRIC_FORMATS = ["currency", "number", "percent"] as const;
+
+export type QueryMetricFormat = typeof QUERY_METRIC_FORMATS[number];
 
 export type WorkspaceMetric = {
   key: string;
@@ -9,16 +19,57 @@ export type WorkspaceMetric = {
   sourceArtifactId: string;
 };
 
+export type QueryMetricReference = {
+  queryArtifactId: string;
+  column: string;
+  format: QueryMetricFormat;
+};
+
+export type WorkspaceQueryMetric = QueryMetricReference & {
+  key: string;
+  value: number;
+  formatted: string;
+  dataArtifactId: string;
+};
+
 export type CompiledArtifact = {
   source: string;
   references: string[];
   unresolved: string[];
+  queryMetricReferences: QueryMetricReference[];
+  unresolvedQueryMetrics: string[];
+  pendingQueryMetrics: string[];
+  queryMetricRuntimeErrors: string[];
+  metricBindingErrors: string[];
   chartReferences: string[];
   unresolvedCharts: string[];
   metrics: Record<string, WorkspaceMetric>;
+  queryMetrics: Record<string, WorkspaceQueryMetric>;
 };
 
-const metricPattern = /\{\{\s*metric\(["']([a-z0-9_.-]+)["']\)\s*\}\}/gi;
+type MetricBinding =
+  | { kind: "legacy"; key: string; start: number; end: number }
+  | { kind: "query"; reference: QueryMetricReference; start: number; end: number };
+
+export type ParsedMetricBindings = {
+  bindings: MetricBinding[];
+  errors: string[];
+};
+
+export type QueryMetricValidation = {
+  queryArtifact?: WorkspaceArtifact;
+  dataArtifact?: WorkspaceArtifact;
+  errors: string[];
+};
+
+type QueryMetricResolution = QueryMetricValidation & {
+  metric?: WorkspaceQueryMetric;
+  pending: boolean;
+  staticValid: boolean;
+};
+
+const LEGACY_METRIC_KEY = /^[a-z0-9_.-]+$/iu;
+const MAX_METRIC_IDENTITY_CHARS = 120;
 
 function findColumn(columns: string[], pattern: RegExp) {
   return columns.find((column) => pattern.test(column));
@@ -48,10 +99,155 @@ function slug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
 
+function splitMetricArguments(source: string): string[] | null {
+  const parts: string[] = [];
+  let quote: "\"" | "'" | null = null;
+  let escaped = false;
+  let start = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === quote) quote = null;
+      continue;
+    }
+    if (character === "\"" || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === ",") {
+      parts.push(source.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  if (quote || escaped) return null;
+  parts.push(source.slice(start).trim());
+  return parts.every(Boolean) ? parts : null;
+}
+
+function decodeMetricString(source: string): string | null {
+  if (source.startsWith("\"") && source.endsWith("\"")) {
+    try {
+      const value: unknown = JSON.parse(source);
+      return typeof value === "string" ? value : null;
+    } catch {
+      return null;
+    }
+  }
+  if (!source.startsWith("'") || !source.endsWith("'")) return null;
+  const body = source.slice(1, -1);
+  let value = "";
+  for (let index = 0; index < body.length; index += 1) {
+    const character = body[index];
+    if (character !== "\\") {
+      value += character;
+      continue;
+    }
+    const next = body[index + 1];
+    if (next !== "\\" && next !== "'") return null;
+    value += next;
+    index += 1;
+  }
+  return value;
+}
+
+function validMetricIdentity(value: string) {
+  return value.length > 0
+    && value.length <= MAX_METRIC_IDENTITY_CHARS
+    && !/[\u0000-\u001f\u007f]/u.test(value);
+}
+
+export function queryMetricReferenceKey(reference: QueryMetricReference) {
+  return JSON.stringify([reference.queryArtifactId, reference.column, reference.format]);
+}
+
+export function queryMetricReferenceLabel(reference: QueryMetricReference) {
+  return `${reference.queryArtifactId}.${reference.column}`;
+}
+
+export function parseMetricBindings(source: string): ParsedMetricBindings {
+  const bindings: MetricBinding[] = [];
+  const errors: string[] = [];
+  let cursor = 0;
+  while (cursor < source.length) {
+    const start = source.indexOf("{{", cursor);
+    if (start < 0) break;
+    const endMarker = source.indexOf("}}", start + 2);
+    if (endMarker < 0) {
+      if (/^\{\{\s*metric\b/iu.test(source.slice(start))) {
+        errors.push("Close the metric binding with }}.");
+      }
+      break;
+    }
+    const end = endMarker + 2;
+    const inner = source.slice(start + 2, endMarker).trim();
+    cursor = end;
+    if (!/^metric\b/iu.test(inner)) continue;
+    const invocation = inner.match(/^metric\s*\(([\s\S]*)\)$/iu);
+    if (!invocation) {
+      errors.push('Use {{ metric("key") }} or {{ metric("query-id", "column", "currency|number|percent") }}.');
+      continue;
+    }
+    const rawArguments = splitMetricArguments(invocation[1]);
+    const argumentsList = rawArguments?.map(decodeMetricString);
+    if (!rawArguments || !argumentsList || argumentsList.some((value) => value == null)) {
+      errors.push("Metric binding arguments must be quoted strings with valid escapes.");
+      continue;
+    }
+    const values = argumentsList as string[];
+    if (values.length === 1) {
+      const key = values[0].toLocaleLowerCase("en-US");
+      if (!LEGACY_METRIC_KEY.test(key) || key.length > MAX_METRIC_IDENTITY_CHARS) {
+        errors.push("A legacy metric key may contain only letters, numbers, dots, underscores, and hyphens.");
+        continue;
+      }
+      bindings.push({ kind: "legacy", key, start, end });
+      continue;
+    }
+    if (values.length !== 3) {
+      errors.push('A Query metric needs exactly three arguments: metric("query-id", "column", "format").');
+      continue;
+    }
+    const [queryArtifactId, column, format] = values;
+    if (!validMetricIdentity(queryArtifactId) || !validMetricIdentity(column)) {
+      errors.push("Query metric ids and columns must be 1–120 visible characters.");
+      continue;
+    }
+    if (!QUERY_METRIC_FORMATS.includes(format as QueryMetricFormat)) {
+      errors.push(`Query metric format must be ${QUERY_METRIC_FORMATS.join(", ")}.`);
+      continue;
+    }
+    bindings.push({
+      kind: "query",
+      reference: { queryArtifactId, column, format: format as QueryMetricFormat },
+      start,
+      end,
+    });
+  }
+  return { bindings, errors: [...new Set(errors)] };
+}
+
 export function findMetricReferences(source: string): string[] {
   const references = new Set<string>();
-  for (const match of source.matchAll(metricPattern)) references.add(match[1]);
+  parseMetricBindings(source).bindings.forEach((binding) => {
+    if (binding.kind === "legacy") references.add(binding.key);
+  });
   return [...references];
+}
+
+export function findQueryMetricReferences(source: string): QueryMetricReference[] {
+  const references = new Map<string, QueryMetricReference>();
+  parseMetricBindings(source).bindings.forEach((binding) => {
+    if (binding.kind === "query") {
+      references.set(queryMetricReferenceKey(binding.reference), binding.reference);
+    }
+  });
+  return [...references.values()];
+}
+
+export function queryMetricSourceIdsForArtifact(source: string) {
+  return [...new Set(findQueryMetricReferences(source).map((reference) => reference.queryArtifactId))];
 }
 
 export function deriveWorkspaceMetrics(artifacts: WorkspaceArtifact[]): Record<string, WorkspaceMetric> {
@@ -100,20 +296,198 @@ export function deriveWorkspaceMetrics(artifacts: WorkspaceArtifact[]): Record<s
   return Object.fromEntries(values.map((metric) => [metric.key, metric]));
 }
 
-export function compileArtifactSource(source: string, artifacts: WorkspaceArtifact[]): CompiledArtifact {
+export function validateQueryMetricReference(
+  reference: QueryMetricReference,
+  artifacts: WorkspaceArtifact[],
+): QueryMetricValidation {
+  const queryArtifact = artifacts.find((artifact) => artifact.id === reference.queryArtifactId);
+  if (!queryArtifact) {
+    return { errors: [`Query metric source not found: ${reference.queryArtifactId}`] };
+  }
+  if (queryArtifact.kind !== "query") {
+    return { errors: [`Query metric source must reference a Query artifact: ${reference.queryArtifactId}`] };
+  }
+  const dataResolution = resolveQueryDataArtifact(queryArtifact, artifacts);
+  if (!dataResolution.artifact) {
+    return {
+      queryArtifact,
+      errors: dataResolution.errors.map((error) => `Query metric source: ${error}`),
+    };
+  }
+  const dataArtifact = dataResolution.artifact;
+  const parsedData = parseDataSource(dataArtifact.source);
+  if (parsedData.errors.length || !parsedData.columns.length) {
+    return {
+      queryArtifact,
+      dataArtifact,
+      errors: (parsedData.errors.length ? parsedData.errors : ["The bound Data artifact has no columns."])
+        .map((error) => `Query metric Data source: ${error}`),
+    };
+  }
+  const output = inferQueryOutputColumns(queryArtifact.source, parsedData.columns);
+  if (output.errors.length) {
+    return {
+      queryArtifact,
+      dataArtifact,
+      errors: output.errors.map((error) => `Query metric source: ${error}`),
+    };
+  }
+  if (!output.columns.includes(reference.column)) {
+    return {
+      queryArtifact,
+      dataArtifact,
+      errors: [`Query metric column not found in Query output: ${reference.column}`],
+    };
+  }
+  return { queryArtifact, dataArtifact, errors: [] };
+}
+
+function queryMetricNumber(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const number = Number(value.replace(/[$,%\s,]/gu, ""));
+  return Number.isFinite(number) ? number : null;
+}
+
+function formatQueryMetric(value: number, format: QueryMetricFormat) {
+  if (format === "currency") return formatCurrency(value);
+  if (format === "percent") return formatPercent(value);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+}
+
+function resolveQueryMetricReference(
+  reference: QueryMetricReference,
+  artifacts: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[],
+): QueryMetricResolution {
+  const validation = validateQueryMetricReference(reference, artifacts);
+  if (!validation.queryArtifact || !validation.dataArtifact || validation.errors.length) {
+    return { ...validation, pending: false, staticValid: false };
+  }
+  const snapshot = querySnapshots.find((candidate) => (
+    candidate.queryArtifactId === validation.queryArtifact?.id
+  ));
+  if (!snapshot) return { ...validation, pending: true, staticValid: true };
+  if (!workspaceQuerySnapshotIsCurrent(snapshot, validation.queryArtifact, validation.dataArtifact)) {
+    return {
+      ...validation,
+      pending: false,
+      staticValid: true,
+      errors: [`Query metric result is stale: ${reference.queryArtifactId}`],
+    };
+  }
+  if (snapshot.result.truncated) {
+    return {
+      ...validation,
+      pending: false,
+      staticValid: true,
+      errors: [`Query metric source exceeds 500 rows: ${reference.queryArtifactId}`],
+    };
+  }
+  if (snapshot.result.rows.length !== 1) {
+    return {
+      ...validation,
+      pending: false,
+      staticValid: true,
+      errors: [`Query metric source must return exactly one row: ${reference.queryArtifactId} returned ${snapshot.result.rows.length}.`],
+    };
+  }
+  const columnIndices = snapshot.result.columns.flatMap((column, index) => (
+    column === reference.column ? [index] : []
+  ));
+  if (columnIndices.length !== 1) {
+    return {
+      ...validation,
+      pending: false,
+      staticValid: true,
+      errors: [`Query metric column is missing or ambiguous at runtime: ${reference.column}`],
+    };
+  }
+  const value = queryMetricNumber(snapshot.result.rows[0]?.[columnIndices[0]]);
+  if (value == null) {
+    return {
+      ...validation,
+      pending: false,
+      staticValid: true,
+      errors: [`Query metric value must be a finite number: ${queryMetricReferenceLabel(reference)}`],
+    };
+  }
+  const key = queryMetricReferenceKey(reference);
+  return {
+    ...validation,
+    pending: false,
+    staticValid: true,
+    errors: [],
+    metric: {
+      ...reference,
+      key,
+      value,
+      formatted: formatQueryMetric(value, reference.format),
+      dataArtifactId: validation.dataArtifact.id,
+    },
+  };
+}
+
+export function compileArtifactSource(
+  source: string,
+  artifacts: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[] = [],
+): CompiledArtifact {
+  const parsedBindings = parseMetricBindings(source);
   const metrics = deriveWorkspaceMetrics(artifacts);
   const references = findMetricReferences(source);
   const unresolved = references.filter((reference) => !metrics[reference]);
+  const queryMetricReferences = findQueryMetricReferences(source);
+  const queryResolutions = new Map(queryMetricReferences.map((reference) => [
+    queryMetricReferenceKey(reference),
+    resolveQueryMetricReference(reference, artifacts, querySnapshots),
+  ]));
+  const unresolvedQueryMetrics = [...queryResolutions.values()].flatMap((resolution) => (
+    !resolution.staticValid ? resolution.errors : []
+  ));
+  const pendingQueryMetrics = queryMetricReferences
+    .filter((reference) => queryResolutions.get(queryMetricReferenceKey(reference))?.pending)
+    .map(queryMetricReferenceLabel);
+  const queryMetricRuntimeErrors = [...queryResolutions.values()].flatMap((resolution) => (
+    resolution.staticValid && !resolution.pending && !resolution.metric
+      ? resolution.errors
+      : []
+  ));
+  const queryMetrics = Object.fromEntries([...queryResolutions.entries()].flatMap(([key, resolution]) => (
+    resolution.metric ? [[key, resolution.metric]] : []
+  )));
   const chartReferences = findChartReferences(source);
   const unresolvedCharts = chartReferences.filter((reference) => (
     !artifacts.some((artifact) => artifact.id === reference && artifact.kind === "chart")
   ));
+
+  let compiledSource = "";
+  let cursor = 0;
+  parsedBindings.bindings.forEach((binding) => {
+    compiledSource += source.slice(cursor, binding.start);
+    if (binding.kind === "legacy") {
+      compiledSource += metrics[binding.key]?.formatted ?? `⚠ ${binding.key}`;
+    } else {
+      const resolution = queryResolutions.get(queryMetricReferenceKey(binding.reference));
+      compiledSource += resolution?.metric?.formatted
+        ?? (resolution?.pending ? "…" : `⚠ ${queryMetricReferenceLabel(binding.reference)}`);
+    }
+    cursor = binding.end;
+  });
+  compiledSource += source.slice(cursor);
+
   return {
-    source: source.replace(metricPattern, (_token, key: string) => metrics[key]?.formatted ?? `⚠ ${key}`),
+    source: compiledSource,
     references,
     unresolved,
+    queryMetricReferences,
+    unresolvedQueryMetrics: [...new Set(unresolvedQueryMetrics)],
+    pendingQueryMetrics,
+    queryMetricRuntimeErrors: [...new Set(queryMetricRuntimeErrors)],
+    metricBindingErrors: parsedBindings.errors,
     chartReferences,
     unresolvedCharts,
     metrics,
+    queryMetrics,
   };
 }

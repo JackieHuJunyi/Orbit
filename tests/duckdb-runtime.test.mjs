@@ -13,9 +13,11 @@ import { defaultArtifacts, parseDataSource } from "../app/lib/workspace.ts";
 
 test("executes the golden workspace query in DuckDB-Wasm", async () => {
   const data = defaultArtifacts.find((artifact) => artifact.kind === "data");
-  const query = defaultArtifacts.find((artifact) => artifact.kind === "query");
+  const query = defaultArtifacts.find((artifact) => artifact.id === "regional-analysis");
+  const summaryQuery = defaultArtifacts.find((artifact) => artifact.id === "regional-summary");
   assert.ok(data);
   assert.ok(query);
+  assert.ok(summaryQuery);
 
   const dist = path.resolve("node_modules/@duckdb/duckdb-wasm/dist");
   const database = await duckdb.createDuckDB({
@@ -34,6 +36,12 @@ test("executes the golden workspace query in DuckDB-Wasm", async () => {
     assert.equal(result.numRows, 4);
     assert.equal(first.Region, "APAC");
     assert.equal(first.margin_pct, 39.1);
+    const summary = connection.query(buildBoundedQuery(summaryQuery.source));
+    const scalar = summary.toArray()[0].toJSON();
+    assert.equal(summary.numRows, 1);
+    assert.equal(Number(scalar.total_q2_revenue), 4_820_000);
+    assert.equal(Number(scalar.qoq_growth_pct), 12.4);
+    assert.equal(Number(scalar.gross_margin_pct), 35);
   } finally {
     connection.close();
   }

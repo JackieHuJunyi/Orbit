@@ -49,7 +49,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Click a section for Agent/);
   assert.match(html, /data-preview-source-target="document-section"/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
-  assert.match(html, /linked metrics/);
+  assert.match(html, /SQL metrics/);
   assert.match(html, /Saved on device/);
   assert.match(html, /> New</);
   assert.match(html, /aria-label="Create a new artifact"/);
@@ -62,13 +62,14 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /q2-review\.md/);
   assert.match(html, /CSV \/ JSON/);
   assert.match(html, /regional-analysis\.sql/);
+  assert.match(html, /regional-summary\.sql/);
   assert.match(html, /DuckDB SQL/);
   assert.match(html, /regional-revenue\.chart\.json/);
   assert.match(html, /regional-margin\.chart\.json/);
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.23/);
+  assert.match(html, /Rune v0\.24/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -138,6 +139,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /-- rune:data/);
   assert.match(clientSource, /Explicit Data binding/);
   assert.match(clientSource, /Legacy first-Data binding/);
+  assert.match(clientSource, /compiled from SQL/);
+  assert.match(clientSource, /total_q2_revenue/);
   assert.match(clientSource, /Dependency graph/);
   assert.match(clientSource, /Current bindings and temporary pins choose a bounded, revision-live context pack/);
   assert.match(clientSource, /No hidden graph state/);

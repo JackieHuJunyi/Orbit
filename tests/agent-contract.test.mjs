@@ -28,6 +28,8 @@ const request = {
 test("accepts a bounded artifact request and preserves metric context", () => {
   const parsed = AgentRequestSchema.parse(request);
   assert.match(buildAgentInstructions(parsed), /Preserve useful headings/);
+  assert.match(buildAgentInstructions(parsed), /exact existing Query id/);
+  assert.match(buildAgentInstructions(parsed), /only Workspace scope may introduce or retarget/i);
   assert.match(buildAgentInput(parsed), /total_revenue/);
 });
 

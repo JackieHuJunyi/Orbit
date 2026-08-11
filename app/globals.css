@@ -875,7 +875,8 @@ textarea:focus-visible {
   color: #a5aaa6;
 }
 
-.dependency-relation.query { color: var(--query); }
+.dependency-relation.query,
+.dependency-relation.query-metric { color: var(--query); }
 .dependency-relation.chart-data,
 .dependency-relation.chart-query,
 .dependency-relation.chart-embed { color: var(--chart); }

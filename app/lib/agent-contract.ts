@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  MAX_WORKSPACE_AGENT_ARTIFACTS,
   MAX_WORKSPACE_AGENT_PINS,
   WORKSPACE_DEPENDENCY_KINDS,
 } from "./dependency-graph.ts";
@@ -162,7 +163,7 @@ export const AgentRequestSchema = z.object({
   scope: z.enum(["selection", "artifact", "workspace"]).default("artifact"),
   artifact: AgentArtifactSchema,
   selection: AgentSourceSelectionSchema.optional(),
-  workspaceArtifacts: z.array(AgentArtifactSchema).min(2).max(6).optional(),
+  workspaceArtifacts: z.array(AgentArtifactSchema).min(2).max(MAX_WORKSPACE_AGENT_ARTIFACTS).optional(),
   workspaceDependencies: z.array(AgentWorkspaceDependencySchema).max(32).optional(),
   workspacePinnedArtifactIds: z.array(z.string().min(1).max(120)).max(MAX_WORKSPACE_AGENT_PINS).optional(),
   prompt: z.string().trim().min(1).max(2_000),
@@ -234,11 +235,11 @@ export type AgentCompiledWorkspacePatch = z.infer<typeof AgentCompiledWorkspaceP
 export type AgentRequest = z.infer<typeof AgentRequestSchema>;
 
 const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
-  document: "The resulting source must be valid GitHub-Flavored Markdown. Prefer replace_markdown_section or insert_markdown_section_after for section work; use replace_text only for a precise inline edit. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
+  document: "The resulting source must be valid GitHub-Flavored Markdown. Prefer replace_markdown_section or insert_markdown_section_after for section work; use replace_text only for a precise inline edit. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding. A three-argument metric must name an exact existing Query id, an explicit output column, and currency, number, or percent; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
   data: "The resulting source must remain valid CSV or flat object JSON in the input format. Prefer upsert_data_row with an existing unique key column and typed cell values; use replace_text only for a precise structural edit. Preserve headers and types, and never invent hidden rows. Derived values must be deterministic from visible source values.",
   query: "Use only replace_text. The resulting source must be one read-only DuckDB SELECT or WITH query. Read the bound Data artifact through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid. Preserve an existing first-line -- rune:data \"artifact-id\" directive exactly. In Workspace scope, add or change that directive only to an exact existing Data artifact id from visible context; never invent an id.",
   chart: "Use only replace_text. The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing Data or Query artifact id and exact source/output column names; give every derived Query field an explicit AS alias. Keep mark as bar, color as a six-digit hex value, and maxItems between 1 and 20.",
-  slides: "For legacy semantic HTML use only replace_text. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding.",
+  slides: "For legacy semantic HTML use only replace_text. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding. A three-argument metric must name an exact existing Query id, an explicit output column, and currency, number, or percent; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
 };
 
 const deckMarkdownRule = "The resulting source must remain complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter. Prefer replace_deck_slide or insert_deck_slide_after for slide work; use replace_text only for frontmatter or a precise inline edit. A slide operation's slide field contains one complete slide without a --- separator. Keep only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never introduce raw HTML or manual slide numbers.";

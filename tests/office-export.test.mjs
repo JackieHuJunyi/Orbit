@@ -12,7 +12,11 @@ import {
 } from "../app/lib/office-export.ts";
 import { convertOfficeFile } from "../app/lib/office-import.ts";
 import { defaultArtifacts, parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
-import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
+import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
+
+function defaultRuntimeSnapshots() {
+  return [defaultQuerySnapshot(), defaultSummaryQuerySnapshot()];
+}
 
 function packageParts(bytes) {
   const parts = unzipSync(bytes);
@@ -127,8 +131,11 @@ test("exports CSV values as deterministic formula-safe XLSX and imports them bac
 test("exports Deck Markdown as deterministic semantic PPTX and imports it back", () => {
   const artifact = defaultArtifacts.find((candidate) => candidate.kind === "slides");
   assert.ok(artifact);
-  const first = exportOfficeArtifact(artifact, defaultArtifacts, [defaultQuerySnapshot()]);
-  const second = exportOfficeArtifact(artifact, defaultArtifacts, [defaultQuerySnapshot()]);
+  const snapshots = defaultRuntimeSnapshots();
+  const compiled = compileArtifactSource(artifact.source, defaultArtifacts, snapshots);
+  const exportArtifact = { ...artifact, source: compiled.source };
+  const first = exportOfficeArtifact(exportArtifact, defaultArtifacts, snapshots);
+  const second = exportOfficeArtifact(exportArtifact, defaultArtifacts, snapshots);
   assert.equal(first.targetType, "pptx");
   assert.equal(first.fileName, "board-briefing.pptx");
   assert.deepEqual(first.bytes, second.bytes);
@@ -188,10 +195,11 @@ test("exports compiled workspace metrics instead of canonical template tokens", 
   const document = defaultArtifacts.find((artifact) => artifact.kind === "document");
   const deck = defaultArtifacts.find((artifact) => artifact.kind === "slides");
   assert.ok(document && deck);
-  const compiled = compileArtifactSource(document.source, defaultArtifacts);
+  const snapshots = defaultRuntimeSnapshots();
+  const compiled = compileArtifactSource(document.source, defaultArtifacts, snapshots);
   assert.deepEqual(compiled.unresolved, []);
   assert.doesNotMatch(compiled.source, /\{\{\s*metric/);
-  const exported = exportOfficeArtifact({ ...document, source: compiled.source }, defaultArtifacts, [defaultQuerySnapshot()]);
+  const exported = exportOfficeArtifact({ ...document, source: compiled.source }, defaultArtifacts, snapshots);
   const parts = packageParts(exported.bytes);
   const documentXml = strFromU8(parts["word/document.xml"]);
   assert.doesNotMatch(documentXml, /\{\{\s*metric/);
@@ -203,9 +211,9 @@ test("exports compiled workspace metrics instead of canonical template tokens", 
   assert.doesNotMatch(documentXml, /Chart omitted/);
   assert.match(exported.warnings.join(" "), /semantic bar table/i);
 
-  const compiledDeck = compileArtifactSource(deck.source, defaultArtifacts);
+  const compiledDeck = compileArtifactSource(deck.source, defaultArtifacts, snapshots);
   assert.deepEqual(compiledDeck.unresolved, []);
-  const pptx = exportOfficeArtifact({ ...deck, source: compiledDeck.source }, defaultArtifacts, [defaultQuerySnapshot()]);
+  const pptx = exportOfficeArtifact({ ...deck, source: compiledDeck.source }, defaultArtifacts, snapshots);
   const slideXml = Object.entries(packageParts(pptx.bytes))
     .filter(([path]) => /^ppt\/slides\/slide\d+\.xml$/.test(path))
     .map(([, bytes]) => strFromU8(bytes))

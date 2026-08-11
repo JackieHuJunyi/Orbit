@@ -178,6 +178,31 @@ test("rejects a Query whose explicit Data binding is missing", () => {
   assert.equal(result.nextArtifacts, defaultArtifacts);
 });
 
+test("rejects a Query edit that breaks a downstream scalar metric", () => {
+  const query = defaultArtifacts.find((item) => item.id === "regional-summary");
+  assert.ok(query);
+  const result = prepareWorkspacePatch(defaultArtifacts, [{
+    artifactId: query.id,
+    summary: "Rename a scalar output",
+    detail: "The report and Deck bindings must veto an incompatible Query schema.",
+    nextSource: query.source.replace("total_q2_revenue", "renamed_total"),
+  }]);
+  assert.match(result.errors.join(" "), /Query metric column not found in Query output: total_q2_revenue/);
+  assert.equal(result.nextArtifacts, defaultArtifacts);
+});
+
+test("rejects malformed scalar metric syntax atomically", () => {
+  const document = artifact("document");
+  const result = prepareWorkspacePatch(defaultArtifacts, [{
+    artifactId: document.id,
+    summary: "Add an incomplete scalar binding",
+    detail: "Malformed source bindings must not reach persistence.",
+    nextSource: `${document.source}\n\nBroken: {{ metric("regional-summary", "total_q2_revenue") }}`,
+  }]);
+  assert.match(result.errors.join(" "), /needs exactly three arguments/);
+  assert.equal(result.nextArtifacts, defaultArtifacts);
+});
+
 test("rejects unresolved cross-file metric bindings atomically", () => {
   const document = artifact("document");
   const result = prepareWorkspacePatch(defaultArtifacts, [{

@@ -19,9 +19,21 @@ function resolvedCharts(
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
 ) {
-  const compiled = compileArtifactSource(artifact.source, workspace);
+  const compiled = compileArtifactSource(artifact.source, workspace, querySnapshots);
+  if (compiled.metricBindingErrors.length) {
+    throw new Error(`Fix the metric binding before HTML export: ${compiled.metricBindingErrors[0]}`);
+  }
   if (compiled.unresolved.length) {
     throw new Error(`Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before HTML export.`);
+  }
+  if (compiled.unresolvedQueryMetrics.length) {
+    throw new Error(`Resolve the Query metric before HTML export: ${compiled.unresolvedQueryMetrics[0]}`);
+  }
+  if (compiled.pendingQueryMetrics.length) {
+    throw new Error(`Run ${compiled.pendingQueryMetrics[0]} before HTML export.`);
+  }
+  if (compiled.queryMetricRuntimeErrors.length) {
+    throw new Error(`Query metric unavailable: ${compiled.queryMetricRuntimeErrors[0]}`);
   }
   if (compiled.unresolvedCharts.length) {
     throw new Error(`Resolve ${compiled.unresolvedCharts.length} missing chart ${compiled.unresolvedCharts.length === 1 ? "reference" : "references"} before HTML export.`);

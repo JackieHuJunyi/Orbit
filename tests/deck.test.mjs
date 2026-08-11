@@ -5,7 +5,7 @@ import { renderChartReferencesToHtml, resolveChartModel } from "../app/lib/chart
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "../app/lib/deck.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { defaultArtifacts, detectArtifact, parseDataSource, planLocalChange, validateArtifact } from "../app/lib/workspace.ts";
-import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
+import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function deckArtifact() {
   const artifact = defaultArtifacts.find((item) => item.kind === "slides");
@@ -26,7 +26,11 @@ test("parses the bounded Deck Markdown grammar", () => {
 });
 
 test("compiles metrics, numbering, and a shared chart into static deck HTML", () => {
-  const compiledBindings = compileArtifactSource(deckArtifact().source, defaultArtifacts);
+  const compiledBindings = compileArtifactSource(
+    deckArtifact().source,
+    defaultArtifacts,
+    [defaultSummaryQuerySnapshot()],
+  );
   const deck = compileDeckSource(compiledBindings.source);
   assert.deepEqual(deck.errors, []);
   assert.equal(deck.slideCount, 4);

@@ -3,7 +3,11 @@ import test from "node:test";
 
 import { exportDeckHtml, MAX_STANDALONE_HTML_BYTES } from "../app/lib/html-export.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
-import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
+import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
+
+function defaultRuntimeSnapshots() {
+  return [defaultQuerySnapshot(), defaultSummaryQuerySnapshot()];
+}
 
 function defaultDeck() {
   const deck = defaultArtifacts.find((artifact) => artifact.kind === "slides");
@@ -14,8 +18,8 @@ function defaultDeck() {
 test("exports a deterministic self-contained Deck HTML handoff", () => {
   const deck = defaultDeck();
   const sourceBefore = deck.source;
-  const first = exportDeckHtml(deck, defaultArtifacts, [defaultQuerySnapshot()]);
-  const second = exportDeckHtml(deck, defaultArtifacts, [defaultQuerySnapshot()]);
+  const first = exportDeckHtml(deck, defaultArtifacts, defaultRuntimeSnapshots());
+  const second = exportDeckHtml(deck, defaultArtifacts, defaultRuntimeSnapshots());
   assert.equal(first.targetType, "html");
   assert.equal(first.fileName, "board-briefing.html");
   assert.equal(first.mimeType, "text/html;charset=utf-8");
@@ -51,7 +55,11 @@ test("rejects unsupported or unresolved HTML export inputs", () => {
     /missing metric reference/i,
   );
   assert.throws(
-    () => exportDeckHtml({ ...deck, source: deck.source.replace("regional-revenue-chart", "missing-chart") }, defaultArtifacts),
+    () => exportDeckHtml(
+      { ...deck, source: deck.source.replace("regional-revenue-chart", "missing-chart") },
+      defaultArtifacts,
+      defaultRuntimeSnapshots(),
+    ),
     /missing chart reference/i,
   );
 });
@@ -65,7 +73,7 @@ test("sanitizes portable HTML filenames and hostile deck metadata", () => {
       .replace("Q2 · Board Briefing", "<img src=x onerror=alert(1)>")
       .replace(/\{\{ chart\("regional-revenue-chart"\) \}\}/g, "Chart intentionally removed"),
   };
-  const result = exportDeckHtml(deck, defaultArtifacts, [defaultQuerySnapshot()]);
+  const result = exportDeckHtml(deck, defaultArtifacts, defaultRuntimeSnapshots());
   assert.equal(result.fileName, "rune-CON.html");
   const html = new TextDecoder().decode(result.bytes);
   assert.doesNotMatch(html, /<script>|<img/i);

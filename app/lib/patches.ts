@@ -66,7 +66,9 @@ export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): stri
 
   artifacts.forEach((artifact) => {
     const compiled = compileArtifactSource(artifact.source, artifacts);
+    compiled.metricBindingErrors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
     compiled.unresolved.forEach((key) => errors.push(`${artifact.name}: unresolved metric ${key}.`));
+    compiled.unresolvedQueryMetrics.forEach((error) => errors.push(`${artifact.name}: ${error}`));
     compiled.unresolvedCharts.forEach((key) => errors.push(`${artifact.name}: unresolved chart ${key}.`));
   });
 

@@ -28,3 +28,28 @@ export function defaultQuerySnapshot() {
     engine: "DuckDB-Wasm fixture",
   });
 }
+
+export function defaultSummaryQuerySnapshot() {
+  const query = defaultArtifacts.find((artifact) => artifact.id === "regional-summary");
+  const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
+  assert.ok(query);
+  assert.ok(data);
+  const columns = [
+    "total_q2_revenue",
+    "qoq_growth_pct",
+    "gross_margin_pct",
+    "apac_revenue",
+    "total_customers",
+  ];
+  const rows = [[4_820_000, 12.4, 35, 1_840_000, 392]];
+  return createWorkspaceQuerySnapshot(query, data, {
+    columns,
+    rows,
+    sourceRowIndices: [null],
+    cellLineage: [columns.map(() => null)],
+    lineageMode: "read-only",
+    elapsedMs: 3,
+    truncated: false,
+    engine: "DuckDB-Wasm scalar fixture",
+  });
+}

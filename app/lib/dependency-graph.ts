@@ -1,4 +1,10 @@
-import { deriveWorkspaceMetrics, findMetricReferences } from "./bindings.ts";
+import {
+  deriveWorkspaceMetrics,
+  findMetricReferences,
+  findQueryMetricReferences,
+  parseMetricBindings,
+  validateQueryMetricReference,
+} from "./bindings.ts";
 import { findChartReferences, parseChartSource } from "./charts.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
@@ -6,12 +12,13 @@ import type { WorkspaceArtifact } from "./workspace.ts";
 export const WORKSPACE_DEPENDENCY_KINDS = [
   "metric",
   "query",
+  "query-metric",
   "chart-data",
   "chart-query",
   "chart-embed",
 ] as const;
 
-export const MAX_WORKSPACE_AGENT_ARTIFACTS = 6;
+export const MAX_WORKSPACE_AGENT_ARTIFACTS = 7;
 export const MAX_WORKSPACE_AGENT_PINS = MAX_WORKSPACE_AGENT_ARTIFACTS - 1;
 export const MAX_WORKSPACE_AGENT_ARTIFACT_CHARS = 100_000;
 export const MAX_WORKSPACE_AGENT_CONTEXT_CHARS = 180_000;
@@ -84,6 +91,41 @@ export function buildWorkspaceDependencyGraph(
         });
       });
     }
+
+    const parsedMetricBindings = parseMetricBindings(artifact.source);
+    parsedMetricBindings.errors.forEach((error) => {
+      issues.push({
+        artifactId: artifact.id,
+        kind: "query-metric",
+        target: "metric binding",
+        message: error,
+      });
+    });
+    const queryMetricGroups = new Map<string, string[]>();
+    findQueryMetricReferences(artifact.source).forEach((reference) => {
+      const validation = validateQueryMetricReference(reference, artifacts);
+      if (!validation.queryArtifact || validation.errors.length) {
+        issues.push({
+          artifactId: artifact.id,
+          kind: "query-metric",
+          target: `${reference.queryArtifactId}.${reference.column}`,
+          message: validation.errors[0] ?? "Query metric binding is invalid.",
+        });
+        return;
+      }
+      const references = queryMetricGroups.get(validation.queryArtifact.id) ?? [];
+      references.push(`${reference.column}:${reference.format}`);
+      queryMetricGroups.set(validation.queryArtifact.id, references);
+    });
+    queryMetricGroups.forEach((references, queryArtifactId) => {
+      addEdge({
+        fromArtifactId: queryArtifactId,
+        toArtifactId: artifact.id,
+        kind: "query-metric",
+        label: plural(references.length, "scalar metric"),
+        references: [...new Set(references)].slice(0, MAX_WORKSPACE_DEPENDENCY_REFERENCES),
+      });
+    });
 
     if (artifact.kind === "query") {
       const resolution = resolveQueryDataArtifact(artifact, artifacts);

@@ -1492,3 +1492,19 @@ dependency graph 也从顺序推断升级成 identity edge。显式 Query 产生
 兼容不能靠静默重写用户 SQL。已经导入、同步或保存在设备上的 directive-free Query 继续读取第一份 Data，已有 source byte 不变；只有新的默认 Query 和本地 planner 生成的后续版本使用或保留显式 directive。这个回退仍进入 graph、snapshot revision 和完整校验，因此不会比旧版更危险，只是会在 UI 中诚实标注顺序依赖。缺失或错误的显式 target 不会降级到第一份 Data，因为那会把拼写错误变成另一份看似正常的结果。
 
 这一轮没有新增数据库、索引、manifest metadata 或 hosted service，binding 只存在于已经可 diff 的 `.sql`。它也没有假装解决多表 JOIN：当前每个 Query 仍只装载一个 `workspace_data`，从而保留一对一 lineage 的安全边界。下一步可以让 user-defined metric 从显式 Query output 读取一个 scalar，逐步移除 metrics 对第一份 Data 的最后一处硬编码；只有在 relation-qualified provenance set 设计完成后，才应该让一条 Query 同时绑定多份 Data。
+
+## 28. Query scalar metric：让每个 KPI 都能指出自己的 SQL 证据
+
+v0.23 已让 Query 明确绑定 Data，但报告和 Deck 中的数字仍大多来自最早 demo 的一参数 `metric("name")`。这些 legacy metrics 由 workspace 中第一份 Data 直接计算，只有一张表时足够简洁；当用户导入多个 worksheet、重排 manifest 或需要用 SQL 聚合时，它们既无法说明选择了哪份 Data，也无法表达筛选、分组和业务公式。更危险的是，展示出来的 KPI 可能继续“看起来正确”，却没有一条可导航、可审查的计算链。v0.24 的目标因此不是增加更多硬编码 metric 名，而是让数字直接引用一份可读 Query 的一个输出列。
+
+新的 source 形式刻意保持窄而明确：`{{ metric("query-id", "column", "currency|number|percent") }}`。三个参数都必须是 quoted string；Query id 和 output column 使用精确 identity，format 只能从三个展示枚举中选择。这个语法没有嵌入 SQL、公式表达式或任意 formatter，因此正文仍适合阅读和 diff，计算逻辑只存在于 `.sql`，格式只影响呈现。原有一参数 `metric("top_region")` 继续兼容，Rune 不静默改写旧文件，也不把两种语义伪装成同一种 binding。
+
+scalar 必须同时通过静态合同和运行时证据。静态阶段不启动 DuckDB，只解析 Query 的显式 Data source 和保守 output schema；缺失 Query/Data、无显式 alias、重复列名、字段改名或错误 format 会在 workspace mutation review 前否决整笔事务。运行阶段只接受绑定当前 Query source 与当前 resolved Data id/source 的 snapshot，并要求结果未截断、恰好一行、目标列唯一且值是 finite number。零行、多行、字符串、`NaN`、无穷值、旧 revision 或尚未完成的执行都 fail closed，preview 显示 pending/error，而不会沿用旧数字。
+
+preview coordinator 现在收集目标 Document/Deck 中 Chart 和 scalar metric 所需 Query 的并集，同一 Query 的所有 consumer 共享一个 revision-keyed snapshot。Office 和 standalone HTML export 不依赖用户是否打开过 preview，而是在准备交付时重新执行这份并集，再把格式化数字与 Chart 一起冻结。运行结果仍只是一份 ephemeral evidence：不会进入 localStorage、checkpoint、folder manifest、Git 或新的数据库，canonical truth 仍是 Data、SQL 和消费它们的 Markdown/Deck source。
+
+dependency graph 为每组 scalar reference 增加 `Query → consumer` 的 `query-metric` edge，并复用已有的 `bound Data → Query` edge，于是默认报告第一次拥有完整的 `regional-revenue.csv → regional-summary.sql → report/deck` 数字链。Workspace Agent context 会沿这条链纳入确切 Query 和 Data，客户端与服务端都从 canonical source 重编并比对 edge。Selection/File scope 不能新建或改指跨文件 Query metric；只有 Workspace scope 在相关文件确实位于可验证 context 时才能这样做。无论模型计划是否合理，最终 Apply 仍在完整 device workspace 上重跑 schema 和 binding safety，所以被 context cap 省略的 consumer 仍保有否决权。
+
+默认 workspace 新增 `regional-summary.sql`，用一行聚合输出总收入、环比、毛利率、APAC 收入和客户数；报告与 Deck 的数值 KPI 已迁移到这份 Query，`top_region` 则故意保留为 legacy compatibility 示例。完整默认闭包因此多了一个真实上游文件。为了仍允许用户在默认六文件链之外 pin 一份独立材料，Workspace Agent 文件上限从 6 提到 7、pin 上限从 5 提到 6，总字符上限仍保持 180,000；这是一项显式 capability 调整，而不是放宽 provider 可见性的通用理由。
+
+这一轮仍没有引入 hosted compute、多表 JOIN、文本 scalar 或用户自定义脚本 formatter。numeric-only 与 exactly-one-row 是为了先把 cardinality、revision 和失败语义做实；文本标签仍可暂时使用兼容 metric，集合结果应继续用 Chart 或表格。下一步若支持 text scalar，应先定义空值、locale 与 escaping 合同；若支持多 Data Query，则必须先把 relation-qualified revision/provenance set 纳入 snapshot 和 graph。Rune 先保证每个可见数字都能回答“来自哪份 SQL、哪一列、哪一版 Data”，再扩大表达能力。

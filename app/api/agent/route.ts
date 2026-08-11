@@ -21,6 +21,11 @@ import {
   dependencyEdgesForContext,
   selectWorkspaceAgentContext,
 } from "../../lib/dependency-graph.ts";
+import {
+  findQueryMetricReferences,
+  parseMetricBindings,
+  queryMetricReferenceKey,
+} from "../../lib/bindings.ts";
 
 const DEFAULT_MODEL = "gpt-5.6";
 
@@ -148,6 +153,25 @@ export async function POST(request: Request) {
     const artifactPlan = AgentCompiledPatchSchema.safeParse(compiled.plan);
     if (!artifactPlan.success) {
       return Response.json({ error: "The model returned an invalid compiled artifact patch." }, { status: 502 });
+    }
+    const metricBindingErrors = parseMetricBindings(artifactPlan.data.nextSource).errors;
+    if (metricBindingErrors.length) {
+      return Response.json({
+        error: "The compiled model operations produced an invalid metric binding.",
+        details: metricBindingErrors.slice(0, 3),
+      }, { status: 502 });
+    }
+    const originalQueryMetrics = findQueryMetricReferences(parsed.data.artifact.source)
+      .map(queryMetricReferenceKey)
+      .sort();
+    const nextQueryMetrics = findQueryMetricReferences(artifactPlan.data.nextSource)
+      .map(queryMetricReferenceKey)
+      .sort();
+    if (originalQueryMetrics.length !== nextQueryMetrics.length
+      || originalQueryMetrics.some((reference, index) => reference !== nextQueryMetrics[index])) {
+      return Response.json({
+        error: "Cross-file Query metric bindings can be introduced or retargeted only in Workspace scope.",
+      }, { status: 502 });
     }
     if (parsed.data.scope === "selection" && parsed.data.selection) {
       const selectionErrors = validateCompiledSelectionPatch(

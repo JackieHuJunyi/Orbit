@@ -113,6 +113,27 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   assert.match(providerRequest.input[0].content, /Markdown by exact heading|ordered edits/i);
 });
 
+test("rejects a cross-file Query metric introduced outside Workspace scope", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Bind a hidden Query metric",
+    detail: "Artifact scope must not create a cross-file dependency it could not inspect.",
+    edits: [{
+      type: "replace_text",
+      find: "Old conclusion.",
+      replace: '{{ metric("regional-summary", "total_q2_revenue", "currency") }}',
+    }],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody()),
+  }));
+  assert.equal(response.status, 502);
+  assert.match((await response.json()).error, /only in Workspace scope/i);
+});
+
 test("returns a Selection Agent patch only when every compiled change stays in range", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const source = "# Report\n\nOld conclusion.\n\nKeep this paragraph.";

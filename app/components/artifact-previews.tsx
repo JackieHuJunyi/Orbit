@@ -14,7 +14,7 @@ import {
   Rows3,
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
-import { compileArtifactSource } from "../lib/bindings";
+import { compileArtifactSource, queryMetricSourceIdsForArtifact } from "../lib/bindings";
 import {
   chartQuerySourceIdsForArtifact,
   parseChartSource,
@@ -59,11 +59,16 @@ function usePreviewQueryRuntime(
   artifact: WorkspaceArtifact,
   artifacts: WorkspaceArtifact[],
 ): QueryRuntime {
-  const requiredQueryIds = useMemo(() => (
-    artifact.kind === "query"
-      ? [artifact.id]
-      : chartQuerySourceIdsForArtifact(artifact, artifacts)
-  ), [artifact, artifacts]);
+  const requiredQueryIds = useMemo(() => {
+    if (artifact.kind === "query") return [artifact.id];
+    const ids = new Set([
+      ...chartQuerySourceIdsForArtifact(artifact, artifacts),
+      ...queryMetricSourceIdsForArtifact(artifact.source),
+    ]);
+    return artifacts
+      .filter((candidate) => candidate.kind === "query" && ids.has(candidate.id))
+      .map((candidate) => candidate.id);
+  }, [artifact, artifacts]);
   const queryArtifacts = useMemo(() => requiredQueryIds.flatMap((queryId) => {
     const query = artifacts.find((candidate) => candidate.id === queryId && candidate.kind === "query");
     return query ? [query] : [];
@@ -165,6 +170,12 @@ function resolvePreviewChart(
     return resolveChartModel(chartArtifact, artifacts, parseDataSource, [entry.snapshot]);
   }
   return resolveChartModel(chartArtifact, artifacts, parseDataSource);
+}
+
+function readyQuerySnapshots(queryRuntime: QueryRuntime) {
+  return Object.values(queryRuntime).flatMap((entry) => (
+    entry.status === "ready" ? [entry.snapshot] : []
+  ));
 }
 
 function EmptyPreview({ message }: { message: string }) {
@@ -341,7 +352,11 @@ function DocumentPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
 }) {
-  const compiled = compileArtifactSource(artifact.source, artifacts);
+  const compiled = compileArtifactSource(
+    artifact.source,
+    artifacts,
+    readyQuerySnapshots(queryRuntime),
+  );
   return (
     <div className="document-stage">
       <article className="document-paper">
@@ -676,7 +691,11 @@ export function ArtifactPreview({
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
-  const compiled = compileArtifactSource(artifact.source, artifacts);
+  const compiled = compileArtifactSource(
+    artifact.source,
+    artifacts,
+    readyQuerySnapshots(queryRuntime),
+  );
   if (artifact.kind === "data") {
     const targets = deriveDataPreviewSourceTargets(artifact);
     return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} />;

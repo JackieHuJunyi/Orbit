@@ -218,7 +218,7 @@ export function inferQueryOutputColumns(
   const words = topLevelWords(query);
   const selectWords = words.filter((word) => word.value === "select");
   if (selectWords.length !== 1) {
-    return { columns: [], errors: ["A Chart query source needs one outer SELECT projection."] };
+    return { columns: [], errors: ["A downstream Query source needs one outer SELECT projection."] };
   }
   const selectWord = selectWords[0];
   const followingWords = words.filter((word) => word.start >= selectWord.end);
@@ -260,7 +260,7 @@ export function inferQueryOutputColumns(
       if (!workspaceStarSource || !qualifierMatches || !workspaceDataColumns.length) {
         return {
           columns: [],
-          errors: ["Chart-bound Query stars must expand directly from workspace_data with known canonical columns."],
+          errors: ["Downstream Query stars must expand directly from workspace_data with known canonical columns."],
         };
       }
       columns.push(...workspaceDataColumns);
@@ -270,14 +270,14 @@ export function inferQueryOutputColumns(
     if (!outputName) {
       return {
         columns: [],
-        errors: ["Give every derived Query field used by a Chart an explicit AS alias."],
+        errors: ["Give every derived Query field used downstream an explicit AS alias."],
       };
     }
     columns.push(outputName);
   }
 
-  if (!columns.length) return { columns: [], errors: ["A Chart query source needs at least one output column."] };
-  if (columns.length > 256) return { columns: [], errors: ["A Chart query source is limited to 256 output columns."] };
+  if (!columns.length) return { columns: [], errors: ["A downstream Query source needs at least one output column."] };
+  if (columns.length > 256) return { columns: [], errors: ["A downstream Query source is limited to 256 output columns."] };
   const seen = new Set<string>();
   for (const column of columns) {
     const normalized = column.toLocaleLowerCase("en-US");

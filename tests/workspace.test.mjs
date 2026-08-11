@@ -14,10 +14,12 @@ import {
   compileArtifactSource,
   deriveWorkspaceMetrics,
   findMetricReferences,
+  findQueryMetricReferences,
 } from "../app/lib/bindings.ts";
 import { prepareWorkspacePatch, validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { compileDeckSource } from "../app/lib/deck.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
+import { defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 test("parses the sample CSV without sending data anywhere", () => {
   const artifact = defaultArtifacts.find((item) => item.kind === "data");
@@ -111,12 +113,14 @@ test("compiles document and slide metrics from the shared CSV source", () => {
   const slides = defaultArtifacts.find((item) => item.kind === "slides");
   assert.ok(document);
   assert.ok(slides);
-  const documentResult = compileArtifactSource(document.source, defaultArtifacts);
-  const slidesResult = compileArtifactSource(slides.source, defaultArtifacts);
+  const summarySnapshot = defaultSummaryQuerySnapshot();
+  const documentResult = compileArtifactSource(document.source, defaultArtifacts, [summarySnapshot]);
+  const slidesResult = compileArtifactSource(slides.source, defaultArtifacts, [summarySnapshot]);
   assert.match(documentResult.source, /\$4\.82M/);
-  assert.match(documentResult.source, /\+12\.4%/);
+  assert.match(documentResult.source, /12\.4%/);
   assert.doesNotMatch(documentResult.source, /\{\{\s*metric/);
-  assert.ok(findMetricReferences(slides.source).length >= 4);
+  assert.deepEqual(findMetricReferences(slides.source), ["top_region"]);
+  assert.equal(findQueryMetricReferences(slides.source).length, 3);
   assert.deepEqual(slidesResult.unresolved, []);
   assert.deepEqual(documentResult.chartReferences, ["regional-revenue-chart", "regional-margin-chart"]);
   assert.deepEqual(slidesResult.chartReferences, ["regional-revenue-chart", "regional-margin-chart"]);
@@ -130,9 +134,17 @@ test("recompiles every artifact when the canonical data changes", () => {
   const metrics = deriveWorkspaceMetrics(changed);
   assert.equal(metrics.total_revenue.formatted, "$5.82M");
   const document = changed.find((item) => item.kind === "document");
+  const changedData = changed.find((item) => item.kind === "data");
   assert.ok(document);
-  assert.match(compileArtifactSource(document.source, changed).source, /\$5\.82M/);
-  assert.match(document.source, /metric\("total_revenue"\)/);
+  assert.ok(changedData);
+  const snapshot = defaultSummaryQuerySnapshot();
+  const changedSnapshot = {
+    ...snapshot,
+    dataSource: changedData.source,
+    result: { ...snapshot.result, rows: [[5_820_000, 35.7, 45, 2_840_000, 392]] },
+  };
+  assert.match(compileArtifactSource(document.source, changed, [changedSnapshot]).source, /\$5\.82M/);
+  assert.match(document.source, /metric\("regional-summary", "total_q2_revenue", "currency"\)/);
 });
 
 test("coordinates analysis, report, and slides as one valid local workspace plan", () => {

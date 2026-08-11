@@ -41,11 +41,11 @@ const documentSource = `# Q2 Business Review
 
 ## Executive summary
 
-Revenue reached **{{ metric("total_revenue") }}**, up **{{ metric("qoq_growth") }} quarter over quarter**. **{{ metric("top_region") }}** led growth while gross margin reached **{{ metric("gross_margin") }}**.
+Revenue reached **{{ metric("regional-summary", "total_q2_revenue", "currency") }}**, up **{{ metric("regional-summary", "qoq_growth_pct", "percent") }} quarter over quarter**. **{{ metric("top_region") }}** led growth while gross margin reached **{{ metric("regional-summary", "gross_margin_pct", "percent") }}**.
 
 ## What changed
 
-- The leading region contributed {{ metric("region.apac.revenue") }} after the partner launch.
+- The leading region contributed {{ metric("regional-summary", "apac_revenue", "currency") }} after the partner launch.
 - Gross margin improved 2.8 points as infrastructure costs normalized.
 - Enterprise retention held above 96%.
 
@@ -85,6 +85,15 @@ SELECT
   Customers
 FROM workspace_data
 ORDER BY "Q2 Revenue" DESC;`;
+
+const summaryQuerySource = `${formatQueryDataSourceDirective("regional-revenue")}
+SELECT
+  SUM("Q2 Revenue") AS total_q2_revenue,
+  ROUND((SUM("Q2 Revenue") / NULLIF(SUM("Q1 Revenue"), 0) - 1) * 100, 1) AS qoq_growth_pct,
+  ROUND((SUM("Q2 Revenue") - SUM(Cost)) / NULLIF(SUM("Q2 Revenue"), 0) * 100, 1) AS gross_margin_pct,
+  SUM(CASE WHEN Region = 'APAC' THEN "Q2 Revenue" ELSE 0 END) AS apac_revenue,
+  SUM(Customers) AS total_customers
+FROM workspace_data;`;
 
 const chartSource = `{
   "version": 1,
@@ -138,7 +147,7 @@ A shared story compiled from the same source as the operating data and written r
 
 | Q2 revenue | Quarter over quarter | Gross margin |
 | --- | --- | --- |
-| **{{ metric("total_revenue") }}** | **{{ metric("qoq_growth") }}** | **{{ metric("gross_margin") }}** |
+| **{{ metric("regional-summary", "total_q2_revenue", "currency") }}** | **{{ metric("regional-summary", "qoq_growth_pct", "percent") }}** | **{{ metric("regional-summary", "gross_margin_pct", "percent") }}** |
 
 ---
 
@@ -184,6 +193,13 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
     kind: "query",
     language: "DuckDB SQL",
     source: querySource,
+  },
+  {
+    id: "regional-summary",
+    name: "regional-summary.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: summaryQuerySource,
   },
   {
     id: "regional-revenue-chart",
@@ -370,7 +386,7 @@ function insertAfterTitle(source: string, block: string): string {
 
 function planDocument(source: string, prompt: string): LocalPlan {
   if (/三条|要点|summary|摘要/i.test(prompt)) {
-    const block = `## Executive summary\n\n- Revenue reached **{{ metric("total_revenue") }}**, with **{{ metric("qoq_growth") }}** quarter-over-quarter growth.\n- **{{ metric("top_region") }}** became the leading growth engine after the partner launch.\n- Gross margin reached **{{ metric("gross_margin") }}**, increasing confidence in Q3.`;
+    const block = `## Executive summary\n\n- Revenue reached **{{ metric("regional-summary", "total_q2_revenue", "currency") }}**, with **{{ metric("regional-summary", "qoq_growth_pct", "percent") }}** quarter-over-quarter growth.\n- **{{ metric("top_region") }}** became the leading growth engine after the partner launch.\n- Gross margin reached **{{ metric("regional-summary", "gross_margin_pct", "percent") }}**, increasing confidence in Q3.`;
     const pattern = /## Executive summary[\s\S]*?(?=\n## |$)/i;
     return {
       nextSource: pattern.test(source) ? source.replace(pattern, block) : insertAfterTitle(source, block),
