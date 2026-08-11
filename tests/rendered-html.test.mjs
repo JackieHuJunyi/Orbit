@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.27\.1/);
+  assert.match(html, /Rune v0\.28/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -96,6 +96,15 @@ test("keeps the Office compatibility parser out of the initial client bundle", a
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/agent-evidence.ts"));
   assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/query-preflight.ts"));
+});
+
+test("ships exactly one compiler-guided repair request site before the repeated runtime gate", async () => {
+  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  assert.equal(source.split("runtimeRepair: repairFeedback").length - 1, 1);
+  assert.match(source, /repairPayload\.repairAttempt === 1/);
+  assert.match(source, /preflightRuntimeImpact\(\s*replacementPlan\.patches,\s*replacementPlan\.creations/);
+  assert.match(source, /Automatic repair stopped after one attempt/);
+  assert.match(source, /Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged/);
 });
 
 test("ships a review-before-write import surface in the client", async () => {
@@ -166,6 +175,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);
   assert.match(clientSource, /Runtime impact preflight passed/);
   assert.match(clientSource, /Runtime impact preflight failed/);
+  assert.match(clientSource, /one automatic repair attempt stopped/);
+  assert.match(clientSource, /Recovered after one compiler-guided repair/);
+  assert.match(clientSource, /First proposal stayed unapplied/);
+  assert.match(clientSource, /repaired once from local compiler feedback/);
   assert.match(clientSource, /impacted.*Queries.*executed locally/);
   assert.match(clientSource, /legacy metric/);
 });

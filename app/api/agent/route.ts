@@ -161,7 +161,12 @@ export async function POST(request: Request) {
           details: prepared.errors.slice(0, 3),
         }, { status: 502 });
       }
-      return Response.json({ provider: "openai", model, plan: workspacePlan.data });
+      return Response.json({
+        provider: "openai",
+        model,
+        repairAttempt: parsed.data.runtimeRepair?.attempt,
+        plan: workspacePlan.data,
+      });
     }
 
     const operationPlan = AgentOperationPatchSchema.safeParse(response.output_parsed);
@@ -224,6 +229,7 @@ export async function POST(request: Request) {
     return Response.json({
       provider: "openai",
       model,
+      repairAttempt: parsed.data.runtimeRepair?.attempt,
       plan: artifactPlan.data,
     });
   } catch {

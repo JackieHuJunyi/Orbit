@@ -1399,7 +1399,8 @@ textarea:focus-visible {
   line-height: 1.35;
 }
 
-.runtime-preflight {
+.runtime-preflight,
+.runtime-repair {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: start;
@@ -1412,24 +1413,38 @@ textarea:focus-visible {
   color: #287352;
 }
 
-.runtime-preflight > svg {
+.runtime-repair {
+  border-color: #cbd8df;
+  background: #eef5f8;
+  color: #315f73;
+}
+
+.runtime-preflight > svg,
+.runtime-repair > svg {
   width: 15px;
   height: 15px;
 }
 
-.runtime-preflight > span {
+.runtime-preflight > span,
+.runtime-repair > span {
   display: grid;
   gap: 1px;
 }
 
-.patch-copy .runtime-preflight strong {
+.patch-copy .runtime-preflight strong,
+.patch-copy .runtime-repair strong {
   font-size: 9px;
 }
 
-.runtime-preflight small {
+.runtime-preflight small,
+.runtime-repair small {
   color: #4f6d5c;
   font-size: 8px;
   line-height: 1.35;
+}
+
+.runtime-repair small {
+  color: #516c79;
 }
 
 .diff-summary {

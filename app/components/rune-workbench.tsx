@@ -105,6 +105,7 @@ import {
 import type { ArtifactExportResult } from "../lib/export-contract";
 import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
 import type { RuntimeImpactPreflight } from "../lib/query-preflight";
+import { buildAgentRuntimeRepair, type AgentRuntimeRepair } from "../lib/agent-repair";
 import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
   MAX_WORKSPACE_AGENT_ARTIFACT_CHARS,
@@ -147,6 +148,7 @@ type PendingChange = {
   detail: string;
   patches: ArtifactSourcePatch[];
   creations: ArtifactCreationChange[];
+  runtimeRepair?: Pick<AgentRuntimeRepair, "attempt" | "failure">;
   runtimePreflight?: RuntimeImpactPreflight;
 };
 
@@ -173,6 +175,7 @@ type RemoteAgentResponse = {
   model?: string;
   plan?: unknown;
   queryArtifactIds?: string[];
+  repairAttempt?: number;
 };
 
 function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
@@ -1021,12 +1024,35 @@ export function RuneWorkbench() {
           prompt: instruction,
           metrics,
         };
-        const sendRemoteRequest = (body: typeof remoteRequest & { queryEvidence?: unknown }) => fetch("/api/agent", {
+        type RemoteRequestBody = typeof remoteRequest & {
+          queryEvidence?: unknown;
+          runtimeRepair?: AgentRuntimeRepair;
+        };
+        const sendRemoteRequest = (body: RemoteRequestBody) => fetch("/api/agent", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
         });
-        let response = await sendRemoteRequest(remoteRequest);
+        const normalizeRemotePlan = (candidate: unknown): RemoteWorkspacePlan | null => {
+          if (scope === "workspace" && isRemoteWorkspacePlan(candidate)) return candidate;
+          if (scope !== "workspace" && isRemoteSinglePlan(candidate)) {
+            return {
+              summary: candidate.summary,
+              detail: candidate.detail,
+              patches: [{ artifactId: targetArtifact.id, ...candidate }],
+              creations: [],
+            };
+          }
+          return null;
+        };
+        const stopRemoteRepair = (message: string) => {
+          setPendingChange(null);
+          setAgentError(message);
+          setNotice("Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged");
+          setAgentState("idle");
+        };
+        let remoteBody: RemoteRequestBody = remoteRequest;
+        let response = await sendRemoteRequest(remoteBody);
         let payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
         let queryEvidenceCount = 0;
 
@@ -1051,47 +1077,70 @@ export function RuneWorkbench() {
             runWorkspaceQuerySnapshot,
           );
           queryEvidenceCount = queryEvidence.length;
-          response = await sendRemoteRequest({ ...remoteRequest, queryEvidence });
+          remoteBody = { ...remoteRequest, queryEvidence };
+          response = await sendRemoteRequest(remoteBody);
           payload = await response.json().catch(() => ({})) as RemoteAgentResponse;
         }
 
-        if (response.ok && scope === "workspace" && isRemoteWorkspacePlan(payload.plan)) {
+        let remotePlan = response.ok ? normalizeRemotePlan(payload.plan) : null;
+        if (remotePlan) {
           let runtimePreflight: RuntimeImpactPreflight | undefined;
+          let runtimeRepair: PendingChange["runtimeRepair"];
           try {
-            runtimePreflight = await preflightRuntimeImpact(payload.plan.patches, payload.plan.creations);
-          } catch (error) {
-            setPendingChange(null);
-            setAgentError(error instanceof Error ? error.message : "The proposed runtime impact failed preflight.");
-            setNotice("Nothing proposed — runtime impact preflight failed; every source stayed unchanged");
-            setAgentState("idle");
-            return;
-          }
-          setPendingChange({
-            prompt: instruction,
-            provider: "openai",
-            scope,
-            baseRevision: targetRevision,
-            ...payload.plan,
-            runtimePreflight,
-          });
-          setAgentMode("openai");
-          setPrompt("");
-          const changeCount = payload.plan.patches.length + payload.plan.creations.length;
-          setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${queryEvidenceCount ? ` · inspected ${queryEvidenceCount} Query ${queryEvidenceCount === 1 ? "result" : "results"}` : ""}${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}${payload.model ? ` · ${payload.model}` : ""}`);
-          setAgentState("idle");
-          return;
-        }
-        if (response.ok && scope !== "workspace" && isRemoteSinglePlan(payload.plan)) {
-          const patches = [{ artifactId: targetArtifact.id, ...payload.plan }];
-          let runtimePreflight: RuntimeImpactPreflight | undefined;
-          try {
-            runtimePreflight = await preflightRuntimeImpact(patches, []);
-          } catch (error) {
-            setPendingChange(null);
-            setAgentError(error instanceof Error ? error.message : "The proposed runtime impact failed preflight.");
-            setNotice("Nothing proposed — runtime impact preflight failed; every source stayed unchanged");
-            setAgentState("idle");
-            return;
+            runtimePreflight = await preflightRuntimeImpact(remotePlan.patches, remotePlan.creations);
+          } catch (firstError) {
+            let repairFeedback: AgentRuntimeRepair;
+            try {
+              repairFeedback = buildAgentRuntimeRepair(
+                targetArtifacts,
+                remotePlan.patches,
+                remotePlan.creations,
+                firstError,
+              );
+            } catch (feedbackError) {
+              const message = feedbackError instanceof Error
+                ? feedbackError.message
+                : "Rune could not safely bound the compiler feedback.";
+              stopRemoteRepair(`Automatic repair could not start · ${message}`);
+              return;
+            }
+            setNotice("Agent is using the local compiler failure to prepare one replacement plan");
+            let repairResponse: Response;
+            let repairPayload: RemoteAgentResponse;
+            try {
+              repairResponse = await sendRemoteRequest({ ...remoteBody, runtimeRepair: repairFeedback });
+              repairPayload = await repairResponse.json().catch(() => ({})) as RemoteAgentResponse;
+            } catch {
+              stopRemoteRepair("Automatic repair stopped after one attempt · the model provider could not be reached.");
+              return;
+            }
+            const replacementPlan = repairResponse.ok
+              && repairPayload.repairAttempt === 1
+              ? normalizeRemotePlan(repairPayload.plan)
+              : null;
+            if (!replacementPlan) {
+              const reason = repairPayload.error
+                ?? (repairPayload.repairAttempt !== 1
+                  ? "The replacement response did not match Rune's repair request."
+                  : "The model did not return a valid replacement plan.");
+              stopRemoteRepair(`Automatic repair stopped after one attempt · ${reason}`);
+              return;
+            }
+            try {
+              runtimePreflight = await preflightRuntimeImpact(
+                replacementPlan.patches,
+                replacementPlan.creations,
+              );
+            } catch (secondError) {
+              const message = secondError instanceof Error
+                ? secondError.message
+                : "The replacement runtime impact could not be verified.";
+              stopRemoteRepair(`Automatic repair stopped after one attempt · ${message}`);
+              return;
+            }
+            remotePlan = replacementPlan;
+            payload = repairPayload;
+            runtimeRepair = { attempt: 1, failure: repairFeedback.failure };
           }
           setPendingChange({
             prompt: instruction,
@@ -1099,15 +1148,19 @@ export function RuneWorkbench() {
             scope,
             selection: scope === "selection" ? targetSelection ?? undefined : undefined,
             baseRevision: targetRevision,
-            summary: payload.plan.summary,
-            detail: payload.plan.detail,
-            patches,
-            creations: [],
+            ...remotePlan,
+            runtimeRepair,
             runtimePreflight,
           });
           setAgentMode("openai");
           setPrompt("");
-          setNotice(`${scope === "selection" ? "Model prepared a selection-confined patch" : "Model prepared a file patch"}${payload.model ? ` · ${payload.model}` : ""}`);
+          const repairSuffix = runtimeRepair ? " · repaired once from local compiler feedback" : "";
+          if (scope === "workspace") {
+            const changeCount = remotePlan.patches.length + remotePlan.creations.length;
+            setNotice(`Model prepared ${changeCount} coordinated file ${changeCount === 1 ? "change" : "changes"} from ${targetWorkspaceContext.length}-file context${queryEvidenceCount ? ` · inspected ${queryEvidenceCount} Query ${queryEvidenceCount === 1 ? "result" : "results"}` : ""}${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}${repairSuffix}${payload.model ? ` · ${payload.model}` : ""}`);
+          } else {
+            setNotice(`${scope === "selection" ? "Model prepared a selection-confined patch" : "Model prepared a file patch"}${repairSuffix}${payload.model ? ` · ${payload.model}` : ""}`);
+          }
           setAgentState("idle");
           return;
         }
@@ -1812,9 +1865,18 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : pendingChange.scope === "selection" ? "selection-confined patch" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}</span>
+                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : pendingChange.scope === "selection" ? "selection-confined patch" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}{pendingChange.runtimeRepair ? " · repaired once" : ""}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
+                  {pendingChange.runtimeRepair && (
+                    <div className="runtime-repair" aria-label="Compiler-guided repair passed">
+                      <RefreshCw aria-hidden="true" />
+                      <span>
+                        <strong>Recovered after one compiler-guided repair</strong>
+                        <small>First proposal stayed unapplied · {pendingChange.runtimeRepair.failure}</small>
+                      </span>
+                    </div>
+                  )}
                   {pendingChange.runtimePreflight && (
                     <div className="runtime-preflight" aria-label="Runtime impact preflight passed">
                       <CheckCircle2 aria-hidden="true" />
@@ -1959,7 +2021,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.27.1</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.28</span></div>
       </footer>
 
       {newArtifactOpen && (

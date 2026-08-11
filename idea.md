@@ -1578,3 +1578,23 @@ v0.27.1 因此增加一个很小但明确的 Rune-owned display compiler。普�
 回归不能只断言“Node 输出了什么”。新增 fixture 明确规定边界值、负数、单位提升、尾零和非有限值；默认 golden workspace 同时断言服务端 HTML 包含 `$970K` 且不含 `$970.00K`。客户端 bundle 与服务端都导入同一份无 `Intl.NumberFormat` 的实现，因此跨运行时一致性来自代码共享与算法确定性，而不是测试机恰好和生产浏览器使用同一 ICU。
 
 未来若需要人民币、欧元、中文万/亿、会计负数或用户 locale，应该把 format/locale 变成 Chart 或 workspace 中可读、可 diff、可迁移的显式 source contract，再由 Rune compiler 实现和版本化；不能重新退回 ambient browser locale。AI Native 编辑器要求模型、预览和交付看到同一份事实，而“这个事实最后显示成什么文字”也是编译结果的一部分。
+
+## 33. 一次有界自修复：让编译器反馈回到模型，但不把 Rune 变成失控 Agent
+
+v0.26 和 v0.27 已经完成 Generate → Render/Execute → Inspect 的硬边界：模型可以看见当前 Query evidence，Data/SQL 提议则必须跑过 proposed workspace 的完整 runtime impact graph。但闭环在失败处仍然中断。模型第一次把列名写错、误判 aggregate cardinality，或让 Chart 的 value 变成字符串时，Rune 明明已经拥有非常具体的 binder、scalar 或 Chart compiler error，却只把它展示给用户。用户必须复制错误、重新描述目标、再次等待模型规划；这不是 AI Native，而是把一个本可机器消费的诊断端口重新变成人工聊天中转站。
+
+最直接的反应是“让 Agent 一直改到通过”，但这会破坏 Rune 当前最重要的成本与信任模型。无界循环无法预估 token、延迟和本地 DuckDB 执行次数；后续尝试可能越来越偏离原始 source；错误字符串和失败 proposal 也可能被当成新指令，形成间接 prompt injection。更重要的是，只要系统在后台连续替用户改写，就很容易把“编译通过”偷换成“意图正确”，最后让 review 退化成对一长串不可复现历史的追认。Rune 需要的是一次明确的 compiler-guided retry，而不是 autonomous coding agent。
+
+v0.28 因此把自动预算固定为字面量 `attempt: 1`。触发条件也很窄：只有已配置 provider 返回了合法、经服务端编译的具体 Data/Query proposal，而浏览器对完整 device workspace 的 runtime impact preflight 失败时才触发。文档-only、Deck-only、Chart-only 计划没有运行失败就不会触发；确定性 local planner 失败也直接停止，不会为了“更聪明”突然扩大到外部模型。第一次 proposal 始终保持 unapplied，不创建 pending review、checkpoint、localStorage 写入、folder 写入或 React workspace mutation。
+
+修复反馈不是完整对话 transcript。它只包含本轮第一次 proposal 中 1–4 份 Rune 已编译的候选 source、Rune-owned 文件身份与一条清洗后最多 1,000 字符的失败信息。每份 source 最多 100,000 字符，Workspace 总计仍不超过 180,000；已有文件必须精确匹配当前 context 的 id/name/kind/language，新建文件必须使用 Rune 已生成且不碰撞的 Office-core identity；id 与 name 都不能重复，并且至少包含一份 Data 或 Query。Selection scope 还要证明第一次 proposal 的 prefix/suffix 没越界。这样 repair 不能借错误通道偷偷塞入更多文件、另一份 revision 或第二种写能力。
+
+同一份反馈同时具有 prompt-injection 风险，所以 provider instruction 明确把 `failure` 和 `proposedSource` 定义为 untrusted advisory data。模型必须拿它们和仍然存在的 canonical current source 对比，返回一份完整 replacement typed-operation plan；不能“编辑错误对象”、不能假设第一次 proposal 已经 Apply，也不能声称 replacement 已通过 compiler。原始 prompt、scope、selection、workspace graph、pins、metrics 和已经通过身份验证的 Query evidence 原样保留。模型由此得到足够的局部反例，却没有获得比第一次请求更大的 source capability。
+
+修复响应不是客户端可以凭形状猜测的普通成功。服务端仍从原始 canonical revision 编译 typed operations，重新执行 artifact/workspace safety gate，并只对修复请求回传 `repairAttempt: 1`。浏览器要求 marker 与 plan 同时成立，再对 replacement 从头运行同一条完整 impact graph：构造 proposed workspace、解析 changed Data、执行全部 identity-bound impacted Query、验证 legacy metric、Query scalar、direct Data Chart 与 Query Chart。只有第二轮全部成立才生成 diff，审阅卡明确显示 `Recovered after one compiler-guided repair`，保留第一次 bounded failure，并说明第一次 proposal 从未应用。
+
+任何中间问题都 fail closed：反馈无法在预算内构造、provider 网络失败、API 返回错误、marker 缺失、replacement shape 不合法、服务端 operation compiler 拒绝，或第二次 runtime preflight 再失败，都会显示“一次自动修复已停止”，没有 pending change，也不会静默切换成 local planner。这里拒绝 fallback 很重要：一旦用户的 configured model 已经生成具体计划并收到 compiler feedback，再用另一套 deterministic heuristic 伪装成同一条修复结果，会丢失 provenance，也让错误看起来被处理了。用户可以修改 prompt 后主动发起下一次独立动作，但 Rune 不会把它算作当前动作的第二次后台 retry。
+
+这一设计把一次动作的最坏外部成本从一次 provider call 提高到最多两次，把 runtime gate 从最多一次提高到最多两次，但仍是可解释的常数。Workspace Query evidence 的 428 握手不会重复计算：repair request 复用同一份 exact current evidence 和同一 canonical revision；第二轮只重新执行 replacement 的 proposed impact。没有 provider key 的 owner-only Sites 路径继续不为模型 evidence 启动 DuckDB，非 runtime source 的计划继续不加载 preflight chunk，`agent-evidence` 与 `query-preflight` 也保持 dynamic import，避免为了少数失败拖慢首屏。
+
+v0.28 仍不声称可以自动评价叙事质量、版式美感或事实正确性。Compiler 能证明 SQL 可执行、binding 有效、数值类型与 cardinality 合同成立，却不能证明“这份董事会结论是否合理”。一次 self-repair 只消除系统已经有确定反例的 proposal，不替代人的 review。未来若加入 screenshot critic、semantic eval、预算可配置的多轮 Agent 或跨设备后台任务，应当显式增加新的 evidence 类型、次数预算、取消能力与审计日志；不能把当前字面量一次重试悄悄改成循环。AI Native 的关键不是让 AI 永不停下，而是让每一次自动前进都有清晰证据、有限成本和不变的用户确认边界。

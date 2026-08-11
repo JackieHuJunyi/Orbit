@@ -139,6 +139,7 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   const payload = await response.json();
   assert.equal(payload.plan.nextSource, "# Report\n\nConcise conclusion.");
   assert.equal(payload.plan.operationCount, 1);
+  assert.equal(payload.repairAttempt, undefined);
   assert.equal("edits" in payload.plan, false);
   assert.equal(providerRequest.max_output_tokens, 8_000);
   assert.equal(providerRequest.text.format.name, "artifact_operations");
@@ -155,6 +156,93 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   ]);
   assert.equal("nextSource" in providerRequest.text.format.schema.properties, false);
   assert.match(providerRequest.input[0].content, /Markdown by exact heading|ordered edits/i);
+});
+
+test("returns a replacement plan marked as the single compiler-guided repair attempt", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerRequest;
+  globalThis.fetch = async (_input, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(providerResponse({
+      summary: "Repair the aggregate",
+      detail: "The replacement keeps the canonical field and handles an empty result.",
+      edits: [{
+        type: "replace_text",
+        find: "SELECT SUM(Value) AS total FROM workspace_data;",
+        replace: "SELECT COALESCE(SUM(Value), 0) AS total FROM workspace_data;",
+      }],
+    })), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const artifact = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+  };
+  const runtimeRepair = {
+    attempt: 1,
+    failure: "Runtime impact preflight failed · Binder Error: missing_value is unavailable.",
+    proposedArtifacts: [{
+      artifactId: "analysis",
+      name: "analysis.sql",
+      kind: "query",
+      language: "DuckDB SQL",
+      proposedSource: '-- rune:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
+      isCreation: false,
+    }],
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({ artifact, runtimeRepair })),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.repairAttempt, 1);
+  assert.match(payload.plan.nextSource, /COALESCE/);
+  const modelInput = JSON.parse(providerRequest.input[1].content);
+  assert.deepEqual(modelInput.runtimeRepair, runtimeRepair);
+  assert.match(providerRequest.input[0].content, /only automatic repair attempt/i);
+  assert.match(providerRequest.input[0].content, /untrusted advisory data/i);
+  assert.match(providerRequest.input[0].content, /complete replacement operation plan/i);
+});
+
+test("rejects a repeated automatic repair attempt before contacting the provider", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerCalled = false;
+  globalThis.fetch = async () => {
+    providerCalled = true;
+    throw new Error("provider must not be called");
+  };
+  const artifact = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: "SELECT Value FROM workspace_data;",
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      artifact,
+      runtimeRepair: {
+        attempt: 2,
+        failure: "still invalid",
+        proposedArtifacts: [{
+          artifactId: "analysis",
+          name: "analysis.sql",
+          kind: "query",
+          language: "DuckDB SQL",
+          proposedSource: "SELECT missing_value FROM workspace_data;",
+          isCreation: false,
+        }],
+      },
+    })),
+  }));
+  assert.equal(response.status, 400);
+  assert.equal(providerCalled, false);
 });
 
 test("rejects a cross-file Query metric introduced outside Workspace scope", async () => {

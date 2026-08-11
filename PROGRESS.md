@@ -38,3 +38,4 @@
 - 2026-08-11 — Let the Workspace Agent inspect bounded current Query results and required every proposed SQL change to pass local runtime/downstream preflight before review.
 - 2026-08-11 — Executed the complete Data/Query impact graph before Agent review so proposed data edits cannot silently break SQL metrics or charts.
 - 2026-08-12 — Replaced runtime-dependent compact number formatting so SSR, browser hydration, live previews, and exports render identical metric and chart text.
+- 2026-08-12 — Added one bounded compiler-guided model repair for failed Data/SQL proposals before the unchanged reviewed runtime-impact gate.

@@ -7,6 +7,7 @@ import {
   AgentOperationPatchSchema,
   AgentPatchSchema,
   AgentRequestSchema,
+  AgentRuntimeRepairSchema,
   AgentWorkspacePatchSchema,
   AgentWorkspaceOperationPlanSchema,
   buildAgentInput,
@@ -31,6 +32,164 @@ test("accepts a bounded artifact request and preserves metric context", () => {
   assert.match(buildAgentInstructions(parsed), /exact existing Query id/);
   assert.match(buildAgentInstructions(parsed), /only Workspace scope may introduce or retarget/i);
   assert.match(buildAgentInput(parsed), /total_revenue/);
+});
+
+test("accepts one bounded compiler-guided repair attempt as untrusted replacement context", () => {
+  const queryArtifact = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+  };
+  const runtimeRepair = {
+    attempt: 1,
+    failure: "Runtime impact preflight failed · Binder Error: missing_value is unavailable.",
+    proposedArtifacts: [{
+      artifactId: "analysis",
+      name: "analysis.sql",
+      kind: "query",
+      language: "DuckDB SQL",
+      proposedSource: '-- rune:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
+      isCreation: false,
+    }],
+  };
+  const parsed = AgentRequestSchema.parse({
+    ...request,
+    artifact: queryArtifact,
+    runtimeRepair,
+  });
+  assert.deepEqual(JSON.parse(buildAgentInput(parsed)).runtimeRepair, runtimeRepair);
+  assert.match(buildAgentInstructions(parsed), /only automatic repair attempt/i);
+  assert.match(buildAgentInstructions(parsed), /first unapplied compiled proposal/i);
+  assert.match(buildAgentInstructions(parsed), /untrusted advisory data/i);
+  assert.match(buildAgentInstructions(parsed), /complete replacement operation plan/i);
+  assert.equal(AgentRuntimeRepairSchema.safeParse({ ...runtimeRepair, attempt: 2 }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    artifact: queryArtifact,
+    runtimeRepair: {
+      ...runtimeRepair,
+      proposedArtifacts: [{ ...runtimeRepair.proposedArtifacts[0], artifactId: "foreign" }],
+    },
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    artifact: queryArtifact,
+    runtimeRepair: {
+      ...runtimeRepair,
+      proposedArtifacts: [{ ...runtimeRepair.proposedArtifacts[0], proposedSource: queryArtifact.source }],
+    },
+  }).success, false);
+});
+
+test("rejects runtime repair feedback that crosses a Selection boundary or its source budget", () => {
+  const queryArtifact = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: '-- rune:data "data"\nSELECT Value AS total FROM workspace_data;',
+  };
+  const start = queryArtifact.source.indexOf("Value");
+  const end = start + "Value".length;
+  const repair = {
+    attempt: 1,
+    failure: "Binder error",
+    proposedArtifacts: [{
+      artifactId: "analysis",
+      name: "analysis.sql",
+      kind: "query",
+      language: "DuckDB SQL",
+      proposedSource: `${queryArtifact.source}\nLIMIT 1`,
+      isCreation: false,
+    }],
+  };
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "selection",
+    artifact: queryArtifact,
+    selection: { start, end },
+    runtimeRepair: repair,
+  }).success, false);
+
+  const data = { id: "data", name: "data.csv", kind: "data", language: "CSV / JSON", source: "Item,Value\nA,1" };
+  const workspaceRepair = {
+    attempt: 1,
+    failure: "Runtime impact failed",
+    proposedArtifacts: [
+      { artifactId: "data", name: "data.csv", kind: "data", language: "CSV / JSON", proposedSource: `Item,Value\n${"x".repeat(94_990)}`, isCreation: false },
+      { artifactId: "analysis", name: "analysis.sql", kind: "query", language: "DuckDB SQL", proposedSource: `-- rune:data "data"\nSELECT '${"x".repeat(94_950)}' FROM workspace_data`, isCreation: false },
+    ],
+  };
+  assert.equal(AgentRequestSchema.safeParse({
+    ...request,
+    scope: "workspace",
+    artifact: queryArtifact,
+    workspaceArtifacts: [data, queryArtifact],
+    workspaceDependencies: [{ fromArtifactId: "data", toArtifactId: "analysis", kind: "query", references: ["data"] }],
+    workspacePinnedArtifactIds: [],
+    runtimeRepair: workspaceRepair,
+  }).success, false);
+});
+
+test("binds Workspace repair identities and action/error budgets to the supplied canonical context", () => {
+  const data = { id: "data", name: "data.csv", kind: "data", language: "CSV / JSON", source: "Item,Value\nA,1" };
+  const queryArtifact = {
+    id: "analysis",
+    name: "analysis.sql",
+    kind: "query",
+    language: "DuckDB SQL",
+    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+  };
+  const base = {
+    ...request,
+    scope: "workspace",
+    artifact: queryArtifact,
+    workspaceArtifacts: [data, queryArtifact],
+    workspaceDependencies: [{ fromArtifactId: "data", toArtifactId: "analysis", kind: "query", references: ["data"] }],
+    workspacePinnedArtifactIds: [],
+  };
+  const creation = {
+    artifactId: "forecast",
+    name: "forecast.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    proposedSource: "Item,Value\nForecast,not-a-number",
+    isCreation: true,
+  };
+  const runtimeRepair = { attempt: 1, failure: "Chart value is not numeric.", proposedArtifacts: [creation] };
+  assert.equal(AgentRequestSchema.safeParse({ ...base, runtimeRepair }).success, true);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...base,
+    runtimeRepair: { ...runtimeRepair, failure: "x".repeat(1_001) },
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...base,
+    runtimeRepair: {
+      ...runtimeRepair,
+      proposedArtifacts: [{ ...creation, artifactId: "data" }],
+    },
+  }).success, false);
+  assert.equal(AgentRequestSchema.safeParse({
+    ...base,
+    runtimeRepair: {
+      ...runtimeRepair,
+      proposedArtifacts: [{ ...creation, name: "DATA.CSV" }],
+    },
+  }).success, false);
+  assert.equal(AgentRuntimeRepairSchema.safeParse({
+    ...runtimeRepair,
+    proposedArtifacts: Array.from({ length: 5 }, (_, index) => ({
+      ...creation,
+      artifactId: `forecast-${index}`,
+      name: `forecast-${index}.csv`,
+    })),
+  }).success, false);
+  assert.equal(AgentRuntimeRepairSchema.safeParse({
+    ...runtimeRepair,
+    proposedArtifacts: [creation, { ...creation }],
+  }).success, false);
 });
 
 test("binds Selection Agent context to one exact non-empty source range", () => {
