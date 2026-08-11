@@ -234,6 +234,7 @@ export const quickCommands: Record<ArtifactKind, string[]> = {
 };
 
 export const workspaceQuickCommands = [
+  "根据收入数据创建分析、图表和报告",
   "根据当前报告新建一份演示",
   "同步季度结论到报告和演示",
   "让分析、报告和演示保持一致",

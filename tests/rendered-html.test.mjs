@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.31/);
+  assert.match(html, /Rune v0\.32/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -154,6 +154,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /New source diff/);
   assert.match(clientSource, /Workspace Briefing/);
   assert.match(clientSource, /根据当前报告新建一份演示/);
+  assert.match(clientSource, /根据收入数据创建分析、图表和报告/);
+  assert.match(clientSource, /source-bound analysis workflow/);
   assert.match(clientSource, /把选中内容压缩成一句话/);
   assert.match(clientSource, /把选中数值乘以 1\.1/);
   assert.match(clientSource, /Nothing outside the selected source may change/);

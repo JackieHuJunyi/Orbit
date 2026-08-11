@@ -2,6 +2,7 @@ import Papa from "papaparse";
 import {
   AgentCompiledPatchSchema,
   AgentCompiledWorkspacePatchSchema,
+  type AgentArtifactReference,
   type AgentCompiledPatch,
   type AgentCompiledWorkspacePatch,
   type AgentOperationPatch,
@@ -13,6 +14,7 @@ import {
   prepareArtifactCreation,
   type ArtifactCreationInput,
 } from "./artifact-creation.ts";
+import { findChartReferences, formatChartReference } from "./charts.ts";
 import { isDeckMarkdownArtifact } from "./deck.ts";
 import { buildWorkspaceDependencyGraph } from "./dependency-graph.ts";
 import { sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
@@ -30,6 +32,10 @@ type SourceOperationCompilation = {
 type PlanCompilation<Plan> = {
   plan?: Plan;
   errors: string[];
+};
+
+type AgentCompilableOperationPatch = Omit<AgentOperationPatch, "edits"> & {
+  edits: AgentSourceOperation[];
 };
 
 type MarkdownSection = {
@@ -441,6 +447,41 @@ function insertDeckSlide(
   return { nextSource: serializeDeck(source, parsed.deck), errors: [] };
 }
 
+function appendChart(
+  artifact: WorkspaceArtifact,
+  source: string,
+  edit: Extract<AgentSourceOperation, { type: "append_chart" }>,
+): SourceOperationCompilation {
+  if (edit.chart.kind !== "artifact") {
+    return { nextSource: source, errors: ["Creation handles can be resolved only in Workspace scope."] };
+  }
+  if (findChartReferences(source).includes(edit.chart.artifactId)) {
+    return { nextSource: source, errors: [`This source already embeds Chart ${edit.chart.artifactId}.`] };
+  }
+  let reference: string;
+  try {
+    reference = formatChartReference(edit.chart.artifactId);
+  } catch (error) {
+    return { nextSource: source, errors: [error instanceof Error ? error.message : "The Chart reference is invalid."] };
+  }
+  if (artifact.kind === "document") {
+    return {
+      nextSource: `${source.trimEnd()}\n\n## ${edit.heading}\n\n${reference}\n`,
+      errors: [],
+    };
+  }
+  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) {
+    return {
+      nextSource: `${source.trimEnd()}\n\n---\n\n<!-- layout: split -->\n\n# ${edit.heading}\n\n${reference}\n`,
+      errors: [],
+    };
+  }
+  return {
+    nextSource: source,
+    errors: ["append_chart only supports Markdown documents or Deck Markdown presentations."],
+  };
+}
+
 function applyArtifactOperation(
   artifact: WorkspaceArtifact,
   source: string,
@@ -477,9 +518,12 @@ function applyArtifactOperation(
       ? replaceDeckSlide(source, edit)
       : { nextSource: source, errors: ["replace_deck_slide only supports Deck Markdown presentations."] };
   }
-  return artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
-    ? insertDeckSlide(source, edit)
-    : { nextSource: source, errors: ["insert_deck_slide_after only supports Deck Markdown presentations."] };
+  if (edit.type === "insert_deck_slide_after") {
+    return artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
+      ? insertDeckSlide(source, edit)
+      : { nextSource: source, errors: ["insert_deck_slide_after only supports Deck Markdown presentations."] };
+  }
+  return appendChart(artifact, source, edit);
 }
 
 export function applyAgentSourceOperations(
@@ -529,7 +573,7 @@ export function applyAgentArtifactOperations(
 
 export function compileAgentOperationPatch(
   artifact: WorkspaceArtifact,
-  patch: AgentOperationPatch,
+  patch: AgentCompilableOperationPatch,
 ): PlanCompilation<AgentCompiledPatch> {
   const compiled = applyAgentArtifactOperations(artifact, patch.edits);
   if (compiled.errors.length) return { errors: compiled.errors };
@@ -568,22 +612,89 @@ export function compileAgentWorkspaceOperations(
   const seen = new Set<string>();
   const compiledPatches: AgentCompiledWorkspacePatch["patches"] = [];
   const compiledCreations: AgentCompiledWorkspacePatch["creations"] = [];
+  const creationHandles = new Map<string, WorkspaceArtifact>();
+  const authorizedSamePlanDependencies = new Set<string>();
   let workingArtifacts = artifacts;
+
+  const dependencyKey = (fromArtifactId: string, toArtifactId: string) => (
+    `${fromArtifactId}\u0000${toArtifactId}`
+  );
+  const resolveReference = (
+    reference: AgentArtifactReference | undefined,
+    expectedKinds: WorkspaceArtifact["kind"][],
+  ): { artifact?: WorkspaceArtifact; fromCreation?: boolean; error?: string } => {
+    if (!reference || (reference.kind !== "artifact" && reference.kind !== "creation")) {
+      return { error: "Artifact reference is missing or malformed." };
+    }
+    const artifact = reference.kind === "artifact"
+      ? artifacts.find((candidate) => candidate.id === reference.artifactId)
+      : creationHandles.get(reference.handle);
+    const label = reference.kind === "artifact" ? reference.artifactId : reference.handle;
+    if (!artifact) {
+      return {
+        error: reference.kind === "artifact"
+          ? `Artifact reference must name an exact existing visible artifact: ${label}`
+          : `Creation handle must name an earlier successful creation: ${label}`,
+      };
+    }
+    if (!expectedKinds.includes(artifact.kind)) {
+      return { error: `${label} must resolve to ${expectedKinds.join(" or ")}, not ${artifact.kind}.` };
+    }
+    return { artifact, fromCreation: reference.kind === "creation" };
+  };
+  const resolveEdits = (
+    edits: AgentSourceOperation[],
+    targetArtifactId: string,
+  ): { edits: AgentSourceOperation[]; errors: string[] } => {
+    const editErrors: string[] = [];
+    const resolved = edits.map((edit, editIndex) => {
+      if (edit.type !== "append_chart") return edit;
+      const chart = resolveReference(edit.chart, ["chart"]);
+      if (!chart.artifact) {
+        editErrors.push(`Operation ${editIndex + 1} (append_chart): ${chart.error}`);
+        return edit;
+      }
+      if (chart.fromCreation) {
+        authorizedSamePlanDependencies.add(dependencyKey(chart.artifact.id, targetArtifactId));
+      }
+      return {
+        ...edit,
+        chart: { kind: "artifact" as const, artifactId: chart.artifact.id },
+      };
+    });
+    return { edits: resolved, errors: editErrors };
+  };
 
   operationPlan.actions.forEach((action) => {
     if (action.type === "create_artifact") {
-      if ((action.kind === "query" || action.kind === "chart")
-        && !artifacts.some((artifact) => artifact.id === action.sourceArtifactId)) {
-        errors.push(`${action.title}: creation sources must be exact existing artifacts from visible context.`);
+      if (!action.handle) {
+        errors.push(`${action.title}: every creation needs one action-local handle.`);
+        return;
+      }
+      if (creationHandles.has(action.handle)) {
+        errors.push(`${action.title}: creation handles must be unique: ${action.handle}`);
+        return;
+      }
+      const resolvedSource = action.kind === "query"
+        ? resolveReference(action.source, ["data"])
+        : action.kind === "chart"
+          ? resolveReference(action.source, ["data", "query"])
+          : undefined;
+      if (resolvedSource && !resolvedSource.artifact) {
+        errors.push(`${action.title}: ${resolvedSource.error}`);
         return;
       }
       const input: ArtifactCreationInput = action.kind === "query"
-        ? { kind: action.kind, title: action.title, sourceArtifactId: action.sourceArtifactId }
+        ? {
+            kind: action.kind,
+            title: action.title,
+            sourceArtifactId: resolvedSource?.artifact?.id ?? "",
+          }
         : action.kind === "chart"
           ? {
               kind: action.kind,
               title: action.title,
-              sourceArtifactId: action.sourceArtifactId,
+              sourceArtifactId: resolvedSource?.artifact?.id ?? "",
               category: action.category,
               value: action.value,
               mark: action.mark,
@@ -595,8 +706,13 @@ export function compileAgentWorkspaceOperations(
         prepared.errors.forEach((error) => errors.push(`${action.title}: ${error}`));
         return;
       }
+      const resolvedEdits = resolveEdits(action.edits, prepared.artifact.id);
+      if (resolvedEdits.errors.length) {
+        resolvedEdits.errors.forEach((error) => errors.push(`${prepared.artifact?.name ?? action.title}: ${error}`));
+        return;
+      }
       const compiled = action.edits.length
-        ? applyAgentArtifactOperations(prepared.artifact, action.edits)
+        ? applyAgentArtifactOperations(prepared.artifact, resolvedEdits.edits)
         : { nextSource: prepared.artifact.source, errors: [] };
       if (compiled.errors.length) {
         compiled.errors.forEach((error) => errors.push(`${prepared.artifact?.name ?? action.title}: ${error}`));
@@ -609,6 +725,10 @@ export function compileAgentWorkspaceOperations(
         detail: action.detail,
         operationCount: action.edits.length,
       });
+      if (resolvedSource?.artifact && resolvedSource.fromCreation) {
+        authorizedSamePlanDependencies.add(dependencyKey(resolvedSource.artifact.id, artifact.id));
+      }
+      creationHandles.set(action.handle, artifact);
       workingArtifacts = [...workingArtifacts, artifact];
       return;
     }
@@ -623,7 +743,12 @@ export function compileAgentWorkspaceOperations(
       errors.push(`${action.artifactId}: the operation plan references an unknown artifact.`);
       return;
     }
-    const compiled = compileAgentOperationPatch(artifact, action);
+    const resolvedEdits = resolveEdits(action.edits, action.artifactId);
+    if (resolvedEdits.errors.length) {
+      resolvedEdits.errors.forEach((error) => errors.push(`${action.artifactId}: ${error}`));
+      return;
+    }
+    const compiled = compileAgentOperationPatch(artifact, { ...action, edits: resolvedEdits.edits });
     if (!compiled.plan) {
       compiled.errors.forEach((error) => errors.push(`${action.artifactId}: ${error}`));
       return;
@@ -636,15 +761,21 @@ export function compileAgentWorkspaceOperations(
 
   if (errors.length) return { errors: [...new Set(errors)] };
   const createdArtifactIds = new Set(compiledCreations.map((creation) => creation.artifact.id));
-  const patchedArtifactIds = new Set(compiledPatches.map((patch) => patch.artifactId));
+  const touchedArtifactIds = new Set([
+    ...compiledPatches.map((patch) => patch.artifactId),
+    ...compiledCreations.map((creation) => creation.artifact.id),
+  ]);
   const samePlanDependency = buildWorkspaceDependencyGraph(workingArtifacts).edges.find((edge) => (
-    createdArtifactIds.has(edge.fromArtifactId) && patchedArtifactIds.has(edge.toArtifactId)
+    createdArtifactIds.has(edge.fromArtifactId)
+    && touchedArtifactIds.has(edge.toArtifactId)
+    && edge.fromArtifactId !== edge.toArtifactId
+    && !authorizedSamePlanDependencies.has(dependencyKey(edge.fromArtifactId, edge.toArtifactId))
   ));
   if (samePlanDependency) {
     return {
       errors: [
-        `${samePlanDependency.toArtifactId}: a patch cannot reference the guessed identity of `
-          + `same-plan creation ${samePlanDependency.fromArtifactId}; create it first, then use its visible id in a new reviewed plan.`,
+        `${samePlanDependency.toArtifactId}: a source cannot reference the guessed identity of `
+          + `same-plan creation ${samePlanDependency.fromArtifactId}; use an explicit earlier creation handle.`,
       ],
     };
   }

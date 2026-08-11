@@ -4,6 +4,7 @@ import {
   type ArtifactCreationInput,
   type CreatableArtifactKind,
 } from "./artifact-creation.ts";
+import { prepareChartEmbedding } from "./chart-embedding.ts";
 import {
   prepareWorkspaceMutation,
   type ArtifactCreationChange,
@@ -26,6 +27,17 @@ function requestedCreationKind(prompt: string): CreatableArtifactKind | null {
   if (/(?:表格|数据|csv|data|table)/i.test(prompt)) return "data";
   if (/(?:文档|报告|简报|document|report|brief|memo)/i.test(prompt)) return "document";
   return null;
+}
+
+function requestedAnalysisWorkflowTargets(prompt: string): Array<"document" | "slides"> {
+  if (!/(?:新建|创建|生成|create|new|draft|build)/i.test(prompt)) return [];
+  const asksForChart = /(?:图表|可视化|chart|graph|visuali[sz]ation)/i.test(prompt);
+  const hasDataIntent = /(?:数据|分析|查询|sql|data|analysis|query)/i.test(prompt);
+  if (!asksForChart || !hasDataIntent) return [];
+  const targets: Array<"document" | "slides"> = [];
+  if (/(?:文档|报告|简报|document|report|brief|memo)/i.test(prompt)) targets.push("document");
+  if (/(?:演示|幻灯|deck|slides?|presentation)/i.test(prompt)) targets.push("slides");
+  return targets;
 }
 
 function inlineCode(value: string) {
@@ -69,6 +81,26 @@ Use the canonical files above to refine this narrative without copying hidden st
 `;
 }
 
+function chartCreationFields(
+  source: ReturnType<typeof artifactCreationSourceOptions>[number],
+  prompt: string,
+) {
+  const category = source.columns[0] ?? "";
+  const value = source.numericColumns.find((column) => column !== category)
+    ?? source.columns.find((column) => column !== category)
+    ?? source.columns[0]
+    ?? "";
+  const format = /(?:百分比|比例|percent|margin|rate)/i.test(prompt)
+    ? "percent" as const
+    : /(?:收入|营收|金额|销售|revenue|sales|currency|amount)/i.test(prompt)
+      ? "currency" as const
+      : "number" as const;
+  const mark = /(?:趋势|时间|折线|line|trend|timeline)/i.test(prompt)
+    ? "line" as const
+    : "bar" as const;
+  return { category, value, format, mark };
+}
+
 function localCreationInput(
   kind: CreatableArtifactKind,
   title: string,
@@ -87,17 +119,7 @@ function localCreationInput(
       ?? sources.find((option) => option.kind === "data")
       ?? sources[0];
     if (!source) throw new Error("Pin or select one valid Data or Query source before creating a Chart.");
-    const category = source.columns[0] ?? "";
-    const value = source.numericColumns.find((column) => column !== category)
-      ?? source.columns.find((column) => column !== category)
-      ?? source.columns[0]
-      ?? "";
-    const format = /(?:百分比|比例|percent|margin|rate)/i.test(prompt)
-      ? "percent"
-      : /(?:收入|营收|金额|销售|revenue|sales|currency|amount)/i.test(prompt)
-        ? "currency"
-        : "number";
-    const mark = /(?:趋势|时间|折线|line|trend|timeline)/i.test(prompt) ? "line" : "bar";
+    const { category, value, format, mark } = chartCreationFields(source, prompt);
     return {
       kind,
       title,
@@ -109,6 +131,87 @@ function localCreationInput(
     };
   }
   return { kind, title };
+}
+
+function planLocalAnalysisWorkflow(
+  artifacts: WorkspaceArtifact[],
+  contextArtifacts: WorkspaceArtifact[],
+  targets: Array<"document" | "slides">,
+  prompt: string,
+): LocalWorkspaceAgentPlan {
+  const dataSource = artifactCreationSourceOptions(contextArtifacts, "query")[0];
+  if (!dataSource) throw new Error("Pin or select one valid Data source before creating an analysis workflow.");
+
+  const queryPrepared = prepareArtifactCreation(artifacts, {
+    kind: "query",
+    title: "Workspace Analysis",
+    sourceArtifactId: dataSource.artifactId,
+  });
+  if (!queryPrepared.artifact || queryPrepared.errors.length) {
+    throw new Error(queryPrepared.errors[0] ?? "Rune could not prepare the workflow Query.");
+  }
+  const query = queryPrepared.artifact;
+  let workingArtifacts = [...artifacts, query];
+  const queryOption = artifactCreationSourceOptions(workingArtifacts, "chart")
+    .find((option) => option.artifactId === query.id);
+  if (!queryOption) throw new Error("The new Query does not expose a stable Chart schema.");
+  const fields = chartCreationFields({ ...queryOption, numericColumns: dataSource.numericColumns }, prompt);
+  const chartPrepared = prepareArtifactCreation(workingArtifacts, {
+    kind: "chart",
+    title: fields.mark === "line" ? "Workspace Trend" : "Workspace Chart",
+    sourceArtifactId: query.id,
+    ...fields,
+  });
+  if (!chartPrepared.artifact || chartPrepared.errors.length) {
+    throw new Error(chartPrepared.errors[0] ?? "Rune could not prepare the workflow Chart.");
+  }
+  const chart = chartPrepared.artifact;
+  workingArtifacts = [...workingArtifacts, chart];
+  const creations: ArtifactCreationChange[] = [
+    {
+      artifact: query,
+      summary: `Create ${query.name} from ${dataSource.name}`,
+      detail: "The Query uses an exact Rune-owned Data binding and remains readable DuckDB SQL.",
+    },
+    {
+      artifact: chart,
+      summary: `Create ${chart.name} from ${query.name}`,
+      detail: "The Chart binds exact Query output fields and stays live instead of copying result values.",
+    },
+  ];
+
+  targets.forEach((kind) => {
+    const title = kind === "slides" ? "Workspace Briefing" : "Workspace Report";
+    const prepared = prepareArtifactCreation(workingArtifacts, { kind, title });
+    if (!prepared.artifact || prepared.errors.length) {
+      throw new Error(prepared.errors[0] ?? `Rune could not prepare the workflow ${kind}.`);
+    }
+    const contextual = {
+      ...prepared.artifact,
+      source: contextualSource(prepared.artifact, contextArtifacts),
+    };
+    const candidateArtifacts = [...workingArtifacts, contextual];
+    const embedding = prepareChartEmbedding(candidateArtifacts, chart.id, contextual.id);
+    if (!embedding.nextSource || embedding.errors.length) {
+      throw new Error(embedding.errors[0] ?? `Rune could not embed the Chart in ${contextual.name}.`);
+    }
+    const consumer = { ...contextual, source: embedding.nextSource };
+    creations.push({
+      artifact: consumer,
+      summary: `Create ${consumer.name} with a live Chart binding`,
+      detail: "The deliverable keeps one exact Chart reference so future Data and SQL changes recompile it.",
+    });
+    workingArtifacts = [...workingArtifacts, consumer];
+  });
+
+  const mutation = prepareWorkspaceMutation(artifacts, [], creations);
+  if (mutation.errors.length) throw new Error(mutation.errors[0]);
+  return {
+    summary: `Create one source-bound analysis workflow across ${creations.length} files`,
+    detail: "Rune resolves every generated identity first, validates the complete dependency chain, and holds one atomic workspace transaction for review.",
+    patches: [],
+    creations,
+  };
 }
 
 function planLocalCreation(
@@ -155,7 +258,12 @@ export function planLocalWorkspaceAgentChange(
   prompt: string,
   contextArtifacts = artifacts,
 ): LocalWorkspaceAgentPlan {
-  const kind = requestedCreationKind(prompt.trim());
+  const instruction = prompt.trim();
+  const workflowTargets = requestedAnalysisWorkflowTargets(instruction);
+  if (workflowTargets.length) {
+    return planLocalAnalysisWorkflow(artifacts, contextArtifacts, workflowTargets, instruction);
+  }
+  const kind = requestedCreationKind(instruction);
   if (kind) return planLocalCreation(artifacts, contextArtifacts, kind, prompt);
   return { ...planLocalWorkspaceChange(contextArtifacts, prompt), creations: [] };
 }

@@ -662,6 +662,7 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
         type: "create_artifact",
         kind: "slides",
         title: "Board Review",
+        handle: "board_review",
         summary: "Create the board review",
         detail: "Replace the cover and insert a supporting slide.",
         edits: [
@@ -706,7 +707,7 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
   ]);
   creationSchemas.forEach((schema) => {
     const keys = Object.keys(schema.properties);
-    ["artifactId", "nextSource", "id", "name", "language", "source"].forEach((key) => assert.equal(keys.includes(key), false));
+    ["artifactId", "nextSource", "id", "name", "language"].forEach((key) => assert.equal(keys.includes(key), false));
   });
   assert.match(providerRequest.input[0].content, /Rune owns its identity and initial source/);
 });
@@ -721,7 +722,8 @@ test("creates typed Query and Chart sources from exact visible Agent bindings", 
         type: "create_artifact",
         kind: "query",
         title: "Detail Analysis",
-        sourceArtifactId: "data",
+        handle: "detail_analysis",
+        source: { kind: "artifact", artifactId: "data" },
         summary: "Create bound Query",
         detail: "Read the exact visible Data source.",
         edits: [],
@@ -730,7 +732,8 @@ test("creates typed Query and Chart sources from exact visible Agent bindings", 
         type: "create_artifact",
         kind: "chart",
         title: "Total Analysis",
-        sourceArtifactId: "analysis",
+        handle: "total_analysis",
+        source: { kind: "artifact", artifactId: "analysis" },
         category: "total",
         value: "total",
         mark: "bar",
@@ -765,6 +768,90 @@ test("creates typed Query and Chart sources from exact visible Agent bindings", 
   assert.match(payload.plan.creations[1].artifact.source, /"source": "analysis"/);
 });
 
+test("resolves provider creation handles into one concrete four-file dependency chain", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  const workspaceArtifacts = [
+    requestBody().artifact,
+    { id: "data", name: "data.csv", kind: "data", language: "CSV / JSON", source: "Item,Value\nExisting,1" },
+  ];
+  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
+    summary: "Create one complete analysis workflow",
+    detail: "Every dependent action uses a prior symbolic handle.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "data",
+        title: "Pipeline Data",
+        handle: "pipeline_data",
+        summary: "Create Data",
+        detail: "Create the source rows.",
+        edits: [{ type: "replace_text", find: "Item,Value\n", replace: "Region,Revenue\nAPAC,48\nEMEA,31\n" }],
+      },
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Pipeline Query",
+        handle: "pipeline_query",
+        source: { kind: "creation", handle: "pipeline_data" },
+        summary: "Create Query",
+        detail: "Read the prior Data creation.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Pipeline Chart",
+        handle: "pipeline_chart",
+        source: { kind: "creation", handle: "pipeline_query" },
+        category: "Region",
+        value: "Revenue",
+        mark: "bar",
+        format: "currency",
+        summary: "Create Chart",
+        detail: "Bind the prior Query creation.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "document",
+        title: "Pipeline Report",
+        handle: "pipeline_report",
+        summary: "Create report",
+        detail: "Append the prior Chart creation.",
+        edits: [{
+          type: "append_chart",
+          chart: { kind: "creation", handle: "pipeline_chart" },
+          heading: "Regional revenue",
+        }],
+      },
+    ],
+  })), { status: 200, headers: { "content-type": "application/json" } });
+
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      scope: "workspace",
+      workspaceArtifacts,
+      workspaceDependencies: [],
+      workspacePinnedArtifactIds: ["data"],
+    })),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.deepEqual(payload.plan.creations.map((creation) => creation.artifact.kind), [
+    "data",
+    "query",
+    "chart",
+    "document",
+  ]);
+  const [data, query, chart, report] = payload.plan.creations.map((creation) => creation.artifact);
+  assert.match(query.source, new RegExp(`rune:data \\"${data.id}\\"`));
+  assert.match(chart.source, new RegExp(`\\"source\\": \\"${query.id}\\"`));
+  assert.match(report.source, new RegExp(`chart\\(\\"${chart.id}\\"\\)`));
+  assert.ok(payload.plan.creations.every((creation) => !("handle" in creation) && !("source" in creation)));
+});
+
 test("rejects model-authored creation metadata and unsafe created sources", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [
@@ -775,6 +862,7 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
     type: "create_artifact",
     kind: "slides",
     title: "Unsafe Deck",
+    handle: "unsafe_deck",
     summary: "Create a deck",
     detail: "The request must remain bounded.",
     edits: [{

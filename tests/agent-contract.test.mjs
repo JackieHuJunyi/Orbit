@@ -298,15 +298,32 @@ test("converts both operation protocols into provider structured-output schemas"
     { type: "string", const: "query" },
     { type: "string", const: "chart" },
   ]);
-  assert.deepEqual(Object.keys(createActions[0].properties).sort(), ["detail", "edits", "kind", "summary", "title", "type"]);
-  assert.deepEqual(Object.keys(createActions[1].properties).sort(), ["detail", "edits", "kind", "sourceArtifactId", "summary", "title", "type"]);
-  assert.deepEqual(Object.keys(createActions[2].properties).sort(), ["category", "detail", "edits", "format", "kind", "mark", "sourceArtifactId", "summary", "title", "type", "value"]);
+  assert.deepEqual(Object.keys(createActions[0].properties).sort(), ["detail", "edits", "handle", "kind", "summary", "title", "type"]);
+  assert.deepEqual(Object.keys(createActions[1].properties).sort(), ["detail", "edits", "handle", "kind", "source", "summary", "title", "type"]);
+  assert.deepEqual(Object.keys(createActions[2].properties).sort(), ["category", "detail", "edits", "format", "handle", "kind", "mark", "source", "summary", "title", "type", "value"]);
   createActions.forEach((action) => {
     const keys = Object.keys(action.properties);
-    ["artifactId", "id", "name", "language", "source", "nextSource"].forEach((key) => {
+    ["artifactId", "id", "name", "language", "nextSource"].forEach((key) => {
       assert.equal(keys.includes(key), false);
     });
   });
+  const workspaceOperationTypes = actions[0].properties.edits.items.anyOf
+    .map((operation) => operation.properties.type.const);
+  assert.equal(workspaceOperationTypes.at(-1), "append_chart");
+  assert.equal(operationTypes.includes("append_chart"), false);
+  assert.deepEqual(
+    createActions[1].properties.source.anyOf.map((source) => source.properties.kind.const),
+    ["artifact", "creation"],
+  );
+  assert.deepEqual(
+    createActions[2].properties.source.anyOf.map((source) => source.properties.kind.const),
+    ["artifact", "creation"],
+  );
+  const appendChart = actions[0].properties.edits.items.anyOf.at(-1);
+  assert.deepEqual(
+    appendChart.properties.chart.anyOf.map((source) => source.properties.kind.const),
+    ["artifact", "creation"],
+  );
 });
 
 test("accepts strict artifact-aware section, row, and slide operations", () => {
@@ -443,7 +460,10 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.match(buildAgentInstructions(workspaceRequest), /coordinated, reviewable outcome/);
   assert.match(buildAgentInstructions(workspaceRequest), /1-4 actions/);
   assert.match(buildAgentInstructions(workspaceRequest), /create_artifact/);
-  assert.match(buildAgentInstructions(workspaceRequest), /Never provide an id, filename, extension, language, source, or nextSource/);
+  assert.match(buildAgentInstructions(workspaceRequest), /Never provide a final id, filename, extension, language, source text, or nextSource/);
+  assert.match(buildAgentInstructions(workspaceRequest), /unique action-local handle/);
+  assert.match(buildAgentInstructions(workspaceRequest), /earlier successful action/);
+  assert.match(buildAgentInstructions(workspaceRequest), /append_chart/);
   assert.match(buildAgentInstructions(workspaceRequest), /Item,Value/);
   assert.match(buildAgentInstructions(workspaceRequest), /explicit -- rune:data directive/);
   assert.match(buildAgentInstructions(workspaceRequest), /strict Chart JSON/);
@@ -662,6 +682,7 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
     type: "create_artifact",
     kind: "slides",
     title: "Board Briefing",
+    handle: "briefing",
     summary: "Create the briefing",
     detail: "The new deck starts from Rune's deterministic template.",
     edits: [{ type: "replace_deck_slide", title: "Board Briefing", slide: "# Board Briefing\n\nReview." }],
@@ -679,7 +700,8 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
         type: "create_artifact",
         kind: "query",
         title: "Analysis",
-        sourceArtifactId: "data",
+        handle: "analysis",
+        source: { kind: "artifact", artifactId: "data" },
         summary: "Create Query",
         detail: "Bind one visible Data source.",
         edits: [],
@@ -688,7 +710,8 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
         type: "create_artifact",
         kind: "chart",
         title: "Analysis Chart",
-        sourceArtifactId: "analysis",
+        handle: "analysis_chart",
+        source: { kind: "creation", handle: "analysis" },
         category: "Region",
         value: "Revenue",
         mark: "bar",
@@ -706,11 +729,52 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
       type: "create_artifact",
       kind: "chart",
       title: "Incomplete Chart",
-      sourceArtifactId: "data",
+      handle: "incomplete_chart",
+      source: { kind: "artifact", artifactId: "data" },
       summary: "Create Chart",
       detail: "Missing exact fields.",
       edits: [],
     }],
+  }).success, false);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Reject a forward handle",
+    detail: "Creation references are ordered capabilities.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Forward Chart",
+        handle: "forward_chart",
+        source: { kind: "creation", handle: "later_query" },
+        category: "Region",
+        value: "Revenue",
+        mark: "bar",
+        format: "currency",
+        summary: "Create Chart",
+        detail: "This reference is not available yet.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Later Query",
+        handle: "later_query",
+        source: { kind: "artifact", artifactId: "data" },
+        summary: "Create Query",
+        detail: "This action appears too late.",
+        edits: [],
+      },
+    ],
+  }).success, false);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Reject a duplicate handle",
+    detail: "Each creation capability must be unambiguous.",
+    actions: [creation, { ...creation, title: "Second Briefing" }],
+  }).success, false);
+  assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
+    summary: "Reject an invalid handle",
+    detail: "Handles use a small identifier grammar.",
+    actions: [{ ...creation, handle: "Invalid Handle" }],
   }).success, false);
   assert.equal(AgentWorkspaceOperationPlanSchema.safeParse({
     summary: "Reject model-owned identity",

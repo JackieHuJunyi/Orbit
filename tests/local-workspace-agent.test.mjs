@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseChartSource } from "../app/lib/charts.ts";
+import { findChartReferences, parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { planLocalWorkspaceAgentChange } from "../app/lib/local-workspace-agent.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
@@ -50,6 +50,42 @@ test("creates source-bound Query and Chart starters in the offline Workspace Age
   assert.equal(spec.value, "Q2 Revenue");
   assert.equal(spec.format, "currency");
   assert.deepEqual(prepareWorkspaceMutation(defaultArtifacts, [], chartPlan.creations).errors, []);
+});
+
+test("prepares a complete local Data-to-Query-to-Chart-to-deliverable transaction", () => {
+  const originalSources = defaultArtifacts.map((artifact) => artifact.source);
+  const reportPlan = planLocalWorkspaceAgentChange(
+    defaultArtifacts,
+    "根据收入数据创建 SQL 分析、图表和报告",
+  );
+  assert.deepEqual(reportPlan.patches, []);
+  assert.deepEqual(reportPlan.creations.map((creation) => creation.artifact.kind), [
+    "query",
+    "chart",
+    "document",
+  ]);
+  const [query, chart, report] = reportPlan.creations.map((creation) => creation.artifact);
+  assert.equal(parseQueryDataSourceDirective(query.source).artifactId, "regional-revenue");
+  assert.equal(parseChartSource(chart.source).spec.source, query.id);
+  assert.deepEqual(findChartReferences(report.source), [chart.id]);
+  assert.deepEqual(prepareWorkspaceMutation(defaultArtifacts, [], reportPlan.creations).errors, []);
+  assert.deepEqual(defaultArtifacts.map((artifact) => artifact.source), originalSources);
+
+  const completePlan = planLocalWorkspaceAgentChange(
+    defaultArtifacts,
+    "根据收入数据创建分析图表、报告和演示",
+  );
+  assert.deepEqual(completePlan.creations.map((creation) => creation.artifact.kind), [
+    "query",
+    "chart",
+    "document",
+    "slides",
+  ]);
+  const completeChart = completePlan.creations[1].artifact;
+  completePlan.creations.slice(2).forEach((creation) => {
+    assert.deepEqual(findChartReferences(creation.artifact.source), [completeChart.id]);
+  });
+  assert.deepEqual(prepareWorkspaceMutation(defaultArtifacts, [], completePlan.creations).errors, []);
 });
 
 test("keeps existing deterministic workspace coordination available", () => {

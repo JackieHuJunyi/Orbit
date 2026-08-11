@@ -1654,3 +1654,21 @@ Workspace Agent 的 Structured Output 也不再只有一个宽泛 `kind` 枚举�
 无密钥路径也使用同一合同。本地 Workspace Agent 能从显式 context pack 选择 Data 创建 Query，或选择 Data/Query 的静态字段创建 Chart；收入、比例和趋势等窄关键词只决定可见的 format/mark starter，不扩大 context，也不读隐藏结果。创建 identity 仍对完整 workspace 做碰撞解析，最终 transaction 仍让完整 workspace 的 downstream consumer 保留否决权。v0.31 没有增加数据库、服务端执行器、通用可视化库或后台 Agent；它只是终于让已经存在的五种 canonical source 能从零进入同一条低基础设施编译链。
 
 这还不是完整的“数据建模向导”。Query 仍绑定一份 Data，Chart 仍是单 series，用户仍需在创建后的 SQL source 中表达聚合、筛选与 alias；Agent 也不能在一个未审阅计划里创建 Data、Query、Chart 和报告并猜测所有生成 id。下一步若要缩短多步分析，应设计一种 Rune-owned transaction reference（例如 action-local symbolic handle），让后续 creation/patch 能引用同一计划中尚未分配的 identity，并在编译时统一解析、在 review 中完整展开。那应是一套显式、可证明的依赖规划协议，而不是放开模型直接写 id。
+
+## 37. 事务内引用不是临时 ID：让 Agent 一次规划完整的数据到成品链
+
+v0.31 补齐了五类创建，却仍把最重要的工作流切成多轮：先创建 Data，审查后模型才能看见真实 id；再创建 Query；再创建 Chart；最后才把 Chart 放进报告或演示。每一轮都安全，但用户必须反复描述同一个目标，模型也会在轮次之间丢失“这是一个整体交付物”的结构意图。最危险的捷径是让模型按标题猜 `forecast-data`、`forecast-query` 之类的 slug：只要 workspace 已有同名文件，Rune 实际分配 `-2` 后缀，猜测就会指向旧文件、变成 unresolved binding，或偶然连到错误事实。v0.32 因而实现的不是“允许临时 id”，而是一种由编译器独占解释权的事务内引用语言。
+
+每个 `create_artifact` 现在必须声明一个 1–40 字符、以小写字母开头的 action-local `handle`。它只在这次 provider response 内存在，不是 artifact id、filename、manifest metadata 或 source token。Query/Chart 的 `source` 也不再是一个容易混淆的字符串，而是严格 discriminated reference：`{ kind: "artifact", artifactId }` 只能指向请求中原本可见的 canonical file；`{ kind: "creation", handle }` 只能指向同一计划里更早、并且已经成功编译的创建。Chart embedding 使用完全相同的 reference 结构。重复 handle、前向引用、缺失 handle、错误 artifact kind、非法字符或把生成 slug 填进 `artifactId` 都会拒绝完整 operation plan。
+
+“只能引用更早 action”是有意的拓扑约束。一个四步计划可以按 `Data → Query → Chart → Document/Deck` 排列，Rune 每完成一步才把 handle 记录到内存 map；某一步的 template、typed edits 或 workspace validation 失败时，该 handle 从未获得能力，后续动作也不能继续。这样不需要实现任意 DAG 排序、循环检测或模型自定义 dependency solver，Structured Output 的数组顺序就是可读的执行顺序。真实 id 仍由原有 collision resolver 对当时 evolving workspace 分配，所以两个同标题创建可以得到 `brief` 与 `brief-2`，后续 handle 都会准确解析到各自结果，而模型从未看到或控制这个命名决定。
+
+把新 Chart 接入成品不能依赖在任意 `replace_text` 中塞占位符，否则 placeholder grammar 会渗进 Markdown、Deck、SQL 和 JSON 的每个字符串位置，也很难证明模型究竟授权了哪条依赖。v0.32 新增的 `append_chart` 因而是 Workspace-only typed operation：它接收一个现有 Chart 或更早的 Chart handle，再接收一行纯文本 heading。对 Markdown，它追加二级标题和一个由 Rune formatter 生成的 JSON-quoted `{{ chart(...) }}`；对 Deck Markdown，它追加受限 `layout: split` slide。File/Selection provider schema 不暴露这个 operation，legacy HTML、Data、Query、Chart 自身和重复 embedding 都明确失败。模型仍不能 patch 一份刚创建的文件；若要让新 Document/Deck 使用新 Chart，就把 `append_chart` 直接放进该 consumer 的 creation edits。
+
+编译器还会在 source 完成后重建一次完整 dependency graph。所有 `created artifact → touched consumer` 边必须能对应某个已经解析的 creation handle；如果模型在普通 `replace_text` 中碰巧猜中了 Rune 最终生成的 slug，图上虽然会出现一条“可解析”边，但没有 handle authorization，整个计划仍被拒绝。这个二次证明把“引用结果合法”和“模型有权建立这条同事务依赖”分开：whole-workspace validator负责 artifact/schema 正确性，handle ledger 负责能力来源。编译结果只包含真实 source、真实 id 和 operation count；handle 与授权 ledger 在 response、review、localStorage、folder、Git 和 export 中都不存在。
+
+运行时证明没有因为多文件创建而缩短。若计划新建 Data、绑定它的 Query 和绑定 Query 的 Chart，client preflight 会先构造完整 proposed workspace，把新 Data 计入 changed set、只执行精确绑定的新 Query，再用同一个 revision-bound snapshot 验证新 Chart 的 category/value 和 finite numeric rows。最后的 Document/Deck 只消费已经验证的 Chart。任一 SQL runtime、字段、数值、Chart 或 downstream binding 错误都会在 review 出现前拒绝整笔事务；一次 bounded repair 仍必须返回完整 replacement plan。测试同时覆盖 provider route 的四文件 concrete output、编译器 handle stripping、猜测/前向/错误 kind 失败，以及新 Data → Query → Chart impact graph 的实际执行集合。
+
+无密钥模式不能只展示协议而无法完成同样的用户任务。新的 Workspace 快捷指令“根据收入数据创建分析、图表和报告”会从显式 context pack 选择一份有效 Data，由 Rune 自己顺序创建并绑定 Query、Chart 与 Markdown report；若指令同时要求演示，第四个 creation 会加入 Deck，并复用同一 Chart。这个 deterministic planner 不伪造 provider handles，因为所有 identity 本来就由本地 Rune 代码持有，但它产生与远端编译器同形的 concrete creation batch，进入相同的 runtime preflight、review、revision check 和单次 device persistence。由此，默认没有 API key 的产品也能直接演示“一句话产生可继续编辑的完整 source chain”，而不是退回单文件 demo。
+
+v0.32 仍保持明确上限：一次最多四个 action，只支持向 Document/Deck 追加整个 Chart，不支持在同一计划 patch 刚创建的 artifact、前向 handle、任意位置插入、Query scalar handle、多个 Data relation、任意 DAG 或后台自动 Apply。若真实使用证明“同时创建两份数据、三份查询、多个成品”是高频需求，下一步应先把 review 从平面文件列表升级为可折叠 transaction graph，并定义 action budget 与分阶段 commit 语义；不能只把上限从 4 改成 40。当前版本选择最小但完整的核心链，新增的复杂度只在 Zod contract、顺序 compiler 和 deterministic local planner，不增加数据库、队列、常驻 worker、production secret 或第三方 workflow engine。

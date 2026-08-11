@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { prepareArtifactCreation } from "../app/lib/artifact-creation.ts";
-import { AgentOperationPatchSchema } from "../app/lib/agent-contract.ts";
-import { compileAgentOperationPatch } from "../app/lib/agent-operations.ts";
+import { AgentOperationPatchSchema, AgentWorkspaceOperationPlanSchema } from "../app/lib/agent-contract.ts";
+import { compileAgentOperationPatch, compileAgentWorkspaceOperations } from "../app/lib/agent-operations.ts";
+import { planLocalWorkspaceAgentChange } from "../app/lib/local-workspace-agent.ts";
 import { preflightAgentRuntimeImpact } from "../app/lib/query-preflight.ts";
 import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
 import { defaultArtifacts, planLocalChange } from "../app/lib/workspace.ts";
@@ -402,7 +403,111 @@ test("rejects a new Query-backed Chart whose selected value fails at runtime", a
       ...fixture.result,
       rows: fixture.result.rows.map((row) => [...row.slice(0, 4), "not numeric"]),
     },
-  })), /query-customers\.chart\.json.*non-numeric/i);
+})), /query-customers\.chart\.json.*non-numeric/i);
+});
+
+test("runtime-verifies the complete no-key analysis workflow before review", async () => {
+  const plan = planLocalWorkspaceAgentChange(
+    defaultArtifacts,
+    "根据收入数据创建 SQL 分析、图表和报告",
+  );
+  const calls = [];
+  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [], plan.creations, async (query, data) => {
+    calls.push([query.id, data.id]);
+    return createWorkspaceQuerySnapshot(query, data, {
+      columns: ["Region", "Q2 Revenue", "Q1 Revenue", "Cost", "Customers"],
+      rows: [
+        ["APAC", 1840000, 1540000, 1120000, 148],
+        ["EMEA", 1520000, 1430000, 1030000, 121],
+      ],
+      truncated: false,
+      sourceRowIndices: [0, 1],
+      cellLineage: [0, 1].map((sourceRowIndex) => [
+        { sourceRowIndex, sourceColumn: "Region" },
+        { sourceRowIndex, sourceColumn: "Q2 Revenue" },
+        { sourceRowIndex, sourceColumn: "Q1 Revenue" },
+        { sourceRowIndex, sourceColumn: "Cost" },
+        { sourceRowIndex, sourceColumn: "Customers" },
+      ]),
+    });
+  });
+  assert.deepEqual(calls, [["workspace-analysis", "regional-revenue"]]);
+  assert.deepEqual(result, {
+    dataCount: 0,
+    queryCount: 1,
+    legacyMetricConsumerCount: 0,
+    scalarConsumerCount: 0,
+    chartConsumerCount: 1,
+    dataNames: [],
+    queryNames: ["workspace-analysis.sql"],
+  });
+});
+
+test("runtime-verifies a symbolic new Data-to-Query-to-Chart chain as one impact graph", async () => {
+  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, AgentWorkspaceOperationPlanSchema.parse({
+    summary: "Create one new runtime-bound analysis chain",
+    detail: "Every dependent creation uses an earlier symbolic handle.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "data",
+        title: "Runtime Pipeline Data",
+        handle: "runtime_data",
+        summary: "Create Data",
+        detail: "Define visible source rows.",
+        edits: [{ type: "replace_text", find: "Item,Value\n", replace: "Region,Revenue\nAPAC,48\nEMEA,31\n" }],
+      },
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Runtime Pipeline Query",
+        handle: "runtime_query",
+        source: { kind: "creation", handle: "runtime_data" },
+        summary: "Create Query",
+        detail: "Bind the earlier Data creation.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Runtime Pipeline Chart",
+        handle: "runtime_chart",
+        source: { kind: "creation", handle: "runtime_query" },
+        category: "Region",
+        value: "Revenue",
+        mark: "bar",
+        format: "currency",
+        summary: "Create Chart",
+        detail: "Bind exact Query output fields.",
+        edits: [],
+      },
+    ],
+  }));
+  assert.deepEqual(compiled.errors, []);
+  const calls = [];
+  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [], compiled.plan.creations, async (query, data) => {
+    calls.push([query.id, data.id]);
+    return createWorkspaceQuerySnapshot(query, data, {
+      columns: ["Region", "Revenue"],
+      rows: [["APAC", 48], ["EMEA", 31]],
+      truncated: false,
+      sourceRowIndices: [0, 1],
+      cellLineage: [0, 1].map((sourceRowIndex) => [
+        { sourceRowIndex, sourceColumn: "Region" },
+        { sourceRowIndex, sourceColumn: "Revenue" },
+      ]),
+    });
+  });
+  assert.deepEqual(calls, [["runtime-pipeline-query", "runtime-pipeline-data"]]);
+  assert.deepEqual(result, {
+    dataCount: 1,
+    queryCount: 1,
+    legacyMetricConsumerCount: 0,
+    scalarConsumerCount: 0,
+    chartConsumerCount: 1,
+    dataNames: ["runtime-pipeline-data.csv"],
+    queryNames: ["runtime-pipeline-query.sql"],
+  });
 });
 
 test("runs the shipped local Data quick action through the complete impact graph", async () => {

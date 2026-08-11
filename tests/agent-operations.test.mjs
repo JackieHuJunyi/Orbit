@@ -573,6 +573,57 @@ test("rejects semantic operations on incompatible artifact kinds", () => {
   });
 });
 
+test("appends one existing Chart to Markdown and Deck sources through a typed workspace operation", () => {
+  const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
+  const chart = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue-chart");
+  assert.ok(data);
+  assert.ok(chart);
+  const document = documentArtifact("# Report\n\nCurrent narrative.\n", "report");
+  const deck = deckArtifact(deckSource, "deck");
+  const artifacts = [data, chart, document, deck];
+  const plan = AgentWorkspaceOperationPlanSchema.parse({
+    summary: "Add one live visual to both deliverables",
+    detail: "Both sources reference the same exact existing Chart artifact.",
+    actions: [document, deck].map((artifact) => ({
+      type: "patch_artifact",
+      artifactId: artifact.id,
+      summary: `Append Chart to ${artifact.name}`,
+      detail: "Use the typed Chart embedding operation.",
+      edits: [{
+        type: "append_chart",
+        chart: { kind: "artifact", artifactId: chart.id },
+        heading: "Regional revenue",
+      }],
+    })),
+  });
+  const compiled = compileAgentWorkspaceOperations(artifacts, plan);
+  assert.deepEqual(compiled.errors, []);
+  assert.ok(compiled.plan.patches.every((patch) => patch.nextSource.includes(`chart(\"${chart.id}\")`)));
+  assert.deepEqual(parseDeckSource(compiled.plan.patches[1].nextSource).errors, []);
+  const prepared = prepareWorkspaceMutation(artifacts, compiled.plan.patches, []);
+  assert.deepEqual(prepared.errors, []);
+
+  const duplicate = compileAgentWorkspaceOperations(prepared.nextArtifacts, {
+    summary: "Reject a duplicate Chart",
+    detail: "The same deliverable cannot append the same binding twice.",
+    actions: [{ ...plan.actions[0] }],
+  });
+  assert.match(duplicate.errors.join(" "), /already embeds Chart/i);
+  const wrongKind = compileAgentWorkspaceOperations(artifacts, {
+    summary: "Reject a non-Chart reference",
+    detail: "A Data artifact cannot satisfy append_chart.",
+    actions: [{
+      ...plan.actions[0],
+      edits: [{
+        type: "append_chart",
+        chart: { kind: "artifact", artifactId: data.id },
+        heading: "Invalid visual",
+      }],
+    }],
+  });
+  assert.match(wrongKind.errors.join(" "), /must resolve to chart, not data/i);
+});
+
 test("compiles one document-data-Deck plan atomically behind the workspace safety gate", () => {
   const document = documentArtifact("# Review\n\n## Summary\n\nOld.\n\n## Next\n\nKeep.", "review");
   const data = dataArtifact("Region,Revenue\nAPAC,42\nEMEA,31", "revenue");
@@ -630,6 +681,7 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         type: "create_artifact",
         kind: "document",
         title: "Launch Brief",
+        handle: "launch_brief",
         summary: "Create the brief",
         detail: "Fill the initial Markdown section.",
         edits: [{
@@ -642,6 +694,7 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         type: "create_artifact",
         kind: "data",
         title: "Launch Metrics",
+        handle: "launch_metrics",
         summary: "Create the data table",
         detail: "Replace the starter columns with a visible typed table.",
         edits: [{
@@ -654,6 +707,7 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         type: "create_artifact",
         kind: "slides",
         title: "Launch Review",
+        handle: "launch_review",
         summary: "Create the presentation",
         detail: "Refine the cover and insert one complete slide.",
         edits: [
@@ -687,7 +741,8 @@ test("compiles zero-edit Query and Chart creations from exact visible bindings",
         type: "create_artifact",
         kind: "query",
         title: "Regional Detail",
-        sourceArtifactId: "regional-revenue",
+        handle: "regional_detail",
+        source: { kind: "artifact", artifactId: "regional-revenue" },
         summary: "Create a bound Query",
         detail: "Read the complete exact Data source through workspace_data.",
         edits: [],
@@ -696,7 +751,8 @@ test("compiles zero-edit Query and Chart creations from exact visible bindings",
         type: "create_artifact",
         kind: "chart",
         title: "Regional Margin",
-        sourceArtifactId: "regional-analysis",
+        handle: "regional_margin",
+        source: { kind: "artifact", artifactId: "regional-analysis" },
         category: "Region",
         value: "margin_pct",
         mark: "bar",
@@ -737,6 +793,21 @@ test("compiles zero-edit Query and Chart creations from exact visible bindings",
 });
 
 test("rejects invented or same-plan creation sources before identity guessing", () => {
+  const malformed = compileAgentWorkspaceOperations(defaultArtifacts, {
+    summary: "Omit a creation reference",
+    detail: "The compiler must fail closed even before schema parsing.",
+    actions: [{
+      type: "create_artifact",
+      kind: "query",
+      title: "Malformed Query",
+      handle: "malformed_query",
+      summary: "Create malformed Query",
+      detail: "The source reference is absent.",
+      edits: [],
+    }],
+  });
+  assert.match(malformed.errors.join(" "), /reference is missing or malformed/i);
+
   const invented = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Invent a binding",
     detail: "The model must not invent source identities.",
@@ -744,14 +815,15 @@ test("rejects invented or same-plan creation sources before identity guessing", 
       type: "create_artifact",
       kind: "query",
       title: "Unsafe Query",
-      sourceArtifactId: "invented-data",
+      handle: "unsafe_query",
+      source: { kind: "artifact", artifactId: "invented-data" },
       summary: "Create unsafe Query",
       detail: "This source is not visible.",
       edits: [],
     }],
   });
   assert.equal(invented.plan, undefined);
-  assert.match(invented.errors.join(" "), /exact existing artifacts from visible context/i);
+  assert.match(invented.errors.join(" "), /exact existing visible artifact/i);
 
   const samePlan = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Guess a generated identity",
@@ -761,6 +833,7 @@ test("rejects invented or same-plan creation sources before identity guessing", 
         type: "create_artifact",
         kind: "data",
         title: "Forecast Data",
+        handle: "forecast_data",
         summary: "Create Data",
         detail: "Use the typed starter source.",
         edits: [],
@@ -769,7 +842,8 @@ test("rejects invented or same-plan creation sources before identity guessing", 
         type: "create_artifact",
         kind: "query",
         title: "Forecast Query",
-        sourceArtifactId: "forecast-data",
+        handle: "forecast_query",
+        source: { kind: "artifact", artifactId: "forecast-data" },
         summary: "Create Query",
         detail: "This guesses a same-plan id.",
         edits: [],
@@ -777,7 +851,7 @@ test("rejects invented or same-plan creation sources before identity guessing", 
     ],
   });
   assert.equal(samePlan.plan, undefined);
-  assert.match(samePlan.errors.join(" "), /exact existing artifacts from visible context/i);
+  assert.match(samePlan.errors.join(" "), /exact existing visible artifact/i);
 
   const samePlanEmbed = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Guess a generated Chart identity",
@@ -798,7 +872,8 @@ test("rejects invented or same-plan creation sources before identity guessing", 
         type: "create_artifact",
         kind: "chart",
         title: "Forecast Chart",
-        sourceArtifactId: "regional-revenue",
+        handle: "forecast_chart",
+        source: { kind: "artifact", artifactId: "regional-revenue" },
         category: "Region",
         value: "Q2 Revenue",
         mark: "line",
@@ -810,7 +885,76 @@ test("rejects invented or same-plan creation sources before identity guessing", 
     ],
   });
   assert.equal(samePlanEmbed.plan, undefined);
-  assert.match(samePlanEmbed.errors.join(" "), /patch cannot reference.*same-plan creation/i);
+  assert.match(samePlanEmbed.errors.join(" "), /source cannot reference.*same-plan creation/i);
+});
+
+test("resolves an explicit Data-to-Query-to-Chart-to-report handle chain atomically", () => {
+  const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
+    summary: "Create a complete source-first analysis workflow",
+    detail: "Every dependency uses an earlier action-local handle instead of a guessed file id.",
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "data",
+        title: "Workflow Data",
+        handle: "workflow_data",
+        summary: "Create typed Data",
+        detail: "Start the workflow from visible CSV rows.",
+        edits: [{
+          type: "replace_text",
+          find: "Item,Value\n",
+          replace: "Region,Revenue\nAPAC,48\nEMEA,31\n",
+        }],
+      },
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Workflow Query",
+        handle: "workflow_query",
+        source: { kind: "creation", handle: "workflow_data" },
+        summary: "Create bound Query",
+        detail: "Read the earlier Data creation through workspace_data.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "chart",
+        title: "Workflow Chart",
+        handle: "workflow_chart",
+        source: { kind: "creation", handle: "workflow_query" },
+        category: "Region",
+        value: "Revenue",
+        mark: "bar",
+        format: "currency",
+        summary: "Create live Chart",
+        detail: "Bind exact output fields from the earlier Query creation.",
+        edits: [],
+      },
+      {
+        type: "create_artifact",
+        kind: "document",
+        title: "Workflow Report",
+        handle: "workflow_report",
+        summary: "Create linked report",
+        detail: "Append the earlier Chart through its symbolic creation handle.",
+        edits: [{
+          type: "append_chart",
+          chart: { kind: "creation", handle: "workflow_chart" },
+          heading: "Regional revenue",
+        }],
+      },
+    ],
+  });
+  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, operationPlan);
+  assert.deepEqual(compiled.errors, []);
+  assert.deepEqual(compiled.plan.creations.map((creation) => creation.operationCount), [1, 0, 0, 1]);
+  const [data, query, chart, report] = compiled.plan.creations.map((creation) => creation.artifact);
+  assert.equal(parseQueryDataSourceDirective(query.source).artifactId, data.id);
+  assert.equal(parseChartSource(chart.source).spec.source, query.id);
+  assert.match(report.source, new RegExp(`chart\\(\\"${chart.id}\\"\\)`));
+  assert.equal("handle" in compiled.plan.creations[0], false);
+  const prepared = prepareWorkspaceMutation(defaultArtifacts, [], compiled.plan.creations);
+  assert.deepEqual(prepared.errors, []);
 });
 
 test("resolves repeated creation titles and rejects incompatible creation operations", () => {
@@ -818,6 +962,7 @@ test("resolves repeated creation titles and rejects incompatible creation operat
     type: "create_artifact",
     kind: "document",
     title: "Shared Brief",
+    handle: "shared_brief",
     summary: "Create a brief",
     detail: "Fill the deterministic document template.",
     edits: [{ type: "replace_markdown_section", heading: "Shared Brief", body: "Visible context." }],
@@ -825,7 +970,7 @@ test("resolves repeated creation titles and rejects incompatible creation operat
   const repeated = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Create two briefs",
     detail: "Rune must resolve both identities without model-authored ids.",
-    actions: [creation, creation],
+    actions: [creation, { ...creation, handle: "shared_brief_copy" }],
   });
   assert.deepEqual(repeated.errors, []);
   assert.deepEqual(repeated.plan.creations.map((item) => item.artifact.id), ["shared-brief", "shared-brief-2"]);
@@ -838,6 +983,7 @@ test("resolves repeated creation titles and rejects incompatible creation operat
       ...creation,
       kind: "data",
       title: "Wrong Table",
+      handle: "wrong_table",
     }],
   });
   assert.equal(incompatible.plan, undefined);
@@ -862,6 +1008,7 @@ test("keeps mixed patch-and-create plans atomic at the full-workspace safety gat
         type: "create_artifact",
         kind: "slides",
         title: "Unsafe Briefing",
+        handle: "unsafe_briefing",
         summary: "Create an unsafe deck",
         detail: "The final safety gate must reject raw HTML.",
         edits: [{
