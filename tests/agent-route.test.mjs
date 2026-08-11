@@ -151,6 +151,8 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
     "replace_markdown_section",
     "insert_markdown_section_after",
     "upsert_data_row",
+    "upsert_data_column",
+    "rename_data_column",
     "replace_deck_slide",
     "insert_deck_slide_after",
   ]);
@@ -206,6 +208,49 @@ test("returns a replacement plan marked as the single compiler-guided repair att
   assert.match(providerRequest.input[0].content, /only automatic repair attempt/i);
   assert.match(providerRequest.input[0].content, /untrusted advisory data/i);
   assert.match(providerRequest.input[0].content, /complete replacement operation plan/i);
+});
+
+test("compiles a provider keyed Data-column operation into reviewable CSV source", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  let providerRequest;
+  globalThis.fetch = async (_input, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(providerResponse({
+      summary: "Add gross margin",
+      detail: "Every current region receives one typed value keyed by Region.",
+      edits: [{
+        type: "upsert_data_column",
+        keyColumn: "Region",
+        column: "Margin",
+        values: [
+          { keyValue: "APAC", value: 0.34 },
+          { keyValue: "EMEA", value: 0.29 },
+        ],
+      }],
+    })), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const response = await POST(new Request("http://localhost/api/agent", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(requestBody({
+      artifact: {
+        id: "revenue",
+        name: "revenue.csv",
+        kind: "data",
+        language: "CSV / JSON",
+        source: "Region,Revenue\nAPAC,42\nEMEA,31",
+      },
+      prompt: "Add a margin column.",
+    })),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.plan.operationCount, 1);
+  assert.equal(payload.plan.nextSource, "Region,Revenue,Margin\nAPAC,42,0.34\nEMEA,31,0.29");
+  assert.match(providerRequest.input[0].content, /globally unique non-empty key column/i);
+  assert.match(providerRequest.input[0].content, /exactly one typed value for every current row/i);
+  assert.equal(providerRequest.text.format.schema.properties.edits.items.anyOf
+    .some((operation) => operation.properties.type.const === "upsert_data_column"), true);
 });
 
 test("rejects a repeated automatic repair attempt before contacting the provider", async () => {

@@ -191,7 +191,9 @@ function serializeDataRows(
   jsonArray: boolean,
 ) {
   let result = format === "CSV"
-    ? Papa.unparse(rows, { columns, newline: sourceNewline(source) })
+    ? rows.length
+      ? Papa.unparse(rows, { columns, newline: sourceNewline(source) })
+      : Papa.unparse({ fields: columns, data: [] }, { newline: sourceNewline(source) })
     : JSON.stringify(jsonArray ? rows : rows[0], null, 2);
   if (source.endsWith("\n") && !result.endsWith("\n")) result += sourceNewline(source);
   return result;
@@ -255,6 +257,110 @@ function upsertDataRow(
   }
   return {
     nextSource: serializeDataRows(source, parsed.format, parsed.columns, rows, jsonArray),
+    errors: [],
+  };
+}
+
+function semanticDataRows(source: string) {
+  const parsed = parseDataSource(source);
+  if (parsed.errors.length || !parsed.columns.length) {
+    return { parsed, jsonArray: true, error: parsed.errors[0] ?? "The data source has no columns." };
+  }
+  let jsonArray = true;
+  if (parsed.format === "JSON") {
+    const jsonShape = validateFlatJsonRows(source);
+    if (jsonShape.error) return { parsed, jsonArray, error: jsonShape.error };
+    jsonArray = jsonShape.array ?? true;
+  }
+  return { parsed, jsonArray, error: "" };
+}
+
+function upsertDataColumn(
+  source: string,
+  edit: Extract<AgentSourceOperation, { type: "upsert_data_column" }>,
+): SourceOperationCompilation {
+  const semantic = semanticDataRows(source);
+  if (semantic.error) return { nextSource: source, errors: [semantic.error] };
+  const { parsed, jsonArray } = semantic;
+  if (!parsed.columns.includes(edit.keyColumn)) {
+    return { nextSource: source, errors: [`Data key column not found: ${edit.keyColumn}`] };
+  }
+  if (!edit.column.trim() || edit.column !== edit.column.trim() || /[\r\n]/.test(edit.column)) {
+    return { nextSource: source, errors: ["A data column name must be non-empty, single-line, and have no outer whitespace."] };
+  }
+  if (edit.column === edit.keyColumn) {
+    return { nextSource: source, errors: ["A data-column operation cannot change the key column used to identify rows."] };
+  }
+
+  const rows = parsed.rows.map((row) => ({ ...row }));
+  const invalidKey = validateUniqueDataKey(rows, edit.keyColumn);
+  if (invalidKey) return { nextSource: source, errors: [invalidKey] };
+  const requestedKeys = new Set<string>();
+  const rowIndexByKey = new Map(rows.map((row, index) => [dataKeyIdentity(row[edit.keyColumn]), index] as const));
+  const updates: Array<{ rowIndex: number; value: DataCell }> = [];
+  for (const entry of edit.values) {
+    const identity = dataKeyIdentity(entry.keyValue);
+    if (requestedKeys.has(identity)) {
+      return { nextSource: source, errors: [`Data column operation repeats key: ${String(entry.keyValue)}`] };
+    }
+    requestedKeys.add(identity);
+    const rowIndex = rowIndexByKey.get(identity);
+    if (rowIndex == null) {
+      return { nextSource: source, errors: [`Data row not found for ${edit.keyColumn}: ${String(entry.keyValue)}`] };
+    }
+    updates.push({ rowIndex, value: entry.value });
+  }
+
+  const existing = parsed.columns.includes(edit.column);
+  if (!existing && requestedKeys.size !== rows.length) {
+    return {
+      nextSource: source,
+      errors: [`A new data column must provide exactly one value for every current row (${rows.length}).`],
+    };
+  }
+  if (existing && !updates.length) {
+    return { nextSource: source, errors: ["Updating an existing data column requires at least one keyed value."] };
+  }
+  if (existing && updates.every(({ rowIndex, value }) => cellsEqual(rows[rowIndex][edit.column] ?? null, value))) {
+    return { nextSource: source, errors: ["The data-column operation does not change any targeted value."] };
+  }
+  updates.forEach(({ rowIndex, value }) => { rows[rowIndex][edit.column] = value; });
+  const columns = existing ? parsed.columns : [...parsed.columns, edit.column];
+  return {
+    nextSource: serializeDataRows(source, parsed.format, columns, rows, jsonArray),
+    errors: [],
+  };
+}
+
+function renameDataColumn(
+  source: string,
+  edit: Extract<AgentSourceOperation, { type: "rename_data_column" }>,
+): SourceOperationCompilation {
+  const semantic = semanticDataRows(source);
+  if (semantic.error) return { nextSource: source, errors: [semantic.error] };
+  const { parsed, jsonArray } = semantic;
+  if (!parsed.columns.includes(edit.column)) {
+    return { nextSource: source, errors: [`Data column not found: ${edit.column}`] };
+  }
+  if (!edit.nextColumn.trim()
+    || edit.nextColumn !== edit.nextColumn.trim()
+    || /[\r\n]/.test(edit.nextColumn)) {
+    return { nextSource: source, errors: ["A renamed data column must be non-empty, single-line, and have no outer whitespace."] };
+  }
+  if (edit.nextColumn === edit.column) {
+    return { nextSource: source, errors: ["The renamed data column is unchanged."] };
+  }
+  if (parsed.columns.includes(edit.nextColumn)) {
+    return { nextSource: source, errors: [`Data column already exists: ${edit.nextColumn}`] };
+  }
+  const rows = parsed.rows.map((row) => Object.fromEntries(
+    Object.entries(row).map(([column, value]) => (
+      column === edit.column ? [edit.nextColumn, value] : [column, value]
+    )),
+  ) as Record<string, DataCell>);
+  const columns = parsed.columns.map((column) => column === edit.column ? edit.nextColumn : column);
+  return {
+    nextSource: serializeDataRows(source, parsed.format, columns, rows, jsonArray),
     errors: [],
   };
 }
@@ -351,6 +457,16 @@ function applyArtifactOperation(
     return artifact.kind === "data"
       ? upsertDataRow(source, edit)
       : { nextSource: source, errors: ["upsert_data_row only supports CSV or JSON data artifacts."] };
+  }
+  if (edit.type === "upsert_data_column") {
+    return artifact.kind === "data"
+      ? upsertDataColumn(source, edit)
+      : { nextSource: source, errors: ["upsert_data_column only supports CSV or JSON data artifacts."] };
+  }
+  if (edit.type === "rename_data_column") {
+    return artifact.kind === "data"
+      ? renameDataColumn(source, edit)
+      : { nextSource: source, errors: ["rename_data_column only supports CSV or JSON data artifacts."] };
   }
   if (edit.type === "replace_deck_slide") {
     return artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)

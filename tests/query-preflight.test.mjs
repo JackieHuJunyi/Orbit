@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { AgentOperationPatchSchema } from "../app/lib/agent-contract.ts";
+import { compileAgentOperationPatch } from "../app/lib/agent-operations.ts";
 import { preflightAgentRuntimeImpact } from "../app/lib/query-preflight.ts";
 import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
 import { defaultArtifacts, planLocalChange } from "../app/lib/workspace.ts";
@@ -155,6 +157,65 @@ test("executes every Query bound to proposed Data and verifies all downstream co
     dataNames: ["regional-revenue.csv"],
     queryNames: ["regional-analysis.sql", "regional-summary.sql"],
   });
+});
+
+test("runs a compiled keyed column addition through the complete Data impact graph", async () => {
+  const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
+  assert.ok(data);
+  const compiled = compileAgentOperationPatch(data, AgentOperationPatchSchema.parse({
+    summary: "Add review status",
+    detail: "Every current region receives one typed status keyed by Region.",
+    edits: [{
+      type: "upsert_data_column",
+      keyColumn: "Region",
+      column: "Review status",
+      values: [
+        { keyValue: "APAC", value: "approved" },
+        { keyValue: "North America", value: "review" },
+        { keyValue: "Europe", value: "approved" },
+        { keyValue: "LATAM", value: "review" },
+      ],
+    }],
+  }));
+  assert.deepEqual(compiled.errors, []);
+  assert.match(compiled.plan.nextSource, /Review status/);
+  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [{
+    artifactId: data.id,
+    ...compiled.plan,
+  }], [], async (query, proposedData) => currentSnapshot(
+    query,
+    proposedData,
+    query.id === "regional-summary" ? defaultSummaryQuerySnapshot() : defaultQuerySnapshot(),
+  ));
+  assert.deepEqual(result, {
+    dataCount: 1,
+    queryCount: 2,
+    legacyMetricConsumerCount: 2,
+    scalarConsumerCount: 7,
+    chartConsumerCount: 2,
+    dataNames: ["regional-revenue.csv"],
+    queryNames: ["regional-analysis.sql", "regional-summary.sql"],
+  });
+});
+
+test("rejects a compiled column rename that breaks an existing Chart before Query execution", async () => {
+  const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
+  assert.ok(data);
+  const compiled = compileAgentOperationPatch(data, AgentOperationPatchSchema.parse({
+    summary: "Rename revenue",
+    detail: "The downstream Chart must veto an uncoordinated header rename.",
+    edits: [{ type: "rename_data_column", column: "Q2 Revenue", nextColumn: "Q2 Net Revenue" }],
+  }));
+  assert.deepEqual(compiled.errors, []);
+  let called = false;
+  await assert.rejects(preflightAgentRuntimeImpact(defaultArtifacts, [{
+    artifactId: data.id,
+    ...compiled.plan,
+  }], [], async () => {
+    called = true;
+    throw new Error("DuckDB must not start after static Chart validation fails");
+  }), /regional-revenue\.chart\.json.*Q2 Revenue/i);
+  assert.equal(called, false);
 });
 
 test("rejects proposed Data when any impacted Query fails at runtime", async () => {

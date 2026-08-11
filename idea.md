@@ -1598,3 +1598,21 @@ v0.28 因此把自动预算固定为字面量 `attempt: 1`。触发条件也很�
 这一设计把一次动作的最坏外部成本从一次 provider call 提高到最多两次，把 runtime gate 从最多一次提高到最多两次，但仍是可解释的常数。Workspace Query evidence 的 428 握手不会重复计算：repair request 复用同一份 exact current evidence 和同一 canonical revision；第二轮只重新执行 replacement 的 proposed impact。没有 provider key 的 owner-only Sites 路径继续不为模型 evidence 启动 DuckDB，非 runtime source 的计划继续不加载 preflight chunk，`agent-evidence` 与 `query-preflight` 也保持 dynamic import，避免为了少数失败拖慢首屏。
 
 v0.28 仍不声称可以自动评价叙事质量、版式美感或事实正确性。Compiler 能证明 SQL 可执行、binding 有效、数值类型与 cardinality 合同成立，却不能证明“这份董事会结论是否合理”。一次 self-repair 只消除系统已经有确定反例的 proposal，不替代人的 review。未来若加入 screenshot critic、semantic eval、预算可配置的多轮 Agent 或跨设备后台任务，应当显式增加新的 evidence 类型、次数预算、取消能力与审计日志；不能把当前字面量一次重试悄悄改成循环。AI Native 的关键不是让 AI 永不停下，而是让每一次自动前进都有清晰证据、有限成本和不变的用户确认边界。
+
+## 34. 列是 AI 表格的一等操作：用可验证键替代整份 CSV 重写
+
+Rune 已经能让 Agent 通过 `upsert_data_row` 修改或插入一条 CSV/扁平 JSON 记录，但很多真实 Excel 意图天然是按列表达的：“给每个地区增加毛利率”“把状态列中的两项更新为 approved”“把 Revenue 改名为 Net revenue”。此前模型只能对这类任务使用 `replace_text`，要么复制整段 header/多行 source，要么发出多个逐行操作。前者把一个结构化意图退化成脆弱的大字符串匹配，后者浪费 operation/token 预算，也更容易漏行、重复 key 或在中间步骤产生暂时不合法的表。
+
+v0.29 把 Data 列提升为 provider contract 中的一等语义对象，但没有引入隐藏 spreadsheet model。`upsert_data_column` 仍只引用 canonical source 中一个现有 `keyColumn`、一个目标 `column` 和最多 200 对 `{ keyValue, value }`。key 必须在当前 CSV/JSON 中全局唯一且非空，类型也必须精确匹配；Rune 不按可见行号、排序位置或字符串化值猜测记录。模型看到和返回的仍是普通 JSON operation，compiler 才负责把它投影为完整可审阅 source。
+
+“新增列”和“更新列”故意采用不同完整性约束。目标列不存在时，每一条当前记录必须恰好收到一个值；少一行就拒绝，而不是把遗漏静默写成空值。这样“增加利润率”不会因模型漏掉 LATAM 而制造一个看似成功的半成品。空 CSV 模板是唯一自然例外：它可以用空 values 新增一个 header，因为当前确实没有任何 row 需要覆盖。目标列已经存在时，operation 可以只携带需要改变的 keyed subset，但空 update、全部 no-op、重复 key 或不存在的 key 都失败；列操作永远不能插入记录，也不能修改用于定位记录的 key column。
+
+`rename_data_column` 则解决 schema evolution 的最小原语。它只接受一个精确存在的旧列名和一个非空、单行、去除首尾空白且不与现有列碰撞的新名称。CSV 保留列顺序和原有换行风格；扁平 JSON 在每个 object 中就地替换 property name，保留 array 与 single-object shape、属性顺序和 scalar 类型。嵌套 JSON 继续失败关闭，因为任意深度 property rename 会立即引入 JSONPath、父节点 identity 和数组展开语义，超出当前可证明边界。
+
+列名能安全改写 source，并不代表它能安全改写 workspace。Data 是 SQL、legacy metric 和 Chart 的上游：只把 `Q2 Revenue` 改成 `Q2 Net Revenue` 会让 Query binder 和 direct Chart schema 同时失效。v0.29 没有在 column compiler 中偷偷级联字符串替换；它先生成一份 honest proposal，再复用 v0.27 的完整 runtime impact graph。Workspace Agent 若同时协调 SQL/Chart 可以让整笔事务通过；File Agent 若只改 Data，则下游 compiler 会在 DuckDB 启动前或执行时拒绝，并可进入 v0.28 的一次有界修复。依赖关系仍由 source 明示，而不是由一个“智能重命名”黑箱改写。
+
+Selection scope 也不获得例外权限。CSV header rename 如果 serializer 能证明 header 外的 bytes 完全不变，就可以落在一个精确 header selection 内；更新整列值必须把每个受影响 row 包含在 selection 中。JSON pretty-print 或 property rename 通常会重写更大范围，原有 prefix/suffix proof 会自然拒绝过窄 selection。换言之，semantic operation 描述“想改什么”，Selection revision proof 仍决定“这次是否被授权改这些 bytes”，二者不能互相替代。
+
+这一能力还让新建 Data 的模型路径更 source-native。Rune 的空表模板仍是 `Item,Value`；模型可以先精确 rename 两个 starter columns，再按 row 或 column operation 填入数据，而不必用一段完整 CSV replacement 夺回文件作者权。所有结果继续经过同一个 `parseDataSource`、flat JSON gate、120,000 字符输出上限、concrete diff、revision check、checkpoint 和 atomic persistence transaction。没有新增 npm dependency、数据库、后台 worker 或服务器状态，复杂度集中在已有 `agent-operations` compiler 和 Structured Output schema。
+
+v0.29 仍不是 Excel formula engine。列值由模型作为有界、显式 scalar 提议，Rune 可以证明它们与每个当前 key 一一对应、类型可序列化、下游仍可运行，却不能证明 `0.34` 真的是 source 中 Revenue 与 Cost 的正确商。当前 instruction 要求 derived value 只能来自可见 source；真正可重算的公式应继续写进 DuckDB SQL，并通过 Query/Chart/metric binding消费。未来若需要公式列，可以定义可读的 Data transform artifact 或受限 expression AST，让公式成为 canonical source，而不是把 Excel 式隐藏公式塞回 CSV cell。先把列级结构操作做成可验证原语，才能在不牺牲 source-first 原则的前提下逐步接近 AI Native spreadsheet。

@@ -283,6 +283,8 @@ test("converts both operation protocols into provider structured-output schemas"
     "replace_markdown_section",
     "insert_markdown_section_after",
     "upsert_data_row",
+    "upsert_data_column",
+    "rename_data_column",
     "replace_deck_slide",
     "insert_deck_slide_after",
   ]);
@@ -307,6 +309,13 @@ test("accepts strict artifact-aware section, row, and slide operations", () => {
       keyValue: "Q2",
       cells: [{ column: "Revenue", value: 42.5 }, { column: "Approved", value: true }],
     },
+    {
+      type: "upsert_data_column",
+      keyColumn: "Quarter",
+      column: "Margin",
+      values: [{ keyValue: "Q2", value: 0.3 }],
+    },
+    { type: "rename_data_column", column: "Revenue", nextColumn: "Net revenue" },
     { type: "replace_deck_slide", title: "Results", slide: "# Results\n\nImproved." },
     { type: "insert_deck_slide_after", title: "Results", slide: "# Outlook\n\nDurable." },
   ];
@@ -316,6 +325,23 @@ test("accepts strict artifact-aware section, row, and slide operations", () => {
   assert.equal(AgentOperationPatchSchema.safeParse({
     ...base,
     edits: [{ ...operations[0], find: "unexpected" }],
+  }).success, false);
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    ...base,
+    edits: [{ type: "upsert_data_column", keyColumn: "id", column: "value", values: [{ keyValue: null, value: 1 }] }],
+  }).success, false);
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    ...base,
+    edits: [{
+      type: "upsert_data_column",
+      keyColumn: "id",
+      column: "value",
+      values: Array.from({ length: 201 }, (_, index) => ({ keyValue: index, value: index })),
+    }],
+  }).success, false);
+  assert.equal(AgentOperationPatchSchema.safeParse({
+    ...base,
+    edits: [{ type: "rename_data_column", column: "Old", nextColumn: "New", unexpected: true }],
   }).success, false);
 });
 

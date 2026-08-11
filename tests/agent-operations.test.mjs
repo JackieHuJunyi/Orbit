@@ -342,6 +342,167 @@ test("requires a globally unique non-empty data key and keeps row identity fixed
   assert.match(noOp.errors.join(" "), /does not change/i);
 });
 
+test("adds and updates a typed CSV column by exact unique row keys", () => {
+  const artifact = dataArtifact("Region,Revenue\nAPAC,42\nEMEA,31\n");
+  const added = compileAgentOperationPatch(artifact, operationPlan({
+    type: "upsert_data_column",
+    keyColumn: "Region",
+    column: "Margin",
+    values: [
+      { keyValue: "APAC", value: 0.34 },
+      { keyValue: "EMEA", value: 0.29 },
+    ],
+  }));
+  assert.deepEqual(added.errors, []);
+  assert.deepEqual(parseDataSource(added.plan.nextSource), {
+    columns: ["Region", "Revenue", "Margin"],
+    rows: [
+      { Region: "APAC", Revenue: 42, Margin: 0.34 },
+      { Region: "EMEA", Revenue: 31, Margin: 0.29 },
+    ],
+    errors: [],
+    format: "CSV",
+  });
+  assert.equal(added.plan.nextSource.endsWith("\n"), true);
+
+  const updated = compileAgentOperationPatch(
+    { ...artifact, source: added.plan.nextSource },
+    operationPlan({
+      type: "upsert_data_column",
+      keyColumn: "Region",
+      column: "Revenue",
+      values: [{ keyValue: "APAC", value: 48.5 }],
+    }),
+  );
+  assert.deepEqual(updated.errors, []);
+  assert.deepEqual(parseDataSource(updated.plan.nextSource).rows, [
+    { Region: "APAC", Revenue: 48.5, Margin: 0.34 },
+    { Region: "EMEA", Revenue: 31, Margin: 0.29 },
+  ]);
+
+  const empty = compileAgentOperationPatch(dataArtifact("Item,Value\n"), operationPlan({
+    type: "upsert_data_column",
+    keyColumn: "Item",
+    column: "Status",
+    values: [],
+  }));
+  assert.deepEqual(empty.errors, []);
+  assert.deepEqual(parseDataSource(empty.plan.nextSource).columns, ["Item", "Value", "Status"]);
+  assert.deepEqual(parseDataSource(empty.plan.nextSource).rows, []);
+});
+
+test("preserves flat JSON shape and scalar types for column upserts and renames", () => {
+  const arrayArtifact = dataArtifact('[{"id":1,"name":"Alpha"},{"id":2,"name":"Beta"}]\n');
+  const added = compileAgentOperationPatch(arrayArtifact, operationPlan({
+    type: "upsert_data_column",
+    keyColumn: "id",
+    column: "active",
+    values: [{ keyValue: 1, value: true }, { keyValue: 2, value: false }],
+  }));
+  assert.deepEqual(added.errors, []);
+  assert.deepEqual(JSON.parse(added.plan.nextSource), [
+    { id: 1, name: "Alpha", active: true },
+    { id: 2, name: "Beta", active: false },
+  ]);
+  const renamed = compileAgentOperationPatch(
+    { ...arrayArtifact, source: added.plan.nextSource },
+    operationPlan({ type: "rename_data_column", column: "name", nextColumn: "label" }),
+  );
+  assert.deepEqual(renamed.errors, []);
+  assert.deepEqual(JSON.parse(renamed.plan.nextSource), [
+    { id: 1, label: "Alpha", active: true },
+    { id: 2, label: "Beta", active: false },
+  ]);
+  assert.equal(renamed.plan.nextSource.endsWith("\n"), true);
+
+  const objectArtifact = dataArtifact('{"id":"only","count":1}');
+  const objectAdded = compileAgentOperationPatch(objectArtifact, operationPlan({
+    type: "upsert_data_column",
+    keyColumn: "id",
+    column: "approved",
+    values: [{ keyValue: "only", value: true }],
+  }));
+  assert.deepEqual(JSON.parse(objectAdded.plan.nextSource), { id: "only", count: 1, approved: true });
+});
+
+test("renames one exact CSV column while preserving order and exact header selection", () => {
+  const artifact = dataArtifact("Region,Revenue,Approved\r\nAPAC,42,true\r\n");
+  const renamed = compileAgentOperationPatch(artifact, operationPlan({
+    type: "rename_data_column",
+    column: "Revenue",
+    nextColumn: "Net revenue",
+  }));
+  assert.deepEqual(renamed.errors, []);
+  assert.deepEqual(parseDataSource(renamed.plan.nextSource).columns, ["Region", "Net revenue", "Approved"]);
+  assert.equal(renamed.plan.nextSource.includes("\r\n"), true);
+  assert.deepEqual(validateCompiledSelectionPatch(
+    artifact,
+    { start: 0, end: artifact.source.length },
+    renamed.plan.nextSource,
+  ), []);
+  assert.deepEqual(validateCompiledSelectionPatch(
+    artifact,
+    { start: artifact.source.indexOf("Revenue"), end: artifact.source.indexOf("Revenue") + "Revenue".length },
+    renamed.plan.nextSource,
+  ), []);
+});
+
+test("rejects incomplete, ambiguous, fabricated, or no-op data-column operations", () => {
+  const artifact = dataArtifact("id,value\n1,a\n2,b");
+  const cases = [
+    [
+      { type: "upsert_data_column", keyColumn: "missing", column: "score", values: [{ keyValue: 1, value: 10 }, { keyValue: 2, value: 20 }] },
+      /key column not found/i,
+    ],
+    [
+      { type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 10 }] },
+      /every current row/i,
+    ],
+    [
+      { type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 10 }, { keyValue: 1, value: 11 }] },
+      /repeats key/i,
+    ],
+    [
+      { type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 10 }, { keyValue: 3, value: 30 }] },
+      /row not found/i,
+    ],
+    [
+      { type: "upsert_data_column", keyColumn: "id", column: "id", values: [{ keyValue: 1, value: 2 }] },
+      /cannot change the key/i,
+    ],
+    [
+      { type: "upsert_data_column", keyColumn: "id", column: "value", values: [] },
+      /at least one keyed value/i,
+    ],
+    [
+      { type: "upsert_data_column", keyColumn: "id", column: "value", values: [{ keyValue: 1, value: "a" }] },
+      /does not change/i,
+    ],
+    [{ type: "rename_data_column", column: "missing", nextColumn: "next" }, /column not found/i],
+    [{ type: "rename_data_column", column: "value", nextColumn: "id" }, /already exists/i],
+    [{ type: "rename_data_column", column: "value", nextColumn: "value" }, /unchanged/i],
+    [{ type: "rename_data_column", column: "value", nextColumn: " bad " }, /outer whitespace/i],
+  ];
+  cases.forEach(([edit, expected]) => {
+    const compiled = compileAgentOperationPatch(artifact, operationPlan(edit));
+    assert.match(compiled.errors.join(" "), expected);
+  });
+
+  const ambiguous = compileAgentOperationPatch(dataArtifact("id,value\n1,a\n1,b"), operationPlan({
+    type: "upsert_data_column",
+    keyColumn: "id",
+    column: "score",
+    values: [{ keyValue: 1, value: 10 }],
+  }));
+  assert.match(ambiguous.errors.join(" "), /not unique/i);
+  const nested = compileAgentOperationPatch(dataArtifact('[{"id":1,"meta":{"score":2}}]'), operationPlan({
+    type: "rename_data_column",
+    column: "meta",
+    nextColumn: "details",
+  }));
+  assert.match(nested.errors.join(" "), /flat JSON/i);
+});
+
 test("replaces and inserts Deck slides by an exact unique title", () => {
   const artifact = deckArtifact(deckSource);
   const replaced = compileAgentOperationPatch(artifact, operationPlan({
@@ -390,6 +551,12 @@ test("rejects semantic operations on incompatible artifact kinds", () => {
   const cases = [
     [documentArtifact("# Report"), {
       type: "upsert_data_row", keyColumn: "id", keyValue: 1, cells: [{ column: "id", value: 1 }],
+    }],
+    [documentArtifact("# Report"), {
+      type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 2 }],
+    }],
+    [documentArtifact("# Report"), {
+      type: "rename_data_column", column: "old", nextColumn: "new",
     }],
     [dataArtifact("id,value\n1,a"), {
       type: "replace_markdown_section", heading: "Summary", body: "Text.",
