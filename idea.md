@@ -1460,3 +1460,19 @@ pin 不是一条新的 dependency edge。真实 edge 继续只能从 metric、`w
 无模型密钥时也不能退回旧的“读取整个 workspace”语义。确定性 local planner 现在同时接收完整 workspace 与选中的 context pack：前者只负责创建时的 collision-safe identity 和最终安全校验，后者决定内容综合或同步时真正可见、可修改的文件。无论 provider 还是 local plan，Apply 仍然绑定规划开始时的完整 workspace revision，在所有真实 artifact 上执行 adapter、binding、identity 与 dependency validation；pin 改变模型读权限，不改变写入事务的否决范围。
 
 这些 pin 不写入 localStorage、checkpoint、folder manifest、source、Git 或 dependency graph；刷新即消失，Folder Pull 和 Reset 也会清空。短生命周期是产品语义而不是暂时偷懒：用户表达的是“本次请求需要这些材料”，并未声明永久架构关系。未来若高频工作流确实需要稳定 context set，应设计一个可读、可审查、可版本化的 workspace source artifact，而不是悄悄把 pin 持久化为隐藏 UI 状态。下一条更重要的数据链路仍是 Query output 和 user-defined metric 成为正式 dependency source，让真正有长期语义的 `CSV → SQL → Chart → Report/Deck` 关系继续回到 canonical files，而不是依赖手工 pin。
+
+## 26. Query-backed Chart：让 SQL 成为可复用视图，而不是隐藏的数据副本
+
+v0.21 的图谱已经能说明 Data 如何进入 Query、Data 如何进入 Chart、Chart 又如何进入报告和演示，但这仍是两条并行支线：SQL 结果只能在 Query preview 里看，Chart 只能直接读取原始 CSV/JSON。真实分析工作却常常先计算利润率、同比或分组结果，再把这个派生视图画成图。如果用户必须手工复制 SQL 结果到另一份 CSV，Rune 不仅打断了 live loop，还制造了一个没有来源证明、很快会过期的第二事实表。v0.22 因此让 Chart 的 `source` 可以直接指向 Query，第一次把 `Data → SQL → Chart → Markdown/Deck` 编译成一条完整且可导航的链。
+
+最关键的设计不是“如何把二维数组传给图表”，而是 Query result 到底是不是 artifact。当前答案是否定的：`.sql`、Data source 和 `.chart.json` 才是可读、可 diff、可同步的 canonical files；执行结果只是绑定这些 source revision 的运行时证据。Rune 创建的 `WorkspaceQuerySnapshot` 同时记录 Query id/source、canonical Data id/source、结果、截断状态和 cell lineage，只留在组件内存中。任一 SQL 或 Data 字符变化都会使旧 snapshot 失效，consumer 回到 loading 并重新执行；结果不会进入 localStorage、folder manifest、checkpoint 或 Git。这样既避免重复事实，也不用引入数据库、后台 job 或缓存失效服务。
+
+workspace safety gate 又不能在每次键入 Chart JSON 或应用 Agent patch 时都启动 DuckDB。为此 v0.22 增加一个刻意保守的静态 Query output contract：只分析一个顶层 SELECT 的 projection；直接字段沿用字段名，直接读取 `workspace_data` 时可以展开 `*`，计算表达式必须写显式 `AS` alias。重复且大小写不唯一的输出名、隐式派生列名、无法判断 relation 的 star、set query 或超过 256 列都会拒绝成为 Chart source。这里的静态 compiler 只证明“这个名字会存在”，绝不伪造运行值或血缘；不支持的 SQL 仍可在 Query preview 中只读执行，只是不能被下游 Chart 当成稳定 schema。
+
+真正渲染时，preview coordinator 只执行当前 Query、Chart、Document 或 Deck 实际引用到的 Query，并让同一个 Query 的多个 consumer 共享一份 revision-keyed snapshot。Chart resolver 再检查 snapshot 是否对应当前 SQL 与当前 Data，且结果没有超过 500 行边界；missing、running、error、stale 或 truncated 都显示明确状态，不回退到旧图。这个区分也解决了同步 validation 与异步 runtime 的职责：前者阻止一次 patch 破坏下游字段合同，后者证明当前可视图确实来自当前输入。默认 workspace 新增的 margin chart 就直接读取 `regional-analysis.sql` 的 `margin_pct`，同时被报告和第四页 Deck 引用。
+
+血缘能力没有因为中间多了一层 SQL 就被放宽。Query snapshot 中的每个 direct cell 仍携带原始 Data row/column；Chart datum 分别保存 category 和 value provenance。若 `Region` 是直接 projection，点击 Query-backed Chart 的 label 可以跳到 canonical CSV 中准确的 Region token；若 `margin_pct` 来自除法和 rounding，它保持可见但没有写入 target，bar/value 只读。Chart 的排序、格式化和 `maxItems` 不会改变这个判断，重复 label 也不会触发 fuzzy lookup。派生结果帮助用户理解和定位，但不能冒充 canonical fact，这继续遵守 v0.19 的 proof-safe 原则。
+
+导出不能依赖某个 preview 恰好已经打开。准备 DOCX、PPTX 或 standalone HTML 时，Rune 会从目标的 chart references 收集 Query source，使用同一 DuckDB path 对当前 revision 重新执行，拒绝截断，再把这些 snapshot 显式传给 Office/HTML chart compiler。最终包中的表格或 vector bars 是确定性的 frozen handoff，不包含 worker、脚本或 live binding；导出 review 仍绑定完整 workspace reference，编辑后不能下载旧文件。这样线上 preview 和离线交付共享同一计算语义，却不会把 ephemeral execution state 偷渡进 source。
+
+这一轮没有增加 hosted compute、数据库或新的 production service，DuckDB 仍只在需要 Query consumer 时 lazy-load。长期可以把 user-defined metric 也建模为显式 Query output binding，或为多 Data/JOIN 引入 relation-qualified provenance set；但那需要先定义 cardinality、集合导航和多 source revision 合同。现在的窄实现先证明了一件更重要的事：SQL 可以成为 Rune 的可复用视图层，同时保持 canonical files、运行时证据、Agent 权限和导出快照四者边界清楚。

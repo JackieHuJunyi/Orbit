@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+  inferQueryOutputColumns,
+  validateReadQuery,
+} from "./sql.ts";
+import {
+  workspaceQuerySnapshotIsCurrent,
+  type WorkspaceQuerySnapshot,
+} from "./query-snapshot.ts";
 
 export const ChartSpecSchema = z.object({
   version: z.literal(1),
@@ -35,12 +43,21 @@ export type ChartDatum = {
   formatted: string;
   ratio: number;
   sourceRowIndex: number;
+  categoryProvenance: ChartCellProvenance | null;
+  valueProvenance: ChartCellProvenance | null;
+};
+
+export type ChartCellProvenance = {
+  artifactId: string;
+  sourceRowIndex: number;
+  sourceColumn: string;
 };
 
 export type ChartModel = {
   chartArtifactId: string;
   sourceArtifactId: string;
   sourceArtifactName: string;
+  sourceArtifactKind: "data" | "query";
   spec: ChartSpec;
   data: ChartDatum[];
 };
@@ -106,40 +123,96 @@ export function resolveChartModel(
   chartArtifact: ChartArtifactLike,
   artifacts: ChartArtifactLike[],
   parseData: (source: string) => ParsedChartData,
+  querySnapshots: WorkspaceQuerySnapshot[] = [],
 ): ChartResolution {
   const parsedSpec = parseChartSource(chartArtifact.source);
   if (!parsedSpec.spec) return { errors: parsedSpec.errors };
   const spec = parsedSpec.spec;
-  const sourceArtifact = artifacts.find((artifact) => artifact.id === spec.source && artifact.kind === "data");
-  if (!sourceArtifact) return { errors: [`Data source not found: ${spec.source}`] };
+  const sourceArtifact = artifacts.find((artifact) => artifact.id === spec.source);
+  if (!sourceArtifact || (sourceArtifact.kind !== "data" && sourceArtifact.kind !== "query")) {
+    return { errors: [`Chart source not found: ${spec.source}`] };
+  }
 
-  const parsedData = parseData(sourceArtifact.source);
-  if (parsedData.errors.length) return { errors: parsedData.errors.map((error) => `Data source: ${error}`) };
+  let columns: string[];
+  let rows: unknown[][];
+  let provenanceFor: (rowIndex: number, columnIndex: number, column: string) => ChartCellProvenance | null;
+  if (sourceArtifact.kind === "data") {
+    const parsedData = parseData(sourceArtifact.source);
+    if (parsedData.errors.length) return { errors: parsedData.errors.map((error) => `Data source: ${error}`) };
+    columns = parsedData.columns;
+    rows = parsedData.rows.map((row) => columns.map((column) => row[column]));
+    provenanceFor = (rowIndex, _columnIndex, column) => ({
+      artifactId: sourceArtifact.id,
+      sourceRowIndex: rowIndex,
+      sourceColumn: column,
+    });
+  } else {
+    const canonicalData = artifacts.find((artifact) => artifact.kind === "data");
+    if (!canonicalData) return { errors: ["A Query-backed Chart needs a canonical Data artifact."] };
+    const snapshot = querySnapshots.find((candidate) => candidate.queryArtifactId === sourceArtifact.id);
+    if (!snapshot) return { errors: [`Query source is still running: ${sourceArtifact.id}`] };
+    if (!workspaceQuerySnapshotIsCurrent(snapshot, sourceArtifact, canonicalData)) {
+      return { errors: [`Query source result is stale: ${sourceArtifact.id}`] };
+    }
+    if (snapshot.result.truncated) {
+      return { errors: [`Query source exceeds 500 rows; narrow ${sourceArtifact.name} before charting it.`] };
+    }
+    columns = snapshot.result.columns;
+    rows = snapshot.result.rows;
+    provenanceFor = (rowIndex, columnIndex) => {
+      const lineage = snapshot.result.cellLineage[rowIndex]?.[columnIndex];
+      return lineage ? {
+        artifactId: snapshot.dataArtifactId,
+        sourceRowIndex: lineage.sourceRowIndex,
+        sourceColumn: lineage.sourceColumn,
+      } : null;
+    };
+  }
+
   const errors: string[] = [];
-  if (!parsedData.columns.includes(spec.category)) errors.push(`Category column not found: ${spec.category}`);
-  if (!parsedData.columns.includes(spec.value)) errors.push(`Value column not found: ${spec.value}`);
+  const categoryIndices = columns.flatMap((column, index) => column === spec.category ? [index] : []);
+  const valueIndices = columns.flatMap((column, index) => column === spec.value ? [index] : []);
+  if (!categoryIndices.length) errors.push(`Category column not found: ${spec.category}`);
+  if (categoryIndices.length > 1) errors.push(`Category column is ambiguous: ${spec.category}`);
+  if (!valueIndices.length) errors.push(`Value column not found: ${spec.value}`);
+  if (valueIndices.length > 1) errors.push(`Value column is ambiguous: ${spec.value}`);
   if (errors.length) return { errors };
+  const categoryIndex = categoryIndices[0];
+  const valueIndex = valueIndices[0];
 
-  const rows: Array<{ label: string; value: number; sourceRowIndex: number }> = [];
-  parsedData.rows.forEach((row, index) => {
-    const label = String(row[spec.category] ?? "").trim();
-    const value = toFiniteNumber(row[spec.value]);
+  const chartRows: Array<{
+    label: string;
+    value: number;
+    sourceRowIndex: number;
+    categoryProvenance: ChartCellProvenance | null;
+    valueProvenance: ChartCellProvenance | null;
+  }> = [];
+  rows.forEach((row, index) => {
+    const label = String(row[categoryIndex] ?? "").trim();
+    const value = toFiniteNumber(row[valueIndex]);
     if (!label) errors.push(`Row ${index + 1} has an empty ${spec.category} value.`);
     if (value == null) errors.push(`Row ${index + 1} has a non-numeric ${spec.value} value.`);
-    if (label && value != null) rows.push({ label, value, sourceRowIndex: index });
+    if (label && value != null) chartRows.push({
+      label,
+      value,
+      sourceRowIndex: index,
+      categoryProvenance: provenanceFor(index, categoryIndex, spec.category),
+      valueProvenance: provenanceFor(index, valueIndex, spec.value),
+    });
   });
   if (errors.length) return { errors };
-  if (!rows.length) return { errors: ["The chart data source has no rows."] };
+  if (!chartRows.length) return { errors: ["The chart data source has no rows."] };
 
-  if (spec.sort === "ascending") rows.sort((left, right) => left.value - right.value);
-  if (spec.sort === "descending") rows.sort((left, right) => right.value - left.value);
-  const visibleRows = rows.slice(0, spec.maxItems);
+  if (spec.sort === "ascending") chartRows.sort((left, right) => left.value - right.value);
+  if (spec.sort === "descending") chartRows.sort((left, right) => right.value - left.value);
+  const visibleRows = chartRows.slice(0, spec.maxItems);
   const maximum = Math.max(...visibleRows.map((row) => Math.abs(row.value)), 0) || 1;
   return {
     model: {
       chartArtifactId: chartArtifact.id,
       sourceArtifactId: sourceArtifact.id,
       sourceArtifactName: sourceArtifact.name,
+      sourceArtifactKind: sourceArtifact.kind,
       spec,
       data: visibleRows.map((row) => ({
         ...row,
@@ -149,6 +222,52 @@ export function resolveChartModel(
     },
     errors: [],
   };
+}
+
+export function validateChartSourceBinding(
+  chartArtifact: ChartArtifactLike,
+  artifacts: ChartArtifactLike[],
+  parseData: (source: string) => ParsedChartData,
+) {
+  const parsedSpec = parseChartSource(chartArtifact.source);
+  if (!parsedSpec.spec) return parsedSpec.errors;
+  const spec = parsedSpec.spec;
+  const sourceArtifact = artifacts.find((artifact) => artifact.id === spec.source);
+  if (!sourceArtifact || (sourceArtifact.kind !== "data" && sourceArtifact.kind !== "query")) {
+    return [`Chart source not found: ${spec.source}`];
+  }
+  if (sourceArtifact.kind === "data") {
+    return resolveChartModel(chartArtifact, artifacts, parseData).errors;
+  }
+  const queryErrors = validateReadQuery(sourceArtifact.source);
+  if (queryErrors.length) return queryErrors.map((error) => `Query source: ${error}`);
+  const canonicalData = artifacts.find((artifact) => artifact.kind === "data");
+  if (!canonicalData) return ["A Query-backed Chart needs a canonical Data artifact."];
+  const parsedData = parseData(canonicalData.source);
+  if (parsedData.errors.length) return parsedData.errors.map((error) => `Data source: ${error}`);
+  const output = inferQueryOutputColumns(sourceArtifact.source, parsedData.columns);
+  if (output.errors.length) return output.errors.map((error) => `Query source: ${error}`);
+  const errors: string[] = [];
+  if (!output.columns.includes(spec.category)) errors.push(`Category column not found in Query output: ${spec.category}`);
+  if (!output.columns.includes(spec.value)) errors.push(`Value column not found in Query output: ${spec.value}`);
+  return errors;
+}
+
+export function chartQuerySourceIdsForArtifact(
+  artifact: ChartArtifactLike,
+  artifacts: ChartArtifactLike[],
+) {
+  const chartIds = artifact.kind === "chart" ? [artifact.id] : findChartReferences(artifact.source);
+  const queryIds = new Set<string>();
+  chartIds.forEach((chartId) => {
+    const chart = artifacts.find((candidate) => candidate.id === chartId && candidate.kind === "chart");
+    if (!chart) return;
+    const spec = parseChartSource(chart.source).spec;
+    if (!spec) return;
+    const source = artifacts.find((candidate) => candidate.id === spec.source);
+    if (source?.kind === "query") queryIds.add(source.id);
+  });
+  return artifacts.filter((candidate) => queryIds.has(candidate.id)).map((candidate) => candidate.id);
 }
 
 export function findChartReferences(source: string): string[] {

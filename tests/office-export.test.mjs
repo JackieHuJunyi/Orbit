@@ -12,6 +12,7 @@ import {
 } from "../app/lib/office-export.ts";
 import { convertOfficeFile } from "../app/lib/office-import.ts";
 import { defaultArtifacts, parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
+import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function packageParts(bytes) {
   const parts = unzipSync(bytes);
@@ -126,8 +127,8 @@ test("exports CSV values as deterministic formula-safe XLSX and imports them bac
 test("exports Deck Markdown as deterministic semantic PPTX and imports it back", () => {
   const artifact = defaultArtifacts.find((candidate) => candidate.kind === "slides");
   assert.ok(artifact);
-  const first = exportOfficeArtifact(artifact, defaultArtifacts);
-  const second = exportOfficeArtifact(artifact, defaultArtifacts);
+  const first = exportOfficeArtifact(artifact, defaultArtifacts, [defaultQuerySnapshot()]);
+  const second = exportOfficeArtifact(artifact, defaultArtifacts, [defaultQuerySnapshot()]);
   assert.equal(first.targetType, "pptx");
   assert.equal(first.fileName, "board-briefing.pptx");
   assert.deepEqual(first.bytes, second.bytes);
@@ -147,6 +148,7 @@ test("exports Deck Markdown as deterministic semantic PPTX and imports it back",
     .map(([, bytes]) => strFromU8(bytes))
     .join("\n");
   assert.match(slideXml, /Q2 revenue by region/);
+  assert.match(slideXml, /Gross margin by region/);
   assert.match(slideXml, /Q2 revenue by region bar 1/);
   assert.match(slideXml, /APAC/);
   assert.match(slideXml, /\$1\.84M/);
@@ -157,7 +159,7 @@ test("exports Deck Markdown as deterministic semantic PPTX and imports it back",
   assert.match(roundTrip.source, /Growth became more durable/);
   assert.match(roundTrip.source, /Momentum with healthier economics/);
   assert.match(roundTrip.source, /\| Q2 revenue \| Quarter over quarter \| Gross margin \|/);
-  assert.equal(compileDeckSource(roundTrip.source).slideCount, 3);
+  assert.equal(compileDeckSource(roundTrip.source).slideCount, 4);
   assert.deepEqual(validateArtifact(roundTrip), []);
 });
 
@@ -189,7 +191,7 @@ test("exports compiled workspace metrics instead of canonical template tokens", 
   const compiled = compileArtifactSource(document.source, defaultArtifacts);
   assert.deepEqual(compiled.unresolved, []);
   assert.doesNotMatch(compiled.source, /\{\{\s*metric/);
-  const exported = exportOfficeArtifact({ ...document, source: compiled.source }, defaultArtifacts);
+  const exported = exportOfficeArtifact({ ...document, source: compiled.source }, defaultArtifacts, [defaultQuerySnapshot()]);
   const parts = packageParts(exported.bytes);
   const documentXml = strFromU8(parts["word/document.xml"]);
   assert.doesNotMatch(documentXml, /\{\{\s*metric/);
@@ -203,7 +205,7 @@ test("exports compiled workspace metrics instead of canonical template tokens", 
 
   const compiledDeck = compileArtifactSource(deck.source, defaultArtifacts);
   assert.deepEqual(compiledDeck.unresolved, []);
-  const pptx = exportOfficeArtifact({ ...deck, source: compiledDeck.source }, defaultArtifacts);
+  const pptx = exportOfficeArtifact({ ...deck, source: compiledDeck.source }, defaultArtifacts, [defaultQuerySnapshot()]);
   const slideXml = Object.entries(packageParts(pptx.bytes))
     .filter(([path]) => /^ppt\/slides\/slide\d+\.xml$/.test(path))
     .map(([, bytes]) => strFromU8(bytes))

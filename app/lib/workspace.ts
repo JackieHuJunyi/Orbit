@@ -1,5 +1,5 @@
 import Papa from "papaparse";
-import { parseChartSource } from "./charts.ts";
+import { parseChartSource, validateChartSourceBinding } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { validateReadQuery } from "./sql.ts";
 
@@ -52,6 +52,10 @@ Revenue reached **{{ metric("total_revenue") }}**, up **{{ metric("qoq_growth") 
 
 {{ chart("regional-revenue-chart") }}
 
+## Margin signal from SQL
+
+{{ chart("regional-margin-chart") }}
+
 ## Decisions
 
 | Decision | Owner | Due |
@@ -95,6 +99,20 @@ const chartSource = `{
   "maxItems": 8
 }`;
 
+const marginChartSource = `{
+  "version": 1,
+  "title": "Gross margin by region",
+  "description": "Derived live from regional-analysis.sql",
+  "source": "regional-analysis",
+  "mark": "bar",
+  "category": "Region",
+  "value": "margin_pct",
+  "sort": "descending",
+  "format": "percent",
+  "color": "#8267ce",
+  "maxItems": 8
+}`;
+
 const slidesSource = `---
 version: 1
 title: Q2 Board Briefing
@@ -131,6 +149,17 @@ A shared story compiled from the same source as the operating data and written r
 Partner distribution created a repeatable acquisition channel.
 
 {{ chart("regional-revenue-chart") }}
+
+---
+
+<!-- layout: split -->
+<!-- eyebrow: Query-backed signal -->
+
+# Margin varies by region.
+
+This chart is computed from readable DuckDB SQL, not copied into the deck.
+
+{{ chart("regional-margin-chart") }}
 `;
 
 export const defaultArtifacts: WorkspaceArtifact[] = [
@@ -161,6 +190,13 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
     kind: "chart",
     language: "Chart JSON",
     source: chartSource,
+  },
+  {
+    id: "regional-margin-chart",
+    name: "regional-margin.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: marginChartSource,
   },
   {
     id: "board-briefing",
@@ -206,10 +242,30 @@ export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[]
       restored.push(candidate as WorkspaceArtifact);
     });
   }
+  const preservedIds = new Set(seen);
+  let skippedDefaultQueryChart = false;
   cloneDefaultArtifacts().forEach((artifact) => {
-    if (!seen.has(artifact.id)) restored.push(artifact);
+    if (seen.has(artifact.id)) return;
+    if (artifact.id === "regional-margin-chart"
+      && validateChartSourceBinding(artifact, [...restored, artifact], parseDataSource).length) {
+      skippedDefaultQueryChart = true;
+      return;
+    }
+    restored.push(artifact);
+    seen.add(artifact.id);
   });
-  return restored;
+  if (!skippedDefaultQueryChart) return restored;
+  return restored.map((artifact) => (
+    preservedIds.has(artifact.id)
+      ? artifact
+      : {
+          ...artifact,
+          source: artifact.source.replaceAll(
+            '{{ chart("regional-margin-chart") }}',
+            "Query-backed margin view becomes available when the preserved SQL exposes Region and margin_pct.",
+          ),
+        }
+  ));
 }
 
 function normalizeJsonRows(value: unknown): Array<Record<string, DataCell>> {
@@ -512,7 +568,7 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
     if (plan.nextSource !== document.source) patches.push({ artifactId: document.id, ...plan });
   }
   if (query && /分析|query|sql|一致|所有|全局/i.test(instruction)) {
-    const plan = planQuery("汇总季度收入");
+    const plan = planQuery("计算利润率并排序");
     if (plan.nextSource !== query.source) patches.push({ artifactId: query.id, ...plan });
   }
   if (slides) {

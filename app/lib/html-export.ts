@@ -2,6 +2,7 @@ import { compileArtifactSource } from "./bindings.ts";
 import { renderChartReferencesToHtml, resolveChartModel, type ChartModel } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_STANDALONE_HTML_BYTES = 2 * 1024 * 1024;
@@ -13,7 +14,11 @@ const PORTABLE_EXPORT_HEAD = `<meta name="generator" content="Rune" />
   @media print{html,body{background:#fff!important}.deck{display:block;padding:0}.slide{width:13.333333in;height:7.5in;max-width:none;break-after:page;page-break-after:always;border-radius:0;box-shadow:none}.slide:last-child{break-after:auto;page-break-after:auto}}
 </style>`;
 
-function resolvedCharts(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[]) {
+function resolvedCharts(
+  artifact: WorkspaceArtifact,
+  workspace: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[],
+) {
   const compiled = compileArtifactSource(artifact.source, workspace);
   if (compiled.unresolved.length) {
     throw new Error(`Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before HTML export.`);
@@ -25,18 +30,22 @@ function resolvedCharts(artifact: WorkspaceArtifact, workspace: WorkspaceArtifac
   compiled.chartReferences.forEach((chartArtifactId) => {
     const chartArtifact = workspace.find((candidate) => candidate.id === chartArtifactId && candidate.kind === "chart");
     if (!chartArtifact) throw new Error(`Chart not found: ${chartArtifactId}`);
-    const resolution = resolveChartModel(chartArtifact, workspace, parseDataSource);
+    const resolution = resolveChartModel(chartArtifact, workspace, parseDataSource, querySnapshots);
     if (!resolution.model) throw new Error(`Chart ${chartArtifactId}: ${resolution.errors[0] ?? "current data could not compile"}`);
     charts.set(chartArtifactId, resolution.model);
   });
   return { compiledSource: compiled.source, charts };
 }
 
-export function exportDeckHtml(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[]): ArtifactExportResult<"html"> {
+export function exportDeckHtml(
+  artifact: WorkspaceArtifact,
+  workspace: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[] = [],
+): ArtifactExportResult<"html"> {
   if (artifact.kind !== "slides" || !isDeckMarkdownArtifact(artifact)) {
     throw new Error("Standalone HTML export supports Deck Markdown presentations.");
   }
-  const { compiledSource, charts } = resolvedCharts(artifact, workspace);
+  const { compiledSource, charts } = resolvedCharts(artifact, workspace, querySnapshots);
   const deck = compileDeckSource(compiledSource);
   if (!deck.html) throw new Error(deck.errors[0] ?? "The Deck Markdown source could not compile to HTML.");
   const rendered = renderChartReferencesToHtml(deck.html, (chartArtifactId) => {

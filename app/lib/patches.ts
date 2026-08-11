@@ -1,5 +1,5 @@
 import { compileArtifactSource } from "./bindings.ts";
-import { resolveChartModel } from "./charts.ts";
+import { validateChartSourceBinding } from "./charts.ts";
 import { parseDataSource, validateArtifact, type WorkspaceArtifact } from "./workspace.ts";
 
 export type ArtifactSourcePatch = {
@@ -63,8 +63,8 @@ export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): stri
   });
 
   artifacts.filter((artifact) => artifact.kind === "chart").forEach((artifact) => {
-    const resolution = resolveChartModel(artifact, artifacts, parseDataSource);
-    resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
+    validateChartSourceBinding(artifact, artifacts, parseDataSource)
+      .forEach((error) => errors.push(`${artifact.name}: ${error}`));
   });
 
   return [...new Set(errors)];

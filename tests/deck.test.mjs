@@ -5,6 +5,7 @@ import { renderChartReferencesToHtml, resolveChartModel } from "../app/lib/chart
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "../app/lib/deck.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { defaultArtifacts, detectArtifact, parseDataSource, planLocalChange, validateArtifact } from "../app/lib/workspace.ts";
+import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function deckArtifact() {
   const artifact = defaultArtifacts.find((item) => item.kind === "slides");
@@ -18,8 +19,8 @@ test("parses the bounded Deck Markdown grammar", () => {
   assert.deepEqual(parsed.errors, []);
   assert.equal(parsed.deck?.frontmatter.version, 1);
   assert.equal(parsed.deck?.frontmatter.title, "Q2 Board Briefing");
-  assert.equal(parsed.deck?.slides.length, 3);
-  assert.deepEqual(parsed.deck?.slides.map((slide) => slide.layout), ["cover", "metrics", "split"]);
+  assert.equal(parsed.deck?.slides.length, 4);
+  assert.deepEqual(parsed.deck?.slides.map((slide) => slide.layout), ["cover", "metrics", "split", "split"]);
   assert.equal(detectArtifact("briefing.deck.md", deckArtifact().source)?.kind, "slides");
   assert.equal(detectArtifact("briefing.deck.md", deckArtifact().source)?.language, "Deck Markdown");
 });
@@ -28,15 +29,15 @@ test("compiles metrics, numbering, and a shared chart into static deck HTML", ()
   const compiledBindings = compileArtifactSource(deckArtifact().source, defaultArtifacts);
   const deck = compileDeckSource(compiledBindings.source);
   assert.deepEqual(deck.errors, []);
-  assert.equal(deck.slideCount, 3);
+  assert.equal(deck.slideCount, 4);
   assert.match(deck.html ?? "", /\$4\.82M/);
-  assert.match(deck.html ?? "", /01 \/ 03/);
-  assert.match(deck.html ?? "", /03 \/ 03/);
+  assert.match(deck.html ?? "", /01 \/ 04/);
+  assert.match(deck.html ?? "", /04 \/ 04/);
   assert.match(deck.html ?? "", /\{\{\s*chart\("regional-revenue-chart"\)/);
 
   const runtime = renderChartReferencesToHtml(deck.html ?? "", (id) => {
     const chart = defaultArtifacts.find((artifact) => artifact.id === id);
-    return chart ? resolveChartModel(chart, defaultArtifacts, parseDataSource) : { errors: ["Missing chart"] };
+    return chart ? resolveChartModel(chart, defaultArtifacts, parseDataSource, [defaultQuerySnapshot()]) : { errors: ["Missing chart"] };
   });
   assert.doesNotMatch(runtime, /\{\{\s*chart/);
   assert.match(runtime, /rune-embedded-chart/);
@@ -69,7 +70,7 @@ test("keeps an escaped horizontal rule as slide text instead of a slide boundary
   );
   const parsed = parseDeckSource(source);
   assert.deepEqual(parsed.errors, []);
-  assert.equal(parsed.deck?.slides.length, 3);
+  assert.equal(parsed.deck?.slides.length, 4);
   assert.match(compileDeckSource(source).html ?? "", /<p>---<\/p>/);
 });
 
@@ -93,8 +94,8 @@ test("plans theme and conclusion changes in Deck Markdown source", () => {
 
   const conclusion = planLocalChange(deck, "新增一页结论");
   assert.match(conclusion.nextSource, /layout: conclusion/);
-  assert.equal(compileDeckSource(conclusion.nextSource).slideCount, 4);
+  assert.equal(compileDeckSource(conclusion.nextSource).slideCount, 5);
   const refreshed = planLocalChange({ ...deck, source: conclusion.nextSource }, "新增一页结论");
   assert.equal((refreshed.nextSource.match(/layout: conclusion/g) ?? []).length, 1);
-  assert.equal(compileDeckSource(refreshed.nextSource).slideCount, 4);
+  assert.equal(compileDeckSource(refreshed.nextSource).slideCount, 5);
 });

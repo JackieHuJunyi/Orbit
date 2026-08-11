@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -16,13 +16,20 @@ import {
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
 import { compileArtifactSource } from "../lib/bindings";
 import {
+  chartQuerySourceIdsForArtifact,
+  parseChartSource,
   renderChartReferencesToHtml,
   resolveChartModel,
   tokenizeChartReferences,
+  type ChartCellProvenance,
   type ChartModel,
+  type ChartResolution,
 } from "../lib/charts";
 import { compileDeckSource, isDeckMarkdownArtifact } from "../lib/deck";
-import type { QueryCell, WorkspaceQueryResult } from "../lib/duckdb-client";
+import type {
+  QueryCell,
+  WorkspaceQuerySnapshot,
+} from "../lib/query-snapshot";
 import {
   deriveDataPreviewSourceTargets,
   derivePreviewSourceTargets,
@@ -32,7 +39,6 @@ import {
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
-import { queryLineageRevisionMatches } from "../lib/sql";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (
@@ -40,6 +46,112 @@ type PreviewTargetHandler = (
   target: PreviewSourceTarget,
   viaLabel?: string,
 ) => void;
+
+type QueryRuntimeEntry =
+  | { status: "loading" }
+  | { status: "ready"; snapshot: WorkspaceQuerySnapshot }
+  | { status: "error"; error: string };
+
+type QueryRuntime = Record<string, QueryRuntimeEntry>;
+
+function usePreviewQueryRuntime(
+  artifact: WorkspaceArtifact,
+  artifacts: WorkspaceArtifact[],
+): QueryRuntime {
+  const requiredQueryIds = useMemo(() => (
+    artifact.kind === "query"
+      ? [artifact.id]
+      : chartQuerySourceIdsForArtifact(artifact, artifacts)
+  ), [artifact, artifacts]);
+  const queryArtifacts = useMemo(() => requiredQueryIds.flatMap((queryId) => {
+    const query = artifacts.find((candidate) => candidate.id === queryId && candidate.kind === "query");
+    return query ? [query] : [];
+  }), [artifacts, requiredQueryIds]);
+  const dataArtifact = artifacts.find((candidate) => candidate.kind === "data");
+  const revisionKey = useMemo(() => JSON.stringify({
+    data: dataArtifact ? [dataArtifact.id, dataArtifact.source] : null,
+    queries: queryArtifacts.map((query) => [query.id, query.source]),
+  }), [dataArtifact, queryArtifacts]);
+  const [runtime, setRuntime] = useState<{ revisionKey: string; entries: QueryRuntime }>({
+    revisionKey: "",
+    entries: {},
+  });
+
+  useEffect(() => {
+    if (!queryArtifacts.length) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      if (!dataArtifact) {
+        setRuntime({
+          revisionKey,
+          entries: Object.fromEntries(queryArtifacts.map((query) => [query.id, {
+            status: "error",
+            error: "Add a CSV or JSON artifact before running SQL.",
+          }])),
+        });
+        return;
+      }
+      void import("../lib/duckdb-client")
+        .then(async ({ runWorkspaceQuerySnapshot }) => Promise.all(queryArtifacts.map(async (query) => {
+          try {
+            return [query.id, {
+              status: "ready",
+              snapshot: await runWorkspaceQuerySnapshot(query, dataArtifact),
+            }] as const;
+          } catch (error) {
+            return [query.id, {
+              status: "error",
+              error: error instanceof Error
+                ? error.message.replace(/^Error:\s*/i, "")
+                : "DuckDB could not run this query.",
+            }] as const;
+          }
+        })))
+        .then((entries) => {
+          if (active) setRuntime({ revisionKey, entries: Object.fromEntries(entries) });
+        })
+        .catch((error: unknown) => {
+          if (!active) return;
+          const message = error instanceof Error
+            ? error.message.replace(/^Error:\s*/i, "")
+            : "DuckDB could not load in this browser.";
+          setRuntime({
+            revisionKey,
+            entries: Object.fromEntries(queryArtifacts.map((query) => [query.id, { status: "error", error: message }])),
+          });
+        });
+    }, 350);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [dataArtifact, queryArtifacts, revisionKey]);
+
+  if (!queryArtifacts.length) return {};
+  if (runtime.revisionKey !== revisionKey) {
+    return Object.fromEntries(queryArtifacts.map((query) => [query.id, { status: "loading" }]));
+  }
+  return Object.fromEntries(queryArtifacts.map((query) => [
+    query.id,
+    runtime.entries[query.id] ?? { status: "loading" },
+  ]));
+}
+
+function resolvePreviewChart(
+  chartArtifact: WorkspaceArtifact,
+  artifacts: WorkspaceArtifact[],
+  queryRuntime: QueryRuntime,
+): ChartResolution {
+  const spec = parseChartSource(chartArtifact.source).spec;
+  const source = spec ? artifacts.find((candidate) => candidate.id === spec.source) : undefined;
+  if (source?.kind === "query") {
+    const entry = queryRuntime[source.id];
+    if (!entry || entry.status === "loading") return { errors: [`Running query source locally: ${source.name}`] };
+    if (entry.status === "error") return { errors: [`Query source: ${entry.error}`] };
+    return resolveChartModel(chartArtifact, artifacts, parseDataSource, [entry.snapshot]);
+  }
+  return resolveChartModel(chartArtifact, artifacts, parseDataSource);
+}
 
 function EmptyPreview({ message }: { message: string }) {
   return (
@@ -61,17 +173,30 @@ function ChartFigure({
   embedded?: boolean;
   onTargetSource?: PreviewTargetHandler;
 }) {
-  const sourceTargets = resolveDataPreviewSourceTargets(model.sourceArtifactId, artifacts);
-  const cellsByCoordinate = new Map(sourceTargets?.cells.map((target) => (
-    [`${target.rowIndex}\u0000${target.column}`, target] as const
+  const provenanceArtifactIds = new Set(model.data.flatMap((datum) => (
+    [datum.categoryProvenance?.artifactId, datum.valueProvenance?.artifactId]
+      .filter((artifactId): artifactId is string => Boolean(artifactId))
   )));
+  const sourceTargetsByArtifact = new Map([...provenanceArtifactIds].flatMap((artifactId) => {
+    const targets = resolveDataPreviewSourceTargets(artifactId, artifacts);
+    return targets ? [[artifactId, targets] as const] : [];
+  }));
+  const resolveProvenance = (provenance: ChartCellProvenance | null) => {
+    if (!provenance) return null;
+    const sourceTargets = sourceTargetsByArtifact.get(provenance.artifactId);
+    const target = sourceTargets?.cells.find((candidate) => (
+      candidate.rowIndex === provenance.sourceRowIndex
+      && candidate.column === provenance.sourceColumn
+    ));
+    return sourceTargets && target ? { sourceTargets, target } : null;
+  };
   const rows = model.data.map((datum) => ({
     datum,
-    categoryTarget: cellsByCoordinate.get(`${datum.sourceRowIndex}\u0000${model.spec.category}`),
-    valueTarget: cellsByCoordinate.get(`${datum.sourceRowIndex}\u0000${model.spec.value}`),
+    categorySource: resolveProvenance(datum.categoryProvenance),
+    valueSource: resolveProvenance(datum.valueProvenance),
   }));
-  const hasTargetableCells = Boolean(onTargetSource && sourceTargets && rows.some((row) => (
-    row.categoryTarget || row.valueTarget
+  const hasTargetableCells = Boolean(onTargetSource && rows.some((row) => (
+    row.categorySource || row.valueSource
   )));
   return (
     <figure
@@ -80,22 +205,22 @@ function ChartFigure({
       aria-label={model.spec.title}
     >
       <figcaption>
-        <div><span>Live chart</span><strong>{model.spec.title}</strong></div>
+        <div><span>Live chart{model.sourceArtifactKind === "query" ? " · Query output" : ""}</span><strong>{model.spec.title}</strong></div>
         <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
       </figcaption>
       <div className="chart-bars">
-        {rows.map(({ datum, categoryTarget, valueTarget }) => {
-          const openCategory = sourceTargets && categoryTarget && onTargetSource
+        {rows.map(({ datum, categorySource, valueSource }) => {
+          const openCategory = categorySource && onTargetSource
             ? () => onTargetSource(
-                sourceTargets.artifact,
-                categoryTarget,
+                categorySource.sourceTargets.artifact,
+                categorySource.target,
                 `${model.spec.title} · category ${datum.label}`,
               )
             : undefined;
-          const openValue = sourceTargets && valueTarget && onTargetSource
+          const openValue = valueSource && onTargetSource
             ? () => onTargetSource(
-                sourceTargets.artifact,
-                valueTarget,
+                valueSource.sourceTargets.artifact,
+                valueSource.target,
                 `${model.spec.title} · value ${datum.formatted}`,
               )
             : undefined;
@@ -110,8 +235,8 @@ function ChartFigure({
                   className="chart-source-cell chart-category-cell"
                   data-chart-source-cell="category"
                   type="button"
-                  aria-label={`Open ${categoryTarget?.label} in ${sourceTargets?.artifact.name} as Agent context`}
-                  title={`Open exact ${model.spec.category} source cell in ${sourceTargets?.artifact.name}`}
+                  aria-label={`Open ${categorySource?.target.label} in ${categorySource?.sourceTargets.artifact.name} as Agent context`}
+                  title={`Open exact ${categorySource?.target.column} source cell in ${categorySource?.sourceTargets.artifact.name}`}
                   onClick={openCategory}
                 >
                   <span title={datum.label}>{datum.label}</span>
@@ -122,8 +247,8 @@ function ChartFigure({
                   className="chart-source-cell chart-value-cell"
                   data-chart-source-cell="value"
                   type="button"
-                  aria-label={`Open ${valueTarget?.label} in ${sourceTargets?.artifact.name} as Agent context`}
-                  title={`Open exact ${model.spec.value} source cell in ${sourceTargets?.artifact.name}`}
+                  aria-label={`Open ${valueSource?.target.label} in ${valueSource?.sourceTargets.artifact.name} as Agent context`}
+                  title={`Open exact ${valueSource?.target.column} source cell in ${valueSource?.sourceTargets.artifact.name}`}
                   onClick={openValue}
                 >
                   <span className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></span>
@@ -147,15 +272,17 @@ function ChartFigure({
 function EmbeddedChart({
   chartId,
   artifacts,
+  queryRuntime,
   onTargetSource,
 }: {
   chartId: string;
   artifacts: WorkspaceArtifact[];
+  queryRuntime: QueryRuntime;
   onTargetSource?: PreviewTargetHandler;
 }) {
   const chartArtifact = artifacts.find((artifact) => artifact.id === chartId && artifact.kind === "chart");
   if (!chartArtifact) return <div className="embedded-chart-error">Chart not found · {chartId}</div>;
-  const resolution = resolveChartModel(chartArtifact, artifacts, parseDataSource);
+  const resolution = resolvePreviewChart(chartArtifact, artifacts, queryRuntime);
   if (!resolution.model) return <div className="embedded-chart-error">Chart unavailable · {resolution.errors[0]}</div>;
   return <ChartFigure model={resolution.model} artifacts={artifacts} embedded onTargetSource={onTargetSource} />;
 }
@@ -163,10 +290,12 @@ function EmbeddedChart({
 function MarkdownSource({
   source,
   artifacts,
+  queryRuntime,
   onTargetSource,
 }: {
   source: string;
   artifacts: WorkspaceArtifact[];
+  queryRuntime: QueryRuntime;
   onTargetSource?: PreviewTargetHandler;
 }) {
   const parts = tokenizeChartReferences(source);
@@ -176,7 +305,7 @@ function MarkdownSource({
         <Fragment key={`${part.type}-${index}`}>
           {part.type === "source"
             ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.value}</ReactMarkdown>
-            : <EmbeddedChart chartId={part.value} artifacts={artifacts} onTargetSource={onTargetSource} />}
+            : <EmbeddedChart chartId={part.value} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />}
         </Fragment>
       ))}
     </>
@@ -186,12 +315,14 @@ function MarkdownSource({
 function DocumentPreview({
   artifact,
   artifacts,
+  queryRuntime,
   targets,
   activeSelection,
   onTargetSource,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
+  queryRuntime: QueryRuntime;
   targets: PreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
@@ -225,7 +356,7 @@ function DocumentPreview({
           </nav>
         )}
         <div className="markdown-body">
-          <MarkdownSource source={compiled.source} artifacts={artifacts} onTargetSource={onTargetSource} />
+          <MarkdownSource source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />
         </div>
       </article>
     </div>
@@ -387,77 +518,18 @@ function DataPreview({
   );
 }
 
-type QueryState =
-  | { status: "loading"; result?: undefined; error?: undefined }
-  | { status: "ready"; result: WorkspaceQueryResult; error?: undefined; querySource: string; dataArtifactId: string; dataSource: string }
-  | { status: "error"; result?: undefined; error: string; querySource: string; dataArtifactId: string; dataSource: string };
-
 function QueryPreview({
   artifact,
   dataArtifact,
+  runtimeEntry,
   onTargetSource,
 }: {
   artifact: WorkspaceArtifact;
   dataArtifact?: WorkspaceArtifact;
+  runtimeEntry?: QueryRuntimeEntry;
   onTargetSource?: PreviewTargetHandler;
 }) {
-  const [state, setState] = useState<QueryState>({ status: "loading" });
-  const source = artifact.source;
-
-  useEffect(() => {
-    let active = true;
-    const timer = window.setTimeout(() => {
-      if (!dataArtifact) {
-        setState({
-          status: "error",
-          error: "Add a CSV or JSON artifact before running SQL.",
-          querySource: source,
-          dataArtifactId: "",
-          dataSource: "",
-        });
-        return;
-      }
-      setState({ status: "loading" });
-      const dataFormat = dataArtifact.source.trim().startsWith("[") || dataArtifact.source.trim().startsWith("{")
-        ? "JSON"
-        : "CSV";
-      void import("../lib/duckdb-client")
-        .then(({ runWorkspaceQuery }) => runWorkspaceQuery(source, dataArtifact.source, dataFormat))
-        .then((result) => {
-          if (active) setState({
-            status: "ready",
-            result,
-            querySource: source,
-            dataArtifactId: dataArtifact.id,
-            dataSource: dataArtifact.source,
-          });
-        })
-        .catch((error: unknown) => {
-          if (!active) return;
-          const message = error instanceof Error ? error.message : "DuckDB could not run this query.";
-          setState({
-            status: "error",
-            error: message.replace(/^Error:\s*/i, ""),
-            querySource: source,
-            dataArtifactId: dataArtifact.id,
-            dataSource: dataArtifact.source,
-          });
-        });
-    }, 350);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [dataArtifact, source]);
-
-  const stateIsCurrent = state.status === "loading" || queryLineageRevisionMatches(
-    state,
-    source,
-    dataArtifact?.id ?? "",
-    dataArtifact?.source ?? "",
-  );
-  if (state.status === "loading" || !stateIsCurrent) {
+  if (!runtimeEntry || runtimeEntry.status === "loading") {
     return (
       <div className="query-loading" role="status">
         <span><LoaderCircle aria-hidden="true" /></span>
@@ -466,9 +538,9 @@ function QueryPreview({
       </div>
     );
   }
-  if (state.status === "error") return <EmptyPreview message={state.error} />;
+  if (runtimeEntry.status === "error") return <EmptyPreview message={runtimeEntry.error} />;
 
-  const { result } = state;
+  const { result } = runtimeEntry.snapshot;
   const sourceTargets = dataArtifact ? deriveDataPreviewSourceTargets(dataArtifact) : { rows: [], cells: [] };
   const rowsByIndex = new Map(sourceTargets.rows.map((target) => [target.index, target] as const));
   const cellsByCoordinate = new Map(sourceTargets.cells.map((target) => (
@@ -504,13 +576,15 @@ function QueryPreview({
 function ChartPreview({
   artifact,
   artifacts,
+  queryRuntime,
   onTargetSource,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
+  queryRuntime: QueryRuntime;
   onTargetSource?: PreviewTargetHandler;
 }) {
-  const resolution = resolveChartModel(artifact, artifacts, parseDataSource);
+  const resolution = resolvePreviewChart(artifact, artifacts, queryRuntime);
   if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? "The chart could not compile."} />;
   return <div className="chart-stage"><ChartFigure model={resolution.model} artifacts={artifacts} onTargetSource={onTargetSource} /></div>;
 }
@@ -519,6 +593,7 @@ function SlidesPreview({
   artifact,
   source,
   artifacts,
+  queryRuntime,
   targets,
   activeSelection,
   onTargetSource,
@@ -526,6 +601,7 @@ function SlidesPreview({
   artifact: WorkspaceArtifact;
   source: string;
   artifacts: WorkspaceArtifact[];
+  queryRuntime: QueryRuntime;
   targets: PreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
@@ -537,7 +613,7 @@ function SlidesPreview({
   const renderedSource = renderChartReferencesToHtml(runtimeSource, (chartArtifactId) => {
     const chartArtifact = artifacts.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
     return chartArtifact
-      ? resolveChartModel(chartArtifact, artifacts, parseDataSource)
+      ? resolvePreviewChart(chartArtifact, artifacts, queryRuntime)
       : { errors: [`Chart not found: ${chartArtifactId}`] };
   });
   return (
@@ -584,6 +660,7 @@ export function ArtifactPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
 }) {
+  const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
   const compiled = compileArtifactSource(artifact.source, artifacts);
   if (artifact.kind === "data") {
@@ -591,10 +668,10 @@ export function ArtifactPreview({
     return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
   }
   const targets = derivePreviewSourceTargets(artifact);
-  if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
+  if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
   if (artifact.kind === "query") {
-    return <QueryPreview artifact={artifact} dataArtifact={artifacts.find((item) => item.kind === "data")} onTargetSource={onTargetSource} />;
+    return <QueryPreview artifact={artifact} dataArtifact={artifacts.find((item) => item.kind === "data")} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
   }
-  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} onTargetSource={onTargetSource} />;
-  return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
+  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />;
+  return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
 }

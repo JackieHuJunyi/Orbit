@@ -7,9 +7,16 @@ import {
   QUERY_PROVENANCE_COLUMN,
   queryLineageColumnsForOutput,
   queryLineageSourceIsSupported,
-  type QueryCellLineage,
 } from "./sql.ts";
-import { parseDataSource } from "./workspace.ts";
+import {
+  createWorkspaceQuerySnapshot,
+  type QueryCell,
+  type WorkspaceQueryResult,
+  type WorkspaceQuerySnapshot,
+} from "./query-snapshot.ts";
+import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
+
+export type { QueryCell, WorkspaceQueryResult, WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 
 const DUCKDB_VERSION = "1.32.0";
 const DUCKDB_CDN = `https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@${DUCKDB_VERSION}/dist`;
@@ -22,19 +29,6 @@ const PINNED_BUNDLES: duckdb.DuckDBBundles = {
     mainModule: `${DUCKDB_CDN}/duckdb-eh.wasm`,
     mainWorker: `${DUCKDB_CDN}/duckdb-browser-eh.worker.js`,
   },
-};
-
-export type QueryCell = string | number | boolean | null;
-
-export type WorkspaceQueryResult = {
-  columns: string[];
-  rows: QueryCell[][];
-  sourceRowIndices: Array<number | null>;
-  cellLineage: Array<Array<QueryCellLineage | null>>;
-  lineageMode: "direct" | "read-only";
-  elapsedMs: number;
-  truncated: boolean;
-  engine: string;
 };
 
 let databasePromise: Promise<duckdb.AsyncDuckDB> | null = null;
@@ -167,4 +161,17 @@ export function runWorkspaceQuery(
   const job = queryQueue.then(() => executeQuery(sql, dataSource, dataFormat));
   queryQueue = job.then(() => undefined, () => undefined);
   return job;
+}
+
+export async function runWorkspaceQuerySnapshot(
+  queryArtifact: WorkspaceArtifact,
+  dataArtifact: WorkspaceArtifact,
+): Promise<WorkspaceQuerySnapshot> {
+  if (queryArtifact.kind !== "query") throw new Error("Choose a Query artifact as the derived chart source.");
+  if (dataArtifact.kind !== "data") throw new Error("Add a canonical CSV or JSON artifact before running SQL.");
+  const dataFormat = dataArtifact.source.trim().startsWith("[") || dataArtifact.source.trim().startsWith("{")
+    ? "JSON"
+    : "CSV";
+  const result = await runWorkspaceQuery(queryArtifact.source, dataArtifact.source, dataFormat);
+  return createWorkspaceQuerySnapshot(queryArtifact, dataArtifact, result);
 }

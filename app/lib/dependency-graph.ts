@@ -6,6 +6,7 @@ export const WORKSPACE_DEPENDENCY_KINDS = [
   "metric",
   "query",
   "chart-data",
+  "chart-query",
   "chart-embed",
 ] as const;
 
@@ -106,12 +107,12 @@ export function buildWorkspaceDependencyGraph(
       const parsed = parseChartSource(artifact.source);
       if (parsed.spec) {
         const source = artifactById.get(parsed.spec.source);
-        if (source?.kind === "data") {
+        if (source?.kind === "data" || source?.kind === "query") {
           addEdge({
             fromArtifactId: source.id,
             toArtifactId: artifact.id,
-            kind: "chart-data",
-            label: `${parsed.spec.category} → ${parsed.spec.value}`,
+            kind: source.kind === "query" ? "chart-query" : "chart-data",
+            label: `${source.kind === "query" ? "query output · " : ""}${parsed.spec.category} → ${parsed.spec.value}`,
             references: [parsed.spec.category, parsed.spec.value],
           });
         } else {
@@ -119,7 +120,7 @@ export function buildWorkspaceDependencyGraph(
             artifactId: artifact.id,
             kind: "chart-data",
             target: parsed.spec.source,
-            message: `Chart data source is unresolved: ${parsed.spec.source}`,
+            message: `Chart Data or Query source is unresolved: ${parsed.spec.source}`,
           });
         }
       } else {

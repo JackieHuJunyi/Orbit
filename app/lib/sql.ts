@@ -190,6 +190,105 @@ function projectionWithoutAlias(source: string) {
   return source.slice(0, aliasWord.start).trim();
 }
 
+export type QueryOutputContract = {
+  columns: string[];
+  errors: string[];
+};
+
+function projectionOutputName(source: string) {
+  const words = topLevelWords(source);
+  const aliasWord = [...words].reverse().find((word) => word.value === "as");
+  if (aliasWord) {
+    const alias = source.slice(aliasWord.end).trim();
+    const expression = source.slice(0, aliasWord.start).trim();
+    if (!expression || !new RegExp(`^${sqlIdentifier}$`, "u").test(alias)) return null;
+    return decodeIdentifier(alias);
+  }
+  const direct = source.trim().match(new RegExp(`^(?:${sqlIdentifier}\\s*\\.\\s*)?(${sqlIdentifier})$`, "u"));
+  return direct ? decodeIdentifier(direct[1]) : null;
+}
+
+export function inferQueryOutputColumns(
+  source: string,
+  workspaceDataColumns: string[] = [],
+): QueryOutputContract {
+  const queryErrors = validateReadQuery(source);
+  if (queryErrors.length) return { columns: [], errors: queryErrors };
+  const query = normalizeReadQuery(source);
+  const words = topLevelWords(query);
+  const selectWords = words.filter((word) => word.value === "select");
+  if (selectWords.length !== 1) {
+    return { columns: [], errors: ["A Chart query source needs one outer SELECT projection."] };
+  }
+  const selectWord = selectWords[0];
+  const followingWords = words.filter((word) => word.start >= selectWord.end);
+  const setOperator = followingWords.find((word) => ["except", "intersect", "union"].includes(word.value));
+  if (setOperator) {
+    return { columns: [], errors: ["Wrap set-query output in one outer SELECT with explicit column names before using it in a Chart."] };
+  }
+  const fromWord = followingWords.find((word) => word.value === "from");
+  const selectEnd = fromWord?.start
+    ?? followingWords.find((word) => ["fetch", "limit", "offset", "order", "qualify", "where"].includes(word.value))?.start
+    ?? query.length;
+  let selectList = query.slice(selectWord.end, selectEnd).trim();
+  selectList = selectList.replace(/^(?:all|distinct)\b\s*/iu, "");
+  const items = splitTopLevelList(selectList);
+  if (!items) return { columns: [], errors: ["The Query output projection could not be read safely."] };
+
+  let workspaceStarSource = false;
+  let workspaceStarQualifier = "workspace_data";
+  if (fromWord) {
+    const fromIndex = words.indexOf(fromWord);
+    const clauseStarts = new Set(["fetch", "group", "having", "limit", "offset", "order", "qualify", "where", "window"]);
+    const nextClause = words.slice(fromIndex + 1).find((word) => clauseStarts.has(word.value));
+    const fromSource = query.slice(fromWord.end, nextClause?.start ?? query.length).trim();
+    const fromMatch = fromSource.match(new RegExp(`^(${sqlIdentifier})(?:\\s+(?:as\\s+)?(${sqlIdentifier}))?$`, "iu"));
+    if (fromMatch && decodeIdentifier(fromMatch[1]).toLowerCase() === "workspace_data") {
+      workspaceStarSource = true;
+      workspaceStarQualifier = fromMatch[2] ?? fromMatch[1];
+    }
+  }
+
+  const columns: string[] = [];
+  for (const item of items) {
+    const trimmed = item.trim();
+    const qualifiedStar = trimmed.match(new RegExp(`^(${sqlIdentifier})\\s*\\.\\s*\\*$`, "u"));
+    if (trimmed === "*" || qualifiedStar) {
+      const qualifierMatches = !qualifiedStar
+        || sameIdentifier(qualifiedStar[1], workspaceStarQualifier)
+        || sameIdentifier(qualifiedStar[1], "workspace_data");
+      if (!workspaceStarSource || !qualifierMatches || !workspaceDataColumns.length) {
+        return {
+          columns: [],
+          errors: ["Chart-bound Query stars must expand directly from workspace_data with known canonical columns."],
+        };
+      }
+      columns.push(...workspaceDataColumns);
+      continue;
+    }
+    const outputName = projectionOutputName(trimmed);
+    if (!outputName) {
+      return {
+        columns: [],
+        errors: ["Give every derived Query field used by a Chart an explicit AS alias."],
+      };
+    }
+    columns.push(outputName);
+  }
+
+  if (!columns.length) return { columns: [], errors: ["A Chart query source needs at least one output column."] };
+  if (columns.length > 256) return { columns: [], errors: ["A Chart query source is limited to 256 output columns."] };
+  const seen = new Set<string>();
+  for (const column of columns) {
+    const normalized = column.toLocaleLowerCase("en-US");
+    if (!normalized || seen.has(normalized)) {
+      return { columns: [], errors: [`Query output column names must be unique: ${column || "unnamed"}.`] };
+    }
+    seen.add(normalized);
+  }
+  return { columns, errors: [] };
+}
+
 function classifyProjection(
   source: string,
   tableIdentifier: string,

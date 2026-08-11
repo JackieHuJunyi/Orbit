@@ -2,6 +2,7 @@ import { strToU8, zipSync } from "fflate";
 import { resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_OFFICE_EXPORT_SOURCE_CHARS = 2_000_000;
@@ -33,6 +34,7 @@ type DocxContext = {
   relationships: Array<{ id: string; target: string }>;
   warnings: Set<string>;
   workspace: WorkspaceArtifact[];
+  querySnapshots: WorkspaceQuerySnapshot[];
 };
 
 type PptParagraph = { text: string; bullet: boolean; level: number };
@@ -157,13 +159,18 @@ function isSafeOfficeLink(target: string) {
   }
 }
 
-function resolveOfficeChart(chartArtifactId: string, workspace: WorkspaceArtifact[], warnings: Set<string>) {
+function resolveOfficeChart(
+  chartArtifactId: string,
+  workspace: WorkspaceArtifact[],
+  warnings: Set<string>,
+  querySnapshots: WorkspaceQuerySnapshot[],
+) {
   const chartArtifact = workspace.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
   if (!chartArtifact) {
     warnings.add(`Chart ${chartArtifactId} was omitted because its workspace artifact was unavailable during Office export.`);
     return null;
   }
-  const resolution = resolveChartModel(chartArtifact, workspace, parseDataSource);
+  const resolution = resolveChartModel(chartArtifact, workspace, parseDataSource, querySnapshots);
   if (!resolution.model) {
     warnings.add(`Chart ${chartArtifactId} was omitted because its current data snapshot could not compile: ${resolution.errors[0] ?? "unknown chart error"}`);
     return null;
@@ -354,10 +361,14 @@ function docxNumbering() {
 <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${bulletLevels}</w:abstractNum><w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="multilevel"/>${decimalLevels}</w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num></w:numbering>`;
 }
 
-function exportDocx(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[]): OfficeExportResult {
+function exportDocx(
+  artifact: WorkspaceArtifact,
+  workspace: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[],
+): OfficeExportResult {
   if (artifact.source.length > MAX_DOCX_EXPORT_SOURCE_CHARS) throw new Error("DOCX export is limited to 200,000 source characters.");
   const warnings = new Set<string>();
-  const context: DocxContext = { relationships: [], warnings, workspace };
+  const context: DocxContext = { relationships: [], warnings, workspace, querySnapshots };
   const blocks = parseMarkdownBlocks(artifact.source);
   if (blocks.length > MAX_DOCX_EXPORT_BLOCKS) throw new Error("DOCX export is limited to 10,000 semantic blocks.");
   const body = blocks.map((block) => {
@@ -373,7 +384,7 @@ function exportDocx(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[])
     }
     const chartReference = block.source.match(EXACT_CHART_TOKEN)?.[1];
     if (chartReference) {
-      const chart = resolveOfficeChart(chartReference, context.workspace, warnings);
+      const chart = resolveOfficeChart(chartReference, context.workspace, warnings, context.querySnapshots);
       if (chart) return docxChart(chart, context);
     }
     return docxParagraph(block.source, context);
@@ -461,7 +472,12 @@ function exportXlsx(artifact: WorkspaceArtifact): OfficeExportResult {
   };
 }
 
-function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: WorkspaceArtifact[]): PptSlideModel {
+function deckSlideModel(
+  slide: DeckSlide,
+  warnings: Set<string>,
+  workspace: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[],
+): PptSlideModel {
   const blocks = parseMarkdownBlocks(slide.source);
   const headingIndex = blocks.findIndex((block) => block.type === "heading");
   const heading = headingIndex >= 0 ? blocks[headingIndex] : null;
@@ -479,7 +495,7 @@ function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: Work
     const source = block.type === "code" ? block.source.replace(/\n/g, " · ") : block.source;
     const chartReference = source.match(EXACT_CHART_TOKEN)?.[1];
     if (chartReference) {
-      const chart = resolveOfficeChart(chartReference, workspace, warnings);
+      const chart = resolveOfficeChart(chartReference, workspace, warnings, querySnapshots);
       if (chart) charts.push(chart);
       else sanitizeInlineSource(source, warnings);
       return;
@@ -609,11 +625,15 @@ function pptSlideLayout() {
   return `${XML_DECLARATION}<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Rune Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 }
 
-function exportPptx(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[]): OfficeExportResult {
+function exportPptx(
+  artifact: WorkspaceArtifact,
+  workspace: WorkspaceArtifact[],
+  querySnapshots: WorkspaceQuerySnapshot[],
+): OfficeExportResult {
   const parsed = parseDeckSource(artifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The Deck Markdown source is not valid.");
   const warnings = new Set<string>();
-  const models = parsed.deck.slides.map((slide) => deckSlideModel(slide, warnings, workspace));
+  const models = parsed.deck.slides.map((slide) => deckSlideModel(slide, warnings, workspace, querySnapshots));
   if (models.some((model) => model.tables.length > 2)) warnings.add("Only the first two tables on each slide are included in semantic PPTX export.");
   if (models.some((model) => model.charts.length > 1)) warnings.add("Only the first current-data chart snapshot on each slide is included in semantic PPTX export.");
   if (models.some((model) => model.charts.length && model.tables.length)) warnings.add("Tables on slides with a chart snapshot are omitted to keep the generated presentation layout readable.");
@@ -658,11 +678,15 @@ export function isOfficeExportArtifact(artifact: WorkspaceArtifact) {
     || (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md"));
 }
 
-export function exportOfficeArtifact(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[] = []): OfficeExportResult {
+export function exportOfficeArtifact(
+  artifact: WorkspaceArtifact,
+  workspace: WorkspaceArtifact[] = [],
+  querySnapshots: WorkspaceQuerySnapshot[] = [],
+): OfficeExportResult {
   if (!artifact.source.trim()) throw new Error("The source is empty.");
   if (artifact.source.length > MAX_OFFICE_EXPORT_SOURCE_CHARS) throw new Error("Office export is limited to 2,000,000 source characters.");
-  if (artifact.kind === "document") return exportDocx(artifact, workspace);
+  if (artifact.kind === "document") return exportDocx(artifact, workspace, querySnapshots);
   if (artifact.kind === "data") return exportXlsx(artifact);
-  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md")) return exportPptx(artifact, workspace);
+  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md")) return exportPptx(artifact, workspace, querySnapshots);
   throw new Error("Office export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
 }

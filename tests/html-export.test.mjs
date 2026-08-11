@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { exportDeckHtml, MAX_STANDALONE_HTML_BYTES } from "../app/lib/html-export.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
+import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function defaultDeck() {
   const deck = defaultArtifacts.find((artifact) => artifact.kind === "slides");
@@ -13,8 +14,8 @@ function defaultDeck() {
 test("exports a deterministic self-contained Deck HTML handoff", () => {
   const deck = defaultDeck();
   const sourceBefore = deck.source;
-  const first = exportDeckHtml(deck, defaultArtifacts);
-  const second = exportDeckHtml(deck, defaultArtifacts);
+  const first = exportDeckHtml(deck, defaultArtifacts, [defaultQuerySnapshot()]);
+  const second = exportDeckHtml(deck, defaultArtifacts, [defaultQuerySnapshot()]);
   assert.equal(first.targetType, "html");
   assert.equal(first.fileName, "board-briefing.html");
   assert.equal(first.mimeType, "text/html;charset=utf-8");
@@ -31,7 +32,9 @@ test("exports a deterministic self-contained Deck HTML handoff", () => {
   assert.match(html, /class="rune-embedded-chart"/);
   assert.match(html, /APAC/);
   assert.match(html, /@page\{size:13\.333333in 7\.5in/);
-  assert.equal((html.match(/<section class="slide /g) ?? []).length, 3);
+  assert.equal((html.match(/<section class="slide /g) ?? []).length, 4);
+  assert.match(html, /Gross margin by region/);
+  assert.match(html, /39\.1%/);
   assert.doesNotMatch(html, /\{\{\s*(?:metric|chart)\(/i);
   assert.doesNotMatch(html, /<script\b|<(?:iframe|object|embed|link)\b|<[a-z][^>]*\s(?:src|href)\s*=/i);
   assert.match(first.warnings.join(" "), /scriptless file/i);
@@ -62,7 +65,7 @@ test("sanitizes portable HTML filenames and hostile deck metadata", () => {
       .replace("Q2 · Board Briefing", "<img src=x onerror=alert(1)>")
       .replace(/\{\{ chart\("regional-revenue-chart"\) \}\}/g, "Chart intentionally removed"),
   };
-  const result = exportDeckHtml(deck, defaultArtifacts);
+  const result = exportDeckHtml(deck, defaultArtifacts, [defaultQuerySnapshot()]);
   assert.equal(result.fileName, "rune-CON.html");
   const html = new TextDecoder().decode(result.bytes);
   assert.doesNotMatch(html, /<script>|<img/i);

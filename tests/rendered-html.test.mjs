@@ -45,6 +45,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Open Row 1 · Region in regional-revenue\.csv as Agent context/);
   assert.match(html, /Open Row 1 · Q2 Revenue in regional-revenue\.csv as Agent context/);
   assert.match(html, /Click a label or bar to open its exact source cell/);
+  assert.match(html, /Running query source locally: regional-analysis\.sql/);
   assert.match(html, /Click a section for Agent/);
   assert.match(html, /data-preview-source-target="document-section"/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
@@ -63,10 +64,11 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /regional-analysis\.sql/);
   assert.match(html, /DuckDB SQL/);
   assert.match(html, /regional-revenue\.chart\.json/);
+  assert.match(html, /regional-margin\.chart\.json/);
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.21/);
+  assert.match(html, /Rune v0\.22/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);

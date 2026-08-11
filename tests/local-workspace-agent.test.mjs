@@ -32,7 +32,7 @@ test("uses the same collision-safe identity factory for repeated local creation 
 
 test("keeps existing deterministic workspace coordination available", () => {
   const plan = planLocalWorkspaceAgentChange(defaultArtifacts, "让分析、报告和演示保持一致");
-  assert.equal(plan.patches.length, 3);
+  assert.deepEqual(plan.patches.map((patch) => patch.artifactId), ["q2-review", "board-briefing"]);
   assert.deepEqual(plan.creations, []);
 });
 

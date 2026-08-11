@@ -7,6 +7,7 @@ import {
   buildBoundedQuery,
   buildQueryLineagePlan,
   expandQueryLineageColumns,
+  inferQueryOutputColumns,
   normalizeQuerySourceRowIndex,
   normalizeReadQuery,
   queryLineageColumnsForOutput,
@@ -20,6 +21,46 @@ test("accepts one read-only SELECT or WITH query", () => {
   assert.deepEqual(validateReadQuery("-- note\nWITH rows AS (SELECT 1 AS id) SELECT * FROM rows;"), []);
   assert.deepEqual(validateReadQuery("SELECT ';' AS punctuation, '-- text' AS note;"), []);
   assert.equal(normalizeReadQuery("/* note */ SELECT 1;;"), "SELECT 1");
+});
+
+test("derives an explicit stable output contract for Query-backed Charts", () => {
+  const sourceColumns = ["Region", "Revenue", "Cost"];
+  assert.deepEqual(inferQueryOutputColumns(`SELECT
+    Region,
+    Revenue AS revenue,
+    ROUND((Revenue - Cost) / Revenue * 100, 1) AS margin_pct
+  FROM workspace_data`, sourceColumns), {
+    columns: ["Region", "revenue", "margin_pct"],
+    errors: [],
+  });
+  assert.deepEqual(
+    inferQueryOutputColumns("SELECT * FROM workspace_data", sourceColumns).columns,
+    sourceColumns,
+  );
+  assert.deepEqual(
+    inferQueryOutputColumns("WITH totals AS (SELECT Region FROM workspace_data) SELECT Region AS region FROM totals", sourceColumns).columns,
+    ["region"],
+  );
+});
+
+test("refuses ambiguous or implicit derived Query output contracts", () => {
+  const sourceColumns = ["Region", "Revenue"];
+  assert.match(
+    inferQueryOutputColumns("SELECT Region, SUM(Revenue) FROM workspace_data GROUP BY Region", sourceColumns).errors[0],
+    /explicit AS alias/i,
+  );
+  assert.match(
+    inferQueryOutputColumns("SELECT Region AS value, Revenue AS VALUE FROM workspace_data", sourceColumns).errors[0],
+    /unique/i,
+  );
+  assert.match(
+    inferQueryOutputColumns("WITH rows AS (SELECT Region FROM workspace_data) SELECT * FROM rows", sourceColumns).errors[0],
+    /stars.*workspace_data/i,
+  );
+  assert.match(
+    inferQueryOutputColumns("SELECT Region FROM workspace_data UNION ALL SELECT Region FROM workspace_data", sourceColumns).errors[0],
+    /one outer SELECT|set-query/i,
+  );
 });
 
 test("rejects mutation and multiple SQL statements", () => {

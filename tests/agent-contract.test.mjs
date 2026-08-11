@@ -178,7 +178,7 @@ test("constrains query patches to read-only DuckDB SQL", () => {
   assert.match(buildAgentInstructions(queryRequest), /workspace_data/);
 });
 
-test("constrains chart patches to the strict data-bound JSON contract", () => {
+test("constrains chart patches to the strict Data-or-Query JSON contract", () => {
   const chartRequest = AgentRequestSchema.parse({
     ...request,
     artifact: {
@@ -190,6 +190,8 @@ test("constrains chart patches to the strict data-bound JSON contract", () => {
     },
   });
   assert.match(buildAgentInstructions(chartRequest), /strict Chart JSON/);
+  assert.match(buildAgentInstructions(chartRequest), /Data or Query artifact/);
+  assert.match(buildAgentInstructions(chartRequest), /explicit AS alias/);
   assert.match(buildAgentInstructions(chartRequest), /six-digit hex/);
 });
 

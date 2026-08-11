@@ -15,7 +15,7 @@ import {
   deriveWorkspaceMetrics,
   findMetricReferences,
 } from "../app/lib/bindings.ts";
-import { prepareWorkspacePatch } from "../app/lib/patches.ts";
+import { prepareWorkspacePatch, validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { compileDeckSource } from "../app/lib/deck.ts";
 
 test("parses the sample CSV without sending data anywhere", () => {
@@ -64,6 +64,21 @@ test("recognizes imported SQL and migrates older device workspaces", () => {
   assert.ok(restored.some((item) => item.kind === "chart"));
 });
 
+test("preserves an older custom Query without injecting an incompatible default Chart", () => {
+  const data = defaultArtifacts.find((item) => item.kind === "data");
+  const query = defaultArtifacts.find((item) => item.kind === "query");
+  assert.ok(data && query);
+  const customQuery = {
+    ...query,
+    source: 'SELECT Region, "Q2 Revenue" AS revenue FROM workspace_data ORDER BY revenue DESC;',
+  };
+  const restored = normalizeWorkspaceArtifacts([data, customQuery]);
+  assert.equal(restored.find((item) => item.id === query.id)?.source, customQuery.source);
+  assert.equal(restored.some((item) => item.id === "regional-margin-chart"), false);
+  assert.equal(restored.some((item) => item.source.includes('{{ chart("regional-margin-chart") }}')), false);
+  assert.deepEqual(validateWorkspaceArtifacts(restored), []);
+});
+
 test("recognizes and plans validated Chart JSON artifacts", () => {
   const chart = defaultArtifacts.find((item) => item.kind === "chart");
   assert.ok(chart);
@@ -97,8 +112,8 @@ test("compiles document and slide metrics from the shared CSV source", () => {
   assert.doesNotMatch(documentResult.source, /\{\{\s*metric/);
   assert.ok(findMetricReferences(slides.source).length >= 4);
   assert.deepEqual(slidesResult.unresolved, []);
-  assert.deepEqual(documentResult.chartReferences, ["regional-revenue-chart"]);
-  assert.deepEqual(slidesResult.chartReferences, ["regional-revenue-chart"]);
+  assert.deepEqual(documentResult.chartReferences, ["regional-revenue-chart", "regional-margin-chart"]);
+  assert.deepEqual(slidesResult.chartReferences, ["regional-revenue-chart", "regional-margin-chart"]);
   assert.deepEqual(documentResult.unresolvedCharts, []);
 });
 
@@ -116,20 +131,20 @@ test("recompiles every artifact when the canonical data changes", () => {
 
 test("coordinates analysis, report, and slides as one valid local workspace plan", () => {
   const plan = planLocalWorkspaceChange(defaultArtifacts, "让分析、报告和演示保持一致");
-  assert.equal(plan.patches.length, 3);
-  assert.equal(new Set(plan.patches.map((patch) => patch.artifactId)).size, 3);
+  assert.equal(plan.patches.length, 2);
+  assert.equal(new Set(plan.patches.map((patch) => patch.artifactId)).size, 2);
   assert.deepEqual(
     plan.patches.map((patch) => defaultArtifacts.find((artifact) => artifact.id === patch.artifactId)?.kind),
-    ["document", "query", "slides"],
+    ["document", "slides"],
   );
   const prepared = prepareWorkspacePatch(defaultArtifacts, plan.patches);
   assert.deepEqual(prepared.errors, []);
-  assert.match(prepared.nextArtifacts.find((artifact) => artifact.kind === "query")?.source ?? "", /SUM\("Q2 Revenue"\)/);
+  assert.equal(prepared.nextArtifacts.find((artifact) => artifact.kind === "query")?.source, defaultArtifacts.find((artifact) => artifact.kind === "query")?.source);
   const nextSlides = prepared.nextArtifacts.find((artifact) => artifact.kind === "slides")?.source ?? "";
   assert.match(nextSlides, /layout: conclusion/);
   const compiledDeck = compileDeckSource(nextSlides);
-  assert.equal(compiledDeck.slideCount, 4);
+  assert.equal(compiledDeck.slideCount, 5);
   assert.match(compiledDeck.html ?? "", /data-layout="conclusion"/);
-  assert.match(compiledDeck.html ?? "", /01 \/ 04/);
-  assert.match(compiledDeck.html ?? "", /04 \/ 04/);
+  assert.match(compiledDeck.html ?? "", /01 \/ 05/);
+  assert.match(compiledDeck.html ?? "", /05 \/ 05/);
 });

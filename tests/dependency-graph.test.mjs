@@ -24,8 +24,11 @@ test("compiles canonical data, query, metric, chart, and embed dependencies", ()
     ["regional-revenue", "regional-analysis", "query", "workspace_data"],
     ["regional-revenue", "regional-revenue-chart", "chart-data", "Region → Q2 Revenue"],
     ["regional-revenue", "board-briefing", "metric", "4 metrics"],
+    ["regional-analysis", "regional-margin-chart", "chart-query", "query output · Region → margin_pct"],
     ["regional-revenue-chart", "q2-review", "chart-embed", "chart embed"],
     ["regional-revenue-chart", "board-briefing", "chart-embed", "chart embed"],
+    ["regional-margin-chart", "q2-review", "chart-embed", "chart embed"],
+    ["regional-margin-chart", "board-briefing", "chart-embed", "chart embed"],
   ]);
 });
 
@@ -41,19 +44,20 @@ test("selects a deterministic dependency-first Agent context instead of the whol
   const graph = buildWorkspaceDependencyGraph(workspace);
   const context = selectWorkspaceAgentContext(workspace, graph, "q2-review");
   assert.equal(context.length, MAX_WORKSPACE_AGENT_ARTIFACTS);
-  assert.deepEqual(context.slice(0, 5).map((artifact) => artifact.id), [
+  assert.deepEqual(context.map((artifact) => artifact.id), [
     "q2-review",
     "regional-revenue",
     "regional-analysis",
     "regional-revenue-chart",
+    "regional-margin-chart",
     "board-briefing",
   ]);
-  assert.equal(context[5].id, "notes-0");
+  assert.equal(context.some((artifact) => artifact.id === "notes-0"), false);
   assert.equal(context.some((artifact) => artifact.id === "notes-6"), false);
   assert.equal(workspaceAgentContextIsClosed(graph, context), true);
   assert.deepEqual(
     dependencyEdgesForContext(graph, context).map((edge) => edge.kind).sort(),
-    ["chart-data", "chart-embed", "chart-embed", "metric", "metric", "metric", "query"],
+    ["chart-data", "chart-embed", "chart-embed", "chart-embed", "chart-embed", "chart-query", "metric", "metric", "query"],
   );
 });
 
@@ -139,7 +143,7 @@ test("adds explicit pins and their upstream closure without padding other compon
     "regional-revenue",
     "regional-analysis",
     "regional-revenue-chart",
-    "board-briefing",
+    "regional-margin-chart",
     "isolated-brief",
   ]);
   assert.equal(context.some((artifact) => artifact.id === unrelated.id), false);

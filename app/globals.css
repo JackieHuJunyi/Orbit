@@ -877,6 +877,7 @@ textarea:focus-visible {
 
 .dependency-relation.query { color: var(--query); }
 .dependency-relation.chart-data,
+.dependency-relation.chart-query,
 .dependency-relation.chart-embed { color: var(--chart); }
 
 .dependency-issues,

@@ -59,7 +59,12 @@ import {
 import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
 import { planLocalSelectionChange, selectionQuickCommands } from "../lib/local-selection-agent";
 import { compileArtifactSource, findMetricReferences } from "../lib/bindings";
-import { findChartReferences, resolveChartModel } from "../lib/charts";
+import {
+  chartQuerySourceIdsForArtifact,
+  findChartReferences,
+  parseChartSource,
+  validateChartSourceBinding,
+} from "../lib/charts";
 import { isDeckMarkdownArtifact } from "../lib/deck";
 import {
   appendCheckpoint,
@@ -93,6 +98,7 @@ import {
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
 import {
   MAX_WORKSPACE_AGENT_PINS,
   buildWorkspaceDependencyGraph,
@@ -211,7 +217,7 @@ function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }
 
 function DependencyKindIcon({ kind }: { kind: WorkspaceDependencyKind }) {
   if (kind === "query") return <Database aria-hidden="true" />;
-  if (kind === "chart-data" || kind === "chart-embed") return <BarChart3 aria-hidden="true" />;
+  if (kind === "chart-data" || kind === "chart-query" || kind === "chart-embed") return <BarChart3 aria-hidden="true" />;
   return <Link2 aria-hidden="true" />;
 }
 
@@ -434,12 +440,17 @@ export function RuneWorkbench() {
     ? validSourceSelection.end - validSourceSelection.start
     : 0;
   const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
-  const selectedChartResolution = useMemo(
+  const selectedChartBindingErrors = useMemo(
     () => selectedArtifact?.kind === "chart"
-      ? resolveChartModel(selectedArtifact, artifacts, parseDataSource)
-      : null,
+      ? validateChartSourceBinding(selectedArtifact, artifacts, parseDataSource)
+      : [],
     [artifacts, selectedArtifact],
   );
+  const selectedChartSourceArtifact = useMemo(() => {
+    if (selectedArtifact?.kind !== "chart") return undefined;
+    const sourceId = parseChartSource(selectedArtifact.source).spec?.source;
+    return sourceId ? artifacts.find((artifact) => artifact.id === sourceId) : undefined;
+  }, [artifacts, selectedArtifact]);
   const bindingState = useMemo(
     () => selectedArtifact ? compileArtifactSource(selectedArtifact.source, artifacts) : null,
     [artifacts, selectedArtifact],
@@ -463,10 +474,10 @@ export function RuneWorkbench() {
           ...validateArtifact(selectedArtifact),
           ...(bindingState?.unresolved.map((key) => `Unresolved metric: ${key}`) ?? []),
           ...(bindingState?.unresolvedCharts.map((key) => `Unresolved chart: ${key}`) ?? []),
-          ...(selectedChartResolution?.errors ?? []),
+          ...selectedChartBindingErrors,
         ])]
       : ["No artifact selected."],
-    [bindingState?.unresolved, bindingState?.unresolvedCharts, selectedArtifact, selectedChartResolution?.errors],
+    [bindingState?.unresolved, bindingState?.unresolvedCharts, selectedArtifact, selectedChartBindingErrors],
   );
   const lineNumbers = useMemo(
     () => Array.from({ length: selectedArtifact?.source.split("\n").length ?? 1 }, (_, index) => index + 1).join("\n"),
@@ -1283,6 +1294,20 @@ export function RuneWorkbench() {
     setNotice(`Preparing ${targetType} locally from ${targetArtifact.name}…`);
     try {
       let result: ArtifactExportResult;
+      const querySourceIds = chartQuerySourceIdsForArtifact(targetArtifact, baseArtifacts);
+      let querySnapshots: WorkspaceQuerySnapshot[] = [];
+      if (querySourceIds.length) {
+        const dataArtifact = baseArtifacts.find((artifact) => artifact.kind === "data");
+        if (!dataArtifact) throw new Error("Add canonical CSV or JSON before exporting a Query-backed Chart.");
+        const { runWorkspaceQuerySnapshot } = await import("../lib/duckdb-client");
+        querySnapshots = await Promise.all(querySourceIds.map((queryId) => {
+          const queryArtifact = baseArtifacts.find((artifact) => artifact.id === queryId && artifact.kind === "query");
+          if (!queryArtifact) throw new Error(`Query chart source not found: ${queryId}`);
+          return runWorkspaceQuerySnapshot(queryArtifact, dataArtifact);
+        }));
+        const truncated = querySnapshots.find((snapshot) => snapshot.result.truncated);
+        if (truncated) throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its Chart.`);
+      }
       if (destination === "office") {
         const compiled = targetArtifact.kind === "document" || targetArtifact.kind === "slides"
           ? compileArtifactSource(targetArtifact.source, baseArtifacts)
@@ -1291,10 +1316,10 @@ export function RuneWorkbench() {
         if (compiled?.unresolvedCharts.length) throw new Error(`Resolve ${compiled.unresolvedCharts.length} missing chart ${compiled.unresolvedCharts.length === 1 ? "reference" : "references"} before Office export.`);
         const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
         const { exportOfficeArtifact } = await import("../lib/office-export");
-        result = exportOfficeArtifact(exportArtifact, baseArtifacts);
+        result = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
       } else {
         const { exportDeckHtml } = await import("../lib/html-export");
-        result = exportDeckHtml(targetArtifact, baseArtifacts);
+        result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots);
       }
       setPendingExport({ sourceArtifactName: targetArtifact.name, baseArtifacts, result });
       setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
@@ -1690,7 +1715,7 @@ export function RuneWorkbench() {
             </div>
             <div className="preview-actions">
               {selectedArtifact.kind === "query" && canonicalDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> 1 source</span>}
-              {selectedArtifact.kind === "chart" && selectedChartResolution?.model && <span className="binding-badge chart"><TableProperties aria-hidden="true" /> 1 source</span>}
+              {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && <span className="binding-badge chart">{selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />} 1 source</span>}
               {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}
               {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {bindingState.references.length} live</span>}
               {validationErrors.length ? (
@@ -1701,13 +1726,13 @@ export function RuneWorkbench() {
             </div>
           </header>
           <div className="preview-body">
-            {selectedArtifact.kind === "chart" && selectedChartResolution?.model && (
+            {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && (
               <div className="lineage-strip chart-lineage">
-                <TableProperties aria-hidden="true" />
-                <span>{selectedChartResolution.model.sourceArtifactName}</span>
+                {selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />}
+                <span>{selectedChartSourceArtifact.name}</span>
                 <ChevronRight aria-hidden="true" />
                 <span>{selectedArtifact.name}</span>
-                <strong>{selectedChartResolution.model.data.length} marks compiled live</strong>
+                <strong>{selectedChartSourceArtifact.kind === "query" ? "Browser-local query output" : "Canonical data compiled live"}</strong>
               </div>
             )}
             {selectedArtifact.kind === "query" && canonicalDataArtifact && (
@@ -1753,7 +1778,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.21</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} linked metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.22</span></div>
       </footer>
 
       {newArtifactOpen && (
