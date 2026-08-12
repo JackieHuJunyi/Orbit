@@ -1,7 +1,7 @@
 # Rune 产品设计与行动规划
 
-> 版本：1.0  
-> 日期：2026-08-12  
+> 版本：1.1
+> 日期：2026-08-13
 > 状态：产品基线，进入用户验证前  
 > 依据：[AI产品行动指南.md](./AI产品行动指南.md)、[idea.md](./idea.md)、[README.md](./README.md)、[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)  
 > 本文目的：把指南中的原则逐项转成 Rune 的明确决策、验证方法、阶段门槛与停止条件。
@@ -12,7 +12,7 @@
 
 ### 0.1 Rune 现在最需要的不是更多功能
 
-Rune 已经完成了很深的技术纵向切片：本地文件、Document、Data、Query、Chart、Deck、Agent 修改、事务审核、依赖图、运行时验证、checkpoint、Office/PDF/HTML 导入导出都已有基础。
+Rune 已经完成了很深的技术纵向切片：本地文件、Document、Data、Query、Chart、Deck、Agent 修改、事务审核、依赖图、运行时验证、checkpoint、Office/OpenDocument/PDF/HTML 导入导出都已有基础。
 
 但这只证明了“这套系统可以被做出来”，还没有证明以下产品事实：
 
@@ -95,7 +95,7 @@ Rune 是一个**受控的 AI 结果交付系统**：
 4. 系统验证依赖、运行结果和改动范围；
 5. 人审核具体改动及影响；
 6. 批准后原子写入，并保留恢复点；
-7. 结果导出为现实工作仍然需要的 DOCX、XLSX、PPTX、PDF 或 HTML。
+7. 结果导出为现实工作仍然需要的 DOCX、XLSX、PPTX、ODT、ODS、ODP、PDF 或 HTML。
 
 Rune 的产品管理对象不是“页面”，而是以下七项：
 
@@ -1012,9 +1012,9 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 
 | 家族 | 导入 | 导出 | 产品合同 |
 | --- | --- | --- | --- |
-| Document | 当前：MD、Markdown、DOCX、PDF 可选文本到 MD；计划：ODT、带置信度 OCR | 当前：MD、DOCX、PDF；计划：ODT | 结构与语义优先，不承诺像素级 round-trip |
-| Data | 当前：CSV、JSON、XLSX | 当前：CSV/JSON source、XLSX；计划：ODS、表格 PDF | 值、类型、列序和工作表边界明确 |
-| Presentation | 当前：Deck Markdown、HTML、PPTX | 当前：Deck Markdown、PPTX、HTML、PDF；计划：ODP | 语义布局优先，动画与复杂母版明确警告 |
+| Document | 当前：MD、Markdown、DOCX、ODT、PDF 可选文本到 MD；计划：带置信度 OCR | 当前：MD、DOCX、ODT、PDF | 结构与语义优先，不承诺像素级 round-trip |
+| Data | 当前：CSV、JSON、XLSX、ODS | 当前：CSV/JSON source、XLSX、ODS；计划：表格 PDF | 值、类型、列序和工作表边界明确 |
+| Presentation | 当前：Deck Markdown、HTML、PPTX、ODP | 当前：Deck Markdown、PPTX、ODP、HTML、PDF | 语义布局优先，动画与复杂母版明确警告 |
 | Legacy binary | DOC、PPT 需要可靠转换边界 | DOC、PPT 不作为默认交付 | Web 版不伪装解析；由未来桌面壳或受控转换服务提供 |
 
 补充原则：
@@ -1088,6 +1088,16 @@ PDF 现在进入与 DOCX/XLSX/PPTX 相同的多文件导入事务，但使用独
 转换器以文字坐标组合行，保留 `<!-- PDF page N -->` 页来源，处理 CJK 相邻文字、主导 RTL 顺序、断词、段落、项目符号、编号列表和字体尺寸推断标题，并移除在至少半数页面边缘重复出现的页眉页脚。原文花括号会编码，避免恶意 PDF 伪造 `metric` 或 `chart` binding。生成的 Markdown 与其它导入一样先解决名字冲突、验证整个 workspace，并在审核弹层展示预览和所有 fidelity warning；只有确认才单次写入。
 
 当前合同只承诺“可选择文本到可继续编辑的 Markdown”，不承诺还原 PDF 版式。扫描页不做 OCR，图片、字体、列、表格、链接、批注、表单和书签会省略或展平；完全没有可选择文本的 PDF 明确失败。单文件限制 12 MB、200 页、100,000 个文字片段和 200,000 个输出字符。后续 OCR 必须携带页级置信度和原图对照再进入审核，不能静默混入确定文本。
+
+### 6.19 v0.40 OpenDocument 语义导入导出
+
+ODF 不再停留在一个模糊扩展名，而是拆成与 Rune 三类 canonical source 对齐的 ODT、ODS、ODP。导入时，ODT 的标题、段落、强调、HTTP/mailto 链接、列表和表格生成 Markdown；ODS 的每个可见工作表分别生成 CSV，保留数字、布尔、日期、时间和字符串值，公式只读取缓存显示值；ODP 的页面顺序、标题、正文、列表和表格生成经过 Deck compiler 验证的 `.deck.md`。所有结果先进入既有批次审核，不会因拖放或文件选择直接写入设备。
+
+OpenDocument package 有独立的信任边界：单文件 12 MB，第一 ZIP entry 必须是未压缩且与扩展名匹配的 `mimetype`，manifest 必须声明相同 root MIME 和 `content.xml`；重复/穿越路径、DTD/entity、加密包和越界输入失败，脚本与宏绝不执行。标准 ODS 经常用百万级 repeated empty rows 或上万空列表示工作表边界，parser 只移动稀疏游标，不分配空矩阵；非空内容仍受 10,000 行、256 列和 50,000 cell 限制。导入文本的花括号会编码，公式开头字符串会加 apostrophe，避免获得 Rune binding 或 CSV 公式权限。
+
+反向导出由同一个 canonical source 和当前 revision-bound Query/Chart snapshot 生成 ODT、ODS 或 ODP。ODT 保留语义标题、文字样式、列表、表格和当前 Chart 数据表；ODS 写 typed values 但绝不生成公式；ODP 保留页序、文字、列表、表格，并将当前 Chart 值变成可选择表格。文件固定 XML 和 ZIP 时间、以未压缩 `mimetype` 开头，包含标准 content/styles/meta/manifest 部件，生成前后不改 workspace，仍需用户阅读 fidelity notes 后确认一次下载。
+
+兼容承诺仍是 semantic fidelity，而不是 Office/LibreOffice 的完整重建。图片、批注、修订历史、隐藏工作表、live formula、filter、演讲者备注、动画、嵌入对象和复杂母版会省略或展平并明确说明。验证包含独立生成 fixture、Rune 导出→导入往返、恶意 ZIP/XML、超限和公式注入用例；三类输出的四个 XML 部件全部通过 OASIS ODF 1.3 Relax NG Schema，系统 handler 均识别正确 MIME，ODT/ODS 另由本机 Word/Excel 独立打开；PowerPoint 自动化不可用时，ODP 不把 schema/round-trip 结果夸大成已完成视觉打开。这样新增的是可测试的 compatibility port，而不是第二份文档事实或新服务器。
 
 ---
 

@@ -33,10 +33,11 @@ export function ExportReviewDialog({
 }) {
   const target = result.targetType.toUpperCase();
   const office = ["docx", "xlsx", "pptx"].includes(result.targetType);
+  const odf = ["odt", "ods", "odp"].includes(result.targetType);
   const pdf = result.targetType === "pdf";
-  const reviewTitle = office ? "Review Office export" : pdf ? "Review PDF export" : "Review HTML export";
-  const descriptor = office ? "deterministic OOXML ZIP" : pdf ? "fixed-layout PDF" : "self-contained scriptless file";
-  const outputKind = office ? "semantic" : pdf ? "fixed-layout" : "standalone";
+  const reviewTitle = office ? "Review Office export" : odf ? "Review OpenDocument export" : pdf ? "Review PDF export" : "Review HTML export";
+  const descriptor = office ? "deterministic OOXML ZIP" : odf ? "deterministic ODF ZIP" : pdf ? "fixed-layout PDF" : "self-contained scriptless file";
+  const outputKind = office || odf ? "semantic" : pdf ? "fixed-layout" : "standalone";
   return (
     <ReviewDialog
       dialogId="artifact-export-review"
@@ -62,7 +63,7 @@ export function ExportReviewDialog({
       </div>
 
       <section className="office-export-summary" aria-label={`Generated ${target} file`}>
-        <span className="office-export-icon">{office ? <FileArchive aria-hidden="true" /> : pdf ? <FileText aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
+        <span className="office-export-icon">{office || odf ? <FileArchive aria-hidden="true" /> : pdf ? <FileText aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
         <div>
           <strong>{result.fileName}</strong>
           <small>{target} · {readableBytes(result.bytes.length)} · {descriptor}</small>
@@ -83,7 +84,7 @@ export function ExportReviewDialog({
 
       <div className="office-export-contract">
         <div><span>01</span><strong>Canonical source</strong><p>Rune exports the validated source and any referenced current workspace data.</p></div>
-        <div><span>02</span><strong>{office ? "Standard package" : "Portable output"}</strong><p>{office ? "The download uses standard Office Open XML parts and relationships." : pdf ? "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF." : "The download contains its layout, theme, metrics, and charts without external assets."}</p></div>
+        <div><span>02</span><strong>{office || odf ? "Standard package" : "Portable output"}</strong><p>{office ? "The download uses standard Office Open XML parts and relationships." : odf ? "The download uses standard OpenDocument content, styles, MIME, and manifest parts." : pdf ? "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF." : "The download contains its layout, theme, metrics, and charts without external assets."}</p></div>
         <div><span>03</span><strong>Explicit handoff</strong><p>The browser starts one local download only after your confirmation.</p></div>
       </div>
     </ReviewDialog>

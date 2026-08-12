@@ -11,6 +11,7 @@ import {
   Code2,
   Database,
   Download,
+  FileArchive,
   FileCode2,
   FilePlus2,
   FileOutput,
@@ -161,6 +162,7 @@ const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
 const MAX_PDF_IMPORT_BYTES = 12 * 1024 * 1024;
 const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
+const ODF_IMPORT_PATTERN = /\.(?:odt|ods|odp)$/i;
 const PDF_IMPORT_PATTERN = /\.pdf$/i;
 
 async function preflightRuntimeMutation(
@@ -414,6 +416,13 @@ function officeExportType(artifact: WorkspaceArtifact): "DOCX" | "XLSX" | "PPTX"
   return null;
 }
 
+function odfExportType(artifact: WorkspaceArtifact): "ODT" | "ODS" | "ODP" | null {
+  if (artifact.kind === "document") return "ODT";
+  if (artifact.kind === "data") return "ODS";
+  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return "ODP";
+  return null;
+}
+
 function getDiffStats(before: string, after: string) {
   const beforeLines = new Set(before.split("\n"));
   const afterLines = new Set(after.split("\n"));
@@ -477,7 +486,7 @@ export function RuneWorkbench() {
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const [exportError, setExportError] = useState("");
-  const [exportState, setExportState] = useState<"idle" | "office" | "html" | "pdf">("idle");
+  const [exportState, setExportState] = useState<"idle" | "office" | "odf" | "html" | "pdf">("idle");
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
@@ -510,6 +519,7 @@ export function RuneWorkbench() {
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
+  const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
   const selectedPdfExport = Boolean(selectedArtifact?.kind === "document" || selectedHtmlExport);
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
@@ -1778,6 +1788,8 @@ export function RuneWorkbench() {
     const oversized = files.find((file) => file.size > (
       OFFICE_IMPORT_PATTERN.test(file.name)
         ? MAX_OFFICE_IMPORT_BYTES
+        : ODF_IMPORT_PATTERN.test(file.name)
+          ? MAX_OFFICE_IMPORT_BYTES
         : PDF_IMPORT_PATTERN.test(file.name)
           ? MAX_PDF_IMPORT_BYTES
           : MAX_SOURCE_IMPORT_BYTES
@@ -1785,6 +1797,8 @@ export function RuneWorkbench() {
     if (oversized) {
       setNotice(OFFICE_IMPORT_PATTERN.test(oversized.name)
         ? oversized.name + " exceeds the 12 MB Office import limit"
+        : ODF_IMPORT_PATTERN.test(oversized.name)
+          ? oversized.name + " exceeds the 12 MB OpenDocument import limit"
         : PDF_IMPORT_PATTERN.test(oversized.name)
           ? oversized.name + " exceeds the 12 MB PDF import limit"
         : oversized.name + " exceeds the 2 MB source import limit");
@@ -1807,6 +1821,13 @@ export function RuneWorkbench() {
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
+        if (ODF_IMPORT_PATTERN.test(file.name)) {
+          const { convertOdfFile } = await import("../lib/odf-import");
+          const result = convertOdfFile(file.name, await file.arrayBuffer());
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
         if (PDF_IMPORT_PATTERN.test(file.name)) {
           const { convertPdfFile } = await import("../lib/pdf-import-client");
           const result = await convertPdfFile(file.name, await file.arrayBuffer());
@@ -1816,7 +1837,7 @@ export function RuneWorkbench() {
         }
         const artifact = detectArtifact(file.name, await file.text());
         if (!artifact) {
-          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, or PPTX.");
+          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP.");
         }
         incoming.push(artifact);
       }
@@ -1874,9 +1895,11 @@ export function RuneWorkbench() {
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
-  async function prepareExport(destination: "office" | "html" | "pdf") {
+  async function prepareExport(destination: "office" | "odf" | "html" | "pdf") {
     const targetType = destination === "office"
       ? selectedOfficeExportType
+      : destination === "odf"
+        ? selectedOdfExportType
       : destination === "html"
         ? selectedHtmlExport ? "HTML" : null
         : selectedPdfExport ? "PDF" : null;
@@ -1909,19 +1932,24 @@ export function RuneWorkbench() {
         const truncated = querySnapshots.find((snapshot) => snapshot.result.truncated);
         if (truncated) throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its consumers.`);
       }
-      if (destination === "office") {
+      if (destination === "office" || destination === "odf") {
         const compiled = targetArtifact.kind === "document" || targetArtifact.kind === "slides"
           ? compileArtifactSource(targetArtifact.source, baseArtifacts, querySnapshots)
           : null;
         if (compiled?.metricBindingErrors.length) throw new Error(compiled.metricBindingErrors[0]);
-        if (compiled?.unresolved.length) throw new Error(`Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before Office export.`);
+        if (compiled?.unresolved.length) throw new Error(`Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before ${destination === "odf" ? "OpenDocument" : "Office"} export.`);
         if (compiled?.unresolvedQueryMetrics.length) throw new Error(compiled.unresolvedQueryMetrics[0]);
-        if (compiled?.pendingQueryMetrics.length) throw new Error(`Run ${compiled.pendingQueryMetrics[0]} before Office export.`);
+        if (compiled?.pendingQueryMetrics.length) throw new Error(`Run ${compiled.pendingQueryMetrics[0]} before ${destination === "odf" ? "OpenDocument" : "Office"} export.`);
         if (compiled?.queryMetricRuntimeErrors.length) throw new Error(compiled.queryMetricRuntimeErrors[0]);
-        if (compiled?.unresolvedCharts.length) throw new Error(`Resolve ${compiled.unresolvedCharts.length} missing chart ${compiled.unresolvedCharts.length === 1 ? "reference" : "references"} before Office export.`);
+        if (compiled?.unresolvedCharts.length) throw new Error(`Resolve ${compiled.unresolvedCharts.length} missing chart ${compiled.unresolvedCharts.length === 1 ? "reference" : "references"} before ${destination === "odf" ? "OpenDocument" : "Office"} export.`);
         const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
-        const { exportOfficeArtifact } = await import("../lib/office-export");
-        result = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
+        if (destination === "odf") {
+          const { exportOdfArtifact } = await import("../lib/odf-export");
+          result = exportOdfArtifact(exportArtifact, baseArtifacts, querySnapshots);
+        } else {
+          const { exportOfficeArtifact } = await import("../lib/office-export");
+          result = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
+        }
       } else if (destination === "html") {
         const { exportDeckHtml } = await import("../lib/html-export");
         result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots);
@@ -2041,6 +2069,17 @@ export function RuneWorkbench() {
               {exportState === "office" ? <LoaderCircle className="agent-spinner" /> : <FileOutput />}
             </button>
           )}
+          {!emptyWorkspace && selectedOdfExportType && (
+            <button
+              className="icon-button"
+              onClick={() => void prepareExport("odf")}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
+              aria-label={`Export ${selectedArtifact.name} as ${selectedOdfExportType}`}
+              title={`Export as ${selectedOdfExportType} OpenDocument`}
+            >
+              {exportState === "odf" ? <LoaderCircle className="agent-spinner" /> : <FileArchive />}
+            </button>
+          )}
           {!emptyWorkspace && selectedHtmlExport && (
             <button
               className="icon-button"
@@ -2068,7 +2107,7 @@ export function RuneWorkbench() {
               <Download />
             </button>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
         </div>
       </header>
 
@@ -2477,7 +2516,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.39</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.40</span></div>
       </footer>
 
       {newArtifactOpen && (

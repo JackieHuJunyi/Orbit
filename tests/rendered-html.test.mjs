@@ -71,11 +71,12 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.39/);
+  assert.match(html, /Rune v0\.40/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
+  assert.match(html, /Export q2-review\.md as ODT/);
   assert.match(html, /Export q2-review\.md as PDF/);
   assert.match(html, /Compiled output/);
   assert.match(html, /Every write is reviewable and undoable/);
@@ -88,8 +89,12 @@ test("keeps compatibility parsers and heavy runtimes out of the initial client b
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-import.ts"));
   assert.equal(manifest["app/lib/pdf-import-client.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/pdf-import-client.ts"));
+  assert.equal(manifest["app/lib/odf-import.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/odf-import.ts"));
   assert.equal(manifest["app/lib/office-export.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-export.ts"));
+  assert.equal(manifest["app/lib/odf-export.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/odf-export.ts"));
   assert.equal(manifest["app/lib/html-export.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/html-export.ts"));
   assert.equal(manifest["app/lib/pdf-export.ts"]?.isDynamicEntry, true);
@@ -118,7 +123,9 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Review imported sources/);
   assert.match(clientSource, /PDF import recovers selectable text and approximate reading order/);
   assert.match(clientSource, /scanned PDFs do not receive OCR yet/);
-  assert.match(clientSource, /\.docx,\.xlsx,\.pptx,\.pdf/);
+  assert.match(clientSource, /\.docx,\.xlsx,\.pptx,\.odt,\.ods,\.odp,\.pdf/);
+  assert.match(clientSource, /OpenDocument import is limited to 12 MB per file/);
+  assert.match(clientSource, /Review OpenDocument export/);
   assert.match(clientSource, /Nothing is written until you confirm/);
   assert.match(clientSource, /One atomic device write after confirmation/);
   assert.match(clientSource, /aria-modal/);

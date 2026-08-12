@@ -1778,3 +1778,20 @@ PDF 的内部目标是固定呈现，不是可逆的段落模型。即使页面�
 这些规则的价值不在“猜得像人”，而在错误模式清楚：大水平间距提示可能存在列或表格；空页保留 OCR 未执行标记；annotation、bookmark、JavaScript、重复页眉页脚都有独立 warning；完全没有可选择文本则失败，不生成一篇空文档。图片、扫描、字体、精确版式、链接、评论、表单、列和表格结构目前都不保留。未来 OCR 也不能只吐一串文本，它至少要携带页码、区域、置信度和原图对照，继续通过同一 import review transaction。
 
 验证同时包含合成 snapshot、由独立 PDF writer 生成后再经真实 PDF.js 读取的双页文件、密码/伪 header/超大/超页数/纯扫描失败路径，以及 Poppler 逐页渲染和系统文本提取对照。只有 converter 输出通过 canonical artifact 验证、完整 workspace 验证和 stale-context 检查，用户确认才产生一次设备写入。这样 PDF 是一个诚实的兼容 port，不会变成新的 source of truth，也不削弱 Rune“先看见，再接受”的信任边界。
+
+## 45. OpenDocument 支持不是加一个 `.odf`，而是三个有界语义端口
+
+用户说“支持 ODF”时，实际期待的是 Writer 的 ODT、Calc 的 ODS 和 Impress 的 ODP，而不是一个可互换的通用文件。三者虽然共用 ZIP、XML namespace、manifest 和 `mimetype` 包装，但内容模型分别对应文档流、稀疏二维表和页面/绘图树。若只根据 ZIP 内出现的标签猜格式，错误扩展名、伪装包和混合内容会在 UI 中被当成另一类 capability。v0.40 因此把扩展名、首个未压缩 `mimetype`、manifest root MIME 与目标 parser 四者绑定，并以 OASIS ODF 1.3 package/schema 作为机器可验证合同。([ODF 1.3 Packages][23])([ODF 1.3 Schema][24])
+
+导入继续服从 `compatibility bytes → canonical readable source → Rune renderer`。ODT 只提取标题、段落、继承文字样式、安全外链、列表和表格；ODS 把每个可见 table 变成独立 CSV，保留 typed cached value；ODP 按 page 顺序提取 title/body/list/table，再交给现有 Deck parser。图片、comments、tracked changes、hidden sheet、live formula、notes、animation、embedded object 和 master fidelity 不是“以后再说”的静默丢失，而是 Apply 前必须看见的 warning。原文件不上传、不持久化，也不进入 canonical graph。
+
+ODS 暴露了一个不能只靠普通 fixture 发现的资源问题：标准办公软件常用 `table:number-rows-repeated="1048574"` 或 `table:number-columns-repeated="16380"` 压缩尾部空白。如果 parser 看到 repeat 就 `Array.from`，一份很小的合法文件也会制造巨大内存分配。正确实现是维护 row/column cursor，只为非空 cell 建稀疏值，空 repeat 只推进坐标；一旦非空值越过 10,000×256 或总体 50,000 cells 才拒绝。这个规则同时说明为什么 package 压缩大小、expanded XML 大小和 semantic output budget 必须分别限制。
+
+安全处理不止 XML entity。加密声明直接失败；Basic/Scripts 和 document script 元素只记 warning、永不执行；数字公式只拿 `office:value` 的缓存结果，不把 formula 带进 CSV；用户字符串若以 `= + - @` 开头会加 apostrophe；内容中的 `{}` 编码，不能伪造 Rune metric/chart binding。ZIP 路径穿越、重复 part、2,000-entry、6 MB 单 XML、24 MB 总 XML、12 MB 输入、200,000 字符单 artifact 和 500,000 字符 workbook budget 都在 adapter 内失败关闭，而不是寄希望于后续 localStorage 报错。
+
+导出则是新的 deterministic compiler，不复用“把 OOXML 标签换名字”的错觉。ODT 从 Markdown semantic block 生成段落、heading、span、list 与 table；ODS 生成 typed values-only cells，绝不输出 OpenFormula；ODP 从已验证 Deck 生成 16:9 page、原生文字、列表和表格。Query scalar 与 Chart 先沿现有 revision-bound snapshot pipeline 编译，Chart 在 ODT/ODP 中成为可选择的 current-data table，并明确失去 live binding。固定 XML 次序与 1980 ZIP 时间，同一 context 得到逐字节相同输出；首个 `mimetype` 不压缩，manifest、content、styles、meta 都显式存在。
+
+产品上不能把“能打开”写成“原样保真”。当前 ODT 不承诺分页、图片、批注或修订；ODS 不承诺公式、过滤器、图表或格式；ODP 不承诺动画、notes、图片或复杂母版。导出前 review 列出这些边界，workspace revision 变化会使旧二进制失效。验证也不让 Rune 自己证明自己：独立 fixture 覆盖三类输入与敌意 package，Rune 导出后重新导入验证语义 round-trip，十二个 XML/manifest 部件全部通过 OASIS Relax NG，系统 handler 均确认 MIME；ODT/ODS 另由 Word/Excel 独立打开。若 PowerPoint automation 不可用，ODP 明确停在 schema、系统类型和 Rune 往返证据，不把它写成已做过视觉打开。这个阶段增加零 hosted service 和零首屏依赖，却完成了开放标准的双向迁移通道。
+
+[23]: https://docs.oasis-open.org/office/OpenDocument/v1.3/OpenDocument-v1.3-part2-packages.html "OpenDocument v1.3 Part 2: Packages"
+[24]: https://docs.oasis-open.org/office/OpenDocument/v1.3/os/part3-schema/OpenDocument-v1.3-os-part3-schema.html "OpenDocument v1.3 Part 3: Schema"

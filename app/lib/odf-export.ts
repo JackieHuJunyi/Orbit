@@ -1,0 +1,407 @@
+import { strToU8, zipSync, type Zippable } from "fflate";
+
+import { resolveChartModel, type ChartModel } from "./charts.ts";
+import { parseDeckSource, type DeckSlide } from "./deck.ts";
+import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
+import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
+import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
+
+export const MAX_ODF_EXPORT_SOURCE_CHARS = 2_000_000;
+export const MAX_ODF_EXPORT_BYTES = 12 * 1024 * 1024;
+
+const MAX_ODT_SOURCE_CHARS = 200_000;
+const MAX_ODT_BLOCKS = 10_000;
+const ODF_VERSION = "1.3";
+
+const ODF_MIME_TYPES = {
+  odt: "application/vnd.oasis.opendocument.text",
+  ods: "application/vnd.oasis.opendocument.spreadsheet",
+  odp: "application/vnd.oasis.opendocument.presentation",
+} as const;
+
+type OdfExportKind = keyof typeof ODF_MIME_TYPES;
+export type OdfExportResult = ArtifactExportResult<OdfExportKind>;
+
+type InlineSegment = {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+  strike?: boolean;
+  code?: boolean;
+  link?: string;
+};
+
+type OdpParagraph = { text: string; bullet: boolean; level: number; strong?: boolean };
+type OdpSlideModel = {
+  title: string;
+  eyebrow: string;
+  paragraphs: OdpParagraph[];
+  tables: string[][][];
+  charts: ChartModel[];
+  layout: DeckSlide["layout"];
+};
+
+const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8"?>';
+const OFFICE_NS = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
+const STYLE_NS = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
+const TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
+const TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
+const DRAW_NS = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+const PRESENTATION_NS = "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0";
+const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
+const SVG_NS = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
+const META_NS = "urn:oasis:names:tc:opendocument:xmlns:meta:1.0";
+const DC_NS = "http://purl.org/dc/elements/1.1/";
+const FO_NS = "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0";
+const XLINK_NS = "http://www.w3.org/1999/xlink";
+const NUMBER_NS = "urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0";
+const MARKDOWN_TOKEN = /(!?\[[^\]\n]*\]\([^)\n]+\)|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|`[^`\n]+`|\*[^*\n]+\*|_[^_\n]+_)/gu;
+const CHART_TOKEN = /\{\{\s*chart\(["']([a-z0-9_.-]+)["']\)\s*\}\}/giu;
+const EXACT_CHART_TOKEN = /^\s*\{\{\s*chart\(["']([a-z0-9_.-]+)["']\)\s*\}\}\s*$/iu;
+
+function namespaces() {
+  return `xmlns:office="${OFFICE_NS}" xmlns:style="${STYLE_NS}" xmlns:text="${TEXT_NS}" xmlns:table="${TABLE_NS}" xmlns:draw="${DRAW_NS}" xmlns:presentation="${PRESENTATION_NS}" xmlns:svg="${SVG_NS}" xmlns:meta="${META_NS}" xmlns:dc="${DC_NS}" xmlns:fo="${FO_NS}" xmlns:xlink="${XLINK_NS}" xmlns:number="${NUMBER_NS}"`;
+}
+
+function cleanXmlCharacters(value: string) {
+  let result = "";
+  for (const character of value) {
+    const code = character.codePointAt(0) ?? 0;
+    const valid = code === 0x9 || code === 0xa || code === 0xd
+      || (code >= 0x20 && code <= 0xd7ff)
+      || (code >= 0xe000 && code <= 0xfffd)
+      || (code >= 0x10000 && code <= 0x10ffff);
+    result += valid ? character : "�";
+  }
+  return result;
+}
+
+function xmlText(value: string) {
+  return cleanXmlCharacters(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+function xmlAttribute(value: string) {
+  return xmlText(value).replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+}
+
+function manifest(kind: OdfExportKind) {
+  const mime = ODF_MIME_TYPES[kind];
+  return `${XML_DECLARATION}<manifest:manifest xmlns:manifest="${MANIFEST_NS}" manifest:version="${ODF_VERSION}"><manifest:file-entry manifest:full-path="/" manifest:version="${ODF_VERSION}" manifest:media-type="${mime}"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/></manifest:manifest>`;
+}
+
+function metaXml(title: string) {
+  return `${XML_DECLARATION}<office:document-meta ${namespaces()} office:version="${ODF_VERSION}"><office:meta><meta:generator>Rune</meta:generator><dc:title>${xmlText(title)}</dc:title><dc:creator>Rune</dc:creator></office:meta></office:document-meta>`;
+}
+
+function packageOdf(kind: OdfExportKind, title: string, content: string, styles: string) {
+  const timestamp = new Date(Date.UTC(1980, 0, 1));
+  const files: Zippable = {
+    mimetype: [strToU8(ODF_MIME_TYPES[kind]), { level: 0, mtime: timestamp }],
+    "content.xml": [strToU8(content), { level: 6, mtime: timestamp }],
+    "styles.xml": [strToU8(styles), { level: 6, mtime: timestamp }],
+    "meta.xml": [strToU8(metaXml(title)), { level: 6, mtime: timestamp }],
+    "META-INF/manifest.xml": [strToU8(manifest(kind)), { level: 6, mtime: timestamp }],
+  };
+  const bytes = zipSync(files, { level: 6, mtime: timestamp });
+  if (bytes.length > MAX_ODF_EXPORT_BYTES) throw new Error("The generated OpenDocument package exceeds Rune's 12 MB export limit.");
+  return bytes;
+}
+
+function unescapeMarkdown(value: string) {
+  return value.replace(/\\([\\`*_[\]{}#>+!|~<>-])/gu, "$1");
+}
+
+function isSafeLink(target: string) {
+  if (/[\u0000-\u001f\u007f<>"']/u.test(target)) return false;
+  try {
+    const url = new URL(target);
+    if (url.protocol === "http:" || url.protocol === "https:") return Boolean(url.hostname);
+    return url.protocol === "mailto:" && Boolean(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeInlineSource(source: string, warnings: Set<string>) {
+  let result = source.replace(CHART_TOKEN, (_token, id: string) => {
+    warnings.add("Inline Rune chart references use an omission marker in OpenDocument export; put a chart on its own line to export a current-data snapshot.");
+    return `[Chart omitted: ${id}]`;
+  });
+  result = result.replace(/(^|[^\\])<[^>]+>/gu, (_token, prefix: string) => {
+    warnings.add("Raw HTML tags were removed from semantic OpenDocument export.");
+    return prefix;
+  });
+  return result;
+}
+
+function inlineSegments(source: string, warnings: Set<string>): InlineSegment[] {
+  const sanitized = sanitizeInlineSource(source, warnings);
+  const segments: InlineSegment[] = [];
+  let offset = 0;
+  for (const match of sanitized.matchAll(MARKDOWN_TOKEN)) {
+    const index = match.index ?? 0;
+    if (index > offset) segments.push({ text: unescapeMarkdown(sanitized.slice(offset, index)) });
+    const token = match[0];
+    const image = token.match(/^!\[([^\]]*)\]\([^)]+\)$/u);
+    const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/u);
+    if (image) {
+      warnings.add("Markdown images are not embedded in semantic OpenDocument export.");
+      segments.push({ text: `[Image omitted${image[1] ? `: ${image[1]}` : ""}]` });
+    } else if (link) {
+      const target = link[2].trim().replace(/^<|>$/gu, "").split(/\s+["']/u)[0];
+      if (isSafeLink(target)) segments.push({ text: unescapeMarkdown(link[1]), link: target });
+      else {
+        warnings.add("A non-HTTP Markdown link was exported as plain text.");
+        segments.push({ text: unescapeMarkdown(link[1]) });
+      }
+    } else if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) {
+      segments.push({ text: unescapeMarkdown(token.slice(2, -2)), bold: true });
+    } else if (token.startsWith("~~") && token.endsWith("~~")) {
+      segments.push({ text: unescapeMarkdown(token.slice(2, -2)), strike: true });
+    } else if (token.startsWith("`") && token.endsWith("`")) {
+      segments.push({ text: token.slice(1, -1), code: true });
+    } else {
+      segments.push({ text: unescapeMarkdown(token.slice(1, -1)), italic: true });
+    }
+    offset = index + token.length;
+  }
+  if (offset < sanitized.length) segments.push({ text: unescapeMarkdown(sanitized.slice(offset)) });
+  return segments.filter((segment) => segment.text);
+}
+
+function odfInline(source: string, warnings: Set<string>) {
+  return inlineSegments(source, warnings).map((segment) => {
+    let text = xmlText(segment.text).replaceAll("\n", "<text:line-break/>").replaceAll("\t", "<text:tab/>");
+    const styles = [segment.bold ? "RuneBold" : "", segment.italic ? "RuneItalic" : "", segment.strike ? "RuneStrike" : "", segment.code ? "RuneCode" : ""].filter(Boolean);
+    if (styles.length > 1) {
+      styles.forEach((style) => { text = `<text:span text:style-name="${style}">${text}</text:span>`; });
+    } else if (styles[0]) {
+      text = `<text:span text:style-name="${styles[0]}">${text}</text:span>`;
+    }
+    return segment.link
+      ? `<text:a xlink:type="simple" xlink:href="${xmlAttribute(segment.link)}">${text}</text:a>`
+      : text;
+  }).join("");
+}
+
+function plainMarkdownInline(source: string, warnings: Set<string>) {
+  return inlineSegments(source, warnings).map((segment) => segment.text).join("").replace(/\s+/gu, " ").trim();
+}
+
+function semanticTable(rows: string[][], warnings: Set<string>, name: string) {
+  const width = Math.max(1, ...rows.map((row) => row.length));
+  return `<table:table table:name="${xmlAttribute(name)}" table:style-name="RuneTable"><table:table-column table:style-name="RuneColumn" table:number-columns-repeated="${width}"/>${rows.map((row, rowIndex) => `<table:table-row>${Array.from({ length: width }, (_, index) => `<table:table-cell table:style-name="${rowIndex === 0 ? "RuneHeaderCell" : "RuneCell"}" office:value-type="string"><text:p>${odfInline(row[index] ?? "", warnings)}</text:p></table:table-cell>`).join("")}</table:table-row>`).join("")}</table:table>`;
+}
+
+function resolveOdfChart(
+  id: string,
+  workspace: WorkspaceArtifact[],
+  snapshots: WorkspaceQuerySnapshot[],
+  warnings: Set<string>,
+) {
+  const artifact = workspace.find((candidate) => candidate.id === id && candidate.kind === "chart");
+  if (!artifact) {
+    warnings.add(`Chart ${id} was omitted because its workspace artifact was unavailable during OpenDocument export.`);
+    return null;
+  }
+  const resolution = resolveChartModel(artifact, workspace, parseDataSource, snapshots);
+  if (!resolution.model) {
+    warnings.add(`Chart ${id} was omitted because its current data snapshot could not compile: ${resolution.errors[0] ?? "unknown chart error"}`);
+    return null;
+  }
+  return resolution.model;
+}
+
+function chartRows(model: ChartModel) {
+  const secondHeader = model.spec.mark === "line" ? "Trend" : "Relative bar";
+  return [
+    [model.spec.category, secondHeader, model.spec.value],
+    ...model.data.map((datum, index) => {
+      const previous = model.data[index - 1];
+      const visual = model.spec.mark === "line"
+        ? !previous ? "Start" : datum.value > previous.value ? "Increase" : datum.value < previous.value ? "Decrease" : "No change"
+        : datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12)));
+      return [datum.label, visual, datum.formatted];
+    }),
+  ];
+}
+
+function odfChart(model: ChartModel, warnings: Set<string>, tableName: string) {
+  warnings.add(`Live Rune charts are exported as static semantic current-data tables from ${model.sourceArtifactName}; OpenDocument files do not retain the live data binding.`);
+  return `<text:h text:outline-level="3">${odfInline(model.spec.title, warnings)}</text:h>${model.spec.description ? `<text:p text:style-name="RuneQuote">${odfInline(model.spec.description, warnings)}</text:p>` : ""}${semanticTable(chartRows(model), warnings, tableName)}`;
+}
+
+function commonStyles() {
+  return `<style:default-style style:family="paragraph"><style:paragraph-properties fo:margin-bottom="0.08in"/><style:text-properties style:font-name="Arial" fo:font-size="11pt" fo:color="#17211b"/></style:default-style><style:style style:name="RuneTitle" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.2in" fo:margin-bottom="0.16in"/><style:text-properties fo:font-size="24pt" fo:font-weight="bold" fo:color="#17211b"/></style:style>${Array.from({ length: 6 }, (_, index) => `<style:style style:name="RuneHeading${index + 1}" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.16in" fo:margin-bottom="0.08in"/><style:text-properties fo:font-size="${Math.max(13, 22 - index * 2)}pt" fo:font-weight="bold" fo:color="#17211b"/></style:style>`).join("")}<style:style style:name="RuneQuote" style:family="paragraph"><style:paragraph-properties fo:margin-left="0.25in" fo:border-left="0.03in solid #ff5c35" fo:padding-left="0.12in"/><style:text-properties fo:font-style="italic" fo:color="#627068"/></style:style><style:style style:name="RuneCodeBlock" style:family="paragraph"><style:paragraph-properties fo:background-color="#f1f3ef" fo:padding="0.08in"/><style:text-properties style:font-name="Courier New" fo:font-size="9.5pt"/></style:style><style:style style:name="RuneBold" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style><style:style style:name="RuneItalic" style:family="text"><style:text-properties fo:font-style="italic"/></style:style><style:style style:name="RuneStrike" style:family="text"><style:text-properties style:text-line-through-style="solid"/></style:style><style:style style:name="RuneCode" style:family="text"><style:text-properties style:font-name="Courier New" fo:background-color="#f1f3ef"/></style:style><style:style style:name="RuneTable" style:family="table"><style:table-properties style:width="7.2in" table:align="margins" fo:margin-top="0.08in" fo:margin-bottom="0.14in"/></style:style><style:style style:name="RuneColumn" style:family="table-column"><style:table-column-properties style:column-width="2.3in"/></style:style><style:style style:name="RuneCell" style:family="table-cell"><style:table-cell-properties fo:border="0.01in solid #d9d7cf" fo:padding="0.05in"/></style:style><style:style style:name="RuneHeaderCell" style:family="table-cell"><style:table-cell-properties fo:border="0.01in solid #d9d7cf" fo:padding="0.05in" fo:background-color="#2a8c69"/><style:text-properties fo:font-weight="bold" fo:color="#ffffff"/></style:style>`;
+}
+
+function listStyles() {
+  const bullets = Array.from({ length: 7 }, (_, index) => `<text:list-level-style-bullet text:level="${index + 1}" text:bullet-char="•"><style:list-level-properties text:space-before="${0.25 + index * 0.2}in" text:min-label-width="0.2in"/></text:list-level-style-bullet>`).join("");
+  const numbers = Array.from({ length: 7 }, (_, index) => `<text:list-level-style-number text:level="${index + 1}" style:num-format="1" style:num-suffix="."><style:list-level-properties text:space-before="${0.25 + index * 0.2}in" text:min-label-width="0.28in"/></text:list-level-style-number>`).join("");
+  return `<text:list-style style:name="RuneBullet">${bullets}</text:list-style><text:list-style style:name="RuneNumber">${numbers}</text:list-style>`;
+}
+
+function textStylesXml() {
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}</office:styles><office:automatic-styles><style:page-layout style:name="RunePage"><style:page-layout-properties fo:page-width="8.27in" fo:page-height="11.69in" style:print-orientation="portrait" fo:margin="0.7in"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RunePage"/></office:master-styles></office:document-styles>`;
+}
+
+function blockToOdt(
+  block: MarkdownBlock,
+  index: number,
+  warnings: Set<string>,
+  workspace: WorkspaceArtifact[],
+  snapshots: WorkspaceQuerySnapshot[],
+) {
+  if (block.type === "heading") return `<text:h text:style-name="${block.level === 1 ? "RuneTitle" : `RuneHeading${Math.min(6, block.level)}`}" text:outline-level="${Math.min(6, block.level)}">${odfInline(block.source, warnings)}</text:h>`;
+  if (block.type === "quote") return `<text:p text:style-name="RuneQuote">${odfInline(block.source, warnings)}</text:p>`;
+  if (block.type === "list") return `<text:list text:style-name="${block.ordered ? "RuneNumber" : "RuneBullet"}"><text:list-item><text:p>${odfInline(block.source, warnings)}</text:p></text:list-item></text:list>`;
+  if (block.type === "table") return semanticTable(block.rows, warnings, `RuneTable${index + 1}`);
+  if (block.type === "code") {
+    warnings.add("Fenced Markdown code was exported as preformatted OpenDocument text.");
+    return `<text:p text:style-name="RuneCodeBlock">${xmlText(block.source).replaceAll("\n", "<text:line-break/>") || " "}</text:p>`;
+  }
+  const chartId = block.source.match(EXACT_CHART_TOKEN)?.[1];
+  if (chartId) {
+    const chart = resolveOdfChart(chartId, workspace, snapshots, warnings);
+    if (chart) return odfChart(chart, warnings, `RuneChart${index + 1}`);
+  }
+  return `<text:p>${odfInline(block.source, warnings)}</text:p>`;
+}
+
+function exportOdt(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[]): OdfExportResult {
+  if (artifact.source.length > MAX_ODT_SOURCE_CHARS) throw new Error("ODT export is limited to 200,000 source characters.");
+  const warnings = new Set<string>();
+  const blocks = parseMarkdownBlocks(artifact.source);
+  if (blocks.length > MAX_ODT_BLOCKS) throw new Error("ODT export is limited to 10,000 semantic blocks.");
+  const body = blocks.map((block, index) => blockToOdt(block, index, warnings, workspace, snapshots)).join("") || "<text:p/>";
+  warnings.add("ODT export preserves semantic structure; page layout, comments, tracked changes, and advanced word-processor styling are not generated.");
+  const title = safeExportBaseName(artifact.name);
+  const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:text>${body}</office:text></office:body></office:document-content>`;
+  return { bytes: packageOdf("odt", title, content, textStylesXml()), fileName: `${title}.odt`, mimeType: ODF_MIME_TYPES.odt, warnings: [...warnings], targetType: "odt" };
+}
+
+function odsCell(value: DataCell, styleName: string) {
+  if (typeof value === "number" && Number.isFinite(value)) return `<table:table-cell table:style-name="${styleName}" office:value-type="float" office:value="${value}"><text:p>${xmlText(String(value))}</text:p></table:table-cell>`;
+  if (typeof value === "boolean") return `<table:table-cell table:style-name="${styleName}" office:value-type="boolean" office:boolean-value="${value}"><text:p>${value ? "TRUE" : "FALSE"}</text:p></table:table-cell>`;
+  const text = value == null ? "" : String(value);
+  return `<table:table-cell table:style-name="${styleName}" office:value-type="string"><text:p>${xmlText(text)}</text:p></table:table-cell>`;
+}
+
+function spreadsheetStylesXml() {
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}</office:styles><office:automatic-styles/><office:master-styles/></office:document-styles>`;
+}
+
+function exportOds(artifact: WorkspaceArtifact): OdfExportResult {
+  const parsed = parseDataSource(artifact.source);
+  if (parsed.errors.length) throw new Error(parsed.errors[0]);
+  if (!parsed.columns.length) throw new Error("The data artifact does not contain any columns to export.");
+  if (parsed.columns.length > 256) throw new Error("ODS export is limited to 256 columns.");
+  if (parsed.rows.length > 10_000) throw new Error("ODS export is limited to 10,000 data rows.");
+  if ((parsed.rows.length + 1) * parsed.columns.length > 50_000) throw new Error("ODS export is limited to 50,000 cells.");
+  const title = safeExportBaseName(artifact.name);
+  const sheetName = title.replace(/[:\\/?*\[\]]/gu, "-").slice(0, 80) || "Rune data";
+  const rows: DataCell[][] = [parsed.columns, ...parsed.rows.map((row) => parsed.columns.map((column) => row[column] ?? null))];
+  const rowsXml = rows.map((row, rowIndex) => `<table:table-row>${row.map((value) => odsCell(value, rowIndex === 0 ? "RuneHeaderCell" : "RuneCell")).join("")}</table:table-row>`).join("");
+  const columnsXml = `<table:table-column table:style-name="RuneColumn" table:number-columns-repeated="${parsed.columns.length}"/>`;
+  const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="${xmlAttribute(sheetName)}">${columnsXml}${rowsXml}</table:table></office:spreadsheet></office:body></office:document-content>`;
+  const warnings = [
+    "ODS export contains typed values only; formulas, charts, comments, filters, and source formatting are not generated.",
+    "Formula-looking text remains a string and is never emitted as an OpenFormula expression.",
+  ];
+  return { bytes: packageOdf("ods", title, content, spreadsheetStylesXml()), fileName: `${title}.ods`, mimeType: ODF_MIME_TYPES.ods, warnings, targetType: "ods" };
+}
+
+function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[], index: number): OdpSlideModel {
+  const blocks = parseMarkdownBlocks(slide.source);
+  const titleBlock = blocks.find((block) => block.type === "heading");
+  const title = titleBlock && titleBlock.type === "heading" ? plainMarkdownInline(titleBlock.source, warnings) : `Slide ${index + 1}`;
+  const paragraphs: OdpParagraph[] = [];
+  const tables: string[][][] = [];
+  const charts: ChartModel[] = [];
+  let titleConsumed = false;
+  blocks.forEach((block) => {
+    if (block === titleBlock && !titleConsumed) {
+      titleConsumed = true;
+      return;
+    }
+    if (block.type === "table") {
+      tables.push(block.rows);
+      return;
+    }
+    if (block.type === "list") {
+      paragraphs.push({ text: plainMarkdownInline(block.source, warnings), bullet: true, level: block.level });
+      return;
+    }
+    if (block.type === "heading") {
+      paragraphs.push({ text: plainMarkdownInline(block.source, warnings), bullet: false, level: 0, strong: true });
+      return;
+    }
+    const chartId = block.source.match(EXACT_CHART_TOKEN)?.[1];
+    if (chartId) {
+      const chart = resolveOdfChart(chartId, workspace, snapshots, warnings);
+      if (chart) charts.push(chart);
+      return;
+    }
+    paragraphs.push({ text: plainMarkdownInline(block.source, warnings), bullet: false, level: 0 });
+  });
+  return { title, eyebrow: slide.eyebrow, paragraphs, tables, charts, layout: slide.layout };
+}
+
+function odpTextFrame(model: OdpSlideModel) {
+  const paragraphs: string[] = [];
+  if (model.eyebrow) paragraphs.push(`<text:p text:style-name="RuneEyebrow">${xmlText(model.eyebrow.toUpperCase())}</text:p>`);
+  let listOpen = false;
+  model.paragraphs.forEach((paragraph) => {
+    if (paragraph.bullet && !listOpen) {
+      paragraphs.push('<text:list text:style-name="RuneBullet">');
+      listOpen = true;
+    } else if (!paragraph.bullet && listOpen) {
+      paragraphs.push("</text:list>");
+      listOpen = false;
+    }
+    if (paragraph.bullet) paragraphs.push(`<text:list-item><text:p>${paragraph.level ? `${" ".repeat(Math.min(6, paragraph.level))}` : ""}${xmlText(paragraph.text)}</text:p></text:list-item>`);
+    else paragraphs.push(`<text:p${paragraph.strong ? ' text:style-name="RuneSlideHeading"' : ""}>${xmlText(paragraph.text)}</text:p>`);
+  });
+  if (listOpen) paragraphs.push("</text:list>");
+  model.tables.forEach((rows, index) => paragraphs.push(semanticTable(rows, new Set<string>(), `SlideTable${index + 1}`)));
+  model.charts.forEach((chart, index) => paragraphs.push(`<text:h text:outline-level="3">${xmlText(chart.spec.title)}</text:h>${chart.spec.description ? `<text:p text:style-name="RuneQuote">${xmlText(chart.spec.description)}</text:p>` : ""}${semanticTable(chartRows(chart), new Set<string>(), `SlideChart${index + 1}`)}`));
+  return `<draw:frame draw:style-name="RuneContentFrame" presentation:class="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"><draw:text-box>${paragraphs.join("") || "<text:p/>"}</draw:text-box></draw:frame>`;
+}
+
+function presentationStylesXml() {
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="RuneSlideTitle" style:family="paragraph"><style:text-properties fo:font-size="26pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneSlideHeading" style:family="paragraph"><style:text-properties fo:font-size="16pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneEyebrow" style:family="paragraph"><style:text-properties fo:font-size="10pt" fo:font-weight="bold" fo:color="#ff5c35"/></style:style><style:presentation-page-layout style:name="RuneSlide"><presentation:placeholder presentation:object="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"/><presentation:placeholder presentation:object="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"/></style:presentation-page-layout></office:styles><office:automatic-styles><style:page-layout style:name="RuneSlideLayout"><style:page-layout-properties fo:page-width="13.333in" fo:page-height="7.5in" style:print-orientation="landscape" fo:margin="0in"/></style:page-layout><style:style style:name="RunePage" style:family="drawing-page"><style:drawing-page-properties draw:fill="solid" draw:fill-color="#fbfaf6" presentation:background-visible="true"/></style:style><style:style style:name="RuneTitleFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style><style:style style:name="RuneContentFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none" fo:padding="0.04in"/></style:style></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RuneSlideLayout" draw:style-name="RunePage"/></office:master-styles></office:document-styles>`;
+}
+
+function exportOdp(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[]): OdfExportResult {
+  const parsed = parseDeckSource(artifact.source);
+  if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The Deck Markdown source is not valid.");
+  const warnings = new Set<string>();
+  const models = parsed.deck.slides.map((slide, index) => deckSlideModel(slide, warnings, workspace, snapshots, index));
+  if (models.some((model) => model.tables.length > 2)) warnings.add("ODP preserves semantic tables, but crowded slides may need layout adjustment in the receiving presentation app.");
+  if (models.some((model) => model.charts.length)) warnings.add("Live Rune charts are exported as selectable current-data tables in ODP; the live binding and chart geometry are not retained.");
+  warnings.add("ODP export preserves slide order, text, bullets, tables, and current chart values; animation, speaker notes, images, and exact master styling are not generated.");
+  const pages = models.map((model, index) => `<draw:page draw:name="Slide ${index + 1}" draw:style-name="RunePage" draw:master-page-name="Rune" presentation:presentation-page-layout-name="RuneSlide"><draw:frame draw:style-name="RuneTitleFrame" presentation:class="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"><draw:text-box><text:p text:style-name="RuneSlideTitle">${xmlText(model.title)}</text:p></draw:text-box></draw:frame>${odpTextFrame(model)}</draw:page>`).join("");
+  const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:presentation>${pages}</office:presentation></office:body></office:document-content>`;
+  const title = safeExportBaseName(artifact.name);
+  return { bytes: packageOdf("odp", parsed.deck.frontmatter.title || title, content, presentationStylesXml()), fileName: `${title}.odp`, mimeType: ODF_MIME_TYPES.odp, warnings: [...warnings], targetType: "odp" };
+}
+
+export function isOdfExportArtifact(artifact: WorkspaceArtifact) {
+  return artifact.kind === "document"
+    || artifact.kind === "data"
+    || (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md"));
+}
+
+export function exportOdfArtifact(
+  artifact: WorkspaceArtifact,
+  workspace: WorkspaceArtifact[] = [],
+  querySnapshots: WorkspaceQuerySnapshot[] = [],
+): OdfExportResult {
+  if (!artifact.source.trim()) throw new Error("The source is empty.");
+  if (artifact.source.length > MAX_ODF_EXPORT_SOURCE_CHARS) throw new Error("OpenDocument export is limited to 2,000,000 source characters.");
+  if (artifact.kind === "document") return exportOdt(artifact, workspace, querySnapshots);
+  if (artifact.kind === "data") return exportOds(artifact);
+  if (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md")) return exportOdp(artifact, workspace, querySnapshots);
+  throw new Error("OpenDocument export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
+}
