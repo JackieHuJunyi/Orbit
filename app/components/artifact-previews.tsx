@@ -70,6 +70,13 @@ import {
   type VisualDocumentSectionEditInput,
 } from "../lib/visual-document-edit";
 import {
+  MAX_VISUAL_DOCUMENT_BLOCK_CHARS,
+  canVisualEditDocumentBlock,
+  prepareVisualDocumentBlockEdit,
+  visualDocumentBlockDraft,
+  type VisualDocumentBlockEditInput,
+} from "../lib/visual-document-block-edit";
+import {
   applyDocumentFormatting,
   type DocumentFormattingCommand,
 } from "../lib/document-formatting";
@@ -108,6 +115,12 @@ export type DocumentSectionEditHandler = (
   input: VisualDocumentSectionEditInput,
 ) => Promise<string | null>;
 
+export type DocumentBlockEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: DocumentBlockPreviewSourceTarget,
+  input: VisualDocumentBlockEditInput,
+) => Promise<string | null>;
+
 export type DeckSlideEditHandler = (
   artifact: WorkspaceArtifact,
   target: PreviewSourceTarget,
@@ -142,6 +155,14 @@ const DOCUMENT_FORMATTING_CONTROLS = [
   shortcut: string;
   Icon: typeof Bold;
 }>;
+
+function documentBlockFormattingControls(blockType: DocumentBlockPreviewSourceTarget["blockType"]) {
+  if (blockType === "code") return [];
+  return DOCUMENT_FORMATTING_CONTROLS.filter(({ command }) => (
+    ["bold", "italic", "strikethrough", "code", "link"].includes(command)
+    || (blockType === "list" && ["bullet-list", "numbered-list"].includes(command))
+  ));
+}
 
 function usePreviewQueryRuntime(
   artifact: WorkspaceArtifact,
@@ -523,6 +544,8 @@ function MarkdownSource({
   documentBlockTargets,
   activeSelection,
   onTargetSource,
+  onEditDocumentBlock,
+  onBeginDocumentBlockEdit,
 }: {
   source: string;
   sourceOffsets?: number[];
@@ -532,6 +555,8 @@ function MarkdownSource({
   documentBlockTargets?: DocumentBlockPreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  onEditDocumentBlock?: DocumentBlockEditHandler;
+  onBeginDocumentBlockEdit?: (target: DocumentBlockPreviewSourceTarget) => void;
 }) {
   const parts = tokenizeChartReferences(source);
   const blockByRange = useMemo(() => new Map((documentBlockTargets ?? []).map((target) => (
@@ -554,32 +579,63 @@ function MarkdownSource({
   ) => {
     const { node, children, ...elementProps } = props;
     const target = node ? targetForNode(node) : undefined;
-    if (!target || !onTargetSource || !targetArtifact) return createElement(tag, elementProps, children);
+    if (!target || !targetArtifact || (!onTargetSource && !onBeginDocumentBlockEdit)) {
+      return createElement(tag, elementProps, children);
+    }
     const active = previewTargetIsActive(target, activeSelection);
+    const editable = Boolean(
+      onEditDocumentBlock
+      && onBeginDocumentBlockEdit
+      && canVisualEditDocumentBlock(targetArtifact, target),
+    );
     const inheritedClassName = typeof elementProps.className === "string" ? elementProps.className : "";
-    return createElement(tag, {
+    const selectSource = () => onTargetSource?.(targetArtifact, target);
+    const block = createElement(tag, {
       ...elementProps,
-      className: `${inheritedClassName} document-source-block ${active ? "active" : ""}`.trim(),
+      className: inheritedClassName || undefined,
+    }, children);
+    return createElement("div", {
+      className: `document-source-block ${onTargetSource ? "targetable" : ""} ${editable ? "editable" : ""} ${active ? "active" : ""}`.trim(),
       "data-preview-source-target": target.kind,
       "data-document-block-type": target.blockType,
-      "aria-label": `Select ${target.label} in canonical source for Agent context`,
-      "aria-pressed": active,
-      role: "button",
-      tabIndex: 0,
-      title: `Select exact ${target.label} source`,
+      "data-document-heading-level": target.headingLevel,
+      title: onTargetSource ? `Select exact ${target.label} source` : undefined,
       onClick: (event: ReactMouseEvent<HTMLElement>) => {
         const clicked = event.target;
         if (clicked instanceof Element && clicked.closest("a, button, input, textarea, select, [contenteditable='true']")) return;
-        onTargetSource(targetArtifact, target);
+        selectSource();
       },
-      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key !== "Enter" && event.key !== " ") return;
+    }, block, createElement("span", {
+      className: "document-block-actions",
+      role: "group",
+      "aria-label": `${target.label} source actions`,
+    }, onTargetSource && createElement("button", {
+      className: "document-block-locate",
+      type: "button",
+      "aria-label": `Select ${target.label} in canonical source for Agent context`,
+      "aria-pressed": active,
+      "aria-keyshortcuts": editable ? "F2" : undefined,
+      title: `Select exact ${target.label} source`,
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        selectSource();
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
+        if (!editable || event.key !== "F2") return;
         event.preventDefault();
-        onTargetSource(targetArtifact, target);
+        onBeginDocumentBlockEdit?.(target);
       },
-    }, children);
-  }, [activeSelection, onTargetSource, targetArtifact, targetForNode]);
+    }, createElement(MousePointer2, { "aria-hidden": true })), editable && createElement("button", {
+        className: "document-block-edit",
+        type: "button",
+        "aria-label": `Edit ${target.label} ${target.blockType}`,
+        title: `Edit exact ${target.blockType} block · F2`,
+        onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+          event.stopPropagation();
+          onBeginDocumentBlockEdit?.(target);
+        },
+      }, createElement(PencilLine, { "aria-hidden": true }))));
+  }, [activeSelection, onBeginDocumentBlockEdit, onEditDocumentBlock, onTargetSource, targetArtifact, targetForNode]);
 
   const blockComponents = useMemo(() => Object.fromEntries([
     "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr",
@@ -611,6 +667,7 @@ function DocumentPreview({
   activeSelection,
   onTargetSource,
   onEditDocumentSection,
+  onEditDocumentBlock,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -619,6 +676,7 @@ function DocumentPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
+  onEditDocumentBlock?: DocumentBlockEditHandler;
 }) {
   const compiled = compileArtifactSource(
     artifact.source,
@@ -637,11 +695,26 @@ function DocumentPreview({
     error: string;
     submitting: boolean;
   } | null>(null);
+  const [editingBlock, setEditingBlock] = useState<{
+    targetId: string;
+    artifactId: string;
+    sourceRevision: string;
+    draft: string;
+    error: string;
+    submitting: boolean;
+  } | null>(null);
   const sectionDraftRef = useRef<HTMLTextAreaElement>(null);
   const sectionSelectionRef = useRef({ start: 0, end: 0 });
+  const blockEditorRef = useRef<HTMLFormElement>(null);
+  const blockDraftRef = useRef<HTMLTextAreaElement>(null);
+  const blockSelectionRef = useRef({ start: 0, end: 0 });
   const editingTarget = editingSection?.artifactId === artifact.id
     && editingSection.sourceRevision === artifact.source
     ? targets.find((target) => target.id === editingSection.targetId)
+    : undefined;
+  const editingBlockTarget = editingBlock?.artifactId === artifact.id
+    && editingBlock.sourceRevision === artifact.source
+    ? blockTargets.find((target) => target.id === editingBlock.targetId)
     : undefined;
   const draftSource = editingSection?.draft ?? "";
   const compiledDraft = compileArtifactSource(
@@ -649,9 +722,34 @@ function DocumentPreview({
     artifacts,
     readyQuerySnapshots(queryRuntime),
   );
+  const blockDraftSource = editingBlock?.draft ?? "";
+  const compiledBlockDraft = compileArtifactSource(
+    blockDraftSource,
+    artifacts,
+    readyQuerySnapshots(queryRuntime),
+  );
+  const blockFormattingControls = editingBlockTarget
+    ? documentBlockFormattingControls(editingBlockTarget.blockType)
+    : [];
+  const preparedBlockDraft = editingBlock && editingBlockTarget
+    ? prepareVisualDocumentBlockEdit(artifact, editingBlockTarget, { draft: editingBlock.draft })
+    : null;
+  const blockDraftError = preparedBlockDraft?.errors[0] === "The edited block is unchanged."
+    ? ""
+    : preparedBlockDraft?.errors[0] ?? "";
+  const blockDraftCanSave = Boolean(preparedBlockDraft && !preparedBlockDraft.errors.length);
+
+  useEffect(() => {
+    if (!editingBlockTarget) return;
+    const frame = window.requestAnimationFrame(() => {
+      blockEditorRef.current?.scrollIntoView({ block: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editingBlockTarget]);
 
   function beginSectionEdit(target: PreviewSourceTarget) {
     if (!onEditDocumentSection || !canVisualEditDocumentSection(artifact, target)) return;
+    setEditingBlock(null);
     sectionSelectionRef.current = { start: 0, end: 0 };
     setEditingSection({
       targetId: target.id,
@@ -663,8 +761,29 @@ function DocumentPreview({
     });
   }
 
+  function beginBlockEdit(target: DocumentBlockPreviewSourceTarget) {
+    if (!onEditDocumentBlock || !canVisualEditDocumentBlock(artifact, target)) return;
+    setEditingSection(null);
+    blockSelectionRef.current = { start: 0, end: 0 };
+    setEditingBlock({
+      targetId: target.id,
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      draft: visualDocumentBlockDraft(artifact, target),
+      error: "",
+      submitting: false,
+    });
+  }
+
   function rememberSectionSelection(textarea: HTMLTextAreaElement) {
     sectionSelectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  }
+
+  function rememberBlockSelection(textarea: HTMLTextAreaElement) {
+    blockSelectionRef.current = {
       start: textarea.selectionStart,
       end: textarea.selectionEnd,
     };
@@ -711,6 +830,48 @@ function DocumentPreview({
     });
   }
 
+  function formatBlockDraft(command: DocumentFormattingCommand) {
+    if (!editingBlock || editingBlock.submitting || !editingBlockTarget) return;
+    if (!documentBlockFormattingControls(editingBlockTarget.blockType).some((control) => control.command === command)) return;
+    const textarea = blockDraftRef.current;
+    const selection = textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : blockSelectionRef.current;
+    const formatted = applyDocumentFormatting(
+      editingBlock.draft,
+      command,
+      selection.start,
+      selection.end,
+    );
+    if (formatted.draft.length > MAX_VISUAL_DOCUMENT_BLOCK_CHARS) {
+      setEditingBlock((current) => current ? {
+        ...current,
+        error: `Visual Document blocks are limited to ${MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString("en-US")} characters.`,
+      } : current);
+      return;
+    }
+    if (formatted.error) {
+      setEditingBlock((current) => current ? { ...current, error: formatted.error ?? "" } : current);
+      textarea?.focus();
+      return;
+    }
+    blockSelectionRef.current = {
+      start: formatted.selectionStart,
+      end: formatted.selectionEnd,
+    };
+    setEditingBlock((current) => current ? {
+      ...current,
+      draft: formatted.draft,
+      error: "",
+    } : current);
+    window.requestAnimationFrame(() => {
+      const currentTextarea = blockDraftRef.current;
+      if (!currentTextarea) return;
+      currentTextarea.focus();
+      currentTextarea.setSelectionRange(formatted.selectionStart, formatted.selectionEnd);
+    });
+  }
+
   async function submitSectionEdit(target: PreviewSourceTarget) {
     if (!editingSection || !onEditDocumentSection) return;
     setEditingSection((current) => current ? { ...current, error: "", submitting: true } : current);
@@ -722,12 +883,23 @@ function DocumentPreview({
     setEditingSection(null);
   }
 
+  async function submitBlockEdit(target: DocumentBlockPreviewSourceTarget) {
+    if (!editingBlock || !onEditDocumentBlock || !blockDraftCanSave) return;
+    setEditingBlock((current) => current ? { ...current, error: "", submitting: true } : current);
+    const error = await onEditDocumentBlock(artifact, target, { draft: editingBlock.draft });
+    if (error) {
+      setEditingBlock((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setEditingBlock(null);
+  }
+
   return (
     <div className="document-stage">
       <article className="document-paper">
         <div className="paper-meta">
           <span>Rune document</span>
-          <span>{onEditDocumentSection && targets.length ? "Select or edit one exact section" : onTargetSource && targets.length ? "Click a section for Agent" : "Live compilation"}</span>
+          <span>{onEditDocumentBlock && blockTargets.length ? "Select or edit one exact block" : onEditDocumentSection && targets.length ? "Select or edit one exact section" : onTargetSource && targets.length ? "Click a section for Agent" : "Live compilation"}</span>
         </div>
         {onTargetSource && targets.length > 0 && (
           <nav className="document-targets" aria-label="Select or edit a document section">
@@ -852,6 +1024,97 @@ function DocumentPreview({
             </footer>
           </form>
         )}
+        {editingBlock && editingBlockTarget && (
+          <form
+            ref={blockEditorRef}
+            className="visual-document-editor visual-document-block-editor"
+            onSubmit={(event) => { event.preventDefault(); void submitBlockEdit(editingBlockTarget); }}
+          >
+            <header>
+              <div><span>Editing exact {editingBlockTarget.blockType}</span><strong>{editingBlockTarget.label}</strong></div>
+              <small>{editingBlock.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString("en-US")}</small>
+            </header>
+            <div className="visual-document-editor-grid">
+              <div className="visual-document-source">
+                <div className="visual-document-source-label">
+                  <label htmlFor={`visual-document-block-draft-${artifact.id}-${editingBlockTarget.index}`}>Block source</label>
+                  <em>Synced live</em>
+                </div>
+                {blockFormattingControls.length > 0 && (
+                  <div className="visual-document-formatbar" role="toolbar" aria-label={`Format Document ${editingBlockTarget.blockType}`}>
+                    {blockFormattingControls.map(({ command, label, shortcut, Icon }) => (
+                      <button
+                        key={command}
+                        type="button"
+                        disabled={editingBlock.submitting}
+                        aria-label={shortcut ? `${label} · ${shortcut}` : label}
+                        title={shortcut ? `${label} · ${shortcut}` : label}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => formatBlockDraft(command)}
+                      >
+                        <Icon aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <textarea
+                  id={`visual-document-block-draft-${artifact.id}-${editingBlockTarget.index}`}
+                  ref={blockDraftRef}
+                  autoFocus
+                  aria-label={`Edit ${editingBlockTarget.label} Markdown ${editingBlockTarget.blockType} block`}
+                  value={editingBlock.draft}
+                  disabled={editingBlock.submitting}
+                  maxLength={MAX_VISUAL_DOCUMENT_BLOCK_CHARS}
+                  spellCheck
+                  onChange={(event) => {
+                    rememberBlockSelection(event.currentTarget);
+                    setEditingBlock((current) => current ? { ...current, draft: event.target.value, error: "" } : current);
+                  }}
+                  onSelect={(event) => rememberBlockSelection(event.currentTarget)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setEditingBlock(null);
+                    } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                      event.preventDefault();
+                      void submitBlockEdit(editingBlockTarget);
+                    } else if (event.metaKey || event.ctrlKey) {
+                      const command = event.key.toLowerCase() === "b"
+                        ? "bold"
+                        : event.key.toLowerCase() === "i"
+                          ? "italic"
+                          : event.key.toLowerCase() === "k"
+                            ? "link"
+                            : null;
+                      if (command && blockFormattingControls.some((control) => control.command === command)) {
+                        event.preventDefault();
+                        formatBlockDraft(command);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <section aria-label={`Draft preview for ${editingBlockTarget.label}`}>
+                <span>Block preview</span>
+                <div className="visual-document-draft markdown-body">
+                  {blockDraftSource.trim()
+                    ? <MarkdownSource source={compiledBlockDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} />
+                    : <p className="visual-document-empty">This block cannot be empty.</p>}
+                </div>
+              </section>
+            </div>
+            {(editingBlock.error || blockDraftError) && <p className="visual-document-error" role="alert">{editingBlock.error || blockDraftError}</p>}
+            <footer>
+              <p>One proven {editingBlockTarget.blockType} · type and live bindings stay fixed · save writes canonical source</p>
+              <div>
+                <button type="button" disabled={editingBlock.submitting} onClick={() => setEditingBlock(null)}><X />Cancel</button>
+                <button type="submit" disabled={editingBlock.submitting || !blockDraftCanSave}>
+                  {editingBlock.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save block
+                </button>
+              </div>
+            </footer>
+          </form>
+        )}
         <div className="markdown-body">
           <MarkdownSource
             source={compiled.source}
@@ -862,6 +1125,8 @@ function DocumentPreview({
             documentBlockTargets={blockTargets}
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
+            onEditDocumentBlock={onEditDocumentBlock}
+            onBeginDocumentBlockEdit={beginBlockEdit}
           />
         </div>
       </article>
@@ -1723,6 +1988,7 @@ export function ArtifactPreview({
   onTargetSource,
   onEditDataCell,
   onEditDocumentSection,
+  onEditDocumentBlock,
   onEditDeckSlide,
   onEditChartSpec,
 }: {
@@ -1732,6 +1998,7 @@ export function ArtifactPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
+  onEditDocumentBlock?: DocumentBlockEditHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
   onEditChartSpec?: ChartSpecEditHandler;
 }) {
@@ -1747,7 +2014,7 @@ export function ArtifactPreview({
     return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
   }
   const targets = derivePreviewSourceTargets(artifact);
-  if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} />;
+  if (artifact.kind === "document") return <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} />;
   if (artifact.kind === "query") {
     const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
     return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;

@@ -72,6 +72,8 @@ Opening **note** with {{ metric("total_revenue") }}.
   assert.deepEqual(targets.map((target) => target.blockType), [
     "heading", "paragraph", "list", "quote", "code", "table", "rule",
   ]);
+  assert.equal(targets[0].headingLevel, 1);
+  assert.equal(targets[1].headingLevel, undefined);
   assert.deepEqual(targets.map((target) => source.slice(target.start, target.end)), [
     "# Report",
     'Opening **note** with {{ metric("total_revenue") }}.',
@@ -90,16 +92,16 @@ test("withholds Document block targets for non-Document or empty source", () => 
   assert.deepEqual(deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "empty.md", " \n")), []);
 });
 
-test("leaves a standalone Chart binding to its own provenance-aware preview", () => {
+test("leaves standalone or inline Chart bindings to their own provenance-aware preview", () => {
   const source = `# Report
 
 Before.
 
 {{ chart("regional-revenue-chart") }}
 
-After.`;
+After {{ chart("regional-margin-chart") }}.`;
   const targets = deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
-  assert.deepEqual(targets.map((target) => target.label), ["Report", "Before.", "After."]);
+  assert.deepEqual(targets.map((target) => target.label), ["Report", "Before."]);
   assert.equal(targets.some((target) => source.slice(target.start, target.end).includes("chart(")), false);
 });
 

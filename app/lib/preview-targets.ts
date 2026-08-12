@@ -27,6 +27,7 @@ export type DataCellPreviewSourceTarget = PreviewSourceTarget & {
 export type DocumentBlockPreviewSourceTarget = PreviewSourceTarget & {
   kind: "document-block";
   blockType: DocumentBlockType;
+  headingLevel?: number;
 };
 
 export type DataPreviewSourceTargets = {
@@ -135,6 +136,7 @@ type MarkdownNode = {
   type: string;
   value?: string;
   alt?: string;
+  depth?: number;
   children?: MarkdownNode[];
   position?: {
     start?: { offset?: number };
@@ -152,7 +154,7 @@ const DOCUMENT_BLOCK_TYPES: Partial<Record<string, DocumentBlockType>> = {
   thematicBreak: "rule",
 };
 
-const STANDALONE_CHART_BLOCK = /^\s*\{\{\s*chart\(["'][\p{L}\p{N}_.-]+["']\)\s*\}\}\s*$/u;
+const DOCUMENT_CHART_BINDING = /\{\{\s*chart\(["'][\p{L}\p{N}_.-]+["']\)\s*\}\}/u;
 
 const DOCUMENT_BLOCK_FALLBACKS: Record<DocumentBlockType, string> = {
   heading: "Heading",
@@ -183,7 +185,7 @@ function documentBlockTargets(source: string): DocumentBlockPreviewSourceTarget[
     const start = node.position?.start?.offset;
     const end = node.position?.end?.offset;
     if (!blockType || start == null || end == null || start >= end) return [];
-    if (blockType === "paragraph" && STANDALONE_CHART_BLOCK.test(source.slice(start, end))) return [];
+    if (blockType === "paragraph" && DOCUMENT_CHART_BINDING.test(source.slice(start, end))) return [];
     return [{
       start,
       end,
@@ -191,6 +193,9 @@ function documentBlockTargets(source: string): DocumentBlockPreviewSourceTarget[
       index,
       kind: "document-block" as const,
       blockType,
+      ...(blockType === "heading" && Number.isInteger(node.depth)
+        ? { headingLevel: node.depth }
+        : {}),
       label: boundedLabel(documentNodeText(node), DOCUMENT_BLOCK_FALLBACKS[blockType]),
     }];
   });

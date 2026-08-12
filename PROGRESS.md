@@ -53,3 +53,4 @@
 - 2026-08-13 — Added reviewed browser-local ODT/ODS/ODP semantic import and deterministic export with strict package security, OASIS schema validation, round-trip coverage, and installed-handler checks.
 - 2026-08-13 — Added reversible source-synchronized Document formatting controls and keyboard shortcuts with exact selection restoration and live safe preview.
 - 2026-08-13 — Made rendered CommonMark/GFM Document blocks keyboard-targetable and mapped compiled metric text back to exact canonical source selections.
+- 2026-08-13 — Added revision-bound visual editing for AST-proven Document blocks with same-type parsing, live draft preview, F2 access, and atomic canonical-source saves.

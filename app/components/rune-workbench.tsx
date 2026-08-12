@@ -41,6 +41,7 @@ import {
   type ChartSpecEditHandler,
   type DataCellEditHandler,
   type DeckSlideEditHandler,
+  type DocumentBlockEditHandler,
   type DocumentSectionEditHandler,
 } from "./artifact-previews";
 import { EmptyWorkspace } from "./empty-workspace";
@@ -154,6 +155,7 @@ import {
 } from "../lib/model-preference";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
+import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
 import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
 import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 
@@ -1006,6 +1008,19 @@ export function RuneWorkbench() {
     detail: "Replace one revision-bound Markdown section through the visual Document editor.",
     verificationNotice: `Verifying ${target.label} against the complete workspace…`,
     compile: (currentArtifact) => prepareVisualDocumentSectionEdit(currentArtifact, target, input),
+  });
+
+  const commitVisualDocumentBlockEdit: DocumentBlockEditHandler = async (
+    targetArtifact,
+    target,
+    input,
+  ) => commitVisualSourceEdit({
+    targetArtifact,
+    targetLabel: target.label,
+    targetNoun: `${target.blockType} block`,
+    detail: `Replace one revision-bound Markdown ${target.blockType} block through the visual Document editor.`,
+    verificationNotice: `Verifying ${target.label} against the complete workspace…`,
+    compile: (currentArtifact) => prepareVisualDocumentBlockEdit(currentArtifact, target, input),
   });
 
   const commitVisualDeckSlideEdit: DeckSlideEditHandler = async (
@@ -2504,6 +2519,7 @@ export function RuneWorkbench() {
                 onTargetSource={focusPreviewTarget}
                 onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
                 onEditDocumentSection={visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
+                onEditDocumentBlock={visualEditState === "idle" ? commitVisualDocumentBlockEdit : undefined}
                 onEditDeckSlide={visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
                 onEditChartSpec={visualEditState === "idle" ? commitVisualChartSpecEdit : undefined}
               />
@@ -2516,7 +2532,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.42</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.43</span></div>
       </footer>
 
       {newArtifactOpen && (

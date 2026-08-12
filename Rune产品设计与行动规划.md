@@ -1111,9 +1111,17 @@ inline command 只包裹或解除明确的 Markdown delimiter。代码会选择�
 
 Document preview 不再只能通过顶部 section 导航定位粗粒度源码。右侧每个由同一 CommonMark + GFM parser 证明的顶层标题、段落、列表、引用、fenced code、表格与分隔线现在都是键盘可达的 `document-block` target；点击或 Enter/Space 会选择左侧完整 UTF-16 source range、显示右侧 active 状态并进入既有 Selection Agent。section 导航仍负责快速跳转和打开 section editor，二者不是重复入口。
 
-动态 metric 让简单 DOM offset 映射失效：`{{ metric(...) }}` 可能编译成 `$4.82M`，后续所有 preview offset 都发生偏移。本轮 compiler 因此与 compiled source 同时产生一个长度为 `compiled.length + 1` 的单调 canonical boundary map。原样字符逐一映射，replacement 的中间边界保守映射到 token 开头、末边界映射到完整 token 末尾；渲染 AST 的 block start/end 只有重新映射后与 canonical AST block 完全一致才获得 capability。Standalone Chart binding 不生成普通 paragraph target，继续使用图表内部更精确的 Data/Query provenance。
+动态 metric 让简单 DOM offset 映射失效：`{{ metric(...) }}` 可能编译成 `$4.82M`，后续所有 preview offset 都发生偏移。本轮 compiler 因此与 compiled source 同时产生一个长度为 `compiled.length + 1` 的单调 canonical boundary map。原样字符逐一映射，replacement 的中间边界保守映射到 token 开头、末边界映射到完整 token 末尾；渲染 AST 的 block start/end 只有重新映射后与 canonical AST block 完全一致才获得 capability。任何包含 Chart binding 的 paragraph 都不生成普通 block target，继续使用图表内部更精确的 Data/Query provenance。
 
 该能力把 Overleaf 式“点成品，左侧到对应位置”从 section 提升到日常编辑块，同时仍不把 DOM selection 或像素位置当成事实。当前不开放嵌套 list item、表格 cell、inline span 的独立 target，也不允许右侧 block 拖拽或直接修改；它们需要更细的 AST identity、冲突规则与 typed operation。下一步可在已经证明的 block target 上增加一个明确的 block inspector 或 section editor 定位入口，而不是从 contenteditable 反推 Markdown。
+
+### 6.22 v0.43 Document 块级可视化写入
+
+v0.42 已经能证明右侧一个可见 block 对应哪段 canonical source，v0.43 把这份短生命周期 provenance 提升为窄写 capability。右侧每个 heading、paragraph、list、blockquote、fenced code 和 GFM table 都有分离的“定位”与“编辑”动作；鼠标悬停、键盘 focus、触控设备或定位按钮上的 `F2` 都能进入。分隔线仍只定位，因为把一个无内容结构交给空白 textarea 会把“编辑”退化成不明确的删除权限。
+
+块编辑器只持有一个 revision-bound 草稿和同源 live preview。保存时重新从当前 artifact 派生 target，并用 CommonMark + GFM parser 要求草稿恰好产生一个同类型顶层 node；heading 还必须维持原 depth，所有 `{{ ... }}` binding 必须按顺序逐字不变，exact prefix/suffix 也必须不变。段落不能借编辑器生成第二段或列表，列表不能悄悄变成普通段落，code/table/quote 同样不能改变结构类型。格式工具按 block 能力收窄：普通文本开放 inline formatting，list 额外允许 bullet/number 切换，code 不提供会破坏 fenced grammar 的工具。
+
+保存复用既有 visual transaction：先构造完整 proposed workspace，验证 adapter、dependency 与受影响 Query/Chart runtime，复核全工作区 revision，为旧 source 建 checkpoint，再单次持久化。成功后左侧选中新的 exact block、右侧 active 并进入 Selection Agent；取消、stale、no-op、超限、跨块、binding 改动、下游失败或存储失败都零写入。当前仍不支持右侧新增/删除/重排 block、嵌套 list item 或单个 table cell 编辑；这些结构操作应通过显式 typed command 和可预览 transaction，而不能借一个文本框扩大权限。
 
 ---
 

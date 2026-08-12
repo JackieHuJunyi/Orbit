@@ -1816,4 +1816,16 @@ live sync 仍需分清预测与事实。每次格式命令会立即更新 Source
 
 这种设计保留了两层交互。顶部 section chips 适合文档大纲、section 编辑与结构感；正文 block 本身适合“我看到这段结论，带我去它的源码”，点击后激活同一个 Selection Agent capability。hover 只有轻微朱红底色，active 更明确；所有 block 使用原生 focus、Enter/Space 和可读 label。并没有监听用户在 DOM 中划出的任意 Range，因为跨 inline markup、metric replacement 和嵌套结构时，那仍需要更精确的 source-map 合同。
 
-Chart 是重要的反例。Standalone `{{ chart(...) }}` 在 Markdown AST 看起来只是 paragraph，但画面中的 label/bar 已经能追到真正 Data cell；若外层 paragraph 再截获点击，粒度反而退化。因此 Chart binding 不获得普通 Document block target，事件继续由 Chart provenance 处理。v0.42 也暂不拆分 list item、table cell 或 inline span；下一阶段若增加 block inspector，应以这些已证明 target 为输入，编译 typed Markdown operation，而不是让 DOM 成为第二份文档。
+Chart 是重要的反例。含 `{{ chart(...) }}` 的 Markdown paragraph 在 AST 中仍只是普通段落，但画面中的 label/bar 已经能追到真正 Data cell；若外层 paragraph 再截获点击，粒度反而退化。因此任何包含 Chart binding 的 paragraph 都不获得普通 Document block target，事件继续由 Chart provenance 处理。v0.42 也暂不拆分 list item、table cell 或 inline span；下一阶段若增加 block inspector，应以这些已证明 target 为输入，编译 typed Markdown operation，而不是让 DOM 成为第二份文档。
+
+## 48. Block inspector 的权限边界必须比 section editor 更窄
+
+v0.42 已经知道右侧每个顶层 Markdown block 的 exact source range，但“知道它来自哪里”不自动等于“可以随意重写它”。若一个 paragraph editor 接受 `第一段\n\n第二段`，用户表面上仍在改一个块，实际却新增了结构；若 heading 从 `##` 变成 `#`，文档层级也被改变。v0.43 因此把 block editor 定义成 same-type compiler：草稿必须被同一 CommonMark/GFM parser 解析为恰好一个顶层 node，而且 node type 必须与 target 相同；heading depth 也必须相同。解析结果不满足就停在草稿层，canonical source 不动。
+
+这个约束让视觉入口和结构入口分离。heading、paragraph、list、blockquote、fenced code 与 GFM table 可以通过 hover/focus 后的铅笔或 `F2` 打开；thematic break 仍只有定位，因为它没有可编辑正文，允许空草稿会把 edit 模糊成 delete。按钮不是套在 heading/list/table 上的伪 `role=button`：每个语义 block 保留自己的 HTML 元素，外层只负责 hover 与 active 投影，旁边两个原生 button 分别承担 locate 和 edit。链接、task checkbox 等内部控件不会被定位事件截获，触控环境始终显示操作条。
+
+格式命令也不能无条件复用 section toolbar。paragraph、heading、quote 与 table 可获得 inline bold/italic/strike/code/link；list 额外允许 bullet/number 互换；fenced code 不显示任何 Markdown formatting command。即使某个按钮能生成合法字符串，最终 same-type parser 仍是权限门。例如对 paragraph 使用 list command 会改变 node type，因此在 UI 和 compiler 两层都不允许；这比“先让用户点，再报错”更符合克制的 Apple 式交互。
+
+草稿实时预览只证明“当前输入将如何渲染”，不是已经保存的事实。Save 重新派生 exact target、证明所有 `{{ ... }}` binding byte-stable、证明 source range 外 prefix/suffix 不变，再复用 Data/section/Deck/Chart 已共同验证的 visual transaction：完整 workspace static/runtime validation、全局 revision recheck、manual checkpoint、一次 device persistence。成功后新 block range 同时成为左侧 selection、右侧 active state 和 Selection Agent context；任何 stale、no-op、多块、类型变化、heading depth、binding、下游或存储错误都零写入。
+
+v0.43 仍不把 block target 持久化成 UUID，也不支持拖拽、增删、跨块合并、nested list item、单个 table cell 或 DOM contenteditable。当前 `index + range + type + label + headingLevel` 只服务一个 revision；source 一变就重新计算。下一阶段更值得做的是显式的 insert/move/delete block typed operations与 transaction preview，或让左侧 source selection 与右侧滚动互相跟随；不能因为已有铅笔按钮就把所有结构修改偷偷塞进同一个 textarea。
