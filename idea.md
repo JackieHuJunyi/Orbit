@@ -1795,3 +1795,15 @@ ODS 暴露了一个不能只靠普通 fixture 发现的资源问题：标准办�
 
 [23]: https://docs.oasis-open.org/office/OpenDocument/v1.3/OpenDocument-v1.3-part2-packages.html "OpenDocument v1.3 Part 2: Packages"
 [24]: https://docs.oasis-open.org/office/OpenDocument/v1.3/os/part3-schema/OpenDocument-v1.3-os-part3-schema.html "OpenDocument v1.3 Part 3: Schema"
+
+## 46. 普通用户格式化仍要生成 source operation，而不是接管 DOM
+
+v0.36 留下的关键产品假设是：用户愿意在右侧 section editor 工作，但不应该为了加粗一句话或建一个列表而记 Markdown 标点。v0.41 给这个假设一个最小实验，不引入通用 rich-text framework，也不把右侧预览设为 `contenteditable`。编辑器的左半仍明确叫 Source draft，右半仍是 Draft preview；新增的八个图标只是把用户选区编译成可读 Markdown。这样降低表达门槛，但没有引入一份与 canonical source 竞争的 JSON/HTML 文档模型。
+
+格式命令必须是可逆、局部、确定的。粗体、斜体、删除线会识别选区自身或相邻位置已有的 delimiter，再决定包裹还是解除；行内代码扫描选区内最长的反引号 run，使用更长 delimiter，避免用户文字截断 code span；链接只接受一行文本，生成后把安全的 `https://` 草稿选中。列表和引用不依赖 DOM：compiler 扩展到选区覆盖的完整 source lines，保留最多三字符 Markdown indent，把同类 marker 移除或在 bullet/numbered 之间切换，并把原来的 caret/selection 映射到新字符串。
+
+选区本身也是 capability。浏览器 toolbar 的 `mousedown` 会夺走 textarea focus，所以 UI 在按下按钮前阻止默认聚焦，并在 React 更新后的 animation frame 恢复 exact UTF-16 range。按钮和 `⌘/Ctrl B/I/K` 共用同一 pure function，图标全部有可读 `aria-label`、title 和原生 toolbar 语义。空选区不会插入“在这里输入”之类可能被误保存的占位内容；它只生成 delimiter 并把 caret 留在中间。链接因为需要两个可编辑字段，默认保留当前 label 并选中 URL。
+
+live sync 仍需分清预测与事实。每次格式命令会立即更新 Source draft 和安全 Markdown preview，这是同一临时字符串的双投影；草稿不写入 localStorage、folder、checkpoint 或 workspace graph。只有 Save 才进入已有的 revision-bound section compiler，继续拒绝超长、空白、no-op、结构变化、binding 变化和越界，再走完整 workspace validation、checkpoint 与单次 persistence。工具栏不会因此获得改 heading hierarchy、表格结构、图片或 dependency identity 的权限。
+
+这轮刻意不实现 active-format 状态、富文本光标、DOM 段落选择、拖拽 block、复杂嵌套 list 或 undo stack。Markdown 标记可能来自不同等价写法，伪造一个“粗体按钮已激活”反而要求完整 AST/source-position 合同。下一阶段应先采集三个事实：用户使用 button 与 shortcut 的比例、格式操作后的取消/保存率、以及表格/标题/图片需求是否明显高于普通 inline/list 操作。只有 block 级需求被真实使用证明，才为 Markdown AST 建稳定 identity 和 inspector；否则这组薄 compiler controls 已经能覆盖高频编辑，又保留 Rune 最重要的可核验 source。

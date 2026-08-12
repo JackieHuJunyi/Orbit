@@ -1,18 +1,26 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   AlertTriangle,
+  Bold,
   Braces,
   Check,
   CheckCircle2,
   Clock3,
+  Code2,
   Columns3,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
   LoaderCircle,
   MousePointer2,
   PencilLine,
+  Strikethrough,
+  TextQuote,
   Rows3,
   X,
 } from "lucide-react";
@@ -58,6 +66,10 @@ import {
   visualDocumentSectionDraft,
   type VisualDocumentSectionEditInput,
 } from "../lib/visual-document-edit";
+import {
+  applyDocumentFormatting,
+  type DocumentFormattingCommand,
+} from "../lib/document-formatting";
 import {
   MAX_VISUAL_DECK_SLIDE_CHARS,
   VISUAL_DECK_LAYOUTS,
@@ -111,6 +123,22 @@ type QueryRuntimeEntry =
   | { status: "error"; error: string };
 
 type QueryRuntime = Record<string, QueryRuntimeEntry>;
+
+const DOCUMENT_FORMATTING_CONTROLS = [
+  { command: "bold", label: "Bold", shortcut: "⌘/Ctrl B", Icon: Bold },
+  { command: "italic", label: "Italic", shortcut: "⌘/Ctrl I", Icon: Italic },
+  { command: "strikethrough", label: "Strikethrough", shortcut: "", Icon: Strikethrough },
+  { command: "code", label: "Inline code", shortcut: "", Icon: Code2 },
+  { command: "link", label: "Link", shortcut: "⌘/Ctrl K", Icon: Link2 },
+  { command: "bullet-list", label: "Bulleted list", shortcut: "", Icon: List },
+  { command: "numbered-list", label: "Numbered list", shortcut: "", Icon: ListOrdered },
+  { command: "quote", label: "Quote", shortcut: "", Icon: TextQuote },
+] satisfies Array<{
+  command: DocumentFormattingCommand;
+  label: string;
+  shortcut: string;
+  Icon: typeof Bold;
+}>;
 
 function usePreviewQueryRuntime(
   artifact: WorkspaceArtifact,
@@ -506,6 +534,8 @@ function DocumentPreview({
     error: string;
     submitting: boolean;
   } | null>(null);
+  const sectionDraftRef = useRef<HTMLTextAreaElement>(null);
+  const sectionSelectionRef = useRef({ start: 0, end: 0 });
   const editingTarget = editingSection?.artifactId === artifact.id
     && editingSection.sourceRevision === artifact.source
     ? targets.find((target) => target.id === editingSection.targetId)
@@ -519,6 +549,7 @@ function DocumentPreview({
 
   function beginSectionEdit(target: PreviewSourceTarget) {
     if (!onEditDocumentSection || !canVisualEditDocumentSection(artifact, target)) return;
+    sectionSelectionRef.current = { start: 0, end: 0 };
     setEditingSection({
       targetId: target.id,
       artifactId: artifact.id,
@@ -526,6 +557,54 @@ function DocumentPreview({
       draft: visualDocumentSectionDraft(artifact, target),
       error: "",
       submitting: false,
+    });
+  }
+
+  function rememberSectionSelection(textarea: HTMLTextAreaElement) {
+    sectionSelectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  }
+
+  function formatSectionDraft(command: DocumentFormattingCommand) {
+    if (!editingSection || editingSection.submitting) return;
+    const textarea = sectionDraftRef.current;
+    const selection = textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : sectionSelectionRef.current;
+    const formatted = applyDocumentFormatting(
+      editingSection.draft,
+      command,
+      selection.start,
+      selection.end,
+    );
+    if (formatted.draft.length > MAX_VISUAL_DOCUMENT_SECTION_CHARS) {
+      setEditingSection((current) => current ? {
+        ...current,
+        error: `Visual Document sections are limited to ${MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString("en-US")} characters.`,
+      } : current);
+      return;
+    }
+    if (formatted.error) {
+      setEditingSection((current) => current ? { ...current, error: formatted.error ?? "" } : current);
+      textarea?.focus();
+      return;
+    }
+    sectionSelectionRef.current = {
+      start: formatted.selectionStart,
+      end: formatted.selectionEnd,
+    };
+    setEditingSection((current) => current ? {
+      ...current,
+      draft: formatted.draft,
+      error: "",
+    } : current);
+    window.requestAnimationFrame(() => {
+      const currentTextarea = sectionDraftRef.current;
+      if (!currentTextarea) return;
+      currentTextarea.focus();
+      currentTextarea.setSelectionRange(formatted.selectionStart, formatted.selectionEnd);
     });
   }
 
@@ -592,16 +671,40 @@ function DocumentPreview({
               <small>{editingSection.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString("en-US")}</small>
             </header>
             <div className="visual-document-editor-grid">
-              <label>
-                <span>Markdown section</span>
+              <div className="visual-document-source">
+                <div className="visual-document-source-label">
+                  <label htmlFor={`visual-document-draft-${artifact.id}-${editingTarget.index}`}>Source draft</label>
+                  <em>Synced live</em>
+                </div>
+                <div className="visual-document-formatbar" role="toolbar" aria-label="Format Document section">
+                  {DOCUMENT_FORMATTING_CONTROLS.map(({ command, label, shortcut, Icon }) => (
+                    <button
+                      key={command}
+                      type="button"
+                      disabled={editingSection.submitting}
+                      aria-label={shortcut ? `${label} · ${shortcut}` : label}
+                      title={shortcut ? `${label} · ${shortcut}` : label}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => formatSectionDraft(command)}
+                    >
+                      <Icon aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
                 <textarea
+                  id={`visual-document-draft-${artifact.id}-${editingTarget.index}`}
+                  ref={sectionDraftRef}
                   autoFocus
                   aria-label={`Edit ${editingTarget.label} Markdown section`}
                   value={editingSection.draft}
                   disabled={editingSection.submitting}
                   maxLength={MAX_VISUAL_DOCUMENT_SECTION_CHARS}
                   spellCheck
-                  onChange={(event) => setEditingSection((current) => current ? { ...current, draft: event.target.value, error: "" } : current)}
+                  onChange={(event) => {
+                    rememberSectionSelection(event.currentTarget);
+                    setEditingSection((current) => current ? { ...current, draft: event.target.value, error: "" } : current);
+                  }}
+                  onSelect={(event) => rememberSectionSelection(event.currentTarget)}
                   onKeyDown={(event) => {
                     if (event.key === "Escape") {
                       event.preventDefault();
@@ -609,10 +712,22 @@ function DocumentPreview({
                     } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
                       event.preventDefault();
                       void submitSectionEdit(editingTarget);
+                    } else if (event.metaKey || event.ctrlKey) {
+                      const command = event.key.toLowerCase() === "b"
+                        ? "bold"
+                        : event.key.toLowerCase() === "i"
+                          ? "italic"
+                          : event.key.toLowerCase() === "k"
+                            ? "link"
+                            : null;
+                      if (command) {
+                        event.preventDefault();
+                        formatSectionDraft(command);
+                      }
                     }
                   }}
                 />
-              </label>
+              </div>
               <section aria-label={`Draft preview for ${editingTarget.label}`}>
                 <span>Draft preview</span>
                 <div className="visual-document-draft markdown-body">

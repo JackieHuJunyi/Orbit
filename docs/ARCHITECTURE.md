@@ -452,9 +452,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 33. v0.34–v0.38 add Apple-inspired onboarding and model setup plus exact visual writes for Data cells, Document sections, Deck slides, and Chart properties through one revision-bound transaction.
 34. v0.39 imports selectable PDF text into reviewed page-provenance Markdown through a bounded local PDF.js port.
 35. v0.40 imports and exports ODT/ODS/ODP as reviewed semantic canonical-source handoffs with strict ODF packaging, security limits, and official schema validation.
-36. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-37. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-38. D1/R2 remain undeclared until durable hosted projects or assets are required.
+36. v0.41 adds reversible Document draft formatting commands and keyboard shortcuts that operate on exact textarea ranges while the safe preview recompiles live.
+37. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+38. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+39. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

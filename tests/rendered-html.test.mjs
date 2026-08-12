@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.40/);
+  assert.match(html, /Rune v0\.41/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -126,6 +126,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /\.docx,\.xlsx,\.pptx,\.odt,\.ods,\.odp,\.pdf/);
   assert.match(clientSource, /OpenDocument import is limited to 12 MB per file/);
   assert.match(clientSource, /Review OpenDocument export/);
+  assert.match(clientSource, /Format Document section/);
+  assert.match(clientSource, /⌘\/Ctrl B/);
+  assert.match(clientSource, /Source draft/);
+  assert.match(clientSource, /Synced live/);
   assert.match(clientSource, /Nothing is written until you confirm/);
   assert.match(clientSource, /One atomic device write after confirmation/);
   assert.match(clientSource, /aria-modal/);

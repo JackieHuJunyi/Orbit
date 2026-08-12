@@ -31,9 +31,10 @@ test("creates a valid editable local guide in the selected language", () => {
   assert.equal(chinese.id, RUNE_GUIDE_ID);
   assert.equal(english.id, RUNE_GUIDE_ID);
   assert.match(chinese.source, /欢迎使用 Rune/);
+  assert.match(chinese.source, /文档草稿加粗/);
   assert.match(english.source, /Welcome to Rune/);
+  assert.match(english.source, /Bold a Document draft/);
   assert.match(chinese.source, /⌘ Enter/);
   assert.deepEqual(validateArtifact(chinese), []);
   assert.deepEqual(validateArtifact(english), []);
 });
-

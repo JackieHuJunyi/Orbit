@@ -1099,6 +1099,14 @@ OpenDocument package 有独立的信任边界：单文件 12 MB，第一 ZIP ent
 
 兼容承诺仍是 semantic fidelity，而不是 Office/LibreOffice 的完整重建。图片、批注、修订历史、隐藏工作表、live formula、filter、演讲者备注、动画、嵌入对象和复杂母版会省略或展平并明确说明。验证包含独立生成 fixture、Rune 导出→导入往返、恶意 ZIP/XML、超限和公式注入用例；三类输出的四个 XML 部件全部通过 OASIS ODF 1.3 Relax NG Schema，系统 handler 均识别正确 MIME，ODT/ODS 另由本机 Word/Excel 独立打开；PowerPoint 自动化不可用时，ODP 不把 schema/round-trip 结果夸大成已完成视觉打开。这样新增的是可测试的 compatibility port，而不是第二份文档事实或新服务器。
 
+### 6.20 v0.41 Document 可逆格式工具
+
+Document section editor 现在把“普通用户是否需要常用格式入口”落实成一个最小可验证能力。Source draft 上方提供粗体、斜体、删除线、行内代码、链接、无序列表、有序列表和引用；`⌘/Ctrl B`、`⌘/Ctrl I`、`⌘/Ctrl K` 与按钮调用同一个本地 compiler。按钮按下时保留 textarea 的精确 UTF-16 选区，修改后把光标或选区放回内容/URL，右侧 Draft preview 同一帧重编译；没有新的富文本状态、HTML 反向解析或持久 draft。
+
+inline command 只包裹或解除明确的 Markdown delimiter。代码会选择比选区内最长反引号 run 多一位的 delimiter；链接只接受单行 label，并把 `https://` 选中等待替换；列表与引用以完整行边界工作，保留最多三级前导缩进、切换现有 marker，并精确映射原选区。空选区会插入可继续输入的 caret，而不是生成不可编辑占位文案。任何结果超过 16,000 字符都停在草稿层，canonical source 不改变。
+
+这仍不是完整 WYSIWYG：用户能看到 source draft，也必须显式 Save。Save 后才重新证明 section revision、标题结构、binding byte stability、范围边界、workspace/runtime 和 checkpoint/persistence 合同。表格结构、标题层级、图片、脚注、拖拽排序和 paragraph-level DOM editing 仍不在这组格式权限中。下一步应观察 toolbar 的实际使用、误触撤销和用户是否仍需要 block inspector，再决定引入 Markdown AST block identity；不能因为增加八个图标就声称已经实现 Word/Pages 式富文本。
+
 ---
 
 ## 7. 指标、Eval 与结果验证

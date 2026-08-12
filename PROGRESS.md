@@ -51,3 +51,4 @@
 - 2026-08-12 — Added a runtime-validated Chart property panel that rewrites one strict, revision-bound Chart JSON spec through the shared checkpointed visual transaction.
 - 2026-08-12 — Added browser-local, review-first PDF-to-Markdown import with page provenance, bounded layout heuristics, executable-content refusal, and explicit OCR/fidelity limits.
 - 2026-08-13 — Added reviewed browser-local ODT/ODS/ODP semantic import and deterministic export with strict package security, OASIS schema validation, round-trip coverage, and installed-handler checks.
+- 2026-08-13 — Added reversible source-synchronized Document formatting controls and keyboard shortcuts with exact selection restoration and live safe preview.
