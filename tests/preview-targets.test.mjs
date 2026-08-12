@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   deriveDataPreviewSourceTargets,
+  deriveDocumentBlockPreviewSourceTargets,
   derivePreviewSourceTargets,
   previewTargetIsActive,
   resolveDataCellPreviewTarget,
@@ -41,6 +42,65 @@ Proceed.
   assert.match(source.slice(targets[2].start, targets[2].end), /Not a visible section/);
   assert.equal(targets.every((target, index) => index === 0 || target.start >= targets[index - 1].end), true);
   assert.equal(previewTargetIsActive(targets[2], { start: targets[2].start, end: targets[2].end }), true);
+});
+
+test("maps rendered Markdown blocks through the same CommonMark and GFM grammar", () => {
+  const source = `# Report
+
+Opening **note** with {{ metric("total_revenue") }}.
+
+- First item
+  - Nested item
+- Second item
+
+> A quoted decision.
+>
+> With a second paragraph.
+
+~~~md
+## Not a heading
+~~~
+
+| Region | Revenue |
+| --- | ---: |
+| APAC | 42 |
+
+---
+`;
+  const targets = deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
+
+  assert.deepEqual(targets.map((target) => target.blockType), [
+    "heading", "paragraph", "list", "quote", "code", "table", "rule",
+  ]);
+  assert.deepEqual(targets.map((target) => source.slice(target.start, target.end)), [
+    "# Report",
+    'Opening **note** with {{ metric("total_revenue") }}.',
+    "- First item\n  - Nested item\n- Second item",
+    "> A quoted decision.\n>\n> With a second paragraph.",
+    "~~~md\n## Not a heading\n~~~",
+    "| Region | Revenue |\n| --- | ---: |\n| APAC | 42 |",
+    "---",
+  ]);
+  assert.match(targets[1].label, /Opening note with live value/u);
+  assert.equal(targets.every((target, index) => index === 0 || target.start > targets[index - 1].end), true);
+});
+
+test("withholds Document block targets for non-Document or empty source", () => {
+  assert.deepEqual(deriveDocumentBlockPreviewSourceTargets(artifact("data", "CSV", "data.csv", "A\n1")), []);
+  assert.deepEqual(deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "empty.md", " \n")), []);
+});
+
+test("leaves a standalone Chart binding to its own provenance-aware preview", () => {
+  const source = `# Report
+
+Before.
+
+{{ chart("regional-revenue-chart") }}
+
+After.`;
+  const targets = deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
+  assert.deepEqual(targets.map((target) => target.label), ["Report", "Before.", "After."]);
+  assert.equal(targets.some((target) => source.slice(target.start, target.end).includes("chart(")), false);
 });
 
 test("maps quoted multiline CSV records to the exact row source", () => {

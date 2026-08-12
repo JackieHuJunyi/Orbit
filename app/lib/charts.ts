@@ -81,8 +81,8 @@ export type ChartLinePoint = {
 };
 
 export type ChartSourcePart =
-  | { type: "source"; value: string }
-  | { type: "chart"; value: string };
+  | { type: "source"; value: string; start: number; end: number }
+  | { type: "chart"; value: string; start: number; end: number };
 
 function chartReferencePattern() {
   return /\{\{\s*chart\(["']([\p{L}\p{N}_.-]+)["']\)\s*\}\}/giu;
@@ -307,12 +307,13 @@ export function tokenizeChartReferences(source: string): ChartSourcePart[] {
   let cursor = 0;
   for (const match of source.matchAll(pattern)) {
     const index = match.index ?? 0;
-    if (index > cursor) parts.push({ type: "source", value: source.slice(cursor, index) });
-    parts.push({ type: "chart", value: match[1] });
-    cursor = index + match[0].length;
+    if (index > cursor) parts.push({ type: "source", value: source.slice(cursor, index), start: cursor, end: index });
+    const end = index + match[0].length;
+    parts.push({ type: "chart", value: match[1], start: index, end });
+    cursor = end;
   }
-  if (cursor < source.length) parts.push({ type: "source", value: source.slice(cursor) });
-  return parts.length ? parts : [{ type: "source", value: source }];
+  if (cursor < source.length) parts.push({ type: "source", value: source.slice(cursor), start: cursor, end: source.length });
+  return parts.length ? parts : [{ type: "source", value: source, start: 0, end: source.length }];
 }
 
 function escapeHtml(value: string) {

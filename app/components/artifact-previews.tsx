@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, createElement, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ElementType, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
 import {
   AlertTriangle,
   Bold,
@@ -25,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
-import { compileArtifactSource, queryMetricSourceIdsForArtifact } from "../lib/bindings";
+import { compileArtifactSource, compiledSourceRangeToCanonical, queryMetricSourceIdsForArtifact } from "../lib/bindings";
 import {
   chartLinePoints,
   chartQuerySourceIdsForArtifact,
@@ -45,10 +46,12 @@ import type {
 import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
   deriveDataPreviewSourceTargets,
+  deriveDocumentBlockPreviewSourceTargets,
   derivePreviewSourceTargets,
   previewTargetIsActive,
   resolveDataPreviewSourceTargets,
   type DataCellPreviewSourceTarget,
+  type DocumentBlockPreviewSourceTarget,
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
@@ -479,24 +482,120 @@ function EmbeddedChart({
   return <ChartFigure model={resolution.model} artifacts={artifacts} embedded onTargetSource={onTargetSource} />;
 }
 
+function MarkdownSourcePart({
+  source,
+  sourceOffset,
+  components,
+}: {
+  source: string;
+  sourceOffset: number;
+  components: Components;
+}) {
+  const contextualComponents = useMemo(() => Object.fromEntries(Object.entries(components).map(([tag, Component]) => [
+    tag,
+    (props: Record<string, unknown> & { node?: { position?: { start?: { offset?: number }; end?: { offset?: number } } } }) => {
+      const node = props.node;
+      const contextualNode = node ? {
+        ...node,
+        position: node.position ? {
+          start: node.position.start ? {
+            ...node.position.start,
+            offset: node.position.start.offset == null ? undefined : node.position.start.offset + sourceOffset,
+          } : undefined,
+          end: node.position.end ? {
+            ...node.position.end,
+            offset: node.position.end.offset == null ? undefined : node.position.end.offset + sourceOffset,
+          } : undefined,
+        } : undefined,
+      } : undefined;
+      return createElement(Component as ElementType, { ...props, node: contextualNode });
+    },
+  ])) as Components, [components, sourceOffset]);
+  return <ReactMarkdown components={contextualComponents} remarkPlugins={[remarkGfm]}>{source}</ReactMarkdown>;
+}
+
 function MarkdownSource({
   source,
+  sourceOffsets,
+  targetArtifact,
   artifacts,
   queryRuntime,
+  documentBlockTargets,
+  activeSelection,
   onTargetSource,
 }: {
   source: string;
+  sourceOffsets?: number[];
+  targetArtifact?: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
   queryRuntime: QueryRuntime;
+  documentBlockTargets?: DocumentBlockPreviewSourceTarget[];
+  activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
 }) {
   const parts = tokenizeChartReferences(source);
+  const blockByRange = useMemo(() => new Map((documentBlockTargets ?? []).map((target) => (
+    [`${target.start}:${target.end}`, target]
+  ))), [documentBlockTargets]);
+
+  const targetForNode = useCallback((node: { position?: { start?: { offset?: number }; end?: { offset?: number } } }) => {
+    const compiledStart = node.position?.start?.offset;
+    const compiledEnd = node.position?.end?.offset;
+    if (compiledStart == null || compiledEnd == null) return undefined;
+    const canonicalRange = sourceOffsets
+      ? compiledSourceRangeToCanonical({ source, sourceOffsets }, compiledStart, compiledEnd)
+      : { start: compiledStart, end: compiledEnd };
+    return canonicalRange ? blockByRange.get(`${canonicalRange.start}:${canonicalRange.end}`) : undefined;
+  }, [blockByRange, source, sourceOffsets]);
+
+  const interactiveBlock = useCallback((
+    tag: "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "ul" | "ol" | "blockquote" | "pre" | "table" | "hr",
+    props: Record<string, unknown> & { node?: Parameters<typeof targetForNode>[0]; children?: ReactNode },
+  ) => {
+    const { node, children, ...elementProps } = props;
+    const target = node ? targetForNode(node) : undefined;
+    if (!target || !onTargetSource || !targetArtifact) return createElement(tag, elementProps, children);
+    const active = previewTargetIsActive(target, activeSelection);
+    const inheritedClassName = typeof elementProps.className === "string" ? elementProps.className : "";
+    return createElement(tag, {
+      ...elementProps,
+      className: `${inheritedClassName} document-source-block ${active ? "active" : ""}`.trim(),
+      "data-preview-source-target": target.kind,
+      "data-document-block-type": target.blockType,
+      "aria-label": `Select ${target.label} in canonical source for Agent context`,
+      "aria-pressed": active,
+      role: "button",
+      tabIndex: 0,
+      title: `Select exact ${target.label} source`,
+      onClick: (event: ReactMouseEvent<HTMLElement>) => {
+        const clicked = event.target;
+        if (clicked instanceof Element && clicked.closest("a, button, input, textarea, select, [contenteditable='true']")) return;
+        onTargetSource(targetArtifact, target);
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        onTargetSource(targetArtifact, target);
+      },
+    }, children);
+  }, [activeSelection, onTargetSource, targetArtifact, targetForNode]);
+
+  const blockComponents = useMemo(() => Object.fromEntries([
+    "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr",
+  ].map((tag) => [tag, (props: Record<string, unknown>) => interactiveBlock(tag as Parameters<typeof interactiveBlock>[0], props)])) as Components,
+  [interactiveBlock]);
   return (
     <>
       {parts.map((part, index) => (
         <Fragment key={`${part.type}-${index}`}>
           {part.type === "source"
-            ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.value}</ReactMarkdown>
+            ? <MarkdownSourcePart
+                key={`${part.type}-${index}`}
+                source={part.value}
+                sourceOffset={part.start}
+                components={blockComponents}
+              />
             : <EmbeddedChart chartId={part.value} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />}
         </Fragment>
       ))}
@@ -525,6 +624,10 @@ function DocumentPreview({
     artifact.source,
     artifacts,
     readyQuerySnapshots(queryRuntime),
+  );
+  const blockTargets = useMemo(
+    () => deriveDocumentBlockPreviewSourceTargets(artifact),
+    [artifact],
   );
   const [editingSection, setEditingSection] = useState<{
     targetId: string;
@@ -750,7 +853,16 @@ function DocumentPreview({
           </form>
         )}
         <div className="markdown-body">
-          <MarkdownSource source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />
+          <MarkdownSource
+            source={compiled.source}
+            sourceOffsets={compiled.sourceOffsets}
+            targetArtifact={artifact}
+            artifacts={artifacts}
+            queryRuntime={queryRuntime}
+            documentBlockTargets={blockTargets}
+            activeSelection={activeSelection}
+            onTargetSource={onTargetSource}
+          />
         </div>
       </article>
     </div>

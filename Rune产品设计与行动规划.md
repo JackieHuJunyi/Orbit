@@ -1107,6 +1107,14 @@ inline command 只包裹或解除明确的 Markdown delimiter。代码会选择�
 
 这仍不是完整 WYSIWYG：用户能看到 source draft，也必须显式 Save。Save 后才重新证明 section revision、标题结构、binding byte stability、范围边界、workspace/runtime 和 checkpoint/persistence 合同。表格结构、标题层级、图片、脚注、拖拽排序和 paragraph-level DOM editing 仍不在这组格式权限中。下一步应观察 toolbar 的实际使用、误触撤销和用户是否仍需要 block inspector，再决定引入 Markdown AST block identity；不能因为增加八个图标就声称已经实现 Word/Pages 式富文本。
 
+### 6.21 v0.42 Document 块级双侧定位
+
+Document preview 不再只能通过顶部 section 导航定位粗粒度源码。右侧每个由同一 CommonMark + GFM parser 证明的顶层标题、段落、列表、引用、fenced code、表格与分隔线现在都是键盘可达的 `document-block` target；点击或 Enter/Space 会选择左侧完整 UTF-16 source range、显示右侧 active 状态并进入既有 Selection Agent。section 导航仍负责快速跳转和打开 section editor，二者不是重复入口。
+
+动态 metric 让简单 DOM offset 映射失效：`{{ metric(...) }}` 可能编译成 `$4.82M`，后续所有 preview offset 都发生偏移。本轮 compiler 因此与 compiled source 同时产生一个长度为 `compiled.length + 1` 的单调 canonical boundary map。原样字符逐一映射，replacement 的中间边界保守映射到 token 开头、末边界映射到完整 token 末尾；渲染 AST 的 block start/end 只有重新映射后与 canonical AST block 完全一致才获得 capability。Standalone Chart binding 不生成普通 paragraph target，继续使用图表内部更精确的 Data/Query provenance。
+
+该能力把 Overleaf 式“点成品，左侧到对应位置”从 section 提升到日常编辑块，同时仍不把 DOM selection 或像素位置当成事实。当前不开放嵌套 list item、表格 cell、inline span 的独立 target，也不允许右侧 block 拖拽或直接修改；它们需要更细的 AST identity、冲突规则与 typed operation。下一步可在已经证明的 block target 上增加一个明确的 block inspector 或 section editor 定位入口，而不是从 contenteditable 反推 Markdown。
+
 ---
 
 ## 7. 指标、Eval 与结果验证

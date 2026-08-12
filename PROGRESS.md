@@ -52,3 +52,4 @@
 - 2026-08-12 — Added browser-local, review-first PDF-to-Markdown import with page provenance, bounded layout heuristics, executable-content refusal, and explicit OCR/fidelity limits.
 - 2026-08-13 — Added reviewed browser-local ODT/ODS/ODP semantic import and deterministic export with strict package security, OASIS schema validation, round-trip coverage, and installed-handler checks.
 - 2026-08-13 — Added reversible source-synchronized Document formatting controls and keyboard shortcuts with exact selection restoration and live safe preview.
+- 2026-08-13 — Made rendered CommonMark/GFM Document blocks keyboard-targetable and mapped compiled metric text back to exact canonical source selections.

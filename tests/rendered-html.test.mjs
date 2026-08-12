@@ -50,6 +50,13 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Running query source locally: regional-analysis\.sql/);
   assert.match(html, /Select or edit one exact section/);
   assert.match(html, /data-preview-source-target="document-section"/);
+  assert.match(html, /data-preview-source-target="document-block"/);
+  assert.match(html, /data-document-block-type="heading"/);
+  assert.match(html, /data-document-block-type="paragraph"/);
+  assert.match(html, /contains-task-list document-source-block/);
+  assert.match(html, /role="button"/);
+  assert.match(html, /tabindex="0"/);
+  assert.match(html, /Select Q2 Business Review in canonical source for Agent context/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /SQL metrics/);
   assert.match(html, /Saved on device/);
@@ -71,7 +78,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.41/);
+  assert.match(html, /Rune v0\.42/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -130,6 +137,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /⌘\/Ctrl B/);
   assert.match(clientSource, /Source draft/);
   assert.match(clientSource, /Synced live/);
+  assert.match(clientSource, /document-source-block/);
+  assert.match(clientSource, /data-document-block-type/);
   assert.match(clientSource, /Nothing is written until you confirm/);
   assert.match(clientSource, /One atomic device write after confirmation/);
   assert.match(clientSource, /aria-modal/);

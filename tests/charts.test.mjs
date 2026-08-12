@@ -214,7 +214,13 @@ test("escapes chart text when compiling a static slide embed", () => {
 test("finds and tokenizes chart references without evaluating source", () => {
   const source = '# Review\n\n{{ chart("regional-revenue-chart") }}\n\nEnd';
   assert.deepEqual(findChartReferences(source), ["regional-revenue-chart"]);
-  assert.deepEqual(tokenizeChartReferences(source).map((part) => part.type), ["source", "chart", "source"]);
+  const parts = tokenizeChartReferences(source);
+  assert.deepEqual(parts.map((part) => part.type), ["source", "chart", "source"]);
+  assert.deepEqual(parts.map((part) => source.slice(part.start, part.end)), [
+    "# Review\n\n",
+    '{{ chart("regional-revenue-chart") }}',
+    "\n\nEnd",
+  ]);
 });
 
 test("compiles a chart directive into static sandbox-safe slide HTML", () => {

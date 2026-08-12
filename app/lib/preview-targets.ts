@@ -1,9 +1,14 @@
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
 import { parseDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
 import { parseChartSource } from "./charts.ts";
 import type { SourceSelection } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
-export type PreviewSourceTargetKind = "document-section" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
+export type PreviewSourceTargetKind = "document-section" | "document-block" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
+
+export type DocumentBlockType = "heading" | "paragraph" | "list" | "quote" | "code" | "table" | "rule";
 
 export type PreviewSourceTarget = SourceSelection & {
   id: string;
@@ -17,6 +22,11 @@ export type DataCellPreviewSourceTarget = PreviewSourceTarget & {
   rowIndex: number;
   columnIndex: number;
   column: string;
+};
+
+export type DocumentBlockPreviewSourceTarget = PreviewSourceTarget & {
+  kind: "document-block";
+  blockType: DocumentBlockType;
 };
 
 export type DataPreviewSourceTargets = {
@@ -119,6 +129,71 @@ function documentTargets(source: string): PreviewSourceTarget[] {
     targets.push({ ...range, id: `document-section:${index}:${range.start}`, index, kind: "document-section", label: heading.label });
   });
   return targets;
+}
+
+type MarkdownNode = {
+  type: string;
+  value?: string;
+  alt?: string;
+  children?: MarkdownNode[];
+  position?: {
+    start?: { offset?: number };
+    end?: { offset?: number };
+  };
+};
+
+const DOCUMENT_BLOCK_TYPES: Partial<Record<string, DocumentBlockType>> = {
+  heading: "heading",
+  paragraph: "paragraph",
+  list: "list",
+  blockquote: "quote",
+  code: "code",
+  table: "table",
+  thematicBreak: "rule",
+};
+
+const STANDALONE_CHART_BLOCK = /^\s*\{\{\s*chart\(["'][\p{L}\p{N}_.-]+["']\)\s*\}\}\s*$/u;
+
+const DOCUMENT_BLOCK_FALLBACKS: Record<DocumentBlockType, string> = {
+  heading: "Heading",
+  paragraph: "Paragraph",
+  list: "List",
+  quote: "Quote",
+  code: "Code block",
+  table: "Table",
+  rule: "Divider",
+};
+
+function documentNodeText(node: MarkdownNode): string {
+  if (node.type === "text" || node.type === "inlineCode" || node.type === "code") return node.value ?? "";
+  if (node.type === "image") return node.alt ?? "";
+  if (node.type === "break") return " ";
+  return (node.children ?? []).map(documentNodeText).join(" ");
+}
+
+function documentBlockTargets(source: string): DocumentBlockPreviewSourceTarget[] {
+  let children: MarkdownNode[];
+  try {
+    children = (unified().use(remarkParse).use(remarkGfm).parse(source) as MarkdownNode).children ?? [];
+  } catch {
+    return [];
+  }
+  return children.flatMap((node, index) => {
+    const blockType = DOCUMENT_BLOCK_TYPES[node.type];
+    const start = node.position?.start?.offset;
+    const end = node.position?.end?.offset;
+    if (!blockType || start == null || end == null || start >= end) return [];
+    if (blockType === "paragraph" && STANDALONE_CHART_BLOCK.test(source.slice(start, end))) return [];
+    return [{
+      start,
+      end,
+      id: `document-block:${index}:${start}`,
+      index,
+      kind: "document-block" as const,
+      blockType,
+      label: boundedLabel(documentNodeText(node), DOCUMENT_BLOCK_FALLBACKS[blockType]),
+    }];
+  });
 }
 
 function csvRecordRanges(source: string): SourceSelection[] {
@@ -397,6 +472,13 @@ export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): Preview
   if (artifact.kind === "chart") return chartTargets(artifact);
   if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return deckTargets(artifact.source);
   return [];
+}
+
+export function deriveDocumentBlockPreviewSourceTargets(
+  artifact: WorkspaceArtifact,
+): DocumentBlockPreviewSourceTarget[] {
+  if (artifact.kind !== "document" || !artifact.source.trim()) return [];
+  return documentBlockTargets(artifact.source);
 }
 
 export function deriveDataPreviewSourceTargets(artifact: WorkspaceArtifact): DataPreviewSourceTargets {

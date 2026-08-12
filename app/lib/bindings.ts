@@ -40,6 +40,7 @@ export type WorkspaceQueryMetric = QueryMetricReference & {
 
 export type CompiledArtifact = {
   source: string;
+  sourceOffsets: number[];
   references: string[];
   unresolved: string[];
   queryMetricReferences: QueryMetricReference[];
@@ -462,22 +463,42 @@ export function compileArtifactSource(
   ));
 
   let compiledSource = "";
+  const sourceOffsets: number[] = [0];
+  const appendOriginal = (start: number, end: number) => {
+    for (let index = start; index < end; index += 1) {
+      compiledSource += source[index];
+      sourceOffsets.push(index + 1);
+    }
+  };
+  const appendReplacement = (value: string, start: number, end: number) => {
+    compiledSource += value;
+    if (!value.length) {
+      sourceOffsets[sourceOffsets.length - 1] = end;
+      return;
+    }
+    for (let index = 1; index <= value.length; index += 1) {
+      sourceOffsets.push(index === value.length ? end : start);
+    }
+  };
   let cursor = 0;
   parsedBindings.bindings.forEach((binding) => {
-    compiledSource += source.slice(cursor, binding.start);
+    appendOriginal(cursor, binding.start);
+    let replacement: string;
     if (binding.kind === "legacy") {
-      compiledSource += metrics[binding.key]?.formatted ?? `⚠ ${binding.key}`;
+      replacement = metrics[binding.key]?.formatted ?? `⚠ ${binding.key}`;
     } else {
       const resolution = queryResolutions.get(queryMetricReferenceKey(binding.reference));
-      compiledSource += resolution?.metric?.formatted
+      replacement = resolution?.metric?.formatted
         ?? (resolution?.pending ? "…" : `⚠ ${queryMetricReferenceLabel(binding.reference)}`);
     }
+    appendReplacement(replacement, binding.start, binding.end);
     cursor = binding.end;
   });
-  compiledSource += source.slice(cursor);
+  appendOriginal(cursor, source.length);
 
   return {
     source: compiledSource,
+    sourceOffsets,
     references,
     unresolved,
     queryMetricReferences,
@@ -490,4 +511,22 @@ export function compileArtifactSource(
     metrics,
     queryMetrics,
   };
+}
+
+export function compiledSourceRangeToCanonical(
+  compiled: Pick<CompiledArtifact, "source" | "sourceOffsets">,
+  start: number,
+  end: number,
+): { start: number; end: number } | null {
+  if (!Number.isInteger(start)
+    || !Number.isInteger(end)
+    || start < 0
+    || end <= start
+    || end > compiled.source.length
+    || compiled.sourceOffsets.length !== compiled.source.length + 1) return null;
+  const canonicalStart = compiled.sourceOffsets[start];
+  const canonicalEnd = compiled.sourceOffsets[end];
+  return Number.isInteger(canonicalStart) && Number.isInteger(canonicalEnd) && canonicalStart < canonicalEnd
+    ? { start: canonicalStart, end: canonicalEnd }
+    : null;
 }

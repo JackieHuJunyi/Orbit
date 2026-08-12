@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   compileArtifactSource,
+  compiledSourceRangeToCanonical,
   findMetricReferences,
   findQueryMetricReferences,
   parseMetricBindings,
@@ -33,6 +34,13 @@ test("parses exact Query scalar metrics alongside legacy metric compatibility", 
 test("compiles one current Query row into explicitly formatted scalar values", () => {
   const compiled = compileArtifactSource(scalarSource, defaultArtifacts, [defaultSummaryQuerySnapshot()]);
   assert.equal(compiled.source, "$4.82M · 12.4% · 392");
+  assert.equal(compiled.sourceOffsets.length, compiled.source.length + 1);
+  assert.equal(compiled.sourceOffsets[0], 0);
+  assert.equal(compiled.sourceOffsets.at(-1), scalarSource.length);
+  const firstBindingEnd = parseMetricBindings(scalarSource).bindings[0].end;
+  assert.deepEqual(compiled.sourceOffsets.slice(0, "$4.82M".length + 1), [0, 0, 0, 0, 0, 0, firstBindingEnd]);
+  assert.deepEqual(compiledSourceRangeToCanonical(compiled, 0, "$4.82M".length), { start: 0, end: firstBindingEnd });
+  assert.equal(compiledSourceRangeToCanonical(compiled, -1, 2), null);
   assert.deepEqual(compiled.metricBindingErrors, []);
   assert.deepEqual(compiled.unresolvedQueryMetrics, []);
   assert.deepEqual(compiled.pendingQueryMetrics, []);

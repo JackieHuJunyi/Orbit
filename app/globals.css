@@ -3230,6 +3230,36 @@ button.transaction-node:hover,
   accent-color: var(--accent);
 }
 
+.markdown-body .document-source-block {
+  position: relative;
+  border-radius: 7px;
+  cursor: pointer;
+  outline: 0;
+  transition: background-color .16s ease, box-shadow .16s ease;
+}
+
+.markdown-body .document-source-block:hover,
+.markdown-body .document-source-block:focus-visible {
+  background: rgba(255, 92, 53, .065);
+  box-shadow: 0 0 0 5px rgba(255, 92, 53, .065);
+}
+
+.markdown-body .document-source-block:focus-visible {
+  outline: 2px solid rgba(255, 92, 53, .66);
+  outline-offset: 4px;
+}
+
+.markdown-body .document-source-block.active {
+  background: rgba(255, 92, 53, .11);
+  box-shadow: 0 0 0 5px rgba(255, 92, 53, .11);
+}
+
+.markdown-body hr.document-source-block {
+  min-height: 9px;
+  border: 0;
+  background: linear-gradient(transparent 4px, #ddd9cf 4px, #ddd9cf 5px, transparent 5px);
+}
+
 .chart-stage {
   min-height: 100%;
   padding: clamp(24px, 5vw, 64px);

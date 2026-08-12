@@ -1807,3 +1807,13 @@ v0.36 留下的关键产品假设是：用户愿意在右侧 section editor 工�
 live sync 仍需分清预测与事实。每次格式命令会立即更新 Source draft 和安全 Markdown preview，这是同一临时字符串的双投影；草稿不写入 localStorage、folder、checkpoint 或 workspace graph。只有 Save 才进入已有的 revision-bound section compiler，继续拒绝超长、空白、no-op、结构变化、binding 变化和越界，再走完整 workspace validation、checkpoint 与单次 persistence。工具栏不会因此获得改 heading hierarchy、表格结构、图片或 dependency identity 的权限。
 
 这轮刻意不实现 active-format 状态、富文本光标、DOM 段落选择、拖拽 block、复杂嵌套 list 或 undo stack。Markdown 标记可能来自不同等价写法，伪造一个“粗体按钮已激活”反而要求完整 AST/source-position 合同。下一阶段应先采集三个事实：用户使用 button 与 shortcut 的比例、格式操作后的取消/保存率、以及表格/标题/图片需求是否明显高于普通 inline/list 操作。只有 block 级需求被真实使用证明，才为 Markdown AST 建稳定 identity 和 inspector；否则这组薄 compiler controls 已经能覆盖高频编辑，又保留 Rune 最重要的可核验 source。
+
+## 47. Overleaf 式同步的关键不是滚动，而是 compiler provenance
+
+此前 Document 的右→左只有 section outline，用户点击右侧正文里的某句话并不会定位左侧对应段落。这离用户设想的 Overleaf 体验仍有明显距离：section 能回答“在哪一章”，不能回答“这一个可见块来自哪段 source”。v0.42 把 heading、paragraph、list、blockquote、fenced code、GFM table 和 thematic break 提升为 `document-block` capability；它们来自与 ReactMarkdown 相同的 CommonMark/GFM AST top-level node position，不是另一套正则或浏览器 DOM 文本搜索。
+
+真正困难的不是 Markdown AST，而是编译改变了字符串坐标。一个 67 字符的 Query metric token 可能显示成 6 字符，后面的 paragraph offset 全部左移；如果直接把 rendered AST offset 写进 textarea selection，看似正确的点击会悄悄选到另一段。Rune 现在让 metric compiler 同时输出长度为 `compiledSource.length + 1` 的 canonical boundary map。未替换字符每个边界一一前进；replacement 内部的边界保守地指向 token 开头，最后一个边界才指向 token 末尾。preview AST range 先通过这个 map 回到 canonical range，再要求它与 canonical AST target 的 start/end 完全相同。映射不能证明就没有按钮权限。
+
+这种设计保留了两层交互。顶部 section chips 适合文档大纲、section 编辑与结构感；正文 block 本身适合“我看到这段结论，带我去它的源码”，点击后激活同一个 Selection Agent capability。hover 只有轻微朱红底色，active 更明确；所有 block 使用原生 focus、Enter/Space 和可读 label。并没有监听用户在 DOM 中划出的任意 Range，因为跨 inline markup、metric replacement 和嵌套结构时，那仍需要更精确的 source-map 合同。
+
+Chart 是重要的反例。Standalone `{{ chart(...) }}` 在 Markdown AST 看起来只是 paragraph，但画面中的 label/bar 已经能追到真正 Data cell；若外层 paragraph 再截获点击，粒度反而退化。因此 Chart binding 不获得普通 Document block target，事件继续由 Chart provenance 处理。v0.42 也暂不拆分 list item、table cell 或 inline span；下一阶段若增加 block inspector，应以这些已证明 target 为输入，编译 typed Markdown operation，而不是让 DOM 成为第二份文档。
