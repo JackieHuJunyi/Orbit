@@ -559,6 +559,7 @@ function MarkdownSource({
   artifacts,
   queryRuntime,
   documentBlockTargets,
+  documentSectionTargets,
   activeSelection,
   onTargetSource,
   onEditDocumentBlock,
@@ -571,6 +572,7 @@ function MarkdownSource({
   artifacts: WorkspaceArtifact[];
   queryRuntime: QueryRuntime;
   documentBlockTargets?: DocumentBlockPreviewSourceTarget[];
+  documentSectionTargets?: PreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
@@ -584,6 +586,16 @@ function MarkdownSource({
   const blockByRange = useMemo(() => new Map((documentBlockTargets ?? []).map((target) => (
     [`${target.start}:${target.end}`, target]
   ))), [documentBlockTargets]);
+  const sectionByFirstBlockId = useMemo(() => {
+    const sections = new Map<string, PreviewSourceTarget>();
+    (documentSectionTargets ?? []).forEach((section) => {
+      const firstBlock = documentBlockTargets?.find((block) => (
+        section.start <= block.start && block.end <= section.end
+      ));
+      if (firstBlock) sections.set(firstBlock.id, section);
+    });
+    return sections;
+  }, [documentBlockTargets, documentSectionTargets]);
 
   const targetForNode = useCallback((node: { position?: { start?: { offset?: number }; end?: { offset?: number } } }) => {
     const compiledStart = node.position?.start?.offset;
@@ -604,7 +616,9 @@ function MarkdownSource({
     if (!target || !targetArtifact || (!onTargetSource && !onBeginDocumentBlockEdit && !onBeginDocumentBlockStructure)) {
       return createElement(tag, elementProps, children);
     }
-    const active = previewTargetIsActive(target, activeSelection);
+    const sectionTarget = sectionByFirstBlockId.get(target.id);
+    const active = previewTargetIsActive(target, activeSelection)
+      || Boolean(sectionTarget && previewTargetIsActive(sectionTarget, activeSelection));
     const editable = Boolean(
       onEditDocumentBlock
       && onBeginDocumentBlockEdit
@@ -622,6 +636,8 @@ function MarkdownSource({
     return createElement("div", {
       className: `document-source-block ${onTargetSource ? "targetable" : ""} ${editable ? "editable" : ""} ${structure?.available ? "structurable" : ""} ${active ? "active" : ""}`.trim(),
       "data-preview-source-target": target.kind,
+      "data-preview-source-id": target.id,
+      "data-preview-section-id": sectionTarget?.id,
       "data-document-block-type": target.blockType,
       "data-document-heading-level": target.headingLevel,
       title: onTargetSource ? `Select exact ${target.label} source` : undefined,
@@ -729,7 +745,7 @@ function MarkdownSource({
         onBeginDocumentBlockStructure?.(target, "insert-after");
       },
     }, createElement(Plus, { "aria-hidden": true })))));
-  }, [activeSelection, onBeginDocumentBlockEdit, onBeginDocumentBlockStructure, onEditDocumentBlock, onTargetSource, targetArtifact, targetForNode]);
+  }, [activeSelection, onBeginDocumentBlockEdit, onBeginDocumentBlockStructure, onEditDocumentBlock, onTargetSource, sectionByFirstBlockId, targetArtifact, targetForNode]);
 
   const blockComponents = useMemo(() => Object.fromEntries([
     "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr",
@@ -1074,7 +1090,11 @@ function DocumentPreview({
               const editable = Boolean(onEditDocumentSection && canVisualEditDocumentSection(artifact, target));
               const editing = editingTarget?.id === target.id;
               return (
-                <span className={`document-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()} key={target.id}>
+                <span
+                  className={`document-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()}
+                  data-preview-source-id={target.id}
+                  key={target.id}
+                >
                   <button
                     className="document-target-select"
                     data-preview-source-target={target.kind}
@@ -1342,6 +1362,7 @@ function DocumentPreview({
             artifacts={artifacts}
             queryRuntime={queryRuntime}
             documentBlockTargets={blockTargets}
+            documentSectionTargets={targets}
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
             onEditDocumentBlock={onEditDocumentBlock}
@@ -1463,6 +1484,7 @@ function ResultGrid({
               return (
               <tr
                 className={`${activate ? "preview-data-target" : ""} ${active ? "active" : ""}`.trim() || undefined}
+                data-preview-source-id={target?.id}
                 key={rowIndex}
               >
                 <th className="row-index">
@@ -1510,6 +1532,7 @@ function ResultGrid({
                     <td
                       key={`${column}-${columnIndex}`}
                       className={`${numeric ? "numeric" : ""} ${activateCell ? "preview-data-cell" : ""} ${cellActive ? "active" : ""} ${cellEditable ? "editable" : ""} ${editing ? "editing" : ""}`.trim() || undefined}
+                      data-preview-source-id={cellTarget?.id}
                     >
                       {editing && editableCellTarget && editingCell ? (
                         <form
@@ -1818,7 +1841,7 @@ function ChartPreview({
   return (
     <div className="chart-stage">
       {target && (onTargetSource || onEditChartSpec) && (
-        <div className="chart-stage-toolbar">
+        <div className="chart-stage-toolbar" data-preview-source-id={target.id}>
           <div><span>Bound chart source</span><strong>{sourceFields.sourceName}</strong></div>
           <div>
             {onTargetSource && (
@@ -2086,7 +2109,11 @@ function SlidesPreview({
             const editable = Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target));
             const editing = editingTarget?.id === target.id;
             return (
-              <span className={`slide-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()} key={target.id}>
+              <span
+                className={`slide-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()}
+                data-preview-source-id={target.id}
+                key={target.id}
+              >
                 {onTargetSource && (
                   <button
                     className="slide-target-select"

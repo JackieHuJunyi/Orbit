@@ -1839,3 +1839,13 @@ v0.44 因此先把结构操作做成显式 command。每个 AST-proven 顶层块
 这里最重要的产品层不是四个图标，而是结构 transaction review。命令先生成完整 proposed source，再展示具体的行级增删；binding 删除和 heading-only 行为用独立 warning 解释。用户确认后，系统重新在当前 artifact 派生完整 target identity，重新运行 compiler，并要求新的 `nextSource` 与已审阅版本 byte-for-byte 一致。只有随后完整 workspace validation、revision recheck、checkpoint 和 atomic persistence 都通过，结构才成为事实。成功选择新块或最近存活块，Selection Agent 也随同前进；Escape、Cancel、stale、unsupported neighbor、runtime 或 storage failure 不留下半个操作。
 
 这一设计暂时牺牲自由拖拽的顺滑，换来三项可测的假设：用户是否真正常用块排序；他们想移动的是一个块还是 heading subtree；精确 diff 是否足以建立删除信任。只有证据表明跨距离拖拽是高频，才把同一 typed operation 接到 pointer interaction；只有证据表明“章节”是主要心智模型，才新增 section-subtree identity。这样 UI 可以渐进变得自然，但 canonical Markdown 不会因为手势而产生隐藏结构规则。
+
+## 50. 左侧到右侧的同步也必须从 source identity 出发
+
+Overleaf 式体验经常被概括成“两边一起滚动”，但滚动百分比只是视觉近似：Markdown 一个段落可能渲染成多行，GFM table、列表、代码、Chart 和 Deck iframe 的高度也完全不同。若拿两个 scrollTop 做比例换算，长表格后面的 source 会定位到错误正文；若在右侧搜同样文字，重复句子、格式标记与 metric replacement 又会产生歧义。v0.45 因此把反向同步定义成 `current source offsets → proven preview target → DOM destination`，而不是两个像素坐标之间的联动。
+
+用户每次移动 canonical textarea 的 caret 或改变 selection，Rune 都在该时刻的 artifact source 上复用现有 parser target。Document 同时拥有 block 与 section 范围，Data 同时拥有 scalar cell 与 row 范围，所以 resolver 按“完全包含当前选区、范围最小、粒度最细”的规则选择；共享边界优先刚开始的目标。跨多个块或 cell 时只能降级到完整包含它的 section 或 row。Deck 只在 slide body 内定位，Chart 因完整 JSON 都映射到一个 spec 而整份可定位。Query source、CSV header、Deck frontmatter、跨 section/row selection 都返回 null；Chart-binding paragraph、unsupported Markdown node 和 block 间空白本身没有细粒度 capability，最多得到它们所在 section 的导航。没有证据时安静地不联动，比把错误对象涂红更可信。
+
+解析结果的 id 被放到对应 React 元素的 data attribute，唯一用途是让右侧容器找到目标并滚动到中部。DOM 自己不参与推断，也不能授予编辑权限；section 没有额外包裹时，可以通过起始 block 上的独立 section id 滚到该节。高亮、顶部 badge 与滚动共享同一个 target object，系统减少动态效果时关闭平滑动画。用户只是放置 caret 时，Selection Agent 仍保持 File scope；只有非空且通过 revision、UTF-16 和长度验证的 selection 才获得原来的窄 Agent capability。
+
+这完成的是身份同步，不是滚动锁定。连续按像素同步容易和用户主动浏览冲突，也会在 iframe、表格和折叠 UI 中漂移；嵌套 list item、table cell、inline span 与派生 Query 结果则需要新的 source map 才能进入。Rune 以后可以观察用户是否需要 source-scroll 驱动的“当前可见块”同步，但任何扩展都必须继续从 compiler provenance 出发。

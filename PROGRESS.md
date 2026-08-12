@@ -55,3 +55,4 @@
 - 2026-08-13 — Made rendered CommonMark/GFM Document blocks keyboard-targetable and mapped compiled metric text back to exact canonical source selections.
 - 2026-08-13 — Added revision-bound visual editing for AST-proven Document blocks with same-type parsing, live draft preview, F2 access, and atomic canonical-source saves.
 - 2026-08-13 — Added reviewed Document block insertion, adjacent movement, and deletion with AST/revision proof, exact source diffs, warnings, checkpoints, and atomic saves.
+- 2026-08-13 — Linked source-editor carets and selections back to the smallest proven Document, Data, Deck, or Chart preview target with automatic accessible scrolling.

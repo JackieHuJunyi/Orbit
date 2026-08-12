@@ -2642,6 +2642,37 @@ button.transaction-node:hover,
   gap: 6px;
 }
 
+.source-link-badge {
+  display: inline-flex;
+  max-width: 190px;
+  height: 25px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid #e7b8ad;
+  border-radius: 999px;
+  background: #fff2ee;
+  color: #a7382b;
+  font-size: 9px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-link-badge svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.source-link-badge span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .binding-badge {
   height: 25px;
   padding: 0 8px;

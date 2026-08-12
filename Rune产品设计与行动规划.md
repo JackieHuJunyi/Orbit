@@ -1133,6 +1133,14 @@ move 不根据 DOM、label 或像素猜顺序，只交换两个相邻 AST siblin
 
 这仍不是自由拖拽画布：当前结构操作只覆盖顶层 CommonMark/GFM sibling，不拆 nested list item、table row/cell，不把 heading 当作 section container，也不允许跨任意距离拖放。若真实使用证明整节移动更重要，下一步应为 section subtree 建独立 operation 和影响预览，而不是让单块按钮获得隐式范围。
 
+### 6.24 v0.45 Source → Preview 反向定位
+
+左右同步现在不再只从成品指向 source。用户在左侧 canonical textarea 移动光标，或选择一段完全位于某个可证明目标内的文字时，Rune 会从当前 artifact revision 重新派生全部 preview targets，并选择包含该范围的最小目标：Document block 优先于 section，Data cell 优先于 row，Deck slide 与完整 Chart spec 使用各自现有范围。选区跨越多个 Document block 时只能降级到仍完整包含它的 section，跨越 Data cell 时只能降级到 row；若跨越 section/row，或落在 Deck frontmatter、CSV header、Query source 等没有可见 source target 的位置，系统不猜测、不制造 active 状态。Chart-binding paragraph 和 unsupported Markdown node 本身没有 block capability，但若仍位于可证明的 section，只能得到 section 级导航。
+
+解析结果只携带既有 target id、kind、label 与 exact UTF-16 range。右侧元素的 `data-preview-source-id` 只用于找到已被 parser 证明的元素并调用 `scrollIntoView`，DOM 文本、像素或 iframe 从不参与目标推断，也不会因此获得写权限。高亮和顶部 link badge 使用同一个 target identity；自动滚动居中且遵循系统“减少动态效果”偏好。普通 caret 不会自动升级成 Selection Agent，只有非空且合法的 source selection 继续进入现有 16,000 字符、revision-bound Agent capability。
+
+这一步补齐了 Overleaf 式日常双侧导航的另一半，同时保留 Rune 的 source-of-truth。当前不做连续滚动比例同步、DOM 文本 selection、嵌套 list item、Markdown inline span、空 CSV cell 或 Query 派生行的反向定位；这些对象必须先获得更细且可证明的 source map，不能从视觉近似推断。
+
 ---
 
 ## 7. 指标、Eval 与结果验证

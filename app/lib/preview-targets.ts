@@ -49,6 +49,15 @@ export type ResolvedDataPreviewSourceTargets = DataPreviewSourceTargets & {
   artifact: WorkspaceArtifact;
 };
 
+const SOURCE_LINK_TARGET_PRIORITY: Record<PreviewSourceTargetKind, number> = {
+  "data-cell": 0,
+  "document-block": 1,
+  "data-row": 2,
+  "deck-slide": 3,
+  "chart-spec": 3,
+  "document-section": 4,
+};
+
 type SourceLine = {
   start: number;
   end: number;
@@ -491,8 +500,80 @@ export function deriveDataPreviewSourceTargets(artifact: WorkspaceArtifact): Dat
   return dataTargets(artifact.source);
 }
 
+/**
+ * Returns every canonical-source range that has a visible target in the
+ * current artifact preview. The ranges may intentionally overlap: a
+ * Document block belongs to a section and a Data cell belongs to a row.
+ */
+export function deriveSourceLinkedPreviewTargets(
+  artifact: WorkspaceArtifact,
+): PreviewSourceTarget[] {
+  if (!artifact.source.trim()) return [];
+  if (artifact.kind === "document") {
+    return [
+      ...deriveDocumentBlockPreviewSourceTargets(artifact),
+      ...derivePreviewSourceTargets(artifact),
+    ];
+  }
+  if (artifact.kind === "data") {
+    const targets = deriveDataPreviewSourceTargets(artifact);
+    return [...targets.cells, ...targets.rows];
+  }
+  return derivePreviewSourceTargets(artifact);
+}
+
+function sourceRangeCanLink(source: string, selection: SourceSelection) {
+  if (!Number.isInteger(selection.start)
+    || !Number.isInteger(selection.end)
+    || selection.start < 0
+    || selection.end < selection.start
+    || selection.end > source.length) return false;
+  const splitsSurrogatePair = (offset: number) => offset > 0
+    && offset < source.length
+    && source.charCodeAt(offset - 1) >= 0xD800
+    && source.charCodeAt(offset - 1) <= 0xDBFF
+    && source.charCodeAt(offset) >= 0xDC00
+    && source.charCodeAt(offset) <= 0xDFFF;
+  return !splitsSurrogatePair(selection.start) && !splitsSurrogatePair(selection.end);
+}
+
+/**
+ * Resolves a textarea-compatible UTF-16 caret or selection to the smallest
+ * visible preview range that fully contains it. Exact nested targets win over
+ * their container (cell over row, block over section). At a shared boundary,
+ * the target beginning at the caret wins over the target ending there.
+ */
+export function resolveSourceLinkedPreviewTarget(
+  artifact: WorkspaceArtifact,
+  selection: SourceSelection,
+  targets = deriveSourceLinkedPreviewTargets(artifact),
+): PreviewSourceTarget | null {
+  if (!sourceRangeCanLink(artifact.source, selection)) return null;
+  const collapsed = selection.start === selection.end;
+  const candidates = targets.filter((target) => (
+    collapsed
+      ? target.start <= selection.start && selection.start <= target.end
+      : target.start <= selection.start && selection.end <= target.end
+  ));
+  candidates.sort((left, right) => {
+    if (collapsed) {
+      const leftStartsHere = selection.start === left.start;
+      const rightStartsHere = selection.start === right.start;
+      if (leftStartsHere !== rightStartsHere) return leftStartsHere ? -1 : 1;
+    }
+    const span = (left.end - left.start) - (right.end - right.start);
+    if (span) return span;
+    const priority = SOURCE_LINK_TARGET_PRIORITY[left.kind] - SOURCE_LINK_TARGET_PRIORITY[right.kind];
+    if (priority) return priority;
+    return left.index - right.index || left.id.localeCompare(right.id);
+  });
+  return candidates[0] ?? null;
+}
+
 export function previewTargetIsActive(target: PreviewSourceTarget, selection?: SourceSelection | null) {
-  return Boolean(selection && target.start === selection.start && target.end === selection.end);
+  if (!selection) return false;
+  if ("id" in selection && typeof selection.id === "string") return target.id === selection.id;
+  return target.start === selection.start && target.end === selection.end;
 }
 
 export function resolveDataRowPreviewTarget(

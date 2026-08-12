@@ -4,9 +4,11 @@ import {
   deriveDataPreviewSourceTargets,
   deriveDocumentBlockPreviewSourceTargets,
   derivePreviewSourceTargets,
+  deriveSourceLinkedPreviewTargets,
   previewTargetIsActive,
   resolveDataCellPreviewTarget,
   resolveDataRowPreviewTarget,
+  resolveSourceLinkedPreviewTarget,
 } from "../app/lib/preview-targets.ts";
 import { resolveChartModel } from "../app/lib/charts.ts";
 import { parseDataSource } from "../app/lib/workspace.ts";
@@ -42,6 +44,8 @@ Proceed.
   assert.match(source.slice(targets[2].start, targets[2].end), /Not a visible section/);
   assert.equal(targets.every((target, index) => index === 0 || target.start >= targets[index - 1].end), true);
   assert.equal(previewTargetIsActive(targets[2], { start: targets[2].start, end: targets[2].end }), true);
+  assert.equal(previewTargetIsActive(targets[2], targets[2]), true);
+  assert.equal(previewTargetIsActive(targets[1], targets[2]), false);
 });
 
 test("maps rendered Markdown blocks through the same CommonMark and GFM grammar", () => {
@@ -103,6 +107,135 @@ After {{ chart("regional-margin-chart") }}.`;
   const targets = deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
   assert.deepEqual(targets.map((target) => target.label), ["Report", "Before."]);
   assert.equal(targets.some((target) => source.slice(target.start, target.end).includes("chart(")), false);
+});
+
+test("links a source caret or contained selection to the smallest proven Document target", () => {
+  const source = `# Report
+
+Opening note.
+
+Second paragraph.
+
+## Decision
+
+Proceed.`;
+  const document = artifact("document", "Markdown", "report.md", source);
+  const openingStart = source.indexOf("Opening");
+  const opening = resolveSourceLinkedPreviewTarget(document, {
+    start: openingStart + 3,
+    end: openingStart + 3,
+  });
+  assert.equal(opening?.kind, "document-block");
+  assert.equal(opening?.label, "Opening note.");
+
+  const partial = resolveSourceLinkedPreviewTarget(document, {
+    start: openingStart,
+    end: openingStart + "Opening".length,
+  });
+  assert.equal(partial?.id, opening?.id);
+
+  const secondStart = source.indexOf("Second paragraph");
+  const boundary = resolveSourceLinkedPreviewTarget(document, {
+    start: secondStart,
+    end: secondStart,
+  });
+  assert.equal(boundary?.kind, "document-block");
+  assert.equal(boundary?.label, "Second paragraph.");
+
+  const openingEnd = openingStart + "Opening note.".length;
+  const endBoundary = resolveSourceLinkedPreviewTarget(document, {
+    start: openingEnd,
+    end: openingEnd,
+  });
+  assert.equal(endBoundary?.id, opening?.id);
+
+  const reportSection = derivePreviewSourceTargets(document)[0];
+  const exactSection = resolveSourceLinkedPreviewTarget(document, reportSection);
+  assert.equal(exactSection?.kind, "document-section");
+  assert.equal(exactSection?.label, "Report");
+
+  const blankLine = source.indexOf("\n\nSecond") + 1;
+  const sectionOnly = resolveSourceLinkedPreviewTarget(document, { start: blankLine, end: blankLine });
+  assert.equal(sectionOnly?.kind, "document-section");
+  assert.equal(sectionOnly?.label, "Report");
+
+  const crossSection = resolveSourceLinkedPreviewTarget(document, {
+    start: openingStart,
+    end: source.indexOf("Proceed") + "Proceed".length,
+  });
+  assert.equal(crossSection, null);
+});
+
+test("links Data source positions to cells before rows without guessing invalid ranges", () => {
+  const source = "Region,Revenue\nAPAC,42\nEMEA,31";
+  const data = artifact("data", "CSV / JSON", "regions.csv", source);
+  const valueStart = source.indexOf("42");
+  const cell = resolveSourceLinkedPreviewTarget(data, { start: valueStart, end: valueStart });
+  assert.equal(cell?.kind, "data-cell");
+  assert.equal(cell?.label, "Row 1 · Revenue");
+
+  const targets = deriveDataPreviewSourceTargets(data);
+  const row = resolveSourceLinkedPreviewTarget(data, targets.rows[0]);
+  assert.equal(row?.kind, "data-row");
+  assert.equal(row?.label, "Row 1 · APAC");
+  assert.equal(deriveSourceLinkedPreviewTargets(data).length, targets.cells.length + targets.rows.length);
+
+  const crossCells = resolveSourceLinkedPreviewTarget(data, {
+    start: source.indexOf("APAC"),
+    end: valueStart + 2,
+  }, [...targets.cells, ...targets.rows]);
+  assert.equal(crossCells?.kind, "data-row");
+
+  assert.equal(resolveSourceLinkedPreviewTarget(data, { start: -1, end: 0 }), null);
+  assert.equal(resolveSourceLinkedPreviewTarget(data, { start: 8, end: 7 }), null);
+  assert.equal(resolveSourceLinkedPreviewTarget(
+    artifact("data", "CSV / JSON", "unicode.csv", "Name\n😀"),
+    { start: 6, end: 6 },
+  ), null);
+});
+
+test("links Deck and Chart source while leaving Query source without a false visual target", () => {
+  const deckSource = `---
+version: 1
+title: Briefing
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Opening
+
+Start here.`;
+  const deck = artifact("slides", "Deck Markdown", "briefing.deck.md", deckSource);
+  const slide = resolveSourceLinkedPreviewTarget(deck, {
+    start: deckSource.indexOf("Start here") + 2,
+    end: deckSource.indexOf("Start here") + 2,
+  });
+  assert.equal(slide?.kind, "deck-slide");
+
+  const chartSource = JSON.stringify({
+    version: 1,
+    title: "Revenue",
+    description: "",
+    source: "regions",
+    mark: "bar",
+    category: "Region",
+    value: "Revenue",
+    sort: "source",
+    format: "number",
+    color: "#ff5c35",
+    maxItems: 8,
+  });
+  const chart = resolveSourceLinkedPreviewTarget(
+    artifact("chart", "Chart JSON", "revenue.chart.json", chartSource),
+    { start: chartSource.indexOf("Revenue"), end: chartSource.indexOf("Revenue") },
+  );
+  assert.equal(chart?.kind, "chart-spec");
+
+  assert.equal(resolveSourceLinkedPreviewTarget(
+    artifact("query", "DuckDB SQL", "report.sql", "SELECT * FROM workspace_data"),
+    { start: 4, end: 4 },
+  ), null);
 });
 
 test("maps quoted multiline CSV records to the exact row source", () => {

@@ -60,6 +60,8 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Edit Q2 Business Review heading/);
   assert.match(html, /Select Q2 Business Review in canonical source for Agent context/);
   assert.match(html, /role="group" aria-label="Q2 Business Review source actions"/);
+  assert.match(html, /data-preview-source-id="document-block:/);
+  assert.match(html, /data-preview-section-id="document-section:/);
   assert.match(html, /aria-keyshortcuts="F2"/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /SQL metrics/);
@@ -82,7 +84,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.44/);
+  assert.match(html, /Rune v0\.45/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -209,6 +211,11 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Selection Agent is limited to/);
   assert.match(clientSource, /selection boundary verification failed/);
   assert.match(clientSource, /selected from preview · Selection Agent ready/);
+  assert.match(clientSource, /linked from canonical source/);
+  assert.match(clientSource, /linked in preview/);
+  assert.match(clientSource, /data-preview-source-id/);
+  assert.match(clientSource, /source-link-badge/);
+  assert.match(clientSource, /prefers-reduced-motion: reduce/);
   assert.match(clientSource, /click a cell for exact Agent context/);
   assert.match(clientSource, /press Enter or use the pencil to edit a proven scalar cell/);
   assert.match(clientSource, /Select or edit one exact section/);

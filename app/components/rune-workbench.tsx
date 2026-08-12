@@ -132,8 +132,12 @@ import {
   type WorkspaceDependencyGraph,
   type WorkspaceDependencyKind,
 } from "../lib/dependency-graph";
-import type { PreviewSourceTarget } from "../lib/preview-targets";
-import type { DocumentBlockPreviewSourceTarget } from "../lib/preview-targets";
+import {
+  deriveSourceLinkedPreviewTargets,
+  resolveSourceLinkedPreviewTarget,
+  type DocumentBlockPreviewSourceTarget,
+  type PreviewSourceTarget,
+} from "../lib/preview-targets";
 import { buildWorkspaceTransactionReview } from "../lib/transaction-review";
 import {
   MAX_AGENT_SELECTION_CHARS,
@@ -203,6 +207,11 @@ async function preflightRuntimeMutation(
 type AgentScope = "selection" | "artifact" | "workspace";
 
 type ActiveSourceSelection = SourceSelection & {
+  artifactId: string;
+  sourceRevision: string;
+};
+
+type ActiveSourceCursor = SourceSelection & {
   artifactId: string;
   sourceRevision: string;
 };
@@ -498,6 +507,7 @@ export function RuneWorkbench() {
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const [pendingReviewId, setPendingReviewId] = useState("");
   const [sourceSelection, setSourceSelection] = useState<ActiveSourceSelection | null>(null);
+  const [sourceCursor, setSourceCursor] = useState<ActiveSourceCursor | null>(null);
   const [newArtifactOpen, setNewArtifactOpen] = useState(false);
   const [newArtifactError, setNewArtifactError] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
@@ -527,6 +537,7 @@ export function RuneWorkbench() {
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
@@ -553,6 +564,22 @@ export function RuneWorkbench() {
   const validSourceSelection = currentSourceSelection && !currentSelectionError
     ? { start: currentSourceSelection.start, end: currentSourceSelection.end }
     : null;
+  const currentSourceCursor = sourceCursor?.artifactId === selectedArtifact?.id
+    && sourceCursor.sourceRevision === selectedArtifact?.source
+    ? sourceCursor
+    : null;
+  const sourceLinkedPreviewTargets = useMemo(
+    () => selectedArtifact ? deriveSourceLinkedPreviewTargets(selectedArtifact) : [],
+    [selectedArtifact],
+  );
+  const activePreviewTarget = useMemo(
+    () => selectedArtifact && currentSourceCursor
+      ? resolveSourceLinkedPreviewTarget(selectedArtifact, currentSourceCursor, sourceLinkedPreviewTargets)
+      : null,
+    [currentSourceCursor, selectedArtifact, sourceLinkedPreviewTargets],
+  );
+  const activePreviewTargetId = activePreviewTarget?.id ?? "";
+  const activePreviewTargetKind = activePreviewTarget?.kind ?? null;
   const selectedCharacterCount = validSourceSelection
     ? validSourceSelection.end - validSourceSelection.start
     : 0;
@@ -726,6 +753,28 @@ export function RuneWorkbench() {
   }, [artifacts, checkpoints, hydrated, selectedId]);
 
   useEffect(() => {
+    if (!activePreviewTargetId) return;
+    const frame = window.requestAnimationFrame(() => {
+      const linkedElements = [...(previewScrollRef.current?.querySelectorAll<HTMLElement>(
+        "[data-preview-source-id], [data-preview-section-id]",
+      ) ?? [])];
+      const linkedElement = linkedElements.find((element) => (
+        activePreviewTargetKind === "document-section"
+        && element.dataset.previewSectionId === activePreviewTargetId
+      )) ?? linkedElements.find((element) => (
+        element.dataset.previewSourceId === activePreviewTargetId
+      ));
+      if (!linkedElement) return;
+      linkedElement.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activePreviewTargetId, activePreviewTargetKind, selectedArtifact?.id]);
+
+  useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (visualEditState !== "idle" || pendingDocumentStructure) return;
       if (!(event.metaKey || event.ctrlKey)) return;
@@ -739,6 +788,7 @@ export function RuneWorkbench() {
         setEmptyWorkspace(true);
         setHistoryOpen(false);
         setSourceSelection(null);
+        setSourceCursor(null);
         setNotice("Closed the current file — every source remains in the workspace");
         return;
       }
@@ -774,6 +824,7 @@ export function RuneWorkbench() {
     setSelectedId(id);
     setEmptyWorkspace(false);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setAgentError("");
     setNotice("Switched artifact context");
@@ -783,6 +834,7 @@ export function RuneWorkbench() {
     setEmptyWorkspace(true);
     setHistoryOpen(false);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setAgentError("");
     setNotice("Closed the current file — every source remains safely in the workspace");
@@ -879,13 +931,18 @@ export function RuneWorkbench() {
     setNotice("Temporary Workspace Agent context pins cleared");
   }
 
-  function updateSource(source: string) {
+  function updateSource(source: string, cursor?: SourceSelection) {
     if (pendingDocumentStructure) return;
     setSaveState("saving");
     setArtifacts((current) => current.map((artifact) => (
       artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact
     )));
     setSourceSelection(null);
+    setSourceCursor(cursor ? {
+      artifactId: selectedArtifact.id,
+      sourceRevision: source,
+      ...cursor,
+    } : null);
     if (agentScope === "selection") setAgentScope("artifact");
     if (pendingChange) setPendingChange(null);
   }
@@ -991,6 +1048,7 @@ export function RuneWorkbench() {
       setArtifacts(prepared.nextArtifacts);
       setSelectedId(currentArtifact.id);
       setSourceSelection(selection);
+      setSourceCursor(selection);
       setAgentScope("selection");
       setCheckpoints(nextCheckpoints);
       setPendingChange(null);
@@ -1146,19 +1204,41 @@ export function RuneWorkbench() {
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
     const start = event.currentTarget.selectionStart;
     const end = event.currentTarget.selectionEnd;
+    const sourceRevision = event.currentTarget.value;
     const previewTarget = previewSelectionNoticeRef.current;
     previewSelectionNoticeRef.current = null;
+    const cursor: ActiveSourceCursor = {
+      artifactId: selectedArtifact.id,
+      sourceRevision,
+      start,
+      end,
+    };
+    setSourceCursor(cursor);
+    const sourceArtifact = sourceRevision === selectedArtifact.source
+      ? selectedArtifact
+      : { ...selectedArtifact, source: sourceRevision };
+    const linkedTarget = resolveSourceLinkedPreviewTarget(
+      sourceArtifact,
+      cursor,
+      sourceArtifact === selectedArtifact
+        ? sourceLinkedPreviewTargets
+        : deriveSourceLinkedPreviewTargets(sourceArtifact),
+    );
     if (start >= end) {
       setSourceSelection(null);
       if (agentScope === "selection") {
         setAgentScope("artifact");
-        setNotice("Selection cleared · Current-file Agent scope enabled");
+        setNotice(linkedTarget
+          ? `${linkedTarget.label} linked in preview · Current-file Agent scope enabled`
+          : "Selection cleared · Current-file Agent scope enabled");
+      } else if (linkedTarget) {
+        setNotice(`${linkedTarget.label} linked from canonical source`);
       }
       return;
     }
     const nextSelection: ActiveSourceSelection = {
       artifactId: selectedArtifact.id,
-      sourceRevision: selectedArtifact.source,
+      sourceRevision,
       start,
       end,
     };
@@ -1175,7 +1255,9 @@ export function RuneWorkbench() {
       : "";
     setNotice(previewLabel
       ? `${previewLabel} selected from preview · Selection Agent ready`
-      : `${formatInteger(end - start)} source characters selected · Selection Agent ready`);
+      : linkedTarget
+        ? `${formatInteger(end - start)} source characters selected · ${linkedTarget.label} linked in preview · Selection Agent ready`
+        : `${formatInteger(end - start)} source characters selected · Selection Agent ready`);
   }
 
   function focusPreviewTarget(
@@ -1187,6 +1269,7 @@ export function RuneWorkbench() {
     const currentTargetArtifact = artifacts.find((artifact) => artifact.id === targetArtifact.id);
     if (!currentTargetArtifact) {
       setSourceSelection(null);
+      setSourceCursor(null);
       if (agentScope === "selection") setAgentScope("artifact");
       setAgentError("The preview target artifact is no longer in this workspace.");
       setNotice("Preview target is too large or no longer matches the current source");
@@ -1195,6 +1278,7 @@ export function RuneWorkbench() {
     const error = sourceSelectionError(currentTargetArtifact.source, target);
     if (error) {
       setSourceSelection(null);
+      setSourceCursor(null);
       if (agentScope === "selection") setAgentScope("artifact");
       setAgentError(error);
       setNotice("Preview target is too large or no longer matches the current source");
@@ -1210,6 +1294,7 @@ export function RuneWorkbench() {
     };
     if (changesArtifact) setSelectedId(currentTargetArtifact.id);
     setSourceSelection(selection);
+    setSourceCursor(selection);
     setAgentScope("selection");
     setPendingChange(null);
     setHistoryOpen(false);
@@ -1279,6 +1364,7 @@ export function RuneWorkbench() {
     setSelectedId(nextSelectedId);
     setWorkspacePinnedArtifactIds([]);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setPendingChange(null);
@@ -1755,6 +1841,7 @@ export function RuneWorkbench() {
     setArtifacts(prepared.nextArtifacts);
     setSelectedId(nextSelectedId);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (pendingChange.scope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setSaveState("saved");
@@ -1784,6 +1871,7 @@ export function RuneWorkbench() {
     setEmptyWorkspace(false);
     setWorkspacePinnedArtifactIds([]);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints({});
     setHistoryOpen(false);
@@ -1872,6 +1960,7 @@ export function RuneWorkbench() {
     setSelectedId(prepared.artifact.id);
     setEmptyWorkspace(false);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setHistoryOpen(false);
     setPendingChange(null);
@@ -1998,6 +2087,7 @@ export function RuneWorkbench() {
     setSelectedId(firstImported.id);
     setEmptyWorkspace(false);
     setSourceSelection(null);
+    setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setSaveState("saved");
     setSavedAt("just now");
@@ -2398,7 +2488,10 @@ export function RuneWorkbench() {
               ref={sourceEditorRef}
               className="source-editor"
               value={selectedArtifact.source}
-              onChange={(event) => updateSource(event.target.value)}
+              onChange={(event) => updateSource(event.target.value, {
+                start: event.currentTarget.selectionStart,
+                end: event.currentTarget.selectionEnd,
+              })}
               onSelect={captureSourceSelection}
               onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }}
               spellCheck={false}
@@ -2545,6 +2638,11 @@ export function RuneWorkbench() {
               <div><span className="overline">Compiled output</span><strong>Live preview</strong></div>
             </div>
             <div className="preview-actions">
+              {activePreviewTarget && (
+                <span className="source-link-badge" title={`Canonical source linked to ${activePreviewTarget.label}`}>
+                  <CircleDot aria-hidden="true" /><span>{activePreviewTarget.label}</span>
+                </span>
+              )}
               {selectedArtifact.kind === "query" && selectedQueryDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> 1 source</span>}
               {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && <span className="binding-badge chart">{selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />} 1 source</span>}
               {!!bindingState?.queryMetricReferences.length && <span className="binding-badge query"><Database aria-hidden="true" /> {bindingState.queryMetricReferences.length} SQL metric{bindingState.queryMetricReferences.length > 1 ? "s" : ""}</span>}
@@ -2607,11 +2705,11 @@ export function RuneWorkbench() {
                 <strong>{bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""} compiled live</strong>
               </div>
             )}
-            <div className="preview-scroll">
+            <div className="preview-scroll" ref={previewScrollRef}>
               <ArtifactPreview
                 artifact={selectedArtifact}
                 artifacts={artifacts}
-                activeSelection={validSourceSelection}
+                activeSelection={activePreviewTarget}
                 onTargetSource={focusPreviewTarget}
                 onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
                 onEditDocumentSection={visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
@@ -2629,7 +2727,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.44</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.45</span></div>
       </footer>
 
       {newArtifactOpen && (
