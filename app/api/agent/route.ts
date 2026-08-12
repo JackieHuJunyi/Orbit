@@ -27,8 +27,7 @@ import {
   queryMetricReferenceKey,
 } from "../../lib/bindings.ts";
 import { validateAgentQueryEvidenceContext } from "../../lib/agent-evidence.ts";
-
-const DEFAULT_MODEL = "gpt-5.6";
+import { DEFAULT_OPENAI_MODEL } from "../../lib/model-preference.ts";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -103,7 +102,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
+  const model = process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
   const client = new OpenAI({ apiKey });
 
   try {

@@ -29,7 +29,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Rune — AI-native artifact workspace<\/title>/i);
+  assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
   assert.match(html, /Artifact workspace/);
   assert.match(html, /q2-review\.md/);
   assert.match(html, /Rune Agent/);
@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.34/);
+  assert.match(html, /Rune v0\.35/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -168,6 +168,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /selection boundary verification failed/);
   assert.match(clientSource, /selected from preview · Selection Agent ready/);
   assert.match(clientSource, /click a cell for exact Agent context/);
+  assert.match(clientSource, /press Enter or use the pencil to edit a proven scalar cell/);
+  assert.match(clientSource, /Verifying .* against every live Data consumer/);
   assert.match(clientSource, /row number for the full record/);
   assert.match(clientSource, /Select the exact/);
   assert.match(clientSource, /Select the complete canonical row/);
@@ -192,6 +194,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /workspaceDependencies/);
   assert.match(clientSource, /workspacePinnedArtifactIds/);
   assert.match(clientSource, /A configured model can inspect/);
+  assert.match(clientSource, /Set up your own OpenAI API/);
+  assert.match(clientSource, /browser page never accepts an API key/);
   assert.match(clientSource, /bounded local Query/);
   assert.match(clientSource, /evidence is not persisted/);
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);

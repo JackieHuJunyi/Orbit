@@ -35,13 +35,13 @@ import {
   X,
 } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArtifactPreview } from "./artifact-previews";
+import { ArtifactPreview, type DataCellEditHandler } from "./artifact-previews";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
 import { TransactionReviewMap } from "./transaction-review-map";
-import { WelcomeExperience, type WelcomeAction } from "./welcome-experience";
+import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
 import {
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
@@ -140,6 +140,12 @@ import {
   RUNE_ONBOARDING_STORAGE_KEY,
   type RuneLocale,
 } from "../lib/localization";
+import {
+  normalizeRuneModelMode,
+  RUNE_MODEL_MODE_STORAGE_KEY,
+  type RuneModelMode,
+} from "../lib/model-preference";
+import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -472,10 +478,12 @@ export function RuneWorkbench() {
   const [notice, setNotice] = useState("Local workspace ready");
   const [locale, setLocale] = useState<RuneLocale>("en");
   const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
+  const [modelMode, setModelMode] = useState<RuneModelMode>("auto");
   const [welcomeOpen, setWelcomeOpen] = useState(false);
-  const [welcomeStartAt, setWelcomeStartAt] = useState<"welcome" | "language">("welcome");
+  const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
+  const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
@@ -483,6 +491,11 @@ export function RuneWorkbench() {
   const importRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
   const exportInFlightRef = useRef(false);
+  const visualEditInFlightRef = useRef(false);
+  const artifactsRef = useRef(artifacts);
+  const checkpointsRef = useRef(checkpoints);
+  artifactsRef.current = artifacts;
+  checkpointsRef.current = checkpoints;
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
@@ -616,15 +629,18 @@ export function RuneWorkbench() {
     || exportState !== "idle"
     || Boolean(pendingChange)
     || Boolean(pendingImport)
-    || Boolean(pendingExport);
+    || Boolean(pendingExport)
+    || visualEditState !== "idle";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         const detected = detectPreferredLocale(navigator.languages?.length ? navigator.languages : [navigator.language]);
         const storedLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY));
+        const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
         setDetectedLocale(detected);
         setLocale(storedLocale ?? detected);
+        setModelMode(storedModelMode ?? "auto");
         setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -669,6 +685,7 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (visualEditState !== "idle") return;
       if (!(event.metaKey || event.ctrlKey)) return;
       if (event.key.toLowerCase() === "o") {
         event.preventDefault();
@@ -706,7 +723,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [artifacts, checkpoints, selectedId]);
+  }, [artifacts, checkpoints, selectedId, visualEditState]);
 
   if (!selectedArtifact) return null;
 
@@ -753,11 +770,21 @@ export function RuneWorkbench() {
     return guide;
   }
 
+  function setPreferredModelMode(nextMode: RuneModelMode) {
+    setModelMode(nextMode);
+    try {
+      localStorage.setItem(RUNE_MODEL_MODE_STORAGE_KEY, nextMode);
+    } catch {
+      // This preference contains no credential; in-memory mode remains available.
+    }
+  }
+
   function finishWelcome(action: WelcomeAction) {
     const guide = ensureLocalGuide();
     try {
       localStorage.setItem(RUNE_ONBOARDING_STORAGE_KEY, "complete");
       localStorage.setItem(RUNE_LOCALE_STORAGE_KEY, locale);
+      localStorage.setItem(RUNE_MODEL_MODE_STORAGE_KEY, modelMode);
     } catch {
       // Onboarding remains complete for this session even without preference storage.
     }
@@ -819,6 +846,99 @@ export function RuneWorkbench() {
     if (agentScope === "selection") setAgentScope("artifact");
     if (pendingChange) setPendingChange(null);
   }
+
+  const commitVisualDataCellEdit: DataCellEditHandler = async (
+    targetArtifact,
+    target,
+    input,
+  ) => {
+    if (visualEditInFlightRef.current) return "Another visual edit is still being verified.";
+    if (pendingChange || pendingImport || pendingExport || agentState === "planning") {
+      return "Finish or cancel the current review before editing a preview cell.";
+    }
+    const baseArtifacts = artifactsRef.current;
+    const currentArtifact = baseArtifacts.find((artifact) => artifact.id === targetArtifact.id);
+    if (!currentArtifact || currentArtifact.source !== targetArtifact.source) {
+      return "The cell no longer matches the current workspace revision.";
+    }
+    if (!canCheckpointSource(currentArtifact.source)) {
+      return `${currentArtifact.name} is too large for a safe pre-edit checkpoint.`;
+    }
+    const compiled = prepareVisualDataCellEdit(currentArtifact, target, input);
+    if (compiled.errors.length || !compiled.nextTarget) {
+      return compiled.errors[0] ?? "Rune could not compile this visual edit.";
+    }
+    const patch: ArtifactSourcePatch = {
+      artifactId: currentArtifact.id,
+      summary: `Edit ${target.label}`,
+      detail: "Replace one proven scalar literal through the visual Data editor.",
+      nextSource: compiled.nextSource,
+      operationCount: 1,
+    };
+    const prepared = prepareWorkspaceMutation(baseArtifacts, [patch], []);
+    if (prepared.errors.length) return prepared.errors.slice(0, 3).join(" ");
+    const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
+
+    visualEditInFlightRef.current = true;
+    setVisualEditState("checking");
+    setSaveState("saving");
+    setAgentError("");
+    setNotice(`Verifying ${target.label} against every live Data consumer…`);
+    try {
+      let runtimePreflight: RuntimeImpactPreflight | undefined;
+      try {
+        runtimePreflight = await preflightRuntimeMutation(baseArtifacts, [patch], []);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "The downstream runtime could not verify this value.";
+        setNotice("Visual edit rejected — every source stayed unchanged");
+        return `Runtime verification failed · ${message}`;
+      }
+      if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
+        setNotice("Visual edit held — the workspace changed during verification");
+        return "The workspace changed while Rune was verifying this cell. Try again from the current value.";
+      }
+
+      const checkpoint = createCheckpoint(
+        currentArtifact,
+        `Before visual edit · ${target.label}`,
+        "manual",
+      );
+      const nextCheckpoints = appendCheckpoint(checkpointsRef.current, checkpoint);
+      try {
+        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints);
+      } catch {
+        setSaveState("error");
+        setNotice("Visual edit rejected — device persistence failed");
+        return "Device storage is full, so Rune kept every source unchanged.";
+      }
+
+      const selection: ActiveSourceSelection = {
+        artifactId: currentArtifact.id,
+        sourceRevision: compiled.nextSource,
+        start: compiled.nextTarget.start,
+        end: compiled.nextTarget.end,
+      };
+      setArtifacts(prepared.nextArtifacts);
+      setSelectedId(currentArtifact.id);
+      setSourceSelection(selection);
+      setAgentScope("selection");
+      setCheckpoints(nextCheckpoints);
+      setPendingChange(null);
+      setSaveState("saved");
+      setSavedAt("just now");
+      const runtimeSuffix = runtimePreflight
+        ? ` · ${runtimePreflight.queryCount} impacted ${runtimePreflight.queryCount === 1 ? "Query" : "Queries"} verified`
+        : " · workspace bindings verified";
+      setNotice(`${target.label} updated in canonical source${runtimeSuffix}${directoryHandle ? " · Push when ready" : ""}`);
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        sourceEditorRef.current?.setSelectionRange(selection.start, selection.end, "forward");
+      }));
+      return null;
+    } finally {
+      visualEditInFlightRef.current = false;
+      setVisualEditState("idle");
+    }
+  };
 
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
     const start = event.currentTarget.selectionStart;
@@ -1055,7 +1175,7 @@ export function RuneWorkbench() {
 
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
-    if (!instruction || agentState === "planning") return;
+    if (!instruction || agentState === "planning" || visualEditState !== "idle") return;
     const scope = agentScope;
     const targetSelection = scope === "selection" ? validSourceSelection : null;
     if (scope === "selection" && !targetSelection) {
@@ -1139,7 +1259,7 @@ export function RuneWorkbench() {
       }
     }
 
-    if (remoteEligible) {
+    if (remoteEligible && modelMode === "auto") {
       try {
         const remoteRequest = {
           scope,
@@ -1298,6 +1418,8 @@ export function RuneWorkbench() {
         fallbackNotice = "Local patch ready · network fallback active";
       }
     }
+
+    if (modelMode === "local") fallbackNotice = "Local patch ready · local-only mode selected";
 
     try {
       if (scope === "workspace") {
@@ -1794,7 +1916,7 @@ export function RuneWorkbench() {
           >
             <FilePlus2 aria-hidden="true" /> New
           </button>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}>
+          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} Import
           </button>
           <button
@@ -1815,7 +1937,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("office")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
               aria-label={`Export ${selectedArtifact.name} as ${selectedOfficeExportType}`}
               title={`Export as ${selectedOfficeExportType}`}
             >
@@ -1826,7 +1948,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("html")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
               aria-label={`Export ${selectedArtifact.name} as HTML`}
               title="Export as standalone HTML"
             >
@@ -1837,7 +1959,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("pdf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
               aria-label={`Export ${selectedArtifact.name} as PDF`}
               title="Export as fixed PDF"
             >
@@ -1849,7 +1971,7 @@ export function RuneWorkbench() {
               <Download />
             </button>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
         </div>
       </header>
 
@@ -2033,6 +2155,8 @@ export function RuneWorkbench() {
               onSelect={captureSourceSelection}
               onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }}
               spellCheck={false}
+              disabled={visualEditState !== "idle"}
+              aria-busy={visualEditState !== "idle"}
               aria-label={`Edit ${selectedArtifact.name} source`}
             />
           </div>
@@ -2056,7 +2180,7 @@ export function RuneWorkbench() {
                             ? `${formatInteger(selectedCharacterCount)} selected characters bound to Agent scope`
                             : "Current-file Agent scope enabled");
                       }}
-                      disabled={agentState === "planning" || (scope === "selection" && !validSourceSelection)}
+                      disabled={agentState === "planning" || visualEditState !== "idle" || (scope === "selection" && !validSourceSelection)}
                       aria-pressed={agentScope === scope}
                     >
                       {scope === "selection" ? "Selection" : scope === "artifact" ? "File" : "Workspace"}
@@ -2073,7 +2197,7 @@ export function RuneWorkbench() {
                 : agentScope === "workspace"
                   ? workspaceQuickCommands
                   : quickCommands[selectedArtifact.kind]).map((command) => (
-                <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning"}>{command}</button>
+                <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning" || visualEditState !== "idle"}>{command}</button>
               ))}
             </div>
 
@@ -2161,7 +2285,7 @@ export function RuneWorkbench() {
                 rows={1}
                 aria-label={agentScope === "workspace" ? "Describe a workspace change" : agentScope === "selection" ? "Describe a selected-source change" : "Describe an artifact change"}
               />
-              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || (agentScope === "selection" && !validSourceSelection)} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
+              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || visualEditState !== "idle" || (agentScope === "selection" && !validSourceSelection)} aria-label="Plan change" title="Plan change (⌘ Enter)">{agentState === "planning" || visualEditState !== "idle" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
             <p className="agent-hint">⌘ Enter to plan · {agentScope === "workspace" ? `${workspaceAgentContext.length} context files${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""} · full workspace validates atomically` : agentScope === "selection" ? "Nothing outside the selected source may change" : "Every write is reviewable and undoable"}</p>
           </div>
@@ -2242,6 +2366,7 @@ export function RuneWorkbench() {
                 artifacts={artifacts}
                 activeSelection={validSourceSelection}
                 onTargetSource={focusPreviewTarget}
+                onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
               />
             </div>
           </div>
@@ -2252,7 +2377,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.34</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.35</span></div>
       </footer>
 
       {newArtifactOpen && (
@@ -2290,9 +2415,11 @@ export function RuneWorkbench() {
         <WelcomeExperience
           detectedLocale={detectedLocale}
           locale={locale}
+          modelMode={modelMode}
           startAt={welcomeStartAt}
           dismissible={welcomeDismissible}
           onLocaleChange={setInterfaceLocale}
+          onModelModeChange={setPreferredModelMode}
           onComplete={finishWelcome}
           onDismiss={() => setWelcomeOpen(false)}
         />

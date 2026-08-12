@@ -6,12 +6,15 @@ import remarkGfm from "remark-gfm";
 import {
   AlertTriangle,
   Braces,
+  Check,
   CheckCircle2,
   Clock3,
   Columns3,
   LoaderCircle,
   MousePointer2,
+  PencilLine,
   Rows3,
+  X,
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
 import { compileArtifactSource, queryMetricSourceIdsForArtifact } from "../lib/bindings";
@@ -41,6 +44,14 @@ import {
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
+import {
+  MAX_VISUAL_DATA_CELL_CHARS,
+  canVisualEditDataCell,
+  visualDataCellDraft,
+  visualDataCellValueType,
+  type VisualDataCellEditInput,
+  type VisualDataCellValueType,
+} from "../lib/visual-data-edit";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (
@@ -48,6 +59,12 @@ type PreviewTargetHandler = (
   target: PreviewSourceTarget,
   viaLabel?: string,
 ) => void;
+
+export type DataCellEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: DataCellPreviewSourceTarget,
+  input: VisualDataCellEditInput,
+) => Promise<string | null>;
 
 type QueryRuntimeEntry =
   | { status: "loading" }
@@ -487,6 +504,8 @@ function ResultGrid({
   targetViaLabel,
   activeSelection,
   onTargetSource,
+  editableFormat,
+  onEditDataCell,
 }: {
   columns: string[];
   rows: GridCell[][];
@@ -499,6 +518,8 @@ function ResultGrid({
   targetViaLabel?: string;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  editableFormat?: "CSV" | "JSON";
+  onEditDataCell?: DataCellEditHandler;
 }) {
   const icons = {
     rows: <Rows3 aria-hidden="true" />,
@@ -509,6 +530,48 @@ function ResultGrid({
   const cellsByCoordinate = new Map(cellTargets?.map((target) => (
     [`${target.rowIndex}:${target.columnIndex}`, target] as const
   )));
+  const [editingCell, setEditingCell] = useState<{
+    key: string;
+    sourceRevision: string;
+    draft: string;
+    valueType: VisualDataCellValueType;
+    error: string;
+    submitting: boolean;
+  } | null>(null);
+
+  function beginCellEdit(
+    target: DataCellPreviewSourceTarget,
+    value: GridCell,
+  ) {
+    if (!targetArtifact || !editableFormat || !onEditDataCell || !canVisualEditDataCell(targetArtifact, target)) return;
+    const scalar = value == null || ["string", "number", "boolean"].includes(typeof value)
+      ? value as DataCell
+      : String(value);
+    setEditingCell({
+      key: `${target.rowIndex}:${target.columnIndex}`,
+      sourceRevision: targetArtifact.source,
+      draft: visualDataCellDraft(scalar),
+      valueType: visualDataCellValueType(scalar, editableFormat),
+      error: "",
+      submitting: false,
+    });
+  }
+
+  async function submitCellEdit(
+    target: DataCellPreviewSourceTarget,
+  ) {
+    if (!editingCell || !targetArtifact || !onEditDataCell) return;
+    setEditingCell((current) => current ? { ...current, error: "", submitting: true } : current);
+    const error = await onEditDataCell(targetArtifact, target, {
+      draft: editingCell.draft,
+      valueType: editingCell.valueType,
+    });
+    if (error) {
+      setEditingCell((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setEditingCell(null);
+  }
 
   return (
     <div className="data-stage">
@@ -558,24 +621,130 @@ function ResultGrid({
                   const activateCell = cellTarget && targetArtifact && onTargetSource
                     ? () => onTargetSource(targetArtifact, cellTarget, targetViaLabel)
                     : undefined;
+                  const editableCellTarget = cellTarget?.kind === "data-cell" && "rowIndex" in cellTarget
+                    ? cellTarget as DataCellPreviewSourceTarget
+                    : undefined;
+                  const cellEditable = Boolean(
+                    editableCellTarget
+                    && targetArtifact
+                    && editableFormat
+                    && onEditDataCell
+                    && canVisualEditDataCell(targetArtifact, editableCellTarget),
+                  );
                   const cellActive = Boolean(cellTarget && previewTargetIsActive(cellTarget, activeSelection));
                   const displayValue = value == null ? "—" : String(value);
+                  const editKey = `${rowIndex}:${columnIndex}`;
+                  const editing = Boolean(
+                    cellTarget
+                    && editingCell?.key === editKey
+                    && editingCell.sourceRevision === targetArtifact?.source,
+                  );
                   return (
                     <td
                       key={`${column}-${columnIndex}`}
-                      className={`${numeric ? "numeric" : ""} ${activateCell ? "preview-data-cell" : ""} ${cellActive ? "active" : ""}`.trim() || undefined}
+                      className={`${numeric ? "numeric" : ""} ${activateCell ? "preview-data-cell" : ""} ${cellActive ? "active" : ""} ${cellEditable ? "editable" : ""} ${editing ? "editing" : ""}`.trim() || undefined}
                     >
-                      {activateCell ? (
-                        <button
-                          type="button"
-                          data-preview-source-target={cellTarget?.kind}
-                          aria-label={`Select ${cellTarget?.label} in canonical source for Agent context`}
-                          aria-pressed={cellActive}
-                          title={`Select the exact canonical source cell · ${cellTarget?.label}`}
-                          onClick={activateCell}
+                      {editing && editableCellTarget && editingCell ? (
+                        <form
+                          className="visual-cell-editor"
+                          onSubmit={(event) => { event.preventDefault(); void submitCellEdit(editableCellTarget); }}
                         >
-                          {displayValue}
-                        </button>
+                          <div className="visual-cell-fields">
+                            <select
+                              aria-label={`Value type for ${editableCellTarget.label}`}
+                              value={editingCell.valueType}
+                              disabled={editingCell.submitting || editableFormat === "CSV"}
+                              onChange={(event) => {
+                                const valueType = event.target.value as VisualDataCellValueType;
+                                setEditingCell((current) => current ? {
+                                  ...current,
+                                  valueType,
+                                  draft: valueType === "null"
+                                    ? ""
+                                    : valueType === "boolean" && !["true", "false"].includes(current.draft)
+                                      ? "true"
+                                      : current.draft,
+                                  error: "",
+                                } : current);
+                              }}
+                            >
+                              {editableFormat === "CSV" ? <option value="auto">Auto</option> : (
+                                <>
+                                  <option value="string">Text</option>
+                                  <option value="number">Number</option>
+                                  <option value="boolean">Boolean</option>
+                                  <option value="null">Empty</option>
+                                </>
+                              )}
+                            </select>
+                            {editingCell.valueType === "boolean" ? (
+                              <select
+                                autoFocus
+                                aria-label={`Edit ${editableCellTarget.label}`}
+                                value={editingCell.draft}
+                                disabled={editingCell.submitting}
+                                onChange={(event) => setEditingCell((current) => current ? { ...current, draft: event.target.value, error: "" } : current)}
+                              >
+                                <option value="true">true</option>
+                                <option value="false">false</option>
+                              </select>
+                            ) : editingCell.valueType === "null" ? (
+                              <span className="visual-null-value">null</span>
+                            ) : (
+                              <input
+                                autoFocus
+                                aria-label={`Edit ${editableCellTarget.label}`}
+                                value={editingCell.draft}
+                                disabled={editingCell.submitting}
+                                maxLength={MAX_VISUAL_DATA_CELL_CHARS}
+                                onChange={(event) => setEditingCell((current) => current ? { ...current, draft: event.target.value, error: "" } : current)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Escape") {
+                                    event.preventDefault();
+                                    setEditingCell(null);
+                                  }
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div className="visual-cell-actions">
+                            <button type="submit" aria-label={`Save ${editableCellTarget.label}`} disabled={editingCell.submitting} title="Save to canonical source">
+                              {editingCell.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}
+                            </button>
+                            <button type="button" aria-label="Cancel cell edit" disabled={editingCell.submitting} onClick={() => setEditingCell(null)}><X /></button>
+                          </div>
+                          {editingCell.error && <small role="alert">{editingCell.error}</small>}
+                        </form>
+                      ) : activateCell ? (
+                        <>
+                          <button
+                            className="preview-cell-select"
+                            type="button"
+                            data-preview-source-target={cellTarget?.kind}
+                            aria-label={`Select ${cellTarget?.label} in canonical source for Agent context`}
+                            aria-pressed={cellActive}
+                            title={`${cellEditable ? "Press Enter to edit · " : ""}Select the exact canonical source cell · ${cellTarget?.label}`}
+                            onClick={activateCell}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" || !editableCellTarget || !cellEditable) return;
+                              event.preventDefault();
+                              beginCellEdit(editableCellTarget, value);
+                            }}
+                          >
+                            <span>{displayValue}</span>
+                          </button>
+                          {cellEditable && editableCellTarget && (
+                            <button
+                              className="visual-cell-edit-trigger"
+                              type="button"
+                              aria-label={`Edit ${editableCellTarget.label}`}
+                              title="Edit this canonical source cell"
+                              onClick={() => beginCellEdit(editableCellTarget, value)}
+                            >
+                              <PencilLine aria-hidden="true" />
+                            </button>
+                          )}
+                        </>
                       ) : displayValue}
                     </td>
                   );
@@ -598,12 +767,14 @@ function DataPreview({
   cellTargets,
   activeSelection,
   onTargetSource,
+  onEditDataCell,
 }: {
   artifact: WorkspaceArtifact;
   rowTargets: PreviewSourceTarget[];
   cellTargets: DataCellPreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  onEditDataCell?: DataCellEditHandler;
 }) {
   const parsed = parseDataSource(artifact.source);
   if (parsed.errors.length) return <EmptyPreview message={parsed.errors[0]} />;
@@ -616,8 +787,10 @@ function DataPreview({
         { icon: "columns", label: `${parsed.columns.length} columns` },
         { icon: "format", label: parsed.format },
       ]}
-      footnote={onTargetSource && cellTargets.length
-        ? "Parsed locally — click a cell for exact Agent context, or a row number for the full record."
+      footnote={onEditDataCell && cellTargets.some((target) => canVisualEditDataCell(artifact, target))
+        ? "Parsed locally — click selects exact source; press Enter or use the pencil to edit a proven scalar cell."
+        : onTargetSource && cellTargets.length
+          ? "Parsed locally — click a cell for exact Agent context, or a row number for the full record."
         : onTargetSource && rowTargets.length
           ? "Parsed locally — click a row number to bind the full record as Agent context."
           : "Parsed locally — no targetable rows left this device."}
@@ -626,6 +799,8 @@ function DataPreview({
       targetArtifact={artifact}
       activeSelection={activeSelection}
       onTargetSource={onTargetSource}
+      editableFormat={parsed.format}
+      onEditDataCell={onEditDataCell}
     />
   );
 }
@@ -766,11 +941,13 @@ export function ArtifactPreview({
   artifacts,
   activeSelection,
   onTargetSource,
+  onEditDataCell,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  onEditDataCell?: DataCellEditHandler;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
@@ -781,7 +958,7 @@ export function ArtifactPreview({
   );
   if (artifact.kind === "data") {
     const targets = deriveDataPreviewSourceTargets(artifact);
-    return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
+    return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
   }
   const targets = derivePreviewSourceTargets(artifact);
   if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;

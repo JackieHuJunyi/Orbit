@@ -56,6 +56,11 @@ const chineseGuide = [
   "- 每次改动先显示具体差异、依赖变化和运行验证。",
   "- 应用前建立恢复点；失败时整笔修改保持零写入。",
   "- 导入和导出会明确说明无法保留的内容，不假装无损转换。",
+  "- 模型密钥只放在服务端环境变量；不会进入浏览器表单、工作区、localStorage、Artifact 或 Git。",
+  "",
+  "## 设置模型",
+  "",
+  "当前 Web 版通过服务端 OpenAI 适配器使用模型。在本地运行时，把 `OPENAI_API_KEY` 和可选的 `OPENAI_MODEL` 写入被 Git 忽略的 `.env.local`，重启 Rune 后从帮助重新检查。没有配置模型时，本地确定性规划器仍然可用。未来桌面版将把个人密钥交给系统钥匙串。",
   "",
   "## 下一步",
   "",
@@ -100,6 +105,11 @@ const englishGuide = [
   "- Every proposal shows its concrete diff, dependency change, and runtime checks.",
   "- Apply creates a checkpoint; a failed transaction writes nothing.",
   "- Import and export disclose omissions instead of pretending to be lossless.",
+  "- Model credentials belong only in the server environment; they never enter a browser form, workspace, localStorage, Artifact, or Git.",
+  "",
+  "## Connect a model",
+  "",
+  "The current web build uses a server-side OpenAI adapter. When running locally, put `OPENAI_API_KEY` and an optional `OPENAI_MODEL` in the Git-ignored `.env.local`, restart Rune, then check again from Help. Deterministic local planners remain available without a model. A future desktop build will place personal credentials in the system keychain.",
   "",
   "## Next",
   "",
@@ -116,4 +126,3 @@ export function createRuneGuideArtifact(locale: RuneLocale): WorkspaceArtifact {
     source: locale === "zh-CN" ? chineseGuide : englishGuide,
   };
 }
-

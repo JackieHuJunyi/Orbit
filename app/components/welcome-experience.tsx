@@ -4,20 +4,33 @@ import {
   ArrowRight,
   Check,
   Command,
+  Copy,
+  ExternalLink,
   FileText,
   FolderOpen,
   Globe2,
   Keyboard,
+  KeyRound,
+  Laptop,
+  RefreshCw,
+  Server,
   ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { localeDisplayName, type RuneLocale } from "../lib/localization";
+import {
+  DEFAULT_OPENAI_MODEL,
+  type ModelProviderStatus,
+  type RuneModelMode,
+} from "../lib/model-preference";
 
 export type WelcomeAction = "guide" | "import" | "sample";
-type WelcomeStep = "welcome" | "language" | "shortcuts" | "ready";
+export type WelcomeStep = "welcome" | "language" | "model" | "shortcuts" | "ready";
 type ShortcutId = "open" | "save" | "agent";
+
+const MODEL_ENVIRONMENT_TEMPLATE = `OPENAI_API_KEY=your_api_key_here\nOPENAI_MODEL=${DEFAULT_OPENAI_MODEL}\n`;
 
 const copy = {
   "zh-CN": {
@@ -35,6 +48,26 @@ const copy = {
     languageBody: "我们已经根据这台设备做出推荐。你可以随时从帮助菜单中更改。",
     recommended: "系统推荐",
     continue: "继续",
+    modelEyebrow: "模型连接",
+    modelTitle: "选择 Rune 如何使用模型",
+    modelBody: "模型只负责提出受约束的修改；源文件、验证与是否写入仍由 Rune 和你决定。",
+    checkingModel: "正在检查模型连接…",
+    connectedModel: "已连接部署模型",
+    connectedModelBody: "密钥保存在服务端环境中，不会发送到浏览器。",
+    noModel: "尚未连接部署模型",
+    noModelBody: "当前仍可使用确定性的本地规划器，之后可从帮助重新设置。",
+    useConnected: "使用已连接模型",
+    useConnectedBody: "通过 Rune 的服务端适配器生成先审后写的修改",
+    useLocal: "仅使用本地模式",
+    useLocalBody: "不向模型服务发送内容，使用内置确定性规划器",
+    personalKey: "设置你自己的 OpenAI API",
+    personalKeyBody: "出于安全考虑，浏览器页面不接收 API 密钥。请把密钥放入本地 Rune 服务的 .env.local，然后重启并重新检查。",
+    createKey: "创建 API 密钥",
+    copyTemplate: "复制安全配置模板",
+    copiedTemplate: "已复制",
+    recheck: "重新检查",
+    modelSafety: "密钥不会进入工作区、localStorage、Artifact、Git 或模型输入。桌面版将使用系统钥匙串。",
+    modelUnavailable: "无法读取模型状态；你可以先使用本地模式。",
     shortcutEyebrow: "快速上手",
     shortcutTitle: "亲手试试三个快捷键",
     shortcutBody: "按下对应按键，Rune 会在这里确认。你也可以稍后从本地指南重新学习。",
@@ -71,6 +104,26 @@ const copy = {
     languageBody: "We made a recommendation from this device. You can change it later from Help.",
     recommended: "System recommendation",
     continue: "Continue",
+    modelEyebrow: "Model connection",
+    modelTitle: "Choose how Rune uses a model",
+    modelBody: "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.",
+    checkingModel: "Checking the model connection…",
+    connectedModel: "Deployment model connected",
+    connectedModelBody: "Its credential stays in the server environment and is never sent to the browser.",
+    noModel: "No deployment model connected",
+    noModelBody: "Rune still works with deterministic local planners. You can revisit this from Help.",
+    useConnected: "Use connected model",
+    useConnectedBody: "Generate review-before-write changes through Rune's server adapter",
+    useLocal: "Use local mode only",
+    useLocalBody: "Send nothing to a model service and use built-in deterministic planners",
+    personalKey: "Set up your own OpenAI API",
+    personalKeyBody: "For security, the browser page never accepts an API key. Put it in the local Rune service's .env.local, restart, then check again.",
+    createKey: "Create API key",
+    copyTemplate: "Copy secure config template",
+    copiedTemplate: "Copied",
+    recheck: "Check again",
+    modelSafety: "The key never enters the workspace, localStorage, an Artifact, Git, or model input. The desktop app will use the system keychain.",
+    modelUnavailable: "Rune could not read model status. You can continue in local mode.",
     shortcutEyebrow: "Quick start",
     shortcutTitle: "Try three shortcuts yourself",
     shortcutBody: "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.",
@@ -103,7 +156,9 @@ export function WelcomeExperience({
   locale,
   startAt = "welcome",
   dismissible = false,
+  modelMode,
   onLocaleChange,
+  onModelModeChange,
   onComplete,
   onDismiss,
 }: {
@@ -111,16 +166,63 @@ export function WelcomeExperience({
   locale: RuneLocale;
   startAt?: WelcomeStep;
   dismissible?: boolean;
+  modelMode: RuneModelMode;
   onLocaleChange: (locale: RuneLocale) => void;
+  onModelModeChange: (mode: RuneModelMode) => void;
   onComplete: (action: WelcomeAction) => void;
   onDismiss?: () => void;
 }) {
   const [step, setStep] = useState<WelcomeStep>(startAt);
   const [completedShortcuts, setCompletedShortcuts] = useState<ShortcutId[]>([]);
+  const [modelStatus, setModelStatus] = useState<ModelProviderStatus | null>(null);
+  const [modelStatusError, setModelStatusError] = useState("");
+  const [checkingModel, setCheckingModel] = useState(true);
+  const [templateCopied, setTemplateCopied] = useState(false);
   const text = copy[locale];
   const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
   const modifier = isMac ? "⌘" : "Ctrl";
-  const steps = useMemo<WelcomeStep[]>(() => ["welcome", "language", "shortcuts", "ready"], []);
+  const steps = useMemo<WelcomeStep[]>(() => ["welcome", "language", "model", "shortcuts", "ready"], []);
+
+  async function checkModelStatus() {
+    setCheckingModel(true);
+    setModelStatusError("");
+    try {
+      const response = await fetch("/api/model-status", { cache: "no-store" });
+      if (!response.ok) throw new Error("status unavailable");
+      const status = await response.json() as ModelProviderStatus;
+      if (typeof status.configured !== "boolean") throw new Error("invalid status");
+      setModelStatus(status);
+    } catch {
+      setModelStatus(null);
+      setModelStatusError(text.modelUnavailable);
+    } finally {
+      setCheckingModel(false);
+    }
+  }
+
+  useEffect(() => {
+    if (step !== "model") return;
+    const controller = new AbortController();
+    void fetch("/api/model-status", { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("status unavailable");
+        return response.json() as Promise<ModelProviderStatus>;
+      })
+      .then((status) => {
+        if (typeof status.configured !== "boolean") throw new Error("invalid status");
+        setModelStatus(status);
+        setModelStatusError("");
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setModelStatus(null);
+        setModelStatusError(copy[locale].modelUnavailable);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCheckingModel(false);
+      });
+    return () => controller.abort();
+  }, [locale, step]);
 
   useEffect(() => {
     if (step !== "shortcuts") return;
@@ -161,7 +263,7 @@ export function WelcomeExperience({
           {dismissible ? (
             <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}><X /></button>
           ) : (
-            <button type="button" onClick={() => setStep("ready")}>{text.skip}</button>
+            <button type="button" onClick={() => { onModelModeChange("local"); setStep("ready"); }}>{text.skip}</button>
           )}
         </header>
 
@@ -206,7 +308,68 @@ export function WelcomeExperience({
                   </button>
                 ))}
               </div>
-              <button className="welcome-primary" type="button" onClick={() => setStep("shortcuts")}>{text.continue}<ArrowRight /></button>
+              <button className="welcome-primary" type="button" onClick={() => { setCheckingModel(true); setStep("model"); }}>{text.continue}<ArrowRight /></button>
+            </>
+          )}
+
+          {step === "model" && (
+            <>
+              <div className="welcome-icon-disc"><KeyRound /></div>
+              <span className="welcome-eyebrow">{text.modelEyebrow}</span>
+              <h1 id="welcome-title">{text.modelTitle}</h1>
+              <p>{text.modelBody}</p>
+              <div className="model-setup-panel">
+                <div className={`model-status-card ${modelStatus?.configured ? "connected" : ""}`} role="status">
+                  <span>{modelStatus?.configured ? <Check /> : checkingModel ? <RefreshCw className="agent-spinner" /> : <Server />}</span>
+                  <div>
+                    <strong>{checkingModel ? text.checkingModel : modelStatus?.configured ? text.connectedModel : text.noModel}</strong>
+                    <small>{modelStatusError || (modelStatus?.configured
+                      ? `${modelStatus.provider === "openai" ? "OpenAI" : "Model"} · ${modelStatus.model ?? DEFAULT_OPENAI_MODEL} · ${text.connectedModelBody}`
+                      : text.noModelBody)}</small>
+                  </div>
+                  <button type="button" onClick={() => void checkModelStatus()} disabled={checkingModel}><RefreshCw />{text.recheck}</button>
+                </div>
+                <div className="model-mode-options" role="radiogroup" aria-label={text.modelTitle}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={modelMode === "auto" && Boolean(modelStatus?.configured)}
+                    className={modelMode === "auto" && modelStatus?.configured ? "selected" : ""}
+                    disabled={!modelStatus?.configured}
+                    onClick={() => onModelModeChange("auto")}
+                  >
+                    <span><Server /></span><span><strong>{text.useConnected}</strong><small>{text.useConnectedBody}</small></span>{modelMode === "auto" && modelStatus?.configured ? <Check /> : null}
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={modelMode === "local"}
+                    className={modelMode === "local" ? "selected" : ""}
+                    onClick={() => onModelModeChange("local")}
+                  >
+                    <span><Laptop /></span><span><strong>{text.useLocal}</strong><small>{text.useLocalBody}</small></span>{modelMode === "local" ? <Check /> : null}
+                  </button>
+                </div>
+                {!modelStatus?.configured && !checkingModel && (
+                  <section className="personal-model-setup" aria-label={text.personalKey}>
+                    <div><strong>{text.personalKey}</strong><p>{text.personalKeyBody}</p><pre>{MODEL_ENVIRONMENT_TEMPLATE}</pre></div>
+                    <div className="personal-model-actions">
+                      <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">{text.createKey}<ExternalLink /></a>
+                      <button type="button" onClick={() => {
+                        if (!navigator.clipboard) return;
+                        void navigator.clipboard.writeText(MODEL_ENVIRONMENT_TEMPLATE)
+                          .then(() => setTemplateCopied(true))
+                          .catch(() => setTemplateCopied(false));
+                      }}>{templateCopied ? <Check /> : <Copy />}{templateCopied ? text.copiedTemplate : text.copyTemplate}</button>
+                    </div>
+                  </section>
+                )}
+                <p className="model-safety-note"><ShieldCheck />{text.modelSafety}</p>
+              </div>
+              <button className="welcome-primary" type="button" onClick={() => {
+                if (!modelStatus?.configured) onModelModeChange("local");
+                setStep("shortcuts");
+              }}>{text.continue}<ArrowRight /></button>
             </>
           )}
 

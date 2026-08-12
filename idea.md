@@ -1708,3 +1708,21 @@ Gemini Notebook 类产品值得借鉴的是 Sources 作为所有回答和产物�
 v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装整个旧工作台已完成国际化。它也不因为用户希望打开 DOC、PPT、PDF、ODF 就把扩展名加入 accept 列表：DOC/PPT 是旧二进制格式，需要未来桌面壳或受控 conversion service；PDF 到 Markdown 是语义提取/OCR，不是原版式 round-trip；ODF 要分别实现 ODT、ODS、ODP。每一种格式仍必须有 parser limit、review、fidelity warning、fixture 和独立 handler QA。
 
 双向编辑同样保持 source-first。当前左侧修改已经实时重编译右侧，右侧 heading、cell、row、Query direct field、Chart datum 和 Deck slide 已能定位精确 source。下一阶段先让直接 Data cell 通过 typed visual editor 编译回 CSV/JSON，再逐步加入 Document block、Deck block 和 Chart property operation。Rune 不会把整个 preview 设成 contenteditable 后猜测如何还原 Markdown，因为那会制造第二份状态、格式漂移和不可证明的写入范围。所谓双向同步，是两个受控投影修改同一个 canonical source。
+
+## 40. 语言之后先决定模型边界，并让第一种右侧编辑回到 source
+
+语言确认后立即进入模型设置，比把 API 配置藏进后续 Preferences 更符合首次启动的心理顺序：语言回答“Rune 怎样和我说话”，模型回答“Rune 会把什么交给谁处理”。如果先教快捷键、最后才解释可能发生的远端请求，用户在第一次触发 Agent 时才发现数据边界，信任已经被透支。因此 v0.35 把 setup assistant 固定为欢迎、语言、模型、快捷键、开始五步；帮助入口允许以后重新进入模型页，首次跳过也只代表选择本地模式，不代表默许远端传输。
+
+模型设置必须把“个人 API”和“网页输入 API Key”分开。OpenAI 的官方认证说明要求 API Key 作为秘密存放在服务端环境变量或密钥管理系统中，不能暴露在浏览器和客户端代码。Rune Web 因而不渲染密钥输入框：它只向 `GET /api/model-status` 读取 `configured`、`provider`、`model` 三个非秘密字段，展示已连接部署模型或本地规划器；用户偏好也只保存 `auto` / `local`。未连接时界面可以打开官方 API Key 管理页、复制 `.env.local` 模板并在重启后重新检查，但密钥不能进入 workspace、Artifact、localStorage、checkpoint、文件夹 manifest、Git、URL、日志、分析事件或模型输入。
+
+这也解释了 Web、部署和未来桌面版的三种产品路径。本地开发把个人 key 写进未提交的 `.env.local`；托管 Web 由部署者在平台 secret 中提供一把服务端 credential，普通访客只能选择是否使用该已连接能力；真正面向每位用户的桌面 BYOK 必须接入 macOS Keychain / Windows Credential Manager 等原生安全存储，React 只拿不透明状态。当前版本没有假装已经完成桌面钥匙串，也没有把“复制环境模板”包装成普通用户的最终体验。无模型时 deterministic planner 仍能完成核心任务，是隐私选择和可用降级，不是错误页。
+
+模型状态与模型权限仍是两件事。连接成功只让 Rune 可以调用 provider；provider 依旧只能返回有界 typed operation，不能接触 localStorage、文件系统 handle 或写入 API。请求仍由 graph-bounded context 决定，Data/Query/Chart 改动仍要通过本地 runtime preflight，所有结果仍需 review、revision check、checkpoint 与原子写入。用户选“仅本地”后，client 不发送 Agent 请求到远端 route，而是明确运行内置规划器；刷新后只恢复这个非秘密选择。
+
+同一版本实现了右侧到左侧的第一种真实写入：Data scalar cell。此前点击 cell 已能通过 parser-derived source target 选中左侧精确 token；现在 Enter 或显式铅笔按钮可以打开 typed editor。这个入口不使用双击，因为单击定位会在下一个 animation frame 聚焦 textarea，容易与双击产生的 editor autofocus 冲突；独立按钮把“定位”和“修改”变成两个可理解、键盘可达的动作。
+
+视觉编辑没有直接改 React table rows。提交时 Rune 用 row index、column index、column name、start/end 与当前 source revision 重新证明 target；CSV 通过现有 parser 做自动 scalar typing，JSON 要求用户显式选择 string、number、boolean 或 null。嵌套 object/array、重复 JSON key、missing property、非有限数字、相同值、超过 10,000 字符、旧 offset 和跨出 token 边界的修改全部拒绝。序列化后还要重新 parse 完整 source，证明目标值 round-trip，并重新生成新 source range。
+
+单个 cell 看起来是局部写入，但它可能改变 Query、metric、Chart 和成品，所以不能在 editor blur 时立刻落盘。Rune 先基于 captured workspace revision 构造完整 proposed workspace，运行静态 adapter/dependency validation，再执行受影响 Query 并验证所有相关 Chart；过程中 source editor、Import、Export 和 Agent 暂停新的写入。只有全部通过，才为旧 Data source 建 checkpoint、执行一次 device persistence，并同时更新 source、preview、精确选择和 Selection Agent context。任何错误都把信息留在 cell editor 内，canonical source 保持 byte-for-byte 不变。
+
+v0.35 的限制是有意的：Query result 和 Chart datum 即使具有跨 Artifact provenance，也只导航到 Data，不直接写；嵌套 JSON 只定位不编辑；Document、Deck 和 Chart 视觉写入还未开放。下一阶段先设计 Markdown heading/block operation 与 preview block identity，沿用相同的 stale-range、outside-boundary、whole-workspace、checkpoint 和 atomic persistence 合同，而不是把 document preview 设为 contenteditable。这样每扩展一种右侧交互，Rune 增加的是一个可测试 compiler operation，而不是一套新的隐藏文档模型。

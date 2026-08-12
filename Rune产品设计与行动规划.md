@@ -967,12 +967,16 @@ Rune 必须形成自己的视觉身份：
 
 1. 展示独立欢迎页，说明本地优先、先审后写和实时编译；
 2. 根据操作系统语言推荐简体中文或 English，但由用户确认；
-3. 让用户实际按下打开、保存恢复点和 Agent 规划三个快捷键；
-4. 让用户选择打开本地指南、导入自己的文件或探索示例；
-5. 在工作区生成可编辑的 rune-guide.md，本地保存并参与普通预览；
-6. 后续可通过帮助按钮重新打开欢迎与教程。
+3. 在语言之后单独解释模型边界，检测当前部署是否已连接模型，让用户明确选择“已连接模型”或“仅本地”；
+4. 若未连接，只提供官方密钥入口、安全的服务端配置模板和重新检查，不在网页输入或保存 API Key；
+5. 让用户实际按下打开、保存恢复点和 Agent 规划三个快捷键；
+6. 让用户选择打开本地指南、导入自己的文件或探索示例；
+7. 在工作区生成可编辑的 rune-guide.md，本地保存并参与普通预览；
+8. 后续可通过帮助按钮重新打开欢迎、模型设置与教程。
 
 语言检测只能作为默认建议，不能替用户锁定。第一阶段先让欢迎、教程、空状态和指南双语；随后按任务频率逐步覆盖工作台，不用一次大规模翻译制造长期不一致。
+
+Web 版的个人模型配置不能为了“步骤顺滑”把密钥交给 React。开发环境使用 `.env.local`，部署环境使用托管平台的 secret；状态接口只返回是否配置、provider 名称和 model 名称。浏览器只保存 `auto` / `local` 这类非秘密偏好。未来桌面版可以在这一步接收 BYOK，但必须写入 macOS Keychain、Windows Credential Manager 等系统安全存储，并通过原生桥向界面返回不透明的连接状态，不能复用 localStorage 方案。
 
 ### 6.10 空文件状态
 
@@ -1042,6 +1046,14 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 6. 对无法证明一对一映射的派生 Query、复杂 Markdown inline 或旧 HTML 保持只读。
 
 右侧任意 contenteditable 后再猜 Markdown 会造成格式漂移、范围歧义和数据丢失，因此明确不采用。Rune 的“双向”是同一 canonical source 的两个受控编辑投影。
+
+### 6.14 v0.35 已落地边界：模型设置与第一种视觉写入
+
+本阶段把两项规划变成可运行合同：首次启动顺序正式成为“欢迎 → 语言 → 模型 → 快捷键 → 开始”；帮助入口也可直接回到模型步骤。Rune 自动读取当前服务端连接状态，已配置时显示 provider 与 model 并允许用户选择，未配置或状态请求失败时仍可在不上传内容的本地规划器中完成核心演示。选择模型不是把 Agent 变成自动写入者，所有远端结果仍只进入既有 typed operation、review、revision、runtime preflight、checkpoint 和 atomic persistence 边界。
+
+第一种真正的右侧编辑只开放给 canonical Data 的可证明 scalar cell。点击仍做左右同步定位；Enter 或铅笔进入 typed editor。CSV 使用自动 scalar typing，JSON 必须明确 Text、Number、Boolean 或 Empty，嵌套对象/数组保持只读。提交后先证明只替换该 cell 的精确 source token，再完整 parse、验证 workspace、执行所有受影响的 Query/Chart、创建恢复点并单次持久化。任何旧 revision、非法类型、no-op、超长值或 downstream 错误都不改变 source。
+
+这一步验证了“双向编辑 = 受控 operation 编译回同一 source”的产品方向，但没有宣称所有预览可编辑。Document block、Deck block 和 Chart property 仍按 6.13 的顺序迭代；Query result 与跨 Artifact Chart datum 当前只负责带来源定位，不能借 lineage 获得写权限。
 
 ---
 
