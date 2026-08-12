@@ -1754,3 +1754,15 @@ Save 不信任打开时的解析结果。compiler 用 artifact kind/language、t
 通过上述局部证明后，Deck 写入不走快捷路径，而是复用 Data/Document 已有的共享 transaction：验证完整 proposed workspace、捕获并复核全工作区 revision、为旧 Deck 建立 manual checkpoint、单次 device persistence，成功后将左侧 textarea 选到新 slide 并让右侧 target 同步 active。任何错误都留在 editor 内，源、恢复历史和 folder 都零写入。frontmatter/theme、增删/重排页、binding 修改、旧 Semantic HTML 仍属于 canonical source 或 Agent review；这是刻意的 capability boundary，不是遗漏。
 
 这一阶段真正验证的问题不是“Rune 能否像 PowerPoint 一样拖框”，而是用户能否在一个 page-sized preview 旁快速完成大多数叙事修改，并理解 layout 是受控选择而非任意画布。如果高频需求集中在改标题、要点、eyebrow 和 layout，这个小 grammar 会比自由画布更可靠；如果真实用户持续需要图片、演讲者备注、母版和坐标布局，再用数据决定扩展 AST，而不是预先背负完整演示引擎。
+
+## 43. Chart 编辑要分开“数据点来源”和“图表规格权限”
+
+Chart 右侧早已有精确点击：标签和 mark 通过 compiler provenance 跳到 Data cell。但这种 lineage 只证明“这个显示值来自哪里”，不证明用户点击一个 bar 就授权修改 Chart JSON，更不证明 Query 结果可以被反向写入。v0.38 因而没有把点按数据 mark 变成就地数值编辑，而是在独立 Chart 页面增加单独的 Source/Configure toolbar。Source 选择完整 JSON；Configure 才授予一份完整、严格、当前 revision 的 chart-spec write capability。
+
+Chart spec 很适合受控表单，因为它本来就是一个 strict JSON schema，而不是自由 DOM。表单一一对应 title、description、mark、category、value、sort、format、color 和 maxItems；没有任意 CSS、表达式、回调或 JSON 文本插槽。category/value 选项不是从画面标签猜测，而是从绑定 Data parser 的列，或 Query 的 conservative static output contract 得出。每次输入都会临时生成完整 spec，并用当前 Data 或 revision-bound Query snapshot 走正常 Chart resolver；因此 bar/line、排序、格式、颜色和 mark 数量的草稿都对应真实运行数据。
+
+`source` identity 被刻意锁定。换 source 会改变 graph edge、需要的 Query 证据、Workspace Agent context、嵌入报告/Deck 的语义以及运行权限，这不是普通外观设置。如果把它藏进一个下拉框，用户可能只想换配色，却无意中把整份报告改到另一组数据。现阶段 dependency identity 变化继续通过左侧 canonical JSON 或 Agent transaction map；将来若用户测试证明直接切换是高频任务，也应设计一个明确显示旧/新 edge 与影响消费者的独立 binding flow，而不是静默扩展 Configure。
+
+保存时 `prepareVisualChartSpecEdit` 从当前 source 重新派生完整 target，要求 artifact kind/language、id/index/label、0..source.length range 全部一致。输入先通过同一 `ChartSpecSchema`，Rune 再以固定字段顺序和两空格缩进重写完整 JSON；source identity 始终来自 current spec 而非浏览器草稿。no-op、stale、超限或 invalid schema 立即失败。之后共享 visual transaction 会验证完整 workspace，执行 changed Chart 所需的 Query 和 Chart runtime impact，创建 checkpoint 并单次持久化。成功后左侧选中完整新 JSON，右侧用同一 revision 重绘；失败时图表、source、历史和 folder 都不动。
+
+这个设计把两种“实时”区分清楚：输入过程中的 draft preview 是可丢弃的预测，Save 后的 live preview 才是 canonical projection。它也完成了 Data cell、Document section、Deck slide、Chart spec 四类右侧写入的共同架构验证：每一类都先获得窄 capability，再由确定性 compiler 生成 source patch，最后进入相同 revision/checkpoint/validation/persistence 边界。下一步应优先补真实文件格式覆盖和普通用户格式工具，而不是为每种 preview 再造一套状态机。

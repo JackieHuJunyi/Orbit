@@ -48,3 +48,4 @@
 - 2026-08-12 — Added safe post-language model setup and exact typed preview-to-source Data cell edits with downstream runtime verification.
 - 2026-08-12 — Added revision-bound Document section editing with a live draft preview, exact-range proof, checkpoints, and atomic source synchronization.
 - 2026-08-12 — Added controlled Deck slide editing with layout and eyebrow fields, a sandboxed one-slide draft, exact-range proof, checkpoints, and atomic source synchronization.
+- 2026-08-12 — Added a runtime-validated Chart property panel that rewrites one strict, revision-bound Chart JSON spec through the shared checkpointed visual transaction.

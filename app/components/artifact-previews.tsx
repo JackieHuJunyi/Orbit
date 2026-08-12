@@ -66,6 +66,13 @@ import {
   visualDeckSlidePreviewSource,
   type VisualDeckSlideEditInput,
 } from "../lib/visual-deck-edit";
+import {
+  canVisualEditChartSpec,
+  visualChartSourceFields,
+  visualChartSpecDraft,
+  visualChartSpecPreviewSource,
+  type VisualChartSpecEditInput,
+} from "../lib/visual-chart-edit";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (
@@ -90,6 +97,12 @@ export type DeckSlideEditHandler = (
   artifact: WorkspaceArtifact,
   target: PreviewSourceTarget,
   input: VisualDeckSlideEditInput,
+) => Promise<string | null>;
+
+export type ChartSpecEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: PreviewSourceTarget,
+  input: VisualChartSpecEditInput,
 ) => Promise<string | null>;
 
 type QueryRuntimeEntry =
@@ -1001,16 +1014,250 @@ function ChartPreview({
   artifact,
   artifacts,
   queryRuntime,
+  targets,
+  activeSelection,
   onTargetSource,
+  onEditChartSpec,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
   queryRuntime: QueryRuntime;
+  targets: PreviewSourceTarget[];
+  activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  onEditChartSpec?: ChartSpecEditHandler;
 }) {
+  const [editingChart, setEditingChart] = useState<{
+    artifactId: string;
+    sourceRevision: string;
+    targetId: string;
+    input: VisualChartSpecEditInput;
+    error: string;
+    submitting: boolean;
+  } | null>(null);
+  const target = targets.find((candidate) => candidate.kind === "chart-spec");
+  const editingTarget = editingChart?.artifactId === artifact.id
+    && editingChart.sourceRevision === artifact.source
+    && target?.id === editingChart.targetId
+    ? target
+    : undefined;
+  const currentSpec = parseChartSource(artifact.source).spec;
+  const sourceFields = currentSpec
+    ? visualChartSourceFields(artifacts, currentSpec.source)
+    : { sourceName: "Unknown source", columns: [], errors: ["The current Chart JSON is invalid."] };
+  const draftSource = editingChart
+    ? visualChartSpecPreviewSource(artifact, editingChart.input)
+    : null;
+  const draftArtifact = draftSource && !draftSource.errors.length
+    ? { ...artifact, source: draftSource.source }
+    : null;
+  const draftResolution = draftArtifact
+    ? resolvePreviewChart(draftArtifact, artifacts, queryRuntime)
+    : null;
+  const draftError = draftSource?.errors[0]
+    ?? sourceFields.errors[0]
+    ?? draftResolution?.errors[0]
+    ?? "";
   const resolution = resolvePreviewChart(artifact, artifacts, queryRuntime);
   if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? "The chart could not compile."} />;
-  return <div className="chart-stage"><ChartFigure model={resolution.model} artifacts={artifacts} onTargetSource={onTargetSource} /></div>;
+
+  function beginChartEdit() {
+    if (!target || !onEditChartSpec || !canVisualEditChartSpec(artifact, target)) return;
+    const input = visualChartSpecDraft(artifact);
+    if (!input) return;
+    setEditingChart({
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      targetId: target.id,
+      input,
+      error: "",
+      submitting: false,
+    });
+  }
+
+  function updateChartInput<K extends keyof VisualChartSpecEditInput>(
+    key: K,
+    value: VisualChartSpecEditInput[K],
+  ) {
+    setEditingChart((current) => current ? {
+      ...current,
+      input: { ...current.input, [key]: value },
+      error: "",
+    } : current);
+  }
+
+  async function submitChartEdit() {
+    if (!editingChart || !editingTarget || !onEditChartSpec) return;
+    setEditingChart((current) => current ? { ...current, error: "", submitting: true } : current);
+    const error = await onEditChartSpec(artifact, editingTarget, editingChart.input);
+    if (error) {
+      setEditingChart((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setEditingChart(null);
+  }
+
+  const targetActive = Boolean(target && previewTargetIsActive(target, activeSelection));
+  return (
+    <div className="chart-stage">
+      {target && (onTargetSource || onEditChartSpec) && (
+        <div className="chart-stage-toolbar">
+          <div><span>Bound chart source</span><strong>{sourceFields.sourceName}</strong></div>
+          <div>
+            {onTargetSource && (
+              <button
+                className={targetActive ? "active" : ""}
+                data-preview-source-target="chart-spec"
+                type="button"
+                aria-pressed={targetActive}
+                onClick={() => onTargetSource(artifact, target)}
+                title="Select the complete canonical Chart JSON"
+              ><MousePointer2 aria-hidden="true" />Source</button>
+            )}
+            {onEditChartSpec && canVisualEditChartSpec(artifact, target) && (
+              <button
+                className={editingTarget ? "active" : ""}
+                type="button"
+                aria-expanded={Boolean(editingTarget)}
+                onClick={beginChartEdit}
+              ><PencilLine aria-hidden="true" />Configure</button>
+            )}
+          </div>
+        </div>
+      )}
+      {editingChart && editingTarget && (
+        <form
+          className="visual-chart-editor"
+          aria-busy={editingChart.submitting}
+          onSubmit={(event) => { event.preventDefault(); void submitChartEdit(); }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setEditingChart(null);
+            } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+              event.preventDefault();
+              void submitChartEdit();
+            }
+          }}
+        >
+          <header>
+            <div><span>Editing complete Chart spec</span><strong>{editingChart.input.title || "Untitled chart"}</strong></div>
+            <small>Strict Chart JSON · source identity locked</small>
+          </header>
+          <div className="visual-chart-editor-grid">
+            <div className="visual-chart-fields">
+              <label className="visual-chart-field-wide">
+                <span>Title</span>
+                <input
+                  autoFocus
+                  aria-label="Edit Chart title"
+                  value={editingChart.input.title}
+                  disabled={editingChart.submitting}
+                  maxLength={120}
+                  onChange={(event) => updateChartInput("title", event.target.value)}
+                />
+              </label>
+              <label className="visual-chart-field-wide">
+                <span>Description <small>optional</small></span>
+                <textarea
+                  aria-label="Edit Chart description"
+                  value={editingChart.input.description}
+                  disabled={editingChart.submitting}
+                  maxLength={240}
+                  onChange={(event) => updateChartInput("description", event.target.value)}
+                />
+              </label>
+              <label>
+                <span>Mark</span>
+                <select value={editingChart.input.mark} disabled={editingChart.submitting} onChange={(event) => updateChartInput("mark", event.target.value as VisualChartSpecEditInput["mark"])}>
+                  <option value="bar">Bar</option>
+                  <option value="line">Line</option>
+                </select>
+              </label>
+              <label>
+                <span>Sort</span>
+                <select value={editingChart.input.sort} disabled={editingChart.submitting} onChange={(event) => updateChartInput("sort", event.target.value as VisualChartSpecEditInput["sort"])}>
+                  <option value="source">Source order</option>
+                  <option value="ascending">Ascending</option>
+                  <option value="descending">Descending</option>
+                </select>
+              </label>
+              <label>
+                <span>Category field</span>
+                <select value={editingChart.input.category} disabled={editingChart.submitting} onChange={(event) => updateChartInput("category", event.target.value)}>
+                  {sourceFields.columns.map((column) => <option value={column} key={column}>{column}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Value field</span>
+                <select value={editingChart.input.value} disabled={editingChart.submitting} onChange={(event) => updateChartInput("value", event.target.value)}>
+                  {sourceFields.columns.map((column) => <option value={column} key={column}>{column}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Number format</span>
+                <select value={editingChart.input.format} disabled={editingChart.submitting} onChange={(event) => updateChartInput("format", event.target.value as VisualChartSpecEditInput["format"])}>
+                  <option value="currency">Currency</option>
+                  <option value="number">Number</option>
+                  <option value="percent">Percent</option>
+                </select>
+              </label>
+              <label>
+                <span>Visible marks <output>{editingChart.input.maxItems}</output></span>
+                <input
+                  aria-label="Choose maximum visible Chart marks"
+                  type="range"
+                  min="1"
+                  max="20"
+                  value={editingChart.input.maxItems}
+                  disabled={editingChart.submitting}
+                  onChange={(event) => updateChartInput("maxItems", Number(event.target.value))}
+                />
+              </label>
+              <label className="visual-chart-color-field visual-chart-field-wide">
+                <span>Accent color</span>
+                <div>
+                  <input
+                    aria-label="Choose Chart accent color"
+                    type="color"
+                    value={/^#[0-9a-f]{6}$/iu.test(editingChart.input.color) ? editingChart.input.color.toLowerCase() : "#ff5c35"}
+                    disabled={editingChart.submitting}
+                    onChange={(event) => updateChartInput("color", event.target.value)}
+                  />
+                  <input
+                    aria-label="Edit Chart accent hex color"
+                    value={editingChart.input.color}
+                    disabled={editingChart.submitting}
+                    maxLength={7}
+                    spellCheck={false}
+                    onChange={(event) => updateChartInput("color", event.target.value)}
+                  />
+                </div>
+              </label>
+              <p className="visual-chart-source-lock">Source · <strong>{sourceFields.sourceName}</strong> · change identity in canonical source or reviewed Agent flow</p>
+            </div>
+            <section className="visual-chart-draft" aria-label="Draft Chart preview">
+              <span>Runtime-validated draft</span>
+              {draftResolution?.model && !draftError
+                ? <ChartFigure model={draftResolution.model} artifacts={artifacts} embedded />
+                : <div className="visual-chart-draft-error"><AlertTriangle aria-hidden="true" /><p>{draftError || "Choose valid Chart properties."}</p></div>}
+            </section>
+          </div>
+          {editingChart.error && <p className="visual-chart-error" role="alert">{editingChart.error}</p>}
+          <footer>
+            <p>One strict spec · runtime impact verified · save rewrites canonical Chart JSON</p>
+            <div>
+              <button type="button" disabled={editingChart.submitting} onClick={() => setEditingChart(null)}><X />Cancel</button>
+              <button type="submit" disabled={editingChart.submitting || Boolean(draftError) || !draftResolution?.model}>
+                {editingChart.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save Chart
+              </button>
+            </div>
+          </footer>
+        </form>
+      )}
+      <ChartFigure model={resolution.model} artifacts={artifacts} onTargetSource={onTargetSource} />
+    </div>
+  );
 }
 
 function SlidesPreview({
@@ -1250,6 +1497,7 @@ export function ArtifactPreview({
   onEditDataCell,
   onEditDocumentSection,
   onEditDeckSlide,
+  onEditChartSpec,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -1258,6 +1506,7 @@ export function ArtifactPreview({
   onEditDataCell?: DataCellEditHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
+  onEditChartSpec?: ChartSpecEditHandler;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
@@ -1276,6 +1525,6 @@ export function ArtifactPreview({
     const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
     return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
   }
-  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />;
+  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} />;
   return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} />;
 }

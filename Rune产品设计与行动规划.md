@@ -1073,6 +1073,14 @@ Save 重新核对 artifact/source revision 和 slide target 的 id、index、lab
 
 这不是通用 PowerPoint 画布：本轮不开放自由拖拽、绝对坐标、图片、动画、母版、页面增删/重排或 frontmatter/theme 修改。那些操作会改变结构或依赖，继续通过 canonical source 或可审核 Agent 完成。下一阶段按既定顺序实现 Chart 属性面板，让 bar/line、字段、颜色、排序和格式也以 typed spec operation 回写，而不是让图表 DOM 成为事实。
 
+### 6.17 v0.38 Chart 属性面板
+
+独立 Chart 预览上方现在区分两个能力：Source 选择完整 Chart JSON 并进入原有 Selection Agent；Configure 打开严格属性表单。用户可以修改标题、说明、bar/line、category/value 字段、source/ascending/descending 排序、currency/number/percent 格式、六位 hex 强调色与 1–20 个可见 marks。字段选项来自当前绑定 Data 的真实列，或当前绑定 Query 的保守静态输出合同；草稿立即使用当前 Data/Query revision 重新解析成真实图表，而不是只换一张假图片。
+
+本轮有意不允许在面板里切换 `source` identity。图表数据源不仅是视觉属性，它会改变 dependency graph、模型上下文、运行权限和所有嵌入成品，因此仍需在 canonical source 或有明确 diff/transaction map 的 Agent Review 中完成。Configure 只保留已有 source，重新生成完整 `version: 1` Chart JSON，并在 Save 前验证 schema、当前 target revision、完整 workspace、受影响 Query/Chart runtime 与 downstream consumers。
+
+成功写入沿用 visual transaction：旧 Chart 建 checkpoint、一次设备持久化、左侧选择完整新 JSON、右侧显示同一 revision；无效颜色/长度/范围、缺失字段、非数字 value、Query stale/truncated、no-op、并发 source 变化或任何消费者错误都零写入。图表数据点仍只负责定位 canonical Data cell，不能因为属性面板存在而获得直接修改 Query 结果的权限。
+
 ---
 
 ## 7. 指标、Eval 与结果验证

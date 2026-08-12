@@ -1,8 +1,9 @@
 import { parseDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
+import { parseChartSource } from "./charts.ts";
 import type { SourceSelection } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
-export type PreviewSourceTargetKind = "document-section" | "data-row" | "data-cell" | "deck-slide";
+export type PreviewSourceTargetKind = "document-section" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
 
 export type PreviewSourceTarget = SourceSelection & {
   id: string;
@@ -376,10 +377,24 @@ function deckTargets(source: string): PreviewSourceTarget[] {
   });
 }
 
+function chartTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
+  const parsed = parseChartSource(artifact.source);
+  if (!parsed.spec || !artifact.source.length) return [];
+  return [{
+    start: 0,
+    end: artifact.source.length,
+    id: "chart-spec:0:0",
+    index: 0,
+    kind: "chart-spec",
+    label: boundedLabel(parsed.spec.title, "Chart properties"),
+  }];
+}
+
 export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
   if (!artifact.source.trim()) return [];
   if (artifact.kind === "document") return documentTargets(artifact.source);
   if (artifact.kind === "data") return dataTargets(artifact.source).rows;
+  if (artifact.kind === "chart") return chartTargets(artifact);
   if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return deckTargets(artifact.source);
   return [];
 }

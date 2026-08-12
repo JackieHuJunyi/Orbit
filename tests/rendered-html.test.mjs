@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.37/);
+  assert.match(html, /Rune v0\.38/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -180,6 +180,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Select or edit a Deck slide/);
   assert.match(clientSource, /Sandboxed one-slide preview/);
   assert.match(clientSource, /One revision-bound slide.*bindings stay fixed.*save writes canonical source/);
+  assert.match(clientSource, /Bound chart source/);
+  assert.match(clientSource, /Strict Chart JSON.*source identity locked/);
+  assert.match(clientSource, /Runtime-validated draft/);
+  assert.match(clientSource, /One strict spec.*runtime impact verified.*save rewrites canonical Chart JSON/);
   assert.match(clientSource, /Preview target is too large or no longer matches the current source/);
   assert.match(clientSource, /The preview target artifact is no longer in this workspace/);
   assert.match(clientSource, /Open exact/);
