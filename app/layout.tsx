@@ -7,8 +7,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Rune — AI-native artifact workspace";
-  const description = "Create documents, data views, reusable charts, and presentations from readable source with an agent-native workflow.";
+  const title = "Rune — Work that traces back to source";
+  const description = "Turn business data into traceable reports and decks. Review every AI change before it writes.";
 
   return {
     metadataBase: new URL(origin),
@@ -18,13 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: "website",
-      images: [{ url: `${origin}/og.png`, width: 1731, height: 909, alt: "Rune source-to-artifact workbench" }],
+      images: [{ url: `${origin}/og-v2.png`, width: 1727, height: 911, alt: "Rune turns readable sources into traceable work" }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [`${origin}/og.png`],
+      images: [`${origin}/og-v2.png`],
     },
   };
 }
