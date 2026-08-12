@@ -1690,3 +1690,21 @@ v0.32 让一句话第一次可以产生 `Data → Query → Chart → Report/Dec
 交互使用原生 `details/summary`，多文件或有依赖的事务默认展开，键盘可以折叠；节点与 edge list 都有明确的 ARIA label。没有引入 canvas layout、第三方 graph 库或 DOM 连线坐标，因为这些只会增加初始 bundle 与无障碍成本，却不能增强 source truth。当前最多四个 changed action，纵向 edge list 已足以完整呈现；未来若 action budget 真正扩大，再考虑分层布局、节点折叠和分阶段 commit，而不是提前把审核变成不可读的流程设计器。
 
 v0.33 仍不支持文件删除、部分 Apply、跨阶段回滚、多人 approval 或持久 audit log，也没有把四 action 上限提高。事务图只是当前原子提议的可解释投影，关闭 review 后不会留在 localStorage、folder manifest 或 Git。这个限制是有意的：先证明用户能在一次批准前看懂完整 source chain，再决定是否需要更大 transaction、staged commit 或 CRDT。AI Native Office 的信任基础不是“AI 一次改得更多”，而是每次改动都能同时回答文本差异、依赖变化和运行时影响。
+
+## 39. 从工作台直接出现，转向被欢迎、被教会、再进入任务
+
+v0.33 以前的 Rune 一打开就是完整工作台：文件列表、source editor、preview、Agent、graph、导入导出和同步控件同时出现。这对已经理解 artifact-as-code 的开发者有效，却要求新用户先理解 Rune 的内部架构，才能知道第一步做什么。它也让产品看起来像常见的深色侧栏 AI 工具，而不是有自身秩序和气质的内容产品。v0.34 因而没有扩张 Agent 权限，而是第一次把“用户如何进入 Rune”作为完整产品路径。
+
+视觉上借鉴 Apple 的克制、留白、材料层级、系统语言建议和 setup assistant 节奏，但不复制系统控件或品牌。Rune 选择朱砂红作为自己的主色：它既像编辑批注和确认印记，也能与雾白画布、石墨侧栏和 Artifact 语义色形成稳定识别。原来占主导的森林绿退出品牌主色，只保留 Data 的含义；通用 AI 星云渐变不再承担产品身份。顶部材料使用轻模糊和细边框，动效只解释页面进入、快捷键完成和拖放状态，并服从 reduced-motion。
+
+首次启动先从 navigator languages 中保守推荐简体中文或 English，再由人确认，选择只作为设备偏好保存在独立 localStorage key。SSR 始终先输出不带 welcome 的稳定英文壳，hydration 后才读取设备信息并挂载 setup assistant，避免重演 locale 导致的 hydration mismatch。欢迎流程依次解释本地优先、先审后写和实时编译；快捷键页不是静态说明，而是在 capture phase 监听用户实际按下打开、checkpoint 和 Agent plan 组合键并逐项确认。完成后可打开指南、导入自己的文件或探索示例，帮助按钮可以重新进入，不把教程变成一次性不可找回的弹层。
+
+说明文档不是外部 help center。Rune 生成一份普通 rune-guide.md Artifact，跟其他 source 一样可编辑、可预览、可下载、可同步到用户目录，也能演示右侧 heading 到左侧精确 source selection。更改界面语言时，只在指南仍等于 Rune 原始模板时切换内容；用户改过的指南不会被偏好更新覆盖。这让 onboarding 本身遵守 source ownership，而不是引入另一套隐藏内容系统。
+
+“工作区存在文件”和“当前打开文件”也被拆开。按 Cmd/Ctrl-W 或 source header 的关闭按钮只关闭当前视图，不删除任何 Artifact；中央出现系统式 drop zone，同时保留 Sources rail。点击或拖放最多二十个文件会进入一次 import transaction：每个文件独立通过大小、格式和本地转换边界，Office warning 带来源文件名，所有生成 Artifact 合并后经过一次完整 workspace validation 和同一个 review dialog，确认前零写入。Cmd/Ctrl-O 与中央按钮共享同一 file input，所以快捷键、点击和拖放不会形成三条不一致的导入路径。
+
+Gemini Notebook 类产品值得借鉴的是 Sources 作为所有回答和产物的证据基础、基于来源的提问、可回到原文的引用与引导式产物入口，而不是复制聊天加笔记布局。Rune 的长期信息流仍是 Sources → Analysis → Deliverables → Review → Apply。任何引用或右侧交互都必须由 source range、SQL lineage 或 Chart provenance 证明，不能信任模型编造的页码和文件名。
+
+v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装整个旧工作台已完成国际化。它也不因为用户希望打开 DOC、PPT、PDF、ODF 就把扩展名加入 accept 列表：DOC/PPT 是旧二进制格式，需要未来桌面壳或受控 conversion service；PDF 到 Markdown 是语义提取/OCR，不是原版式 round-trip；ODF 要分别实现 ODT、ODS、ODP。每一种格式仍必须有 parser limit、review、fidelity warning、fixture 和独立 handler QA。
+
+双向编辑同样保持 source-first。当前左侧修改已经实时重编译右侧，右侧 heading、cell、row、Query direct field、Chart datum 和 Deck slide 已能定位精确 source。下一阶段先让直接 Data cell 通过 typed visual editor 编译回 CSV/JSON，再逐步加入 Document block、Deck block 和 Chart property operation。Rune 不会把整个 preview 设成 contenteditable 后猜测如何还原 Markdown，因为那会制造第二份状态、格式漂移和不可证明的写入范围。所谓双向同步，是两个受控投影修改同一个 canonical source。

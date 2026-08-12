@@ -1,0 +1,254 @@
+"use client";
+
+import {
+  ArrowRight,
+  Check,
+  Command,
+  FileText,
+  FolderOpen,
+  Globe2,
+  Keyboard,
+  ShieldCheck,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { localeDisplayName, type RuneLocale } from "../lib/localization";
+
+export type WelcomeAction = "guide" | "import" | "sample";
+type WelcomeStep = "welcome" | "language" | "shortcuts" | "ready";
+type ShortcutId = "open" | "save" | "agent";
+
+const copy = {
+  "zh-CN": {
+    skip: "跳过",
+    close: "关闭教程",
+    welcomeEyebrow: "欢迎来到 Rune",
+    welcomeTitle: "让想法成为可核验的作品。",
+    welcomeBody: "文档、数据、图表和演示在一个本地优先的工作台里协同。源内容保持可读，每一次 AI 修改都由你决定。",
+    begin: "开始设置",
+    local: "本地优先",
+    review: "先审后写",
+    live: "实时编译",
+    languageEyebrow: "语言",
+    languageTitle: "选择 Rune 使用的语言",
+    languageBody: "我们已经根据这台设备做出推荐。你可以随时从帮助菜单中更改。",
+    recommended: "系统推荐",
+    continue: "继续",
+    shortcutEyebrow: "快速上手",
+    shortcutTitle: "亲手试试三个快捷键",
+    shortcutBody: "按下对应按键，Rune 会在这里确认。你也可以稍后从本地指南重新学习。",
+    openTitle: "打开文件",
+    openBody: "选择一个本地文件开始工作",
+    saveTitle: "保存恢复点",
+    saveBody: "为当前源内容建立可恢复版本",
+    agentTitle: "规划 AI 修改",
+    agentBody: "让 Agent 提出改动，但暂不写入",
+    tried: "已完成",
+    skipTutorial: "稍后学习",
+    readyEyebrow: "准备好了",
+    readyTitle: "你的工作区，由你掌控。",
+    readyBody: "先阅读保存在工作区里的 Rune 指南、导入自己的文件，或者打开完整示例。",
+    guide: "打开本地指南",
+    guideBody: "从一份可编辑的 Markdown 说明开始",
+    import: "导入我的文件",
+    importBody: "文件会先在当前设备上读取",
+    sample: "探索示例工作区",
+    sampleBody: "查看数据到报告与演示的完整链路",
+  },
+  en: {
+    skip: "Skip",
+    close: "Close tutorial",
+    welcomeEyebrow: "Welcome to Rune",
+    welcomeTitle: "Turn intent into verifiable work.",
+    welcomeBody: "Documents, data, charts, and presentations work together in one local-first space. Source stays readable, and you decide every AI write.",
+    begin: "Set up Rune",
+    local: "Local first",
+    review: "Review before write",
+    live: "Live compilation",
+    languageEyebrow: "Language",
+    languageTitle: "Choose your Rune language",
+    languageBody: "We made a recommendation from this device. You can change it later from Help.",
+    recommended: "System recommendation",
+    continue: "Continue",
+    shortcutEyebrow: "Quick start",
+    shortcutTitle: "Try three shortcuts yourself",
+    shortcutBody: "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.",
+    openTitle: "Open a file",
+    openBody: "Choose a local file to begin",
+    saveTitle: "Save a checkpoint",
+    saveBody: "Capture a recoverable source version",
+    agentTitle: "Plan an AI change",
+    agentBody: "Ask the Agent to propose, without writing",
+    tried: "Done",
+    skipTutorial: "Learn later",
+    readyEyebrow: "Ready",
+    readyTitle: "Your workspace, under your control.",
+    readyBody: "Read the Rune guide stored in your workspace, import your own file, or explore the complete sample.",
+    guide: "Open local guide",
+    guideBody: "Start with an editable Markdown reference",
+    import: "Import my file",
+    importBody: "The file is read on this device first",
+    sample: "Explore sample workspace",
+    sampleBody: "See the full data-to-report-and-deck chain",
+  },
+} as const;
+
+function ShortcutKey({ children }: { children: ReactNode }) {
+  return <kbd>{children}</kbd>;
+}
+
+export function WelcomeExperience({
+  detectedLocale,
+  locale,
+  startAt = "welcome",
+  dismissible = false,
+  onLocaleChange,
+  onComplete,
+  onDismiss,
+}: {
+  detectedLocale: RuneLocale;
+  locale: RuneLocale;
+  startAt?: WelcomeStep;
+  dismissible?: boolean;
+  onLocaleChange: (locale: RuneLocale) => void;
+  onComplete: (action: WelcomeAction) => void;
+  onDismiss?: () => void;
+}) {
+  const [step, setStep] = useState<WelcomeStep>(startAt);
+  const [completedShortcuts, setCompletedShortcuts] = useState<ShortcutId[]>([]);
+  const text = copy[locale];
+  const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+  const modifier = isMac ? "⌘" : "Ctrl";
+  const steps = useMemo<WelcomeStep[]>(() => ["welcome", "language", "shortcuts", "ready"], []);
+
+  useEffect(() => {
+    if (step !== "shortcuts") return;
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      const modified = event.metaKey || event.ctrlKey;
+      let shortcut: ShortcutId | null = null;
+      if (modified && event.key.toLowerCase() === "o") shortcut = "open";
+      if (modified && event.key.toLowerCase() === "s") shortcut = "save";
+      if (modified && event.key === "Enter") shortcut = "agent";
+      if (!shortcut) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setCompletedShortcuts((current) => current.includes(shortcut) ? current : [...current, shortcut]);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [step]);
+
+  const shortcutRows = [
+    { id: "open" as const, title: text.openTitle, body: text.openBody, keyName: "O" },
+    { id: "save" as const, title: text.saveTitle, body: text.saveBody, keyName: "S" },
+    { id: "agent" as const, title: text.agentTitle, body: text.agentBody, keyName: "↵" },
+  ];
+
+  return (
+    <div className="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+      <section className="welcome-window">
+        <header className="welcome-chrome">
+          <div className="welcome-traffic" aria-hidden="true"><span /><span /><span /></div>
+          <div className="welcome-progress" aria-label={String(steps.indexOf(step) + 1) + " of " + String(steps.length)}>
+            {steps.map((item) => (
+              <span
+                className={item === step ? "active" : steps.indexOf(item) < steps.indexOf(step) ? "complete" : ""}
+                key={item}
+              />
+            ))}
+          </div>
+          {dismissible ? (
+            <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}><X /></button>
+          ) : (
+            <button type="button" onClick={() => setStep("ready")}>{text.skip}</button>
+          )}
+        </header>
+
+        <div className={"welcome-page welcome-" + step}>
+          {step === "welcome" && (
+            <>
+              <div className="rune-welcome-symbol" aria-hidden="true"><span>R</span></div>
+              <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
+              <h1 id="welcome-title">{text.welcomeTitle}</h1>
+              <p>{text.welcomeBody}</p>
+              <div className="welcome-promises" aria-label="Rune principles">
+                <span><ShieldCheck />{text.local}</span>
+                <span><Check />{text.review}</span>
+                <span><Sparkles />{text.live}</span>
+              </div>
+              <button className="welcome-primary" type="button" onClick={() => setStep("language")}>{text.begin}<ArrowRight /></button>
+            </>
+          )}
+
+          {step === "language" && (
+            <>
+              <div className="welcome-icon-disc"><Globe2 /></div>
+              <span className="welcome-eyebrow">{text.languageEyebrow}</span>
+              <h1 id="welcome-title">{text.languageTitle}</h1>
+              <p>{text.languageBody}</p>
+              <div className="language-options" role="radiogroup" aria-label={text.languageTitle}>
+                {(["zh-CN", "en"] as const).map((option) => (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={locale === option}
+                    className={locale === option ? "selected" : ""}
+                    onClick={() => onLocaleChange(option)}
+                    key={option}
+                  >
+                    <span className="language-monogram">{option === "zh-CN" ? "文" : "A"}</span>
+                    <span>
+                      <strong>{localeDisplayName(option)}</strong>
+                      <small>{option === detectedLocale ? text.recommended : option === "zh-CN" ? "Chinese (Simplified)" : "英语"}</small>
+                    </span>
+                    {locale === option && <Check />}
+                  </button>
+                ))}
+              </div>
+              <button className="welcome-primary" type="button" onClick={() => setStep("shortcuts")}>{text.continue}<ArrowRight /></button>
+            </>
+          )}
+
+          {step === "shortcuts" && (
+            <>
+              <div className="welcome-icon-disc"><Keyboard /></div>
+              <span className="welcome-eyebrow">{text.shortcutEyebrow}</span>
+              <h1 id="welcome-title">{text.shortcutTitle}</h1>
+              <p>{text.shortcutBody}</p>
+              <div className="shortcut-lessons">
+                {shortcutRows.map((item) => {
+                  const complete = completedShortcuts.includes(item.id);
+                  return (
+                    <div className={complete ? "complete" : ""} key={item.id}>
+                      <span className="shortcut-status">{complete ? <Check /> : <Command />}</span>
+                      <span><strong>{item.title}</strong><small>{complete ? text.tried : item.body}</small></span>
+                      <span className="shortcut-keys"><ShortcutKey>{modifier}</ShortcutKey><ShortcutKey>{item.keyName}</ShortcutKey></span>
+                    </div>
+                  );
+                })}
+              </div>
+              <button className="welcome-primary" type="button" onClick={() => setStep("ready")}>
+                {completedShortcuts.length === shortcutRows.length ? text.continue : text.skipTutorial}<ArrowRight />
+              </button>
+            </>
+          )}
+
+          {step === "ready" && (
+            <>
+              <div className="welcome-icon-disc ready"><Sparkles /></div>
+              <span className="welcome-eyebrow">{text.readyEyebrow}</span>
+              <h1 id="welcome-title">{text.readyTitle}</h1>
+              <p>{text.readyBody}</p>
+              <div className="welcome-actions">
+                <button type="button" className="featured" onClick={() => onComplete("guide")}><span><FileText /></span><span><strong>{text.guide}</strong><small>{text.guideBody}</small></span><ArrowRight /></button>
+                <button type="button" onClick={() => onComplete("import")}><span><FolderOpen /></span><span><strong>{text.import}</strong><small>{text.importBody}</small></span><ArrowRight /></button>
+                <button type="button" onClick={() => onComplete("sample")}><span><Sparkles /></span><span><strong>{text.sample}</strong><small>{text.sampleBody}</small></span><ArrowRight /></button>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  BookOpen,
   Bot,
   Check,
   CheckCircle2,
@@ -35,10 +36,12 @@ import {
 } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactPreview } from "./artifact-previews";
+import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
 import { TransactionReviewMap } from "./transaction-review-map";
+import { WelcomeExperience, type WelcomeAction } from "./welcome-experience";
 import {
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
@@ -128,6 +131,15 @@ import {
   type SourceSelection,
 } from "../lib/source-selection";
 import { formatInteger } from "../lib/number-format";
+import {
+  createRuneGuideArtifact,
+  detectPreferredLocale,
+  normalizeRuneLocale,
+  RUNE_GUIDE_ID,
+  RUNE_LOCALE_STORAGE_KEY,
+  RUNE_ONBOARDING_STORAGE_KEY,
+  type RuneLocale,
+} from "../lib/localization";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -458,6 +470,12 @@ export function RuneWorkbench() {
   const [directoryHandle, setDirectoryHandle] = useState<DirectoryWorkspaceHandle | null>(null);
   const [directoryState, setDirectoryState] = useState<"disconnected" | "syncing" | "connected" | "error">("disconnected");
   const [notice, setNotice] = useState("Local workspace ready");
+  const [locale, setLocale] = useState<RuneLocale>("en");
+  const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [welcomeStartAt, setWelcomeStartAt] = useState<"welcome" | "language">("welcome");
+  const [welcomeDismissible, setWelcomeDismissible] = useState(false);
+  const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
@@ -603,6 +621,11 @@ export function RuneWorkbench() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
+        const detected = detectPreferredLocale(navigator.languages?.length ? navigator.languages : [navigator.language]);
+        const storedLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY));
+        setDetectedLocale(detected);
+        setLocale(storedLocale ?? detected);
+        setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored) as { artifacts?: unknown; selectedId?: unknown; checkpoints?: unknown };
@@ -617,6 +640,10 @@ export function RuneWorkbench() {
           setNotice("Restored the latest device draft");
         }
       } catch {
+        const detected = detectPreferredLocale(navigator.languages?.length ? navigator.languages : [navigator.language]);
+        setDetectedLocale(detected);
+        setLocale(detected);
+        setWelcomeOpen(true);
         setNotice("Started a fresh local workspace");
       } finally {
         setHydrated(true);
@@ -642,7 +669,21 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") return;
+      if (!(event.metaKey || event.ctrlKey)) return;
+      if (event.key.toLowerCase() === "o") {
+        event.preventDefault();
+        importRef.current?.click();
+        return;
+      }
+      if (event.key.toLowerCase() === "w") {
+        event.preventDefault();
+        setEmptyWorkspace(true);
+        setHistoryOpen(false);
+        setSourceSelection(null);
+        setNotice("Closed the current file — every source remains in the workspace");
+        return;
+      }
+      if (event.key.toLowerCase() !== "s") return;
       event.preventDefault();
       const artifact = artifacts.find((item) => item.id === selectedId) ?? artifacts[0];
       if (!artifact) return;
@@ -672,10 +713,78 @@ export function RuneWorkbench() {
   function selectArtifact(id: string) {
     setSaveState("saving");
     setSelectedId(id);
+    setEmptyWorkspace(false);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setAgentError("");
     setNotice("Switched artifact context");
+  }
+
+  function closeCurrentArtifact() {
+    setEmptyWorkspace(true);
+    setHistoryOpen(false);
+    setSourceSelection(null);
+    if (agentScope === "selection") setAgentScope("artifact");
+    setAgentError("");
+    setNotice("Closed the current file — every source remains safely in the workspace");
+  }
+
+  function setInterfaceLocale(nextLocale: RuneLocale) {
+    const currentDefaultGuide = createRuneGuideArtifact(locale);
+    const nextGuide = createRuneGuideArtifact(nextLocale);
+    setLocale(nextLocale);
+    try {
+      localStorage.setItem(RUNE_LOCALE_STORAGE_KEY, nextLocale);
+    } catch {
+      // The in-memory choice still applies when browser preference storage is unavailable.
+    }
+    setArtifacts((current) => current.map((artifact) => (
+      artifact.id === RUNE_GUIDE_ID && artifact.source === currentDefaultGuide.source
+        ? nextGuide
+        : artifact
+    )));
+  }
+
+  function ensureLocalGuide(nextLocale = locale) {
+    const guide = createRuneGuideArtifact(nextLocale);
+    setArtifacts((current) => current.some((artifact) => artifact.id === RUNE_GUIDE_ID)
+      ? current
+      : [guide, ...current]);
+    return guide;
+  }
+
+  function finishWelcome(action: WelcomeAction) {
+    const guide = ensureLocalGuide();
+    try {
+      localStorage.setItem(RUNE_ONBOARDING_STORAGE_KEY, "complete");
+      localStorage.setItem(RUNE_LOCALE_STORAGE_KEY, locale);
+    } catch {
+      // Onboarding remains complete for this session even without preference storage.
+    }
+    setWelcomeOpen(false);
+    setWelcomeDismissible(true);
+    setWelcomeStartAt("welcome");
+    if (action === "guide") {
+      setSelectedId(guide.id);
+      setEmptyWorkspace(false);
+      setNotice("Opened the editable Rune guide stored in this workspace");
+      return;
+    }
+    if (action === "import") {
+      setEmptyWorkspace(true);
+      setNotice("Choose one or more files — Rune reads them locally before review");
+      window.setTimeout(() => importRef.current?.click(), 0);
+      return;
+    }
+    setSelectedId(artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? guide.id);
+    setEmptyWorkspace(false);
+    setNotice("Sample workspace ready · every result stays linked to readable source");
+  }
+
+  function openWelcomeGuide() {
+    setWelcomeStartAt("welcome");
+    setWelcomeDismissible(true);
+    setWelcomeOpen(true);
   }
 
   function toggleWorkspaceContextPin(artifactId: string) {
@@ -1346,6 +1455,7 @@ export function RuneWorkbench() {
     setSaveState("saving");
     setArtifacts(defaults);
     setSelectedId(defaults[0].id);
+    setEmptyWorkspace(false);
     setWorkspacePinnedArtifactIds([]);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
@@ -1433,6 +1543,7 @@ export function RuneWorkbench() {
     }
     setArtifacts(nextArtifacts);
     setSelectedId(prepared.artifact.id);
+    setEmptyWorkspace(false);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setHistoryOpen(false);
@@ -1447,41 +1558,57 @@ export function RuneWorkbench() {
   }
 
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const files = [...(event.target.files ?? [])];
     event.target.value = "";
-    if (!file || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingExport || exportState !== "idle") return;
-    const officeFile = OFFICE_IMPORT_PATTERN.test(file.name);
-    const limit = officeFile ? MAX_OFFICE_IMPORT_BYTES : MAX_SOURCE_IMPORT_BYTES;
-    if (file.size > limit) {
-      setNotice(officeFile ? "Office import is limited to 12 MB per file" : "Source import is limited to 2 MB per file");
+    await prepareFileImport(files);
+  }
+
+  async function prepareFileImport(files: File[]) {
+    if (!files.length || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingExport || exportState !== "idle") return;
+    if (files.length > 20) {
+      setNotice("Import up to 20 files in one review transaction");
+      return;
+    }
+    const oversized = files.find((file) => file.size > (
+      OFFICE_IMPORT_PATTERN.test(file.name) ? MAX_OFFICE_IMPORT_BYTES : MAX_SOURCE_IMPORT_BYTES
+    ));
+    if (oversized) {
+      setNotice(OFFICE_IMPORT_PATTERN.test(oversized.name)
+        ? oversized.name + " exceeds the 12 MB Office import limit"
+        : oversized.name + " exceeds the 2 MB source import limit");
       return;
     }
     const baseArtifacts = artifacts;
+    const sourceName = files.length === 1 ? files[0].name : String(files.length) + " local files";
     importInFlightRef.current = true;
     setImportState("reading");
     setImportError("");
-    setNotice(officeFile ? `Converting ${file.name} locally…` : `Reading ${file.name} locally…`);
+    setNotice(files.length === 1 ? "Reading " + files[0].name + " locally…" : "Reading " + String(files.length) + " files locally…");
     try {
-      let incoming: WorkspaceArtifact[];
-      let warnings: string[] = [];
-      if (officeFile) {
-        const { convertOfficeFile } = await import("../lib/office-import");
-        const result = convertOfficeFile(file.name, await file.arrayBuffer());
-        incoming = result.artifacts;
-        warnings = result.warnings;
-      } else {
-        const source = await file.text();
-        const artifact = detectArtifact(file.name, source);
-        if (!artifact) throw new Error("Choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, DOCX, XLSX, or PPTX.");
-        incoming = [artifact];
+      const incoming: WorkspaceArtifact[] = [];
+      const warnings: string[] = [];
+      for (const file of files) {
+        if (OFFICE_IMPORT_PATTERN.test(file.name)) {
+          const { convertOfficeFile } = await import("../lib/office-import");
+          const result = convertOfficeFile(file.name, await file.arrayBuffer());
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
+        const artifact = detectArtifact(file.name, await file.text());
+        if (!artifact) {
+          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, DOCX, XLSX, or PPTX.");
+        }
+        incoming.push(artifact);
       }
-      const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, file.name, warnings);
+      const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, sourceName, warnings);
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
       setPendingImport(prepared.review);
-      setNotice(`Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} before importing ${file.name}`);
+      setNotice("Review " + String(prepared.review.importedArtifacts.length) + " generated "
+        + (prepared.review.importedArtifacts.length === 1 ? "source" : "sources") + " before importing " + sourceName);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Rune could not import that file");
+      setNotice(error instanceof Error ? error.message : "Rune could not import those files");
     } finally {
       importInFlightRef.current = false;
       setImportState("idle");
@@ -1518,6 +1645,7 @@ export function RuneWorkbench() {
     const warningCount = pendingImport.warnings.length;
     setArtifacts(pendingImport.nextArtifacts);
     setSelectedId(firstImported.id);
+    setEmptyWorkspace(false);
     setSourceSelection(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setSaveState("saved");
@@ -1656,6 +1784,9 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? "Saved on device" : saveState === "error" ? "Storage full" : "Saving"}</span>
           </div>
+          <button className="icon-button help-button" onClick={openWelcomeGuide} aria-label="Open Rune welcome and guide" title="Welcome & guide">
+            <BookOpen />
+          </button>
           <button
             className="button ghost-button"
             onClick={openNewArtifact}
@@ -1680,7 +1811,7 @@ export function RuneWorkbench() {
               <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing"} aria-label={`Push source files to ${directoryHandle.name}`} title="Push workspace files"><Save /></button>
             </>
           )}
-          {selectedOfficeExportType && (
+          {!emptyWorkspace && selectedOfficeExportType && (
             <button
               className="icon-button"
               onClick={() => void prepareExport("office")}
@@ -1691,7 +1822,7 @@ export function RuneWorkbench() {
               {exportState === "office" ? <LoaderCircle className="agent-spinner" /> : <FileOutput />}
             </button>
           )}
-          {selectedHtmlExport && (
+          {!emptyWorkspace && selectedHtmlExport && (
             <button
               className="icon-button"
               onClick={() => void prepareExport("html")}
@@ -1702,7 +1833,7 @@ export function RuneWorkbench() {
               {exportState === "html" ? <LoaderCircle className="agent-spinner" /> : <FileCode2 />}
             </button>
           )}
-          {selectedPdfExport && (
+          {!emptyWorkspace && selectedPdfExport && (
             <button
               className="icon-button"
               onClick={() => void prepareExport("pdf")}
@@ -1713,10 +1844,12 @@ export function RuneWorkbench() {
               {exportState === "pdf" ? <LoaderCircle className="agent-spinner" /> : <FileText />}
             </button>
           )}
-          <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
-            <Download />
-          </button>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
+          {!emptyWorkspace && (
+            <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`Download ${selectedArtifact.name}`} title="Download source">
+              <Download />
+            </button>
+          )}
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
         </div>
       </header>
 
@@ -1819,6 +1952,19 @@ export function RuneWorkbench() {
           </aside>
         ))}
 
+        {emptyWorkspace ? (
+          <EmptyWorkspace
+            locale={locale}
+            onChooseFiles={() => importRef.current?.click()}
+            onCreate={openNewArtifact}
+            onDropFiles={(files) => void prepareFileImport(files)}
+            onOpenSample={() => {
+              const sampleId = artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? artifacts[0].id;
+              selectArtifact(sampleId);
+            }}
+          />
+        ) : (
+          <>
         <section className="source-pane" aria-label="Source editor">
           <header className="pane-header">
             <div className="pane-title">
@@ -1841,6 +1987,12 @@ export function RuneWorkbench() {
                 aria-label="Restore latest different checkpoint"
                 title="Restore latest checkpoint"
               ><Undo2 /></button>
+              <button
+                className="icon-button small close-file-button"
+                onClick={closeCurrentArtifact}
+                aria-label="Close current file"
+                title="Close file (⌘ W)"
+              ><X /></button>
             </div>
           </header>
 
@@ -2094,11 +2246,13 @@ export function RuneWorkbench() {
             </div>
           </div>
         </section>
+          </>
+        )}
       </div>
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.33</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.34</span></div>
       </footer>
 
       {newArtifactOpen && (
@@ -2130,6 +2284,17 @@ export function RuneWorkbench() {
           error={exportError}
           onCancel={cancelExport}
           onConfirm={confirmExport}
+        />
+      )}
+      {welcomeOpen && hydrated && (
+        <WelcomeExperience
+          detectedLocale={detectedLocale}
+          locale={locale}
+          startAt={welcomeStartAt}
+          dismissible={welcomeDismissible}
+          onLocaleChange={setInterfaceLocale}
+          onComplete={finishWelcome}
+          onDismiss={() => setWelcomeOpen(false)}
         />
       )}
     </main>
