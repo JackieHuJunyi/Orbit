@@ -48,7 +48,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Open Row 1 · Q2 Revenue in regional-revenue\.csv as Agent context/);
   assert.match(html, /Click a label or bar to open its exact source cell/);
   assert.match(html, /Running query source locally: regional-analysis\.sql/);
-  assert.match(html, /Click a section for Agent/);
+  assert.match(html, /Select or edit one exact section/);
   assert.match(html, /data-preview-source-target="document-section"/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /SQL metrics/);
@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.35/);
+  assert.match(html, /Rune v0\.36/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -169,6 +169,9 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /selected from preview · Selection Agent ready/);
   assert.match(clientSource, /click a cell for exact Agent context/);
   assert.match(clientSource, /press Enter or use the pencil to edit a proven scalar cell/);
+  assert.match(clientSource, /Select or edit one exact section/);
+  assert.match(clientSource, /One revision-bound section.*live bindings stay fixed.*save writes canonical source/);
+  assert.match(clientSource, /Verifying .* against the complete workspace/);
   assert.match(clientSource, /Verifying .* against every live Data consumer/);
   assert.match(clientSource, /row number for the full record/);
   assert.match(clientSource, /Select the exact/);

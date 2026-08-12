@@ -1053,7 +1053,17 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 
 第一种真正的右侧编辑只开放给 canonical Data 的可证明 scalar cell。点击仍做左右同步定位；Enter 或铅笔进入 typed editor。CSV 使用自动 scalar typing，JSON 必须明确 Text、Number、Boolean 或 Empty，嵌套对象/数组保持只读。提交后先证明只替换该 cell 的精确 source token，再完整 parse、验证 workspace、执行所有受影响的 Query/Chart、创建恢复点并单次持久化。任何旧 revision、非法类型、no-op、超长值或 downstream 错误都不改变 source。
 
-这一步验证了“双向编辑 = 受控 operation 编译回同一 source”的产品方向，但没有宣称所有预览可编辑。Document block、Deck block 和 Chart property 仍按 6.13 的顺序迭代；Query result 与跨 Artifact Chart datum 当前只负责带来源定位，不能借 lineage 获得写权限。
+这一步验证了“双向编辑 = 受控 operation 编译回同一 source”的产品方向，但没有宣称所有预览可编辑。Document block 在 v0.36 继续落地；Deck block 和 Chart property 仍按 6.13 的顺序迭代。Query result 与跨 Artifact Chart datum 当前只负责带来源定位，不能借 lineage 获得写权限。
+
+### 6.15 v0.36 Document section 受控编辑
+
+Document 右侧的每个可证明 section 现在同时有“选择 source”和“编辑 section”两个动作。编辑界面并排展示有界 Markdown 草稿与安全实时预览，让普通用户在成品侧完成标题、段落、列表、引用、表格等 section 内修改；它不是把整张文档 DOM 设为 contenteditable，也不会在输入过程中制造第二份持久文档。
+
+Save 必须重新证明 artifact id、source revision、target id/index/label 与 UTF-16 start/end 全部一致。标题型 section 只能保留一个位于开头且层级不变的可见标题，允许改标题文字和正文；preamble 或无标题全文必须继续无标题。代码围栏中的 `#` 不算结构。空内容、no-op、超过 16,000 字符、增加或删除标题、改变标题层级、改变任何 `{{ ... }}` live binding 或越出目标 range 都失败关闭。
+
+编译完成后 Rune 构造完整 proposed workspace，执行 adapter 与 dependency validation，核对期间 workspace revision 未变化，为旧 Document 建立恢复点并单次写入设备。成功后左侧精确选择新 section、右侧标记同一 section，并进入 Selection Agent；存储失败或任何验证错误时两侧 source 都保持原样。结构调整和依赖修改继续在 canonical source 或有审核的 Agent 流程完成。
+
+这个阶段仍不是完整 WYSIWYG。当前 section editor 暴露 Markdown 草稿，是从“只能点回 source”走向“可在成品侧安全写入”的过渡层；下一轮用户测试要观察普通用户是否能理解 section、是否需要块级格式工具条，以及 live draft 是否比直接编辑 source 更快。若证据成立，再为常用 paragraph/list/table block 增加受限控件；不先实现不可逆的任意富文本 round-trip。
 
 ---
 

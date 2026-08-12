@@ -1726,3 +1726,19 @@ v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装�
 单个 cell 看起来是局部写入，但它可能改变 Query、metric、Chart 和成品，所以不能在 editor blur 时立刻落盘。Rune 先基于 captured workspace revision 构造完整 proposed workspace，运行静态 adapter/dependency validation，再执行受影响 Query 并验证所有相关 Chart；过程中 source editor、Import、Export 和 Agent 暂停新的写入。只有全部通过，才为旧 Data source 建 checkpoint、执行一次 device persistence，并同时更新 source、preview、精确选择和 Selection Agent context。任何错误都把信息留在 cell editor 内，canonical source 保持 byte-for-byte 不变。
 
 v0.35 的限制是有意的：Query result 和 Chart datum 即使具有跨 Artifact provenance，也只导航到 Data，不直接写；嵌套 JSON 只定位不编辑；Document、Deck 和 Chart 视觉写入还未开放。下一阶段先设计 Markdown heading/block operation 与 preview block identity，沿用相同的 stale-range、outside-boundary、whole-workspace、checkpoint 和 atomic persistence 合同，而不是把 document preview 设为 contenteditable。这样每扩展一种右侧交互，Rune 增加的是一个可测试 compiler operation，而不是一套新的隐藏文档模型。
+
+## 41. Document 双向编辑不是富文本反向猜测，而是 section capability
+
+Data cell 能依靠 CSV/JSON lexer 找到一个 scalar token，Document 却没有天然的“一个可见段落等于一个连续 Markdown range”保证。ReactMarkdown 可能把引用、列表、表格、链接定义和 fenced code 组合成不同 DOM；compiled metric 与 Chart 又会把 source token 投影成运行结果。如果直接监听右侧 DOM 或使用 contenteditable，Rune 必须从浏览器重写后的 HTML 反推 Markdown，空白、列表编号、引用层级和 binding 很快会漂移。v0.36 因而没有承诺任意 WYSIWYG，而是先把已经可证明的 `document-section` target 提升成一种有界写 capability。
+
+一个 section target 来自当前 canonical revision 的 fence-aware heading scanner。preamble 是第一个可见标题之前的连续内容；每个标题 section 从该 ATX heading 开始，到下一个可见标题之前结束；没有标题时全文是一个 body。代码围栏中的 `#` 永远不创建 section。target 包含 artifact、id、index、label 和 UTF-16 start/end，但仍只在当前渲染中存在。为了不把四空格 code block 的缩进当成“可清理空白”，Document target 只移除边界上的完整空白行，不再逐字符 trim 内容。
+
+右侧交互保持两个动作：点击 section 名称仍然执行精确 source 定位并进入 Selection Agent；旁边的铅笔打开 section editor。编辑器左侧是最多 16,000 字符的 Markdown 草稿，右侧通过 Rune 现有安全 compiler 即时展示 draft preview。草稿只是组件内的临时输入，不进 localStorage、checkpoint、folder 或 workspace graph；取消立即丢弃。这里仍展示 Markdown，是有意的过渡：它让用户在成品侧工作并获得实时反馈，却不伪装已经解决所有富文本 round-trip。
+
+Save 会从零重做授权证明，而不信任打开 editor 时缓存的 fragment。Rune 要求当前 artifact source 与 UI revision 相同，再用 target id、index、label、start/end 找到完全一致的 section。标题型 section 的 draft 必须仍只有一个位于 offset 0 的可见标题，标题层级必须不变；标题文字和正文可以修改。preamble 或无标题全文必须继续无标题。这样 section rename 是局部内容操作，而增加/删除 section、改变 hierarchy 仍是显式结构操作。空 draft、no-op、超限、stale target、额外标题、缺失标题和越界替换全部失败关闭。
+
+live binding 需要更严格的权限。视觉 editor 中出现的每个 `{{ ... }}` token 必须与原 section 按顺序 byte-for-byte 相同；用户可以改它周围的论述，却不能在一个看似文本编辑器里悄悄新增、删除或重定向 metric/Chart dependency。依赖变更继续通过 canonical source 或 Agent review，让 transaction map 和运行时证据有清楚入口。这也避免 Document-only patch 因为临时换到另一张 Query-backed Chart 而需要隐藏启动 DuckDB。
+
+compiler 只用 replacement 替换 exact range，并再次证明 prefix 与 suffix 完全不变；随后通过完整 proposed workspace 的 adapter、metric、Chart 与 dependency validation。共享 visual-commit pipeline 捕获全工作区 revision，暂停 source、Import、Export 和 Agent 并发写入，为旧 Document 建 manual checkpoint，再执行一次 device persistence。只有成功后 React workspace 才切换，新 section range 同时成为左侧 textarea selection、右侧 active target 和 Selection Agent capability；失败时旧 source 和恢复历史都不改变。Data 与 Document 共用这一 commit pipeline，为下一步 Deck slide 和 Chart property 避免复制一套不一致事务。
+
+v0.36 仍没有 paragraph-level DOM selection、拖拽重排 section、可视化表格结构编辑、图片 block 或多人光标。下一步不是立刻引入通用 rich-text framework，而是先观察 section editor 的三个事实：普通用户是否理解 section 名称，是否能在 draft preview 中更快完成真实报告修改，是否高频需要 bold/list/link 等可逆 formatting controls。只有这些证据成立，才为单个 Markdown AST block 增加稳定 identity 与 typed operation；否则保留 section/source 两级就比维护第三套文档模型更低成本、更可信。

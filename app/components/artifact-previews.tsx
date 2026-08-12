@@ -52,6 +52,12 @@ import {
   type VisualDataCellEditInput,
   type VisualDataCellValueType,
 } from "../lib/visual-data-edit";
+import {
+  MAX_VISUAL_DOCUMENT_SECTION_CHARS,
+  canVisualEditDocumentSection,
+  visualDocumentSectionDraft,
+  type VisualDocumentSectionEditInput,
+} from "../lib/visual-document-edit";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (
@@ -64,6 +70,12 @@ export type DataCellEditHandler = (
   artifact: WorkspaceArtifact,
   target: DataCellPreviewSourceTarget,
   input: VisualDataCellEditInput,
+) => Promise<string | null>;
+
+export type DocumentSectionEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: PreviewSourceTarget,
+  input: VisualDocumentSectionEditInput,
 ) => Promise<string | null>;
 
 type QueryRuntimeEntry =
@@ -444,6 +456,7 @@ function DocumentPreview({
   targets,
   activeSelection,
   onTargetSource,
+  onEditDocumentSection,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -451,38 +464,148 @@ function DocumentPreview({
   targets: PreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  onEditDocumentSection?: DocumentSectionEditHandler;
 }) {
   const compiled = compileArtifactSource(
     artifact.source,
     artifacts,
     readyQuerySnapshots(queryRuntime),
   );
+  const [editingSection, setEditingSection] = useState<{
+    targetId: string;
+    artifactId: string;
+    sourceRevision: string;
+    draft: string;
+    error: string;
+    submitting: boolean;
+  } | null>(null);
+  const editingTarget = editingSection?.artifactId === artifact.id
+    && editingSection.sourceRevision === artifact.source
+    ? targets.find((target) => target.id === editingSection.targetId)
+    : undefined;
+  const draftSource = editingSection?.draft ?? "";
+  const compiledDraft = compileArtifactSource(
+    draftSource,
+    artifacts,
+    readyQuerySnapshots(queryRuntime),
+  );
+
+  function beginSectionEdit(target: PreviewSourceTarget) {
+    if (!onEditDocumentSection || !canVisualEditDocumentSection(artifact, target)) return;
+    setEditingSection({
+      targetId: target.id,
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      draft: visualDocumentSectionDraft(artifact, target),
+      error: "",
+      submitting: false,
+    });
+  }
+
+  async function submitSectionEdit(target: PreviewSourceTarget) {
+    if (!editingSection || !onEditDocumentSection) return;
+    setEditingSection((current) => current ? { ...current, error: "", submitting: true } : current);
+    const error = await onEditDocumentSection(artifact, target, { draft: editingSection.draft });
+    if (error) {
+      setEditingSection((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setEditingSection(null);
+  }
+
   return (
     <div className="document-stage">
       <article className="document-paper">
         <div className="paper-meta">
           <span>Rune document</span>
-          <span>{onTargetSource && targets.length ? "Click a section for Agent" : "Live compilation"}</span>
+          <span>{onEditDocumentSection && targets.length ? "Select or edit one exact section" : onTargetSource && targets.length ? "Click a section for Agent" : "Live compilation"}</span>
         </div>
         {onTargetSource && targets.length > 0 && (
-          <nav className="document-targets" aria-label="Select a document section as Agent context">
+          <nav className="document-targets" aria-label="Select or edit a document section">
             {targets.map((target) => {
               const active = previewTargetIsActive(target, activeSelection);
+              const editable = Boolean(onEditDocumentSection && canVisualEditDocumentSection(artifact, target));
+              const editing = editingTarget?.id === target.id;
               return (
-                <button
-                  className={active ? "active" : ""}
-                  data-preview-source-target={target.kind}
-                  key={target.id}
-                  type="button"
-                  aria-label={`Select ${target.label} in canonical source for Agent context`}
-                  aria-pressed={active}
-                  onClick={() => onTargetSource(artifact, target)}
-                >
-                  <MousePointer2 aria-hidden="true" /> <span>{target.label}</span>
-                </button>
+                <span className={`document-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()} key={target.id}>
+                  <button
+                    className="document-target-select"
+                    data-preview-source-target={target.kind}
+                    type="button"
+                    aria-label={`Select ${target.label} in canonical source for Agent context`}
+                    aria-pressed={active}
+                    title={`Select exact ${target.label} source`}
+                    onClick={() => onTargetSource(artifact, target)}
+                  >
+                    <MousePointer2 aria-hidden="true" /> <span>{target.label}</span>
+                  </button>
+                  {editable && (
+                    <button
+                      className="document-target-edit"
+                      type="button"
+                      aria-label={`Edit ${target.label}`}
+                      title={`Edit exact ${target.label} section`}
+                      onClick={() => beginSectionEdit(target)}
+                    >
+                      <PencilLine aria-hidden="true" />
+                    </button>
+                  )}
+                </span>
               );
             })}
           </nav>
+        )}
+        {editingSection && editingTarget && (
+          <form
+            className="visual-document-editor"
+            onSubmit={(event) => { event.preventDefault(); void submitSectionEdit(editingTarget); }}
+          >
+            <header>
+              <div><span>Editing exact section</span><strong>{editingTarget.label}</strong></div>
+              <small>{editingSection.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString("en-US")}</small>
+            </header>
+            <div className="visual-document-editor-grid">
+              <label>
+                <span>Markdown section</span>
+                <textarea
+                  autoFocus
+                  aria-label={`Edit ${editingTarget.label} Markdown section`}
+                  value={editingSection.draft}
+                  disabled={editingSection.submitting}
+                  maxLength={MAX_VISUAL_DOCUMENT_SECTION_CHARS}
+                  spellCheck
+                  onChange={(event) => setEditingSection((current) => current ? { ...current, draft: event.target.value, error: "" } : current)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setEditingSection(null);
+                    } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                      event.preventDefault();
+                      void submitSectionEdit(editingTarget);
+                    }
+                  }}
+                />
+              </label>
+              <section aria-label={`Draft preview for ${editingTarget.label}`}>
+                <span>Draft preview</span>
+                <div className="visual-document-draft markdown-body">
+                  {draftSource.trim()
+                    ? <MarkdownSource source={compiledDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} />
+                    : <p className="visual-document-empty">This section cannot be empty.</p>}
+                </div>
+              </section>
+            </div>
+            {editingSection.error && <p className="visual-document-error" role="alert">{editingSection.error}</p>}
+            <footer>
+              <p>One revision-bound section · live bindings stay fixed · save writes canonical source</p>
+              <div>
+                <button type="button" disabled={editingSection.submitting} onClick={() => setEditingSection(null)}><X />Cancel</button>
+                <button type="submit" disabled={editingSection.submitting || !editingSection.draft.trim()}>
+                  {editingSection.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save section
+                </button>
+              </div>
+            </footer>
+          </form>
         )}
         <div className="markdown-body">
           <MarkdownSource source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />
@@ -942,12 +1065,14 @@ export function ArtifactPreview({
   activeSelection,
   onTargetSource,
   onEditDataCell,
+  onEditDocumentSection,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
+  onEditDocumentSection?: DocumentSectionEditHandler;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
@@ -961,7 +1086,7 @@ export function ArtifactPreview({
     return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
   }
   const targets = derivePreviewSourceTargets(artifact);
-  if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
+  if (artifact.kind === "document") return <DocumentPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} />;
   if (artifact.kind === "query") {
     const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
     return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;

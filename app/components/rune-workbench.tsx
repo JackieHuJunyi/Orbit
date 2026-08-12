@@ -35,7 +35,11 @@ import {
   X,
 } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArtifactPreview, type DataCellEditHandler } from "./artifact-previews";
+import {
+  ArtifactPreview,
+  type DataCellEditHandler,
+  type DocumentSectionEditHandler,
+} from "./artifact-previews";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
@@ -146,6 +150,7 @@ import {
   type RuneModelMode,
 } from "../lib/model-preference";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
+import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -847,31 +852,45 @@ export function RuneWorkbench() {
     if (pendingChange) setPendingChange(null);
   }
 
-  const commitVisualDataCellEdit: DataCellEditHandler = async (
+  async function commitVisualSourceEdit({
     targetArtifact,
-    target,
-    input,
-  ) => {
+    targetLabel,
+    targetNoun,
+    detail,
+    verificationNotice,
+    compile,
+  }: {
+    targetArtifact: WorkspaceArtifact;
+    targetLabel: string;
+    targetNoun: string;
+    detail: string;
+    verificationNotice: string;
+    compile: (artifact: WorkspaceArtifact) => {
+      nextSource: string;
+      nextTarget: PreviewSourceTarget | null;
+      errors: string[];
+    };
+  }): Promise<string | null> {
     if (visualEditInFlightRef.current) return "Another visual edit is still being verified.";
     if (pendingChange || pendingImport || pendingExport || agentState === "planning") {
-      return "Finish or cancel the current review before editing a preview cell.";
+      return `Finish or cancel the current review before editing a preview ${targetNoun}.`;
     }
     const baseArtifacts = artifactsRef.current;
     const currentArtifact = baseArtifacts.find((artifact) => artifact.id === targetArtifact.id);
     if (!currentArtifact || currentArtifact.source !== targetArtifact.source) {
-      return "The cell no longer matches the current workspace revision.";
+      return `The ${targetNoun} no longer matches the current workspace revision.`;
     }
     if (!canCheckpointSource(currentArtifact.source)) {
       return `${currentArtifact.name} is too large for a safe pre-edit checkpoint.`;
     }
-    const compiled = prepareVisualDataCellEdit(currentArtifact, target, input);
+    const compiled = compile(currentArtifact);
     if (compiled.errors.length || !compiled.nextTarget) {
       return compiled.errors[0] ?? "Rune could not compile this visual edit.";
     }
     const patch: ArtifactSourcePatch = {
       artifactId: currentArtifact.id,
-      summary: `Edit ${target.label}`,
-      detail: "Replace one proven scalar literal through the visual Data editor.",
+      summary: `Edit ${targetLabel}`,
+      detail,
       nextSource: compiled.nextSource,
       operationCount: 1,
     };
@@ -883,24 +902,26 @@ export function RuneWorkbench() {
     setVisualEditState("checking");
     setSaveState("saving");
     setAgentError("");
-    setNotice(`Verifying ${target.label} against every live Data consumer…`);
+    setNotice(verificationNotice);
     try {
       let runtimePreflight: RuntimeImpactPreflight | undefined;
       try {
         runtimePreflight = await preflightRuntimeMutation(baseArtifacts, [patch], []);
       } catch (error) {
         const message = error instanceof Error ? error.message : "The downstream runtime could not verify this value.";
+        setSaveState("saved");
         setNotice("Visual edit rejected — every source stayed unchanged");
         return `Runtime verification failed · ${message}`;
       }
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
+        setSaveState("saved");
         setNotice("Visual edit held — the workspace changed during verification");
-        return "The workspace changed while Rune was verifying this cell. Try again from the current value.";
+        return `The workspace changed while Rune was verifying this ${targetNoun}. Try again from the current source.`;
       }
 
       const checkpoint = createCheckpoint(
         currentArtifact,
-        `Before visual edit · ${target.label}`,
+        `Before visual edit · ${targetLabel}`,
         "manual",
       );
       const nextCheckpoints = appendCheckpoint(checkpointsRef.current, checkpoint);
@@ -929,16 +950,47 @@ export function RuneWorkbench() {
       const runtimeSuffix = runtimePreflight
         ? ` · ${runtimePreflight.queryCount} impacted ${runtimePreflight.queryCount === 1 ? "Query" : "Queries"} verified`
         : " · workspace bindings verified";
-      setNotice(`${target.label} updated in canonical source${runtimeSuffix}${directoryHandle ? " · Push when ready" : ""}`);
+      setNotice(`${targetLabel} updated in canonical source${runtimeSuffix}${directoryHandle ? " · Push when ready" : ""}`);
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        sourceEditorRef.current?.focus({ preventScroll: true });
         sourceEditorRef.current?.setSelectionRange(selection.start, selection.end, "forward");
       }));
       return null;
+    } catch (error) {
+      setSaveState("saved");
+      setNotice("Visual edit rejected — every source stayed unchanged");
+      return error instanceof Error ? error.message : "Rune could not finish this visual edit.";
     } finally {
       visualEditInFlightRef.current = false;
       setVisualEditState("idle");
     }
-  };
+  }
+
+  const commitVisualDataCellEdit: DataCellEditHandler = async (
+    targetArtifact,
+    target,
+    input,
+  ) => commitVisualSourceEdit({
+    targetArtifact,
+    targetLabel: target.label,
+    targetNoun: "cell",
+    detail: "Replace one proven scalar literal through the visual Data editor.",
+    verificationNotice: `Verifying ${target.label} against every live Data consumer…`,
+    compile: (currentArtifact) => prepareVisualDataCellEdit(currentArtifact, target, input),
+  });
+
+  const commitVisualDocumentSectionEdit: DocumentSectionEditHandler = async (
+    targetArtifact,
+    target,
+    input,
+  ) => commitVisualSourceEdit({
+    targetArtifact,
+    targetLabel: target.label,
+    targetNoun: "section",
+    detail: "Replace one revision-bound Markdown section through the visual Document editor.",
+    verificationNotice: `Verifying ${target.label} against the complete workspace…`,
+    compile: (currentArtifact) => prepareVisualDocumentSectionEdit(currentArtifact, target, input),
+  });
 
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
     const start = event.currentTarget.selectionStart;
@@ -2367,6 +2419,7 @@ export function RuneWorkbench() {
                 activeSelection={validSourceSelection}
                 onTargetSource={focusPreviewTarget}
                 onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
+                onEditDocumentSection={visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
               />
             </div>
           </div>
@@ -2377,7 +2430,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.35</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.36</span></div>
       </footer>
 
       {newArtifactOpen && (

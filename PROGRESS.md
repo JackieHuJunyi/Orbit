@@ -46,3 +46,4 @@
 - 2026-08-12 — Added a source-derived transaction map that exposes changed bindings, exact inputs, and validated downstream consumers before atomic Apply.
 - 2026-08-12 — Added Rune's vermilion visual baseline, device-language welcome, real shortcut tutorial, editable local guide, and review-first multi-file drop/open state.
 - 2026-08-12 — Added safe post-language model setup and exact typed preview-to-source Data cell edits with downstream runtime verification.
+- 2026-08-12 — Added revision-bound Document section editing with a live draft preview, exact-range proof, checkpoints, and atomic source synchronization.

@@ -73,6 +73,16 @@ function trimRange(source: string, start: number, end: number): SourceSelection 
   return start < end ? { start, end } : null;
 }
 
+function trimDocumentRange(source: string, start: number, end: number): SourceSelection | null {
+  const fragment = source.slice(start, end);
+  const leadingBlankLines = fragment.match(/^(?:[\t ]*(?:\r\n|\r|\n))+/u)?.[0].length ?? 0;
+  const withoutLeading = fragment.slice(leadingBlankLines);
+  const trailingBlankLines = withoutLeading.match(/[\t ]*(?:(?:\r\n|\r|\n)[\t ]*)+$/u)?.[0].length ?? 0;
+  const nextStart = start + leadingBlankLines;
+  const nextEnd = end - trailingBlankLines;
+  return nextStart < nextEnd ? { start: nextStart, end: nextEnd } : null;
+}
+
 function documentTargets(source: string): PreviewSourceTarget[] {
   const headings: Array<{ start: number; label: string }> = [];
   let fence: { marker: "`" | "~"; length: number } | null = null;
@@ -91,18 +101,18 @@ function documentTargets(source: string): PreviewSourceTarget[] {
   });
 
   if (!headings.length) {
-    const range = trimRange(source, 0, source.length);
+    const range = trimDocumentRange(source, 0, source.length);
     return range ? [{ ...range, id: `document-section:0:${range.start}`, index: 0, kind: "document-section", label: "Document body" }] : [];
   }
 
   const targets: PreviewSourceTarget[] = [];
-  const preamble = trimRange(source, 0, headings[0].start);
+  const preamble = trimDocumentRange(source, 0, headings[0].start);
   if (preamble) {
     targets.push({ ...preamble, id: `document-section:0:${preamble.start}`, index: 0, kind: "document-section", label: "Document preamble" });
   }
   headings.forEach((heading, headingIndex) => {
     const end = headings[headingIndex + 1]?.start ?? source.length;
-    const range = trimRange(source, heading.start, end);
+    const range = trimDocumentRange(source, heading.start, end);
     if (!range) return;
     const index = targets.length;
     targets.push({ ...range, id: `document-section:${index}:${range.start}`, index, kind: "document-section", label: heading.label });
