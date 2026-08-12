@@ -1829,3 +1829,13 @@ v0.42 已经知道右侧每个顶层 Markdown block 的 exact source range，但
 草稿实时预览只证明“当前输入将如何渲染”，不是已经保存的事实。Save 重新派生 exact target、证明所有 `{{ ... }}` binding byte-stable、证明 source range 外 prefix/suffix 不变，再复用 Data/section/Deck/Chart 已共同验证的 visual transaction：完整 workspace static/runtime validation、全局 revision recheck、manual checkpoint、一次 device persistence。成功后新 block range 同时成为左侧 selection、右侧 active state 和 Selection Agent context；任何 stale、no-op、多块、类型变化、heading depth、binding、下游或存储错误都零写入。
 
 v0.43 仍不把 block target 持久化成 UUID，也不支持拖拽、增删、跨块合并、nested list item、单个 table cell 或 DOM contenteditable。当前 `index + range + type + label + headingLevel` 只服务一个 revision；source 一变就重新计算。下一阶段更值得做的是显式的 insert/move/delete block typed operations与 transaction preview，或让左侧 source selection 与右侧滚动互相跟随；不能因为已有铅笔按钮就把所有结构修改偷偷塞进同一个 textarea。
+
+## 49. 结构编辑必须先回答“操作了什么范围”，再追求拖拽手感
+
+一旦用户能在右侧改写一个块，最自然的下一步就是新增、删除和排序。但它们和文字修改的风险不同：改 paragraph 内容只替换一个 exact range，move 会同时改两个 source range 的相对顺序，delete 可能移除 live dependency，heading 的移动更容易被误解为“整节跟着走”。如果直接上拖拽，drop indicator 的像素位置会被误当成语义授权，用户也很难在松手前知道是移动标题还是整个 section。
+
+v0.44 因此先把结构操作做成显式 command。每个 AST-proven 顶层块旁有 insert-before/after、move-up/down、delete；首尾动作按当前 revision 禁用。新增不是把任意 Markdown 粘进文档，而是要求草稿经同一 CommonMark/GFM parser 得到恰好一个受支持 node，且不能在这个窄入口获得新增 metric/Chart dependency 的权限。move 只允许跨一个相邻且同样有 position 的受支持 sibling，使用两段原始 source fragment 加原间隔确定性换位；raw HTML 等未授权 node 会形成 fail-closed 边界。delete 必须连同一个可证明的 whitespace gap 移除，并拒绝删除最后一个 node，保证 Document validator 不被绕过。
+
+这里最重要的产品层不是四个图标，而是结构 transaction review。命令先生成完整 proposed source，再展示具体的行级增删；binding 删除和 heading-only 行为用独立 warning 解释。用户确认后，系统重新在当前 artifact 派生完整 target identity，重新运行 compiler，并要求新的 `nextSource` 与已审阅版本 byte-for-byte 一致。只有随后完整 workspace validation、revision recheck、checkpoint 和 atomic persistence 都通过，结构才成为事实。成功选择新块或最近存活块，Selection Agent 也随同前进；Escape、Cancel、stale、unsupported neighbor、runtime 或 storage failure 不留下半个操作。
+
+这一设计暂时牺牲自由拖拽的顺滑，换来三项可测的假设：用户是否真正常用块排序；他们想移动的是一个块还是 heading subtree；精确 diff 是否足以建立删除信任。只有证据表明跨距离拖拽是高频，才把同一 typed operation 接到 pointer interaction；只有证据表明“章节”是主要心智模型，才新增 section-subtree identity。这样 UI 可以渐进变得自然，但 canonical Markdown 不会因为手势而产生隐藏结构规则。

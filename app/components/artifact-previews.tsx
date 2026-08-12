@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   Bold,
   Braces,
   Check,
@@ -20,9 +22,11 @@ import {
   LoaderCircle,
   MousePointer2,
   PencilLine,
+  Plus,
   Strikethrough,
   TextQuote,
   Rows3,
+  Trash2,
   X,
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
@@ -77,6 +81,13 @@ import {
   type VisualDocumentBlockEditInput,
 } from "../lib/visual-document-block-edit";
 import {
+  MAX_VISUAL_DOCUMENT_INSERT_CHARS,
+  documentBlockStructureCapabilities,
+  prepareVisualDocumentBlockStructure,
+  type VisualDocumentBlockStructureAction,
+  type VisualDocumentBlockStructureInput,
+} from "../lib/visual-document-block-structure";
+import {
   applyDocumentFormatting,
   type DocumentFormattingCommand,
 } from "../lib/document-formatting";
@@ -119,6 +130,12 @@ export type DocumentBlockEditHandler = (
   artifact: WorkspaceArtifact,
   target: DocumentBlockPreviewSourceTarget,
   input: VisualDocumentBlockEditInput,
+) => Promise<string | null>;
+
+export type DocumentBlockStructureReviewHandler = (
+  artifact: WorkspaceArtifact,
+  target: DocumentBlockPreviewSourceTarget,
+  input: VisualDocumentBlockStructureInput,
 ) => Promise<string | null>;
 
 export type DeckSlideEditHandler = (
@@ -546,6 +563,7 @@ function MarkdownSource({
   onTargetSource,
   onEditDocumentBlock,
   onBeginDocumentBlockEdit,
+  onBeginDocumentBlockStructure,
 }: {
   source: string;
   sourceOffsets?: number[];
@@ -557,6 +575,10 @@ function MarkdownSource({
   onTargetSource?: PreviewTargetHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
   onBeginDocumentBlockEdit?: (target: DocumentBlockPreviewSourceTarget) => void;
+  onBeginDocumentBlockStructure?: (
+    target: DocumentBlockPreviewSourceTarget,
+    action: VisualDocumentBlockStructureAction,
+  ) => void;
 }) {
   const parts = tokenizeChartReferences(source);
   const blockByRange = useMemo(() => new Map((documentBlockTargets ?? []).map((target) => (
@@ -579,7 +601,7 @@ function MarkdownSource({
   ) => {
     const { node, children, ...elementProps } = props;
     const target = node ? targetForNode(node) : undefined;
-    if (!target || !targetArtifact || (!onTargetSource && !onBeginDocumentBlockEdit)) {
+    if (!target || !targetArtifact || (!onTargetSource && !onBeginDocumentBlockEdit && !onBeginDocumentBlockStructure)) {
       return createElement(tag, elementProps, children);
     }
     const active = previewTargetIsActive(target, activeSelection);
@@ -588,6 +610,9 @@ function MarkdownSource({
       && onBeginDocumentBlockEdit
       && canVisualEditDocumentBlock(targetArtifact, target),
     );
+    const structure = onBeginDocumentBlockStructure
+      ? documentBlockStructureCapabilities(targetArtifact, target)
+      : null;
     const inheritedClassName = typeof elementProps.className === "string" ? elementProps.className : "";
     const selectSource = () => onTargetSource?.(targetArtifact, target);
     const block = createElement(tag, {
@@ -595,14 +620,14 @@ function MarkdownSource({
       className: inheritedClassName || undefined,
     }, children);
     return createElement("div", {
-      className: `document-source-block ${onTargetSource ? "targetable" : ""} ${editable ? "editable" : ""} ${active ? "active" : ""}`.trim(),
+      className: `document-source-block ${onTargetSource ? "targetable" : ""} ${editable ? "editable" : ""} ${structure?.available ? "structurable" : ""} ${active ? "active" : ""}`.trim(),
       "data-preview-source-target": target.kind,
       "data-document-block-type": target.blockType,
       "data-document-heading-level": target.headingLevel,
       title: onTargetSource ? `Select exact ${target.label} source` : undefined,
       onClick: (event: ReactMouseEvent<HTMLElement>) => {
         const clicked = event.target;
-        if (clicked instanceof Element && clicked.closest("a, button, input, textarea, select, [contenteditable='true']")) return;
+        if (clicked instanceof Element && clicked.closest("a, button, summary, input, textarea, select, [contenteditable='true']")) return;
         selectSource();
       },
     }, block, createElement("span", {
@@ -626,16 +651,85 @@ function MarkdownSource({
         onBeginDocumentBlockEdit?.(target);
       },
     }, createElement(MousePointer2, { "aria-hidden": true })), editable && createElement("button", {
-        className: "document-block-edit",
-        type: "button",
-        "aria-label": `Edit ${target.label} ${target.blockType}`,
-        title: `Edit exact ${target.blockType} block · F2`,
-        onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
-          event.stopPropagation();
-          onBeginDocumentBlockEdit?.(target);
-        },
-      }, createElement(PencilLine, { "aria-hidden": true }))));
-  }, [activeSelection, onBeginDocumentBlockEdit, onEditDocumentBlock, onTargetSource, targetArtifact, targetForNode]);
+      className: "document-block-edit",
+      type: "button",
+      "aria-label": `Edit ${target.label} ${target.blockType}`,
+      title: `Edit exact ${target.blockType} block · F2`,
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        onBeginDocumentBlockEdit?.(target);
+      },
+    }, createElement(PencilLine, { "aria-hidden": true }))), structure?.available && createElement("details", {
+      className: "document-block-structure-actions",
+    }, createElement("summary", {
+      "aria-label": `Open structure actions for ${target.label}`,
+      title: "Block structure",
+    }, createElement(Rows3, { "aria-hidden": true })), createElement("span", {
+      className: "document-block-structure-menu",
+      role: "group",
+      "aria-label": `${target.label} structure actions`,
+    }, createElement("button", {
+      className: "document-block-insert-before",
+      type: "button",
+      disabled: !structure.canInsertBefore,
+      "aria-label": `Insert a block before ${target.label}`,
+      title: structure.canInsertBefore ? "Insert block before" : "Unsupported structure boundary",
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        const details = event.currentTarget.closest("details");
+        if (details) details.open = false;
+        onBeginDocumentBlockStructure?.(target, "insert-before");
+      },
+    }, createElement(Plus, { "aria-hidden": true })), createElement("button", {
+      className: "document-block-move-up",
+      type: "button",
+      disabled: !structure.canMoveUp,
+      "aria-label": `Move ${target.label} up one block`,
+      title: structure.canMoveUp ? "Move block up" : "Already first",
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        const details = event.currentTarget.closest("details");
+        if (details) details.open = false;
+        onBeginDocumentBlockStructure?.(target, "move-up");
+      },
+    }, createElement(ArrowUp, { "aria-hidden": true })), createElement("button", {
+      className: "document-block-move-down",
+      type: "button",
+      disabled: !structure.canMoveDown,
+      "aria-label": `Move ${target.label} down one block`,
+      title: structure.canMoveDown ? "Move block down" : "Already last",
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        const details = event.currentTarget.closest("details");
+        if (details) details.open = false;
+        onBeginDocumentBlockStructure?.(target, "move-down");
+      },
+    }, createElement(ArrowDown, { "aria-hidden": true })), createElement("button", {
+      className: "document-block-delete",
+      type: "button",
+      disabled: !structure.canDelete,
+      "aria-label": `Delete ${target.label} block`,
+      title: structure.canDelete ? "Delete block" : "The last block cannot be deleted",
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        const details = event.currentTarget.closest("details");
+        if (details) details.open = false;
+        onBeginDocumentBlockStructure?.(target, "delete");
+      },
+    }, createElement(Trash2, { "aria-hidden": true })), createElement("button", {
+      className: "document-block-insert-after",
+      type: "button",
+      disabled: !structure.canInsertAfter,
+      "aria-label": `Insert a block after ${target.label}`,
+      title: structure.canInsertAfter ? "Insert block after" : "Unsupported structure boundary",
+      onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        const details = event.currentTarget.closest("details");
+        if (details) details.open = false;
+        onBeginDocumentBlockStructure?.(target, "insert-after");
+      },
+    }, createElement(Plus, { "aria-hidden": true })))));
+  }, [activeSelection, onBeginDocumentBlockEdit, onBeginDocumentBlockStructure, onEditDocumentBlock, onTargetSource, targetArtifact, targetForNode]);
 
   const blockComponents = useMemo(() => Object.fromEntries([
     "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr",
@@ -668,6 +762,7 @@ function DocumentPreview({
   onTargetSource,
   onEditDocumentSection,
   onEditDocumentBlock,
+  onReviewDocumentBlockStructure,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -677,6 +772,7 @@ function DocumentPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
+  onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
 }) {
   const compiled = compileArtifactSource(
     artifact.source,
@@ -703,11 +799,22 @@ function DocumentPreview({
     error: string;
     submitting: boolean;
   } | null>(null);
+  const [insertingBlock, setInsertingBlock] = useState<{
+    targetId: string;
+    artifactId: string;
+    sourceRevision: string;
+    action: "insert-before" | "insert-after";
+    draft: string;
+    error: string;
+    submitting: boolean;
+  } | null>(null);
+  const [structureError, setStructureError] = useState("");
   const sectionDraftRef = useRef<HTMLTextAreaElement>(null);
   const sectionSelectionRef = useRef({ start: 0, end: 0 });
   const blockEditorRef = useRef<HTMLFormElement>(null);
   const blockDraftRef = useRef<HTMLTextAreaElement>(null);
   const blockSelectionRef = useRef({ start: 0, end: 0 });
+  const insertDraftRef = useRef<HTMLTextAreaElement>(null);
   const editingTarget = editingSection?.artifactId === artifact.id
     && editingSection.sourceRevision === artifact.source
     ? targets.find((target) => target.id === editingSection.targetId)
@@ -715,6 +822,10 @@ function DocumentPreview({
   const editingBlockTarget = editingBlock?.artifactId === artifact.id
     && editingBlock.sourceRevision === artifact.source
     ? blockTargets.find((target) => target.id === editingBlock.targetId)
+    : undefined;
+  const insertingBlockTarget = insertingBlock?.artifactId === artifact.id
+    && insertingBlock.sourceRevision === artifact.source
+    ? blockTargets.find((target) => target.id === insertingBlock.targetId)
     : undefined;
   const draftSource = editingSection?.draft ?? "";
   const compiledDraft = compileArtifactSource(
@@ -738,6 +849,16 @@ function DocumentPreview({
     ? ""
     : preparedBlockDraft?.errors[0] ?? "";
   const blockDraftCanSave = Boolean(preparedBlockDraft && !preparedBlockDraft.errors.length);
+  const preparedInsertDraft = insertingBlock && insertingBlockTarget
+    ? prepareVisualDocumentBlockStructure(artifact, insertingBlockTarget, {
+        action: insertingBlock.action,
+        draft: insertingBlock.draft,
+      })
+    : null;
+  const insertDraftError = preparedInsertDraft?.errors[0] === "Write one new Markdown block before reviewing this structure change."
+    ? ""
+    : preparedInsertDraft?.errors[0] ?? "";
+  const insertDraftCanReview = Boolean(preparedInsertDraft && !preparedInsertDraft.errors.length);
 
   useEffect(() => {
     if (!editingBlockTarget) return;
@@ -750,6 +871,8 @@ function DocumentPreview({
   function beginSectionEdit(target: PreviewSourceTarget) {
     if (!onEditDocumentSection || !canVisualEditDocumentSection(artifact, target)) return;
     setEditingBlock(null);
+    setInsertingBlock(null);
+    setStructureError("");
     sectionSelectionRef.current = { start: 0, end: 0 };
     setEditingSection({
       targetId: target.id,
@@ -764,6 +887,8 @@ function DocumentPreview({
   function beginBlockEdit(target: DocumentBlockPreviewSourceTarget) {
     if (!onEditDocumentBlock || !canVisualEditDocumentBlock(artifact, target)) return;
     setEditingSection(null);
+    setInsertingBlock(null);
+    setStructureError("");
     blockSelectionRef.current = { start: 0, end: 0 };
     setEditingBlock({
       targetId: target.id,
@@ -773,6 +898,47 @@ function DocumentPreview({
       error: "",
       submitting: false,
     });
+  }
+
+  function beginBlockStructure(
+    target: DocumentBlockPreviewSourceTarget,
+    action: VisualDocumentBlockStructureAction,
+  ) {
+    if (!onReviewDocumentBlockStructure) return;
+    setStructureError("");
+    const capabilities = documentBlockStructureCapabilities(artifact, target);
+    if (!capabilities.available) return;
+    if (action === "insert-before" || action === "insert-after") {
+      setEditingSection(null);
+      setEditingBlock(null);
+      setInsertingBlock({
+        targetId: target.id,
+        artifactId: artifact.id,
+        sourceRevision: artifact.source,
+        action,
+        draft: "",
+        error: "",
+        submitting: false,
+      });
+      return;
+    }
+    void onReviewDocumentBlockStructure(artifact, target, { action }).then((error) => {
+      if (error) setStructureError(error);
+    });
+  }
+
+  async function submitBlockInsertion(target: DocumentBlockPreviewSourceTarget) {
+    if (!insertingBlock || !onReviewDocumentBlockStructure || !insertDraftCanReview) return;
+    setInsertingBlock((current) => current ? { ...current, error: "", submitting: true } : current);
+    const error = await onReviewDocumentBlockStructure(artifact, target, {
+      action: insertingBlock.action,
+      draft: insertingBlock.draft,
+    });
+    if (error) {
+      setInsertingBlock((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setInsertingBlock(null);
   }
 
   function rememberSectionSelection(textarea: HTMLTextAreaElement) {
@@ -1115,6 +1281,59 @@ function DocumentPreview({
             </footer>
           </form>
         )}
+        {insertingBlock && insertingBlockTarget && (
+          <form
+            className="visual-document-insert-editor"
+            onSubmit={(event) => { event.preventDefault(); void submitBlockInsertion(insertingBlockTarget); }}
+          >
+            <header>
+              <div>
+                <span>{insertingBlock.action === "insert-before" ? "New block before" : "New block after"}</span>
+                <strong>{insertingBlockTarget.label}</strong>
+              </div>
+              <small>{insertingBlock.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_INSERT_CHARS.toLocaleString("en-US")}</small>
+            </header>
+            <label htmlFor={`visual-document-insert-${artifact.id}-${insertingBlockTarget.index}`}>One Markdown block</label>
+            <textarea
+              id={`visual-document-insert-${artifact.id}-${insertingBlockTarget.index}`}
+              ref={insertDraftRef}
+              autoFocus
+              aria-label={`Write one new Markdown block ${insertingBlock.action === "insert-before" ? "before" : "after"} ${insertingBlockTarget.label}`}
+              value={insertingBlock.draft}
+              disabled={insertingBlock.submitting}
+              maxLength={MAX_VISUAL_DOCUMENT_INSERT_CHARS}
+              spellCheck
+              placeholder="A paragraph, heading, list, quote, code block, table, or divider…"
+              onChange={(event) => setInsertingBlock((current) => current ? {
+                ...current,
+                draft: event.target.value,
+                error: "",
+              } : current)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setInsertingBlock(null);
+                } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                  event.preventDefault();
+                  void submitBlockInsertion(insertingBlockTarget);
+                }
+              }}
+            />
+            {(insertingBlock.error || insertDraftError) && (
+              <p className="visual-document-error" role="alert">{insertingBlock.error || insertDraftError}</p>
+            )}
+            <footer>
+              <p>One new block · no live bindings · review the exact source diff before writing</p>
+              <div>
+                <button type="button" disabled={insertingBlock.submitting} onClick={() => setInsertingBlock(null)}><X />Cancel</button>
+                <button type="submit" disabled={insertingBlock.submitting || !insertDraftCanReview}>
+                  {insertingBlock.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Review insertion
+                </button>
+              </div>
+            </footer>
+          </form>
+        )}
+        {structureError && <p className="visual-document-error document-structure-inline-error" role="alert">{structureError}</p>}
         <div className="markdown-body">
           <MarkdownSource
             source={compiled.source}
@@ -1127,6 +1346,12 @@ function DocumentPreview({
             onTargetSource={onTargetSource}
             onEditDocumentBlock={onEditDocumentBlock}
             onBeginDocumentBlockEdit={beginBlockEdit}
+            onBeginDocumentBlockStructure={onReviewDocumentBlockStructure
+              && !editingSection
+              && !editingBlock
+              && !insertingBlock
+              ? beginBlockStructure
+              : undefined}
           />
         </div>
       </article>
@@ -1989,6 +2214,7 @@ export function ArtifactPreview({
   onEditDataCell,
   onEditDocumentSection,
   onEditDocumentBlock,
+  onReviewDocumentBlockStructure,
   onEditDeckSlide,
   onEditChartSpec,
 }: {
@@ -1999,6 +2225,7 @@ export function ArtifactPreview({
   onEditDataCell?: DataCellEditHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
+  onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
   onEditChartSpec?: ChartSpecEditHandler;
 }) {
@@ -2014,7 +2241,7 @@ export function ArtifactPreview({
     return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
   }
   const targets = derivePreviewSourceTargets(artifact);
-  if (artifact.kind === "document") return <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} />;
+  if (artifact.kind === "document") return <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} />;
   if (artifact.kind === "query") {
     const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
     return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;

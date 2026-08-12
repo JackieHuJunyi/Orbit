@@ -82,7 +82,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.43/);
+  assert.match(html, /Rune v0\.44/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -147,6 +147,15 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /One proven/);
   assert.match(clientSource, /type and live bindings stay fixed/);
   assert.match(clientSource, /data-document-block-type/);
+  assert.match(clientSource, /document-block-structure-actions/);
+  assert.match(clientSource, /Open structure actions for/);
+  assert.match(clientSource, /Insert a block before/);
+  assert.match(clientSource, /Move block up/);
+  assert.match(clientSource, /Delete block/);
+  assert.match(clientSource, /Review insertion/);
+  assert.match(clientSource, /Document structure.*revision-bound/);
+  assert.match(clientSource, /Canonical source diff/);
+  assert.match(clientSource, /One atomic device write.*checkpoint is created first/);
   assert.match(clientSource, /Nothing is written until you confirm/);
   assert.match(clientSource, /One atomic device write after confirmation/);
   assert.match(clientSource, /aria-modal/);

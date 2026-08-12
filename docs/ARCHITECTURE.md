@@ -457,9 +457,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 36. v0.41 adds reversible Document draft formatting commands and keyboard shortcuts that operate on exact textarea ranges while the safe preview recompiles live.
 37. v0.42 makes rendered CommonMark/GFM Document blocks keyboard-targetable and maps compiled metric text back to exact canonical source ranges.
 38. v0.43 makes AST-proven Document blocks visually editable through a same-type compiler and the shared checkpointed atomic source-write transaction.
-39. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
-40. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-41. D1/R2 remain undeclared until durable hosted projects or assets are required.
+39. v0.44 adds reviewed insert-before/after, adjacent move, and delete operations over those revision-bound block identities, with exact source diffs and atomic checkpoints.
+40. A desktop shell can implement the same port with directory watching and atomic rename semantics later.
+41. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+42. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -477,6 +478,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 - A configured provider receives at most one automatic repair request after its first unapplied proposal fails that impact gate. Feedback contains only 1–4 identity-checked proposed sources plus a normalized 1,000-character failure within the existing source budgets, is labelled untrusted, and retains no write authority. A replacement is accepted only with the exact attempt marker and after server compilation plus a second complete local impact proof; any failure stops without recursive retry or deterministic fallback.
 - Selection Agent requests bind non-empty UTF-16 offsets to one exact source revision, reject surrogate-splitting or oversized ranges, and require the server compiler and client Apply path to independently prove that source outside the selection is unchanged.
 - Preview targets are locally derived from the current canonical revision and only populate that existing selection contract; CSV quotes and JSON value delimiters stay inside exact cell ranges, while empty/ambiguous tokens receive no cell capability. Rendered DOM, sandbox contents, labels, and indices never become write authority, and derived views without exact source provenance remain non-targetable.
+- Document structure operations re-resolve the full block identity against the current CommonMark/GFM AST. Insert accepts exactly one supported block and cannot mint live bindings; move swaps only adjacent supported siblings while preserving their bytes and intervening whitespace; delete refuses the final block and removes a proven adjacent separator. Every proposed source is shown in a modal diff, then recompiled byte-for-byte at confirmation before workspace validation, checkpoint, and one persistence write. Unsupported top-level nodes, ambiguous gaps, stale targets, heading/body ambiguity, cancellation, and storage failure grant no write.
 - Bar and line marks retain compiler-owned provenance through sorting, truncation, and line normalization, then resolve direct Data or direct Query-projected fields against current canonical cell targets; derived Query fields remain read-only, and cross-artifact targeting never matches by a duplicate label, visible order, formatted value, or DOM/SVG geometry.
 - Creation accepts bounded single-line titles plus exact typed Query/Chart bindings; generated identity is portable and collision-safe, optional Chart embedding checkpoints its consumer, the complete next workspace and runtime impact validate before persistence, and a failed device write leaves React state unchanged.
 - OOXML import rejects oversized/unsafe ZIP parts, path traversal, DTD/entity declarations, invalid output adapters, and partial device writes; binary input never leaves the browser.

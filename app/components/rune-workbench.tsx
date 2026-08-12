@@ -42,8 +42,10 @@ import {
   type DataCellEditHandler,
   type DeckSlideEditHandler,
   type DocumentBlockEditHandler,
+  type DocumentBlockStructureReviewHandler,
   type DocumentSectionEditHandler,
 } from "./artifact-previews";
+import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
@@ -131,6 +133,7 @@ import {
   type WorkspaceDependencyKind,
 } from "../lib/dependency-graph";
 import type { PreviewSourceTarget } from "../lib/preview-targets";
+import type { DocumentBlockPreviewSourceTarget } from "../lib/preview-targets";
 import { buildWorkspaceTransactionReview } from "../lib/transaction-review";
 import {
   MAX_AGENT_SELECTION_CHARS,
@@ -156,6 +159,11 @@ import {
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
+import {
+  prepareVisualDocumentBlockStructure,
+  type PreparedVisualDocumentBlockStructure,
+  type VisualDocumentBlockStructureInput,
+} from "../lib/visual-document-block-structure";
 import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
 import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 
@@ -217,6 +225,15 @@ type PendingExport = {
   sourceArtifactName: string;
   baseArtifacts: WorkspaceArtifact[];
   result: ArtifactExportResult;
+};
+
+type PendingDocumentStructure = {
+  targetArtifact: WorkspaceArtifact;
+  target: DocumentBlockPreviewSourceTarget;
+  input: VisualDocumentBlockStructureInput;
+  prepared: PreparedVisualDocumentBlockStructure;
+  error: string;
+  submitting: boolean;
 };
 
 type RemoteFilePlan = ArtifactSourcePatch & { operationCount: number };
@@ -487,6 +504,7 @@ export function RuneWorkbench() {
   const [importError, setImportError] = useState("");
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
+  const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [exportError, setExportError] = useState("");
   const [exportState, setExportState] = useState<"idle" | "office" | "odf" | "html" | "pdf">("idle");
   const [agentError, setAgentError] = useState("");
@@ -653,6 +671,7 @@ export function RuneWorkbench() {
     || Boolean(pendingChange)
     || Boolean(pendingImport)
     || Boolean(pendingExport)
+    || Boolean(pendingDocumentStructure)
     || visualEditState !== "idle";
 
   useEffect(() => {
@@ -708,7 +727,7 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (visualEditState !== "idle") return;
+      if (visualEditState !== "idle" || pendingDocumentStructure) return;
       if (!(event.metaKey || event.ctrlKey)) return;
       if (event.key.toLowerCase() === "o") {
         event.preventDefault();
@@ -746,7 +765,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [artifacts, checkpoints, selectedId, visualEditState]);
+  }, [artifacts, checkpoints, pendingDocumentStructure, selectedId, visualEditState]);
 
   if (!selectedArtifact) return null;
 
@@ -861,6 +880,7 @@ export function RuneWorkbench() {
   }
 
   function updateSource(source: string) {
+    if (pendingDocumentStructure) return;
     setSaveState("saving");
     setArtifacts((current) => current.map((artifact) => (
       artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact
@@ -877,6 +897,8 @@ export function RuneWorkbench() {
     detail,
     verificationNotice,
     compile,
+    expectedNextSource,
+    allowDocumentStructureReview,
   }: {
     targetArtifact: WorkspaceArtifact;
     targetLabel: string;
@@ -888,9 +910,15 @@ export function RuneWorkbench() {
       nextTarget: PreviewSourceTarget | null;
       errors: string[];
     };
+    expectedNextSource?: string;
+    allowDocumentStructureReview?: boolean;
   }): Promise<string | null> {
     if (visualEditInFlightRef.current) return "Another visual edit is still being verified.";
-    if (pendingChange || pendingImport || pendingExport || agentState === "planning") {
+    if (pendingChange
+      || pendingImport
+      || pendingExport
+      || (pendingDocumentStructure && !allowDocumentStructureReview)
+      || agentState === "planning") {
       return `Finish or cancel the current review before editing a preview ${targetNoun}.`;
     }
     const baseArtifacts = artifactsRef.current;
@@ -904,6 +932,9 @@ export function RuneWorkbench() {
     const compiled = compile(currentArtifact);
     if (compiled.errors.length || !compiled.nextTarget) {
       return compiled.errors[0] ?? "Rune could not compile this visual edit.";
+    }
+    if (expectedNextSource != null && compiled.nextSource !== expectedNextSource) {
+      return `The reviewed ${targetNoun} change no longer matches the current compiler result.`;
     }
     const patch: ArtifactSourcePatch = {
       artifactId: currentArtifact.id,
@@ -1022,6 +1053,69 @@ export function RuneWorkbench() {
     verificationNotice: `Verifying ${target.label} against the complete workspace…`,
     compile: (currentArtifact) => prepareVisualDocumentBlockEdit(currentArtifact, target, input),
   });
+
+  const reviewVisualDocumentBlockStructure: DocumentBlockStructureReviewHandler = async (
+    targetArtifact,
+    target,
+    input,
+  ) => {
+    if (visualEditInFlightRef.current || visualEditState !== "idle") {
+      return "Another visual edit is still being verified.";
+    }
+    if (pendingChange || pendingImport || pendingExport || pendingDocumentStructure || agentState === "planning") {
+      return "Finish or cancel the current review before changing Document structure.";
+    }
+    const currentArtifact = artifactsRef.current.find((artifact) => artifact.id === targetArtifact.id);
+    if (!currentArtifact || currentArtifact.source !== targetArtifact.source) {
+      return "The Document block no longer matches the current workspace revision.";
+    }
+    const prepared = prepareVisualDocumentBlockStructure(currentArtifact, target, input);
+    if (prepared.errors.length || !prepared.nextTarget) {
+      return prepared.errors[0] ?? "Rune could not compile this Document structure change.";
+    }
+    setPendingDocumentStructure({
+      targetArtifact: currentArtifact,
+      target,
+      input,
+      prepared,
+      error: "",
+      submitting: false,
+    });
+    setNotice("Document structure change ready for exact source review");
+    return null;
+  };
+
+  async function confirmVisualDocumentBlockStructure() {
+    const pending = pendingDocumentStructure;
+    if (!pending || pending.submitting) return;
+    setPendingDocumentStructure((current) => current ? { ...current, error: "", submitting: true } : current);
+    const actionLabel = pending.input.action === "delete"
+      ? "Delete"
+      : pending.input.action.startsWith("insert")
+        ? "Insert near"
+        : pending.input.action === "move-up"
+          ? "Move up"
+          : "Move down";
+    const error = await commitVisualSourceEdit({
+      targetArtifact: pending.targetArtifact,
+      targetLabel: pending.target.label,
+      targetNoun: "Document structure",
+      detail: `${actionLabel} one revision-bound Markdown block after explicit source-diff review.`,
+      verificationNotice: `Verifying the reviewed structure change for ${pending.target.label}…`,
+      compile: (currentArtifact) => prepareVisualDocumentBlockStructure(
+        currentArtifact,
+        pending.target,
+        pending.input,
+      ),
+      expectedNextSource: pending.prepared.nextSource,
+      allowDocumentStructureReview: true,
+    });
+    if (error) {
+      setPendingDocumentStructure((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setPendingDocumentStructure(null);
+  }
 
   const commitVisualDeckSlideEdit: DeckSlideEditHandler = async (
     targetArtifact,
@@ -1198,7 +1292,7 @@ export function RuneWorkbench() {
   }
 
   async function connectWorkspaceFolder() {
-    if (directoryState === "syncing") return;
+    if (directoryState === "syncing" || pendingDocumentStructure) return;
     if (!supportsDirectoryWorkspace()) {
       setDirectoryState("error");
       setNotice("Folder workspaces require a browser with the File System Access API");
@@ -1284,7 +1378,7 @@ export function RuneWorkbench() {
 
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
-    if (!instruction || agentState === "planning" || visualEditState !== "idle") return;
+    if (!instruction || agentState === "planning" || visualEditState !== "idle" || pendingDocumentStructure) return;
     const scope = agentScope;
     const targetSelection = scope === "selection" ? validSourceSelection : null;
     if (scope === "selection" && !targetSelection) {
@@ -1681,6 +1775,7 @@ export function RuneWorkbench() {
   }
 
   function resetWorkspace() {
+    if (pendingDocumentStructure) return;
     if (!window.confirm("Reset this device draft to the Rune sample workspace?")) return;
     const defaults = cloneDefaultArtifacts();
     setSaveState("saving");
@@ -1705,6 +1800,7 @@ export function RuneWorkbench() {
   }
 
   async function createNewArtifact(input: ArtifactCreationInput, embedArtifactId?: string) {
+    if (pendingDocumentStructure) return;
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
@@ -1795,7 +1891,7 @@ export function RuneWorkbench() {
   }
 
   async function prepareFileImport(files: File[]) {
-    if (!files.length || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingExport || exportState !== "idle") return;
+    if (!files.length || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingExport || pendingDocumentStructure || exportState !== "idle") return;
     if (files.length > 20) {
       setNotice("Import up to 20 files in one review transaction");
       return;
@@ -1918,7 +2014,7 @@ export function RuneWorkbench() {
       : destination === "html"
         ? selectedHtmlExport ? "HTML" : null
         : selectedPdfExport ? "PDF" : null;
-    if (!targetType || exportState !== "idle" || pendingExport || pendingImport || importInFlightRef.current || exportInFlightRef.current) return;
+    if (!targetType || exportState !== "idle" || pendingExport || pendingImport || pendingDocumentStructure || importInFlightRef.current || exportInFlightRef.current) return;
     const targetArtifact = selectedArtifact;
     const baseArtifacts = artifacts;
     exportInFlightRef.current = true;
@@ -2056,7 +2152,7 @@ export function RuneWorkbench() {
           >
             <FilePlus2 aria-hidden="true" /> New
           </button>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}>
+          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} Import
           </button>
           <button
@@ -2077,7 +2173,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("office")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={`Export ${selectedArtifact.name} as ${selectedOfficeExportType}`}
               title={`Export as ${selectedOfficeExportType}`}
             >
@@ -2088,7 +2184,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("odf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={`Export ${selectedArtifact.name} as ${selectedOdfExportType}`}
               title={`Export as ${selectedOdfExportType} OpenDocument`}
             >
@@ -2099,7 +2195,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("html")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={`Export ${selectedArtifact.name} as HTML`}
               title="Export as standalone HTML"
             >
@@ -2110,7 +2206,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("pdf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={`Export ${selectedArtifact.name} as PDF`}
               title="Export as fixed PDF"
             >
@@ -2122,7 +2218,7 @@ export function RuneWorkbench() {
               <Download />
             </button>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
         </div>
       </header>
 
@@ -2306,8 +2402,8 @@ export function RuneWorkbench() {
               onSelect={captureSourceSelection}
               onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }}
               spellCheck={false}
-              disabled={visualEditState !== "idle"}
-              aria-busy={visualEditState !== "idle"}
+              disabled={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
+              aria-busy={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
               aria-label={`Edit ${selectedArtifact.name} source`}
             />
           </div>
@@ -2520,6 +2616,7 @@ export function RuneWorkbench() {
                 onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
                 onEditDocumentSection={visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
                 onEditDocumentBlock={visualEditState === "idle" ? commitVisualDocumentBlockEdit : undefined}
+                onReviewDocumentBlockStructure={visualEditState === "idle" && !pendingDocumentStructure ? reviewVisualDocumentBlockStructure : undefined}
                 onEditDeckSlide={visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
                 onEditChartSpec={visualEditState === "idle" ? commitVisualChartSpecEdit : undefined}
               />
@@ -2532,7 +2629,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.43</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.44</span></div>
       </footer>
 
       {newArtifactOpen && (
@@ -2564,6 +2661,24 @@ export function RuneWorkbench() {
           error={exportError}
           onCancel={cancelExport}
           onConfirm={confirmExport}
+        />
+      )}
+      {pendingDocumentStructure && (
+        <DocumentStructureReviewDialog
+          artifactName={pendingDocumentStructure.targetArtifact.name}
+          targetLabel={pendingDocumentStructure.target.label}
+          action={pendingDocumentStructure.input.action}
+          beforeSource={pendingDocumentStructure.targetArtifact.source}
+          nextSource={pendingDocumentStructure.prepared.nextSource}
+          warnings={pendingDocumentStructure.prepared.warnings}
+          error={pendingDocumentStructure.error}
+          submitting={pendingDocumentStructure.submitting}
+          onCancel={() => {
+            if (pendingDocumentStructure.submitting) return;
+            setPendingDocumentStructure(null);
+            setNotice("Document structure change cancelled — source stayed unchanged");
+          }}
+          onConfirm={() => void confirmVisualDocumentBlockStructure()}
         />
       )}
       {welcomeOpen && hydrated && (

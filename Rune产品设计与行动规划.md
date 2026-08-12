@@ -1123,6 +1123,16 @@ v0.42 已经能证明右侧一个可见 block 对应哪段 canonical source，v0
 
 保存复用既有 visual transaction：先构造完整 proposed workspace，验证 adapter、dependency 与受影响 Query/Chart runtime，复核全工作区 revision，为旧 source 建 checkpoint，再单次持久化。成功后左侧选中新的 exact block、右侧 active 并进入 Selection Agent；取消、stale、no-op、超限、跨块、binding 改动、下游失败或存储失败都零写入。当前仍不支持右侧新增/删除/重排 block、嵌套 list item 或单个 table cell 编辑；这些结构操作应通过显式 typed command 和可预览 transaction，而不能借一个文本框扩大权限。
 
+### 6.23 v0.44 Document 块结构事务
+
+Document 成品侧现在把“改内容”和“改结构”分成两类权限。右上角的定位与铅笔仍只负责选择或 same-type 改写；块左侧独立提供在前/后新增、向上/下移动一个相邻块、删除一个块。新增草稿必须经同一 CommonMark + GFM parser 证明恰好是一个受支持顶层块，长度不超过 16,000 字符，并禁止在这个轻量入口新增 `{{ ... }}` dependency；依赖变化仍进入 canonical source 或 Agent review。
+
+move 不根据 DOM、label 或像素猜顺序，只交换两个相邻 AST sibling 的原始 source bytes，保留二者内容与中间 whitespace。遇到 raw HTML 等未授权顶层 node、无法证明的间隔、文档首尾或 stale revision 时，对应动作停用或失败关闭。delete 会连同一个可证明的相邻空白 separator 删除，但不允许删掉最后一个块；含 live binding 的块会在确认前明确列出丢失数量。heading 的移动和删除只作用于标题本身，不暗示整节跟随，因此确认页必须提示正文仍留在原位置。
+
+所有结构命令都先生成完整 proposed source，并进入带 focus trap、Escape 取消和精确行 diff 的确认窗口。Confirm 后不能直接复用旧字符串：系统重新派生 target、再次编译并要求结果与用户审阅的 `nextSource` 逐字一致，再执行完整 workspace/runtime validation、revision recheck、manual checkpoint 和单次 device persistence。成功后选择新插入/移动块或最近的存活块，左右两侧与 Selection Agent 一起前进；取消、过期、歧义、验证或存储失败都保持零写入。
+
+这仍不是自由拖拽画布：当前结构操作只覆盖顶层 CommonMark/GFM sibling，不拆 nested list item、table row/cell，不把 heading 当作 section container，也不允许跨任意距离拖放。若真实使用证明整节移动更重要，下一步应为 section subtree 建独立 operation 和影响预览，而不是让单块按钮获得隐式范围。
+
 ---
 
 ## 7. 指标、Eval 与结果验证
