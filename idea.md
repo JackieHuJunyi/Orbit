@@ -1766,3 +1766,15 @@ Chart spec 很适合受控表单，因为它本来就是一个 strict JSON schem
 保存时 `prepareVisualChartSpecEdit` 从当前 source 重新派生完整 target，要求 artifact kind/language、id/index/label、0..source.length range 全部一致。输入先通过同一 `ChartSpecSchema`，Rune 再以固定字段顺序和两空格缩进重写完整 JSON；source identity 始终来自 current spec 而非浏览器草稿。no-op、stale、超限或 invalid schema 立即失败。之后共享 visual transaction 会验证完整 workspace，执行 changed Chart 所需的 Query 和 Chart runtime impact，创建 checkpoint 并单次持久化。成功后左侧选中完整新 JSON，右侧用同一 revision 重绘；失败时图表、source、历史和 folder 都不动。
 
 这个设计把两种“实时”区分清楚：输入过程中的 draft preview 是可丢弃的预测，Save 后的 live preview 才是 canonical projection。它也完成了 Data cell、Document section、Deck slide、Chart spec 四类右侧写入的共同架构验证：每一类都先获得窄 capability，再由确定性 compiler 生成 source patch，最后进入相同 revision/checkpoint/validation/persistence 边界。下一步应优先补真实文件格式覆盖和普通用户格式工具，而不是为每种 preview 再造一套状态机。
+
+## 44. PDF 导入不是“打开一个 PDF”，而是一次有损、可证明的语义迁移
+
+PDF 的内部目标是固定呈现，不是可逆的段落模型。即使页面看起来像一篇文章，文件里也可能只是许多带坐标的字形：列顺序、表格单元格、标题层级、页眉页脚和段落边界并没有统一语义。若产品把 `.pdf` 加进文件选择器后直接宣称“支持编辑”，用户会自然期待原排版、图片和表格都被保留，而 Rune 实际只能猜测。这一轮因此把承诺明确写成 **selectable text → reviewable Markdown**，并让每一类无法恢复的信息在 Apply 前可见。
+
+解析使用按需加载的 PDF.js display layer 和本地 worker。它只在用户选择 PDF 后进入浏览器，不上传 bytes，也不进入首屏包。输入先检查扩展名、12 MB 上限与前 1,024 bytes 内的 PDF signature；运行时关闭 eval、stream、range 和 auto-fetch，遇到错误停止。加密文件明确要求用户先导出无密码副本，页面不新增一个短命的 secret 输入面。文档 JavaScript只被检测并写成 warning，绝不执行。页数、文字片段和 Markdown 输出分别限制为 200、100,000 和 200,000，避免一份敌意或异常 PDF 把 UI 和 localStorage 拖垮。
+
+语义转换只使用可以审查的有界 heuristic。坐标接近的 fragment 合成一行，dominant RTL 决定行内排序，CJK 相邻字符不强行插入空格；跨行根据垂直间距、缩进和断词规则组成段落。字体高度相对正文中位数只推断二到四级标题，常见 bullet/number 变成 Markdown list。至少半数页面顶部或底部重复的标准化文本视为页眉页脚；每个页面仍写入 `<!-- PDF page N -->`，让用户和未来 OCR 能回到来源。所有原文花括号先编码，因此 PDF 中看似 `{{ metric(...) }}` 的文字不能获得 Rune binding 权限。
+
+这些规则的价值不在“猜得像人”，而在错误模式清楚：大水平间距提示可能存在列或表格；空页保留 OCR 未执行标记；annotation、bookmark、JavaScript、重复页眉页脚都有独立 warning；完全没有可选择文本则失败，不生成一篇空文档。图片、扫描、字体、精确版式、链接、评论、表单、列和表格结构目前都不保留。未来 OCR 也不能只吐一串文本，它至少要携带页码、区域、置信度和原图对照，继续通过同一 import review transaction。
+
+验证同时包含合成 snapshot、由独立 PDF writer 生成后再经真实 PDF.js 读取的双页文件、密码/伪 header/超大/超页数/纯扫描失败路径，以及 Poppler 逐页渲染和系统文本提取对照。只有 converter 输出通过 canonical artifact 验证、完整 workspace 验证和 stale-context 检查，用户确认才产生一次设备写入。这样 PDF 是一个诚实的兼容 port，不会变成新的 source of truth，也不削弱 Rune“先看见，再接受”的信任边界。

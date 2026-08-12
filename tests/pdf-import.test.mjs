@@ -1,0 +1,146 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import {
+  MAX_PDF_IMPORT_BYTES,
+  MAX_PDF_IMPORT_PAGES,
+  convertPdfFileWithLibrary,
+  convertPdfSemanticSnapshot,
+} from "../app/lib/pdf-import.ts";
+import { validateArtifact } from "../app/lib/workspace.ts";
+
+function item(str, x, y, height, width = Math.max(8, str.length * height * 0.5)) {
+  return { str, x, y, width, height, hasEOL: true, direction: "ltr" };
+}
+
+function page(pageNumber, items, annotationCount = 0) {
+  return { pageNumber, width: 612, height: 792, items, annotationCount };
+}
+
+test("converts positioned PDF text into bounded source-safe Markdown with page provenance", () => {
+  const result = convertPdfSemanticSnapshot("quarterly-review.pdf", {
+    title: "Quarterly Review",
+    outlineCount: 2,
+    hasJavaScript: true,
+    pages: [
+      page(1, [
+        item("Rune Confidential", 72, 775, 9),
+        item("Quarterly Review", 72, 720, 24),
+        item("Revenue grew across", 72, 680, 12),
+        item("all operating regions.", 72, 665, 12),
+        item("• APAC led growth", 90, 630, 12),
+        item("Decision", 72, 585, 18),
+        item('{{ metric("fabricated") }} stays literal.', 72, 555, 12),
+        item("1", 304, 28, 9),
+      ], 2),
+      page(2, [
+        item("Rune Confidential", 72, 775, 9),
+        item("Next action", 72, 700, 18),
+        item("Fund the verified plan.", 72, 665, 12),
+        item("2", 304, 28, 9),
+      ]),
+      page(3, []),
+    ],
+  });
+
+  assert.equal(result.sourceType, "pdf");
+  assert.equal(result.artifacts.length, 1);
+  const artifact = result.artifacts[0];
+  assert.equal(artifact.name, "quarterly-review.md");
+  assert.match(artifact.source, /^# Quarterly Review/u);
+  assert.match(artifact.source, /<!-- PDF page 1 -->/u);
+  assert.match(artifact.source, /Revenue grew across all operating regions\./u);
+  assert.match(artifact.source, /^- APAC led growth$/mu);
+  assert.match(artifact.source, /^### Decision$/mu);
+  assert.match(artifact.source, /&#123;&#123; metric\("fabricated"\) &#125;&#125; stays literal\./u);
+  assert.doesNotMatch(artifact.source, /\{\{\s*metric/iu);
+  assert.doesNotMatch(artifact.source, /Rune Confidential/u);
+  assert.doesNotMatch(artifact.source, /^\d$/mu);
+  assert.match(artifact.source, /PDF page 3[\s\S]*OCR was not performed/u);
+  assert.match(result.warnings.join(" "), /selectable text.*approximate reading order/iu);
+  assert.match(result.warnings.join(" "), /repeated header or footer/iu);
+  assert.match(result.warnings.join(" "), /annotations were omitted/iu);
+  assert.match(result.warnings.join(" "), /bookmarks were not preserved/iu);
+  assert.match(result.warnings.join(" "), /JavaScript was ignored/iu);
+  assert.deepEqual(validateArtifact(artifact), []);
+});
+
+test("extracts a real two-page PDF locally through PDF.js", async () => {
+  const document = await PDFDocument.create();
+  document.setTitle("Operating Review");
+  const regular = await document.embedFont(StandardFonts.Helvetica);
+  const bold = await document.embedFont(StandardFonts.HelveticaBold);
+  const first = document.addPage([612, 792]);
+  first.drawText("Operating Review", { x: 72, y: 720, size: 24, font: bold });
+  first.drawText("Revenue grew across regions.", { x: 72, y: 680, size: 12, font: regular });
+  first.drawText("- APAC led growth", { x: 90, y: 650, size: 12, font: regular });
+  const second = document.addPage([612, 792]);
+  second.drawText("Decision", { x: 72, y: 710, size: 18, font: bold });
+  second.drawText("Fund the repeatable channel.", { x: 72, y: 675, size: 12, font: regular });
+  const bytes = await document.save();
+
+  const result = await convertPdfFileWithLibrary("operating-review.pdf", bytes, pdfjs);
+  const artifact = result.artifacts[0];
+  assert.equal(artifact.name, "operating-review.md");
+  assert.match(artifact.source, /^# Operating Review/u);
+  assert.match(artifact.source, /Revenue grew across regions\./u);
+  assert.match(artifact.source, /^- APAC led growth$/mu);
+  assert.match(artifact.source, /Decision/u);
+  assert.match(artifact.source, /Fund the repeatable channel\./u);
+  assert.equal((artifact.source.match(/<!-- PDF page/gu) ?? []).length, 2);
+  assert.deepEqual(validateArtifact(artifact), []);
+});
+
+test("fails closed for non-PDF, oversized, empty-page, and overlong page-count input", async () => {
+  const unusedPdfJs = { getDocument() { throw new Error("must not parse invalid bytes"); } };
+  await assert.rejects(
+    () => convertPdfFileWithLibrary("notes.txt", new TextEncoder().encode("%PDF-1.7"), unusedPdfJs),
+    /Choose a PDF/u,
+  );
+  await assert.rejects(
+    () => convertPdfFileWithLibrary("fake.pdf", new TextEncoder().encode("not a pdf"), unusedPdfJs),
+    /valid PDF header/u,
+  );
+  await assert.rejects(
+    () => convertPdfFileWithLibrary("large.pdf", new Uint8Array(MAX_PDF_IMPORT_BYTES + 1), unusedPdfJs),
+    /12 MB/u,
+  );
+  assert.throws(
+    () => convertPdfSemanticSnapshot("scan.pdf", { title: "", pages: [page(1, [])], outlineCount: 0, hasJavaScript: false }),
+    /no selectable text.*OCR/iu,
+  );
+  assert.throws(
+    () => convertPdfSemanticSnapshot("long.pdf", {
+      title: "Long",
+      pages: Array.from({ length: MAX_PDF_IMPORT_PAGES + 1 }, (_, index) => page(index + 1, [item("Text", 72, 700, 12)])),
+      outlineCount: 0,
+      hasJavaScript: false,
+    }),
+    /200 pages/u,
+  );
+});
+
+test("reports password-protected PDF failures without requesting a browser secret", async () => {
+  const protectedPdfJs = {
+    getDocument() {
+      let rejectPromise;
+      const promise = new Promise((_resolve, reject) => { rejectPromise = reject; });
+      const task = {
+        promise,
+        async destroy() {},
+        onPassword: null,
+      };
+      queueMicrotask(() => {
+        task.onPassword?.(() => {}, 1);
+        rejectPromise(Object.assign(new Error("Password required"), { name: "PasswordException" }));
+      });
+      return task;
+    },
+  };
+  await assert.rejects(
+    () => convertPdfFileWithLibrary("protected.pdf", new TextEncoder().encode("%PDF-1.7\n"), protectedPdfJs),
+    /Password-protected PDFs are not supported/u,
+  );
+});

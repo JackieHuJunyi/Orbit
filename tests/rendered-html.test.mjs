@@ -71,7 +71,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.38/);
+  assert.match(html, /Rune v0\.39/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -81,11 +81,13 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Every write is reviewable and undoable/);
 });
 
-test("keeps the Office compatibility parser out of the initial client bundle", async () => {
+test("keeps compatibility parsers and heavy runtimes out of the initial client bundle", async () => {
   const manifestUrl = new URL("../dist/client/.vite/manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
   assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-import.ts"));
+  assert.equal(manifest["app/lib/pdf-import-client.ts"]?.isDynamicEntry, true);
+  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/pdf-import-client.ts"));
   assert.equal(manifest["app/lib/office-export.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-export.ts"));
   assert.equal(manifest["app/lib/html-export.ts"]?.isDynamicEntry, true);
@@ -114,6 +116,9 @@ test("ships a review-before-write import surface in the client", async () => {
   const files = (await readdir(assetsUrl)).filter((name) => name.endsWith(".js"));
   const clientSource = (await Promise.all(files.map((name) => readFile(new URL(name, assetsUrl), "utf8")))).join("\n");
   assert.match(clientSource, /Review imported sources/);
+  assert.match(clientSource, /PDF import recovers selectable text and approximate reading order/);
+  assert.match(clientSource, /scanned PDFs do not receive OCR yet/);
+  assert.match(clientSource, /\.docx,\.xlsx,\.pptx,\.pdf/);
   assert.match(clientSource, /Nothing is written until you confirm/);
   assert.match(clientSource, /One atomic device write after confirmation/);
   assert.match(clientSource, /aria-modal/);

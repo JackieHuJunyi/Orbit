@@ -49,3 +49,4 @@
 - 2026-08-12 — Added revision-bound Document section editing with a live draft preview, exact-range proof, checkpoints, and atomic source synchronization.
 - 2026-08-12 — Added controlled Deck slide editing with layout and eyebrow fields, a sandboxed one-slide draft, exact-range proof, checkpoints, and atomic source synchronization.
 - 2026-08-12 — Added a runtime-validated Chart property panel that rewrites one strict, revision-bound Chart JSON spec through the shared checkpointed visual transaction.
+- 2026-08-12 — Added browser-local, review-first PDF-to-Markdown import with page provenance, bounded layout heuristics, executable-content refusal, and explicit OCR/fidelity limits.

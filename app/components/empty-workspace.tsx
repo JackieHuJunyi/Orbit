@@ -12,7 +12,7 @@ const copy = {
     choose: "选择文件",
     create: "新建空白内容",
     sample: "打开示例",
-    support: "支持 Markdown、CSV、JSON、HTML、DOCX、XLSX、PPTX；更多格式正在分阶段加入。",
+    support: "支持 Markdown、CSV、JSON、HTML、PDF、DOCX、XLSX、PPTX；PDF 会提取可选择文本并先显示转换审核。",
     drop: "松开即可准备导入",
     guide: "本地指南仍在左侧工作区中",
   },
@@ -23,7 +23,7 @@ const copy = {
     choose: "Choose files",
     create: "Create blank",
     sample: "Open sample",
-    support: "Supports Markdown, CSV, JSON, HTML, DOCX, XLSX, and PPTX. More formats are being added in stages.",
+    support: "Supports Markdown, CSV, JSON, HTML, PDF, DOCX, XLSX, and PPTX. PDFs extract selectable text into a reviewed conversion.",
     drop: "Release to prepare the import",
     guide: "Your local guide remains in the workspace rail",
   },
@@ -80,4 +80,3 @@ export function EmptyWorkspace({
     </section>
   );
 }
-

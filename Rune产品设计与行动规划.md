@@ -1012,7 +1012,7 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 
 | 家族 | 导入 | 导出 | 产品合同 |
 | --- | --- | --- | --- |
-| Document | 当前：MD、Markdown、DOCX；计划：PDF 文本到 MD、ODT | 当前：MD、DOCX、PDF；计划：ODT | 结构与语义优先，不承诺像素级 round-trip |
+| Document | 当前：MD、Markdown、DOCX、PDF 可选文本到 MD；计划：ODT、带置信度 OCR | 当前：MD、DOCX、PDF；计划：ODT | 结构与语义优先，不承诺像素级 round-trip |
 | Data | 当前：CSV、JSON、XLSX | 当前：CSV/JSON source、XLSX；计划：ODS、表格 PDF | 值、类型、列序和工作表边界明确 |
 | Presentation | 当前：Deck Markdown、HTML、PPTX | 当前：Deck Markdown、PPTX、HTML、PDF；计划：ODP | 语义布局优先，动画与复杂母版明确警告 |
 | Legacy binary | DOC、PPT 需要可靠转换边界 | DOC、PPT 不作为默认交付 | Web 版不伪装解析；由未来桌面壳或受控转换服务提供 |
@@ -1080,6 +1080,14 @@ Save 重新核对 artifact/source revision 和 slide target 的 id、index、lab
 本轮有意不允许在面板里切换 `source` identity。图表数据源不仅是视觉属性，它会改变 dependency graph、模型上下文、运行权限和所有嵌入成品，因此仍需在 canonical source 或有明确 diff/transaction map 的 Agent Review 中完成。Configure 只保留已有 source，重新生成完整 `version: 1` Chart JSON，并在 Save 前验证 schema、当前 target revision、完整 workspace、受影响 Query/Chart runtime 与 downstream consumers。
 
 成功写入沿用 visual transaction：旧 Chart 建 checkpoint、一次设备持久化、左侧选择完整新 JSON、右侧显示同一 revision；无效颜色/长度/范围、缺失字段、非数字 value、Query stale/truncated、no-op、并发 source 变化或任何消费者错误都零写入。图表数据点仍只负责定位 canonical Data cell，不能因为属性面板存在而获得直接修改 Query 结果的权限。
+
+### 6.18 v0.39 PDF → Markdown 语义导入
+
+PDF 现在进入与 DOCX/XLSX/PPTX 相同的多文件导入事务，但使用独立的按需解析端口。用户选择或拖入 `.pdf` 后，Rune 在浏览器本地加载 PDF.js 与同源 worker，读取 metadata、页尺寸、可选择文本、annotation 数量、书签数量和 JavaScript 存在性；原文件不上传，PDF JavaScript 不执行，加密文件不会在页面里索取密码。
+
+转换器以文字坐标组合行，保留 `<!-- PDF page N -->` 页来源，处理 CJK 相邻文字、主导 RTL 顺序、断词、段落、项目符号、编号列表和字体尺寸推断标题，并移除在至少半数页面边缘重复出现的页眉页脚。原文花括号会编码，避免恶意 PDF 伪造 `metric` 或 `chart` binding。生成的 Markdown 与其它导入一样先解决名字冲突、验证整个 workspace，并在审核弹层展示预览和所有 fidelity warning；只有确认才单次写入。
+
+当前合同只承诺“可选择文本到可继续编辑的 Markdown”，不承诺还原 PDF 版式。扫描页不做 OCR，图片、字体、列、表格、链接、批注、表单和书签会省略或展平；完全没有可选择文本的 PDF 明确失败。单文件限制 12 MB、200 页、100,000 个文字片段和 200,000 个输出字符。后续 OCR 必须携带页级置信度和原图对照再进入审核，不能静默混入确定文本。
 
 ---
 

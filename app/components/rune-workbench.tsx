@@ -159,7 +159,9 @@ import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
 const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
+const MAX_PDF_IMPORT_BYTES = 12 * 1024 * 1024;
 const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
+const PDF_IMPORT_PATTERN = /\.pdf$/i;
 
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
@@ -1774,11 +1776,17 @@ export function RuneWorkbench() {
       return;
     }
     const oversized = files.find((file) => file.size > (
-      OFFICE_IMPORT_PATTERN.test(file.name) ? MAX_OFFICE_IMPORT_BYTES : MAX_SOURCE_IMPORT_BYTES
+      OFFICE_IMPORT_PATTERN.test(file.name)
+        ? MAX_OFFICE_IMPORT_BYTES
+        : PDF_IMPORT_PATTERN.test(file.name)
+          ? MAX_PDF_IMPORT_BYTES
+          : MAX_SOURCE_IMPORT_BYTES
     ));
     if (oversized) {
       setNotice(OFFICE_IMPORT_PATTERN.test(oversized.name)
         ? oversized.name + " exceeds the 12 MB Office import limit"
+        : PDF_IMPORT_PATTERN.test(oversized.name)
+          ? oversized.name + " exceeds the 12 MB PDF import limit"
         : oversized.name + " exceeds the 2 MB source import limit");
       return;
     }
@@ -1799,9 +1807,16 @@ export function RuneWorkbench() {
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
+        if (PDF_IMPORT_PATTERN.test(file.name)) {
+          const { convertPdfFile } = await import("../lib/pdf-import-client");
+          const result = await convertPdfFile(file.name, await file.arrayBuffer());
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
         const artifact = detectArtifact(file.name, await file.text());
         if (!artifact) {
-          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, DOCX, XLSX, or PPTX.");
+          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, or PPTX.");
         }
         incoming.push(artifact);
       }
@@ -2053,7 +2068,7 @@ export function RuneWorkbench() {
               <Download />
             </button>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport)} />
         </div>
       </header>
 
@@ -2462,7 +2477,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.38</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.39</span></div>
       </footer>
 
       {newArtifactOpen && (

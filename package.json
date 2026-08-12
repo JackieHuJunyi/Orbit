@@ -12,6 +12,7 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
     "qa:pdf": "node --experimental-strip-types scripts/generate-pdf-qa.mjs",
+    "qa:pdf-import": "node --experimental-strip-types scripts/generate-pdf-import-qa.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate"
@@ -27,6 +28,7 @@
     "openai": "^7.4.0",
     "papaparse": "^5.5.4",
     "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.2.108",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-markdown": "^10.1.0",
