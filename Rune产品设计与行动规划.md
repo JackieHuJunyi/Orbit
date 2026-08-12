@@ -1065,6 +1065,14 @@ Save 必须重新证明 artifact id、source revision、target id/index/label �
 
 这个阶段仍不是完整 WYSIWYG。当前 section editor 暴露 Markdown 草稿，是从“只能点回 source”走向“可在成品侧安全写入”的过渡层；下一轮用户测试要观察普通用户是否能理解 section、是否需要块级格式工具条，以及 live draft 是否比直接编辑 source 更快。若证据成立，再为常用 paragraph/list/table block 增加受限控件；不先实现不可逆的任意富文本 round-trip。
 
+### 6.16 v0.37 Deck slide 受控编辑
+
+Deck Markdown 的右侧 slide strip 现在也拆分为“选择精确 source”和“编辑这一页”两个动作。编辑器只开放 Rune 已有明确 grammar 的三个字段：`cover/content/metrics/split/conclusion` 版式、可选的单行 eyebrow、以及单页 Markdown body。右侧草稿不是主 Deck iframe 的可变 DOM，而是用当前已验证 frontmatter 生成一份临时单页 Deck，经相同 binding compiler、HTML escaping 和空 sandbox iframe 实时展示。
+
+Save 重新核对 artifact/source revision 和 slide target 的 id、index、label、UTF-16 range，并用 Rune 自己的 metadata serializer 生成替换片段。草稿不能为空、不能注入独立 `---`、不能含 raw HTML，eyebrow 不能带换行、HTML/comment 语法且最多 100 字符；所有 `{{ ... }}` metric/Chart binding 必须与原页按顺序 byte-for-byte 相同。完整 Deck 必须重新 parse 成相同页数，并证明目标外 prefix/suffix 未改变，之后才进入共享的 workspace validation、checkpoint、单次设备写入和双侧 selection 同步。
+
+这不是通用 PowerPoint 画布：本轮不开放自由拖拽、绝对坐标、图片、动画、母版、页面增删/重排或 frontmatter/theme 修改。那些操作会改变结构或依赖，继续通过 canonical source 或可审核 Agent 完成。下一阶段按既定顺序实现 Chart 属性面板，让 bar/line、字段、颜色、排序和格式也以 typed spec operation 回写，而不是让图表 DOM 成为事实。
+
 ---
 
 ## 7. 指标、Eval 与结果验证

@@ -58,6 +58,14 @@ import {
   visualDocumentSectionDraft,
   type VisualDocumentSectionEditInput,
 } from "../lib/visual-document-edit";
+import {
+  MAX_VISUAL_DECK_SLIDE_CHARS,
+  VISUAL_DECK_LAYOUTS,
+  canVisualEditDeckSlide,
+  visualDeckSlideDraft,
+  visualDeckSlidePreviewSource,
+  type VisualDeckSlideEditInput,
+} from "../lib/visual-deck-edit";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (
@@ -76,6 +84,12 @@ export type DocumentSectionEditHandler = (
   artifact: WorkspaceArtifact,
   target: PreviewSourceTarget,
   input: VisualDocumentSectionEditInput,
+) => Promise<string | null>;
+
+export type DeckSlideEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: PreviewSourceTarget,
+  input: VisualDeckSlideEditInput,
 ) => Promise<string | null>;
 
 type QueryRuntimeEntry =
@@ -1007,6 +1021,7 @@ function SlidesPreview({
   targets,
   activeSelection,
   onTargetSource,
+  onEditDeckSlide,
 }: {
   artifact: WorkspaceArtifact;
   source: string;
@@ -1015,7 +1030,18 @@ function SlidesPreview({
   targets: PreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
+  onEditDeckSlide?: DeckSlideEditHandler;
 }) {
+  const [editingSlide, setEditingSlide] = useState<{
+    targetId: string;
+    artifactId: string;
+    sourceRevision: string;
+    layout: VisualDeckSlideEditInput["layout"];
+    eyebrow: string;
+    draft: string;
+    error: string;
+    submitting: boolean;
+  } | null>(null);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source) : null;
   if (deckCompilation?.errors.length) return <EmptyPreview message={deckCompilation.errors[0]} />;
   const runtimeSource = deckCompilation?.html ?? source;
@@ -1026,28 +1052,185 @@ function SlidesPreview({
       ? resolvePreviewChart(chartArtifact, artifacts, queryRuntime)
       : { errors: [`Chart not found: ${chartArtifactId}`] };
   });
+  const editingTarget = editingSlide?.artifactId === artifact.id
+    && editingSlide.sourceRevision === artifact.source
+    ? targets.find((target) => target.id === editingSlide.targetId)
+    : undefined;
+  const draftInput: VisualDeckSlideEditInput | null = editingSlide ? {
+    layout: editingSlide.layout,
+    eyebrow: editingSlide.eyebrow,
+    draft: editingSlide.draft,
+  } : null;
+  const draftCandidate = draftInput
+    ? visualDeckSlidePreviewSource(artifact, draftInput)
+    : null;
+  const draftBindings = draftCandidate && !draftCandidate.errors.length
+    ? compileArtifactSource(draftCandidate.source, artifacts, readyQuerySnapshots(queryRuntime))
+    : null;
+  const draftCompilation = draftBindings ? compileDeckSource(draftBindings.source) : null;
+  const draftRenderedSource = draftCompilation?.html
+    ? renderChartReferencesToHtml(draftCompilation.html, (chartArtifactId) => {
+      const chartArtifact = artifacts.find((candidate) => candidate.id === chartArtifactId && candidate.kind === "chart");
+      return chartArtifact
+        ? resolvePreviewChart(chartArtifact, artifacts, queryRuntime)
+        : { errors: [`Chart not found: ${chartArtifactId}`] };
+    })
+    : null;
+  const draftPreviewError = draftCandidate?.errors[0]
+    ?? draftCompilation?.errors[0]
+    ?? draftBindings?.metricBindingErrors[0]
+    ?? draftBindings?.unresolvedQueryMetrics[0]
+    ?? draftBindings?.queryMetricRuntimeErrors[0]
+    ?? "";
+
+  function beginSlideEdit(target: PreviewSourceTarget) {
+    if (!onEditDeckSlide || !canVisualEditDeckSlide(artifact, target)) return;
+    const draft = visualDeckSlideDraft(artifact, target);
+    if (!draft) return;
+    setEditingSlide({
+      targetId: target.id,
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      ...draft,
+      error: "",
+      submitting: false,
+    });
+  }
+
+  async function submitSlideEdit(target: PreviewSourceTarget) {
+    if (!editingSlide || !onEditDeckSlide) return;
+    setEditingSlide((current) => current ? { ...current, error: "", submitting: true } : current);
+    const error = await onEditDeckSlide(artifact, target, {
+      layout: editingSlide.layout,
+      eyebrow: editingSlide.eyebrow,
+      draft: editingSlide.draft,
+    });
+    if (error) {
+      setEditingSlide((current) => current ? { ...current, error, submitting: false } : current);
+      return;
+    }
+    setEditingSlide(null);
+  }
+
   return (
     <div className="slides-stage">
-      <div className="slides-stage-meta"><span>{slideCount} slides</span><span>{deckCompilation ? "Deck Markdown → sandboxed HTML" : "Legacy sandboxed HTML"}</span></div>
-      {onTargetSource && targets.length > 0 && (
-        <nav className="slide-targets" aria-label="Select a slide as Agent context">
+      <div className="slides-stage-meta"><span>{slideCount} slides</span><span>{deckCompilation ? onEditDeckSlide ? "Deck Markdown → select or edit one exact slide" : "Deck Markdown → sandboxed HTML" : "Legacy sandboxed HTML"}</span></div>
+      {(onTargetSource || onEditDeckSlide) && targets.length > 0 && (
+        <nav className="slide-targets" aria-label="Select or edit a Deck slide">
           {targets.map((target) => {
             const active = previewTargetIsActive(target, activeSelection);
+            const editable = Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target));
+            const editing = editingTarget?.id === target.id;
             return (
-              <button
-                className={active ? "active" : ""}
-                key={target.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => onTargetSource(artifact, target)}
-                title={`Select ${target.label} in canonical source`}
-              >
-                <span>{String(target.index + 1).padStart(2, "0")}</span>
-                <strong>{target.label}</strong>
-              </button>
+              <span className={`slide-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()} key={target.id}>
+                {onTargetSource && (
+                  <button
+                    className="slide-target-select"
+                    data-preview-source-target={target.kind}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onTargetSource(artifact, target)}
+                    title={`Select ${target.label} in canonical source`}
+                  >
+                    <span>{String(target.index + 1).padStart(2, "0")}</span>
+                    <strong>{target.label}</strong>
+                  </button>
+                )}
+                {editable && (
+                  <button
+                    className="slide-target-edit"
+                    type="button"
+                    aria-label={`Edit ${target.label}`}
+                    title={`Edit exact ${target.label} slide`}
+                    onClick={() => beginSlideEdit(target)}
+                  >
+                    <PencilLine aria-hidden="true" />
+                  </button>
+                )}
+              </span>
             );
           })}
         </nav>
+      )}
+      {editingSlide && editingTarget && (
+        <form
+          className="visual-deck-editor"
+          aria-busy={editingSlide.submitting}
+          onSubmit={(event) => { event.preventDefault(); void submitSlideEdit(editingTarget); }}
+        >
+          <header>
+            <div><span>Editing exact slide {editingTarget.index + 1}</span><strong>{editingTarget.label}</strong></div>
+            <small>{editingSlide.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DECK_SLIDE_CHARS.toLocaleString("en-US")}</small>
+          </header>
+          <div className="visual-deck-editor-grid">
+            <div className="visual-deck-fields">
+              <div className="visual-deck-field-row">
+                <label>
+                  <span>Layout</span>
+                  <select
+                    aria-label={`Choose layout for ${editingTarget.label}`}
+                    value={editingSlide.layout}
+                    disabled={editingSlide.submitting}
+                    onChange={(event) => setEditingSlide((current) => current ? {
+                      ...current,
+                      layout: event.target.value as VisualDeckSlideEditInput["layout"],
+                      error: "",
+                    } : current)}
+                  >
+                    {VISUAL_DECK_LAYOUTS.map((layout) => <option key={layout} value={layout}>{layout}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>Eyebrow <small>optional</small></span>
+                  <input
+                    aria-label={`Edit eyebrow for ${editingTarget.label}`}
+                    value={editingSlide.eyebrow}
+                    disabled={editingSlide.submitting}
+                    maxLength={100}
+                    onChange={(event) => setEditingSlide((current) => current ? { ...current, eyebrow: event.target.value, error: "" } : current)}
+                  />
+                </label>
+              </div>
+              <label className="visual-deck-markdown-field">
+                <span>Slide Markdown</span>
+                <textarea
+                  autoFocus
+                  aria-label={`Edit ${editingTarget.label} slide Markdown`}
+                  value={editingSlide.draft}
+                  disabled={editingSlide.submitting}
+                  maxLength={MAX_VISUAL_DECK_SLIDE_CHARS}
+                  spellCheck
+                  onChange={(event) => setEditingSlide((current) => current ? { ...current, draft: event.target.value, error: "" } : current)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setEditingSlide(null);
+                    } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                      event.preventDefault();
+                      void submitSlideEdit(editingTarget);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            <section className="visual-deck-draft" aria-label={`Draft preview for ${editingTarget.label}`}>
+              <span>Sandboxed one-slide preview</span>
+              {draftRenderedSource && !draftPreviewError
+                ? <iframe srcDoc={draftRenderedSource} sandbox="" title={`Draft preview for ${editingTarget.label}`} />
+                : <div className="visual-deck-draft-error"><AlertTriangle aria-hidden="true" /><p>{draftPreviewError || "Add a valid # or ## slide heading."}</p></div>}
+            </section>
+          </div>
+          {editingSlide.error && <p className="visual-deck-error" role="alert">{editingSlide.error}</p>}
+          <footer>
+            <p>One revision-bound slide · bindings stay fixed · save writes canonical source</p>
+            <div>
+              <button type="button" disabled={editingSlide.submitting} onClick={() => setEditingSlide(null)}><X />Cancel</button>
+              <button type="submit" disabled={editingSlide.submitting || !editingSlide.draft.trim() || Boolean(draftPreviewError)}>
+                {editingSlide.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save slide
+              </button>
+            </div>
+          </footer>
+        </form>
       )}
       <iframe
         className="slides-frame"
@@ -1066,6 +1249,7 @@ export function ArtifactPreview({
   onTargetSource,
   onEditDataCell,
   onEditDocumentSection,
+  onEditDeckSlide,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -1073,6 +1257,7 @@ export function ArtifactPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
+  onEditDeckSlide?: DeckSlideEditHandler;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
@@ -1092,5 +1277,5 @@ export function ArtifactPreview({
     return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
   }
   if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />;
-  return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} />;
+  return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} />;
 }

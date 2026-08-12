@@ -3830,46 +3830,287 @@ button.chart-line-point {
   overflow-x: auto;
 }
 
-.slide-targets button {
-  display: inline-grid;
+.slide-target {
+  display: inline-flex;
   min-width: 138px;
   height: 38px;
   flex: 0 0 auto;
-  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 7px;
-  padding: 0 9px;
   border: 1px solid #c7c4ba;
   border-radius: 8px;
   background: rgba(255, 255, 255, .68);
   color: #536058;
+  overflow: hidden;
+}
+
+.slide-target:hover,
+.slide-target:focus-within,
+.slide-target.active,
+.slide-target.editing {
+  border-color: rgba(220, 75, 54, .56);
+  outline: 0;
+  background: #fff2ee;
+  color: #a7382b;
+}
+
+.slide-target.active,
+.slide-target.editing {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.slide-target-select,
+.slide-target-edit {
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
+}
+
+.slide-target-select {
+  display: inline-grid;
+  min-width: 0;
+  flex: 1;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px;
   text-align: left;
 }
 
-.slide-targets button:hover,
-.slide-targets button:focus-visible,
-.slide-targets button.active {
-  border-color: #8eb39d;
-  outline: 0;
-  background: #edf7f0;
-  color: #1f6f50;
+.slide-target-edit {
+  display: grid;
+  width: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-left: 1px solid rgba(125, 126, 121, .2);
+  opacity: .7;
 }
 
-.slide-targets button.active {
-  box-shadow: inset 0 -2px 0 var(--data);
+.slide-target-select:hover,
+.slide-target-select:focus-visible,
+.slide-target-edit:hover,
+.slide-target-edit:focus-visible {
+  background: rgba(255, 255, 255, .72);
+  color: var(--accent);
 }
 
-.slide-targets span {
+.slide-target-select span {
   font-family: var(--font-mono);
   font-size: 8px;
 }
 
-.slide-targets strong {
+.slide-target-select strong {
   overflow: hidden;
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.slide-target-edit svg {
+  width: 11px;
+  height: 11px;
+}
+
+.visual-deck-editor {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 12px;
+  margin-bottom: 11px;
+  padding: 14px;
+  border: 1px solid #c7c4ba;
+  border-radius: 13px;
+  background: rgba(249, 248, 244, .96);
+  box-shadow: 0 14px 34px rgba(45, 42, 39, .12);
+  color: var(--ink);
+}
+
+.visual-deck-editor > header,
+.visual-deck-editor > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.visual-deck-editor > header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.visual-deck-editor > header span,
+.visual-deck-fields label > span,
+.visual-deck-draft > span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.visual-deck-editor > header strong {
+  font-size: 12px;
+}
+
+.visual-deck-editor > header small {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.visual-deck-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr);
+  gap: 11px;
+}
+
+.visual-deck-fields,
+.visual-deck-fields label,
+.visual-deck-draft {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.visual-deck-fields {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.visual-deck-field-row {
+  display: grid;
+  grid-template-columns: minmax(110px, .72fr) minmax(160px, 1.28fr);
+  gap: 8px;
+}
+
+.visual-deck-fields select,
+.visual-deck-fields input,
+.visual-deck-fields textarea {
+  width: 100%;
+  border: 1px solid #d4d1ca;
+  border-radius: 8px;
+  outline: 0;
+  background: #fff;
+  color: #343438;
+}
+
+.visual-deck-fields select,
+.visual-deck-fields input {
+  height: 33px;
+  padding: 0 9px;
+  font: 10px var(--font-sans);
+}
+
+.visual-deck-fields textarea {
+  min-height: 235px;
+  padding: 12px;
+  resize: vertical;
+  font: 10px/1.6 var(--font-mono);
+  tab-size: 2;
+}
+
+.visual-deck-fields select:focus,
+.visual-deck-fields input:focus,
+.visual-deck-fields textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(220, 75, 54, .1);
+}
+
+.visual-deck-field-row label > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.visual-deck-field-row label > span small {
+  color: var(--subtle);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.visual-deck-draft iframe,
+.visual-deck-draft-error {
+  width: 100%;
+  min-height: 274px;
+  border: 1px solid #d4d1ca;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.visual-deck-draft iframe {
+  aspect-ratio: 16 / 9;
+}
+
+.visual-deck-draft-error {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--danger);
+  text-align: center;
+}
+
+.visual-deck-draft-error svg {
+  width: 18px;
+}
+
+.visual-deck-draft-error p,
+.visual-deck-error,
+.visual-deck-editor > footer p {
+  margin: 0;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.visual-deck-error {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff0ec;
+  color: var(--danger);
+}
+
+.visual-deck-editor > footer p {
+  color: var(--muted);
+}
+
+.visual-deck-editor > footer > div {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.visual-deck-editor > footer button {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1px solid #d8d5cf;
+  border-radius: 8px;
+  background: #fff;
+  color: #5d5d62;
+  cursor: pointer;
+  font: 700 9px var(--font-sans);
+}
+
+.visual-deck-editor > footer button:last-child {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.visual-deck-editor > footer button:disabled {
+  cursor: wait;
+  opacity: .58;
+}
+
+.visual-deck-editor > footer button svg {
+  width: 11px;
+  height: 11px;
 }
 
 .slides-frame {
@@ -5073,12 +5314,18 @@ button.chart-line-point {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .visual-document-editor > footer {
+  .visual-deck-editor-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .visual-document-editor > footer,
+  .visual-deck-editor > footer {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .visual-document-editor > footer > div {
+  .visual-document-editor > footer > div,
+  .visual-deck-editor > footer > div {
     justify-content: flex-end;
   }
 

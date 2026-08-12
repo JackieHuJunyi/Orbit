@@ -47,3 +47,4 @@
 - 2026-08-12 — Added Rune's vermilion visual baseline, device-language welcome, real shortcut tutorial, editable local guide, and review-first multi-file drop/open state.
 - 2026-08-12 — Added safe post-language model setup and exact typed preview-to-source Data cell edits with downstream runtime verification.
 - 2026-08-12 — Added revision-bound Document section editing with a live draft preview, exact-range proof, checkpoints, and atomic source synchronization.
+- 2026-08-12 — Added controlled Deck slide editing with layout and eyebrow fields, a sandboxed one-slide draft, exact-range proof, checkpoints, and atomic source synchronization.

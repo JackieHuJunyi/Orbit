@@ -38,6 +38,7 @@ import { ChangeEvent, KeyboardEvent, SyntheticEvent, useEffect, useMemo, useRef,
 import {
   ArtifactPreview,
   type DataCellEditHandler,
+  type DeckSlideEditHandler,
   type DocumentSectionEditHandler,
 } from "./artifact-previews";
 import { EmptyWorkspace } from "./empty-workspace";
@@ -151,6 +152,7 @@ import {
 } from "../lib/model-preference";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
+import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -990,6 +992,19 @@ export function RuneWorkbench() {
     detail: "Replace one revision-bound Markdown section through the visual Document editor.",
     verificationNotice: `Verifying ${target.label} against the complete workspace…`,
     compile: (currentArtifact) => prepareVisualDocumentSectionEdit(currentArtifact, target, input),
+  });
+
+  const commitVisualDeckSlideEdit: DeckSlideEditHandler = async (
+    targetArtifact,
+    target,
+    input,
+  ) => commitVisualSourceEdit({
+    targetArtifact,
+    targetLabel: target.label,
+    targetNoun: "slide",
+    detail: "Replace one revision-bound Deck slide through the controlled visual editor.",
+    verificationNotice: `Verifying ${target.label} against the complete workspace…`,
+    compile: (currentArtifact) => prepareVisualDeckSlideEdit(currentArtifact, target, input),
   });
 
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
@@ -2420,6 +2435,7 @@ export function RuneWorkbench() {
                 onTargetSource={focusPreviewTarget}
                 onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
                 onEditDocumentSection={visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
+                onEditDeckSlide={visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
               />
             </div>
           </div>
@@ -2430,7 +2446,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.36</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.37</span></div>
       </footer>
 
       {newArtifactOpen && (

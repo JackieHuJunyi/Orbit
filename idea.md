@@ -1742,3 +1742,15 @@ live binding 需要更严格的权限。视觉 editor 中出现的每个 `{{ ...
 compiler 只用 replacement 替换 exact range，并再次证明 prefix 与 suffix 完全不变；随后通过完整 proposed workspace 的 adapter、metric、Chart 与 dependency validation。共享 visual-commit pipeline 捕获全工作区 revision，暂停 source、Import、Export 和 Agent 并发写入，为旧 Document 建 manual checkpoint，再执行一次 device persistence。只有成功后 React workspace 才切换，新 section range 同时成为左侧 textarea selection、右侧 active target 和 Selection Agent capability；失败时旧 source 和恢复历史都不改变。Data 与 Document 共用这一 commit pipeline，为下一步 Deck slide 和 Chart property 避免复制一套不一致事务。
 
 v0.36 仍没有 paragraph-level DOM selection、拖拽重排 section、可视化表格结构编辑、图片 block 或多人光标。下一步不是立刻引入通用 rich-text framework，而是先观察 section editor 的三个事实：普通用户是否理解 section 名称，是否能在 draft preview 中更快完成真实报告修改，是否高频需要 bold/list/link 等可逆 formatting controls。只有这些证据成立，才为单个 Markdown AST block 增加稳定 identity 与 typed operation；否则保留 section/source 两级就比维护第三套文档模型更低成本、更可信。
+
+## 42. Deck 双向编辑从受限 slide grammar 开始，而不是做一块缩水版 PowerPoint
+
+演示预览运行在无脚本 sandbox iframe 中，它天然不能像 React 文档或表格一样把 click 事件直接带回 workbench；更重要的是，iframe 中的 HTML 是 Deck Markdown、metric 和 Chart snapshot 的编译结果，不是可逆编辑模型。让用户直接拖动编译后的标题或图形，再尝试从 CSS/DOM 反推 Deck Markdown，会立刻制造第三份 layout state，并破坏 Rune “source 是事实”的核心。因此 v0.37 继续使用 iframe 外、由 canonical source 派生的 `deck-slide` target strip：主按钮只定位 source，独立铅笔才授予该页的受控写权限。
+
+单页 editor 不复制完整 PowerPoint 功能，只呈现 strict Deck grammar 已经拥有的三个旋钮：五种 layout enum、最多 100 字符的单行 eyebrow、最多 16,000 字符的 Markdown body。打开时 parser 从当前 source revision 读出语义字段，而不是把 metadata comment 当普通正文交给用户；输入过程只保存在 React state。草稿预览也不复用整份 source：Rune 从当前已验证 frontmatter 合成一份临时单页 Deck，先解析、编译 live binding，再用相同 escaped static HTML 进入一个新的空 sandbox iframe。这样用户看到真实主题与布局，同时临时草稿不污染 workspace、checkpoint、folder、localStorage 或 dependency graph。
+
+Save 不信任打开时的解析结果。compiler 用 artifact kind/language、target id/index/label/start/end 再次证明当前页；拒绝空白、no-op、过长 body、未知 layout、换行或 `<>`/`--` eyebrow、独立 `---` 和 raw HTML。每个 `{{ ... }}` binding 必须与原页按顺序 byte-for-byte 相同，所以改文案/版式不会顺手换掉数据来源。replacement 使用源文件的 CRLF/LF 约定和 Rune-owned metadata 顺序，只覆盖 exact slide range；随后重解析整份 Deck，证明页数不变、目标新 range 可派生、prefix/suffix 完全不动。
+
+通过上述局部证明后，Deck 写入不走快捷路径，而是复用 Data/Document 已有的共享 transaction：验证完整 proposed workspace、捕获并复核全工作区 revision、为旧 Deck 建立 manual checkpoint、单次 device persistence，成功后将左侧 textarea 选到新 slide 并让右侧 target 同步 active。任何错误都留在 editor 内，源、恢复历史和 folder 都零写入。frontmatter/theme、增删/重排页、binding 修改、旧 Semantic HTML 仍属于 canonical source 或 Agent review；这是刻意的 capability boundary，不是遗漏。
+
+这一阶段真正验证的问题不是“Rune 能否像 PowerPoint 一样拖框”，而是用户能否在一个 page-sized preview 旁快速完成大多数叙事修改，并理解 layout 是受控选择而非任意画布。如果高频需求集中在改标题、要点、eyebrow 和 layout，这个小 grammar 会比自由画布更可靠；如果真实用户持续需要图片、演讲者备注、母版和坐标布局，再用数据决定扩展 AST，而不是预先背负完整演示引擎。
