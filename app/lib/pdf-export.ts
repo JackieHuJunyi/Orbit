@@ -708,6 +708,7 @@ type DeckContext = {
   supported: Set<number>;
   warnings: Set<string>;
   theme: PdfTheme;
+  images: Map<string, { asset: RuneExportImageAsset; image: PDFImage }>;
 };
 
 function deckPlain(source: string, context: DeckContext) {
@@ -838,7 +839,7 @@ function drawDeckBody(
   let y = box.y + box.height;
   const bottom = box.y;
   for (const block of blocks) {
-    if (block.type === "heading" || (block.type === "paragraph" && CHART_TOKEN.test(block.source))) continue;
+    if (block.type === "heading" || (block.type === "paragraph" && (CHART_TOKEN.test(block.source) || parseRuneMarkdownImage(block.source)))) continue;
     if (y < bottom + 20) {
       context.warnings.add("Slide content that exceeded the fixed 16:9 frame was omitted after a visible layout boundary.");
       break;
@@ -864,6 +865,26 @@ function drawDeckBody(
   }
 }
 
+function drawDeckImage(
+  page: PDFPage,
+  reference: { id: string; alt: string },
+  context: DeckContext,
+  box: { x: number; y: number; width: number; height: number },
+) {
+  const resolved = context.images.get(reference.id);
+  if (!resolved) throw new Error(`Referenced local image is missing or corrupt: ${reference.id}`);
+  const scale = Math.min(box.width / resolved.image.width, box.height / resolved.image.height);
+  const width = resolved.image.width * scale;
+  const height = resolved.image.height * scale;
+  page.drawImage(resolved.image, {
+    x: box.x + (box.width - width) / 2,
+    y: box.y + (box.height - height) / 2,
+    width,
+    height,
+  });
+  context.warnings.add("Rune local images are embedded as portable, static PDF media; content-hash references remain only in canonical Deck Markdown.");
+}
+
 function drawDeckSlide(
   page: PDFPage,
   slide: DeckSlide,
@@ -878,6 +899,7 @@ function drawDeckSlide(
   const blocks = parseMarkdownBlocks(slide.source);
   const heading = blocks.find((block): block is Extract<MarkdownBlock, { type: "heading" }> => block.type === "heading");
   const body = heading ? blocks.filter((block) => block !== heading) : blocks;
+  const imageReference = body.flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)].filter((value): value is { id: string; alt: string } => Boolean(value)) : [])[0];
   const chartIds = chartIdsFromBlocks(blocks);
   const chartModels = chartIds.map((id) => resolvePdfChart(id, workspace, snapshots));
   const eyebrow = safeText(slide.eyebrow.toLocaleUpperCase("en-US"), context.supported, context.warnings);
@@ -894,19 +916,20 @@ function drawDeckSlide(
     if (heading) drawDeckWrapped(page, heading.source, context, {
       x: 66,
       y: 352,
-      width: 820,
+      width: imageReference ? 500 : 820,
       size: 50,
       lineHeight: 56,
       maxLines: 3,
     });
-    drawDeckBody(page, body, context, { x: 68, y: 90, width: 650, height: 145 });
+    drawDeckBody(page, body, context, { x: 68, y: 90, width: imageReference ? 440 : 650, height: 145 });
+    if (imageReference) drawDeckImage(page, imageReference, context, { x: 605, y: 92, width: 289, height: 345 });
     page.drawRectangle({ x: 66, y: 256, width: 64, height: 5, color: COLORS.accent });
     return;
   }
   if (heading) drawDeckWrapped(page, heading.source, context, {
     x: 66,
     y: 418,
-    width: slide.layout === "split" ? 420 : 828,
+    width: slide.layout === "split" || imageReference ? 420 : 828,
     size: slide.layout === "split" ? 31 : 34,
     lineHeight: slide.layout === "split" ? 36 : 40,
     maxLines: 3,
@@ -919,14 +942,16 @@ function drawDeckSlide(
   }
   if (slide.layout === "split") {
     drawDeckBody(page, body, context, { x: 66, y: 85, width: 390, height: 215 });
-    if (chartModels[0]) {
+    if (imageReference) drawDeckImage(page, imageReference, context, { x: 500, y: 94, width: 394, height: 312 });
+    else if (chartModels[0]) {
       drawPdfChart(page, chartModels[0], context, { x: 500, y: 94, width: 394, height: 312 }, context.theme);
       context.warnings.add("Charts are frozen as vector snapshots of the exact current workspace data used for this PDF.");
     }
     return;
   }
-  drawDeckBody(page, body, context, { x: 66, y: 76, width: chartModels.length ? 390 : 828, height: 266 });
-  if (chartModels[0]) {
+  drawDeckBody(page, body, context, { x: 66, y: 76, width: chartModels.length || imageReference ? 390 : 828, height: 266 });
+  if (imageReference) drawDeckImage(page, imageReference, context, { x: 500, y: 78, width: 394, height: 264 });
+  else if (chartModels[0]) {
     drawPdfChart(page, chartModels[0], context, { x: 500, y: 78, width: 394, height: 264 }, context.theme);
     context.warnings.add("Charts are frozen as vector snapshots of the exact current workspace data used for this PDF.");
   }
@@ -937,6 +962,7 @@ async function renderDeckPdf(
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
   fontBytes: Uint8Array,
+  imageAssets: readonly RuneExportImageAsset[],
 ) {
   const warnings = new Set<string>([
     "Deck slides use fixed 16:9 pages; animations, speaker notes, and editable slide objects are not included.",
@@ -946,11 +972,23 @@ async function renderDeckPdf(
   const parsed = parseDeckSource(source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "Deck Markdown could not compile for PDF export.");
   const { document, font, unicodeFont, supported } = await createPdf(parsed.deck.frontmatter.title, fontBytes);
+  const verifiedImages = runeImageAssetMap(imageAssets);
+  const referencedImageIds = extractRuneAssetIds(source);
+  const missingImage = referencedImageIds.find((id) => !verifiedImages.has(id));
+  if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
+  for (const [id, asset] of verifiedImages) {
+    const compatible = await pdfCompatibleImage(asset);
+    const image = compatible.mimeType === "image/png" ? await document.embedPng(compatible.bytes) : await document.embedJpg(compatible.bytes);
+    images.set(id, { asset, image });
+  }
   const dark = parsed.deck.frontmatter.theme === "rune-dark";
   const theme: PdfTheme = dark
     ? { paper: COLORS.darkPaper, ink: COLORS.darkInk, muted: COLORS.darkMuted, line: rgb(0.204, 0.255, 0.224) }
     : { paper: COLORS.paper, ink: COLORS.ink, muted: COLORS.muted, line: COLORS.line };
-  const context: DeckContext = { font, unicodeFont, supported, warnings, theme };
+  const context: DeckContext = { font, unicodeFont, supported, warnings, theme, images };
   parsed.deck.slides.forEach((slide, index) => {
     const page = document.addPage([DECK_WIDTH, DECK_HEIGHT]);
     drawDeckSlide(page, slide, index, parsed.deck?.slides.length ?? 0, workspace, snapshots, context);
@@ -980,7 +1018,7 @@ export async function exportPdfArtifact(
     ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets)
     : artifact.kind === "data"
       ? await renderDataPdf(artifact, fontBytes)
-      : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes);
+      : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets);
   if (rendered.bytes.length > MAX_PDF_EXPORT_BYTES) throw new Error("The generated PDF exceeds Rune's 12 MB export limit.");
   return {
     bytes: rendered.bytes,

@@ -15,6 +15,10 @@ function defaultDeck() {
   return deck;
 }
 
+const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const runeImageId = "d".repeat(64);
+const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+
 test("exports a deterministic self-contained Deck HTML handoff", () => {
   const deck = defaultDeck();
   const sourceBefore = deck.source;
@@ -64,6 +68,38 @@ test("rejects unsupported or unresolved HTML export inputs", () => {
   );
 });
 
+test("embeds reviewed Deck images as approved data URLs without opening an external resource boundary", () => {
+  const artifact = {
+    id: "image-deck",
+    name: "image-deck.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Image deck
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: split -->
+# Visual proof
+
+The source remains readable.
+
+![Portable proof](rune-asset:sha256:${runeImageId})
+`,
+  };
+  const first = exportDeckHtml(artifact, [artifact], [], [runeImageAsset]);
+  const second = exportDeckHtml(artifact, [artifact], [], [runeImageAsset]);
+  assert.deepEqual(first.bytes, second.bytes);
+  const html = new TextDecoder().decode(first.bytes);
+  assert.match(html, /<img src="data:image\/png;base64,/u);
+  assert.doesNotMatch(html, /https?:\/\//u);
+  assert.match(first.warnings.join(" "), /local images/iu);
+  assert.throws(() => exportDeckHtml(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
+});
+
 test("sanitizes portable HTML filenames and hostile deck metadata", () => {
   const deck = {
     ...defaultDeck(),
@@ -81,17 +117,13 @@ test("sanitizes portable HTML filenames and hostile deck metadata", () => {
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
 });
 
-test("caps standalone HTML after workspace charts are expanded", () => {
-  const longLabel = "x".repeat(105_000);
-  const rows = Array.from({ length: 20 }, (_, index) => `${index}-${longLabel},${index + 1}`).join("\n");
-  const data = { id: "large-html-data", name: "large.csv", kind: "data", language: "CSV", source: `Label,Value\n${rows}\n` };
-  const chart = {
-    id: "large-html-chart",
-    name: "large.chart.json",
-    kind: "chart",
-    language: "Chart JSON",
-    source: JSON.stringify({ version: 1, title: "Large chart", description: "", source: data.id, mark: "bar", category: "Label", value: "Value", sort: "source", format: "number", color: "#ff5c35", maxItems: 20 }),
-  };
+test("caps standalone HTML after local images are embedded", () => {
+  const imageBytes = new Uint8Array(5 * 1024 * 1024);
+  imageBytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  imageBytes.set([0, 0, 0, 1, 0, 0, 0, 1], 16);
+  const firstId = "e".repeat(64);
+  const secondId = "f".repeat(64);
+  const assets = [firstId, secondId].map((id, index) => ({ id, name: `large-${index}.png`, mimeType: "image/png", size: imageBytes.length, bytes: imageBytes }));
   const deck = {
     id: "large-html-deck",
     name: "large.deck.md",
@@ -105,12 +137,18 @@ ratio: 16:9
 lang: en
 ---
 
-# Large chart
+# Large image one
 
-{{ chart("large-html-chart") }}
+![One](rune-asset:sha256:${firstId})
+
+---
+
+# Large image two
+
+![Two](rune-asset:sha256:${secondId})
 `,
   };
-  assert.throws(() => exportDeckHtml(deck, [deck, data, chart]), /exceeds Rune's 2 MB export limit/i);
+  assert.throws(() => exportDeckHtml(deck, [deck], [], assets), /exceeds Rune's 12 MB export limit/i);
 });
 
 test("exports a scriptless line chart with deterministic SVG geometry", () => {

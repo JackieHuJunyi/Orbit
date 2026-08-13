@@ -177,6 +177,22 @@ export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) 
   return byId;
 }
 
+export function runeImageDataUrl(asset: RuneExportImageAsset) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let encoded = "";
+  for (let index = 0; index < asset.bytes.length; index += 3) {
+    const first = asset.bytes[index];
+    const second = asset.bytes[index + 1];
+    const third = asset.bytes[index + 2];
+    const value = (first << 16) | ((second ?? 0) << 8) | (third ?? 0);
+    encoded += alphabet[(value >>> 18) & 63];
+    encoded += alphabet[(value >>> 12) & 63];
+    encoded += second == null ? "=" : alphabet[(value >>> 6) & 63];
+    encoded += third == null ? "=" : alphabet[value & 63];
+  }
+  return `data:${asset.mimeType};base64,${encoded}`;
+}
+
 export function buildRuneImageInsertion(source: string, offset: number, alt: string, assetId: string): RuneImageInsertion {
   if (!validUtf16Boundary(source, offset)) throw new Error("The image insertion point is no longer valid.");
   const safeAlt = escapeMarkdownAlt(alt);

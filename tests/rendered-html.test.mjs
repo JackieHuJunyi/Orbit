@@ -451,7 +451,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.98<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.99<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -546,6 +546,8 @@ test("ships reviewed device-local images as content-hash Markdown references wit
   assert.match(workbench, /accept=\{RUNE_IMAGE_ACCEPT\}/);
   assert.match(workbench, /putRuneImageAsset\(pending\.asset\)/);
   assert.match(workbench, /deleteRuneImageAsset\(pending\.asset\.id\)/);
+  assert.match(workbench, /selectedArtifact\.kind === "slides" && isDeckMarkdownArtifact\(selectedArtifact\)/);
+  assert.match(preview, /compileDeckSource\(source, \{ resolveLocalAssetUrl \}\)/);
   assert.match(preview, /data-rune-asset-state/);
   assert.match(preview, /defaultUrlTransform/);
   assert.match(preview, /node\.tagName === "img" && key === "src"/);

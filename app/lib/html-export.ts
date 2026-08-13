@@ -2,10 +2,11 @@ import { compileArtifactSource } from "./bindings.ts";
 import { renderChartReferencesToHtml, resolveChartModel, type ChartModel } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import { extractRuneAssetIds, parseRuneAssetReference, runeImageAssetMap, runeImageDataUrl, type RuneExportImageAsset } from "./local-assets.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 
-export const MAX_STANDALONE_HTML_BYTES = 2 * 1024 * 1024;
+export const MAX_STANDALONE_HTML_BYTES = 12 * 1024 * 1024;
 
 const PORTABLE_EXPORT_HEAD = `<meta name="generator" content="Rune" />
 <meta name="rune-export" content="standalone-deck-v1" />
@@ -53,29 +54,47 @@ export function exportDeckHtml(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
+  imageAssets: readonly RuneExportImageAsset[] = [],
 ): ArtifactExportResult<"html"> {
   if (artifact.kind !== "slides" || !isDeckMarkdownArtifact(artifact)) {
     throw new Error("Standalone HTML export supports Deck Markdown presentations.");
   }
   const { compiledSource, charts } = resolvedCharts(artifact, workspace, querySnapshots);
-  const deck = compileDeckSource(compiledSource);
+  const images = runeImageAssetMap(imageAssets);
+  const referencedImageIds = extractRuneAssetIds(compiledSource);
+  const missingImage = referencedImageIds.find((id) => !images.has(id));
+  if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  const approvedDataUrls = new Set<string>();
+  const deck = compileDeckSource(compiledSource, {
+    resolveLocalAssetUrl(reference) {
+      const id = parseRuneAssetReference(reference);
+      const asset = id ? images.get(id) : null;
+      if (!asset) return null;
+      const url = runeImageDataUrl(asset);
+      approvedDataUrls.add(url);
+      return url;
+    },
+  });
   if (!deck.html) throw new Error(deck.errors[0] ?? "The Deck Markdown source could not compile to HTML.");
   const rendered = renderChartReferencesToHtml(deck.html, (chartArtifactId) => {
     const model = charts.get(chartArtifactId);
     return model ? { model, errors: [] } : { errors: [`Chart not found: ${chartArtifactId}`] };
   }).replace("</head>", `${PORTABLE_EXPORT_HEAD}\n</head>`);
   if (/\{\{\s*(?:metric|chart)\(/i.test(rendered)) throw new Error("The standalone HTML still contains an unresolved workspace binding.");
-  if (/<script\b|<(?:iframe|object|embed|link)\b|<[a-z][^>]*\s(?:src|href)\s*=/i.test(rendered)) {
+  const unsafeResource = [...rendered.matchAll(/\s(src|href)="([^"]*)"/gi)].find((match) => match[1].toLowerCase() !== "src" || !approvedDataUrls.has(match[2]));
+  if (/<script\b|<(?:iframe|object|embed|link)\b/i.test(rendered) || unsafeResource) {
     throw new Error("Rune refused to export HTML containing an executable or external resource boundary.");
   }
   const bytes = new TextEncoder().encode(rendered);
-  if (bytes.length > MAX_STANDALONE_HTML_BYTES) throw new Error("The standalone HTML exceeds Rune's 2 MB export limit.");
+  if (bytes.length > MAX_STANDALONE_HTML_BYTES) throw new Error("The standalone HTML exceeds Rune's 12 MB export limit.");
   return {
     bytes,
     fileName: `${safeExportBaseName(artifact.name)}.html`,
     mimeType: "text/html;charset=utf-8",
     warnings: [
-      "Standalone HTML preserves the current Rune theme, compiled metrics, and current-data charts in one scriptless file.",
+      "Standalone HTML preserves the current Rune theme, local images, compiled metrics, and current-data charts in one scriptless file.",
       "Live workspace bindings, Agent controls, checkpoints, and editing UI are not included in the exported HTML.",
       "Print styles create one 16:9 page per slide when a browser prints or saves the file as PDF.",
     ],

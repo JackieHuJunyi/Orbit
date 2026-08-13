@@ -77,6 +77,38 @@ test("exports one deterministic 16:9 PDF page per Deck Markdown slide", async ()
   });
 });
 
+test("embeds a reviewed Deck image into deterministic fixed PDF geometry", async () => {
+  const artifact = {
+    id: "image-deck",
+    name: "image-deck.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Image deck
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: split -->
+# Visual proof
+
+The source remains readable.
+
+![Portable proof](rune-asset:sha256:${runeImageId})
+`,
+  };
+  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
+  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
+  assert.deepEqual(first.bytes, second.bytes);
+  const document = await PDFDocument.load(first.bytes);
+  assert.equal(document.getPageCount(), 1);
+  assert.deepEqual(document.getPage(0).getSize(), { width: 960, height: 540 });
+  assert.match(first.warnings.join(" "), /portable, static PDF media/iu);
+  await assert.rejects(() => exportPdfArtifact(artifact, [artifact], [], fontBytes), /Referenced local image is missing or corrupt/iu);
+});
+
 test("embeds Unicode text without a network font dependency", async () => {
   const base = defaultArtifacts.find((candidate) => candidate.kind === "document");
   const artifact = {

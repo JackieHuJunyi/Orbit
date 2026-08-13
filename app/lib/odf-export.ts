@@ -34,12 +34,14 @@ type InlineSegment = {
 };
 
 type OdpParagraph = { text: string; bullet: boolean; level: number; strong?: boolean };
+type OdpSlideImage = { reference: { id: string; alt: string }; asset: RuneExportImageAsset };
 type OdpSlideModel = {
   title: string;
   eyebrow: string;
   paragraphs: OdpParagraph[];
   tables: string[][][];
   charts: ChartModel[];
+  image: OdpSlideImage | null;
   layout: DeckSlide["layout"];
 };
 
@@ -339,13 +341,14 @@ function exportOds(artifact: WorkspaceArtifact): OdfExportResult {
   return { bytes: packageOdf("ods", title, content, spreadsheetStylesXml()), fileName: `${title}.ods`, mimeType: ODF_MIME_TYPES.ods, warnings, targetType: "ods" };
 }
 
-function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[], index: number): OdpSlideModel {
+function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[], index: number, images: Map<string, RuneExportImageAsset>): OdpSlideModel {
   const blocks = parseMarkdownBlocks(slide.source);
   const titleBlock = blocks.find((block) => block.type === "heading");
   const title = titleBlock && titleBlock.type === "heading" ? plainMarkdownInline(titleBlock.source, warnings) : `Slide ${index + 1}`;
   const paragraphs: OdpParagraph[] = [];
   const tables: string[][][] = [];
   const charts: ChartModel[] = [];
+  let image: OdpSlideImage | null = null;
   let titleConsumed = false;
   blocks.forEach((block) => {
     if (block === titleBlock && !titleConsumed) {
@@ -364,6 +367,13 @@ function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: Work
       paragraphs.push({ text: plainMarkdownInline(block.source, warnings), bullet: false, level: 0, strong: true });
       return;
     }
+    const imageReference = parseRuneMarkdownImage(block.source);
+    if (imageReference) {
+      const asset = images.get(imageReference.id);
+      if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
+      image = { reference: imageReference, asset };
+      return;
+    }
     const chartId = block.source.match(EXACT_CHART_TOKEN)?.[1];
     if (chartId) {
       const chart = resolveOdfChart(chartId, workspace, snapshots, warnings);
@@ -372,7 +382,7 @@ function deckSlideModel(slide: DeckSlide, warnings: Set<string>, workspace: Work
     }
     paragraphs.push({ text: plainMarkdownInline(block.source, warnings), bullet: false, level: 0 });
   });
-  return { title, eyebrow: slide.eyebrow, paragraphs, tables, charts, layout: slide.layout };
+  return { title, eyebrow: slide.eyebrow, paragraphs, tables, charts, image, layout: slide.layout };
 }
 
 function odpTextFrame(model: OdpSlideModel) {
@@ -393,25 +403,45 @@ function odpTextFrame(model: OdpSlideModel) {
   if (listOpen) paragraphs.push("</text:list>");
   model.tables.forEach((rows, index) => paragraphs.push(semanticTable(rows, new Set<string>(), `SlideTable${index + 1}`)));
   model.charts.forEach((chart, index) => paragraphs.push(`<text:h text:outline-level="3">${xmlText(chart.spec.title)}</text:h>${chart.spec.description ? `<text:p text:style-name="RuneQuote">${xmlText(chart.spec.description)}</text:p>` : ""}${semanticTable(chartRows(chart), new Set<string>(), `SlideChart${index + 1}`)}`));
-  return `<draw:frame draw:style-name="RuneContentFrame" presentation:class="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"><draw:text-box>${paragraphs.join("") || "<text:p/>"}</draw:text-box></draw:frame>`;
+  return `<draw:frame draw:style-name="RuneContentFrame" presentation:class="outline" svg:x="0.8in" svg:y="1.75in" svg:width="${model.image ? "5.25in" : "11.73in"}" svg:height="5.2in"><draw:text-box>${paragraphs.join("") || "<text:p/>"}</draw:text-box></draw:frame>`;
+}
+
+function odpImageFrame(image: OdpSlideImage) {
+  const dimensions = runeImageDimensions(image.asset.bytes, image.asset.mimeType);
+  if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${image.asset.id}`);
+  const box = { x: 6.55, y: 1.55, width: 5.95, height: 4.95 };
+  const scale = Math.min(box.width / dimensions.width, box.height / dimensions.height);
+  const width = dimensions.width * scale;
+  const height = dimensions.height * scale;
+  const x = box.x + (box.width - width) / 2;
+  const y = box.y + (box.height - height) / 2;
+  const path = `Pictures/rune-${image.asset.id}.${runeImageExtension(image.asset.mimeType)}`;
+  return `<draw:frame draw:style-name="RuneImageFrame" draw:name="${xmlAttribute(image.reference.alt || image.asset.name || "Rune image")}" svg:x="${x.toFixed(4)}in" svg:y="${y.toFixed(4)}in" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame>`;
 }
 
 function presentationStylesXml() {
-  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="RuneSlideTitle" style:family="paragraph"><style:text-properties fo:font-size="26pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneSlideHeading" style:family="paragraph"><style:text-properties fo:font-size="16pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneEyebrow" style:family="paragraph"><style:text-properties fo:font-size="10pt" fo:font-weight="bold" fo:color="#ff5c35"/></style:style><style:presentation-page-layout style:name="RuneSlide"><presentation:placeholder presentation:object="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"/><presentation:placeholder presentation:object="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"/></style:presentation-page-layout></office:styles><office:automatic-styles><style:page-layout style:name="RuneSlideLayout"><style:page-layout-properties fo:page-width="13.333in" fo:page-height="7.5in" style:print-orientation="landscape" fo:margin="0in"/></style:page-layout><style:style style:name="RunePage" style:family="drawing-page"><style:drawing-page-properties draw:fill="solid" draw:fill-color="#fbfaf6" presentation:background-visible="true"/></style:style><style:style style:name="RuneTitleFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style><style:style style:name="RuneContentFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none" fo:padding="0.04in"/></style:style></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RuneSlideLayout" draw:style-name="RunePage"/></office:master-styles></office:document-styles>`;
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="RuneSlideTitle" style:family="paragraph"><style:text-properties fo:font-size="26pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneSlideHeading" style:family="paragraph"><style:text-properties fo:font-size="16pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneEyebrow" style:family="paragraph"><style:text-properties fo:font-size="10pt" fo:font-weight="bold" fo:color="#ff5c35"/></style:style><style:presentation-page-layout style:name="RuneSlide"><presentation:placeholder presentation:object="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"/><presentation:placeholder presentation:object="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"/></style:presentation-page-layout></office:styles><office:automatic-styles><style:page-layout style:name="RuneSlideLayout"><style:page-layout-properties fo:page-width="13.333in" fo:page-height="7.5in" style:print-orientation="landscape" fo:margin="0in"/></style:page-layout><style:style style:name="RunePage" style:family="drawing-page"><style:drawing-page-properties draw:fill="solid" draw:fill-color="#fbfaf6" presentation:background-visible="true"/></style:style><style:style style:name="RuneTitleFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style><style:style style:name="RuneContentFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none" fo:padding="0.04in"/></style:style><style:style style:name="RuneImageFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RuneSlideLayout" draw:style-name="RunePage"/></office:master-styles></office:document-styles>`;
 }
 
-function exportOdp(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[]): OdfExportResult {
+function exportOdp(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[], imageAssets: readonly RuneExportImageAsset[]): OdfExportResult {
   const parsed = parseDeckSource(artifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The Deck Markdown source is not valid.");
   const warnings = new Set<string>();
-  const models = parsed.deck.slides.map((slide, index) => deckSlideModel(slide, warnings, workspace, snapshots, index));
+  const images = runeImageAssetMap(imageAssets);
+  const referencedImageIds = extractRuneAssetIds(artifact.source);
+  const missingImage = referencedImageIds.find((id) => !images.has(id));
+  if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  const models = parsed.deck.slides.map((slide, index) => deckSlideModel(slide, warnings, workspace, snapshots, index, images));
   if (models.some((model) => model.tables.length > 2)) warnings.add("ODP preserves semantic tables, but crowded slides may need layout adjustment in the receiving presentation app.");
   if (models.some((model) => model.charts.length)) warnings.add("Live Rune charts are exported as selectable current-data tables in ODP; the live binding and chart geometry are not retained.");
-  warnings.add("ODP export preserves slide order, text, bullets, tables, and current chart values; animation, speaker notes, images, and exact master styling are not generated.");
-  const pages = models.map((model, index) => `<draw:page draw:name="Slide ${index + 1}" draw:style-name="RunePage" draw:master-page-name="Rune" presentation:presentation-page-layout-name="RuneSlide"><draw:frame draw:style-name="RuneTitleFrame" presentation:class="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"><draw:text-box><text:p text:style-name="RuneSlideTitle">${xmlText(model.title)}</text:p></draw:text-box></draw:frame>${odpTextFrame(model)}</draw:page>`).join("");
+  if (models.some((model) => model.image)) warnings.add("Rune local images are embedded as portable, static ODP media; content-hash references remain only in canonical Deck Markdown.");
+  warnings.add("ODP export preserves slide order, text, bullets, tables, local images, and current chart values; animation, speaker notes, and exact master styling are not generated.");
+  const pages = models.map((model, index) => `<draw:page draw:name="Slide ${index + 1}" draw:style-name="RunePage" draw:master-page-name="Rune" presentation:presentation-page-layout-name="RuneSlide"><draw:frame draw:style-name="RuneTitleFrame" presentation:class="title" svg:x="0.8in" svg:y="0.55in" svg:width="${model.image ? "5.25in" : "11.73in"}" svg:height="1.05in"><draw:text-box><text:p text:style-name="RuneSlideTitle">${xmlText(model.title)}</text:p></draw:text-box></draw:frame>${odpTextFrame(model)}${model.image ? odpImageFrame(model.image) : ""}</draw:page>`).join("");
   const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:presentation>${pages}</office:presentation></office:body></office:document-content>`;
   const title = safeExportBaseName(artifact.name);
-  return { bytes: packageOdf("odp", parsed.deck.frontmatter.title || title, content, presentationStylesXml()), fileName: `${title}.odp`, mimeType: ODF_MIME_TYPES.odp, warnings: [...warnings], targetType: "odp" };
+  return { bytes: packageOdf("odp", parsed.deck.frontmatter.title || title, content, presentationStylesXml(), images), fileName: `${title}.odp`, mimeType: ODF_MIME_TYPES.odp, warnings: [...warnings], targetType: "odp" };
 }
 
 export function isOdfExportArtifact(artifact: WorkspaceArtifact) {
@@ -430,6 +460,6 @@ export function exportOdfArtifact(
   if (artifact.source.length > MAX_ODF_EXPORT_SOURCE_CHARS) throw new Error("OpenDocument export is limited to 2,000,000 source characters.");
   if (artifact.kind === "document") return exportOdt(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportOds(artifact);
-  if (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md")) return exportOdp(artifact, workspace, querySnapshots);
+  if (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md")) return exportOdp(artifact, workspace, querySnapshots, imageAssets);
   throw new Error("OpenDocument export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
 }

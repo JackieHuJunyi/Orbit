@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.99 with reviewed Deck image insertion over the existing content-hash asset port, live local preview, folder portability, and deterministic PPTX/ODP/standalone-HTML/PDF embedding that fails closed on external, missing, corrupt, or conflicting visuals.
 - 2026-08-14 — Shipped Rune v0.98 with an optional, nine-locale seven-dimensional real-task review, explicit authorized/redacted provenance, content-free v3 evidence migration, unique-task summaries, and a number-correctness gate that averages cannot hide; the real human-rated baseline remains honestly at zero until submitted.
 - 2026-08-14 — Shipped Rune v0.97 with a Harness-informed static Quick Actions registry and multilingual `⌘⇧P` command surface, plus a release-gated 20-task synthetic Golden Task baseline that explicitly separates deterministic regression evidence from licensed human outcome proof.
 - 2026-08-14 — Shipped Rune v0.96 with a versioned forward migration that makes one exact-source/all-output evidence ledger authoritative for both focused tasks while preserving older Operating Review records as read-only history.

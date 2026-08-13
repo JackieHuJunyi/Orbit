@@ -2305,3 +2305,11 @@ baseline 标记为 E1，只证明 deterministic regression。真实任务仍是 
 详细路径没有默认分。七项必须全部完成，并由评审者明确确认任务已获准用于评估或已经脱敏，才形成一个 human evaluation。许可不是从文件、账号或模型推断出来的能力；不满足条件的数据只能保留为 quick outcome。设备 ledger 的前向迁移同样不补历史分数，坏数据降为 null，现有 0/20 基线不会因为功能上线自动增长。
 
 数字正确性保持独立硬门槛。侧栏既显示 unique real task 数，也显示低于 4 分的 number checks；每条历史把该分数放在交付格式旁。七维平均可以帮助发现总体趋势，却永远不能把关键数字错误美化成“整体不错”。这套统计仍不保存正文、提示词、模型回复、Query 行、文件名作为测量字段或用户身份，因此可以随 source-first workspace 扩展，而不会形成第二份内容数据库或遥测系统。
+
+## 105. v0.99 演示文稿图片必须复用同一个资产事实，而不是新建一个媒体子系统
+
+Document 已经拥有内容哈希图片、IndexedDB、本机文件夹闭环和 DOCX/ODT/PDF embedding。如果 Deck 为了尽快显示图片而保存 blob URL、base64 source、远端 URL 或 slide-only upload record，就会同时产生第二套 identity、生命周期和导出行为；未来删除、同步、权限和损坏恢复都要做两遍。低成本扩展的正确单位不是“再写一个上传组件”，而是让新 Artifact 消费已经证明过的窄能力。
+
+v0.99 因此不改变 `rune-asset:sha256:<digest>`。用户把源光标放进一个编译器证明的 Deck slide，再经过现有九语言图片审核；完整 next Deck 必须在写入前重新解析。每页只允许一项 primary visual：非 metrics 页面可选一张独立行本机图片，图片、Chart、table 不同时争抢视觉区。外链、inline、重复、缺失和损坏引用都失败关闭。这条限制同时服务留白、可预测版式和跨格式一致性，不是某个 exporter 的临时妥协。
+
+同一份重新校验的 bytes 现在进入五个消费端：预览只拿可撤销 blob URL；PPTX 写 media part、slide relationship 与 aspect-fit picture；ODP 写 Pictures、manifest MIME 与 drawing frame；HTML 只为已批准引用生成 data URL 并拒绝其他 `src/href`；PDF 在本机解码后写入固定 16:9 主视觉框。文件夹同步无需新代码路径，因为 manifest closure 本来就扫描所有 Artifact source。canonical Deck 仍没有 base64、package path 或 renderer id，新增的是一个 consumer，而不是第二个 asset owner。

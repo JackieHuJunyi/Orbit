@@ -2216,6 +2216,7 @@ function SlidesPreview({
   onTargetSource,
   onEditDeckSlide,
   onVisualSourceDraftChange,
+  resolveLocalAssetUrl,
 }: {
   artifact: WorkspaceArtifact;
   source: string;
@@ -2226,6 +2227,7 @@ function SlidesPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
+  resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
   const copy = usePreviewCopy();
   const [editingSlide, setEditingSlide] = useState<{
@@ -2238,7 +2240,7 @@ function SlidesPreview({
     error: string;
     submitting: boolean;
   } | null>(null);
-  const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source) : null;
+  const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source, { resolveLocalAssetUrl }) : null;
   const runtimeSource = deckCompilation?.html ?? source;
   const slideCount = deckCompilation?.slideCount ?? source.match(/<section[\s>]/gi)?.length ?? 0;
   const renderedSource = renderChartReferencesToHtml(runtimeSource, (chartArtifactId) => {
@@ -2262,7 +2264,7 @@ function SlidesPreview({
   const draftBindings = draftCandidate && !draftCandidate.errors.length
     ? compileArtifactSource(draftCandidate.source, artifacts, readyQuerySnapshots(queryRuntime))
     : null;
-  const draftCompilation = draftBindings ? compileDeckSource(draftBindings.source) : null;
+  const draftCompilation = draftBindings ? compileDeckSource(draftBindings.source, { resolveLocalAssetUrl }) : null;
   const draftRenderedSource = draftCompilation?.html
     ? renderChartReferencesToHtml(draftCompilation.html, (chartArtifactId) => {
       const chartArtifact = artifacts.find((candidate) => candidate.id === chartArtifactId && candidate.kind === "chart");
@@ -2507,7 +2509,7 @@ export function ArtifactPreview({
         const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
         content = <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
       } else if (artifact.kind === "chart") content = <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
-      else content = <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
+      else content = <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} onVisualSourceDraftChange={onVisualSourceDraftChange} resolveLocalAssetUrl={resolveLocalAssetUrl} />;
     }
   }
   return <PreviewCopyContext.Provider value={copy}>{content}</PreviewCopyContext.Provider>;

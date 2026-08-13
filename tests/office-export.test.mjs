@@ -81,6 +81,41 @@ test("fails DOCX export closed when a referenced Rune image is missing", () => {
   assert.throws(() => exportOfficeArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
 
+test("embeds a reviewed Deck image into deterministic bounded PPTX media", () => {
+  const artifact = {
+    id: "image-deck",
+    name: "image-deck.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Image deck
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: split -->
+# Visual proof
+
+The source remains readable.
+
+![Portable proof](rune-asset:sha256:${runeImageId})
+`,
+  };
+  const first = exportOfficeArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const second = exportOfficeArtifact(artifact, [artifact], [], [runeImageAsset]);
+  assert.deepEqual(first.bytes, second.bytes);
+  const parts = packageParts(first.bytes);
+  assert.deepEqual(parts[`ppt/media/rune-${runeImageId}.png`], onePixelPng);
+  assert.match(strFromU8(parts["ppt/slides/slide1.xml"]), /<p:pic>/u);
+  assert.match(strFromU8(parts["ppt/slides/_rels/slide1.xml.rels"]), /relationships\/image/u);
+  assert.match(strFromU8(parts["[Content_Types].xml"]), /ContentType="image\/png"/u);
+  assertPptSlideBounds(parts);
+  assert.match(first.warnings.join(" "), /portable, static PowerPoint media/iu);
+  assert.throws(() => exportOfficeArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
+});
+
 test("exports Markdown as deterministic semantic DOCX and imports it back", () => {
   const artifact = {
     id: "export-report",

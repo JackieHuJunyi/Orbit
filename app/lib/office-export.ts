@@ -42,7 +42,8 @@ type DocxContext = {
 };
 
 type PptParagraph = { text: string; bullet: boolean; level: number };
-type PptSlideModel = { title: string; eyebrow: string; paragraphs: PptParagraph[]; tables: string[][][]; charts: ChartModel[]; layout: DeckSlide["layout"] };
+type PptSlideImage = { reference: { id: string; alt: string }; asset: RuneExportImageAsset };
+type PptSlideModel = { title: string; eyebrow: string; paragraphs: PptParagraph[]; tables: string[][][]; charts: ChartModel[]; image: PptSlideImage | null; layout: DeckSlide["layout"] };
 
 const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 const PACKAGE_RELATIONSHIPS = "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -527,6 +528,7 @@ function deckSlideModel(
   warnings: Set<string>,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
+  images: Map<string, RuneExportImageAsset>,
 ): PptSlideModel {
   const blocks = parseMarkdownBlocks(slide.source);
   const headingIndex = blocks.findIndex((block) => block.type === "heading");
@@ -535,6 +537,7 @@ function deckSlideModel(
   const paragraphs: PptParagraph[] = [];
   const tables: string[][][] = [];
   const charts: ChartModel[] = [];
+  let image: PptSlideImage | null = null;
   blocks.forEach((block, index) => {
     if (index === headingIndex) return;
     if (block.type === "table") {
@@ -543,6 +546,13 @@ function deckSlideModel(
     }
     if (block.type === "code") warnings.add("Fenced code in Deck Markdown was exported as plain presentation text.");
     const source = block.type === "code" ? block.source.replace(/\n/g, " · ") : block.source;
+    const imageReference = parseRuneMarkdownImage(source);
+    if (imageReference) {
+      const asset = images.get(imageReference.id);
+      if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
+      image = { reference: imageReference, asset };
+      return;
+    }
     const chartReference = source.match(EXACT_CHART_TOKEN)?.[1];
     if (chartReference) {
       const chart = resolveOfficeChart(chartReference, workspace, warnings, querySnapshots);
@@ -558,7 +568,7 @@ function deckSlideModel(
       level: block.type === "list" ? block.level : 0,
     });
   });
-  return { title, eyebrow: plainMarkdownInline(slide.eyebrow, warnings), paragraphs, tables, charts, layout: slide.layout };
+  return { title, eyebrow: plainMarkdownInline(slide.eyebrow, warnings), paragraphs, tables, charts, image, layout: slide.layout };
 }
 
 function pptRun(text: string, options: { size?: number; bold?: boolean; color?: string } = {}) {
@@ -680,10 +690,26 @@ function pptTable(id: number, rows: string[][], y: number) {
   return `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="900000" y="${y}"/><a:ext cx="${totalWidth}" cy="${height}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${grid}</a:tblGrid>${rowXml}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
 }
 
-function pptSlideXml(model: PptSlideModel) {
+function fitPptImage(asset: RuneExportImageAsset, box: { x: number; y: number; cx: number; cy: number }) {
+  const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
+  if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${asset.id}`);
+  const scale = Math.min(box.cx / dimensions.width, box.cy / dimensions.height);
+  const cx = Math.max(1, Math.round(dimensions.width * scale));
+  const cy = Math.max(1, Math.round(dimensions.height * scale));
+  return { x: Math.round(box.x + (box.cx - cx) / 2), y: Math.round(box.y + (box.cy - cy) / 2), cx, cy };
+}
+
+function pptImage(id: number, image: PptSlideImage, relationshipId: string, box: { x: number; y: number; cx: number; cy: number }) {
+  const geometry = fitPptImage(image.asset, box);
+  const description = image.reference.alt || image.asset.name || "Rune image";
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${xmlAttribute(description)}" descr="${xmlAttribute(description)}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:ln><a:noFill/></a:ln></p:spPr></p:pic>`;
+}
+
+function pptSlideXml(model: PptSlideModel, imageRelationshipId?: string) {
   const cover = model.layout === "cover";
   const chart = model.charts[0];
-  const splitChart = Boolean(chart && model.layout === "split");
+  const visual = Boolean(chart || model.image);
+  const splitVisual = Boolean(visual && (model.layout === "split" || cover || model.layout === "conclusion"));
   const background = cover ? "17231C" : "FBFAF6";
   const titleColor = cover ? "FFF8EC" : "17211B";
   const bodyColor = cover ? "D7DED8" : "455149";
@@ -693,20 +719,24 @@ function pptSlideXml(model: PptSlideModel) {
   let nextId = 2;
   const shapes: string[] = [];
   if (model.eyebrow) shapes.push(pptShape(nextId++, "Eyebrow", [{ text: model.eyebrow.toUpperCase(), bullet: false, level: 0 }], { x: 900_000, y: 520_000, cx: 10_300_000, cy: 420_000 }, { size: 1100, bold: true, color: cover ? "FF8A6D" : "2A8C69" }));
-  shapes.push(pptShape(nextId++, "Title", [{ text: model.title, bullet: false, level: 0 }], { x: 900_000, y: titleY, cx: 10_400_000, cy: cover ? 1_500_000 : 900_000 }, { placeholder: "title", size: cover ? 3400 : 2700, bold: true, color: titleColor }));
+  shapes.push(pptShape(nextId++, "Title", [{ text: model.title, bullet: false, level: 0 }], { x: 900_000, y: titleY, cx: visual ? 5_000_000 : 10_400_000, cy: cover ? 1_500_000 : 900_000 }, { placeholder: "title", size: cover ? 3400 : 2700, bold: true, color: titleColor }));
   if (model.paragraphs.length) {
-    const contentWidth = splitChart ? 4_850_000 : 10_400_000;
-    const contentHeight = chart && !splitChart ? 1_050_000 : model.tables.length ? 1_650_000 : 3_600_000;
+    const contentWidth = visual ? 4_850_000 : 10_400_000;
+    const contentHeight = chart && !splitVisual ? 1_050_000 : model.tables.length ? 1_650_000 : 3_600_000;
     shapes.push(pptShape(nextId++, "Content", model.paragraphs, { x: 900_000, y: bodyY, cx: contentWidth, cy: contentHeight }, { placeholder: "body", size: cover ? 1700 : 1600, color: bodyColor }));
   }
   if (!chart) model.tables.slice(0, 2).forEach((table, index) => shapes.push(pptTable(nextId++, table, tableY + index * 1_450_000)));
   if (chart) {
-    const chartGeometry = splitChart
+    const chartGeometry = splitVisual
       ? { x: 6_250_000, y: 1_650_000, cx: 4_950_000, cy: 4_650_000 }
       : { x: 900_000, y: model.paragraphs.length ? 3_050_000 : 1_850_000, cx: 10_400_000, cy: model.paragraphs.length ? 3_150_000 : 4_350_000 };
     const renderedChart = pptChartShapes(nextId, chart, chartGeometry);
     shapes.push(renderedChart.xml);
     nextId = renderedChart.nextId;
+  }
+  if (model.image && imageRelationshipId) {
+    const imageBox = { x: 6_250_000, y: cover || model.layout === "conclusion" ? 1_250_000 : 1_650_000, cx: 4_950_000, cy: cover || model.layout === "conclusion" ? 4_850_000 : 4_650_000 };
+    shapes.push(pptImage(nextId++, model.image, imageRelationshipId, imageBox));
   }
   return `${XML_DECLARATION}<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="${background}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 }
@@ -728,24 +758,33 @@ function exportPptx(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
+  imageAssets: readonly RuneExportImageAsset[],
 ): OfficeExportResult {
   const parsed = parseDeckSource(artifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The Deck Markdown source is not valid.");
   const warnings = new Set<string>();
-  const models = parsed.deck.slides.map((slide) => deckSlideModel(slide, warnings, workspace, querySnapshots));
+  const images = runeImageAssetMap(imageAssets);
+  const referencedImageIds = extractRuneAssetIds(artifact.source);
+  const missingImage = referencedImageIds.find((id) => !images.has(id));
+  if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  const models = parsed.deck.slides.map((slide) => deckSlideModel(slide, warnings, workspace, querySnapshots, images));
   if (models.some((model) => model.tables.length > 2)) warnings.add("Only the first two tables on each slide are included in semantic PPTX export.");
   if (models.some((model) => model.charts.length > 1)) warnings.add("Only the first current-data chart snapshot on each slide is included in semantic PPTX export.");
   if (models.some((model) => model.charts.length && model.tables.length)) warnings.add("Tables on slides with a chart snapshot are omitted to keep the generated presentation layout readable.");
   if (models.some((model) => model.charts.length)) {
     warnings.add("Live Rune charts are exported as editable native PowerPoint text and vector shapes using the current workspace data; the live data binding is not retained.");
   }
-  warnings.add("PPTX export preserves slide order, text, bullets, tables, and current-data chart snapshots; animation, speaker notes, and exact master styling are not generated.");
+  if (models.some((model) => model.image)) warnings.add("Rune local images are embedded as portable, static PowerPoint media; content-hash references remain only in canonical Deck Markdown.");
+  warnings.add("PPTX export preserves slide order, text, bullets, tables, local images, and current-data chart snapshots; animation, speaker notes, and exact master styling are not generated.");
   const title = safeExportBaseName(artifact.name);
   const slideOverrides = models.map((_model, index) => `<Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("");
   const slideRelationships = models.map((_model, index) => `<Relationship Id="rId${index + 2}" Type="${OFFICE_RELATIONSHIPS}/slide" Target="slides/slide${index + 1}.xml"/>`).join("");
   const slideIds = models.map((_model, index) => `<p:sldId id="${256 + index}" r:id="rId${index + 2}"/>`).join("");
-  const parts: Record<string, string> = {
-    "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
+  const imageDefaults = [...new Set(imageAssets.map((asset) => runeImageExtension(asset.mimeType)))].map((extension) => `<Default Extension="${extension}" ContentType="${extension === "png" ? "image/png" : extension === "jpg" ? "image/jpeg" : extension === "webp" ? "image/webp" : "image/gif"}"/>`).join("");
+  const parts: Record<string, string | Uint8Array> = {
+    "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageDefaults}<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     "_rels/.rels": rootRelationships("ppt/presentation.xml"),
     "docProps/core.xml": coreProperties(parsed.deck.frontmatter.title || title),
     "docProps/app.xml": appProperties("Slides", models.length),
@@ -758,9 +797,12 @@ function exportPptx(
     "ppt/slideLayouts/_rels/slideLayout1.xml.rels": `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`,
     "ppt/theme/theme1.xml": pptTheme(),
   };
+  images.forEach((asset) => { parts[`ppt/media/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`] = asset.bytes; });
   models.forEach((model, index) => {
-    parts[`ppt/slides/slide${index + 1}.xml`] = pptSlideXml(model);
-    parts[`ppt/slides/_rels/slide${index + 1}.xml.rels`] = `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>`;
+    const imageRelationshipId = model.image ? "rId2" : undefined;
+    parts[`ppt/slides/slide${index + 1}.xml`] = pptSlideXml(model, imageRelationshipId);
+    const imageRelationship = model.image ? `<Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/image" Target="../media/rune-${model.image.asset.id}.${runeImageExtension(model.image.asset.mimeType)}"/>` : "";
+    parts[`ppt/slides/_rels/slide${index + 1}.xml.rels`] = `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${imageRelationship}</Relationships>`;
   });
   return {
     bytes: zipPackage(parts),
@@ -787,6 +829,6 @@ export function exportOfficeArtifact(
   if (artifact.source.length > MAX_OFFICE_EXPORT_SOURCE_CHARS) throw new Error("Office export is limited to 2,000,000 source characters.");
   if (artifact.kind === "document") return exportDocx(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportXlsx(artifact);
-  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md")) return exportPptx(artifact, workspace, querySnapshots);
+  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md")) return exportPptx(artifact, workspace, querySnapshots, imageAssets);
   throw new Error("Office export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
 }

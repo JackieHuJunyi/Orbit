@@ -102,7 +102,7 @@ import {
   validateChartSourceBinding,
 } from "../lib/charts";
 import { prepareChartEmbedding } from "../lib/chart-embedding";
-import { isDeckMarkdownArtifact } from "../lib/deck";
+import { isDeckMarkdownArtifact, parseDeckSource } from "../lib/deck";
 import {
   appendCheckpoint,
   canCheckpointSource,
@@ -150,6 +150,7 @@ import {
   type WorkspaceDependencyKind,
 } from "../lib/dependency-graph";
 import {
+  derivePreviewSourceTargets,
   deriveSourceLinkedPreviewTargets,
   resolveSourceLinkedPreviewTarget,
   type DocumentBlockPreviewSourceTarget,
@@ -1531,8 +1532,9 @@ export function RuneWorkbench() {
     event.target.value = "";
     if (!file) return;
     const targetArtifact = artifactsRef.current.find((artifact) => artifact.id === selectedId);
-    if (!targetArtifact || targetArtifact.kind !== "document") {
-      setNotice("Local images can currently be inserted into Markdown Documents");
+    const deckArtifact = Boolean(targetArtifact?.kind === "slides" && isDeckMarkdownArtifact(targetArtifact));
+    if (!targetArtifact || (targetArtifact.kind !== "document" && !deckArtifact)) {
+      setNotice("Local images can be inserted into Markdown Documents and Deck Markdown slides");
       return;
     }
     if (pendingChange || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || pendingLocalImage || activeVisualSourceDraft) {
@@ -1541,12 +1543,23 @@ export function RuneWorkbench() {
     }
     const editor = sourceEditorRef.current;
     const offset = editor ? editor.selectionEnd : targetArtifact.source.length;
+    if (deckArtifact) {
+      const slide = derivePreviewSourceTargets(targetArtifact).find((target) => target.kind === "deck-slide" && offset >= target.start && offset <= target.end);
+      if (!slide) {
+        setNotice("Place the source cursor inside one Deck slide before inserting an image");
+        return;
+      }
+    }
     setSaveState("saving");
     setNotice("Reading and verifying the image locally");
     try {
       const asset = await prepareRuneImageAsset(file.name, file.type, await file.arrayBuffer());
       const alt = runeImageAltFromName(asset.name);
       const insertion = buildRuneImageInsertion(targetArtifact.source, offset, alt, asset.id);
+      if (deckArtifact) {
+        const parsed = parseDeckSource(insertion.nextSource);
+        if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The image does not fit this Deck slide.");
+      }
       setPendingLocalImage({ artifact: targetArtifact, asset, insertion, offset, alt, error: "", submitting: false });
       setSaveState("saved");
       setNotice("Local image ready for source review");
@@ -1594,6 +1607,10 @@ export function RuneWorkbench() {
     let insertion: RuneImageInsertion;
     try {
       insertion = buildRuneImageInsertion(currentArtifact.source, pending.offset, pending.alt, pending.asset.id);
+      if (currentArtifact.kind === "slides" && isDeckMarkdownArtifact(currentArtifact)) {
+        const parsed = parseDeckSource(insertion.nextSource);
+        if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The image does not fit this Deck slide.");
+      }
     } catch (error) {
       setPendingLocalImage({ ...pending, error: error instanceof Error ? error.message : "The Markdown image reference is invalid." });
       return;
@@ -3588,7 +3605,7 @@ export function RuneWorkbench() {
         const truncated = querySnapshots.find((snapshot) => snapshot.result.truncated);
         if (truncated) throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its consumers.`);
       }
-      const imageAssets = targetArtifact.kind === "document" && extractRuneAssetIds(targetArtifact.source).length
+      const imageAssets = (targetArtifact.kind === "document" || (targetArtifact.kind === "slides" && isDeckMarkdownArtifact(targetArtifact))) && extractRuneAssetIds(targetArtifact.source).length
         ? await collectWorkspaceLocalAssets([targetArtifact])
         : [];
       if (destination === "csv" || destination === "json") {
@@ -3631,7 +3648,7 @@ export function RuneWorkbench() {
         }
       } else if (destination === "html") {
         const { exportDeckHtml } = await import("../lib/html-export");
-        result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots);
+        result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots, imageAssets);
       } else {
         const { exportPdfArtifact } = await import("../lib/pdf-export");
         result = await exportPdfArtifact(targetArtifact, baseArtifacts, querySnapshots, undefined, imageAssets);
@@ -3895,7 +3912,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.98</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.99</strong></footer>
               </div>
             )}
           </div>
@@ -3904,7 +3921,7 @@ export function RuneWorkbench() {
           )}
           <input ref={importRef} className="visually-hidden" type="file" multiple accept=".doc,.ppt,.docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
           <input ref={taskImportRef} className="visually-hidden" type="file" multiple accept={RUNE_TASK_DEFINITIONS[taskSession?.taskId ?? "operating-review"].sourceAccept} onChange={importTaskSource} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
-          <input ref={imageImportRef} className="visually-hidden" type="file" accept={RUNE_IMAGE_ACCEPT} onChange={(event) => void prepareLocalImage(event)} disabled={!hydrated || selectedArtifact.kind !== "document" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingChange) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure) || Boolean(pendingLocalImage)} />
+          <input ref={imageImportRef} className="visually-hidden" type="file" accept={RUNE_IMAGE_ACCEPT} onChange={(event) => void prepareLocalImage(event)} disabled={!hydrated || !(selectedArtifact.kind === "document" || (selectedArtifact.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact))) || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingChange) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure) || Boolean(pendingLocalImage)} />
         </div>
       </header>
 
@@ -4210,7 +4227,7 @@ export function RuneWorkbench() {
               <div><span className="overline">{proposalReviewActive ? ui.proposalPreview : ui.source}</span><strong>{presentedArtifact.name}</strong></div>
             </div>
             <div className="pane-actions">
-              {!proposalReviewActive && selectedArtifact.kind === "document" && (
+              {!proposalReviewActive && (selectedArtifact.kind === "document" || (selectedArtifact.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact))) && (
                 <button
                   type="button"
                   className="icon-button small insert-local-image-button"

@@ -94,6 +94,38 @@ test("rejects raw HTML and unsupported layout metadata", () => {
   assert.match(parseDeckSource(futureVersion).errors.join(" "), /version/);
 });
 
+test("renders one standalone content-hash image per non-metrics slide and fails closed otherwise", () => {
+  const id = "a".repeat(64);
+  const source = `---
+version: 1
+title: Image deck
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: split -->
+# A local visual
+
+Readable context stays editable.
+
+![Quarterly proof](rune-asset:sha256:${id})
+`;
+  assert.deepEqual(parseDeckSource(source).errors, []);
+  const missing = compileDeckSource(source).html ?? "";
+  assert.match(missing, /data-rune-asset-state="missing"/u);
+  assert.doesNotMatch(missing, /<img\s+src=/u);
+  const rendered = compileDeckSource(source, { resolveLocalAssetUrl: () => "blob:https://rune.local/proof" }).html ?? "";
+  assert.match(rendered, /<img src="blob:https:\/\/rune\.local\/proof" alt="Quarterly proof"/u);
+  const hostile = compileDeckSource(source, { resolveLocalAssetUrl: () => "https://example.com/tracker.png" }).html ?? "";
+  assert.doesNotMatch(hostile, /example\.com/u);
+
+  assert.match(parseDeckSource(source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, "![Remote](https://example.com/a.png)")).errors.join(" "), /standalone Rune local-image reference/u);
+  assert.match(parseDeckSource(source.replace("<!-- layout: split -->", "<!-- layout: metrics -->")).errors.join(" "), /metrics layout/u);
+  assert.match(parseDeckSource(source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, `![One](rune-asset:sha256:${id})\n\n![Two](rune-asset:sha256:${"b".repeat(64)})`)).errors.join(" "), /one primary image/u);
+  assert.match(parseDeckSource(source.replace("Readable context stays editable.", '{{ chart("regional-revenue-chart") }}')).errors.join(" "), /either one image or one chart/u);
+});
+
 test("escapes frontmatter and eyebrow text in compiled HTML", () => {
   const source = deckArtifact().source
     .replace("title: Q2 Board Briefing", "title: <img src=x>")

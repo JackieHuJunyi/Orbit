@@ -60,6 +60,41 @@ test("fails ODT export closed when a referenced Rune image is missing", () => {
   assert.throws(() => exportOdfArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
 
+test("embeds a reviewed Deck image into deterministic ODP pictures", () => {
+  const artifact = {
+    id: "image-deck",
+    name: "image-deck.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Image deck
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: split -->
+# Visual proof
+
+The source remains readable.
+
+![Portable proof](rune-asset:sha256:${runeImageId})
+`,
+  };
+  const first = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const second = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
+  assert.deepEqual(first.bytes, second.bytes);
+  const parts = packageParts(first.bytes);
+  assert.deepEqual(parts[`Pictures/rune-${runeImageId}.png`], onePixelPng);
+  const content = strFromU8(parts["content.xml"]);
+  assert.match(content, new RegExp(`Pictures/rune-${runeImageId}\\.png`, "u"));
+  assert.match(content, /<draw:image/u);
+  assert.match(strFromU8(parts["META-INF/manifest.xml"]), /manifest:media-type="image\/png"/u);
+  assert.match(first.warnings.join(" "), /portable, static ODP media/iu);
+  assert.throws(() => exportOdfArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
+});
+
 test("exports deterministic ODT with semantic Markdown and imports it back", () => {
   const artifact = {
     id: "report",
