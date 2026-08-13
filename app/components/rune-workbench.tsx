@@ -23,6 +23,7 @@ import {
   FolderOpen,
   History,
   LayoutGrid,
+  ImagePlus,
   Link2,
   LoaderCircle,
   PanelLeftClose,
@@ -53,6 +54,7 @@ import {
   type VisualSourceDraft,
 } from "./artifact-previews";
 import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
+import { LocalImageReviewDialog, localImageCopy } from "./local-image-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
@@ -184,6 +186,19 @@ import {
   RUNE_APPEARANCE_THEMES,
   type RuneAppearanceTheme,
 } from "../lib/appearance";
+import {
+  buildRuneImageInsertion,
+  deleteRuneImageAsset,
+  extractRuneAssetIds,
+  getRuneImageBlob,
+  parseRuneAssetReference,
+  prepareRuneImageAsset,
+  putRuneImageAsset,
+  runeImageAltFromName,
+  RUNE_IMAGE_ACCEPT,
+  type PreparedRuneImageAsset,
+  type RuneImageInsertion,
+} from "../lib/local-assets";
 import {
   clampWorkspaceSourcePercent,
   DEFAULT_WORKSPACE_SOURCE_PERCENT,
@@ -317,6 +332,16 @@ type PendingDocumentStructure = {
   target: DocumentBlockPreviewSourceTarget;
   input: VisualDocumentBlockStructureInput;
   prepared: PreparedVisualDocumentBlockStructure;
+  error: string;
+  submitting: boolean;
+};
+
+type PendingLocalImage = {
+  artifact: WorkspaceArtifact;
+  asset: PreparedRuneImageAsset;
+  insertion: RuneImageInsertion;
+  offset: number;
+  alt: string;
   error: string;
   submitting: boolean;
 };
@@ -619,6 +644,8 @@ export function RuneWorkbench() {
   const [pdfOcrError, setPdfOcrError] = useState("");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
+  const [pendingLocalImage, setPendingLocalImage] = useState<PendingLocalImage | null>(null);
+  const [localAssetUrls, setLocalAssetUrls] = useState<Record<string, string>>({});
   const [exportError, setExportError] = useState("");
   const [exportState, setExportState] = useState<"idle" | "office" | "legacy-office" | "odf" | "html" | "pdf" | "csv" | "json">("idle");
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -654,7 +681,9 @@ export function RuneWorkbench() {
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const imageImportRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
+  const localImageInFlightRef = useRef(false);
   const pdfOcrAbortRef = useRef<AbortController | null>(null);
   const exportInFlightRef = useRef(false);
   const visualEditInFlightRef = useRef(false);
@@ -683,6 +712,40 @@ export function RuneWorkbench() {
       // Appearance stays available in memory when device preference persistence is unavailable.
     }
   }, [appearanceTheme, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const referencedIds = [...new Set(artifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)))];
+    let cancelled = false;
+    const nextUrls: Record<string, string> = {};
+    void Promise.all(referencedIds.map(async (id) => {
+      try {
+        const blob = await getRuneImageBlob(id);
+        if (blob && !cancelled) nextUrls[id] = URL.createObjectURL(blob);
+      } catch {
+        // A missing or unavailable device asset remains an explicit preview placeholder.
+      }
+    })).then(() => {
+      if (cancelled) {
+        Object.values(nextUrls).forEach((url) => URL.revokeObjectURL(url));
+        return;
+      }
+      setLocalAssetUrls((current) => {
+        Object.values(current).forEach((url) => URL.revokeObjectURL(url));
+        return nextUrls;
+      });
+    });
+    return () => { cancelled = true; };
+  }, [artifacts, hydrated]);
+
+  useEffect(() => () => {
+    Object.values(localAssetUrls).forEach((url) => URL.revokeObjectURL(url));
+  }, [localAssetUrls]);
+
+  const resolveLocalAssetUrl = useCallback((reference: string) => {
+    const id = parseRuneAssetReference(reference);
+    return id ? localAssetUrls[id] ?? null : null;
+  }, [localAssetUrls]);
 
   useEffect(() => () => {
     document.body.classList.remove("workspace-resizing");
@@ -903,6 +966,7 @@ export function RuneWorkbench() {
     || Boolean(pendingPdfOcr)
     || Boolean(pendingExport)
     || Boolean(pendingDocumentStructure)
+    || Boolean(pendingLocalImage)
     || operatingReviewOpen
     || operatingReviewState !== "idle"
     || visualEditState !== "idle"
@@ -1061,6 +1125,7 @@ export function RuneWorkbench() {
       if (visualEditState !== "idle"
         || activeVisualSourceDraft
         || pendingDocumentStructure
+        || pendingLocalImage
         || operatingReviewOpen
         || newArtifactOpen
         || welcomeOpen
@@ -1113,7 +1178,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact) return null;
 
@@ -1238,6 +1303,141 @@ export function RuneWorkbench() {
     } : null);
     if (agentScope === "selection") setAgentScope("artifact");
     if (pendingChange) setPendingChange(null);
+  }
+
+  async function prepareLocalImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const targetArtifact = artifactsRef.current.find((artifact) => artifact.id === selectedId);
+    if (!targetArtifact || targetArtifact.kind !== "document") {
+      setNotice("Local images can currently be inserted into Markdown Documents");
+      return;
+    }
+    if (pendingChange || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || pendingLocalImage || activeVisualSourceDraft) {
+      setNotice("Finish or cancel the current review before inserting an image");
+      return;
+    }
+    const editor = sourceEditorRef.current;
+    const offset = editor ? editor.selectionEnd : targetArtifact.source.length;
+    setSaveState("saving");
+    setNotice("Reading and verifying the image locally");
+    try {
+      const asset = await prepareRuneImageAsset(file.name, file.type, await file.arrayBuffer());
+      const alt = runeImageAltFromName(asset.name);
+      const insertion = buildRuneImageInsertion(targetArtifact.source, offset, alt, asset.id);
+      setPendingLocalImage({ artifact: targetArtifact, asset, insertion, offset, alt, error: "", submitting: false });
+      setSaveState("saved");
+      setNotice("Local image ready for source review");
+    } catch (error) {
+      setSaveState("saved");
+      setNotice(error instanceof Error ? error.message : "Rune could not verify this image");
+    }
+  }
+
+  function updatePendingLocalImageAlt(alt: string) {
+    setPendingLocalImage((current) => {
+      if (!current) return current;
+      try {
+        return {
+          ...current,
+          alt,
+          insertion: buildRuneImageInsertion(current.artifact.source, current.offset, alt, current.asset.id),
+          error: "",
+        };
+      } catch (error) {
+        return { ...current, alt, error: error instanceof Error ? error.message : "The Markdown image reference is invalid." };
+      }
+    });
+  }
+
+  function cancelPendingLocalImage() {
+    if (pendingLocalImage?.submitting) return;
+    setPendingLocalImage(null);
+    setNotice("Image insertion cancelled — the workspace is unchanged");
+  }
+
+  async function confirmPendingLocalImage() {
+    const pending = pendingLocalImage;
+    if (!pending || pending.submitting || localImageInFlightRef.current) return;
+    const currentArtifacts = artifactsRef.current;
+    const currentArtifact = currentArtifacts.find((artifact) => artifact.id === pending.artifact.id);
+    if (!currentArtifact || currentArtifact.source !== pending.artifact.source) {
+      setPendingLocalImage({ ...pending, error: "The Document changed after this review opened. Choose the image again from the current source." });
+      return;
+    }
+    if (!canCheckpointSource(currentArtifact.source)) {
+      setPendingLocalImage({ ...pending, error: "This Document is too large for a safe pre-insertion checkpoint." });
+      return;
+    }
+    let insertion: RuneImageInsertion;
+    try {
+      insertion = buildRuneImageInsertion(currentArtifact.source, pending.offset, pending.alt, pending.asset.id);
+    } catch (error) {
+      setPendingLocalImage({ ...pending, error: error instanceof Error ? error.message : "The Markdown image reference is invalid." });
+      return;
+    }
+    const patch: ArtifactSourcePatch = {
+      artifactId: currentArtifact.id,
+      summary: `Insert ${pending.asset.name}`,
+      detail: "Store one device-local image by content hash and insert its readable Markdown reference.",
+      nextSource: insertion.nextSource,
+      operationCount: 1,
+    };
+    const prepared = prepareWorkspaceMutation(currentArtifacts, [patch], []);
+    if (prepared.errors.length) {
+      setPendingLocalImage({ ...pending, insertion, error: prepared.errors.slice(0, 3).join(" ") });
+      return;
+    }
+    const checkpoint = createCheckpoint(currentArtifact, `Before image · ${pending.asset.name}`, "manual");
+    const nextCheckpoints = appendCheckpoint(checkpointsRef.current, checkpoint);
+    localImageInFlightRef.current = true;
+    setPendingLocalImage({ ...pending, insertion, error: "", submitting: true });
+    setSaveState("saving");
+    setNotice("Saving the image and Markdown reference atomically");
+    let created = false;
+    try {
+      created = await putRuneImageAsset(pending.asset);
+      try {
+        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints, savedOperatingReviewsRef.current);
+      } catch {
+        if (created) await deleteRuneImageAsset(pending.asset.id).catch(() => undefined);
+        setSaveState("error");
+        setPendingLocalImage((value) => value ? { ...value, error: "Device storage is full, so Rune kept the Document unchanged.", submitting: false } : value);
+        return;
+      }
+      const selection: ActiveSourceSelection = {
+        artifactId: currentArtifact.id,
+        sourceRevision: insertion.nextSource,
+        start: insertion.start,
+        end: insertion.end,
+      };
+      setArtifacts(prepared.nextArtifacts);
+      setSelectedId(currentArtifact.id);
+      setCheckpoints(nextCheckpoints);
+      setSourceSelection(selection);
+      setSourceCursor(selection);
+      setAgentScope("selection");
+      setPendingChange(null);
+      setPendingLocalImage(null);
+      setSaveState("saved");
+      setSavedAt("");
+      setNotice(`${pending.asset.name} inserted as a device-local content-hash asset`);
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        sourceEditorRef.current?.focus({ preventScroll: true });
+        sourceEditorRef.current?.setSelectionRange(selection.start, selection.end, "forward");
+      }));
+    } catch (error) {
+      if (created) await deleteRuneImageAsset(pending.asset.id).catch(() => undefined);
+      setSaveState("saved");
+      setPendingLocalImage((value) => value ? {
+        ...value,
+        error: error instanceof Error ? error.message : "Rune could not store this image locally.",
+        submitting: false,
+      } : value);
+    } finally {
+      localImageInFlightRef.current = false;
+    }
   }
 
   async function commitVisualSourceEdit({
@@ -1414,7 +1614,7 @@ export function RuneWorkbench() {
     if (visualEditInFlightRef.current || visualEditState !== "idle") {
       return "Another visual edit is still being verified.";
     }
-    if (pendingChange || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || agentState === "planning") {
+    if (pendingChange || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || pendingLocalImage || agentState === "planning") {
       return "Finish or cancel the current review before changing Document structure.";
     }
     const currentArtifact = artifactsRef.current.find((artifact) => artifact.id === targetArtifact.id);
@@ -2965,7 +3165,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.73</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.74</strong></footer>
               </div>
             )}
           </div>
@@ -2973,6 +3173,7 @@ export function RuneWorkbench() {
             <span className="visually-hidden" aria-live="polite">{exportState === "idle" ? "" : `${ui.exportMenu} ${exportState}`}</span>
           )}
           <input ref={importRef} className="visually-hidden" type="file" multiple accept=".doc,.ppt,.docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
+          <input ref={imageImportRef} className="visually-hidden" type="file" accept={RUNE_IMAGE_ACCEPT} onChange={(event) => void prepareLocalImage(event)} disabled={!hydrated || selectedArtifact.kind !== "document" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingChange) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure) || Boolean(pendingLocalImage)} />
         </div>
       </header>
 
@@ -3167,6 +3368,16 @@ export function RuneWorkbench() {
               <div><span className="overline">{ui.source}</span><strong>{selectedArtifact.name}</strong></div>
             </div>
             <div className="pane-actions">
+              {selectedArtifact.kind === "document" && (
+                <button
+                  type="button"
+                  className="icon-button small insert-local-image-button"
+                  onClick={() => imageImportRef.current?.click()}
+                  disabled={!hydrated || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingChange) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure) || Boolean(pendingLocalImage)}
+                  aria-label={localImageCopy(locale).insertLocal}
+                  title={localImageCopy(locale).insertLocalAtCursor}
+                ><ImagePlus aria-hidden="true" /></button>
+              )}
               <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
                 <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
                 <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
@@ -3516,6 +3727,7 @@ export function RuneWorkbench() {
                 onEditDeckSlide={visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
                 onEditChartSpec={visualEditState === "idle" ? commitVisualChartSpecEdit : undefined}
                 onVisualSourceDraftChange={handleVisualSourceDraftChange}
+                resolveLocalAssetUrl={resolveLocalAssetUrl}
               />
             </div>
           </div>
@@ -3610,6 +3822,20 @@ export function RuneWorkbench() {
             setNotice(ui.structureCancelled);
           }}
           onConfirm={() => void confirmVisualDocumentBlockStructure()}
+        />
+      )}
+      {pendingLocalImage && (
+        <LocalImageReviewDialog
+          asset={pendingLocalImage.asset}
+          artifactName={pendingLocalImage.artifact.name}
+          insertion={pendingLocalImage.insertion}
+          alt={pendingLocalImage.alt}
+          error={pendingLocalImage.error}
+          submitting={pendingLocalImage.submitting}
+          locale={locale}
+          onAltChange={updatePendingLocalImageAlt}
+          onCancel={cancelPendingLocalImage}
+          onConfirm={() => void confirmPendingLocalImage()}
         />
       )}
       {welcomeOpen && hydrated && (

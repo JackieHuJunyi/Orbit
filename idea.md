@@ -2064,4 +2064,12 @@ Preview header 已经拥有可展开的来源、binding 与 validation 证据，
 
 每种主题拆成两层：圆形 swatch 表达接近设备表面高光与阴影的 `finish`，实际按钮、焦点框和选中态使用经过对比度收敛的 `color` 与 `soft`。因此浅金和银色仍能保留轻巧气质，却不会让白底文字失去可读性。外观入口从五个无名色点升级为九个具名的 `menuitemradio`；选择即时生效、继续写入原有设备偏好，并在九种界面语言下显示明确名称。Rune 的朱红品牌符号不随主题变化，避免视觉身份被主题吞没。
 
+## 79. v0.74 图片先成为可追踪的本机资源，再进入文档
+
+富媒体不能把 `data:image/...;base64` 塞进 canonical source，否则文档不可读、diff 无意义、模型上下文被二进制占满，也无法独立删除、同步或导出资源。v0.74 为 Markdown Document 建立第一条本机图片链路：用户在源内容光标处选择 PNG/JPEG/WebP/GIF，Rune 读取真实 magic bytes、限制单图 8 MB，并以 SHA-256 内容摘要生成 `rune-asset:sha256:<hash>` identity。相同内容天然去重，文件名只作为可读元数据。
+
+写入前必须经过九语言审核面：图片预览、真实格式与大小、可编辑且必填的 alt text，以及精确 Markdown 新增都同时可见。确认后图片 bytes 写入 IndexedDB，Markdown 只写 stable reference；source 持久化失败时，如果该资源是本次新建，就补偿删除 IndexedDB 记录，避免半次事务。每台设备最多 40 张、总计 64 MB；读取时重新检查大小、格式、hash，损坏或缺失资源只显示明确的 missing 状态，不把错误 bytes 交给浏览器。
+
+当前边界保持诚实：该版本只让本机 Document 插入与预览图片；source-only 下载、文件夹同步和语义 Office/ODF/PDF 导出尚未携带这些 bytes，仍按现有 fidelity warning 处理。后续所有资产包、删除、目录同步和导出嵌入都必须复用同一 hash identity，而不能发明第二套路径。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

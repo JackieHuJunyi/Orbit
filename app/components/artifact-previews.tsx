@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ElementType, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import {
@@ -121,6 +121,8 @@ type PreviewTargetHandler = (
   target: PreviewSourceTarget,
   viaLabel?: string,
 ) => void;
+
+export type LocalAssetUrlResolver = (reference: string) => string | null;
 
 export type DataCellEditHandler = (
   artifact: WorkspaceArtifact,
@@ -576,7 +578,15 @@ function MarkdownSourcePart({
       return createElement(Component as ElementType, { ...props, node: contextualNode });
     },
   ])) as Components, [components, sourceOffset]);
-  return <ReactMarkdown components={contextualComponents} remarkPlugins={[remarkGfm]}>{source}</ReactMarkdown>;
+  return <ReactMarkdown
+    components={contextualComponents}
+    remarkPlugins={[remarkGfm]}
+    urlTransform={(value, key, node) => (
+      node.tagName === "img" && key === "src" && value.startsWith("rune-asset:sha256:")
+        ? value
+        : defaultUrlTransform(value)
+    )}
+  >{source}</ReactMarkdown>;
 }
 
 function MarkdownSource({
@@ -593,6 +603,7 @@ function MarkdownSource({
   onEditDocumentBlock,
   onBeginDocumentBlockEdit,
   onBeginDocumentBlockStructure,
+  resolveLocalAssetUrl,
 }: {
   source: string;
   sourceOffsets?: number[];
@@ -610,6 +621,7 @@ function MarkdownSource({
     target: DocumentBlockPreviewSourceTarget,
     action: VisualDocumentBlockStructureAction,
   ) => void;
+  resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
   const copy = usePreviewCopy();
   const parts = tokenizeChartReferences(source);
@@ -655,17 +667,28 @@ function MarkdownSource({
     props: Record<string, unknown> & { node?: Parameters<typeof fragmentTargetForNode>[0]; children?: ReactNode },
   ) => {
     const { node, children, ...elementProps } = props;
+    const imageSource = tag === "img" && typeof elementProps.src === "string" ? elementProps.src : "";
+    const localImage = imageSource.startsWith("rune-asset:");
+    const localImageUrl = localImage ? resolveLocalAssetUrl?.(imageSource) : null;
+    const renderedElementProps = localImage
+      ? {
+          ...elementProps,
+          src: localImageUrl ?? undefined,
+          className: `${typeof elementProps.className === "string" ? elementProps.className : ""} rune-local-image ${localImageUrl ? "" : "missing"}`.trim(),
+          "data-rune-asset-state": localImageUrl ? "ready" : "missing",
+        }
+      : elementProps;
     const target = node ? fragmentTargetForNode(node) : undefined;
     const renderElement = (nextProps: Record<string, unknown>) => (
       tag === "img" ? createElement(tag, nextProps) : createElement(tag, nextProps, children)
     );
-    if (!target || !targetArtifact || !onTargetSource) return renderElement(elementProps);
+    if (!target || !targetArtifact || !onTargetSource) return renderElement(renderedElementProps);
     const active = previewTargetIsActive(target, activeSelection);
-    const inheritedClassName = typeof elementProps.className === "string" ? elementProps.className : "";
+    const inheritedClassName = typeof renderedElementProps.className === "string" ? renderedElementProps.className : "";
     const opensLink = tag === "a";
     const selectSource = () => onTargetSource(targetArtifact, target);
     return renderElement({
-      ...elementProps,
+      ...renderedElementProps,
       className: `${inheritedClassName} document-source-fragment targetable ${active ? "active" : ""}`.trim(),
       "data-preview-source-target": target.kind,
       "data-preview-source-id": target.id,
@@ -689,7 +712,7 @@ function MarkdownSource({
         selectSource();
       },
     });
-  }, [activeSelection, copy, fragmentTargetForNode, onTargetSource, targetArtifact]);
+  }, [activeSelection, copy, fragmentTargetForNode, onTargetSource, resolveLocalAssetUrl, targetArtifact]);
 
   const interactiveBlock = useCallback((
     tag: "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "ul" | "ol" | "blockquote" | "pre" | "table" | "hr",
@@ -868,6 +891,7 @@ function DocumentPreview({
   onEditDocumentBlock,
   onReviewDocumentBlockStructure,
   onVisualSourceDraftChange,
+  resolveLocalAssetUrl,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -879,6 +903,7 @@ function DocumentPreview({
   onEditDocumentBlock?: DocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
+  resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
   const copy = usePreviewCopy();
   const compiled = compileArtifactSource(
@@ -1319,7 +1344,7 @@ function DocumentPreview({
                 <span>{copy.draftPreview}</span>
                 <div className="visual-document-draft markdown-body">
                   {draftSource.trim()
-                    ? <MarkdownSource source={compiledDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} />
+                    ? <MarkdownSource source={compiledDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} resolveLocalAssetUrl={resolveLocalAssetUrl} />
                     : <p className="visual-document-empty">{copy.sectionEmpty}</p>}
                 </div>
               </section>
@@ -1413,7 +1438,7 @@ function DocumentPreview({
                 <span>{copy.blockPreview}</span>
                 <div className="visual-document-draft markdown-body">
                   {blockDraftSource.trim()
-                    ? <MarkdownSource source={compiledBlockDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} />
+                    ? <MarkdownSource source={compiledBlockDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} resolveLocalAssetUrl={resolveLocalAssetUrl} />
                     : <p className="visual-document-empty">{copy.blockEmpty}</p>}
                 </div>
               </section>
@@ -1496,6 +1521,7 @@ function DocumentPreview({
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
             onEditDocumentBlock={onEditDocumentBlock}
+            resolveLocalAssetUrl={resolveLocalAssetUrl}
             onBeginDocumentBlockEdit={beginBlockEdit}
             onBeginDocumentBlockStructure={onReviewDocumentBlockStructure
               && !editingSection
@@ -2444,6 +2470,7 @@ export function ArtifactPreview({
   onEditDeckSlide,
   onEditChartSpec,
   onVisualSourceDraftChange,
+  resolveLocalAssetUrl,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -2457,6 +2484,7 @@ export function ArtifactPreview({
   onEditDeckSlide?: DeckSlideEditHandler;
   onEditChartSpec?: ChartSpecEditHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
+  resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   const copy = useMemo(() => runeUICopy(locale).preview, [locale]);
@@ -2474,7 +2502,7 @@ export function ArtifactPreview({
       content = <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
     } else {
       const targets = derivePreviewSourceTargets(artifact);
-      if (artifact.kind === "document") content = <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
+      if (artifact.kind === "document") content = <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} onVisualSourceDraftChange={onVisualSourceDraftChange} resolveLocalAssetUrl={resolveLocalAssetUrl} />;
       else if (artifact.kind === "query") {
         const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
         content = <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;

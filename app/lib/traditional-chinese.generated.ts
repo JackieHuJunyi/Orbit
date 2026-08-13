@@ -154,6 +154,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "右側也會高亮並滾動到對應成品"
   ],
   [
+    "在來源內容游標處插入本機圖片",
+    "在來源內容遊標處插入本機圖片"
+  ],
+  [
     "对关键变化补充负责人和下一步",
     "對關鍵變化補充負責人和下一步"
   ],
@@ -226,6 +230,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "和自定義協議的個人模型配置"
   ],
   [
+    "在源内容光标处插入本机图片",
+    "在源內容游標處插入本機圖片"
+  ],
+  [
     "当前服务没有启用加密凭据库",
     "當前服務沒有啟用加密憑據庫"
   ],
@@ -268,6 +276,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "会在提交前验证完整工作流",
     "會在提交前驗證完整工作流"
+  ],
+  [
+    "供辅助技术使用的图片说明",
+    "供輔助技術使用的圖片說明"
   ],
   [
     "写入前始终可以审核和撤销",
@@ -502,6 +514,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "無法寫入本機恢復點歷史"
   ],
   [
+    "是无障碍文档的必需信息",
+    "是無障礙文件的必需資訊"
+  ],
+  [
+    "是無障礙文件的必要資訊",
+    "是無障礙檔案的必要資訊"
+  ],
+  [
     "普通点击链接定位源内容",
     "普通點選連結定位源內容"
   ],
@@ -608,6 +628,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "可视化文档内容块最多",
     "視覺化文件內容塊最多"
+  ],
+  [
+    "图片字节仅保留在本机",
+    "圖片位元組僅保留在本機"
   ],
   [
     "完整工作区未通过校验",
@@ -728,6 +752,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "个人密钥会被加密为",
     "個人金鑰會被加密為"
+  ],
+  [
+    "中保存内容哈希引用",
+    "中儲存內容雜湊引用"
   ],
   [
     "亲手试试四个快捷键",
@@ -970,6 +998,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "可隨時寫回資料夾"
   ],
   [
+    "图片与源内容变更",
+    "圖片與源內容變更"
+  ],
+  [
     "图表数据或演示页",
     "圖表資料或演示頁"
   ],
@@ -1152,6 +1184,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "生成的源内容预览",
     "生成的源內容預覽"
+  ],
+  [
+    "确认图片及其可读",
+    "確認圖片及其可讀"
   ],
   [
     "示例工作区已就绪",
@@ -1502,6 +1538,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "歡迎與本地指南"
   ],
   [
+    "正在保存到本机",
+    "正在儲存到本機"
+  ],
+  [
     "正文定位按钮按",
     "正文定位按鈕按"
   ],
@@ -1552,6 +1592,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "规范源内容差异",
     "規範源內容差異"
+  ],
+  [
+    "规范源内容新增",
+    "規範源內容新增"
   ],
   [
     "请先添加有效的",
@@ -1754,6 +1798,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "稽核資料匯出"
   ],
   [
+    "审核本机图片",
+    "稽核本機圖片"
+  ],
+  [
     "导入我的文件",
     "匯入我的檔案"
   ],
@@ -1812,6 +1860,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "按下对应按键",
     "按下對應按鍵"
+  ],
+  [
+    "插入本机图片",
+    "插入本機圖片"
   ],
   [
     "改成紫色强调",
@@ -2642,6 +2694,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "和你決定"
   ],
   [
+    "图片数据",
+    "圖片資料"
+  ],
+  [
+    "图片说明",
+    "圖片說明"
+  ],
+  [
     "图表形式",
     "圖表形式"
   ],
@@ -2774,6 +2834,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "提出改動"
   ],
   [
+    "插入图片",
+    "插入圖片"
+  ],
+  [
     "数値形式",
     "數値形式"
   ],
@@ -2858,6 +2922,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "本機歷史"
   ],
   [
+    "本机资源",
+    "本機資源"
+  ],
+  [
     "本次目标",
     "本次目標"
   ],
@@ -2924,6 +2992,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "画像内容",
     "畫像內容"
+  ],
+  [
+    "画像説明",
+    "畫像説明"
   ],
   [
     "的值类型",
@@ -3082,6 +3154,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "不上傳"
   ],
   [
+    "不保存",
+    "不儲存"
+  ],
+  [
     "个图形",
     "個圖形"
   ],
@@ -3128,6 +3204,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "供应商",
     "供應商"
+  ],
+  [
+    "保存中",
+    "儲存中"
   ],
   [
     "保存後",
@@ -3184,6 +3264,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "导出为",
     "匯出為"
+  ],
+  [
+    "将用作",
+    "將用作"
   ],
   [
     "工作区",

@@ -1927,3 +1927,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 将当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的代表性 finish 转译为九个 Rune 主题，不把硬件营销色直接当作控件颜色。
 - 每个主题拥有独立的材质 swatch、对比度安全的交互 accent 与柔和 surface tint；Rune 朱红标志始终独立。
 - 外观面板显示主题名称、当前选择和原生 `menuitemradio` 状态，支持全部九种界面语言与设备本地持久化。
+
+### 17.19 v0.74 本机图片资源基础
+
+- Markdown Document 可从当前源内容光标插入 PNG/JPEG/WebP/GIF；写入前审核图片、格式、大小、alt text 与精确 Markdown。
+- binary 使用 SHA-256 identity 存入 IndexedDB，source 仅保存 `rune-asset:sha256:<hash>`，禁止 base64；相同 bytes 去重。
+- 单图 8 MB、单设备 40 张/64 MB；读取时重验 magic bytes 与 hash，缺失/损坏 fail closed。
+- source 与新 asset 使用补偿事务：设备 source 持久化失败则删除本次新建 bytes，checkpoint 保留写入前文档。
+- 本阶段不宣称 source-only 下载、folder sync 或 Office/ODF/PDF 已携带 binary；下一阶段沿同一 identity 实现 portable asset package 与导出嵌入。

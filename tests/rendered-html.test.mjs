@@ -402,7 +402,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.73<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.74<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -473,4 +473,24 @@ test("moves live lineage into preview evidence so compiled content starts immedi
   assert.doesNotMatch(html, /<div class="preview-body"><div class="lineage-strip/);
   assert.match(styles, /\.preview-evidence-lineage\s*\{/);
   assert.match(styles, /\.preview-evidence-lineage \.lineage-strip\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
+});
+
+test("ships reviewed device-local images as content-hash Markdown references without base64 source", async () => {
+  const response = await render();
+  const html = await response.text();
+  const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const preview = await readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8");
+  const assets = await readFile(new URL("../app/lib/local-assets.ts", import.meta.url), "utf8");
+  assert.match(html, /aria-label="Insert local image"/);
+  assert.match(workbench, /<LocalImageReviewDialog/);
+  assert.match(workbench, /accept=\{RUNE_IMAGE_ACCEPT\}/);
+  assert.match(workbench, /putRuneImageAsset\(pending\.asset\)/);
+  assert.match(workbench, /deleteRuneImageAsset\(pending\.asset\.id\)/);
+  assert.match(preview, /data-rune-asset-state/);
+  assert.match(preview, /defaultUrlTransform/);
+  assert.match(preview, /node\.tagName === "img" && key === "src"/);
+  assert.match(assets, /rune-asset:sha256:/);
+  assert.match(assets, /indexedDB\.open/);
+  assert.doesNotMatch(workbench, /readAsDataURL|data:image\/[^;]+;base64/);
+  assert.doesNotMatch(assets, /readAsDataURL|data:image\/[^;]+;base64/);
 });

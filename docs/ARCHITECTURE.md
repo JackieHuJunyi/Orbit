@@ -560,6 +560,10 @@ The full-screen Setup Assistant is a presentation change over the existing `Welc
 
 Preview lineage relocation moves the existing render branches into the existing native evidence disclosure. Chart source, Query/Data resolution, Query scalar references, legacy metric references, and embedded Chart ids continue to derive synchronously from the selected artifact and current workspace; the same localized status text is rendered. The default preview body now owns only the compiled-output scroll container. No lineage snapshot, validation cache, alternate identity, or permission path is introduced.
 
+Device-local Document images use one strict `rune-asset:sha256:<64 lowercase hex>` source contract. PNG/JPEG/WebP/GIF bytes are magic-byte validated, capped at 8 MB each, hashed before review, and stored in an IndexedDB object store capped at 40 records/64 MB. The canonical Markdown contains only the content-hash reference and required alt text; it never contains base64. Preview resolution rereads the blob, repeats size/format/hash validation, creates an ephemeral object URL, and revokes replaced URLs. Missing or corrupt bytes fail closed.
+
+Image insertion is revision-bound and review-before-write. Rune stores/deduplicates the asset first, persists the validated next workspace and pre-write checkpoint second, and removes a newly created asset when source persistence fails. Existing deduplicated bytes are never deleted by compensation. This is the device foundation only: raw source download, directory sync, compatibility import, and Office/ODF/PDF export do not yet claim binary fidelity and must reuse this exact identity when portable asset packaging is introduced. Hosted R2 remains undeclared.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |
