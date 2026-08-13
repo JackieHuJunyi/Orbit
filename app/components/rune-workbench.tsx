@@ -63,6 +63,7 @@ import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
 import { OperatingReviewDialog, operatingReviewCopy } from "./operating-review-dialog";
+import { PilotEvidenceReviewDialog, pilotEvidenceCopy } from "./pilot-evidence-review-dialog";
 import { WorkbenchCommandMenu } from "./workbench-command-menu";
 import {
   PdfOcrSetupDialog,
@@ -135,6 +136,7 @@ import {
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import { prepareRunePilotEvidenceExport, type RunePilotEvidenceExport } from "../lib/pilot-evidence";
 import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
 import type { RuntimeImpactPreflight } from "../lib/query-preflight";
 import { buildAgentRuntimeRepair, type AgentRuntimeRepair } from "../lib/agent-repair";
@@ -378,6 +380,11 @@ type PendingExport = {
   sourceRevision: string;
   baseArtifacts: WorkspaceArtifact[];
   result: ArtifactExportResult;
+};
+
+type PendingPilotEvidence = {
+  baseEvidence: RuneTaskEvidence;
+  result: RunePilotEvidenceExport;
 };
 
 type PendingDeliveryConfirmation = {
@@ -716,6 +723,8 @@ export function RuneWorkbench() {
   const [pdfOcrActiveFileName, setPdfOcrActiveFileName] = useState("");
   const [pdfOcrError, setPdfOcrError] = useState("");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
+  const [pendingPilotEvidence, setPendingPilotEvidence] = useState<PendingPilotEvidence | null>(null);
+  const [pilotEvidenceError, setPilotEvidenceError] = useState("");
   const [pendingDeliveryConfirmation, setPendingDeliveryConfirmation] = useState<PendingDeliveryConfirmation | null>(null);
   const [deliveryOutcomeError, setDeliveryOutcomeError] = useState("");
   const [deliveryOutcomeState, setDeliveryOutcomeState] = useState<"idle" | "recording">("idle");
@@ -1095,6 +1104,7 @@ export function RuneWorkbench() {
     || Boolean(pendingImport)
     || Boolean(pendingPdfOcr)
     || Boolean(pendingExport)
+    || Boolean(pendingPilotEvidence)
     || Boolean(pendingDeliveryConfirmation)
     || Boolean(pendingDocumentStructure)
     || Boolean(pendingLocalImage)
@@ -1105,6 +1115,7 @@ export function RuneWorkbench() {
     || visualEditState !== "idle"
     || Boolean(activeVisualSourceDraft);
   const commandMenuCopy = useMemo(() => runeCommandMenuCopy(locale), [locale]);
+  const pilotEvidenceUI = useMemo(() => pilotEvidenceCopy(locale), [locale]);
   const workbenchCommands = useMemo(() => createRuneWorkbenchCommands({
     ui,
     locale,
@@ -1310,6 +1321,7 @@ export function RuneWorkbench() {
         || pendingImport
         || pendingPdfOcr
         || pendingExport
+        || pendingPilotEvidence
         || pendingDeliveryConfirmation
         || pendingChange) return;
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "p") {
@@ -1365,7 +1377,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, commandMenuOpen, documentBriefingOpen, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, commandMenuOpen, documentBriefingOpen, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, pendingPilotEvidence, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact || !presentedArtifact) return null;
 
@@ -3736,6 +3748,48 @@ export function RuneWorkbench() {
     }
   }
 
+  function reviewPilotEvidenceExport() {
+    setToolsMenuOpen(false);
+    setPilotEvidenceError("");
+    try {
+      const baseEvidence = taskEvidenceRef.current;
+      const result = prepareRunePilotEvidenceExport(baseEvidence);
+      setPendingPilotEvidence({ baseEvidence, result });
+      setNotice(`${pilotEvidenceUI.reviewNotice} · ${result.package.runs.length}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : pilotEvidenceUI.prepareError);
+    }
+  }
+
+  function cancelPilotEvidenceExport() {
+    if (!pendingPilotEvidence) return;
+    setPendingPilotEvidence(null);
+    setPilotEvidenceError("");
+    setNotice(pilotEvidenceUI.cancelNotice);
+  }
+
+  function confirmPilotEvidenceExport() {
+    if (!pendingPilotEvidence) return;
+    if (taskEvidenceRef.current !== pendingPilotEvidence.baseEvidence) {
+      setPilotEvidenceError(pilotEvidenceUI.changedError);
+      setNotice(pilotEvidenceUI.changedNotice);
+      return;
+    }
+    const { result } = pendingPilotEvidence;
+    const bytes = new Uint8Array(result.bytes).buffer;
+    const url = URL.createObjectURL(new Blob([bytes], { type: `${result.mimeType};charset=utf-8` }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = result.fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+    setPendingPilotEvidence(null);
+    setPilotEvidenceError("");
+    setNotice(`${pilotEvidenceUI.downloadedNotice} · ${result.fileName}`);
+  }
+
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
@@ -3905,6 +3959,7 @@ export function RuneWorkbench() {
                 <div className="tools-menu-actions">
                   <button type="button" role="menuitem" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); openWelcomeGuide(); }}><BookOpen aria-hidden="true" /><span><strong>{ui.help}</strong><small>{ui.brandSubtitle}</small></span></button>
                   <button type="button" role="menuitem" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }}><Settings aria-hidden="true" /><span><strong>{ui.models}</strong><small>{ui.localFirst}</small></span></button>
+                  <button type="button" role="menuitem" disabled={!taskEvidence.runs.length || Boolean(activeVisualSourceDraft)} onClick={reviewPilotEvidenceExport}><FileCode2 aria-hidden="true" /><span><strong>{pilotEvidenceUI.menuTitle}</strong><small>{taskEvidence.runs.length ? pilotEvidenceUI.menuBody : pilotEvidenceUI.menuEmpty}</small></span></button>
                   <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void connectWorkspaceFolder(); }}><FolderOpen aria-hidden="true" /><span><strong>{directoryHandle?.name ?? ui.openFolder}</strong><small>{ui.workspace}</small></span></button>
                   {directoryHandle && <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void pullWorkspaceFolder(); }}><RefreshCw aria-hidden="true" /><span><strong>{ui.pull}</strong><small>{directoryHandle.name}</small></span></button>}
                   {directoryHandle && <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void pushWorkspaceFolder(); }}><Save aria-hidden="true" /><span><strong>{ui.push}</strong><small>{directoryHandle.name}</small></span></button>}
@@ -3936,7 +3991,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.01</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.02</strong></footer>
               </div>
             )}
           </div>
@@ -4744,6 +4799,15 @@ export function RuneWorkbench() {
           locale={locale}
           onCancel={cancelExport}
           onConfirm={confirmExport}
+        />
+      )}
+      {pendingPilotEvidence && (
+        <PilotEvidenceReviewDialog
+          result={pendingPilotEvidence.result}
+          locale={locale}
+          error={pilotEvidenceError}
+          onCancel={cancelPilotEvidenceExport}
+          onConfirm={confirmPilotEvidenceExport}
         />
       )}
       {pendingDeliveryConfirmation && (

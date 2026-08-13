@@ -82,5 +82,10 @@
   .delivery-rubric-row { grid-template-columns: 1fr; gap: 8px; padding: 11px; }
   .delivery-score-options { width: 100%; grid-template-columns: repeat(5, minmax(34px, 1fr)); }
   .delivery-score-options label { width: 100%; height: 34px; }
+  .pilot-evidence-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pilot-evidence-scope { grid-template-columns: 1fr; }
+  .pilot-evidence-file { grid-template-columns: 38px minmax(0, 1fr); }
+  .pilot-evidence-file > svg { width: 38px; height: 38px; }
+  .pilot-evidence-file > span:last-child { display: none; }
   .proposal-preview-badge { max-width: 150px; padding-inline: 8px; }
 }

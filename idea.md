@@ -2327,3 +2327,11 @@ Deck Markdown 原本只编译成一份包含所有页面的 sandbox HTML。这�
 v1.01 不为此复制一个 React slide renderer，也不向 iframe 增加 script 或 same-origin 权限。`compileDeckSource` 从同一份严格 Deck model、block compiler、escape、theme、image 与 numbering 规则同时产生完整多页 HTML 和有稳定 index 的逐页独立 HTML。完整结果继续服务 HTML export；工作台只解析并渲染当前页的 Chart token，所以最多四十页不会同时启动重复的 live presentation runtime。
 
 当前页外层携带 exact `PreviewSourceTarget` identity。左侧光标进入一页时，页 identity 直接选择右侧单页画布；右侧实际画布上方有覆盖完整页面、键盘可达的透明定位按钮，调用既有 revision-check、Split reveal、textarea focus、selection 和居中滚动能力。Source 与 Preview 都不拥有另一套 target 规则，legacy HTML 因为缺少可证明 source range 继续诚实地保持兼容 iframe。这里落实的是 DeepSeek Harness 值得学习的单向分层：compiler 产生事实，presentation 选择视图，capability 执行动作，而不是让 UI 穿透 sandbox 猜状态。
+
+## 108. v1.02 产品证据可以携带，但不能把工作内容和内部身份一起带走
+
+真实 pilot 的下一步不是继续横向增加 Office 功能，而是把已经发生的任务、交付判断和授权/脱敏人工评分交给研究汇总。直接导出 localStorage 会泄露 Artifact id、文件名片段、精确版本 token、交付 SHA-256、provider label 与时间戳；自动上传则会把 Rune 从 local-first workspace 变成没有明确授权的遥测系统。两者都不符合产品边界。
+
+v1.02 新增纯 `pilot-evidence` compiler，只消费规范化后的 v3 ledger。它对 run 与 output 使用包内匿名编号，把时间降低到日期，把 planner 折叠成 local/configured-model，只留下任务状态、有限影响数量、耗时、可用时的 token、交付格式/判断和完整的 authorized-or-redacted 七维评分。正文、数据、prompt、model response、Query 行、文件名、Artifact id、路径、版本指纹、SHA-256、credential、用户身份和准确时间全部不能进入 JSON；输出固定小于 128 KB，给定账本和时间必须字节确定，深冻结输入保持不变。
+
+下载能力仍只属于 Workbench。用户在九语言 review dialog 里先看清包含/排除范围、记录数和大小，再明确确认“这是候选证据，不是 PMF 证明”；审核期间 ledger 变化会让下载失败，网络上传路径不存在。Synthetic Golden Task 和没有完整人工评分的技术成功都不会被包装成真实样本。这个功能让 0/20 基线有一条诚实的收集与交接路径，但发布本身不会让 0 自动变成 1。

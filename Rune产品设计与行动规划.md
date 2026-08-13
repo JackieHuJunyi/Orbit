@@ -2058,3 +2058,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 任一成品数字正确性低于 4，则该任务不计入 pilot eligible，并在侧栏与单条历史中直接显示；七维均值只能辅助观察，不能覆盖这条硬门槛。
 - 账本继续只保存版本、评分、格式、耗时、精确 run/output identity 与 SHA-256 指纹；不保存正文、提示词、模型回复、Query 行、文件名作为测量字段、凭据、用户身份或后台 telemetry。
 - 九种界面语言共享一个响应式组件与评分合同，Arabic 使用既有 RTL；本版只提供诚实采集能力，未收到实际提交前，获授权/脱敏人工评分基线仍为 0/20。
+
+### 17.34 v1.02 Pilot Evidence 必须可交接、可审阅，同时保持零内容与零上传
+
+- Pilot Evidence 只消费规范化后的 v3 设备账本，不读取 Artifact source、Query runtime、模型回复或文件系统；没有有效 guided-task run 时不产生空壳证据。
+- run/output identity 必须改成包内 `run-001` / `output-01`；任务与导出时间只保留日期。文件名、Artifact id、路径、provider name、source/output revision、交付 SHA-256、正文、prompt、Query 行、credential 与用户身份始终排除。
+- JSON 只保留任务类型、applied/stopped、停止原因、local/configured-model、有限影响数量、耗时、可用时的 token、交付方式/格式/判断，以及完整的 authorized-or-redacted 七维评分；最大 128 KB，给定账本和 clock 必须字节确定。
+- 九语言审阅弹层必须在下载前列出包含与排除范围、记录数、真实人工评估任务数和文件大小；用户明确确认“这是候选结果证据，不是 PMF 证明”后才允许下载。
+- 审阅期间账本变化必须使旧导出失效；下载只使用浏览器本地 Blob，不得增加 route、fetch、telemetry、clipboard、自动文件夹写入或后台同步。
+- Golden Task E1、未评分 quick outcome 和技术 Apply success 不能自动计入真实 pilot。功能上线只建立 0/20 → 20/20 的安全收集路径，不改变当前 0/20 基线。

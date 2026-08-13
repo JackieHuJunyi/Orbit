@@ -22,6 +22,7 @@ const componentCatalogs = [
   ["app/components/operating-review-dialog.tsx", "OPERATING_REVIEW_BASE_COPY"],
   ["app/components/document-briefing-dialog.tsx", "DOCUMENT_BRIEFING_BASE_COPY"],
   ["app/components/delivery-outcome-dialog.tsx", "DELIVERY_OUTCOME_BASE_COPY"],
+  ["app/components/pilot-evidence-review-dialog.tsx", "PILOT_EVIDENCE_BASE_COPY"],
   ["app/components/pdf-ocr-setup-dialog.tsx", "PDF_OCR_BASE_COPY"],
 ];
 const protectedTerms = [
