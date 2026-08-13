@@ -38,6 +38,7 @@ export type OperatingReviewInput = {
 };
 
 export const MAX_SAVED_OPERATING_REVIEWS = 8;
+export const MAX_OPERATING_REVIEW_RUNS = 12;
 
 export type OperatingReviewArtifactIds = {
   query: string;
@@ -51,6 +52,23 @@ export type SavedOperatingReview = {
   id: string;
   input: OperatingReviewInput;
   artifactIds: OperatingReviewArtifactIds;
+  runs: OperatingReviewRun[];
+};
+
+export type OperatingReviewRun = {
+  version: 1;
+  id: string;
+  completedAt: string;
+  period: string;
+  status: "applied" | "stopped";
+  stopReason: "validation" | "runtime" | "stale" | "persistence" | "cancelled" | null;
+  provider: "local" | "openai";
+  changedFileCount: number;
+  queryCount: number;
+  chartConsumerCount: number;
+  durationMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
 };
 
 export type PreparedSavedOperatingReview = PreparedOperatingReview & {
@@ -438,6 +456,83 @@ export function createSavedOperatingReview(
     id: savedReviewId({ query, chart, document, slides }),
     input: copyOperatingReviewInput(input),
     artifactIds: { query, chart, ...(document ? { document } : {}), ...(slides ? { slides } : {}) },
+    runs: [],
+  };
+}
+
+function nonNegativeInteger(value: unknown, max: number) {
+  return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= max ? Number(value) : undefined;
+}
+
+function normalizeOperatingReviewRuns(value: unknown): OperatingReviewRun[] {
+  if (!Array.isArray(value)) return [];
+  const runs: OperatingReviewRun[] = [];
+  const ids = new Set<string>();
+  for (const entry of value.slice(0, MAX_OPERATING_REVIEW_RUNS * 2)) {
+    if (!entry || typeof entry !== "object") continue;
+    const candidate = entry as Partial<OperatingReviewRun>;
+    const id = stringValue(candidate.id, 160);
+    const period = stringValue(candidate.period, MAX_OPERATING_REVIEW_PERIOD_CHARS);
+    const completedAt = stringValue(candidate.completedAt, 40);
+    const status = candidate.status === "applied" || candidate.status === "stopped" ? candidate.status : undefined;
+    const stopReason = candidate.stopReason === null
+      || ["validation", "runtime", "stale", "persistence", "cancelled"].includes(candidate.stopReason ?? "")
+      ? candidate.stopReason as OperatingReviewRun["stopReason"]
+      : undefined;
+    const changedFileCount = nonNegativeInteger(candidate.changedFileCount, 4);
+    const queryCount = nonNegativeInteger(candidate.queryCount, 50);
+    const chartConsumerCount = nonNegativeInteger(candidate.chartConsumerCount, 50);
+    const durationMs = nonNegativeInteger(candidate.durationMs, 30 * 60 * 1000);
+    const inputTokens = candidate.inputTokens === null ? null : nonNegativeInteger(candidate.inputTokens, 10_000_000);
+    const outputTokens = candidate.outputTokens === null ? null : nonNegativeInteger(candidate.outputTokens, 10_000_000);
+    if (candidate.version !== 1 || !id || ids.has(id) || !period || !completedAt || !status
+      || Number.isNaN(Date.parse(completedAt)) || (candidate.provider !== "local" && candidate.provider !== "openai")
+      || stopReason === undefined || (status === "applied" ? stopReason !== null : stopReason === null)
+      || changedFileCount == null || queryCount == null || chartConsumerCount == null || durationMs == null
+      || inputTokens === undefined || outputTokens === undefined) continue;
+    ids.add(id);
+    runs.push({
+      version: 1,
+      id,
+      completedAt: new Date(completedAt).toISOString(),
+      period,
+      status,
+      stopReason,
+      provider: candidate.provider,
+      changedFileCount,
+      queryCount,
+      chartConsumerCount,
+      durationMs,
+      inputTokens,
+      outputTokens,
+    });
+    if (runs.length >= MAX_OPERATING_REVIEW_RUNS) break;
+  }
+  return runs.sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+}
+
+export function appendOperatingReviewRun(
+  workflow: SavedOperatingReview,
+  run: OperatingReviewRun,
+): SavedOperatingReview {
+  const normalized = normalizeOperatingReviewRuns([run, ...workflow.runs]);
+  return { ...workflow, runs: normalized };
+}
+
+export function summarizeOperatingReviewRuns(runs: OperatingReviewRun[]) {
+  const applied = runs.filter((run) => run.status === "applied");
+  const modelRuns = runs.filter((run) => run.inputTokens != null && run.outputTokens != null);
+  return {
+    total: runs.length,
+    applied: applied.length,
+    stopped: runs.length - applied.length,
+    successRate: runs.length ? Math.round((applied.length / runs.length) * 100) : null,
+    averageDurationMs: runs.length
+      ? Math.round(runs.reduce((total, run) => total + run.durationMs, 0) / runs.length)
+      : null,
+    modelRunCount: modelRuns.length,
+    inputTokens: modelRuns.length ? modelRuns.reduce((total, run) => total + (run.inputTokens ?? 0), 0) : null,
+    outputTokens: modelRuns.length ? modelRuns.reduce((total, run) => total + (run.outputTokens ?? 0), 0) : null,
   };
 }
 
@@ -504,6 +599,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
         locale: input.locale,
       },
       artifactIds: normalizedArtifactIds,
+      runs: normalizeOperatingReviewRuns(candidate.runs),
     });
     if (normalized.length >= MAX_SAVED_OPERATING_REVIEWS) break;
   }

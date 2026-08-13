@@ -122,6 +122,30 @@ export function runeUICopy(locale: RuneLocale) {
       rerunReview: (title: string) => zh ? `重新运行「${title}」` : `Rerun “${title}”`,
       rerun: zh ? "重新运行" : "Rerun",
       reviewSourceMissing: zh ? "来源或成品已缺失" : "Source or output missing",
+      taskRuns: (value: number) => zh ? `${value} 次本机运行` : `${value} device ${value === 1 ? "run" : "runs"}`,
+      lastRun: zh ? "最近运行" : "Last run",
+      runApplied: zh ? "已应用" : "Applied",
+      runStopped: zh ? "已停止" : "Stopped",
+      noTaskRuns: zh ? "首次应用后开始记录" : "Recorded after first Apply",
+      localPlanner: zh ? "本地规则" : "Local planner",
+      tokenUse: (input: number | null, output: number | null) => input == null || output == null
+        ? (zh ? "未调用模型" : "No model call")
+        : (zh ? `${input} 输入 · ${output} 输出 token` : `${input} input · ${output} output tokens`),
+      successRate: (value: number | null) => value == null ? (zh ? "尚无结果" : "No outcomes yet") : (zh ? `${value}% 应用成功` : `${value}% applied`),
+      averageReviewTime: (milliseconds: number | null) => milliseconds == null
+        ? (zh ? "尚无确认耗时" : "No review time yet")
+        : (zh ? `平均确认 ${Math.max(1, Math.round(milliseconds / 1000))} 秒` : `${Math.max(1, Math.round(milliseconds / 1000))}s average review`),
+      runHistory: zh ? "运行历史" : "Run history",
+      runImpact: (files: number, queries: number, charts: number) => zh
+        ? `${files} 个文件 · ${queries} 个 Query · ${charts} 个 Chart`
+        : `${files} files · ${queries} Queries · ${charts} Charts`,
+      stopReasons: {
+        validation: zh ? "来源或设置未通过验证" : "Source or settings failed validation",
+        runtime: zh ? "本地运行验证未通过" : "Local runtime validation failed",
+        stale: zh ? "工作区版本已变化" : "Workspace revision changed",
+        persistence: zh ? "本机持久化失败" : "Device persistence failed",
+        cancelled: zh ? "审核时取消" : "Cancelled during review",
+      },
       focusAgent: zh ? "聚焦 Rune Agent" : "Focus Rune Agent",
       dataGraph: zh ? "数据关系图" : "Data graph",
       resetSample: zh ? "重置示例工作区" : "Reset sample workspace",

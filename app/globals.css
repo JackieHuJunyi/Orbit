@@ -2805,6 +2805,14 @@ button.transaction-node:hover,
   border-top: 1px solid rgba(30, 30, 35, .08);
 }
 
+.saved-review-card {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgba(30, 30, 35, .08);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .44);
+}
+
 .saved-review-list .artifact-group-label {
   padding: 0 2px 4px;
 }
@@ -2818,7 +2826,7 @@ button.transaction-node:hover,
   padding: 9px 10px;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: rgba(255, 255, 255, .44);
+  background: transparent;
   color: var(--ink);
   text-align: left;
 }
@@ -2855,6 +2863,63 @@ button.transaction-node:hover,
 .saved-review-row strong { font-size: 10px; }
 .saved-review-row small { color: var(--subtle); font-size: 8px; }
 .saved-review-row:disabled { opacity: .52; }
+
+.saved-review-metrics {
+  display: grid;
+  gap: 2px;
+  padding: 0 10px 9px 42px;
+  color: var(--subtle);
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+.saved-review-metrics span:first-child {
+  color: #4d4d52;
+  font-weight: 700;
+}
+
+.saved-review-history {
+  border-top: 1px solid rgba(30, 30, 35, .07);
+}
+
+.saved-review-history summary {
+  padding: 7px 10px;
+  color: var(--subtle);
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.saved-review-history ol {
+  display: grid;
+  max-height: 170px;
+  gap: 1px;
+  margin: 0;
+  padding: 0 8px 8px;
+  overflow: auto;
+  list-style: none;
+}
+
+.saved-review-history li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 6px;
+  padding: 7px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .68);
+}
+
+.saved-review-history li > span {
+  align-self: start;
+  color: #277553;
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.saved-review-history li > span.stopped { color: #a04f46; }
+.saved-review-history strong { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.saved-review-history small { grid-column: 1 / -1; color: var(--subtle); font-size: 7px; line-height: 1.35; }
 
 .new-artifact-form {
   display: grid;

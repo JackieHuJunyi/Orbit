@@ -58,6 +58,7 @@ test("uses the active personal provider endpoint without exposing its credential
   assert.equal(payload.provider, "custom");
   assert.equal(payload.profileName, "Private gateway");
   assert.equal(payload.model, "rune-model-1");
+  assert.deepEqual(payload.usage, { inputTokens: 1, outputTokens: 1 });
   assert.equal(providerUrl, "https://models.example.com/v1/responses");
   assert.equal(providerAuthorization, "Bearer personal-agent-secret");
   assert.doesNotMatch(JSON.stringify(payload), /personal-agent-secret/);
@@ -188,6 +189,7 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   assert.equal(payload.plan.nextSource, "# Report\n\nConcise conclusion.");
   assert.equal(payload.plan.operationCount, 1);
   assert.equal(payload.repairAttempt, undefined);
+  assert.deepEqual(payload.usage, { inputTokens: 1, outputTokens: 1 });
   assert.equal("edits" in payload.plan, false);
   assert.equal(providerRequest.max_output_tokens, 8_000);
   assert.equal(providerRequest.text.format.name, "artifact_operations");

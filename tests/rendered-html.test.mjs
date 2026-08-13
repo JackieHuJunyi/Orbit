@@ -91,7 +91,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.54/);
+  assert.match(html, /Rune v0\.55/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -289,6 +289,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Saved tasks/);
   assert.match(clientSource, /Rerun/);
   assert.match(clientSource, /Update this operating-review task/);
+  assert.match(clientSource, /Recorded after first Apply/);
+  assert.match(clientSource, /No model call/);
   assert.match(clientSource, /One atomic transaction · no local file upload/);
   assert.match(clientSource, /Data → Query → Chart/);
   assert.match(clientSource, /Hello/);

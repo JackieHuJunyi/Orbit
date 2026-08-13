@@ -183,11 +183,13 @@ import {
 import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
 import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 import {
+  appendOperatingReviewRun,
   createSavedOperatingReview,
   MAX_SAVED_OPERATING_REVIEWS,
   normalizeSavedOperatingReviews,
   prepareOperatingReviewWorkflow,
   prepareSavedOperatingReviewRerun,
+  summarizeOperatingReviewRuns,
   type OperatingReviewInput,
   type SavedOperatingReview,
 } from "../lib/operating-review";
@@ -269,6 +271,8 @@ type PendingChange = {
   runtimeRepair?: Pick<AgentRuntimeRepair, "attempt" | "failure">;
   runtimePreflight?: RuntimeImpactPreflight;
   savedOperatingReviewAfterApply?: SavedOperatingReview;
+  preparedAt?: number;
+  usage?: { inputTokens: number | null; outputTokens: number | null };
 };
 
 type PendingPdfOcr = {
@@ -312,7 +316,15 @@ type RemoteAgentResponse = {
   plan?: unknown;
   queryArtifactIds?: string[];
   repairAttempt?: number;
+  usage?: { inputTokens?: unknown; outputTokens?: unknown };
 };
+
+function normalizeAgentUsage(value: RemoteAgentResponse["usage"]) {
+  const token = (candidate: unknown) => Number.isInteger(candidate) && Number(candidate) >= 0
+    ? Number(candidate)
+    : null;
+  return { inputTokens: token(value?.inputTokens), outputTokens: token(value?.outputTokens) };
+}
 
 function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
   return Boolean(
@@ -613,6 +625,7 @@ export function RuneWorkbench() {
   const artifactsRef = useRef(artifacts);
   const checkpointsRef = useRef(checkpoints);
   const savedOperatingReviewsRef = useRef(savedOperatingReviews);
+  const recordedStoppedReviewIdsRef = useRef(new Set<string>());
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
   savedOperatingReviewsRef.current = savedOperatingReviews;
@@ -1832,6 +1845,7 @@ export function RuneWorkbench() {
             selection: scope === "selection" ? targetSelection ?? undefined : undefined,
             baseRevision: targetRevision,
             ...remotePlan,
+            usage: normalizeAgentUsage(payload.usage),
             runtimeRepair,
             runtimePreflight,
           });
@@ -1909,9 +1923,53 @@ export function RuneWorkbench() {
     }
   }
 
+  function recordStoppedOperatingReview(
+    workflow: SavedOperatingReview | undefined,
+    stopReason: "validation" | "runtime" | "stale" | "persistence" | "cancelled",
+    startedAt: number,
+    changeCount = 0,
+    runtimePreflight?: RuntimeImpactPreflight,
+  ) {
+    if (!workflow) return;
+    const runIdentity = `${workflow.id}:${startedAt}:${stopReason}`;
+    if (recordedStoppedReviewIdsRef.current.has(runIdentity)) return;
+    recordedStoppedReviewIdsRef.current.add(runIdentity);
+    const stopped = appendOperatingReviewRun(workflow, {
+      version: 1,
+      id: `run:${workflow.id}:stopped:${Date.now()}`,
+      completedAt: new Date().toISOString(),
+      period: workflow.input.period,
+      status: "stopped",
+      stopReason,
+      provider: "local",
+      changedFileCount: changeCount,
+      queryCount: runtimePreflight?.queryCount ?? 0,
+      chartConsumerCount: runtimePreflight?.chartConsumerCount ?? 0,
+      durationMs: Math.max(0, Date.now() - startedAt),
+      inputTokens: null,
+      outputTokens: null,
+    });
+    const nextSavedReviews = savedOperatingReviewsRef.current.map((item) => (
+      item.id === stopped.id ? stopped : item
+    ));
+    try {
+      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews);
+      setSavedOperatingReviews(nextSavedReviews);
+    } catch {
+      // A stopped run is evidence only; it must never weaken the zero-source-write guarantee.
+    }
+  }
+
   function applyPendingChange() {
     if (!pendingChange) return;
     if (!workspaceMatchesSourceRevision(artifacts, pendingChange.baseRevision)) {
+      recordStoppedOperatingReview(
+        pendingChange.savedOperatingReviewAfterApply,
+        "stale",
+        pendingChange.preparedAt ?? Date.now(),
+        pendingChange.patches.length + pendingChange.creations.length,
+        pendingChange.runtimePreflight,
+      );
       setAgentError("The workspace changed while this Agent plan was being prepared. Discard it and plan again from the current source revision.");
       setNotice("Patch held for review — workspace source revision changed");
       return;
@@ -1921,6 +1979,13 @@ export function RuneWorkbench() {
       return artifact ? [artifact] : [];
     });
     if (targetArtifacts.length !== pendingChange.patches.length) {
+      recordStoppedOperatingReview(
+        pendingChange.savedOperatingReviewAfterApply,
+        "stale",
+        pendingChange.preparedAt ?? Date.now(),
+        pendingChange.patches.length + pendingChange.creations.length,
+        pendingChange.runtimePreflight,
+      );
       setAgentError("The plan references a file that is no longer in this workspace.");
       setNotice("Patch held for review — workspace context changed");
       return;
@@ -1952,6 +2017,13 @@ export function RuneWorkbench() {
       pendingChange.creations,
     );
     if (prepared.errors.length) {
+      recordStoppedOperatingReview(
+        pendingChange.savedOperatingReviewAfterApply,
+        "validation",
+        pendingChange.preparedAt ?? Date.now(),
+        pendingChange.patches.length + pendingChange.creations.length,
+        pendingChange.runtimePreflight,
+      );
       setAgentError(prepared.errors.slice(0, 3).join(" "));
       setNotice("Nothing applied — the complete workspace did not pass validation");
       return;
@@ -1978,9 +2050,26 @@ export function RuneWorkbench() {
     const nextSelectedId = pendingChange.selectAfterApplyArtifactId
       ?? pendingChange.creations[0]?.artifact.id
       ?? selectedId;
-    const nextSavedReviews = pendingChange.savedOperatingReviewAfterApply
+    const completedWorkflow = pendingChange.savedOperatingReviewAfterApply
+      ? appendOperatingReviewRun(pendingChange.savedOperatingReviewAfterApply, {
+          version: 1,
+          id: `run:${pendingChange.savedOperatingReviewAfterApply.id}:${Date.now()}`,
+          completedAt: new Date().toISOString(),
+          period: pendingChange.savedOperatingReviewAfterApply.input.period,
+          status: "applied",
+          stopReason: null,
+          provider: pendingChange.provider === "local" ? "local" : "openai",
+          changedFileCount: pendingChange.patches.length + pendingChange.creations.length,
+          queryCount: pendingChange.runtimePreflight?.queryCount ?? 0,
+          chartConsumerCount: pendingChange.runtimePreflight?.chartConsumerCount ?? 0,
+          durationMs: pendingChange.preparedAt == null ? 0 : Math.max(0, Date.now() - pendingChange.preparedAt),
+          inputTokens: pendingChange.usage?.inputTokens ?? null,
+          outputTokens: pendingChange.usage?.outputTokens ?? null,
+        })
+      : undefined;
+    const nextSavedReviews = completedWorkflow
       ? [
-          pendingChange.savedOperatingReviewAfterApply,
+          completedWorkflow,
           ...savedOperatingReviews.filter((workflow) => workflow.id !== pendingChange.savedOperatingReviewAfterApply?.id),
         ].slice(0, MAX_SAVED_OPERATING_REVIEWS)
       : savedOperatingReviews;
@@ -1990,6 +2079,13 @@ export function RuneWorkbench() {
       setSaveState("error");
       setAgentError("Device storage is full, so Rune kept every source unchanged.");
       setNotice("Nothing applied — atomic persistence failed");
+      recordStoppedOperatingReview(
+        pendingChange.savedOperatingReviewAfterApply,
+        "persistence",
+        pendingChange.preparedAt ?? Date.now(),
+        pendingChange.patches.length + pendingChange.creations.length,
+        pendingChange.runtimePreflight,
+      );
       return;
     }
 
@@ -2009,6 +2105,19 @@ export function RuneWorkbench() {
       ? ` · ${pendingChange.creations.length} new ${pendingChange.creations.length === 1 ? "file" : "files"}`
       : " · checkpoints are ready";
     setNotice(`${changeCount} ${changeCount === 1 ? "file change" : "file changes"} applied atomically${creationNotice}${directoryHandle ? " · Push when ready" : ""}`);
+  }
+
+  function discardPendingChange() {
+    if (!pendingChange) return;
+    recordStoppedOperatingReview(
+      pendingChange.savedOperatingReviewAfterApply,
+      "cancelled",
+      pendingChange.preparedAt ?? Date.now(),
+      pendingChange.patches.length + pendingChange.creations.length,
+      pendingChange.runtimePreflight,
+    );
+    setPendingChange(null);
+    setNotice(locale === "zh-CN" ? "已取消审核 — 所有源内容保持不变" : "Review cancelled — every source stayed unchanged");
   }
 
   function undoLastAgentChange() {
@@ -2117,6 +2226,7 @@ export function RuneWorkbench() {
           ?? savedOperatingReviewAfterApply?.artifactIds.slides
           ?? savedOperatingReviewAfterApply?.artifactIds.chart,
         savedOperatingReviewAfterApply,
+        preparedAt: Date.now(),
         ...prepared.plan,
         runtimePreflight,
       });
@@ -2792,19 +2902,43 @@ export function RuneWorkbench() {
                 {savedOperatingReviews.map((workflow) => {
                   const complete = artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId)
                     && Object.values(workflow.artifactIds).every((artifactId) => artifacts.some((artifact) => artifact.id === artifactId));
+                  const latestRun = workflow.runs[0];
+                  const runSummary = summarizeOperatingReviewRuns(workflow.runs);
                   return (
-                    <button
-                      type="button"
-                      key={workflow.id}
-                      className="saved-review-row"
-                      onClick={() => openSavedOperatingReview(workflow)}
-                      disabled={!complete || artifactCreationDisabled}
-                      aria-label={ui.rerunReview(workflow.input.title)}
-                    >
-                      <ClipboardList aria-hidden="true" />
-                      <span><strong>{workflow.input.title}</strong><small>{complete ? `${workflow.input.period} · ${ui.rerun}` : ui.reviewSourceMissing}</small></span>
-                      <Play aria-hidden="true" />
-                    </button>
+                    <article className="saved-review-card" key={workflow.id}>
+                      <button
+                        type="button"
+                        className="saved-review-row"
+                        onClick={() => openSavedOperatingReview(workflow)}
+                        disabled={!complete || artifactCreationDisabled}
+                        aria-label={ui.rerunReview(workflow.input.title)}
+                      >
+                        <ClipboardList aria-hidden="true" />
+                        <span><strong>{workflow.input.title}</strong><small>{complete ? `${workflow.input.period} · ${ui.rerun}` : ui.reviewSourceMissing}</small></span>
+                        <Play aria-hidden="true" />
+                      </button>
+                      <div className="saved-review-metrics">
+                        <span>{ui.taskRuns(workflow.runs.length)}</span>
+                        <span>{latestRun ? `${ui.lastRun} · ${latestRun.status === "applied" ? ui.runApplied : ui.runStopped} · ${ui.successRate(runSummary.successRate)}` : ui.noTaskRuns}</span>
+                        {latestRun && <span>{ui.averageReviewTime(runSummary.averageDurationMs)} · {ui.runImpact(latestRun.changedFileCount, latestRun.queryCount, latestRun.chartConsumerCount)}</span>}
+                        {latestRun && <span>{latestRun.provider === "local" ? ui.localPlanner : "Model"} · {ui.tokenUse(latestRun.inputTokens, latestRun.outputTokens)}</span>}
+                      </div>
+                      {!!workflow.runs.length && (
+                        <details className="saved-review-history">
+                          <summary>{ui.runHistory}</summary>
+                          <ol>
+                            {workflow.runs.map((run) => (
+                              <li key={run.id}>
+                                <span className={run.status}>{run.status === "applied" ? ui.runApplied : ui.runStopped}</span>
+                                <strong>{run.period}</strong>
+                                <small>{run.completedAt.slice(0, 10)} · {ui.runImpact(run.changedFileCount, run.queryCount, run.chartConsumerCount)}</small>
+                                <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
+                              </li>
+                            ))}
+                          </ol>
+                        </details>
+                      )}
+                    </article>
                   );
                 })}
               </section>
@@ -3043,7 +3177,7 @@ export function RuneWorkbench() {
                 </div>
                 <div className="patch-actions">
                   <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> {pendingStats.length > 1 ? ui.applyAll : ui.apply}</button>
-                  <button className="icon-button small" onClick={() => setPendingChange(null)} aria-label={ui.discardPatch} title={ui.discard}><X /></button>
+                  <button className="icon-button small" onClick={discardPendingChange} aria-label={ui.discardPatch} title={ui.discard}><X /></button>
                 </div>
               </div>
             )}
@@ -3165,7 +3299,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.54</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.55</span></div>
       </footer>
 
       {newArtifactOpen && (

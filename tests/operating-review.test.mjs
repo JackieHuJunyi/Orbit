@@ -4,10 +4,12 @@ import test from "node:test";
 import { parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import {
+  appendOperatingReviewRun,
   createSavedOperatingReview,
   normalizeSavedOperatingReviews,
   prepareOperatingReviewWorkflow,
   prepareSavedOperatingReviewRerun,
+  summarizeOperatingReviewRuns,
 } from "../app/lib/operating-review.ts";
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
@@ -367,4 +369,91 @@ test("normalizes bounded saved workflows and rejects malformed or mismatched del
     };
   });
   assert.equal(normalizeSavedOperatingReviews(many).length, 8);
+});
+
+test("records bounded newest-first task outcomes without storing workspace content", () => {
+  const initial = prepareOperatingReviewWorkflow([dataArtifact()], reviewInput());
+  const workflow = createSavedOperatingReview(reviewInput(), initial.plan);
+  const first = appendOperatingReviewRun(workflow, {
+    version: 1,
+    id: "run:first",
+    completedAt: "2026-08-13T08:00:00.000Z",
+    period: "FY26 H1",
+    status: "applied",
+    stopReason: null,
+    provider: "local",
+    changedFileCount: 4,
+    queryCount: 1,
+    chartConsumerCount: 1,
+    durationMs: 3400,
+    inputTokens: null,
+    outputTokens: null,
+  });
+  const second = appendOperatingReviewRun(first, {
+    version: 1,
+    id: "run:second",
+    completedAt: "2026-08-13T09:00:00.000Z",
+    period: "FY26 Q3",
+    status: "applied",
+    stopReason: null,
+    provider: "openai",
+    changedFileCount: 3,
+    queryCount: 1,
+    chartConsumerCount: 1,
+    durationMs: 5100,
+    inputTokens: 240,
+    outputTokens: 91,
+  });
+
+  assert.deepEqual(second.runs.map((run) => run.id), ["run:second", "run:first"]);
+  assert.equal(second.runs[0].inputTokens, 240);
+  assert.deepEqual(summarizeOperatingReviewRuns(second.runs), {
+    total: 2,
+    applied: 2,
+    stopped: 0,
+    successRate: 100,
+    averageDurationMs: 4250,
+    modelRunCount: 1,
+    inputTokens: 240,
+    outputTokens: 91,
+  });
+  assert.doesNotMatch(JSON.stringify(second.runs), /source-data\.csv|1840000|durable growth/i);
+  assert.deepEqual(normalizeSavedOperatingReviews([{ ...second, runs: [{ ...second.runs[0], status: "stopped", stopReason: null }] }])[0].runs, []);
+});
+
+test("caps task run history and discards malformed usage, duration, and timestamps", () => {
+  const initial = prepareOperatingReviewWorkflow([dataArtifact()], reviewInput());
+  let workflow = createSavedOperatingReview(reviewInput(), initial.plan);
+  for (let index = 0; index < 20; index += 1) {
+    workflow = appendOperatingReviewRun(workflow, {
+      version: 1,
+      id: `run:${index}`,
+      completedAt: new Date(Date.UTC(2026, 7, 13, 10, index)).toISOString(),
+      period: `Run ${index}`,
+      status: "applied",
+      stopReason: null,
+      provider: "local",
+      changedFileCount: 4,
+      queryCount: 1,
+      chartConsumerCount: 1,
+      durationMs: index,
+      inputTokens: null,
+      outputTokens: null,
+    });
+  }
+  assert.equal(workflow.runs.length, 12);
+  assert.equal(workflow.runs[0].id, "run:19");
+  assert.equal(workflow.runs.at(-1).id, "run:8");
+  const malformed = { ...workflow, runs: [{ ...workflow.runs[0], completedAt: "not-a-date", durationMs: -1 }] };
+  assert.deepEqual(normalizeSavedOperatingReviews([malformed])[0].runs, []);
+  assert.deepEqual(summarizeOperatingReviewRuns([]), {
+    total: 0,
+    applied: 0,
+    stopped: 0,
+    successRate: null,
+    averageDurationMs: null,
+    modelRunCount: 0,
+    inputTokens: null,
+    outputTokens: null,
+  });
 });

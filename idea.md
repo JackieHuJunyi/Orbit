@@ -1943,3 +1943,9 @@ Apple 的学习方向也在这一版进一步成为工程规则：尊重系统�
 侧栏的“已保存任务”不是后台自动化。重新运行会打开同一任务表单，允许调整本期周期、重点、受众、口径和图表，但锁定既有 Document/Slides 集合；编译器在完整当前工作区中生成一条 collision-safe 候选链，再把新 Query/Chart/成品 source 映射回原 ID。Chart 的 source 与成品的 chart binding 会显式重写到原稳定身份，绝不引用临时生成 ID。最终计划只有既有文件 patch，没有重复 creation；仍需 runtime preflight、逐文件 diff、dependency transaction map、显式 Apply、每个旧文件 checkpoint 与一次设备持久化。
 
 复用不以静默容错换顺滑。Data 字段大小写或类型漂移、来源缺失、任一成品被删除、任务记录被篡改、工作区验证失败、运行失败、审核期间 revision 改变或存储失败都保持 canonical source 不变。当前保存的是设备级任务，不是跨设备账号、定时器、目录监听或自动发布；这些能力只有在真实用户连续复用并要求自动刷新后才进入下一阶段。这样 v0.54 完成的是“同一任务下一周期再做一次”的核心循环，而不是新增一个看似自动化的按钮。
+
+## 60. v0.55 指标必须对应一次可验证结果，而不是一次点击
+
+Rune 不能只记录“用户打开过几次”或“Agent 调用过几次”。v0.55 因此把 outcome 绑定到 saved operating review：只有任务准备后被明确 Apply，才记录一次 applied；审核取消、旧 revision、完整 workspace validation 或本机持久化失败记录 stopped，并携带有界原因。每条记录包含周期、确认完成时间、从准备到结果的本地耗时、变更文件数、runtime preflight 实际覆盖的 Query/Chart 数与 local/model planner。模型端只把 provider response 自带的 input/output token 数作为脱敏 usage 返回；本地规则明确记为无模型调用，不估算、不伪造 token。
+
+运行历史与任务一同留在设备，单任务最多十二条；恢复时拒绝非法时间、负数、越界计数、状态/停止原因矛盾和重复 ID。记录不包含 source、CSV 行、Query 结果、prompt、provider 响应正文、API key、用户身份或文件路径。侧栏可以展示最近状态、成功率、平均确认耗时、运行影响和 token，但这些只是当前设备的产品证据。它不能证明 PMF、节省时间或愿意付费；真实价值仍需在真实任务中对比原工作流并由用户确认结果。

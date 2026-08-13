@@ -106,6 +106,15 @@ export async function POST(request: Request) {
   const model = connection.model || DEFAULT_OPENAI_MODEL;
   const client = new OpenAI({ apiKey: connection.apiKey, baseURL: connection.baseURL });
 
+  const responseUsage = (response: { usage?: { input_tokens?: number; output_tokens?: number } | null }) => ({
+    inputTokens: Number.isInteger(response.usage?.input_tokens) && Number(response.usage?.input_tokens) >= 0
+      ? Number(response.usage?.input_tokens)
+      : null,
+    outputTokens: Number.isInteger(response.usage?.output_tokens) && Number(response.usage?.output_tokens) >= 0
+      ? Number(response.usage?.output_tokens)
+      : null,
+  });
+
   try {
     const workspaceScope = parsed.data.scope === "workspace";
     const providerController = new AbortController();
@@ -173,6 +182,7 @@ export async function POST(request: Request) {
         profileName: connection.profileName,
         model,
         repairAttempt: parsed.data.runtimeRepair?.attempt,
+        usage: responseUsage(response),
         plan: workspacePlan.data,
       });
     }
@@ -239,6 +249,7 @@ export async function POST(request: Request) {
       profileName: connection.profileName,
       model,
       repairAttempt: parsed.data.runtimeRepair?.attempt,
+      usage: responseUsage(response),
       plan: artifactPlan.data,
     });
   } catch {

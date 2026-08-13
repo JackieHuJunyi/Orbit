@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-13 — Added bounded device-local operating-review outcomes with applied/stopped status, review time, runtime impact, and real provider token usage while retaining no workspace content or hidden telemetry.
+
 - 2026-08-13 — Made operating reviews repeatable device-local tasks that rerun against the same exact Data/Query/Chart/report/deck identities as a runtime-verified, checkpointed review transaction instead of creating duplicate files.
 
 - 2026-08-13 — Added a hardened macOS desktop shell with Keychain-protected model-vault storage that converts real legacy DOC/PPT through installed Office with macros disabled, then routes the generated canonical source through Rune's unchanged atomic import review; greetings now come only from the same registry as complete interface languages.
