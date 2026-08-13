@@ -1,22 +1,57 @@
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
 
-export type RuneLocale = "zh-CN" | "en";
+export const RUNE_LOCALE_REGISTRY = [
+  {
+    locale: "zh-CN",
+    greeting: "你好",
+    monogram: "文",
+    nativeName: "简体中文",
+    languagePrefixes: ["zh"],
+  },
+  {
+    locale: "en",
+    greeting: "Hello",
+    monogram: "A",
+    nativeName: "English",
+    languagePrefixes: ["en"],
+  },
+] as const;
+
+export type RuneLocale = (typeof RUNE_LOCALE_REGISTRY)[number]["locale"];
 
 export const RUNE_LOCALE_STORAGE_KEY = "rune-locale-v1";
 export const RUNE_ONBOARDING_STORAGE_KEY = "rune-onboarding-v1";
 export const RUNE_GUIDE_ID = "rune-guide";
 
 export function normalizeRuneLocale(value: unknown): RuneLocale | null {
-  if (value === "zh-CN" || value === "en") return value;
-  return null;
+  return RUNE_LOCALE_REGISTRY.some((entry) => entry.locale === value) ? value as RuneLocale : null;
 }
 
 export function detectPreferredLocale(languages: readonly string[] = []): RuneLocale {
-  return languages.some((language) => /^zh(?:-|$)/i.test(language)) ? "zh-CN" : "en";
+  for (const language of languages) {
+    const normalized = language.toLowerCase();
+    const match = RUNE_LOCALE_REGISTRY.find((entry) => (
+      entry.languagePrefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}-`))
+    ));
+    if (match) return match.locale;
+  }
+  return "en";
 }
 
 export function localeDisplayName(locale: RuneLocale) {
-  return locale === "zh-CN" ? "简体中文" : "English";
+  return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.nativeName ?? locale;
+}
+
+export function localeMonogram(locale: RuneLocale) {
+  return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.monogram ?? "A";
+}
+
+export function runeGreetingSequence(preferred: RuneLocale): string[] {
+  const ordered = [
+    ...RUNE_LOCALE_REGISTRY.filter((entry) => entry.locale === preferred),
+    ...RUNE_LOCALE_REGISTRY.filter((entry) => entry.locale !== preferred),
+  ];
+  return ordered.map((entry) => entry.greeting);
 }
 
 export function runeUICopy(locale: RuneLocale) {
@@ -671,7 +706,7 @@ const chineseGuide = [
   "- **数据：** CSV / JSON 是可读源，可用本地 DuckDB SQL 分析。",
   "- **图表：** Chart JSON 绑定数据或 Query，报告和演示共享同一份事实。",
   "- **演示：** Deck Markdown 编译为安全的 HTML，并可交付为 PPTX、HTML 或 PDF。",
-  "- **兼容：** PDF、DOCX、XLSX、PPTX、ODT、ODS、ODP 会在导入前说明语义转换限制；扫描 PDF 会先让你明确选择页码和英文/简中 OCR，再显示逐页置信度。",
+  "- **兼容：** PDF、DOCX、XLSX、PPTX、ODT、ODS、ODP 会在导入前说明语义转换限制；Rune Desktop 还可通过本机 Word/PowerPoint 将旧 DOC/PPT 转换后进入同一审核；扫描 PDF 会先让你明确选择页码和英文/简中 OCR，再显示逐页置信度。",
   "",
   "## Rune 的安全边界",
   "",
@@ -684,7 +719,7 @@ const chineseGuide = [
   "",
   "## 设置模型",
   "",
-  "Rune 支持 OpenAI、OpenRouter 和兼容 Responses API 的个人模型配置。密钥保存后会被服务端加密成浏览器脚本不可读的 HttpOnly 凭据，不进入工作区或 localStorage；本地/部署环境必须设置独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY`。没有配置模型时，确定性本地规划器仍然可用；未来桌面版将把同一安全存储端口接入系统钥匙串。",
+  "Rune 支持 OpenAI、OpenRouter 和兼容 Responses API 的个人模型配置。密钥保存后会被服务端加密成浏览器脚本不可读的 HttpOnly 凭据，不进入工作区或 localStorage；Web 本地/部署环境必须设置独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY`，Rune Desktop 则用 macOS 钥匙串保护该主密钥。没有配置模型时，确定性本地规划器仍然可用。",
   "",
   "## 下一步",
   "",
@@ -724,7 +759,7 @@ const englishGuide = [
   "- **Data:** readable CSV / JSON can be analyzed with local DuckDB SQL.",
   "- **Charts:** Chart JSON binds to Data or Query so reports and decks share one fact.",
   "- **Presentations:** Deck Markdown compiles into safe HTML and can hand off as PPTX, HTML, or PDF.",
-  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.",
+  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Rune Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.",
   "",
   "## Rune's trust boundary",
   "",
@@ -737,7 +772,7 @@ const englishGuide = [
   "",
   "## Connect a model",
   "",
-  "Rune supports personal OpenAI, OpenRouter, and compatible Responses API profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage, and local/deployed servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`. Deterministic local planners remain available without a model. A future desktop build will connect the same secret-storage port to the system keychain.",
+  "Rune supports personal OpenAI, OpenRouter, and compatible Responses API profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Deterministic local planners remain available without a model.",
   "",
   "## Next",
   "",

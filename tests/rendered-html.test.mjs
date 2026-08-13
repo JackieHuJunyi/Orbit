@@ -91,7 +91,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.52/);
+  assert.match(html, /Rune v0\.53/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -162,7 +162,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Choose pages for OCR/);
   assert.match(clientSource, /Page images stay on device/);
   assert.match(clientSource, /On-device recognition/);
-  assert.match(clientSource, /\.docx,\.xlsx,\.pptx,\.odt,\.ods,\.odp,\.pdf/);
+  assert.match(clientSource, /\.doc,\.ppt,\.docx,\.xlsx,\.pptx,\.odt,\.ods,\.odp,\.pdf/);
   assert.match(clientSource, /OpenDocument import is limited to 12 MB per file/);
   assert.match(clientSource, /Review OpenDocument export/);
   assert.match(clientSource, /Format Document section/);
@@ -289,7 +289,8 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /One atomic transaction · no local file upload/);
   assert.match(clientSource, /Data → Query → Chart/);
   assert.match(clientSource, /Hello/);
-  assert.match(clientSource, /Bonjour/);
+  assert.match(clientSource, /你好/);
+  assert.doesNotMatch(clientSource, /Bonjour|こんにちは|안녕하세요|Hola|Halo/);
   assert.match(clientSource, /prefers-reduced-motion: reduce/);
   assert.match(clientSource, /evidence is not persisted/);
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);

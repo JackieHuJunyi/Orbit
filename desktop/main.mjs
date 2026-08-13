@@ -1,0 +1,156 @@
+import { app, BrowserWindow, ipcMain, safeStorage } from "electron";
+import { randomBytes } from "node:crypto";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { convertLegacyOffice } from "./legacy-office.mjs";
+
+const desktopDirectory = path.dirname(fileURLToPath(import.meta.url));
+const projectDirectory = path.resolve(desktopDirectory, "..");
+const clientDirectory = path.join(projectDirectory, "dist/client");
+const STATIC_CONTENT_TYPES = Object.freeze({
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".ico": "image/x-icon",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+});
+
+app.setName("Rune");
+
+async function initializeDesktopCredentialVault() {
+  if (!safeStorage.isEncryptionAvailable()) return false;
+  const userDataDirectory = app.getPath("userData");
+  const encryptedPath = path.join(userDataDirectory, "credential-vault-key.bin");
+  let key;
+  try {
+    key = safeStorage.decryptString(await readFile(encryptedPath));
+  } catch (error) {
+    if (error?.code !== "ENOENT") return false;
+    key = randomBytes(32).toString("hex");
+    await mkdir(userDataDirectory, { recursive: true, mode: 0o700 });
+    const temporaryPath = `${encryptedPath}.${process.pid}.tmp`;
+    try {
+      await writeFile(temporaryPath, safeStorage.encryptString(key), { mode: 0o600, flag: "wx" });
+      await rename(temporaryPath, encryptedPath);
+    } finally {
+      await rm(temporaryPath, { force: true });
+    }
+  }
+  if (!/^[a-f0-9]{64}$/.test(key)) return false;
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = key;
+  return true;
+}
+
+async function serveStaticAsset(request, response, url) {
+  if (request.method !== "GET" && request.method !== "HEAD") return false;
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(url.pathname);
+  } catch {
+    return false;
+  }
+  const assetPath = path.resolve(clientDirectory, `.${decodedPath}`);
+  if (!assetPath.startsWith(`${clientDirectory}${path.sep}`)) return false;
+  const metadata = await stat(assetPath).catch(() => undefined);
+  if (!metadata?.isFile()) return false;
+  const contentType = STATIC_CONTENT_TYPES[path.extname(assetPath).toLowerCase()] ?? "application/octet-stream";
+  const immutable = decodedPath.startsWith("/assets/");
+  response.writeHead(200, {
+    "cache-control": immutable ? "public, max-age=31536000, immutable" : "no-cache",
+    "content-length": metadata.size,
+    "content-type": contentType,
+    "x-content-type-options": "nosniff",
+  });
+  if (request.method === "HEAD") response.end();
+  else response.end(await readFile(assetPath));
+  return true;
+}
+
+async function startRuneServer() {
+  const worker = (await import(pathToFileURL(path.join(projectDirectory, "dist/server/index.js")).href)).default;
+  const server = createServer(async (request, response) => {
+    try {
+      const origin = `http://${request.headers.host}`;
+      const url = new URL(request.url ?? "/", origin);
+      if (await serveStaticAsset(request, response, url)) return;
+      const body = request.method === "GET" || request.method === "HEAD" ? undefined : request;
+      const webRequest = new Request(url, { method: request.method, headers: request.headers, body, duplex: body ? "half" : undefined });
+      const webResponse = await worker.fetch(webRequest, {}, { waitUntil() {}, passThroughOnException() {} });
+      const responseHeaders = Object.fromEntries(webResponse.headers);
+      responseHeaders["content-security-policy"] = "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self' data:; frame-ancestors 'none'; img-src 'self' data: blob: https:; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:";
+      responseHeaders["x-content-type-options"] = "nosniff";
+      response.writeHead(webResponse.status, responseHeaders);
+      if (webResponse.body) for await (const chunk of webResponse.body) response.write(chunk);
+      response.end();
+    } catch (error) {
+      response.writeHead(500, { "content-type": "text/plain;charset=utf-8" });
+      response.end(error instanceof Error ? error.message : "Rune Desktop server error");
+    }
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Rune Desktop could not start its local workspace server.");
+  return { server, url: `http://127.0.0.1:${address.port}` };
+}
+
+let runeServer;
+let mainWindow;
+
+async function createRuneWindow() {
+  if (!runeServer) runeServer = await startRuneServer();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+  const window = new BrowserWindow({
+    width: 1480,
+    height: 940,
+    minWidth: 960,
+    minHeight: 640,
+    titleBarStyle: "hiddenInset",
+    backgroundColor: "#f6f5f1",
+    webPreferences: {
+      preload: path.join(desktopDirectory, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  mainWindow = window;
+  window.on("closed", () => {
+    if (mainWindow === window) mainWindow = undefined;
+  });
+  window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  window.webContents.on("will-navigate", (event, target) => {
+    if (new URL(target).origin !== runeServer.url) event.preventDefault();
+  });
+  await window.loadURL(runeServer.url);
+}
+
+app.whenReady().then(async () => {
+  await initializeDesktopCredentialVault();
+  ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);
+  await createRuneWindow();
+  app.on("activate", () => {
+    void createRuneWindow();
+  });
+});
+
+app.on("window-all-closed", () => {
+  runeServer?.server?.close();
+  if (process.platform !== "darwin") app.quit();
+});

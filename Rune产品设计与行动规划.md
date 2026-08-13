@@ -1015,7 +1015,7 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 | Document | 当前：MD、Markdown、DOCX、ODT、PDF 可选文本与显式选择扫描页 OCR 到 MD | 当前：MD、DOCX、ODT、PDF | 结构与语义优先；OCR 标页码与置信度，不承诺像素级 round-trip |
 | Data | 当前：CSV、JSON、XLSX、ODS | 当前：CSV、JSON、XLSX、ODS、表格 PDF | 值、类型、列序和工作表边界明确；PDF 是固定快照 |
 | Presentation | 当前：Deck Markdown、HTML、PPTX、ODP | 当前：Deck Markdown、PPTX、ODP、HTML、PDF | 语义布局优先，动画与复杂母版明确警告 |
-| Legacy binary | DOC、PPT 需要可靠转换边界 | DOC、PPT 不作为默认交付 | Web 版不伪装解析；由未来桌面壳或受控转换服务提供 |
+| Legacy binary | Rune Desktop 当前：通过本机 Word/PowerPoint 将 DOC/PPT 转成 DOCX/PPTX，再进入相同导入审核；Web 明确拒绝 | DOC、PPT 不作为默认交付 | 12 MB、30 秒、宏禁用、私有临时目录与清理；真实 DOC/PPT 往返 fixture 已通过 |
 
 补充原则：
 
@@ -1162,7 +1162,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 1. **Welcome & Trust**：设备语言、欢迎、模型/隐私选择、快捷键教程、本地指南与空态；v0.49 已让主要工作区与专业审核延续同一中英文选择，形成首次与持续帮助闭环。
 2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
-4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；旧 `.doc/.ppt` 等待隔离转换服务。
+4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；v0.53 已让旧 `.doc/.ppt` 在 macOS 桌面壳通过本机 Office 的受限转换进入同一审核，Web 仍明确拒绝。
 5. **Model Platform**：v0.46 先完成 Responses profile；下一步才是 Anthropic/Gemini/Chat adapters、capability manifest、故障转移、用量和预算路由。
 6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
 
@@ -1174,7 +1174,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
 
-这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，但 OCR 不是确定事实、不是原排版恢复，也没有任意语言或区域级框选。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–55 节。
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移；v0.53 的旧 `.doc/.ppt` 只在 macOS Rune Desktop 且本机已安装对应 Word/PowerPoint 时支持受限本地转换，Web 仍不解析、不上传、不猜测。selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，但 OCR 不是确定事实、不是原排版恢复，也没有任意语言或区域级框选。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–58 节。
 
 ### 6.28 v0.48 Markdown 细粒度双向定位
 

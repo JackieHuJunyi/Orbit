@@ -5,16 +5,20 @@ import {
   createRuneGuideArtifact,
   detectPreferredLocale,
   localeDisplayName,
+  localeMonogram,
   localizeRuneStatus,
   normalizeRuneLocale,
+  runeGreetingSequence,
   runeQuickCommands,
   runeUICopy,
   RUNE_GUIDE_ID,
+  RUNE_LOCALE_REGISTRY,
 } from "../app/lib/localization.ts";
 import { validateArtifact } from "../app/lib/workspace.ts";
 
-test("detects Chinese from any preferred device language and otherwise uses English", () => {
-  assert.equal(detectPreferredLocale(["en-US", "zh-Hans-CN"]), "zh-CN");
+test("uses the first supported language in the device's ordered preferences", () => {
+  assert.equal(detectPreferredLocale(["en-US", "zh-Hans-CN"]), "en");
+  assert.equal(detectPreferredLocale(["zh-Hans-CN", "en-US"]), "zh-CN");
   assert.equal(detectPreferredLocale(["zh-Hant"]), "zh-CN");
   assert.equal(detectPreferredLocale(["fr-FR", "en-GB"]), "en");
   assert.equal(detectPreferredLocale([]), "en");
@@ -26,6 +30,17 @@ test("normalizes only supported Rune interface locales", () => {
   assert.equal(normalizeRuneLocale("en-US"), null);
   assert.equal(normalizeRuneLocale(null), null);
   assert.equal(localeDisplayName("zh-CN"), "简体中文");
+  assert.equal(localeMonogram("en"), "A");
+});
+
+test("keeps welcome greetings identical to the complete interface locale registry", () => {
+  const registeredGreetings = RUNE_LOCALE_REGISTRY.map((entry) => entry.greeting).sort();
+  for (const entry of RUNE_LOCALE_REGISTRY) {
+    assert.deepEqual(runeGreetingSequence(entry.locale).sort(), registeredGreetings);
+    assert.equal(runeGreetingSequence(entry.locale)[0], entry.greeting);
+    assert.ok(runeUICopy(entry.locale).workbench.livePreview);
+    assert.ok(createRuneGuideArtifact(entry.locale).source.length > 100);
+  }
 });
 
 test("creates a valid editable local guide in the selected language", () => {

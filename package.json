@@ -14,10 +14,12 @@
     "qa:pdf": "node --experimental-strip-types scripts/generate-pdf-qa.mjs",
     "qa:pdf-import": "node --experimental-strip-types scripts/generate-pdf-import-qa.mjs",
     "qa:odf": "node --experimental-strip-types scripts/generate-odf-qa.mjs",
+    "qa:legacy-office": "node --experimental-strip-types scripts/generate-legacy-office-qa.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "audit:production": "npm audit --omit=dev --audit-level=high"
+    "audit:production": "npm audit --omit=dev --audit-level=high",
+    "desktop:dev": "npm run build && electron desktop/main.mjs"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "1.32.0",
@@ -52,6 +54,7 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "drizzle-kit": "^0.31.10",
+    "electron": "43.2.0",
     "eslint": "9.39.4",
     "eslint-config-next": "16.3.0",
     "react-server-dom-webpack": "^19.2.8",

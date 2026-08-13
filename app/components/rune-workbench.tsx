@@ -186,6 +186,11 @@ import {
   prepareOperatingReviewWorkflow,
   type OperatingReviewInput,
 } from "../lib/operating-review";
+import {
+  convertLegacyOfficeFile,
+  legacyOfficeFileName,
+  MAX_LEGACY_OFFICE_IMPORT_BYTES,
+} from "../lib/desktop-bridge";
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -194,6 +199,19 @@ const MAX_PDF_IMPORT_BYTES = 12 * 1024 * 1024;
 const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
 const ODF_IMPORT_PATTERN = /\.(?:odt|ods|odp)$/i;
 const PDF_IMPORT_PATTERN = /\.pdf$/i;
+
+async function importLegacyOfficeThroughDesktop(file: File) {
+  const converted = await convertLegacyOfficeFile(file);
+  const { convertOfficeFile } = await import("../lib/office-import");
+  const result = convertOfficeFile(converted.fileName, converted.bytes);
+  return {
+    ...result,
+    warnings: [
+      converted.warning,
+      ...result.warnings,
+    ],
+  };
+}
 
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
@@ -2167,7 +2185,9 @@ export function RuneWorkbench() {
       return;
     }
     const oversized = files.find((file) => file.size > (
-      OFFICE_IMPORT_PATTERN.test(file.name)
+      legacyOfficeFileName(file.name)
+        ? MAX_LEGACY_OFFICE_IMPORT_BYTES
+        : OFFICE_IMPORT_PATTERN.test(file.name)
         ? MAX_OFFICE_IMPORT_BYTES
         : ODF_IMPORT_PATTERN.test(file.name)
           ? MAX_OFFICE_IMPORT_BYTES
@@ -2176,7 +2196,9 @@ export function RuneWorkbench() {
           : MAX_SOURCE_IMPORT_BYTES
     ));
     if (oversized) {
-      setNotice(OFFICE_IMPORT_PATTERN.test(oversized.name)
+      setNotice(legacyOfficeFileName(oversized.name)
+        ? oversized.name + " exceeds the 12 MB desktop legacy Office import limit"
+        : OFFICE_IMPORT_PATTERN.test(oversized.name)
         ? oversized.name + " exceeds the 12 MB Office import limit"
         : ODF_IMPORT_PATTERN.test(oversized.name)
           ? oversized.name + " exceeds the 12 MB OpenDocument import limit"
@@ -2213,6 +2235,12 @@ export function RuneWorkbench() {
       const incoming: WorkspaceArtifact[] = [];
       const warnings: string[] = [];
       for (const file of files) {
+        if (legacyOfficeFileName(file.name)) {
+          const result = await importLegacyOfficeThroughDesktop(file);
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
         if (OFFICE_IMPORT_PATTERN.test(file.name)) {
           const { convertOfficeFile } = await import("../lib/office-import");
           const result = convertOfficeFile(file.name, await file.arrayBuffer());
@@ -2236,7 +2264,7 @@ export function RuneWorkbench() {
         }
         const artifact = detectArtifact(file.name, await file.text());
         if (!artifact) {
-          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP.");
+          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP. Legacy DOC/PPT requires Rune Desktop.");
         }
         incoming.push(artifact);
       }
@@ -2277,6 +2305,12 @@ export function RuneWorkbench() {
       for (const [fileIndex, file] of pending.files.entries()) {
         if (abortController.signal.aborted) throw new DOMException("OCR cancelled", "AbortError");
         setPdfOcrActiveFileName(file.name);
+        if (legacyOfficeFileName(file.name)) {
+          const result = await importLegacyOfficeThroughDesktop(file);
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
         if (OFFICE_IMPORT_PATTERN.test(file.name)) {
           const { convertOfficeFile } = await import("../lib/office-import");
           const result = convertOfficeFile(file.name, await file.arrayBuffer());
@@ -2306,7 +2340,7 @@ export function RuneWorkbench() {
         }
         const artifact = detectArtifact(file.name, await file.text());
         if (!artifact) {
-          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP.");
+          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP. Legacy DOC/PPT requires Rune Desktop.");
         }
         incoming.push(artifact);
       }
@@ -2604,7 +2638,7 @@ export function RuneWorkbench() {
           {!emptyWorkspace && (
             <span className="visually-hidden" aria-live="polite">{exportState === "idle" ? "" : `${ui.exportMenu} ${exportState}`}</span>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".doc,.ppt,.docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
         </div>
       </header>
 
@@ -3057,7 +3091,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.52</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.53</span></div>
       </footer>
 
       {newArtifactOpen && (

@@ -18,17 +18,18 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ModelProfileManager } from "./model-profile-manager";
-import { localeDisplayName, type RuneLocale } from "../lib/localization";
+import {
+  localeDisplayName,
+  localeMonogram,
+  runeGreetingSequence,
+  RUNE_LOCALE_REGISTRY,
+  type RuneLocale,
+} from "../lib/localization";
 import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
 
 export type WelcomeAction = "guide" | "import" | "sample";
 export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
 type ShortcutId = "open" | "save" | "agent";
-
-const GREETINGS = {
-  "zh-CN": ["你好", "Hello", "Bonjour", "こんにちは", "안녕하세요", "Hola", "Halo"],
-  en: ["Hello", "你好", "Bonjour", "Hola", "こんにちは", "안녕하세요", "Halo"],
-} as const;
 
 const copy = {
   "zh-CN": {
@@ -172,7 +173,7 @@ export function WelcomeExperience({
       : "⌘"
   ));
   const text = copy[locale];
-  const greetings = GREETINGS[locale];
+  const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
 
   useEffect(() => {
@@ -299,7 +300,7 @@ export function WelcomeExperience({
                     </div>
                   </div>
                   <div className="language-options" role="radiogroup" aria-label={text.languageTitle}>
-                    {(["zh-CN", "en"] as const).map((option) => (
+                    {RUNE_LOCALE_REGISTRY.map(({ locale: option }) => (
                       <button
                         type="button"
                         role="radio"
@@ -308,7 +309,7 @@ export function WelcomeExperience({
                         onClick={() => onLocaleChange(option)}
                         key={option}
                       >
-                        <span className="language-monogram">{option === "zh-CN" ? "文" : "A"}</span>
+                        <span className="language-monogram">{localeMonogram(option)}</span>
                         <span>
                           <strong>{localeDisplayName(option)}</strong>
                           <small>{option === detectedLocale ? text.recommended : option === "zh-CN" ? "Chinese (Simplified)" : "英语"}</small>

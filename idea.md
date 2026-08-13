@@ -1925,3 +1925,13 @@ projection 不是 canonical source。右侧仍是这次草稿的唯一 writer，
 CSV/JSON 不是复制原字符串。适配器先用 Rune 当前 parser 得到 typed rows 与 stable column order，再构造矩形输出；JSON 缺失字段成为可见 `null`，CSV 通过标准 quoting 生成 UTF-8 文本并明确不包含 schema。相同输入逐 byte 确定，invalid/empty/oversized source fail closed，生成文件仍需人确认 fidelity notes。原 source 下载保持 byte-preserving，因此“保留原貌”和“格式转换”是两个不同动作。
 
 Data PDF 则补齐此前明确等待的打印合同：landscape A4、每页重复 header、最多 12 列与 5,000 行、固定 row/column geometry、两行 cell wrapping、visible ellipsis warning、footer page count。它不声称是一张可编辑表格，也不携带公式、筛选、类型或 binding。默认 fixture 已由独立 PDF parser 验证页面尺寸与 byte determinism，再由 Poppler 以 144 DPI 渲染并检查表格边线、留白、表头和 footer；这才把状态矩阵中的“计划：表格 PDF”改为已交付。
+
+## 58. v0.53 桌面格式兼容与语言承诺都必须通过真实边界
+
+浏览器不能诚实解析旧二进制 `.doc/.ppt`。v0.53 因此增加首个 macOS Electron 壳，但 renderer 仍没有 Node 权限：`contextIsolation` 与 sandbox 开启，preload 只暴露一个 `convertLegacyOffice` 请求，导航锁定临时 `127.0.0.1` 同源，本地静态文件路径防穿越并带 CSP。桌面首次运行在 main process 生成 32-byte 随机模型 vault 主密钥，用 Electron `safeStorage` 交给 macOS Keychain 保护，再以 0600 原子文件持久化密文；renderer、preload、workspace 和日志都不能读到它，现有 onboarding 的个人 API profile 因而可在桌面真实使用。转换输入限 12 MB、执行限 30 秒；文件写入 0600 的独立临时目录，只以参数数组调用系统 `osascript`，通过已安装 Word/PowerPoint 将旧格式保存成 DOCX/PPTX，强制禁用 Office 自动化宏，并在成功或失败后递归清理临时目录。转换结果没有直接写工作区，而是进入现有 OOXML parser、fidelity warning、完整 workspace validation 与一次 import review。
+
+这条链不能靠 mock 声称完成。QA 先用 Rune 自己的 deterministic exporter 生成 DOCX/PPTX，再让本机 Word/PowerPoint 真实降级成 OLE `.doc/.ppt`，随后调用与 desktop IPC 相同的转换函数恢复 OOXML，最后用 Rune importer 验证 `Q2 Business Review` 和 `Q2 Board Briefing` 语义仍能成为有效 Markdown/Deck Markdown。两条链均在宏禁用和临时清理条件下通过。Web 端虽然允许用户选择后缀，但没有窄 desktop bridge 时明确拒绝，不上传、不猜测、不假装支持；`.xls` 仍未交付，因为当前产品只授权了用户提出的旧 Word/PPT 路径。
+
+欢迎页此前轮播七种问候、却只提供中英文界面，是视觉承诺与产品事实不一致。v0.53 将 BCP 47 前缀、设备偏好顺序、native name、monogram 和 greeting 合并到唯一 `RUNE_LOCALE_REGISTRY`，欢迎轮播与语言选择都由它派生。自动测试要求每个问候恰好对应一个真实可选择 locale，同时该 locale 必须拥有完整 typed UI contract 和本地指南；因此当前只轮播已完整交付的“你好 / Hello”。Français、日本語、한국어、Español、Bahasa Indonesia 只有在教程、菜单、空态、review、错误、导出提示和指南全部完成后，才能同时加入 registry 与动画。Apple 式欢迎由此不是多语言装饰，而是一项可验证的界面承诺。
+
+Apple 的学习方向也在这一版进一步成为工程规则：尊重系统语言的有序 preference，不自行覆盖用户选择；使用原生 macOS 隐私授权而不申请无关的辅助功能/全盘权限；用最小 capability bridge 和渐进披露代替万能 renderer；尊重 reduced motion、键盘操作、同源安全与清晰反馈。Rune 学习的是层级、节奏、材料、原生平台行为与可访问性，不复制 Apple 商标、资产或某一代外观。
