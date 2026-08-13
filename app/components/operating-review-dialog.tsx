@@ -178,7 +178,11 @@ export function OperatingReviewDialog({
   const preferredCategory = sourceOption?.columns.find((column) => !sourceOption.numericColumns.includes(column))
     ?? sourceOption?.columns[0]
     ?? "";
-  const effectiveCategory = sourceOption?.columns.includes(category) ? category : preferredCategory;
+  const effectiveCategory = sourceOption?.columns.includes(category)
+    ? category
+    : initialInput
+      ? category
+      : preferredCategory;
   const strictNumericColumns = useMemo(() => {
     const source = artifacts.find((artifact) => artifact.id === sourceOption?.artifactId);
     if (!source || source.kind !== "data") return [];
@@ -190,7 +194,9 @@ export function OperatingReviewDialog({
   }, [artifacts, sourceOption?.artifactId]);
   const effectiveValue = strictNumericColumns.includes(value) && value !== effectiveCategory
     ? value
-    : strictNumericColumns.find((column) => column !== effectiveCategory) ?? "";
+    : initialInput
+      ? value
+      : strictNumericColumns.find((column) => column !== effectiveCategory) ?? "";
   const deliverables = useMemo(
     () => selectedDeliverables(includeReport, includeSlides),
     [includeReport, includeSlides],
@@ -333,6 +339,9 @@ export function OperatingReviewDialog({
               aria-invalid={attempted && !effectiveCategory}
             >
               {!sourceOption?.columns.length && <option value="">{copy.noField}</option>}
+              {initialInput && effectiveCategory && !sourceOption?.columns.includes(effectiveCategory) && (
+                <option value={effectiveCategory}>{effectiveCategory} · {copy.noField}</option>
+              )}
               {sourceOption?.columns.map((column) => <option key={column} value={column}>{column}</option>)}
             </select>
           </label>
@@ -350,6 +359,9 @@ export function OperatingReviewDialog({
             >
               {!strictNumericColumns.some((column) => column !== effectiveCategory) && (
                 <option value="">{copy.noNumericField}</option>
+              )}
+              {initialInput && effectiveValue && !strictNumericColumns.includes(effectiveValue) && (
+                <option value={effectiveValue}>{effectiveValue} · {copy.noNumericField}</option>
               )}
               {strictNumericColumns
                 .filter((column) => column !== effectiveCategory)
