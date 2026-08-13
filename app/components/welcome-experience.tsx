@@ -21,8 +21,8 @@ import { ModelProfileManager } from "./model-profile-manager";
 import {
   localeDisplayName,
   localeMonogram,
+  localizeRuneCopy,
   runeGreetingSequence,
-  runeText,
   RUNE_LOCALE_REGISTRY,
   type RuneLocale,
 } from "../lib/localization";
@@ -32,7 +32,7 @@ export type WelcomeAction = "guide" | "import" | "sample";
 export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
 type ShortcutId = "open" | "save" | "agent";
 
-const copy = {
+export const WELCOME_BASE_COPY = {
   "zh-CN": {
     skip: "跳过",
     close: "关闭教程",
@@ -138,11 +138,7 @@ const copy = {
 } as const;
 
 function welcomeCopy(locale: RuneLocale) {
-  if (locale === "en") return copy.en;
-  if (locale === "zh-CN") return copy["zh-CN"];
-  return Object.fromEntries(Object.entries(copy["zh-CN"]).map(([key, value]) => (
-    [key, runeText(locale, value, value)]
-  ))) as typeof copy["zh-CN"];
+  return localizeRuneCopy(locale, WELCOME_BASE_COPY.en, WELCOME_BASE_COPY["zh-CN"]);
 }
 
 function ShortcutKey({ children }: { children: ReactNode }) {

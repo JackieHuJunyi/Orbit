@@ -5,6 +5,7 @@ import {
   createRuneGuideArtifact,
   detectPreferredLocale,
   localeDisplayName,
+  localeDirection,
   localeMonogram,
   localizeRuneStatus,
   normalizeRuneLocale,
@@ -22,7 +23,12 @@ test("uses the first supported language in the device's ordered preferences", ()
   assert.equal(detectPreferredLocale(["zh-Hans-CN", "en-US"]), "zh-CN");
   assert.equal(detectPreferredLocale(["zh-Hant"]), "zh-TW");
   assert.equal(detectPreferredLocale(["zh-HK", "zh-CN"]), "zh-TW");
-  assert.equal(detectPreferredLocale(["fr-FR", "en-GB"]), "en");
+  assert.equal(detectPreferredLocale(["fr-FR", "en-GB"]), "fr");
+  assert.equal(detectPreferredLocale(["es-MX"]), "es");
+  assert.equal(detectPreferredLocale(["ru-RU"]), "ru");
+  assert.equal(detectPreferredLocale(["ar-SA"]), "ar");
+  assert.equal(detectPreferredLocale(["ja-JP"]), "ja");
+  assert.equal(detectPreferredLocale(["ko-KR"]), "ko");
   assert.equal(detectPreferredLocale([]), "en");
 });
 
@@ -30,11 +36,17 @@ test("normalizes only supported Rune interface locales", () => {
   assert.equal(normalizeRuneLocale("zh-CN"), "zh-CN");
   assert.equal(normalizeRuneLocale("en"), "en");
   assert.equal(normalizeRuneLocale("zh-TW"), "zh-TW");
+  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) assert.equal(normalizeRuneLocale(locale), locale);
   assert.equal(normalizeRuneLocale("en-US"), null);
   assert.equal(normalizeRuneLocale(null), null);
   assert.equal(localeDisplayName("zh-CN"), "简体中文");
   assert.equal(localeDisplayName("zh-TW"), "繁體中文");
   assert.equal(localeMonogram("en"), "A");
+  assert.equal(localeDisplayName("ar"), "العربية");
+  assert.equal(localeDirection("ar"), "rtl");
+  assert.equal(localeDirection("ja"), "ltr");
+  assert.equal(RUNE_LOCALE_REGISTRY.length, 9);
+  assert.deepEqual(["zh-CN", "en", "fr", "es", "ru", "ar"].every((locale) => RUNE_LOCALE_REGISTRY.some((entry) => entry.locale === locale)), true);
 });
 
 test("keeps welcome greetings identical to the complete interface locale registry", () => {
@@ -65,6 +77,13 @@ test("creates a valid editable local guide in the selected language", () => {
   assert.deepEqual(validateArtifact(chinese), []);
   assert.deepEqual(validateArtifact(traditionalChinese), []);
   assert.deepEqual(validateArtifact(english), []);
+  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
+    const guide = createRuneGuideArtifact(locale);
+    assert.notEqual(guide.source, english.source);
+    assert.match(guide.source, /Rune/);
+    assert.match(guide.source, /⌘ Enter/);
+    assert.deepEqual(validateArtifact(guide), []);
+  }
 });
 
 function catalogShape(value) {
@@ -73,12 +92,13 @@ function catalogShape(value) {
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, catalogShape(value[key])]));
 }
 
-test("keeps one complete typed UI contract for English and Simplified Chinese", () => {
+test("keeps one complete typed UI contract across all nine interface locales", () => {
   const chinese = runeUICopy("zh-CN");
   const traditionalChinese = runeUICopy("zh-TW");
   const english = runeUICopy("en");
   assert.deepEqual(catalogShape(chinese), catalogShape(english));
   assert.deepEqual(catalogShape(traditionalChinese), catalogShape(english));
+  for (const { locale } of RUNE_LOCALE_REGISTRY) assert.deepEqual(catalogShape(runeUICopy(locale)), catalogShape(english));
   assert.equal(chinese.workbench.livePreview, "实时预览");
   assert.equal(english.workbench.livePreview, "Live preview");
   assert.equal(traditionalChinese.workbench.livePreview, "即時預覽");
@@ -86,6 +106,10 @@ test("keeps one complete typed UI contract for English and Simplified Chinese", 
   assert.equal(english.preview.saveSlide, "Save slide");
   assert.equal(chinese.importReview.title, "审核导入后的可读源");
   assert.equal(english.exportReview.title("pdf"), "Review PDF export");
+  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
+    assert.notEqual(runeUICopy(locale).workbench.livePreview, english.workbench.livePreview);
+    assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
+  }
 });
 
 test("formats dynamic review copy without fragile token replacement", () => {

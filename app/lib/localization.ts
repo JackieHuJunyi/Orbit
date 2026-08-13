@@ -1,4 +1,6 @@
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
+import { GENERATED_INTERFACE_TRANSLATIONS } from "./interface-locales.generated.ts";
+import { MANUAL_INTERFACE_TRANSLATIONS } from "./interface-locales.manual.ts";
 import { TRADITIONAL_CHINESE_SEGMENTS } from "./traditional-chinese.generated.ts";
 
 const traditionalChinesePattern = new RegExp(
@@ -18,6 +20,7 @@ export const RUNE_LOCALE_REGISTRY = [
     monogram: "文",
     nativeName: "简体中文",
     languagePrefixes: ["zh-cn", "zh-hans", "zh-sg", "zh-my", "zh"],
+    direction: "ltr",
   },
   {
     locale: "zh-TW",
@@ -25,6 +28,7 @@ export const RUNE_LOCALE_REGISTRY = [
     monogram: "繁",
     nativeName: "繁體中文",
     languagePrefixes: ["zh-tw", "zh-hant", "zh-hk", "zh-mo"],
+    direction: "ltr",
   },
   {
     locale: "en",
@@ -32,6 +36,55 @@ export const RUNE_LOCALE_REGISTRY = [
     monogram: "A",
     nativeName: "English",
     languagePrefixes: ["en"],
+    direction: "ltr",
+  },
+  {
+    locale: "fr",
+    greeting: "Bonjour",
+    monogram: "Fr",
+    nativeName: "Français",
+    languagePrefixes: ["fr"],
+    direction: "ltr",
+  },
+  {
+    locale: "es",
+    greeting: "Hola",
+    monogram: "Es",
+    nativeName: "Español",
+    languagePrefixes: ["es"],
+    direction: "ltr",
+  },
+  {
+    locale: "ru",
+    greeting: "Здравствуйте",
+    monogram: "Ру",
+    nativeName: "Русский",
+    languagePrefixes: ["ru"],
+    direction: "ltr",
+  },
+  {
+    locale: "ar",
+    greeting: "مرحبًا",
+    monogram: "ع",
+    nativeName: "العربية",
+    languagePrefixes: ["ar"],
+    direction: "rtl",
+  },
+  {
+    locale: "ja",
+    greeting: "こんにちは",
+    monogram: "日",
+    nativeName: "日本語",
+    languagePrefixes: ["ja"],
+    direction: "ltr",
+  },
+  {
+    locale: "ko",
+    greeting: "안녕하세요",
+    monogram: "한",
+    nativeName: "한국어",
+    languagePrefixes: ["ko"],
+    direction: "ltr",
   },
 ] as const;
 
@@ -39,6 +92,10 @@ export type RuneLocale = (typeof RUNE_LOCALE_REGISTRY)[number]["locale"];
 
 export function isChineseRuneLocale(locale: RuneLocale) {
   return locale === "zh-CN" || locale === "zh-TW";
+}
+
+export function localeDirection(locale: RuneLocale) {
+  return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.direction ?? "ltr";
 }
 
 function convertPreservingValues(value: string, preservedValues: readonly string[] = []) {
@@ -54,7 +111,11 @@ function convertPreservingValues(value: string, preservedValues: readonly string
 
 export function runeText(locale: RuneLocale, english: string, simplifiedChinese: string, preservedValues: readonly string[] = []) {
   if (locale === "en") return english;
-  return locale === "zh-TW" ? convertPreservingValues(simplifiedChinese, preservedValues) : simplifiedChinese;
+  if (locale === "zh-CN") return simplifiedChinese;
+  if (locale === "zh-TW") return convertPreservingValues(simplifiedChinese, preservedValues);
+  const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+  const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+  return manual?.[english] ?? generated?.[english] ?? english;
 }
 
 function localizeChineseCatalog<T>(value: T): T {
@@ -72,6 +133,36 @@ function localizeChineseCatalog<T>(value: T): T {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeChineseCatalog(item)])) as T;
   }
   return value;
+}
+
+function localizeGeneratedCatalog<T>(locale: RuneLocale, value: T): T {
+  if (typeof value === "string") return runeText(locale, value, value) as T;
+  if (typeof value === "function") {
+    return ((...args: unknown[]) => {
+      const result = value(...args);
+      return typeof result === "string" ? runeText(locale, result, result) : localizeGeneratedCatalog(locale, result);
+    }) as T;
+  }
+  if (Array.isArray(value)) return value.map((item) => localizeGeneratedCatalog(locale, item)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeGeneratedCatalog(locale, item)])) as T;
+  }
+  return value;
+}
+
+export function localizeRuneCopy<T>(locale: RuneLocale, english: T, simplifiedChinese: unknown = english): T {
+  if (locale === "en") return english;
+  if (locale === "zh-CN") return simplifiedChinese as T;
+  if (locale === "zh-TW") return localizeChineseCatalog(simplifiedChinese as T);
+  return localizeGeneratedCatalog(locale, english);
+}
+
+function localizeRuneMultiline(locale: RuneLocale, english: string, simplifiedChinese: string) {
+  const source = locale === "en" ? english : locale === "zh-CN" ? simplifiedChinese : locale === "zh-TW" ? toTaiwanTraditional(simplifiedChinese) : english;
+  if (locale === "en" || isChineseRuneLocale(locale)) return source;
+  const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+  const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+  return source.split("\n").map((line) => manual?.[line] ?? generated?.[line] ?? line).join("\n");
 }
 
 export const RUNE_LOCALE_STORAGE_KEY = "rune-locale-v1";
@@ -138,6 +229,9 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       storageFull: zh ? "存储空间不足" : "Storage full",
       help: zh ? "欢迎与本地指南" : "Welcome & local guide",
       models: zh ? "模型配置" : "Model settings",
+      appearance: zh ? "外观" : "Appearance",
+      appearanceBody: zh ? "选择 Rune 的气质色" : "Choose Rune's character color",
+      activeTheme: zh ? "当前主题" : "Current theme",
       newArtifact: zh ? "新建" : "New",
       import: zh ? "导入" : "Import",
       openFolder: zh ? "打开文件夹" : "Open folder",
@@ -629,6 +723,12 @@ const RUNE_UI_COPY: Record<RuneLocale, RuneUICopy> = {
   en: buildRuneUICopy("en"),
   "zh-CN": buildRuneUICopy("zh-CN"),
   "zh-TW": localizeChineseCatalog(buildRuneUICopy("zh-CN")),
+  fr: localizeGeneratedCatalog("fr", buildRuneUICopy("en")),
+  es: localizeGeneratedCatalog("es", buildRuneUICopy("en")),
+  ru: localizeGeneratedCatalog("ru", buildRuneUICopy("en")),
+  ar: localizeGeneratedCatalog("ar", buildRuneUICopy("en")),
+  ja: localizeGeneratedCatalog("ja", buildRuneUICopy("en")),
+  ko: localizeGeneratedCatalog("ko", buildRuneUICopy("en")),
 };
 
 export function runeUICopy(locale: RuneLocale): RuneUICopy {
@@ -686,6 +786,14 @@ export function runeQuickCommands(locale: RuneLocale, scope: "selection" | "arti
     if (scope === "workspace") return englishWorkspaceCommands;
     if (scope === "selection") return englishSelectionCommands[kind];
     return englishArtifactCommands[kind];
+  }
+  if (!isChineseRuneLocale(locale)) {
+    const commands = scope === "workspace"
+      ? englishWorkspaceCommands
+      : scope === "selection"
+        ? englishSelectionCommands[kind]
+        : englishArtifactCommands[kind];
+    return commands.map((command) => runeText(locale, command, command));
   }
   const commands = scope === "workspace"
     ? chineseWorkspaceCommands
@@ -749,6 +857,11 @@ const chineseStatusMessages: Record<string, string> = {
 
 export function localizeRuneStatus(locale: RuneLocale, message: string) {
   if (locale === "en") return message;
+  if (!isChineseRuneLocale(locale)) {
+    const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+    const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+    return manual?.[message] ?? generated?.[message] ?? message;
+  }
   const exact = chineseStatusMessages[message];
   if (exact) return locale === "zh-TW" ? toTaiwanTraditional(exact) : exact;
   const patterns: Array<[RegExp, (...parts: string[]) => string]> = [
@@ -780,7 +893,7 @@ export function localizeRuneStatus(locale: RuneLocale, message: string) {
   return message;
 }
 
-const chineseGuide = [
+export const CHINESE_RUNE_GUIDE = [
   "# 欢迎使用 Rune",
   "",
   "> Rune 是一个本地优先、可核验的 AI 工作台。你的源文件是事实，预览是实时编译结果；你批准前，Agent 不会写入文件。",
@@ -833,7 +946,7 @@ const chineseGuide = [
   "",
 ].join("\n");
 
-const englishGuide = [
+export const ENGLISH_RUNE_GUIDE = [
   "# Welcome to Rune",
   "",
   "> Rune is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.",
@@ -887,16 +1000,12 @@ const englishGuide = [
 ].join("\n");
 
 export function createRuneGuideArtifact(locale: RuneLocale): WorkspaceArtifact {
-  const source = locale === "en"
-    ? englishGuide
-    : locale === "zh-TW"
-      ? toTaiwanTraditional(chineseGuide)
-      : chineseGuide;
+  const source = localizeRuneMultiline(locale, ENGLISH_RUNE_GUIDE, CHINESE_RUNE_GUIDE);
   return {
     id: RUNE_GUIDE_ID,
     name: "rune-guide.md",
     kind: "document",
-    language: locale === "en" ? "Markdown · English" : locale === "zh-TW" ? "Markdown · 繁體中文" : "Markdown · 简体中文",
+    language: `Markdown · ${localeDisplayName(locale)}`,
     source,
   };
 }

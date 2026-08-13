@@ -1973,3 +1973,11 @@ Rune 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改
 四个 adapter 的输出都必须成为同一个 Rune-owned operation schema，而不是各自获得写权限。Responses/Chat/Gemini 的文本先作为 JSON 解析，再由既有 Zod schema验证；Anthropic 只接受名字精确匹配的强制 tool input。之后仍由相同 operation compiler 生成 concrete source、证明 selection/workspace 边界、执行完整 artifact/dependency/runtime gate，并停在 Review。真实 provider token usage 映射为统一 input/output 字段；无法提供时写 null，不估算。
 
 安全边界也跟协议显式化一起收紧：模型目录和生成请求都拒绝 redirect，目录响应限 1 MB、Agent 响应限 2 MB、调用限 60 秒，供应商错误只向前端返回状态而不回显可能含敏感信息的正文。认证头按协议隔离，密钥仍只存在加密 HttpOnly vault 或桌面 Keychain。Rune 不自动把失败任务转发到另一家供应商，因为 fallback 本质上是一次新的数据授权；未来若做故障转移，必须由用户为明确的供应商链和数据范围单独确认。隔离测试与完整 Agent route 测试证明四条 transport 都落回相同 Markdown typed operation 和安全编译器。
+
+## 64. v0.59 视觉转向不是复制 Apple，而是建立 Rune 自己的材料、节奏与颜色层级
+
+Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分区和克制动效建立层级；Rune 学习这些方法，但不复制 Apple 的商标、图片、系统控件或具体页面。工作台从连续灰色工具栏改成云白画布上的四个轻材质区域，弱化分割线与“AI 面板”感；首启页把动图问候、语言决定和模型配置作为依次展开的真实任务。所有过渡都短、可中断，并继续服从 `prefers-reduced-motion`。
+
+颜色分成两种不同职责。朱砂 `#dc4b36` 是 Rune mark，只用于品牌身份和少量 source 信号；用户外观色负责按钮、焦点、选择与环境氛围。首批雾蓝、鼠尾草绿、薰衣草、深蓝、宇宙橙参考当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的低饱和蓝绿紫和高辨识橙蓝方向，再重新校准为 Rune 自己可访问、适合长时间工作的界面 token。主题只保存枚举 id 到本机，不修改 Artifact、导出文件或工作区事实。
+
+语言注册表现在包含 `zh-CN / zh-TW / en / fr / es / ru / ar / ja / ko`，覆盖联合国六种官方语言并增加日语、韩语。问候动画严格从这个注册表生成，所以每个问候都有真实的语言选择、完整同形 UI contract 和本地指南。简繁转换与六种新增静态目录均在开发期生成并提交，运行时不请求翻译服务；关键 OCR 流程另有人工校对目录。阿拉伯语会把界面切成 RTL，但 Markdown/CSV/JSON/SQL 源、代码、URL、model id 和 API key 始终保持 LTR。机器生成目录仍需母语审校，不把“测试有文本”误报为语言质量已经终结。

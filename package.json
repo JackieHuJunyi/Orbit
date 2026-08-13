@@ -20,7 +20,8 @@
     "db:generate": "drizzle-kit generate",
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "locales:generate": "node scripts/generate-traditional-chinese.mjs",
-    "locales:check": "node scripts/generate-traditional-chinese.mjs --check",
+    "locales:check": "node scripts/generate-traditional-chinese.mjs --check && node --experimental-strip-types scripts/generate-interface-locales.mjs --check",
+    "locales:interface:generate": "node --experimental-strip-types scripts/generate-interface-locales.mjs",
     "desktop:dev": "npm run build && electron desktop/main.mjs"
   },
   "dependencies": {

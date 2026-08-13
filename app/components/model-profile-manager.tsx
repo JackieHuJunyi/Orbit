@@ -24,10 +24,10 @@ import {
   type ModelProviderKind,
   type PublicModelProfile,
 } from "../lib/model-profiles";
-import { runeText, type RuneLocale } from "../lib/localization";
+import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
 import type { ModelProviderStatus } from "../lib/model-preference";
 
-const managerCopy = {
+export const MODEL_MANAGER_BASE_COPY = {
   "zh-CN": {
     loading: "正在读取模型配置…",
     unavailable: "当前服务没有启用加密凭据库；仍可使用部署模型或本地模式。",
@@ -50,6 +50,8 @@ const managerCopy = {
     apiKey: "API Key",
     keepKey: "留空则继续使用已加密保存的密钥",
     keyPlaceholder: "只在保存前短暂存在于当前输入框",
+    showKey: "显示 API 密钥",
+    hideKey: "隐藏 API 密钥",
     test: "读取模型",
     testing: "正在读取…",
     save: "保存并启用",
@@ -81,6 +83,8 @@ const managerCopy = {
     apiKey: "API Key",
     keepKey: "Leave empty to keep the encrypted credential",
     keyPlaceholder: "Exists only in this field until you save",
+    showKey: "Show API key",
+    hideKey: "Hide API key",
     test: "Fetch models",
     testing: "Fetching…",
     save: "Save & enable",
@@ -93,11 +97,7 @@ const managerCopy = {
 } as const;
 
 function modelManagerCopy(locale: RuneLocale) {
-  if (locale === "en") return managerCopy.en;
-  if (locale === "zh-CN") return managerCopy["zh-CN"];
-  return Object.fromEntries(Object.entries(managerCopy["zh-CN"]).map(([key, value]) => (
-    [key, runeText(locale, value, value)]
-  ))) as typeof managerCopy["zh-CN"];
+  return localizeRuneCopy(locale, MODEL_MANAGER_BASE_COPY.en, MODEL_MANAGER_BASE_COPY["zh-CN"]);
 }
 
 type EditableProfile = {
@@ -297,10 +297,10 @@ export function ModelProfileManager({
           </div>
           <div className="model-editor-grid">
             <label><span>{text.name}</span><input value={editor.name} maxLength={60} onChange={(event) => setEditor({ ...editor, name: event.target.value })} required /></label>
-            <label><span>{text.model}</span><input value={editor.model} maxLength={120} onChange={(event) => setEditor({ ...editor, model: event.target.value })} required /></label>
-            <label className="wide"><span>{text.endpoint}</span><input value={editor.baseURL} maxLength={300} disabled={!preset?.editableEndpoint} onChange={(event) => setEditor({ ...editor, baseURL: event.target.value })} required /></label>
+            <label><span>{text.model}</span><input className="canonical-ltr" value={editor.model} maxLength={120} onChange={(event) => setEditor({ ...editor, model: event.target.value })} required /></label>
+            <label className="wide"><span>{text.endpoint}</span><input className="canonical-ltr" dir="ltr" value={editor.baseURL} maxLength={300} disabled={!preset?.editableEndpoint} onChange={(event) => setEditor({ ...editor, baseURL: event.target.value })} required /></label>
             {preset?.editableProtocol && <label className="wide"><span>{text.protocol}</span><span className="model-protocol-select"><select value={editor.protocol} onChange={(event) => setEditor({ ...editor, protocol: event.target.value as ModelProtocol })}><option value="responses">OpenAI Responses</option><option value="chat-completions">OpenAI-compatible Chat Completions</option><option value="anthropic-messages">Anthropic Messages</option><option value="gemini-generate-content">Gemini generateContent</option></select><ChevronDown /></span></label>}
-            <label className="wide"><span>{text.apiKey}</span><span className="model-key-input"><input type={showKey ? "text" : "password"} value={editor.apiKey} maxLength={512} placeholder={editor.id ? text.keepKey : text.keyPlaceholder} onChange={(event) => setEditor({ ...editor, apiKey: event.target.value })} required={!editor.id} autoComplete="off" spellCheck={false} /><button type="button" onClick={() => setShowKey((shown) => !shown)} aria-label={showKey ? "Hide API key" : "Show API key"}>{showKey ? <EyeOff /> : <Eye />}</button></span></label>
+            <label className="wide"><span>{text.apiKey}</span><span className="model-key-input"><input className="canonical-ltr" dir="ltr" type={showKey ? "text" : "password"} value={editor.apiKey} maxLength={512} placeholder={editor.id ? text.keepKey : text.keyPlaceholder} onChange={(event) => setEditor({ ...editor, apiKey: event.target.value })} required={!editor.id} autoComplete="off" spellCheck={false} /><button type="button" onClick={() => setShowKey((shown) => !shown)} aria-label={showKey ? text.hideKey : text.showKey}>{showKey ? <EyeOff /> : <Eye />}</button></span></label>
           </div>
           {!!models.length && <label className="model-list-select"><span>{text.chooseModel}</span><span><select value={editor.model} onChange={(event) => setEditor({ ...editor, model: event.target.value })}>{!models.includes(editor.model) && <option value={editor.model}>{editor.model}</option>}{models.map((model) => <option value={model} key={model}>{model}</option>)}</select><ChevronDown /></span></label>}
           <p className="model-editor-hint">{text.modelHint}</p>

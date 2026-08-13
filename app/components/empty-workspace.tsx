@@ -2,9 +2,9 @@
 
 import { FilePlus2, FileText, FolderOpen, Sparkles, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
-import { runeText, type RuneLocale } from "../lib/localization";
+import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 
-const copy = {
+export const EMPTY_WORKSPACE_BASE_COPY = {
   "zh-CN": {
     eyebrow: "打开内容",
     title: "把文件拖到这里",
@@ -30,11 +30,7 @@ const copy = {
 } as const;
 
 function emptyWorkspaceCopy(locale: RuneLocale) {
-  if (locale === "en") return copy.en;
-  if (locale === "zh-CN") return copy["zh-CN"];
-  return Object.fromEntries(Object.entries(copy["zh-CN"]).map(([key, value]) => (
-    [key, runeText(locale, value, value)]
-  ))) as typeof copy["zh-CN"];
+  return localizeRuneCopy(locale, EMPTY_WORKSPACE_BASE_COPY.en, EMPTY_WORKSPACE_BASE_COPY["zh-CN"]);
 }
 
 export function EmptyWorkspace({

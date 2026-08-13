@@ -29,7 +29,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<html lang="en">/);
+  assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue">/);
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
   assert.match(html, /Content workspace/);
   assert.match(html, /q2-review\.md/);
@@ -91,7 +91,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.58/);
+  assert.match(html, /Rune v0\.59/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -295,7 +295,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Data → Query → Chart/);
   assert.match(clientSource, /Hello/);
   assert.match(clientSource, /你好/);
-  assert.doesNotMatch(clientSource, /Bonjour|こんにちは|안녕하세요|Hola|Halo/);
+  for (const greeting of ["哈囉", "Bonjour", "Hola", "Здравствуйте", "مرحبًا", "こんにちは", "안녕하세요"]) {
+    assert.match(clientSource, new RegExp(greeting));
+  }
+  assert.doesNotMatch(clientSource, /Halo/);
   assert.match(clientSource, /prefers-reduced-motion: reduce/);
   assert.match(clientSource, /evidence is not persisted/);
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);

@@ -12,7 +12,7 @@ import {
 } from "./patches.ts";
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
-import { isChineseRuneLocale, runeText, type RuneLocale } from "./localization.ts";
+import { isChineseRuneLocale, normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
 
 export const MAX_OPERATING_REVIEW_TITLE_CHARS = 60;
 export const MAX_OPERATING_REVIEW_PERIOD_CHARS = 60;
@@ -105,6 +105,11 @@ const audienceLabels = {
   },
 } as const;
 
+function audienceLabel(locale: RuneLocale, audience: OperatingReviewAudience) {
+  if (locale === "zh-CN" || locale === "zh-TW" || locale === "en") return audienceLabels[locale][audience];
+  return runeText(locale, audienceLabels.en[audience], audienceLabels.en[audience]);
+}
+
 function normalizeTaskText(value: string) {
   return value.normalize("NFKC").replace(/[\t ]+/gu, " ").trim();
 }
@@ -168,7 +173,7 @@ function reportSource(
   const category = markdownInline(input.category);
   const value = markdownInline(input.value);
   const sourceName = markdownInline(data.name);
-  const audience = audienceLabels[input.locale][input.audience];
+  const audience = audienceLabel(input.locale, input.audience);
   const aggregation = input.aggregation === "average"
     ? zh ? "平均值" : "average"
     : zh ? "合计值" : "sum";
@@ -244,7 +249,7 @@ function deckSource(
   const category = markdownInline(input.category);
   const value = markdownInline(input.value);
   const sourceName = markdownInline(data.name);
-  const audience = audienceLabels[input.locale][input.audience];
+  const audience = audienceLabel(input.locale, input.audience);
   const chartBinding = formatChartReference(chart.id);
   const source = `---
 version: 1
@@ -314,7 +319,7 @@ export function prepareOperatingReviewWorkflow(
   if (!["sum", "average"].includes(input.aggregation)) errors.push("Choose sum or average aggregation.");
   if (!["bar", "line"].includes(input.mark)) errors.push("Choose a supported chart form.");
   if (!["number", "currency", "percent"].includes(input.format)) errors.push("Choose a supported number format.");
-  if (!(["zh-CN", "zh-TW", "en"] as const).includes(input.locale)) errors.push("Choose a supported interface language.");
+  if (!normalizeRuneLocale(input.locale)) errors.push("Choose a supported interface language.");
 
   const deliverables = uniqueDeliverables(input.deliverables);
   if (!deliverables.length) errors.push("Choose at least one deliverable.");

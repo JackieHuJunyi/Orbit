@@ -9,7 +9,7 @@ import {
   type PdfOcrLanguage,
   type PdfOcrProgress,
 } from "../lib/pdf-import";
-import { isChineseRuneLocale, type RuneLocale } from "../lib/localization";
+import { isChineseRuneLocale, localizeRuneCopy, type RuneLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 export type PdfOcrCandidate = {
@@ -29,6 +29,67 @@ type Draft = {
   language: PdfOcrLanguage;
   pages: string;
 };
+
+export const PDF_OCR_BASE_COPY = {
+  en: {
+    changed: "The detected scan pages changed. Import the file again.",
+    reviewPages: "Review the OCR page selection.",
+    loadingModel: "Loading and caching language model",
+    renderingPage: "Rendering page",
+    locally: "locally",
+    recognizingPage: "Recognizing page",
+    preparing: "Preparing OCR",
+    kicker: "Scanned PDF · explicit selection",
+    title: "Choose pages for OCR",
+    description: "Rune found pages without selectable text. Confirm pages and language; image content is not read until you continue.",
+    settings: "OCR settings",
+    privacyFooter: "Page images stay on device · results remain reviewable",
+    stop: "Stop",
+    cancel: "Cancel",
+    recognizing: "Recognizing…",
+    recognize: "Recognize",
+    page: "page",
+    pages: "pages",
+    onDevice: "On-device recognition",
+    privacy: "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.",
+    detectedScanPages: "detected scan pages",
+    pagesToRecognize: "Pages to recognize",
+    ocrPagesFor: "OCR pages for",
+    pageExample: "For example 1-3, 5; only detected scan pages can be selected.",
+    pageLanguage: "Page language",
+    ocrLanguageFor: "OCR language for",
+    languageHint: "Choose the language actually used on the page to reduce errors.",
+  },
+  zh: {
+    changed: "扫描页信息已经变化，请重新导入。",
+    reviewPages: "请检查 OCR 页码。",
+    loadingModel: "正在加载并缓存语言模型",
+    renderingPage: "正在本地渲染第",
+    locally: "页",
+    recognizingPage: "正在识别第",
+    preparing: "准备 OCR",
+    kicker: "扫描 PDF · 明确选择",
+    title: "选择需要 OCR 的页面",
+    description: "Rune 发现了没有可选文本的页面。请确认页码和语言；确认前不会读取图像内容。",
+    settings: "OCR 设置",
+    privacyFooter: "页面图像不上传 · 结果仍需审核",
+    stop: "停止",
+    cancel: "取消",
+    recognizing: "正在识别…",
+    recognize: "识别",
+    page: "页",
+    pages: "页",
+    onDevice: "设备内识别",
+    privacy: "PDF 页面只在浏览器内渲染。Rune 会从当前站点加载内置 OCR 运行库和语言数据，并由浏览器缓存；不会发送页面图像或识别文本。",
+    detectedScanPages: "检测到扫描页",
+    pagesToRecognize: "识别页码",
+    ocrPagesFor: "OCR 页码：",
+    pageExample: "例如 1-3, 5；只能选择上方检测到的扫描页。",
+    pageLanguage: "页面语言",
+    ocrLanguageFor: "OCR 语言：",
+    languageHint: "选择页面实际使用的语言可减少误识别。",
+  },
+} as const;
 
 function initialDrafts(candidates: PdfOcrCandidate[], locale: RuneLocale): Draft[] {
   return candidates.map((candidate) => ({
@@ -57,7 +118,7 @@ export function PdfOcrSetupDialog({
   onCancel: () => void;
   onRecognize: (selections: PdfOcrSelection[]) => void;
 }) {
-  const zh = isChineseRuneLocale(locale);
+  const copy = localizeRuneCopy<typeof PDF_OCR_BASE_COPY.en>(locale, PDF_OCR_BASE_COPY.en, PDF_OCR_BASE_COPY.zh);
   const [drafts, setDrafts] = useState(() => initialDrafts(candidates, locale));
   const [validationError, setValidationError] = useState("");
   const selectedCount = useMemo(() => drafts.reduce((total, draft) => {
@@ -74,7 +135,7 @@ export function PdfOcrSetupDialog({
     try {
       const selections = drafts.map((draft) => {
         const candidate = candidates.find((item) => item.fileIndex === draft.fileIndex);
-        if (!candidate) throw new Error(zh ? "扫描页信息已经变化，请重新导入。" : "The detected scan pages changed. Import the file again.");
+        if (!candidate) throw new Error(copy.changed);
         return {
           fileIndex: draft.fileIndex,
           language: draft.language,
@@ -84,17 +145,17 @@ export function PdfOcrSetupDialog({
       setValidationError("");
       onRecognize(selections);
     } catch (nextError) {
-      setValidationError(nextError instanceof Error ? nextError.message : (zh ? "请检查 OCR 页码。" : "Review the OCR page selection."));
+      setValidationError(nextError instanceof Error ? nextError.message : copy.reviewPages);
     }
   }
 
   const stageLabel = progress
     ? progress.stage === "loading-model"
-      ? (zh ? "正在加载并缓存语言模型" : "Loading and caching language model")
+      ? copy.loadingModel
       : progress.stage === "rendering-page"
-        ? (zh ? `正在本地渲染第 ${progress.pageNumber} 页` : `Rendering page ${progress.pageNumber} locally`)
-        : (zh ? `正在识别第 ${progress.pageNumber} 页` : `Recognizing page ${progress.pageNumber}`)
-    : (zh ? "准备 OCR" : "Preparing OCR");
+        ? `${copy.renderingPage} ${progress.pageNumber} ${copy.locally}`
+        : `${copy.recognizingPage} ${progress.pageNumber}`
+    : copy.preparing;
   const progressValue = progress
     ? Math.round(((progress.completedPages + progress.progress) / Math.max(1, progress.totalPages)) * 100)
     : 0;
@@ -102,22 +163,20 @@ export function PdfOcrSetupDialog({
   return (
     <ReviewDialog
       dialogId="pdf-ocr-setup"
-      kicker={<><FileScan aria-hidden="true" /> {zh ? "扫描 PDF · 明确选择" : "Scanned PDF · explicit selection"}</>}
-      title={zh ? "选择需要 OCR 的页面" : "Choose pages for OCR"}
-      description={zh
-        ? "Rune 发现了没有可选文本的页面。请确认页码和语言；确认前不会读取图像内容。"
-        : "Rune found pages without selectable text. Confirm pages and language; image content is not read until you continue."}
-      detailsLabel={zh ? "OCR 设置" : "OCR settings"}
+      kicker={<><FileScan aria-hidden="true" /> {copy.kicker}</>}
+      title={copy.title}
+      description={copy.description}
+      detailsLabel={copy.settings}
       locale={locale}
       onCancel={onCancel}
       footer={(
         <>
-          <div><ShieldCheck aria-hidden="true" /> {zh ? "页面图像不上传 · 结果仍需审核" : "Page images stay on device · results remain reviewable"}</div>
+          <div><ShieldCheck aria-hidden="true" /> {copy.privacyFooter}</div>
           <span>
-            <button className="button ghost-button" onClick={onCancel}>{processing ? (zh ? "停止" : "Stop") : (zh ? "取消" : "Cancel")}</button>
+            <button className="button ghost-button" onClick={onCancel}>{processing ? copy.stop : copy.cancel}</button>
             <button className="button primary-button" onClick={submit} disabled={processing} data-dialog-initial-focus>
               {processing ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <ScanText aria-hidden="true" />}
-              {processing ? (zh ? "正在识别…" : "Recognizing…") : (zh ? `识别 ${selectedCount} 页` : `Recognize ${selectedCount} ${selectedCount === 1 ? "page" : "pages"}`)}
+              {processing ? copy.recognizing : `${copy.recognize} ${selectedCount} ${selectedCount === 1 ? copy.page : copy.pages}`}
             </button>
           </span>
         </>
@@ -127,10 +186,8 @@ export function PdfOcrSetupDialog({
         <section className="pdf-ocr-privacy">
           <ShieldCheck aria-hidden="true" />
           <div>
-            <strong>{zh ? "设备内识别" : "On-device recognition"}</strong>
-            <p>{zh
-              ? "PDF 页面只在浏览器内渲染。Rune 会从当前站点加载内置 OCR 运行库和语言数据，并由浏览器缓存；不会发送页面图像或识别文本。"
-              : "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent."}</p>
+            <strong>{copy.onDevice}</strong>
+            <p>{copy.privacy}</p>
           </div>
         </section>
 
@@ -144,31 +201,29 @@ export function PdfOcrSetupDialog({
                 <span><FileScan aria-hidden="true" /></span>
                 <div>
                   <strong>{candidate.fileName}</strong>
-                  <small>{zh
-                    ? `${candidate.analysis.pageCount} 页 · 检测到扫描页 ${candidatePages}`
-                    : `${candidate.analysis.pageCount} pages · detected scan pages ${candidatePages}`}</small>
+                  <small>{candidate.analysis.pageCount} {candidate.analysis.pageCount === 1 ? copy.page : copy.pages} · {copy.detectedScanPages} {candidatePages}</small>
                 </div>
               </header>
               <div className="pdf-ocr-fields">
                 <label>
-                  <span>{zh ? "识别页码" : "Pages to recognize"}</span>
+                  <span>{copy.pagesToRecognize}</span>
                   <input
                     value={draft.pages}
                     disabled={processing}
                     spellCheck={false}
-                    aria-label={zh ? `${candidate.fileName} 的 OCR 页码` : `OCR pages for ${candidate.fileName}`}
+                    aria-label={`${copy.ocrPagesFor} ${candidate.fileName}`}
                     onChange={(event) => setDrafts((current) => current.map((item) => (
                       item.fileIndex === candidate.fileIndex ? { ...item, pages: event.target.value } : item
                     )))}
                   />
-                  <small>{zh ? "例如 1-3, 5；只能选择上方检测到的扫描页。" : "For example 1-3, 5; only detected scan pages can be selected."}</small>
+                  <small>{copy.pageExample}</small>
                 </label>
                 <label>
-                  <span>{zh ? "页面语言" : "Page language"}</span>
+                  <span>{copy.pageLanguage}</span>
                   <select
                     value={draft.language}
                     disabled={processing}
-                    aria-label={zh ? `${candidate.fileName} 的 OCR 语言` : `OCR language for ${candidate.fileName}`}
+                    aria-label={`${copy.ocrLanguageFor} ${candidate.fileName}`}
                     onChange={(event) => setDrafts((current) => current.map((item) => (
                       item.fileIndex === candidate.fileIndex
                         ? { ...item, language: event.target.value as PdfOcrLanguage }
@@ -179,7 +234,7 @@ export function PdfOcrSetupDialog({
                     <option value="chi_sim">简体中文</option>
                     <option value="eng+chi_sim">简体中文 + English</option>
                   </select>
-                  <small>{zh ? "选择页面实际使用的语言可减少误识别。" : "Choose the language actually used on the page to reduce errors."}</small>
+                  <small>{copy.languageHint}</small>
                 </label>
               </div>
             </section>

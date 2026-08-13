@@ -25,6 +25,7 @@ import {
   LoaderCircle,
   PanelLeftClose,
   PanelLeftOpen,
+  Palette,
   Pin,
   Play,
   Presentation,
@@ -157,6 +158,7 @@ import type { PdfOcrProgress } from "../lib/pdf-import";
 import {
   createRuneGuideArtifact,
   detectPreferredLocale,
+  localeDirection,
   localizeRuneStatus,
   normalizeRuneLocale,
   runeQuickCommands,
@@ -173,6 +175,12 @@ import {
   RUNE_MODEL_MODE_STORAGE_KEY,
   type RuneModelMode,
 } from "../lib/model-preference";
+import {
+  normalizeRuneAppearanceTheme,
+  RUNE_APPEARANCE_STORAGE_KEY,
+  RUNE_APPEARANCE_THEMES,
+  type RuneAppearanceTheme,
+} from "../lib/appearance";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
@@ -615,6 +623,8 @@ export function RuneWorkbench() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
+  const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
+  const [appearanceMenuOpen, setAppearanceMenuOpen] = useState(false);
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
   const [visualSourceDraft, setVisualSourceDraft] = useState<VisualSourceDraft | null>(null);
@@ -622,6 +632,7 @@ export function RuneWorkbench() {
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const appearanceMenuRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
@@ -642,16 +653,31 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.documentElement.dir = "ltr";
+    document.documentElement.dir = localeDirection(locale);
+    document.documentElement.dataset.locale = locale;
   }, [locale]);
 
   useEffect(() => {
-    if (!exportMenuOpen) return;
+    document.documentElement.dataset.theme = appearanceTheme;
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(RUNE_APPEARANCE_STORAGE_KEY, appearanceTheme);
+    } catch {
+      // Appearance stays available in memory when device preference persistence is unavailable.
+    }
+  }, [appearanceTheme, hydrated]);
+
+  useEffect(() => {
+    if (!exportMenuOpen && !appearanceMenuOpen) return;
     const closeOutside = (event: globalThis.PointerEvent) => {
       if (!exportMenuRef.current?.contains(event.target as Node)) setExportMenuOpen(false);
+      if (!appearanceMenuRef.current?.contains(event.target as Node)) setAppearanceMenuOpen(false);
     };
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setExportMenuOpen(false);
+      if (event.key === "Escape") {
+        setExportMenuOpen(false);
+        setAppearanceMenuOpen(false);
+      }
     };
     window.addEventListener("pointerdown", closeOutside);
     window.addEventListener("keydown", closeOnEscape);
@@ -659,7 +685,7 @@ export function RuneWorkbench() {
       window.removeEventListener("pointerdown", closeOutside);
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [exportMenuOpen]);
+  }, [appearanceMenuOpen, exportMenuOpen]);
   const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
     setModelMode(nextMode);
     try {
@@ -867,9 +893,11 @@ export function RuneWorkbench() {
         const detected = detectPreferredLocale(navigator.languages?.length ? navigator.languages : [navigator.language]);
         const storedLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY));
         const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
+        const storedAppearance = normalizeRuneAppearanceTheme(localStorage.getItem(RUNE_APPEARANCE_STORAGE_KEY));
         setDetectedLocale(detected);
         setLocale(storedLocale ?? detected);
         setModelMode(storedModelMode ?? "auto");
+        setAppearanceTheme(storedAppearance ?? "mist-blue");
         setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -2747,6 +2775,38 @@ export function RuneWorkbench() {
           <button className="icon-button help-button" disabled={Boolean(activeVisualSourceDraft)} onClick={openWelcomeGuide} aria-label={ui.help} title={ui.help}>
             <BookOpen />
           </button>
+          <div className="appearance-menu" ref={appearanceMenuRef}>
+            <button
+              className={`icon-button appearance-trigger ${appearanceMenuOpen ? "active" : ""}`.trim()}
+              type="button"
+              onClick={() => setAppearanceMenuOpen((open) => !open)}
+              aria-label={ui.appearance}
+              aria-expanded={appearanceMenuOpen}
+              aria-haspopup="menu"
+              title={ui.appearance}
+            ><Palette /></button>
+            {appearanceMenuOpen && (
+              <div className="appearance-popover" role="menu" aria-label={ui.appearanceBody}>
+                <header><span className="overline">{ui.appearance}</span><strong>{ui.appearanceBody}</strong></header>
+                <div className="appearance-swatches">
+                  {RUNE_APPEARANCE_THEMES.map((theme) => (
+                    <button
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={appearanceTheme === theme.id}
+                      className={appearanceTheme === theme.id ? "selected" : ""}
+                      onClick={() => { setAppearanceTheme(theme.id); setAppearanceMenuOpen(false); }}
+                      key={theme.id}
+                    >
+                      <span className="appearance-swatch" style={{ background: `linear-gradient(145deg, ${theme.soft} 0 48%, ${theme.color} 50% 100%)` }} />
+                      <span><strong>{runeText(locale, theme.english, theme.chinese)}</strong>{appearanceTheme === theme.id && <small>{ui.activeTheme}</small>}</span>
+                      {appearanceTheme === theme.id && <Check />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <button className="icon-button" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }} aria-label={ui.models} title={ui.models}>
             <Settings />
           </button>
@@ -3318,7 +3378,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.58</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.59</span></div>
       </footer>
 
       {newArtifactOpen && (

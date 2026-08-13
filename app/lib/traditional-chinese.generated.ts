@@ -1918,6 +1918,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "的範圍與口徑"
   ],
   [
+    "簡体字中国語",
+    "簡體字中國語"
+  ],
+  [
     "绑定保持固定",
     "繫結保持固定"
   ],
@@ -2546,6 +2550,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "建立彙報"
   ],
   [
+    "取締役会",
+    "取締役會"
+  ],
+  [
     "可以保存",
     "可以儲存"
   ],
@@ -2650,6 +2658,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "建議操作"
   ],
   [
+    "当前主题",
+    "當前主題"
+  ],
+  [
     "当前文件",
     "當前檔案"
   ],
@@ -2692,6 +2704,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "提出改动",
     "提出改動"
+  ],
+  [
+    "数値形式",
+    "數値形式"
   ],
   [
     "数值字段",
@@ -2740,6 +2756,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "是可读源",
     "是可讀源"
+  ],
+  [
+    "暗号化中",
+    "暗號化中"
   ],
   [
     "未知来源",
@@ -2834,8 +2854,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "源單元格"
   ],
   [
+    "画像内容",
+    "畫像內容"
+  ],
+  [
     "的值类型",
     "的值型別"
+  ],
+  [
+    "的气质色",
+    "的氣質色"
   ],
   [
     "的浏览器",
@@ -2942,6 +2970,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "選擇需要"
   ],
   [
+    "選択内容",
+    "選択內容"
+  ],
+  [
     "配置名称",
     "配置名稱"
   ],
@@ -2968,6 +3000,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "默认模型",
     "預設模型"
+  ],
+  [
+    "鼠尾草绿",
+    "鼠尾草綠"
   ],
   [
     "一句话",
@@ -3018,8 +3054,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "程式碼塊"
   ],
   [
+    "余白列",
+    "餘白列"
+  ],
+  [
     "供应商",
     "供應商"
+  ],
+  [
+    "保存後",
+    "儲存後"
+  ],
+  [
+    "具体的",
+    "具體的"
   ],
   [
     "内容块",
@@ -3122,8 +3170,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "新檔案"
   ],
   [
+    "暗号化",
+    "暗號化"
+  ],
+  [
     "未下载",
     "未下載"
+  ],
+  [
+    "未保存",
+    "未儲存"
   ],
   [
     "未关联",
@@ -3154,6 +3210,18 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "演示頁"
   ],
   [
+    "点線付",
+    "點線付"
+  ],
+  [
+    "理事会",
+    "理事會"
+  ],
+  [
+    "番号付",
+    "番號付"
+  ],
+  [
     "的内容",
     "的內容"
   ],
@@ -3172,6 +3240,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "确定性",
     "確定性"
+  ],
+  [
+    "箇条書",
+    "箇條書"
   ],
   [
     "管理层",
@@ -3250,8 +3322,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "主題"
   ],
   [
+    "余白",
+    "餘白"
+  ],
+  [
     "保存",
     "儲存"
+  ],
+  [
+    "全体",
+    "全體"
   ],
   [
     "全局",
@@ -3268,6 +3348,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "内容",
     "內容"
+  ],
+  [
+    "内蔵",
+    "內蔵"
   ],
   [
     "写入",
@@ -3310,12 +3394,24 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "刪除"
   ],
   [
+    "判断",
+    "判斷"
+  ],
+  [
+    "区切",
+    "區切"
+  ],
+  [
     "区域",
     "區域"
   ],
   [
     "压缩",
     "壓縮"
+  ],
+  [
+    "参照",
+    "參照"
   ],
   [
     "可读",
@@ -3342,6 +3438,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "地區"
   ],
   [
+    "外观",
+    "外觀"
+  ],
+  [
     "大写",
     "大寫"
   ],
@@ -3352,6 +3452,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "客户",
     "客戶"
+  ],
+  [
+    "密钥",
+    "金鑰"
   ],
   [
     "对比",
@@ -3368,6 +3472,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "将旧",
     "將舊"
+  ],
+  [
+    "導入",
+    "匯入"
   ],
   [
     "属性",
@@ -3392,6 +3500,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "当前",
     "當前"
+  ],
+  [
+    "従来",
+    "従來"
   ],
   [
     "总计",
@@ -3430,6 +3542,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "支援"
   ],
   [
+    "数値",
+    "數値"
+  ],
+  [
     "数值",
     "數值"
   ],
@@ -3466,6 +3582,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "明確"
   ],
   [
+    "显示",
+    "顯示"
+  ],
+  [
     "来源",
     "來源"
   ],
@@ -3494,8 +3614,32 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "彙總"
   ],
   [
+    "深蓝",
+    "深藍"
+  ],
+  [
+    "焦点",
+    "焦點"
+  ],
+  [
+    "状態",
+    "狀態"
+  ],
+  [
     "独立",
     "獨立"
+  ],
+  [
+    "独自",
+    "獨自"
+  ],
+  [
+    "画像",
+    "畫像"
+  ],
+  [
+    "番号",
+    "番號"
   ],
   [
     "眉题",
@@ -3566,6 +3710,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "規範"
   ],
   [
+    "計画",
+    "計畫"
+  ],
+  [
     "设置",
     "設定"
   ],
@@ -3618,6 +3766,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "通過"
   ],
   [
+    "連携",
+    "連攜"
+  ],
+  [
     "金额",
     "金額"
   ],
@@ -3630,12 +3782,24 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "銷售"
   ],
   [
+    "隐藏",
+    "隱藏"
+  ],
+  [
+    "雾蓝",
+    "霧藍"
+  ],
+  [
     "章节",
     "章節"
   ],
   [
     "页码",
     "頁碼"
+  ],
+  [
+    "項目",
+    "專案"
   ],
   [
     "顺序",
@@ -3654,12 +3818,36 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "從"
   ],
   [
+    "体",
+    "體"
+  ],
+  [
+    "内",
+    "內"
+  ],
+  [
+    "学",
+    "學"
+  ],
+  [
     "对",
     "對"
   ],
   [
     "将",
     "將"
+  ],
+  [
+    "当",
+    "當"
+  ],
+  [
+    "横",
+    "橫"
+  ],
+  [
+    "残",
+    "殘"
   ],
   [
     "点",

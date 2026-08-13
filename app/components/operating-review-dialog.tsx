@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
-import { runeText, type RuneLocale } from "../lib/localization";
+import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
 import {
   MAX_OPERATING_REVIEW_FOCUS_CHARS,
   MAX_OPERATING_REVIEW_PERIOD_CHARS,
@@ -31,7 +31,7 @@ type OperatingReviewDialogProps = {
   onPrepare: (input: OperatingReviewInput) => void | Promise<void>;
 };
 
-const COPY = {
+export const OPERATING_REVIEW_BASE_COPY = {
   "zh-CN": {
     kicker: "经营汇报 · 任务优先",
     title: "准备一条可核验的经营汇报链",
@@ -141,11 +141,7 @@ const COPY = {
 } as const;
 
 function operatingReviewCopy(locale: RuneLocale) {
-  if (locale === "en") return COPY.en;
-  if (locale === "zh-CN") return COPY["zh-CN"];
-  return Object.fromEntries(Object.entries(COPY["zh-CN"]).map(([key, value]) => (
-    [key, runeText(locale, value, value)]
-  ))) as typeof COPY["zh-CN"];
+  return localizeRuneCopy(locale, OPERATING_REVIEW_BASE_COPY.en, OPERATING_REVIEW_BASE_COPY["zh-CN"]);
 }
 
 function selectedDeliverables(report: boolean, slides: boolean): OperatingReviewDeliverable[] {
