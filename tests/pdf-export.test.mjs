@@ -12,6 +12,9 @@ import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 const fontBytes = new Uint8Array(await readFile(new URL(`../public${RUNE_PDF_FONT_PATH}`, import.meta.url)));
+const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const runeImageId = "c".repeat(64);
+const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
 
 function runtimeSnapshots() {
   return [defaultQuerySnapshot(), defaultSummaryQuerySnapshot()];
@@ -38,6 +41,21 @@ test("exports a deterministic A4 PDF from the default Markdown Document", async 
     assert.ok(Math.abs(width - 595.28) < 0.1);
     assert.ok(Math.abs(height - 841.89) < 0.1);
   });
+});
+
+test("embeds verified Rune local images into fixed Document PDF", async () => {
+  const artifact = { id: "image", name: "image.md", kind: "document", language: "Markdown", source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n` };
+  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
+  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
+  assert.deepEqual(first.bytes, second.bytes);
+  const document = await PDFDocument.load(first.bytes);
+  assert.equal(document.getPageCount(), 1);
+  assert.match(first.warnings.join(" "), /embedded as portable, static PDF image snapshots/iu);
+});
+
+test("fails PDF export closed when a referenced Rune image is missing", async () => {
+  const artifact = { id: "missing", name: "missing.md", kind: "document", language: "Markdown", source: `![Missing](rune-asset:sha256:${runeImageId})` };
+  await assert.rejects(() => exportPdfArtifact(artifact, [artifact], [], fontBytes), /Referenced local image is missing or corrupt/iu);
 });
 
 test("exports one deterministic 16:9 PDF page per Deck Markdown slide", async () => {

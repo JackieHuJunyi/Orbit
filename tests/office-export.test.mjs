@@ -55,6 +55,32 @@ function assertPptSlideBounds(parts) {
     });
 }
 
+const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const runeImageId = "a".repeat(64);
+const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+
+test("embeds verified Rune local images into portable DOCX media", () => {
+  const artifact = {
+    id: "image-report",
+    name: "image-report.md",
+    kind: "document",
+    language: "Markdown",
+    source: `# Image report\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n`,
+  };
+  const exported = exportOfficeArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const parts = packageParts(exported.bytes);
+  assert.deepEqual(parts[`word/media/rune-${runeImageId}.png`], onePixelPng);
+  assert.match(strFromU8(parts["word/document.xml"]), /<w:drawing>/u);
+  assert.match(strFromU8(parts["word/_rels/document.xml.rels"]), /relationships\/image/u);
+  assert.match(strFromU8(parts["[Content_Types].xml"]), /ContentType="image\/png"/u);
+  assert.match(exported.warnings.join(" "), /embedded as portable, static DOCX media/iu);
+});
+
+test("fails DOCX export closed when a referenced Rune image is missing", () => {
+  const artifact = { id: "missing", name: "missing.md", kind: "document", language: "Markdown", source: `![Missing](rune-asset:sha256:${runeImageId})` };
+  assert.throws(() => exportOfficeArtifact(artifact), /Referenced local image is missing or corrupt/iu);
+});
+
 test("exports Markdown as deterministic semantic DOCX and imports it back", () => {
   const artifact = {
     id: "export-report",

@@ -3,6 +3,7 @@ import {
   PDFDocument,
   StandardFonts,
   type PDFFont,
+  type PDFImage,
   type PDFPage,
   rgb,
 } from "pdf-lib";
@@ -10,6 +11,7 @@ import { compileArtifactSource } from "./bindings.ts";
 import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import { extractRuneAssetIds, parseRuneMarkdownImage, runeImageAssetMap, type RuneExportImageAsset } from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
@@ -97,6 +99,35 @@ function plainInline(source: string, warnings: Set<string>) {
     .replace(/\\([\\`*_[\]{}#>+!~<>-])/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+async function pdfCompatibleImage(asset: RuneExportImageAsset) {
+  if (asset.mimeType === "image/png" || asset.mimeType === "image/jpeg") return { bytes: asset.bytes, mimeType: asset.mimeType } as const;
+  if (typeof createImageBitmap !== "function") throw new Error(`PDF export cannot decode ${asset.mimeType} on this device; replace ${asset.name} with PNG or JPEG.`);
+  const bitmap = await createImageBitmap(new Blob([asset.bytes.slice().buffer as ArrayBuffer], { type: asset.mimeType }));
+  try {
+    let blob: Blob;
+    if (typeof OffscreenCanvas !== "undefined") {
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Rune could not prepare the image canvas for PDF export.");
+      context.drawImage(bitmap, 0, 0);
+      blob = await canvas.convertToBlob({ type: "image/png" });
+    } else if (typeof document !== "undefined") {
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Rune could not prepare the image canvas for PDF export.");
+      context.drawImage(bitmap, 0, 0);
+      blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("Rune could not convert the image for PDF export.")), "image/png"));
+    } else {
+      throw new Error(`PDF export cannot decode ${asset.mimeType} on this device; replace ${asset.name} with PNG or JPEG.`);
+    }
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), mimeType: "image/png" as const };
+  } finally {
+    bitmap.close();
+  }
 }
 
 function safeText(value: string, supported: Set<number>, warnings: Set<string>) {
@@ -245,6 +276,7 @@ type DocumentContext = {
   page: PDFPage;
   y: number;
   pages: PDFPage[];
+  images: Map<string, { asset: RuneExportImageAsset; image: PDFImage }>;
 };
 
 function addDocumentPage(context: Omit<DocumentContext, "page" | "y">) {
@@ -270,6 +302,28 @@ function documentSpace(context: DocumentContext, height: number) {
   const next = addDocumentPage(context);
   context.page = next.page;
   context.y = next.y;
+}
+
+function drawDocumentImage(context: DocumentContext, reference: { id: string; alt: string }) {
+  const embedded = context.images.get(reference.id);
+  if (!embedded) throw new Error(`Referenced local image is missing or corrupt: ${reference.id}`);
+  const maxWidth = A4_WIDTH - 96;
+  const maxHeight = A4_HEIGHT - 170;
+  const naturalWidth = embedded.image.width * 0.75;
+  const naturalHeight = embedded.image.height * 0.75;
+  const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+  const width = Math.max(1, naturalWidth * scale);
+  const height = Math.max(1, naturalHeight * scale);
+  const caption = reference.alt || embedded.asset.name;
+  const captionText = safeText(caption, context.supported, context.warnings);
+  const captionFont = fontForText(captionText, context);
+  const captionLines = captionText ? wrapText(captionText, captionFont, { size: 7.5, maxWidth, maxLines: 2 }).lines : [];
+  const totalHeight = height + (captionLines.length ? captionLines.length * 10 + 10 : 8);
+  documentSpace(context, totalHeight);
+  context.page.drawImage(embedded.image, { x: 48 + (maxWidth - width) / 2, y: context.y - height, width, height });
+  context.y -= height + 7;
+  if (captionLines.length) context.y = drawLines(context.page, captionLines, captionFont, 48 + (maxWidth - captionFont.widthOfTextAtSize(captionLines[0], 7.5)) / 2, context.y, 7.5, 10, COLORS.muted) - 7;
+  context.warnings.add("Rune local images are embedded as portable, static PDF image snapshots; the content-hash source reference remains only in canonical Markdown.");
 }
 
 function documentText(
@@ -446,6 +500,7 @@ async function renderDocumentPdf(
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
   fontBytes: Uint8Array,
+  imageAssets: readonly RuneExportImageAsset[],
 ) {
   const warnings = new Set<string>([
     "Document pages use a fixed A4 layout; review page breaks before external handoff.",
@@ -453,8 +508,20 @@ async function renderDocumentPdf(
   ]);
   const source = assertCompiledSource(artifact, workspace, snapshots);
   const { document, font, unicodeFont, supported } = await createPdf(artifact.name, fontBytes);
+  const verifiedImages = runeImageAssetMap(imageAssets);
+  const referencedImageIds = parseMarkdownBlocks(source).flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id)) : []);
+  const inlineImage = extractRuneAssetIds(source).find((id) => !referencedImageIds.includes(id));
+  if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before PDF export.");
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
+  const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
+  for (const [id, asset] of verifiedImages) {
+    const compatible = await pdfCompatibleImage(asset);
+    const image = compatible.mimeType === "image/png" ? await document.embedPng(compatible.bytes) : await document.embedJpg(compatible.bytes);
+    images.set(id, { asset, image });
+  }
   const pages: PDFPage[] = [];
-  const first = addDocumentPage({ document, font, unicodeFont, supported, warnings, artifactName: artifact.name, workspace, snapshots, pages });
+  const first = addDocumentPage({ document, font, unicodeFont, supported, warnings, artifactName: artifact.name, workspace, snapshots, pages, images });
   const context: DocumentContext = {
     document,
     font,
@@ -465,11 +532,17 @@ async function renderDocumentPdf(
     workspace,
     snapshots,
     pages,
+    images,
     page: first.page,
     y: first.y,
   };
   parseMarkdownBlocks(source).forEach((block) => {
     if (block.type === "paragraph") {
+      const imageReference = parseRuneMarkdownImage(block.source);
+      if (imageReference) {
+        drawDocumentImage(context, imageReference);
+        return;
+      }
       const chart = block.source.match(CHART_TOKEN);
       if (chart) drawDocumentChart(context, chart[1]);
       else documentText(context, block.source, { size: 10, lineHeight: 15, color: COLORS.ink, gap: 10 });
@@ -897,13 +970,14 @@ export async function exportPdfArtifact(
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
   providedFontBytes?: Uint8Array,
+  imageAssets: readonly RuneExportImageAsset[] = [],
 ): Promise<PdfExportResult> {
   if (!isPdfExportArtifact(artifact)) throw new Error("Direct PDF export supports Markdown Documents, Data, and Deck Markdown artifacts.");
   const sourceLimit = artifact.kind === "data" ? 2_000_000 : 200_000;
   if (artifact.source.length > sourceLimit) throw new Error(`PDF export is limited to ${sourceLimit.toLocaleString("en-US")} source characters for this artifact.`);
   const fontBytes = providedFontBytes ?? await loadRunePdfFont();
   const rendered = artifact.kind === "document"
-    ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes)
+    ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets)
     : artifact.kind === "data"
       ? await renderDataPdf(artifact, fontBytes)
       : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes);

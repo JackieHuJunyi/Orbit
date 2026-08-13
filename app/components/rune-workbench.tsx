@@ -1964,7 +1964,7 @@ export function RuneWorkbench() {
     setDirectoryState("syncing");
     try {
       const localAssets = await collectWorkspaceLocalAssets(artifacts);
-      const written = await writeWorkspaceDirectory(directoryHandle, artifacts, localAssets);
+      await writeWorkspaceDirectory(directoryHandle, artifacts, localAssets);
       setDirectoryState("connected");
       setNotice(`Pushed ${artifacts.length} source files${localAssets.length ? ` and ${localAssets.length} local images` : ""} with rune.workspace.json to ${directoryHandle.name}`);
     } catch (error) {
@@ -2981,6 +2981,9 @@ export function RuneWorkbench() {
         const truncated = querySnapshots.find((snapshot) => snapshot.result.truncated);
         if (truncated) throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its consumers.`);
       }
+      const imageAssets = targetArtifact.kind === "document" && extractRuneAssetIds(targetArtifact.source).length
+        ? await collectWorkspaceLocalAssets([targetArtifact])
+        : [];
       if (destination === "csv" || destination === "json") {
         const { exportPortableDataArtifact } = await import("../lib/data-export");
         result = exportPortableDataArtifact(targetArtifact, destination);
@@ -2997,10 +3000,10 @@ export function RuneWorkbench() {
         const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
         if (destination === "odf") {
           const { exportOdfArtifact } = await import("../lib/odf-export");
-          result = exportOdfArtifact(exportArtifact, baseArtifacts, querySnapshots);
+          result = exportOdfArtifact(exportArtifact, baseArtifacts, querySnapshots, imageAssets);
         } else {
           const { exportOfficeArtifact } = await import("../lib/office-export");
-          const modernResult = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
+          const modernResult = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots, imageAssets);
           if (destination === "legacy-office") {
             const { exportLegacyOfficeFile } = await import("../lib/desktop-bridge");
             const legacy = await exportLegacyOfficeFile({ bytes: modernResult.bytes, fileName: modernResult.fileName });
@@ -3024,7 +3027,7 @@ export function RuneWorkbench() {
         result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots);
       } else {
         const { exportPdfArtifact } = await import("../lib/pdf-export");
-        result = await exportPdfArtifact(targetArtifact, baseArtifacts, querySnapshots);
+        result = await exportPdfArtifact(targetArtifact, baseArtifacts, querySnapshots, undefined, imageAssets);
       }
       setPendingExport({ sourceArtifactName: targetArtifact.name, baseArtifacts, result });
       setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
@@ -3193,7 +3196,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.75</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.76</strong></footer>
               </div>
             )}
           </div>

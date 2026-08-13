@@ -3,6 +3,7 @@ import { strToU8, zipSync, type Zippable } from "fflate";
 import { resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import { extractRuneAssetIds, parseRuneMarkdownImage, runeImageAssetMap, runeImageDimensions, runeImageExtension, type RuneExportImageAsset } from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
@@ -85,24 +86,27 @@ function xmlAttribute(value: string) {
   return xmlText(value).replaceAll('"', "&quot;").replaceAll("'", "&apos;");
 }
 
-function manifest(kind: OdfExportKind) {
+function manifest(kind: OdfExportKind, images: Iterable<{ path: string; asset: RuneExportImageAsset }> = []) {
   const mime = ODF_MIME_TYPES[kind];
-  return `${XML_DECLARATION}<manifest:manifest xmlns:manifest="${MANIFEST_NS}" manifest:version="${ODF_VERSION}"><manifest:file-entry manifest:full-path="/" manifest:version="${ODF_VERSION}" manifest:media-type="${mime}"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/></manifest:manifest>`;
+  const imageEntries = [...images].map(({ path, asset }) => `<manifest:file-entry manifest:full-path="${xmlAttribute(path)}" manifest:media-type="${asset.mimeType}"/>`).join("");
+  return `${XML_DECLARATION}<manifest:manifest xmlns:manifest="${MANIFEST_NS}" manifest:version="${ODF_VERSION}"><manifest:file-entry manifest:full-path="/" manifest:version="${ODF_VERSION}" manifest:media-type="${mime}"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/>${imageEntries}</manifest:manifest>`;
 }
 
 function metaXml(title: string) {
   return `${XML_DECLARATION}<office:document-meta ${namespaces()} office:version="${ODF_VERSION}"><office:meta><meta:generator>Rune</meta:generator><dc:title>${xmlText(title)}</dc:title><dc:creator>Rune</dc:creator></office:meta></office:document-meta>`;
 }
 
-function packageOdf(kind: OdfExportKind, title: string, content: string, styles: string) {
+function packageOdf(kind: OdfExportKind, title: string, content: string, styles: string, images = new Map<string, RuneExportImageAsset>()) {
   const timestamp = new Date(Date.UTC(1980, 0, 1));
+  const packagedImages = [...images.values()].map((asset) => ({ path: `Pictures/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`, asset }));
   const files: Zippable = {
     mimetype: [strToU8(ODF_MIME_TYPES[kind]), { level: 0, mtime: timestamp }],
     "content.xml": [strToU8(content), { level: 6, mtime: timestamp }],
     "styles.xml": [strToU8(styles), { level: 6, mtime: timestamp }],
     "meta.xml": [strToU8(metaXml(title)), { level: 6, mtime: timestamp }],
-    "META-INF/manifest.xml": [strToU8(manifest(kind)), { level: 6, mtime: timestamp }],
+    "META-INF/manifest.xml": [strToU8(manifest(kind, packagedImages)), { level: 6, mtime: timestamp }],
   };
+  packagedImages.forEach(({ path, asset }) => { files[path] = [asset.bytes, { level: 6, mtime: timestamp }]; });
   const bytes = zipSync(files, { level: 6, mtime: timestamp });
   if (bytes.length > MAX_ODF_EXPORT_BYTES) throw new Error("The generated OpenDocument package exceeds Rune's 12 MB export limit.");
   return bytes;
@@ -243,7 +247,7 @@ function listStyles() {
 }
 
 function textStylesXml() {
-  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}</office:styles><office:automatic-styles><style:page-layout style:name="RunePage"><style:page-layout-properties fo:page-width="8.27in" fo:page-height="11.69in" style:print-orientation="portrait" fo:margin="0.7in"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RunePage"/></office:master-styles></office:document-styles>`;
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="RuneImage" style:family="graphic"><style:graphic-properties style:horizontal-pos="center" style:horizontal-rel="paragraph" style:vertical-pos="top" style:vertical-rel="paragraph" style:wrap="none"/></style:style><style:style style:name="RuneImageCaption" style:family="paragraph"><style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.12in"/><style:text-properties fo:font-size="9pt" fo:font-style="italic" fo:color="#627068"/></style:style></office:styles><office:automatic-styles><style:page-layout style:name="RunePage"><style:page-layout-properties fo:page-width="8.27in" fo:page-height="11.69in" style:print-orientation="portrait" fo:margin="0.7in"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RunePage"/></office:master-styles></office:document-styles>`;
 }
 
 function blockToOdt(
@@ -252,6 +256,7 @@ function blockToOdt(
   warnings: Set<string>,
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
+  images: Map<string, RuneExportImageAsset>,
 ) {
   if (block.type === "heading") return `<text:h text:style-name="${block.level === 1 ? "RuneTitle" : `RuneHeading${Math.min(6, block.level)}`}" text:outline-level="${Math.min(6, block.level)}">${odfInline(block.source, warnings)}</text:h>`;
   if (block.type === "quote") return `<text:p text:style-name="RuneQuote">${odfInline(block.source, warnings)}</text:p>`;
@@ -261,6 +266,22 @@ function blockToOdt(
     warnings.add("Fenced Markdown code was exported as preformatted OpenDocument text.");
     return `<text:p text:style-name="RuneCodeBlock">${xmlText(block.source).replaceAll("\n", "<text:line-break/>") || " "}</text:p>`;
   }
+  const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
+  if (imageReference) {
+    const asset = images.get(imageReference.id);
+    if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
+    const path = `Pictures/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`;
+    const alt = imageReference.alt || asset.name || "Rune image";
+    const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
+    if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${asset.id}`);
+    const naturalWidth = dimensions.width / 96;
+    const naturalHeight = dimensions.height / 96;
+    const scale = Math.min(6.2 / naturalWidth, 9 / naturalHeight, 1);
+    const width = Math.max(0.01, naturalWidth * scale);
+    const height = Math.max(0.01, naturalHeight * scale);
+    warnings.add("Rune local images are embedded as portable, static ODT pictures; the content-hash source reference remains only in canonical Markdown.");
+    return `<draw:frame draw:style-name="RuneImage" draw:name="${xmlAttribute(alt)}" text:anchor-type="paragraph" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="${asset.mimeType}"/><svg:title>${xmlText(alt)}</svg:title></draw:frame><text:p text:style-name="RuneImageCaption">${xmlText(alt)}</text:p>`;
+  }
   const chartId = block.source.match(EXACT_CHART_TOKEN)?.[1];
   if (chartId) {
     const chart = resolveOdfChart(chartId, workspace, snapshots, warnings);
@@ -269,16 +290,22 @@ function blockToOdt(
   return `<text:p>${odfInline(block.source, warnings)}</text:p>`;
 }
 
-function exportOdt(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[]): OdfExportResult {
+function exportOdt(artifact: WorkspaceArtifact, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[], imageAssets: readonly RuneExportImageAsset[]): OdfExportResult {
   if (artifact.source.length > MAX_ODT_SOURCE_CHARS) throw new Error("ODT export is limited to 200,000 source characters.");
   const warnings = new Set<string>();
+  const images = runeImageAssetMap(imageAssets);
   const blocks = parseMarkdownBlocks(artifact.source);
+  const referencedImageIds = blocks.flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id)) : []);
+  const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
+  if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before ODT export.");
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
   if (blocks.length > MAX_ODT_BLOCKS) throw new Error("ODT export is limited to 10,000 semantic blocks.");
-  const body = blocks.map((block, index) => blockToOdt(block, index, warnings, workspace, snapshots)).join("") || "<text:p/>";
+  const body = blocks.map((block, index) => blockToOdt(block, index, warnings, workspace, snapshots, images)).join("") || "<text:p/>";
   warnings.add("ODT export preserves semantic structure; page layout, comments, tracked changes, and advanced word-processor styling are not generated.");
   const title = safeExportBaseName(artifact.name);
   const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:text>${body}</office:text></office:body></office:document-content>`;
-  return { bytes: packageOdf("odt", title, content, textStylesXml()), fileName: `${title}.odt`, mimeType: ODF_MIME_TYPES.odt, warnings: [...warnings], targetType: "odt" };
+  return { bytes: packageOdf("odt", title, content, textStylesXml(), images), fileName: `${title}.odt`, mimeType: ODF_MIME_TYPES.odt, warnings: [...warnings], targetType: "odt" };
 }
 
 function odsCell(value: DataCell, styleName: string) {
@@ -397,10 +424,11 @@ export function exportOdfArtifact(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[] = [],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
+  imageAssets: readonly RuneExportImageAsset[] = [],
 ): OdfExportResult {
   if (!artifact.source.trim()) throw new Error("The source is empty.");
   if (artifact.source.length > MAX_ODF_EXPORT_SOURCE_CHARS) throw new Error("OpenDocument export is limited to 2,000,000 source characters.");
-  if (artifact.kind === "document") return exportOdt(artifact, workspace, querySnapshots);
+  if (artifact.kind === "document") return exportOdt(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportOds(artifact);
   if (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md")) return exportOdp(artifact, workspace, querySnapshots);
   throw new Error("OpenDocument export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");

@@ -2,6 +2,7 @@ import { strToU8, zipSync } from "fflate";
 import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
+import { extractRuneAssetIds, parseRuneMarkdownImage, runeImageAssetMap, runeImageDimensions, runeImageExtension, type RuneExportImageAsset } from "./local-assets.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
@@ -31,10 +32,13 @@ type InlineSegment = {
 };
 
 type DocxContext = {
-  relationships: Array<{ id: string; target: string }>;
+  relationships: Array<{ id: string; target: string; kind: "hyperlink" | "image" }>;
   warnings: Set<string>;
   workspace: WorkspaceArtifact[];
   querySnapshots: WorkspaceQuerySnapshot[];
+  images: Map<string, RuneExportImageAsset>;
+  usedImages: Map<string, { relationshipId: string; fileName: string; asset: RuneExportImageAsset }>;
+  drawingId: number;
 };
 
 type PptParagraph = { text: string; bullet: boolean; level: number };
@@ -72,8 +76,8 @@ function xmlAttribute(value: string) {
   return xmlText(value).replaceAll('"', "&quot;").replaceAll("'", "&apos;");
 }
 
-function zipPackage(parts: Record<string, string>) {
-  const encoded = Object.fromEntries(Object.entries(parts).map(([path, source]) => [path, strToU8(source)]));
+function zipPackage(parts: Record<string, string | Uint8Array>) {
+  const encoded = Object.fromEntries(Object.entries(parts).map(([path, source]) => [path, typeof source === "string" ? strToU8(source) : source]));
   const bytes = zipSync(encoded, {
     level: 6,
     mtime: new Date(Date.UTC(1980, 0, 1)),
@@ -305,9 +309,36 @@ function docxInline(source: string, context: DocxContext) {
   return inlineSegments(source, context.warnings).map((segment) => {
     if (!segment.link) return docxRun(segment);
     const id = `rId${context.relationships.length + 3}`;
-    context.relationships.push({ id, target: segment.link });
+    context.relationships.push({ id, target: segment.link, kind: "hyperlink" });
     return `<w:hyperlink r:id="${id}" w:history="1">${docxRun(segment)}</w:hyperlink>`;
   }).join("") || '<w:r><w:t xml:space="preserve"> </w:t></w:r>';
+}
+
+function docxImage(reference: { id: string; alt: string }, context: DocxContext) {
+  const asset = context.images.get(reference.id);
+  if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${reference.id}`);
+  let used = context.usedImages.get(reference.id);
+  if (!used) {
+    const relationshipId = `rId${context.relationships.length + 3}`;
+    const fileName = `rune-${reference.id}.${runeImageExtension(asset.mimeType)}`;
+    used = { relationshipId, fileName, asset };
+    context.usedImages.set(reference.id, used);
+    context.relationships.push({ id: relationshipId, target: `media/${fileName}`, kind: "image" });
+  }
+  const description = reference.alt || asset.name || "Rune image";
+  const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
+  if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${asset.id}`);
+  const maxWidth = 5_486_400;
+  const maxHeight = 7_086_600;
+  const naturalWidth = dimensions.width * 9_525;
+  const naturalHeight = dimensions.height * 9_525;
+  const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+  const width = Math.max(1, Math.round(naturalWidth * scale));
+  const height = Math.max(1, Math.round(naturalHeight * scale));
+  context.drawingId += 1;
+  const drawingId = context.drawingId;
+  context.warnings.add("Rune local images are embedded as portable, static DOCX media; the content-hash source reference remains only in canonical Markdown.");
+  return `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="160"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${xmlAttribute(description)}" descr="${xmlAttribute(description)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${xmlAttribute(used.fileName)}" descr="${xmlAttribute(description)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${used.relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 
 function docxParagraph(source: string, context: DocxContext, options: { style?: string; ordered?: boolean; level?: number } = {}) {
@@ -371,11 +402,17 @@ function exportDocx(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
+  imageAssets: readonly RuneExportImageAsset[],
 ): OfficeExportResult {
   if (artifact.source.length > MAX_DOCX_EXPORT_SOURCE_CHARS) throw new Error("DOCX export is limited to 200,000 source characters.");
   const warnings = new Set<string>();
-  const context: DocxContext = { relationships: [], warnings, workspace, querySnapshots };
+  const context: DocxContext = { relationships: [], warnings, workspace, querySnapshots, images: runeImageAssetMap(imageAssets), usedImages: new Map(), drawingId: 0 };
   const blocks = parseMarkdownBlocks(artifact.source);
+  const referencedImageIds = blocks.flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id)) : []);
+  const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
+  if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before DOCX export.");
+  const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
+  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
   if (blocks.length > MAX_DOCX_EXPORT_BLOCKS) throw new Error("DOCX export is limited to 10,000 semantic blocks.");
   const body = blocks.map((block) => {
     if (block.type === "heading") return docxParagraph(block.source, context, { style: block.level === 1 ? "Title" : `Heading${Math.min(6, block.level)}` });
@@ -388,6 +425,8 @@ function exportDocx(
       const runs = lines.map((line, index) => `${index ? "<w:r><w:br/></w:r>" : ""}<w:r><w:rPr><w:rStyle w:val="Code"/></w:rPr><w:t xml:space="preserve">${xmlText(line || " ")}</w:t></w:r>`).join("");
       return `<w:p><w:pPr><w:pStyle w:val="CodeBlock"/></w:pPr>${runs}</w:p>`;
     }
+    const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
+    if (imageReference) return docxImage(imageReference, context);
     const chartReference = block.source.match(EXACT_CHART_TOKEN)?.[1];
     if (chartReference) {
       const chart = resolveOfficeChart(chartReference, context.workspace, warnings, context.querySnapshots);
@@ -396,18 +435,23 @@ function exportDocx(
     return docxParagraph(block.source, context);
   }).join("") || "<w:p/>";
   warnings.add("DOCX export preserves semantic structure; page layout, comments, and advanced Word styling are not generated.");
-  const hyperlinkRelationships = context.relationships.map((relationship) => `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/hyperlink" Target="${xmlAttribute(relationship.target)}" TargetMode="External"/>`).join("");
+  const documentRelationships = context.relationships.map((relationship) => relationship.kind === "image"
+    ? `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/image" Target="${xmlAttribute(relationship.target)}"/>`
+    : `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/hyperlink" Target="${xmlAttribute(relationship.target)}" TargetMode="External"/>`).join("");
   const title = safeExportBaseName(artifact.name);
-  const parts = {
-    "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
+  const imageDefaults = [...new Map([...context.usedImages.values()].map(({ asset }) => [runeImageExtension(asset.mimeType), asset.mimeType] as const))]
+    .map(([extension, mimeType]) => `<Default Extension="${extension}" ContentType="${mimeType}"/>`).join("");
+  const parts: Record<string, string | Uint8Array> = {
+    "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageDefaults}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     "_rels/.rels": rootRelationships("word/document.xml"),
     "docProps/core.xml": coreProperties(title),
     "docProps/app.xml": appProperties("Pages"),
     "word/document.xml": `${XML_DECLARATION}<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`,
     "word/styles.xml": docxStyles(),
     "word/numbering.xml": docxNumbering(),
-    "word/_rels/document.xml.rels": `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/numbering" Target="numbering.xml"/>${hyperlinkRelationships}</Relationships>`,
+    "word/_rels/document.xml.rels": `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/numbering" Target="numbering.xml"/>${documentRelationships}</Relationships>`,
   };
+  context.usedImages.forEach(({ fileName, asset }) => { parts[`word/media/${fileName}`] = asset.bytes; });
   return {
     bytes: zipPackage(parts),
     fileName: `${title}.docx`,
@@ -737,10 +781,11 @@ export function exportOfficeArtifact(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[] = [],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
+  imageAssets: readonly RuneExportImageAsset[] = [],
 ): OfficeExportResult {
   if (!artifact.source.trim()) throw new Error("The source is empty.");
   if (artifact.source.length > MAX_OFFICE_EXPORT_SOURCE_CHARS) throw new Error("Office export is limited to 2,000,000 source characters.");
-  if (artifact.kind === "document") return exportDocx(artifact, workspace, querySnapshots);
+  if (artifact.kind === "document") return exportDocx(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportXlsx(artifact);
   if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md")) return exportPptx(artifact, workspace, querySnapshots);
   throw new Error("Office export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");

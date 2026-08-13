@@ -41,6 +41,25 @@ function packageParts(bytes) {
   return parts;
 }
 
+const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const runeImageId = "b".repeat(64);
+const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+
+test("embeds verified Rune local images into portable ODT pictures", () => {
+  const artifact = { id: "image", name: "image.md", kind: "document", language: "Markdown", source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n` };
+  const exported = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const parts = packageParts(exported.bytes);
+  assert.deepEqual(parts[`Pictures/rune-${runeImageId}.png`], onePixelPng);
+  assert.match(strFromU8(parts["content.xml"]), new RegExp(`Pictures/rune-${runeImageId}\\.png`, "u"));
+  assert.match(strFromU8(parts["META-INF/manifest.xml"]), /manifest:media-type="image\/png"/u);
+  assert.match(exported.warnings.join(" "), /embedded as portable, static ODT pictures/iu);
+});
+
+test("fails ODT export closed when a referenced Rune image is missing", () => {
+  const artifact = { id: "missing", name: "missing.md", kind: "document", language: "Markdown", source: `![Missing](rune-asset:sha256:${runeImageId})` };
+  assert.throws(() => exportOdfArtifact(artifact), /Referenced local image is missing or corrupt/iu);
+});
+
 test("exports deterministic ODT with semantic Markdown and imports it back", () => {
   const artifact = {
     id: "report",

@@ -2080,4 +2080,12 @@ Pull 必须证明三件事才会替换设备工作区：每个 source 引用恰�
 
 Push 反向执行同一证明：先收集所有 source reference，从 IndexedDB 重新读取并校验 bytes；缺失或损坏时不写任何文件。资源通过后先写 `.rune-assets`，再写普通 source，最后写 manifest；由于 File System Access 没有跨文件事务，Rune 仍诚实报告中断位置，不宣称整个目录写入是原子的，也不删除不再引用或非 Rune 文件。到这里图片可以随用户文件夹跨浏览器/设备搬运，但 Office/ODF/PDF embed 仍留给下一里程碑。
 
+## 81. v0.76 导出必须携带资源，而不是携带本机地址
+
+预览使用的 `blob:` URL 只在当前页面当前会话有效，不能进入交付文件；`rune-asset:` 则是 canonical identity，也不是 Word、OpenDocument 或 PDF 能直接读取的地址。v0.76 因此在用户选择导出时只收集目标 Document 实际引用的资源，从 IndexedDB 重新验证大小、magic bytes 与 SHA-256，再把同一 bytes 交给格式编译器。缺失、损坏、重复或未被目标文档引用的资源都会在生成下载前失败，不能退化成看似成功的缺图文件。
+
+DOCX 将图片写入 `word/media`，生成内部 image relationship、content type 和带 alt description 的 DrawingML；ODT 将图片写入 `Pictures`，同步 manifest media entry，并以带 title/caption 的 frame 引用；PDF 对 PNG/JPEG 直接嵌入，对 WebP/GIF 仅在当前浏览器本机解码为静态 PNG，然后按 A4 可用区域等比缩放并保留可读 caption。三种输出都继续经过既有 fidelity review 和一次明确下载确认，canonical Markdown、hash identity 与工作区状态完全不变。
+
+这一里程碑只覆盖当前已经允许插图的 Markdown Document。Deck Markdown 尚未开放图片语法，因此 PPTX、ODP 与 standalone slide HTML 不伪装支持；外部 `https:` 图片也不会在导出时联网抓取。后续若为演示加入图片，必须先在 Deck grammar、source-to-preview mapping、PPTX/ODP/HTML/PDF 布局和导入回环中建立同一个可证明合同，而不是只给某一种格式打补丁。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

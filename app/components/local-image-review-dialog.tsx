@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, HardDrive, Image as ImageIcon, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Check, HardDrive, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PreparedRuneImageAsset, RuneImageInsertion } from "../lib/local-assets";
 import type { RuneLocale } from "../lib/localization";
@@ -31,6 +31,17 @@ function readableBytes(bytes: number) {
   return `${(bytes / 1_048_576).toFixed(1)} MB`;
 }
 
+function LocalImagePreview({ asset }: { asset: PreparedRuneImageAsset }) {
+  const [previewUrl] = useState(() => {
+    const bytes = asset.bytes.slice().buffer as ArrayBuffer;
+    return URL.createObjectURL(new Blob([bytes], { type: asset.mimeType }));
+  });
+  useEffect(() => () => URL.revokeObjectURL(previewUrl), [previewUrl]);
+  // Rune has already verified these device-local bytes; a framework image optimizer would cross the local-only boundary.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={previewUrl} alt="" />;
+}
+
 export function LocalImageReviewDialog({
   asset,
   artifactName,
@@ -54,13 +65,6 @@ export function LocalImageReviewDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const [previewUrl, setPreviewUrl] = useState("");
-  useEffect(() => {
-    const bytes = asset.bytes.slice().buffer as ArrayBuffer;
-    const url = URL.createObjectURL(new Blob([bytes], { type: asset.mimeType }));
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [asset]);
   const copy = localImageCopy(locale);
   const title = copy.title;
   return (
@@ -87,7 +91,7 @@ export function LocalImageReviewDialog({
     >
       <div className="local-image-review-grid">
         <figure>
-          {previewUrl ? <img src={previewUrl} alt="" /> : <ImageIcon aria-hidden="true" />}
+          <LocalImagePreview key={asset.id} asset={asset} />
           <figcaption><strong>{asset.name}</strong><span>{asset.mimeType.replace("image/", "").toUpperCase()} · {readableBytes(asset.size)}</span></figcaption>
         </figure>
         <div className="local-image-review-fields">

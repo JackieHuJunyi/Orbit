@@ -21,6 +21,10 @@ export type RuneImageInsertion = {
   end: number;
 };
 
+export type RuneExportImageAsset = Pick<PreparedRuneImageAsset, "id" | "name" | "mimeType" | "size" | "bytes">;
+
+export type RuneImageDimensions = { width: number; height: number };
+
 type RuneLocalAssetRecord = Omit<PreparedRuneImageAsset, "bytes"> & {
   blob: Blob;
   createdAt: string;
@@ -86,6 +90,13 @@ export function parseRuneAssetReference(value: unknown): string | null {
   return SHA256_ID.test(id) ? id : null;
 }
 
+export function parseRuneMarkdownImage(source: string) {
+  const match = source.match(/^\s*!\[((?:\\.|[^\]])*)\]\(\s*(rune-asset:sha256:[0-9a-f]{64})\s*\)\s*$/u);
+  if (!match) return null;
+  const id = parseRuneAssetReference(match[2]);
+  return id ? { id, alt: match[1].replace(/\\([\\`*_[\]{}#>+!~<>-])/gu, "$1").trim() } : null;
+}
+
 export function extractRuneAssetIds(source: string) {
   const ids: string[] = [];
   const seen = new Set<string>();
@@ -98,6 +109,72 @@ export function extractRuneAssetIds(source: string) {
     }
   }
   return ids;
+}
+
+export function runeImageExtension(mimeType: RuneImageMimeType) {
+  return mimeType === "image/png" ? "png" : mimeType === "image/jpeg" ? "jpg" : mimeType === "image/webp" ? "webp" : "gif";
+}
+
+function uint16Le(bytes: Uint8Array, offset: number) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+
+function uint24Le(bytes: Uint8Array, offset: number) {
+  return bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16);
+}
+
+function uint32Be(bytes: Uint8Array, offset: number) {
+  return ((bytes[offset] * 0x1_000_000) + (bytes[offset + 1] << 16) + (bytes[offset + 2] << 8) + bytes[offset + 3]) >>> 0;
+}
+
+export function runeImageDimensions(bytes: Uint8Array, mimeType = detectRuneImageMimeType(bytes)): RuneImageDimensions | null {
+  let dimensions: RuneImageDimensions | null = null;
+  if (mimeType === "image/png" && bytes.length >= 24) {
+    dimensions = { width: uint32Be(bytes, 16), height: uint32Be(bytes, 20) };
+  } else if (mimeType === "image/gif" && bytes.length >= 10) {
+    dimensions = { width: uint16Le(bytes, 6), height: uint16Le(bytes, 8) };
+  } else if (mimeType === "image/webp" && bytes.length >= 30) {
+    const kind = String.fromCharCode(...bytes.slice(12, 16));
+    if (kind === "VP8X") dimensions = { width: uint24Le(bytes, 24) + 1, height: uint24Le(bytes, 27) + 1 };
+    else if (kind === "VP8L" && bytes[20] === 0x2f) dimensions = {
+      width: 1 + bytes[21] + ((bytes[22] & 0x3f) << 8),
+      height: 1 + (bytes[22] >> 6) + (bytes[23] << 2) + ((bytes[24] & 0x0f) << 10),
+    };
+    else if (kind === "VP8 " && bytes[23] === 0x9d && bytes[24] === 0x01 && bytes[25] === 0x2a) dimensions = {
+      width: uint16Le(bytes, 26) & 0x3fff,
+      height: uint16Le(bytes, 28) & 0x3fff,
+    };
+  } else if (mimeType === "image/jpeg") {
+    let offset = 2;
+    while (offset + 8 < bytes.length) {
+      if (bytes[offset] !== 0xff) { offset += 1; continue; }
+      const marker = bytes[offset + 1];
+      if (marker === 0xda || marker === 0xd9) break;
+      if (marker === 0x00 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { offset += 2; continue; }
+      const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+      if (length < 2 || offset + 2 + length > bytes.length) break;
+      if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker) && length >= 7) {
+        dimensions = { height: (bytes[offset + 5] << 8) | bytes[offset + 6], width: (bytes[offset + 7] << 8) | bytes[offset + 8] };
+        break;
+      }
+      offset += 2 + length;
+    }
+  }
+  return dimensions && dimensions.width > 0 && dimensions.height > 0 && dimensions.width <= 32_768 && dimensions.height <= 32_768 ? dimensions : null;
+}
+
+export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) {
+  const byId = new Map<string, RuneExportImageAsset>();
+  for (const asset of assets) {
+    if (!SHA256_ID.test(asset.id)) throw new Error("Rune export image identity must be one lowercase SHA-256 digest.");
+    if (byId.has(asset.id)) throw new Error(`Rune export image is duplicated: ${asset.id}`);
+    const detected = detectRuneImageMimeType(asset.bytes);
+    if (!detected || detected !== asset.mimeType || !runeImageDimensions(asset.bytes, detected) || asset.size !== asset.bytes.length || !asset.bytes.length || asset.bytes.length > MAX_RUNE_IMAGE_BYTES) {
+      throw new Error(`Rune export image is invalid: ${asset.id}`);
+    }
+    byId.set(asset.id, asset);
+  }
+  return byId;
 }
 
 export function buildRuneImageInsertion(source: string, offset: number, alt: string, assetId: string): RuneImageInsertion {

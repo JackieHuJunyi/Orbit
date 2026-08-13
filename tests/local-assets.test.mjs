@@ -11,8 +11,10 @@ import {
   MAX_RUNE_LOCAL_IMAGE_BYTES,
   MAX_RUNE_LOCAL_IMAGES,
   parseRuneAssetReference,
+  parseRuneMarkdownImage,
   prepareRuneImageAsset,
   runeImageAltFromName,
+  runeImageDimensions,
 } from "../app/lib/local-assets.ts";
 
 const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 1, 2, 3]);
@@ -71,5 +73,18 @@ test("parses strict references, deduplicates source identities, and keeps alt te
   assert.equal(parseRuneAssetReference(`rune-asset:${first}`), null);
   assert.equal(parseRuneAssetReference(`rune-asset:sha256:${letters.toUpperCase()}`), null);
   assert.deepEqual(extractRuneAssetIds(`${first}\nrune-asset:sha256:${first}\nrune-asset:sha256:${second}\nrune-asset:sha256:${first}`), [first, second]);
+  assert.deepEqual(parseRuneMarkdownImage(`  ![Q2 \\[view\\]](rune-asset:sha256:${first})  `), { id: first, alt: "Q2 [view]" });
+  assert.equal(parseRuneMarkdownImage(`Before ![Q2](rune-asset:sha256:${first})`), null);
   assert.equal(runeImageAltFromName("  Product   hero.JPEG  "), "Product hero");
+});
+
+test("reads bounded image dimensions from portable headers", () => {
+  const pngHeader = new Uint8Array(24);
+  pngHeader.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  pngHeader.set([0, 0, 0x06, 0x40, 0, 0, 0x03, 0x84], 16);
+  assert.deepEqual(runeImageDimensions(pngHeader), { width: 1600, height: 900 });
+
+  const gifHeader = Uint8Array.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x20, 0x03, 0x58, 0x02]);
+  assert.deepEqual(runeImageDimensions(gifHeader), { width: 800, height: 600 });
+  assert.equal(runeImageDimensions(png), null);
 });
