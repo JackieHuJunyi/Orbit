@@ -2798,6 +2798,64 @@ button.transaction-node:hover,
   padding-left: 18px;
 }
 
+.saved-review-list {
+  display: grid;
+  gap: 6px;
+  padding: 10px 10px 0;
+  border-top: 1px solid rgba(30, 30, 35, .08);
+}
+
+.saved-review-list .artifact-group-label {
+  padding: 0 2px 4px;
+}
+
+.saved-review-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 24px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .44);
+  color: var(--ink);
+  text-align: left;
+}
+
+.saved-review-row:hover:not(:disabled),
+.saved-review-row:focus-visible {
+  border-color: rgba(220, 75, 54, .22);
+  background: rgba(255, 255, 255, .9);
+}
+
+.saved-review-row > svg:first-child {
+  width: 16px;
+  color: var(--accent);
+}
+
+.saved-review-row > svg:last-child {
+  width: 12px;
+  color: var(--subtle);
+}
+
+.saved-review-row span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.saved-review-row strong,
+.saved-review-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-review-row strong { font-size: 10px; }
+.saved-review-row small { color: var(--subtle); font-size: 8px; }
+.saved-review-row:disabled { opacity: .52; }
+
 .new-artifact-form {
   display: grid;
   gap: 16px;

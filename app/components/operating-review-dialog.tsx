@@ -26,6 +26,7 @@ type OperatingReviewDialogProps = {
   artifacts: WorkspaceArtifact[];
   locale: RuneLocale;
   error?: string;
+  initialInput?: OperatingReviewInput;
   onCancel: () => void;
   onPrepare: (input: OperatingReviewInput) => void | Promise<void>;
 };
@@ -73,6 +74,10 @@ const COPY = {
     cancel: "取消",
     preparing: "正在验证来源…",
     prepare: "准备审核",
+    update: "准备更新审核",
+    savedDescription: "调整本期范围后重新编译既有分析、图表和成品。文件身份保持不变，所有变化仍需审核。",
+    savedKicker: "已保存任务 · 可重复运行",
+    savedTitle: "更新这条经营汇报任务",
     footer: "一次原子事务 · 不上传本地文件",
     localErrors: "请先检查以下设置：",
     chain: "交付链",
@@ -122,6 +127,10 @@ const COPY = {
     cancel: "Cancel",
     preparing: "Verifying sources…",
     prepare: "Prepare review",
+    update: "Prepare update review",
+    savedDescription: "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.",
+    savedKicker: "Saved task · repeatable",
+    savedTitle: "Update this operating-review task",
     footer: "One atomic transaction · no local file upload",
     localErrors: "Check these settings first:",
     chain: "Delivery chain",
@@ -140,22 +149,23 @@ export function OperatingReviewDialog({
   artifacts,
   locale,
   error,
+  initialInput,
   onCancel,
   onPrepare,
 }: OperatingReviewDialogProps) {
   const copy = COPY[locale];
-  const [title, setTitle] = useState("");
-  const [sourceArtifactId, setSourceArtifactId] = useState("");
-  const [category, setCategory] = useState("");
-  const [value, setValue] = useState("");
-  const [aggregation, setAggregation] = useState<OperatingReviewInput["aggregation"]>("sum");
-  const [mark, setMark] = useState<OperatingReviewInput["mark"]>("bar");
-  const [format, setFormat] = useState<OperatingReviewInput["format"]>("currency");
-  const [period, setPeriod] = useState("");
-  const [audience, setAudience] = useState<OperatingReviewInput["audience"]>("leadership");
-  const [focus, setFocus] = useState("");
-  const [includeReport, setIncludeReport] = useState(true);
-  const [includeSlides, setIncludeSlides] = useState(true);
+  const [title, setTitle] = useState(initialInput?.title ?? "");
+  const [sourceArtifactId, setSourceArtifactId] = useState(initialInput?.dataArtifactId ?? "");
+  const [category, setCategory] = useState(initialInput?.category ?? "");
+  const [value, setValue] = useState(initialInput?.value ?? "");
+  const [aggregation, setAggregation] = useState<OperatingReviewInput["aggregation"]>(initialInput?.aggregation ?? "sum");
+  const [mark, setMark] = useState<OperatingReviewInput["mark"]>(initialInput?.mark ?? "bar");
+  const [format, setFormat] = useState<OperatingReviewInput["format"]>(initialInput?.format ?? "currency");
+  const [period, setPeriod] = useState(initialInput?.period ?? "");
+  const [audience, setAudience] = useState<OperatingReviewInput["audience"]>(initialInput?.audience ?? "leadership");
+  const [focus, setFocus] = useState(initialInput?.focus ?? "");
+  const [includeReport, setIncludeReport] = useState(initialInput?.deliverables.includes("document") ?? true);
+  const [includeSlides, setIncludeSlides] = useState(initialInput?.deliverables.includes("slides") ?? true);
   const [attempted, setAttempted] = useState(false);
   const [preparing, setPreparing] = useState(false);
 
@@ -248,9 +258,9 @@ export function OperatingReviewDialog({
   return (
     <ReviewDialog
       dialogId="operating-review"
-      kicker={<><BarChart3 aria-hidden="true" /> {copy.kicker}</>}
-      title={copy.title}
-      description={copy.description}
+      kicker={<><BarChart3 aria-hidden="true" /> {initialInput ? copy.savedKicker : copy.kicker}</>}
+      title={initialInput ? copy.savedTitle : copy.title}
+      description={initialInput ? copy.savedDescription : copy.description}
       detailsLabel={copy.details}
       locale={locale}
       onCancel={cancel}
@@ -266,7 +276,7 @@ export function OperatingReviewDialog({
               disabled={preparing || !sourceOptions.length}
             >
               {preparing ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Check aria-hidden="true" />}
-              {preparing ? copy.preparing : copy.prepare}
+              {preparing ? copy.preparing : initialInput ? copy.update : copy.prepare}
             </button>
           </span>
         </>
@@ -413,12 +423,12 @@ export function OperatingReviewDialog({
         <fieldset className="operating-review-deliverables">
           <legend>{copy.deliverables}</legend>
           <label>
-            <input type="checkbox" checked={includeReport} onChange={(event) => setIncludeReport(event.target.checked)} />
+            <input type="checkbox" checked={includeReport} disabled={Boolean(initialInput)} onChange={(event) => setIncludeReport(event.target.checked)} />
             <FileText aria-hidden="true" />
             <span><strong>{copy.report}</strong><small>{copy.reportDetail}</small></span>
           </label>
           <label>
-            <input type="checkbox" checked={includeSlides} onChange={(event) => setIncludeSlides(event.target.checked)} />
+            <input type="checkbox" checked={includeSlides} disabled={Boolean(initialInput)} onChange={(event) => setIncludeSlides(event.target.checked)} />
             <Presentation aria-hidden="true" />
             <span><strong>{copy.slides}</strong><small>{copy.slidesDetail}</small></span>
           </label>

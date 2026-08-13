@@ -3,7 +3,12 @@ import test from "node:test";
 
 import { parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
-import { prepareOperatingReviewWorkflow } from "../app/lib/operating-review.ts";
+import {
+  createSavedOperatingReview,
+  normalizeSavedOperatingReviews,
+  prepareOperatingReviewWorkflow,
+  prepareSavedOperatingReviewRerun,
+} from "../app/lib/operating-review.ts";
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 
@@ -278,4 +283,88 @@ test("does not mutate frozen workspace artifacts or workflow input on success or
   assert.equal(rejected.plan, undefined);
   assert.deepEqual(artifacts, artifactsBefore);
   assert.deepEqual(input, inputBefore);
+});
+
+test("saves one exact workflow identity and reruns it as patches instead of duplicate files", () => {
+  const data = dataArtifact();
+  const initialInput = reviewInput();
+  const initial = prepareOperatingReviewWorkflow([data], initialInput);
+  assert.ok(initial.plan);
+  const workflow = createSavedOperatingReview(initialInput, initial.plan);
+  assert.ok(workflow);
+  const workspace = [data, ...initial.plan.creations.map(({ artifact }) => artifact)];
+  const rerunInput = reviewInput({
+    period: "FY26 Q3",
+    focus: "Decide which region owns the next expansion experiment.",
+    mark: "line",
+  });
+
+  const rerun = prepareSavedOperatingReviewRerun(workspace, workflow, rerunInput);
+
+  assert.deepEqual(rerun.errors, []);
+  assert.ok(rerun.plan);
+  assert.deepEqual(rerun.plan.creations, []);
+  assert.deepEqual(rerun.plan.patches.map((patch) => patch.artifactId), [
+    workflow.artifactIds.query,
+    workflow.artifactIds.chart,
+    workflow.artifactIds.document,
+    workflow.artifactIds.slides,
+  ]);
+  const next = workspace.map((artifact) => ({
+    ...artifact,
+    source: rerun.plan.patches.find((patch) => patch.artifactId === artifact.id)?.nextSource ?? artifact.source,
+  }));
+  assert.equal(next.length, workspace.length);
+  assert.deepEqual(validateWorkspaceArtifacts(next), []);
+  const chart = next.find((artifact) => artifact.id === workflow.artifactIds.chart);
+  assert.equal(parseChartSource(chart.source).spec.source, workflow.artifactIds.query);
+  assert.match(chart.source, /FY26 Q3/);
+  for (const outputId of [workflow.artifactIds.document, workflow.artifactIds.slides]) {
+    assert.ok(next.find((artifact) => artifact.id === outputId).source.includes(`{{ chart("${workflow.artifactIds.chart}") }}`));
+  }
+  assert.equal(rerun.workflow.id, workflow.id);
+  assert.equal(rerun.workflow.input.period, "FY26 Q3");
+});
+
+test("rerun fails closed when a saved output disappears or the Data schema drifts", () => {
+  const data = dataArtifact();
+  const initial = prepareOperatingReviewWorkflow([data], reviewInput());
+  const workflow = createSavedOperatingReview(reviewInput(), initial.plan);
+  const workspace = [data, ...initial.plan.creations.map(({ artifact }) => artifact)];
+
+  const missing = prepareSavedOperatingReviewRerun(
+    workspace.filter((artifact) => artifact.id !== workflow.artifactIds.chart),
+    workflow,
+    reviewInput({ period: "FY26 Q3" }),
+  );
+  const drifted = prepareSavedOperatingReviewRerun(
+    workspace.map((artifact) => artifact.id === data.id ? { ...artifact, source: "Market,Bookings\nAPAC,2\n" } : artifact),
+    workflow,
+    reviewInput({ period: "FY26 Q3" }),
+  );
+
+  assert.equal(missing.plan, undefined);
+  assert.match(missing.errors.join(" "), /exact chart artifact/i);
+  assert.equal(drifted.plan, undefined);
+  assert.match(drifted.errors.join(" "), /category field|value field/i);
+});
+
+test("normalizes bounded saved workflows and rejects malformed or mismatched deliverables", () => {
+  const initial = prepareOperatingReviewWorkflow([dataArtifact()], reviewInput());
+  const workflow = createSavedOperatingReview(reviewInput(), initial.plan);
+  const malformed = structuredClone(workflow);
+  delete malformed.artifactIds.document;
+
+  assert.deepEqual(normalizeSavedOperatingReviews([malformed]), []);
+  assert.deepEqual(normalizeSavedOperatingReviews([workflow, workflow]).map((item) => item.id), [workflow.id]);
+  assert.deepEqual(normalizeSavedOperatingReviews([{ ...workflow, id: "forged-task-id" }]), []);
+  const many = Array.from({ length: 20 }, (_, index) => {
+    const query = `${workflow.artifactIds.query}-${index}`;
+    return {
+      ...workflow,
+      id: `operating-review:${query}`,
+      artifactIds: { ...workflow.artifactIds, query },
+    };
+  });
+  assert.equal(normalizeSavedOperatingReviews(many).length, 8);
 });

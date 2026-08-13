@@ -183,8 +183,13 @@ import {
 import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
 import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 import {
+  createSavedOperatingReview,
+  MAX_SAVED_OPERATING_REVIEWS,
+  normalizeSavedOperatingReviews,
   prepareOperatingReviewWorkflow,
+  prepareSavedOperatingReviewRerun,
   type OperatingReviewInput,
+  type SavedOperatingReview,
 } from "../lib/operating-review";
 import {
   convertLegacyOfficeFile,
@@ -263,6 +268,7 @@ type PendingChange = {
   selectAfterApplyArtifactId?: string;
   runtimeRepair?: Pick<AgentRuntimeRepair, "attempt" | "failure">;
   runtimePreflight?: RuntimeImpactPreflight;
+  savedOperatingReviewAfterApply?: SavedOperatingReview;
 };
 
 type PendingPdfOcr = {
@@ -511,8 +517,13 @@ function checkpointTime(createdAt: string, locale: RuneLocale) {
     .format(new Date(createdAt));
 }
 
-function persistDeviceWorkspace(artifacts: WorkspaceArtifact[], selectedId: string, checkpoints: CheckpointMap) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId, checkpoints }));
+function persistDeviceWorkspace(
+  artifacts: WorkspaceArtifact[],
+  selectedId: string,
+  checkpoints: CheckpointMap,
+  savedOperatingReviews: SavedOperatingReview[],
+) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId, checkpoints, savedOperatingReviews }));
 }
 
 function downloadArtifact(artifact: WorkspaceArtifact) {
@@ -554,6 +565,8 @@ export function RuneWorkbench() {
   const [operatingReviewOpen, setOperatingReviewOpen] = useState(false);
   const [operatingReviewError, setOperatingReviewError] = useState("");
   const [operatingReviewState, setOperatingReviewState] = useState<"idle" | "checking">("idle");
+  const [savedOperatingReviews, setSavedOperatingReviews] = useState<SavedOperatingReview[]>([]);
+  const [editingOperatingReviewId, setEditingOperatingReviewId] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
   const [importError, setImportError] = useState("");
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
@@ -599,8 +612,10 @@ export function RuneWorkbench() {
   const visualEditInFlightRef = useRef(false);
   const artifactsRef = useRef(artifacts);
   const checkpointsRef = useRef(checkpoints);
+  const savedOperatingReviewsRef = useRef(savedOperatingReviews);
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
+  savedOperatingReviewsRef.current = savedOperatingReviews;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
 
@@ -832,7 +847,7 @@ export function RuneWorkbench() {
         setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored) as { artifacts?: unknown; selectedId?: unknown; checkpoints?: unknown };
+          const parsed = JSON.parse(stored) as { artifacts?: unknown; selectedId?: unknown; checkpoints?: unknown; savedOperatingReviews?: unknown };
           const restoredArtifacts = normalizeWorkspaceArtifacts(parsed.artifacts);
           const restoredId = typeof parsed.selectedId === "string"
             && restoredArtifacts.some((artifact) => artifact.id === parsed.selectedId)
@@ -841,6 +856,7 @@ export function RuneWorkbench() {
           setArtifacts(restoredArtifacts);
           setSelectedId(restoredId);
           setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
+          setSavedOperatingReviews(normalizeSavedOperatingReviews(parsed.savedOperatingReviews));
           setNotice("Restored the latest device draft");
         }
       } catch {
@@ -860,7 +876,7 @@ export function RuneWorkbench() {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
       try {
-        persistDeviceWorkspace(artifacts, selectedId, checkpoints);
+        persistDeviceWorkspace(artifacts, selectedId, checkpoints, savedOperatingReviews);
         setSaveState("saved");
         setSavedAt(new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       } catch {
@@ -869,7 +885,7 @@ export function RuneWorkbench() {
       }
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [artifacts, checkpoints, hydrated, locale, selectedId]);
+  }, [artifacts, checkpoints, hydrated, locale, savedOperatingReviews, selectedId]);
 
   useEffect(() => {
     if (!activePreviewTargetId) return;
@@ -931,7 +947,7 @@ export function RuneWorkbench() {
       const checkpoint = createCheckpoint(artifact, "Manual checkpoint", "manual");
       const next = appendCheckpoint(checkpoints, checkpoint);
       try {
-        persistDeviceWorkspace(artifacts, selectedId, next);
+        persistDeviceWorkspace(artifacts, selectedId, next, savedOperatingReviews);
         setCheckpoints(next);
         setSaveState("saved");
         setSavedAt("");
@@ -943,7 +959,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, selectedId, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, savedOperatingReviews, selectedId, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact) return null;
 
@@ -1156,7 +1172,7 @@ export function RuneWorkbench() {
       );
       const nextCheckpoints = appendCheckpoint(checkpointsRef.current, checkpoint);
       try {
-        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints);
+        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints, savedOperatingReviewsRef.current);
       } catch {
         setSaveState("error");
         setNotice("Visual edit rejected — device persistence failed");
@@ -1446,7 +1462,7 @@ export function RuneWorkbench() {
     const checkpoint = createCheckpoint(selectedArtifact, "Manual checkpoint", "manual");
     const next = appendCheckpoint(checkpoints, checkpoint);
     try {
-      persistDeviceWorkspace(artifacts, selectedId, next);
+      persistDeviceWorkspace(artifacts, selectedId, next, savedOperatingReviews);
       setCheckpoints(next);
       setSaveState("saved");
       setSavedAt("");
@@ -1484,7 +1500,11 @@ export function RuneWorkbench() {
     const nextSelectedId = result.artifacts.some((artifact) => artifact.id === selectedId)
       ? selectedId
       : result.artifacts[0].id;
-    persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints);
+    const nextSavedReviews = savedOperatingReviews.filter((workflow) => (
+      result.artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId)
+      && Object.values(workflow.artifactIds).every((artifactId) => result.artifacts.some((artifact) => artifact.id === artifactId))
+    ));
+    persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints, nextSavedReviews);
     setArtifacts(result.artifacts);
     setSelectedId(nextSelectedId);
     setWorkspacePinnedArtifactIds([]);
@@ -1492,6 +1512,7 @@ export function RuneWorkbench() {
     setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
+    setSavedOperatingReviews(nextSavedReviews);
     setPendingChange(null);
     setHistoryOpen(false);
     setSaveState("saved");
@@ -1957,8 +1978,14 @@ export function RuneWorkbench() {
     const nextSelectedId = pendingChange.selectAfterApplyArtifactId
       ?? pendingChange.creations[0]?.artifact.id
       ?? selectedId;
+    const nextSavedReviews = pendingChange.savedOperatingReviewAfterApply
+      ? [
+          pendingChange.savedOperatingReviewAfterApply,
+          ...savedOperatingReviews.filter((workflow) => workflow.id !== pendingChange.savedOperatingReviewAfterApply?.id),
+        ].slice(0, MAX_SAVED_OPERATING_REVIEWS)
+      : savedOperatingReviews;
     try {
-      persistDeviceWorkspace(prepared.nextArtifacts, nextSelectedId, nextCheckpoints);
+      persistDeviceWorkspace(prepared.nextArtifacts, nextSelectedId, nextCheckpoints, nextSavedReviews);
     } catch {
       setSaveState("error");
       setAgentError("Device storage is full, so Rune kept every source unchanged.");
@@ -1972,6 +1999,7 @@ export function RuneWorkbench() {
     setSourceCursor(null);
     if (pendingChange.scope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
+    setSavedOperatingReviews(nextSavedReviews);
     setSaveState("saved");
     setSavedAt("");
     setPendingChange(null);
@@ -2002,6 +2030,8 @@ export function RuneWorkbench() {
     setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints({});
+    setSavedOperatingReviews([]);
+    setEditingOperatingReviewId("");
     setHistoryOpen(false);
     setNewArtifactOpen(false);
     setNewArtifactError("");
@@ -2017,10 +2047,20 @@ export function RuneWorkbench() {
 
   function openOperatingReview() {
     setOperatingReviewError("");
+    setEditingOperatingReviewId("");
     setOperatingReviewOpen(true);
     setNotice(locale === "zh-CN"
       ? "先选择数据、口径和交付物，再生成整条汇报链"
       : "Choose the evidence, measure, and deliverables before Rune prepares the full review chain");
+  }
+
+  function openSavedOperatingReview(workflow: SavedOperatingReview) {
+    setOperatingReviewError("");
+    setEditingOperatingReviewId(workflow.id);
+    setOperatingReviewOpen(true);
+    setNotice(locale === "zh-CN"
+      ? `正在准备重新运行「${workflow.input.title}」`
+      : `Preparing to rerun “${workflow.input.title}”`);
   }
 
   async function prepareOperatingReview(input: OperatingReviewInput) {
@@ -2030,7 +2070,10 @@ export function RuneWorkbench() {
     const baseArtifacts = artifactsRef.current;
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
     try {
-      const prepared = prepareOperatingReviewWorkflow(baseArtifacts, input);
+      const savedWorkflow = savedOperatingReviewsRef.current.find((workflow) => workflow.id === editingOperatingReviewId);
+      const prepared = savedWorkflow
+        ? prepareSavedOperatingReviewRerun(baseArtifacts, savedWorkflow, input)
+        : prepareOperatingReviewWorkflow(baseArtifacts, input);
       if (!prepared.plan || prepared.errors.length) {
         setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
         return;
@@ -2061,22 +2104,30 @@ export function RuneWorkbench() {
         .find((creation) => creation.artifact.kind === "document")
         ?? [...prepared.plan.creations].reverse().find((creation) => creation.artifact.kind === "slides")
         ?? prepared.plan.creations.at(-1);
+      const savedOperatingReviewAfterApply: SavedOperatingReview | undefined = savedWorkflow
+        ? { ...savedWorkflow, input: { ...input, deliverables: [...input.deliverables] } }
+        : createSavedOperatingReview(input, prepared.plan);
       setPendingChange({
         prompt: input.focus,
         provider: "local",
         scope: "workspace",
         baseRevision,
-        selectAfterApplyArtifactId: preferredArtifact?.artifact.id,
+        selectAfterApplyArtifactId: preferredArtifact?.artifact.id
+          ?? savedOperatingReviewAfterApply?.artifactIds.document
+          ?? savedOperatingReviewAfterApply?.artifactIds.slides
+          ?? savedOperatingReviewAfterApply?.artifactIds.chart,
+        savedOperatingReviewAfterApply,
         ...prepared.plan,
         runtimePreflight,
       });
-      setPendingReviewId(prepared.plan.creations[0]?.artifact.id ?? "");
+      setPendingReviewId(prepared.plan.creations[0]?.artifact.id ?? prepared.plan.patches[0]?.artifactId ?? "");
       setAgentMode("local");
       setOperatingReviewOpen(false);
+      setEditingOperatingReviewId("");
       setEmptyWorkspace(false);
       setNotice(locale === "zh-CN"
-        ? `已准备 ${prepared.plan.creations.length} 个互相绑定的文件；审核后才会写入`
-        : `${prepared.plan.creations.length} linked files prepared; nothing writes until you approve the transaction`);
+        ? `已准备 ${prepared.plan.patches.length + prepared.plan.creations.length} 个互相绑定的文件；审核后才会写入`
+        : `${prepared.plan.patches.length + prepared.plan.creations.length} linked files prepared; nothing writes until you approve the transaction`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Rune could not validate this operating review.";
       setOperatingReviewError(message);
@@ -2147,7 +2198,7 @@ export function RuneWorkbench() {
     }
     const commit = commitPreparedArtifactCreation(
       { ...prepared, nextArtifacts },
-      (committedArtifacts, nextSelectedId) => persistDeviceWorkspace(committedArtifacts, nextSelectedId, nextCheckpoints),
+      (committedArtifacts, nextSelectedId) => persistDeviceWorkspace(committedArtifacts, nextSelectedId, nextCheckpoints, savedOperatingReviews),
     );
     if (!commit.committed) {
       setSaveState("error");
@@ -2399,7 +2450,7 @@ export function RuneWorkbench() {
     }
     const firstImported = pendingImport.importedArtifacts[0];
     try {
-      persistDeviceWorkspace(pendingImport.nextArtifacts, firstImported.id, checkpoints);
+      persistDeviceWorkspace(pendingImport.nextArtifacts, firstImported.id, checkpoints, savedOperatingReviews);
     } catch {
       setSaveState("error");
       setImportError("Device storage is full, so Rune kept every source unchanged. Download or remove drafts, then try again.");
@@ -2735,6 +2786,29 @@ export function RuneWorkbench() {
                 );
               })}
             </nav>
+            {!!savedOperatingReviews.length && (
+              <section className="saved-review-list" aria-label={ui.savedReviews}>
+                <div className="artifact-group-label"><span>{ui.savedReviews}</span><span>{savedOperatingReviews.length}</span></div>
+                {savedOperatingReviews.map((workflow) => {
+                  const complete = artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId)
+                    && Object.values(workflow.artifactIds).every((artifactId) => artifacts.some((artifact) => artifact.id === artifactId));
+                  return (
+                    <button
+                      type="button"
+                      key={workflow.id}
+                      className="saved-review-row"
+                      onClick={() => openSavedOperatingReview(workflow)}
+                      disabled={!complete || artifactCreationDisabled}
+                      aria-label={ui.rerunReview(workflow.input.title)}
+                    >
+                      <ClipboardList aria-hidden="true" />
+                      <span><strong>{workflow.input.title}</strong><small>{complete ? `${workflow.input.period} · ${ui.rerun}` : ui.reviewSourceMissing}</small></span>
+                      <Play aria-hidden="true" />
+                    </button>
+                  );
+                })}
+              </section>
+            )}
             <div className="file-rail-spacer" />
             {workspacePinnedArtifactIds.length > 0 && (
               <div className="context-pin-summary">
@@ -3091,7 +3165,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.53</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.54</span></div>
       </footer>
 
       {newArtifactOpen && (
@@ -3109,13 +3183,16 @@ export function RuneWorkbench() {
       )}
       {operatingReviewOpen && (
         <OperatingReviewDialog
+          key={editingOperatingReviewId || "new-operating-review"}
           artifacts={artifacts}
           locale={locale}
           error={operatingReviewError}
+          initialInput={savedOperatingReviews.find((workflow) => workflow.id === editingOperatingReviewId)?.input}
           onCancel={() => {
             if (operatingReviewState !== "idle") return;
             setOperatingReviewOpen(false);
             setOperatingReviewError("");
+            setEditingOperatingReviewId("");
             setNotice(locale === "zh-CN"
               ? "已取消经营汇报 — 工作区保持不变"
               : "Operating review cancelled — the workspace is unchanged");

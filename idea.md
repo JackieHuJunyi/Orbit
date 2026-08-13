@@ -1935,3 +1935,11 @@ Data PDF 则补齐此前明确等待的打印合同：landscape A4、每页重�
 欢迎页此前轮播七种问候、却只提供中英文界面，是视觉承诺与产品事实不一致。v0.53 将 BCP 47 前缀、设备偏好顺序、native name、monogram 和 greeting 合并到唯一 `RUNE_LOCALE_REGISTRY`，欢迎轮播与语言选择都由它派生。自动测试要求每个问候恰好对应一个真实可选择 locale，同时该 locale 必须拥有完整 typed UI contract 和本地指南；因此当前只轮播已完整交付的“你好 / Hello”。Français、日本語、한국어、Español、Bahasa Indonesia 只有在教程、菜单、空态、review、错误、导出提示和指南全部完成后，才能同时加入 registry 与动画。Apple 式欢迎由此不是多语言装饰，而是一项可验证的界面承诺。
 
 Apple 的学习方向也在这一版进一步成为工程规则：尊重系统语言的有序 preference，不自行覆盖用户选择；使用原生 macOS 隐私授权而不申请无关的辅助功能/全盘权限；用最小 capability bridge 和渐进披露代替万能 renderer；尊重 reduced motion、键盘操作、同源安全与清晰反馈。Rune 学习的是层级、节奏、材料、原生平台行为与可访问性，不复制 Apple 商标、资产或某一代外观。
+
+## 59. v0.54 经营汇报只有可重复运行，才从生成器变成工作系统
+
+一次性生成 Data → Query → Chart → 报告/演示只证明格式链能工作，不能证明 Rune 能进入周报/月报。v0.54 因此在首次事务真正 Apply 后保存一份有界 workflow definition：用户选择的来源、精确字段、聚合、图表、周期、受众、重点和交付物，以及 Rune 首次创建的 Query、Chart、Document、Deck 稳定 ID。它与设备工作区一同保存，最多八条，不包含 API key、Query 结果或隐藏模型状态；损坏、重复、过量或交付物映射不一致的记录在恢复时丢弃。
+
+侧栏的“已保存任务”不是后台自动化。重新运行会打开同一任务表单，允许调整本期周期、重点、受众、口径和图表，但锁定既有 Document/Slides 集合；编译器在完整当前工作区中生成一条 collision-safe 候选链，再把新 Query/Chart/成品 source 映射回原 ID。Chart 的 source 与成品的 chart binding 会显式重写到原稳定身份，绝不引用临时生成 ID。最终计划只有既有文件 patch，没有重复 creation；仍需 runtime preflight、逐文件 diff、dependency transaction map、显式 Apply、每个旧文件 checkpoint 与一次设备持久化。
+
+复用不以静默容错换顺滑。Data 字段大小写或类型漂移、来源缺失、任一成品被删除、任务记录被篡改、工作区验证失败、运行失败、审核期间 revision 改变或存储失败都保持 canonical source 不变。当前保存的是设备级任务，不是跨设备账号、定时器、目录监听或自动发布；这些能力只有在真实用户连续复用并要求自动刷新后才进入下一阶段。这样 v0.54 完成的是“同一任务下一周期再做一次”的核心循环，而不是新增一个看似自动化的按钮。

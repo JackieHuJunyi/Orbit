@@ -8,6 +8,7 @@ import { formatChartReference } from "./charts.ts";
 import {
   prepareWorkspaceMutation,
   type ArtifactCreationChange,
+  type ArtifactSourcePatch,
 } from "./patches.ts";
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
@@ -36,10 +37,30 @@ export type OperatingReviewInput = {
   locale: RuneLocale;
 };
 
+export const MAX_SAVED_OPERATING_REVIEWS = 8;
+
+export type OperatingReviewArtifactIds = {
+  query: string;
+  chart: string;
+  document?: string;
+  slides?: string;
+};
+
+export type SavedOperatingReview = {
+  version: 1;
+  id: string;
+  input: OperatingReviewInput;
+  artifactIds: OperatingReviewArtifactIds;
+};
+
+export type PreparedSavedOperatingReview = PreparedOperatingReview & {
+  workflow?: SavedOperatingReview;
+};
+
 export type OperatingReviewPlan = {
   summary: string;
   detail: string;
-  patches: [];
+  patches: ArtifactSourcePatch[];
   creations: ArtifactCreationChange[];
 };
 
@@ -387,6 +408,189 @@ export function prepareOperatingReviewWorkflow(
         : `Rune compiled ${data.name}, explicit field mappings, SQL, a live Chart, and ${deliverables.length} deliverable${deliverables.length === 1 ? "" : "s"} into one atomic review transaction.`,
       patches: [],
       creations,
+    },
+  };
+}
+
+function savedReviewId(artifactIds: OperatingReviewArtifactIds) {
+  return `operating-review:${artifactIds.query}`;
+}
+
+function copyOperatingReviewInput(input: OperatingReviewInput): OperatingReviewInput {
+  return {
+    ...input,
+    deliverables: [...input.deliverables],
+  };
+}
+
+export function createSavedOperatingReview(
+  input: OperatingReviewInput,
+  plan: OperatingReviewPlan,
+): SavedOperatingReview | undefined {
+  const byKind = new Map(plan.creations.map(({ artifact }) => [artifact.kind, artifact.id] as const));
+  const query = byKind.get("query");
+  const chart = byKind.get("chart");
+  if (!query || !chart) return undefined;
+  const document = byKind.get("document");
+  const slides = byKind.get("slides");
+  return {
+    version: 1,
+    id: savedReviewId({ query, chart, document, slides }),
+    input: copyOperatingReviewInput(input),
+    artifactIds: { query, chart, ...(document ? { document } : {}), ...(slides ? { slides } : {}) },
+  };
+}
+
+function stringValue(value: unknown, maxChars: number) {
+  return typeof value === "string" && value.length <= maxChars ? value : undefined;
+}
+
+export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingReview[] {
+  if (!Array.isArray(value)) return [];
+  const normalized: SavedOperatingReview[] = [];
+  const ids = new Set<string>();
+  for (const entry of value.slice(0, MAX_SAVED_OPERATING_REVIEWS * 2)) {
+    if (!entry || typeof entry !== "object") continue;
+    const candidate = entry as Partial<SavedOperatingReview>;
+    const input = candidate.input as Partial<OperatingReviewInput> | undefined;
+    const artifactIds = candidate.artifactIds as Partial<OperatingReviewArtifactIds> | undefined;
+    const id = stringValue(candidate.id, 180);
+    const title = stringValue(input?.title, MAX_OPERATING_REVIEW_TITLE_CHARS);
+    const dataArtifactId = stringValue(input?.dataArtifactId, 120);
+    const category = stringValue(input?.category, 120);
+    const numericValue = stringValue(input?.value, 120);
+    const period = stringValue(input?.period, MAX_OPERATING_REVIEW_PERIOD_CHARS);
+    const focus = stringValue(input?.focus, MAX_OPERATING_REVIEW_FOCUS_CHARS);
+    const query = stringValue(artifactIds?.query, 120);
+    const chart = stringValue(artifactIds?.chart, 120);
+    const document = artifactIds?.document == null ? undefined : stringValue(artifactIds.document, 120);
+    const slides = artifactIds?.slides == null ? undefined : stringValue(artifactIds.slides, 120);
+    const normalizedArtifactIds = query && chart
+      ? { query, chart, ...(document ? { document } : {}), ...(slides ? { slides } : {}) }
+      : undefined;
+    const deliverables = Array.isArray(input?.deliverables)
+      ? [...new Set(input.deliverables)].filter((item): item is OperatingReviewDeliverable => item === "document" || item === "slides")
+      : [];
+    if (candidate.version !== 1 || !id || ids.has(id) || !title || !dataArtifactId || !category
+      || !numericValue || !period || !focus || !query || !chart || !deliverables.length
+      || !normalizedArtifactIds || id !== savedReviewId(normalizedArtifactIds)
+      || Boolean(validateTaskText(title, "Review title", MAX_OPERATING_REVIEW_TITLE_CHARS))
+      || Boolean(validateTaskText(period, "Reporting period", MAX_OPERATING_REVIEW_PERIOD_CHARS))
+      || Boolean(validateTaskText(focus, "Review focus", MAX_OPERATING_REVIEW_FOCUS_CHARS))
+      || ![dataArtifactId, category, numericValue, query, chart, document, slides].filter(Boolean).every((item) => fieldIsSafe(item as string))
+      || !["sum", "average"].includes(input?.aggregation ?? "")
+      || !["bar", "line"].includes(input?.mark ?? "")
+      || !["number", "currency", "percent"].includes(input?.format ?? "")
+      || !["leadership", "board", "team"].includes(input?.audience ?? "")
+      || (input?.locale !== "zh-CN" && input?.locale !== "en")
+      || (deliverables.includes("document") !== Boolean(document))
+      || (deliverables.includes("slides") !== Boolean(slides))) continue;
+    ids.add(id);
+    normalized.push({
+      version: 1,
+      id,
+      input: {
+        title,
+        dataArtifactId,
+        category,
+        value: numericValue,
+        aggregation: input.aggregation as OperatingReviewAggregation,
+        mark: input.mark as ChartCreationMark,
+        format: input.format as ChartCreationFormat,
+        period,
+        audience: input.audience as OperatingReviewAudience,
+        focus,
+        deliverables,
+        locale: input.locale,
+      },
+      artifactIds: normalizedArtifactIds,
+    });
+    if (normalized.length >= MAX_SAVED_OPERATING_REVIEWS) break;
+  }
+  return normalized;
+}
+
+export function prepareSavedOperatingReviewRerun(
+  artifacts: WorkspaceArtifact[],
+  workflow: SavedOperatingReview,
+  input: OperatingReviewInput,
+): PreparedSavedOperatingReview {
+  const normalized = normalizeSavedOperatingReviews([workflow])[0];
+  if (!normalized || normalized.id !== workflow.id) return { errors: ["The saved operating review is invalid."] };
+  const expectedDeliverables = normalized.input.deliverables;
+  if (uniqueDeliverables(input.deliverables).join("|") !== expectedDeliverables.join("|")) {
+    return { errors: ["A saved review keeps its existing report and presentation outputs when rerun."] };
+  }
+  const targets: Array<[keyof OperatingReviewArtifactIds, WorkspaceArtifact["kind"]]> = [
+    ["query", "query"],
+    ["chart", "chart"],
+  ];
+  if (expectedDeliverables.includes("document")) targets.push(["document", "document"]);
+  if (expectedDeliverables.includes("slides")) targets.push(["slides", "slides"]);
+  const targetArtifacts: WorkspaceArtifact[] = [];
+  const targetIds = new Set<string>();
+  for (const [key, kind] of targets) {
+    const artifactId = normalized.artifactIds[key];
+    const artifact = artifacts.find((item) => item.id === artifactId);
+    if (!artifact || artifact.kind !== kind || targetIds.has(artifact.id)) {
+      return { errors: [`The saved review can no longer find its exact ${kind} artifact.`] };
+    }
+    targetIds.add(artifact.id);
+    targetArtifacts.push(artifact);
+  }
+  if (targetArtifacts.some((artifact) => artifact.id === input.dataArtifactId)) {
+    return { errors: ["The saved review Data source cannot be one of its generated outputs."] };
+  }
+  const prepared = prepareOperatingReviewWorkflow(artifacts, input);
+  if (!prepared.plan || prepared.errors.length) return prepared;
+  const generatedByKind = new Map(prepared.plan.creations.map((creation) => [creation.artifact.kind, creation] as const));
+  const generatedQuery = generatedByKind.get("query")?.artifact;
+  const generatedChart = generatedByKind.get("chart")?.artifact;
+  const actualQuery = targetArtifacts.find((artifact) => artifact.kind === "query");
+  const actualChart = targetArtifacts.find((artifact) => artifact.kind === "chart");
+  if (!generatedQuery || !generatedChart || !actualQuery || !actualChart) {
+    return { errors: ["Rune could not rebuild the saved evidence chain."] };
+  }
+  const patches: ArtifactSourcePatch[] = [];
+  for (const target of targetArtifacts) {
+    const generated = generatedByKind.get(target.kind);
+    if (!generated) return { errors: [`Rune could not rebuild the saved ${target.kind} output.`] };
+    let nextSource = generated.artifact.source;
+    if (target.kind === "chart") {
+      const chartSource = JSON.parse(nextSource) as { source: string };
+      chartSource.source = actualQuery.id;
+      nextSource = `${JSON.stringify(chartSource, null, 2)}\n`;
+    } else if (target.kind === "document" || target.kind === "slides") {
+      nextSource = nextSource.replace(
+        formatChartReference(generatedChart.id),
+        formatChartReference(actualChart.id),
+      );
+    }
+    if (nextSource === target.source) continue;
+    patches.push({
+      artifactId: target.id,
+      nextSource,
+      summary: `Refresh ${target.name} from the saved operating review`,
+      detail: generated.detail,
+    });
+  }
+  if (!patches.length) return { errors: ["The saved review already matches these settings and current source mapping."] };
+  const mutation = prepareWorkspaceMutation(artifacts, patches, []);
+  if (mutation.errors.length) return { errors: mutation.errors };
+  const zh = input.locale === "zh-CN";
+  return {
+    errors: [],
+    plan: {
+      summary: zh ? `更新已保存的「${normalizeTaskText(input.title)}」` : `Update saved review “${normalizeTaskText(input.title)}”`,
+      detail: zh
+        ? `Rune 将重新编译 ${patches.length} 个既有文件；文件身份不变，所有变化仍需一次事务审核。`
+        : `Rune will recompile ${patches.length} existing files without changing their identities; every change still requires one transaction review.`,
+      patches,
+      creations: [],
+    },
+    workflow: {
+      ...normalized,
+      input: copyOperatingReviewInput(input),
     },
   };
 }
