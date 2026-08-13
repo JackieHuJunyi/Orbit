@@ -3619,7 +3619,7 @@ button.transaction-node:hover,
   top: calc(100% + 9px);
   right: 0;
   z-index: 80;
-  width: min(290px, calc(100vw - 32px));
+  width: min(350px, calc(100vw - 32px));
   padding: 13px;
   border: 1px solid rgba(20, 22, 26, .09);
   border-radius: 15px;
@@ -3644,6 +3644,39 @@ button.transaction-node:hover,
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.preview-evidence-lineage {
+  display: grid;
+  gap: 7px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(20, 22, 26, .07);
+}
+
+.preview-evidence-lineage:empty { display: none; }
+
+.preview-evidence-lineage .lineage-strip {
+  min-height: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 1.45;
+}
+
+.preview-evidence-lineage .lineage-strip span {
+  max-width: 128px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-evidence-lineage .lineage-strip strong {
+  width: 100%;
+  margin: 1px 0 0 16px;
+  white-space: normal;
 }
 
 html[dir="rtl"] .preview-evidence-popover {

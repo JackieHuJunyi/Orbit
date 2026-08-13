@@ -558,6 +558,8 @@ Top-bar simplification reuses existing handlers and state. New, Import, Export, 
 
 The full-screen Setup Assistant is a presentation change over the existing `WelcomeExperience` state machine. `welcome | model | shortcuts | ready`, locale detection/selection, provider status, local fallback, real shortcut capture, dismissibility, and completion actions are unchanged. The viewport-sized shell supplies one sticky chrome row plus a scrolling page; the step strip exposes `progressbar` min/max/current values. No onboarding state enters Artifact, workspace persistence, model credentials, or export state beyond the already explicit completion choices.
 
+Preview lineage relocation moves the existing render branches into the existing native evidence disclosure. Chart source, Query/Data resolution, Query scalar references, legacy metric references, and embedded Chart ids continue to derive synchronously from the selected artifact and current workspace; the same localized status text is rendered. The default preview body now owns only the compiled-output scroll container. No lineage snapshot, validation cache, alternate identity, or permission path is introduced.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

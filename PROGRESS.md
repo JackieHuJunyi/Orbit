@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.72 with all live Data, Query, metric, and Chart lineage moved into Preview evidence so compiled content begins immediately without losing provenance.
 - 2026-08-13 — Shipped Rune v0.71 with a true full-screen Setup Assistant, an accessible four-step progress contract, and the complete animated multilingual, model, shortcut, and ready flow preserved.
 - 2026-08-13 — Shipped Rune v0.70 with a quieter global top bar, one compact accessible save status, and duplicate operating-review creation removed while retaining its activity-rail entry.
 - 2026-08-13 — Shipped Rune v0.69 with a localized Sources → Analysis → Deliverables file rail, lightweight theme-tinted selection, and context pins hidden until relevant.

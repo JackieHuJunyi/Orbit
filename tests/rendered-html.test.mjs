@@ -401,7 +401,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.71<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.72<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -460,4 +460,16 @@ test("presents onboarding as a full-screen setup assistant with an accessible st
   assert.match(styles, /\.welcome-window\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-height:\s*100vh;[^}]*border-radius:\s*0;[^}]*box-shadow:\s*none;/s);
   assert.match(styles, /\.welcome-chrome\s*\{[^}]*position:\s*sticky;[^}]*height:\s*72px;/s);
   assert.match(styles, /\.welcome-page\s*\{[^}]*min-height:\s*calc\(100vh - 72px\);/s);
+});
+
+test("moves live lineage into preview evidence so compiled content starts immediately", async () => {
+  const response = await render();
+  const html = await response.text();
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(html, /class="preview-evidence-popover"[\s\S]*class="preview-evidence-lineage"[\s\S]*class="lineage-strip query-lineage"/);
+  assert.match(html, /class="preview-evidence-lineage"[\s\S]*regional-summary\.sql[\s\S]*q2-review\.md[\s\S]*regional-revenue\.csv/);
+  assert.match(html, /<div class="preview-body"><div class="preview-scroll">/);
+  assert.doesNotMatch(html, /<div class="preview-body"><div class="lineage-strip/);
+  assert.match(styles, /\.preview-evidence-lineage\s*\{/);
+  assert.match(styles, /\.preview-evidence-lineage \.lineage-strip\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
 });

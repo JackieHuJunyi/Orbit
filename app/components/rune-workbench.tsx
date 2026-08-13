@@ -2964,7 +2964,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.71</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.72</strong></footer>
               </div>
             )}
           </div>
@@ -3445,60 +3445,62 @@ export function RuneWorkbench() {
                       <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
                     )}
                   </div>
+                  <div className="preview-evidence-lineage">
+                    {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && (
+                      <div className="lineage-strip chart-lineage">
+                        {selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />}
+                        <span>{selectedChartSourceArtifact.name}</span>
+                        <ChevronRight aria-hidden="true" />
+                        <span>{selectedArtifact.name}</span>
+                        <strong>{selectedChartSourceArtifact.kind === "query" ? ui.browserQueryOutput : ui.canonicalDataLive}</strong>
+                      </div>
+                    )}
+                    {selectedArtifact.kind === "query" && selectedQueryDataArtifact && (
+                      <div className="lineage-strip query-lineage">
+                        <TableProperties aria-hidden="true" />
+                        <span>{selectedQueryDataArtifact.name}</span>
+                        <ChevronRight aria-hidden="true" />
+                        <span>workspace_data</span>
+                        <ChevronRight aria-hidden="true" />
+                        <span>{selectedArtifact.name}</span>
+                        <strong>{selectedQueryDataResolution?.explicit ? ui.explicitDataBinding : ui.legacyDataBinding}</strong>
+                      </div>
+                    )}
+                    {!!bindingState?.queryMetricReferences.length && (
+                      <div className="lineage-strip query-lineage">
+                        <Database aria-hidden="true" />
+                        <span>{[...new Set(bindingState.queryMetricReferences.map((reference) => (
+                          artifacts.find((artifact) => artifact.id === reference.queryArtifactId)?.name ?? reference.queryArtifactId
+                        )))].join(", ")}</span>
+                        <ChevronRight aria-hidden="true" />
+                        <span>{selectedArtifact.name}</span>
+                        <strong>{ui.scalarMetricsFromSql(bindingState.queryMetricReferences.length)}</strong>
+                      </div>
+                    )}
+                    {!!bindingState?.references.length && (
+                      <div className="lineage-strip">
+                        <Database aria-hidden="true" />
+                        <span>{canonicalDataArtifact?.name ?? ui.workspaceData}</span>
+                        <ChevronRight aria-hidden="true" />
+                        <span>{selectedArtifact.name}</span>
+                        <strong>{ui.metricsCompiledLive(bindingState.references.length)}</strong>
+                      </div>
+                    )}
+                    {!!bindingState?.chartReferences.length && (
+                      <div className="lineage-strip chart-lineage">
+                        <BarChart3 aria-hidden="true" />
+                        <span>{bindingState.chartReferences.map((id) => artifacts.find((artifact) => artifact.id === id)?.name ?? id).join(", ")}</span>
+                        <ChevronRight aria-hidden="true" />
+                        <span>{selectedArtifact.name}</span>
+                        <strong>{ui.chartsCompiledLive(bindingState.chartReferences.length)}</strong>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </details>
             </div>
           </header>
           <div className="preview-body">
-            {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && (
-              <div className="lineage-strip chart-lineage">
-                {selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />}
-                <span>{selectedChartSourceArtifact.name}</span>
-                <ChevronRight aria-hidden="true" />
-                <span>{selectedArtifact.name}</span>
-                <strong>{selectedChartSourceArtifact.kind === "query" ? ui.browserQueryOutput : ui.canonicalDataLive}</strong>
-              </div>
-            )}
-            {selectedArtifact.kind === "query" && selectedQueryDataArtifact && (
-              <div className="lineage-strip query-lineage">
-                <TableProperties aria-hidden="true" />
-                <span>{selectedQueryDataArtifact.name}</span>
-                <ChevronRight aria-hidden="true" />
-                <span>workspace_data</span>
-                <ChevronRight aria-hidden="true" />
-                <span>{selectedArtifact.name}</span>
-                <strong>{selectedQueryDataResolution?.explicit ? ui.explicitDataBinding : ui.legacyDataBinding}</strong>
-              </div>
-            )}
-            {!!bindingState?.queryMetricReferences.length && (
-              <div className="lineage-strip query-lineage">
-                <Database aria-hidden="true" />
-                <span>{[...new Set(bindingState.queryMetricReferences.map((reference) => (
-                  artifacts.find((artifact) => artifact.id === reference.queryArtifactId)?.name ?? reference.queryArtifactId
-                )))].join(", ")}</span>
-                <ChevronRight aria-hidden="true" />
-                <span>{selectedArtifact.name}</span>
-                <strong>{ui.scalarMetricsFromSql(bindingState.queryMetricReferences.length)}</strong>
-              </div>
-            )}
-            {!!bindingState?.references.length && (
-              <div className="lineage-strip">
-                <Database aria-hidden="true" />
-                <span>{canonicalDataArtifact?.name ?? ui.workspaceData}</span>
-                <ChevronRight aria-hidden="true" />
-                <span>{selectedArtifact.name}</span>
-                <strong>{ui.metricsCompiledLive(bindingState.references.length)}</strong>
-              </div>
-            )}
-            {!!bindingState?.chartReferences.length && (
-              <div className="lineage-strip chart-lineage">
-                <BarChart3 aria-hidden="true" />
-                <span>{bindingState.chartReferences.map((id) => artifacts.find((artifact) => artifact.id === id)?.name ?? id).join(", ")}</span>
-                <ChevronRight aria-hidden="true" />
-                <span>{selectedArtifact.name}</span>
-                <strong>{ui.chartsCompiledLive(bindingState.chartReferences.length)}</strong>
-              </div>
-            )}
             <div className="preview-scroll" ref={previewScrollRef}>
               <ArtifactPreview
                 artifact={selectedArtifact}

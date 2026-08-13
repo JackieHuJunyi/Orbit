@@ -1917,3 +1917,7 @@ Source 底部常驻一个与画布连续的轻量输入区，不再用头像、A
 ### 17.16 v0.71 首启是全屏 Setup Assistant
 
 首启使用占满 viewport 的单一设置画布，不渲染居中 modal 的外边框、圆角或漂浮阴影；顶部固定显示 Rune、四步进度和 Skip/Close。Welcome/Language、Model、Shortcuts、Ready 四步及其状态完全保留，内容区允许独立滚动并适配窄屏/RTL/reduced motion。步骤指示必须暴露 `progressbar` 的 min/max/now，不能只靠颜色表达当前进度。
+
+### 17.17 v0.72 成品默认从内容开始
+
+Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条带，而是与来源 target、binding badges 和 validation 一同进入 Preview evidence 原生 disclosure。完整名称、方向、binding 类型和编译状态必须继续从当前 workspace 实时派生。收拢只改变 DOM 位置和样式，不能缓存证据、隐藏错误或影响成品定位、Agent、导出与 source authority。

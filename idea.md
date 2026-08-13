@@ -2052,4 +2052,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 四步没有合并或伪装：欢迎页仍从九语言注册表轮播真实问候并同时选择语言；模型页仍配置个人 profile 和 local fallback；教程仍要求真实按键；完成页仍提供本地指南、导入和示例。步骤指示新增原生 `progressbar` 语义与 min/max/now，RTL 和 `prefers-reduced-motion` 合同不变。视觉上的“系统级”不能以减少选择或隐去安全边界为代价。
 
+## 77. v0.72 成品应该从内容开始，来源链进入同一个证据入口
+
+Preview header 已经拥有可展开的来源、binding 与 validation 证据，但成品正文上方仍永久堆放 Data→Query、Query→metric、Data→metric 和 Chart→deliverable 条带。这让同一事实出现两次，也使报告第一页、数据表和幻灯片都从工程诊断开始。v0.72 将所有实时 lineage DOM 移入既有 Preview evidence popover；默认 `preview-body` 的第一个子元素直接是滚动成品。
+
+这不是删除证据。每条 lineage 仍读取当前 selected artifact、resolved Data/Query、binding compiler 和 live Chart references，名称、方向、明确/legacy binding 和编译状态全部保留；badge 与完整链在同一原生 details 中可键盘访问。popover 加宽并用紧凑多行关系表达，窄屏继续固定到可见区域。没有建立证据缓存，也不改变 preview-to-source 定位、validation、Agent 或导出。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。
