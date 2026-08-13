@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PORTABLE_SOURCE_REVISION_PATTERN } from "./source-revision.ts";
 
 const DeckFrontmatterSchema = z.object({
   version: z.literal("1").transform(() => 1 as const),
@@ -7,9 +8,14 @@ const DeckFrontmatterSchema = z.object({
   ratio: z.literal("16:9"),
   lang: z.enum(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]).default("en"),
   origin: z.string().trim().min(1).max(128).optional(),
+  origin_revision: z.string().regex(PORTABLE_SOURCE_REVISION_PATTERN).optional(),
   audience: z.enum(["leadership", "team", "customer"]).optional(),
   purpose: z.string().trim().min(1).max(180).optional(),
-}).strict();
+}).strict().superRefine((value, context) => {
+  if (value.origin_revision && !value.origin) {
+    context.addIssue({ code: "custom", path: ["origin_revision"], message: "origin_revision requires an exact origin." });
+  }
+});
 
 const DeckLayoutSchema = z.enum(["cover", "content", "metrics", "split", "conclusion"]);
 

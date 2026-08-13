@@ -1997,3 +1997,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 旧 Deck 的新字段保持可选，因此可继续打开和刷新；新字段若受众不在枚举内、重点为空或超过 180 字符、或出现未声明字段，则严格解析失败且不进入写入审核。
 - 任务配方是帮助用户显式重跑的输入，不是后台同步授权。Document 变化仍不会自动写 Deck，每一次刷新继续经过 candidate preview、事务审核、revision 检查和 Apply。
 - 不为 Document briefing 增加第二套 localStorage task 记录；文件夹同步、Git、导入和 AI 都能读取同一份源码事实，降低未来迁移与扩展成本。
+
+### 17.27 v0.86 用户不应靠记忆判断关联成品是否需要刷新
+
+- 任务生成的 Deck 在 `origin` 旁记录当前 Document 源内容的有版本、有界 `origin_revision`；它只表达该演示上次编译时看到的来源版本。
+- 当前工作区从 canonical Document 重新派生版本并将关联演示分为 `current / changed / unknown`。文件栏只对 `changed` 显示轻量“可以刷新”，设置界面的目标选项和实时摘要必须解释完整状态。
+- v0.86 之前没有版本字段的 Deck 明确显示 unknown，而不是假装最新或过期；它仍可刷新，成功刷新后自然写入当前基准。
+- 来源版本是快速变化提示，不是密码学身份、完整性证明或写入权限。即使显示 current，刷新仍必须重读完整 Document 与 Deck，通过 exact id、workspace revision、compiler、transaction review、checkpoint 和 Apply。
+- 不增加轮询、后台写入或额外持久化状态；Document 每次编辑后，新鲜度由现有 React artifact state 同步派生，文件夹与 Git 中的 Deck 仍可独立携带基准。

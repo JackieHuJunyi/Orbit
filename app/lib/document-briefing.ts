@@ -7,6 +7,7 @@ import {
   type ArtifactSourcePatch,
 } from "./patches.ts";
 import { runeText, type RuneLocale } from "./localization.ts";
+import { portableSourceRevision } from "./source-revision.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_DOCUMENT_BRIEFING_TITLE_CHARS = 80;
@@ -14,6 +15,7 @@ export const MAX_DOCUMENT_BRIEFING_FOCUS_CHARS = 180;
 
 export type DocumentBriefingAudience = "leadership" | "team" | "customer";
 export type DocumentBriefingSlideCount = 4 | 6 | 8;
+export type DocumentBriefingFreshness = "current" | "changed" | "unknown";
 
 export type DocumentBriefingInput = {
   sourceArtifactId: string;
@@ -40,6 +42,7 @@ export type DocumentBriefingTarget = {
   locale: RuneLocale;
   audience?: DocumentBriefingAudience;
   purpose?: string;
+  freshness: DocumentBriefingFreshness;
 };
 
 export type PreparedDocumentBriefing = {
@@ -60,6 +63,9 @@ export function documentBriefingTargets(
   artifacts: WorkspaceArtifact[],
   sourceArtifactId: string,
 ): DocumentBriefingTarget[] {
+  const source = artifacts.find((artifact) => artifact.id === sourceArtifactId && artifact.kind === "document");
+  if (!source) return [];
+  const currentSourceRevision = portableSourceRevision(source.source);
   return artifacts.flatMap((artifact): DocumentBriefingTarget[] => {
     if (documentBriefingSourceIdForPresentation(artifact) !== sourceArtifactId) return [];
     const parsed = parseDeckSource(artifact.source);
@@ -72,6 +78,11 @@ export function documentBriefingTargets(
       locale: parsed.deck.frontmatter.lang,
       audience: parsed.deck.frontmatter.audience,
       purpose: parsed.deck.frontmatter.purpose,
+      freshness: parsed.deck.frontmatter.origin_revision == null
+        ? "unknown"
+        : parsed.deck.frontmatter.origin_revision === currentSourceRevision
+          ? "current"
+          : "changed",
     }];
   });
 }
@@ -197,6 +208,7 @@ theme: ${theme}
 ratio: 16:9
 lang: ${input.locale}
 origin: ${source.id}
+origin_revision: ${portableSourceRevision(source.source)}
 audience: ${input.audience}
 purpose: ${normalizePlainText(input.focus)}
 ---

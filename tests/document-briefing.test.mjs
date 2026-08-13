@@ -7,6 +7,7 @@ import {
   prepareDocumentBriefingWorkflow,
 } from "../app/lib/document-briefing.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
+import { portableSourceRevision } from "../app/lib/source-revision.ts";
 import { buildWorkspaceDependencyGraph } from "../app/lib/dependency-graph.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { buildWorkspaceTransactionReview } from "../app/lib/transaction-review.ts";
@@ -61,6 +62,7 @@ test("compiles one reviewed Document into an exact source-linked Deck transactio
   assert.deepEqual(parsed.errors, []);
   assert.equal(parsed.deck?.slides.length, 6);
   assert.equal(parsed.deck?.frontmatter.origin, sourceDocument.id);
+  assert.equal(parsed.deck?.frontmatter.origin_revision, portableSourceRevision(sourceDocument.source));
   assert.equal(parsed.deck?.frontmatter.lang, "en");
   assert.equal(parsed.deck?.frontmatter.audience, "leadership");
   assert.equal(parsed.deck?.frontmatter.purpose, "Decide whether the launch is ready for the next cohort.");
@@ -102,6 +104,7 @@ test("refreshes one linked presentation in place while retaining identity and li
     locale: "en",
     audience: "leadership",
     purpose: "Decide whether the launch is ready for the next cohort.",
+    freshness: "current",
   }]);
 
   const updatedDocument = {
@@ -111,6 +114,7 @@ test("refreshes one linked presentation in place while retaining identity and li
       "Launch the reviewed workflow this month",
     ),
   };
+  assert.equal(documentBriefingTargets([updatedDocument, themedDeck], updatedDocument.id)[0]?.freshness, "changed");
   const refreshed = prepareDocumentBriefingWorkflow(
     [updatedDocument, themedDeck],
     input({ targetArtifactId: themedDeck.id, focus: "Approve the launch plan for this month." }),
@@ -126,6 +130,7 @@ test("refreshes one linked presentation in place while retaining identity and li
   assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.origin, sourceDocument.id);
   assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.theme, "rune-dark");
   assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.purpose, "Approve the launch plan for this month.");
+  assert.equal(documentBriefingTargets([updatedDocument, nextDeck], updatedDocument.id)[0]?.freshness, "current");
 
   const review = buildWorkspaceTransactionReview([updatedDocument, themedDeck], refreshed.plan?.patches ?? [], []);
   assert.deepEqual(review.errors, []);
@@ -152,6 +157,7 @@ test("round-trips a portable briefing recipe from Deck source into the next refr
     locale: "en",
     audience: "customer",
     purpose: "Confirm the customer launch story.",
+    freshness: "current",
   });
   const refreshed = prepareDocumentBriefingWorkflow([sourceDocument, created], {
     sourceArtifactId: sourceDocument.id,
@@ -164,6 +170,21 @@ test("round-trips a portable briefing recipe from Deck source into the next refr
   });
   assert.equal(refreshed.plan, undefined);
   assert.match(refreshed.errors.join(" "), /proposed source is unchanged/);
+});
+
+test("keeps pre-freshness Decks refreshable with an explicit unknown baseline", () => {
+  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0].artifact;
+  assert.ok(created);
+  const legacy = { ...created, source: created.source.replace(/^origin_revision: .*\n/mu, "") };
+  assert.deepEqual(parseDeckSource(legacy.source).errors, []);
+  assert.equal(documentBriefingTargets([sourceDocument, legacy], sourceDocument.id)[0]?.freshness, "unknown");
+  const refreshed = prepareDocumentBriefingWorkflow(
+    [sourceDocument, legacy],
+    input({ slideCount: 4, targetArtifactId: legacy.id }),
+  );
+  assert.deepEqual(refreshed.errors, []);
+  assert.equal(refreshed.plan?.patches.length, 1);
+  assert.match(refreshed.plan?.patches[0].nextSource ?? "", /^origin_revision: r1-/mu);
 });
 
 test("sanitizes imported document syntax instead of creating executable or implicit bindings", () => {

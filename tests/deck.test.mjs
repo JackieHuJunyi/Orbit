@@ -4,6 +4,7 @@ import test from "node:test";
 import { renderChartReferencesToHtml, resolveChartModel } from "../app/lib/charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "../app/lib/deck.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
+import { portableSourceRevision } from "../app/lib/source-revision.ts";
 import { defaultArtifacts, detectArtifact, parseDataSource, planLocalChange, validateArtifact } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
@@ -38,11 +39,12 @@ test("accepts every registered Rune interface language as explicit Deck document
 test("accepts an optional exact Document origin in Deck frontmatter", () => {
   const source = deckArtifact().source.replace(
     "lang: en",
-    "lang: en\norigin: q2-review\naudience: leadership\npurpose: Decide whether to approve the reviewed plan.",
+    `lang: en\norigin: q2-review\norigin_revision: ${portableSourceRevision("review source")}\naudience: leadership\npurpose: Decide whether to approve the reviewed plan.`,
   );
   const parsed = parseDeckSource(source);
   assert.deepEqual(parsed.errors, []);
   assert.equal(parsed.deck?.frontmatter.origin, "q2-review");
+  assert.equal(parsed.deck?.frontmatter.origin_revision, portableSourceRevision("review source"));
   assert.equal(parsed.deck?.frontmatter.audience, "leadership");
   assert.equal(parsed.deck?.frontmatter.purpose, "Decide whether to approve the reviewed plan.");
 });
@@ -54,6 +56,10 @@ test("keeps briefing recipe metadata bounded and rejects unknown Deck fields", (
   assert.match(parseDeckSource(longPurpose).errors.join(" "), /purpose/);
   const unknown = deckArtifact().source.replace("lang: en", "lang: en\nworkflow: briefing");
   assert.match(parseDeckSource(unknown).errors.join(" "), /Unrecognized key/);
+  const malformedRevision = deckArtifact().source.replace("lang: en", "lang: en\norigin: q2-review\norigin_revision: latest");
+  assert.match(parseDeckSource(malformedRevision).errors.join(" "), /origin_revision/);
+  const revisionWithoutOrigin = deckArtifact().source.replace("lang: en", `lang: en\norigin_revision: ${portableSourceRevision("review source")}`);
+  assert.match(parseDeckSource(revisionWithoutOrigin).errors.join(" "), /requires an exact origin/);
 });
 
 test("compiles metrics, numbering, and a shared chart into static deck HTML", () => {

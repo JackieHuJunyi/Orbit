@@ -402,6 +402,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       checkpointCount: (value: number) => zh ? `${value} 个恢复点` : `${value} ${value === 1 ? "checkpoint" : "checkpoints"}`,
       saveCurrent: zh ? "保存当前版本" : "Save current",
       current: zh ? "当前" : "Current",
+      refreshAvailable: zh ? "可以刷新" : "Refresh available",
       restore: zh ? "恢复" : "Restore",
       checkpointEmpty: zh ? "应用 Agent 补丁或按 ⌘S，即可保存当前源内容。" : "Apply an Agent patch or press ⌘S to capture the current source.",
       checkpointReasons: {

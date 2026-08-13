@@ -2175,3 +2175,13 @@ v0.85 因而把最小可移植配方放回 Deck Markdown。严格 frontmatter �
 这不是把执行历史塞进文件。运行耗时、provider token、交付判断等设备证据仍属于经营汇报的本机记录；Deck 只保存重建下一次确定性输入所需的少量意图。旧文件可省略新增字段，新文件的枚举与长度由 Zod 严格验证，未知字段继续失败。Document 更新仍需用户显式发起、预览事务并 Apply，配方不会获得后台写权限。
 
 这一边界比通用 workflow store 更低成本：纯 compiler、parser 和 dialog 共享一种 source-owned truth，没有迁移器、同步冲突或额外 persistence lifecycle。以后若第三条任务需要可重复配置，先判断它是否也能由可读 artifact source 表达；只有运行证据或跨多个不可归属成品的编排状态，才进入独立的设备级任务模型。
+
+## 91. v0.86 “需要刷新”必须来自源码事实，但不能变成后台双写
+
+可重复配方解决了“上次怎么生成”，却仍要求用户自己记住 Document 是否在那之后改过。把所有关联 Deck 都标成可能过期没有价值；监听编辑并自动覆盖则破坏 review-before-write。正确的中间层是一条可移植、可即时派生、没有写权限的新鲜度事实。
+
+Rune 因此在任务生成的 Deck frontmatter 中加入 `origin_revision`：一个带版本前缀、包含 UTF-8 byte length 的有界 FNV-1a 64-bit 变化标记。当前 workspace 每次从 exact origin Document 的 canonical source 重算标记，目标解析器只返回三态：相同为 current，不同为 changed，旧 Deck 缺少字段为 unknown。文件栏只在 changed 时露出一个克制的琥珀色“可以刷新”；目标下拉框和任务摘要保留完整语义，避免红色错误态或全局通知制造焦虑。
+
+这个标记刻意不承担安全含义。它不是密码学 hash，不替代 Artifact id，也不能授权刷新；极端碰撞只会影响一条提示，不会影响写入正确性。真正的刷新仍捕获完整 workspace source revision，重读 Document/Deck，验证 origin 和全部依赖，展示 candidate 与事务关系，最后在 Apply 时再次比较完整源码。这样 Rune 获得接近原生应用的实时轻反馈，同时不引入轮询、数据库记录或第二个 writer。
+
+旧 Deck 不会因为缺少新字段而失效：unknown 是诚实的兼容状态，用户完成一次审核刷新后，compiler 自动补上当前基准。这个迁移方式与 Rune 的 source-first 原则一致——升级发生在用户明确写入的 canonical source 中，而不是启动时静默改文件。

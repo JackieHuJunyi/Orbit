@@ -946,6 +946,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "匯出已校驗的源內容"
   ],
   [
+    "将记录当前来源版本",
+    "將記錄當前來源版本"
+  ],
+  [
     "工作区中没有可用的",
     "工作區中沒有可用的"
   ],
@@ -1228,6 +1232,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "少量修改后可交付",
     "少量修改後可交付"
+  ],
+  [
+    "尚未记录基准版本",
+    "尚未記錄基準版本"
   ],
   [
     "工作区依赖关系图",
@@ -2106,6 +2114,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "已手動固定到"
   ],
   [
+    "已是当前版本",
+    "已是當前版本"
+  ],
+  [
     "已经是第一个",
     "已經是第一個"
   ],
@@ -2710,6 +2722,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "本地工作區"
   ],
   [
+    "来源已变化",
+    "來源已變化"
+  ],
+  [
+    "来源新鲜度",
+    "來源新鮮度"
+  ],
+  [
     "标准文件包",
     "標準檔案包"
   ],
@@ -3014,6 +3034,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "可以儲存"
   ],
   [
+    "可以刷新",
+    "可以重新整理"
+  ],
+  [
     "可以编辑",
     "可以編輯"
   ],
@@ -3260,6 +3284,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "暗号化中",
     "暗號化中"
+  ],
+  [
+    "更新状態",
+    "更新狀態"
   ],
   [
     "未知来源",

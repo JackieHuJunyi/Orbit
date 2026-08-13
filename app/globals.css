@@ -823,9 +823,46 @@ body.workspace-resizing iframe { pointer-events: none; }
 }
 
 .artifact-label small {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
   color: var(--subtle);
   font-size: 9px;
 }
+
+.artifact-label small > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-refresh-status,
+.briefing-freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.artifact-refresh-status {
+  flex: none;
+  color: #9a5a16;
+  font-weight: 650;
+}
+
+.artifact-refresh-status::before,
+.briefing-freshness::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.briefing-freshness.current,
+.briefing-freshness.new { color: #277553; }
+.briefing-freshness.changed { color: #9a5a16; }
+.briefing-freshness.unknown { color: var(--subtle); }
 
 .file-rail-spacer {
   flex: 1;

@@ -451,3 +451,23 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "검토된 문서, 대상, 목적을 선택하세요. Rune은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
   "Create a new presentation": "새 프레젠테이션 만들기", "Create or refresh a light presentation": "가벼운 프레젠테이션 만들기 또는 갱신", "New Deck Markdown": "새 Deck Markdown", "Presentation destination": "프레젠테이션 대상", "Refresh linked presentation in place": "연결된 프레젠테이션을 제자리에서 갱신", "Update in place · identity preserved": "제자리 업데이트 · ID 유지",
 });
+
+// Human-reviewed source-freshness copy for linked presentations.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Source freshness": "Actualité de la source", "Refresh available": "Actualisation disponible", "Source changed · refresh available": "Source modifiée · actualisation disponible", "Baseline not recorded": "Version de référence non enregistrée", "Current source revision will be recorded": "La version actuelle de la source sera enregistrée",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Source freshness": "Actualidad del origen", "Refresh available": "Actualización disponible", "Source changed · refresh available": "El origen cambió · actualización disponible", "Baseline not recorded": "Versión de referencia no registrada", "Current source revision will be recorded": "Se registrará la versión actual del origen",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Source freshness": "Актуальность источника", "Refresh available": "Доступно обновление", "Source changed · refresh available": "Источник изменён · доступно обновление", "Baseline not recorded": "Исходная версия не записана", "Current source revision will be recorded": "Текущая версия источника будет записана",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Source freshness": "حداثة المصدر", "Refresh available": "يتوفر تحديث", "Source changed · refresh available": "تغيّر المصدر · يتوفر تحديث", "Baseline not recorded": "لم يُسجّل الإصدار المرجعي", "Current source revision will be recorded": "سيُسجّل إصدار المصدر الحالي",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Source freshness": "ソースの更新状態", "Refresh available": "更新できます", "Source changed · refresh available": "元文書が変更されました · 更新できます", "Baseline not recorded": "基準バージョンは未記録です", "Current source revision will be recorded": "現在のソース版を記録します",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Source freshness": "원본 최신 상태", "Refresh available": "갱신 가능", "Source changed · refresh available": "원본 변경됨 · 갱신 가능", "Baseline not recorded": "기준 버전이 기록되지 않음", "Current source revision will be recorded": "현재 원본 버전을 기록합니다",
+});

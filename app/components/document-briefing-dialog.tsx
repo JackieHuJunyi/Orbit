@@ -55,6 +55,11 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     sourceIdentity: "来源身份",
     output: "可编辑成品",
     export: "现有导出",
+    freshness: "来源新鲜度",
+    current: "已是当前版本",
+    changed: "来源已变化 · 可以刷新",
+    unknown: "尚未记录基准版本",
+    newBaseline: "将记录当前来源版本",
     newOutputValue: "新的 Deck Markdown",
     refreshOutputValue: "原位更新并保留文件身份",
     exportValue: "HTML · PPTX · ODP · PDF",
@@ -88,6 +93,11 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     sourceIdentity: "Source identity",
     output: "Editable output",
     export: "Existing exports",
+    freshness: "Source freshness",
+    current: "Current",
+    changed: "Source changed · refresh available",
+    unknown: "Baseline not recorded",
+    newBaseline: "Current source revision will be recorded",
     newOutputValue: "New Deck Markdown",
     refreshOutputValue: "Update in place · identity preserved",
     exportValue: "HTML · PPTX · ODP · PDF",
@@ -101,6 +111,13 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
 
 function documentBriefingCopy(locale: RuneLocale) {
   return localizeRuneCopy(locale, DOCUMENT_BRIEFING_BASE_COPY.en, DOCUMENT_BRIEFING_BASE_COPY["zh-CN"]);
+}
+
+function freshnessLabel(
+  copy: ReturnType<typeof documentBriefingCopy>,
+  freshness: "current" | "changed" | "unknown",
+) {
+  return freshness === "changed" ? copy.changed : freshness === "current" ? copy.current : copy.unknown;
 }
 
 export function DocumentBriefingDialog({
@@ -235,7 +252,7 @@ export function DocumentBriefingDialog({
               }
             }}>
               <option value="">{copy.newPresentation}</option>
-              {targetOptions.map((option) => <option key={option.artifactId} value={option.artifactId}>{copy.refreshPresentation} · {option.name}</option>)}
+              {targetOptions.map((option) => <option key={option.artifactId} value={option.artifactId}>{copy.refreshPresentation} · {option.name} · {freshnessLabel(copy, option.freshness)}</option>)}
             </select>
           </label>
 
@@ -284,6 +301,7 @@ export function DocumentBriefingDialog({
           <dl>
             <div><dt>{copy.sourceIdentity}</dt><dd>{source?.id ?? "—"}</dd></div>
             <div><dt>{copy.audience}</dt><dd>{audience === "customer" ? copy.customer : audience === "team" ? copy.team : copy.leadership}</dd></div>
+            <div><dt>{copy.freshness}</dt><dd><span className={`briefing-freshness ${target?.freshness ?? "new"}`}>{target ? freshnessLabel(copy, target.freshness) : copy.newBaseline}</span></dd></div>
             <div><dt>{copy.output}</dt><dd>{target ? copy.refreshOutputValue : copy.newOutputValue}</dd></div>
             <div><dt>{copy.export}</dt><dd>{copy.exportValue}</dd></div>
           </dl>

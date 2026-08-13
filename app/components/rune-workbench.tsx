@@ -242,6 +242,7 @@ import {
 } from "../lib/operating-review";
 import {
   documentBriefingSourceIdForPresentation,
+  documentBriefingTargets,
   type DocumentBriefingInput,
 } from "../lib/document-briefing";
 import { prepareRuneTaskProvider } from "../lib/task-providers";
@@ -750,6 +751,12 @@ export function RuneWorkbench() {
     [appearanceTheme],
   );
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
+  const documentBriefingTargetsById = useMemo(() => new Map(
+    artifacts
+      .filter((artifact) => artifact.kind === "document")
+      .flatMap((artifact) => documentBriefingTargets(artifacts, artifact.id))
+      .map((target) => [target.artifactId, target] as const),
+  ), [artifacts]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -3619,7 +3626,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.85</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.86</strong></footer>
               </div>
             )}
           </div>
@@ -3715,6 +3722,7 @@ export function RuneWorkbench() {
                       const referenceCount = metricReferenceCount + queryMetricReferenceCount + chartReferenceCount;
                       const pinned = workspacePinnedArtifactIds.includes(artifact.id);
                       const inAgentContext = workspaceAgentContext.some((contextArtifact) => contextArtifact.id === artifact.id);
+                      const briefingFreshness = documentBriefingTargetsById.get(artifact.id)?.freshness;
                       return (
                         <div
                           className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""}`.trim()}
@@ -3727,7 +3735,13 @@ export function RuneWorkbench() {
                             onClick={() => selectArtifact(artifact.id)}
                           >
                             <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
-                            <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${ui.liveBindings(referenceCount)}` : ""}</small></span>
+                            <span className="artifact-label">
+                              <strong>{artifact.name}</strong>
+                              <small>
+                                <span>{artifact.language}{referenceCount ? ` · ${ui.liveBindings(referenceCount)}` : ""}</span>
+                                {briefingFreshness === "changed" && <span className="artifact-refresh-status">{ui.refreshAvailable}</span>}
+                              </small>
+                            </span>
                           </button>
                           <button
                             type="button"
