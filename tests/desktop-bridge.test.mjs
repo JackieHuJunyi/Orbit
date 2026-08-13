@@ -3,8 +3,10 @@ import test from "node:test";
 import {
   MAX_LEGACY_OFFICE_IMPORT_BYTES,
   convertLegacyOfficeFile,
+  exportLegacyOfficeFile,
   legacyOfficeFileName,
   supportsLegacyOfficeDesktopConversion,
+  supportsLegacyOfficeDesktopExport,
 } from "../app/lib/desktop-bridge.ts";
 
 function fakeFile(name, bytes) {
@@ -34,6 +36,34 @@ test("accepts one bounded converted OOXML package from the desktop bridge", asyn
   const result = await convertLegacyOfficeFile(fakeFile("brief.doc", [1, 2, 3]));
   assert.equal(result.fileName, "brief.docx");
   assert.deepEqual(result.bytes, new Uint8Array([80, 75, 3, 4]));
+  delete globalThis.window;
+});
+
+test("exports one bounded DOCX or PPTX package through the narrow desktop bridge", async () => {
+  globalThis.window = { runeDesktop: {
+    async convertLegacyOffice() { throw new Error("not used"); },
+    async exportLegacyOffice(input) {
+      assert.equal(input.fileName, "brief.docx");
+      assert.deepEqual(input.bytes, new Uint8Array([80, 75, 3, 4]));
+      return { fileName: "brief.doc", bytes: new Uint8Array([208, 207, 17, 224]), warning: "Converted locally." };
+    },
+  } };
+  assert.equal(supportsLegacyOfficeDesktopExport(), true);
+  const result = await exportLegacyOfficeFile({ fileName: "brief.docx", bytes: new Uint8Array([80, 75, 3, 4]) });
+  assert.equal(result.fileName, "brief.doc");
+  assert.deepEqual(result.bytes, new Uint8Array([208, 207, 17, 224]));
+  delete globalThis.window;
+});
+
+test("keeps legacy export unavailable on the web and rejects mismatched bridge output", async () => {
+  globalThis.window = {};
+  assert.equal(supportsLegacyOfficeDesktopExport(), false);
+  await assert.rejects(() => exportLegacyOfficeFile({ fileName: "brief.docx", bytes: new Uint8Array([1]) }), /requires the Rune desktop app/i);
+  globalThis.window = { runeDesktop: {
+    async convertLegacyOffice() { throw new Error("not used"); },
+    async exportLegacyOffice() { return { fileName: "brief.ppt", bytes: [1], warning: "Wrong kind." }; },
+  } };
+  await assert.rejects(() => exportLegacyOfficeFile({ fileName: "brief.docx", bytes: new Uint8Array([1]) }), /invalid legacy Office export/i);
   delete globalThis.window;
 });
 

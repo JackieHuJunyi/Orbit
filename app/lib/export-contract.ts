@@ -1,4 +1,4 @@
-export type ArtifactExportKind = "csv" | "json" | "docx" | "xlsx" | "pptx" | "odt" | "ods" | "odp" | "html" | "pdf";
+export type ArtifactExportKind = "csv" | "json" | "doc" | "ppt" | "docx" | "xlsx" | "pptx" | "odt" | "ods" | "odp" | "html" | "pdf";
 
 export type ArtifactExportResult<Target extends ArtifactExportKind = ArtifactExportKind> = {
   bytes: Uint8Array;

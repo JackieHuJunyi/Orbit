@@ -35,7 +35,7 @@ export function ExportReviewDialog({
   onConfirm: () => void;
 }) {
   const target = result.targetType.toUpperCase();
-  const office = ["docx", "xlsx", "pptx"].includes(result.targetType);
+  const office = ["doc", "ppt", "docx", "xlsx", "pptx"].includes(result.targetType);
   const odf = ["odt", "ods", "odp"].includes(result.targetType);
   const pdf = result.targetType === "pdf";
   const data = ["csv", "json"].includes(result.targetType);

@@ -198,6 +198,7 @@ import {
   convertLegacyOfficeFile,
   legacyOfficeFileName,
   MAX_LEGACY_OFFICE_IMPORT_BYTES,
+  supportsLegacyOfficeDesktopExport,
 } from "../lib/desktop-bridge";
 
 const STORAGE_KEY = "rune-workspace-v0";
@@ -508,6 +509,12 @@ function officeExportType(artifact: WorkspaceArtifact): "DOCX" | "XLSX" | "PPTX"
   return null;
 }
 
+function legacyOfficeExportType(artifact: WorkspaceArtifact): "DOC" | "PPT" | null {
+  if (artifact.kind === "document") return "DOC";
+  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return "PPT";
+  return null;
+}
+
 function odfExportType(artifact: WorkspaceArtifact): "ODT" | "ODS" | "ODP" | null {
   if (artifact.kind === "document") return "ODT";
   if (artifact.kind === "data") return "ODS";
@@ -591,7 +598,7 @@ export function RuneWorkbench() {
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [exportError, setExportError] = useState("");
-  const [exportState, setExportState] = useState<"idle" | "office" | "odf" | "html" | "pdf" | "csv" | "json">("idle");
+  const [exportState, setExportState] = useState<"idle" | "office" | "legacy-office" | "odf" | "html" | "pdf" | "csv" | "json">("idle");
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
@@ -695,6 +702,10 @@ export function RuneWorkbench() {
     : null;
   const editorSource = activeVisualSourceDraft?.nextSource ?? selectedArtifact?.source ?? "";
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
+  const selectedLegacyOfficeExportType = selectedArtifact ? legacyOfficeExportType(selectedArtifact) : null;
+  const legacyOfficeExportAvailable = hydrated && selectedLegacyOfficeExportType
+    ? supportsLegacyOfficeDesktopExport()
+    : false;
   const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
   const selectedPdfExport = Boolean(selectedArtifact?.kind === "document" || selectedArtifact?.kind === "data" || selectedHtmlExport);
@@ -2571,9 +2582,11 @@ export function RuneWorkbench() {
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
-  async function prepareExport(destination: "office" | "odf" | "html" | "pdf" | "csv" | "json") {
+  async function prepareExport(destination: "office" | "legacy-office" | "odf" | "html" | "pdf" | "csv" | "json") {
     const targetType = destination === "office"
       ? selectedOfficeExportType
+      : destination === "legacy-office"
+        ? selectedLegacyOfficeExportType
       : destination === "odf"
         ? selectedOdfExportType
       : destination === "html"
@@ -2613,7 +2626,7 @@ export function RuneWorkbench() {
       if (destination === "csv" || destination === "json") {
         const { exportPortableDataArtifact } = await import("../lib/data-export");
         result = exportPortableDataArtifact(targetArtifact, destination);
-      } else if (destination === "office" || destination === "odf") {
+      } else if (destination === "office" || destination === "legacy-office" || destination === "odf") {
         const compiled = targetArtifact.kind === "document" || targetArtifact.kind === "slides"
           ? compileArtifactSource(targetArtifact.source, baseArtifacts, querySnapshots)
           : null;
@@ -2629,7 +2642,24 @@ export function RuneWorkbench() {
           result = exportOdfArtifact(exportArtifact, baseArtifacts, querySnapshots);
         } else {
           const { exportOfficeArtifact } = await import("../lib/office-export");
-          result = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
+          const modernResult = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots);
+          if (destination === "legacy-office") {
+            const { exportLegacyOfficeFile } = await import("../lib/desktop-bridge");
+            const legacy = await exportLegacyOfficeFile({ bytes: modernResult.bytes, fileName: modernResult.fileName });
+            result = {
+              bytes: legacy.bytes,
+              fileName: legacy.fileName,
+              mimeType: targetType === "DOC" ? "application/msword" : "application/vnd.ms-powerpoint",
+              targetType: targetType === "DOC" ? "doc" : "ppt",
+              warnings: [
+                ...modernResult.warnings,
+                legacy.warning,
+                "Legacy Office output is a compatibility handoff, not Rune's canonical source. Verify the downloaded file in Microsoft Office before delivery.",
+              ],
+            };
+          } else {
+            result = modernResult;
+          }
         }
       } else if (destination === "html") {
         const { exportDeckHtml } = await import("../lib/html-export");
@@ -2777,6 +2807,7 @@ export function RuneWorkbench() {
                     </>
                   )}
                   {selectedOfficeExportType && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("office"); }}><FileArchive aria-hidden="true" /><span><strong>{selectedOfficeExportType}</strong><small>{ui.exportAs(selectedOfficeExportType)}</small></span></button>}
+                  {legacyOfficeExportAvailable && selectedLegacyOfficeExportType && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("legacy-office"); }}><FileArchive aria-hidden="true" /><span><strong>{selectedLegacyOfficeExportType}</strong><small>{ui.exportAs(selectedLegacyOfficeExportType)} · Rune Desktop</small></span></button>}
                   {selectedOdfExportType && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("odf"); }}><FileArchive aria-hidden="true" /><span><strong>{selectedOdfExportType}</strong><small>{ui.exportAsOpenDocument(selectedOdfExportType)}</small></span></button>}
                   {selectedHtmlExport && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("html"); }}><FileCode2 aria-hidden="true" /><span><strong>HTML</strong><small>{ui.exportStandaloneHtml}</small></span></button>}
                   {selectedPdfExport && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("pdf"); }}><FileText aria-hidden="true" /><span><strong>PDF</strong><small>{ui.exportFixedPdf}</small></span></button>}
@@ -3287,7 +3318,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.56</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.57</span></div>
       </footer>
 
       {newArtifactOpen && (

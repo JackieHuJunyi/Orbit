@@ -1015,7 +1015,7 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 | Document | 当前：MD、Markdown、DOCX、ODT、PDF 可选文本与显式选择扫描页 OCR 到 MD | 当前：MD、DOCX、ODT、PDF | 结构与语义优先；OCR 标页码与置信度，不承诺像素级 round-trip |
 | Data | 当前：CSV、JSON、XLSX、ODS | 当前：CSV、JSON、XLSX、ODS、表格 PDF | 值、类型、列序和工作表边界明确；PDF 是固定快照 |
 | Presentation | 当前：Deck Markdown、HTML、PPTX、ODP | 当前：Deck Markdown、PPTX、ODP、HTML、PDF | 语义布局优先，动画与复杂母版明确警告 |
-| Legacy binary | Rune Desktop 当前：通过本机 Word/PowerPoint 将 DOC/PPT 转成 DOCX/PPTX，再进入相同导入审核；Web 明确拒绝 | DOC、PPT 不作为默认交付 | 12 MB、30 秒、宏禁用、私有临时目录与清理；真实 DOC/PPT 往返 fixture 已通过 |
+| Legacy binary | Rune Desktop 当前：通过本机 Word/PowerPoint 将 DOC/PPT 转成 DOCX/PPTX，再进入相同导入审核；Web 明确拒绝 | Rune Desktop 当前：Document/Deck 先编译成已验证 DOCX/PPTX，再通过本机 Word/PowerPoint 生成经审核的 DOC/PPT 兼容交付；Web 不显示该选项 | 12 MB、30 秒、宏禁用、私有临时目录与清理；真实 DOC/PPT 双向往返 QA 已通过；`.xls` 不支持 |
 
 补充原则：
 
@@ -1162,7 +1162,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 1. **Welcome & Trust**：设备语言、欢迎、模型/隐私选择、快捷键教程、本地指南与空态；v0.49 已让主要工作区与专业审核延续同一中英文选择，形成首次与持续帮助闭环。
 2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
-4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；v0.53 已让旧 `.doc/.ppt` 在 macOS 桌面壳通过本机 Office 的受限转换进入同一审核，Web 仍明确拒绝。
+4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；v0.53 已让旧 `.doc/.ppt` 在 macOS 桌面壳通过本机 Office 的受限转换进入同一导入审核，v0.57 又从已验证 DOCX/PPTX 包建立经审核的本机 DOC/PPT 导出，Web 仍明确拒绝导入且不显示旧格式导出。
 5. **Model Platform**：v0.46 先完成 Responses profile；下一步才是 Anthropic/Gemini/Chat adapters、capability manifest、故障转移、用量和预算路由。
 6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
 
@@ -1174,7 +1174,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
 
-这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移；v0.53 的旧 `.doc/.ppt` 只在 macOS Rune Desktop 且本机已安装对应 Word/PowerPoint 时支持受限本地转换，Web 仍不解析、不上传、不猜测。selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，但 OCR 不是确定事实、不是原排版恢复，也没有任意语言或区域级框选。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–58 节。
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移；v0.53 的旧 `.doc/.ppt` 只在 macOS Rune Desktop 且本机已安装对应 Word/PowerPoint 时支持受限本地导入转换，v0.57 在相同边界内增加从 Rune 现代包到 DOC/PPT 的兼容导出，Web 仍不解析、不上传、不猜测，也不显示旧格式导出。selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，但 OCR 不是确定事实、不是原排版恢复，也没有任意语言或区域级框选。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–62 节。
 
 ### 6.28 v0.48 Markdown 细粒度双向定位
 
@@ -1857,5 +1857,11 @@ Rune 以后所有产品决策都回到这十句话：
 欢迎动画展示的每一种问候必须对应一个真实可选择、完整 shape-tested 的界面 locale。当前注册表只包含 English、简体中文与繁體中文；设备语言按有序、最长 BCP 47 前缀推荐，用户选择始终优先。繁体通过固定版本的本地 OpenCC 台湾短语转换从完整 typed Chinese contract 派生，覆盖动态函数、本地指南、模型配置、空态、专业审核与经营汇报成品，但不转换用户 source、字段 identity、SQL、binding 或技术原始证据。
 
 首启界面遵守三条产品规则：每屏只有一个主要决定；教程短、可跳过且通过真实快捷键操作学习；动效只解释状态，服从系统减少动态效果并不阻塞交互。视觉采用 Rune 自己的朱砂、雾白和石墨层级，减少渐变、徽章、夸张阴影与“AI 能力清单”，不复制 Apple 商标或系统皮肤。未来任何新问候都必须和完整 locale、指南、任务链测试在同一里程碑交付。
+
+### 17.4 v0.57 旧 Office 桌面交付闭环
+
+旧 DOC/PPT 只是一种兼容交付，不成为 Rune 的事实源。Document 和 Deck 必须先经过现有确定性导出器编译成已验证 DOCX/PPTX，冻结当前 Query、Chart 与指标快照，再由 macOS Rune Desktop 通过本机 Word/PowerPoint 转成 DOC/PPT；用户仍会看到文件名、格式、大小与全部 fidelity warnings，并在明确确认后才下载。转换输入与输出各限 12 MB、执行限 30 秒，Office 自动化宏强制关闭，文件只进入权限收紧的独立临时目录且成功或失败后都会清理。
+
+这项能力只在检测到窄 desktop bridge 时出现。Web 不显示 DOC/PPT 导出，不上传现代包，也不制造改后缀的假文件；`.xls` 仍不支持。发布验收必须调用生产转换函数，让真实 Word/PowerPoint 完成 Document→DOC→DOCX→Markdown 和 Deck→PPT→PPTX→Deck Markdown 两条往返链，并验证核心语义可读。旧格式可能改变字体、分页、布局、矢量图表、表格、媒体与可访问性，因此 Rune 必须要求交付前在 Office 中再次核对。
 
 如果未来的新方向违背这些原则，必须先修改本文并写清楚证据和代价，而不是在代码里悄悄改变产品。

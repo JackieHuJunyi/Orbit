@@ -15,6 +15,7 @@ test("ships one context-isolated desktop conversion capability without renderer 
   assert.match(main, /nodeIntegration:\s*false/);
   assert.match(main, /sandbox:\s*true/);
   assert.match(preload, /rune:convert-legacy-office/);
+  assert.match(preload, /rune:export-legacy-office/);
   assert.match(preload, /require\("electron"\)/);
   assert.doesNotMatch(preload, /ipcRenderer\.(?:send|on)|require\("node:/);
   assert.match(packageJson, /"desktop:dev"/);
@@ -38,6 +39,10 @@ test("legacy Office conversion is bounded, macro-disabled, temporary, and review
   assert.match(legacyOffice, /rm\(privateDirectory, \{ recursive: true, force: true \}\)/);
   assert.match(workbench, /importLegacyOfficeThroughDesktop/);
   assert.match(workbench, /prepareWorkspaceImportReview/);
+  assert.match(legacyOffice, /format document97/);
+  assert.match(legacyOffice, /save as presentation/);
+  assert.match(workbench, /exportLegacyOfficeFile/);
+  assert.match(workbench, /Legacy Office output is a compatibility handoff/);
 });
 
 test("desktop navigation remains pinned to Rune's ephemeral loopback origin", () => {

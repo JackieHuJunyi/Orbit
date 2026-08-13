@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { convertLegacyOffice } from "./legacy-office.mjs";
+import { convertLegacyOffice, exportLegacyOffice } from "./legacy-office.mjs";
 
 const desktopDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(desktopDirectory, "..");
@@ -144,6 +144,7 @@ async function createRuneWindow() {
 app.whenReady().then(async () => {
   await initializeDesktopCredentialVault();
   ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);
+  ipcMain.handle("rune:export-legacy-office", exportLegacyOffice);
   await createRuneWindow();
   app.on("activate", () => {
     void createRuneWindow();

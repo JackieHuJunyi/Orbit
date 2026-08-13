@@ -1872,9 +1872,9 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 双向同步 | source → preview 与 preview → source 定位；v0.48 已细化到 Markdown list item/table cell/inline semantics；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | fragment→block→section 最小范围；stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
 | Agent | Selection/File/Workspace typed operation、创建完整 Data→Query→Chart→成品链、review、一次修复：已交付 | bounded context、query evidence、runtime impact | provider 不能直接写；所有 concrete diff 可解释且 Apply 原子化 |
 | 导入 | `.md/.csv/.json/.sql/.html`、DOCX/XLSX/PPTX、ODT/ODS/ODP、selectable PDF 与显式扫描页 OCR：已交付 | 本地 parser、大小/像素上限、fidelity review | 多文件单事务；脚本/OCR/丢失项明确；取消零写入 |
-| 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Deck PDF：已交付 | deterministic compiler、当前 Query snapshot | review 后一次下载；byte/结构 fixture；canonical source 不变 |
+| 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Data/Deck PDF，以及 Rune Desktop 的 DOC/PPT 兼容交付：已交付 | deterministic compiler、当前 Query snapshot、窄 desktop bridge | review 后一次下载；byte/结构 fixture；旧格式真实 Office 往返；canonical source 不变 |
 | 通用经营汇报向导 | Data→Query→Chart→报告/演示的任务式入口：v0.47 已交付 | 明确字段映射、周期/对象/重点、workflow review | 用户确认源、严格数值字段与产物；整链 runtime preflight；一次 transaction Apply；错误字段和中途版本变化零写入 |
-| 原生 `.doc/.ppt` | 暂不做浏览器内解析 | 受控 LibreOffice conversion service 或桌面壳 | 先隔离执行、病毒扫描、超时/资源限制、转换 fidelity review |
+| 原生 `.doc/.ppt` | Rune Desktop 已支持受限本地导入与经审核导出；Web 明确不支持 | 本机 Word/PowerPoint、宏禁用、私有临时目录、12 MB/30 秒边界 | 真实 Office 双向往返 QA；导入/导出均有 fidelity review；`.xls` 不支持 |
 | 扫描 PDF OCR | v0.50 已交付英文/简中本地端口；区域框选与更多语言待真实需求 | 同源 Tesseract worker/WASM/语言数据、明确页码授权与数据披露 | 页面图像不上传；页级 provenance；置信度与遗漏可见；停止零写入 |
 | 富媒体 | 图片、附件、来源摘录：下一阶段 | asset store、hash identity、引用许可 | 不把 base64 混入 source；导入/导出/删除/同步可追踪 |
 | 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
@@ -1892,7 +1892,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Rune 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
 
-这一版本也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；它们等待桌面壳或隔离、限时、限资源、带恶意文件扫描的转换服务。v0.50 已交付带明确页面范围、英文/简中语言选择、置信度和 provenance 的浏览器本地扫描 PDF OCR，但不宣称区域级框选、任意语言、版式重建或确定事实。v0.49 已把主工作区、专业 review 与可视化编辑器纳入统一中英文合同；parser、模型、SQL 和格式转换器的原始技术证据仍等待稳定错误码后再完整本地化。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
+v0.47 当时也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；这项等待桌面壳或隔离转换服务的工作后来由 v0.53 的受限本地导入与 v0.57 的经审核本地导出完成，Web 仍不伪装支持。v0.50 已交付带明确页面范围、英文/简中语言选择、置信度和 provenance 的浏览器本地扫描 PDF OCR，但不宣称区域级框选、任意语言、版式重建或确定事实。v0.49 已把主工作区、专业 review 与可视化编辑器纳入统一中英文合同；parser、模型、SQL 和格式转换器的原始技术证据仍等待稳定错误码后再完整本地化。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
 
 ## 54. v0.48 细粒度同步仍然来自 Markdown AST，而不是点击坐标
 
@@ -1957,3 +1957,11 @@ Rune 不能只记录“用户打开过几次”或“Agent 调用过几次”。
 繁体不是在 DOM 渲染后做字符串替换。Rune 用固定版本、纯本地的 OpenCC 台湾短语转换从完整简体 typed catalog 生成第三套同形契约，函数返回的数量、文件名和错误建议也在调用后转换；源文件 ID、CSV/JSON 字段、SQL identifier、Chart binding 和用户输入永不经过翻译。繁体经营汇报测试同时证明 `lang: zh-TW`、繁体成品和精确字段 identity 可以共存。以后新增日语、韩语、西语或印尼语时，也必须交付完整 catalog、指南和任务链测试后才能把对应问候放入动画。
 
 视觉上继续学习 Apple 的原则而不是复制外观：首屏只保留一个主决策，原来的三块“本地优先 / 先审后写 / 实时编译”功能徽章被收成一句低噪音信任说明；移除装饰渐变，降低阴影，语言列表使用可滚动的标准选择行。动效仍短、可取消且服从 `prefers-reduced-motion`。这遵循 Apple 对 onboarding 的“短、可选、通过实际操作学习”和对 motion 的“有目的、精确、可减少”原则，同时保留 Rune 的朱砂品牌与 source-first 心智，而不是把界面伪装成 macOS。
+
+## 62. v0.57 旧格式导出必须建立在现代包和真实 Office 之上
+
+Rune 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改后缀制造 DOC/PPT。Document 和 Deck 导出继续先走既有 `canonical source → compiled metrics/charts → deterministic DOCX/PPTX` 端口，冻结当前 Query snapshot 并保留现代包的全部 fidelity warnings；只有在 hydration 后检测到 Rune Desktop 的窄 `exportLegacyOffice` capability，导出菜单才增加 DOC 或 PPT。用户确认的仍是一份完整 `ArtifactExportResult`，旧格式只是一次兼容 handoff，不反向成为 workspace source of truth。
+
+桌面 main process 把现代包写入 0600 的独立临时目录，通过参数数组调用 `/usr/bin/osascript`，让本机 Word 使用 `format document97`、PowerPoint 使用 legacy presentation 格式保存。两条自动化链均强制 `msoAutomationSecurityForceDisable`，输入输出各限 12 MB、转换限 30 秒，成功与失败都递归清理临时目录。renderer 没有 Node 权限；preload 只暴露一次请求/一次结果，没有任意路径、命令或文件系统能力。Web 既不显示旧格式菜单，也不上传或伪造输出；Data 的 `.xls` 没有被顺手扩大进合同。
+
+这条链用真实安装的 Word 和 PowerPoint 验收，而不是只测 AppleScript 字符串。默认 Document 经生产 `exportLegacyOffice` 得到 35,328-byte DOC，再经生产 import bridge 恢复 DOCX 并解析回 Markdown；默认 Deck 得到 69,120-byte PPT，再恢复 PPTX 并解析回 Deck Markdown，两者核心标题与内容均保留。测试同时覆盖 Web 不可用、类型不匹配、空/超限结果、IPC 暴露、宏禁用和 review-before-download。产品仍明确提醒字体、分页、布局、矢量图表、表格、媒体和可访问性可能变化，交付前必须在 Office 中复核。
