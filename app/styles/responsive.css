@@ -78,5 +78,9 @@
   .import-task-continuation > svg { width: 34px; height: 34px; padding: 9px; }
   .delivery-outcome-context { grid-template-columns: 1fr; }
   .delivery-outcome-options label { grid-template-columns: 18px 22px minmax(0, 1fr); padding-inline: 13px; border-radius: 18px; }
+  .delivery-evaluation { padding: 12px; border-radius: 18px; }
+  .delivery-rubric-row { grid-template-columns: 1fr; gap: 8px; padding: 11px; }
+  .delivery-score-options { width: 100%; grid-template-columns: repeat(5, minmax(34px, 1fr)); }
+  .delivery-score-options label { width: 100%; height: 34px; }
   .proposal-preview-badge { max-width: 150px; padding-inline: 8px; }
 }

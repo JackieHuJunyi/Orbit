@@ -757,3 +757,71 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Compare with": "비교 대상", "No comparison": "비교 안 함", "Comparison rows": "비교 행", Change: "변화",
   "Optional. Compare another exact value from the same field; change is primary minus comparison.": "선택 사항입니다. 같은 필드의 다른 정확한 값과 비교하며, 변화는 기본 범위에서 비교 범위를 뺀 값입니다.",
 });
+
+// Human-reviewed copy for optional seven-dimensional real-task evaluation.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.": "Un échantillon n’est comptabilisé que si toutes les notes sont renseignées et si le contenu est confirmé comme autorisé ou anonymisé. Une note de 1 indique un résultat à améliorer ; 5, un excellent résultat.",
+  "Add a detailed real-task evaluation": "Ajouter une évaluation détaillée sur une tâche réelle", "Change comprehensibility": "Compréhension des modifications", "Conclusion usefulness": "Utilité des conclusions",
+  "Conclusions trace to sufficient supporting evidence.": "Les conclusions s’appuient sur des éléments probants suffisants.", "Detailed evaluation": "Évaluation détaillée", "Evidence completeness": "Exhaustivité des preuves",
+  "I confirm this task is authorized for evaluation or its content is redacted.": "Je confirme que cette tâche est autorisée pour l’évaluation ou que son contenu a été anonymisé.", "Information hierarchy is clear and easy to scan.": "La hiérarchie de l’information est claire et facile à parcourir.",
+  "Insights support a useful next decision.": "Les enseignements facilitent la prochaine décision.", "number checks below 4": "contrôles numériques inférieurs à 4", "Number correctness": "Exactitude des chiffres",
+  "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.": "Une exactitude des chiffres inférieure à 4 reste toujours un point bloquant visible et n’est jamais masquée dans une moyenne.", "Optional · seven dimensions · about one minute": "Facultatif · sept dimensions · environ une minute",
+  "Overall time saved": "Gain de temps global", "real tasks reviewed": "tâches réelles évaluées", "Real-task evaluation": "Évaluation sur une tâche réelle", "Structure clarity": "Clarté de la structure",
+  "The layout is usable without material rework.": "La mise en page est utilisable sans reprise importante.", "The result saves meaningful time over manual work.": "Le résultat fait gagner un temps notable par rapport au travail manuel.",
+  "The user can understand what Rune changed and why.": "L’utilisateur peut comprendre ce que Rune a modifié et pourquoi.", "Values, definitions, and calculations are accurate.": "Les valeurs, les définitions et les calculs sont exacts.", "Visual deliverability": "Qualité visuelle livrable",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.": "Una muestra solo cuenta cuando todas las puntuaciones están completas y se confirma que el contenido está autorizado o anonimizado. Un 1 necesita mejoras; un 5 es excelente.",
+  "Add a detailed real-task evaluation": "Añadir una evaluación detallada de la tarea real", "Change comprehensibility": "Comprensión de los cambios", "Conclusion usefulness": "Utilidad de las conclusiones",
+  "Conclusions trace to sufficient supporting evidence.": "Las conclusiones se apoyan en pruebas suficientes.", "Detailed evaluation": "Evaluación detallada", "Evidence completeness": "Integridad de las pruebas",
+  "I confirm this task is authorized for evaluation or its content is redacted.": "Confirmo que esta tarea está autorizada para evaluación o que su contenido está anonimizado.", "Information hierarchy is clear and easy to scan.": "La jerarquía de la información es clara y fácil de revisar.",
+  "Insights support a useful next decision.": "Los hallazgos ayudan a tomar una siguiente decisión útil.", "number checks below 4": "comprobaciones numéricas por debajo de 4", "Number correctness": "Exactitud numérica",
+  "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.": "Una exactitud numérica inferior a 4 siempre permanece como bloqueo visible y nunca se oculta en un promedio.", "Optional · seven dimensions · about one minute": "Opcional · siete dimensiones · alrededor de un minuto",
+  "Overall time saved": "Ahorro de tiempo total", "real tasks reviewed": "tareas reales evaluadas", "Real-task evaluation": "Evaluación de tarea real", "Structure clarity": "Claridad de la estructura",
+  "The layout is usable without material rework.": "El diseño puede usarse sin una reelaboración importante.", "The result saves meaningful time over manual work.": "El resultado ahorra un tiempo significativo frente al trabajo manual.",
+  "The user can understand what Rune changed and why.": "El usuario puede entender qué cambió Rune y por qué.", "Values, definitions, and calculations are accurate.": "Los valores, las definiciones y los cálculos son correctos.", "Visual deliverability": "Calidad visual entregable",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.": "Пример учитывается только после заполнения всех оценок и подтверждения, что содержимое разрешено для оценки или обезличено. 1 означает, что нужна доработка; 5 — отличный результат.",
+  "Add a detailed real-task evaluation": "Добавить подробную оценку реальной задачи", "Change comprehensibility": "Понятность изменений", "Conclusion usefulness": "Полезность выводов",
+  "Conclusions trace to sufficient supporting evidence.": "Выводы опираются на достаточные подтверждающие данные.", "Detailed evaluation": "Подробная оценка", "Evidence completeness": "Полнота доказательств",
+  "I confirm this task is authorized for evaluation or its content is redacted.": "Подтверждаю, что задача разрешена для оценки или её содержимое обезличено.", "Information hierarchy is clear and easy to scan.": "Иерархия информации ясна, материал легко просматривать.",
+  "Insights support a useful next decision.": "Выводы помогают принять следующее полезное решение.", "number checks below 4": "оценок точности чисел ниже 4", "Number correctness": "Точность чисел",
+  "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.": "Оценка точности чисел ниже 4 всегда остаётся видимым препятствием и не скрывается в среднем значении.", "Optional · seven dimensions · about one minute": "Необязательно · семь критериев · около минуты",
+  "Overall time saved": "Общая экономия времени", "real tasks reviewed": "реальных задач оценено", "Real-task evaluation": "Оценка реальной задачи", "Structure clarity": "Ясность структуры",
+  "The layout is usable without material rework.": "Макет пригоден без существенной переработки.", "The result saves meaningful time over manual work.": "Результат заметно экономит время по сравнению с ручной работой.",
+  "The user can understand what Rune changed and why.": "Пользователь понимает, что и почему изменил Rune.", "Values, definitions, and calculations are accurate.": "Значения, определения и расчёты точны.", "Visual deliverability": "Визуальная готовность к передаче",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.": "لا تُحتسب العينة إلا بعد اكتمال جميع الدرجات والتأكيد بأن المحتوى مصرح به للتقييم أو منقح. الدرجة 1 تعني أنه يحتاج إلى تحسين، و5 تعني ممتاز.",
+  "Add a detailed real-task evaluation": "إضافة تقييم مفصل لمهمة حقيقية", "Change comprehensibility": "وضوح التغييرات", "Conclusion usefulness": "فائدة الاستنتاجات",
+  "Conclusions trace to sufficient supporting evidence.": "تستند الاستنتاجات إلى أدلة داعمة كافية.", "Detailed evaluation": "تقييم مفصل", "Evidence completeness": "اكتمال الأدلة",
+  "I confirm this task is authorized for evaluation or its content is redacted.": "أؤكد أن هذه المهمة مصرح بتقييمها أو أن محتواها منقح.", "Information hierarchy is clear and easy to scan.": "التسلسل الهرمي للمعلومات واضح وسهل التصفح.",
+  "Insights support a useful next decision.": "تدعم الرؤى اتخاذ قرار تالٍ مفيد.", "number checks below 4": "تقييمات دقة الأرقام دون 4", "Number correctness": "دقة الأرقام",
+  "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.": "تظل دقة الأرقام الأقل من 4 عائقًا ظاهرًا دائمًا ولا تُخفى داخل المتوسط.", "Optional · seven dimensions · about one minute": "اختياري · سبعة أبعاد · نحو دقيقة",
+  "Overall time saved": "إجمالي الوقت الموفر", "real tasks reviewed": "مهام حقيقية جرى تقييمها", "Real-task evaluation": "تقييم مهمة حقيقية", "Structure clarity": "وضوح البنية",
+  "The layout is usable without material rework.": "التخطيط قابل للاستخدام دون إعادة عمل جوهرية.", "The result saves meaningful time over manual work.": "توفر النتيجة وقتًا ملحوظًا مقارنة بالعمل اليدوي.",
+  "The user can understand what Rune changed and why.": "يستطيع المستخدم فهم ما غيّره Rune ولماذا.", "Values, definitions, and calculations are accurate.": "القيم والتعريفات والحسابات دقيقة.", "Visual deliverability": "الجاهزية البصرية للتسليم",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.": "すべての評価を入力し、内容が評価を許可されているか匿名化済みであると確認した場合のみ、サンプルとして集計されます。1 は要改善、5 は優秀を表します。",
+  "Add a detailed real-task evaluation": "実タスクの詳細評価を追加", "Change comprehensibility": "変更の分かりやすさ", "Conclusion usefulness": "結論の有用性",
+  "Conclusions trace to sufficient supporting evidence.": "結論を十分な根拠までたどれます。", "Detailed evaluation": "詳細評価", "Evidence completeness": "根拠の完全性",
+  "I confirm this task is authorized for evaluation or its content is redacted.": "このタスクが評価を許可されているか、内容が匿名化済みであることを確認します。", "Information hierarchy is clear and easy to scan.": "情報の階層が明確で、すばやく把握できます。",
+  "Insights support a useful next decision.": "洞察が次の有用な意思決定を支えます。", "number checks below 4": "数値正確性が 4 未満", "Number correctness": "数値の正確性",
+  "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.": "数値の正確性が 4 未満の場合は常に明示的な阻害要因として残り、平均値には隠れません。", "Optional · seven dimensions · about one minute": "任意 · 7 項目 · 約 1 分",
+  "Overall time saved": "全体の時間短縮", "real tasks reviewed": "件の実タスクを評価", "Real-task evaluation": "実タスク評価", "Structure clarity": "構成の明確さ",
+  "The layout is usable without material rework.": "大幅な手直しなしでレイアウトを使用できます。", "The result saves meaningful time over manual work.": "手作業と比べて有意に時間を短縮できます。",
+  "The user can understand what Rune changed and why.": "Rune が何をなぜ変更したかをユーザーが理解できます。", "Values, definitions, and calculations are accurate.": "値、定義、計算が正確です。", "Visual deliverability": "視覚的な納品可能性",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.": "모든 점수를 입력하고 콘텐츠가 평가용으로 승인되었거나 비식별 처리되었음을 확인해야 표본으로 집계됩니다. 1점은 개선 필요, 5점은 매우 우수함을 뜻합니다.",
+  "Add a detailed real-task evaluation": "실제 작업 상세 평가 추가", "Change comprehensibility": "변경 이해도", "Conclusion usefulness": "결론의 유용성",
+  "Conclusions trace to sufficient supporting evidence.": "결론을 충분한 근거까지 추적할 수 있습니다.", "Detailed evaluation": "상세 평가", "Evidence completeness": "근거 완전성",
+  "I confirm this task is authorized for evaluation or its content is redacted.": "이 작업이 평가용으로 승인되었거나 콘텐츠가 비식별 처리되었음을 확인합니다.", "Information hierarchy is clear and easy to scan.": "정보 계층이 명확하고 빠르게 훑어보기 쉽습니다.",
+  "Insights support a useful next decision.": "인사이트가 유용한 다음 결정을 뒷받침합니다.", "number checks below 4": "숫자 정확성 4점 미만", "Number correctness": "숫자 정확성",
+  "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.": "숫자 정확성이 4점 미만이면 항상 눈에 띄는 차단 요인으로 남고 평균값에 가려지지 않습니다.", "Optional · seven dimensions · about one minute": "선택 사항 · 7개 항목 · 약 1분",
+  "Overall time saved": "전체 시간 절감", "real tasks reviewed": "개의 실제 작업 평가", "Real-task evaluation": "실제 작업 평가", "Structure clarity": "구조 명확성",
+  "The layout is usable without material rework.": "큰 재작업 없이 레이아웃을 사용할 수 있습니다.", "The result saves meaningful time over manual work.": "수작업보다 의미 있는 시간을 절약합니다.",
+  "The user can understand what Rune changed and why.": "사용자가 Rune이 무엇을 왜 변경했는지 이해할 수 있습니다.", "Values, definitions, and calculations are accurate.": "값, 정의, 계산이 정확합니다.", "Visual deliverability": "시각적 전달 완성도",
+});

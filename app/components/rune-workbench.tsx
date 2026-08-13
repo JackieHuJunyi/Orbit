@@ -258,8 +258,8 @@ import {
   runeTaskRunsForIdentity,
   summarizeRuneTaskDeliveries,
   summarizeRuneTaskRuns,
+  type RuneTaskDeliveryConfirmation,
   type RuneTaskDeliveryMethod,
-  type RuneTaskDeliveryRating,
   type RuneTaskDeliveryTarget,
   type RuneTaskEvidence,
   type RuneTaskRun,
@@ -2127,7 +2127,7 @@ export function RuneWorkbench() {
     });
   }
 
-  async function confirmDeliveryOutcome(rating: RuneTaskDeliveryRating) {
+  async function confirmDeliveryOutcome(confirmation: RuneTaskDeliveryConfirmation) {
     const pending = pendingDeliveryConfirmation;
     if (!pending || deliveryOutcomeState !== "idle") return;
     setDeliveryOutcomeState("recording");
@@ -2154,7 +2154,8 @@ export function RuneWorkbench() {
         currentOutputRevisions,
         method: pending.method,
         target: pending.target,
-        rating,
+        rating: confirmation.rating,
+        evaluation: confirmation.evaluation,
       });
       persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, savedOperatingReviewsRef.current, nextEvidence);
       setTaskEvidence(nextEvidence);
@@ -3894,7 +3895,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.97</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.98</strong></footer>
               </div>
             )}
           </div>
@@ -4076,6 +4077,9 @@ export function RuneWorkbench() {
                         <span>{deliverySummary.total
                           ? `${deliverySummary.total} ${ui.confirmedDeliverables} · ${deliverySummary.usableRate}% ${ui.usableDeliverables}`
                           : ui.noDeliveryOutcomes}</span>
+                        {!!deliverySummary.reviewedRealTasks && (
+                          <span>{deliverySummary.reviewedRealTasks} {ui.realTasksReviewed} · {deliverySummary.numberCorrectnessBelow4} {ui.numberChecksBelowFour}</span>
+                        )}
                       </div>
                       {!!workflowRuns.length && (
                         <details className="saved-review-history">
@@ -4090,7 +4094,7 @@ export function RuneWorkbench() {
                                   <small>{run.completedAt.slice(0, 10)} · {ui.runImpact(run.changedFileCount, run.queryCount, run.chartConsumerCount)}</small>
                                   <small>{ui.taskTime} {Math.max(1, Math.round(run.durationMs / 1000))}s · {run.provider}</small>
                                   <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
-                                  {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}</small>)}
+                                  {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}{delivery.evaluation ? ` · ${ui.numberScore} ${delivery.evaluation.rubric.numberCorrectness}/5` : ""}</small>)}
                                 </li>
                               );
                             })}
@@ -4130,6 +4134,9 @@ export function RuneWorkbench() {
                     <span>{documentBriefingDeliverySummary.total
                       ? `${documentBriefingDeliverySummary.total} ${ui.confirmedDeliverables} · ${documentBriefingDeliverySummary.usableRate}% ${ui.usableDeliverables}`
                       : ui.noDeliveryOutcomes}</span>
+                    {!!documentBriefingDeliverySummary.reviewedRealTasks && (
+                      <span>{documentBriefingDeliverySummary.reviewedRealTasks} {ui.realTasksReviewed} · {documentBriefingDeliverySummary.numberCorrectnessBelow4} {ui.numberChecksBelowFour}</span>
+                    )}
                   </div>
                   <details className="saved-review-history">
                     <summary>{ui.runHistory}</summary>
@@ -4151,7 +4158,7 @@ export function RuneWorkbench() {
                             <small>{source?.name ?? run.sourceArtifactId} → {output?.name ?? run.outputArtifactIds[0]}</small>
                             <small>{run.completedAt.slice(0, 10)} · {ui.taskTime} {Math.max(1, Math.round(run.durationMs / 1000))}s · {run.provider}</small>
                             <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
-                            {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}</small>)}
+                            {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}{delivery.evaluation ? ` · ${ui.numberScore} ${delivery.evaluation.rubric.numberCorrectness}/5` : ""}</small>)}
                           </li>
                         );
                       })}

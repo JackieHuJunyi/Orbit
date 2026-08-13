@@ -2297,3 +2297,11 @@ v0.97 增加静态 `workbench-commands` definition。它只描述十四个稳定
 首个 Rune Golden Task Set 因而使用二十个明确 synthetic fixtures，并把 provenance 固定为 synthetic。十四条成功任务走真实 task provider 与 transaction，其中十条 Operating Review 实际执行生成的 DuckDB-Wasm SQL，再核对 evidence、Chart 和 live deliverables；六条失败任务必须在零输出时给出预期原因。Document briefing 同时检查 exact origin/revision、页数、source-unit coverage 和 refresh identity/theme。输入在成功与失败路径都深冻结，避免 compiler 静默修改测试事实。
 
 baseline 标记为 E1，只证明 deterministic regression。真实任务仍是 0/20，human ratings 仍是 0；没有任何代码可以把 synthetic pass 自动升级成需求、可用性、留存或付费证据。拿到授权或脱敏任务后，仍要逐项进行七维人工评分，且 number correctness 低于 4 不得靠其他平均分隐藏。这样发布门禁会更强，产品结论反而更诚实。
+
+## 104. v0.98 采集真实结果不应把每次交付变成问卷
+
+合成 Golden Tasks 解决的是回归，不是产品价值。Rune 需要真实任务的七维人工评分，但若每次下载或 Push 都弹出完整量表，用户会为了继续工作随手点击，得到的不是更强证据，而是更高噪声。因此交付后的默认路径仍是一项快速可用性判断；详细评估被放进一个安静的渐进 disclosure，用户明确选择时才展开七行紧凑评分。
+
+详细路径没有默认分。七项必须全部完成，并由评审者明确确认任务已获准用于评估或已经脱敏，才形成一个 human evaluation。许可不是从文件、账号或模型推断出来的能力；不满足条件的数据只能保留为 quick outcome。设备 ledger 的前向迁移同样不补历史分数，坏数据降为 null，现有 0/20 基线不会因为功能上线自动增长。
+
+数字正确性保持独立硬门槛。侧栏既显示 unique real task 数，也显示低于 4 分的 number checks；每条历史把该分数放在交付格式旁。七维平均可以帮助发现总体趋势，却永远不能把关键数字错误美化成“整体不错”。这套统计仍不保存正文、提示词、模型回复、Query 行、文件名作为测量字段或用户身份，因此可以随 source-first workspace 扩展，而不会形成第二份内容数据库或遥测系统。

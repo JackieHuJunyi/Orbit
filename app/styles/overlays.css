@@ -230,6 +230,68 @@ html[dir="rtl"] .command-menu-group > button { text-align: right; }
 .delivery-outcome-options span { display: grid; min-width: 0; gap: 3px; }
 .delivery-outcome-options strong { font-size: var(--rune-type-ui); }
 .delivery-outcome-options small { color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.4; }
+.delivery-detail-toggle {
+  display: grid;
+  width: 100%;
+  min-height: 58px;
+  grid-template-columns: 34px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: var(--rune-space-3);
+  margin-top: var(--rune-space-4);
+  padding: 10px 13px;
+  border: 1px solid rgba(118, 118, 128, .13);
+  border-radius: var(--rune-radius-control);
+  background: rgba(118, 118, 128, .055);
+  color: var(--ink);
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--rune-duration-micro) var(--rune-ease-smooth), border-color var(--rune-duration-micro) var(--rune-ease-smooth);
+}
+.delivery-detail-toggle:hover { background: rgba(var(--theme-rgb), .065); }
+.delivery-detail-toggle:focus-visible { outline: 3px solid rgba(var(--theme-rgb), .16); outline-offset: 2px; }
+.delivery-detail-toggle > svg:first-child { width: 34px; height: 34px; padding: 8px; border-radius: 11px; background: #fff; color: var(--theme-accent); box-shadow: inset 0 0 0 1px var(--rune-hairline); }
+.delivery-detail-toggle > svg:last-child { width: 16px; height: 16px; color: var(--muted); transition: transform var(--rune-duration-micro) var(--rune-ease-out); }
+.delivery-detail-toggle.open > svg:last-child { transform: rotate(180deg); }
+.delivery-detail-toggle > span { display: grid; min-width: 0; gap: 2px; }
+.delivery-detail-toggle strong { font-size: var(--rune-type-ui); font-weight: 650; }
+.delivery-detail-toggle small { color: var(--muted); font-size: var(--rune-type-caption); }
+.delivery-evaluation {
+  display: grid;
+  gap: var(--rune-space-4);
+  margin-top: var(--rune-space-3);
+  padding: var(--rune-space-4);
+  border: 1px solid rgba(var(--theme-rgb), .16);
+  border-radius: var(--rune-radius-card);
+  background: rgba(255, 255, 255, .76);
+}
+.delivery-evaluation > header h3 { margin: 0; font-size: 15px; font-weight: 680; letter-spacing: -.01em; }
+.delivery-evaluation > header p { margin: 5px 0 0; color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.45; }
+.delivery-rubric { display: grid; gap: 1px; overflow: hidden; border: 1px solid var(--rune-hairline); border-radius: var(--rune-radius-control); background: var(--rune-hairline); }
+.delivery-rubric-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rune-space-4);
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  background: rgba(255, 255, 255, .96);
+}
+.delivery-rubric-copy { display: grid; min-width: 0; gap: 2px; }
+.delivery-rubric-copy strong { font-size: var(--rune-type-ui); font-weight: 640; }
+.delivery-rubric-copy small { color: var(--muted); font-size: 10px; line-height: 1.35; }
+.delivery-score-options { display: grid; grid-template-columns: repeat(5, 30px); gap: 4px; }
+.delivery-score-options label { position: relative; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: var(--muted); cursor: pointer; transition: background var(--rune-duration-micro) var(--rune-ease-smooth), color var(--rune-duration-micro) var(--rune-ease-smooth); }
+.delivery-score-options label:hover { background: rgba(var(--theme-rgb), .075); color: var(--ink); }
+.delivery-score-options label.selected { background: var(--theme-accent); color: #fff; }
+.delivery-score-options input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.delivery-score-options label:focus-within { outline: 3px solid rgba(var(--theme-rgb), .16); outline-offset: 1px; }
+.delivery-score-options span { font-size: 11px; font-weight: 680; }
+.delivery-number-gate { display: flex; align-items: flex-start; gap: 7px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.delivery-number-gate svg { flex: 0 0 auto; width: 13px; height: 13px; margin-top: 1px; color: var(--theme-accent); }
+.delivery-authorization { display: grid; grid-template-columns: 17px minmax(0, 1fr); align-items: start; gap: 9px; font-size: var(--rune-type-caption); font-weight: 590; line-height: 1.45; cursor: pointer; }
+.delivery-authorization input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--theme-accent); }
 
 html[dir="rtl"] .tools-popover { transform-origin: top left; text-align: right; }
 html[dir="rtl"] .tools-menu-actions > button,

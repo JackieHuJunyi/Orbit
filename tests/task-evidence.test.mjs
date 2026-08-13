@@ -8,6 +8,7 @@ import {
   MAX_RUNE_TASK_DELIVERIES,
   MAX_RUNE_TASK_RUNS,
   appendRuneTaskRun,
+  normalizeRuneTaskHumanEvaluation,
   normalizeRuneTaskEvidence,
   recordRuneTaskDelivery,
   runeTaskDeliveryId,
@@ -16,6 +17,29 @@ import {
   summarizeRuneTaskDeliveries,
   summarizeRuneTaskRuns,
 } from "../app/lib/task-evidence.ts";
+
+function humanEvaluation(rubric = {}) {
+  return {
+    version: 1,
+    provenance: "authorized-or-redacted",
+    rubric: {
+      numberCorrectness: 5,
+      evidenceCompleteness: 4,
+      conclusionUsefulness: 4,
+      structureClarity: 5,
+      visualDeliverability: 4,
+      changeComprehensibility: 4,
+      timeSaved: 5,
+      ...rubric,
+    },
+  };
+}
+
+function deepFreeze(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  Object.values(value).forEach((entry) => deepFreeze(entry));
+  return Object.freeze(value);
+}
 
 function briefingRun(overrides = {}) {
   const outputArtifactIds = overrides.outputArtifactIds ?? ["strategy-briefing"];
@@ -44,7 +68,7 @@ function briefingRun(overrides = {}) {
 
 test("records one normalized content-free task run and summary", () => {
   const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
-  assert.equal(evidence.version, 2);
+  assert.equal(evidence.version, 3);
   assert.equal(evidence.runs.length, 1);
   assert.deepEqual(summarizeRuneTaskRuns(evidence.runs), {
     total: 1,
@@ -91,8 +115,10 @@ test("migrates the v1 ledger forward without losing exact runs or deliveries", (
     outputArtifactIds: ["review-slides", "review-document", "review-chart", "review-query"],
   };
 
-  assert.equal(migrated.version, 2);
+  assert.equal(migrated.version, 3);
   assert.equal(migrated.deliveries.length, 1);
+  assert.equal(migrated.deliveries[0].version, 2);
+  assert.equal(migrated.deliveries[0].evaluation, null);
   assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], identity), true);
   assert.deepEqual(runeTaskRunsForIdentity(migrated, identity).map((run) => run.id), [operatingReview.id]);
   assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, outputArtifactIds: ["review-document"] }), false);
@@ -115,7 +141,7 @@ test("binds a delivery judgment to the exact applied task output and revision", 
     now: new Date("2026-08-14T08:01:00.000Z"),
   });
   assert.deepEqual(recorded.deliveries[0], {
-    version: 1,
+    version: 2,
     id: runeTaskDeliveryId(evidence.runs[0].id, "strategy-briefing"),
     confirmedAt: "2026-08-14T08:01:00.000Z",
     runId: evidence.runs[0].id,
@@ -126,9 +152,122 @@ test("binds a delivery judgment to the exact applied task output and revision", 
     rating: "minor-edits",
     sourceSha256: createHash("sha256").update(source).digest("hex"),
     taskDurationMs: 64_000,
+    evaluation: null,
   });
   assert.equal(summarizeRuneTaskDeliveries(recorded.deliveries).usableRate, 100);
   assert.doesNotMatch(JSON.stringify(recorded), /Strategy briefing|Direction/u);
+});
+
+test("records only complete authorized seven-dimensional evaluations and exposes the number gate", async () => {
+  const run = briefingRun();
+  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
+  const evaluation = humanEvaluation({ numberCorrectness: 3 });
+  const frozenInput = deepFreeze({ evidence, evaluation });
+  const before = JSON.stringify(frozenInput);
+  const recorded = await recordRuneTaskDelivery({
+    evidence: frozenInput.evidence,
+    runId: run.id,
+    artifactId: "strategy-briefing",
+    source: "# strategy-briefing\n",
+    currentSourceRevision: run.sourceRevision,
+    currentOutputRevisions: run.outputRevisions,
+    method: "download",
+    target: "pptx",
+    rating: "minor-edits",
+    evaluation: frozenInput.evaluation,
+    now: new Date("2026-08-14T08:01:00.000Z"),
+  });
+
+  assert.equal(JSON.stringify(frozenInput), before);
+  assert.deepEqual(recorded.deliveries[0].evaluation, evaluation);
+  assert.deepEqual(summarizeRuneTaskDeliveries(recorded.deliveries), {
+    total: 1,
+    ready: 0,
+    minorEdits: 1,
+    notReady: 0,
+    usable: 1,
+    usableRate: 100,
+    averageTaskDurationMs: 64_000,
+    humanEvaluated: 1,
+    reviewedRealTasks: 1,
+    numberCorrectnessBelow4: 1,
+    pilotEligibleTasks: 0,
+    meetsPilotMinimum: false,
+    dimensionAverages: {
+      numberCorrectness: 3,
+      evidenceCompleteness: 4,
+      conclusionUsefulness: 4,
+      structureClarity: 5,
+      visualDeliverability: 4,
+      changeComprehensibility: 4,
+      timeSaved: 5,
+    },
+  });
+
+  const incomplete = humanEvaluation();
+  delete incomplete.rubric.timeSaved;
+  const frozenIncomplete = Object.freeze({ ...incomplete, rubric: Object.freeze(incomplete.rubric) });
+  assert.equal(normalizeRuneTaskHumanEvaluation(frozenIncomplete), null);
+  await assert.rejects(() => recordRuneTaskDelivery({
+    evidence,
+    runId: run.id,
+    artifactId: "strategy-briefing",
+    source: "# strategy-briefing\n",
+    currentSourceRevision: run.sourceRevision,
+    currentOutputRevisions: run.outputRevisions,
+    method: "download",
+    target: "pptx",
+    rating: "ready",
+    evaluation: frozenIncomplete,
+  }), /evaluation is incomplete or invalid/i);
+  assert.equal(Object.hasOwn(frozenIncomplete.rubric, "timeSaved"), false);
+});
+
+test("counts unique real tasks, preserves a detailed evaluation on quick reconfirmation, and never averages away a low number score", async () => {
+  const run = briefingRun({
+    outputArtifactIds: ["strategy-document", "strategy-deck"],
+    outputSources: ["# strategy-document\n", "# strategy-deck\n"],
+  });
+  let evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
+  for (const [artifactId, source, score] of [
+    ["strategy-document", "# strategy-document\n", 5],
+    ["strategy-deck", "# strategy-deck\n", 3],
+  ]) {
+    evidence = await recordRuneTaskDelivery({
+      evidence,
+      runId: run.id,
+      artifactId,
+      source,
+      currentSourceRevision: run.sourceRevision,
+      currentOutputRevisions: run.outputRevisions,
+      method: "download",
+      target: "pdf",
+      rating: "ready",
+      evaluation: humanEvaluation({ numberCorrectness: score }),
+      now: new Date(`2026-08-14T08:0${score}:00.000Z`),
+    });
+  }
+  const summary = summarizeRuneTaskDeliveries(evidence.deliveries);
+  assert.equal(summary.humanEvaluated, 2);
+  assert.equal(summary.reviewedRealTasks, 1);
+  assert.equal(summary.numberCorrectnessBelow4, 1);
+  assert.equal(summary.pilotEligibleTasks, 0);
+  assert.equal(summary.dimensionAverages.numberCorrectness, 4);
+
+  const priorEvaluation = evidence.deliveries.find((delivery) => delivery.artifactId === "strategy-document").evaluation;
+  evidence = await recordRuneTaskDelivery({
+    evidence,
+    runId: run.id,
+    artifactId: "strategy-document",
+    source: "# strategy-document\n",
+    currentSourceRevision: run.sourceRevision,
+    currentOutputRevisions: run.outputRevisions,
+    method: "folder",
+    target: "folder",
+    rating: "minor-edits",
+    now: new Date("2026-08-14T09:00:00.000Z"),
+  });
+  assert.deepEqual(evidence.deliveries.find((delivery) => delivery.artifactId === "strategy-document").evaluation, priorEvaluation);
 });
 
 test("refuses an operating-review handoff when any linked task output changed", async () => {

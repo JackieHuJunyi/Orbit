@@ -25,8 +25,8 @@ test("wires both focused tasks through one bounded device task evidence ledger",
   assert.doesNotMatch(workbench, /recordOperatingReviewDelivery|appendOperatingReviewRun|recordStoppedOperatingReview/);
   assert.match(workbench, /ui\.recentTaskRuns/);
 
-  assert.match(evidence, /version: 2/);
-  assert.match(evidence, /candidate\.version !== 1 && candidate\.version !== 2|version !== 1 && version !== 2/);
+  assert.match(evidence, /export type RuneTaskEvidence = \{\s*version: 3;/s);
+  assert.match(evidence, /version !== 1 && version !== 2 && version !== 3/);
   assert.match(evidence, /MAX_RUNE_TASK_RUNS = 24/);
   assert.match(evidence, /MAX_RUNE_TASK_DELIVERIES = 24/);
   assert.match(evidence, /sourceRevision: string/);
@@ -35,6 +35,10 @@ test("wires both focused tasks through one bounded device task evidence ledger",
   assert.match(evidence, /This output changed after the applied task/);
   assert.doesNotMatch(evidence, /prompt|sourceText|documentText|workspaceSource/u);
   assert.match(deliveryDialog, /RuneTaskDeliveryRating/);
+  assert.match(deliveryDialog, /RUNE_TASK_RUBRIC_DIMENSIONS/);
+  assert.match(deliveryDialog, /provenance: "authorized-or-redacted"/);
+  assert.match(deliveryDialog, /!detailed \|\| \(authorized && evaluationComplete\)/);
+  assert.match(workbench, /evaluation: confirmation\.evaluation/);
   assert.doesNotMatch(deliveryDialog, /OperatingReviewDeliveryRating/);
 });
 
@@ -53,5 +57,8 @@ test("ships the new task evidence labels in every non-Chinese registered interfa
     assert.match(block, /"Document to presentation":/);
     assert.match(block, /"Task time":/);
     assert.match(block, /"Earlier device records \(read only\)":/);
+    assert.match(block, /"Real-task evaluation":/);
+    assert.match(block, /"Number correctness":/);
+    assert.match(block, /"Optional · seven dimensions · about one minute":/);
   }
 });
