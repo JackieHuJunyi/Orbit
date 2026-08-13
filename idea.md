@@ -2319,3 +2319,11 @@ v0.99 因此不改变 `rune-asset:sha256:<digest>`。用户把源光标放进一
 DOCX/PPTX/ODT/ODP 不能再一边声称支持导入，一边把正常业务文件中的图片全部丢掉。四种 package parser 只拥有关系解析与有界媒体候选，不拥有 hash、IndexedDB 或 React；共享 `imported-images` 端口复用现有图片魔数、尺寸、8 MB 单图、40 图/64 MB 批次和 SHA-256 规则，把每个 converter-owned placeholder 精确替换一次。Document 尽量保留阅读顺序；Presentation 遵守一页一个 primary visual，遇到同页 table 或多图时在 40 页预算内生成相邻图片页，并明确披露裁切、重叠与坐标不保真。
 
 导入审核现在同时持有 canonical sources 和去重后的 bytes，存在图片时两边 identity 必须完全闭合。确认先写图片、再写 workspace；任一步失败只删除本次新建的 hash，已存在的相同资产不受影响。这个设计采用 DeepSeek Harness 值得学习的 capability seam 与 reversible effect，但继续拒绝为了两个 parser family 引入动态插件树：Definition、Provider、Consumer 和补偿边界清楚，已经足以低成本替换解析器或把计算迁移到 Worker。
+
+## 107. v1.01 完整演示交付和单页编辑预览必须共享一个编译器
+
+Deck Markdown 原本只编译成一份包含所有页面的 sandbox HTML。这适合导出，却不适合类似 Overleaf 的双向定位：外层页面无法可靠控制不透明 iframe 内滚动到哪一页，用户点击 iframe 内的实际幻灯片也不能返回精确源码。只让顶部页签高亮并不等于右侧内容已经移动到对应位置。
+
+v1.01 不为此复制一个 React slide renderer，也不向 iframe 增加 script 或 same-origin 权限。`compileDeckSource` 从同一份严格 Deck model、block compiler、escape、theme、image 与 numbering 规则同时产生完整多页 HTML 和有稳定 index 的逐页独立 HTML。完整结果继续服务 HTML export；工作台只解析并渲染当前页的 Chart token，所以最多四十页不会同时启动重复的 live presentation runtime。
+
+当前页外层携带 exact `PreviewSourceTarget` identity。左侧光标进入一页时，页 identity 直接选择右侧单页画布；右侧实际画布上方有覆盖完整页面、键盘可达的透明定位按钮，调用既有 revision-check、Split reveal、textarea focus、selection 和居中滚动能力。Source 与 Preview 都不拥有另一套 target 规则，legacy HTML 因为缺少可证明 source range 继续诚实地保持兼容 iframe。这里落实的是 DeepSeek Harness 值得学习的单向分层：compiler 产生事实，presentation 选择视图，capability 执行动作，而不是让 UI 穿透 sandbox 猜状态。

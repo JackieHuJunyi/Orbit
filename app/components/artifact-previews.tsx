@@ -2240,15 +2240,29 @@ function SlidesPreview({
     error: string;
     submitting: boolean;
   } | null>(null);
+  const [visibleSlideIndex, setVisibleSlideIndex] = useState(0);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source, { resolveLocalAssetUrl }) : null;
   const runtimeSource = deckCompilation?.html ?? source;
   const slideCount = deckCompilation?.slideCount ?? source.match(/<section[\s>]/gi)?.length ?? 0;
-  const renderedSource = renderChartReferencesToHtml(runtimeSource, (chartArtifactId) => {
+  const resolveDeckChart = (chartArtifactId: string) => {
     const chartArtifact = artifacts.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
     return chartArtifact
       ? resolvePreviewChart(chartArtifact, artifacts, queryRuntime)
       : { errors: [`Chart not found: ${chartArtifactId}`] };
-  });
+  };
+  const renderedSource = deckCompilation ? "" : renderChartReferencesToHtml(runtimeSource, resolveDeckChart);
+  const previewSlides = deckCompilation?.previewSlides ?? [];
+  const sourceLinkedSlideIndex = targets.findIndex((target) => previewTargetIsActive(target, activeSelection));
+  const requestedVisibleSlideIndex = sourceLinkedSlideIndex >= 0 ? sourceLinkedSlideIndex : visibleSlideIndex;
+  const boundedVisibleSlideIndex = Math.max(0, Math.min(
+    Math.max(0, previewSlides.length - 1),
+    requestedVisibleSlideIndex,
+  ));
+  const visibleSlide = previewSlides[boundedVisibleSlideIndex];
+  const renderedVisibleSlide = visibleSlide
+    ? renderChartReferencesToHtml(visibleSlide.html, resolveDeckChart)
+    : "";
+  const visibleTarget = targets[boundedVisibleSlideIndex];
   const editingTarget = editingSlide?.artifactId === artifact.id
     && editingSlide.sourceRevision === artifact.source
     ? targets.find((target) => target.id === editingSlide.targetId)
@@ -2300,6 +2314,7 @@ function SlidesPreview({
     if (!onEditDeckSlide || !canVisualEditDeckSlide(artifact, target)) return;
     const draft = visualDeckSlideDraft(artifact, target);
     if (!draft) return;
+    setVisibleSlideIndex(Math.max(0, targets.findIndex((candidate) => candidate.id === target.id)));
     setEditingSlide({
       targetId: target.id,
       artifactId: artifact.id,
@@ -2328,10 +2343,10 @@ function SlidesPreview({
   return (
     <div className="slides-stage">
       <div className="slides-stage-meta"><span>{copy.slides(slideCount)}</span><span>{copy.deckMode(deckCompilation ? onEditDeckSlide ? "edit" : "sandbox" : "legacy")}</span></div>
-      {(onTargetSource || onEditDeckSlide) && targets.length > 0 && (
+      {deckCompilation && targets.length > 0 && (
         <nav className="slide-targets" aria-label={copy.selectDeckSlide}>
-          {targets.map((target) => {
-            const active = previewTargetIsActive(target, activeSelection);
+          {targets.map((target, targetIndex) => {
+            const active = targetIndex === boundedVisibleSlideIndex;
             const editable = Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target));
             const editing = editingTarget?.id === target.id;
             return (
@@ -2340,19 +2355,20 @@ function SlidesPreview({
                 data-preview-source-id={target.id}
                 key={target.id}
               >
-                {onTargetSource && (
-                  <button
-                    className="slide-target-select"
-                    data-preview-source-target={target.kind}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => onTargetSource(artifact, target)}
-                    title={copy.selectExact(target.label)}
-                  >
-                    <span>{String(target.index + 1).padStart(2, "0")}</span>
-                    <strong>{target.label}</strong>
-                  </button>
-                )}
+                <button
+                  className="slide-target-select"
+                  data-preview-source-target={target.kind}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setVisibleSlideIndex(targetIndex);
+                    onTargetSource?.(artifact, target);
+                  }}
+                  title={onTargetSource ? copy.selectExact(target.label) : target.label}
+                >
+                  <span>{String(target.index + 1).padStart(2, "0")}</span>
+                  <strong>{target.label}</strong>
+                </button>
                 {editable && (
                   <button
                     className="slide-target-edit"
@@ -2449,12 +2465,41 @@ function SlidesPreview({
           </footer>
         </form>
       )}
-      <iframe
-        className="slides-frame"
-        srcDoc={renderedSource}
-        sandbox=""
-        title={copy.renderedPresentation}
-      />
+      {deckCompilation && visibleSlide ? (
+        <div
+          className={`deck-slide-canvas ${onTargetSource && visibleTarget ? "targetable" : ""} ${visibleTarget && previewTargetIsActive(visibleTarget, activeSelection) ? "active" : ""}`.trim()}
+          data-preview-source-id={visibleTarget?.id}
+          data-preview-source-primary="true"
+        >
+          <iframe
+            className="slides-frame"
+            srcDoc={renderedVisibleSlide}
+            sandbox=""
+            tabIndex={-1}
+            title={visibleTarget ? `${copy.renderedPresentation} · ${visibleTarget.label}` : copy.renderedPresentation}
+          />
+          {onTargetSource && visibleTarget && (
+            <button
+              className="deck-slide-source-hit"
+              data-preview-source-target={visibleTarget.kind}
+              type="button"
+              aria-label={copy.selectForAgent(visibleTarget.label)}
+              aria-pressed={previewTargetIsActive(visibleTarget, activeSelection)}
+              title={copy.selectExact(visibleTarget.label)}
+              onClick={() => onTargetSource(artifact, visibleTarget)}
+            >
+              <span><MousePointer2 aria-hidden="true" />{visibleTarget.label}</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <iframe
+          className="slides-frame"
+          srcDoc={renderedSource}
+          sandbox=""
+          title={copy.renderedPresentation}
+        />
+      )}
     </div>
   );
 }

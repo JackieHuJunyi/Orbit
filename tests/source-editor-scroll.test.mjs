@@ -51,5 +51,15 @@ test("workbench applies preview selection, source scrolling, and gutter synchron
   assert.match(workbench, /sourceSelectionScrollTop\(\{/);
   assert.match(workbench, /editor\.scrollTo\(\{[\s\S]*behavior:[\s\S]*prefers-reduced-motion/);
   assert.match(workbench, /gutterRef\.current\.scrollTop = nextScrollTop/);
+  assert.match(workbench, /element\.dataset\.previewSourcePrimary === "true"[\s\S]*element\.dataset\.previewSourceId === activePreviewTargetId/);
   assert.match(workbench, /wrap="off"/);
+});
+
+test("Deck preview exposes one primary slide canvas that can drive the same source-selection path", async () => {
+  const preview = await readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8");
+  assert.match(preview, /deckCompilation\?\.previewSlides/);
+  assert.match(preview, /className="deck-slide-source-hit"/);
+  assert.match(preview, /data-preview-source-primary="true"/);
+  assert.match(preview, /onClick=\{\(\) => onTargetSource\(artifact, visibleTarget\)\}/);
+  assert.match(preview, /requestedVisibleSlideIndex = sourceLinkedSlideIndex >= 0 \? sourceLinkedSlideIndex : visibleSlideIndex/);
 });

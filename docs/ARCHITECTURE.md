@@ -26,12 +26,14 @@ Workbench UI
        ├─ Data adapter     → parsed grid
        ├─ Query adapter    → DuckDB-Wasm result grid
        ├─ Chart adapter    → validated JSON + local semantic bar/line view
-       └─ Slides adapter   → Deck Markdown compiler → sandboxed HTML runtime
+       └─ Slides adapter   → Deck Markdown compiler → full handoff HTML + compiler-owned one-slide sandbox previews
 ```
 
 ## Stable contracts
 
 An artifact adapter owns its default source, source language, validation, display metadata, and preview. The workbench owns selection, persistence, history, and agent actions. This boundary lets us extend SQL, charts, Deck Markdown, Office import, or a desktop filesystem without rewriting the shell.
+
+Deck compilation has two presentation consumers but one semantic owner. `compileDeckSource` returns the complete scriptless HTML document used by export plus ordered standalone one-slide documents derived from the same parsed model and block compiler. The workbench renders only the current page and binds its exact `PreviewSourceTarget` to an accessible outer hit target; it never reaches into the sandbox or recreates slide HTML in React. Canonical source selection chooses the visible page, and activating the page delegates back to the existing revision-checked source-selection capability. Legacy semantic HTML remains a single compatibility iframe because no exact slide source identity can be proven.
 
 The provider-facing contract is a bounded, source-native operation plan:
 

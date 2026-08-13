@@ -158,3 +158,68 @@
 .visual-document-editor,
 .visual-chart-editor,
 .visual-deck-editor { border-radius: var(--rune-radius-card); }
+
+.deck-slide-canvas {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--rune-hairline-strong);
+  border-radius: var(--rune-radius-card);
+  background: white;
+  box-shadow: var(--rune-shadow-card);
+  transition: border-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-surface) var(--rune-ease-out), transform var(--rune-duration-micro) var(--rune-ease-out);
+}
+.deck-slide-canvas .slides-frame {
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+.deck-slide-canvas.targetable:hover,
+.deck-slide-canvas.targetable:focus-within,
+.deck-slide-canvas.active {
+  border-color: rgba(var(--theme-rgb), .34);
+  box-shadow: 0 18px 52px rgba(24, 24, 28, .1), 0 0 0 3px rgba(var(--theme-rgb), .07);
+}
+.deck-slide-source-hit {
+  position: absolute;
+  z-index: calc(var(--rune-layer-canvas) + 1);
+  inset: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  outline: 0;
+  background: transparent;
+  color: var(--theme-accent);
+  cursor: pointer;
+}
+.deck-slide-source-hit > span {
+  position: absolute;
+  inset-block-start: var(--rune-space-4);
+  inset-inline-end: var(--rune-space-4);
+  display: inline-flex;
+  max-width: min(70%, 280px);
+  min-height: 30px;
+  align-items: center;
+  gap: var(--rune-space-2);
+  padding-inline: var(--rune-space-3);
+  overflow: hidden;
+  border: 1px solid rgba(var(--theme-rgb), .15);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 8px 24px rgba(24, 24, 28, .08);
+  font-size: var(--rune-type-caption);
+  font-weight: 650;
+  opacity: 0;
+  text-overflow: ellipsis;
+  transform: translateY(-4px);
+  transition: opacity var(--rune-duration-micro) ease, transform var(--rune-duration-micro) var(--rune-ease-out);
+  white-space: nowrap;
+}
+.deck-slide-source-hit > span svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.deck-slide-source-hit:hover > span,
+.deck-slide-source-hit:focus-visible > span { opacity: 1; transform: translateY(0); }
+.deck-slide-source-hit:focus-visible { box-shadow: inset 0 0 0 3px rgba(var(--theme-rgb), .24); }

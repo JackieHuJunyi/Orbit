@@ -41,8 +41,14 @@ export type DeckParseResult = {
 
 export type DeckCompilation = {
   html?: string;
+  previewSlides?: DeckCompiledPreviewSlide[];
   slideCount: number;
   errors: string[];
+};
+
+export type DeckCompiledPreviewSlide = {
+  index: number;
+  html: string;
 };
 
 export type DeckCompileOptions = {
@@ -279,6 +285,14 @@ function deckStyles() {
   `;
 }
 
+function deckHtmlDocument(frontmatter: DeckFrontmatter, slides: string) {
+  return `<!doctype html>
+<html lang="${frontmatter.lang}">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style></head>
+<body class="${frontmatter.theme === "rune-dark" ? "rune-dark" : ""}"><main class="deck" data-deck-title="${escapeHtml(frontmatter.title)}">${slides}</main></body>
+</html>`;
+}
+
 export function compileDeckSource(source: string, options: DeckCompileOptions = {}): DeckCompilation {
   const parsed = parseDeckSource(source);
   if (!parsed.deck) return { slideCount: 0, errors: parsed.errors };
@@ -286,19 +300,19 @@ export function compileDeckSource(source: string, options: DeckCompileOptions = 
   const slides = parsed.deck.slides.map((slide, index) => {
     const number = String(index + 1).padStart(2, "0");
     const totalLabel = String(total).padStart(2, "0");
-    return `<section class="slide ${slide.layout}" data-layout="${slide.layout}">
+    return `<section class="slide ${slide.layout}" data-layout="${slide.layout}" data-slide-index="${index}">
       ${slide.eyebrow ? `<p class="eyebrow">${escapeHtml(slide.eyebrow)}</p>` : ""}
       <div class="slide-body">${compileBlocks(slide.source, slide.layout, options)}</div>
       <span class="number">${number} / ${totalLabel}</span>
     </section>`;
-  }).join("\n");
+  });
   const { frontmatter } = parsed.deck;
   return {
-    html: `<!doctype html>
-<html lang="${frontmatter.lang}">
-<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style></head>
-<body class="${frontmatter.theme === "rune-dark" ? "rune-dark" : ""}"><main class="deck" data-deck-title="${escapeHtml(frontmatter.title)}">${slides}</main></body>
-</html>`,
+    html: deckHtmlDocument(frontmatter, slides.join("\n")),
+    previewSlides: slides.map((slide, index) => ({
+      index,
+      html: deckHtmlDocument(frontmatter, slide),
+    })),
     slideCount: total,
     errors: [],
   };

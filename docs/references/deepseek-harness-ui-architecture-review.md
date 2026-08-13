@@ -65,7 +65,7 @@ Harness 把 session、agent、capability events 分域，并要求新行为挂�
 
 Harness 的 `ui-theme` 独占静态色阶、语义别名、字体、motion、shadow 和 light/dark preference；功能组件只消费语义 token。其客户端又把纯数据对象、React 绑定层和纯 props 呈现组件做成单向依赖，避免业务组件直接读取全局 context。
 
-Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance registry 是颜色、字体、圆角、阴影和 motion 的唯一共享权威；功能样式使用语义变量，不另建主题；`app/lib` 的 compiler/port 不导入 React，组件只接收已经准备好的数据与回调。v1.00 的图片兼容导入进一步把 package parser、共享 hash validator、review transaction 和 IndexedDB effect 分开，证明无需动态插件树也能获得清晰可替换的能力缝。
+Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance registry 是颜色、字体、圆角、阴影和 motion 的唯一共享权威；功能样式使用语义变量，不另建主题；`app/lib` 的 compiler/port 不导入 React，组件只接收已经准备好的数据与回调。v1.00 的图片兼容导入进一步把 package parser、共享 hash validator、review transaction 和 IndexedDB effect 分开；v1.01 则让同一个 Deck compiler 同时供应完整交付 HTML 与逐页预览，组件只选择当前呈现并转交既有 selection capability。两者都证明无需动态插件树也能获得清晰、可替换且单向的数据边界。
 
 ## 2. 本轮采用与不采用
 

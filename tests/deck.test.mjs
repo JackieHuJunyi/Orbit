@@ -85,6 +85,25 @@ test("compiles metrics, numbering, and a shared chart into static deck HTML", ()
   assert.doesNotMatch(runtime, /<script/i);
 });
 
+test("derives one safe, identity-stable preview document per slide from the same Deck compilation", () => {
+  const compiledBindings = compileArtifactSource(
+    deckArtifact().source,
+    defaultArtifacts,
+    [defaultSummaryQuerySnapshot()],
+  );
+  const deck = compileDeckSource(compiledBindings.source);
+  assert.deepEqual(deck.errors, []);
+  assert.equal(deck.previewSlides?.length, deck.slideCount);
+  assert.equal((deck.html?.match(/<section class="slide /g) ?? []).length, 4);
+  deck.previewSlides?.forEach((slide, index) => {
+    assert.equal(slide.index, index);
+    assert.equal((slide.html.match(/<section class="slide /g) ?? []).length, 1);
+    assert.match(slide.html, new RegExp(`data-slide-index="${index}"`));
+    assert.match(slide.html, new RegExp(`${String(index + 1).padStart(2, "0")} \/ 04`));
+    assert.doesNotMatch(slide.html, /<script/i);
+  });
+});
+
 test("rejects raw HTML and unsupported layout metadata", () => {
   const rawHtml = deckArtifact().source.replace("# Growth became more durable.", "# Growth\n\n<script>alert(1)</script>");
   assert.match(parseDeckSource(rawHtml).errors.join(" "), /raw HTML/);

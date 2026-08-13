@@ -1278,6 +1278,9 @@ export function RuneWorkbench() {
         "[data-preview-source-id], [data-preview-section-id]",
       ) ?? [])];
       const linkedElement = linkedElements.find((element) => (
+        element.dataset.previewSourcePrimary === "true"
+        && element.dataset.previewSourceId === activePreviewTargetId
+      )) ?? linkedElements.find((element) => (
         activePreviewTargetKind === "document-section"
         && element.dataset.previewSectionId === activePreviewTargetId
       )) ?? linkedElements.find((element) => (
@@ -3933,7 +3936,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.00</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.01</strong></footer>
               </div>
             )}
           </div>
