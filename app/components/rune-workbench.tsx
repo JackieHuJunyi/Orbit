@@ -117,6 +117,7 @@ import {
   type ArtifactSourcePatch,
   type WorkspaceSourceRevision,
 } from "../lib/patches";
+import { prepareWorkspaceProposalPreview } from "../lib/proposal-preview";
 import {
   prepareWorkspaceImportReview,
   validateWorkspaceImportReview,
@@ -865,7 +866,6 @@ export function RuneWorkbench() {
     && visualSourceDraft.sourceRevision === selectedArtifact.source
     ? visualSourceDraft
     : null;
-  const editorSource = activeVisualSourceDraft?.nextSource ?? selectedArtifact?.source ?? "";
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
   const selectedLegacyOfficeExportType = selectedArtifact ? legacyOfficeExportType(selectedArtifact) : null;
   const legacyOfficeExportAvailable = hydrated && selectedLegacyOfficeExportType
@@ -956,10 +956,6 @@ export function RuneWorkbench() {
       : ["No artifact selected."],
     [bindingState?.metricBindingErrors, bindingState?.unresolved, bindingState?.unresolvedCharts, bindingState?.unresolvedQueryMetrics, selectedArtifact, selectedChartBindingErrors, selectedQueryDataResolution?.errors],
   );
-  const lineNumbers = useMemo(
-    () => Array.from({ length: editorSource.split("\n").length || 1 }, (_, index) => index + 1).join("\n"),
-    [editorSource],
-  );
   const pendingStats = useMemo(() => {
     if (!pendingChange) return [];
     const patches = pendingChange.patches.flatMap((patch) => {
@@ -987,6 +983,25 @@ export function RuneWorkbench() {
     }));
     return [...patches, ...creations];
   }, [artifacts, pendingChange]);
+  const proposalPreview = useMemo(() => pendingChange
+    ? prepareWorkspaceProposalPreview({
+        artifacts,
+        baseRevision: pendingChange.baseRevision,
+        patches: pendingChange.patches,
+        creations: pendingChange.creations,
+        requestedArtifactId: pendingReviewId || undefined,
+      })
+    : null, [artifacts, pendingChange, pendingReviewId]);
+  const proposalArtifact = proposalPreview?.artifact ?? null;
+  const proposalReviewActive = Boolean(pendingChange);
+  const proposalPreviewActive = Boolean(proposalArtifact);
+  const presentedArtifact = proposalArtifact ?? selectedArtifact;
+  const presentedArtifacts = proposalPreviewActive ? proposalPreview?.artifacts ?? artifacts : artifacts;
+  const editorSource = activeVisualSourceDraft?.nextSource ?? presentedArtifact?.source ?? "";
+  const lineNumbers = useMemo(
+    () => Array.from({ length: editorSource.split("\n").length || 1 }, (_, index) => index + 1).join("\n"),
+    [editorSource],
+  );
   const pendingTotals = useMemo(() => pendingStats.reduce(
     (total, patch) => ({
       additions: total.additions + patch.additions,
@@ -1006,9 +1021,8 @@ export function RuneWorkbench() {
       : null,
     [artifacts, pendingChange],
   );
-  const selectedPendingStat = pendingStats.find((change) => change.artifact.id === pendingReviewId)
-    ?? pendingStats.find((change) => change.artifact.id === selectedArtifact?.id)
-    ?? pendingStats[0];
+  const selectedPendingStat = pendingStats.find((change) => change.artifact.id === proposalArtifact?.id)
+    ?? (!proposalArtifact ? pendingStats[0] : undefined);
   const selectedDiffPreview = useMemo(() => selectedPendingStat
     ? createLineDiffPreview(selectedPendingStat.beforeSource, selectedPendingStat.patch.nextSource)
     : [], [selectedPendingStat]);
@@ -1027,6 +1041,19 @@ export function RuneWorkbench() {
     || operatingReviewState !== "idle"
     || visualEditState !== "idle"
     || Boolean(activeVisualSourceDraft);
+
+  useEffect(() => {
+    if (!proposalArtifact) return;
+    const frame = window.requestAnimationFrame(() => {
+      const editor = sourceEditorRef.current;
+      if (!editor || editor.value !== proposalArtifact.source) return;
+      editor.setSelectionRange(0, 0);
+      editor.scrollTop = 0;
+      editor.scrollLeft = 0;
+      if (gutterRef.current) gutterRef.current.scrollTop = 0;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [proposalArtifact]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -1237,12 +1264,13 @@ export function RuneWorkbench() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
-  if (!selectedArtifact) return null;
+  if (!selectedArtifact || !presentedArtifact) return null;
 
   function selectArtifact(id: string) {
     if (activeVisualSourceDraft) return;
     setSaveState("saving");
     setSelectedId(id);
+    if (pendingChange) setPendingReviewId(id);
     setEmptyWorkspace(false);
     setSourceSelection(null);
     setSourceCursor(null);
@@ -2160,6 +2188,7 @@ export function RuneWorkbench() {
     setAgentState("planning");
     setAgentError("");
     setPendingChange(null);
+    setPendingReviewId("");
     setNotice(scope === "workspace"
       ? `Agent is coordinating ${targetWorkspaceContext.length} context sources${targetWorkspacePinnedArtifactIds.length ? ` · ${targetWorkspacePinnedArtifactIds.length} pinned` : ""}`
       : scope === "selection"
@@ -2599,6 +2628,7 @@ export function RuneWorkbench() {
     setSaveState("saved");
     setSavedAt("");
     setPendingChange(null);
+    setPendingReviewId("");
     setAgentError("");
     const changeCount = pendingChange.patches.length + pendingChange.creations.length;
     const creationNotice = pendingChange.creations.length
@@ -2617,6 +2647,7 @@ export function RuneWorkbench() {
       pendingChange.runtimePreflight,
     );
     setPendingChange(null);
+    setPendingReviewId("");
     setNotice(runeText(locale, "Review cancelled — every source stayed unchanged", "已取消审核 — 所有源内容保持不变"));
   }
 
@@ -2645,6 +2676,7 @@ export function RuneWorkbench() {
     setNewArtifactOpen(false);
     setNewArtifactError("");
     setPendingChange(null);
+    setPendingReviewId("");
     localStorage.removeItem(STORAGE_KEY);
     setNotice("Sample workspace restored");
   }
@@ -3356,7 +3388,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.80</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.81</strong></footer>
               </div>
             )}
           </div>
@@ -3561,11 +3593,11 @@ export function RuneWorkbench() {
         <section className="source-pane" aria-label={ui.sourceEditor}>
           <header className="pane-header">
             <div className="pane-title">
-              <span className={`artifact-icon ${selectedArtifact.kind}`}><ArtifactIcon kind={selectedArtifact.kind} /></span>
-              <div><span className="overline">{ui.source}</span><strong>{selectedArtifact.name}</strong></div>
+              <span className={`artifact-icon ${presentedArtifact.kind}`}><ArtifactIcon kind={presentedArtifact.kind} /></span>
+              <div><span className="overline">{proposalReviewActive ? ui.proposalPreview : ui.source}</span><strong>{presentedArtifact.name}</strong></div>
             </div>
             <div className="pane-actions">
-              {selectedArtifact.kind === "document" && (
+              {!proposalReviewActive && selectedArtifact.kind === "document" && (
                 <button
                   type="button"
                   className="icon-button small insert-local-image-button"
@@ -3580,23 +3612,31 @@ export function RuneWorkbench() {
                 <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
                 <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
-              <button
-                className={`history-trigger source-version-trigger ${historyOpen ? "active" : ""}`}
-                onClick={() => setHistoryOpen((open) => !open)}
-                aria-expanded={historyOpen}
-                aria-label={ui.sourceVersions}
-                title={ui.sourceVersions}
-              ><Code2 aria-hidden="true" /><span>{selectedArtifact.language}</span><i aria-hidden="true" /><History aria-hidden="true" /><span>{selectedCheckpoints.length}</span><ChevronDown className="source-version-chevron" aria-hidden="true" /></button>
-              <button
-                className="icon-button small close-file-button"
-                onClick={closeCurrentArtifact}
-                aria-label={ui.closeFile}
-                title={`${ui.closeFile} (⌘ W)`}
-              ><X /></button>
+              {proposalReviewActive ? (
+                <span className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`} role="status">
+                  <Eye aria-hidden="true" /><span>{proposalPreviewActive ? ui.proposalReadOnly : ui.proposalPreviewUnavailable}</span>
+                </span>
+              ) : (
+                <>
+                  <button
+                    className={`history-trigger source-version-trigger ${historyOpen ? "active" : ""}`}
+                    onClick={() => setHistoryOpen((open) => !open)}
+                    aria-expanded={historyOpen}
+                    aria-label={ui.sourceVersions}
+                    title={ui.sourceVersions}
+                  ><Code2 aria-hidden="true" /><span>{selectedArtifact.language}</span><i aria-hidden="true" /><History aria-hidden="true" /><span>{selectedCheckpoints.length}</span><ChevronDown className="source-version-chevron" aria-hidden="true" /></button>
+                  <button
+                    className="icon-button small close-file-button"
+                    onClick={closeCurrentArtifact}
+                    aria-label={ui.closeFile}
+                    title={`${ui.closeFile} (⌘ W)`}
+                  ><X /></button>
+                </>
+              )}
             </div>
           </header>
 
-          {historyOpen && (
+          {historyOpen && !proposalReviewActive && (
             <section className="checkpoint-panel" aria-label={ui.checkpoints}>
               <div className="checkpoint-panel-header">
                 <div><span className="overline">{ui.sourceVersions}</span><strong>{ui.checkpointCount(selectedCheckpoints.length)}</strong><small>{selectedArtifact.language}</small></div>
@@ -3633,7 +3673,7 @@ export function RuneWorkbench() {
           )}
 
           <div className="editor-wrap">
-            <pre ref={gutterRef} className={`line-gutter ${activeVisualSourceDraft ? "visual-source-draft" : ""}`.trim()} aria-hidden="true">{lineNumbers}</pre>
+            <pre ref={gutterRef} className={`line-gutter ${activeVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()} aria-hidden="true">{lineNumbers}</pre>
             {activeVisualSourceDraft && (
               <div className={`visual-source-sync-state ${activeVisualSourceDraft.errors.length ? "has-error" : "valid"}`} role="status">
                 <span>{ui.unsavedVisualDraft}</span>
@@ -3644,15 +3684,21 @@ export function RuneWorkbench() {
                     : ui.draftReady}</strong>
               </div>
             )}
+            {proposalReviewActive && (
+              <div className={`visual-source-sync-state proposal ${proposalPreviewActive ? "valid" : "has-error"}`} role="status">
+                <span>{ui.proposalSource}</span>
+                <strong>{proposalPreviewActive ? ui.canonicalUnchanged : proposalPreview?.errors[0] ?? ui.proposalPreviewUnavailable}</strong>
+              </div>
+            )}
             <textarea
               ref={sourceEditorRef}
-              className={`source-editor ${activeVisualSourceDraft ? "visual-source-draft" : ""}`.trim()}
+              className={`source-editor ${activeVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()}
               value={editorSource}
               onChange={(event) => updateSource(event.target.value, {
                 start: event.currentTarget.selectionStart,
                 end: event.currentTarget.selectionEnd,
               })}
-              onSelect={captureSourceSelection}
+              onSelect={proposalReviewActive ? undefined : captureSourceSelection}
               onScroll={(event) => {
                 if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop;
                 if (sourceDraftMirrorRef.current) {
@@ -3662,11 +3708,15 @@ export function RuneWorkbench() {
               }}
               spellCheck={false}
               wrap="off"
-              readOnly={Boolean(activeVisualSourceDraft)}
+              readOnly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
               disabled={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
               aria-busy={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
-              aria-readonly={Boolean(activeVisualSourceDraft)}
-              aria-label={activeVisualSourceDraft ? ui.syncedDraftSource(selectedArtifact.name) : ui.editSource(selectedArtifact.name)}
+              aria-readonly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
+              aria-label={proposalReviewActive
+                ? `${ui.proposalSource} · ${presentedArtifact.name}`
+                : activeVisualSourceDraft
+                  ? ui.syncedDraftSource(selectedArtifact.name)
+                  : ui.editSource(selectedArtifact.name)}
             />
             {activeVisualSourceDraft && (
               <pre ref={sourceDraftMirrorRef} className="source-draft-mirror" aria-hidden="true">
@@ -3706,7 +3756,7 @@ export function RuneWorkbench() {
                   {pendingTransactionReview && !pendingTransactionReview.errors.length && (
                     <TransactionReviewMap
                       review={pendingTransactionReview}
-                      activeArtifactId={selectedPendingStat?.artifact.id ?? ""}
+                      activeArtifactId={proposalArtifact?.id ?? selectedPendingStat?.artifact.id ?? ""}
                       locale={locale}
                       onSelect={setPendingReviewId}
                     />
@@ -3716,7 +3766,7 @@ export function RuneWorkbench() {
                     {pendingStats.map(({ artifact, patch, additions, removals, isCreation }) => (
                       <button
                         key={artifact.id}
-                        className={`patch-file-row ${artifact.id === selectedPendingStat?.artifact.id ? "active" : ""}`}
+                        className={`patch-file-row ${artifact.id === proposalArtifact?.id ? "active" : ""}`}
                         onClick={() => setPendingReviewId(artifact.id)}
                         aria-label={ui.reviewArtifact(artifact.name)}
                       >
@@ -3734,7 +3784,7 @@ export function RuneWorkbench() {
                       ))}</pre>
                     </div>
                   ) : (
-                    <p className="patch-review-hint">{ui.selectChangedFile}</p>
+                    <p className="patch-review-hint">{proposalPreviewActive ? ui.proposalSourceUnchanged : ui.selectChangedFile}</p>
                   )}
                 </div>
                 <div className="patch-actions">
@@ -3768,6 +3818,7 @@ export function RuneWorkbench() {
                     onClick={() => {
                       setAgentScope(scope);
                       setPendingChange(null);
+                      setPendingReviewId("");
                       setAgentError("");
                       setNotice(scope === "workspace"
                         ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}`
@@ -3815,11 +3866,11 @@ export function RuneWorkbench() {
           onDoubleClick={() => setPreferredWorkspaceSplit(DEFAULT_WORKSPACE_SOURCE_PERCENT)}
         ><span aria-hidden="true" /></div>
 
-        <section className="preview-pane" aria-label={ui.preview}>
+        <section className="preview-pane" aria-label={proposalReviewActive ? `${ui.preview} · ${ui.proposalPreview}` : ui.preview} data-proposal-preview={proposalReviewActive ? "true" : undefined}>
           <header className="pane-header preview-header">
             <div className="pane-title">
               <span className="preview-mark"><FileCode2 aria-hidden="true" /></span>
-              <div><span className="overline">{ui.output}</span><strong>{ui.livePreview}</strong></div>
+              <div><span className="overline">{ui.output}</span><strong>{proposalReviewActive ? ui.proposalPreview : ui.livePreview}</strong></div>
             </div>
             <div className="preview-actions">
               <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
@@ -3827,7 +3878,11 @@ export function RuneWorkbench() {
                 <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
                 <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
-              <details className="preview-evidence">
+              {proposalReviewActive ? (
+                <span className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`} role="status">
+                  <Eye aria-hidden="true" /><span>{proposalPreviewActive ? ui.proposalOutput : ui.proposalPreviewUnavailable}</span>
+                </span>
+              ) : <details className="preview-evidence">
                 <summary aria-label={ui.previewDetails} title={ui.previewDetailsBody}>
                   {validationErrors.length ? (
                     <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
@@ -3907,25 +3962,25 @@ export function RuneWorkbench() {
                     )}
                   </div>
                 </div>
-              </details>
+              </details>}
             </div>
           </header>
           <div className="preview-body">
             <div className="preview-scroll" ref={previewScrollRef}>
               <ArtifactPreview
-                key={selectedArtifact.id}
-                artifact={selectedArtifact}
-                artifacts={artifacts}
+                key={`${proposalReviewActive ? "proposal" : "canonical"}:${presentedArtifact.id}`}
+                artifact={presentedArtifact}
+                artifacts={presentedArtifacts}
                 locale={locale}
-                activeSelection={activePreviewTarget}
-                onTargetSource={focusPreviewTarget}
-                onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
-                onEditDocumentSection={visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
-                onEditDocumentBlock={visualEditState === "idle" ? commitVisualDocumentBlockEdit : undefined}
-                onReviewDocumentBlockStructure={visualEditState === "idle" && !pendingDocumentStructure ? reviewVisualDocumentBlockStructure : undefined}
-                onEditDeckSlide={visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
-                onEditChartSpec={visualEditState === "idle" ? commitVisualChartSpecEdit : undefined}
-                onVisualSourceDraftChange={handleVisualSourceDraftChange}
+                activeSelection={proposalReviewActive ? null : activePreviewTarget}
+                onTargetSource={proposalReviewActive ? undefined : focusPreviewTarget}
+                onEditDataCell={!proposalReviewActive && visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
+                onEditDocumentSection={!proposalReviewActive && visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined}
+                onEditDocumentBlock={!proposalReviewActive && visualEditState === "idle" ? commitVisualDocumentBlockEdit : undefined}
+                onReviewDocumentBlockStructure={!proposalReviewActive && visualEditState === "idle" && !pendingDocumentStructure ? reviewVisualDocumentBlockStructure : undefined}
+                onEditDeckSlide={!proposalReviewActive && visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
+                onEditChartSpec={!proposalReviewActive && visualEditState === "idle" ? commitVisualChartSpecEdit : undefined}
+                onVisualSourceDraftChange={proposalReviewActive ? undefined : handleVisualSourceDraftChange}
                 resolveLocalAssetUrl={resolveLocalAssetUrl}
               />
             </div>
@@ -3937,7 +3992,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span></div>
+        <div className="statusbar-right"><span>{artifactStats(presentedArtifact)}</span></div>
       </footer>
 
       {newArtifactOpen && (

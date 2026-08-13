@@ -150,6 +150,31 @@ test("ships a complete-source live mirror for revision-bound visual Document dra
   assert.match(previewSource, /projectVisualChartSpecDraft/);
 });
 
+test("renders a complete read-only Agent proposal through the live source and output panes before Apply", async () => {
+  const [workbench, projection, localization, contentStyles] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/proposal-preview.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/localization.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(workbench, /prepareWorkspaceProposalPreview\(\{/);
+  assert.match(workbench, /requestedArtifactId: pendingReviewId \|\| undefined/);
+  assert.match(workbench, /const presentedArtifacts = proposalPreviewActive/);
+  assert.match(workbench, /readOnly=\{Boolean\(activeVisualSourceDraft\) \|\| proposalReviewActive\}/);
+  assert.match(workbench, /artifact=\{presentedArtifact\}/);
+  assert.match(workbench, /artifacts=\{presentedArtifacts\}/);
+  assert.match(workbench, /activeSelection=\{proposalReviewActive \? null : activePreviewTarget\}/);
+  assert.match(workbench, /onTargetSource=\{proposalReviewActive \? undefined : focusPreviewTarget\}/);
+  assert.match(localization, /Proposed output · nothing written/);
+  assert.match(projection, /workspaceMatchesSourceRevision\(input\.artifacts, input\.baseRevision\)/);
+  assert.match(projection, /prepareWorkspaceMutation\(input\.artifacts, input\.patches, input\.creations\)/);
+  assert.match(projection, /requestedArtifactId/);
+  assert.doesNotMatch(projection, /persist|localStorage|indexedDB|fetch\(/i);
+  assert.match(contentStyles, /\.source-editor\.proposal-source-preview/);
+  assert.match(contentStyles, /\.preview-pane\[data-proposal-preview="true"\]/);
+  assert.match(contentStyles, /\.proposal-preview-badge/);
+});
+
 test("ships exactly one compiler-guided repair request site before the repeated runtime gate", async () => {
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
   assert.equal(source.split("runtimeRepair: repairFeedback").length - 1, 1);
@@ -425,7 +450,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.80<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.81<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

@@ -2125,3 +2125,11 @@ ColaMD 最值得学习的并不是某个按钮或颜色，而是它对编辑器�
 这不是满意度问卷，而是一条严格身份合同。记录必须同时命中 saved workflow、applied run 和 Document/Slides deliverable id，并保存实际交付方法与格式。当前 canonical source 只生成本机 SHA-256 指纹，正文、提示词、Query rows、文件名内容和凭据都不进入证据；同一运行与制品只拥有一个确定性记录，重复确认会替换而不会刷高样本。12 条上限延续设备存储的有界原则，旧任务缺少字段时迁移为空数组。
 
 侧栏将技术 Apply 率和用户确认的可用率分开显示；“ready + minor edits”可以用于检查 70% 的成品门槛，但必须同时保留两类数量，不能掩盖人工返工。该数字仍只是 E1/E2 级本机产品证据，不能替代真实用户访谈、重复使用、付费和留存。为了让这条任务实验真的覆盖既定用户，保存任务 locale 和 Deck frontmatter 也统一到完整九语言注册表，避免法、西、俄、阿、日、韩任务在重开或生成演示时静默失效。
+
+## 86. v0.81 安全审核不能牺牲 AI 修改的实时成品反馈
+
+此前 Agent 审核能展示精确 source diff，却让主源码和成品仍停留在旧 workspace；这在安全上正确，在产品心智上却把“AI 改左边、右边实时变化”截断在 Apply 之后。真正的 AI Native 编辑器必须同时满足两件事：用户在写入前看见完整结果，模型在确认前没有任何持久化权限。
+
+v0.81 因此把已通过预检的 patch 与 creation 投影成一份完整、纯内存的候选 workspace。左侧可以阅读任一候选文件，包括尚未创建的制品；右侧始终用整份候选图重新运行 binding、Query、metric、Chart、Document 和 Deck compiler。这样即使报告源码完全未改，只要上游 Data 或 Query 改了，它的数字和图表也会在 Apply 前真实更新，而不是靠 diff 让用户猜结果。
+
+projection 不是真实状态。两个 pane 都在审核期间只读，preview click、可视化编辑、checkpoint、localStorage、folder Push 和 export 全部继续绑定 canonical revision；Apply 再次验证后才单次写入，Discard 直接销毁候选。任何 stale 或无效事务都不返回部分 candidate。这让实时性成为“可撤销、可验证的未来状态预览”，而不是危险的 optimistic write，也为以后更长的 Agent workflow 保留同一低成本边界。

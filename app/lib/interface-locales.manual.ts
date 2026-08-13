@@ -209,3 +209,58 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "Rune은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
   Task: "작업", "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.", "The numbers, structure, and language meet this task.": "수치, 구조, 표현이 이 작업의 요구를 충족합니다.", "usable or minor edits": "사용 가능 또는 가벼운 수정 필요",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Proposal preview": "Aperçu de la proposition",
+  "AI proposal · read-only until Apply": "Proposition de l’IA · lecture seule jusqu’à l’application",
+  "Proposed source": "Source proposée",
+  "Canonical source stays unchanged until Apply": "La source canonique reste inchangée jusqu’à l’application",
+  "Proposal preview unavailable": "Aperçu de la proposition indisponible",
+  "Proposed output · nothing written": "Résultat proposé · aucune écriture",
+  "This source is unchanged; its live output is rendered against the complete proposed workspace.": "Cette source est inchangée ; son résultat en direct est rendu à partir de l’espace de travail proposé complet.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Proposal preview": "Vista previa de la propuesta",
+  "AI proposal · read-only until Apply": "Propuesta de IA · solo lectura hasta aplicar",
+  "Proposed source": "Fuente propuesta",
+  "Canonical source stays unchanged until Apply": "La fuente canónica permanece sin cambios hasta aplicar",
+  "Proposal preview unavailable": "Vista previa de la propuesta no disponible",
+  "Proposed output · nothing written": "Resultado propuesto · nada escrito",
+  "This source is unchanged; its live output is rendered against the complete proposed workspace.": "Esta fuente no cambia; su resultado en directo se renderiza con todo el espacio de trabajo propuesto.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Proposal preview": "Предпросмотр предложения",
+  "AI proposal · read-only until Apply": "Предложение ИИ · только чтение до применения",
+  "Proposed source": "Предлагаемый исходник",
+  "Canonical source stays unchanged until Apply": "Канонический исходник не изменится до применения",
+  "Proposal preview unavailable": "Предпросмотр предложения недоступен",
+  "Proposed output · nothing written": "Предлагаемый результат · ничего не записано",
+  "This source is unchanged; its live output is rendered against the complete proposed workspace.": "Этот исходник не изменён; его живой результат построен на основе всего предлагаемого рабочего пространства.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Proposal preview": "معاينة الاقتراح",
+  "AI proposal · read-only until Apply": "اقتراح الذكاء الاصطناعي · للقراءة فقط حتى التطبيق",
+  "Proposed source": "المصدر المقترح",
+  "Canonical source stays unchanged until Apply": "يبقى المصدر الأساسي بلا تغيير حتى التطبيق",
+  "Proposal preview unavailable": "معاينة الاقتراح غير متاحة",
+  "Proposed output · nothing written": "النتيجة المقترحة · لم تتم أي كتابة",
+  "This source is unchanged; its live output is rendered against the complete proposed workspace.": "هذا المصدر لم يتغير؛ وتُعرض نتيجته المباشرة استنادًا إلى مساحة العمل المقترحة كاملة.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Proposal preview": "提案プレビュー",
+  "AI proposal · read-only until Apply": "AI の提案 · 適用するまで読み取り専用",
+  "Proposed source": "提案されたソース",
+  "Canonical source stays unchanged until Apply": "適用するまで正規ソースは変更されません",
+  "Proposal preview unavailable": "提案をプレビューできません",
+  "Proposed output · nothing written": "提案された成果物 · まだ書き込まれていません",
+  "This source is unchanged; its live output is rendered against the complete proposed workspace.": "このソース自体は変更されていません。ライブ成果物は提案されたワークスペース全体を基に再描画されています。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Proposal preview": "제안 미리보기",
+  "AI proposal · read-only until Apply": "AI 제안 · 적용 전까지 읽기 전용",
+  "Proposed source": "제안된 소스",
+  "Canonical source stays unchanged until Apply": "적용 전까지 정규 소스는 변경되지 않습니다",
+  "Proposal preview unavailable": "제안을 미리 볼 수 없음",
+  "Proposed output · nothing written": "제안된 결과물 · 아직 쓰지 않음",
+  "This source is unchanged; its live output is rendered against the complete proposed workspace.": "이 소스 자체는 변경되지 않았으며, 실시간 결과물은 제안된 전체 작업 공간을 기준으로 렌더링됩니다.",
+});

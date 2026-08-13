@@ -34,6 +34,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "在左側移動游標或選擇同一可證明範圍時"
   ],
   [
+    "实时成品正基于完整建议工作区重新编译",
+    "即時成品正基於完整建議工作區重新編譯"
+  ],
+  [
     "不会把失败请求自动转给另一家供应商",
     "不會把失敗請求自動轉給另一家供應商"
   ],
@@ -734,6 +738,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在對照即時來源核驗"
   ],
   [
+    "此文件的源内容未修改",
+    "此檔案的源內容未修改"
+  ],
+  [
     "没有隐藏的关系图状态",
     "沒有隱藏的關係圖狀態"
   ],
@@ -942,6 +950,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "耗時與來源版本指紋"
   ],
   [
+    "规范源内容保持不变",
+    "規範源內容保持不變"
+  ],
+  [
     "转换后进入同一审核",
     "轉換後進入同一稽核"
   ],
@@ -1128,6 +1140,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "应用前建立恢复点",
     "應用前建立恢復點"
+  ],
+  [
+    "建议的完整源内容",
+    "建議的完整源內容"
   ],
   [
     "建议补丁中的文件",
@@ -1556,6 +1572,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "无法准备该导出",
     "無法準備該匯出"
+  ],
+  [
+    "无法预览此提案",
+    "無法預覽此提案"
   ],
   [
     "是一个本地优先",
@@ -2406,6 +2426,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "並可交付為"
   ],
   [
+    "应用前只读",
+    "應用前只讀"
+  ],
+  [
     "恢复点历史",
     "恢復點歷史"
   ],
@@ -2838,6 +2862,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "尚未儲存"
   ],
   [
+    "尚未写入",
+    "尚未寫入"
+  ],
+  [
     "已从临时",
     "已從臨時"
   ],
@@ -2848,6 +2876,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "应用成功",
     "應用成功"
+  ],
+  [
+    "建议成品",
+    "建議成品"
   ],
   [
     "建议操作",
@@ -2908,6 +2940,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "提出改动",
     "提出改動"
+  ],
+  [
+    "提案预览",
+    "提案預覽"
   ],
   [
     "插入图片",
@@ -3322,6 +3358,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "再建立"
   ],
   [
+    "再描画",
+    "再描畫"
+  ],
+  [
     "删除线",
     "刪除線"
   ],
@@ -3408,6 +3448,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "并交付",
     "並交付"
+  ],
+  [
+    "应用前",
+    "應用前"
   ],
   [
     "建议的",
@@ -3956,6 +4000,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "编辑",
     "編輯"
+  ],
+  [
+    "自体",
+    "自體"
   ],
   [
     "自动",

@@ -112,6 +112,8 @@ test("keeps one complete typed UI contract across all nine interface locales", (
     assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
     assert.notEqual(runeUICopy(locale).workbench.deliveryOutcomeRecorded, english.workbench.deliveryOutcomeRecorded);
     assert.notEqual(runeUICopy(locale).workbench.deliveryRatings.ready, english.workbench.deliveryRatings.ready);
+    assert.notEqual(runeUICopy(locale).workbench.proposalPreview, english.workbench.proposalPreview);
+    assert.notEqual(runeUICopy(locale).workbench.proposalSourceUnchanged, english.workbench.proposalSourceUnchanged);
   }
 });
 

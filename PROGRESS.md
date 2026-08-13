@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.81 with a pure in-memory Agent proposal workspace that shows complete proposed source and recompiles even unchanged downstream deliverables live before Apply, while canonical files remain read-only and untouched.
 - 2026-08-13 — Shipped Rune v0.80 with optional post-handoff deliverable ratings bound to exact applied runs, artifact ids, formats, elapsed time, and device-local source fingerprints; saved tasks now distinguish technical Apply success from user-confirmed usable results across all nine interface locales.
 - 2026-08-13 — Shipped Rune v0.77 with an Apple-informed 87.5% onboarding frame, one 44:56 source-to-preview default, quieter continuous workspace chrome, and one shared proportion/material system across navigation, editors, previews, empty states, menus, and review dialogs.
 - 2026-08-13 — Shipped Rune v0.76 with verified local Document images embedded into portable DOCX, ODT, and fixed PDF exports, including closed-failure handling for missing or corrupt resources.
