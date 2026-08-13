@@ -2963,6 +2963,117 @@ button.transaction-node:hover,
   line-height: 1.5;
 }
 
+.operating-review-evidence {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+  padding-block: 12px 4px;
+  border-top: 1px solid #e7e7ea;
+}
+
+.operating-review-evidence > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.operating-review-evidence > header > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.operating-review-evidence > header strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.operating-review-evidence > header span,
+.operating-review-evidence > footer {
+  color: var(--subtle);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.operating-review-evidence > header dl {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin: 0;
+}
+
+.operating-review-evidence > header dl > div {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid #e4e4e7;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.operating-review-evidence > header dt {
+  color: var(--subtle);
+  font-size: 8px;
+}
+
+.operating-review-evidence > header dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.operating-review-evidence-table {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid #e3e3e6;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.operating-review-evidence table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.operating-review-evidence th,
+.operating-review-evidence td {
+  padding: 7px 9px;
+  border-bottom: 1px solid #ececef;
+  text-align: start;
+}
+
+.operating-review-evidence thead th {
+  color: var(--subtle);
+  background: #fafafa;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .025em;
+}
+
+.operating-review-evidence tbody th {
+  max-width: 260px;
+  overflow: hidden;
+  color: #45454a;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operating-review-evidence tbody td {
+  color: #4f4f55;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.operating-review-evidence tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
 .operating-review-summary dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8749,6 +8860,14 @@ html[dir="rtl"] [data-preview-source-id] {
   .operating-review-deliverables,
   .operating-review-summary dl {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .operating-review-evidence > header {
+    display: grid;
+  }
+
+  .operating-review-evidence > header dl {
+    justify-self: start;
   }
 
   .shortcut-lessons > div {

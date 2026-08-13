@@ -5,6 +5,7 @@ import {
   chartLinePoints,
   chartQuerySourceIdsForArtifact,
   findChartReferences,
+  formatChartValue,
   parseChartSource,
   renderChartModelHtml,
   renderChartReferencesToHtml,
@@ -30,6 +31,13 @@ test("parses the bounded Chart JSON contract", () => {
   assert.match(parseChartSource('{"version":1,"title":"x"}').errors.join(" "), /source|mark|category|value/i);
   assert.equal(parseChartSource(chartArtifact().source.replace('"bar"', '"line"')).spec?.mark, "line");
   assert.match(parseChartSource(chartArtifact().source.replace('"bar"', '"scatter"')).errors.join(" "), /bar|line/i);
+});
+
+test("formats evidence previews and rendered charts through one deterministic contract", () => {
+  assert.equal(formatChartValue(1_840_000, "currency"), "$1.84M");
+  assert.equal(formatChartValue(970_000, "currency"), "$970K");
+  assert.equal(formatChartValue(12.34, "percent"), "12.3%");
+  assert.equal(formatChartValue(12_500, "number"), "12.5K");
 });
 
 test("normalizes ordered line points across negative, zero, and positive values", () => {

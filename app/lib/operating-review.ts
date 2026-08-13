@@ -113,6 +113,15 @@ export type PreparedOperatingReview = {
   errors: string[];
 };
 
+export type PreparedOperatingReviewEvidence = {
+  data?: WorkspaceArtifact;
+  evidenceRows?: OperatingReviewEvidenceRow[];
+  scope?: OperatingReviewScope | null;
+  matchedRowCount?: number;
+  groupCount?: number;
+  errors: string[];
+};
+
 export type { OperatingReviewNarrative } from "./operating-review-contract.ts";
 
 const audienceLabels = {
@@ -173,7 +182,7 @@ function clipped(value: string, maxChars: number) {
 export function prepareOperatingReviewEvidence(
   artifacts: WorkspaceArtifact[],
   input: OperatingReviewInput,
-) {
+): PreparedOperatingReviewEvidence {
   const data = artifacts.find((artifact) => artifact.id === input.dataArtifactId);
   if (!data || data.kind !== "data") return { errors: ["Choose one exact valid Data source."] };
   const parsed = parseDataSource(data.source);
@@ -235,6 +244,7 @@ export function prepareOperatingReviewEvidence(
     evidenceRows,
     scope: preparedScope.scope,
     matchedRowCount: preparedScope.rows.length,
+    groupCount: aggregated.length,
     errors: [],
   };
 }

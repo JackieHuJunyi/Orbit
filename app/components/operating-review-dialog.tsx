@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
+import { formatChartValue } from "../lib/charts";
 import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
 import type { RuneModelMode } from "../lib/model-preference";
 import {
   MAX_OPERATING_REVIEW_FOCUS_CHARS,
   MAX_OPERATING_REVIEW_PERIOD_CHARS,
   MAX_OPERATING_REVIEW_TITLE_CHARS,
+  prepareOperatingReviewEvidence,
   prepareOperatingReviewWorkflow,
   type OperatingReviewDeliverable,
   type OperatingReviewInput,
@@ -40,6 +42,8 @@ type OperatingReviewDialogProps = {
   onCancel: () => void;
   onPrepare: (input: OperatingReviewInput) => void | Promise<void>;
 };
+
+const MAX_OPERATING_REVIEW_PREVIEW_ROWS = 5;
 
 export const OPERATING_REVIEW_BASE_COPY = {
   "zh-CN": {
@@ -111,6 +115,14 @@ export const OPERATING_REVIEW_BASE_COPY = {
     fields: "字段与口径",
     scope: "周期与对象",
     focusSummary: "任务重点",
+    evidencePreview: "聚合证据预览",
+    evidenceDescription: "在请求模型前，Rune 已按当前范围在本地编译这些结果。",
+    eligibleRows: "命中行",
+    excludedRows: "排除行",
+    sourceRows: "来源行",
+    showing: "显示",
+    of: "共",
+    groups: "项",
   },
   en: {
     kicker: "Operating review · task first",
@@ -181,6 +193,14 @@ export const OPERATING_REVIEW_BASE_COPY = {
     fields: "Fields and measure",
     scope: "Period and audience",
     focusSummary: "Task focus",
+    evidencePreview: "Aggregate evidence preview",
+    evidenceDescription: "Rune compiled these results locally from the current scope before any model request.",
+    eligibleRows: "Eligible rows",
+    excludedRows: "Excluded rows",
+    sourceRows: "Source rows",
+    showing: "Showing",
+    of: "of",
+    groups: "groups",
   },
 } as const;
 
@@ -314,6 +334,13 @@ export function OperatingReviewDialog({
     () => prepareOperatingReviewWorkflow(artifacts, input),
     [artifacts, input],
   );
+  const evidence = useMemo(
+    () => prepareOperatingReviewEvidence(artifacts, input),
+    [artifacts, input],
+  );
+  const evidenceRows = evidence.evidenceRows?.slice(0, MAX_OPERATING_REVIEW_PREVIEW_ROWS) ?? [];
+  const eligibleRowCount = evidence.matchedRowCount ?? 0;
+  const excludedRowCount = Math.max(0, (parsedData?.rows.length ?? 0) - eligibleRowCount);
 
   const deliverableNames = deliverables.map((deliverable) => (
     deliverable === "document" ? copy.report : copy.slides
@@ -584,6 +611,35 @@ export function OperatingReviewDialog({
             <div><span>{copy.summary}</span><strong id="operating-review-summary-title">{title.trim() || copy.reviewTitlePlaceholder}</strong></div>
           </header>
           <p>{liveSummary}</p>
+          {!!evidenceRows.length && (
+            <section className="operating-review-evidence" aria-labelledby="operating-review-evidence-title">
+              <header>
+                <div>
+                  <strong id="operating-review-evidence-title">{copy.evidencePreview}</strong>
+                  <span>{copy.evidenceDescription}</span>
+                </div>
+                <dl aria-label={copy.evidencePreview}>
+                  <div><dt>{copy.eligibleRows}</dt><dd>{eligibleRowCount}</dd></div>
+                  <div><dt>{copy.excludedRows}</dt><dd>{excludedRowCount}</dd></div>
+                </dl>
+              </header>
+              <div className="operating-review-evidence-table">
+                <table>
+                  <thead><tr><th scope="col">{effectiveCategory}</th><th scope="col">{effectiveValue}</th><th scope="col">{copy.sourceRows}</th></tr></thead>
+                  <tbody>
+                    {evidenceRows.map((row) => (
+                      <tr key={row.id}>
+                        <th scope="row">{row.category}</th>
+                        <td>{formatChartValue(row.value, format)}</td>
+                        <td>{row.sourceRowCount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <footer>{copy.showing} {evidenceRows.length} {copy.of} {evidence.groupCount ?? evidenceRows.length} {copy.groups}</footer>
+            </section>
+          )}
           <dl>
             <div><dt>{copy.fields}</dt><dd>{effectiveCategory && effectiveValue ? `${effectiveCategory} → ${aggregationLabel}(${effectiveValue})` : "—"}</dd></div>
             <div><dt>{copy.scope}</dt><dd>{period.trim() ? `${period.trim()} · ${audienceLabel} · ${scopeLabel}` : `${audienceLabel} · ${scopeLabel}`}</dd></div>

@@ -130,6 +130,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "圖表和演示共享同一套可讀源內容"
   ],
   [
+    "已按当前范围在本地编译这些结果",
+    "已按當前範圍在本地編譯這些結果"
+  ],
+  [
     "当前仍可使用确定性的本地规划器",
     "當前仍可使用確定性的本地規劃器"
   ],
@@ -2170,6 +2174,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "圖表無法編譯"
   ],
   [
+    "在请求模型前",
+    "在請求模型前"
+  ],
+  [
     "增加利润率列",
     "增加利潤率列"
   ],
@@ -2452,6 +2460,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "编译为安全的",
     "編譯為安全的"
+  ],
+  [
+    "聚合证据预览",
+    "聚合證據預覽"
   ],
   [
     "表格或分隔线",
@@ -3954,6 +3966,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "未關聯"
   ],
   [
+    "来源行",
+    "來源行"
+  ],
+  [
     "柱状图",
     "柱狀圖"
   ],
@@ -4534,6 +4550,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "行動"
   ],
   [
+    "行数",
+    "行數"
+  ],
+  [
     "要点",
     "要點"
   ],
@@ -4700,5 +4720,9 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "页",
     "頁"
+  ],
+  [
+    "项",
+    "項"
   ]
 ] as const;

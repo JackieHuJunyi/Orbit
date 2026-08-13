@@ -2237,3 +2237,11 @@ v0.90 首次把 exact scope 接到了 evidence 与 SQL，但继续沿用了全�
 v0.91 把 numeric-column discovery 收回同一个纯 scope port。`prepareOperatingReviewNumericColumns` 先用 typed equality 得到 eligible rows，再要求候选列在这些行内全部为 finite number；选择 all rows 时 eligible rows 就是完整数据，因此旧的严格拒绝完全保留。UI 与 compiler 不再各写一套规则：范围选择排在 category/value 之前，选定周期后数值字段即时按相同 helper 更新，evidence compiler 随后在同一行集合上再次逐值验证。React 仍不生成 predicate，也不能让一个无效字段越过 compiler。
 
 这个修复明确不等于静默容错。选中范围内的空值、`N/A`、货币字符串和无穷值仍失败；只有已经被用户 exact scope 排除的行不再影响当前任务。生成 SQL 对已经通过 compiler 检查的 eligible measure 显式 `CAST(... AS DOUBLE)`：这是为了防止 DuckDB 因被排除行的文本而把整列绑定成 `VARCHAR`，不是用 `TRY_CAST` 偷偷吞掉范围内错误。真实 DuckDB fixture 使用 June 的 `N/A` 与 `$700` 证明 July 仍只得到 100 和 80。这样“July review”既不会吃进 June 的数值，也不会被 June 的数据质量问题误伤，而全表汇报仍要求全表干净。
+
+## 97. v0.92 在请求模型之前，用户必须看见编译器真正算出的证据
+
+范围、分类字段和数值字段如果只以表单文字出现，用户仍要等到完整事务审核才能发现自己选择了错误口径。最危险的不是报错，而是一个看起来合理、实际聚合范围错误的结果。另一方面，若为了即时反馈在 React 组件里再写一遍筛选、分组和排序，UI 与 Query/Chart/model 很快就会出现两套真相，未来增加日期区间或复合范围时维护成本还会翻倍。
+
+v0.92 因此把既有 `prepareOperatingReviewEvidence` 直接作为只读 preview port。用户选择有效 Data、exact scope、category 和 numeric value 后，界面即时展示命中行、排除行，以及按真实 Query 顺序排列的前五组聚合；同时保留完整 group count，让“显示 5 / 共 25”不会被模型二十行上限误导。数值格式不在对话框里重写，而是调用 Chart 渲染器同一个 deterministic formatter，因此货币、百分比和缩写不会再次产生 hydration 差异。
+
+这份预览不会联系 provider，也不会生成 SQL、patch 或写入 workspace；字段不完整、scope 过期、范围内存在非数值、或没有可用分类时直接不显示推测结果。React 只能投影 compiler 输出，不能扩展其行集。未来新增筛选、聚合和模型任务时，应先扩展纯 compiler 的 typed result，再让各个界面选择性展示，而不是让每个组件拥有自己的数据逻辑。低成本迭代来自单一事实来源和窄能力边界，而不只是把文件拆得更多。

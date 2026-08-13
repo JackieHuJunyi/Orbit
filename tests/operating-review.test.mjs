@@ -123,6 +123,8 @@ test("derives bounded aggregate evidence in the same order as the generated Quer
   });
   const sum = prepareOperatingReviewEvidence([data], reviewInput());
   assert.deepEqual(sum.errors, []);
+  assert.equal(sum.matchedRowCount, 4);
+  assert.equal(sum.groupCount, 3);
   assert.deepEqual(sum.evidenceRows, [
     { id: "result-1", category: "APAC", value: 150, sourceRowCount: 2 },
     { id: "result-2", category: "North America", value: 120, sourceRowCount: 1 },
@@ -135,6 +137,19 @@ test("derives bounded aggregate evidence in the same order as the generated Quer
     { id: "result-2", category: "Europe", value: 80, sourceRowCount: 1 },
     { id: "result-3", category: "North America", value: 120, sourceRowCount: 1 },
   ]);
+});
+
+test("retains the complete group count while bounding model evidence rows", () => {
+  const rows = Array.from({ length: 25 }, (_, index) => `Region ${index + 1},${index + 1}`);
+  const data = dataArtifact({ source: `Region,Net Revenue\n${rows.join("\n")}\n` });
+
+  const evidence = prepareOperatingReviewEvidence([data], reviewInput());
+
+  assert.deepEqual(evidence.errors, []);
+  assert.equal(evidence.matchedRowCount, 25);
+  assert.equal(evidence.groupCount, 25);
+  assert.equal(evidence.evidenceRows.length, 20);
+  assert.deepEqual(evidence.evidenceRows.slice(0, 3).map((row) => row.value), [25, 24, 23]);
 });
 
 test("applies one exact Data scope consistently to evidence, SQL, charts, and deliverables", () => {

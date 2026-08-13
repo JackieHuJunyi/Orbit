@@ -687,3 +687,41 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Choose one exact scope value, or return to all Data rows.": "정확히 일치하는 범위 값을 선택하거나 모든 데이터 행으로 돌아가세요.",
   "Only fields that are numeric throughout the current Data scope are shown.": "현재 데이터 범위 전체에서 숫자인 필드만 표시합니다.",
 });
+
+// Human-reviewed copy for the compiler-derived pre-model evidence preview.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Aggregate evidence preview": "Aperçu des preuves agrégées",
+  "Rune compiled these results locally from the current scope before any model request.": "Rune a compilé ces résultats localement à partir du périmètre actuel, avant toute requête au modèle.",
+  "Eligible rows": "Lignes retenues", "Excluded rows": "Lignes exclues", "Source rows": "Lignes source",
+  Showing: "Affichage de", of: "sur", groups: "groupes",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Aggregate evidence preview": "Vista previa de evidencia agregada",
+  "Rune compiled these results locally from the current scope before any model request.": "Rune compiló estos resultados localmente a partir del ámbito actual, antes de cualquier solicitud al modelo.",
+  "Eligible rows": "Filas incluidas", "Excluded rows": "Filas excluidas", "Source rows": "Filas de origen",
+  Showing: "Mostrando", of: "de", groups: "grupos",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Aggregate evidence preview": "Предпросмотр агрегированных доказательств",
+  "Rune compiled these results locally from the current scope before any model request.": "Rune локально скомпилировал эти результаты для текущей области до любого запроса к модели.",
+  "Eligible rows": "Учтённые строки", "Excluded rows": "Исключённые строки", "Source rows": "Строки источника",
+  Showing: "Показано", of: "из", groups: "групп",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Aggregate evidence preview": "معاينة الأدلة المجمّعة",
+  "Rune compiled these results locally from the current scope before any model request.": "جمّع Rune هذه النتائج محليًا من نطاق البيانات الحالي قبل إرسال أي طلب إلى النموذج.",
+  "Eligible rows": "الصفوف المشمولة", "Excluded rows": "الصفوف المستبعدة", "Source rows": "صفوف المصدر",
+  Showing: "عرض", of: "من", groups: "مجموعات",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Aggregate evidence preview": "集計根拠のプレビュー",
+  "Rune compiled these results locally from the current scope before any model request.": "Rune はモデルへリクエストする前に、現在のデータ範囲からこの結果をローカルで集計しました。",
+  "Eligible rows": "対象行", "Excluded rows": "除外行", "Source rows": "元の行数",
+  Showing: "表示", of: "/", groups: "件",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Aggregate evidence preview": "집계 근거 미리보기",
+  "Rune compiled these results locally from the current scope before any model request.": "Rune이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
+  "Eligible rows": "포함된 행", "Excluded rows": "제외된 행", "Source rows": "원본 행",
+  Showing: "표시", of: "/", groups: "개 그룹",
+});

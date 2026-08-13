@@ -123,7 +123,7 @@ function toFiniteNumber(value: unknown) {
   return Number.isFinite(number) ? number : null;
 }
 
-function formatChartValue(value: number, format: ChartSpec["format"]) {
+export function formatChartValue(value: number, format: ChartSpec["format"]) {
   if (format === "currency") return formatCompactCurrency(value);
   if (format === "percent") return formatFixedPercent(value);
   return formatCompactNumber(value);

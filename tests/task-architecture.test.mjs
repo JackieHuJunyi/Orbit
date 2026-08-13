@@ -55,6 +55,11 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.doesNotMatch(operatingScope, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
   assert.match(operatingDialog, /collectOperatingReviewScopeValues/);
   assert.match(operatingDialog, /prepareOperatingReviewNumericColumns/);
+  assert.match(operatingDialog, /prepareOperatingReviewEvidence/);
+  assert.match(operatingDialog, /MAX_OPERATING_REVIEW_PREVIEW_ROWS = 5/);
+  assert.match(operatingDialog, /formatChartValue\(row\.value, format\)/);
+  assert.match(operatingDialog, /aria-labelledby="operating-review-evidence-title"/);
+  assert.match(operatingCompiler, /groupCount: aggregated\.length/);
   assert.ok(operatingDialog.indexOf('id="operating-review-scope-field"') < operatingDialog.indexOf('id="operating-review-category"'));
   assert.ok(operatingDialog.indexOf('id="operating-review-scope-value"') < operatingDialog.indexOf('id="operating-review-value"'));
   assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);
