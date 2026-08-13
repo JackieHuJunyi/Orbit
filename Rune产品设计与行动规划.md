@@ -1909,3 +1909,7 @@ Source 底部常驻一个与画布连续的轻量输入区，不再用头像、A
 ### 17.14 v0.69 文件栏表达 Sources → Analysis → Deliverables
 
 工作区文件按产品角色从同一 artifact 列表实时派生三组：Data 属于 Sources，Query/Chart 属于 Analysis，Document/Slides 属于 Deliverables。分组只影响导航呈现，不改变 artifact 顺序、identity、目录存储、依赖边、Agent context、pin 或导出。三组标题必须覆盖完整界面语言并使用语义 section/heading；选中态采用克制主题色，未固定 pin 只在 hover/focus 时出现。
+
+### 17.15 v0.70 顶部栏只保留全局动作
+
+顶部路径只显示 Rune 与当前工作区；常驻动作按 New、Import、Export、More Tools 排列。经营汇报创建保留在 activity rail，不在顶部重复。保存状态以紧凑图标显示，但必须通过 `role=status`、完整本地化 `aria-label` 和 title 保留 saved/saving/error 与最近保存信息。入口收敛不得删除 operating-review handler、导入导出、错误反馈或响应式可访问性。

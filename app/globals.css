@@ -121,7 +121,7 @@ textarea:focus-visible {
 .topbar-left,
 .topbar-actions {
   min-width: 0;
-  gap: 8px;
+  gap: 6px;
 }
 
 .export-menu {
@@ -245,8 +245,8 @@ textarea:focus-visible {
 }
 
 .brand-copy {
-  display: grid;
-  min-width: 112px;
+  display: flex;
+  min-width: 0;
   line-height: 1.05;
 }
 
@@ -256,27 +256,21 @@ textarea:focus-visible {
   letter-spacing: -.02em;
 }
 
-.brand-copy span {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: .025em;
-}
-
-.breadcrumb-chevron {
-  width: 14px;
-  color: var(--line-strong);
+.project-separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: rgba(20, 22, 26, .1);
 }
 
 .project-name {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 7px;
   overflow: hidden;
-  color: #4f5b53;
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 580;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -289,10 +283,6 @@ textarea:focus-visible {
   height: 7px;
   border-radius: 50%;
   background: var(--data);
-}
-
-.project-dot {
-  box-shadow: 0 0 0 3px rgba(42, 140, 105, .12);
 }
 
 .button,
@@ -372,17 +362,6 @@ textarea:focus-visible {
   background: #c9402e;
 }
 
-.review-task-button {
-  border: 1px solid rgba(220, 75, 54, .25);
-  background: #f9e9e6;
-  color: #ae3829;
-}
-
-.review-task-button:hover:not(:disabled) {
-  border-color: rgba(220, 75, 54, .4);
-  background: #f6dcd6;
-}
-
 .icon-button {
   width: 32px;
   height: 32px;
@@ -424,12 +403,13 @@ textarea:focus-visible {
 
 .save-indicator {
   display: flex;
+  width: 30px;
   height: 30px;
   align-items: center;
-  gap: 6px;
-  padding: 0 9px;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
   color: var(--muted);
-  font-size: 11px;
 }
 
 .save-indicator svg {
@@ -7276,17 +7256,6 @@ body {
   box-shadow: 0 11px 26px rgba(var(--theme-rgb), .24);
 }
 
-.review-task-button {
-  border-color: rgba(var(--theme-rgb), .14);
-  background: var(--theme-soft);
-  color: var(--theme-accent);
-}
-
-.review-task-button:hover:not(:disabled) {
-  border-color: rgba(var(--theme-rgb), .27);
-  background: color-mix(in srgb, var(--theme-soft) 82%, #fff);
-}
-
 .workspace {
   gap: 0;
   padding: 10px;
@@ -7946,10 +7915,8 @@ html[dir="rtl"] [data-preview-source-id] {
     top: 0;
   }
 
-  .brand-copy span,
-  .breadcrumb-chevron,
+  .project-separator,
   .project-name,
-  .save-indicator span,
   .ghost-button {
     display: none;
   }

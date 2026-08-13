@@ -2040,4 +2040,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 三层标题拥有九语言完整目录和原生 section/heading 结构；每个文件仍显示 canonical 名称、language 与 live binding 数，选择、pin、Agent context 和 saved workflow 仍按原 artifact id 工作。选中态从漂浮白卡加独立 notch 收敛成低饱和主题底色和一条内嵌气质色边线，pin 在未固定且未 hover/focus 时完全隐藏。信息没有丢失，只让默认画面优先表达当前文件和工作流。
 
+## 75. v0.70 顶部栏只承担全局导航、文件动作与保存状态
+
+顶部同时显示品牌副标题、绿色工作区状态点、工作区名称、保存文字、更多工具、创建汇报、新建、导入和导出时，用户无法快速区分全局动作与任务入口。创建汇报已经在 activity rail 有稳定且可访问的同一 handler，v0.70 删除顶部重复按钮；它没有删除经营汇报编译器、saved task 或任何运行证据。顶部常驻顺序变成 New、Import、Export、More Tools，符合从创建到交付再到低频设置的节奏。
+
+左侧路径收敛为 Rune、一道轻分隔和当前本机/目录工作区名称；营销式副标题和状态装饰不再占用工具栏。保存状态改成一个 30px 无障碍状态点：图标表达正常/保存中/失败，完整本地化状态和最近保存时间通过 `role=status`、`aria-label` 与 title 保留。窄屏隐藏路径但不隐藏状态语义。顶栏减少的是重复视觉，不是行为或错误信息。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

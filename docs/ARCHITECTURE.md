@@ -554,6 +554,8 @@ Assistance chrome is likewise presentation-only. The source-integrated composer,
 
 File-rail workflow grouping is a render-time projection over the canonical `WorkspaceArtifact[]`: Data maps to Sources, Query/Chart to Analysis, and Document/Slides to Deliverables, preserving the original array order inside each group. Group ids are presentation constants rather than persisted folders or graph nodes. Selection, temporary pins, context closure, revisions, directory manifests, and exports continue to resolve exact artifact ids; semantic sections and localized headings only improve navigation hierarchy.
 
+Top-bar simplification reuses existing handlers and state. New, Import, Export, and More Tools remain global controls; operating-review creation retains the same handler in the persistent activity rail rather than rendering a duplicate top-bar button. The compact `role="status"` save indicator derives its accessible label and title from existing save state, timestamp, and localized copy. Workspace identity still reads the directory handle or local-workspace label; no navigation, persistence, task, or save model changes.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

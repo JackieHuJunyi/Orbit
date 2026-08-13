@@ -31,9 +31,9 @@ test("server-renders the Rune artifact workbench", async () => {
   const html = await response.text();
   assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue">/);
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
-  assert.match(html, /Content workspace/);
+  assert.match(html, /Local workspace/);
   assert.match(html, /q2-review\.md/);
-  assert.match(html, /Create review/);
+  assert.match(html, /Create operating review/);
   assert.match(html, /More tools/);
   assert.match(html, /\.docx,\.xlsx,\.pptx/);
   assert.match(html, /Live preview/);
@@ -354,13 +354,13 @@ test("keeps preview validation visible while progressively disclosing detailed e
   assert.match(styles, /html\[dir="rtl"\] \.preview-evidence-popover/);
 });
 
-test("keeps primary creation and handoff actions visible while disclosing workspace tools in one menu", async () => {
+test("keeps primary file and handoff actions visible while disclosing workspace tools in one menu", async () => {
   const response = await render();
   const html = await response.text();
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(html, /aria-label="More tools"/);
   assert.match(html, /aria-haspopup="menu"/);
-  assert.match(html, />Create review</);
+  assert.match(html, /aria-label="Create operating review"/);
   assert.match(html, />New</);
   assert.match(html, />Import</);
   assert.match(html, />Export</);
@@ -401,7 +401,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.69<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.70<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -432,4 +432,19 @@ test("organizes workspace files by product workflow rather than internal artifac
   assert.doesNotMatch(html, /class="active-notch"/);
   assert.match(styles, /\.artifact-row\.active\s*\{[^}]*background:\s*rgba\(var\(--theme-rgb\),\s*\.085\);[^}]*box-shadow:\s*inset 2px 0 var\(--theme-accent\);/s);
   assert.match(styles, /\.artifact-context-pin\s*\{[^}]*opacity:\s*0;/s);
+});
+
+test("keeps the top bar global and moves duplicate task creation into the activity rail", async () => {
+  const response = await render();
+  const html = await response.text();
+  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const topbarSource = source.slice(source.indexOf('<header className="topbar">'), source.indexOf("</header>", source.indexOf('<header className="topbar">')));
+  assert.doesNotMatch(topbarSource, /openOperatingReview|review-task-button|ClipboardList/);
+  assert.match(html, /class="brand-copy"><strong>Rune<\/strong><\/div><span class="project-separator"/);
+  assert.match(html, /class="save-indicator saved" role="status" aria-label="Saved on device · Last saved/);
+  assert.match(html, /class="visually-hidden">Saved on device<\/span>/);
+  assert.match(source, /className="activity-button"[\s\S]{0,420}onClick=\{openOperatingReview\}/);
+  assert.match(html, />New<\/button>[\s\S]*>Import<\/button>[\s\S]*class="export-menu"[\s\S]*class="tools-menu"/);
+  assert.doesNotMatch(styles, /\.review-task-button\s*\{/);
 });
