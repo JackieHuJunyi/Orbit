@@ -2133,3 +2133,13 @@ ColaMD 最值得学习的并不是某个按钮或颜色，而是它对编辑器�
 v0.81 因此把已通过预检的 patch 与 creation 投影成一份完整、纯内存的候选 workspace。左侧可以阅读任一候选文件，包括尚未创建的制品；右侧始终用整份候选图重新运行 binding、Query、metric、Chart、Document 和 Deck compiler。这样即使报告源码完全未改，只要上游 Data 或 Query 改了，它的数字和图表也会在 Apply 前真实更新，而不是靠 diff 让用户猜结果。
 
 projection 不是真实状态。两个 pane 都在审核期间只读，preview click、可视化编辑、checkpoint、localStorage、folder Push 和 export 全部继续绑定 canonical revision；Apply 再次验证后才单次写入，Discard 直接销毁候选。任何 stale 或无效事务都不返回部分 candidate。这让实时性成为“可撤销、可验证的未来状态预览”，而不是危险的 optimistic write，也为以后更长的 Agent workflow 保留同一低成本边界。
+
+## 87. v0.82 可组合不是先装插件框架，而是先把第一条任务链做成显式合同
+
+当前经营汇报的能力已经完整，却需要用户先导入、确认、再找任务、再选择同一份 Data。这个断点不是缺少转换器，而是能力没有被编排成用户结果。v0.82 把欢迎页和空态的首要入口改成“从数据创建经营汇报”：专用 picker 只接受 CSV/JSON/XLSX/ODS，仍复用原有 import converter 与原子审核；确认后自动打开字段/口径/交付物设置，并预选本次审核得到的精确 Data id。普通 Import 和手动汇报入口仍保留，不共享隐形最近状态。
+
+Cordis 的 Context/Fiber/Registry 与 DeepSeek Harness 的 session facts、capability seams、typed UI slots、纯 column solver 和 dependency verifier 指向同一个可迁移原则：生命周期、依赖和写入动作必须可声明、可验证、可回收。但把这两套开发者预览中的动态 plugin/session runtime 直接装进 Rune，会先引入配置树、包边界和迁移成本，再寻找产品用途；它们的聊天/Agent shell 也不应替代 Rune 的 source-linked Office workspace 心智。
+
+因此这一版只抽出最小静态 seam。`task-runtime.ts` 不读取 React、浏览器、网络或存储，只定义 task capability 与 `awaiting-source → reviewing-source → configuring` 三个事实阶段，并在每一步验证 workspace revision、review identity、imported id 顺序和 accepted Artifact kind。workbench 只是 assembly：打开 picker、调用 converter、展示审核、执行既有 persistence，再把下一阶段交给聚焦 dialog。preferred Data 不另存一份 UI state，而是由 session 本身提供，避免“双份真相”。
+
+新增的 architecture gate 会拒绝 task runtime 越界，并验证 UI 只消费 registry 声明的 accept capability、精确 import binding 和一次 continuation。未来第二、第三个任务应复用相同结构；只有出现三个以上真实任务并证明动态注册、替换或第三方扩展需求时，才重新评估 slot/plugin registry。低成本架构不是现在为所有可能性付费，而是让下一条已知任务不需要复制身份、取消、版本和零写入逻辑。

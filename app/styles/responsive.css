@@ -63,6 +63,13 @@
   .import-review-header,
   .import-review-body,
   .import-review-actions { padding-inline: 18px; }
+  .empty-task-primary { min-height: 76px; grid-template-columns: 42px minmax(0, 1fr) 18px; gap: var(--rune-space-3); padding: var(--rune-space-3) var(--rune-space-4); border-radius: var(--rune-radius-card); }
+  .empty-task-primary > span:first-child { width: 42px; height: 42px; border-radius: var(--rune-radius-control); }
+  .empty-task-primary small { font-size: 10px; }
+  .empty-choice-divider { width: 94%; }
+  .empty-actions { max-width: 340px; }
+  .import-task-continuation { grid-template-columns: 34px minmax(0, 1fr); padding: var(--rune-space-3); border-radius: var(--rune-radius-control); }
+  .import-task-continuation > svg { width: 34px; height: 34px; padding: 9px; }
   .delivery-outcome-context { grid-template-columns: 1fr; }
   .delivery-outcome-options label { grid-template-columns: 18px 22px minmax(0, 1fr); padding-inline: 13px; border-radius: 18px; }
   .proposal-preview-badge { max-width: 150px; padding-inline: 8px; }

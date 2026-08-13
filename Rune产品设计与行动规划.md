@@ -1,7 +1,7 @@
 # Rune 产品设计与行动规划
 
-> 版本：1.2
-> 日期：2026-08-13
+> 版本：1.3
+> 日期：2026-08-14
 > 状态：产品基线，进入用户验证前  
 > 依据：[AI产品行动指南.md](./AI产品行动指南.md)、[idea.md](./idea.md)、[README.md](./README.md)、[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)  
 > 本文目的：把指南中的原则逐项转成 Rune 的明确决策、验证方法、阶段门槛与停止条件。
@@ -1960,3 +1960,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 新建制品在 Apply 前可以被查看，但只存在于候选工作区；canonical artifact、checkpoint、设备存储、文件夹和导出仍读取原 revision。
 - 提案预览期间左右两侧只读，并关闭 preview-to-source 和可视化编辑回调；Apply/Discard 是唯一离开审核的状态转换，不能形成第二个 writer。
 - stale revision、无效 patch、冲突 creation 或任一完整工作区验证失败都必须 fail closed，不得暴露部分候选结果。
+
+### 17.23 v0.82 首次价值路径与任务架构必须是同一条链
+
+- 欢迎页和空工作区的第一主操作不再是泛化“导入”，而是“从数据创建经营汇报”；用户选择 CSV/JSON/XLSX/ODS 后，先看到现有 fidelity/source 审核，再直接进入字段、口径、图表和交付物设置。
+- 续接必须携带该次选择产生的精确 Data Artifact id；不能根据第一份 Data、最近打开文件或文件名重新猜测。普通多格式导入和手动经营汇报入口继续独立存在，并清空遗留任务上下文。
+- 任务定义只声明稳定 id、文件能力和允许的 Artifact kind；任务会话只记录 `awaiting-source → reviewing-source → configuring`、workspace revision 和精确 imported ids。React、localStorage、IndexedDB、fetch、provider 与文件系统不得进入任务 runtime。
+- 导入取消、非 Data 结果、workspace revision 变化、review identity 变化、来源顺序/身份变化或 preferred source 丢失都必须关闭续接且零写入。只有现有 import transaction 能写入已审核 Data，后续 operating-review compiler 仍走 runtime preflight、diff 与 Apply。
+- 从 Cordis 学习显式生命周期、作用域能力和可释放注册；从 DeepSeek Harness 学习纯 UI 几何、窄 action 面、slot/模块边界和自动依赖门禁，但当前不引入其动态插件系统、通用会话日志或聊天 shell。至少三个独立 Rune task 证明重复注册需求前，静态 typed composition 成本更低。
+- 新任务的固定扩展步骤是：定义 capability → 编写纯 phase transition → 复用受审核 compiler/transaction → 增加一个 assembly 入口和聚焦界面 → 扩展架构门禁；不得继续向 workbench 添加互不相干的 loading/cancel/source 布尔状态。

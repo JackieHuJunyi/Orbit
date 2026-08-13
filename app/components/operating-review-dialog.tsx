@@ -27,6 +27,7 @@ type OperatingReviewDialogProps = {
   locale: RuneLocale;
   error?: string;
   initialInput?: OperatingReviewInput;
+  preferredDataArtifactId?: string;
   onCancel: () => void;
   onPrepare: (input: OperatingReviewInput) => void | Promise<void>;
 };
@@ -154,12 +155,15 @@ export function OperatingReviewDialog({
   locale,
   error,
   initialInput,
+  preferredDataArtifactId,
   onCancel,
   onPrepare,
 }: OperatingReviewDialogProps) {
   const copy = operatingReviewCopy(locale);
   const [title, setTitle] = useState(initialInput?.title ?? "");
-  const [sourceArtifactId, setSourceArtifactId] = useState(initialInput?.dataArtifactId ?? "");
+  const [sourceArtifactId, setSourceArtifactId] = useState(
+    initialInput?.dataArtifactId ?? preferredDataArtifactId ?? "",
+  );
   const [category, setCategory] = useState(initialInput?.category ?? "");
   const [value, setValue] = useState(initialInput?.value ?? "");
   const [aggregation, setAggregation] = useState<OperatingReviewInput["aggregation"]>(initialInput?.aggregation ?? "sum");

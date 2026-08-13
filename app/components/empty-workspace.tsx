@@ -1,29 +1,35 @@
 "use client";
 
-import { FilePlus2, FileText, FolderOpen, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, ClipboardList, FilePlus2, FileText, FolderOpen, Sparkles, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 
 export const EMPTY_WORKSPACE_BASE_COPY = {
   "zh-CN": {
-    eyebrow: "打开内容",
-    title: "把文件拖到这里",
-    body: "或从这台设备选择文件。Rune 会先在本地读取，并在写入工作区前显示转换结果。",
-    choose: "选择文件",
+    eyebrow: "从真实结果开始",
+    title: "把数据变成可核验的汇报。",
+    body: "选择 CSV、JSON、XLSX 或 ODS。Rune 会先让你审核导入结果，再引导你确认字段、口径、图表和交付物。",
+    startReview: "创建经营汇报",
+    startReviewBody: "导入数据后，直接进入字段映射和成品设置",
+    orOpen: "或者打开其他内容",
+    choose: "打开文件",
     create: "新建空白内容",
     sample: "打开示例",
-    support: "支持 Markdown、CSV、JSON、HTML、PDF、DOCX、XLSX、PPTX、ODT、ODS、ODP；兼容格式都会先显示转换审核。",
+    support: "也可以把任意支持的文件拖到此处。所有兼容格式都会先显示转换审核。",
     drop: "松开即可准备导入",
     guide: "本地指南仍在左侧工作区中",
   },
   en: {
-    eyebrow: "Open something",
-    title: "Drop files here",
-    body: "Or choose files from this device. Rune reads locally first and shows the conversion before writing to your workspace.",
-    choose: "Choose files",
+    eyebrow: "Start with a real outcome",
+    title: "Turn data into a verifiable review.",
+    body: "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.",
+    startReview: "Create operating review",
+    startReviewBody: "Import data, then continue directly to mapping and output setup",
+    orOpen: "Or open something else",
+    choose: "Open files",
     create: "Create blank",
     sample: "Open sample",
-    support: "Supports Markdown, CSV, JSON, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP. Compatibility imports are reviewed before writing.",
+    support: "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.",
     drop: "Release to prepare the import",
     guide: "Your local guide remains in the workspace rail",
   },
@@ -35,12 +41,14 @@ function emptyWorkspaceCopy(locale: RuneLocale) {
 
 export function EmptyWorkspace({
   locale,
+  onStartReview,
   onChooseFiles,
   onCreate,
   onDropFiles,
   onOpenSample,
 }: {
   locale: RuneLocale;
+  onStartReview: () => void;
   onChooseFiles: () => void;
   onCreate: () => void;
   onDropFiles: (files: File[]) => void;
@@ -73,8 +81,14 @@ export function EmptyWorkspace({
         <span className="empty-eyebrow">{dragging ? text.drop : text.eyebrow}</span>
         <h1>{text.title}</h1>
         <p>{text.body}</p>
+        <button type="button" className="empty-task-primary" onClick={onStartReview}>
+          <span><ClipboardList aria-hidden="true" /></span>
+          <span><strong>{text.startReview}</strong><small>{text.startReviewBody}</small></span>
+          <ArrowRight aria-hidden="true" />
+        </button>
+        <div className="empty-choice-divider"><span>{text.orOpen}</span></div>
         <div className="empty-actions">
-          <button type="button" className="welcome-primary" onClick={onChooseFiles}><FolderOpen />{text.choose}</button>
+          <button type="button" onClick={onChooseFiles}><FolderOpen />{text.choose}</button>
           <button type="button" onClick={onCreate}><FilePlus2 />{text.create}</button>
           <button type="button" onClick={onOpenSample}><Sparkles />{text.sample}</button>
         </div>

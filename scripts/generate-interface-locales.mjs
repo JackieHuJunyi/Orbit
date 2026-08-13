@@ -17,6 +17,7 @@ const targetLocales = ["fr", "es", "ru", "ar", "ja", "ko"];
 const componentCatalogs = [
   ["app/components/welcome-experience.tsx", "WELCOME_BASE_COPY"],
   ["app/components/empty-workspace.tsx", "EMPTY_WORKSPACE_BASE_COPY"],
+  ["app/components/import-review-dialog.tsx", "IMPORT_REVIEW_TASK_BASE_COPY"],
   ["app/components/model-profile-manager.tsx", "MODEL_MANAGER_BASE_COPY"],
   ["app/components/operating-review-dialog.tsx", "OPERATING_REVIEW_BASE_COPY"],
   ["app/components/delivery-outcome-dialog.tsx", "DELIVERY_OUTCOME_BASE_COPY"],

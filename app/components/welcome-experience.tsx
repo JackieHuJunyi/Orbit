@@ -3,9 +3,9 @@
 import {
   ArrowRight,
   Check,
+  ClipboardList,
   Command,
   FileText,
-  FolderOpen,
   Globe2,
   Keyboard,
   KeyRound,
@@ -30,7 +30,7 @@ import {
 import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
-export type WelcomeAction = "guide" | "import" | "sample";
+export type WelcomeAction = "guide" | "review" | "sample";
 export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
 type ShortcutId = "open" | "save" | "agent" | "view";
 
@@ -43,7 +43,7 @@ export const WELCOME_BASE_COPY = {
     welcomeBody: "文档、数据、图表和演示共享同一套可读源内容。你专注判断，Rune 负责把变化实时连接起来。",
     begin: "继续设置",
     local: "本地优先",
-    review: "先审后写",
+    reviewFirst: "先审后写",
     live: "实时编译",
     languageEyebrow: "语言",
     languageTitle: "选择 Rune 使用的语言",
@@ -80,11 +80,11 @@ export const WELCOME_BASE_COPY = {
     skipTutorial: "稍后学习",
     readyEyebrow: "准备好了",
     readyTitle: "你的工作区，由你掌控。",
-    readyBody: "先阅读保存在工作区里的 Rune 指南、导入自己的文件，或者打开完整示例。",
+    readyBody: "从一份真实经营汇报开始，或者先阅读本地指南、探索完整示例。",
+    review: "从数据创建经营汇报",
+    reviewBody: "导入真实数据，审核后直接确认字段、口径和交付物",
     guide: "打开本地指南",
     guideBody: "从一份可编辑的 Markdown 说明开始",
-    import: "导入我的文件",
-    importBody: "文件会先在当前设备上读取",
     sample: "探索示例工作区",
     sampleBody: "查看数据到报告与演示的完整链路",
   },
@@ -96,7 +96,7 @@ export const WELCOME_BASE_COPY = {
     welcomeBody: "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.",
     begin: "Continue setup",
     local: "Local first",
-    review: "Review before write",
+    reviewFirst: "Review before write",
     live: "Live compilation",
     languageEyebrow: "Language",
     languageTitle: "Choose your Rune language",
@@ -133,11 +133,11 @@ export const WELCOME_BASE_COPY = {
     skipTutorial: "Learn later",
     readyEyebrow: "Ready",
     readyTitle: "Your workspace, under your control.",
-    readyBody: "Read the Rune guide stored in your workspace, import your own file, or explore the complete sample.",
+    readyBody: "Start with a real operating review, or read the local guide and explore the complete sample first.",
+    review: "Create a review from data",
+    reviewBody: "Import real data, review it, then map fields, measures, and deliverables",
     guide: "Open local guide",
     guideBody: "Start with an editable Markdown reference",
-    import: "Import my file",
-    importBody: "The file is read on this device first",
     sample: "Explore sample workspace",
     sampleBody: "See the full data-to-report-and-deck chain",
   },
@@ -330,7 +330,7 @@ export function WelcomeExperience({
                   <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
                   <h1 id="welcome-title">{text.welcomeTitle}</h1>
                   <p>{text.welcomeBody}</p>
-                  <p className="welcome-principles"><ShieldCheck aria-hidden="true" />{text.local} · {text.review} · {text.live}</p>
+                  <p className="welcome-principles"><ShieldCheck aria-hidden="true" />{text.local} · {text.reviewFirst} · {text.live}</p>
                 </div>
                 <section className="welcome-language-card" aria-labelledby="welcome-language-title">
                   <div className="welcome-language-heading">
@@ -444,8 +444,8 @@ export function WelcomeExperience({
               <h1 id="welcome-title">{text.readyTitle}</h1>
               <p>{text.readyBody}</p>
               <div className="welcome-actions">
-                <button type="button" className="featured" onClick={() => onComplete("guide")}><span><FileText /></span><span><strong>{text.guide}</strong><small>{text.guideBody}</small></span><ArrowRight /></button>
-                <button type="button" onClick={() => onComplete("import")}><span><FolderOpen /></span><span><strong>{text.import}</strong><small>{text.importBody}</small></span><ArrowRight /></button>
+                <button type="button" className="featured" onClick={() => onComplete("review")}><span><ClipboardList /></span><span><strong>{text.review}</strong><small>{text.reviewBody}</small></span><ArrowRight /></button>
+                <button type="button" onClick={() => onComplete("guide")}><span><FileText /></span><span><strong>{text.guide}</strong><small>{text.guideBody}</small></span><ArrowRight /></button>
                 <button type="button" onClick={() => onComplete("sample")}><span><Sparkles /></span><span><strong>{text.sample}</strong><small>{text.sampleBody}</small></span><ArrowRight /></button>
               </div>
             </>

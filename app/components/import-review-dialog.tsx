@@ -4,6 +4,7 @@ import {
   BarChart3,
   Check,
   CheckCircle2,
+  ClipboardList,
   Database,
   FileText,
   Presentation,
@@ -12,10 +13,25 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { createImportSourcePreview } from "../lib/imports";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { localizeRuneCopy, runeUICopy, type RuneLocale } from "../lib/localization";
 import { formatInteger } from "../lib/number-format";
 import type { ArtifactKind, WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
+
+export const IMPORT_REVIEW_TASK_BASE_COPY = {
+  "zh-CN": {
+    confirm: "导入并设置汇报",
+    nextStep: "下一步",
+    nextTitle: "下一步：确认字段与交付物",
+    nextBody: "确认这次导入后，Rune 会自动打开经营汇报设置，并预先选择这份数据。",
+  },
+  en: {
+    confirm: "Import and map review",
+    nextStep: "Next step",
+    nextTitle: "Next: choose fields and deliverables",
+    nextBody: "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.",
+  },
+} as const;
 
 function ArtifactIcon({ kind }: { kind: ArtifactKind }) {
   if (kind === "document") return <FileText aria-hidden="true" />;
@@ -35,6 +51,7 @@ export function ImportReviewDialog({
   warnings,
   error,
   locale,
+  continueToOperatingReview = false,
   onCancel,
   onConfirm,
 }: {
@@ -43,11 +60,13 @@ export function ImportReviewDialog({
   warnings: string[];
   error?: string;
   locale: RuneLocale;
+  continueToOperatingReview?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const uniqueWarnings = [...new Set(warnings)];
   const copy = runeUICopy(locale);
+  const taskCopy = localizeRuneCopy(locale, IMPORT_REVIEW_TASK_BASE_COPY.en, IMPORT_REVIEW_TASK_BASE_COPY["zh-CN"]);
 
   return (
     <ReviewDialog
@@ -63,11 +82,22 @@ export function ImportReviewDialog({
           <div><ShieldCheck aria-hidden="true" /> {copy.importReview.atomic}</div>
           <span>
             <button className="button ghost-button" onClick={onCancel}>{copy.common.cancel}</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {copy.importReview.importSources(artifacts.length)}</button>
+            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {continueToOperatingReview
+              ? taskCopy.confirm
+              : copy.importReview.importSources(artifacts.length)}</button>
           </span>
         </>
       )}
     >
+          {continueToOperatingReview && (
+            <section className="import-task-continuation" aria-label={taskCopy.nextStep}>
+              <ClipboardList aria-hidden="true" />
+              <div>
+                <strong>{taskCopy.nextTitle}</strong>
+                <p>{taskCopy.nextBody}</p>
+              </div>
+            </section>
+          )}
           {uniqueWarnings.length ? (
             <section className="import-warning-panel" aria-labelledby="import-warning-title">
               <div className="import-warning-heading">

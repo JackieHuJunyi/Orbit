@@ -510,6 +510,24 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
+## Composable task runtime
+
+Rune tasks are declarative product capabilities, not extra modal booleans inside the workbench. A task definition declares a stable id, the source capability it can accept, and the Artifact kinds it may consume. A short-lived task session records only explicit lifecycle facts (`awaiting-source → reviewing-source → configuring`) plus the captured workspace revision and exact imported Artifact identities. The runtime is a pure TypeScript module: it cannot import React, persistence, browser APIs, providers, or filesystem adapters.
+
+The workbench is the assembly boundary. It may open the task-specific picker, run the existing import converter, present the existing atomic import review, and then pass the reviewed result back through the task runtime. The runtime proves the captured workspace revision, import-review identity, ordered imported ids, accepted Artifact kinds, and preferred source before the UI may continue. Only the existing import transaction writes the accepted source. Cancelling, choosing an incompatible file, changing the workspace, changing the reviewed import, or losing the preferred source closes the continuation without a task side effect.
+
+This design takes four durable ideas from [Cordis](https://github.com/cordiverse/cordis) and [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): explicit lifecycle rather than implicit mounted state; declared capabilities rather than cross-module reach; pure components/geometry fed through narrow shares; and automated dependency-boundary checks. Rune deliberately does **not** add either repository as a runtime dependency, adopt Harness's chat/session shell, or introduce a dynamic plugin loader while the product is still proving its core Office tasks. Their plugin APIs are broader than Rune needs and currently carry avoidable migration cost. We use static typed composition first and keep the seam small enough to replace later.
+
+Adding a task now has a bounded path:
+
+1. Add its static definition and accepted Artifact kinds to the task registry.
+2. Add pure phase transitions that capture exact revisions and identities.
+3. Reuse an existing reviewed import/compiler/mutation capability; do not write from the task runtime.
+4. Add one assembly entry in the workbench and one focused task surface.
+5. Extend the architecture gate so the new runtime still has no React, persistence, network, or browser dependency.
+
+The first migrated path is operating review: Welcome or Empty workspace → choose CSV/JSON/XLSX/ODS → inspect the generated Data source → confirm one atomic import → map fields and deliverables with that exact imported Data source preselected. Independent multi-format Import and the existing manual operating-review entry remain available; they do not share hidden task state.
+
 ## Security boundaries
 
 - Markdown is rendered as React elements and does not execute embedded HTML.

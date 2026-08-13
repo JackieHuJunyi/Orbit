@@ -241,6 +241,13 @@ import {
   type SavedOperatingReview,
 } from "../lib/operating-review";
 import {
+  bindRuneTaskImportReview,
+  prepareRuneTaskAfterImport,
+  RUNE_TASK_DEFINITIONS,
+  startRuneTaskSession,
+  type RuneTaskSession,
+} from "../lib/task-runtime";
+import {
   convertLegacyOfficeFile,
   legacyOfficeFileName,
   MAX_LEGACY_OFFICE_IMPORT_BYTES,
@@ -655,6 +662,7 @@ export function RuneWorkbench() {
   const [operatingReviewOpen, setOperatingReviewOpen] = useState(false);
   const [operatingReviewError, setOperatingReviewError] = useState("");
   const [operatingReviewState, setOperatingReviewState] = useState<"idle" | "checking">("idle");
+  const [taskSession, setTaskSession] = useState<RuneTaskSession | null>(null);
   const [savedOperatingReviews, setSavedOperatingReviews] = useState<SavedOperatingReview[]>([]);
   const [editingOperatingReviewId, setEditingOperatingReviewId] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
@@ -708,6 +716,7 @@ export function RuneWorkbench() {
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const taskImportRef = useRef<HTMLInputElement>(null);
   const imageImportRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
   const localImageInFlightRef = useRef(false);
@@ -1227,6 +1236,7 @@ export function RuneWorkbench() {
       if (!(event.metaKey || event.ctrlKey)) return;
       if (event.key.toLowerCase() === "o") {
         event.preventDefault();
+        setTaskSession(null);
         importRef.current?.click();
         return;
       }
@@ -1316,6 +1326,24 @@ export function RuneWorkbench() {
     return guide;
   }
 
+  function beginStandardImport() {
+    setTaskSession(null);
+    importRef.current?.click();
+  }
+
+  function startOperatingReviewFromData() {
+    setTaskSession(startRuneTaskSession("operating-review", artifactsRef.current));
+    setOperatingReviewError("");
+    setEditingOperatingReviewId("");
+    setEmptyWorkspace(true);
+    setNotice(runeText(
+      locale,
+      "Choose CSV, JSON, XLSX, or ODS — Rune will review the import before mapping the task",
+      "请选择 CSV、JSON、XLSX 或 ODS — Rune 会先审核导入，再进入任务映射",
+    ));
+    window.setTimeout(() => taskImportRef.current?.click(), 0);
+  }
+
   function finishWelcome(action: WelcomeAction) {
     const guide = ensureLocalGuide();
     try {
@@ -1334,10 +1362,8 @@ export function RuneWorkbench() {
       setNotice("Opened the editable Rune guide stored in this workspace");
       return;
     }
-    if (action === "import") {
-      setEmptyWorkspace(true);
-      setNotice("Choose one or more files — Rune reads them locally before review");
-      window.setTimeout(() => importRef.current?.click(), 0);
+    if (action === "review") {
+      startOperatingReviewFromData();
       return;
     }
     setSelectedId(artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? guide.id);
@@ -2672,6 +2698,7 @@ export function RuneWorkbench() {
     setCheckpoints({});
     setSavedOperatingReviews([]);
     setEditingOperatingReviewId("");
+    setTaskSession(null);
     setHistoryOpen(false);
     setNewArtifactOpen(false);
     setNewArtifactError("");
@@ -2689,6 +2716,7 @@ export function RuneWorkbench() {
   function openOperatingReview() {
     setOperatingReviewError("");
     setEditingOperatingReviewId("");
+    setTaskSession(null);
     setOperatingReviewOpen(true);
     setNotice(runeText(locale, "Choose the evidence, measure, and deliverables before Rune prepares the full review chain", "先选择数据、口径和交付物，再生成整条汇报链"));
   }
@@ -2696,6 +2724,7 @@ export function RuneWorkbench() {
   function openSavedOperatingReview(workflow: SavedOperatingReview) {
     setOperatingReviewError("");
     setEditingOperatingReviewId(workflow.id);
+    setTaskSession(null);
     setOperatingReviewOpen(true);
     setNotice(runeText(locale, `Preparing to rerun “${workflow.input.title}”`, `正在准备重新运行「${workflow.input.title}」`));
   }
@@ -2760,6 +2789,7 @@ export function RuneWorkbench() {
       setAgentMode("local");
       setOperatingReviewOpen(false);
       setEditingOperatingReviewId("");
+      setTaskSession(null);
       setEmptyWorkspace(false);
       setNotice(runeText(locale, `${prepared.plan.patches.length + prepared.plan.creations.length} linked files prepared; nothing writes until you approve the transaction`, `已准备 ${prepared.plan.patches.length + prepared.plan.creations.length} 个互相绑定的文件；审核后才会写入`));
     } catch (error) {
@@ -2863,9 +2893,24 @@ export function RuneWorkbench() {
     await prepareFileImport(files);
   }
 
-  async function prepareFileImport(files: File[]) {
+  async function importTaskSource(event: ChangeEvent<HTMLInputElement>) {
+    const files = [...(event.target.files ?? [])];
+    event.target.value = "";
+    const activeTaskSession = taskSession?.taskId === "operating-review"
+      && taskSession.phase === "awaiting-source"
+      ? taskSession
+      : startRuneTaskSession("operating-review", artifactsRef.current);
+    setTaskSession(activeTaskSession);
+    await prepareFileImport(files, activeTaskSession);
+  }
+
+  async function prepareFileImport(files: File[], activeTaskSession: RuneTaskSession | null = null) {
     if (!files.length || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || exportState !== "idle") return;
+    if (!activeTaskSession) {
+      setTaskSession(null);
+    }
     if (files.length > 20) {
+      if (activeTaskSession) setTaskSession(null);
       setNotice("Import up to 20 files in one review transaction");
       return;
     }
@@ -2881,6 +2926,7 @@ export function RuneWorkbench() {
           : MAX_SOURCE_IMPORT_BYTES
     ));
     if (oversized) {
+      if (activeTaskSession) setTaskSession(null);
       setNotice(legacyOfficeFileName(oversized.name)
         ? oversized.name + " exceeds the 12 MB desktop legacy Office import limit"
         : OFFICE_IMPORT_PATTERN.test(oversized.name)
@@ -2909,6 +2955,13 @@ export function RuneWorkbench() {
         }
       }
       if (ocrCandidates.length) {
+        if (activeTaskSession) {
+          throw new Error(runeText(
+            locale,
+            "This task starts from CSV, JSON, XLSX, or ODS. Import PDF separately first.",
+            "此任务需要从 CSV、JSON、XLSX 或 ODS 开始。请先单独导入 PDF。",
+          ));
+        }
         setPendingPdfOcr({ files, baseArtifacts, sourceName, candidates: ocrCandidates });
         setPdfOcrError("");
         setPdfOcrProgress(null);
@@ -2954,10 +3007,18 @@ export function RuneWorkbench() {
       const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, sourceName, warnings);
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
+      if (activeTaskSession) {
+        const boundTask = bindRuneTaskImportReview(activeTaskSession, baseArtifacts, prepared.review);
+        if (!boundTask.session || boundTask.errors.length) {
+          throw new Error(boundTask.errors[0] ?? "Rune could not bind this import to the task.");
+        }
+        setTaskSession(boundTask.session);
+      }
       setPendingImport(prepared.review);
       setNotice("Review " + String(prepared.review.importedArtifacts.length) + " generated "
         + (prepared.review.importedArtifacts.length === 1 ? "source" : "sources") + " before importing " + sourceName);
     } catch (error) {
+      if (activeTaskSession) setTaskSession(null);
       setNotice(error instanceof Error ? error.message : "Rune could not import those files");
     } finally {
       importInFlightRef.current = false;
@@ -3065,11 +3126,21 @@ export function RuneWorkbench() {
     const sourceName = pendingImport.sourceName;
     setPendingImport(null);
     setImportError("");
+    setTaskSession(null);
     setNotice(`Import cancelled — ${sourceName} did not change the workspace`);
   }
 
   function applyPendingImport() {
     if (!pendingImport) return;
+    const taskContinuation = taskSession
+      ? prepareRuneTaskAfterImport(taskSession, artifacts, pendingImport)
+      : null;
+    if (taskContinuation?.errors.length || (taskSession && !taskContinuation?.session)) {
+      setTaskSession(null);
+      setImportError(taskContinuation?.errors[0] ?? "Rune could not continue this task from the reviewed import.");
+      setNotice(runeText(locale, "Import held for review — task context changed", "导入仍在等待审核 — 任务上下文已变化"));
+      return;
+    }
     const contextErrors = validateWorkspaceImportReview(artifacts, pendingImport);
     if (contextErrors.length) {
       setImportError(contextErrors[0]);
@@ -3098,6 +3169,19 @@ export function RuneWorkbench() {
     setSavedAt("");
     setPendingImport(null);
     setImportError("");
+    if (taskContinuation?.session && taskContinuation.preferredArtifactId) {
+      setTaskSession(taskContinuation.session);
+      setOperatingReviewError("");
+      setEditingOperatingReviewId("");
+      setOperatingReviewOpen(true);
+      setNotice(runeText(
+        locale,
+        `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"}; choose the fields and deliverables for the review`,
+        `已导入 ${importedCount} 份可读数据；请选择汇报字段与交付物`,
+      ));
+      return;
+    }
+    setTaskSession(null);
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
@@ -3304,7 +3388,7 @@ export function RuneWorkbench() {
           >
             <FilePlus2 aria-hidden="true" /> {ui.newArtifact}
           </button>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
+          <button className="button ghost-button" onClick={beginStandardImport} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} {ui.import}
           </button>
           {!emptyWorkspace && (
@@ -3388,7 +3472,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.81</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.82</strong></footer>
               </div>
             )}
           </div>
@@ -3396,6 +3480,7 @@ export function RuneWorkbench() {
             <span className="visually-hidden" aria-live="polite">{exportState === "idle" ? "" : `${ui.exportMenu} ${exportState}`}</span>
           )}
           <input ref={importRef} className="visually-hidden" type="file" multiple accept=".doc,.ppt,.docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
+          <input ref={taskImportRef} className="visually-hidden" type="file" multiple accept={RUNE_TASK_DEFINITIONS["operating-review"].sourceAccept} onChange={importTaskSource} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
           <input ref={imageImportRef} className="visually-hidden" type="file" accept={RUNE_IMAGE_ACCEPT} onChange={(event) => void prepareLocalImage(event)} disabled={!hydrated || selectedArtifact.kind !== "document" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingChange) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure) || Boolean(pendingLocalImage)} />
         </div>
       </header>
@@ -3580,7 +3665,8 @@ export function RuneWorkbench() {
         {emptyWorkspace ? (
           <EmptyWorkspace
             locale={locale}
-            onChooseFiles={() => importRef.current?.click()}
+            onStartReview={startOperatingReviewFromData}
+            onChooseFiles={beginStandardImport}
             onCreate={openNewArtifact}
             onDropFiles={(files) => void prepareFileImport(files)}
             onOpenSample={() => {
@@ -4010,16 +4096,18 @@ export function RuneWorkbench() {
       )}
       {operatingReviewOpen && (
         <OperatingReviewDialog
-          key={editingOperatingReviewId || "new-operating-review"}
+          key={`${editingOperatingReviewId || "new-operating-review"}:${taskSession?.phase === "configuring" ? taskSession.preferredArtifactId ?? "default" : "default"}`}
           artifacts={artifacts}
           locale={locale}
           error={operatingReviewError}
           initialInput={savedOperatingReviews.find((workflow) => workflow.id === editingOperatingReviewId)?.input}
+          preferredDataArtifactId={taskSession?.phase === "configuring" ? taskSession.preferredArtifactId ?? undefined : undefined}
           onCancel={() => {
             if (operatingReviewState !== "idle") return;
             setOperatingReviewOpen(false);
             setOperatingReviewError("");
             setEditingOperatingReviewId("");
+            setTaskSession(null);
             setNotice(runeText(locale, "Operating review cancelled — the workspace is unchanged", "已取消经营汇报 — 工作区保持不变"));
           }}
           onPrepare={prepareOperatingReview}
@@ -4032,6 +4120,7 @@ export function RuneWorkbench() {
           warnings={pendingImport.warnings}
           error={importError}
           locale={locale}
+          continueToOperatingReview={taskSession?.phase === "reviewing-source"}
           onCancel={cancelPendingImport}
           onConfirm={applyPendingImport}
         />
