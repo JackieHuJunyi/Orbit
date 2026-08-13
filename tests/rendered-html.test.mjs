@@ -402,7 +402,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.76<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.77<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -493,4 +493,17 @@ test("ships reviewed device-local images as content-hash Markdown references wit
   assert.match(assets, /indexedDB\.open/);
   assert.doesNotMatch(workbench, /readAsDataURL|data:image\/[^;]+;base64/);
   assert.doesNotMatch(assets, /readAsDataURL|data:image\/[^;]+;base64/);
+});
+
+test("ships one Apple-informed proportion system across onboarding and the editing workspace", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(styles, /--rune-content-wide:\s*1260px;/);
+  assert.match(styles, /--rune-frame-width:\s*87\.5%;/);
+  assert.match(styles, /--rune-radius-window:\s*28px;/);
+  assert.match(styles, /--rune-radius-workspace:\s*22px;/);
+  assert.match(styles, /--rune-file-width:\s*232px;/);
+  assert.match(styles, /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(var\(--rune-frame-width\),\s*var\(--rune-content-wide\)\);/s);
+  assert.match(styles, /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s);
+  assert.match(styles, /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--rune-stage\);[^}]*background-image:\s*none;/s);
+  assert.match(styles, /Rune 0\.77 cascade seal/);
 });

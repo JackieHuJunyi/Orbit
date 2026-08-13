@@ -2088,4 +2088,12 @@ DOCX 将图片写入 `word/media`，生成内部 image relationship、content ty
 
 这一里程碑只覆盖当前已经允许插图的 Markdown Document。Deck Markdown 尚未开放图片语法，因此 PPTX、ODP 与 standalone slide HTML 不伪装支持；外部 `https:` 图片也不会在导出时联网抓取。后续若为演示加入图片，必须先在 Deck grammar、source-to-preview mapping、PPTX/ODP/HTML/PDF 布局和导入回环中建立同一个可证明合同，而不是只给某一种格式打补丁。
 
+## 82. v0.77 先建立比例系统，再讨论“像 Apple”
+
+对 Apple 官网的学习不能退化成复制玻璃、渐变或某个按钮。真正可迁移的是约束：主体内容使用 87.5% 的响应式宽度并在大屏停止无边扩张；标题、正文和辅助信息建立明显而克制的字号层级；一个界面只保留少量半径等级；操作区、内容区与留白有稳定比例；材质只说明层级，不抢内容。Rune 因此把欢迎页主体限制在 1260px，使用 28px 大容器、20px 内容卡、12px 控件和胶囊主操作四级形态，并把控制高度收敛到 36/44/52px 三档。
+
+工作台不是营销网页，不能照搬官网的单列 Hero。它需要长期编辑密度，所以采用 52px activity rail、232px file rail 与 44:56 source/preview 默认分配；外部是一个 22px 连续窗口，内部靠细分隔线而不是多层卡片区分职责。Document、Data、Chart 和 Slides 共用安静的 `#f5f5f7` 舞台、白色成品面板和同一阴影尺度；源码区与 Agent composer 则保留更高信息密度。这样视觉转向来自可重复的空间语法，而不是“AI 产品常见的彩色卡片 + 渐变背景”。
+
+响应式规则继续保留任务关系：桌面显示同一连续工作面，窄屏变成独立但同构的 source/preview 卡片，手机隐藏文件栏而不卸载同步语义。左右定位、selection identity、实时编译和写入权限都没有因新外观改变；44:56 只是可持久化、可拖动、可双击复位的展示默认值。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

@@ -1,6 +1,6 @@
-export const RUNE_WORKSPACE_SPLIT_STORAGE_KEY = "rune-workspace-split-v1";
+export const RUNE_WORKSPACE_SPLIT_STORAGE_KEY = "rune-workspace-split-v2";
 export const RUNE_WORKSPACE_VIEW_STORAGE_KEY = "rune-workspace-view-v1";
-export const DEFAULT_WORKSPACE_SOURCE_PERCENT = 47;
+export const DEFAULT_WORKSPACE_SOURCE_PERCENT = 44;
 export const MIN_WORKSPACE_SOURCE_PERCENT = 35;
 export const MAX_WORKSPACE_SOURCE_PERCENT = 65;
 export const RUNE_WORKSPACE_VIEWS = ["split", "source", "preview"] as const;

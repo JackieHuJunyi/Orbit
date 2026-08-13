@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.77 with an Apple-informed 87.5% onboarding frame, one 44:56 source-to-preview default, quieter continuous workspace chrome, and one shared proportion/material system across navigation, editors, previews, empty states, menus, and review dialogs.
 - 2026-08-13 — Shipped Rune v0.76 with verified local Document images embedded into portable DOCX, ODT, and fixed PDF exports, including closed-failure handling for missing or corrupt resources.
 - 2026-08-13 — Shipped Rune v0.75 with portable content-hash images in user-owned folder workspaces through a strict v2 manifest, hidden `.rune-assets` bytes, verified Pull import, and missing-asset-blocking Push.
 - 2026-08-13 — Shipped Rune v0.74 with reviewed PNG/JPEG/WebP/GIF insertion into Markdown Documents, device-local SHA-256 asset identity, IndexedDB byte storage, live blob preview, and compensating atomic source persistence without base64.
