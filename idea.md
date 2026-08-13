@@ -2313,3 +2313,9 @@ Document 已经拥有内容哈希图片、IndexedDB、本机文件夹闭环和 D
 v0.99 因此不改变 `rune-asset:sha256:<digest>`。用户把源光标放进一个编译器证明的 Deck slide，再经过现有九语言图片审核；完整 next Deck 必须在写入前重新解析。每页只允许一项 primary visual：非 metrics 页面可选一张独立行本机图片，图片、Chart、table 不同时争抢视觉区。外链、inline、重复、缺失和损坏引用都失败关闭。这条限制同时服务留白、可预测版式和跨格式一致性，不是某个 exporter 的临时妥协。
 
 同一份重新校验的 bytes 现在进入五个消费端：预览只拿可撤销 blob URL；PPTX 写 media part、slide relationship 与 aspect-fit picture；ODP 写 Pictures、manifest MIME 与 drawing frame；HTML 只为已批准引用生成 data URL 并拒绝其他 `src/href`；PDF 在本机解码后写入固定 16:9 主视觉框。文件夹同步无需新代码路径，因为 manifest closure 本来就扫描所有 Artifact source。canonical Deck 仍没有 base64、package path 或 renderer id，新增的是一个 consumer，而不是第二个 asset owner。
+
+## 106. v1.00 兼容导入的图片也必须进入同一个可补偿事务
+
+DOCX/PPTX/ODT/ODP 不能再一边声称支持导入，一边把正常业务文件中的图片全部丢掉。四种 package parser 只拥有关系解析与有界媒体候选，不拥有 hash、IndexedDB 或 React；共享 `imported-images` 端口复用现有图片魔数、尺寸、8 MB 单图、40 图/64 MB 批次和 SHA-256 规则，把每个 converter-owned placeholder 精确替换一次。Document 尽量保留阅读顺序；Presentation 遵守一页一个 primary visual，遇到同页 table 或多图时在 40 页预算内生成相邻图片页，并明确披露裁切、重叠与坐标不保真。
+
+导入审核现在同时持有 canonical sources 和去重后的 bytes，存在图片时两边 identity 必须完全闭合。确认先写图片、再写 workspace；任一步失败只删除本次新建的 hash，已存在的相同资产不受影响。这个设计采用 DeepSeek Harness 值得学习的 capability seam 与 reversible effect，但继续拒绝为了两个 parser family 引入动态插件树：Definition、Provider、Consumer 和补偿边界清楚，已经足以低成本替换解析器或把计算迁移到 Worker。

@@ -6,6 +6,17 @@ import {
 } from "@xmldom/xmldom";
 import { strFromU8, unzipSync, type Unzipped } from "fflate";
 
+import {
+  createImportedImageToken,
+  finalizeImportedImages,
+  type ImportedImageCandidate,
+} from "./imported-images.ts";
+import {
+  MAX_RUNE_IMAGE_BYTES,
+  MAX_RUNE_LOCAL_IMAGE_BYTES,
+  MAX_RUNE_LOCAL_IMAGES,
+  type PreparedRuneImageAsset,
+} from "./local-assets.ts";
 import type { DataCell, WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_ODF_IMPORT_BYTES = 12 * 1024 * 1024;
@@ -34,6 +45,9 @@ type PackageContext = {
   files: Unzipped;
   paths: string[];
   warnings: string[];
+  importImages: boolean;
+  imageCandidates: ImportedImageCandidate[];
+  imageRequests: number;
 };
 
 type TextStyle = {
@@ -46,6 +60,10 @@ export type OdfImportResult = {
   artifacts: WorkspaceArtifact[];
   warnings: string[];
   sourceType: OdfKind;
+};
+
+export type OdfImportWithAssetsResult = OdfImportResult & {
+  assets: PreparedRuneImageAsset[];
 };
 
 function extensionOf(name: string) {
@@ -78,7 +96,7 @@ function firstZipEntry(bytes: Uint8Array) {
   return { name, compressionMethod };
 }
 
-function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array): PackageContext {
+function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImages = false): PackageContext {
   const bytes = toBytes(input);
   if (!bytes.length || bytes.length > MAX_ODF_IMPORT_BYTES) {
     throw new Error("OpenDocument import is limited to 12 MB per file.");
@@ -89,6 +107,9 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array): PackageCon
   }
   let entryCount = 0;
   let expandedXmlBytes = 0;
+  let expandedImageBytes = 0;
+  let imageEntries = 0;
+  let imageLimitWarning = false;
   const seenPaths = new Set<string>();
   const paths: string[] = [];
   const requiredEntries = new Set(["mimetype", "content.xml", "META-INF/manifest.xml"]);
@@ -107,12 +128,25 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array): PackageCon
         if (requiredEntries.has(path) && file.originalSize > MAX_XML_PART_BYTES) {
           throw new Error(`${path} exceeds Rune's 6 MB required-part limit.`);
         }
+        const imagePart = importImages && /^Pictures\//u.test(path);
         const relevant = path === "mimetype"
           || path === "content.xml"
           || path === "styles.xml"
           || path === "meta.xml"
-          || path === "META-INF/manifest.xml";
+          || path === "META-INF/manifest.xml"
+          || imagePart;
         if (!relevant) return false;
+        if (imagePart) {
+          imageEntries += 1;
+          if (imageEntries > MAX_RUNE_LOCAL_IMAGES
+            || file.originalSize > MAX_RUNE_IMAGE_BYTES
+            || expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES) {
+            imageLimitWarning = true;
+            return false;
+          }
+          expandedImageBytes += file.originalSize;
+          return true;
+        }
         if (path.endsWith(".xml")) {
           if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
           expandedXmlBytes += file.originalSize;
@@ -135,7 +169,16 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array): PackageCon
     if (actualMimeType !== expectedMimeType) {
       throw new Error(`The package mimetype does not match .${kind}: expected ${expectedMimeType}.`);
     }
-    return { files, paths, warnings: [] };
+    return {
+      files,
+      paths,
+      warnings: imageLimitWarning
+        ? [`Embedded OpenDocument images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`]
+        : [],
+      importImages,
+      imageCandidates: [],
+      imageRequests: 0,
+    };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "The ZIP package could not be opened.";
     throw new Error(detail.startsWith("The OpenDocument") || detail.startsWith("A conforming") || detail.startsWith("The package")
@@ -274,6 +317,61 @@ function packageWarnings(context: PackageContext, content: XmlDocument) {
   if (signaturePaths.length) context.warnings.push("Digital signatures were not preserved after semantic import.");
 }
 
+function odfImagePath(href: string) {
+  if (!href || /^(?:\/|[a-z][a-z0-9+.-]*:)/iu.test(href)) return null;
+  let decoded = href;
+  try {
+    decoded = decodeURIComponent(href);
+  } catch {
+    return null;
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.replaceAll("\\", "/").split("/")) {
+    if (!segment || segment === ".") continue;
+    if (segment === ".." || segment.includes("\0")) return null;
+    segments.push(segment);
+  }
+  const path = segments.join("/");
+  return /^Pictures\//u.test(path) ? path : null;
+}
+
+function odfImageToken(context: PackageContext, artifactId: string, image: XmlElement) {
+  context.imageRequests += 1;
+  const href = attribute(image, "href");
+  const path = odfImagePath(href);
+  if (!path) {
+    context.warnings.push("An external or unsafe OpenDocument image reference was not fetched.");
+    return "";
+  }
+  const bytes = context.files[path];
+  if (!bytes) {
+    context.warnings.push(`Embedded OpenDocument image “${path.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`);
+    return "";
+  }
+  let ancestor = image.parentNode;
+  let alt = "";
+  while (ancestor?.nodeType === 1) {
+    const element = ancestor as XmlElement;
+    if (localName(element) === "frame") {
+      alt = attribute(element, "name") || attribute(element, "title");
+      break;
+    }
+    ancestor = ancestor.parentNode;
+  }
+  const fileName = path.split("/").pop() || "embedded-image";
+  const extension = fileName.match(/\.[a-z0-9]{2,5}$/iu)?.[0] ?? "";
+  const normalizedAlt = oneLine(alt).replace(/[\\/]/gu, "-").slice(0, 140);
+  const token = createImportedImageToken(context.imageRequests - 1);
+  context.imageCandidates.push({
+    artifactId,
+    token,
+    name: normalizedAlt ? `${normalizedAlt}${extension}` : fileName,
+    claimedMimeType: "",
+    bytes,
+  });
+  return token;
+}
+
 function styleMap(context: PackageContext, content: XmlDocument) {
   const documents = [content, xmlPart(context, "styles.xml", false)].filter((value): value is XmlDocument => Boolean(value));
   const raw = new Map<string, TextStyle & { parent: string }>();
@@ -331,19 +429,25 @@ function plainText(node: XmlNode): string {
   return value;
 }
 
-function inlineText(node: XmlNode, styles: Map<string, TextStyle>, warnings: string[]): string {
+function inlineText(
+  node: XmlNode,
+  styles: Map<string, TextStyle>,
+  warnings: string[],
+  imageToken?: (image: XmlElement) => string,
+): string {
   if (node.nodeType === 3 || node.nodeType === 4) return escapeMarkdown(node.nodeValue ?? "");
   if (node.nodeType !== 1) return "";
   const element = node as XmlElement;
   const name = localName(element);
   if (["annotation", "note", "tracked-changes", "change-start", "change-end"].includes(name)) return "";
+  if (name === "image") return imageToken ? `\n\n${imageToken(element)}\n\n` : "";
   if (name === "tab") return "\t";
   if (name === "line-break") return "\n";
   if (name === "s") return " ".repeat(repeatCount(element, "c", 1_000, "OpenDocument whitespace"));
   let value = "";
   for (let index = 0; index < element.childNodes.length; index += 1) {
     const child = element.childNodes.item(index);
-    if (child) value += inlineText(child, styles, warnings);
+    if (child) value += inlineText(child, styles, warnings, imageToken);
   }
   if (name === "a") {
     const target = safeLinkTarget(attribute(element, "href"));
@@ -388,6 +492,7 @@ function listLines(
   warnings: string[],
   level = 0,
   inheritedStyle = "",
+  imageToken?: (image: XmlElement) => string,
 ): string[] {
   const styleName = attribute(list, "style-name") || inheritedStyle;
   const ordered = definitions.get(styleName)?.get(level + 1) ?? false;
@@ -396,15 +501,20 @@ function listLines(
     if (localName(item) !== "list-item" && localName(item) !== "list-header") return;
     const paragraphs = childElements(item).filter((child) => ["p", "h"].includes(localName(child)));
     paragraphs.forEach((paragraph, index) => {
-      const text = oneLine(inlineText(paragraph, styles, warnings));
+      const text = oneLine(inlineText(paragraph, styles, warnings, imageToken));
       if (text) lines.push(`${"  ".repeat(level)}${index === 0 ? ordered ? "1." : "-" : "  "} ${text}`);
     });
-    childElements(item, "list").forEach((nested) => lines.push(...listLines(nested, styles, definitions, warnings, level + 1, styleName)));
+    childElements(item, "list").forEach((nested) => lines.push(...listLines(nested, styles, definitions, warnings, level + 1, styleName, imageToken)));
   });
   return lines;
 }
 
-function tableRowsForMarkdown(table: XmlElement, styles: Map<string, TextStyle>, warnings: string[]) {
+function tableRowsForMarkdown(
+  table: XmlElement,
+  styles: Map<string, TextStyle>,
+  warnings: string[],
+  imageToken?: (image: XmlElement) => string,
+) {
   const rows: string[][] = [];
   let cellCount = 0;
   function addRows(container: XmlElement) {
@@ -426,7 +536,7 @@ function tableRowsForMarkdown(table: XmlElement, styles: Map<string, TextStyle>,
         }
         const value = cellName === "covered-table-cell"
           ? ""
-          : oneLine(childElements(cell).filter((child) => ["p", "h"].includes(localName(child))).map((paragraph) => inlineText(paragraph, styles, warnings)).join(" / "));
+          : oneLine(childElements(cell).filter((child) => ["p", "h"].includes(localName(child))).map((paragraph) => inlineText(paragraph, styles, warnings, imageToken)).join(" / "));
         for (let index = 0; index < columnRepeat; index += 1) values.push(value);
       });
       if (values.length > MAX_COLUMNS) throw new Error("An OpenDocument table exceeds the 256-column semantic import limit.");
@@ -464,6 +574,12 @@ function convertOdt(fileName: string, context: PackageContext, content: XmlDocum
   if (!body) throw new Error("The ODT content does not contain an office:text body.");
   const styles = styleMap(context, content);
   const definitions = listStyles(context, content);
+  const artifactId = stableImportId(fileName);
+  const requestStart = context.imageRequests;
+  const candidateStart = context.imageCandidates.length;
+  const imageToken = context.importImages
+    ? (image: XmlElement) => odfImageToken(context, artifactId, image)
+    : undefined;
   const blocks: string[] = [];
   function visit(container: XmlElement) {
     childElements(container).forEach((block) => {
@@ -471,27 +587,40 @@ function convertOdt(fileName: string, context: PackageContext, content: XmlDocum
       const name = localName(block);
       if (name === "h") {
         const level = Math.max(1, Math.min(6, Number(attribute(block, "outline-level")) || 1));
-        const text = oneLine(inlineText(block, styles, context.warnings));
+        const text = oneLine(inlineText(block, styles, context.warnings, imageToken));
         if (text) blocks.push(`${"#".repeat(level)} ${text}`);
       } else if (name === "p") {
-        const text = oneLine(inlineText(block, styles, context.warnings));
+        const text = oneLine(inlineText(block, styles, context.warnings, imageToken));
         if (text) blocks.push(text);
       } else if (name === "list") {
-        const lines = listLines(block, styles, definitions, context.warnings);
+        const lines = listLines(block, styles, definitions, context.warnings, 0, "", imageToken);
         if (lines.length) blocks.push(lines.join("\n"));
       } else if (name === "table") {
-        const table = markdownTable(tableRowsForMarkdown(block, styles, context.warnings));
+        const table = markdownTable(tableRowsForMarkdown(block, styles, context.warnings, imageToken));
         if (table) blocks.push(table);
+      } else if (name === "frame" && imageToken) {
+        const image = firstDescendant(block, "image");
+        const token = image ? imageToken(image) : "";
+        if (token) blocks.push(token);
       } else if (["section", "index-body"].includes(name)) {
         visit(block);
       }
     });
   }
   visit(body);
-  const images = context.paths.filter((path) => /^Pictures\//u.test(path)).length + descendantElements(content, "image").length;
+  const images = descendantElements(content, "image").length;
+  const packagedImages = context.paths.filter((path) => /^Pictures\//u.test(path)).length;
   const annotations = descendantElements(content, "annotation").length;
   const trackedChanges = descendantElements(content, "tracked-changes").length + descendantElements(content, "change-start").length;
-  if (images) context.warnings.push("ODT images were omitted from canonical Markdown.");
+  if ((images || packagedImages) && !context.importImages) {
+    context.warnings.push("ODT images were omitted from canonical Markdown.");
+  } else if (images && context.imageRequests - requestStart < images) {
+    const unmapped = images - (context.imageRequests - requestStart);
+    context.warnings.push(`${unmapped} ODT image${unmapped === 1 ? " had" : "s had"} no readable inline reference and ${unmapped === 1 ? "was" : "were"} omitted.`);
+  }
+  if (context.importImages && context.imageCandidates.length - candidateStart > 0) {
+    context.warnings.push("ODT image positions were preserved in canonical Markdown; page wrapping and exact frame geometry remain semantic approximations.");
+  }
   if (annotations) context.warnings.push(`${annotations} ODT ${annotations === 1 ? "annotation was" : "annotations were"} omitted.`);
   if (trackedChanges) context.warnings.push("ODT tracked-change markup and history were not preserved; review the imported text state.");
   context.warnings.push("ODT page layout, headers, footers, fields, and advanced styles were not preserved in canonical Markdown.");
@@ -500,7 +629,7 @@ function convertOdt(fileName: string, context: PackageContext, content: XmlDocum
     sourceType: "odt",
     warnings: [...new Set(context.warnings)],
     artifacts: [{
-      id: stableImportId(fileName),
+      id: artifactId,
       name: `${safeFileSegment(baseName(fileName))}.md`,
       kind: "document",
       language: "Markdown",
@@ -685,6 +814,14 @@ function hasAncestor(element: XmlElement, name: string, boundary: XmlElement) {
   return false;
 }
 
+function odpImageTokens(context: PackageContext, artifactId: string, page: XmlElement) {
+  if (!context.importImages) return [];
+  return descendantElements(page, "image")
+    .filter((image) => !hasAncestor(image, "notes", page))
+    .map((image) => odfImageToken(context, artifactId, image))
+    .filter(Boolean);
+}
+
 function convertOdp(fileName: string, context: PackageContext, content: XmlDocument): OdfImportResult {
   const presentation = firstDescendant(content, "presentation");
   if (!presentation) throw new Error("The ODP content does not contain an office:presentation body.");
@@ -693,11 +830,13 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
   if (pages.length > MAX_SLIDES) context.warnings.push(`Only the first ${MAX_SLIDES} ODP slides were imported.`);
   const selected = pages.slice(0, MAX_SLIDES);
   const slides: string[] = [];
+  const artifactId = stableImportId(fileName);
   let images = 0;
   let objects = 0;
   let notes = 0;
   selected.forEach((page, index) => {
-    images += descendantElements(page, "image").length;
+    const pageImages = descendantElements(page, "image").filter((image) => !hasAncestor(image, "notes", page));
+    if (!context.importImages) images += pageImages.length;
     objects += descendantElements(page, "object").length + descendantElements(page, "object-ole").length;
     notes += descendantElements(page, "notes").length;
     const frames = descendantElements(page, "frame").filter((frame) => !hasAncestor(frame, "notes", page));
@@ -722,11 +861,34 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
       const markdown = markdownTable(tableRowsForMarkdown(table, styles, context.warnings));
       if (markdown) body.push(markdown);
     });
-    const layout = index === 0 && body.length <= 1 ? "cover" : "content";
+    const imageTokens = odpImageTokens(context, artifactId, page);
+    const hasTable = descendantElements(page, "table").some((table) => !hasAncestor(table, "notes", page));
+    const firstImageToken = hasTable ? "" : imageTokens.shift() ?? "";
+    if (firstImageToken) body.push(firstImageToken);
+    const layout = firstImageToken ? "split" : index === 0 && body.length <= 1 ? "cover" : "content";
     slides.push([`<!-- layout: ${layout} -->`, "", `# ${escapeDeckText(title)}`, ...(body.length ? ["", ...body] : [])].join("\n"));
+    imageTokens.forEach((token, imageIndex) => {
+      const remainingSourceSlides = selected.length - index - 1;
+      if (slides.length + remainingSourceSlides >= MAX_SLIDES) {
+        images += 1;
+        const candidateIndex = context.imageCandidates.findIndex((candidate) => candidate.token === token);
+        if (candidateIndex >= 0) context.imageCandidates.splice(candidateIndex, 1);
+        return;
+      }
+      slides.push([
+        "<!-- layout: split -->",
+        "",
+        `# ${escapeDeckText(title)} · Image ${imageIndex + (firstImageToken ? 2 : 1)}`,
+        "",
+        token,
+      ].join("\n"));
+    });
   });
   if (!slides.length) throw new Error("The ODP did not contain any slides.");
-  if (images) context.warnings.push(`${images} ODP ${images === 1 ? "image was" : "images were"} omitted.`);
+  if (images) context.warnings.push(`${images} ODP ${images === 1 ? "image was" : "images were"} omitted because the semantic Deck reached its visual or 40-slide limit.`);
+  if (context.importImages && context.imageCandidates.length) {
+    context.warnings.push("ODP images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.");
+  }
   if (objects) context.warnings.push(`${objects} embedded ODP ${objects === 1 ? "object was" : "objects were"} omitted; import its source data to rebuild a live Rune artifact.`);
   if (notes) context.warnings.push("ODP speaker notes were not imported into Deck Markdown.");
   context.warnings.push("ODP positioning, theme, master styling, transitions, animation, and inline text styling were not preserved in Deck Markdown.");
@@ -748,7 +910,7 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
     sourceType: "odp",
     warnings: [...new Set(context.warnings)],
     artifacts: [{
-      id: stableImportId(fileName),
+      id: artifactId,
       name: `${safeFileSegment(baseName(fileName))}.deck.md`,
       kind: "slides",
       language: "Deck Markdown",
@@ -766,4 +928,22 @@ export function convertOdfFile(fileName: string, input: ArrayBuffer | Uint8Array
   if (kind === "odt") return convertOdt(fileName, context, content);
   if (kind === "ods") return convertOds(fileName, context, content);
   return convertOdp(fileName, context, content);
+}
+
+export async function convertOdfFileWithAssets(
+  fileName: string,
+  input: ArrayBuffer | Uint8Array,
+): Promise<OdfImportWithAssetsResult> {
+  const kind = odfKind(fileName);
+  const context = openPackage(kind, input, true);
+  validateManifest(kind, context);
+  const content = xmlPart(context, "content.xml");
+  packageWarnings(context, content);
+  const result = kind === "odt"
+    ? convertOdt(fileName, context, content)
+    : kind === "ods"
+      ? convertOds(fileName, context, content)
+      : convertOdp(fileName, context, content);
+  const finalized = await finalizeImportedImages(result.artifacts, context.imageCandidates, result.warnings);
+  return { sourceType: result.sourceType, ...finalized };
 }

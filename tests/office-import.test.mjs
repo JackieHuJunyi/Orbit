@@ -6,6 +6,7 @@ import { compileDeckSource, parseDeckSource } from "../app/lib/deck.ts";
 import {
   MAX_OFFICE_IMPORT_BYTES,
   convertOfficeFile,
+  convertOfficeFileWithAssets,
   isOfficeFileName,
 } from "../app/lib/office-import.ts";
 import { parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
@@ -190,4 +191,16 @@ test("rejects oversized, malformed, or declaration-bearing Office packages", () 
   );
   assert.throws(() => convertOfficeFile("broken.xlsx", new Uint8Array([0x50, 0x4b, 0, 0])), /Office import failed/);
   assert.throws(() => convertOfficeFile("unsafe.docx", docxFixture({ unsafe: true })), /blocked XML declaration/);
+});
+
+test("asset-aware Office import removes unresolved visuals without leaking converter placeholders", async () => {
+  const docx = await convertOfficeFileWithAssets("report.docx", docxFixture());
+  assert.deepEqual(docx.assets, []);
+  assert.match(docx.warnings.join(" "), /no supported image reference/iu);
+  assert.doesNotMatch(docx.artifacts[0].source, /RUNEIMPORTIMAGEPLACEHOLDER/u);
+
+  const pptx = await convertOfficeFileWithAssets("board.pptx", pptxFixture());
+  assert.deepEqual(pptx.assets, []);
+  assert.match(pptx.warnings.join(" "), /no readable package relationship/iu);
+  assert.deepEqual(parseDeckSource(pptx.artifacts[0].source).errors, []);
 });

@@ -7,6 +7,7 @@ import { compileDeckSource, parseDeckSource } from "../app/lib/deck.ts";
 import {
   MAX_ODF_IMPORT_BYTES,
   convertOdfFile,
+  convertOdfFileWithAssets,
   isOdfFileName,
 } from "../app/lib/odf-import.ts";
 import { parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
@@ -188,4 +189,12 @@ test("rejects oversized, malformed, compressed-MIME, mismatched, encrypted, and 
   assert.throws(() => convertOdfFile("unsafe.odt", odtFixture({ unsafe: true })), /blocked XML declaration/u);
   assert.throws(() => convertOdfFile("traversal.odt", odfPackage("odt", "<office:document-content xmlns:office=\"office\" />", { extra: { "../outside.xml": "unsafe" } })), /unsafe part path/u);
   assert.throws(() => convertOdfFile("absolute.odt", odfPackage("odt", "<office:document-content xmlns:office=\"office\" />", { extra: { "C:/outside.xml": "unsafe" } })), /unsafe part path/u);
+});
+
+test("asset-aware OpenDocument import rejects corrupt pictures without leaking placeholders", async () => {
+  const result = await convertOdfFileWithAssets("board.odp", odpFixture());
+  assert.deepEqual(result.assets, []);
+  assert.match(result.warnings.join(" "), /embedded image.*omitted/iu);
+  assert.doesNotMatch(result.artifacts[0].source, /RUNEIMPORTIMAGEPLACEHOLDER/u);
+  assert.deepEqual(parseDeckSource(result.artifacts[0].source).errors, []);
 });

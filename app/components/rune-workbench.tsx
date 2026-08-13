@@ -292,8 +292,8 @@ const PDF_IMPORT_PATTERN = /\.pdf$/i;
 
 async function importLegacyOfficeThroughDesktop(file: File) {
   const converted = await convertLegacyOfficeFile(file);
-  const { convertOfficeFile } = await import("../lib/office-import");
-  const result = convertOfficeFile(converted.fileName, converted.bytes);
+  const { convertOfficeFileWithAssets } = await import("../lib/office-import");
+  const result = await convertOfficeFileWithAssets(converted.fileName, converted.bytes);
   return {
     ...result,
     warnings: [
@@ -3319,24 +3319,28 @@ export function RuneWorkbench() {
       }
       const incoming: WorkspaceArtifact[] = [];
       const warnings: string[] = [];
+      const assets: PreparedRuneImageAsset[] = [];
       for (const file of files) {
         if (legacyOfficeFileName(file.name)) {
           const result = await importLegacyOfficeThroughDesktop(file);
           incoming.push(...result.artifacts);
+          assets.push(...result.assets);
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
         if (OFFICE_IMPORT_PATTERN.test(file.name)) {
-          const { convertOfficeFile } = await import("../lib/office-import");
-          const result = convertOfficeFile(file.name, await file.arrayBuffer());
+          const { convertOfficeFileWithAssets } = await import("../lib/office-import");
+          const result = await convertOfficeFileWithAssets(file.name, await file.arrayBuffer());
           incoming.push(...result.artifacts);
+          assets.push(...result.assets);
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
         if (ODF_IMPORT_PATTERN.test(file.name)) {
-          const { convertOdfFile } = await import("../lib/odf-import");
-          const result = convertOdfFile(file.name, await file.arrayBuffer());
+          const { convertOdfFileWithAssets } = await import("../lib/odf-import");
+          const result = await convertOdfFileWithAssets(file.name, await file.arrayBuffer());
           incoming.push(...result.artifacts);
+          assets.push(...result.assets);
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
@@ -3353,7 +3357,7 @@ export function RuneWorkbench() {
         }
         incoming.push(artifact);
       }
-      const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, sourceName, warnings);
+      const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, sourceName, warnings, assets);
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
       if (activeTaskSession) {
@@ -3393,26 +3397,30 @@ export function RuneWorkbench() {
     try {
       const incoming: WorkspaceArtifact[] = [];
       const warnings: string[] = [];
+      const assets: PreparedRuneImageAsset[] = [];
       for (const [fileIndex, file] of pending.files.entries()) {
         if (abortController.signal.aborted) throw new DOMException("OCR cancelled", "AbortError");
         setPdfOcrActiveFileName(file.name);
         if (legacyOfficeFileName(file.name)) {
           const result = await importLegacyOfficeThroughDesktop(file);
           incoming.push(...result.artifacts);
+          assets.push(...result.assets);
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
         if (OFFICE_IMPORT_PATTERN.test(file.name)) {
-          const { convertOfficeFile } = await import("../lib/office-import");
-          const result = convertOfficeFile(file.name, await file.arrayBuffer());
+          const { convertOfficeFileWithAssets } = await import("../lib/office-import");
+          const result = await convertOfficeFileWithAssets(file.name, await file.arrayBuffer());
           incoming.push(...result.artifacts);
+          assets.push(...result.assets);
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
         if (ODF_IMPORT_PATTERN.test(file.name)) {
-          const { convertOdfFile } = await import("../lib/odf-import");
-          const result = convertOdfFile(file.name, await file.arrayBuffer());
+          const { convertOdfFileWithAssets } = await import("../lib/odf-import");
+          const result = await convertOdfFileWithAssets(file.name, await file.arrayBuffer());
           incoming.push(...result.artifacts);
+          assets.push(...result.assets);
           warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
           continue;
         }
@@ -3435,7 +3443,7 @@ export function RuneWorkbench() {
         }
         incoming.push(artifact);
       }
-      const prepared = prepareWorkspaceImportReview(pending.baseArtifacts, incoming, pending.sourceName, warnings);
+      const prepared = prepareWorkspaceImportReview(pending.baseArtifacts, incoming, pending.sourceName, warnings, assets);
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
       if (pending.taskSession) {
@@ -3480,7 +3488,7 @@ export function RuneWorkbench() {
   }
 
   function cancelPendingImport() {
-    if (!pendingImport) return;
+    if (!pendingImport || importInFlightRef.current) return;
     const sourceName = pendingImport.sourceName;
     setPendingImport(null);
     setImportError("");
@@ -3488,8 +3496,8 @@ export function RuneWorkbench() {
     setNotice(`Import cancelled — ${sourceName} did not change the workspace`);
   }
 
-  function applyPendingImport() {
-    if (!pendingImport) return;
+  async function applyPendingImport() {
+    if (!pendingImport || importInFlightRef.current) return;
     const taskContinuation = taskSession
       ? prepareRuneTaskAfterImport(taskSession, artifacts, pendingImport)
       : null;
@@ -3506,12 +3514,23 @@ export function RuneWorkbench() {
       return;
     }
     const firstImported = pendingImport.importedArtifacts[0];
+    const importedAssetIds: string[] = [];
+    importInFlightRef.current = true;
+    setImportState("reading");
     try {
+      for (const asset of pendingImport.assets) {
+        if (await putRuneImageAsset(asset)) importedAssetIds.push(asset.id);
+      }
       persistDeviceWorkspace(pendingImport.nextArtifacts, firstImported.id, checkpoints, savedOperatingReviews, taskEvidenceRef.current);
-    } catch {
+    } catch (error) {
+      await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
       setSaveState("error");
-      setImportError("Device storage is full, so Rune kept every source unchanged. Download or remove drafts, then try again.");
-      setNotice("Nothing imported — atomic persistence failed");
+      setImportError(error instanceof Error
+        ? `${error.message} Rune removed every image created by this attempt and kept all sources unchanged.`
+        : "Device storage failed. Rune removed every image created by this attempt and kept all sources unchanged.");
+      setNotice("Nothing imported — atomic source and image persistence failed");
+      importInFlightRef.current = false;
+      setImportState("idle");
       return;
     }
     const importedCount = pendingImport.importedArtifacts.length;
@@ -3527,6 +3546,8 @@ export function RuneWorkbench() {
     setSavedAt("");
     setPendingImport(null);
     setImportError("");
+    importInFlightRef.current = false;
+    setImportState("idle");
     if (taskContinuation?.session && taskContinuation.preferredArtifactId) {
       setTaskSession(taskContinuation.session);
       if (taskContinuation.session.taskId === "document-briefing") {
@@ -3912,7 +3933,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.99</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.00</strong></footer>
               </div>
             )}
           </div>
@@ -4692,6 +4713,7 @@ export function RuneWorkbench() {
           artifacts={pendingImport.importedArtifacts}
           warnings={pendingImport.warnings}
           error={importError}
+          busy={importState === "reading"}
           locale={locale}
           continuationTask={taskSession?.phase === "reviewing-source" ? taskSession.taskId : undefined}
           onCancel={cancelPendingImport}

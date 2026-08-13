@@ -11,7 +11,7 @@ import {
   exportOdfArtifact,
   isOdfExportArtifact,
 } from "../app/lib/odf-export.ts";
-import { convertOdfFile } from "../app/lib/odf-import.ts";
+import { convertOdfFile, convertOdfFileWithAssets } from "../app/lib/odf-import.ts";
 import { defaultArtifacts, parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
@@ -45,7 +45,7 @@ const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB
 const runeImageId = "b".repeat(64);
 const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
 
-test("embeds verified Rune local images into portable ODT pictures", () => {
+test("embeds and reimports verified Rune local images through portable ODT pictures", async () => {
   const artifact = { id: "image", name: "image.md", kind: "document", language: "Markdown", source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n` };
   const exported = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
   const parts = packageParts(exported.bytes);
@@ -53,6 +53,11 @@ test("embeds verified Rune local images into portable ODT pictures", () => {
   assert.match(strFromU8(parts["content.xml"]), new RegExp(`Pictures/rune-${runeImageId}\\.png`, "u"));
   assert.match(strFromU8(parts["META-INF/manifest.xml"]), /manifest:media-type="image\/png"/u);
   assert.match(exported.warnings.join(" "), /embedded as portable, static ODT pictures/iu);
+  const imported = await convertOdfFileWithAssets(exported.fileName, exported.bytes);
+  assert.equal(imported.assets.length, 1);
+  assert.deepEqual(imported.assets[0].bytes, onePixelPng);
+  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.warnings.join(" "), /verified local image.*preserved/iu);
 });
 
 test("fails ODT export closed when a referenced Rune image is missing", () => {
@@ -60,7 +65,7 @@ test("fails ODT export closed when a referenced Rune image is missing", () => {
   assert.throws(() => exportOdfArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
 
-test("embeds a reviewed Deck image into deterministic ODP pictures", () => {
+test("embeds and reimports a reviewed Deck image through deterministic ODP pictures", async () => {
   const artifact = {
     id: "image-deck",
     name: "image-deck.deck.md",
@@ -92,6 +97,11 @@ The source remains readable.
   assert.match(content, /<draw:image/u);
   assert.match(strFromU8(parts["META-INF/manifest.xml"]), /manifest:media-type="image\/png"/u);
   assert.match(first.warnings.join(" "), /portable, static ODP media/iu);
+  const imported = await convertOdfFileWithAssets(first.fileName, first.bytes);
+  assert.equal(imported.assets.length, 1);
+  assert.deepEqual(imported.assets[0].bytes, onePixelPng);
+  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.deepEqual(validateArtifact(imported.artifacts[0]), []);
   assert.throws(() => exportOdfArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
 });
 

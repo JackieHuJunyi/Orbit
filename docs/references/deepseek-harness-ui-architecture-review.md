@@ -61,6 +61,12 @@ Harness 把 session、agent、capability events 分域，并要求新行为挂�
 
 若未来出现至少三个真正独立、需要第三方替换或运行时装卸的任务，再评估动态 task/plugin host。当前继续使用静态 typed composition：它更容易 tree-shake、审计、测试和迁移，也不会把生命周期/顺序/卸载复杂度提前带入产品。
 
+### 1.7 主题与呈现必须各有单一所有者
+
+Harness 的 `ui-theme` 独占静态色阶、语义别名、字体、motion、shadow 和 light/dark preference；功能组件只消费语义 token。其客户端又把纯数据对象、React 绑定层和纯 props 呈现组件做成单向依赖，避免业务组件直接读取全局 context。
+
+Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance registry 是颜色、字体、圆角、阴影和 motion 的唯一共享权威；功能样式使用语义变量，不另建主题；`app/lib` 的 compiler/port 不导入 React，组件只接收已经准备好的数据与回调。v1.00 的图片兼容导入进一步把 package parser、共享 hash validator、review transaction 和 IndexedDB effect 分开，证明无需动态插件树也能获得清晰可替换的能力缝。
+
 ## 2. 本轮采用与不采用
 
 | Harness 方法 | Rune 决定 | 本轮落点 |
@@ -71,6 +77,8 @@ Harness 把 session、agent、capability events 分域，并要求新行为挂�
 | Mounted collapsible panels | 采用 | Source/Preview 零宽收放、`inert`、保留 scroll/selection/runtime |
 | Typed UI slots | 暂缓 | 只有两个 focused tasks，静态组合成本更低 |
 | Human command registry | 采用静态版本 | `workbench-commands` 描述能力，Quick Actions 只消费，Workbench 执行现有 handler |
+| Theme owner + semantic aliases | 采用 | token/appearance 独占共享视觉事实，功能样式不复制 palette |
+| Data → binding → presentation 单向层 | 采用 | pure `app/lib` 端口、Workbench effect、props-only review component |
 | Dynamic profiles/bundles/patch tree | 不采用 | Rune 不是 agent harness，暂无第三方 runtime composition 需求 |
 | Chat/session-first shell | 不采用 | Rune 继续以文档、数据、分析和成品为中心 |
 

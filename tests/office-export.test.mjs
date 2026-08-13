@@ -10,7 +10,7 @@ import {
   exportOfficeArtifact,
   isOfficeExportArtifact,
 } from "../app/lib/office-export.ts";
-import { convertOfficeFile } from "../app/lib/office-import.ts";
+import { convertOfficeFile, convertOfficeFileWithAssets } from "../app/lib/office-import.ts";
 import { defaultArtifacts, parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
@@ -59,7 +59,7 @@ const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB
 const runeImageId = "a".repeat(64);
 const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
 
-test("embeds verified Rune local images into portable DOCX media", () => {
+test("embeds and reimports verified Rune local images through portable DOCX media", async () => {
   const artifact = {
     id: "image-report",
     name: "image-report.md",
@@ -74,6 +74,11 @@ test("embeds verified Rune local images into portable DOCX media", () => {
   assert.match(strFromU8(parts["word/_rels/document.xml.rels"]), /relationships\/image/u);
   assert.match(strFromU8(parts["[Content_Types].xml"]), /ContentType="image\/png"/u);
   assert.match(exported.warnings.join(" "), /embedded as portable, static DOCX media/iu);
+  const imported = await convertOfficeFileWithAssets(exported.fileName, exported.bytes);
+  assert.equal(imported.assets.length, 1);
+  assert.deepEqual(imported.assets[0].bytes, onePixelPng);
+  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.warnings.join(" "), /verified local image.*preserved/iu);
 });
 
 test("fails DOCX export closed when a referenced Rune image is missing", () => {
@@ -81,7 +86,7 @@ test("fails DOCX export closed when a referenced Rune image is missing", () => {
   assert.throws(() => exportOfficeArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
 
-test("embeds a reviewed Deck image into deterministic bounded PPTX media", () => {
+test("embeds and reimports a reviewed Deck image through deterministic bounded PPTX media", async () => {
   const artifact = {
     id: "image-deck",
     name: "image-deck.deck.md",
@@ -113,6 +118,11 @@ The source remains readable.
   assert.match(strFromU8(parts["[Content_Types].xml"]), /ContentType="image\/png"/u);
   assertPptSlideBounds(parts);
   assert.match(first.warnings.join(" "), /portable, static PowerPoint media/iu);
+  const imported = await convertOfficeFileWithAssets(first.fileName, first.bytes);
+  assert.equal(imported.assets.length, 1);
+  assert.deepEqual(imported.assets[0].bytes, onePixelPng);
+  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.deepEqual(validateArtifact(imported.artifacts[0]), []);
   assert.throws(() => exportOfficeArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
 });
 

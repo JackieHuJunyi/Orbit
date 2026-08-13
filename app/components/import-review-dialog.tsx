@@ -57,6 +57,7 @@ export function ImportReviewDialog({
   artifacts,
   warnings,
   error,
+  busy = false,
   locale,
   continuationTask,
   onCancel,
@@ -66,10 +67,11 @@ export function ImportReviewDialog({
   artifacts: WorkspaceArtifact[];
   warnings: string[];
   error?: string;
+  busy?: boolean;
   locale: RuneLocale;
   continuationTask?: RuneTaskId;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   const uniqueWarnings = [...new Set(warnings)];
   const copy = runeUICopy(locale);
@@ -90,8 +92,8 @@ export function ImportReviewDialog({
         <>
           <div><ShieldCheck aria-hidden="true" /> {copy.importReview.atomic}</div>
           <span>
-            <button className="button ghost-button" onClick={onCancel}>{copy.common.cancel}</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {continuesTask
+            <button className="button ghost-button" onClick={onCancel} disabled={busy}>{copy.common.cancel}</button>
+            <button className="button primary-button" onClick={() => void onConfirm()} disabled={busy}><Check aria-hidden="true" /> {continuesTask
               ? continuesBriefing ? taskCopy.briefingConfirm : taskCopy.confirm
               : copy.importReview.importSources(artifacts.length)}</button>
           </span>
