@@ -2146,6 +2146,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "再次點選刪除"
   ],
   [
+    "最近任务记录",
+    "最近任務記錄"
+  ],
+  [
     "准备更新审核",
     "準備更新稽核"
   ],
@@ -2854,6 +2858,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "文件到演示"
   ],
   [
+    "文档转演示",
+    "文件轉演示"
+  ],
+  [
     "未关联内容",
     "未關聯內容"
   ],
@@ -3108,6 +3116,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "任务优先",
     "任務優先"
+  ],
+  [
+    "任务耗时",
+    "任務耗時"
   ],
   [
     "任务范围",

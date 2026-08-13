@@ -409,7 +409,7 @@ test("records user-confirmed deliverable outcomes after exact downloads or folde
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(exportedArtifact, "download", result\.targetType/);
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(handoffArtifact, "folder", "folder"/);
   assert.match(workbench, /recordOperatingReviewDelivery\(/);
-  assert.match(workbench, /persistDeviceWorkspace\(artifactsRef\.current, selectedId, checkpointsRef\.current, nextSavedReviews\)/);
+  assert.match(workbench, /persistDeviceWorkspace\(artifactsRef\.current, selectedId, checkpointsRef\.current, nextSavedReviews, taskEvidenceRef\.current\)/);
   assert.match(workbench, /summarizeOperatingReviewDeliveryOutcomes\(workflow\.deliveries\)/);
   assert.match(dialog, /Did this result become usable in real work\?/);
   assert.match(dialog, /type="radio"/);
@@ -450,7 +450,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.94<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.95<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

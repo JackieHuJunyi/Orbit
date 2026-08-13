@@ -2013,3 +2013,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 有效动作只选择目标并打开现有 Document briefing `configuring` session，预选 exact source 和 target，恢复 source-owned recipe；它不得调用 compiler、修改 Artifact 或写持久化。
 - pending transaction、导入/导出、OCR、视觉编辑或其他审核期间复用统一禁用合同，避免叠加写入面。
 - 文件行的刷新和 Agent context pin 使用逻辑 inline-end 定位与留白，在 Arabic RTL 中整体镜像；桌面和窄屏保持同一 44px 以上文件行触控区域与明确的辅助技术标签。
+
+### 17.29 v0.95 任务运行证据必须复用同一边界，并绑定精确版本
+
+- Document → Presentation 的新建与原位刷新统一写入设备级 task evidence：task id、applied/stopped、停止原因、实际 provider、token、耗时、运行影响，以及精确 source/output id 与 portable revision；最多保留 24 次。
+- 成功 Apply 的运行记录必须与 source、checkpoint、workspace 在同一持久化事务中提交；记录失败不能获得写权限，也不能让失败任务产生部分文件。
+- 只有当前 Document source 与 Deck output 都仍匹配该 applied run，下载 Deck Markdown/PPTX/ODP/HTML/PDF 或 Push 文件夹后才允许确认真实可用性；后续人工修改、来源变化、外来文件或 stopped run 全部 fail closed。
+- 交付记录最多 24 条，绑定 run、task、output、handoff、rating、elapsed time 与 output SHA-256；同一 run/output 的再次确认覆盖旧值。
+- 账本不保存 canonical source、文件名作为测量字段、prompt、模型 response、Query rows、credential、用户身份或后台 telemetry；设备结果不能冒充 Demand、Retention、付费或商业结论证据。
+- recipe 继续属于可读 Artifact，phase 属于纯 task runtime，model I/O 属于 injected port，运行证据属于 device ledger，唯一 writer 仍是既有 Apply transaction。Operating Review 旧记录只有在显式 storage migration 后才能迁入，当前不双写。

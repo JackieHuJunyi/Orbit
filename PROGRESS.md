@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.95 with one bounded, content-free device task-evidence ledger for Document-to-Presentation runs and exact-revision delivery ratings, plus visible recent history across all nine interface locales.
 - 2026-08-14 — Shipped Rune v0.94 with compiler-owned paired exact-scope comparisons across preview, DuckDB SQL, Chart, model evidence, live deliverables, and saved reruns, plus mounted 240ms Source/Preview focus transitions informed by a pinned DeepSeek Harness architecture review.
 - 2026-08-14 — Shipped Rune v0.93 with one injected, typed, 128 KB-bounded client model-planning port shared by Operating Review and Document-to-Presentation, removing duplicated network and evidence-validation logic from the workbench.
 - 2026-08-14 — Shipped Rune v0.92 with a compiler-derived pre-model evidence preview: eligible/excluded row counts, the first five aggregate groups, complete group accounting, and the same deterministic formatting used by live Charts.

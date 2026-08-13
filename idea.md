@@ -2261,3 +2261,13 @@ Golden Task Set 里的周环比、月环比和目标差异不能靠 `period = "J
 Evidence compiler 分别聚合两边，只保留两个范围都真正存在的分类，并把唯一变化口径定义为 `primary − comparison`。这个字段同时进入本地预览、conditional aggregate SQL、Chart、发送给模型的有界 aggregate evidence、报告与 Deck 的 live Query metric binding，以及保存任务的重跑 recipe。缺一侧的分类不会被偷偷当作零；任一侧范围内存在格式化文本或非有限数值都会在 provider 与写入之前失败。真实 DuckDB-Wasm fixture 证明 SQL 返回当前值、对比值和变化，单边分类被 `HAVING` 排除。
 
 本轮也重新审阅了 DeepSeek Harness 的实际源码与架构文档。Rune 采用它最适合 Office workspace 的原则：入口薄、能力有 owner、持久事实可重建、折叠面板保持 mounted、布局切换短而克制。桌面 Source/Preview focus mode 不再 `display:none` 跳切，而是在 240ms 内收放 grid tracks；隐藏侧同时 `inert`、`aria-hidden`、零宽并不可交互，滚动、选择与 preview runtime 仍保留。我们不引入 Harness 的动态 plugin/session host：它仍处于 developer preview，而 Rune 目前只有两个 focused tasks，静态 typed composition 的审计和迁移成本更低。只有至少三个任务证明运行时注册、替换或第三方分发需求后，才重新评估 plugin host。
+
+## 100. v0.95 任务扩展不能复制结果证据，也不能把旧版本冒充成交付
+
+第二条 Document → Presentation 任务已经能创建、原位刷新、调用个人模型并交付 Office/PDF，但只有经营汇报记录 applied/stopped、耗时、token 和交付评价。若为每个 task 在自己的 recipe 或组件状态中再建一套记录，第三条任务会复制校验、隐私、上限、持久化和 UI；而把运行记录写进 Deck frontmatter，又会把设备运行证据混入可移植内容事实。两者都会提高扩展成本。
+
+v0.95 增加静态 typed `RuneTaskEvidence` ledger。Document briefing 的成功 Apply 与 workspace/checkpoint 在同一次设备持久化中写入 task id、实际 provider、input/output token、耗时、运行影响、精确 Document/Deck id 和两侧 portable revision；取消、stale、validation 或 persistence 失败可以记录 stopped，但记录失败永远不能反向获得 source 写权限。侧栏只展示设备内最近任务事实，不把它包装成用户留存或市场需求。
+
+交付评价必须比 Artifact id 更严格。Rune 只有在当前 Document 与 Deck 都仍匹配那次 applied run 的版本时，才在 Deck Markdown、PPTX、ODP、HTML、PDF 下载或 folder Push 后询问可用性；任一侧后来被编辑，旧 run 不再获得评价入口。确认记录再以 SHA-256 绑定当时输出，reconfirm 覆盖同一 run/output，避免虚增数量。账本最多保留 24 次运行和 24 次交付，不保存正文、文件名内容、prompt、模型 response、Query 行、credential、用户 identity 或后台 telemetry。
+
+这次复用的是 DeepSeek Harness 值得借鉴的 owner/capability 思路，而不是它的 session shell：task recipe 仍属于 readable Artifact，短期 phase 属于纯 runtime，网络属于 injected model port，运行证据属于 device ledger，writer 仍只有既有 Apply transaction。Operating Review 的旧 schema 为兼容当前设备暂不迁移；未来只能通过显式 storage version 与测试完成一次性迁移，不能长期双写同一个 run。

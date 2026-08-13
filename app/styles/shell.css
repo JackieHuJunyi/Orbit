@@ -70,6 +70,11 @@
 .saved-review-metrics { gap: var(--rune-space-1); padding: 0 10px 10px 42px; font-size: 10px; line-height: 1.35; }
 .saved-review-history summary { min-height: 32px; font-size: 10px; }
 .saved-review-history li > span { font-size: 9px; }
+.task-evidence-summary { padding: 10px; }
+.task-evidence-target { min-width: 0; padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: 650; text-align: start; cursor: pointer; }
+.task-evidence-target:hover:not(:disabled) { color: var(--theme-accent); }
+.task-evidence-target:focus-visible { border-radius: 4px; outline: 2px solid rgba(var(--theme-rgb), .22); outline-offset: 2px; }
+.task-evidence-target:disabled { cursor: default; }
 
 html[dir="rtl"] .activity-rail { border-radius: 0 var(--rune-radius-workspace) var(--rune-radius-workspace) 0; }
 html[dir="rtl"] .preview-pane,

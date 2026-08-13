@@ -2,7 +2,7 @@
 
 import { BadgeCheck, Check, CircleX, PencilLine, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import type { OperatingReviewDeliveryRating } from "../lib/delivery-outcomes";
+import type { RuneTaskDeliveryRating } from "../lib/task-evidence";
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
@@ -64,10 +64,10 @@ export function DeliveryOutcomeDialog({
   submitting?: boolean;
   error?: string;
   onCancel: () => void;
-  onConfirm: (rating: OperatingReviewDeliveryRating) => void | Promise<void>;
+  onConfirm: (rating: RuneTaskDeliveryRating) => void | Promise<void>;
 }) {
   const copy = localizeRuneCopy(locale, DELIVERY_OUTCOME_BASE_COPY.en, DELIVERY_OUTCOME_BASE_COPY["zh-CN"]);
-  const [rating, setRating] = useState<OperatingReviewDeliveryRating | null>(null);
+  const [rating, setRating] = useState<RuneTaskDeliveryRating | null>(null);
   const options = [
     { id: "ready" as const, title: copy.readyTitle, body: copy.readyBody, icon: BadgeCheck },
     { id: "minor-edits" as const, title: copy.minorTitle, body: copy.minorBody, icon: PencilLine },

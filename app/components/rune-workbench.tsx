@@ -215,6 +215,7 @@ import {
   type RuneWorkspaceView,
 } from "../lib/workspace-layout";
 import { sourceSelectionScrollTop } from "../lib/source-editor-scroll";
+import { portableSourceRevision } from "../lib/source-revision";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
@@ -234,9 +235,6 @@ import {
   recordOperatingReviewDelivery,
   summarizeOperatingReviewDeliveryOutcomes,
   summarizeOperatingReviewRuns,
-  type OperatingReviewDeliveryMethod,
-  type OperatingReviewDeliveryRating,
-  type OperatingReviewDeliveryTarget,
   type OperatingReviewInput,
   type OperatingReviewNarrative,
   type SavedOperatingReview,
@@ -248,6 +246,21 @@ import {
 } from "../lib/document-briefing";
 import { prepareRuneTaskProvider } from "../lib/task-providers";
 import { prepareRuneTaskModelAssistance } from "../lib/task-model-planning";
+import {
+  EMPTY_RUNE_TASK_EVIDENCE,
+  MAX_RUNE_TASK_DURATION_MS,
+  appendRuneTaskRun,
+  normalizeRuneTaskEvidence,
+  recordRuneTaskDelivery,
+  summarizeRuneTaskDeliveries,
+  summarizeRuneTaskRuns,
+  type RuneTaskDeliveryMethod,
+  type RuneTaskDeliveryRating,
+  type RuneTaskDeliveryTarget,
+  type RuneTaskEvidence,
+  type RuneTaskRun,
+  type RuneTaskStopReason,
+} from "../lib/task-evidence";
 import {
   bindRuneTaskImportReview,
   prepareRuneTaskAfterImport,
@@ -337,6 +350,11 @@ type PendingChange = {
   runtimeRepair?: Pick<AgentRuntimeRepair, "attempt" | "failure">;
   runtimePreflight?: RuntimeImpactPreflight;
   savedOperatingReviewAfterApply?: SavedOperatingReview;
+  taskRun?: {
+    taskId: RuneTaskId;
+    sourceArtifactId: string;
+    outputArtifactIds: string[];
+  };
   preparedAt?: number;
   usage?: { inputTokens: number | null; outputTokens: number | null };
 };
@@ -358,14 +376,16 @@ type PendingExport = {
 };
 
 type PendingDeliveryConfirmation = {
-  workflowId: string;
+  recordKind: "operating-review" | "task-evidence";
+  workflowId?: string;
   runId: string;
   workflowTitle: string;
+  taskSourceArtifactId?: string;
   artifactId: string;
   artifactName: string;
   sourceRevision: string;
-  method: OperatingReviewDeliveryMethod;
-  target: OperatingReviewDeliveryTarget;
+  method: RuneTaskDeliveryMethod;
+  target: RuneTaskDeliveryTarget;
   handoffLabel: string;
 };
 
@@ -632,8 +652,9 @@ function persistDeviceWorkspace(
   selectedId: string,
   checkpoints: CheckpointMap,
   savedOperatingReviews: SavedOperatingReview[],
+  taskEvidence: RuneTaskEvidence,
 ) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId, checkpoints, savedOperatingReviews }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ artifacts, selectedId, checkpoints, savedOperatingReviews, taskEvidence }));
 }
 
 function downloadArtifact(artifact: WorkspaceArtifact) {
@@ -681,6 +702,7 @@ export function RuneWorkbench() {
   const [preferredDocumentBriefingTargetId, setPreferredDocumentBriefingTargetId] = useState("");
   const [taskSession, setTaskSession] = useState<RuneTaskSession | null>(null);
   const [savedOperatingReviews, setSavedOperatingReviews] = useState<SavedOperatingReview[]>([]);
+  const [taskEvidence, setTaskEvidence] = useState<RuneTaskEvidence>(EMPTY_RUNE_TASK_EVIDENCE);
   const [editingOperatingReviewId, setEditingOperatingReviewId] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
   const [importError, setImportError] = useState("");
@@ -744,10 +766,13 @@ export function RuneWorkbench() {
   const artifactsRef = useRef(artifacts);
   const checkpointsRef = useRef(checkpoints);
   const savedOperatingReviewsRef = useRef(savedOperatingReviews);
+  const taskEvidenceRef = useRef(taskEvidence);
   const recordedStoppedReviewIdsRef = useRef(new Set<string>());
+  const recordedStoppedTaskIdsRef = useRef(new Set<string>());
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
   savedOperatingReviewsRef.current = savedOperatingReviews;
+  taskEvidenceRef.current = taskEvidence;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
   const activeAppearance = useMemo(
     () => RUNE_APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) ?? RUNE_APPEARANCE_THEMES[0],
@@ -1108,7 +1133,7 @@ export function RuneWorkbench() {
         setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored) as { artifacts?: unknown; selectedId?: unknown; checkpoints?: unknown; savedOperatingReviews?: unknown };
+          const parsed = JSON.parse(stored) as { artifacts?: unknown; selectedId?: unknown; checkpoints?: unknown; savedOperatingReviews?: unknown; taskEvidence?: unknown };
           const restoredArtifacts = normalizeWorkspaceArtifacts(parsed.artifacts);
           const restoredId = typeof parsed.selectedId === "string"
             && restoredArtifacts.some((artifact) => artifact.id === parsed.selectedId)
@@ -1118,6 +1143,7 @@ export function RuneWorkbench() {
           setSelectedId(restoredId);
           setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
           setSavedOperatingReviews(normalizeSavedOperatingReviews(parsed.savedOperatingReviews));
+          setTaskEvidence(normalizeRuneTaskEvidence(parsed.taskEvidence));
           setNotice("Restored the latest device draft");
         }
       } catch {
@@ -1221,7 +1247,7 @@ export function RuneWorkbench() {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
       try {
-        persistDeviceWorkspace(artifacts, selectedId, checkpoints, savedOperatingReviews);
+        persistDeviceWorkspace(artifacts, selectedId, checkpoints, savedOperatingReviews, taskEvidence);
         setSaveState("saved");
         setSavedAt(new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       } catch {
@@ -1230,7 +1256,7 @@ export function RuneWorkbench() {
       }
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [artifacts, checkpoints, hydrated, locale, savedOperatingReviews, selectedId]);
+  }, [artifacts, checkpoints, hydrated, locale, savedOperatingReviews, selectedId, taskEvidence]);
 
   useEffect(() => {
     if (!activePreviewTargetId || workspaceView === "source") return;
@@ -1303,7 +1329,7 @@ export function RuneWorkbench() {
       const checkpoint = createCheckpoint(artifact, "Manual checkpoint", "manual");
       const next = appendCheckpoint(checkpoints, checkpoint);
       try {
-        persistDeviceWorkspace(artifacts, selectedId, next, savedOperatingReviews);
+        persistDeviceWorkspace(artifacts, selectedId, next, savedOperatingReviews, taskEvidenceRef.current);
         setCheckpoints(next);
         setSaveState("saved");
         setSavedAt("");
@@ -1574,7 +1600,7 @@ export function RuneWorkbench() {
     try {
       created = await putRuneImageAsset(pending.asset);
       try {
-        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints, savedOperatingReviewsRef.current);
+        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints, savedOperatingReviewsRef.current, taskEvidenceRef.current);
       } catch {
         if (created) await deleteRuneImageAsset(pending.asset.id).catch(() => undefined);
         setSaveState("error");
@@ -1701,7 +1727,7 @@ export function RuneWorkbench() {
       );
       const nextCheckpoints = appendCheckpoint(checkpointsRef.current, checkpoint);
       try {
-        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints, savedOperatingReviewsRef.current);
+        persistDeviceWorkspace(prepared.nextArtifacts, currentArtifact.id, nextCheckpoints, savedOperatingReviewsRef.current, taskEvidenceRef.current);
       } catch {
         setSaveState("error");
         setNotice("Visual edit rejected — device persistence failed");
@@ -2007,7 +2033,7 @@ export function RuneWorkbench() {
     const checkpoint = createCheckpoint(selectedArtifact, "Manual checkpoint", "manual");
     const next = appendCheckpoint(checkpoints, checkpoint);
     try {
-      persistDeviceWorkspace(artifacts, selectedId, next, savedOperatingReviews);
+      persistDeviceWorkspace(artifacts, selectedId, next, savedOperatingReviews, taskEvidenceRef.current);
       setCheckpoints(next);
       setSaveState("saved");
       setSavedAt("");
@@ -2047,20 +2073,30 @@ export function RuneWorkbench() {
 
   function openDeliveryConfirmationForArtifact(
     artifact: WorkspaceArtifact,
-    method: OperatingReviewDeliveryMethod,
-    target: OperatingReviewDeliveryTarget,
+    method: RuneTaskDeliveryMethod,
+    target: RuneTaskDeliveryTarget,
     handoffLabel: string,
   ) {
     const workflow = savedOperatingReviewsRef.current.find((candidate) => (
       candidate.artifactIds.document === artifact.id || candidate.artifactIds.slides === artifact.id
     ));
     const run = workflow?.runs.find((candidate) => candidate.status === "applied");
-    if (!workflow || !run) return;
+    const taskRun = taskEvidenceRef.current.runs.find((candidate) => {
+      const taskSource = artifactsRef.current.find((item) => item.id === candidate.sourceArtifactId);
+      return candidate.status === "applied"
+        && candidate.outputArtifactIds.includes(artifact.id)
+        && candidate.outputRevisions[artifact.id] === portableSourceRevision(artifact.source)
+        && Boolean(taskSource)
+        && candidate.sourceRevision === portableSourceRevision(taskSource?.source ?? "");
+    });
+    if ((!workflow || !run) && !taskRun) return;
     setDeliveryOutcomeError("");
     setPendingDeliveryConfirmation({
-      workflowId: workflow.id,
-      runId: run.id,
-      workflowTitle: workflow.input.title,
+      recordKind: workflow && run ? "operating-review" : "task-evidence",
+      ...(workflow && run ? { workflowId: workflow.id } : {}),
+      runId: run?.id ?? taskRun?.id ?? "",
+      workflowTitle: workflow?.input.title ?? artifact.name,
+      ...(taskRun ? { taskSourceArtifactId: taskRun.sourceArtifactId } : {}),
       artifactId: artifact.id,
       artifactName: artifact.name,
       sourceRevision: artifact.source,
@@ -2070,28 +2106,49 @@ export function RuneWorkbench() {
     });
   }
 
-  async function confirmDeliveryOutcome(rating: OperatingReviewDeliveryRating) {
+  async function confirmDeliveryOutcome(rating: RuneTaskDeliveryRating) {
     const pending = pendingDeliveryConfirmation;
     if (!pending || deliveryOutcomeState !== "idle") return;
     setDeliveryOutcomeState("recording");
     setDeliveryOutcomeError("");
     try {
-      const workflow = savedOperatingReviewsRef.current.find((candidate) => candidate.id === pending.workflowId);
-      if (!workflow) throw new Error("The saved task is no longer available.");
-      const recorded = await recordOperatingReviewDelivery({
-        workflow,
-        runId: pending.runId,
-        artifactId: pending.artifactId,
-        source: pending.sourceRevision,
-        method: pending.method,
-        target: pending.target,
-        rating,
-      });
-      const nextSavedReviews = savedOperatingReviewsRef.current.map((candidate) => (
-        candidate.id === recorded.id ? recorded : candidate
-      ));
-      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews);
-      setSavedOperatingReviews(nextSavedReviews);
+      const currentOutput = artifactsRef.current.find((artifact) => artifact.id === pending.artifactId);
+      if (!currentOutput || currentOutput.source !== pending.sourceRevision) {
+        throw new Error("The deliverable changed after this confirmation opened. Export or hand it off again.");
+      }
+      if (pending.recordKind === "operating-review") {
+        const workflow = savedOperatingReviewsRef.current.find((candidate) => candidate.id === pending.workflowId);
+        if (!workflow) throw new Error("The saved task is no longer available.");
+        const recorded = await recordOperatingReviewDelivery({
+          workflow,
+          runId: pending.runId,
+          artifactId: pending.artifactId,
+          source: pending.sourceRevision,
+          method: pending.method,
+          target: pending.target,
+          rating,
+        });
+        const nextSavedReviews = savedOperatingReviewsRef.current.map((candidate) => (
+          candidate.id === recorded.id ? recorded : candidate
+        ));
+        persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews, taskEvidenceRef.current);
+        setSavedOperatingReviews(nextSavedReviews);
+      } else {
+        const taskSource = artifactsRef.current.find((artifact) => artifact.id === pending.taskSourceArtifactId);
+        if (!taskSource) throw new Error("The exact task source is no longer available.");
+        const nextEvidence = await recordRuneTaskDelivery({
+          evidence: taskEvidenceRef.current,
+          runId: pending.runId,
+          artifactId: pending.artifactId,
+          source: pending.sourceRevision,
+          currentSourceRevision: portableSourceRevision(taskSource.source),
+          method: pending.method,
+          target: pending.target,
+          rating,
+        });
+        persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, savedOperatingReviewsRef.current, nextEvidence);
+        setTaskEvidence(nextEvidence);
+      }
       setPendingDeliveryConfirmation(null);
       setNotice(ui.deliveryOutcomeRecorded);
     } catch (error) {
@@ -2125,8 +2182,16 @@ export function RuneWorkbench() {
       result.artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId)
       && Object.values(workflow.artifactIds).every((artifactId) => result.artifacts.some((artifact) => artifact.id === artifactId))
     ));
+    const pulledArtifactIds = new Set(result.artifacts.map((artifact) => artifact.id));
+    const nextTaskEvidence = normalizeRuneTaskEvidence({
+      ...taskEvidenceRef.current,
+      runs: taskEvidenceRef.current.runs.filter((run) => (
+        pulledArtifactIds.has(run.sourceArtifactId)
+        && run.outputArtifactIds.every((artifactId) => pulledArtifactIds.has(artifactId))
+      )),
+    });
     try {
-      persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints, nextSavedReviews);
+      persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints, nextSavedReviews, nextTaskEvidence);
     } catch (error) {
       await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
       throw error;
@@ -2139,6 +2204,7 @@ export function RuneWorkbench() {
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setSavedOperatingReviews(nextSavedReviews);
+    setTaskEvidence(nextTaskEvidence);
     setPendingChange(null);
     setHistoryOpen(false);
     setSaveState("saved");
@@ -2572,10 +2638,66 @@ export function RuneWorkbench() {
       item.id === stopped.id ? stopped : item
     ));
     try {
-      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews);
+      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews, taskEvidenceRef.current);
       setSavedOperatingReviews(nextSavedReviews);
     } catch {
       // A stopped run is evidence only; it must never weaken the zero-source-write guarantee.
+    }
+  }
+
+  function runeTaskRunFromPendingChange(
+    change: PendingChange,
+    status: RuneTaskRun["status"],
+    stopReason: RuneTaskStopReason | null,
+  ): RuneTaskRun | undefined {
+    if (!change.taskRun) return undefined;
+    const completedAt = new Date();
+    const sourceArtifact = change.baseRevision.find((artifact) => artifact.id === change.taskRun?.sourceArtifactId);
+    const outputSources = Object.fromEntries(change.taskRun.outputArtifactIds.flatMap((artifactId) => {
+      const patch = change.patches.find((candidate) => candidate.artifactId === artifactId);
+      const creation = change.creations.find((candidate) => candidate.artifact.id === artifactId);
+      const current = artifactsRef.current.find((artifact) => artifact.id === artifactId);
+      const source = patch?.nextSource ?? creation?.artifact.source ?? current?.source;
+      return source == null ? [] : [[artifactId, source]];
+    }));
+    if (!sourceArtifact || Object.keys(outputSources).length !== change.taskRun.outputArtifactIds.length) return undefined;
+    return {
+      version: 1,
+      id: `task-run:${change.taskRun.taskId}:${completedAt.getTime()}:${status}`,
+      taskId: change.taskRun.taskId,
+      completedAt: completedAt.toISOString(),
+      status,
+      stopReason,
+      provider: change.provider || "local",
+      sourceArtifactId: change.taskRun.sourceArtifactId,
+      sourceRevision: portableSourceRevision(sourceArtifact.source),
+      outputArtifactIds: [...change.taskRun.outputArtifactIds],
+      outputRevisions: Object.fromEntries(Object.entries(outputSources).map(([artifactId, source]) => (
+        [artifactId, portableSourceRevision(source)]
+      ))),
+      changedFileCount: change.patches.length + change.creations.length,
+      queryCount: change.runtimePreflight?.queryCount ?? 0,
+      chartConsumerCount: change.runtimePreflight?.chartConsumerCount ?? 0,
+      durationMs: change.preparedAt == null
+        ? 0
+        : Math.min(MAX_RUNE_TASK_DURATION_MS, Math.max(0, completedAt.getTime() - change.preparedAt)),
+      inputTokens: change.usage?.inputTokens ?? null,
+      outputTokens: change.usage?.outputTokens ?? null,
+    };
+  }
+
+  function recordStoppedRuneTask(change: PendingChange, stopReason: RuneTaskStopReason) {
+    const identity = `${change.taskRun?.taskId ?? "none"}:${change.preparedAt ?? 0}`;
+    if (!change.taskRun || recordedStoppedTaskIdsRef.current.has(identity)) return;
+    recordedStoppedTaskIdsRef.current.add(identity);
+    const run = runeTaskRunFromPendingChange(change, "stopped", stopReason);
+    if (!run) return;
+    const nextEvidence = appendRuneTaskRun(taskEvidenceRef.current, run);
+    try {
+      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, savedOperatingReviewsRef.current, nextEvidence);
+      setTaskEvidence(nextEvidence);
+    } catch {
+      // Task evidence must never weaken the zero-source-write guarantee.
     }
   }
 
@@ -2589,6 +2711,7 @@ export function RuneWorkbench() {
         pendingChange.patches.length + pendingChange.creations.length,
         pendingChange.runtimePreflight,
       );
+      recordStoppedRuneTask(pendingChange, "stale");
       setAgentError("The workspace changed while this Agent plan was being prepared. Discard it and plan again from the current source revision.");
       setNotice("Patch held for review — workspace source revision changed");
       return;
@@ -2605,6 +2728,7 @@ export function RuneWorkbench() {
         pendingChange.patches.length + pendingChange.creations.length,
         pendingChange.runtimePreflight,
       );
+      recordStoppedRuneTask(pendingChange, "stale");
       setAgentError("The plan references a file that is no longer in this workspace.");
       setNotice("Patch held for review — workspace context changed");
       return;
@@ -2643,6 +2767,7 @@ export function RuneWorkbench() {
         pendingChange.patches.length + pendingChange.creations.length,
         pendingChange.runtimePreflight,
       );
+      recordStoppedRuneTask(pendingChange, "validation");
       setAgentError(prepared.errors.slice(0, 3).join(" "));
       setNotice("Nothing applied — the complete workspace did not pass validation");
       return;
@@ -2686,6 +2811,10 @@ export function RuneWorkbench() {
           outputTokens: pendingChange.usage?.outputTokens ?? null,
         })
       : undefined;
+    const completedTaskRun = runeTaskRunFromPendingChange(pendingChange, "applied", null);
+    const nextTaskEvidence = completedTaskRun
+      ? appendRuneTaskRun(taskEvidenceRef.current, completedTaskRun)
+      : taskEvidenceRef.current;
     const nextSavedReviews = completedWorkflow
       ? [
           completedWorkflow,
@@ -2693,7 +2822,7 @@ export function RuneWorkbench() {
         ].slice(0, MAX_SAVED_OPERATING_REVIEWS)
       : savedOperatingReviews;
     try {
-      persistDeviceWorkspace(prepared.nextArtifacts, nextSelectedId, nextCheckpoints, nextSavedReviews);
+      persistDeviceWorkspace(prepared.nextArtifacts, nextSelectedId, nextCheckpoints, nextSavedReviews, nextTaskEvidence);
     } catch {
       setSaveState("error");
       setAgentError("Device storage is full, so Rune kept every source unchanged.");
@@ -2705,6 +2834,7 @@ export function RuneWorkbench() {
         pendingChange.patches.length + pendingChange.creations.length,
         pendingChange.runtimePreflight,
       );
+      recordStoppedRuneTask(pendingChange, "persistence");
       return;
     }
 
@@ -2715,6 +2845,7 @@ export function RuneWorkbench() {
     if (pendingChange.scope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setSavedOperatingReviews(nextSavedReviews);
+    setTaskEvidence(nextTaskEvidence);
     setSaveState("saved");
     setSavedAt("");
     setPendingChange(null);
@@ -2736,6 +2867,7 @@ export function RuneWorkbench() {
       pendingChange.patches.length + pendingChange.creations.length,
       pendingChange.runtimePreflight,
     );
+    recordStoppedRuneTask(pendingChange, "cancelled");
     setPendingChange(null);
     setPendingReviewId("");
     setNotice(runeText(locale, "Review cancelled — every source stayed unchanged", "已取消审核 — 所有源内容保持不变"));
@@ -2761,6 +2893,7 @@ export function RuneWorkbench() {
     if (agentScope === "selection") setAgentScope("artifact");
     setCheckpoints({});
     setSavedOperatingReviews([]);
+    setTaskEvidence(EMPTY_RUNE_TASK_EVIDENCE);
     setEditingOperatingReviewId("");
     setTaskSession(null);
     setOperatingReviewOpen(false);
@@ -2961,6 +3094,7 @@ export function RuneWorkbench() {
 
   async function prepareDocumentBriefing(input: DocumentBriefingInput) {
     if (documentBriefingState !== "idle" || pendingChange) return;
+    const taskStartedAt = Date.now();
     setDocumentBriefingError("");
     setDocumentBriefingState("checking");
     const baseArtifacts = artifactsRef.current;
@@ -2991,32 +3125,48 @@ export function RuneWorkbench() {
         setDocumentBriefingError(prepared.errors[0] ?? "Rune could not prepare this presentation.");
         return;
       }
-      const transaction = prepareWorkspaceMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
-      if (transaction.errors.length) {
-        setDocumentBriefingError(transaction.errors.slice(0, 3).join(" "));
-        return;
-      }
-      const runtimePreflight = await preflightRuntimeMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
-      if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
-        setDocumentBriefingError(runeText(locale, "The workspace changed during validation. Prepare the presentation again from the current document.", "验证期间工作区已发生变化。请按当前文档重新准备演示。"));
-        setNotice(runeText(locale, "Presentation not prepared — workspace revision changed", "演示未生成 — 工作区版本已变化"));
-        return;
-      }
       const outputArtifactId = prepared.plan.patches[0]?.artifactId ?? prepared.plan.creations[0]?.artifact.id;
       if (!outputArtifactId) {
         setDocumentBriefingError("Rune could not resolve the presentation output.");
         return;
       }
-      setPendingChange({
+      const pendingTaskChange: PendingChange = {
         prompt: input.focus,
         provider,
         ...(outline ? { planningKind: "task-outline" as const } : {}),
         scope: "workspace",
         baseRevision,
         selectAfterApplyArtifactId: outputArtifactId,
-        preparedAt: Date.now(),
+        taskRun: {
+          taskId: "document-briefing",
+          sourceArtifactId: input.sourceArtifactId,
+          outputArtifactIds: [outputArtifactId],
+        },
+        preparedAt: taskStartedAt,
         usage,
         ...prepared.plan,
+      };
+      const transaction = prepareWorkspaceMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
+      if (transaction.errors.length) {
+        recordStoppedRuneTask(pendingTaskChange, "validation");
+        setDocumentBriefingError(transaction.errors.slice(0, 3).join(" "));
+        return;
+      }
+      let runtimePreflight: RuntimeImpactPreflight | undefined;
+      try {
+        runtimePreflight = await preflightRuntimeMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
+      } catch (error) {
+        recordStoppedRuneTask(pendingTaskChange, "runtime");
+        throw error;
+      }
+      if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
+        recordStoppedRuneTask({ ...pendingTaskChange, runtimePreflight }, "stale");
+        setDocumentBriefingError(runeText(locale, "The workspace changed during validation. Prepare the presentation again from the current document.", "验证期间工作区已发生变化。请按当前文档重新准备演示。"));
+        setNotice(runeText(locale, "Presentation not prepared — workspace revision changed", "演示未生成 — 工作区版本已变化"));
+        return;
+      }
+      setPendingChange({
+        ...pendingTaskChange,
         runtimePreflight,
       });
       setPendingReviewId(outputArtifactId);
@@ -3095,7 +3245,7 @@ export function RuneWorkbench() {
     }
     const commit = commitPreparedArtifactCreation(
       { ...prepared, nextArtifacts },
-      (committedArtifacts, nextSelectedId) => persistDeviceWorkspace(committedArtifacts, nextSelectedId, nextCheckpoints, savedOperatingReviews),
+      (committedArtifacts, nextSelectedId) => persistDeviceWorkspace(committedArtifacts, nextSelectedId, nextCheckpoints, savedOperatingReviews, taskEvidenceRef.current),
     );
     if (!commit.committed) {
       setSaveState("error");
@@ -3398,7 +3548,7 @@ export function RuneWorkbench() {
     }
     const firstImported = pendingImport.importedArtifacts[0];
     try {
-      persistDeviceWorkspace(pendingImport.nextArtifacts, firstImported.id, checkpoints, savedOperatingReviews);
+      persistDeviceWorkspace(pendingImport.nextArtifacts, firstImported.id, checkpoints, savedOperatingReviews, taskEvidenceRef.current);
     } catch {
       setSaveState("error");
       setImportError("Device storage is full, so Rune kept every source unchanged. Download or remove drafts, then try again.");
@@ -3447,7 +3597,7 @@ export function RuneWorkbench() {
   function downloadSelectedArtifactSource() {
     const artifact = selectedArtifact;
     downloadArtifact(artifact);
-    const target: OperatingReviewDeliveryTarget | null = artifact.kind === "document"
+    const target: RuneTaskDeliveryTarget | null = artifact.kind === "document"
       ? "md"
       : artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
         ? "deck-md"
@@ -3615,6 +3765,10 @@ export function RuneWorkbench() {
     { id: "analysis", label: ui.analysis, artifacts: artifacts.filter((artifact) => artifact.kind === "query" || artifact.kind === "chart") },
     { id: "deliverables", label: ui.deliverables, artifacts: artifacts.filter((artifact) => artifact.kind === "document" || artifact.kind === "slides") },
   ].filter((group) => group.artifacts.length > 0);
+  const documentBriefingRuns = taskEvidence.runs.filter((run) => run.taskId === "document-briefing");
+  const documentBriefingRunSummary = summarizeRuneTaskRuns(documentBriefingRuns);
+  const documentBriefingDeliveries = taskEvidence.deliveries.filter((delivery) => delivery.taskId === "document-briefing");
+  const documentBriefingDeliverySummary = summarizeRuneTaskDeliveries(documentBriefingDeliveries);
   const saveStatusLabel = saveState === "saved" ? ui.saved : saveState === "error" ? ui.storageFull : ui.saving;
   const saveStatusDetail = saveState === "error" ? ui.deviceStorageFull : ui.lastSaved(savedAt || ui.justNow);
 
@@ -3731,7 +3885,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.94</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.95</strong></footer>
               </div>
             )}
           </div>
@@ -3927,6 +4081,45 @@ export function RuneWorkbench() {
                     </article>
                   );
                 })}
+              </section>
+            )}
+            {!!documentBriefingRuns.length && (
+              <section className="saved-review-list task-evidence-list" aria-label={ui.recentTaskRuns}>
+                <div className="artifact-group-label"><span>{ui.recentTaskRuns}</span><span>{documentBriefingRuns.length}</span></div>
+                <div className="saved-review-card">
+                  <div className="saved-review-metrics task-evidence-summary">
+                    <span>{ui.documentBriefingTask} · {ui.successRate(documentBriefingRunSummary.successRate)}</span>
+                    <span>{documentBriefingDeliverySummary.total
+                      ? `${documentBriefingDeliverySummary.total} ${ui.confirmedDeliverables} · ${documentBriefingDeliverySummary.usableRate}% ${ui.usableDeliverables}`
+                      : ui.noDeliveryOutcomes}</span>
+                  </div>
+                  <details className="saved-review-history">
+                    <summary>{ui.runHistory}</summary>
+                    <ol>
+                      {documentBriefingRuns.map((run) => {
+                        const source = artifacts.find((artifact) => artifact.id === run.sourceArtifactId);
+                        const output = artifacts.find((artifact) => run.outputArtifactIds.includes(artifact.id));
+                        const runDeliveries = documentBriefingDeliveries.filter((delivery) => delivery.runId === run.id);
+                        const openArtifact = output ?? source;
+                        return (
+                          <li key={run.id}>
+                            <span className={run.status}>{run.status === "applied" ? ui.runApplied : ui.runStopped}</span>
+                            <button
+                              type="button"
+                              className="task-evidence-target"
+                              disabled={!openArtifact || Boolean(activeVisualSourceDraft)}
+                              onClick={() => openArtifact && selectArtifact(openArtifact.id)}
+                            >{output?.name ?? ui.documentBriefingTask}</button>
+                            <small>{source?.name ?? run.sourceArtifactId} → {output?.name ?? run.outputArtifactIds[0]}</small>
+                            <small>{run.completedAt.slice(0, 10)} · {ui.taskTime} {Math.max(1, Math.round(run.durationMs / 1000))}s · {run.provider}</small>
+                            <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
+                            {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}</small>)}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </details>
+                </div>
               </section>
             )}
             <div className="file-rail-spacer" />

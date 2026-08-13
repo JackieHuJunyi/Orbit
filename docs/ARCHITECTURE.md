@@ -528,6 +528,16 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
+## Device task evidence
+
+Operational task evidence is separate from portable task recipes and canonical source. `task-evidence.ts` owns one versioned, bounded device ledger for registered task runs and post-handoff usability judgments. It imports task identity and source-revision utilities, but no React, browser storage, provider, compiler, credential, or mutation API. The workbench supplies the only persistence capability.
+
+Document-to-Presentation writes an applied run in the same local-storage transaction as its validated source mutation and checkpoints. The record contains exact Document/Deck ids and portable revisions, actual planner provider, provider-reported token usage, bounded runtime-impact counts, and elapsed time. Cancellation, stale revision, validation failure, and persistence failure may produce a stopped record, but evidence persistence is best-effort and cannot authorize or rescue a source write. Twenty-four newest runs are retained.
+
+A delivery judgment is offered only after an exact task output is downloaded or written to a user folder and only while both the current task source and output still match that applied run's recorded revisions. Confirmation adds a SHA-256 output fingerprint, handoff target/method, rating, and elapsed time; stopped runs, foreign outputs, changed revisions, invalid method/format pairs, duplicate ids, malformed hashes, and oversized values fail closed. Reconfirming one run/output replaces the prior judgment and twenty-four newest outcomes are retained.
+
+The ledger stores no canonical source, prompt, model response, Query evidence, credentials, user identity, or background telemetry. Source-owned recipe fields remain inside readable Artifacts; device execution facts remain in the ledger. Operating Review keeps its legacy per-workflow evidence in v0.95 for storage compatibility and is not dual-written. Any consolidation requires an explicit versioned migration rather than two authoritative copies.
+
 ## Composable task runtime
 
 Rune tasks are declarative product capabilities, not extra modal booleans inside the workbench. A task definition declares a stable id, the source capability it can accept, and the Artifact kinds it may consume. A short-lived task session records only explicit lifecycle facts (`awaiting-source → reviewing-source → configuring`) plus the captured workspace revision and exact imported Artifact identities. The runtime is a pure TypeScript module: it cannot import React, persistence, browser APIs, providers, or filesystem adapters.
