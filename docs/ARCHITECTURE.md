@@ -552,6 +552,8 @@ Status-bar simplification is presentation-only. The left side continues to rende
 
 Assistance chrome is likewise presentation-only. The source-integrated composer, existing three-way scope setter, planner-status badge, and native suggestions disclosure all read the same prompt, selection, dependency context, provider mode, and Query-evidence count. Suggested commands still call the same `runAgent` boundary, while a pending mutation continues to expand the complete patch/runtime/transaction review above the composer. Removing the persistent avatar/title card and collapsing idle suggestions does not alter context authority, runtime gates, checkpoints, or Apply/Discard behavior.
 
+File-rail workflow grouping is a render-time projection over the canonical `WorkspaceArtifact[]`: Data maps to Sources, Query/Chart to Analysis, and Document/Slides to Deliverables, preserving the original array order inside each group. Group ids are presentation constants rather than persisted folders or graph nodes. Selection, temporary pins, context closure, revisions, directory manifests, and exports continue to resolve exact artifact ids; semantic sections and localized headings only improve navigation hierarchy.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

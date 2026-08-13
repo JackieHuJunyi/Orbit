@@ -2852,6 +2852,12 @@ export function RuneWorkbench() {
     }
   }
 
+  const artifactGroups = [
+    { id: "sources", label: ui.sources, artifacts: artifacts.filter((artifact) => artifact.kind === "data") },
+    { id: "analysis", label: ui.analysis, artifacts: artifacts.filter((artifact) => artifact.kind === "query" || artifact.kind === "chart") },
+    { id: "deliverables", label: ui.deliverables, artifacts: artifacts.filter((artifact) => artifact.kind === "document" || artifact.kind === "slides") },
+  ].filter((group) => group.artifacts.length > 0);
+
   return (
     <main className="rune-shell">
       <header className="topbar">
@@ -2912,7 +2918,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.68</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.69</strong></footer>
               </div>
             )}
           </div>
@@ -3035,44 +3041,52 @@ export function RuneWorkbench() {
               <div><span className="overline">{ui.workspace}</span><strong>{directoryHandle?.name ?? ui.localWorkspace}</strong></div>
               <button className="tiny-icon-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label={runeText(locale, "Create a new artifact", "新建内容")} title={ui.newArtifact}>+</button>
             </div>
-            <div className="artifact-group-label"><span>{ui.artifacts}</span><span>{artifacts.length}{workspacePinnedArtifactIds.length ? ` · ${ui.pinnedCount(workspacePinnedArtifactIds.length)}` : ""}</span></div>
-            <nav className="artifact-list">
-              {artifacts.map((artifact) => {
-                const metricReferenceCount = findMetricReferences(artifact.source).length;
-                const queryMetricReferenceCount = findQueryMetricReferences(artifact.source).length;
-                const chartReferenceCount = findChartReferences(artifact.source).length;
-                const referenceCount = metricReferenceCount + queryMetricReferenceCount + chartReferenceCount;
-                const pinned = workspacePinnedArtifactIds.includes(artifact.id);
-                const inAgentContext = workspaceAgentContext.some((contextArtifact) => contextArtifact.id === artifact.id);
-                return (
-                  <div
-                    className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""}`.trim()}
-                    data-agent-context={inAgentContext ? "true" : undefined}
-                    key={artifact.id}
-                  >
-                    <button
-                      className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
-                      disabled={Boolean(activeVisualSourceDraft)}
-                      onClick={() => selectArtifact(artifact.id)}
-                    >
-                      <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
-                      <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${ui.liveBindings(referenceCount)}` : ""}</small></span>
-                      {artifact.id === selectedArtifact.id && <span className="active-notch" />}
-                    </button>
-                    <button
-                      type="button"
-                      className={`artifact-context-pin ${pinned ? "active" : ""}`.trim()}
-                      aria-label={ui.pinContext(artifact.name, pinned)}
-                      aria-pressed={pinned}
-                      title={pinned ? ui.removePin : ui.keepPin}
-                      disabled={Boolean(activeVisualSourceDraft)}
-                      onClick={() => toggleWorkspaceContextPin(artifact.id)}
-                    >
-                      <Pin aria-hidden="true" />
-                    </button>
+            <nav className="artifact-groups" aria-label={ui.artifacts}>
+              {artifactGroups.map((group) => (
+                <section className={`artifact-group artifact-group-${group.id}`} aria-labelledby={`artifact-group-${group.id}`} key={group.id}>
+                  <header className="artifact-group-label">
+                    <h2 id={`artifact-group-${group.id}`}>{group.label}</h2>
+                    <span>{group.artifacts.length}</span>
+                  </header>
+                  <div className="artifact-list">
+                    {group.artifacts.map((artifact) => {
+                      const metricReferenceCount = findMetricReferences(artifact.source).length;
+                      const queryMetricReferenceCount = findQueryMetricReferences(artifact.source).length;
+                      const chartReferenceCount = findChartReferences(artifact.source).length;
+                      const referenceCount = metricReferenceCount + queryMetricReferenceCount + chartReferenceCount;
+                      const pinned = workspacePinnedArtifactIds.includes(artifact.id);
+                      const inAgentContext = workspaceAgentContext.some((contextArtifact) => contextArtifact.id === artifact.id);
+                      return (
+                        <div
+                          className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""}`.trim()}
+                          data-agent-context={inAgentContext ? "true" : undefined}
+                          key={artifact.id}
+                        >
+                          <button
+                            className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
+                            disabled={Boolean(activeVisualSourceDraft)}
+                            onClick={() => selectArtifact(artifact.id)}
+                          >
+                            <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
+                            <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${ui.liveBindings(referenceCount)}` : ""}</small></span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`artifact-context-pin ${pinned ? "active" : ""}`.trim()}
+                            aria-label={ui.pinContext(artifact.name, pinned)}
+                            aria-pressed={pinned}
+                            title={pinned ? ui.removePin : ui.keepPin}
+                            disabled={Boolean(activeVisualSourceDraft)}
+                            onClick={() => toggleWorkspaceContextPin(artifact.id)}
+                          >
+                            <Pin aria-hidden="true" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </section>
+              ))}
             </nav>
             {!!savedOperatingReviews.length && (
               <section className="saved-review-list" aria-label={ui.savedReviews}>

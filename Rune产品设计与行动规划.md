@@ -1905,3 +1905,7 @@ Source 标题栏用一个九语言 Source and Versions 控件同时表达 source
 ### 17.13 v0.68 辅助输入属于编辑器，不属于机器人面板
 
 Source 底部常驻一个与画布连续的轻量输入区，不再用头像、Assistant 标题和能力说明制造独立 AI 卡片。Selection/File/Workspace 范围保持直接可见；快捷建议和 Query evidence 通过原生 disclosure 按需展开；provider/local 状态保持诚实。pending change、runtime proof、diff、错误与 Apply/Discard 仍使用现有完整审核面，任何视觉收敛都不得隐藏权限范围、减少验证或改变写入路径。
+
+### 17.14 v0.69 文件栏表达 Sources → Analysis → Deliverables
+
+工作区文件按产品角色从同一 artifact 列表实时派生三组：Data 属于 Sources，Query/Chart 属于 Analysis，Document/Slides 属于 Deliverables。分组只影响导航呈现，不改变 artifact 顺序、identity、目录存储、依赖边、Agent context、pin 或导出。三组标题必须覆盖完整界面语言并使用语义 section/heading；选中态采用克制主题色，未固定 pin 只在 hover/focus 时出现。

@@ -401,7 +401,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.68<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.69<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -418,4 +418,18 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.doesNotMatch(html, /class="agent-avatar"/);
   assert.match(styles, /\.agent-dock\s*\{[^}]*margin:\s*0;[^}]*border:\s*0;[^}]*border-top:/s);
   assert.match(styles, /\.agent-composer:focus-within\s*\{/);
+});
+
+test("organizes workspace files by product workflow rather than internal artifact inventory", async () => {
+  const response = await render();
+  const html = await response.text();
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(html, /<nav class="artifact-groups" aria-label="Artifacts">/);
+  assert.match(html, /class="artifact-group artifact-group-sources"[\s\S]*>Sources<\/h2>/);
+  assert.match(html, /class="artifact-group artifact-group-analysis"[\s\S]*>Analysis<\/h2>/);
+  assert.match(html, /class="artifact-group artifact-group-deliverables"[\s\S]*>Deliverables<\/h2>/);
+  assert.match(html, /artifact-group-sources[\s\S]*regional-revenue\.csv[\s\S]*artifact-group-analysis[\s\S]*regional-analysis\.sql[\s\S]*regional-revenue\.chart\.json[\s\S]*artifact-group-deliverables[\s\S]*q2-review\.md[\s\S]*board-briefing\.deck\.md/);
+  assert.doesNotMatch(html, /class="active-notch"/);
+  assert.match(styles, /\.artifact-row\.active\s*\{[^}]*background:\s*rgba\(var\(--theme-rgb\),\s*\.085\);[^}]*box-shadow:\s*inset 2px 0 var\(--theme-accent\);/s);
+  assert.match(styles, /\.artifact-context-pin\s*\{[^}]*opacity:\s*0;/s);
 });

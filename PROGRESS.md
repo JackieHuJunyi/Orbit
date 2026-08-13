@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.69 with a localized Sources → Analysis → Deliverables file rail, lightweight theme-tinted selection, and context pins hidden until relevant.
 - 2026-08-13 — Shipped Rune v0.68 with a source-integrated assistance composer, compact explicit scope controls, and native progressive disclosure for suggestions and Query evidence.
 - 2026-08-13 — Shipped Rune v0.67 with a task-focused status bar that retains only current operation state and artifact statistics while moving product version into More Tools.
 - 2026-08-13 — Shipped Rune v0.66 with one localized Source and Versions control that consolidates source language, checkpoint count, save, undo, and exact restore actions behind the existing history state.

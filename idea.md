@@ -2034,4 +2034,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 范围选择保留为输入框下方的紧凑原生按钮，因为授权边界必须始终可见；模型/本地状态继续诚实显示。快捷建议和 Workspace Query 证据进入原生 `details/summary`，用户需要时一击展开，键盘和辅助技术不依赖自定义弹层。pending patch、runtime preflight、repair 证据与错误仍完整展开，因为它们属于一次正在发生的审核任务，不是装饰。这里只改变信息出现的时机和材料关系，没有减少可验证性或创建第二套 Agent 状态。
 
+## 74. v0.69 文件栏首先解释工作流，而不是罗列内部类型
+
+把 Markdown、CSV、SQL、Chart JSON 和 Deck Markdown 全部放在一个 Artifacts 清单中，虽然忠实于实现，却要求用户先理解 Rune 的内部抽象。v0.69 使用同一份 artifact 数组按产品角色派生三个有序分组：Data 是 Sources，Query 与 Chart 是 Analysis，Document 与 Slides 是 Deliverables。它让用户直接看到“来源 → 分析 → 成品”的工作流，又不伪造目录、移动文件或改变 dependency graph。
+
+三层标题拥有九语言完整目录和原生 section/heading 结构；每个文件仍显示 canonical 名称、language 与 live binding 数，选择、pin、Agent context 和 saved workflow 仍按原 artifact id 工作。选中态从漂浮白卡加独立 notch 收敛成低饱和主题底色和一条内嵌气质色边线，pin 在未固定且未 hover/focus 时完全隐藏。信息没有丢失，只让默认画面优先表达当前文件和工作流。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。
