@@ -29,6 +29,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
+  assert.match(html, /<html lang="en">/);
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
   assert.match(html, /Content workspace/);
   assert.match(html, /q2-review\.md/);
@@ -90,7 +91,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.48/);
+  assert.match(html, /Rune v0\.49/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);

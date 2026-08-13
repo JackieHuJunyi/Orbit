@@ -22,6 +22,7 @@ import {
   type ChartCreationMark,
   type CreatableArtifactKind,
 } from "../lib/artifact-creation";
+import { runeUICopy, type RuneLocale } from "../lib/localization";
 import type { WorkspaceArtifact } from "../lib/workspace";
 import { chartEmbeddingTargets } from "../lib/chart-embedding";
 import { ReviewDialog } from "./review-dialog";
@@ -50,22 +51,16 @@ function creationInputFor(
   return { kind, title };
 }
 
-function titlePlaceholder(kind: CreatableArtifactKind) {
-  if (kind === "document") return "Project brief";
-  if (kind === "data") return "Operating metrics";
-  if (kind === "query") return "Revenue analysis";
-  if (kind === "chart") return "Revenue by region";
-  return "Board narrative";
-}
-
 export function NewArtifactDialog({
   artifacts,
   error,
+  locale,
   onCancel,
   onCreate,
 }: {
   artifacts: WorkspaceArtifact[];
   error?: string;
+  locale: RuneLocale;
   onCancel: () => void;
   onCreate: (input: ArtifactCreationInput, embedArtifactId?: string) => void | Promise<void>;
 }) {
@@ -78,6 +73,7 @@ export function NewArtifactDialog({
   const [format, setFormat] = useState<ChartCreationFormat>("number");
   const [embedArtifactId, setEmbedArtifactId] = useState("");
   const [creating, setCreating] = useState(false);
+  const copy = runeUICopy(locale);
   const embeddingTargets = useMemo(() => chartEmbeddingTargets(artifacts), [artifacts]);
   const sourceOptions = useMemo(
     () => kind === "query" || kind === "chart"
@@ -113,8 +109,8 @@ export function NewArtifactDialog({
   );
   const bindingError = (kind === "query" || kind === "chart") && !sourceOption
     ? kind === "query"
-      ? "Add a valid Data table before creating a Query."
-      : "Add a valid Data table or Query before creating a Chart."
+      ? copy.newArtifact.addDataForQuery
+      : copy.newArtifact.addSourceForChart
     : "";
   const formError = error || bindingError || (title ? prepared.errors[0] : "");
 
@@ -137,21 +133,22 @@ export function NewArtifactDialog({
   return (
     <ReviewDialog
       dialogId="new-artifact"
-      kicker={<><FilePlus2 aria-hidden="true" /> Start from readable source</>}
-      title="Create a new artifact"
-      description="Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision."
-      detailsLabel="New artifact details"
+      kicker={<><FilePlus2 aria-hidden="true" /> {copy.newArtifact.kicker}</>}
+      title={copy.newArtifact.title}
+      description={copy.newArtifact.description}
+      detailsLabel={copy.newArtifact.details}
+      locale={locale}
       onCancel={() => {
         if (!creating) onCancel();
       }}
       footer={(
         <>
-          <div><ShieldCheck aria-hidden="true" /> One atomic device write · no upload</div>
+          <div><ShieldCheck aria-hidden="true" /> {copy.newArtifact.atomic}</div>
           <span>
-            <button className="button ghost-button" onClick={onCancel} disabled={creating}>Cancel</button>
+            <button className="button ghost-button" onClick={onCancel} disabled={creating}>{copy.common.cancel}</button>
             <button className="button primary-button" onClick={() => void create()} disabled={!prepared.artifact || creating}>
               {creating ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Check aria-hidden="true" />}
-              {creating ? "Verifying live source…" : "Create source"}
+              {creating ? copy.newArtifact.verifying : copy.newArtifact.create}
             </button>
           </span>
         </>
@@ -159,8 +156,8 @@ export function NewArtifactDialog({
     >
       <div className="new-artifact-form">
         <fieldset>
-          <legend>Artifact type</legend>
-          <div className="new-artifact-types" role="radiogroup" aria-label="Artifact type">
+          <legend>{copy.newArtifact.type}</legend>
+          <div className="new-artifact-types" role="radiogroup" aria-label={copy.newArtifact.type}>
             {creatableArtifactTypes.map((type) => (
               <button
                 key={type.kind}
@@ -170,8 +167,8 @@ export function NewArtifactDialog({
                 aria-checked={kind === type.kind}
               >
                 <span className={`artifact-icon ${type.kind}`}><TypeIcon kind={type.kind} /></span>
-                <strong>{type.label}</strong>
-                <small>{type.description}</small>
+                <strong>{copy.newArtifact.typeNames[type.kind]}</strong>
+                <small>{copy.newArtifact.typeDescriptions[type.kind]}</small>
                 <code>{type.format} · {type.extension}</code>
               </button>
             ))}
@@ -179,27 +176,27 @@ export function NewArtifactDialog({
         </fieldset>
 
         <label className="new-artifact-title" htmlFor="new-artifact-title">
-          <span>Title</span>
+          <span>{copy.newArtifact.titleLabel}</span>
           <input
             id="new-artifact-title"
             data-dialog-initial-focus
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             onKeyDown={onTitleKeyDown}
-            placeholder={titlePlaceholder(kind)}
+            placeholder={copy.newArtifact.placeholders[kind]}
             maxLength={MAX_ARTIFACT_TITLE_CHARS + 1}
             aria-describedby="new-artifact-title-help"
             aria-invalid={Boolean(title && prepared.errors.length)}
           />
-          <small id="new-artifact-title-help">Rune derives a portable filename and stable workspace id. You can edit the source immediately.</small>
+          <small id="new-artifact-title-help">{copy.newArtifact.titleHelp}</small>
         </label>
 
         {(kind === "query" || kind === "chart") && (
           <fieldset className="new-artifact-binding">
-            <legend>Source binding</legend>
+            <legend>{copy.newArtifact.sourceBinding}</legend>
             <div className="new-artifact-binding-grid">
               <label className="wide" htmlFor="new-artifact-source">
-                <span>{kind === "query" ? "Data source" : "Data or Query source"}</span>
+                <span>{kind === "query" ? copy.newArtifact.dataSource : copy.newArtifact.dataOrQuerySource}</span>
                 <select
                   id="new-artifact-source"
                   value={sourceOption?.artifactId ?? ""}
@@ -210,7 +207,7 @@ export function NewArtifactDialog({
                   }}
                   disabled={!sourceOptions.length}
                 >
-                  {!sourceOptions.length && <option value="">No compatible source</option>}
+                  {!sourceOptions.length && <option value="">{copy.newArtifact.noCompatibleSource}</option>}
                   {sourceOptions.map((option) => (
                     <option key={option.artifactId} value={option.artifactId}>
                       {option.name} · {option.kind === "query" ? "Query" : "Data"}
@@ -222,7 +219,7 @@ export function NewArtifactDialog({
               {kind === "chart" && sourceOption && (
                 <>
                   <label htmlFor="new-artifact-category">
-                    <span>Category field</span>
+                    <span>{copy.newArtifact.categoryField}</span>
                     <select
                       id="new-artifact-category"
                       value={effectiveCategory}
@@ -235,37 +232,37 @@ export function NewArtifactDialog({
                     </select>
                   </label>
                   <label htmlFor="new-artifact-value">
-                    <span>Value field</span>
+                    <span>{copy.newArtifact.valueField}</span>
                     <select id="new-artifact-value" value={effectiveValue} onChange={(event) => setValue(event.target.value)}>
                       {sourceOption.columns.map((column) => (
                         <option key={column} value={column}>
-                          {column}{sourceOption.numericColumns.includes(column) ? " · numeric" : ""}
+                          {column}{sourceOption.numericColumns.includes(column) ? ` · ${copy.newArtifact.numeric}` : ""}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label htmlFor="new-artifact-mark">
-                    <span>Mark</span>
+                    <span>{copy.newArtifact.mark}</span>
                     <select id="new-artifact-mark" value={mark} onChange={(event) => setMark(event.target.value as ChartCreationMark)}>
-                      <option value="bar">Bar · compare</option>
-                      <option value="line">Line · sequence</option>
+                      <option value="bar">{copy.newArtifact.barCompare}</option>
+                      <option value="line">{copy.newArtifact.lineSequence}</option>
                     </select>
                   </label>
                   <label htmlFor="new-artifact-format">
-                    <span>Number format</span>
+                    <span>{copy.newArtifact.format}</span>
                     <select id="new-artifact-format" value={format} onChange={(event) => setFormat(event.target.value as ChartCreationFormat)}>
-                      <option value="number">Number</option>
-                      <option value="currency">Currency · USD</option>
-                      <option value="percent">Percent</option>
+                      <option value="number">{copy.newArtifact.number}</option>
+                      <option value="currency">{copy.newArtifact.currency}</option>
+                      <option value="percent">{copy.newArtifact.percent}</option>
                     </select>
                   </label>
                   <label className="wide" htmlFor="new-artifact-embed">
-                    <span>Embed in · optional</span>
+                    <span>{copy.newArtifact.embedOptional}</span>
                     <select id="new-artifact-embed" value={embedArtifactId} onChange={(event) => setEmbedArtifactId(event.target.value)}>
-                      <option value="">Create reusable Chart only</option>
+                      <option value="">{copy.newArtifact.reusableOnly}</option>
                       {embeddingTargets.map((target) => (
                         <option key={target.id} value={target.id}>
-                          {target.name} · {target.kind === "document" ? "Document" : "Presentation"}
+                          {target.name} · {target.kind === "document" ? copy.newArtifact.document : copy.newArtifact.presentation}
                         </option>
                       ))}
                     </select>
@@ -273,19 +270,17 @@ export function NewArtifactDialog({
                 </>
               )}
             </div>
-            <small>{kind === "query"
-              ? "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered."
-              : "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding."}</small>
+            <small>{kind === "query" ? copy.newArtifact.queryBindingHelp : copy.newArtifact.chartBindingHelp}</small>
           </fieldset>
         )}
 
         {formError && <div className="import-review-error" role="alert">{formError}</div>}
 
         {prepared.artifact && (
-          <section className="new-artifact-preview" aria-label="New source preview">
+          <section className="new-artifact-preview" aria-label={copy.newArtifact.preview}>
             <header>
               <span className={`artifact-icon ${prepared.artifact.kind}`}><TypeIcon kind={kind} /></span>
-              <div><strong>{prepared.artifact.name}</strong><small>{prepared.artifact.language} · ready to edit</small></div>
+              <div><strong>{prepared.artifact.name}</strong><small>{prepared.artifact.language} · {copy.newArtifact.readyToEdit}</small></div>
             </header>
             <pre><code>{prepared.artifact.source}</code></pre>
           </section>

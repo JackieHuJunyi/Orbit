@@ -1,19 +1,12 @@
 "use client";
 
 import { AlertTriangle, Check, LoaderCircle } from "lucide-react";
+import { runeUICopy, type RuneLocale } from "../lib/localization";
 import { createLineDiffPreview } from "../lib/patches";
 import type {
   VisualDocumentBlockStructureAction,
 } from "../lib/visual-document-block-structure";
 import { ReviewDialog } from "./review-dialog";
-
-const ACTION_TITLES: Record<VisualDocumentBlockStructureAction, string> = {
-  "insert-before": "Insert block before",
-  "insert-after": "Insert block after",
-  "move-up": "Move block up",
-  "move-down": "Move block down",
-  delete: "Delete block",
-};
 
 export function DocumentStructureReviewDialog({
   artifactName,
@@ -24,6 +17,7 @@ export function DocumentStructureReviewDialog({
   warnings,
   error,
   submitting,
+  locale,
   onCancel,
   onConfirm,
 }: {
@@ -35,24 +29,27 @@ export function DocumentStructureReviewDialog({
   warnings: string[];
   error: string;
   submitting: boolean;
+  locale: RuneLocale;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const diff = createLineDiffPreview(beforeSource, nextSource, 24);
   const destructive = action === "delete";
+  const copy = runeUICopy(locale);
   return (
     <ReviewDialog
       dialogId="document-structure-review"
-      kicker={<>Document structure · revision-bound</>}
-      title={ACTION_TITLES[action]}
-      description={<>Review the exact canonical-source change for <strong>{targetLabel}</strong>. Nothing is written until you confirm.</>}
-      detailsLabel={`Source change for ${artifactName}`}
+      kicker={copy.documentStructure.kicker}
+      title={copy.documentStructure.actionTitles[action]}
+      description={copy.documentStructure.description(targetLabel)}
+      detailsLabel={copy.documentStructure.details(artifactName)}
+      locale={locale}
       onCancel={onCancel}
       footer={(
         <>
-          <span>One atomic device write · a checkpoint is created first</span>
+          <span>{copy.documentStructure.atomic}</span>
           <div>
-            <button className="button ghost-button" type="button" data-dialog-initial-focus={destructive ? true : undefined} disabled={submitting} onClick={onCancel}>Cancel</button>
+            <button className="button ghost-button" type="button" data-dialog-initial-focus={destructive ? true : undefined} disabled={submitting} onClick={onCancel}>{copy.common.cancel}</button>
             <button
               className={`button primary-button ${destructive ? "danger-button" : ""}`.trim()}
               type="button"
@@ -61,7 +58,7 @@ export function DocumentStructureReviewDialog({
               onClick={onConfirm}
             >
               {submitting ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Check aria-hidden="true" />}
-              {submitting ? "Verifying…" : destructive ? "Delete block" : "Apply structure change"}
+              {submitting ? copy.documentStructure.verifying : destructive ? copy.documentStructure.deleteBlock : copy.documentStructure.apply}
             </button>
           </div>
         </>
@@ -75,7 +72,7 @@ export function DocumentStructureReviewDialog({
       ))}
       {error && <div className="import-review-error" role="alert">{error}</div>}
       <article className="document-structure-diff">
-        <header><span>Canonical source diff</span><strong>{artifactName}</strong></header>
+        <header><span>{copy.documentStructure.diff}</span><strong>{artifactName}</strong></header>
         <pre>{diff.map((line, index) => (
           <code className={line.kind} key={`${line.kind}-${index}`}>
             <span>{line.kind === "addition" ? "+" : line.kind === "removal" ? "−" : " "}</span>{line.text || " "}

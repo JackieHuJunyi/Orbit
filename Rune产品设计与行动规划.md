@@ -1153,7 +1153,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 所有用户提出的能力已经归入六个 product systems，而不是继续堆在单页功能列表：
 
-1. **Welcome & Trust**：设备语言、欢迎、模型/隐私选择、快捷键教程、本地指南与空态；现已形成首次与持续帮助闭环。
+1. **Welcome & Trust**：设备语言、欢迎、模型/隐私选择、快捷键教程、本地指南与空态；v0.49 已让主要工作区与专业审核延续同一中英文选择，形成首次与持续帮助闭环。
 2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
 4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、HTML 与固定 PDF 已按语义端口落地；旧 `.doc/.ppt` 等待隔离转换服务，扫描 PDF 等待可披露的 OCR port。
@@ -1168,13 +1168,19 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
 
-这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 已转 Markdown，扫描 PDF 尚无 OCR。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–54 节。
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 已转 Markdown，扫描 PDF 尚无 OCR。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–55 节。
 
 ### 6.28 v0.48 Markdown 细粒度双向定位
 
 在 block 与 section 之间新增 `document-fragment` capability。Rune 使用与渲染相同的 CommonMark/GFM AST，为单个列表项、表头/表体单元格、粗体、斜体、删除线、行内代码、链接和图片生成 exact UTF-16 range；表格 target 还保留行列坐标。右侧普通点击或键盘激活直接选择完整 Markdown 语法（包括标记符、链接地址和表格分隔符），链接使用 ⌘/Ctrl 点击仍可正常打开。左侧 caret/selection 则按“fragment → block → section”的最小包含范围解析，并滚动到同一个 parser-proven id；嵌套列表项按更小范围胜出，表格共享边界优先起始于该位置的 cell。
 
 这一层仍只是现有 Selection capability，不增加 DOM 回写权。编译后的 metric 显示必须先经 source-offset map 返回 exact canonical fragment 才可交互；包含 Chart binding 的 fragment 主动让位给 Chart 的跨文件 data-cell provenance。普通文本仍由 paragraph block 承担定位，跨 fragment 选择只有在同一个 block/section 完整包含时才回退；连续像素滚动比例、任意 DOM 文本 selection 和无法证明 source range 的派生视图仍不实现。
+
+### 6.29 v0.49 主工作区统一中英文合同
+
+语言选择现在是每个主要交互面的显式输入，不再只是欢迎页和顶部导航的装饰状态。工作台导航、依赖图、恢复点、Agent 范围与建议审核、事务图、导入/导出/新建/结构审核，以及 Document、Data、Query、Chart、Deck 的预览定位与可视化编辑，都读取同一份 `RuneLocale` 合同。文件名、数量、目标范围、绑定与交付格式等动态文案由参数函数生成；英文和简体中文的完整 key shape 由自动化测试锁定。快捷建议也按语言提供等价意图，避免英文模式突然出现中文操作。
+
+SSR 仍固定输出稳定英文壳，hydration 后才读取设备建议或已确认偏好，并同步根节点 `lang`；因此语言扩展不会重新引入 `Date.now`、浏览器 formatter 或服务端/客户端分叉。状态栏在展示时翻译高频生命周期消息，切换语言无需重写工作区状态。parser、模型供应商、DuckDB 与格式 adapter 返回的原始诊断和 fidelity evidence 暂时保留来源语言，避免无错误码条件下的松散翻译改变技术含义；下一阶段若要覆盖这些错误，先把它们升级为稳定 code + parameters，再由 UI 本地化。
 
 ---
 

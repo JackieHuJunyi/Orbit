@@ -12,6 +12,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { createImportSourcePreview } from "../lib/imports";
+import { runeUICopy, type RuneLocale } from "../lib/localization";
 import { formatInteger } from "../lib/number-format";
 import type { ArtifactKind, WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
@@ -33,6 +34,7 @@ export function ImportReviewDialog({
   artifacts,
   warnings,
   error,
+  locale,
   onCancel,
   onConfirm,
 }: {
@@ -40,25 +42,28 @@ export function ImportReviewDialog({
   artifacts: WorkspaceArtifact[];
   warnings: string[];
   error?: string;
+  locale: RuneLocale;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const uniqueWarnings = [...new Set(warnings)];
+  const copy = runeUICopy(locale);
 
   return (
     <ReviewDialog
       dialogId="import-review"
-      kicker={<><ShieldCheck aria-hidden="true" /> Local conversion · no upload</>}
-      title="Review imported sources"
-      description={<><strong>{sourceName}</strong> produced {artifacts.length} readable {artifacts.length === 1 ? "artifact" : "artifacts"}. Nothing is written until you confirm.</>}
-      detailsLabel="Import details"
+      kicker={<><ShieldCheck aria-hidden="true" /> {copy.importReview.kicker}</>}
+      title={copy.importReview.title}
+      description={copy.importReview.description(sourceName, artifacts.length)}
+      detailsLabel={copy.importReview.details}
+      locale={locale}
       onCancel={onCancel}
       footer={(
         <>
-          <div><ShieldCheck aria-hidden="true" /> One atomic device write after confirmation</div>
+          <div><ShieldCheck aria-hidden="true" /> {copy.importReview.atomic}</div>
           <span>
-            <button className="button ghost-button" onClick={onCancel}>Cancel</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> Import {artifacts.length} {artifacts.length === 1 ? "source" : "sources"}</button>
+            <button className="button ghost-button" onClick={onCancel}>{copy.common.cancel}</button>
+            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {copy.importReview.importSources(artifacts.length)}</button>
           </span>
         </>
       )}
@@ -67,18 +72,18 @@ export function ImportReviewDialog({
             <section className="import-warning-panel" aria-labelledby="import-warning-title">
               <div className="import-warning-heading">
                 <TriangleAlert aria-hidden="true" />
-                <h3 id="import-warning-title">Fidelity notes</h3>
+                <h3 id="import-warning-title">{copy.importReview.fidelityNotes}</h3>
                 <span>{uniqueWarnings.length}</span>
               </div>
               <ul>{uniqueWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
             </section>
           ) : (
-            <div className="import-review-clear"><CheckCircle2 aria-hidden="true" /> The adapter reported no semantic omissions.</div>
+            <div className="import-review-clear"><CheckCircle2 aria-hidden="true" /> {copy.importReview.noOmissions}</div>
           )}
 
           {error && <div className="import-review-error" role="alert">{error}</div>}
 
-          <div className="import-review-files" aria-label="Generated source previews">
+          <div className="import-review-files" aria-label={copy.importReview.generatedPreviews}>
             {artifacts.map((artifact) => {
               const preview = createImportSourcePreview(artifact.source);
               return (
@@ -87,11 +92,11 @@ export function ImportReviewDialog({
                     <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
                     <div>
                       <strong>{artifact.name}</strong>
-                      <small>{artifact.language} · {readableNumber(preview.lineCount)} lines · {readableNumber(preview.charCount)} chars</small>
+                      <small>{artifact.language} · {copy.importReview.sourceStats(readableNumber(preview.lineCount), readableNumber(preview.charCount))}</small>
                     </div>
                   </header>
                   <pre><code>{preview.text}</code></pre>
-                  {preview.truncated && <p>Preview capped · the complete validated source will be imported.</p>}
+                  {preview.truncated && <p>{copy.importReview.previewCapped}</p>}
                 </article>
               );
             })}

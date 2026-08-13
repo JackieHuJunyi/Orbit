@@ -59,3 +59,4 @@
 - 2026-08-13 — Froze Rune's complete feature map and shipped encrypted CC Switch-style OpenAI/OpenRouter/custom Responses profiles with model discovery and one-click switching.
 - 2026-08-13 — Added an animated language-first welcome, a quieter Rune-owned content visual system, localized core chrome, and a runtime-verified task-first operating-review chain behind one atomic review.
 - 2026-08-13 — Extended compiler-proven Document synchronization to individual list items, GFM table cells, and inline Markdown semantics in both directions.
+- 2026-08-13 — Unified the main workbench, dependency graph, review dialogs, localized Agent suggestions, and Document/Data/Chart/Deck visual editors behind one explicit English/Simplified-Chinese UI contract.

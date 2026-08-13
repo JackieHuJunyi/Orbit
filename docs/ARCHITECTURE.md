@@ -422,6 +422,12 @@ The operating-review entry is an orchestration layer over existing canonical com
 
 The workbench captures the complete source revision before preparation, compiles the full creation list, repeats the whole-workspace mutation check, and runs the existing browser-local runtime-impact preflight. A stale revision or any SQL/Chart/downstream failure returns no pending change. Success produces the same transaction map, per-file source diffs, runtime evidence card, explicit Apply, and atomic device persistence as every Workspace Agent change; the task layer receives no direct persistence capability. Cancel and every error path leave the caller's artifacts and input immutable. Seven deterministic fixtures cover bilingual chains, exact ids/bindings, invalid sources/field case, nonnumeric values, duplicate deliverables, case-insensitive collisions, and frozen-input success/failure paths.
 
+## Explicit interface localization
+
+Locale is an explicit UI dependency, not an ambient browser input. The server renders one stable English workbench and never reads `navigator`, local storage, time, or runtime locale data during SSR. After hydration the setup flow recommends a device language, restores the confirmed preference, updates the root `lang`, and passes `RuneLocale` into the workbench, review dialogs, dependency/transaction maps, and the complete Document/Data/Query/Chart/Deck preview tree. This keeps a Chinese interaction from falling back to English when the user enters a professional editor or review step, without reintroducing server/client text divergence.
+
+`runeUICopy(locale)` is the typed contract for normal product copy. Dynamic counts, filenames, targets, bindings, and review summaries are functions rather than token replacement; locale tests compare the complete recursive catalog shape and exercise interpolation. Deterministic Agent suggestions are selected from the same locale boundary so English mode no longer exposes Chinese-only starter actions. High-frequency status text is translated at presentation time, allowing a locale change to update the current status without rewriting stored state. Raw parser, provider, SQL-runtime, and adapter fidelity evidence may remain in its originating language: those strings are technical facts, not ordinary chrome, and must not be loosely translated in a way that changes remediation meaning. Future full error localization needs stable error codes before localized rendering.
+
 ## Checkpoint log
 
 Device history is an append-only, per-artifact list of source snapshots. Applying a file or workspace Agent mutation records every patched pre-change source before the atomic write; a newly created artifact has no prior source to checkpoint. ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
@@ -478,9 +484,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 42. v0.46 also updates the production dependency chain, pins the build-only image parser away from unsupported vulnerable formats, and makes the production audit a release gate.
 43. v0.47 adds a deterministic task-first Data → Query → Chart → Document/Slides operating-review compiler behind the unchanged runtime and atomic review gates, and merges animated device-language welcome into Rune's quieter content-first visual system.
 44. v0.48 extends the exact bidirectional source map from Document blocks into individual list items, GFM table cells, and inline Markdown semantic nodes without trusting rendered text.
-45. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
-46. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-47. D1/R2 remain undeclared until durable hosted projects or assets are required.
+45. v0.49 makes locale an explicit dependency across the primary workbench, review surfaces, suggestions, dependency maps, and every visual artifact editor while keeping SSR deterministic.
+46. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
+47. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+48. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

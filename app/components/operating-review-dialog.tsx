@@ -252,6 +252,7 @@ export function OperatingReviewDialog({
       title={copy.title}
       description={copy.description}
       detailsLabel={copy.details}
+      locale={locale}
       onCancel={cancel}
       footer={(
         <>

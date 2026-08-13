@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { runeUICopy, type RuneLocale } from "../lib/localization";
 
 export function ReviewDialog({
   dialogId,
@@ -11,6 +12,7 @@ export function ReviewDialog({
   detailsLabel,
   children,
   footer,
+  locale,
   onCancel,
 }: {
   dialogId: string;
@@ -20,8 +22,10 @@ export function ReviewDialog({
   detailsLabel: string;
   children: ReactNode;
   footer: ReactNode;
+  locale: RuneLocale;
   onCancel: () => void;
 }) {
+  const copy = runeUICopy(locale);
   const dialogRef = useRef<HTMLElement>(null);
   const cancelRef = useRef(onCancel);
 
@@ -83,7 +87,7 @@ export function ReviewDialog({
             <h2 id={`${dialogId}-title`}>{title}</h2>
             <p id={`${dialogId}-description`}>{description}</p>
           </div>
-          <button className="icon-button" onClick={onCancel} aria-label={`Cancel ${title.toLowerCase()}`} title="Cancel"><X /></button>
+          <button className="icon-button" onClick={onCancel} aria-label={copy.common.closeDialog(title)} title={copy.common.cancel}><X /></button>
         </header>
         <div className="import-review-body" role="region" aria-label={detailsLabel} tabIndex={0}>{children}</div>
         <footer className="import-review-actions">{footer}</footer>

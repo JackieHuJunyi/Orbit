@@ -10,6 +10,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import { runeUICopy, type RuneLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 function readableBytes(bytes: number) {
@@ -22,12 +23,14 @@ export function ExportReviewDialog({
   sourceName,
   result,
   error,
+  locale,
   onCancel,
   onConfirm,
 }: {
   sourceName: string;
   result: ArtifactExportResult;
   error?: string;
+  locale: RuneLocale;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -35,46 +38,49 @@ export function ExportReviewDialog({
   const office = ["docx", "xlsx", "pptx"].includes(result.targetType);
   const odf = ["odt", "ods", "odp"].includes(result.targetType);
   const pdf = result.targetType === "pdf";
-  const reviewTitle = office ? "Review Office export" : odf ? "Review OpenDocument export" : pdf ? "Review PDF export" : "Review HTML export";
-  const descriptor = office ? "deterministic OOXML ZIP" : odf ? "deterministic ODF ZIP" : pdf ? "fixed-layout PDF" : "self-contained scriptless file";
-  const outputKind = office || odf ? "semantic" : pdf ? "fixed-layout" : "standalone";
+  const kind = office ? "office" : odf ? "odf" : pdf ? "pdf" : "html";
+  const copy = runeUICopy(locale);
+  const reviewTitle = copy.exportReview.title(kind);
+  const descriptor = copy.exportReview.descriptors[kind];
+  const outputKind = office || odf ? copy.exportReview.outputKinds.semantic : pdf ? copy.exportReview.outputKinds.fixed : copy.exportReview.outputKinds.standalone;
   return (
     <ReviewDialog
       dialogId="artifact-export-review"
-      kicker={<><ShieldCheck aria-hidden="true" /> Browser-local export · no upload</>}
+      kicker={<><ShieldCheck aria-hidden="true" /> {copy.exportReview.kicker}</>}
       title={reviewTitle}
-      description={<><strong>{sourceName}</strong> will become a {outputKind} <strong>{target}</strong> file after you confirm the download.</>}
-      detailsLabel={`${target} export details`}
+      description={copy.exportReview.description(sourceName, outputKind, target)}
+      detailsLabel={copy.exportReview.details(target)}
+      locale={locale}
       onCancel={onCancel}
       footer={(
         <>
-          <div><ShieldCheck aria-hidden="true" /> No workspace or device draft changes</div>
+          <div><ShieldCheck aria-hidden="true" /> {copy.exportReview.noChanges}</div>
           <span>
-            <button className="button ghost-button" onClick={onCancel}>Cancel</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> Download {target}</button>
+            <button className="button ghost-button" onClick={onCancel}>{copy.common.cancel}</button>
+            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {copy.exportReview.download(target)}</button>
           </span>
         </>
       )}
     >
-      <div className="office-export-route" aria-label={`${target} export route`}>
+      <div className="office-export-route" aria-label={copy.exportReview.route(target)}>
         <span>{sourceName}</span>
         <ChevronRight aria-hidden="true" />
         <strong>{result.fileName}</strong>
       </div>
 
-      <section className="office-export-summary" aria-label={`Generated ${target} file`}>
+      <section className="office-export-summary" aria-label={copy.exportReview.generatedFile(target)}>
         <span className="office-export-icon">{office || odf ? <FileArchive aria-hidden="true" /> : pdf ? <FileText aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
         <div>
           <strong>{result.fileName}</strong>
           <small>{target} · {readableBytes(result.bytes.length)} · {descriptor}</small>
         </div>
-        <span className="office-export-ready">Ready</span>
+        <span className="office-export-ready">{copy.common.ready}</span>
       </section>
 
       <section className="import-warning-panel" aria-labelledby="artifact-export-warning-title">
         <div className="import-warning-heading">
           <TriangleAlert aria-hidden="true" />
-          <h3 id="artifact-export-warning-title">Fidelity notes</h3>
+          <h3 id="artifact-export-warning-title">{copy.exportReview.fidelityNotes}</h3>
           <span>{result.warnings.length}</span>
         </div>
         <ul>{result.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
@@ -83,9 +89,9 @@ export function ExportReviewDialog({
       {error && <div className="import-review-error" role="alert">{error}</div>}
 
       <div className="office-export-contract">
-        <div><span>01</span><strong>Canonical source</strong><p>Rune exports the validated source and any referenced current workspace data.</p></div>
-        <div><span>02</span><strong>{office || odf ? "Standard package" : "Portable output"}</strong><p>{office ? "The download uses standard Office Open XML parts and relationships." : odf ? "The download uses standard OpenDocument content, styles, MIME, and manifest parts." : pdf ? "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF." : "The download contains its layout, theme, metrics, and charts without external assets."}</p></div>
-        <div><span>03</span><strong>Explicit handoff</strong><p>The browser starts one local download only after your confirmation.</p></div>
+        <div><span>01</span><strong>{copy.exportReview.canonicalTitle}</strong><p>{copy.exportReview.canonicalBody}</p></div>
+        <div><span>02</span><strong>{copy.exportReview.packageTitle(office || odf)}</strong><p>{copy.exportReview.packageBody(kind)}</p></div>
+        <div><span>03</span><strong>{copy.exportReview.handoffTitle}</strong><p>{copy.exportReview.handoffBody}</p></div>
       </div>
     </ReviewDialog>
   );

@@ -67,14 +67,12 @@ import {
   normalizeWorkspaceArtifacts,
   planLocalChange,
   parseDataSource,
-  quickCommands,
   validateArtifact,
-  workspaceQuickCommands,
   type ArtifactKind,
   type WorkspaceArtifact,
 } from "../lib/workspace";
 import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
-import { planLocalSelectionChange, selectionQuickCommands } from "../lib/local-selection-agent";
+import { planLocalSelectionChange } from "../lib/local-selection-agent";
 import {
   compileArtifactSource,
   findMetricReferences,
@@ -95,7 +93,6 @@ import {
   createCheckpoint,
   normalizeCheckpointMap,
   type CheckpointMap,
-  type CheckpointReason,
   type WorkspaceCheckpoint,
 } from "../lib/checkpoints";
 import {
@@ -152,11 +149,15 @@ import { formatInteger } from "../lib/number-format";
 import {
   createRuneGuideArtifact,
   detectPreferredLocale,
+  localizeRuneStatus,
   normalizeRuneLocale,
+  runeQuickCommands,
+  runeUICopy,
   RUNE_GUIDE_ID,
   RUNE_LOCALE_STORAGE_KEY,
   RUNE_ONBOARDING_STORAGE_KEY,
   type RuneLocale,
+  type RuneUICopy,
 } from "../lib/localization";
 import {
   normalizeRuneModelMode,
@@ -185,87 +186,6 @@ const MAX_PDF_IMPORT_BYTES = 12 * 1024 * 1024;
 const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
 const ODF_IMPORT_PATTERN = /\.(?:odt|ods|odp)$/i;
 const PDF_IMPORT_PATTERN = /\.pdf$/i;
-
-const WORKBENCH_COPY = {
-  "zh-CN": {
-    brandSubtitle: "内容工作台",
-    localWorkspace: "本地工作区",
-    saved: "已保存到本机",
-    saving: "正在保存",
-    storageFull: "存储空间不足",
-    help: "欢迎与本地指南",
-    models: "模型配置",
-    newArtifact: "新建",
-    import: "导入",
-    openFolder: "打开文件夹",
-    pull: "读取文件夹变化",
-    push: "写回工作区文件",
-    download: "下载源文件",
-    workspace: "工作区",
-    artifacts: "内容",
-    oneWorkspace: "一个事实工作区",
-    oneWorkspaceBody: "每份内容都保持可读，并能被人和模型共同使用。",
-    localFirst: "本地优先",
-    source: "可读源内容",
-    output: "实时成品",
-    livePreview: "实时预览",
-    valid: "有效",
-    assistant: "Rune",
-    assistantBody: "先准备修改，再由你确认写入",
-    selection: "选区",
-    file: "当前文件",
-    workspaceScope: "工作区",
-    modelConnected: "模型已连接",
-    localFallback: "本地模式",
-    suggestedActions: "建议操作",
-    askWorkspace: "描述一个需要多份内容共同完成的结果…",
-    askSelection: "描述只针对当前选区的修改…",
-    askFile: "描述你希望对当前文件做出的修改…",
-    planChange: "准备修改",
-    planHint: "⌘ Enter 准备修改 · 写入前始终可以审核和撤销",
-    sourceEditor: "源内容编辑器",
-    preview: "编译后的成品预览",
-  },
-  en: {
-    brandSubtitle: "Content workspace",
-    localWorkspace: "Local workspace",
-    saved: "Saved on device",
-    saving: "Saving",
-    storageFull: "Storage full",
-    help: "Welcome & local guide",
-    models: "Model settings",
-    newArtifact: "New",
-    import: "Import",
-    openFolder: "Open folder",
-    pull: "Pull folder changes",
-    push: "Push workspace files",
-    download: "Download source",
-    workspace: "Workspace",
-    artifacts: "Artifacts",
-    oneWorkspace: "One source workspace",
-    oneWorkspaceBody: "Every artifact stays readable to people and models.",
-    localFirst: "Local first",
-    source: "Readable source",
-    output: "Live output",
-    livePreview: "Live preview",
-    valid: "Valid",
-    assistant: "Rune",
-    assistantBody: "Prepares a change before you approve the write",
-    selection: "Selection",
-    file: "File",
-    workspaceScope: "Workspace",
-    modelConnected: "Model connected",
-    localFallback: "Local mode",
-    suggestedActions: "Suggested actions",
-    askWorkspace: "Describe an outcome across the connected workspace…",
-    askSelection: "Describe a change confined to this selection…",
-    askFile: "Describe the change you want in this file…",
-    planChange: "Prepare change",
-    planHint: "⌘ Enter to prepare · every write remains reviewable and undoable",
-    sourceEditor: "Source editor",
-    preview: "Compiled artifact preview",
-  },
-} as const;
 
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
@@ -420,6 +340,7 @@ function DependencyGraphRail({
   contextArtifacts,
   pinnedArtifactIds,
   selectedArtifactId,
+  copy,
   onClearPins,
   onSelect,
 }: {
@@ -428,6 +349,7 @@ function DependencyGraphRail({
   contextArtifacts: WorkspaceArtifact[];
   pinnedArtifactIds: string[];
   selectedArtifactId: string;
+  copy: RuneUICopy["workbench"];
   onClearPins: () => void;
   onSelect: (artifactId: string) => void;
 }) {
@@ -437,18 +359,18 @@ function DependencyGraphRail({
   const connectedIds = new Set(graph.edges.flatMap((edge) => [edge.fromArtifactId, edge.toArtifactId]));
   const unlinkedArtifacts = artifacts.filter((artifact) => !connectedIds.has(artifact.id));
   return (
-    <aside className="file-rail dependency-rail" aria-label="Workspace dependency graph">
+    <aside className="file-rail dependency-rail" aria-label={copy.dependencyGraph}>
       <div className="file-rail-header">
-        <div><span className="overline">Live context</span><strong>Dependency graph</strong></div>
-        <span className="dependency-count" aria-label={`${graph.edges.length} dependency edges`}>{graph.edges.length}</span>
+        <div><span className="overline">{copy.liveContext}</span><strong>{copy.dependencyGraphTitle}</strong></div>
+        <span className="dependency-count" aria-label={copy.dependencyEdges(graph.edges.length)}>{graph.edges.length}</span>
       </div>
-      <section className="graph-context-card" aria-label="Workspace Agent context pack">
+      <section className="graph-context-card" aria-label={copy.agentContextPack}>
         <div className="graph-context-heading">
-          <span>Agent context</span>
-          <span><strong>{contextArtifacts.length} / {artifacts.length}</strong>{pinnedArtifactIds.length > 0 && <button type="button" onClick={onClearPins}>Clear pins</button>}</span>
+          <span>{copy.agentContext}</span>
+          <span><strong>{contextArtifacts.length} / {artifacts.length}</strong>{pinnedArtifactIds.length > 0 && <button type="button" onClick={onClearPins}>{copy.clearPins}</button>}</span>
         </div>
-        <p>Current bindings and temporary pins choose a bounded, revision-live context pack.</p>
-        <nav aria-label="Artifacts in Agent context">
+        <p>{copy.contextExplanation}</p>
+        <nav aria-label={copy.artifactsInContext}>
           {contextArtifacts.map((artifact) => (
             <button
               type="button"
@@ -456,7 +378,7 @@ function DependencyGraphRail({
               className={`${artifact.id === selectedArtifactId ? "active" : ""} ${pinnedIds.has(artifact.id) ? "pinned" : ""}`.trim() || undefined}
               onClick={() => onSelect(artifact.id)}
               aria-current={artifact.id === selectedArtifactId ? "page" : undefined}
-              aria-label={`Open ${artifact.name}${pinnedIds.has(artifact.id) ? ", manually pinned in Agent context" : ""}`}
+              aria-label={copy.openContextArtifact(artifact.name, pinnedIds.has(artifact.id))}
             >
               <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={11} /></span>
               <span>{artifact.name}</span>
@@ -465,8 +387,8 @@ function DependencyGraphRail({
           ))}
         </nav>
       </section>
-      <div className="artifact-group-label"><span>Source → consumer</span><span>{graph.edges.length}</span></div>
-      <div className="dependency-edge-list" role="list" aria-label="Live artifact dependencies">
+      <div className="artifact-group-label"><span>{copy.sourceToConsumer}</span><span>{graph.edges.length}</span></div>
+      <div className="dependency-edge-list" role="list" aria-label={copy.liveDependencies}>
         {graph.edges.map((edge) => {
           const source = artifactById.get(edge.fromArtifactId);
           const consumer = artifactById.get(edge.toArtifactId);
@@ -479,7 +401,7 @@ function DependencyGraphRail({
               key={`${edge.fromArtifactId}-${edge.toArtifactId}-${edge.kind}`}
               role="listitem"
             >
-              <button type="button" className="dependency-endpoint" onClick={() => onSelect(source.id)} aria-label={`Open dependency source ${source.name}`}>
+              <button type="button" className="dependency-endpoint" onClick={() => onSelect(source.id)} aria-label={copy.openDependencySource(source.name)}>
                 <span className={`artifact-icon ${source.kind}`}><ArtifactIcon kind={source.kind} size={11} /></span>
                 <span>{source.name}</span>
               </button>
@@ -488,18 +410,18 @@ function DependencyGraphRail({
                 <span>{edge.label}</span>
                 <ChevronRight aria-hidden="true" />
               </div>
-              <button type="button" className="dependency-endpoint" onClick={() => onSelect(consumer.id)} aria-label={`Open dependency consumer ${consumer.name}`}>
+              <button type="button" className="dependency-endpoint" onClick={() => onSelect(consumer.id)} aria-label={copy.openDependencyConsumer(consumer.name)}>
                 <span className={`artifact-icon ${consumer.kind}`}><ArtifactIcon kind={consumer.kind} size={11} /></span>
                 <span>{consumer.name}</span>
               </button>
             </div>
           );
         })}
-        {!graph.edges.length && <p className="dependency-empty">Add a metric, query, or chart binding to create the first live edge.</p>}
+        {!graph.edges.length && <p className="dependency-empty">{copy.noDependency}</p>}
       </div>
       {!!graph.issues.length && (
-        <section className="dependency-issues" aria-label="Unresolved dependencies">
-          <span className="overline">Needs attention · {graph.issues.length}</span>
+        <section className="dependency-issues" aria-label={copy.unresolvedDependencies}>
+          <span className="overline">{copy.needsAttention(graph.issues.length)}</span>
           {graph.issues.map((issue) => {
             const artifact = artifactById.get(issue.artifactId);
             return (
@@ -511,8 +433,8 @@ function DependencyGraphRail({
         </section>
       )}
       {!!unlinkedArtifacts.length && (
-        <section className="unlinked-artifacts" aria-label="Unlinked artifacts">
-          <span className="overline">Unlinked</span>
+        <section className="unlinked-artifacts" aria-label={copy.unlinkedArtifacts}>
+          <span className="overline">{copy.unlinked}</span>
           <div>{unlinkedArtifacts.map((artifact) => (
             <button type="button" key={artifact.id} onClick={() => onSelect(artifact.id)}>{artifact.name}</button>
           ))}</div>
@@ -521,7 +443,7 @@ function DependencyGraphRail({
       <div className="file-rail-spacer" />
       <div className="workspace-note graph-note">
         <Database aria-hidden="true" />
-        <div><strong>No hidden graph state</strong><span>Edges recompile from source; pins last only for this session.</span></div>
+        <div><strong>{copy.noHiddenGraph}</strong><span>{copy.graphRecompiles}</span></div>
       </div>
     </aside>
   );
@@ -551,12 +473,8 @@ function getDiffStats(before: string, after: string) {
   return { additions, removals };
 }
 
-function checkpointReasonLabel(reason: CheckpointReason) {
-  return { agent: "Agent", manual: "Manual", restore: "Restore safety" }[reason];
-}
-
-function checkpointTime(createdAt: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+function checkpointTime(createdAt: string, locale: RuneLocale) {
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
     .format(new Date(createdAt));
 }
 
@@ -589,7 +507,7 @@ export function RuneWorkbench() {
   const [selectedId, setSelectedId] = useState("q2-review");
   const [hydrated, setHydrated] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
-  const [savedAt, setSavedAt] = useState("just now");
+  const [savedAt, setSavedAt] = useState("");
   const [fileRailOpen, setFileRailOpen] = useState(true);
   const [railView, setRailView] = useState<"workspace" | "graph">("workspace");
   const [workspacePinnedArtifactIds, setWorkspacePinnedArtifactIds] = useState<string[]>([]);
@@ -640,7 +558,12 @@ export function RuneWorkbench() {
   const checkpointsRef = useRef(checkpoints);
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
-  const ui = WORKBENCH_COPY[locale];
+  const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
+  const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
   const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
     setModelMode(nextMode);
     try {
@@ -847,14 +770,14 @@ export function RuneWorkbench() {
       try {
         persistDeviceWorkspace(artifacts, selectedId, checkpoints);
         setSaveState("saved");
-        setSavedAt(new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
+        setSavedAt(new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       } catch {
         setSaveState("error");
         setNotice("Device storage is full — download the source before leaving");
       }
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [artifacts, checkpoints, hydrated, selectedId]);
+  }, [artifacts, checkpoints, hydrated, locale, selectedId]);
 
   useEffect(() => {
     if (!activePreviewTargetId) return;
@@ -917,7 +840,7 @@ export function RuneWorkbench() {
         persistDeviceWorkspace(artifacts, selectedId, next);
         setCheckpoints(next);
         setSaveState("saved");
-        setSavedAt("just now");
+        setSavedAt("");
         setNotice(next === checkpoints ? "Current source is already checkpointed" : "Manual checkpoint saved on this device");
       } catch {
         setSaveState("error");
@@ -1155,7 +1078,7 @@ export function RuneWorkbench() {
       setCheckpoints(nextCheckpoints);
       setPendingChange(null);
       setSaveState("saved");
-      setSavedAt("just now");
+      setSavedAt("");
       const runtimeSuffix = runtimePreflight
         ? ` · ${runtimePreflight.queryCount} impacted ${runtimePreflight.queryCount === 1 ? "Query" : "Queries"} verified`
         : " · workspace bindings verified";
@@ -1426,7 +1349,7 @@ export function RuneWorkbench() {
       persistDeviceWorkspace(artifacts, selectedId, next);
       setCheckpoints(next);
       setSaveState("saved");
-      setSavedAt("just now");
+      setSavedAt("");
       setNotice(next === checkpoints ? "Current source is already checkpointed" : "Manual checkpoint saved on this device");
     } catch {
       setSaveState("error");
@@ -1472,7 +1395,7 @@ export function RuneWorkbench() {
     setPendingChange(null);
     setHistoryOpen(false);
     setSaveState("saved");
-    setSavedAt("just now");
+    setSavedAt("");
     setDirectoryHandle(handle);
     setDirectoryState("connected");
     setNotice(`Pulled ${result.artifacts.length} source files from ${handle.name} · ${result.source}`);
@@ -1949,7 +1872,7 @@ export function RuneWorkbench() {
     if (pendingChange.scope === "selection") setAgentScope("artifact");
     setCheckpoints(nextCheckpoints);
     setSaveState("saved");
-    setSavedAt("just now");
+    setSavedAt("");
     setPendingChange(null);
     setAgentError("");
     const changeCount = pendingChange.patches.length + pendingChange.creations.length;
@@ -2142,7 +2065,7 @@ export function RuneWorkbench() {
     setAgentError("");
     setCheckpoints(nextCheckpoints);
     setSaveState("saved");
-    setSavedAt("just now");
+    setSavedAt("");
     setNewArtifactOpen(false);
     setNewArtifactError("");
     setNotice(`Created ${prepared.artifact.name}${embeddedTargetName ? ` and embedded it in ${embeddedTargetName}` : ""} on this device${directoryHandle ? " · Push when ready" : ""}`);
@@ -2265,7 +2188,7 @@ export function RuneWorkbench() {
     setSourceCursor(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setSaveState("saved");
-    setSavedAt("just now");
+    setSavedAt("");
     setPendingImport(null);
     setImportError("");
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
@@ -2392,8 +2315,8 @@ export function RuneWorkbench() {
           <button
             className="icon-button rail-toggle"
             onClick={() => setFileRailOpen((open) => !open)}
-            aria-label={fileRailOpen ? "Hide workspace files" : "Show workspace files"}
-            title={fileRailOpen ? "Hide files" : "Show files"}
+            aria-label={fileRailOpen ? ui.hideFiles : ui.showFiles}
+            title={fileRailOpen ? ui.hideFiles : ui.showFiles}
           >
             {fileRailOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
           </button>
@@ -2403,7 +2326,7 @@ export function RuneWorkbench() {
           <div className="project-name"><span className="project-dot" /> {directoryHandle?.name ?? ui.localWorkspace}</div>
         </div>
         <div className="topbar-actions">
-          <div className={`save-indicator ${saveState}`} title={saveState === "error" ? "Device storage is full" : `Last saved ${savedAt}`}>
+          <div className={`save-indicator ${saveState}`} title={saveState === "error" ? ui.deviceStorageFull : ui.lastSaved(savedAt || ui.justNow)}>
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? ui.saved : saveState === "error" ? ui.storageFull : ui.saving}</span>
           </div>
@@ -2418,7 +2341,7 @@ export function RuneWorkbench() {
             onClick={openOperatingReview}
             disabled={artifactCreationDisabled}
           >
-            <ClipboardList aria-hidden="true" /> {locale === "zh-CN" ? "创建汇报" : "Create review"}
+            <ClipboardList aria-hidden="true" /> {ui.createReview}
           </button>
           <button
             className="button ghost-button"
@@ -2449,8 +2372,8 @@ export function RuneWorkbench() {
               className="icon-button"
               onClick={() => void prepareExport("office")}
               disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={`Export ${selectedArtifact.name} as ${selectedOfficeExportType}`}
-              title={`Export as ${selectedOfficeExportType}`}
+              aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOfficeExportType)}
+              title={ui.exportAs(selectedOfficeExportType)}
             >
               {exportState === "office" ? <LoaderCircle className="agent-spinner" /> : <FileOutput />}
             </button>
@@ -2460,8 +2383,8 @@ export function RuneWorkbench() {
               className="icon-button"
               onClick={() => void prepareExport("odf")}
               disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={`Export ${selectedArtifact.name} as ${selectedOdfExportType}`}
-              title={`Export as ${selectedOdfExportType} OpenDocument`}
+              aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOdfExportType)}
+              title={ui.exportAsOpenDocument(selectedOdfExportType)}
             >
               {exportState === "odf" ? <LoaderCircle className="agent-spinner" /> : <FileArchive />}
             </button>
@@ -2471,8 +2394,8 @@ export function RuneWorkbench() {
               className="icon-button"
               onClick={() => void prepareExport("html")}
               disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={`Export ${selectedArtifact.name} as HTML`}
-              title="Export as standalone HTML"
+              aria-label={ui.exportArtifactAs(selectedArtifact.name, "HTML")}
+              title={ui.exportStandaloneHtml}
             >
               {exportState === "html" ? <LoaderCircle className="agent-spinner" /> : <FileCode2 />}
             </button>
@@ -2482,8 +2405,8 @@ export function RuneWorkbench() {
               className="icon-button"
               onClick={() => void prepareExport("pdf")}
               disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={`Export ${selectedArtifact.name} as PDF`}
-              title="Export as fixed PDF"
+              aria-label={ui.exportArtifactAs(selectedArtifact.name, "PDF")}
+              title={ui.exportFixedPdf}
             >
               {exportState === "pdf" ? <LoaderCircle className="agent-spinner" /> : <FileText />}
             </button>
@@ -2498,39 +2421,39 @@ export function RuneWorkbench() {
       </header>
 
       <div className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"}`}>
-        <aside className="activity-rail" aria-label="Rune sections">
+        <aside className="activity-rail" aria-label={ui.runeSections}>
           <div className="activity-group">
             <button
               className={`activity-button ${railView === "workspace" ? "active" : ""}`.trim()}
               onClick={() => { setRailView("workspace"); setFileRailOpen(true); }}
-              aria-label="Workspace files"
+              aria-label={ui.workspaceFiles}
               aria-pressed={railView === "workspace"}
-              title="Workspace files"
+              title={ui.workspaceFiles}
             ><FolderOpen /></button>
-            <button className="activity-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label="New artifact" title="New artifact"><FilePlus2 /></button>
+            <button className="activity-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label={ui.newArtifact} title={ui.newArtifact}><FilePlus2 /></button>
             <button
               className="activity-button"
               onClick={openOperatingReview}
               disabled={artifactCreationDisabled}
-              aria-label={locale === "zh-CN" ? "创建经营汇报" : "Create operating review"}
-              title={locale === "zh-CN" ? "创建经营汇报" : "Create operating review"}
+              aria-label={ui.createOperatingReview}
+              title={ui.createOperatingReview}
             ><ClipboardList /></button>
             <button
               className="activity-button"
-              onClick={() => { promptRef.current?.focus(); setNotice("Agent composer focused"); }}
-              aria-label="Focus Rune Agent"
-              title="Focus Rune Agent"
+              onClick={() => { promptRef.current?.focus(); setNotice(ui.focusAgent); }}
+              aria-label={ui.focusAgent}
+              title={ui.focusAgent}
             ><Sparkles /></button>
             <button
               className={`activity-button ${railView === "graph" ? "active" : ""}`.trim()}
               onClick={() => { setRailView("graph"); setFileRailOpen(true); }}
-              aria-label="Data graph"
+              aria-label={ui.dataGraph}
               aria-pressed={railView === "graph"}
-              title="Data graph"
+              title={ui.dataGraph}
             ><Database /></button>
           </div>
           <div className="activity-group">
-            <button className="activity-button" onClick={resetWorkspace} aria-label="Reset sample workspace" title="Reset sample"><RotateCcw /></button>
+            <button className="activity-button" onClick={resetWorkspace} aria-label={ui.resetSample} title={ui.resetSample}><RotateCcw /></button>
           </div>
         </aside>
 
@@ -2541,6 +2464,7 @@ export function RuneWorkbench() {
             contextArtifacts={workspaceAgentContext}
             pinnedArtifactIds={workspacePinnedArtifactIds}
             selectedArtifactId={selectedArtifact.id}
+            copy={ui}
             onClearPins={clearWorkspaceContextPins}
             onSelect={selectArtifact}
           />
@@ -2550,7 +2474,7 @@ export function RuneWorkbench() {
               <div><span className="overline">{ui.workspace}</span><strong>{directoryHandle?.name ?? ui.localWorkspace}</strong></div>
               <button className="tiny-icon-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label={locale === "zh-CN" ? "新建内容" : "Create a new artifact"} title={ui.newArtifact}>+</button>
             </div>
-            <div className="artifact-group-label"><span>{ui.artifacts}</span><span>{artifacts.length}{workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}</span></div>
+            <div className="artifact-group-label"><span>{ui.artifacts}</span><span>{artifacts.length}{workspacePinnedArtifactIds.length ? ` · ${ui.pinnedCount(workspacePinnedArtifactIds.length)}` : ""}</span></div>
             <nav className="artifact-list">
               {artifacts.map((artifact) => {
                 const metricReferenceCount = findMetricReferences(artifact.source).length;
@@ -2570,15 +2494,15 @@ export function RuneWorkbench() {
                       onClick={() => selectArtifact(artifact.id)}
                     >
                       <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
-                      <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${referenceCount} live bindings` : ""}</small></span>
+                      <span className="artifact-label"><strong>{artifact.name}</strong><small>{artifact.language}{referenceCount ? ` · ${ui.liveBindings(referenceCount)}` : ""}</small></span>
                       {artifact.id === selectedArtifact.id && <span className="active-notch" />}
                     </button>
                     <button
                       type="button"
                       className={`artifact-context-pin ${pinned ? "active" : ""}`.trim()}
-                      aria-label={`${pinned ? "Remove" : "Pin"} ${artifact.name} ${pinned ? "from" : "in"} Workspace Agent context`}
+                      aria-label={ui.pinContext(artifact.name, pinned)}
                       aria-pressed={pinned}
-                      title={pinned ? "Remove temporary Agent context pin" : "Keep this file in the next Workspace Agent context"}
+                      title={pinned ? ui.removePin : ui.keepPin}
                       onClick={() => toggleWorkspaceContextPin(artifact.id)}
                     >
                       <Pin aria-hidden="true" />
@@ -2591,8 +2515,8 @@ export function RuneWorkbench() {
             {workspacePinnedArtifactIds.length > 0 && (
               <div className="context-pin-summary">
                 <Pin aria-hidden="true" />
-                <span><strong>{workspacePinnedArtifactIds.length} temporary {workspacePinnedArtifactIds.length === 1 ? "pin" : "pins"}</strong><small>Included with required upstream sources.</small></span>
-                <button type="button" onClick={clearWorkspaceContextPins}>Clear</button>
+                <span><strong>{ui.temporaryPins(workspacePinnedArtifactIds.length)}</strong><small>{ui.includedUpstream}</small></span>
+                <button type="button" onClick={clearWorkspaceContextPins}>{ui.clear}</button>
               </div>
             )}
             <div className="workspace-note">
@@ -2628,30 +2552,30 @@ export function RuneWorkbench() {
                 className={`history-trigger ${historyOpen ? "active" : ""}`}
                 onClick={() => setHistoryOpen((open) => !open)}
                 aria-expanded={historyOpen}
-                aria-label="Show saved checkpoints"
-                title="Checkpoint history"
+                aria-label={ui.checkpoints}
+                title={ui.checkpoints}
               ><History /><span>{selectedCheckpoints.length}</span></button>
               <button
                 className="icon-button small"
                 onClick={undoLastAgentChange}
                 disabled={!selectedCheckpoints.some((checkpoint) => checkpoint.source !== selectedArtifact.source)}
-                aria-label="Restore latest different checkpoint"
-                title="Restore latest checkpoint"
+                aria-label={ui.restoreLatestDifferent}
+                title={ui.restoreLatest}
               ><Undo2 /></button>
               <button
                 className="icon-button small close-file-button"
                 onClick={closeCurrentArtifact}
-                aria-label="Close current file"
-                title="Close file (⌘ W)"
+                aria-label={ui.closeFile}
+                title={`${ui.closeFile} (⌘ W)`}
               ><X /></button>
             </div>
           </header>
 
           {historyOpen && (
-            <section className="checkpoint-panel" aria-label="Checkpoint history">
+            <section className="checkpoint-panel" aria-label={ui.checkpoints}>
               <div className="checkpoint-panel-header">
-                <div><span className="overline">Device history</span><strong>{selectedCheckpoints.length} checkpoint{selectedCheckpoints.length === 1 ? "" : "s"}</strong></div>
-                <button className="button checkpoint-save" onClick={saveManualCheckpoint}><Check aria-hidden="true" /> Save current</button>
+                <div><span className="overline">{ui.deviceHistory}</span><strong>{ui.checkpointCount(selectedCheckpoints.length)}</strong></div>
+                <button className="button checkpoint-save" onClick={saveManualCheckpoint}><Check aria-hidden="true" /> {ui.saveCurrent}</button>
               </div>
               {selectedCheckpoints.length ? (
                 <div className="checkpoint-list">
@@ -2660,16 +2584,16 @@ export function RuneWorkbench() {
                     return (
                       <div className={`checkpoint-row ${current ? "current" : ""}`} key={checkpoint.id}>
                         <span className="checkpoint-node" aria-hidden="true" />
-                        <div><strong>{checkpoint.label}</strong><small>{checkpointReasonLabel(checkpoint.reason)} · {checkpointTime(checkpoint.createdAt)}</small></div>
+                        <div><strong>{checkpoint.label}</strong><small>{ui.checkpointReasons[checkpoint.reason]} · {checkpointTime(checkpoint.createdAt, locale)}</small></div>
                         {current
-                          ? <span className="checkpoint-current">Current</span>
-                          : <button onClick={() => restoreCheckpoint(checkpoint)}>Restore</button>}
+                          ? <span className="checkpoint-current">{ui.current}</span>
+                          : <button onClick={() => restoreCheckpoint(checkpoint)}>{ui.restore}</button>}
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="checkpoint-empty">Apply an Agent patch or press ⌘S to capture the current source.</p>
+                <p className="checkpoint-empty">{ui.checkpointEmpty}</p>
               )}
             </section>
           )}
@@ -2689,15 +2613,15 @@ export function RuneWorkbench() {
               spellCheck={false}
               disabled={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
               aria-busy={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
-              aria-label={`Edit ${selectedArtifact.name} source`}
+              aria-label={ui.editSource(selectedArtifact.name)}
             />
           </div>
 
           <div className="agent-dock">
             <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>{ui.assistant}</strong><small>{agentScope === "workspace" ? `${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}` : agentScope === "selection" ? `${formatInteger(selectedCharacterCount)} characters bound to this revision` : ui.assistantBody}</small></div></div>
+              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>{ui.assistant}</strong><small>{agentScope === "workspace" ? ui.contextSources(workspaceAgentContext.length, workspacePinnedArtifactIds.length) : agentScope === "selection" ? ui.charactersBound(formatInteger(selectedCharacterCount)) : ui.assistantBody}</small></div></div>
               <div className="agent-controls">
-                <div className="agent-scope-switch" role="group" aria-label="Agent change scope">
+                <div className="agent-scope-switch" role="group" aria-label={ui.agentScope}>
                   {(["selection", "artifact", "workspace"] as const).map((scope) => (
                     <button
                       key={scope}
@@ -2724,18 +2648,14 @@ export function RuneWorkbench() {
             </div>
 
             <div className="quick-commands" aria-label={ui.suggestedActions}>
-              {(agentScope === "selection"
-                ? selectionQuickCommands[selectedArtifact.kind]
-                : agentScope === "workspace"
-                  ? workspaceQuickCommands
-                  : quickCommands[selectedArtifact.kind]).map((command) => (
+              {runeQuickCommands(locale, agentScope, selectedArtifact.kind).map((command) => (
                 <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning" || visualEditState !== "idle"}>{command}</button>
               ))}
             </div>
 
             {agentScope === "workspace" && workspaceAgentQueryCount > 0 && (
               <p className="agent-evidence-hint">
-                A configured model can inspect {workspaceAgentQueryCount} bounded local Query {workspaceAgentQueryCount === 1 ? "result" : "results"} after you ask; evidence is not persisted.
+                {ui.queryEvidence(workspaceAgentQueryCount)}
               </p>
             )}
 
@@ -2743,23 +2663,23 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">Proposed {pendingChange.scope === "workspace" ? "workspace change" : pendingChange.scope === "selection" ? "selection-confined patch" : "file patch"} · {pendingChange.provider === "openai" ? `${pendingOperationCount} typed source ${pendingOperationCount === 1 ? "operation" : "operations"}` : "Local deterministic plan"}{pendingChange.runtimeRepair ? " · repaired once" : ""}</span>
+                  <span className="overline">{ui.proposedChange(pendingChange.scope === "workspace" ? "workspace" : pendingChange.scope === "selection" ? "selection" : "file")} · {pendingChange.provider === "openai" ? ui.typedOperations(pendingOperationCount) : ui.localPlan}{pendingChange.runtimeRepair ? ` · ${ui.repairedOnce}` : ""}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   {pendingChange.runtimeRepair && (
-                    <div className="runtime-repair" aria-label="Compiler-guided repair passed">
+                    <div className="runtime-repair" aria-label={ui.repairPassed}>
                       <RefreshCw aria-hidden="true" />
                       <span>
-                        <strong>Recovered after one compiler-guided repair</strong>
-                        <small>First proposal stayed unapplied · {pendingChange.runtimeRepair.failure}</small>
+                        <strong>{ui.recovered}</strong>
+                        <small>{ui.firstUnapplied} · {pendingChange.runtimeRepair.failure}</small>
                       </span>
                     </div>
                   )}
                   {pendingChange.runtimePreflight && (
-                    <div className="runtime-preflight" aria-label="Runtime impact preflight passed">
+                    <div className="runtime-preflight" aria-label={ui.runtimePassed}>
                       <CheckCircle2 aria-hidden="true" />
                       <span>
-                        <strong>Runtime impact preflight passed</strong>
+                        <strong>{ui.runtimePassed}</strong>
                         <small>{pendingChange.runtimePreflight.dataCount > 0 ? `${pendingChange.runtimePreflight.dataCount} proposed Data ${pendingChange.runtimePreflight.dataCount === 1 ? "source" : "sources"} · ` : ""}{pendingChange.runtimePreflight.queryCount > 0 ? `${pendingChange.runtimePreflight.queryCount} impacted ${pendingChange.runtimePreflight.queryCount === 1 ? "Query" : "Queries"} executed locally` : "no SQL execution required"} · {pendingChange.runtimePreflight.legacyMetricConsumerCount} legacy metric {pendingChange.runtimePreflight.legacyMetricConsumerCount === 1 ? "consumer" : "consumers"} · {pendingChange.runtimePreflight.scalarConsumerCount} SQL scalar {pendingChange.runtimePreflight.scalarConsumerCount === 1 ? "consumer" : "consumers"} · {pendingChange.runtimePreflight.chartConsumerCount} {pendingChange.runtimePreflight.chartConsumerCount === 1 ? "chart" : "charts"} · {[...pendingChange.runtimePreflight.dataNames, ...pendingChange.runtimePreflight.queryNames].join(", ")}</small>
                       </span>
                     </div>
@@ -2768,38 +2688,39 @@ export function RuneWorkbench() {
                     <TransactionReviewMap
                       review={pendingTransactionReview}
                       activeArtifactId={selectedPendingStat?.artifact.id ?? ""}
+                      locale={locale}
                       onSelect={setPendingReviewId}
                     />
                   )}
-                  <div className="diff-summary"><span>{pendingStats.length} {pendingStats.length === 1 ? "file" : "files"}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>changed lines</span></div>
-                  <div className="patch-file-list" aria-label="Files in proposed patch">
+                  <div className="diff-summary"><span>{ui.changedFiles(pendingStats.length)}</span><span className="additions">+{pendingTotals.additions}</span><span className="removals">−{pendingTotals.removals}</span><span>{ui.changedLines}</span></div>
+                  <div className="patch-file-list" aria-label={ui.filesInPatch}>
                     {pendingStats.map(({ artifact, patch, additions, removals, isCreation }) => (
                       <button
                         key={artifact.id}
                         className={`patch-file-row ${artifact.id === selectedPendingStat?.artifact.id ? "active" : ""}`}
                         onClick={() => setPendingReviewId(artifact.id)}
-                        aria-label={`Review ${artifact.name}`}
+                        aria-label={ui.reviewArtifact(artifact.name)}
                       >
                         <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} size={13} /></span>
-                        <span className="patch-file-label"><strong>{artifact.name}{isCreation && <em className="new-file-badge">New file</em>}</strong><small>{patch.summary}{patch.operationCount ? ` · ${patch.operationCount} typed ${patch.operationCount === 1 ? "op" : "ops"}` : ""}</small></span>
+                        <span className="patch-file-label"><strong>{artifact.name}{isCreation && <em className="new-file-badge">{ui.newFile}</em>}</strong><small>{patch.summary}{patch.operationCount ? ` · ${ui.typedOps(patch.operationCount)}` : ""}</small></span>
                         <span className="patch-file-diff"><b>+{additions}</b><i>−{removals}</i></span>
                       </button>
                     ))}
                   </div>
                   {selectedPendingStat ? (
-                    <div className="patch-source-diff" aria-label={`Source diff for ${selectedPendingStat.artifact.name}`}>
-                      <div className="patch-source-diff-header"><span>{selectedPendingStat.isCreation ? "New source diff" : "Source diff"}</span><strong>{selectedPendingStat.artifact.name}</strong></div>
+                    <div className="patch-source-diff" aria-label={ui.sourceDiffFor(selectedPendingStat.artifact.name)}>
+                      <div className="patch-source-diff-header"><span>{selectedPendingStat.isCreation ? ui.newSourceDiff : ui.sourceDiff}</span><strong>{selectedPendingStat.artifact.name}</strong></div>
                       <pre>{selectedDiffPreview.map((line, index) => (
                         <code className={line.kind} key={`${line.kind}-${index}`}><span>{line.kind === "addition" ? "+" : line.kind === "removal" ? "−" : " "}</span>{line.text || " "}</code>
                       ))}</pre>
                     </div>
                   ) : (
-                    <p className="patch-review-hint">Select a changed file to inspect its source diff.</p>
+                    <p className="patch-review-hint">{ui.selectChangedFile}</p>
                   )}
                 </div>
                 <div className="patch-actions">
-                  <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> {pendingStats.length > 1 ? "Apply all" : "Apply"}</button>
-                  <button className="icon-button small" onClick={() => setPendingChange(null)} aria-label="Discard proposed patch" title="Discard"><X /></button>
+                  <button className="button primary-button" onClick={applyPendingChange}><Check aria-hidden="true" /> {pendingStats.length > 1 ? ui.applyAll : ui.apply}</button>
+                  <button className="icon-button small" onClick={() => setPendingChange(null)} aria-label={ui.discardPatch} title={ui.discard}><X /></button>
                 </div>
               </div>
             )}
@@ -2815,7 +2736,7 @@ export function RuneWorkbench() {
                 onKeyDown={onPromptKeyDown}
                 placeholder={agentScope === "workspace" ? ui.askWorkspace : agentScope === "selection" ? ui.askSelection : ui.askFile}
                 rows={1}
-                aria-label={agentScope === "workspace" ? "Describe a workspace change" : agentScope === "selection" ? "Describe a selected-source change" : "Describe an artifact change"}
+                aria-label={agentScope === "workspace" ? ui.describeWorkspaceChange : agentScope === "selection" ? ui.describeSelectionChange : ui.describeArtifactChange}
               />
               <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || visualEditState !== "idle" || (agentScope === "selection" && !validSourceSelection)} aria-label={ui.planChange} title={`${ui.planChange} (⌘ Enter)`}>{agentState === "planning" || visualEditState !== "idle" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
@@ -2831,17 +2752,17 @@ export function RuneWorkbench() {
             </div>
             <div className="preview-actions">
               {activePreviewTarget && (
-                <span className="source-link-badge" title={`Canonical source linked to ${activePreviewTarget.label}`}>
+                <span className="source-link-badge" title={ui.sourceLinked(activePreviewTarget.label)}>
                   <CircleDot aria-hidden="true" /><span>{activePreviewTarget.label}</span>
                 </span>
               )}
-              {selectedArtifact.kind === "query" && selectedQueryDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> 1 source</span>}
-              {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && <span className="binding-badge chart">{selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />} 1 source</span>}
-              {!!bindingState?.queryMetricReferences.length && <span className="binding-badge query"><Database aria-hidden="true" /> {bindingState.queryMetricReferences.length} SQL metric{bindingState.queryMetricReferences.length > 1 ? "s" : ""}</span>}
-              {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}
-              {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {bindingState.references.length} live</span>}
+              {selectedArtifact.kind === "query" && selectedQueryDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.oneSource}</span>}
+              {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && <span className="binding-badge chart">{selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />} {ui.oneSource}</span>}
+              {!!bindingState?.queryMetricReferences.length && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.sqlMetricBadge(bindingState.queryMetricReferences.length)}</span>}
+              {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {ui.chartBadge(bindingState.chartReferences.length)}</span>}
+              {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {ui.liveBadge(bindingState.references.length)}</span>}
               {validationErrors.length ? (
-                <span className="validation-badge error"><X aria-hidden="true" /> {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}</span>
+                <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
               ) : (
                 <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
               )}
@@ -2854,7 +2775,7 @@ export function RuneWorkbench() {
                 <span>{selectedChartSourceArtifact.name}</span>
                 <ChevronRight aria-hidden="true" />
                 <span>{selectedArtifact.name}</span>
-                <strong>{selectedChartSourceArtifact.kind === "query" ? "Browser-local query output" : "Canonical data compiled live"}</strong>
+                <strong>{selectedChartSourceArtifact.kind === "query" ? ui.browserQueryOutput : ui.canonicalDataLive}</strong>
               </div>
             )}
             {selectedArtifact.kind === "query" && selectedQueryDataArtifact && (
@@ -2865,7 +2786,7 @@ export function RuneWorkbench() {
                 <span>workspace_data</span>
                 <ChevronRight aria-hidden="true" />
                 <span>{selectedArtifact.name}</span>
-                <strong>{selectedQueryDataResolution?.explicit ? "Explicit Data binding" : "Legacy first-Data binding"}</strong>
+                <strong>{selectedQueryDataResolution?.explicit ? ui.explicitDataBinding : ui.legacyDataBinding}</strong>
               </div>
             )}
             {!!bindingState?.queryMetricReferences.length && (
@@ -2876,16 +2797,16 @@ export function RuneWorkbench() {
                 )))].join(", ")}</span>
                 <ChevronRight aria-hidden="true" />
                 <span>{selectedArtifact.name}</span>
-                <strong>{bindingState.queryMetricReferences.length} scalar metric{bindingState.queryMetricReferences.length > 1 ? "s" : ""} compiled from SQL</strong>
+                <strong>{ui.scalarMetricsFromSql(bindingState.queryMetricReferences.length)}</strong>
               </div>
             )}
             {!!bindingState?.references.length && (
               <div className="lineage-strip">
                 <Database aria-hidden="true" />
-                <span>{canonicalDataArtifact?.name ?? "workspace data"}</span>
+                <span>{canonicalDataArtifact?.name ?? ui.workspaceData}</span>
                 <ChevronRight aria-hidden="true" />
                 <span>{selectedArtifact.name}</span>
-                <strong>{bindingState.references.length} metrics compiled live</strong>
+                <strong>{ui.metricsCompiledLive(bindingState.references.length)}</strong>
               </div>
             )}
             {!!bindingState?.chartReferences.length && (
@@ -2894,13 +2815,14 @@ export function RuneWorkbench() {
                 <span>{bindingState.chartReferences.map((id) => artifacts.find((artifact) => artifact.id === id)?.name ?? id).join(", ")}</span>
                 <ChevronRight aria-hidden="true" />
                 <span>{selectedArtifact.name}</span>
-                <strong>{bindingState.chartReferences.length} chart{bindingState.chartReferences.length > 1 ? "s" : ""} compiled live</strong>
+                <strong>{ui.chartsCompiledLive(bindingState.chartReferences.length)}</strong>
               </div>
             )}
             <div className="preview-scroll" ref={previewScrollRef}>
               <ArtifactPreview
                 artifact={selectedArtifact}
                 artifacts={artifacts}
+                locale={locale}
                 activeSelection={activePreviewTarget}
                 onTargetSource={focusPreviewTarget}
                 onEditDataCell={visualEditState === "idle" ? commitVisualDataCellEdit : undefined}
@@ -2918,18 +2840,19 @@ export function RuneWorkbench() {
       </div>
 
       <footer className="statusbar">
-        <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.48</span></div>
+        <div><span className="status-agent-dot" /> {visibleNotice}</div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.49</span></div>
       </footer>
 
       {newArtifactOpen && (
         <NewArtifactDialog
           artifacts={artifacts}
           error={newArtifactError}
+          locale={locale}
           onCancel={() => {
             setNewArtifactOpen(false);
             setNewArtifactError("");
-            setNotice("New artifact cancelled — the workspace is unchanged");
+            setNotice(ui.newCancelled);
           }}
           onCreate={createNewArtifact}
         />
@@ -2956,6 +2879,7 @@ export function RuneWorkbench() {
           artifacts={pendingImport.importedArtifacts}
           warnings={pendingImport.warnings}
           error={importError}
+          locale={locale}
           onCancel={cancelPendingImport}
           onConfirm={applyPendingImport}
         />
@@ -2965,6 +2889,7 @@ export function RuneWorkbench() {
           sourceName={pendingExport.sourceArtifactName}
           result={pendingExport.result}
           error={exportError}
+          locale={locale}
           onCancel={cancelExport}
           onConfirm={confirmExport}
         />
@@ -2979,10 +2904,11 @@ export function RuneWorkbench() {
           warnings={pendingDocumentStructure.prepared.warnings}
           error={pendingDocumentStructure.error}
           submitting={pendingDocumentStructure.submitting}
+          locale={locale}
           onCancel={() => {
             if (pendingDocumentStructure.submitting) return;
             setPendingDocumentStructure(null);
-            setNotice("Document structure change cancelled — source stayed unchanged");
+            setNotice(ui.structureCancelled);
           }}
           onConfirm={() => void confirmVisualDocumentBlockStructure()}
         />

@@ -11,6 +11,7 @@ import {
   Workflow,
 } from "lucide-react";
 
+import { runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
 import type { WorkspaceDependencyKind } from "../lib/dependency-graph";
 import type {
   WorkspaceTransactionNode,
@@ -34,24 +35,20 @@ function DependencyKindIcon({ kind }: { kind: WorkspaceDependencyKind }) {
   return <Link2 aria-hidden="true" />;
 }
 
-const statusLabels = {
-  created: "New",
-  edited: "Edited",
-  validated: "Validated",
-  input: "Input",
-} as const;
-
 function TransactionNode({
   node,
   active,
   compact = false,
+  copy,
   onSelect,
 }: {
   node: WorkspaceTransactionNode;
   active: boolean;
   compact?: boolean;
+  copy: RuneUICopy;
   onSelect: (artifactId: string) => void;
 }) {
+  const statusLabel = copy.transaction.statuses[node.status];
   const content = (
     <>
       <span className={`artifact-icon ${node.kind}`}>
@@ -59,7 +56,7 @@ function TransactionNode({
       </span>
       <span className="transaction-node-name">{node.name}</span>
       {!compact && (
-        <em className={`transaction-node-status ${node.status}`}>{statusLabels[node.status]}</em>
+        <em className={`transaction-node-status ${node.status}`}>{statusLabel}</em>
       )}
     </>
   );
@@ -70,7 +67,7 @@ function TransactionNode({
         type="button"
         className={className}
         onClick={() => onSelect(node.artifactId)}
-        aria-label={`Review ${node.name}, ${statusLabels[node.status].toLowerCase()}`}
+        aria-label={copy.transaction.reviewNode(node.name, statusLabel)}
         aria-current={active ? "true" : undefined}
       >
         {content}
@@ -78,7 +75,7 @@ function TransactionNode({
     );
   }
   return (
-    <span className={className} aria-label={`${node.name}, ${statusLabels[node.status].toLowerCase()}`}>
+    <span className={className} aria-label={copy.transaction.nodeLabel(node.name, statusLabel)}>
       {content}
     </span>
   );
@@ -87,12 +84,15 @@ function TransactionNode({
 export function TransactionReviewMap({
   review,
   activeArtifactId,
+  locale,
   onSelect,
 }: {
   review: WorkspaceTransactionReview;
   activeArtifactId: string;
+  locale: RuneLocale;
   onSelect: (artifactId: string) => void;
 }) {
+  const copy = runeUICopy(locale);
   const nodeById = new Map(review.nodes.map((node) => [node.artifactId, node] as const));
   const bindingChanges = review.addedEdgeCount + review.removedEdgeCount + review.updatedEdgeCount;
   return (
@@ -100,24 +100,25 @@ export function TransactionReviewMap({
       <summary>
         <Workflow aria-hidden="true" />
         <span>
-          <strong>Transaction map</strong>
-          <small>{review.changeCount} {review.changeCount === 1 ? "change" : "changes"} · {review.nodes.length} source {review.nodes.length === 1 ? "node" : "nodes"} · {bindingChanges} binding {bindingChanges === 1 ? "change" : "changes"}</small>
+          <strong>{copy.transaction.title}</strong>
+          <small>{copy.transaction.summary(review.changeCount, review.nodes.length, bindingChanges)}</small>
         </span>
-        <span className="transaction-edge-count" aria-label={`${review.edges.length} dependency edges`}>{review.edges.length}</span>
+        <span className="transaction-edge-count" aria-label={copy.transaction.dependencyEdges(review.edges.length)}>{review.edges.length}</span>
       </summary>
       <div className="transaction-review-content">
-        <div className="transaction-node-list" role="list" aria-label="Sources in proposed transaction">
+        <div className="transaction-node-list" role="list" aria-label={copy.transaction.sources}>
           {review.nodes.map((node) => (
             <span role="listitem" key={node.artifactId}>
               <TransactionNode
                 node={node}
                 active={activeArtifactId === node.artifactId}
+                copy={copy}
                 onSelect={onSelect}
               />
             </span>
           ))}
         </div>
-        <div className="transaction-edge-list" role="list" aria-label="Proposed source dependency changes">
+        <div className="transaction-edge-list" role="list" aria-label={copy.transaction.dependencies}>
           {review.edges.map((edge) => {
             const source = nodeById.get(edge.fromArtifactId);
             const consumer = nodeById.get(edge.toArtifactId);
@@ -131,20 +132,20 @@ export function TransactionReviewMap({
                 role="listitem"
                 key={`${edge.fromArtifactId}-${edge.toArtifactId}-${edge.kind}`}
               >
-                <TransactionNode node={source} compact active={activeArtifactId === source.artifactId} onSelect={onSelect} />
+                <TransactionNode node={source} compact active={activeArtifactId === source.artifactId} copy={copy} onSelect={onSelect} />
                 <span className={`transaction-edge-relation ${edge.kind}`} title={edge.references.join(", ")}>
                   <DependencyKindIcon kind={edge.kind} />
                   <span>{edge.status === "added" ? "+" : edge.status === "removed" ? "−" : edge.status === "updated" ? "~" : ""} {relation}</span>
                   <ChevronRight aria-hidden="true" />
                 </span>
-                <TransactionNode node={consumer} compact active={activeArtifactId === consumer.artifactId} onSelect={onSelect} />
+                <TransactionNode node={consumer} compact active={activeArtifactId === consumer.artifactId} copy={copy} onSelect={onSelect} />
               </div>
             );
           })}
-          {!review.edges.length && <p>No cross-file bindings change in this transaction.</p>}
+          {!review.edges.length && <p>{copy.transaction.noBindings}</p>}
         </div>
         <p className="transaction-review-note">
-          New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Rune compiled them to prove the complete proposed workspace.
+          {copy.transaction.note}
         </p>
       </div>
     </details>

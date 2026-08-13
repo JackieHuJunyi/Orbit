@@ -5,7 +5,10 @@ import {
   createRuneGuideArtifact,
   detectPreferredLocale,
   localeDisplayName,
+  localizeRuneStatus,
   normalizeRuneLocale,
+  runeQuickCommands,
+  runeUICopy,
   RUNE_GUIDE_ID,
 } from "../app/lib/localization.ts";
 import { validateArtifact } from "../app/lib/workspace.ts";
@@ -37,4 +40,40 @@ test("creates a valid editable local guide in the selected language", () => {
   assert.match(chinese.source, /⌘ Enter/);
   assert.deepEqual(validateArtifact(chinese), []);
   assert.deepEqual(validateArtifact(english), []);
+});
+
+function catalogShape(value) {
+  if (typeof value === "function") return "function";
+  if (!value || typeof value !== "object") return typeof value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, catalogShape(value[key])]));
+}
+
+test("keeps one complete typed UI contract for English and Simplified Chinese", () => {
+  const chinese = runeUICopy("zh-CN");
+  const english = runeUICopy("en");
+  assert.deepEqual(catalogShape(chinese), catalogShape(english));
+  assert.equal(chinese.workbench.livePreview, "实时预览");
+  assert.equal(english.workbench.livePreview, "Live preview");
+  assert.equal(chinese.preview.saveSlide, "保存演示页");
+  assert.equal(english.preview.saveSlide, "Save slide");
+  assert.equal(chinese.importReview.title, "审核导入后的可读源");
+  assert.equal(english.exportReview.title("pdf"), "Review PDF export");
+});
+
+test("formats dynamic review copy without fragile token replacement", () => {
+  const chinese = runeUICopy("zh-CN");
+  const english = runeUICopy("en");
+  assert.equal(chinese.importReview.description("经营数据.xlsx", 2), "经营数据.xlsx 已生成 2 份可读内容。确认前不会写入。");
+  assert.equal(english.importReview.description("metrics.xlsx", 1), "metrics.xlsx produced 1 readable artifact. Nothing is written until you confirm.");
+  assert.equal(chinese.transaction.summary(3, 4, 2), "3 项修改 · 4 个源节点 · 2 项绑定变化");
+  assert.equal(english.transaction.summary(1, 2, 1), "1 change · 2 source nodes · 1 binding change");
+  assert.equal(chinese.preview.queryFootnote("DuckDB", "收入.csv", true, true), "DuckDB · 收入.csv 始终留在此浏览器 · 可证明时，结果行号与直接字段可打开规范源内容；派生单元格保持只读 · 预览最多显示 500 行。");
+});
+
+test("localizes suggested actions and high-frequency live status without altering English evidence", () => {
+  assert.equal(runeQuickCommands("en", "artifact", "chart")[1], "Change the accent to purple");
+  assert.equal(runeQuickCommands("zh-CN", "selection", "document")[0], "把选中内容压缩成一句话");
+  assert.equal(localizeRuneStatus("zh-CN", "Local workspace ready"), "本地工作区已就绪");
+  assert.equal(localizeRuneStatus("zh-CN", "report.md updated in canonical source · Push when ready"), "report.md 已更新到规范源内容 · 可随时写回文件夹");
+  assert.equal(localizeRuneStatus("en", "DuckDB could not run this query."), "DuckDB could not run this query.");
 });

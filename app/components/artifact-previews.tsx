@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, createElement, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ElementType, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { Fragment, createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ElementType, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
+import { runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
 import { compileArtifactSource, compiledSourceRangeToCanonical, queryMetricSourceIdsForArtifact } from "../lib/bindings";
 import {
   chartLinePoints,
@@ -158,6 +159,12 @@ type QueryRuntimeEntry =
   | { status: "error"; error: string };
 
 type QueryRuntime = Record<string, QueryRuntimeEntry>;
+
+const PreviewCopyContext = createContext<RuneUICopy["preview"]>(runeUICopy("en").preview);
+
+function usePreviewCopy() {
+  return useContext(PreviewCopyContext);
+}
 
 const DOCUMENT_FORMATTING_CONTROLS = [
   { command: "bold", label: "Bold", shortcut: "⌘/Ctrl B", Icon: Bold },
@@ -326,6 +333,7 @@ function ChartFigure({
   embedded?: boolean;
   onTargetSource?: PreviewTargetHandler;
 }) {
+  const copy = usePreviewCopy();
   const provenanceArtifactIds = new Set(model.data.flatMap((datum) => (
     [datum.categoryProvenance?.artifactId, datum.valueProvenance?.artifactId]
       .filter((artifactId): artifactId is string => Boolean(artifactId))
@@ -362,7 +370,7 @@ function ChartFigure({
       aria-label={model.spec.title}
     >
       <figcaption>
-        <div><span>Live chart{model.sourceArtifactKind === "query" ? " · Query output" : ""}</span><strong>{model.spec.title}</strong></div>
+        <div><span>{copy.liveChart}{model.sourceArtifactKind === "query" ? ` · ${copy.queryOutput}` : ""}</span><strong>{model.spec.title}</strong></div>
         <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
       </figcaption>
       {model.spec.mark === "line" ? (
@@ -381,7 +389,7 @@ function ChartFigure({
                 ? () => onTargetSource(
                     valueSource.sourceTargets.artifact,
                     valueSource.target,
-                    `${model.spec.title} · value ${datum.formatted}`,
+                    copy.valueDatum(model.spec.title, datum.formatted),
                   )
                 : undefined;
               const pointStyle = {
@@ -396,8 +404,8 @@ function ChartFigure({
                   key={datum.sourceRowIndex}
                   style={pointStyle}
                   type="button"
-                  aria-label={`Open ${valueSource?.target.label} in ${valueSource?.sourceTargets.artifact.name} as Agent context`}
-                  title={`Open exact ${valueSource?.target.column} source cell in ${valueSource?.sourceTargets.artifact.name}`}
+                  aria-label={copy.openCellForAgent(valueSource?.target.label ?? "", valueSource?.sourceTargets.artifact.name ?? "")}
+                  title={copy.openExactCell(valueSource?.target.column ?? "", valueSource?.sourceTargets.artifact.name ?? "")}
                   onClick={openValue}
                 >
                   <i aria-hidden="true" />
@@ -423,7 +431,7 @@ function ChartFigure({
                 ? () => onTargetSource(
                     categorySource.sourceTargets.artifact,
                     categorySource.target,
-                    `${model.spec.title} · category ${datum.label}`,
+                    copy.categoryDatum(model.spec.title, datum.label),
                   )
                 : undefined;
               return openCategory ? (
@@ -433,8 +441,8 @@ function ChartFigure({
                   data-chart-source-row={datum.sourceRowIndex}
                   key={datum.sourceRowIndex}
                   type="button"
-                  aria-label={`Open ${categorySource?.target.label} in ${categorySource?.sourceTargets.artifact.name} as Agent context`}
-                  title={`Open exact ${categorySource?.target.column} source cell in ${categorySource?.sourceTargets.artifact.name}`}
+                  aria-label={copy.openCellForAgent(categorySource?.target.label ?? "", categorySource?.sourceTargets.artifact.name ?? "")}
+                  title={copy.openExactCell(categorySource?.target.column ?? "", categorySource?.sourceTargets.artifact.name ?? "")}
                   onClick={openCategory}
                 >
                   <span>{datum.label}</span>
@@ -449,14 +457,14 @@ function ChartFigure({
             ? () => onTargetSource(
                 categorySource.sourceTargets.artifact,
                 categorySource.target,
-                `${model.spec.title} · category ${datum.label}`,
+                copy.categoryDatum(model.spec.title, datum.label),
               )
             : undefined;
           const openValue = valueSource && onTargetSource
             ? () => onTargetSource(
                 valueSource.sourceTargets.artifact,
                 valueSource.target,
-                `${model.spec.title} · value ${datum.formatted}`,
+                copy.valueDatum(model.spec.title, datum.formatted),
               )
             : undefined;
           return (
@@ -470,8 +478,8 @@ function ChartFigure({
                   className="chart-source-cell chart-category-cell"
                   data-chart-source-cell="category"
                   type="button"
-                  aria-label={`Open ${categorySource?.target.label} in ${categorySource?.sourceTargets.artifact.name} as Agent context`}
-                  title={`Open exact ${categorySource?.target.column} source cell in ${categorySource?.sourceTargets.artifact.name}`}
+                  aria-label={copy.openCellForAgent(categorySource?.target.label ?? "", categorySource?.sourceTargets.artifact.name ?? "")}
+                  title={copy.openExactCell(categorySource?.target.column ?? "", categorySource?.sourceTargets.artifact.name ?? "")}
                   onClick={openCategory}
                 >
                   <span title={datum.label}>{datum.label}</span>
@@ -482,8 +490,8 @@ function ChartFigure({
                   className="chart-source-cell chart-value-cell"
                   data-chart-source-cell="value"
                   type="button"
-                  aria-label={`Open ${valueSource?.target.label} in ${valueSource?.sourceTargets.artifact.name} as Agent context`}
-                  title={`Open exact ${valueSource?.target.column} source cell in ${valueSource?.sourceTargets.artifact.name}`}
+                  aria-label={copy.openCellForAgent(valueSource?.target.label ?? "", valueSource?.sourceTargets.artifact.name ?? "")}
+                  title={copy.openExactCell(valueSource?.target.column ?? "", valueSource?.sourceTargets.artifact.name ?? "")}
                   onClick={openValue}
                 >
                   <span className="chart-bar-track"><i style={{ width: `${datum.ratio * 100}%` }} /></span>
@@ -499,7 +507,7 @@ function ChartFigure({
           );
         })}
       </div>}
-      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {model.data.length} marks{hasTargetableCells ? ` · Click a label or ${model.spec.mark === "line" ? "point" : "bar"} to open its exact source cell` : ""}</span></footer>
+      <footer><span>{model.spec.value}</span><span>{model.sourceArtifactName} · {copy.marks(model.data.length)}{hasTargetableCells ? ` · ${copy.clickExactDatum(model.spec.mark)}` : ""}</span></footer>
     </figure>
   );
 }
@@ -515,10 +523,11 @@ function EmbeddedChart({
   queryRuntime: QueryRuntime;
   onTargetSource?: PreviewTargetHandler;
 }) {
+  const copy = usePreviewCopy();
   const chartArtifact = artifacts.find((artifact) => artifact.id === chartId && artifact.kind === "chart");
-  if (!chartArtifact) return <div className="embedded-chart-error">Chart not found · {chartId}</div>;
+  if (!chartArtifact) return <div className="embedded-chart-error">{copy.chartNotFound(chartId)}</div>;
   const resolution = resolvePreviewChart(chartArtifact, artifacts, queryRuntime);
-  if (!resolution.model) return <div className="embedded-chart-error">Chart unavailable · {resolution.errors[0]}</div>;
+  if (!resolution.model) return <div className="embedded-chart-error">{copy.chartUnavailable(resolution.errors[0] ?? "")}</div>;
   return <ChartFigure model={resolution.model} artifacts={artifacts} embedded onTargetSource={onTargetSource} />;
 }
 
@@ -586,6 +595,7 @@ function MarkdownSource({
     action: VisualDocumentBlockStructureAction,
   ) => void;
 }) {
+  const copy = usePreviewCopy();
   const parts = tokenizeChartReferences(source);
   const blockByRange = useMemo(() => new Map((documentBlockTargets ?? []).map((target) => (
     [`${target.start}:${target.end}`, target]
@@ -646,9 +656,9 @@ function MarkdownSource({
       "data-document-fragment-type": target.fragmentType,
       tabIndex: 0,
       role: ["strong", "em", "del", "code", "img"].includes(tag) ? "button" : undefined,
-      "aria-label": `Select exact ${target.label} source${opensLink ? "; Command-click or Control-click opens the link" : ""}`,
+      "aria-label": opensLink ? copy.selectLinkExact(target.label) : copy.selectExact(target.label),
       "aria-pressed": ["strong", "em", "del", "code", "img"].includes(tag) ? active : undefined,
-      title: `Select exact ${target.label} source${opensLink ? " · Command-click or Control-click opens link" : ""}`,
+      title: opensLink ? copy.selectLinkExact(target.label) : copy.selectExact(target.label),
       onClick: (event: ReactMouseEvent<HTMLElement>) => {
         if (opensLink && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return;
         event.preventDefault();
@@ -663,7 +673,7 @@ function MarkdownSource({
         selectSource();
       },
     });
-  }, [activeSelection, fragmentTargetForNode, onTargetSource, targetArtifact]);
+  }, [activeSelection, copy, fragmentTargetForNode, onTargetSource, targetArtifact]);
 
   const interactiveBlock = useCallback((
     tag: "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "ul" | "ol" | "blockquote" | "pre" | "table" | "hr",
@@ -698,7 +708,7 @@ function MarkdownSource({
       "data-preview-section-id": sectionTarget?.id,
       "data-document-block-type": target.blockType,
       "data-document-heading-level": target.headingLevel,
-      title: onTargetSource ? `Select exact ${target.label} source` : undefined,
+      title: onTargetSource ? copy.selectExact(target.label) : undefined,
       onClick: (event: ReactMouseEvent<HTMLElement>) => {
         const clicked = event.target;
         if (clicked instanceof Element && clicked.closest("a, button, summary, input, textarea, select, [contenteditable='true']")) return;
@@ -707,14 +717,14 @@ function MarkdownSource({
     }, block, createElement("span", {
       className: "document-block-actions",
       role: "group",
-      "aria-label": `${target.label} source actions`,
+      "aria-label": copy.sourceActions(target.label),
     }, onTargetSource && createElement("button", {
       className: "document-block-locate",
       type: "button",
-      "aria-label": `Select ${target.label} in canonical source for Agent context`,
+      "aria-label": copy.selectForAgent(target.label),
       "aria-pressed": active,
       "aria-keyshortcuts": editable ? "F2" : undefined,
-      title: `Select exact ${target.label} source`,
+      title: copy.selectExact(target.label),
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         selectSource();
@@ -727,8 +737,8 @@ function MarkdownSource({
     }, createElement(MousePointer2, { "aria-hidden": true })), editable && createElement("button", {
       className: "document-block-edit",
       type: "button",
-      "aria-label": `Edit ${target.label} ${target.blockType}`,
-      title: `Edit exact ${target.blockType} block · F2`,
+      "aria-label": copy.editBlockTarget(target.label, target.blockType),
+      title: `${copy.editExactBlock(target.blockType)} · F2`,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         onBeginDocumentBlockEdit?.(target);
@@ -736,18 +746,18 @@ function MarkdownSource({
     }, createElement(PencilLine, { "aria-hidden": true }))), structure?.available && createElement("details", {
       className: "document-block-structure-actions",
     }, createElement("summary", {
-      "aria-label": `Open structure actions for ${target.label}`,
-      title: "Block structure",
+      "aria-label": copy.openStructureActions(target.label),
+      title: copy.blockStructure,
     }, createElement(Rows3, { "aria-hidden": true })), createElement("span", {
       className: "document-block-structure-menu",
       role: "group",
-      "aria-label": `${target.label} structure actions`,
+      "aria-label": copy.structureActions(target.label),
     }, createElement("button", {
       className: "document-block-insert-before",
       type: "button",
       disabled: !structure.canInsertBefore,
-      "aria-label": `Insert a block before ${target.label}`,
-      title: structure.canInsertBefore ? "Insert block before" : "Unsupported structure boundary",
+      "aria-label": `${copy.insertBefore} · ${target.label}`,
+      title: structure.canInsertBefore ? copy.insertBefore : copy.unsupportedBoundary,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         const details = event.currentTarget.closest("details");
@@ -758,8 +768,8 @@ function MarkdownSource({
       className: "document-block-move-up",
       type: "button",
       disabled: !structure.canMoveUp,
-      "aria-label": `Move ${target.label} up one block`,
-      title: structure.canMoveUp ? "Move block up" : "Already first",
+      "aria-label": `${copy.moveUp} · ${target.label}`,
+      title: structure.canMoveUp ? copy.moveUp : copy.alreadyFirst,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         const details = event.currentTarget.closest("details");
@@ -770,8 +780,8 @@ function MarkdownSource({
       className: "document-block-move-down",
       type: "button",
       disabled: !structure.canMoveDown,
-      "aria-label": `Move ${target.label} down one block`,
-      title: structure.canMoveDown ? "Move block down" : "Already last",
+      "aria-label": `${copy.moveDown} · ${target.label}`,
+      title: structure.canMoveDown ? copy.moveDown : copy.alreadyLast,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         const details = event.currentTarget.closest("details");
@@ -782,8 +792,8 @@ function MarkdownSource({
       className: "document-block-delete",
       type: "button",
       disabled: !structure.canDelete,
-      "aria-label": `Delete ${target.label} block`,
-      title: structure.canDelete ? "Delete block" : "The last block cannot be deleted",
+      "aria-label": `${copy.deleteBlock} · ${target.label}`,
+      title: structure.canDelete ? copy.deleteBlock : copy.lastCannotDelete,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         const details = event.currentTarget.closest("details");
@@ -794,8 +804,8 @@ function MarkdownSource({
       className: "document-block-insert-after",
       type: "button",
       disabled: !structure.canInsertAfter,
-      "aria-label": `Insert a block after ${target.label}`,
-      title: structure.canInsertAfter ? "Insert block after" : "Unsupported structure boundary",
+      "aria-label": `${copy.insertAfter} · ${target.label}`,
+      title: structure.canInsertAfter ? copy.insertAfter : copy.unsupportedBoundary,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         const details = event.currentTarget.closest("details");
@@ -803,7 +813,7 @@ function MarkdownSource({
         onBeginDocumentBlockStructure?.(target, "insert-after");
       },
     }, createElement(Plus, { "aria-hidden": true })))));
-  }, [activeSelection, onBeginDocumentBlockEdit, onBeginDocumentBlockStructure, onEditDocumentBlock, onTargetSource, sectionByFirstBlockId, targetArtifact, targetForNode]);
+  }, [activeSelection, copy, onBeginDocumentBlockEdit, onBeginDocumentBlockStructure, onEditDocumentBlock, onTargetSource, sectionByFirstBlockId, targetArtifact, targetForNode]);
 
   const markdownComponents = useMemo(() => Object.fromEntries([
     ...[
@@ -852,6 +862,7 @@ function DocumentPreview({
   onEditDocumentBlock?: DocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
 }) {
+  const copy = usePreviewCopy();
   const compiled = compileArtifactSource(
     artifact.source,
     artifacts,
@@ -1052,7 +1063,7 @@ function DocumentPreview({
     if (formatted.draft.length > MAX_VISUAL_DOCUMENT_SECTION_CHARS) {
       setEditingSection((current) => current ? {
         ...current,
-        error: `Visual Document sections are limited to ${MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString("en-US")} characters.`,
+        error: copy.sectionLimit(MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString(copy.numberLocale)),
       } : current);
       return;
     }
@@ -1094,7 +1105,7 @@ function DocumentPreview({
     if (formatted.draft.length > MAX_VISUAL_DOCUMENT_BLOCK_CHARS) {
       setEditingBlock((current) => current ? {
         ...current,
-        error: `Visual Document blocks are limited to ${MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString("en-US")} characters.`,
+        error: copy.blockLimit(MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString(copy.numberLocale)),
       } : current);
       return;
     }
@@ -1146,11 +1157,11 @@ function DocumentPreview({
     <div className="document-stage">
       <article className="document-paper">
         <div className="paper-meta">
-          <span>Rune document</span>
-          <span>{onEditDocumentBlock && blockTargets.length ? "Select or edit one exact block" : onEditDocumentSection && targets.length ? "Select or edit one exact section" : onTargetSource && targets.length ? "Click a section for Agent" : "Live compilation"}</span>
+          <span>{copy.runeDocument}</span>
+          <span>{copy.documentMode(onEditDocumentBlock && blockTargets.length ? "block" : onEditDocumentSection && targets.length ? "section" : onTargetSource && targets.length ? "select" : "live")}</span>
         </div>
         {onTargetSource && targets.length > 0 && (
-          <nav className="document-targets" aria-label="Select or edit a document section">
+          <nav className="document-targets" aria-label={copy.selectDocumentSection}>
             {targets.map((target) => {
               const active = previewTargetIsActive(target, activeSelection);
               const editable = Boolean(onEditDocumentSection && canVisualEditDocumentSection(artifact, target));
@@ -1165,9 +1176,9 @@ function DocumentPreview({
                     className="document-target-select"
                     data-preview-source-target={target.kind}
                     type="button"
-                    aria-label={`Select ${target.label} in canonical source for Agent context`}
+                    aria-label={copy.selectForAgent(target.label)}
                     aria-pressed={active}
-                    title={`Select exact ${target.label} source`}
+                    title={copy.selectExact(target.label)}
                     onClick={() => onTargetSource(artifact, target)}
                   >
                     <MousePointer2 aria-hidden="true" /> <span>{target.label}</span>
@@ -1176,8 +1187,8 @@ function DocumentPreview({
                     <button
                       className="document-target-edit"
                       type="button"
-                      aria-label={`Edit ${target.label}`}
-                      title={`Edit exact ${target.label} section`}
+                      aria-label={copy.editTarget(target.label)}
+                      title={copy.editTarget(target.label)}
                       onClick={() => beginSectionEdit(target)}
                     >
                       <PencilLine aria-hidden="true" />
@@ -1194,17 +1205,19 @@ function DocumentPreview({
             onSubmit={(event) => { event.preventDefault(); void submitSectionEdit(editingTarget); }}
           >
             <header>
-              <div><span>Editing exact section</span><strong>{editingTarget.label}</strong></div>
-              <small>{editingSection.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString("en-US")}</small>
+              <div><span>{copy.editingSection}</span><strong>{editingTarget.label}</strong></div>
+              <small>{editingSection.draft.length.toLocaleString(copy.numberLocale)} / {MAX_VISUAL_DOCUMENT_SECTION_CHARS.toLocaleString(copy.numberLocale)}</small>
             </header>
             <div className="visual-document-editor-grid">
               <div className="visual-document-source">
                 <div className="visual-document-source-label">
-                  <label htmlFor={`visual-document-draft-${artifact.id}-${editingTarget.index}`}>Source draft</label>
-                  <em>Synced live</em>
+                  <label htmlFor={`visual-document-draft-${artifact.id}-${editingTarget.index}`}>{copy.sourceDraft}</label>
+                  <em>{copy.syncedLive}</em>
                 </div>
-                <div className="visual-document-formatbar" role="toolbar" aria-label="Format Document section">
-                  {DOCUMENT_FORMATTING_CONTROLS.map(({ command, label, shortcut, Icon }) => (
+                <div className="visual-document-formatbar" role="toolbar" aria-label={copy.formatSection}>
+                  {DOCUMENT_FORMATTING_CONTROLS.map(({ command, shortcut, Icon }) => {
+                    const label = copy.formattingLabels[command];
+                    return (
                     <button
                       key={command}
                       type="button"
@@ -1216,13 +1229,14 @@ function DocumentPreview({
                     >
                       <Icon aria-hidden="true" />
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
                 <textarea
                   id={`visual-document-draft-${artifact.id}-${editingTarget.index}`}
                   ref={sectionDraftRef}
                   autoFocus
-                  aria-label={`Edit ${editingTarget.label} Markdown section`}
+                  aria-label={copy.editMarkdownSection(editingTarget.label)}
                   value={editingSection.draft}
                   disabled={editingSection.submitting}
                   maxLength={MAX_VISUAL_DOCUMENT_SECTION_CHARS}
@@ -1255,22 +1269,22 @@ function DocumentPreview({
                   }}
                 />
               </div>
-              <section aria-label={`Draft preview for ${editingTarget.label}`}>
-                <span>Draft preview</span>
+              <section aria-label={`${copy.draftPreview} · ${editingTarget.label}`}>
+                <span>{copy.draftPreview}</span>
                 <div className="visual-document-draft markdown-body">
                   {draftSource.trim()
                     ? <MarkdownSource source={compiledDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} />
-                    : <p className="visual-document-empty">This section cannot be empty.</p>}
+                    : <p className="visual-document-empty">{copy.sectionEmpty}</p>}
                 </div>
               </section>
             </div>
             {editingSection.error && <p className="visual-document-error" role="alert">{editingSection.error}</p>}
             <footer>
-              <p>One revision-bound section · live bindings stay fixed · save writes canonical source</p>
+              <p>{copy.sectionContract}</p>
               <div>
-                <button type="button" disabled={editingSection.submitting} onClick={() => setEditingSection(null)}><X />Cancel</button>
+                <button type="button" disabled={editingSection.submitting} onClick={() => setEditingSection(null)}><X />{copy.cancel}</button>
                 <button type="submit" disabled={editingSection.submitting || !editingSection.draft.trim()}>
-                  {editingSection.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save section
+                  {editingSection.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}{copy.saveSection}
                 </button>
               </div>
             </footer>
@@ -1283,18 +1297,20 @@ function DocumentPreview({
             onSubmit={(event) => { event.preventDefault(); void submitBlockEdit(editingBlockTarget); }}
           >
             <header>
-              <div><span>Editing exact {editingBlockTarget.blockType}</span><strong>{editingBlockTarget.label}</strong></div>
-              <small>{editingBlock.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString("en-US")}</small>
+              <div><span>{copy.editingBlock(editingBlockTarget.blockType)}</span><strong>{editingBlockTarget.label}</strong></div>
+              <small>{editingBlock.draft.length.toLocaleString(copy.numberLocale)} / {MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString(copy.numberLocale)}</small>
             </header>
             <div className="visual-document-editor-grid">
               <div className="visual-document-source">
                 <div className="visual-document-source-label">
-                  <label htmlFor={`visual-document-block-draft-${artifact.id}-${editingBlockTarget.index}`}>Block source</label>
-                  <em>Synced live</em>
+                  <label htmlFor={`visual-document-block-draft-${artifact.id}-${editingBlockTarget.index}`}>{copy.blockSource}</label>
+                  <em>{copy.syncedLive}</em>
                 </div>
                 {blockFormattingControls.length > 0 && (
-                  <div className="visual-document-formatbar" role="toolbar" aria-label={`Format Document ${editingBlockTarget.blockType}`}>
-                    {blockFormattingControls.map(({ command, label, shortcut, Icon }) => (
+                  <div className="visual-document-formatbar" role="toolbar" aria-label={copy.formatBlock(editingBlockTarget.blockType)}>
+                    {blockFormattingControls.map(({ command, shortcut, Icon }) => {
+                      const label = copy.formattingLabels[command];
+                      return (
                       <button
                         key={command}
                         type="button"
@@ -1306,14 +1322,15 @@ function DocumentPreview({
                       >
                         <Icon aria-hidden="true" />
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 <textarea
                   id={`visual-document-block-draft-${artifact.id}-${editingBlockTarget.index}`}
                   ref={blockDraftRef}
                   autoFocus
-                  aria-label={`Edit ${editingBlockTarget.label} Markdown ${editingBlockTarget.blockType} block`}
+                  aria-label={copy.editMarkdownBlock(editingBlockTarget.label, editingBlockTarget.blockType)}
                   value={editingBlock.draft}
                   disabled={editingBlock.submitting}
                   maxLength={MAX_VISUAL_DOCUMENT_BLOCK_CHARS}
@@ -1346,22 +1363,22 @@ function DocumentPreview({
                   }}
                 />
               </div>
-              <section aria-label={`Draft preview for ${editingBlockTarget.label}`}>
-                <span>Block preview</span>
+              <section aria-label={`${copy.blockPreview} · ${editingBlockTarget.label}`}>
+                <span>{copy.blockPreview}</span>
                 <div className="visual-document-draft markdown-body">
                   {blockDraftSource.trim()
                     ? <MarkdownSource source={compiledBlockDraft.source} artifacts={artifacts} queryRuntime={queryRuntime} />
-                    : <p className="visual-document-empty">This block cannot be empty.</p>}
+                    : <p className="visual-document-empty">{copy.blockEmpty}</p>}
                 </div>
               </section>
             </div>
             {(editingBlock.error || blockDraftError) && <p className="visual-document-error" role="alert">{editingBlock.error || blockDraftError}</p>}
             <footer>
-              <p>One proven {editingBlockTarget.blockType} · type and live bindings stay fixed · save writes canonical source</p>
+              <p>{copy.blockContract(editingBlockTarget.blockType)}</p>
               <div>
-                <button type="button" disabled={editingBlock.submitting} onClick={() => setEditingBlock(null)}><X />Cancel</button>
+                <button type="button" disabled={editingBlock.submitting} onClick={() => setEditingBlock(null)}><X />{copy.cancel}</button>
                 <button type="submit" disabled={editingBlock.submitting || !blockDraftCanSave}>
-                  {editingBlock.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save block
+                  {editingBlock.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}{copy.saveBlock}
                 </button>
               </div>
             </footer>
@@ -1374,12 +1391,12 @@ function DocumentPreview({
           >
             <header>
               <div>
-                <span>{insertingBlock.action === "insert-before" ? "New block before" : "New block after"}</span>
+                <span>{insertingBlock.action === "insert-before" ? copy.newBefore : copy.newAfter}</span>
                 <strong>{insertingBlockTarget.label}</strong>
               </div>
-              <small>{insertingBlock.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DOCUMENT_INSERT_CHARS.toLocaleString("en-US")}</small>
+              <small>{insertingBlock.draft.length.toLocaleString(copy.numberLocale)} / {MAX_VISUAL_DOCUMENT_INSERT_CHARS.toLocaleString(copy.numberLocale)}</small>
             </header>
-            <label htmlFor={`visual-document-insert-${artifact.id}-${insertingBlockTarget.index}`}>One Markdown block</label>
+            <label htmlFor={`visual-document-insert-${artifact.id}-${insertingBlockTarget.index}`}>{copy.oneMarkdownBlock}</label>
             <textarea
               id={`visual-document-insert-${artifact.id}-${insertingBlockTarget.index}`}
               ref={insertDraftRef}
@@ -1389,7 +1406,7 @@ function DocumentPreview({
               disabled={insertingBlock.submitting}
               maxLength={MAX_VISUAL_DOCUMENT_INSERT_CHARS}
               spellCheck
-              placeholder="A paragraph, heading, list, quote, code block, table, or divider…"
+              placeholder={copy.blockPlaceholder}
               onChange={(event) => setInsertingBlock((current) => current ? {
                 ...current,
                 draft: event.target.value,
@@ -1409,11 +1426,11 @@ function DocumentPreview({
               <p className="visual-document-error" role="alert">{insertingBlock.error || insertDraftError}</p>
             )}
             <footer>
-              <p>One new block · no live bindings · review the exact source diff before writing</p>
+              <p>{copy.insertionContract}</p>
               <div>
-                <button type="button" disabled={insertingBlock.submitting} onClick={() => setInsertingBlock(null)}><X />Cancel</button>
+                <button type="button" disabled={insertingBlock.submitting} onClick={() => setInsertingBlock(null)}><X />{copy.cancel}</button>
                 <button type="submit" disabled={insertingBlock.submitting || !insertDraftCanReview}>
-                  {insertingBlock.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Review insertion
+                  {insertingBlock.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}{copy.reviewInsertion}
                 </button>
               </div>
             </footer>
@@ -1476,6 +1493,7 @@ function ResultGrid({
   editableFormat?: "CSV" | "JSON";
   onEditDataCell?: DataCellEditHandler;
 }) {
+  const copy = usePreviewCopy();
   const icons = {
     rows: <Rows3 aria-hidden="true" />,
     columns: <Columns3 aria-hidden="true" />,
@@ -1530,7 +1548,7 @@ function ResultGrid({
 
   return (
     <div className="data-stage">
-      <div className="data-summary" aria-label="Result summary">
+      <div className="data-summary" aria-label={copy.resultSummary}>
         {badges.map((badge) => <span key={`${badge.icon}-${badge.label}`}>{icons[badge.icon]} {badge.label}</span>)}
       </div>
       <div className="data-grid-wrap">
@@ -1559,9 +1577,9 @@ function ResultGrid({
                     <button
                       type="button"
                       data-preview-source-target={target?.kind}
-                      aria-label={`Select ${target?.label} in canonical source for Agent context`}
+                      aria-label={copy.selectForAgent(target?.label ?? "")}
                       aria-pressed={active}
-                      title="Select the complete canonical row"
+                      title={copy.exactRow}
                       onClick={activate}
                     >
                       {rowIndex + 1}
@@ -1608,7 +1626,7 @@ function ResultGrid({
                         >
                           <div className="visual-cell-fields">
                             <select
-                              aria-label={`Value type for ${editableCellTarget.label}`}
+                              aria-label={copy.valueType(editableCellTarget.label)}
                               value={editingCell.valueType}
                               disabled={editingCell.submitting || editableFormat === "CSV"}
                               onChange={(event) => {
@@ -1625,12 +1643,12 @@ function ResultGrid({
                                 } : current);
                               }}
                             >
-                              {editableFormat === "CSV" ? <option value="auto">Auto</option> : (
+                              {editableFormat === "CSV" ? <option value="auto">{copy.auto}</option> : (
                                 <>
-                                  <option value="string">Text</option>
-                                  <option value="number">Number</option>
-                                  <option value="boolean">Boolean</option>
-                                  <option value="null">Empty</option>
+                                  <option value="string">{copy.text}</option>
+                                  <option value="number">{copy.number}</option>
+                                  <option value="boolean">{copy.boolean}</option>
+                                  <option value="null">{copy.empty}</option>
                                 </>
                               )}
                             </select>
@@ -1665,10 +1683,10 @@ function ResultGrid({
                             )}
                           </div>
                           <div className="visual-cell-actions">
-                            <button type="submit" aria-label={`Save ${editableCellTarget.label}`} disabled={editingCell.submitting} title="Save to canonical source">
+                            <button type="submit" aria-label={copy.saveCell(editableCellTarget.label)} disabled={editingCell.submitting} title={copy.saveCanonical}>
                               {editingCell.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}
                             </button>
-                            <button type="button" aria-label="Cancel cell edit" disabled={editingCell.submitting} onClick={() => setEditingCell(null)}><X /></button>
+                            <button type="button" aria-label={copy.cancelCell} disabled={editingCell.submitting} onClick={() => setEditingCell(null)}><X /></button>
                           </div>
                           {editingCell.error && <small role="alert">{editingCell.error}</small>}
                         </form>
@@ -1678,9 +1696,9 @@ function ResultGrid({
                             className="preview-cell-select"
                             type="button"
                             data-preview-source-target={cellTarget?.kind}
-                            aria-label={`Select ${cellTarget?.label} in canonical source for Agent context`}
+                            aria-label={copy.selectForAgent(cellTarget?.label ?? "")}
                             aria-pressed={cellActive}
-                            title={`${cellEditable ? "Press Enter to edit · " : ""}Select the exact canonical source cell · ${cellTarget?.label}`}
+                            title={copy.selectCellTitle(cellTarget?.label ?? "", cellEditable)}
                             onClick={activateCell}
                             onKeyDown={(event) => {
                               if (event.key !== "Enter" || !editableCellTarget || !cellEditable) return;
@@ -1694,8 +1712,8 @@ function ResultGrid({
                             <button
                               className="visual-cell-edit-trigger"
                               type="button"
-                              aria-label={`Edit ${editableCellTarget.label}`}
-                              title="Edit this canonical source cell"
+                              aria-label={copy.editTarget(editableCellTarget.label)}
+                              title={copy.editCell}
                               onClick={() => beginCellEdit(editableCellTarget, value)}
                             >
                               <PencilLine aria-hidden="true" />
@@ -1711,7 +1729,7 @@ function ResultGrid({
             })}
           </tbody>
         </table>
-        {!rows.length && <div className="empty-grid-result">Query completed with no rows.</div>}
+        {!rows.length && <div className="empty-grid-result">{copy.noRows}</div>}
       </div>
       <div className="data-footnote"><CheckCircle2 aria-hidden="true" /> {footnote}</div>
     </div>
@@ -1733,6 +1751,7 @@ function DataPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
 }) {
+  const copy = usePreviewCopy();
   const parsed = parseDataSource(artifact.source);
   if (parsed.errors.length) return <EmptyPreview message={parsed.errors[0]} />;
   return (
@@ -1740,17 +1759,17 @@ function DataPreview({
       columns={parsed.columns}
       rows={parsed.rows.map((row) => parsed.columns.map((column) => row[column]))}
       badges={[
-        { icon: "rows", label: `${parsed.rows.length} rows` },
-        { icon: "columns", label: `${parsed.columns.length} columns` },
+        { icon: "rows", label: copy.rows(parsed.rows.length) },
+        { icon: "columns", label: copy.columns(parsed.columns.length) },
         { icon: "format", label: parsed.format },
       ]}
       footnote={onEditDataCell && cellTargets.some((target) => canVisualEditDataCell(artifact, target))
-        ? "Parsed locally — click selects exact source; press Enter or use the pencil to edit a proven scalar cell."
+        ? copy.dataFootnote("edit")
         : onTargetSource && cellTargets.length
-          ? "Parsed locally — click a cell for exact Agent context, or a row number for the full record."
+          ? copy.dataFootnote("cell")
         : onTargetSource && rowTargets.length
-          ? "Parsed locally — click a row number to bind the full record as Agent context."
-          : "Parsed locally — no targetable rows left this device."}
+          ? copy.dataFootnote("row")
+          : copy.dataFootnote("none")}
       rowTargets={rowTargets}
       cellTargets={cellTargets}
       targetArtifact={artifact}
@@ -1773,12 +1792,13 @@ function QueryPreview({
   runtimeEntry?: QueryRuntimeEntry;
   onTargetSource?: PreviewTargetHandler;
 }) {
+  const copy = usePreviewCopy();
   if (!runtimeEntry || runtimeEntry.status === "loading") {
     return (
       <div className="query-loading" role="status">
         <span><LoaderCircle aria-hidden="true" /></span>
-        <strong>Running locally</strong>
-        <p>Loading the bound Data artifact into DuckDB-Wasm…</p>
+        <strong>{copy.runningLocally}</strong>
+        <p>{copy.loadingDuckDB}</p>
       </div>
     );
   }
@@ -1803,15 +1823,15 @@ function QueryPreview({
       columns={result.columns}
       rows={result.rows}
       badges={[
-        { icon: "rows", label: `${result.rows.length}${result.truncated ? "+" : ""} rows` },
-        { icon: "columns", label: `${result.columns.length} columns` },
+        { icon: "rows", label: copy.rows(result.rows.length, result.truncated) },
+        { icon: "columns", label: copy.columns(result.columns.length) },
         { icon: "time", label: `${Math.max(1, Math.round(result.elapsedMs))} ms` },
       ]}
-      footnote={`${result.engine} · ${dataArtifact?.name ?? "workspace_data"} stayed in this browser${result.lineageMode === "direct" ? " · result row numbers and direct fields, when present, open canonical source; derived cells stay read-only" : " · this query shape stays read-only because no one-to-one lineage was proven"}${result.truncated ? " · preview limited to 500 rows" : ""}.`}
+      footnote={copy.queryFootnote(result.engine, dataArtifact?.name ?? "workspace_data", result.lineageMode === "direct", result.truncated)}
       rowTargets={rowTargets}
       cellTargetRows={cellTargetRows}
       targetArtifact={dataArtifact}
-      targetViaLabel={`Query result · ${artifact.name}`}
+      targetViaLabel={copy.queryResultVia(artifact.name)}
       onTargetSource={onTargetSource}
     />
   );
@@ -1834,6 +1854,7 @@ function ChartPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditChartSpec?: ChartSpecEditHandler;
 }) {
+  const copy = usePreviewCopy();
   const [editingChart, setEditingChart] = useState<{
     artifactId: string;
     sourceRevision: string;
@@ -1851,7 +1872,7 @@ function ChartPreview({
   const currentSpec = parseChartSource(artifact.source).spec;
   const sourceFields = currentSpec
     ? visualChartSourceFields(artifacts, currentSpec.source)
-    : { sourceName: "Unknown source", columns: [], errors: ["The current Chart JSON is invalid."] };
+    : { sourceName: copy.unknownSource, columns: [], errors: [copy.chartInvalid] };
   const draftSource = editingChart
     ? visualChartSpecPreviewSource(artifact, editingChart.input)
     : null;
@@ -1866,7 +1887,7 @@ function ChartPreview({
     ?? draftResolution?.errors[0]
     ?? "";
   const resolution = resolvePreviewChart(artifact, artifacts, queryRuntime);
-  if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? "The chart could not compile."} />;
+  if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? copy.chartCouldNotCompile} />;
 
   function beginChartEdit() {
     if (!target || !onEditChartSpec || !canVisualEditChartSpec(artifact, target)) return;
@@ -1909,7 +1930,7 @@ function ChartPreview({
     <div className="chart-stage">
       {target && (onTargetSource || onEditChartSpec) && (
         <div className="chart-stage-toolbar" data-preview-source-id={target.id}>
-          <div><span>Bound chart source</span><strong>{sourceFields.sourceName}</strong></div>
+          <div><span>{copy.boundChartSource}</span><strong>{sourceFields.sourceName}</strong></div>
           <div>
             {onTargetSource && (
               <button
@@ -1918,8 +1939,8 @@ function ChartPreview({
                 type="button"
                 aria-pressed={targetActive}
                 onClick={() => onTargetSource(artifact, target)}
-                title="Select the complete canonical Chart JSON"
-              ><MousePointer2 aria-hidden="true" />Source</button>
+                title={copy.completeChartSource}
+              ><MousePointer2 aria-hidden="true" />{copy.source}</button>
             )}
             {onEditChartSpec && canVisualEditChartSpec(artifact, target) && (
               <button
@@ -1927,7 +1948,7 @@ function ChartPreview({
                 type="button"
                 aria-expanded={Boolean(editingTarget)}
                 onClick={beginChartEdit}
-              ><PencilLine aria-hidden="true" />Configure</button>
+              ><PencilLine aria-hidden="true" />{copy.configure}</button>
             )}
           </div>
         </div>
@@ -1948,16 +1969,16 @@ function ChartPreview({
           }}
         >
           <header>
-            <div><span>Editing complete Chart spec</span><strong>{editingChart.input.title || "Untitled chart"}</strong></div>
-            <small>Strict Chart JSON · source identity locked</small>
+            <div><span>{copy.editingChart}</span><strong>{editingChart.input.title || copy.untitledChart}</strong></div>
+            <small>{copy.chartLocked}</small>
           </header>
           <div className="visual-chart-editor-grid">
             <div className="visual-chart-fields">
               <label className="visual-chart-field-wide">
-                <span>Title</span>
+                <span>{copy.title}</span>
                 <input
                   autoFocus
-                  aria-label="Edit Chart title"
+                  aria-label={copy.editChartTitle}
                   value={editingChart.input.title}
                   disabled={editingChart.submitting}
                   maxLength={120}
@@ -1965,9 +1986,9 @@ function ChartPreview({
                 />
               </label>
               <label className="visual-chart-field-wide">
-                <span>Description <small>optional</small></span>
+                <span>{copy.description} <small>{copy.optional}</small></span>
                 <textarea
-                  aria-label="Edit Chart description"
+                  aria-label={copy.editChartDescription}
                   value={editingChart.input.description}
                   disabled={editingChart.submitting}
                   maxLength={240}
@@ -1975,44 +1996,44 @@ function ChartPreview({
                 />
               </label>
               <label>
-                <span>Mark</span>
+                <span>{copy.mark}</span>
                 <select value={editingChart.input.mark} disabled={editingChart.submitting} onChange={(event) => updateChartInput("mark", event.target.value as VisualChartSpecEditInput["mark"])}>
-                  <option value="bar">Bar</option>
-                  <option value="line">Line</option>
+                  <option value="bar">{copy.bar}</option>
+                  <option value="line">{copy.line}</option>
                 </select>
               </label>
               <label>
-                <span>Sort</span>
+                <span>{copy.sort}</span>
                 <select value={editingChart.input.sort} disabled={editingChart.submitting} onChange={(event) => updateChartInput("sort", event.target.value as VisualChartSpecEditInput["sort"])}>
-                  <option value="source">Source order</option>
-                  <option value="ascending">Ascending</option>
-                  <option value="descending">Descending</option>
+                  <option value="source">{copy.sourceOrder}</option>
+                  <option value="ascending">{copy.ascending}</option>
+                  <option value="descending">{copy.descending}</option>
                 </select>
               </label>
               <label>
-                <span>Category field</span>
+                <span>{copy.categoryField}</span>
                 <select value={editingChart.input.category} disabled={editingChart.submitting} onChange={(event) => updateChartInput("category", event.target.value)}>
                   {sourceFields.columns.map((column) => <option value={column} key={column}>{column}</option>)}
                 </select>
               </label>
               <label>
-                <span>Value field</span>
+                <span>{copy.valueField}</span>
                 <select value={editingChart.input.value} disabled={editingChart.submitting} onChange={(event) => updateChartInput("value", event.target.value)}>
                   {sourceFields.columns.map((column) => <option value={column} key={column}>{column}</option>)}
                 </select>
               </label>
               <label>
-                <span>Number format</span>
+                <span>{copy.numberFormat}</span>
                 <select value={editingChart.input.format} disabled={editingChart.submitting} onChange={(event) => updateChartInput("format", event.target.value as VisualChartSpecEditInput["format"])}>
-                  <option value="currency">Currency</option>
-                  <option value="number">Number</option>
-                  <option value="percent">Percent</option>
+                  <option value="currency">{copy.currency}</option>
+                  <option value="number">{copy.number}</option>
+                  <option value="percent">{copy.percent}</option>
                 </select>
               </label>
               <label>
-                <span>Visible marks <output>{editingChart.input.maxItems}</output></span>
+                <span>{copy.visibleMarks} <output>{editingChart.input.maxItems}</output></span>
                 <input
-                  aria-label="Choose maximum visible Chart marks"
+                  aria-label={copy.chooseVisibleMarks}
                   type="range"
                   min="1"
                   max="20"
@@ -2022,17 +2043,17 @@ function ChartPreview({
                 />
               </label>
               <label className="visual-chart-color-field visual-chart-field-wide">
-                <span>Accent color</span>
+                <span>{copy.accentColor}</span>
                 <div>
                   <input
-                    aria-label="Choose Chart accent color"
+                    aria-label={copy.chooseAccentColor}
                     type="color"
                     value={/^#[0-9a-f]{6}$/iu.test(editingChart.input.color) ? editingChart.input.color.toLowerCase() : "#ff5c35"}
                     disabled={editingChart.submitting}
                     onChange={(event) => updateChartInput("color", event.target.value)}
                   />
                   <input
-                    aria-label="Edit Chart accent hex color"
+                    aria-label={copy.editAccentHex}
                     value={editingChart.input.color}
                     disabled={editingChart.submitting}
                     maxLength={7}
@@ -2041,22 +2062,22 @@ function ChartPreview({
                   />
                 </div>
               </label>
-              <p className="visual-chart-source-lock">Source · <strong>{sourceFields.sourceName}</strong> · change identity in canonical source or reviewed Agent flow</p>
+              <p className="visual-chart-source-lock">{copy.chartSourceLock(sourceFields.sourceName)}</p>
             </div>
-            <section className="visual-chart-draft" aria-label="Draft Chart preview">
-              <span>Runtime-validated draft</span>
+            <section className="visual-chart-draft" aria-label={copy.chartDraft}>
+              <span>{copy.runtimeDraft}</span>
               {draftResolution?.model && !draftError
                 ? <ChartFigure model={draftResolution.model} artifacts={artifacts} embedded />
-                : <div className="visual-chart-draft-error"><AlertTriangle aria-hidden="true" /><p>{draftError || "Choose valid Chart properties."}</p></div>}
+                : <div className="visual-chart-draft-error"><AlertTriangle aria-hidden="true" /><p>{draftError || copy.chooseChartProperties}</p></div>}
             </section>
           </div>
           {editingChart.error && <p className="visual-chart-error" role="alert">{editingChart.error}</p>}
           <footer>
-            <p>One strict spec · runtime impact verified · save rewrites canonical Chart JSON</p>
+            <p>{copy.chartContract}</p>
             <div>
-              <button type="button" disabled={editingChart.submitting} onClick={() => setEditingChart(null)}><X />Cancel</button>
+              <button type="button" disabled={editingChart.submitting} onClick={() => setEditingChart(null)}><X />{copy.cancel}</button>
               <button type="submit" disabled={editingChart.submitting || Boolean(draftError) || !draftResolution?.model}>
-                {editingChart.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save Chart
+                {editingChart.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}{copy.saveChart}
               </button>
             </div>
           </footer>
@@ -2086,6 +2107,7 @@ function SlidesPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
 }) {
+  const copy = usePreviewCopy();
   const [editingSlide, setEditingSlide] = useState<{
     targetId: string;
     artifactId: string;
@@ -2168,9 +2190,9 @@ function SlidesPreview({
 
   return (
     <div className="slides-stage">
-      <div className="slides-stage-meta"><span>{slideCount} slides</span><span>{deckCompilation ? onEditDeckSlide ? "Deck Markdown → select or edit one exact slide" : "Deck Markdown → sandboxed HTML" : "Legacy sandboxed HTML"}</span></div>
+      <div className="slides-stage-meta"><span>{copy.slides(slideCount)}</span><span>{copy.deckMode(deckCompilation ? onEditDeckSlide ? "edit" : "sandbox" : "legacy")}</span></div>
       {(onTargetSource || onEditDeckSlide) && targets.length > 0 && (
-        <nav className="slide-targets" aria-label="Select or edit a Deck slide">
+        <nav className="slide-targets" aria-label={copy.selectDeckSlide}>
           {targets.map((target) => {
             const active = previewTargetIsActive(target, activeSelection);
             const editable = Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target));
@@ -2188,7 +2210,7 @@ function SlidesPreview({
                     type="button"
                     aria-pressed={active}
                     onClick={() => onTargetSource(artifact, target)}
-                    title={`Select ${target.label} in canonical source`}
+                    title={copy.selectExact(target.label)}
                   >
                     <span>{String(target.index + 1).padStart(2, "0")}</span>
                     <strong>{target.label}</strong>
@@ -2198,8 +2220,8 @@ function SlidesPreview({
                   <button
                     className="slide-target-edit"
                     type="button"
-                    aria-label={`Edit ${target.label}`}
-                    title={`Edit exact ${target.label} slide`}
+                    aria-label={copy.editTarget(target.label)}
+                    title={copy.editTarget(target.label)}
                     onClick={() => beginSlideEdit(target)}
                   >
                     <PencilLine aria-hidden="true" />
@@ -2217,16 +2239,16 @@ function SlidesPreview({
           onSubmit={(event) => { event.preventDefault(); void submitSlideEdit(editingTarget); }}
         >
           <header>
-            <div><span>Editing exact slide {editingTarget.index + 1}</span><strong>{editingTarget.label}</strong></div>
-            <small>{editingSlide.draft.length.toLocaleString("en-US")} / {MAX_VISUAL_DECK_SLIDE_CHARS.toLocaleString("en-US")}</small>
+            <div><span>{copy.editingSlide(editingTarget.index + 1)}</span><strong>{editingTarget.label}</strong></div>
+            <small>{editingSlide.draft.length.toLocaleString(copy.numberLocale)} / {MAX_VISUAL_DECK_SLIDE_CHARS.toLocaleString(copy.numberLocale)}</small>
           </header>
           <div className="visual-deck-editor-grid">
             <div className="visual-deck-fields">
               <div className="visual-deck-field-row">
                 <label>
-                  <span>Layout</span>
+                  <span>{copy.layout}</span>
                   <select
-                    aria-label={`Choose layout for ${editingTarget.label}`}
+                    aria-label={copy.chooseLayout(editingTarget.label)}
                     value={editingSlide.layout}
                     disabled={editingSlide.submitting}
                     onChange={(event) => setEditingSlide((current) => current ? {
@@ -2239,9 +2261,9 @@ function SlidesPreview({
                   </select>
                 </label>
                 <label>
-                  <span>Eyebrow <small>optional</small></span>
+                  <span>{copy.eyebrow} <small>{copy.optional}</small></span>
                   <input
-                    aria-label={`Edit eyebrow for ${editingTarget.label}`}
+                    aria-label={copy.editEyebrow(editingTarget.label)}
                     value={editingSlide.eyebrow}
                     disabled={editingSlide.submitting}
                     maxLength={100}
@@ -2250,10 +2272,10 @@ function SlidesPreview({
                 </label>
               </div>
               <label className="visual-deck-markdown-field">
-                <span>Slide Markdown</span>
+                <span>{copy.slideMarkdown}</span>
                 <textarea
                   autoFocus
-                  aria-label={`Edit ${editingTarget.label} slide Markdown`}
+                  aria-label={copy.editSlideMarkdown(editingTarget.label)}
                   value={editingSlide.draft}
                   disabled={editingSlide.submitting}
                   maxLength={MAX_VISUAL_DECK_SLIDE_CHARS}
@@ -2271,20 +2293,20 @@ function SlidesPreview({
                 />
               </label>
             </div>
-            <section className="visual-deck-draft" aria-label={`Draft preview for ${editingTarget.label}`}>
-              <span>Sandboxed one-slide preview</span>
+            <section className="visual-deck-draft" aria-label={copy.slideDraft(editingTarget.label)}>
+              <span>{copy.sandboxedSlide}</span>
               {draftRenderedSource && !draftPreviewError
-                ? <iframe srcDoc={draftRenderedSource} sandbox="" title={`Draft preview for ${editingTarget.label}`} />
-                : <div className="visual-deck-draft-error"><AlertTriangle aria-hidden="true" /><p>{draftPreviewError || "Add a valid # or ## slide heading."}</p></div>}
+                ? <iframe srcDoc={draftRenderedSource} sandbox="" title={copy.slideDraft(editingTarget.label)} />
+                : <div className="visual-deck-draft-error"><AlertTriangle aria-hidden="true" /><p>{draftPreviewError || copy.validSlideHeading}</p></div>}
             </section>
           </div>
           {editingSlide.error && <p className="visual-deck-error" role="alert">{editingSlide.error}</p>}
           <footer>
-            <p>One revision-bound slide · bindings stay fixed · save writes canonical source</p>
+            <p>{copy.slideContract}</p>
             <div>
-              <button type="button" disabled={editingSlide.submitting} onClick={() => setEditingSlide(null)}><X />Cancel</button>
+              <button type="button" disabled={editingSlide.submitting} onClick={() => setEditingSlide(null)}><X />{copy.cancel}</button>
               <button type="submit" disabled={editingSlide.submitting || !editingSlide.draft.trim() || Boolean(draftPreviewError)}>
-                {editingSlide.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}Save slide
+                {editingSlide.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}{copy.saveSlide}
               </button>
             </div>
           </footer>
@@ -2294,7 +2316,7 @@ function SlidesPreview({
         className="slides-frame"
         srcDoc={renderedSource}
         sandbox=""
-        title="Rendered presentation preview"
+        title={copy.renderedPresentation}
       />
     </div>
   );
@@ -2303,6 +2325,7 @@ function SlidesPreview({
 export function ArtifactPreview({
   artifact,
   artifacts,
+  locale,
   activeSelection,
   onTargetSource,
   onEditDataCell,
@@ -2314,6 +2337,7 @@ export function ArtifactPreview({
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
+  locale: RuneLocale;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
@@ -2324,22 +2348,28 @@ export function ArtifactPreview({
   onEditChartSpec?: ChartSpecEditHandler;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
-  if (!artifact.source.trim()) return <EmptyPreview message="Start writing to compile a preview." />;
-  const compiled = compileArtifactSource(
-    artifact.source,
-    artifacts,
-    readyQuerySnapshots(queryRuntime),
-  );
-  if (artifact.kind === "data") {
+  const copy = useMemo(() => runeUICopy(locale).preview, [locale]);
+  let content: ReactNode;
+  if (!artifact.source.trim()) {
+    content = <EmptyPreview message={copy.startWriting} />;
+  } else {
+    const compiled = compileArtifactSource(
+      artifact.source,
+      artifacts,
+      readyQuerySnapshots(queryRuntime),
+    );
+    if (artifact.kind === "data") {
     const targets = deriveDataPreviewSourceTargets(artifact);
-    return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
+      content = <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
+    } else {
+      const targets = derivePreviewSourceTargets(artifact);
+      if (artifact.kind === "document") content = <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} />;
+      else if (artifact.kind === "query") {
+        const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
+        content = <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
+      } else if (artifact.kind === "chart") content = <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} />;
+      else content = <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} />;
+    }
   }
-  const targets = derivePreviewSourceTargets(artifact);
-  if (artifact.kind === "document") return <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} />;
-  if (artifact.kind === "query") {
-    const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
-    return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
-  }
-  if (artifact.kind === "chart") return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} />;
-  return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} />;
+  return <PreviewCopyContext.Provider value={copy}>{content}</PreviewCopyContext.Provider>;
 }

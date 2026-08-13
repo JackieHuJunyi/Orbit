@@ -1866,7 +1866,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 | 产品层 | 功能与状态 | 必须依赖 | 可发布验收 |
 | --- | --- | --- | --- |
-| 进入 Rune | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放：已交付 | hydration 稳定壳、本地偏好 | 首次/再次打开都可进入；SSR/CSR 文本一致；指南是普通可编辑 Artifact |
+| 进入 Rune | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放，以及 v0.49 主要工作面统一中英文：已交付 | hydration 稳定壳、本地偏好、typed copy contract | 首次/再次打开都可进入；SSR/CSR 文本一致；语言切换覆盖专业操作；指南是普通可编辑 Artifact |
 | 模型 | 多 profile BYOK、OpenAI/OpenRouter/自定义 Responses、读取模型、启用/编辑/删除：v0.46 | 同源 API、AES-GCM vault、端点验证、local fallback | UI/route 实测；响应与 cookie 不出现明文；篡改失败关闭；旧部署模型兼容 |
 | Artifact 核心 | Document/Data/Query/Chart/Deck 可读 source、实时 preview、依赖图：已交付 | strict adapters、revision identity | 完整 workspace 每次变化都可重新编译；无隐藏 graph state |
 | 双向同步 | source → preview 与 preview → source 定位；v0.48 已细化到 Markdown list item/table cell/inline semantics；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | fragment→block→section 最小范围；stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
@@ -1892,7 +1892,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Rune 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
 
-这一版本也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；它们等待桌面壳或隔离、限时、限资源、带恶意文件扫描的转换服务。扫描 PDF 仍等待带页面范围披露、置信度和 provenance 的 OCR port。主工作区已有中英文核心导航，但历史提示、专业 review 细节和少数编辑器文案还需继续进入统一 localization catalog。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
+这一版本也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；它们等待桌面壳或隔离、限时、限资源、带恶意文件扫描的转换服务。扫描 PDF 仍等待带页面范围披露、置信度和 provenance 的 OCR port。v0.49 已把主工作区、专业 review 与可视化编辑器纳入统一中英文合同；parser、模型、SQL 和格式转换器的原始技术证据仍等待稳定错误码后再完整本地化。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
 
 ## 54. v0.48 细粒度同步仍然来自 Markdown AST，而不是点击坐标
 
@@ -1901,3 +1901,11 @@ v0.45 已经证明左侧 caret 可以回到右侧 block，但一个整张 GFM �
 渲染端只把这些 target id 附在对应 React Markdown 元素上。普通点击、Enter 或 Space 选择 canonical range、聚焦左侧并进入既有 Selection scope；链接普通点击用于定位，⌘/Ctrl 点击仍保留打开行为。反向链路从当前 source revision 的 caret/selection 选择最小包含范围，顺序是 fragment → block → section，再用 DOM id 做居中滚动。DOM 文本、浏览器 Range、元素坐标、标签文案和像素位置都不参与推断。
 
 编译后的 live metric 仍经过 monotonic offset map 返回完整 canonical binding syntax，只有映射结果与 canonical fragment exact match 才能交互；任何包含 Chart binding 的 fragment 都主动让位给 Chart → Query/Data cell 的更精确跨文件 provenance。跨 fragment 的选择只在同一 block 或 section 完整包含时回退，普通未格式化文字继续以 paragraph block 为最小粒度。连续像素 scroll-lock 和任意 rendered-text selection 仍不做，因为它们不能提高 source 可证明性，反而会制造滚动争夺和错误权限。
+
+## 55. v0.49 语言是显式产品状态，不是散落字符串
+
+只翻译欢迎页会制造一种更差的体验：用户确认中文后，刚进入导入审核、图表配置或文档块编辑就突然回到英文，语言选择因此像一次没有兑现的承诺。v0.49 把主要产品文案收敛到 `runeUICopy(locale)`：工作台 chrome、依赖与事务图、恢复点、Agent 建议审核、导入/导出/新建/文档结构弹窗，以及 Document/Data/Query/Chart/Deck 预览和可视化编辑器都必须显式接收同一个 `RuneLocale`。动态数量、文件名、目标和绑定使用函数插值，不能靠 `replace("files", ...)` 之类易碎拼接；测试递归比较两套 catalog 的完整形状。
+
+语言同时影响可执行建议，而不只影响按钮。过去英文界面仍显示中文 quick commands，用户可以点击，但产品心智已经断裂；现在 Selection、File 和 Workspace 三种范围都有等价的双语确定性指令，既保留本地 planner 的意图匹配，也让模型请求与界面一致。高频状态在渲染边界按当前 locale 转换，因此用户切换语言时当前状态立即变化，workspace、checkpoint 和 source 不需要被改写。
+
+稳定渲染仍优先。SSR 输出英文壳且 `<html lang="en">` 与首屏内容一致，hydration 后才读取已确认的设备偏好并更新根 `lang`；catalog 不读取时间、随机数或 ambient ICU formatter。技术证据保留一条明确边界：parser、provider、DuckDB 和 import/export adapter 的原始错误可能仍是英文，因为没有稳定 code 时翻译自由文本可能掩盖真正修复动作。下一步不是补一个巨型模糊词典，而是让这些端口返回 `code + parameters + original detail`，再由 UI 翻译标题与建议、保留可展开的原始证据。
