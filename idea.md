@@ -1981,3 +1981,9 @@ Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分�
 颜色分成两种不同职责。朱砂 `#dc4b36` 是 Rune mark，只用于品牌身份和少量 source 信号；用户外观色负责按钮、焦点、选择与环境氛围。首批雾蓝、鼠尾草绿、薰衣草、深蓝、宇宙橙参考当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的低饱和蓝绿紫和高辨识橙蓝方向，再重新校准为 Rune 自己可访问、适合长时间工作的界面 token。主题只保存枚举 id 到本机，不修改 Artifact、导出文件或工作区事实。
 
 语言注册表现在包含 `zh-CN / zh-TW / en / fr / es / ru / ar / ja / ko`，覆盖联合国六种官方语言并增加日语、韩语。问候动画严格从这个注册表生成，所以每个问候都有真实的语言选择、完整同形 UI contract 和本地指南。简繁转换与六种新增静态目录均在开发期生成并提交，运行时不请求翻译服务；关键 OCR 流程另有人工校对目录。阿拉伯语会把界面切成 RTL，但 Markdown/CSV/JSON/SQL 源、代码、URL、model id 和 API key 始终保持 LTR。机器生成目录仍需母语审校，不把“测试有文本”误报为语言质量已经终结。
+
+## 65. v0.60 左右实时同步也必须允许用户决定当下的注意力比例
+
+固定 47:53 的编辑器会迫使所有任务使用同一种注意力分配：写长文时 source 太窄，检查成品时 preview 又不够大。v0.60 在两个语义 pane 之间加入真正的 `role="separator"`；鼠标或触控笔拖动可在 35%–65% 之间连续调整，左右键以 2% 微调、Shift 加速到 5%，Home 或双击恢复默认。阿拉伯语 RTL 下物理方向与 source 比例的含义保持一致，960px 以下继续使用原来的上下堆叠并隐藏分隔器。
+
+这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

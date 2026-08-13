@@ -13,6 +13,7 @@ import {
   runeQuickCommands,
   runeText,
   runeUICopy,
+  workspaceSplitValueLabel,
   RUNE_GUIDE_ID,
   RUNE_LOCALE_REGISTRY,
 } from "../app/lib/localization.ts";
@@ -132,4 +133,14 @@ test("localizes suggested actions and high-frequency live status without alterin
   assert.equal(localizeRuneStatus("zh-TW", "Local workspace ready"), "本地工作區已就緒");
   assert.equal(localizeRuneStatus("zh-CN", "report.md updated in canonical source · Push when ready"), "report.md 已更新到规范源内容 · 可随时写回文件夹");
   assert.equal(localizeRuneStatus("en", "DuckDB could not run this query."), "DuckDB could not run this query.");
+});
+
+test("localizes the adjustable workspace split value in every interface language", () => {
+  for (const { locale } of RUNE_LOCALE_REGISTRY) {
+    const label = workspaceSplitValueLabel(locale, 47);
+    assert.match(label, /47/);
+    assert.match(label, /%|٪/);
+  }
+  assert.equal(workspaceSplitValueLabel("ar", 47), "عرض المصدر 47٪");
+  assert.equal(workspaceSplitValueLabel("ja", 47), "ソース幅 47%");
 });

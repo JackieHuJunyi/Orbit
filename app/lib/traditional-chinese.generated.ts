@@ -698,6 +698,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "請選擇一個或多個檔案"
   ],
   [
+    "调整源内容与预览宽度",
+    "調整源內容與預覽寬度"
+  ],
+  [
     "转换器未报告语义缺失",
     "轉換器未報告語義缺失"
   ],
@@ -1036,6 +1040,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "建议补丁中的文件",
     "建議補丁中的檔案"
+  ],
+  [
+    "恢复默认左右宽度",
+    "恢復預設左右寬度"
   ],
   [
     "或打开示例工作区",
@@ -2308,6 +2316,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "添加供应商",
     "新增供應商"
+  ],
+  [
+    "源内容宽度",
+    "源內容寬度"
   ],
   [
     "源内容差异",

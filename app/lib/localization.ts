@@ -98,6 +98,21 @@ export function localeDirection(locale: RuneLocale) {
   return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.direction ?? "ltr";
 }
 
+export function workspaceSplitValueLabel(locale: RuneLocale, value: number) {
+  const labels: Record<RuneLocale, string> = {
+    "zh-CN": `源内容宽度 ${value}%`,
+    "zh-TW": `來源內容寬度 ${value}%`,
+    en: `Source width ${value}%`,
+    fr: `Largeur de la source ${value} %`,
+    es: `Ancho de la fuente ${value} %`,
+    ru: `Ширина исходника ${value}%`,
+    ar: `عرض المصدر ${value}٪`,
+    ja: `ソース幅 ${value}%`,
+    ko: `소스 너비 ${value}%`,
+  };
+  return labels[locale];
+}
+
 function convertPreservingValues(value: string, preservedValues: readonly string[] = []) {
   const replacements = [...new Set(preservedValues.filter(Boolean))]
     .sort((left, right) => right.length - left.length)
@@ -232,6 +247,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       appearance: zh ? "外观" : "Appearance",
       appearanceBody: zh ? "选择 Rune 的气质色" : "Choose Rune's character color",
       activeTheme: zh ? "当前主题" : "Current theme",
+      resizeWorkspace: zh ? "调整源内容与预览宽度" : "Resize source and preview",
+      resetWorkspaceSplit: zh ? "恢复默认左右宽度" : "Reset source and preview widths",
       newArtifact: zh ? "新建" : "New",
       import: zh ? "导入" : "Import",
       openFolder: zh ? "打开文件夹" : "Open folder",

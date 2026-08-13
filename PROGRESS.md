@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.60 with a bounded, persistent, pointer-and-keyboard adjustable source/preview splitter that respects Arabic RTL and collapses back to the stacked responsive layout.
 - 2026-08-13 — Shipped Rune v0.59 with nine greeting-backed interface locales (all UN official languages plus Japanese and Korean), true Arabic RTL with canonical-source LTR boundaries, five persistent airy character-color themes inspired by current iPhone palettes, and a distinct vermilion Rune mark.
 
 - 2026-08-13 — Added explicit, no-cross-provider-fallback model adapters for OpenAI Responses, OpenAI-compatible Chat Completions/OpenRouter, Anthropic Messages, and Gemini generateContent while preserving one Rune typed-plan safety and review contract.

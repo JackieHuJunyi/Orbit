@@ -68,29 +68,35 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   Appearance: "Apparence", "Choose Rune's character color": "Choisissez la couleur de caractère de Rune", "Current theme": "Thème actuel",
   "Mist Blue": "Bleu brume", Sage: "Sauge", Lavender: "Lavande", "Deep Blue": "Bleu profond", "Cosmic Orange": "Orange cosmique",
   "Show API key": "Afficher la clé API", "Hide API key": "Masquer la clé API",
+  "Resize source and preview": "Redimensionner la source et l’aperçu", "Reset source and preview widths": "Rétablir les largeurs par défaut",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   Appearance: "Apariencia", "Choose Rune's character color": "Elige el color de carácter de Rune", "Current theme": "Tema actual",
   "Mist Blue": "Azul bruma", Sage: "Salvia", Lavender: "Lavanda", "Deep Blue": "Azul profundo", "Cosmic Orange": "Naranja cósmico",
   "Show API key": "Mostrar clave API", "Hide API key": "Ocultar clave API",
+  "Resize source and preview": "Cambiar el tamaño de la fuente y la vista previa", "Reset source and preview widths": "Restablecer los anchos predeterminados",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   Appearance: "Оформление", "Choose Rune's character color": "Выберите характерный цвет Rune", "Current theme": "Текущая тема",
   "Mist Blue": "Туманно-синий", Sage: "Шалфейный", Lavender: "Лавандовый", "Deep Blue": "Глубокий синий", "Cosmic Orange": "Космический оранжевый",
   "Show API key": "Показать ключ API", "Hide API key": "Скрыть ключ API",
+  "Resize source and preview": "Изменить ширину исходника и предпросмотра", "Reset source and preview widths": "Восстановить ширину по умолчанию",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   Appearance: "المظهر", "Choose Rune's character color": "اختر لون طابع Rune", "Current theme": "السمة الحالية",
   "Mist Blue": "أزرق ضبابي", Sage: "أخضر مريمي", Lavender: "خزامي", "Deep Blue": "أزرق داكن", "Cosmic Orange": "برتقالي كوني",
   "Show API key": "إظهار مفتاح API", "Hide API key": "إخفاء مفتاح API",
+  "Resize source and preview": "تغيير عرض المصدر والمعاينة", "Reset source and preview widths": "استعادة العرض الافتراضي",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   Appearance: "外観", "Choose Rune's character color": "Rune のテーマカラーを選択", "Current theme": "現在のテーマ",
   "Mist Blue": "ミストブルー", Sage: "セージ", Lavender: "ラベンダー", "Deep Blue": "ディープブルー", "Cosmic Orange": "コズミックオレンジ",
   "Show API key": "API キーを表示", "Hide API key": "API キーを隠す",
+  "Resize source and preview": "ソースとプレビューの幅を調整", "Reset source and preview widths": "既定の幅に戻す",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   Appearance: "화면 스타일", "Choose Rune's character color": "Rune의 테마 색상 선택", "Current theme": "현재 테마",
   "Mist Blue": "미스트 블루", Sage: "세이지", Lavender: "라벤더", "Deep Blue": "딥 블루", "Cosmic Orange": "코스믹 오렌지",
   "Show API key": "API 키 표시", "Hide API key": "API 키 숨기기",
+  "Resize source and preview": "소스와 미리보기 너비 조절", "Reset source and preview widths": "기본 너비로 복원",
 });

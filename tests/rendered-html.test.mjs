@@ -70,6 +70,11 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /data-preview-source-id="document-block:/);
   assert.match(html, /data-preview-section-id="document-section:/);
   assert.match(html, /aria-keyshortcuts="F2"/);
+  assert.match(html, /role="separator"/);
+  assert.match(html, /aria-orientation="vertical"/);
+  assert.match(html, /aria-valuemin="35"/);
+  assert.match(html, /aria-valuemax="65"/);
+  assert.match(html, /Resize source and preview/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /SQL metrics/);
   assert.match(html, /Saved on device/);
@@ -91,7 +96,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.59/);
+  assert.match(html, /Rune v0\.60/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);

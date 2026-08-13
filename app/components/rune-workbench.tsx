@@ -39,7 +39,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { ChangeEvent, KeyboardEvent, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
   ArtifactPreview,
   type ChartSpecEditHandler,
@@ -164,6 +164,7 @@ import {
   runeQuickCommands,
   runeText,
   runeUICopy,
+  workspaceSplitValueLabel,
   RUNE_GUIDE_ID,
   RUNE_LOCALE_STORAGE_KEY,
   RUNE_ONBOARDING_STORAGE_KEY,
@@ -181,6 +182,13 @@ import {
   RUNE_APPEARANCE_THEMES,
   type RuneAppearanceTheme,
 } from "../lib/appearance";
+import {
+  clampWorkspaceSourcePercent,
+  DEFAULT_WORKSPACE_SOURCE_PERCENT,
+  normalizeWorkspaceSourcePercent,
+  RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
+  workspaceSplitTracks,
+} from "../lib/workspace-layout";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
@@ -625,9 +633,11 @@ export function RuneWorkbench() {
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
   const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
   const [appearanceMenuOpen, setAppearanceMenuOpen] = useState(false);
+  const [workspaceSourcePercent, setWorkspaceSourcePercent] = useState(DEFAULT_WORKSPACE_SOURCE_PERCENT);
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
   const [visualSourceDraft, setVisualSourceDraft] = useState<VisualSourceDraft | null>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
@@ -666,6 +676,10 @@ export function RuneWorkbench() {
       // Appearance stays available in memory when device preference persistence is unavailable.
     }
   }, [appearanceTheme, hydrated]);
+
+  useEffect(() => () => {
+    document.body.classList.remove("workspace-resizing");
+  }, []);
 
   useEffect(() => {
     if (!exportMenuOpen && !appearanceMenuOpen) return;
@@ -894,10 +908,12 @@ export function RuneWorkbench() {
         const storedLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY));
         const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
         const storedAppearance = normalizeRuneAppearanceTheme(localStorage.getItem(RUNE_APPEARANCE_STORAGE_KEY));
+        const storedWorkspaceSplit = normalizeWorkspaceSourcePercent(localStorage.getItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY));
         setDetectedLocale(detected);
         setLocale(storedLocale ?? detected);
         setModelMode(storedModelMode ?? "auto");
         setAppearanceTheme(storedAppearance ?? "mist-blue");
+        setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
         setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -925,6 +941,65 @@ export function RuneWorkbench() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  const setPreferredWorkspaceSplit = useCallback((value: number) => {
+    const next = clampWorkspaceSourcePercent(value);
+    setWorkspaceSourcePercent(next);
+    try {
+      localStorage.setItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, String(next));
+    } catch {
+      // The presentation-only split remains usable in memory.
+    }
+  }, []);
+
+  const resizeWorkspaceFromPointer = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || window.matchMedia("(max-width: 960px)").matches) return;
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+    const sourcePane = workspace.querySelector<HTMLElement>(":scope > .source-pane");
+    const previewPane = workspace.querySelector<HTMLElement>(":scope > .preview-pane");
+    if (!sourcePane || !previewPane) return;
+    const sourceRect = sourcePane.getBoundingClientRect();
+    const previewRect = previewPane.getBoundingClientRect();
+    const start = Math.min(sourceRect.left, previewRect.left);
+    const end = Math.max(sourceRect.right, previewRect.right);
+    const width = end - start;
+    if (width <= 0) return;
+    document.body.classList.add("workspace-resizing");
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const onMove = (moveEvent: PointerEvent) => {
+      const physicalPercent = ((moveEvent.clientX - start) / width) * 100;
+      setWorkspaceSourcePercent(clampWorkspaceSourcePercent(document.documentElement.dir === "rtl" ? 100 - physicalPercent : physicalPercent));
+    };
+    const onEnd = () => {
+      document.body.classList.remove("workspace-resizing");
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+      setWorkspaceSourcePercent((current) => {
+        try { localStorage.setItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, String(current)); } catch { /* memory-only */ }
+        return current;
+      });
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
+  }, []);
+
+  const resizeWorkspaceFromKeyboard = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const direction = document.documentElement.dir === "rtl" ? -1 : 1;
+    const step = event.shiftKey ? 5 : 2;
+    if (event.key === "Home") {
+      event.preventDefault();
+      setPreferredWorkspaceSplit(DEFAULT_WORKSPACE_SOURCE_PERCENT);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setPreferredWorkspaceSplit(workspaceSourcePercent - step * direction);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setPreferredWorkspaceSplit(workspaceSourcePercent + step * direction);
+    }
+  }, [setPreferredWorkspaceSplit, workspaceSourcePercent]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -2882,7 +2957,14 @@ export function RuneWorkbench() {
         </div>
       </header>
 
-      <div className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"}`}>
+      <div
+        ref={workspaceRef}
+        className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"}`}
+        style={{
+          "--workspace-source-track": workspaceSplitTracks(workspaceSourcePercent).source,
+          "--workspace-preview-track": workspaceSplitTracks(workspaceSourcePercent).preview,
+        } as CSSProperties}
+      >
         <aside className="activity-rail" aria-label={ui.runeSections}>
           <div className="activity-group">
             <button
@@ -3280,6 +3362,22 @@ export function RuneWorkbench() {
           </div>
         </section>
 
+        <div
+          className="workspace-splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={ui.resizeWorkspace}
+          aria-valuemin={35}
+          aria-valuemax={65}
+          aria-valuenow={Math.round(workspaceSourcePercent)}
+          aria-valuetext={workspaceSplitValueLabel(locale, Math.round(workspaceSourcePercent))}
+          tabIndex={0}
+          title={`${ui.resizeWorkspace} · ${ui.resetWorkspaceSplit}`}
+          onPointerDown={resizeWorkspaceFromPointer}
+          onKeyDown={resizeWorkspaceFromKeyboard}
+          onDoubleClick={() => setPreferredWorkspaceSplit(DEFAULT_WORKSPACE_SOURCE_PERCENT)}
+        ><span aria-hidden="true" /></div>
+
         <section className="preview-pane" aria-label={ui.preview}>
           <header className="pane-header preview-header">
             <div className="pane-title">
@@ -3378,7 +3476,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.59</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.60</span></div>
       </footer>
 
       {newArtifactOpen && (
