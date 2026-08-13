@@ -3991,7 +3991,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.02</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.03</strong></footer>
               </div>
             )}
           </div>

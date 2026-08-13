@@ -2335,3 +2335,11 @@ v1.01 不为此复制一个 React slide renderer，也不向 iframe 增加 scrip
 v1.02 新增纯 `pilot-evidence` compiler，只消费规范化后的 v3 ledger。它对 run 与 output 使用包内匿名编号，把时间降低到日期，把 planner 折叠成 local/configured-model，只留下任务状态、有限影响数量、耗时、可用时的 token、交付格式/判断和完整的 authorized-or-redacted 七维评分。正文、数据、prompt、model response、Query 行、文件名、Artifact id、路径、版本指纹、SHA-256、credential、用户身份和准确时间全部不能进入 JSON；输出固定小于 128 KB，给定账本和时间必须字节确定，深冻结输入保持不变。
 
 下载能力仍只属于 Workbench。用户在九语言 review dialog 里先看清包含/排除范围、记录数和大小，再明确确认“这是候选证据，不是 PMF 证明”；审核期间 ledger 变化会让下载失败，网络上传路径不存在。Synthetic Golden Task 和没有完整人工评分的技术成功都不会被包装成真实样本。这个功能让 0/20 基线有一条诚实的收集与交接路径，但发布本身不会让 0 自动变成 1。
+
+## 109. v1.03 多人试点汇总不能靠相加不可信 JSON，也不能为判重重新创造身份
+
+单设备匿名包解决了交接，但研究者如果直接把多个 JSON 的 `summary` 相加，任何手工编辑、重复导出或错误 manifest 都可能把 2 个任务变成 20 个。用长期 participant/run hash 可以判重，却会重新引入跨导出可关联身份，破坏 v1.02 的隐私边界。Rune 选择更窄的研究合同：每个 `participant-NNN` 只提交一个研究窗口结束时的最终包；新导出替换旧文件，不做增量合并。
+
+纯 cohort compiler 把每个包当作非可信输入，重新验证 provenance、alias、日期、状态、数值上限、task/output link、method/format、完整 rubric 与顺序，重新计算 summary 后才允许聚合。内容相同但导出日期不同的重复包也拒绝。输出只保留群组 counts、weighted averages、任务类型、独立 number gate，以及同一匿名包内跨不同日期且不超过 28 天的复用信号；participant id、run/output record 和任务日期都不会进入结果。
+
+CLI 只读 manifest 目录内的显式相对常规文件，拒绝 symlink、越界路径、超过 128 KB 与重复路径；默认只打印，显式输出时以 user-only、non-overwrite 和失败补偿方式生成 JSON/Markdown。`pilot-private/`、原始包和 cohort 报告默认不进 Git。这个能力不自动得到任何真实样本，但让 P1/P2 一旦开始就不会用临时 spreadsheet 重新制造一套不可审计的证据系统。

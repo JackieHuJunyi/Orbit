@@ -2067,3 +2067,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 九语言审阅弹层必须在下载前列出包含与排除范围、记录数、真实人工评估任务数和文件大小；用户明确确认“这是候选结果证据，不是 PMF 证明”后才允许下载。
 - 审阅期间账本变化必须使旧导出失效；下载只使用浏览器本地 Blob，不得增加 route、fetch、telemetry、clipboard、自动文件夹写入或后台同步。
 - Golden Task E1、未评分 quick outcome 和技术 Apply success 不能自动计入真实 pilot。功能上线只建立 0/20 → 20/20 的安全收集路径，不改变当前 0/20 基线。
+
+### 17.35 v1.03 Cohort 汇总必须重验每条事实，但不得重新引入可关联身份
+
+- 每位研究参与者使用 `participant-NNN` 且只提交一个研究窗口结束时的最终包；更新时替换文件，不追加第二行。真实身份映射、授权、访谈和商业记录留在独立获批系统，不进入 manifest、Rune、Git 或报告。
+- cohort compiler 必须把包当作 untrusted：重验 exact schema/provenance、alias、日期、状态、上限、task/output link、交付组合、rubric 与顺序，并重新计算 summary；输入自称达到 20 个任务不能被信任。
+- 同一内容即使换了 export date 也视为重复；但系统不生成稳定 cross-export participant/run id，因此无法自动合并增量包。这是避免可关联身份的明确取舍。
+- 输出只保留群组 run/delivery、weighted seven-dimension average、number gate、task mix 和 28 天内跨不同日期的 evaluated repeat signal；participant id、package/run/output record、文件名、路径和任务日期不得进入 JSON/Markdown。
+- CLI manifest 只接受目录内相对常规 JSON，拒绝 symlink、path escape、重复 path 和超过 128 KB；默认 stdout，显式写入使用 user-only、non-overwrite 与补偿清理。所有真实包和报告默认 Git-ignore。
+- [真实试点 runbook](docs/pilot/README.md) 固定 P1 招募、授权/脱敏、人工基线、Rune 对照、详细评分、最终导出、汇总与 P2/P3 判定流程；工具上线不改变 0/20，只有实际获授权完整评分才能改变。

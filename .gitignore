@@ -44,3 +44,9 @@ next-env.d.ts
 /work/
 /output/
 /tmp/
+
+# Local real-pilot evidence. Never commit participant packages or cohort reports.
+/pilot-private/
+rune-pilot-evidence-*.json
+rune-pilot-cohort-*.json
+rune-pilot-cohort-*.md

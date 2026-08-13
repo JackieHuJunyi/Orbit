@@ -12,6 +12,7 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run locales:check && npm run build && npm run eval:golden && node --experimental-strip-types --test tests/*.test.mjs",
     "eval:golden": "node --experimental-strip-types scripts/run-golden-task-eval.mjs",
+    "pilot:aggregate": "node --experimental-strip-types scripts/aggregate-pilot-evidence.mjs",
     "qa:pdf": "node --experimental-strip-types scripts/generate-pdf-qa.mjs",
     "qa:pdf-import": "node --experimental-strip-types scripts/generate-pdf-import-qa.mjs",
     "qa:odf": "node --experimental-strip-types scripts/generate-odf-qa.mjs",
