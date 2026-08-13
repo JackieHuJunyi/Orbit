@@ -12,7 +12,7 @@ import {
 } from "./patches.ts";
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
-import type { RuneLocale } from "./localization.ts";
+import { isChineseRuneLocale, runeText, type RuneLocale } from "./localization.ts";
 
 export const MAX_OPERATING_REVIEW_TITLE_CHARS = 60;
 export const MAX_OPERATING_REVIEW_PERIOD_CHARS = 60;
@@ -98,6 +98,11 @@ const audienceLabels = {
     board: "Board",
     team: "Operating team",
   },
+  "zh-TW": {
+    leadership: "管理層",
+    board: "董事會",
+    team: "執行團隊",
+  },
 } as const;
 
 function normalizeTaskText(value: string) {
@@ -156,7 +161,7 @@ function reportSource(
   data: WorkspaceArtifact,
   chart: WorkspaceArtifact,
 ) {
-  const zh = input.locale === "zh-CN";
+  const zh = isChineseRuneLocale(input.locale);
   const title = markdownInline(normalizeTaskText(input.title));
   const period = markdownInline(normalizeTaskText(input.period));
   const focus = markdownInline(normalizeTaskText(input.focus));
@@ -170,7 +175,7 @@ function reportSource(
   const chartBinding = formatChartReference(chart.id);
 
   if (zh) {
-    return `# ${title}
+    const source = `# ${title}
 
 > **任务范围** · ${period} · ${audience} · 本地来源 \`${sourceName}\`
 
@@ -196,6 +201,7 @@ ${chartBinding}
 | --- | --- | --- | --- |
 | 待审核后填写 | — | — | ${sourceName} |
 `;
+    return runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding]);
   }
 
   return `# ${title}
@@ -231,7 +237,7 @@ function deckSource(
   data: WorkspaceArtifact,
   chart: WorkspaceArtifact,
 ) {
-  const zh = input.locale === "zh-CN";
+  const zh = isChineseRuneLocale(input.locale);
   const title = markdownInline(normalizeTaskText(input.title));
   const period = markdownInline(normalizeTaskText(input.period));
   const focus = markdownInline(normalizeTaskText(input.focus));
@@ -240,7 +246,7 @@ function deckSource(
   const sourceName = markdownInline(data.name);
   const audience = audienceLabels[input.locale][input.audience];
   const chartBinding = formatChartReference(chart.id);
-  return `---
+  const source = `---
 version: 1
 title: ${normalizeTaskText(input.title)}
 theme: rune
@@ -286,6 +292,7 @@ ${focus}
 
 ${zh ? "所有应用动作仍需在 Rune 的事务审核中明确确认。" : "Every apply remains subject to an explicit Rune transaction review."}
 `;
+  return zh ? runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding]) : source;
 }
 
 function uniqueDeliverables(deliverables: OperatingReviewDeliverable[]) {
@@ -307,7 +314,7 @@ export function prepareOperatingReviewWorkflow(
   if (!["sum", "average"].includes(input.aggregation)) errors.push("Choose sum or average aggregation.");
   if (!["bar", "line"].includes(input.mark)) errors.push("Choose a supported chart form.");
   if (!["number", "currency", "percent"].includes(input.format)) errors.push("Choose a supported number format.");
-  if (input.locale !== "zh-CN" && input.locale !== "en") errors.push("Choose a supported interface language.");
+  if (!(["zh-CN", "zh-TW", "en"] as const).includes(input.locale)) errors.push("Choose a supported interface language.");
 
   const deliverables = uniqueDeliverables(input.deliverables);
   if (!deliverables.length) errors.push("Choose at least one deliverable.");
@@ -414,15 +421,17 @@ export function prepareOperatingReviewWorkflow(
 
   const mutation = prepareWorkspaceMutation(artifacts, [], creations);
   if (mutation.errors.length) return { errors: mutation.errors };
-  const zh = input.locale === "zh-CN";
+  const zh = isChineseRuneLocale(input.locale);
+  const chineseSummary = `为「${title}」创建一条可核验经营汇报链`;
+  const chineseDetail = `Rune 将 ${data.name}、字段映射、SQL、图表和 ${deliverables.length} 份成品编译成一次原子审核事务。`;
   return {
     errors: [],
     plan: {
       summary: zh
-        ? `为「${title}」创建一条可核验经营汇报链`
+        ? runeText(input.locale, chineseSummary, chineseSummary, [title])
         : `Create a verifiable operating-review chain for “${title}”`,
       detail: zh
-        ? `Rune 将 ${data.name}、字段映射、SQL、图表和 ${deliverables.length} 份成品编译成一次原子审核事务。`
+        ? runeText(input.locale, chineseDetail, chineseDetail, [data.name])
         : `Rune compiled ${data.name}, explicit field mappings, SQL, a live Chart, and ${deliverables.length} deliverable${deliverables.length === 1 ? "" : "s"} into one atomic review transaction.`,
       patches: [],
       creations,
@@ -577,7 +586,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       || !["bar", "line"].includes(input?.mark ?? "")
       || !["number", "currency", "percent"].includes(input?.format ?? "")
       || !["leadership", "board", "team"].includes(input?.audience ?? "")
-      || (input?.locale !== "zh-CN" && input?.locale !== "en")
+      || (input?.locale !== "zh-CN" && input?.locale !== "zh-TW" && input?.locale !== "en")
       || (deliverables.includes("document") !== Boolean(document))
       || (deliverables.includes("slides") !== Boolean(slides))) continue;
     ids.add(id);
@@ -673,13 +682,15 @@ export function prepareSavedOperatingReviewRerun(
   if (!patches.length) return { errors: ["The saved review already matches these settings and current source mapping."] };
   const mutation = prepareWorkspaceMutation(artifacts, patches, []);
   if (mutation.errors.length) return { errors: mutation.errors };
-  const zh = input.locale === "zh-CN";
+  const zh = isChineseRuneLocale(input.locale);
+  const chineseSummary = `更新已保存的「${normalizeTaskText(input.title)}」`;
+  const chineseDetail = `Rune 将重新编译 ${patches.length} 个既有文件；文件身份不变，所有变化仍需一次事务审核。`;
   return {
     errors: [],
     plan: {
-      summary: zh ? `更新已保存的「${normalizeTaskText(input.title)}」` : `Update saved review “${normalizeTaskText(input.title)}”`,
+      summary: zh ? runeText(input.locale, chineseSummary, chineseSummary, [normalizeTaskText(input.title)]) : `Update saved review “${normalizeTaskText(input.title)}”`,
       detail: zh
-        ? `Rune 将重新编译 ${patches.length} 个既有文件；文件身份不变，所有变化仍需一次事务审核。`
+        ? runeText(input.locale, chineseDetail, chineseDetail)
         : `Rune will recompile ${patches.length} existing files without changing their identities; every change still requires one transaction review.`,
       patches,
       creations: [],

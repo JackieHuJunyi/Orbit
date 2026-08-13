@@ -9,7 +9,7 @@ import {
   type PdfOcrLanguage,
   type PdfOcrProgress,
 } from "../lib/pdf-import";
-import { type RuneLocale } from "../lib/localization";
+import { isChineseRuneLocale, type RuneLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 export type PdfOcrCandidate = {
@@ -33,7 +33,7 @@ type Draft = {
 function initialDrafts(candidates: PdfOcrCandidate[], locale: RuneLocale): Draft[] {
   return candidates.map((candidate) => ({
     fileIndex: candidate.fileIndex,
-    language: locale === "zh-CN" ? "eng+chi_sim" : "eng",
+    language: isChineseRuneLocale(locale) ? "eng+chi_sim" : "eng",
     pages: formatPdfPageSelection(candidate.analysis.ocrCandidatePageNumbers),
   }));
 }
@@ -57,7 +57,7 @@ export function PdfOcrSetupDialog({
   onCancel: () => void;
   onRecognize: (selections: PdfOcrSelection[]) => void;
 }) {
-  const zh = locale === "zh-CN";
+  const zh = isChineseRuneLocale(locale);
   const [drafts, setDrafts] = useState(() => initialDrafts(candidates, locale));
   const [validationError, setValidationError] = useState("");
   const selectedCount = useMemo(() => drafts.reduce((total, draft) => {

@@ -1,4 +1,15 @@
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
+import { TRADITIONAL_CHINESE_SEGMENTS } from "./traditional-chinese.generated.ts";
+
+const traditionalChinesePattern = new RegExp(
+  TRADITIONAL_CHINESE_SEGMENTS.map(([source]) => source.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|"),
+  "gu",
+);
+const traditionalChineseBySource = new Map<string, string>(TRADITIONAL_CHINESE_SEGMENTS);
+
+function toTaiwanTraditional(value: string) {
+  return value.replace(traditionalChinesePattern, (source) => traditionalChineseBySource.get(source) ?? source);
+}
 
 export const RUNE_LOCALE_REGISTRY = [
   {
@@ -6,7 +17,14 @@ export const RUNE_LOCALE_REGISTRY = [
     greeting: "你好",
     monogram: "文",
     nativeName: "简体中文",
-    languagePrefixes: ["zh"],
+    languagePrefixes: ["zh-cn", "zh-hans", "zh-sg", "zh-my", "zh"],
+  },
+  {
+    locale: "zh-TW",
+    greeting: "哈囉",
+    monogram: "繁",
+    nativeName: "繁體中文",
+    languagePrefixes: ["zh-tw", "zh-hant", "zh-hk", "zh-mo"],
   },
   {
     locale: "en",
@@ -19,6 +37,43 @@ export const RUNE_LOCALE_REGISTRY = [
 
 export type RuneLocale = (typeof RUNE_LOCALE_REGISTRY)[number]["locale"];
 
+export function isChineseRuneLocale(locale: RuneLocale) {
+  return locale === "zh-CN" || locale === "zh-TW";
+}
+
+function convertPreservingValues(value: string, preservedValues: readonly string[] = []) {
+  const replacements = [...new Set(preservedValues.filter(Boolean))]
+    .sort((left, right) => right.length - left.length)
+    .map((preserved, index) => ({ preserved, placeholder: `\u{f0000}${index}\u{f0001}` }));
+  let protectedValue = value;
+  for (const { preserved, placeholder } of replacements) protectedValue = protectedValue.replaceAll(preserved, placeholder);
+  let converted = toTaiwanTraditional(protectedValue);
+  for (const { preserved, placeholder } of replacements) converted = converted.replaceAll(placeholder, preserved);
+  return converted;
+}
+
+export function runeText(locale: RuneLocale, english: string, simplifiedChinese: string, preservedValues: readonly string[] = []) {
+  if (locale === "en") return english;
+  return locale === "zh-TW" ? convertPreservingValues(simplifiedChinese, preservedValues) : simplifiedChinese;
+}
+
+function localizeChineseCatalog<T>(value: T): T {
+  if (typeof value === "string") return toTaiwanTraditional(value) as T;
+  if (typeof value === "function") {
+    return ((...args: unknown[]) => {
+      const result = value(...args);
+      return typeof result === "string"
+        ? convertPreservingValues(result, args.filter((item): item is string => typeof item === "string"))
+        : localizeChineseCatalog(result);
+    }) as T;
+  }
+  if (Array.isArray(value)) return value.map((item) => localizeChineseCatalog(item)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeChineseCatalog(item)])) as T;
+  }
+  return value;
+}
+
 export const RUNE_LOCALE_STORAGE_KEY = "rune-locale-v1";
 export const RUNE_ONBOARDING_STORAGE_KEY = "rune-onboarding-v1";
 export const RUNE_GUIDE_ID = "rune-guide";
@@ -30,9 +85,10 @@ export function normalizeRuneLocale(value: unknown): RuneLocale | null {
 export function detectPreferredLocale(languages: readonly string[] = []): RuneLocale {
   for (const language of languages) {
     const normalized = language.toLowerCase();
-    const match = RUNE_LOCALE_REGISTRY.find((entry) => (
-      entry.languagePrefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}-`))
-    ));
+    const match = RUNE_LOCALE_REGISTRY
+      .flatMap((entry) => entry.languagePrefixes.map((prefix) => ({ entry, prefix })))
+      .filter(({ prefix }) => normalized === prefix || normalized.startsWith(`${prefix}-`))
+      .sort((left, right) => right.prefix.length - left.prefix.length)[0]?.entry;
     if (match) return match.locale;
   }
   return "en";
@@ -54,7 +110,7 @@ export function runeGreetingSequence(preferred: RuneLocale): string[] {
   return ordered.map((entry) => entry.greeting);
 }
 
-export function runeUICopy(locale: RuneLocale) {
+function buildRuneUICopy(locale: "zh-CN" | "en") {
   const zh = locale === "zh-CN";
   const count = (value: number, singular: string, plural: string, chineseUnit: string) => (
     zh ? `${value} ${chineseUnit}` : `${value} ${value === 1 ? singular : plural}`
@@ -567,7 +623,17 @@ export function runeUICopy(locale: RuneLocale) {
   };
 }
 
-export type RuneUICopy = ReturnType<typeof runeUICopy>;
+export type RuneUICopy = ReturnType<typeof buildRuneUICopy>;
+
+const RUNE_UI_COPY: Record<RuneLocale, RuneUICopy> = {
+  en: buildRuneUICopy("en"),
+  "zh-CN": buildRuneUICopy("zh-CN"),
+  "zh-TW": localizeChineseCatalog(buildRuneUICopy("zh-CN")),
+};
+
+export function runeUICopy(locale: RuneLocale): RuneUICopy {
+  return RUNE_UI_COPY[locale];
+}
 
 const chineseArtifactCommands: Record<ArtifactKind, string[]> = {
   document: ["把摘要压缩成三条要点", "补充下一步行动"],
@@ -616,9 +682,17 @@ const englishSelectionCommands: Record<ArtifactKind, string[]> = {
 };
 
 export function runeQuickCommands(locale: RuneLocale, scope: "selection" | "artifact" | "workspace", kind: ArtifactKind) {
-  if (scope === "workspace") return locale === "zh-CN" ? chineseWorkspaceCommands : englishWorkspaceCommands;
-  if (scope === "selection") return locale === "zh-CN" ? chineseSelectionCommands[kind] : englishSelectionCommands[kind];
-  return locale === "zh-CN" ? chineseArtifactCommands[kind] : englishArtifactCommands[kind];
+  if (locale === "en") {
+    if (scope === "workspace") return englishWorkspaceCommands;
+    if (scope === "selection") return englishSelectionCommands[kind];
+    return englishArtifactCommands[kind];
+  }
+  const commands = scope === "workspace"
+    ? chineseWorkspaceCommands
+    : scope === "selection"
+      ? chineseSelectionCommands[kind]
+      : chineseArtifactCommands[kind];
+  return locale === "zh-TW" ? commands.map(toTaiwanTraditional) : commands;
 }
 
 const chineseStatusMessages: Record<string, string> = {
@@ -674,9 +748,9 @@ const chineseStatusMessages: Record<string, string> = {
 };
 
 export function localizeRuneStatus(locale: RuneLocale, message: string) {
-  if (locale !== "zh-CN") return message;
+  if (locale === "en") return message;
   const exact = chineseStatusMessages[message];
-  if (exact) return exact;
+  if (exact) return locale === "zh-TW" ? toTaiwanTraditional(exact) : exact;
   const patterns: Array<[RegExp, (...parts: string[]) => string]> = [
     [/^(.+) removed from temporary Agent context pins$/, (name) => `已从临时 Agent 上下文固定项移除 ${name}`],
     [/^(.+) pinned for the next Workspace Agent plan$/, (name) => `已将 ${name} 固定到下一次工作区 Agent 方案`],
@@ -698,7 +772,10 @@ export function localizeRuneStatus(locale: RuneLocale, message: string) {
   ];
   for (const [pattern, format] of patterns) {
     const match = message.match(pattern);
-    if (match) return format(...match.slice(1));
+    if (match) {
+      const localized = format(...match.slice(1));
+      return locale === "zh-TW" ? convertPreservingValues(localized, match.slice(1)) : localized;
+    }
   }
   return message;
 }
@@ -810,11 +887,16 @@ const englishGuide = [
 ].join("\n");
 
 export function createRuneGuideArtifact(locale: RuneLocale): WorkspaceArtifact {
+  const source = locale === "en"
+    ? englishGuide
+    : locale === "zh-TW"
+      ? toTaiwanTraditional(chineseGuide)
+      : chineseGuide;
   return {
     id: RUNE_GUIDE_ID,
     name: "rune-guide.md",
     kind: "document",
-    language: locale === "zh-CN" ? "Markdown · 简体中文" : "Markdown · English",
-    source: locale === "zh-CN" ? chineseGuide : englishGuide,
+    language: locale === "en" ? "Markdown · English" : locale === "zh-TW" ? "Markdown · 繁體中文" : "Markdown · 简体中文",
+    source,
   };
 }

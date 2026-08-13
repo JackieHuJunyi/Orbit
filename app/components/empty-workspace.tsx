@@ -2,7 +2,7 @@
 
 import { FilePlus2, FileText, FolderOpen, Sparkles, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
-import type { RuneLocale } from "../lib/localization";
+import { runeText, type RuneLocale } from "../lib/localization";
 
 const copy = {
   "zh-CN": {
@@ -29,6 +29,14 @@ const copy = {
   },
 } as const;
 
+function emptyWorkspaceCopy(locale: RuneLocale) {
+  if (locale === "en") return copy.en;
+  if (locale === "zh-CN") return copy["zh-CN"];
+  return Object.fromEntries(Object.entries(copy["zh-CN"]).map(([key, value]) => (
+    [key, runeText(locale, value, value)]
+  ))) as typeof copy["zh-CN"];
+}
+
 export function EmptyWorkspace({
   locale,
   onChooseFiles,
@@ -43,7 +51,7 @@ export function EmptyWorkspace({
   onOpenSample: () => void;
 }) {
   const [dragging, setDragging] = useState(false);
-  const text = copy[locale];
+  const text = emptyWorkspaceCopy(locale);
 
   function acceptDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();

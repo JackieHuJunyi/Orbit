@@ -1949,3 +1949,11 @@ Apple 的学习方向也在这一版进一步成为工程规则：尊重系统�
 Rune 不能只记录“用户打开过几次”或“Agent 调用过几次”。v0.55 因此把 outcome 绑定到 saved operating review：只有任务准备后被明确 Apply，才记录一次 applied；审核取消、旧 revision、完整 workspace validation 或本机持久化失败记录 stopped，并携带有界原因。每条记录包含周期、确认完成时间、从准备到结果的本地耗时、变更文件数、runtime preflight 实际覆盖的 Query/Chart 数与 local/model planner。模型端只把 provider response 自带的 input/output token 数作为脱敏 usage 返回；本地规则明确记为无模型调用，不估算、不伪造 token。
 
 运行历史与任务一同留在设备，单任务最多十二条；恢复时拒绝非法时间、负数、越界计数、状态/停止原因矛盾和重复 ID。记录不包含 source、CSV 行、Query 结果、prompt、provider 响应正文、API key、用户身份或文件路径。侧栏可以展示最近状态、成功率、平均确认耗时、运行影响和 token，但这些只是当前设备的产品证据。它不能证明 PMF、节省时间或愿意付费；真实价值仍需在真实任务中对比原工作流并由用户确认结果。
+
+## 61. v0.56 问候有多少种语言，界面就必须兑现多少种完整语言
+
+“多语言欢迎”不能只是一段全球化装饰。v0.56 在同一个 `RUNE_LOCALE_REGISTRY` 中加入 `zh-TW`：设备偏好按最长 BCP 47 前缀优先匹配，因此 `zh-Hant`、`zh-TW`、`zh-HK` 和 `zh-MO` 不会被宽泛的 `zh` 抢先归入简体。欢迎轮播、语言选择、根节点 `lang`、动态工作台文案、快捷建议、本地指南、模型配置、空态、专业 review 和经营汇报编译器都读取这一个 locale 身份；Deck frontmatter 也正式接受 `zh-TW`。
+
+繁体不是在 DOM 渲染后做字符串替换。Rune 用固定版本、纯本地的 OpenCC 台湾短语转换从完整简体 typed catalog 生成第三套同形契约，函数返回的数量、文件名和错误建议也在调用后转换；源文件 ID、CSV/JSON 字段、SQL identifier、Chart binding 和用户输入永不经过翻译。繁体经营汇报测试同时证明 `lang: zh-TW`、繁体成品和精确字段 identity 可以共存。以后新增日语、韩语、西语或印尼语时，也必须交付完整 catalog、指南和任务链测试后才能把对应问候放入动画。
+
+视觉上继续学习 Apple 的原则而不是复制外观：首屏只保留一个主决策，原来的三块“本地优先 / 先审后写 / 实时编译”功能徽章被收成一句低噪音信任说明；移除装饰渐变，降低阴影，语言列表使用可滚动的标准选择行。动效仍短、可取消且服从 `prefers-reduced-motion`。这遵循 Apple 对 onboarding 的“短、可选、通过实际操作学习”和对 motion 的“有目的、精确、可减少”原则，同时保留 Rune 的朱砂品牌与 source-first 心智，而不是把界面伪装成 macOS。

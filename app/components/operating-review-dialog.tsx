@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
-import type { RuneLocale } from "../lib/localization";
+import { runeText, type RuneLocale } from "../lib/localization";
 import {
   MAX_OPERATING_REVIEW_FOCUS_CHARS,
   MAX_OPERATING_REVIEW_PERIOD_CHARS,
@@ -140,6 +140,14 @@ const COPY = {
   },
 } as const;
 
+function operatingReviewCopy(locale: RuneLocale) {
+  if (locale === "en") return COPY.en;
+  if (locale === "zh-CN") return COPY["zh-CN"];
+  return Object.fromEntries(Object.entries(COPY["zh-CN"]).map(([key, value]) => (
+    [key, runeText(locale, value, value)]
+  ))) as typeof COPY["zh-CN"];
+}
+
 function selectedDeliverables(report: boolean, slides: boolean): OperatingReviewDeliverable[] {
   return [report ? "document" : null, slides ? "slides" : null]
     .filter((item): item is OperatingReviewDeliverable => item !== null);
@@ -153,7 +161,7 @@ export function OperatingReviewDialog({
   onCancel,
   onPrepare,
 }: OperatingReviewDialogProps) {
-  const copy = COPY[locale];
+  const copy = operatingReviewCopy(locale);
   const [title, setTitle] = useState(initialInput?.title ?? "");
   const [sourceArtifactId, setSourceArtifactId] = useState(initialInput?.dataArtifactId ?? "");
   const [category, setCategory] = useState(initialInput?.category ?? "");
@@ -240,8 +248,8 @@ export function OperatingReviewDialog({
   const markLabel = mark === "line" ? copy.line : copy.bar;
   const audienceLabel = audience === "board" ? copy.board : audience === "team" ? copy.team : copy.leadership;
   const liveSummary = sourceOption && effectiveCategory && effectiveValue && deliverableNames.length
-    ? locale === "zh-CN"
-      ? `从 ${sourceOption.name} 按「${effectiveCategory}」${aggregationLabel}「${effectiveValue}」，生成${markLabel}并交付${deliverableNames.join("和")}。`
+    ? locale !== "en"
+      ? runeText(locale, "", `从 ${sourceOption.name} 按「${effectiveCategory}」${aggregationLabel}「${effectiveValue}」，生成${markLabel}并交付${deliverableNames.join("和")}。`, [sourceOption.name, effectiveCategory, effectiveValue])
       : `Use ${aggregationLabel.toLowerCase()} of “${effectiveValue}” by “${effectiveCategory}” from ${sourceOption.name}, then create a ${markLabel.toLowerCase()} and ${deliverableNames.join(" plus ").toLowerCase()}.`
     : copy.incomplete;
 

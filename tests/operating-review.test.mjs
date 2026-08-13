@@ -169,6 +169,36 @@ test("creates a Chinese Document + Slides review chain without translating canon
   assert.deepEqual(validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()), []);
 });
 
+test("creates a complete Traditional Chinese review chain while preserving exact field identities", () => {
+  const data = dataArtifact({
+    id: "營運資料",
+    name: "營運資料.csv",
+    source: "地區,淨收入\n亞太,1840000\n歐洲,970000\n",
+  });
+  const input = reviewInput({
+    title: "半年度營運回顧",
+    dataArtifactId: data.id,
+    category: "地區",
+    value: "淨收入",
+    period: "2026 年上半年",
+    audience: "board",
+    focus: "確認成長品質與下一步投入。",
+    locale: "zh-TW",
+  });
+
+  const result = prepareOperatingReviewWorkflow([data], input);
+  assert.deepEqual(result.errors, []);
+  assert.match(result.plan.summary, /建立一條可核驗經營彙報鏈/);
+  const created = creationsByKind(result);
+  assert.match(created.query.source, /SUM\("淨收入"\) AS "淨收入"/);
+  assert.match(created.document.source, /## 本次目標/);
+  assert.match(created.document.source, /董事會/);
+  assert.match(created.slides.source, /\nlang: zh-TW\n/);
+  assert.match(created.slides.source, /<!-- eyebrow: 可核驗證據 -->/);
+  assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
+  assert.deepEqual(validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()), []);
+});
+
 test("rejects missing sources and inexact category or value fields before creating anything", () => {
   const artifacts = [dataArtifact()];
   const scenarios = [

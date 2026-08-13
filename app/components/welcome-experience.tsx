@@ -22,6 +22,7 @@ import {
   localeDisplayName,
   localeMonogram,
   runeGreetingSequence,
+  runeText,
   RUNE_LOCALE_REGISTRY,
   type RuneLocale,
 } from "../lib/localization";
@@ -136,6 +137,14 @@ const copy = {
   },
 } as const;
 
+function welcomeCopy(locale: RuneLocale) {
+  if (locale === "en") return copy.en;
+  if (locale === "zh-CN") return copy["zh-CN"];
+  return Object.fromEntries(Object.entries(copy["zh-CN"]).map(([key, value]) => (
+    [key, runeText(locale, value, value)]
+  ))) as typeof copy["zh-CN"];
+}
+
 function ShortcutKey({ children }: { children: ReactNode }) {
   return <kbd>{children}</kbd>;
 }
@@ -172,7 +181,7 @@ export function WelcomeExperience({
       ? "Ctrl"
       : "⌘"
   ));
-  const text = copy[locale];
+  const text = welcomeCopy(locale);
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
 
@@ -217,7 +226,7 @@ export function WelcomeExperience({
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setModelStatus(null);
-        setModelStatusError(copy[locale].modelUnavailable);
+        setModelStatusError(welcomeCopy(locale).modelUnavailable);
       })
       .finally(() => {
         if (!controller.signal.aborted) setCheckingModel(false);
@@ -285,11 +294,7 @@ export function WelcomeExperience({
                   <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
                   <h1 id="welcome-title">{text.welcomeTitle}</h1>
                   <p>{text.welcomeBody}</p>
-                  <div className="welcome-promises" aria-label="Rune principles">
-                    <span><ShieldCheck /><b>{text.local}</b></span>
-                    <span><Check /><b>{text.review}</b></span>
-                    <span><Sparkles /><b>{text.live}</b></span>
-                  </div>
+                  <p className="welcome-principles"><ShieldCheck aria-hidden="true" />{text.local} · {text.review} · {text.live}</p>
                 </div>
                 <section className="welcome-language-card" aria-labelledby="welcome-language-title">
                   <div className="welcome-language-heading">
@@ -312,7 +317,7 @@ export function WelcomeExperience({
                         <span className="language-monogram">{localeMonogram(option)}</span>
                         <span>
                           <strong>{localeDisplayName(option)}</strong>
-                          <small>{option === detectedLocale ? text.recommended : option === "zh-CN" ? "Chinese (Simplified)" : "英语"}</small>
+                          <small>{option === detectedLocale ? text.recommended : option}</small>
                         </span>
                         {locale === option && <Check />}
                       </button>

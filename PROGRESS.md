@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-13 — Added a complete Traditional Chinese interface, guide, task compiler, and device-language route from the same locale registry while simplifying the welcome screen into a quieter Apple-inspired setup assistant.
+
 - 2026-08-13 — Added bounded device-local operating-review outcomes with applied/stopped status, review time, runtime impact, and real provider token usage while retaining no workspace content or hidden telemetry.
 
 - 2026-08-13 — Made operating reviews repeatable device-local tasks that rerun against the same exact Data/Query/Chart/report/deck identities as a runtime-verified, checkpointed review transaction instead of creating duplicate files.

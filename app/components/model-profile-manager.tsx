@@ -23,7 +23,7 @@ import {
   type ModelProviderKind,
   type PublicModelProfile,
 } from "../lib/model-profiles";
-import type { RuneLocale } from "../lib/localization";
+import { runeText, type RuneLocale } from "../lib/localization";
 import type { ModelProviderStatus } from "../lib/model-preference";
 
 const managerCopy = {
@@ -89,6 +89,14 @@ const managerCopy = {
   },
 } as const;
 
+function modelManagerCopy(locale: RuneLocale) {
+  if (locale === "en") return managerCopy.en;
+  if (locale === "zh-CN") return managerCopy["zh-CN"];
+  return Object.fromEntries(Object.entries(managerCopy["zh-CN"]).map(([key, value]) => (
+    [key, runeText(locale, value, value)]
+  ))) as typeof managerCopy["zh-CN"];
+}
+
 type EditableProfile = {
   id?: string;
   provider: ModelProviderKind;
@@ -136,7 +144,7 @@ export function ModelProfileManager({
   locale: RuneLocale;
   onStatusChange: (status: ModelProviderStatus) => void;
 }) {
-  const text = managerCopy[locale];
+  const text = modelManagerCopy(locale);
   const [state, setState] = useState<ModelProfilesState | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -233,7 +241,7 @@ export function ModelProfileManager({
   if (loading) return <div className="model-manager-loading"><LoaderCircle className="agent-spinner" />{text.loading}</div>;
 
   return (
-    <section className="model-profile-manager" aria-label={locale === "zh-CN" ? "个人模型配置" : "Personal model profiles"}>
+    <section className="model-profile-manager" aria-label={runeText(locale, "Personal model profiles", "个人模型配置")}>
       {state?.deployment.configured && (
         <div className={`model-profile-card deployment ${state.activeSource === "deployment" ? "active" : ""}`}>
           <span><Server /></span>

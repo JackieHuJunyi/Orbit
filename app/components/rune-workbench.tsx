@@ -160,6 +160,7 @@ import {
   localizeRuneStatus,
   normalizeRuneLocale,
   runeQuickCommands,
+  runeText,
   runeUICopy,
   RUNE_GUIDE_ID,
   RUNE_LOCALE_STORAGE_KEY,
@@ -634,6 +635,7 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     document.documentElement.lang = locale;
+    document.documentElement.dir = "ltr";
   }, [locale]);
 
   useEffect(() => {
@@ -2117,7 +2119,7 @@ export function RuneWorkbench() {
       pendingChange.runtimePreflight,
     );
     setPendingChange(null);
-    setNotice(locale === "zh-CN" ? "已取消审核 — 所有源内容保持不变" : "Review cancelled — every source stayed unchanged");
+    setNotice(runeText(locale, "Review cancelled — every source stayed unchanged", "已取消审核 — 所有源内容保持不变"));
   }
 
   function undoLastAgentChange() {
@@ -2158,18 +2160,14 @@ export function RuneWorkbench() {
     setOperatingReviewError("");
     setEditingOperatingReviewId("");
     setOperatingReviewOpen(true);
-    setNotice(locale === "zh-CN"
-      ? "先选择数据、口径和交付物，再生成整条汇报链"
-      : "Choose the evidence, measure, and deliverables before Rune prepares the full review chain");
+    setNotice(runeText(locale, "Choose the evidence, measure, and deliverables before Rune prepares the full review chain", "先选择数据、口径和交付物，再生成整条汇报链"));
   }
 
   function openSavedOperatingReview(workflow: SavedOperatingReview) {
     setOperatingReviewError("");
     setEditingOperatingReviewId(workflow.id);
     setOperatingReviewOpen(true);
-    setNotice(locale === "zh-CN"
-      ? `正在准备重新运行「${workflow.input.title}」`
-      : `Preparing to rerun “${workflow.input.title}”`);
+    setNotice(runeText(locale, `Preparing to rerun “${workflow.input.title}”`, `正在准备重新运行「${workflow.input.title}」`));
   }
 
   async function prepareOperatingReview(input: OperatingReviewInput) {
@@ -2202,10 +2200,8 @@ export function RuneWorkbench() {
         prepared.plan.creations,
       );
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
-        setOperatingReviewError(locale === "zh-CN"
-          ? "验证期间工作区已发生变化。请按当前数据重新准备。"
-          : "The workspace changed during validation. Prepare the review again from the current data.");
-        setNotice(locale === "zh-CN" ? "汇报未生成 — 工作区版本已变化" : "Review not prepared — workspace revision changed");
+        setOperatingReviewError(runeText(locale, "The workspace changed during validation. Prepare the review again from the current data.", "验证期间工作区已发生变化。请按当前数据重新准备。"));
+        setNotice(runeText(locale, "Review not prepared — workspace revision changed", "汇报未生成 — 工作区版本已变化"));
         return;
       }
       const preferredArtifact = [...prepared.plan.creations]
@@ -2235,13 +2231,11 @@ export function RuneWorkbench() {
       setOperatingReviewOpen(false);
       setEditingOperatingReviewId("");
       setEmptyWorkspace(false);
-      setNotice(locale === "zh-CN"
-        ? `已准备 ${prepared.plan.patches.length + prepared.plan.creations.length} 个互相绑定的文件；审核后才会写入`
-        : `${prepared.plan.patches.length + prepared.plan.creations.length} linked files prepared; nothing writes until you approve the transaction`);
+      setNotice(runeText(locale, `${prepared.plan.patches.length + prepared.plan.creations.length} linked files prepared; nothing writes until you approve the transaction`, `已准备 ${prepared.plan.patches.length + prepared.plan.creations.length} 个互相绑定的文件；审核后才会写入`));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Rune could not validate this operating review.";
       setOperatingReviewError(message);
-      setNotice(locale === "zh-CN" ? "汇报未生成 — 运行验证未通过" : "Review not prepared — runtime validation failed");
+      setNotice(runeText(locale, "Review not prepared — runtime validation failed", "汇报未生成 — 运行验证未通过"));
     } finally {
       setOperatingReviewState("idle");
     }
@@ -2388,9 +2382,7 @@ export function RuneWorkbench() {
         setPendingPdfOcr({ files, baseArtifacts, sourceName, candidates: ocrCandidates });
         setPdfOcrError("");
         setPdfOcrProgress(null);
-        setNotice(locale === "zh-CN"
-          ? `请确认 ${ocrCandidates.length} 份 PDF 的扫描页与 OCR 语言`
-          : `Choose scan pages and OCR language for ${ocrCandidates.length} ${ocrCandidates.length === 1 ? "PDF" : "PDFs"}`);
+        setNotice(runeText(locale, `Choose scan pages and OCR language for ${ocrCandidates.length} ${ocrCandidates.length === 1 ? "PDF" : "PDFs"}`, `请确认 ${ocrCandidates.length} 份 PDF 的扫描页与 OCR 语言`));
         return;
       }
       const incoming: WorkspaceArtifact[] = [];
@@ -2447,9 +2439,7 @@ export function RuneWorkbench() {
     const pending = pendingPdfOcr;
     if (!pending || pdfOcrProcessing || importInFlightRef.current) return;
     if (artifacts !== pending.baseArtifacts) {
-      setPdfOcrError(locale === "zh-CN"
-        ? "OCR 设置期间工作区已经变化。请取消并重新导入，以审核最新事务。"
-        : "The workspace changed during OCR setup. Cancel and import again to review a fresh transaction.");
+      setPdfOcrError(runeText(locale, "The workspace changed during OCR setup. Cancel and import again to review a fresh transaction.", "OCR 设置期间工作区已经变化。请取消并重新导入，以审核最新事务。"));
       return;
     }
     const selectionByIndex = new Map(selections.map((selection) => [selection.fileIndex, selection]));
@@ -2510,15 +2500,13 @@ export function RuneWorkbench() {
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
       setPendingImport(prepared.review);
       setPendingPdfOcr(null);
-      setNotice(locale === "zh-CN"
-        ? `请在写入前审核 ${prepared.review.importedArtifacts.length} 份生成的源内容与逐页 OCR 置信度`
-        : `Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} and page-level OCR confidence before import`);
+      setNotice(runeText(locale, `Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} and page-level OCR confidence before import`, `请在写入前审核 ${prepared.review.importedArtifacts.length} 份生成的源内容与逐页 OCR 置信度`));
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        setNotice(locale === "zh-CN" ? "OCR 已停止 — 工作区保持不变" : "OCR stopped — the workspace is unchanged");
+        setNotice(runeText(locale, "OCR stopped — the workspace is unchanged", "OCR 已停止 — 工作区保持不变"));
         setPendingPdfOcr(null);
       } else {
-        setPdfOcrError(error instanceof Error ? error.message : (locale === "zh-CN" ? "Rune 无法识别这些扫描页。" : "Rune could not recognize those scanned pages."));
+        setPdfOcrError(error instanceof Error ? error.message : runeText(locale, "Rune could not recognize those scanned pages.", "Rune 无法识别这些扫描页。"));
       }
     } finally {
       pdfOcrAbortRef.current = null;
@@ -2539,7 +2527,7 @@ export function RuneWorkbench() {
     setPendingPdfOcr(null);
     setPdfOcrError("");
     setPdfOcrProgress(null);
-    setNotice(locale === "zh-CN" ? "已取消 OCR — 工作区保持不变" : "OCR cancelled — the workspace is unchanged");
+    setNotice(runeText(locale, "OCR cancelled — the workspace is unchanged", "已取消 OCR — 工作区保持不变"));
   }
 
   function cancelPendingImport() {
@@ -2855,7 +2843,7 @@ export function RuneWorkbench() {
           <aside className="file-rail" aria-label={ui.workspace}>
             <div className="file-rail-header">
               <div><span className="overline">{ui.workspace}</span><strong>{directoryHandle?.name ?? ui.localWorkspace}</strong></div>
-              <button className="tiny-icon-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label={locale === "zh-CN" ? "新建内容" : "Create a new artifact"} title={ui.newArtifact}>+</button>
+              <button className="tiny-icon-button" onClick={openNewArtifact} disabled={artifactCreationDisabled} aria-label={runeText(locale, "Create a new artifact", "新建内容")} title={ui.newArtifact}>+</button>
             </div>
             <div className="artifact-group-label"><span>{ui.artifacts}</span><span>{artifacts.length}{workspacePinnedArtifactIds.length ? ` · ${ui.pinnedCount(workspacePinnedArtifactIds.length)}` : ""}</span></div>
             <nav className="artifact-list">
@@ -3299,7 +3287,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.55</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.56</span></div>
       </footer>
 
       {newArtifactOpen && (
@@ -3327,9 +3315,7 @@ export function RuneWorkbench() {
             setOperatingReviewOpen(false);
             setOperatingReviewError("");
             setEditingOperatingReviewId("");
-            setNotice(locale === "zh-CN"
-              ? "已取消经营汇报 — 工作区保持不变"
-              : "Operating review cancelled — the workspace is unchanged");
+            setNotice(runeText(locale, "Operating review cancelled — the workspace is unchanged", "已取消经营汇报 — 工作区保持不变"));
           }}
           onPrepare={prepareOperatingReview}
         />

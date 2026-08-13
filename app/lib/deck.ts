@@ -5,7 +5,7 @@ const DeckFrontmatterSchema = z.object({
   title: z.string().trim().min(1).max(120),
   theme: z.enum(["rune", "rune-dark"]),
   ratio: z.literal("16:9"),
-  lang: z.enum(["en", "zh-CN"]).default("en"),
+  lang: z.enum(["en", "zh-CN", "zh-TW"]).default("en"),
 }).strict();
 
 const DeckLayoutSchema = z.enum(["cover", "content", "metrics", "split", "conclusion"]);
