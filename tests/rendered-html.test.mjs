@@ -91,13 +91,12 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.51/);
+  assert.match(html, /Rune v0\.52/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
-  assert.match(html, /Export q2-review\.md as DOCX/);
-  assert.match(html, /Export q2-review\.md as ODT/);
-  assert.match(html, /Export q2-review\.md as PDF/);
+  assert.match(html, /aria-haspopup="menu"/);
+  assert.match(html, />Export</);
   assert.match(html, /Live output/);
   assert.match(html, /every write remains reviewable and undoable/i);
 });

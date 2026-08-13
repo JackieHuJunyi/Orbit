@@ -6,6 +6,7 @@ import {
   Bot,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   CircleDot,
   ClipboardList,
@@ -546,7 +547,8 @@ export function RuneWorkbench() {
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [exportError, setExportError] = useState("");
-  const [exportState, setExportState] = useState<"idle" | "office" | "odf" | "html" | "pdf">("idle");
+  const [exportState, setExportState] = useState<"idle" | "office" | "odf" | "html" | "pdf" | "csv" | "json">("idle");
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
@@ -568,6 +570,7 @@ export function RuneWorkbench() {
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
@@ -586,6 +589,22 @@ export function RuneWorkbench() {
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const closeOutside = (event: globalThis.PointerEvent) => {
+      if (!exportMenuRef.current?.contains(event.target as Node)) setExportMenuOpen(false);
+    };
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setExportMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", closeOutside);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("pointerdown", closeOutside);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [exportMenuOpen]);
   const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
     setModelMode(nextMode);
     try {
@@ -630,7 +649,7 @@ export function RuneWorkbench() {
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
   const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
-  const selectedPdfExport = Boolean(selectedArtifact?.kind === "document" || selectedHtmlExport);
+  const selectedPdfExport = Boolean(selectedArtifact?.kind === "document" || selectedArtifact?.kind === "data" || selectedHtmlExport);
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const currentSourceSelection = sourceSelection?.artifactId === selectedArtifact?.id
     && sourceSelection.sourceRevision === selectedArtifact?.source
@@ -2369,14 +2388,16 @@ export function RuneWorkbench() {
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
-  async function prepareExport(destination: "office" | "odf" | "html" | "pdf") {
+  async function prepareExport(destination: "office" | "odf" | "html" | "pdf" | "csv" | "json") {
     const targetType = destination === "office"
       ? selectedOfficeExportType
       : destination === "odf"
         ? selectedOdfExportType
       : destination === "html"
         ? selectedHtmlExport ? "HTML" : null
-        : selectedPdfExport ? "PDF" : null;
+        : destination === "pdf"
+          ? selectedPdfExport ? "PDF" : null
+          : selectedArtifact.kind === "data" ? destination.toUpperCase() : null;
     if (!targetType || exportState !== "idle" || activeVisualSourceDraft || pendingExport || pendingImport || pendingPdfOcr || pendingDocumentStructure || importInFlightRef.current || exportInFlightRef.current) return;
     const targetArtifact = selectedArtifact;
     const baseArtifacts = artifacts;
@@ -2406,7 +2427,10 @@ export function RuneWorkbench() {
         const truncated = querySnapshots.find((snapshot) => snapshot.result.truncated);
         if (truncated) throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its consumers.`);
       }
-      if (destination === "office" || destination === "odf") {
+      if (destination === "csv" || destination === "json") {
+        const { exportPortableDataArtifact } = await import("../lib/data-export");
+        result = exportPortableDataArtifact(targetArtifact, destination);
+      } else if (destination === "office" || destination === "odf") {
         const compiled = targetArtifact.kind === "document" || targetArtifact.kind === "slides"
           ? compileArtifactSource(targetArtifact.source, baseArtifacts, querySnapshots)
           : null;
@@ -2472,6 +2496,8 @@ export function RuneWorkbench() {
       ? "standalone HTML"
       : result.targetType === "pdf"
         ? "fixed PDF"
+        : result.targetType === "csv" || result.targetType === "json"
+          ? `portable ${result.targetType.toUpperCase()}`
         : `semantic ${result.targetType.toUpperCase()}`;
     setNotice(`Downloaded ${result.fileName} · ${exportLabel} export`);
   }
@@ -2542,54 +2568,41 @@ export function RuneWorkbench() {
               <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} aria-label={`${ui.push} · ${directoryHandle.name}`} title={ui.push}><Save /></button>
             </>
           )}
-          {!emptyWorkspace && selectedOfficeExportType && (
-            <button
-              className="icon-button"
-              onClick={() => void prepareExport("office")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOfficeExportType)}
-              title={ui.exportAs(selectedOfficeExportType)}
-            >
-              {exportState === "office" ? <LoaderCircle className="agent-spinner" /> : <FileOutput />}
-            </button>
-          )}
-          {!emptyWorkspace && selectedOdfExportType && (
-            <button
-              className="icon-button"
-              onClick={() => void prepareExport("odf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOdfExportType)}
-              title={ui.exportAsOpenDocument(selectedOdfExportType)}
-            >
-              {exportState === "odf" ? <LoaderCircle className="agent-spinner" /> : <FileArchive />}
-            </button>
-          )}
-          {!emptyWorkspace && selectedHtmlExport && (
-            <button
-              className="icon-button"
-              onClick={() => void prepareExport("html")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={ui.exportArtifactAs(selectedArtifact.name, "HTML")}
-              title={ui.exportStandaloneHtml}
-            >
-              {exportState === "html" ? <LoaderCircle className="agent-spinner" /> : <FileCode2 />}
-            </button>
-          )}
-          {!emptyWorkspace && selectedPdfExport && (
-            <button
-              className="icon-button"
-              onClick={() => void prepareExport("pdf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
-              aria-label={ui.exportArtifactAs(selectedArtifact.name, "PDF")}
-              title={ui.exportFixedPdf}
-            >
-              {exportState === "pdf" ? <LoaderCircle className="agent-spinner" /> : <FileText />}
-            </button>
+          {!emptyWorkspace && (
+            <div className="export-menu" ref={exportMenuRef}>
+              <button
+                className={`button ghost-button export-menu-trigger ${exportMenuOpen ? "active" : ""}`.trim()}
+                type="button"
+                onClick={() => setExportMenuOpen((open) => !open)}
+                disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+                aria-haspopup="menu"
+                aria-expanded={exportMenuOpen}
+              >
+                {exportState === "idle" ? <FileOutput aria-hidden="true" /> : <LoaderCircle className="agent-spinner" aria-hidden="true" />}
+                <span>{ui.exportMenu}</span><ChevronDown aria-hidden="true" />
+              </button>
+              {exportMenuOpen && (
+                <div className="export-popover" role="menu" aria-label={ui.exportMenuBody}>
+                  <div><span className="overline">{ui.exportMenu}</span><strong>{ui.exportMenuBody}</strong></div>
+                  <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); downloadArtifact(selectedArtifact); }}>
+                    <Download aria-hidden="true" /><span><strong>{ui.canonicalSource}</strong><small>{selectedArtifact.name}</small></span>
+                  </button>
+                  {selectedArtifact.kind === "data" && (
+                    <>
+                      <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("csv"); }}><FileCode2 aria-hidden="true" /><span><strong>CSV</strong><small>{ui.exportAs("CSV")}</small></span></button>
+                      <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("json"); }}><FileCode2 aria-hidden="true" /><span><strong>JSON</strong><small>{ui.exportAs("JSON")}</small></span></button>
+                    </>
+                  )}
+                  {selectedOfficeExportType && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("office"); }}><FileArchive aria-hidden="true" /><span><strong>{selectedOfficeExportType}</strong><small>{ui.exportAs(selectedOfficeExportType)}</small></span></button>}
+                  {selectedOdfExportType && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("odf"); }}><FileArchive aria-hidden="true" /><span><strong>{selectedOdfExportType}</strong><small>{ui.exportAsOpenDocument(selectedOdfExportType)}</small></span></button>}
+                  {selectedHtmlExport && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("html"); }}><FileCode2 aria-hidden="true" /><span><strong>HTML</strong><small>{ui.exportStandaloneHtml}</small></span></button>}
+                  {selectedPdfExport && <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); void prepareExport("pdf"); }}><FileText aria-hidden="true" /><span><strong>PDF</strong><small>{ui.exportFixedPdf}</small></span></button>}
+                </div>
+              )}
+            </div>
           )}
           {!emptyWorkspace && (
-            <button className="icon-button" disabled={Boolean(activeVisualSourceDraft)} onClick={() => downloadArtifact(selectedArtifact)} aria-label={`${ui.download} · ${selectedArtifact.name}`} title={ui.download}>
-              <Download />
-            </button>
+            <span className="visually-hidden" aria-live="polite">{exportState === "idle" ? "" : `${ui.exportMenu} ${exportState}`}</span>
           )}
           <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
         </div>
@@ -3044,7 +3057,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.51</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.52</span></div>
       </footer>
 
       {newArtifactOpen && (

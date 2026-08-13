@@ -38,11 +38,12 @@ export function ExportReviewDialog({
   const office = ["docx", "xlsx", "pptx"].includes(result.targetType);
   const odf = ["odt", "ods", "odp"].includes(result.targetType);
   const pdf = result.targetType === "pdf";
-  const kind = office ? "office" : odf ? "odf" : pdf ? "pdf" : "html";
+  const data = ["csv", "json"].includes(result.targetType);
+  const kind = office ? "office" : odf ? "odf" : pdf ? "pdf" : data ? "data" : "html";
   const copy = runeUICopy(locale);
   const reviewTitle = copy.exportReview.title(kind);
   const descriptor = copy.exportReview.descriptors[kind];
-  const outputKind = office || odf ? copy.exportReview.outputKinds.semantic : pdf ? copy.exportReview.outputKinds.fixed : copy.exportReview.outputKinds.standalone;
+  const outputKind = office || odf ? copy.exportReview.outputKinds.semantic : pdf ? copy.exportReview.outputKinds.fixed : data ? copy.exportReview.outputKinds.portable : copy.exportReview.outputKinds.standalone;
   return (
     <ReviewDialog
       dialogId="artifact-export-review"

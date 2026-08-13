@@ -1013,7 +1013,7 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 | 家族 | 导入 | 导出 | 产品合同 |
 | --- | --- | --- | --- |
 | Document | 当前：MD、Markdown、DOCX、ODT、PDF 可选文本与显式选择扫描页 OCR 到 MD | 当前：MD、DOCX、ODT、PDF | 结构与语义优先；OCR 标页码与置信度，不承诺像素级 round-trip |
-| Data | 当前：CSV、JSON、XLSX、ODS | 当前：CSV/JSON source、XLSX、ODS；计划：表格 PDF | 值、类型、列序和工作表边界明确 |
+| Data | 当前：CSV、JSON、XLSX、ODS | 当前：CSV、JSON、XLSX、ODS、表格 PDF | 值、类型、列序和工作表边界明确；PDF 是固定快照 |
 | Presentation | 当前：Deck Markdown、HTML、PPTX、ODP | 当前：Deck Markdown、PPTX、ODP、HTML、PDF | 语义布局优先，动画与复杂母版明确警告 |
 | Legacy binary | DOC、PPT 需要可靠转换边界 | DOC、PPT 不作为默认交付 | Web 版不伪装解析；由未来桌面壳或受控转换服务提供 |
 
@@ -1193,6 +1193,12 @@ SSR 仍固定输出稳定英文壳，hydration 后才读取设备建议或已确
 右侧 Document section/block、Data scalar cell、Deck slide 和完整 Chart spec 的受控编辑现在不再只更新各自局部预览。每次输入都通过该编辑器已有的 revision-bound compiler 投影成一份完整 source candidate，并在左侧主源区域实时显示、精确高亮实际替换范围；换行和行号跟随完整草稿，invalid/no-op/ready 状态明确可见。用户因此能同时看到“成品会怎样变”和“规范源会怎样变”，而不需要先保存或打开另一个 diff 弹层。
 
 这仍然只有一份草稿写权限。右侧编辑存在时，左侧镜像只读，并暂停文件切换、导入、导出、目录同步、Agent 和全局 checkpoint；这样不会出现两个输入端互相覆盖。镜像从不写入 artifact、localStorage、checkpoint、dependency graph、export 或 folder source，Cancel/Escape 立即销毁；Save 重新以未改变的 canonical revision 编译，继续通过完整 workspace validation、受影响 Query/Chart runtime preflight、checkpoint 和一次持久化。Query 派生结果、legacy HTML 和无 exact provenance 的视觉元素仍只读。
+
+### 6.31 v0.52 数据交付格式闭环
+
+顶部不再横向堆叠多个相似导出图标，而是用一个带材料感的 Export 菜单列出当前 artifact 真正可用的交付格式。规范源下载始终放在第一项；Data 同时提供 CSV、JSON、XLSX、ODS 与 PDF。CSV/JSON 转换先解析并验证同一份 canonical Data，再按确定列序输出矩形快照：JSON 的缺失 cell 显式写为 `null`，CSV 明确不携带 schema。两者都是 UTF-8、确定性、无公式执行的本地文件，并进入与 Office/ODF/PDF 相同的保真审核和 stale-workspace 检查后才下载。
+
+Data PDF 使用横向 A4、重复表头、固定列宽、交替行底色、页码和行列统计。它限制为 12 列、5,000 行、2,000,000 source chars 和 12 MB；超长 cell 显式省略并增加 fidelity warning，而不是溢出或静默缩放成不可读文字。PDF 是只读交付快照，不伪装保留类型、筛选、公式或 live binding。Poppler 重新渲染与人工图片检查已经确认默认经营数据无裁切、重叠或缺字。
 
 ---
 

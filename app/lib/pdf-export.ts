@@ -542,6 +542,93 @@ async function renderDocumentPdf(
   return { bytes, warnings: unique(warnings) };
 }
 
+async function renderDataPdf(
+  artifact: WorkspaceArtifact,
+  fontBytes: Uint8Array,
+) {
+  const parsed = parseDataSource(artifact.source);
+  if (parsed.errors.length) throw new Error(parsed.errors[0]);
+  if (!parsed.columns.length) throw new Error("Add at least one Data column before PDF export.");
+  if (parsed.columns.length > 12) throw new Error("Table PDF export supports at most 12 Data columns.");
+  if (parsed.rows.length > 5_000) throw new Error("Table PDF export supports at most 5,000 Data rows.");
+
+  const warnings = new Set<string>([
+    "Data PDF uses a fixed landscape A4 table; review column widths, wrapping, and page breaks before external handoff.",
+    "The PDF is a readable snapshot of canonical Data and does not retain CSV/JSON types, formulas, filters, or live bindings.",
+  ]);
+  const { document, font, unicodeFont, supported } = await createPdf(artifact.name, fontBytes);
+  const width = A4_HEIGHT;
+  const height = A4_WIDTH;
+  const left = 34;
+  const right = 34;
+  const top = 58;
+  const bottom = 38;
+  const tableWidth = width - left - right;
+  const columnWidth = tableWidth / parsed.columns.length;
+  const rowHeight = 25;
+  const headerHeight = 31;
+  const pages: PDFPage[] = [];
+
+  function addPage() {
+    const page = document.addPage([width, height]);
+    pages.push(page);
+    page.drawRectangle({ x: 0, y: 0, width, height, color: COLORS.white });
+    page.drawText("RUNE", { x: left, y: height - 30, size: 8, font, color: COLORS.accent });
+    const title = safeText(artifact.name, supported, warnings);
+    const titleFont = fontForText(title, { font, unicodeFont });
+    page.drawText(wrapText(title, titleFont, { size: 8, maxWidth: width - 150, maxLines: 1 }).lines[0], {
+      x: left + 42,
+      y: height - 30,
+      size: 8,
+      font: titleFont,
+      color: COLORS.muted,
+    });
+    const headerY = height - top - headerHeight;
+    parsed.columns.forEach((column, columnIndex) => {
+      const x = left + columnIndex * columnWidth;
+      page.drawRectangle({ x, y: headerY, width: columnWidth, height: headerHeight, color: COLORS.paper, borderColor: COLORS.line, borderWidth: 0.5 });
+      const text = safeText(column, supported, warnings);
+      const textFont = fontForText(text, { font, unicodeFont });
+      const wrapped = wrapText(text, textFont, { size: 7.5, maxWidth: columnWidth - 10, maxLines: 2 });
+      if (wrapped.truncated) warnings.add("Some table headings were visibly shortened to fit the fixed PDF columns.");
+      drawLines(page, wrapped.lines, textFont, x + 5, headerY + headerHeight - 11, 7.5, 9, COLORS.ink);
+    });
+    return { page, y: headerY };
+  }
+
+  let current = addPage();
+  parsed.rows.forEach((row, rowIndex) => {
+    if (current.y - rowHeight < bottom) current = addPage();
+    const rowY = current.y - rowHeight;
+    parsed.columns.forEach((column, columnIndex) => {
+      const x = left + columnIndex * columnWidth;
+      current.page.drawRectangle({
+        x,
+        y: rowY,
+        width: columnWidth,
+        height: rowHeight,
+        color: rowIndex % 2 ? rgb(0.985, 0.982, 0.971) : COLORS.white,
+        borderColor: COLORS.line,
+        borderWidth: 0.35,
+      });
+      const value = row[column] == null ? "" : String(row[column]);
+      const text = safeText(value, supported, warnings);
+      const textFont = fontForText(text, { font, unicodeFont });
+      const wrapped = wrapText(text, textFont, { size: 7, maxWidth: columnWidth - 10, maxLines: 2 });
+      if (wrapped.truncated) warnings.add("Some long Data cells were visibly shortened to fit the fixed PDF columns.");
+      drawLines(current.page, wrapped.lines, textFont, x + 5, rowY + rowHeight - 10, 7, 8.5, COLORS.ink);
+    });
+    current.y = rowY;
+  });
+  pages.forEach((page, index) => {
+    const label = `${index + 1} / ${pages.length}`;
+    page.drawText(`${parsed.rows.length} rows · ${parsed.columns.length} columns`, { x: left, y: 19, size: 6.5, font, color: COLORS.muted });
+    page.drawText(label, { x: width - right - font.widthOfTextAtSize(label, 6.5), y: 19, size: 6.5, font, color: COLORS.muted });
+  });
+  const bytes = await document.save({ addDefaultPage: false, updateFieldAppearances: false });
+  return { bytes, warnings: unique(warnings) };
+}
+
 type DeckContext = {
   font: PDFFont;
   unicodeFont: PDFFont;
@@ -800,7 +887,9 @@ async function renderDeckPdf(
 }
 
 export function isPdfExportArtifact(artifact: WorkspaceArtifact) {
-  return artifact.kind === "document" || (artifact.kind === "slides" && artifact.language === "Deck Markdown");
+  return artifact.kind === "document"
+    || artifact.kind === "data"
+    || (artifact.kind === "slides" && artifact.language === "Deck Markdown");
 }
 
 export async function exportPdfArtifact(
@@ -809,12 +898,15 @@ export async function exportPdfArtifact(
   querySnapshots: WorkspaceQuerySnapshot[] = [],
   providedFontBytes?: Uint8Array,
 ): Promise<PdfExportResult> {
-  if (!isPdfExportArtifact(artifact)) throw new Error("Direct PDF export supports Markdown Documents and Deck Markdown artifacts.");
-  if (artifact.source.length > 200_000) throw new Error("PDF export is limited to 200,000 source characters.");
+  if (!isPdfExportArtifact(artifact)) throw new Error("Direct PDF export supports Markdown Documents, Data, and Deck Markdown artifacts.");
+  const sourceLimit = artifact.kind === "data" ? 2_000_000 : 200_000;
+  if (artifact.source.length > sourceLimit) throw new Error(`PDF export is limited to ${sourceLimit.toLocaleString("en-US")} source characters for this artifact.`);
   const fontBytes = providedFontBytes ?? await loadRunePdfFont();
   const rendered = artifact.kind === "document"
     ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes)
-    : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes);
+    : artifact.kind === "data"
+      ? await renderDataPdf(artifact, fontBytes)
+      : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes);
   if (rendered.bytes.length > MAX_PDF_EXPORT_BYTES) throw new Error("The generated PDF exceeds Rune's 12 MB export limit.");
   return {
     bytes: rendered.bytes,

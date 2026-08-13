@@ -491,6 +491,7 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 45. v0.49 makes locale an explicit dependency across the primary workbench, review surfaces, suggestions, dependency maps, and every visual artifact editor while keeping SSR deterministic.
 46. v0.50 adds explicit-page, English/Simplified-Chinese browser-local OCR for scanned PDF pages with same-origin assets, stoppable progress, page provenance, visible confidence, and the unchanged atomic import review.
 47. v0.51 mirrors every controlled visual draft into a complete highlighted canonical-source candidate without granting that temporary projection persistence or write authority.
+48. v0.52 normalizes Data into deterministic rectangular CSV/JSON snapshots and fixed landscape PDF tables behind the same stale-context export review; canonical source, XLSX, and ODS remain adjacent explicit choices.
 48. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
 49. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
 50. D1/R2 remain undeclared until durable hosted projects or assets are required.
@@ -538,7 +539,7 @@ This avoids paying for identity, databases, and sync before they improve the cor
 | Presentation source | Deck Markdown compiler and legacy HTML bridge | No hosted infrastructure |
 | Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
 | Compatibility import | Semantic DOCX/XLSX/PPTX, ODT/ODS/ODP, selectable-text PDF ingestion, and explicit browser-local scan OCR | Lazy local ZIP/XML, PDF, and same-origin OCR adapters |
-| Compatibility export | Semantic DOCX/XLSX/PPTX and ODT/ODS/ODP, standalone Deck HTML, and fixed Document/Deck PDF | Lazy deterministic adapters; isolated workers only when needed |
+| Compatibility export | Deterministic CSV/JSON, semantic DOCX/XLSX/PPTX and ODT/ODS/ODP, standalone Deck HTML, and fixed Document/Data/Deck PDF | Lazy deterministic adapters; isolated workers only when needed |
 
 ## Quality gates
 

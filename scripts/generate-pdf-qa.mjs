@@ -8,6 +8,7 @@ const fontBytes = new Uint8Array(await readFile(new URL(`../public${RUNE_PDF_FON
 const snapshots = [defaultQuerySnapshot(), defaultSummaryQuerySnapshot()];
 const targets = [
   ["document", "rune-v025-q2-review.pdf"],
+  ["data", "rune-v052-regional-revenue.pdf"],
   ["slides", "rune-v025-board-briefing.pdf"],
 ];
 

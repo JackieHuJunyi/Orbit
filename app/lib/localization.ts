@@ -127,6 +127,9 @@ export function runeUICopy(locale: RuneLocale) {
       exportAsOpenDocument: (target: string) => zh ? `导出为 ${target} OpenDocument` : `Export as ${target} OpenDocument`,
       exportStandaloneHtml: zh ? "导出为独立 HTML" : "Export as standalone HTML",
       exportFixedPdf: zh ? "导出为固定版式 PDF" : "Export as fixed PDF",
+      exportMenu: zh ? "导出" : "Export",
+      exportMenuBody: zh ? "选择交付格式" : "Choose a handoff format",
+      canonicalSource: zh ? "规范源" : "Canonical source",
       pinnedCount: (value: number) => zh ? `${value} 个已固定` : `${value} pinned`,
       liveBindings: (value: number) => zh ? `${value} 项实时绑定` : `${value} live bindings`,
       pinContext: (name: string, pinned: boolean) => zh ? (pinned ? `从工作区 Agent 上下文移除 ${name}` : `将 ${name} 固定到工作区 Agent 上下文`) : `${pinned ? "Remove" : "Pin"} ${name} ${pinned ? "from" : "in"} Workspace Agent context`,
@@ -230,9 +233,9 @@ export function runeUICopy(locale: RuneLocale) {
     },
     exportReview: {
       kicker: zh ? "浏览器本地导出 · 不上传" : "Browser-local export · no upload",
-      title: (kind: "office" | "odf" | "pdf" | "html") => zh
-        ? ({ office: "审核 Office 导出", odf: "审核 OpenDocument 导出", pdf: "审核 PDF 导出", html: "审核 HTML 导出" })[kind]
-        : ({ office: "Review Office export", odf: "Review OpenDocument export", pdf: "Review PDF export", html: "Review HTML export" })[kind],
+      title: (kind: "office" | "odf" | "pdf" | "html" | "data") => zh
+        ? ({ office: "审核 Office 导出", odf: "审核 OpenDocument 导出", pdf: "审核 PDF 导出", html: "审核 HTML 导出", data: "审核数据导出" })[kind]
+        : ({ office: "Review Office export", odf: "Review OpenDocument export", pdf: "Review PDF export", html: "Review HTML export", data: "Review Data export" })[kind],
       description: (name: string, outputKind: string, target: string) => zh
         ? `确认下载后，${name} 将生成一份${outputKind} ${target} 文件。`
         : `${name} will become a ${outputKind} ${target} file after you confirm the download.`,
@@ -240,6 +243,7 @@ export function runeUICopy(locale: RuneLocale) {
         semantic: zh ? "语义化" : "semantic",
         fixed: zh ? "固定版式" : "fixed-layout",
         standalone: zh ? "独立" : "standalone",
+        portable: zh ? "便携数据" : "portable data",
       },
       details: (target: string) => zh ? `${target} 导出详情` : `${target} export details`,
       noChanges: zh ? "不会修改工作区或本机草稿" : "No workspace or device draft changes",
@@ -251,14 +255,15 @@ export function runeUICopy(locale: RuneLocale) {
         odf: zh ? "确定性 ODF ZIP" : "deterministic ODF ZIP",
         pdf: zh ? "固定版式 PDF" : "fixed-layout PDF",
         html: zh ? "自包含无脚本文件" : "self-contained scriptless file",
+        data: zh ? "确定性 UTF-8 数据" : "deterministic UTF-8 data",
       },
       fidelityNotes: zh ? "保真说明" : "Fidelity notes",
       canonicalTitle: zh ? "规范源内容" : "Canonical source",
       canonicalBody: zh ? "Rune 导出已校验的源内容，以及当前工作区中被引用的数据。" : "Rune exports the validated source and any referenced current workspace data.",
       packageTitle: (packaged: boolean) => packaged ? (zh ? "标准文件包" : "Standard package") : (zh ? "便携成品" : "Portable output"),
-      packageBody: (kind: "office" | "odf" | "pdf" | "html") => zh
-        ? ({ office: "下载使用标准 Office Open XML 部件及关系。", odf: "下载使用标准 OpenDocument 内容、样式、MIME 与清单部件。", pdf: "下载在标准 PDF 中嵌入版式、Unicode 字体和当前数据快照。", html: "下载包含版式、主题、指标和图表，不依赖外部资源。" })[kind]
-        : ({ office: "The download uses standard Office Open XML parts and relationships.", odf: "The download uses standard OpenDocument content, styles, MIME, and manifest parts.", pdf: "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF.", html: "The download contains its layout, theme, metrics, and charts without external assets." })[kind],
+      packageBody: (kind: "office" | "odf" | "pdf" | "html" | "data") => zh
+        ? ({ office: "下载使用标准 Office Open XML 部件及关系。", odf: "下载使用标准 OpenDocument 内容、样式、MIME 与清单部件。", pdf: "下载在标准 PDF 中嵌入版式、Unicode 字体和当前数据快照。", html: "下载包含版式、主题、指标和图表，不依赖外部资源。", data: "下载使用确定性的 UTF-8 CSV 或 JSON，不携带隐藏公式或脚本。" })[kind]
+        : ({ office: "The download uses standard Office Open XML parts and relationships.", odf: "The download uses standard OpenDocument content, styles, MIME, and manifest parts.", pdf: "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF.", html: "The download contains its layout, theme, metrics, and charts without external assets.", data: "The download uses deterministic UTF-8 CSV or JSON without hidden formulas or scripts." })[kind],
       handoffTitle: zh ? "明确交付" : "Explicit handoff",
       handoffBody: zh ? "只有确认后，浏览器才会启动一次本地下载。" : "The browser starts one local download only after your confirmation.",
     },

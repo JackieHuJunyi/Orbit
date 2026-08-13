@@ -1917,3 +1917,11 @@ v0.45 已经证明左侧 caret 可以回到右侧 block，但一个整张 GFM �
 projection 不是 canonical source。右侧仍是这次草稿的唯一 writer，左侧只读；artifact state、localStorage、checkpoint、依赖图、Agent context、folder Push 与各种 export 始终读取原 revision。Cancel/Escape 只销毁 projection，不需要 undo；Save 不信任已有 mirror，而是对当前 base revision 再编译一次，运行完整 workspace/downstream proof，创建 checkpoint 后才单次持久化。编辑期间暂停文件切换、导入导出、目录同步、Agent 和全局保存，避免异步上下文把临时草稿误当成已保存事实。
 
 这不是任意 contenteditable。右侧只能编辑已有 compiler 已授权的语义范围，invalid draft 即使可以显示文本候选也会标红、禁用保存；Query 派生值、legacy HTML、嵌套 JSON、不可证明 DOM selection 和连续像素 scroll lock 仍不获得写权限。下一步若要允许左侧在同一临时 session 继续改，必须引入统一 draft document 与 selection transform，而不是让两个 textarea 分别维护自己的字符串。
+
+## 57. v0.52 导出首先是一项明确的交付选择，而不是工具栏图标集合
+
+过去 DOCX/XLSX/PPTX、ODF、HTML、PDF 和原始 source 各占一个顶部按钮，格式能力越完整，界面越像开发工具栏。v0.52 把它们收进一个 contextual Export 菜单：第一项始终是 canonical source，其余只显示当前 artifact 的真实 adapter。Data 因而明确拥有 CSV、JSON、XLSX、ODS 与 PDF 五条交付路径，而不是要求用户通过改扩展名猜测转换。菜单只改变入口，不放松原有 review、revision 和零写入边界。
+
+CSV/JSON 不是复制原字符串。适配器先用 Rune 当前 parser 得到 typed rows 与 stable column order，再构造矩形输出；JSON 缺失字段成为可见 `null`，CSV 通过标准 quoting 生成 UTF-8 文本并明确不包含 schema。相同输入逐 byte 确定，invalid/empty/oversized source fail closed，生成文件仍需人确认 fidelity notes。原 source 下载保持 byte-preserving，因此“保留原貌”和“格式转换”是两个不同动作。
+
+Data PDF 则补齐此前明确等待的打印合同：landscape A4、每页重复 header、最多 12 列与 5,000 行、固定 row/column geometry、两行 cell wrapping、visible ellipsis warning、footer page count。它不声称是一张可编辑表格，也不携带公式、筛选、类型或 binding。默认 fixture 已由独立 PDF parser 验证页面尺寸与 byte determinism，再由 Poppler 以 144 DPI 渲染并检查表格边线、留白、表头和 footer；这才把状态矩阵中的“计划：表格 PDF”改为已交付。

@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-13 — Unified format handoff behind one Apple-like Export menu and added reviewed deterministic Data export to CSV, JSON, and repeating-header landscape PDF alongside XLSX/ODS.
+
 - 2026-08-11 — Defined Rune as an artifact-as-code workspace and documented the low-cost expansion architecture.
 - 2026-08-11 — Built the first local-first workbench with live Markdown, CSV/JSON, and sandboxed HTML artifact previews.
 - 2026-08-11 — Added reviewable local Agent patches, undo checkpoints, import, download, validation, and device persistence.

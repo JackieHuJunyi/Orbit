@@ -73,13 +73,26 @@ test("embeds Unicode text without a network font dependency", async () => {
   assert.doesNotMatch(exported.warnings.join(" "), /replaced with visible question marks/i);
 });
 
+test("exports Data as a deterministic landscape A4 table PDF", async () => {
+  const data = defaultArtifacts.find((candidate) => candidate.kind === "data");
+  const first = await exportPdfArtifact(data, defaultArtifacts, [], fontBytes);
+  const second = await exportPdfArtifact(data, defaultArtifacts, [], fontBytes);
+  assert.deepEqual(first.bytes, second.bytes);
+  assert.equal(first.fileName, "regional-revenue.pdf");
+  assert.match(first.warnings.join(" "), /landscape A4 table/i);
+  const document = await PDFDocument.load(first.bytes);
+  assert.equal(document.getPageCount(), 1);
+  const { width, height } = document.getPages()[0].getSize();
+  assert.ok(Math.abs(width - 841.89) < 0.1);
+  assert.ok(Math.abs(height - 595.28) < 0.1);
+});
+
 test("fails closed for unsupported artifacts, pending Query bindings, and invalid font assets", async () => {
   const document = defaultArtifacts.find((candidate) => candidate.kind === "document");
   const data = defaultArtifacts.find((candidate) => candidate.kind === "data");
 
   assert.equal(isPdfExportArtifact(document), true);
-  assert.equal(isPdfExportArtifact(data), false);
-  await assert.rejects(() => exportPdfArtifact(data, defaultArtifacts, [], fontBytes), /supports Markdown Documents and Deck Markdown/i);
+  assert.equal(isPdfExportArtifact(data), true);
   await assert.rejects(() => exportPdfArtifact(document, defaultArtifacts, [], fontBytes), /before PDF export/i);
   await assert.rejects(
     () => exportPdfArtifact({ ...document, source: "# Small" }, defaultArtifacts, [], new Uint8Array([1, 2, 3, 4])),
