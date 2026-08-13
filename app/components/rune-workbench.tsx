@@ -211,6 +211,7 @@ import {
   workspaceSplitTracks,
   type RuneWorkspaceView,
 } from "../lib/workspace-layout";
+import { sourceSelectionScrollTop } from "../lib/source-editor-scroll";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
@@ -673,6 +674,7 @@ export function RuneWorkbench() {
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
   const [visualSourceDraft, setVisualSourceDraft] = useState<VisualSourceDraft | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLElement>(null);
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
@@ -696,6 +698,10 @@ export function RuneWorkbench() {
   checkpointsRef.current = checkpoints;
   savedOperatingReviewsRef.current = savedOperatingReviews;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
+  const activeAppearance = useMemo(
+    () => RUNE_APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) ?? RUNE_APPEARANCE_THEMES[0],
+    [appearanceTheme],
+  );
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
 
   useEffect(() => {
@@ -713,6 +719,31 @@ export function RuneWorkbench() {
       // Appearance stays available in memory when device preference persistence is unavailable.
     }
   }, [appearanceTheme, hydrated]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      || window.matchMedia("(pointer: coarse)").matches) return;
+    let frame = 0;
+    const moveMaterialLight = (event: globalThis.PointerEvent) => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        shell.style.setProperty("--rune-pointer-x", `${event.clientX}px`);
+        shell.style.setProperty("--rune-pointer-y", `${event.clientY}px`);
+        shell.style.setProperty("--rune-pointer-opacity", "1");
+        frame = 0;
+      });
+    };
+    const hideMaterialLight = () => shell.style.setProperty("--rune-pointer-opacity", "0");
+    shell.addEventListener("pointermove", moveMaterialLight, { passive: true });
+    shell.addEventListener("pointerleave", hideMaterialLight);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      shell.removeEventListener("pointermove", moveMaterialLight);
+      shell.removeEventListener("pointerleave", hideMaterialLight);
+    };
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -1802,8 +1833,22 @@ export function RuneWorkbench() {
     const focusSelection = () => {
       const editor = sourceEditorRef.current;
       if (!editor) return;
-      editor.focus();
+      editor.focus({ preventScroll: true });
       editor.setSelectionRange(target.start, target.end, "forward");
+      const computedLineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight);
+      const nextScrollTop = sourceSelectionScrollTop({
+        source: currentTargetArtifact.source,
+        start: target.start,
+        end: target.end,
+        lineHeight: computedLineHeight,
+        viewportHeight: editor.clientHeight,
+        scrollHeight: editor.scrollHeight,
+      });
+      editor.scrollTo({
+        top: nextScrollTop,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
+      if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
     };
     window.requestAnimationFrame(() => {
       if (changesArtifact || revealsSource) window.requestAnimationFrame(focusSelection);
@@ -3092,7 +3137,7 @@ export function RuneWorkbench() {
   const saveStatusDetail = saveState === "error" ? ui.deviceStorageFull : ui.lastSaved(savedAt || ui.justNow);
 
   return (
-    <main className="rune-shell">
+    <main className="rune-shell" ref={shellRef}>
       <header className="topbar">
         <div className="topbar-left">
           <button
@@ -3178,6 +3223,14 @@ export function RuneWorkbench() {
                   {directoryHandle && <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void pushWorkspaceFolder(); }}><Save aria-hidden="true" /><span><strong>{ui.push}</strong><small>{directoryHandle.name}</small></span></button>}
                 </div>
                 <div className="tools-appearance-header"><Palette aria-hidden="true" /><span><strong>{ui.appearance}</strong><small>{ui.appearanceBody}</small></span></div>
+                <div className="tools-material-preview" aria-live="polite">
+                  <span
+                    className="appearance-swatch"
+                    aria-hidden="true"
+                    style={{ background: `linear-gradient(145deg, ${activeAppearance.finish[0]}, ${activeAppearance.finish[1]})` }}
+                  />
+                  <span><small>{ui.activeTheme}</small><strong>{runeText(locale, activeAppearance.english, activeAppearance.chinese)}</strong></span>
+                </div>
                 <div className="tools-theme-grid" aria-label={ui.appearanceBody}>
                   {RUNE_APPEARANCE_THEMES.map((theme) => (
                     <button
@@ -3196,7 +3249,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.77</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.78</strong></footer>
               </div>
             )}
           </div>
@@ -3495,6 +3548,7 @@ export function RuneWorkbench() {
                 }
               }}
               spellCheck={false}
+              wrap="off"
               readOnly={Boolean(activeVisualSourceDraft)}
               disabled={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
               aria-busy={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
@@ -3746,6 +3800,7 @@ export function RuneWorkbench() {
           <div className="preview-body">
             <div className="preview-scroll" ref={previewScrollRef}>
               <ArtifactPreview
+                key={selectedArtifact.id}
                 artifact={selectedArtifact}
                 artifacts={artifacts}
                 locale={locale}

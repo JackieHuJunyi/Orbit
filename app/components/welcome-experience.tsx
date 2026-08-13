@@ -16,9 +16,10 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ModelProfileManager } from "./model-profile-manager";
 import {
+  localeDirection,
   localeDisplayName,
   localeMonogram,
   localizeRuneCopy,
@@ -189,13 +190,18 @@ export function WelcomeExperience({
   ));
   const text = welcomeCopy(locale);
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
+  const greeting = greetings[greetingIndex] ?? greetings[0] ?? "Hello";
+  const greetingLocale = RUNE_LOCALE_REGISTRY.find((entry) => entry.greeting === greeting)?.locale ?? locale;
+  const greetingCharacters = localeDirection(greetingLocale) === "rtl"
+    ? [greeting]
+    : greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting);
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
 
   useEffect(() => {
     if (step !== "welcome" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = window.setInterval(() => {
       setGreetingIndex((current) => (current + 1) % greetings.length);
-    }, 1_850);
+    }, 3_200);
     return () => window.clearInterval(timer);
   }, [greetings, step]);
 
@@ -303,7 +309,22 @@ export function WelcomeExperience({
               <div className="welcome-intro-grid">
                 <div className="welcome-intro-copy">
                   <div className="welcome-greeting-stage" aria-hidden="true">
-                    <span className="welcome-greeting" key={`${locale}-${greetingIndex}`}>{greetings[greetingIndex]}</span>
+                    <span
+                      className={`welcome-greeting ${greetingCharacters.length > 9 ? "long" : ""}`.trim()}
+                      data-greeting-locale={greetingLocale}
+                      dir={localeDirection(greetingLocale)}
+                      aria-label={greeting}
+                      key={`${locale}-${greetingIndex}`}
+                    >
+                      {greetingCharacters.map((character, index) => (
+                        <span
+                          aria-hidden="true"
+                          className="welcome-greeting-character"
+                          style={{ "--greeting-order": index } as CSSProperties}
+                          key={`${character}-${index}`}
+                        >{character}</span>
+                      ))}
+                    </span>
                     <i>Rune</i>
                   </div>
                   <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
