@@ -2072,4 +2072,12 @@ Preview header 已经拥有可展开的来源、binding 与 validation 证据，
 
 当前边界保持诚实：该版本只让本机 Document 插入与预览图片；source-only 下载、文件夹同步和语义 Office/ODF/PDF 导出尚未携带这些 bytes，仍按现有 fidelity warning 处理。后续所有资产包、删除、目录同步和导出嵌入都必须复用同一 hash identity，而不能发明第二套路径。
 
+## 80. v0.75 用户文件夹必须同时拥有可读源与可验证资源
+
+v0.74 的 `rune-asset:` identity 已经让 source 保持可读，但仅存在当前浏览器 IndexedDB 的 bytes 仍无法跟随用户自己的工作区。v0.75 将现有 `rune.workspace.json` 做向后兼容升级：没有图片继续写 version 1；存在图片时写 version 2，并只增加 asset 的 id、原文件名、真实 MIME 和大小。binary 不进入 manifest，而是按 `.rune-assets/<sha256>.<ext>` 存放；source 仍不进入 manifest，Markdown identity 也不改变。
+
+Pull 必须证明三件事才会替换设备工作区：每个 source 引用恰好出现在 manifest assets 中；每个 manifest asset 在隐藏目录有对应文件；每个文件的大小、magic bytes 和重新计算的 SHA-256 都与声明一致。通过用户确认后，Rune 先把 bytes 去重写入本机 asset store，再 checkpoint 旧 source 和单次持久化新 workspace；后一步失败只补偿删除本次真正新建的 assets。无 manifest 的 loose folder 若含 `rune-asset:` 直接拒绝，避免看起来成功却得到 broken preview。
+
+Push 反向执行同一证明：先收集所有 source reference，从 IndexedDB 重新读取并校验 bytes；缺失或损坏时不写任何文件。资源通过后先写 `.rune-assets`，再写普通 source，最后写 manifest；由于 File System Access 没有跨文件事务，Rune 仍诚实报告中断位置，不宣称整个目录写入是原子的，也不删除不再引用或非 Rune 文件。到这里图片可以随用户文件夹跨浏览器/设备搬运，但 Office/ODF/PDF embed 仍留给下一里程碑。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

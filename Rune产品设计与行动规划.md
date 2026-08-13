@@ -1935,3 +1935,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 单图 8 MB、单设备 40 张/64 MB；读取时重验 magic bytes 与 hash，缺失/损坏 fail closed。
 - source 与新 asset 使用补偿事务：设备 source 持久化失败则删除本次新建 bytes，checkpoint 保留写入前文档。
 - 本阶段不宣称 source-only 下载、folder sync 或 Office/ODF/PDF 已携带 binary；下一阶段沿同一 identity 实现 portable asset package 与导出嵌入。
+
+### 17.20 v0.75 图片随用户文件夹携带
+
+- `rune.workspace.json` 无图片保持 version 1；有图片使用 version 2，资产清单仅含 hash、名称、MIME、大小，bytes 位于 `.rune-assets/<hash>.<ext>`。
+- Pull 要求 source references、manifest assets 与隐藏目录文件精确闭合，并重验 8 MB 单图、40 张/64 MB、magic bytes 与 SHA-256；loose folder 不能解析资产引用。
+- Pull 先去重写入本机 asset store，再 checkpoint/source persistence；失败时只补偿删除本轮新建 bytes。
+- Push 先重新读取并校验所有引用资源，缺失/损坏则零目录写入；随后 assets → source → manifest，任何中断报告精确目标且不宣称跨文件原子性。
+- 不删除文件夹中的旧资源或非 Rune 文件；垃圾回收必须成为用户可审核的独立动作。

@@ -191,6 +191,7 @@ import {
   deleteRuneImageAsset,
   extractRuneAssetIds,
   getRuneImageBlob,
+  getRuneImageAsset,
   parseRuneAssetReference,
   prepareRuneImageAsset,
   putRuneImageAsset,
@@ -1845,12 +1846,32 @@ export function RuneWorkbench() {
     return next;
   }
 
-  function applyDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
+  async function collectWorkspaceLocalAssets(sourceArtifacts = artifactsRef.current) {
+    const ids = [...new Set(sourceArtifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)))];
+    const assets: PreparedRuneImageAsset[] = [];
+    for (const id of ids) {
+      const asset = await getRuneImageAsset(id);
+      if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${id}`);
+      assets.push(asset);
+    }
+    return assets;
+  }
+
+  async function applyDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
     if (result.errors.length) throw new Error(result.errors[0]);
     if (!result.artifacts.length) throw new Error("The selected folder does not contain a Rune workspace yet.");
     if (!window.confirm(`Replace this device draft with ${result.artifacts.length} validated source files from “${handle.name}”? A checkpoint of every current file will be kept.`)) {
       setNotice("Folder pull cancelled — the device draft is unchanged");
       return false;
+    }
+    const importedAssetIds: string[] = [];
+    try {
+      for (const asset of result.assets) {
+        if (await putRuneImageAsset(asset)) importedAssetIds.push(asset.id);
+      }
+    } catch (error) {
+      await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
+      throw error;
     }
     const nextCheckpoints = checkpointWorkspaceBeforeFolderPull();
     const nextSelectedId = result.artifacts.some((artifact) => artifact.id === selectedId)
@@ -1860,7 +1881,12 @@ export function RuneWorkbench() {
       result.artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId)
       && Object.values(workflow.artifactIds).every((artifactId) => result.artifacts.some((artifact) => artifact.id === artifactId))
     ));
-    persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints, nextSavedReviews);
+    try {
+      persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints, nextSavedReviews);
+    } catch (error) {
+      await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
+      throw error;
+    }
     setArtifacts(result.artifacts);
     setSelectedId(nextSelectedId);
     setWorkspacePinnedArtifactIds([]);
@@ -1875,7 +1901,7 @@ export function RuneWorkbench() {
     setSavedAt("");
     setDirectoryHandle(handle);
     setDirectoryState("connected");
-    setNotice(`Pulled ${result.artifacts.length} source files from ${handle.name} · ${result.source}`);
+    setNotice(`Pulled ${result.artifacts.length} source files${result.assets.length ? ` and ${result.assets.length} local images` : ""} from ${handle.name} · ${result.source}`);
     return true;
   }
 
@@ -1898,13 +1924,14 @@ export function RuneWorkbench() {
           setNotice("Folder connection cancelled");
           return;
         }
-        await writeWorkspaceDirectory(handle, artifacts);
+        const localAssets = await collectWorkspaceLocalAssets(artifacts);
+        await writeWorkspaceDirectory(handle, artifacts, localAssets);
         setDirectoryHandle(handle);
         setDirectoryState("connected");
         setNotice(`Connected ${handle.name} · wrote ${artifacts.length} readable source files`);
         return;
       }
-      if (!applyDirectoryWorkspace(handle, result)) setDirectoryState(directoryHandle ? "connected" : "disconnected");
+      if (!(await applyDirectoryWorkspace(handle, result))) setDirectoryState(directoryHandle ? "connected" : "disconnected");
     } catch (error) {
       if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "AbortError") {
         setDirectoryState(directoryHandle ? "connected" : "disconnected");
@@ -1921,7 +1948,7 @@ export function RuneWorkbench() {
     setDirectoryState("syncing");
     try {
       const result = await readWorkspaceDirectory(directoryHandle);
-      if (!applyDirectoryWorkspace(directoryHandle, result)) setDirectoryState("connected");
+      if (!(await applyDirectoryWorkspace(directoryHandle, result))) setDirectoryState("connected");
     } catch (error) {
       setDirectoryState("error");
       setNotice(error instanceof Error ? error.message : "Rune could not pull that folder");
@@ -1936,9 +1963,10 @@ export function RuneWorkbench() {
     }
     setDirectoryState("syncing");
     try {
-      const written = await writeWorkspaceDirectory(directoryHandle, artifacts);
+      const localAssets = await collectWorkspaceLocalAssets(artifacts);
+      const written = await writeWorkspaceDirectory(directoryHandle, artifacts, localAssets);
       setDirectoryState("connected");
-      setNotice(`Pushed ${written.length - 1} source files and rune.workspace.json to ${directoryHandle.name}`);
+      setNotice(`Pushed ${artifacts.length} source files${localAssets.length ? ` and ${localAssets.length} local images` : ""} with rune.workspace.json to ${directoryHandle.name}`);
     } catch (error) {
       setDirectoryState("error");
       setNotice(error instanceof Error ? error.message : "Rune could not push that folder");
@@ -3165,7 +3193,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.74</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.75</strong></footer>
               </div>
             )}
           </div>

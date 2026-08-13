@@ -191,25 +191,31 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
   }
 }
 
-export async function getRuneImageBlob(id: string) {
+export async function getRuneImageAsset(id: string): Promise<PreparedRuneImageAsset | null> {
   if (!SHA256_ID.test(id)) return null;
   const database = await openAssetDatabase();
   try {
-    const blob = await new Promise<Blob | null>((resolve, reject) => {
+    const record = await new Promise<RuneLocalAssetRecord | null>((resolve, reject) => {
       const request = database.transaction(IMAGE_STORE, "readonly").objectStore(IMAGE_STORE).get(id);
-      request.onsuccess = () => resolve(request.result?.blob instanceof Blob ? request.result.blob : null);
+      request.onsuccess = () => resolve(request.result?.blob instanceof Blob ? request.result as RuneLocalAssetRecord : null);
       request.onerror = () => reject(request.error ?? new Error("Rune could not read this local image."));
     });
-    if (!blob || !blob.size || blob.size > MAX_RUNE_IMAGE_BYTES) return null;
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    if (!record || !record.blob.size || record.blob.size > MAX_RUNE_IMAGE_BYTES) return null;
+    const bytes = new Uint8Array(await record.blob.arrayBuffer());
     const mimeType = detectRuneImageMimeType(bytes);
     if (!mimeType) return null;
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     const actualId = [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
-    return actualId === id ? new Blob([bytes.buffer as ArrayBuffer], { type: mimeType }) : null;
+    if (actualId !== id || record.size !== bytes.length || record.mimeType !== mimeType) return null;
+    return { id, name: normalizedAssetName(record.name), mimeType, size: bytes.length, bytes };
   } finally {
     database.close();
   }
+}
+
+export async function getRuneImageBlob(id: string) {
+  const asset = await getRuneImageAsset(id);
+  return asset ? new Blob([asset.bytes.buffer as ArrayBuffer], { type: asset.mimeType }) : null;
 }
 
 export async function deleteRuneImageAsset(id: string) {
