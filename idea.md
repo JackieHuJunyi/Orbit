@@ -1713,9 +1713,9 @@ v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装�
 
 语言确认后立即进入模型设置，比把 API 配置藏进后续 Preferences 更符合首次启动的心理顺序：语言回答“Rune 怎样和我说话”，模型回答“Rune 会把什么交给谁处理”。如果先教快捷键、最后才解释可能发生的远端请求，用户在第一次触发 Agent 时才发现数据边界，信任已经被透支。因此 v0.35 把 setup assistant 固定为欢迎、语言、模型、快捷键、开始五步；帮助入口允许以后重新进入模型页，首次跳过也只代表选择本地模式，不代表默许远端传输。
 
-模型设置必须把“个人 API”和“网页输入 API Key”分开。OpenAI 的官方认证说明要求 API Key 作为秘密存放在服务端环境变量或密钥管理系统中，不能暴露在浏览器和客户端代码。Rune Web 因而不渲染密钥输入框：它只向 `GET /api/model-status` 读取 `configured`、`provider`、`model` 三个非秘密字段，展示已连接部署模型或本地规划器；用户偏好也只保存 `auto` / `local`。未连接时界面可以打开官方 API Key 管理页、复制 `.env.local` 模板并在重启后重新检查，但密钥不能进入 workspace、Artifact、localStorage、checkpoint、文件夹 manifest、Git、URL、日志、分析事件或模型输入。
+模型设置必须把“个人 API”和“把 key 交给浏览器可读持久层”分开。OpenAI 的官方认证说明要求 API Key 作为秘密保存在服务端环境或密钥管理系统中，不能嵌入客户端代码。v0.35 因而最初只向 `GET /api/model-status` 读取 `configured`、`provider`、`model` 三个非秘密字段，展示部署模型或本地规划器；v0.46 在不改变该边界的前提下允许用户在 password draft 中短暂输入 key，立刻通过同源 HTTPS 交给服务端加密为浏览器脚本不可读的 HttpOnly credential。用户偏好仍只在 localStorage 保存 `auto` / `local`，密钥不能进入 workspace、Artifact、localStorage、checkpoint、文件夹 manifest、Git、URL、日志、分析事件或模型输入。
 
-这也解释了 Web、部署和未来桌面版的三种产品路径。本地开发把个人 key 写进未提交的 `.env.local`；托管 Web 由部署者在平台 secret 中提供一把服务端 credential，普通访客只能选择是否使用该已连接能力；真正面向每位用户的桌面 BYOK 必须接入 macOS Keychain / Windows Credential Manager 等原生安全存储，React 只拿不透明状态。当前版本没有假装已经完成桌面钥匙串，也没有把“复制环境模板”包装成普通用户的最终体验。无模型时 deterministic planner 仍能完成核心任务，是隐私选择和可用降级，不是错误页。
+这也解释了 Web、部署和未来桌面版的三种产品路径。本地开发可以在未提交的 `.env.local` 放部署 key，也可以配置独立加密主密钥后使用个人 profile；托管 Web 把每位用户的 credential 保存在同源、可撤销的加密 HttpOnly cookie 中；桌面 BYOK 则必须把同一 secret-storage port 接入 macOS Keychain / Windows Credential Manager，React 仍只拿脱敏状态。当前版本没有假装 Web cookie 已经是跨设备账号 vault。无模型时 deterministic planner 仍能完成核心任务，是隐私选择和可用降级，不是错误页。
 
 模型状态与模型权限仍是两件事。连接成功只让 Rune 可以调用 provider；provider 依旧只能返回有界 typed operation，不能接触 localStorage、文件系统 handle 或写入 API。请求仍由 graph-bounded context 决定，Data/Query/Chart 改动仍要通过本地 runtime preflight，所有结果仍需 review、revision check、checkpoint 与原子写入。用户选“仅本地”后，client 不发送 Agent 请求到远端 route，而是明确运行内置规划器；刷新后只恢复这个非秘密选择。
 
@@ -1849,3 +1849,37 @@ Overleaf 式体验经常被概括成“两边一起滚动”，但滚动百分�
 解析结果的 id 被放到对应 React 元素的 data attribute，唯一用途是让右侧容器找到目标并滚动到中部。DOM 自己不参与推断，也不能授予编辑权限；section 没有额外包裹时，可以通过起始 block 上的独立 section id 滚到该节。高亮、顶部 badge 与滚动共享同一个 target object，系统减少动态效果时关闭平滑动画。用户只是放置 caret 时，Selection Agent 仍保持 File scope；只有非空且通过 revision、UTF-16 和长度验证的 selection 才获得原来的窄 Agent capability。
 
 这完成的是身份同步，不是滚动锁定。连续按像素同步容易和用户主动浏览冲突，也会在 iframe、表格和折叠 UI 中漂移；嵌套 list item、table cell、inline span 与派生 Query 结果则需要新的 source map 才能进入。Rune 以后可以观察用户是否需要 source-scroll 驱动的“当前可见块”同步，但任何扩展都必须继续从 compiler provenance 出发。
+
+## 51. 模型配置不是一个 Key 输入框，而是一套可切换的信任边界
+
+CC Switch 最值得借鉴的不是界面形状，而是把供应商当作可命名、可编辑、可启用、可删除的配置对象：预设自动填端点，自定义配置显式填写地址，模型列表可以从供应商读取，当前配置可以一键切换。Rune v0.46 把这套心智模型放进语言之后的 onboarding，也在工作台顶部提供独立设置入口；个人配置与部署者提供的 OpenAI 配置并存，最多保存三份个人 profile，任一时刻只有一份 active。删除 active profile 后回退到下一份个人配置；没有个人配置时才回退到部署模型或确定性本地模式。
+
+Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中的 key 只存在于当前 React draft，保存时通过同源 HTTPS 发到 `/api/model-profiles`，服务端以 `RUNE_CREDENTIAL_ENCRYPTION_KEY` 派生 AES-GCM key，把 profile metadata 与 credential 一起加密、认证后写入 `HttpOnly; SameSite=Strict; Path=/api` cookie。浏览器脚本、localStorage、workspace、Artifact、checkpoint、folder manifest、Git、URL、日志与模型 prompt 都无法读回或持久化明文。服务器主密钥缺失时，生产环境直接关闭个人凭据库；密文被改动或主密钥轮换后按空 vault 处理。当前三份/30 天上限是 cookie-backed 单设备阶段的明确产品限制，不是假装已有账号云同步。
+
+端点能力也必须诚实。首版支持 OpenAI Responses、OpenRouter Responses 和用户明确声明兼容 OpenAI Responses 的自定义 HTTPS 基础地址。自定义地址必须是公共 DNS、标准 443 端口、无 userinfo/query/fragment，且不能是 localhost、IP literal、`.local` 或 `.internal` 等私网名称；输入完整 `/responses` 或 `/chat/completions` 会被拒绝，减少 SSRF 和路径误配。读取模型只调用该供应商的 `GET /models`，设置 8 秒超时、1 MB 响应上限和最多 80 个唯一模型 ID，不发送 workspace 内容，也不触发模型生成；真正是否支持 Structured Outputs 仍由第一次受约束 Agent plan 证明。Anthropic Messages、Gemini、Chat Completions 转换、多端点故障转移、费用/延迟路由以后通过独立 adapter/proxy 实现，不在一个“兼容”标签里假装完成。
+
+这仍不改变 Agent 权限。active profile 只决定 `apiKey + baseURL + model` 的 transport，供应商仍只能返回既有 typed operations；source revision、context graph、Query evidence、runtime impact、一次修复、review、checkpoint 和 atomic Apply 全部保持原样。用户选择 local 后浏览器不会调用远端 Agent route。个人配置优先于部署配置，但响应只返回 provider、profile name 与 model，绝不返回 credential；跨 origin 的配置写请求也被拒绝。
+
+## 52. 一小时设计冻结：全功能地图、依赖与发布门槛
+
+2026-08-13 的设计冲刺把“所有功能”定义为所有已提出能力都有明确产品合同，而不是宣称所有长期工程已在一小时内完成。状态只有四种：**已交付**、**本版交付**、**下一阶段**、**暂不做**。每一项都必须先满足上一层依赖，任何视觉入口都不能早于 parser/compiler、安全边界和可验证 fixture。
+
+| 产品层 | 功能与状态 | 必须依赖 | 可发布验收 |
+| --- | --- | --- | --- |
+| 进入 Rune | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放：已交付 | hydration 稳定壳、本地偏好 | 首次/再次打开都可进入；SSR/CSR 文本一致；指南是普通可编辑 Artifact |
+| 模型 | 多 profile BYOK、OpenAI/OpenRouter/自定义 Responses、读取模型、启用/编辑/删除：v0.46 | 同源 API、AES-GCM vault、端点验证、local fallback | UI/route 实测；响应与 cookie 不出现明文；篡改失败关闭；旧部署模型兼容 |
+| Artifact 核心 | Document/Data/Query/Chart/Deck 可读 source、实时 preview、依赖图：已交付 | strict adapters、revision identity | 完整 workspace 每次变化都可重新编译；无隐藏 graph state |
+| 双向同步 | source → preview 与 preview → source 定位；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
+| Agent | Selection/File/Workspace typed operation、创建完整 Data→Query→Chart→成品链、review、一次修复：已交付 | bounded context、query evidence、runtime impact | provider 不能直接写；所有 concrete diff 可解释且 Apply 原子化 |
+| 导入 | `.md/.csv/.json/.sql/.html`、DOCX/XLSX/PPTX、ODT/ODS/ODP、selectable PDF：已交付 | 本地 parser、大小上限、fidelity review | 多文件单事务；脚本/OCR/丢失项明确；取消零写入 |
+| 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Deck PDF：已交付 | deterministic compiler、当前 Query snapshot | review 后一次下载；byte/结构 fixture；canonical source 不变 |
+| 通用经营汇报向导 | 一句话生成 Data→Query→Chart→报告/演示：下一阶段，已有本地编译草稿未发布 | 明确字段映射、日期/维度/指标语义、workflow review | 用户必须确认源、字段、产物；一次 transaction 可运行；空壳或错误字段失败关闭 |
+| 原生 `.doc/.ppt` | 暂不做浏览器内解析 | 受控 LibreOffice conversion service 或桌面壳 | 先隔离执行、病毒扫描、超时/资源限制、转换 fidelity review |
+| 扫描 PDF OCR | 下一阶段 | 本地/可选远端 OCR、页面权限与数据披露 | 用户明确选择上传范围；页级 provenance；置信度与遗漏可见 |
+| 富媒体 | 图片、附件、来源摘录：下一阶段 | asset store、hash identity、引用许可 | 不把 base64 混入 source；导入/导出/删除/同步可追踪 |
+| 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
+| 云与桌面 | 先桌面 Keychain/系统文件能力，再可选端到端加密云同步 | storage port、secret port、账号恢复 | Web cookie profile 不假装跨设备；桌面 key 不进 renderer；云端无法读取明文 workspace |
+| 供应商路由 | Anthropic/Gemini/Chat adapter、fallback、成本/延迟/健康度：下一阶段 | protocol adapters、capability manifest、usage ledger | 每个 model 声明 Structured Outputs/tool/context 能力；失败不自动泄露到新供应商 |
+| 商业与治理 | 预算、额度、用量、数据地域、审计：下一阶段 | identity、provider usage、policy engine | 单任务预算可见；模型/供应商切换需符合数据政策；key 从不入日志 |
+
+实现顺序被冻结为四条串行主线。第一，先用真实经营汇报任务验证“来源到成品”的时间节省，而不是继续横向加格式；第二，补桌面安全存储、旧 Office 转换和 OCR，使目标用户的现实输入可进入同一 canonical model；第三，在重复使用成立后做资产、模板、连接器与自动刷新；第四，只有多人重复协作和付费证据同时出现，才引入账号、云同步、CRDT 与组织治理。停止条件同样明确：不能建立 source provenance 的入口不做可视化回写，不能安全持有 credential 的平台不开放 BYOK，不能在 compiler fixture 中 round-trip 的格式不标“支持”，没有实际用户复用证据不建设 marketplace 或企业后台。

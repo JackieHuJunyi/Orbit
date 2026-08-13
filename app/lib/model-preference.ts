@@ -5,8 +5,10 @@ export type RuneModelMode = "auto" | "local";
 
 export type ModelProviderStatus = {
   configured: boolean;
-  provider: "openai" | null;
+  provider: "openai" | "openrouter" | "custom" | null;
   model: string | null;
+  source?: "personal" | "deployment" | null;
+  profileName?: string | null;
 };
 
 function safeModelName(value: string | undefined) {

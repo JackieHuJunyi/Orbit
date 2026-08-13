@@ -976,7 +976,7 @@ Rune 必须形成自己的视觉身份：
 
 语言检测只能作为默认建议，不能替用户锁定。第一阶段先让欢迎、教程、空状态和指南双语；随后按任务频率逐步覆盖工作台，不用一次大规模翻译制造长期不一致。
 
-Web 版的个人模型配置不能为了“步骤顺滑”把密钥交给 React。开发环境使用 `.env.local`，部署环境使用托管平台的 secret；状态接口只返回是否配置、provider 名称和 model 名称。浏览器只保存 `auto` / `local` 这类非秘密偏好。未来桌面版可以在这一步接收 BYOK，但必须写入 macOS Keychain、Windows Credential Manager 等系统安全存储，并通过原生桥向界面返回不透明的连接状态，不能复用 localStorage 方案。
+Web 版的个人模型配置不能为了“步骤顺滑”把密钥交给 React 可读持久层。v0.46 允许 key 在 password draft 中短暂存在，随后只通过同源 HTTPS 交给服务端加密成 HttpOnly credential；状态接口只返回是否配置、profile/provider、endpoint 与 model 等脱敏字段。浏览器 localStorage 只保存 `auto` / `local` 这类非秘密偏好。未来桌面版必须把相同的 secret-storage port 接到 macOS Keychain、Windows Credential Manager 等系统安全存储，通过原生桥向界面返回不透明状态，不能复用 cookie 或 localStorage。
 
 ### 6.10 空文件状态
 
@@ -1140,6 +1140,27 @@ move 不根据 DOM、label 或像素猜顺序，只交换两个相邻 AST siblin
 解析结果只携带既有 target id、kind、label 与 exact UTF-16 range。右侧元素的 `data-preview-source-id` 只用于找到已被 parser 证明的元素并调用 `scrollIntoView`，DOM 文本、像素或 iframe 从不参与目标推断，也不会因此获得写权限。高亮和顶部 link badge 使用同一个 target identity；自动滚动居中且遵循系统“减少动态效果”偏好。普通 caret 不会自动升级成 Selection Agent，只有非空且合法的 source selection 继续进入现有 16,000 字符、revision-bound Agent capability。
 
 这一步补齐了 Overleaf 式日常双侧导航的另一半，同时保留 Rune 的 source-of-truth。当前不做连续滚动比例同步、DOM 文本 selection、嵌套 list item、Markdown inline span、空 CSV cell 或 Query 派生行的反向定位；这些对象必须先获得更细且可证明的 source map，不能从视觉近似推断。
+
+### 6.25 v0.46 CC Switch 式个人模型配置
+
+Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址、可命名 profile、读取模型、编辑、删除与一键启用；不照搬桌面明文配置文件。首版 profile 上限为三份，支持 OpenAI Responses、OpenRouter Responses 和声明兼容 Responses 的自定义公共 HTTPS 端点。个人 profile 优先于部署环境的 OpenAI 配置；全部个人 profile 删除后，Rune 自动回到部署模型或本地规划器。
+
+个人 key 在 React 里只存在到 Save。它经同源 HTTPS 进入服务端，用独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY` 做 AES-GCM 加密和完整性认证，写入 30 天、`HttpOnly; SameSite=Strict; Path=/api` cookie；浏览器脚本只能读取脱敏 metadata。生产环境缺少主密钥时不开放个人配置，密文篡改、密钥轮换和 schema 损坏都失败关闭。自定义 endpoint 拒绝 HTTP、IP、localhost、私网后缀、非 443 端口、userinfo/query/fragment 和最终 API path；配置写入同时要求 same-origin。读取模型具有八秒超时、1 MB response ceiling 与 80 个 model 上限，不携带 workspace source。
+
+本阶段不实现协议转换。Anthropic Messages、Gemini 和只支持 Chat Completions 的服务必须等待各自 adapter 或本地/服务端 route；界面不会把“OpenAI-compatible”当成无条件兼容。模型 profile 只改变 transport，不扩大 context、operation 或写权限，既有 graph-bounded context、Query evidence、runtime impact、review、revision、checkpoint 与 atomic Apply 合同全部保留。
+
+### 6.26 全功能设计冻结与落地顺序
+
+所有用户提出的能力已经归入六个 product systems，而不是继续堆在单页功能列表：
+
+1. **Welcome & Trust**：设备语言、欢迎、模型/隐私选择、快捷键教程、本地指南与空态；现已形成首次与持续帮助闭环。
+2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
+3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
+4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、HTML 与固定 PDF 已按语义端口落地；旧 `.doc/.ppt` 等待隔离转换服务，扫描 PDF 等待可披露的 OCR port。
+5. **Model Platform**：v0.46 先完成 Responses profile；下一步才是 Anthropic/Gemini/Chat adapters、capability manifest、故障转移、用量和预算路由。
+6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
+
+统一验收规则：任何入口都要列出输入上限、数据去向、canonical 结果、可逆路径和失败状态；任何 AI 写入都要有 exact revision、bounded capability、concrete diff、compiler/runtime proof 和人的确认；任何“支持格式”都要有真实 fixture、fidelity notes 与外部 handler/render QA；任何秘密都不能进入浏览器可读存储、workspace、日志或 Git。详细状态矩阵记录在 `idea.md` 第 52 节，路线图阶段 P0–P6 继续作为商业验证门，而不是被工程版本号替代。
 
 ---
 

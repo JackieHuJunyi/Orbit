@@ -29,13 +29,14 @@ import {
   RotateCcw,
   RefreshCw,
   Save,
+  Settings,
   Sparkles,
   TableProperties,
   Undo2,
   Upload,
   X,
 } from "lucide-react";
-import { ChangeEvent, KeyboardEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArtifactPreview,
   type ChartSpecEditHandler,
@@ -218,7 +219,7 @@ type ActiveSourceCursor = SourceSelection & {
 
 type PendingChange = {
   prompt: string;
-  provider: "openai" | "local";
+  provider: string;
   scope: AgentScope;
   selection?: SourceSelection;
   baseRevision: WorkspaceSourceRevision;
@@ -260,6 +261,7 @@ type RemoteAgentResponse = {
   code?: string;
   provider?: string;
   model?: string;
+  profileName?: string;
   plan?: unknown;
   queryArtifactIds?: string[];
   repairAttempt?: number;
@@ -547,6 +549,14 @@ export function RuneWorkbench() {
   const checkpointsRef = useRef(checkpoints);
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
+  const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
+    setModelMode(nextMode);
+    try {
+      localStorage.setItem(RUNE_MODEL_MODE_STORAGE_KEY, nextMode);
+    } catch {
+      // This preference contains no credential; in-memory mode remains available.
+    }
+  }, []);
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
@@ -862,15 +872,6 @@ export function RuneWorkbench() {
       ? current
       : [guide, ...current]);
     return guide;
-  }
-
-  function setPreferredModelMode(nextMode: RuneModelMode) {
-    setModelMode(nextMode);
-    try {
-      localStorage.setItem(RUNE_MODEL_MODE_STORAGE_KEY, nextMode);
-    } catch {
-      // This preference contains no credential; in-memory mode remains available.
-    }
   }
 
   function finishWelcome(action: WelcomeAction) {
@@ -1680,7 +1681,7 @@ export function RuneWorkbench() {
           }
           setPendingChange({
             prompt: instruction,
-            provider: "openai",
+            provider: payload.provider ?? "openai",
             scope,
             selection: scope === "selection" ? targetSelection ?? undefined : undefined,
             baseRevision: targetRevision,
@@ -2235,6 +2236,9 @@ export function RuneWorkbench() {
           <button className="icon-button help-button" onClick={openWelcomeGuide} aria-label="Open Rune welcome and guide" title="Welcome & guide">
             <BookOpen />
           </button>
+          <button className="icon-button" onClick={() => { setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }} aria-label="Open model provider settings" title="Model providers">
+            <Settings />
+          </button>
           <button
             className="button ghost-button"
             onClick={openNewArtifact}
@@ -2727,7 +2731,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {notice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.45</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{bindingState.references.length} legacy metrics</span>}{!!bindingState?.queryMetricReferences.length && <span>{bindingState.queryMetricReferences.length} SQL metrics</span>}{!!bindingState?.chartReferences.length && <span>{bindingState.chartReferences.length} linked chart{bindingState.chartReferences.length > 1 ? "s" : ""}</span>}<span>UTF-8</span><span>Rune v0.46</span></div>
       </footer>
 
       {newArtifactOpen && (

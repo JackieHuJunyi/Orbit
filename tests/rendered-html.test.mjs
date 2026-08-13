@@ -84,7 +84,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.45/);
+  assert.match(html, /Rune v0\.46/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -252,8 +252,11 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /workspaceDependencies/);
   assert.match(clientSource, /workspacePinnedArtifactIds/);
   assert.match(clientSource, /A configured model can inspect/);
-  assert.match(clientSource, /Set up your own OpenAI API/);
-  assert.match(clientSource, /browser page never accepts an API key/);
+  assert.match(clientSource, /Add model provider/);
+  assert.match(clientSource, /Save & enable/);
+  assert.match(clientSource, /Fetch models/);
+  assert.match(clientSource, /encrypted into an HttpOnly credential/);
+  assert.match(clientSource, /never written to localStorage, the workspace, an Artifact, or Git/);
   assert.match(clientSource, /bounded local Query/);
   assert.match(clientSource, /evidence is not persisted/);
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);

@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { POST } from "../app/api/agent/route.ts";
+import { normalizeModelProfileDraft } from "../app/lib/model-profiles.ts";
+import { serializeModelProfileVaultCookie } from "../app/lib/model-credential-vault.ts";
 
 const originalFetch = globalThis.fetch;
 const originalApiKey = process.env.OPENAI_API_KEY;
 const originalModel = process.env.OPENAI_MODEL;
+const originalVaultKey = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
 
 test.after(() => {
   globalThis.fetch = originalFetch;
@@ -13,6 +16,51 @@ test.after(() => {
   else process.env.OPENAI_API_KEY = originalApiKey;
   if (originalModel === undefined) delete process.env.OPENAI_MODEL;
   else process.env.OPENAI_MODEL = originalModel;
+  if (originalVaultKey === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = originalVaultKey;
+});
+
+test("uses the active personal provider endpoint without exposing its credential in the Agent response", async () => {
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-personal-vault-key-123456789";
+  delete process.env.OPENAI_API_KEY;
+  const profile = normalizeModelProfileDraft({
+    provider: "custom",
+    name: "Private gateway",
+    baseURL: "https://models.example.com/v1",
+    model: "rune-model-1",
+    apiKey: "personal-agent-secret",
+  }, undefined, "2026-08-13T00:00:00.000Z", () => "private");
+  const cookie = await serializeModelProfileVaultCookie(
+    new Request("https://rune.example/api/model-profiles"),
+    { version: 1, activeProfileId: profile.id, profiles: [profile] },
+  );
+  let providerUrl = "";
+  let providerAuthorization = "";
+  globalThis.fetch = async (input, init) => {
+    providerUrl = String(input);
+    providerAuthorization = new Headers(init?.headers).get("authorization") ?? "";
+    return new Response(JSON.stringify(providerResponse({
+      summary: "Shorten the conclusion",
+      detail: "One Markdown section changes.",
+      edits: [{ type: "replace_markdown_section", heading: "Report", body: "Concise conclusion." }],
+    })), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const response = await POST(new Request("https://rune.example/api/agent", {
+    method: "POST",
+    headers: {
+      cookie: cookie.split(";", 1)[0],
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(requestBody()),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.provider, "custom");
+  assert.equal(payload.profileName, "Private gateway");
+  assert.equal(payload.model, "rune-model-1");
+  assert.equal(providerUrl, "https://models.example.com/v1/responses");
+  assert.equal(providerAuthorization, "Bearer personal-agent-secret");
+  assert.doesNotMatch(JSON.stringify(payload), /personal-agent-secret/);
 });
 
 function providerResponse(output) {

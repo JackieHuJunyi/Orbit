@@ -28,6 +28,7 @@ import {
 } from "../../lib/bindings.ts";
 import { validateAgentQueryEvidenceContext } from "../../lib/agent-evidence.ts";
 import { DEFAULT_OPENAI_MODEL } from "../../lib/model-preference.ts";
+import { resolveActiveModelConnection } from "../../lib/model-credential-vault.ts";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -70,8 +71,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const connection = await resolveActiveModelConnection(request);
+  if (!connection) {
     return Response.json(
       { error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" },
       { status: 503 },
@@ -102,25 +103,32 @@ export async function POST(request: Request) {
     }
   }
 
-  const model = process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
-  const client = new OpenAI({ apiKey });
+  const model = connection.model || DEFAULT_OPENAI_MODEL;
+  const client = new OpenAI({ apiKey: connection.apiKey, baseURL: connection.baseURL });
 
   try {
     const workspaceScope = parsed.data.scope === "workspace";
-    const response = await client.responses.parse({
-      model,
-      store: false,
-      input: [
-        { role: "system", content: buildAgentInstructions(parsed.data) },
-        { role: "user", content: buildAgentInput(parsed.data) },
-      ],
-      text: {
-        format: workspaceScope
-          ? zodTextFormat(AgentWorkspaceOperationPlanSchema, "workspace_operations")
-          : zodTextFormat(AgentOperationPatchSchema, "artifact_operations"),
-      },
-      max_output_tokens: 8_000,
-    });
+    const providerController = new AbortController();
+    const providerTimeout = setTimeout(() => providerController.abort(), 60_000);
+    let response;
+    try {
+      response = await client.responses.parse({
+        model,
+        store: false,
+        input: [
+          { role: "system", content: buildAgentInstructions(parsed.data) },
+          { role: "user", content: buildAgentInput(parsed.data) },
+        ],
+        text: {
+          format: workspaceScope
+            ? zodTextFormat(AgentWorkspaceOperationPlanSchema, "workspace_operations")
+            : zodTextFormat(AgentOperationPatchSchema, "artifact_operations"),
+        },
+        max_output_tokens: 8_000,
+      }, { signal: providerController.signal });
+    } finally {
+      clearTimeout(providerTimeout);
+    }
 
     if (!response.output_parsed) {
       return Response.json({ error: "The model did not return a usable patch." }, { status: 502 });
@@ -161,7 +169,8 @@ export async function POST(request: Request) {
         }, { status: 502 });
       }
       return Response.json({
-        provider: "openai",
+        provider: connection.provider,
+        profileName: connection.profileName,
         model,
         repairAttempt: parsed.data.runtimeRepair?.attempt,
         plan: workspacePlan.data,
@@ -226,7 +235,8 @@ export async function POST(request: Request) {
       }, { status: 502 });
     }
     return Response.json({
-      provider: "openai",
+      provider: connection.provider,
+      profileName: connection.profileName,
       model,
       repairAttempt: parsed.data.runtimeRepair?.attempt,
       plan: artifactPlan.data,
