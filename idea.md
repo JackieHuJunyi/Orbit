@@ -2143,3 +2143,15 @@ Cordis 的 Context/Fiber/Registry 与 DeepSeek Harness 的 session facts、capab
 因此这一版只抽出最小静态 seam。`task-runtime.ts` 不读取 React、浏览器、网络或存储，只定义 task capability 与 `awaiting-source → reviewing-source → configuring` 三个事实阶段，并在每一步验证 workspace revision、review identity、imported id 顺序和 accepted Artifact kind。workbench 只是 assembly：打开 picker、调用 converter、展示审核、执行既有 persistence，再把下一阶段交给聚焦 dialog。preferred Data 不另存一份 UI state，而是由 session 本身提供，避免“双份真相”。
 
 新增的 architecture gate 会拒绝 task runtime 越界，并验证 UI 只消费 registry 声明的 accept capability、精确 import binding 和一次 continuation。未来第二、第三个任务应复用相同结构；只有出现三个以上真实任务并证明动态注册、替换或第三方扩展需求时，才重新评估 slot/plugin registry。低成本架构不是现在为所有可能性付费，而是让下一条已知任务不需要复制身份、取消、版本和零写入逻辑。
+
+## 88. v0.83 第二条任务要证明架构，不只是再加一个按钮
+
+Document → Presentation 是现有 format capability 之间最短、最有用户结果感的一条链：Markdown、Word、ODT、PDF 已能进入可读 Document，Deck Markdown 已能实时编译并导出 HTML、PPTX、ODP、PDF。此前缺少的是一个把这些能力连续起来的任务 provider，而不是另一个泛化 AI 输入框。
+
+这一版让 `document-briefing` 与经营汇报共同注册在静态 task runtime。欢迎页和空态选择 Word/Markdown/ODT/PDF 后仍先看到原有转换审核；扫描 PDF 先明确选择 OCR 页和语言；确认后 session 只把本次审核产生的精确 Document id 带进演示设置。已有 Document 则可以在捕获当前 workspace revision 后直接进入 configuring，不需要重新导入或猜测“当前文件”。取消、来源不兼容、revision 变化、review identity 变化都退出 session 且零写入。
+
+演示 compiler 是纯函数，只接受 exact source、title、audience、focus、4/6/8 页和 locale。它从可证明的 Document section range 提取有界内容，移除可执行 HTML 和隐式 binding，生成 collision-safe Deck Markdown proposal；结果进入既有完整 workspace validation、runtime preflight、candidate preview 和 Apply。九种语言写入明确 `lang`，但字段 id、文件 id 与技术来源不翻译。
+
+Deck frontmatter 新增可选 `origin`。任务生成的 Deck 必须把原 Document id 写进去，dependency compiler 将其变成 `deck-origin`；transaction map 因而显示一份 unchanged input 如何产生一份 created presentation。missing 或 wrong-kind origin 在 mutation 边界失败，不能留下看似可用但已经失去来源的演示。这个关系只表达 lineage，不自动双写；未来更新仍必须是显式可审核任务，从而保持一个 canonical writer。
+
+从 DeepSeek Harness 学到的关键在这里落成四层：task capability、task session、pure provider、UI consumer。UI 入口可以增加，compiler 可以替换，导入/OCR 可以暂停再恢复，但 source authority、revision、persistence 和 Apply 不移动。等第三条真实任务出现时，再评估 typed task slot registry；在此之前不为抽象本身引入动态插件 host。

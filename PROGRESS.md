@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.83 with a second registry-backed task that carries reviewed Markdown/Word/ODT/PDF (including selected scanned-PDF OCR) into a source-linked 4/6/8-slide Deck Markdown proposal, exposes the exact Document → Presentation edge in the transaction graph, and retains nine-locale review-before-write behavior.
 - 2026-08-14 — Shipped Rune v0.82 with a Cordis/Harness-informed static task runtime and an outcome-first onboarding/empty path that carries one reviewed CSV/JSON/XLSX/ODS import directly into exact operating-review field mapping without hidden writes.
 - 2026-08-14 — Shipped Rune v0.81 with a pure in-memory Agent proposal workspace that shows complete proposed source and recompiles even unchanged downstream deliverables live before Apply, while canonical files remain read-only and untouched.
 - 2026-08-13 — Shipped Rune v0.80 with optional post-handoff deliverable ratings bound to exact applied runs, artifact ids, formats, elapsed time, and device-local source fingerprints; saved tasks now distinguish technical Apply success from user-confirmed usable results across all nine interface locales.

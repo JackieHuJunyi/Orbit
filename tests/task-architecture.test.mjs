@@ -16,24 +16,31 @@ test("keeps task definitions pure and outside the React or persistence boundary"
   assert.doesNotMatch(runtime, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
 });
 
-test("composes the task through declared capability, exact import identity, and one continuation", async () => {
-  const [workbench, empty, reviewDialog, setupDialog, styles] = await Promise.all([
+test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
+  const [workbench, empty, reviewDialog, operatingDialog, briefingDialog, briefingCompiler, styles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
     source("../app/components/operating-review-dialog.tsx"),
+    source("../app/components/document-briefing-dialog.tsx"),
+    source("../app/lib/document-briefing.ts"),
     source("../app/styles/content.css"),
   ]);
 
-  assert.match(workbench, /accept=\{RUNE_TASK_DEFINITIONS\["operating-review"\]\.sourceAccept\}/);
+  assert.match(workbench, /accept=\{RUNE_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/);
+  assert.match(workbench, /startRuneTaskFromSource\("document-briefing"\)/);
   assert.match(workbench, /bindRuneTaskImportReview\(activeTaskSession, baseArtifacts, prepared\.review\)/);
   assert.match(workbench, /prepareRuneTaskAfterImport\(taskSession, artifacts, pendingImport\)/);
   assert.match(workbench, /preferredDataArtifactId=\{taskSession\?\.phase === "configuring"/);
   assert.match(empty, /onStartReview/);
+  assert.match(empty, /onStartBriefing/);
   assert.match(empty, /className="empty-task-primary"/);
-  assert.match(reviewDialog, /continueToOperatingReview/);
+  assert.match(reviewDialog, /continuationTask\?: RuneTaskId/);
   assert.match(reviewDialog, /className="import-task-continuation"/);
-  assert.match(setupDialog, /initialInput\?\.dataArtifactId \?\? preferredDataArtifactId \?\? ""/);
+  assert.match(operatingDialog, /initialInput\?\.dataArtifactId \?\? preferredDataArtifactId \?\? ""/);
+  assert.match(briefingDialog, /preferredDocumentArtifactId/);
+  assert.match(briefingCompiler, /origin: \$\{source\.id\}/);
+  assert.doesNotMatch(briefingCompiler, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
   assert.match(styles, /\.empty-task-primary/);
   assert.match(styles, /\.import-task-continuation/);
 });

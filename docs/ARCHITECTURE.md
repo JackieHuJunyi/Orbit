@@ -9,6 +9,8 @@ The first release is a local-first vertical slice, not a pixel-fidelity Office c
 ```text
 Workbench UI
   ├─ Workspace state and persistence
+  ├─ Static task assembly
+  │    └─ capability → reviewed source session → pure task provider → transaction
   ├─ Agent command surface
   ├─ OOXML import port
   │    └─ DOCX → Markdown · XLSX → CSV · PPTX → Deck Markdown
@@ -144,7 +146,7 @@ type QueryMetricReference = {
 type WorkspaceDependencyEdge = {
   fromArtifactId: string; // canonical source
   toArtifactId: string;   // consumer
-  kind: "metric" | "query" | "query-metric" | "chart-data" | "chart-query" | "chart-embed";
+  kind: "metric" | "query" | "query-metric" | "chart-data" | "chart-query" | "chart-embed" | "deck-origin";
   references: string[];
 };
 
@@ -264,7 +266,7 @@ The provider must return a complete replacement typed-operation plan compiled ag
 
 ## Workspace dependency graph and Agent context boundary
 
-The Data graph is a compiler output, not persisted workspace metadata. On every artifact revision Rune derives six directed edge families from readable source: the first canonical Data artifact to every legacy metric consumer; the Data artifact resolved for each Query through `workspace_data`; an exact Query id to each three-argument scalar-metric consumer; an exact Data source id to its Chart artifact; an exact Query source id to its Chart artifact; and each `{{ chart(...) }}` artifact to the document or deck that embeds it. A Query's first non-empty `-- rune:data "artifact-id"` line wins over workspace order; SQL imported without that directive retains the first Data as an explicit legacy mode. This makes both `Data → Query → scalar metric → Document/Deck` and `Data → Query → Chart → Document/Deck` first-class upstream chains. Invalid directives or metric syntax, absent Data/Query sources, unsupported Query outputs, invalid Chart JSON, and unresolved metric/chart ids become explicit graph issues rather than invented nodes. Edge order follows workspace identity, both endpoints are native navigation buttons, and the graph contains no copied result values or persisted runtime snapshots.
+The workspace graph is a compiler output, not persisted workspace metadata. On every artifact revision Rune derives seven directed edge families from readable source: the first canonical Data artifact to every legacy metric consumer; the Data artifact resolved for each Query through `workspace_data`; an exact Query id to each three-argument scalar-metric consumer; an exact Data source id to its Chart artifact; an exact Query source id to its Chart artifact; each `{{ chart(...) }}` artifact to the document or deck that embeds it; and an exact Document id declared by optional Deck `origin` frontmatter to that presentation. A Query's first non-empty `-- rune:data "artifact-id"` line wins over workspace order; SQL imported without the directive retains the first Data as an explicit legacy mode. This makes `Data → Query → scalar metric → Document/Deck`, `Data → Query → Chart → Document/Deck`, and `Document → Presentation` first-class upstream chains. Invalid directives or metric syntax, absent Data/Query/Document sources, unsupported Query outputs, invalid Chart JSON, and unresolved metric/chart/origin ids become explicit graph issues rather than invented nodes. Edge order follows workspace identity, both endpoints are native navigation buttons, and the graph contains no copied result values or persisted runtime snapshots.
 
 Workspace Agent context starts at the selected artifact and any user-pinned artifacts, then traverses their graph components as an undirected discovery surface while inclusion remains directed and upstream-closed: a consumer is not sent unless every known source it requires is also sent. Unlinked files are never padded merely to reach a quota, but a user can deliberately bridge up to six disconnected files with native pin controls. Pins are ephemeral session capabilities: they are not written to local storage, `rune.workspace.json`, source, checkpoints, or the dependency graph, and folder Pull/reset clears them. A pin is a required root rather than a preference; its upstream closure is included atomically or the model path is disabled without silently dropping it. The pack retains original workspace order so legacy metric bindings and directive-free Queries keep their prior first-Data meaning, while explicit Query and Query-metric sources are preserved by identity; it then enforces seven files, 100,000 characters per non-selected file, and 180,000 characters in total.
 

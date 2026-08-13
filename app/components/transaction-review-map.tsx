@@ -28,6 +28,7 @@ function ArtifactIcon({ kind, size = 11 }: { kind: ArtifactKind; size?: number }
 }
 
 function DependencyKindIcon({ kind }: { kind: WorkspaceDependencyKind }) {
+  if (kind === "deck-origin") return <FileText aria-hidden="true" />;
   if (kind === "query" || kind === "query-metric") return <Database aria-hidden="true" />;
   if (kind === "chart-data" || kind === "chart-query" || kind === "chart-embed") {
     return <BarChart3 aria-hidden="true" />;

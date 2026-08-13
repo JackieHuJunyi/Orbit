@@ -60,6 +60,43 @@ test("keeps an explicitly bound Query on its Data artifact when workspace order 
   ]);
 });
 
+test("connects a Deck Markdown presentation to its exact Document origin", () => {
+  const document = { id: "brief", name: "brief.md", kind: "document", language: "Markdown", source: "# Brief" };
+  const linkedDeck = {
+    id: "deck",
+    name: "deck.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\norigin: ${document.id}\n---\n\n# Deck`,
+  };
+  const graph = buildWorkspaceDependencyGraph([document, linkedDeck]);
+  assert.deepEqual(graph.issues, []);
+  assert.deepEqual(graph.edges, [{
+    fromArtifactId: document.id,
+    toArtifactId: linkedDeck.id,
+    kind: "deck-origin",
+    label: "presentation source",
+    references: [document.id],
+  }]);
+  const context = selectWorkspaceAgentContext([document, linkedDeck], graph, linkedDeck.id);
+  assert.deepEqual(context.map((artifact) => artifact.id), [document.id, linkedDeck.id]);
+  assert.equal(workspaceAgentContextIsClosed(graph, context), true);
+  assert.deepEqual(dependencyEdgesForContext(graph, context).map((edge) => edge.kind), ["deck-origin"]);
+});
+
+test("reports a missing Deck origin without inventing a dependency", () => {
+  const linkedDeck = {
+    id: "deck",
+    name: "deck.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: "---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\norigin: missing-document\n---\n\n# Deck",
+  };
+  const graph = buildWorkspaceDependencyGraph([linkedDeck]);
+  assert.deepEqual(graph.edges, []);
+  assert.deepEqual(graph.issues.map((issue) => [issue.kind, issue.target]), [["deck-origin", "missing-document"]]);
+});
+
 test("selects a deterministic dependency-first Agent context instead of the whole workspace", () => {
   const extraArtifacts = Array.from({ length: 7 }, (_, index) => ({
     id: `notes-${index}`,

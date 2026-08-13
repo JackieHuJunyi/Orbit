@@ -15,6 +15,7 @@ import {
 import { createImportSourcePreview } from "../lib/imports";
 import { localizeRuneCopy, runeUICopy, type RuneLocale } from "../lib/localization";
 import { formatInteger } from "../lib/number-format";
+import type { RuneTaskId } from "../lib/task-runtime";
 import type { ArtifactKind, WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
 
@@ -24,12 +25,18 @@ export const IMPORT_REVIEW_TASK_BASE_COPY = {
     nextStep: "下一步",
     nextTitle: "下一步：确认字段与交付物",
     nextBody: "确认这次导入后，Rune 会自动打开经营汇报设置，并预先选择这份数据。",
+    briefingConfirm: "导入并设置演示",
+    briefingTitle: "下一步：确认受众与演示重点",
+    briefingBody: "确认这次导入后，Rune 会自动打开文档演示设置，并预先选择这份文档。",
   },
   en: {
     confirm: "Import and map review",
     nextStep: "Next step",
     nextTitle: "Next: choose fields and deliverables",
     nextBody: "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.",
+    briefingConfirm: "Import and shape presentation",
+    briefingTitle: "Next: choose audience and presentation purpose",
+    briefingBody: "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.",
   },
 } as const;
 
@@ -51,7 +58,7 @@ export function ImportReviewDialog({
   warnings,
   error,
   locale,
-  continueToOperatingReview = false,
+  continuationTask,
   onCancel,
   onConfirm,
 }: {
@@ -60,13 +67,15 @@ export function ImportReviewDialog({
   warnings: string[];
   error?: string;
   locale: RuneLocale;
-  continueToOperatingReview?: boolean;
+  continuationTask?: RuneTaskId;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const uniqueWarnings = [...new Set(warnings)];
   const copy = runeUICopy(locale);
   const taskCopy = localizeRuneCopy(locale, IMPORT_REVIEW_TASK_BASE_COPY.en, IMPORT_REVIEW_TASK_BASE_COPY["zh-CN"]);
+  const continuesTask = Boolean(continuationTask);
+  const continuesBriefing = continuationTask === "document-briefing";
 
   return (
     <ReviewDialog
@@ -82,19 +91,19 @@ export function ImportReviewDialog({
           <div><ShieldCheck aria-hidden="true" /> {copy.importReview.atomic}</div>
           <span>
             <button className="button ghost-button" onClick={onCancel}>{copy.common.cancel}</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {continueToOperatingReview
-              ? taskCopy.confirm
+            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {continuesTask
+              ? continuesBriefing ? taskCopy.briefingConfirm : taskCopy.confirm
               : copy.importReview.importSources(artifacts.length)}</button>
           </span>
         </>
       )}
     >
-          {continueToOperatingReview && (
+          {continuesTask && (
             <section className="import-task-continuation" aria-label={taskCopy.nextStep}>
-              <ClipboardList aria-hidden="true" />
+              {continuesBriefing ? <Presentation aria-hidden="true" /> : <ClipboardList aria-hidden="true" />}
               <div>
-                <strong>{taskCopy.nextTitle}</strong>
-                <p>{taskCopy.nextBody}</p>
+                <strong>{continuesBriefing ? taskCopy.briefingTitle : taskCopy.nextTitle}</strong>
+                <p>{continuesBriefing ? taskCopy.briefingBody : taskCopy.nextBody}</p>
               </div>
             </section>
           )}

@@ -18,7 +18,7 @@ We introduce a pure, static task runtime with three layers:
 
 ```text
 Task definition
-  id · accepted file capability · accepted Artifact kinds
+  id · accepted file capability · accepted Artifact kinds · required source label
           ↓
 Task session
   explicit phase · captured workspace revision · exact imported ids
@@ -42,6 +42,7 @@ A continuation is granted only when the current workspace matches the captured r
 - Empty and onboarding surfaces lead with a real outcome rather than an inventory of tools.
 - Intermediate review says what will happen next and keeps the exact selected source visible.
 - The next task surface opens only after the existing import confirmation succeeds.
+- A compatible existing Artifact may enter `configuring` directly through the same registry and captured revision; this never bypasses the compiler or transaction review.
 - Independent Import remains a separate action and always clears abandoned task context.
 - Task transitions reuse the same mounted workbench and canonical state; they do not create a second workspace store.
 
@@ -63,6 +64,6 @@ Rejected. The task would be unable to prove that the imported Artifact came from
 
 ## Enforcement
 
-`tests/task-runtime.test.mjs` exercises every lifecycle transition and stale/mismatched failure. `tests/task-architecture.test.mjs` rejects React, persistence, browser, and network dependencies in the task runtime and verifies that the workbench consumes the declared file capability and exact preferred source continuation.
+`tests/task-runtime.test.mjs` exercises every lifecycle transition, direct compatible-Artifact entry, and stale/mismatched failure. `tests/task-architecture.test.mjs` rejects React, persistence, browser, and network dependencies in the task runtime and verifies that the workbench consumes the declared file capability and exact preferred source continuation.
 
-Future task registries, command registries, or UI slots may replace the static assembly only when at least three independent Rune tasks demonstrate repeated registration needs. Until then, static typed composition is the lower-cost architecture.
+v0.83 adds `document-briefing` beside `operating-review` without duplicating the import lifecycle. Future command registries or dynamic UI slots may replace the static assembly only when at least three independent Rune tasks demonstrate repeated registration needs. Until then, static typed composition is the lower-cost architecture.

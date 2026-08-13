@@ -1969,3 +1969,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 导入取消、非 Data 结果、workspace revision 变化、review identity 变化、来源顺序/身份变化或 preferred source 丢失都必须关闭续接且零写入。只有现有 import transaction 能写入已审核 Data，后续 operating-review compiler 仍走 runtime preflight、diff 与 Apply。
 - 从 Cordis 学习显式生命周期、作用域能力和可释放注册；从 DeepSeek Harness 学习纯 UI 几何、窄 action 面、slot/模块边界和自动依赖门禁，但当前不引入其动态插件系统、通用会话日志或聊天 shell。至少三个独立 Rune task 证明重复注册需求前，静态 typed composition 成本更低。
 - 新任务的固定扩展步骤是：定义 capability → 编写纯 phase transition → 复用受审核 compiler/transaction → 增加一个 assembly 入口和聚焦界面 → 扩展架构门禁；不得继续向 workbench 添加互不相干的 loading/cancel/source 布尔状态。
+
+### 17.24 v0.83 第二条真实任务必须证明扩展成本下降
+
+- `document-briefing` 与 `operating-review` 共享同一个任务 registry、三阶段 session、workspace revision、import review 和取消语义；不能复制一套“最近导入文档”状态。
+- 欢迎页、空工作区与已有 Document 都可进入 Document → Presentation。导入接受 Markdown、DOC/DOCX、ODT、PDF；扫描 PDF 先由用户选择 OCR 页与语言，生成的 Document 通过审核后才续接任务。
+- 纯 `document-briefing` provider 只读取精确 Document id、受众、目标和 4/6/8 页选择；生成 collision-safe Deck Markdown proposal，不访问 React、浏览器、网络、模型或持久化。
+- Deck frontmatter 的可选 `origin` 用于声明明确 Document 来源；任务生成的 Deck 必须写入该 id，dependency graph 产生 `deck-origin`，missing/non-Document origin 必须在事务写入前失败。
+- `origin` 是 lineage，不是自动双写。Document 后续变化不会暗中覆盖 Deck；更新演示仍需重跑任务或提交可审核 Agent proposal。
+- UI 学习 DeepSeek Harness 的窄 action、mounted identity、能力 seam 和 overlay 边界，但保持 Rune 的 Apple-informed 材质、内容比例和 source-linked Office 心智；不复制其聊天外观，也不在两个任务时引入完整插件 host。
+- 所有新增入口、导入续接、设置弹层和错误状态覆盖简中、繁中、英、法、西、俄、阿、日、韩；Arabic RTL 与 reduced-motion 继续沿用既有全局合同。

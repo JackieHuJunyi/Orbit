@@ -20,6 +20,7 @@ const componentCatalogs = [
   ["app/components/import-review-dialog.tsx", "IMPORT_REVIEW_TASK_BASE_COPY"],
   ["app/components/model-profile-manager.tsx", "MODEL_MANAGER_BASE_COPY"],
   ["app/components/operating-review-dialog.tsx", "OPERATING_REVIEW_BASE_COPY"],
+  ["app/components/document-briefing-dialog.tsx", "DOCUMENT_BRIEFING_BASE_COPY"],
   ["app/components/delivery-outcome-dialog.tsx", "DELIVERY_OUTCOME_BASE_COPY"],
   ["app/components/pdf-ocr-setup-dialog.tsx", "PDF_OCR_BASE_COPY"],
 ];

@@ -35,6 +35,13 @@ test("accepts every registered Rune interface language as explicit Deck document
   }
 });
 
+test("accepts an optional exact Document origin in Deck frontmatter", () => {
+  const source = deckArtifact().source.replace("lang: en", "lang: en\norigin: q2-review");
+  const parsed = parseDeckSource(source);
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(parsed.deck?.frontmatter.origin, "q2-review");
+});
+
 test("compiles metrics, numbering, and a shared chart into static deck HTML", () => {
   const compiledBindings = compileArtifactSource(
     deckArtifact().source,

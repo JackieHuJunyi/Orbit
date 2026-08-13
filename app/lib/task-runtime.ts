@@ -6,13 +6,14 @@ import {
 } from "./patches.ts";
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
 
-export type RuneTaskId = "operating-review";
+export type RuneTaskId = "operating-review" | "document-briefing";
 export type RuneTaskPhase = "awaiting-source" | "reviewing-source" | "configuring";
 
 export type RuneTaskDefinition = {
   id: RuneTaskId;
   sourceAccept: string;
   acceptedArtifactKinds: readonly ArtifactKind[];
+  requiredArtifactLabel: string;
 };
 
 export const RUNE_TASK_DEFINITIONS = {
@@ -20,6 +21,13 @@ export const RUNE_TASK_DEFINITIONS = {
     id: "operating-review",
     sourceAccept: ".csv,.json,.xlsx,.ods",
     acceptedArtifactKinds: ["data"],
+    requiredArtifactLabel: "readable Data source",
+  },
+  "document-briefing": {
+    id: "document-briefing",
+    sourceAccept: ".doc,.docx,.odt,.pdf,.md,.markdown",
+    acceptedArtifactKinds: ["document"],
+    requiredArtifactLabel: "readable Document source",
   },
 } as const satisfies Record<RuneTaskId, RuneTaskDefinition>;
 
@@ -54,6 +62,30 @@ export function startRuneTaskSession(
   };
 }
 
+export function startRuneTaskFromArtifact(
+  taskId: RuneTaskId,
+  artifacts: WorkspaceArtifact[],
+  artifactId: string,
+): PreparedRuneTaskSession {
+  const artifact = artifacts.find((item) => item.id === artifactId);
+  const definition = RUNE_TASK_DEFINITIONS[taskId];
+  if (!artifact) return failed([`Task source is missing: ${artifactId}`]);
+  if (!definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind)) {
+    return failed([`${artifact.name} is not a supported source for this task.`]);
+  }
+  return {
+    session: {
+      taskId,
+      phase: "configuring",
+      baseRevision: captureWorkspaceSourceRevision(artifacts),
+      importedArtifactIds: [],
+      preferredArtifactId: artifact.id,
+    },
+    preferredArtifactId: artifact.id,
+    errors: [],
+  };
+}
+
 export function bindRuneTaskImportReview(
   session: RuneTaskSession,
   artifacts: WorkspaceArtifact[],
@@ -79,7 +111,7 @@ export function bindRuneTaskImportReview(
     definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind)
   ));
   if (!preferredArtifact) {
-    return failed(["This task needs at least one readable Data source."]);
+    return failed([`This task needs at least one ${definition.requiredArtifactLabel}.`]);
   }
 
   return {
@@ -117,7 +149,7 @@ export function prepareRuneTaskAfterImport(
   ));
   const definition = RUNE_TASK_DEFINITIONS[session.taskId];
   if (!preferredArtifact || !definition.acceptedArtifactKinds.some((kind) => kind === preferredArtifact.kind)) {
-    return failed(["The preferred Data source is no longer part of this reviewed import."]);
+    return failed([`The preferred ${definition.requiredArtifactLabel} is no longer part of this reviewed import.`]);
   }
 
   return {

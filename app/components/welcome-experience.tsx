@@ -10,6 +10,7 @@ import {
   Keyboard,
   KeyRound,
   Laptop,
+  Presentation,
   RefreshCw,
   Server,
   ShieldCheck,
@@ -30,7 +31,7 @@ import {
 import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
-export type WelcomeAction = "guide" | "review" | "sample";
+export type WelcomeAction = "guide" | "review" | "briefing" | "sample";
 export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
 type ShortcutId = "open" | "save" | "agent" | "view";
 
@@ -83,6 +84,8 @@ export const WELCOME_BASE_COPY = {
     readyBody: "从一份真实经营汇报开始，或者先阅读本地指南、探索完整示例。",
     review: "从数据创建经营汇报",
     reviewBody: "导入真实数据，审核后直接确认字段、口径和交付物",
+    briefing: "从文档创建演示",
+    briefingBody: "导入 Word、Markdown 或 PDF，审核后生成保留来源关系的演示",
     guide: "打开本地指南",
     guideBody: "从一份可编辑的 Markdown 说明开始",
     sample: "探索示例工作区",
@@ -136,6 +139,8 @@ export const WELCOME_BASE_COPY = {
     readyBody: "Start with a real operating review, or read the local guide and explore the complete sample first.",
     review: "Create a review from data",
     reviewBody: "Import real data, review it, then map fields, measures, and deliverables",
+    briefing: "Create presentation from document",
+    briefingBody: "Import Word, Markdown, or PDF, review it, then create a source-linked presentation",
     guide: "Open local guide",
     guideBody: "Start with an editable Markdown reference",
     sample: "Explore sample workspace",
@@ -445,6 +450,7 @@ export function WelcomeExperience({
               <p>{text.readyBody}</p>
               <div className="welcome-actions">
                 <button type="button" className="featured" onClick={() => onComplete("review")}><span><ClipboardList /></span><span><strong>{text.review}</strong><small>{text.reviewBody}</small></span><ArrowRight /></button>
+                <button type="button" onClick={() => onComplete("briefing")}><span><Presentation /></span><span><strong>{text.briefing}</strong><small>{text.briefingBody}</small></span><ArrowRight /></button>
                 <button type="button" onClick={() => onComplete("guide")}><span><FileText /></span><span><strong>{text.guide}</strong><small>{text.guideBody}</small></span><ArrowRight /></button>
                 <button type="button" onClick={() => onComplete("sample")}><span><Sparkles /></span><span><strong>{text.sample}</strong><small>{text.sampleBody}</small></span><ArrowRight /></button>
               </div>

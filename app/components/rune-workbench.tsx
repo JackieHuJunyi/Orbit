@@ -55,6 +55,7 @@ import {
 } from "./artifact-previews";
 import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
 import { DeliveryOutcomeDialog } from "./delivery-outcome-dialog";
+import { DocumentBriefingDialog } from "./document-briefing-dialog";
 import { LocalImageReviewDialog, localImageCopy } from "./local-image-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
@@ -241,10 +242,16 @@ import {
   type SavedOperatingReview,
 } from "../lib/operating-review";
 import {
+  prepareDocumentBriefingWorkflow,
+  type DocumentBriefingInput,
+} from "../lib/document-briefing";
+import {
   bindRuneTaskImportReview,
   prepareRuneTaskAfterImport,
   RUNE_TASK_DEFINITIONS,
+  startRuneTaskFromArtifact,
   startRuneTaskSession,
+  type RuneTaskId,
   type RuneTaskSession,
 } from "../lib/task-runtime";
 import {
@@ -335,6 +342,7 @@ type PendingPdfOcr = {
   baseArtifacts: WorkspaceArtifact[];
   sourceName: string;
   candidates: PdfOcrCandidate[];
+  taskSession?: RuneTaskSession;
 };
 
 type PendingExport = {
@@ -459,6 +467,7 @@ function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }
 }
 
 function DependencyKindIcon({ kind }: { kind: WorkspaceDependencyKind }) {
+  if (kind === "deck-origin") return <FileText aria-hidden="true" />;
   if (kind === "query" || kind === "query-metric") return <Database aria-hidden="true" />;
   if (kind === "chart-data" || kind === "chart-query" || kind === "chart-embed") return <BarChart3 aria-hidden="true" />;
   return <Link2 aria-hidden="true" />;
@@ -662,6 +671,9 @@ export function RuneWorkbench() {
   const [operatingReviewOpen, setOperatingReviewOpen] = useState(false);
   const [operatingReviewError, setOperatingReviewError] = useState("");
   const [operatingReviewState, setOperatingReviewState] = useState<"idle" | "checking">("idle");
+  const [documentBriefingOpen, setDocumentBriefingOpen] = useState(false);
+  const [documentBriefingError, setDocumentBriefingError] = useState("");
+  const [documentBriefingState, setDocumentBriefingState] = useState<"idle" | "checking">("idle");
   const [taskSession, setTaskSession] = useState<RuneTaskSession | null>(null);
   const [savedOperatingReviews, setSavedOperatingReviews] = useState<SavedOperatingReview[]>([]);
   const [editingOperatingReviewId, setEditingOperatingReviewId] = useState("");
@@ -717,6 +729,7 @@ export function RuneWorkbench() {
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const taskImportRef = useRef<HTMLInputElement>(null);
+  const taskImportIdRef = useRef<RuneTaskId>("operating-review");
   const imageImportRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
   const localImageInFlightRef = useRef(false);
@@ -1047,7 +1060,9 @@ export function RuneWorkbench() {
     || Boolean(pendingDocumentStructure)
     || Boolean(pendingLocalImage)
     || operatingReviewOpen
+    || documentBriefingOpen
     || operatingReviewState !== "idle"
+    || documentBriefingState !== "idle"
     || visualEditState !== "idle"
     || Boolean(activeVisualSourceDraft);
 
@@ -1219,6 +1234,7 @@ export function RuneWorkbench() {
         || pendingDocumentStructure
         || pendingLocalImage
         || operatingReviewOpen
+        || documentBriefingOpen
         || newArtifactOpen
         || welcomeOpen
         || pendingImport
@@ -1272,7 +1288,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, documentBriefingOpen, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact || !presentedArtifact) return null;
 
@@ -1331,17 +1347,33 @@ export function RuneWorkbench() {
     importRef.current?.click();
   }
 
-  function startOperatingReviewFromData() {
-    setTaskSession(startRuneTaskSession("operating-review", artifactsRef.current));
+  function startRuneTaskFromSource(taskId: RuneTaskId) {
+    taskImportIdRef.current = taskId;
+    setTaskSession(startRuneTaskSession(taskId, artifactsRef.current));
     setOperatingReviewError("");
+    setDocumentBriefingError("");
     setEditingOperatingReviewId("");
     setEmptyWorkspace(true);
-    setNotice(runeText(
-      locale,
-      "Choose CSV, JSON, XLSX, or ODS — Rune will review the import before mapping the task",
-      "请选择 CSV、JSON、XLSX 或 ODS — Rune 会先审核导入，再进入任务映射",
-    ));
+    setNotice(taskId === "document-briefing"
+      ? runeText(
+        locale,
+        "Choose Word, Markdown, ODT, or PDF — Rune will review the import before shaping the presentation",
+        "请选择 Word、Markdown、ODT 或 PDF — Rune 会先审核导入，再设置演示",
+      )
+      : runeText(
+        locale,
+        "Choose CSV, JSON, XLSX, or ODS — Rune will review the import before mapping the task",
+        "请选择 CSV、JSON、XLSX 或 ODS — Rune 会先审核导入，再进入任务映射",
+      ));
     window.setTimeout(() => taskImportRef.current?.click(), 0);
+  }
+
+  function startOperatingReviewFromData() {
+    startRuneTaskFromSource("operating-review");
+  }
+
+  function startDocumentBriefingFromDocument() {
+    startRuneTaskFromSource("document-briefing");
   }
 
   function finishWelcome(action: WelcomeAction) {
@@ -1364,6 +1396,10 @@ export function RuneWorkbench() {
     }
     if (action === "review") {
       startOperatingReviewFromData();
+      return;
+    }
+    if (action === "briefing") {
+      startDocumentBriefingFromDocument();
       return;
     }
     setSelectedId(artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? guide.id);
@@ -2699,6 +2735,10 @@ export function RuneWorkbench() {
     setSavedOperatingReviews([]);
     setEditingOperatingReviewId("");
     setTaskSession(null);
+    setOperatingReviewOpen(false);
+    setOperatingReviewError("");
+    setDocumentBriefingOpen(false);
+    setDocumentBriefingError("");
     setHistoryOpen(false);
     setNewArtifactOpen(false);
     setNewArtifactError("");
@@ -2719,6 +2759,25 @@ export function RuneWorkbench() {
     setTaskSession(null);
     setOperatingReviewOpen(true);
     setNotice(runeText(locale, "Choose the evidence, measure, and deliverables before Rune prepares the full review chain", "先选择数据、口径和交付物，再生成整条汇报链"));
+  }
+
+  function openDocumentBriefing() {
+    const source = selectedArtifact.kind === "document"
+      ? selectedArtifact
+      : artifactsRef.current.find((artifact) => artifact.kind === "document");
+    if (!source) {
+      setNotice(runeText(locale, "Open or import a Document before creating a presentation", "请先打开或导入一份 Document，再创建演示"));
+      return;
+    }
+    const prepared = startRuneTaskFromArtifact("document-briefing", artifactsRef.current, source.id);
+    if (!prepared.session || prepared.errors.length) {
+      setNotice(prepared.errors[0] ?? "Rune could not start this presentation task.");
+      return;
+    }
+    setTaskSession(prepared.session);
+    setDocumentBriefingError("");
+    setDocumentBriefingOpen(true);
+    setNotice(runeText(locale, `Using ${source.name} as the exact presentation source`, `将 ${source.name} 作为演示的明确来源`));
   }
 
   function openSavedOperatingReview(workflow: SavedOperatingReview) {
@@ -2798,6 +2857,54 @@ export function RuneWorkbench() {
       setNotice(runeText(locale, "Review not prepared — runtime validation failed", "汇报未生成 — 运行验证未通过"));
     } finally {
       setOperatingReviewState("idle");
+    }
+  }
+
+  async function prepareDocumentBriefing(input: DocumentBriefingInput) {
+    if (documentBriefingState !== "idle" || pendingChange) return;
+    setDocumentBriefingError("");
+    setDocumentBriefingState("checking");
+    const baseArtifacts = artifactsRef.current;
+    const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
+    try {
+      const prepared = prepareDocumentBriefingWorkflow(baseArtifacts, input);
+      if (!prepared.plan || prepared.errors.length) {
+        setDocumentBriefingError(prepared.errors[0] ?? "Rune could not prepare this presentation.");
+        return;
+      }
+      const transaction = prepareWorkspaceMutation(baseArtifacts, [], prepared.plan.creations);
+      if (transaction.errors.length) {
+        setDocumentBriefingError(transaction.errors.slice(0, 3).join(" "));
+        return;
+      }
+      const runtimePreflight = await preflightRuntimeMutation(baseArtifacts, [], prepared.plan.creations);
+      if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
+        setDocumentBriefingError(runeText(locale, "The workspace changed during validation. Prepare the presentation again from the current document.", "验证期间工作区已发生变化。请按当前文档重新准备演示。"));
+        setNotice(runeText(locale, "Presentation not prepared — workspace revision changed", "演示未生成 — 工作区版本已变化"));
+        return;
+      }
+      const creation = prepared.plan.creations[0];
+      setPendingChange({
+        prompt: input.focus,
+        provider: "local",
+        scope: "workspace",
+        baseRevision,
+        selectAfterApplyArtifactId: creation.artifact.id,
+        preparedAt: Date.now(),
+        ...prepared.plan,
+        runtimePreflight,
+      });
+      setPendingReviewId(creation.artifact.id);
+      setAgentMode("local");
+      setDocumentBriefingOpen(false);
+      setTaskSession(null);
+      setEmptyWorkspace(false);
+      setNotice(runeText(locale, `${input.slideCount} source-linked slides prepared; nothing writes until you approve the transaction`, `已准备 ${input.slideCount} 页保留来源关系的演示；审核后才会写入`));
+    } catch (error) {
+      setDocumentBriefingError(error instanceof Error ? error.message : "Rune could not validate this presentation.");
+      setNotice(runeText(locale, "Presentation not prepared — runtime validation failed", "演示未生成 — 运行验证未通过"));
+    } finally {
+      setDocumentBriefingState("idle");
     }
   }
 
@@ -2896,10 +3003,11 @@ export function RuneWorkbench() {
   async function importTaskSource(event: ChangeEvent<HTMLInputElement>) {
     const files = [...(event.target.files ?? [])];
     event.target.value = "";
-    const activeTaskSession = taskSession?.taskId === "operating-review"
+    const taskId = taskImportIdRef.current;
+    const activeTaskSession = taskSession?.taskId === taskId
       && taskSession.phase === "awaiting-source"
       ? taskSession
-      : startRuneTaskSession("operating-review", artifactsRef.current);
+      : startRuneTaskSession(taskId, artifactsRef.current);
     setTaskSession(activeTaskSession);
     await prepareFileImport(files, activeTaskSession);
   }
@@ -2955,14 +3063,20 @@ export function RuneWorkbench() {
         }
       }
       if (ocrCandidates.length) {
-        if (activeTaskSession) {
+        if (activeTaskSession?.taskId === "operating-review") {
           throw new Error(runeText(
             locale,
             "This task starts from CSV, JSON, XLSX, or ODS. Import PDF separately first.",
             "此任务需要从 CSV、JSON、XLSX 或 ODS 开始。请先单独导入 PDF。",
           ));
         }
-        setPendingPdfOcr({ files, baseArtifacts, sourceName, candidates: ocrCandidates });
+        setPendingPdfOcr({
+          files,
+          baseArtifacts,
+          sourceName,
+          candidates: ocrCandidates,
+          ...(activeTaskSession ? { taskSession: activeTaskSession } : {}),
+        });
         setPdfOcrError("");
         setPdfOcrProgress(null);
         setNotice(runeText(locale, `Choose scan pages and OCR language for ${ocrCandidates.length} ${ocrCandidates.length === 1 ? "PDF" : "PDFs"}`, `请确认 ${ocrCandidates.length} 份 PDF 的扫描页与 OCR 语言`));
@@ -3089,6 +3203,13 @@ export function RuneWorkbench() {
       const prepared = prepareWorkspaceImportReview(pending.baseArtifacts, incoming, pending.sourceName, warnings);
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
+      if (pending.taskSession) {
+        const boundTask = bindRuneTaskImportReview(pending.taskSession, pending.baseArtifacts, prepared.review);
+        if (!boundTask.session || boundTask.errors.length) {
+          throw new Error(boundTask.errors[0] ?? "Rune could not bind this OCR import to the task.");
+        }
+        setTaskSession(boundTask.session);
+      }
       setPendingImport(prepared.review);
       setPendingPdfOcr(null);
       setNotice(runeText(locale, `Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} and page-level OCR confidence before import`, `请在写入前审核 ${prepared.review.importedArtifacts.length} 份生成的源内容与逐页 OCR 置信度`));
@@ -3096,6 +3217,7 @@ export function RuneWorkbench() {
       if (error instanceof DOMException && error.name === "AbortError") {
         setNotice(runeText(locale, "OCR stopped — the workspace is unchanged", "OCR 已停止 — 工作区保持不变"));
         setPendingPdfOcr(null);
+        if (pending.taskSession) setTaskSession(null);
       } else {
         setPdfOcrError(error instanceof Error ? error.message : runeText(locale, "Rune could not recognize those scanned pages.", "Rune 无法识别这些扫描页。"));
       }
@@ -3116,6 +3238,7 @@ export function RuneWorkbench() {
       return;
     }
     setPendingPdfOcr(null);
+    if (pendingPdfOcr.taskSession) setTaskSession(null);
     setPdfOcrError("");
     setPdfOcrProgress(null);
     setNotice(runeText(locale, "OCR cancelled — the workspace is unchanged", "已取消 OCR — 工作区保持不变"));
@@ -3171,14 +3294,24 @@ export function RuneWorkbench() {
     setImportError("");
     if (taskContinuation?.session && taskContinuation.preferredArtifactId) {
       setTaskSession(taskContinuation.session);
-      setOperatingReviewError("");
-      setEditingOperatingReviewId("");
-      setOperatingReviewOpen(true);
-      setNotice(runeText(
-        locale,
-        `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"}; choose the fields and deliverables for the review`,
-        `已导入 ${importedCount} 份可读数据；请选择汇报字段与交付物`,
-      ));
+      if (taskContinuation.session.taskId === "document-briefing") {
+        setDocumentBriefingError("");
+        setDocumentBriefingOpen(true);
+        setNotice(runeText(
+          locale,
+          `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"}; choose the audience, purpose, and presentation length`,
+          `已导入 ${importedCount} 份可读文档；请选择受众、重点与演示页数`,
+        ));
+      } else {
+        setOperatingReviewError("");
+        setEditingOperatingReviewId("");
+        setOperatingReviewOpen(true);
+        setNotice(runeText(
+          locale,
+          `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"}; choose the fields and deliverables for the review`,
+          `已导入 ${importedCount} 份可读数据；请选择汇报字段与交付物`,
+        ));
+      }
       return;
     }
     setTaskSession(null);
@@ -3472,7 +3605,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.82</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.83</strong></footer>
               </div>
             )}
           </div>
@@ -3480,7 +3613,7 @@ export function RuneWorkbench() {
             <span className="visually-hidden" aria-live="polite">{exportState === "idle" ? "" : `${ui.exportMenu} ${exportState}`}</span>
           )}
           <input ref={importRef} className="visually-hidden" type="file" multiple accept=".doc,.ppt,.docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
-          <input ref={taskImportRef} className="visually-hidden" type="file" multiple accept={RUNE_TASK_DEFINITIONS["operating-review"].sourceAccept} onChange={importTaskSource} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
+          <input ref={taskImportRef} className="visually-hidden" type="file" multiple accept={RUNE_TASK_DEFINITIONS[taskSession?.taskId ?? "operating-review"].sourceAccept} onChange={importTaskSource} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
           <input ref={imageImportRef} className="visually-hidden" type="file" accept={RUNE_IMAGE_ACCEPT} onChange={(event) => void prepareLocalImage(event)} disabled={!hydrated || selectedArtifact.kind !== "document" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingChange) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure) || Boolean(pendingLocalImage)} />
         </div>
       </header>
@@ -3510,6 +3643,13 @@ export function RuneWorkbench() {
               aria-label={ui.createOperatingReview}
               title={ui.createOperatingReview}
             ><ClipboardList /></button>
+            <button
+              className="activity-button"
+              onClick={openDocumentBriefing}
+              disabled={artifactCreationDisabled || !artifacts.some((artifact) => artifact.kind === "document")}
+              aria-label={runeText(locale, "Create presentation from document", "从文档创建演示")}
+              title={runeText(locale, "Create presentation from document", "从文档创建演示")}
+            ><Presentation /></button>
             <button
               className="activity-button"
               onClick={() => { promptRef.current?.focus(); setNotice(ui.focusAgent); }}
@@ -3666,6 +3806,7 @@ export function RuneWorkbench() {
           <EmptyWorkspace
             locale={locale}
             onStartReview={startOperatingReviewFromData}
+            onStartBriefing={startDocumentBriefingFromDocument}
             onChooseFiles={beginStandardImport}
             onCreate={openNewArtifact}
             onDropFiles={(files) => void prepareFileImport(files)}
@@ -4113,6 +4254,25 @@ export function RuneWorkbench() {
           onPrepare={prepareOperatingReview}
         />
       )}
+      {documentBriefingOpen && (
+        <DocumentBriefingDialog
+          key={`new-document-briefing:${taskSession?.phase === "configuring" ? taskSession.preferredArtifactId ?? "default" : "default"}`}
+          artifacts={artifacts}
+          locale={locale}
+          error={documentBriefingError}
+          preferredDocumentArtifactId={taskSession?.phase === "configuring" && taskSession.taskId === "document-briefing"
+            ? taskSession.preferredArtifactId ?? undefined
+            : undefined}
+          onCancel={() => {
+            if (documentBriefingState !== "idle") return;
+            setDocumentBriefingOpen(false);
+            setDocumentBriefingError("");
+            setTaskSession(null);
+            setNotice(runeText(locale, "Document presentation cancelled — the workspace is unchanged", "已取消文档演示 — 工作区保持不变"));
+          }}
+          onPrepare={prepareDocumentBriefing}
+        />
+      )}
       {pendingImport && (
         <ImportReviewDialog
           sourceName={pendingImport.sourceName}
@@ -4120,7 +4280,7 @@ export function RuneWorkbench() {
           warnings={pendingImport.warnings}
           error={importError}
           locale={locale}
-          continueToOperatingReview={taskSession?.phase === "reviewing-source"}
+          continuationTask={taskSession?.phase === "reviewing-source" ? taskSession.taskId : undefined}
           onCancel={cancelPendingImport}
           onConfirm={applyPendingImport}
         />

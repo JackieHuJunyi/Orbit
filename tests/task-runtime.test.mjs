@@ -6,6 +6,7 @@ import {
   bindRuneTaskImportReview,
   prepareRuneTaskAfterImport,
   RUNE_TASK_DEFINITIONS,
+  startRuneTaskFromArtifact,
   startRuneTaskSession,
 } from "../app/lib/task-runtime.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
@@ -18,17 +19,32 @@ const importedData = {
   source: "Region,Revenue\nAPAC,1900000\nEMEA,1430000\n",
 };
 
+const importedDocument = {
+  id: "launch-brief",
+  name: "launch-brief.md",
+  kind: "document",
+  language: "Markdown",
+  source: "# Launch brief\n\nA reviewed source document.\n",
+};
+
 function reviewFor(imported = [importedData]) {
   const prepared = prepareWorkspaceImportReview(defaultArtifacts, imported, "August revenue.csv");
   assert.ok(prepared.review);
   return prepared.review;
 }
 
-test("declares one task entry with a narrow readable-data import capability", () => {
+test("declares composable task entries with narrow source capabilities", () => {
   assert.deepEqual(RUNE_TASK_DEFINITIONS["operating-review"], {
     id: "operating-review",
     sourceAccept: ".csv,.json,.xlsx,.ods",
     acceptedArtifactKinds: ["data"],
+    requiredArtifactLabel: "readable Data source",
+  });
+  assert.deepEqual(RUNE_TASK_DEFINITIONS["document-briefing"], {
+    id: "document-briefing",
+    sourceAccept: ".doc,.docx,.odt,.pdf,.md,.markdown",
+    acceptedArtifactKinds: ["document"],
+    requiredArtifactLabel: "readable Document source",
   });
 });
 
@@ -65,6 +81,30 @@ test("rejects non-Data task imports before the import can be applied", () => {
   );
   assert.equal(result.session, null);
   assert.match(result.errors.join(" "), /not a supported source/);
+});
+
+test("moves a document-briefing task through the same exact import lifecycle", () => {
+  const review = reviewFor([importedDocument]);
+  const started = startRuneTaskSession("document-briefing", defaultArtifacts);
+  const bound = bindRuneTaskImportReview(started, defaultArtifacts, review);
+  assert.deepEqual(bound.errors, []);
+  assert.equal(bound.session?.phase, "reviewing-source");
+  assert.equal(bound.preferredArtifactId, importedDocument.id);
+
+  const continued = prepareRuneTaskAfterImport(bound.session, defaultArtifacts, review);
+  assert.deepEqual(continued.errors, []);
+  assert.equal(continued.session?.phase, "configuring");
+  assert.equal(continued.preferredArtifactId, importedDocument.id);
+});
+
+test("opens a registered task from an existing compatible artifact without an import lifecycle", () => {
+  const result = startRuneTaskFromArtifact("document-briefing", defaultArtifacts, "q2-review");
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.session?.phase, "configuring");
+  assert.equal(result.session?.preferredArtifactId, "q2-review");
+  const rejected = startRuneTaskFromArtifact("document-briefing", defaultArtifacts, "regional-revenue");
+  assert.equal(rejected.session, null);
+  assert.match(rejected.errors.join(" "), /not a supported source/);
 });
 
 test("fails closed when workspace or reviewed import identity changes between phases", () => {

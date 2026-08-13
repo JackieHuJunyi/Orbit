@@ -1,6 +1,7 @@
 import { compileArtifactSource } from "./bindings.ts";
 import { validateChartSourceBinding } from "./charts.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
+import { buildWorkspaceDependencyGraph } from "./dependency-graph.ts";
 import { parseDataSource, validateArtifact, type WorkspaceArtifact } from "./workspace.ts";
 
 export type ArtifactSourcePatch = {
@@ -76,6 +77,10 @@ export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): stri
     validateChartSourceBinding(artifact, artifacts, parseDataSource)
       .forEach((error) => errors.push(`${artifact.name}: ${error}`));
   });
+
+  buildWorkspaceDependencyGraph(artifacts).issues
+    .filter((issue) => issue.kind === "deck-origin")
+    .forEach((issue) => errors.push(`${issue.artifactId}: ${issue.message}`));
 
   return [...new Set(errors)];
 }

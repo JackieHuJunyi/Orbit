@@ -6,6 +6,7 @@ import {
   validateQueryMetricReference,
 } from "./bindings.ts";
 import { findChartReferences, parseChartSource } from "./charts.ts";
+import { isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -16,6 +17,7 @@ export const WORKSPACE_DEPENDENCY_KINDS = [
   "chart-data",
   "chart-query",
   "chart-embed",
+  "deck-origin",
 ] as const;
 
 export const MAX_WORKSPACE_AGENT_ARTIFACTS = 7;
@@ -77,6 +79,30 @@ export function buildWorkspaceDependencyGraph(
   };
 
   artifacts.forEach((artifact) => {
+    if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) {
+      const parsedDeck = parseDeckSource(artifact.source);
+      const originId = parsedDeck.deck?.frontmatter.origin;
+      if (originId) {
+        const origin = artifactById.get(originId);
+        if (origin?.kind === "document") {
+          addEdge({
+            fromArtifactId: origin.id,
+            toArtifactId: artifact.id,
+            kind: "deck-origin",
+            label: "presentation source",
+            references: [origin.id],
+          });
+        } else {
+          issues.push({
+            artifactId: artifact.id,
+            kind: "deck-origin",
+            target: originId,
+            message: `Presentation Document source is unresolved: ${originId}`,
+          });
+        }
+      }
+    }
+
     const metricReferences = findMetricReferences(artifact.source);
     if (metricReferences.length) {
       if (canonicalData) {
