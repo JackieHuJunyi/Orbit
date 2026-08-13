@@ -2022,4 +2022,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 这个入口仍使用原生 button、`aria-expanded` 和九语言 label；窄屏隐藏 language 与分隔符，只保留 history icon 和数量。撤销按钮并没有因为被收进去而改变禁用条件，视觉草稿时仍不可恢复；保存、恢复和 Agent 写入继续走原来的 checkpoint/persistence 边界。标题栏因此只剩视图、版本和关闭三个任务域，而不是一排相邻但缺少关系的控件。
 
+## 72. v0.67 状态栏应该回答“现在发生什么”，不是常驻工程诊断
+
+状态栏以前同时重复显示 legacy/query/chart binding 数、UTF-8、制品统计和产品版本；其中来源与 binding 已经能在成品证据面板按需查看，编码也不是当前工作区可切换的用户任务。v0.67 因此只保留当前保存、导入或 Agent 操作提示，以及当前制品的字数、行数、行列数或幻灯片数。没有操作时，它安静地承担一条低噪音环境边界，而不是持续展示实现细节。
+
+产品版本仍然可发现，但移动到 More Tools 的底部，并使用九语言 `Version` 标签与固定 `Rune 0.67` 值。该调整没有新增或复制任何状态：操作提示继续来自现有 `visibleNotice`，制品统计继续由当前 source 派生，完整来源与 validation 继续属于 Preview 证据面板。状态栏因此更接近 Apple 式“按任务显露”的层级，同时保持 Rune 对真实来源、错误与当前结果的可验证性。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

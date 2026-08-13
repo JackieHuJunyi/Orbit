@@ -548,6 +548,8 @@ Desktop workspace material is a CSS-only continuous surface: activity/file rails
 
 Source header disclosure reuses the existing `historyOpen` boolean and checkpoint panel rather than introducing another version model. Its summary combines the selected artifact's language and current checkpoint count; the panel adds the unchanged nearest-different undo handler beside manual checkpoint save and exact checkpoint restore. All enablement still derives from current source equality and visual-draft locks, and only the presentation/placement changes.
 
+Status-bar simplification is presentation-only. The left side continues to render the existing bounded `visibleNotice`; the right side derives artifact statistics directly from the selected canonical source. Encoding, binding counts, validation evidence, and product version are not copied into new state: provenance remains in the Preview disclosure, while the static version moves to the More Tools footer. This keeps the bottom edge task-focused without weakening any validation or source contract.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.67 with a task-focused status bar that retains only current operation state and artifact statistics while moving product version into More Tools.
 - 2026-08-13 — Shipped Rune v0.66 with one localized Source and Versions control that consolidates source language, checkpoint count, save, undo, and exact restore actions behind the existing history state.
 - 2026-08-13 — Shipped Rune v0.65 with one continuous desktop workspace surface across navigation, sources, editor, splitter, and preview while preserving separated responsive panes and RTL outer edges.
 - 2026-08-13 — Shipped Rune v0.64 with a task-prioritized top bar and one localized More Tools surface for help, models, folder sync, and direct theme selection without removing any capability.

@@ -248,6 +248,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       moreTools: zh ? "更多工具" : "More tools",
       workspaceTools: zh ? "工作区工具" : "Workspace tools",
       workspaceToolsBody: zh ? "帮助、模型、文件夹与外观" : "Help, models, folder, and appearance",
+      version: zh ? "版本" : "Version",
       appearanceBody: zh ? "选择 Rune 的气质色" : "Choose Rune's character color",
       activeTheme: zh ? "当前主题" : "Current theme",
       resizeWorkspace: zh ? "调整源内容与预览宽度" : "Resize source and preview",

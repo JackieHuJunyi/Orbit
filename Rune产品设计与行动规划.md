@@ -1897,3 +1897,7 @@ Split 用于逐段对照，Source 用于集中写作，Preview 用于检查最�
 ### 17.11 v0.66 版本动作归入同一入口
 
 Source 标题栏用一个九语言 Source and Versions 控件同时表达 source language 与 checkpoint count；展开既有 history panel 后提供保存、撤销最近不同版本和任意 checkpoint 恢复。不得创建第二份 history state，也不得改变恢复条件、视觉草稿锁、持久化或 checkpoint identity。窄屏只保留图标与数量。
+
+### 17.12 v0.67 状态栏只表达当前任务
+
+状态栏常驻内容收敛为当前操作提示和当前制品统计；来源、Query/Chart binding 与 validation 证据继续在 Preview 中按需展开，不在底部重复，UTF-8 不作为不可操作的装饰信息出现。产品版本移动到 More Tools 底部并完整本地化标签。此层级调整只读取现有 notice 与 source-derived statistics，不得成为第二份运行状态、验证结果或制品元数据。

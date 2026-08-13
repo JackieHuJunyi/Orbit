@@ -101,7 +101,6 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.66/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -396,4 +395,14 @@ test("consolidates source language, checkpoints, and undo into one version surfa
   assert.match(source, /selectedArtifact\.language/);
   assert.match(styles, /\.source-version-trigger > i\s*\{/);
   assert.match(styles, /\.checkpoint-panel-actions\s*\{/);
+});
+
+test("keeps the status bar task-focused and moves product version into More Tools", async () => {
+  const response = await render();
+  const html = await response.text();
+  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.67<\/strong>/);
+  assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
+  assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
+  assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
 });

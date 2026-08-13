@@ -6019,7 +6019,7 @@ button.chart-line-point {
 }
 
 .statusbar-right {
-  gap: 14px;
+  gap: 0;
   white-space: nowrap;
 }
 
@@ -7502,6 +7502,23 @@ html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { bord
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .38));
 }
 
+.tools-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 7px 1px;
+  border-top: 1px solid rgba(20, 22, 26, .07);
+  color: var(--subtle);
+  font-size: 8px;
+}
+
+.tools-version strong {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 620;
+}
+
 .appearance-swatch {
   width: 29px;
   height: 29px;
@@ -8132,9 +8149,6 @@ html[dir="rtl"] [data-preview-source-id] {
     gap: 8px;
   }
 
-  .statusbar-right span:nth-child(2) {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
