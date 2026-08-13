@@ -556,6 +556,8 @@ File-rail workflow grouping is a render-time projection over the canonical `Work
 
 Top-bar simplification reuses existing handlers and state. New, Import, Export, and More Tools remain global controls; operating-review creation retains the same handler in the persistent activity rail rather than rendering a duplicate top-bar button. The compact `role="status"` save indicator derives its accessible label and title from existing save state, timestamp, and localized copy. Workspace identity still reads the directory handle or local-workspace label; no navigation, persistence, task, or save model changes.
 
+The full-screen Setup Assistant is a presentation change over the existing `WelcomeExperience` state machine. `welcome | model | shortcuts | ready`, locale detection/selection, provider status, local fallback, real shortcut capture, dismissibility, and completion actions are unchanged. The viewport-sized shell supplies one sticky chrome row plus a scrolling page; the step strip exposes `progressbar` min/max/current values. No onboarding state enters Artifact, workspace persistence, model credentials, or export state beyond the already explicit completion choices.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

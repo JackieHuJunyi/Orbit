@@ -401,7 +401,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.70<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.71<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -447,4 +447,17 @@ test("keeps the top bar global and moves duplicate task creation into the activi
   assert.match(source, /className="activity-button"[\s\S]{0,420}onClick=\{openOperatingReview\}/);
   assert.match(html, />New<\/button>[\s\S]*>Import<\/button>[\s\S]*class="export-menu"[\s\S]*class="tools-menu"/);
   assert.doesNotMatch(styles, /\.review-task-button\s*\{/);
+});
+
+test("presents onboarding as a full-screen setup assistant with an accessible step contract", async () => {
+  const component = await readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(component, /className="welcome-progress"\s+role="progressbar"/);
+  assert.match(component, /aria-valuemin=\{1\}/);
+  assert.match(component, /aria-valuemax=\{steps\.length\}/);
+  assert.match(component, /aria-valuenow=\{steps\.indexOf\(step\) \+ 1\}/);
+  assert.match(styles, /\.welcome-backdrop\s*\{[^}]*display:\s*block;[^}]*padding:\s*0;[^}]*overflow:\s*hidden;/s);
+  assert.match(styles, /\.welcome-window\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-height:\s*100vh;[^}]*border-radius:\s*0;[^}]*box-shadow:\s*none;/s);
+  assert.match(styles, /\.welcome-chrome\s*\{[^}]*position:\s*sticky;[^}]*height:\s*72px;/s);
+  assert.match(styles, /\.welcome-page\s*\{[^}]*min-height:\s*calc\(100vh - 72px\);/s);
 });

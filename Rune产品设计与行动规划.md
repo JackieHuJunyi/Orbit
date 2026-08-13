@@ -1913,3 +1913,7 @@ Source 底部常驻一个与画布连续的轻量输入区，不再用头像、A
 ### 17.15 v0.70 顶部栏只保留全局动作
 
 顶部路径只显示 Rune 与当前工作区；常驻动作按 New、Import、Export、More Tools 排列。经营汇报创建保留在 activity rail，不在顶部重复。保存状态以紧凑图标显示，但必须通过 `role=status`、完整本地化 `aria-label` 和 title 保留 saved/saving/error 与最近保存信息。入口收敛不得删除 operating-review handler、导入导出、错误反馈或响应式可访问性。
+
+### 17.16 v0.71 首启是全屏 Setup Assistant
+
+首启使用占满 viewport 的单一设置画布，不渲染居中 modal 的外边框、圆角或漂浮阴影；顶部固定显示 Rune、四步进度和 Skip/Close。Welcome/Language、Model、Shortcuts、Ready 四步及其状态完全保留，内容区允许独立滚动并适配窄屏/RTL/reduced motion。步骤指示必须暴露 `progressbar` 的 min/max/now，不能只靠颜色表达当前进度。

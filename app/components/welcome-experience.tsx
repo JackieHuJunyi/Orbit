@@ -275,7 +275,14 @@ export function WelcomeExperience({
       <section className="welcome-window">
         <header className="welcome-chrome">
           <div className="welcome-chrome-brand" aria-hidden="true"><span>R</span><strong>Rune</strong></div>
-          <div className="welcome-progress" aria-label={String(steps.indexOf(step) + 1) + " of " + String(steps.length)}>
+          <div
+            className="welcome-progress"
+            role="progressbar"
+            aria-label={String(steps.indexOf(step) + 1) + " of " + String(steps.length)}
+            aria-valuemin={1}
+            aria-valuemax={steps.length}
+            aria-valuenow={steps.indexOf(step) + 1}
+          >
             {steps.map((item) => (
               <span
                 className={item === step ? "active" : steps.indexOf(item) < steps.indexOf(step) ? "complete" : ""}

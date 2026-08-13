@@ -7544,27 +7544,40 @@ html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { bord
 
 
 .welcome-backdrop {
-  padding: 18px;
+  display: block;
+  padding: 0;
+  overflow: hidden;
   background:
-    radial-gradient(circle at 74% 18%, rgba(var(--theme-rgb), .14), transparent 34%),
-    radial-gradient(circle at 18% 86%, rgba(220, 75, 54, .07), transparent 30%),
-    #f4f5f7;
+    radial-gradient(circle at 78% 12%, rgba(var(--theme-rgb), .12), transparent 32%),
+    radial-gradient(circle at 14% 92%, rgba(220, 75, 54, .055), transparent 28%),
+    #f7f8fa;
 }
 
 .welcome-window {
-  width: min(1180px, 100%);
-  min-height: min(720px, calc(100vh - 36px));
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  grid-template-rows: 72px minmax(0, 1fr);
+  overflow: auto;
   border: 0;
-  border-radius: 32px;
-  background: rgba(255, 255, 255, .7);
-  box-shadow: 0 30px 90px rgba(31, 35, 41, .1), inset 0 1px rgba(255, 255, 255, .95);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .welcome-chrome {
-  height: 64px;
-  padding-inline: 26px;
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  height: 72px;
+  padding-inline: clamp(20px, 3.5vw, 52px);
   border-bottom-color: rgba(20, 22, 26, .055);
-  background: rgba(255, 255, 255, .45);
+  background: rgba(248, 249, 251, .72);
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
 }
 
 .welcome-chrome-brand span,
@@ -7578,11 +7591,14 @@ html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { bord
 .welcome-progress span.complete { background: rgba(var(--theme-rgb), .38); }
 
 .welcome-page {
-  min-height: 656px;
-  padding: 54px clamp(34px, 6.5vw, 86px) 64px;
+  width: 100%;
+  min-height: calc(100vh - 72px);
+  box-sizing: border-box;
+  padding: 60px clamp(34px, 7vw, 104px) 72px;
 }
 
 .welcome-intro-grid {
+  max-width: 1240px;
   grid-template-columns: minmax(0, 1.06fr) minmax(340px, .82fr);
   gap: clamp(44px, 7vw, 92px);
 }
@@ -7599,8 +7615,8 @@ html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { bord
 .welcome-language-card {
   padding: 20px;
   border-color: rgba(20, 22, 26, .065);
-  background: rgba(255, 255, 255, .57);
-  box-shadow: 0 18px 44px rgba(27, 31, 36, .055), inset 0 1px rgba(255, 255, 255, .92);
+  background: rgba(255, 255, 255, .48);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .92);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
 }

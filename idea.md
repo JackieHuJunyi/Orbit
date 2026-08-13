@@ -2046,4 +2046,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 左侧路径收敛为 Rune、一道轻分隔和当前本机/目录工作区名称；营销式副标题和状态装饰不再占用工具栏。保存状态改成一个 30px 无障碍状态点：图标表达正常/保存中/失败，完整本地化状态和最近保存时间通过 `role=status`、`aria-label` 与 title 保留。窄屏隐藏路径但不隐藏状态语义。顶栏减少的是重复视觉，不是行为或错误信息。
 
+## 76. v0.71 首启应该是一段设备设置过程，不是一张网页弹窗
+
+用户第一次打开 Rune 时，需要连续决定语言、模型使用方式、快捷键学习和进入哪种工作区；把它们放在一张居中圆角卡片中，会让这段关键流程看起来像可随手关闭的营销 modal。v0.71 让 Setup Assistant 占满整个 viewport，外层不再有卡片边框、圆角或漂浮阴影；顶部品牌、四步进度与 Skip/Close 固定在轻薄材料中，内容在其下独立滚动。大屏获得完整留白，窄屏继续自然单列。
+
+四步没有合并或伪装：欢迎页仍从九语言注册表轮播真实问候并同时选择语言；模型页仍配置个人 profile 和 local fallback；教程仍要求真实按键；完成页仍提供本地指南、导入和示例。步骤指示新增原生 `progressbar` 语义与 min/max/now，RTL 和 `prefers-reduced-motion` 合同不变。视觉上的“系统级”不能以减少选择或隐去安全边界为代价。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。
