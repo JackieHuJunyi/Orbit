@@ -152,7 +152,7 @@ test("executes an exact-scope operating review Query in real DuckDB without leak
     name: "period-data.csv",
     kind: "data",
     language: "CSV / JSON",
-    source: "Period,Region,Revenue\nJuly,APAC,100\nJune,APAC,900\nJuly,Europe,80\nJune,Europe,700\n",
+    source: "Period,Region,Revenue\nJuly,APAC,100\nJune,APAC,N/A\nJuly,Europe,80\nJune,Europe,$700\n",
   };
   const prepared = prepareOperatingReviewWorkflow([data], {
     title: "July review",

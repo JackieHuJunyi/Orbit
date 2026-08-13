@@ -24,6 +24,7 @@ import {
   collectOperatingReviewScopeValues,
   formatOperatingReviewScopeLabel,
   operatingReviewScopeValueKey,
+  prepareOperatingReviewNumericColumns,
   type OperatingReviewScopeValue,
 } from "../lib/operating-review-scope";
 import { parseDataSource, type WorkspaceArtifact } from "../lib/workspace";
@@ -54,7 +55,7 @@ export const OPERATING_REVIEW_BASE_COPY = {
     value: "数值字段",
     noField: "没有可用字段",
     noNumericField: "没有严格数值字段",
-    numericHint: "只显示 Rune 识别为数值的字段。",
+    numericHint: "只显示在当前数据范围内全部为数值的字段。",
     dataScope: "数据范围",
     allRows: "全部数据行",
     scopeValue: "精确范围值",
@@ -124,7 +125,7 @@ export const OPERATING_REVIEW_BASE_COPY = {
     value: "Numeric value field",
     noField: "No available field",
     noNumericField: "No strictly numeric field",
-    numericHint: "Only fields Rune recognizes as numeric are shown.",
+    numericHint: "Only fields that are numeric throughout the current Data scope are shown.",
     dataScope: "Data scope",
     allRows: "All Data rows",
     scopeValue: "Exact scope value",
@@ -265,10 +266,12 @@ export function OperatingReviewDialog({
   );
   const strictNumericColumns = useMemo(() => {
     if (!parsedData) return [];
-    return parsedData.columns.filter((column) => parsedData.rows.every((row) => (
-      typeof row[column] === "number" && Number.isFinite(row[column])
-    )));
-  }, [parsedData]);
+    return prepareOperatingReviewNumericColumns(
+      parsedData.rows,
+      parsedData.columns,
+      effectiveScope,
+    ).columns;
+  }, [effectiveScope, parsedData]);
   const effectiveValue = strictNumericColumns.includes(value) && value !== effectiveCategory
     ? value
     : initialInput
@@ -407,51 +410,6 @@ export function OperatingReviewDialog({
             </select>
           </label>
 
-          <label className="operating-review-field" htmlFor="operating-review-category">
-            <span>{copy.category}</span>
-            <select
-              id="operating-review-category"
-              value={effectiveCategory}
-              onChange={(event) => {
-                setCategory(event.target.value);
-                if (event.target.value === effectiveValue) setValue("");
-              }}
-              disabled={!sourceOption?.columns.length}
-              required
-              aria-invalid={attempted && !effectiveCategory}
-            >
-              {!sourceOption?.columns.length && <option value="">{copy.noField}</option>}
-              {initialInput && effectiveCategory && !sourceOption?.columns.includes(effectiveCategory) && (
-                <option value={effectiveCategory}>{effectiveCategory} · {copy.noField}</option>
-              )}
-              {sourceOption?.columns.map((column) => <option key={column} value={column}>{column}</option>)}
-            </select>
-          </label>
-
-          <label className="operating-review-field" htmlFor="operating-review-value">
-            <span>{copy.value}</span>
-            <select
-              id="operating-review-value"
-              value={effectiveValue}
-              onChange={(event) => setValue(event.target.value)}
-              disabled={!strictNumericColumns.some((column) => column !== effectiveCategory)}
-              required
-              aria-describedby="operating-review-value-help"
-              aria-invalid={attempted && !effectiveValue}
-            >
-              {!strictNumericColumns.some((column) => column !== effectiveCategory) && (
-                <option value="">{copy.noNumericField}</option>
-              )}
-              {initialInput && effectiveValue && !strictNumericColumns.includes(effectiveValue) && (
-                <option value={effectiveValue}>{effectiveValue} · {copy.noNumericField}</option>
-              )}
-              {strictNumericColumns
-                .filter((column) => column !== effectiveCategory)
-                .map((column) => <option key={column} value={column}>{column}</option>)}
-            </select>
-            <small id="operating-review-value-help">{copy.numericHint}</small>
-          </label>
-
           <label className="operating-review-field" htmlFor="operating-review-scope-field">
             <span>{copy.dataScope}</span>
             <select
@@ -497,6 +455,51 @@ export function OperatingReviewDialog({
             </select>
             {scopeOptions.truncated && <small>{copy.scopeTooMany}</small>}
             {attempted && !scopeReady && <small className="operating-review-field-error">{copy.scopeValueRequired}</small>}
+          </label>
+
+          <label className="operating-review-field" htmlFor="operating-review-category">
+            <span>{copy.category}</span>
+            <select
+              id="operating-review-category"
+              value={effectiveCategory}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                if (event.target.value === effectiveValue) setValue("");
+              }}
+              disabled={!sourceOption?.columns.length}
+              required
+              aria-invalid={attempted && !effectiveCategory}
+            >
+              {!sourceOption?.columns.length && <option value="">{copy.noField}</option>}
+              {initialInput && effectiveCategory && !sourceOption?.columns.includes(effectiveCategory) && (
+                <option value={effectiveCategory}>{effectiveCategory} · {copy.noField}</option>
+              )}
+              {sourceOption?.columns.map((column) => <option key={column} value={column}>{column}</option>)}
+            </select>
+          </label>
+
+          <label className="operating-review-field" htmlFor="operating-review-value">
+            <span>{copy.value}</span>
+            <select
+              id="operating-review-value"
+              value={effectiveValue}
+              onChange={(event) => setValue(event.target.value)}
+              disabled={!strictNumericColumns.some((column) => column !== effectiveCategory)}
+              required
+              aria-describedby="operating-review-value-help"
+              aria-invalid={attempted && !effectiveValue}
+            >
+              {!strictNumericColumns.some((column) => column !== effectiveCategory) && (
+                <option value="">{copy.noNumericField}</option>
+              )}
+              {initialInput && effectiveValue && !strictNumericColumns.includes(effectiveValue) && (
+                <option value={effectiveValue}>{effectiveValue} · {copy.noNumericField}</option>
+              )}
+              {strictNumericColumns
+                .filter((column) => column !== effectiveCategory)
+                .map((column) => <option key={column} value={column}>{column}</option>)}
+            </select>
+            <small id="operating-review-value-help">{copy.numericHint}</small>
           </label>
 
           <fieldset className="operating-review-field">

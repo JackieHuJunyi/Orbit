@@ -81,6 +81,22 @@ export function prepareOperatingReviewScope(
   };
 }
 
+export function prepareOperatingReviewNumericColumns(
+  rows: Array<Record<string, DataCell>>,
+  columns: string[],
+  candidate: OperatingReviewScope | null | undefined,
+) {
+  const prepared = prepareOperatingReviewScope(rows, columns, candidate);
+  if (prepared.errors.length) return { columns: [], matchedRowCount: 0, errors: prepared.errors };
+  return {
+    columns: columns.filter((column) => prepared.rows.every((row) => (
+      typeof row[column] === "number" && Number.isFinite(row[column])
+    ))),
+    matchedRowCount: prepared.rows.length,
+    errors: [],
+  };
+}
+
 function quoteSqlIdentifier(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
 }

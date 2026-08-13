@@ -2229,3 +2229,11 @@ Rune 不应猜测哪个字段是日期，也不应把任意字符串解析成月
 这个范围不是 React 里的筛选状态。纯 `operating-review-scope.ts` 负责 typed equality、bounded option、DuckDB identifier/literal escaping 和可读标签；evidence compiler 先过滤再聚合，生成的 SQL 写入同义 predicate，Chart description、Markdown、Deck 与模型输入同时声明相同范围。真实 DuckDB fixture 证明六月的高值不会泄漏到七月结果；模型只收到过滤后的 aggregates 与 scope 描述，永远看不到被排除的 raw rows。
 
 保存任务继续保留 exact output identities，并把 scope 作为 typed recipe 一部分。下一周期可从 July 改为 June，重新生成同一 Query/Chart/report/Deck 的审核 patch；若旧 scope 已经不再匹配，任务零写入停止。`period` 仍是面向人的展示标签，Rune 不假装它与 scope 等价。未来的日期区间、多选和复合条件必须升级成 typed filter expression 与可审核 UI，不能退回自由 SQL 字符串或隐式推断。
+
+## 96. v0.91 eligible rows 必须同时决定“哪些字段可用”与“算哪些值”
+
+v0.90 首次把 exact scope 接到了 evidence 与 SQL，但继续沿用了全表数值字段检查。这会产生一条内部矛盾：July 的所有 Revenue 都是有限数字，June 有一格 `N/A`，用户明确选择 July 后，Query 本可安全运行，表单和 compiler 却仍被被排除行阻断。若范围只影响计算、不影响字段资格，它仍不是完整的数据合同。
+
+v0.91 把 numeric-column discovery 收回同一个纯 scope port。`prepareOperatingReviewNumericColumns` 先用 typed equality 得到 eligible rows，再要求候选列在这些行内全部为 finite number；选择 all rows 时 eligible rows 就是完整数据，因此旧的严格拒绝完全保留。UI 与 compiler 不再各写一套规则：范围选择排在 category/value 之前，选定周期后数值字段即时按相同 helper 更新，evidence compiler 随后在同一行集合上再次逐值验证。React 仍不生成 predicate，也不能让一个无效字段越过 compiler。
+
+这个修复明确不等于静默容错。选中范围内的空值、`N/A`、货币字符串和无穷值仍失败；只有已经被用户 exact scope 排除的行不再影响当前任务。生成 SQL 对已经通过 compiler 检查的 eligible measure 显式 `CAST(... AS DOUBLE)`：这是为了防止 DuckDB 因被排除行的文本而把整列绑定成 `VARCHAR`，不是用 `TRY_CAST` 偷偷吞掉范围内错误。真实 DuckDB fixture 使用 June 的 `N/A` 与 `$700` 证明 July 仍只得到 100 和 80。这样“July review”既不会吃进 June 的数值，也不会被 June 的数据质量问题误伤，而全表汇报仍要求全表干净。

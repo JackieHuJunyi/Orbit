@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.91 with exact-scope-aware numeric field discovery and validation, preserving strict all-row checks while ignoring malformed values outside the selected eligible rows.
 - 2026-08-14 — Shipped Rune v0.90 with one optional exact typed Data scope shared by local evidence, DuckDB SQL, model context, charts, report/slides, and identity-stable saved reruns.
 - 2026-08-14 — Shipped Rune v0.89 with bounded model-assisted operating-review questions, compiler-owned aggregate evidence, live row-specific Query number bindings, saved-task identity-safe reruns, nine-locale planner feedback, and the unchanged atomic review-before-write boundary.
 - 2026-08-14 — Shipped Rune v0.88 with evidence-bound model-assisted Document-to-Presentation shaping across every configured provider, a transparent deterministic fallback, triple outline validation, and the unchanged single review-before-write mutation boundary.

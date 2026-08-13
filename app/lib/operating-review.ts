@@ -247,7 +247,7 @@ function querySource(input: OperatingReviewInput, scope: OperatingReviewScope | 
   return `${formatQueryDataSourceDirective(input.dataArtifactId)}
 SELECT
   ${category},
-  ${aggregate}(${value}) AS ${value}
+  ${aggregate}(CAST(${value} AS DOUBLE)) AS ${value}
 FROM workspace_data
 WHERE ${category} IS NOT NULL
   AND TRIM(CAST(${category} AS VARCHAR)) <> ''
@@ -516,15 +516,6 @@ export function prepareOperatingReviewWorkflow(
     errors.push("Choose one exact visible value field from the selected Data source.");
   }
   if (input.category === input.value) errors.push("Category and value must use different fields.");
-
-  if (data) {
-    const parsed = parseDataSource(data.source);
-    if (parsed.errors.length || !parsed.rows.length) errors.push("The selected Data source needs at least one valid row.");
-    const valueIsStrictlyNumeric = parsed.rows.length > 0 && parsed.rows.every((row) => (
-      typeof row[input.value] === "number" && Number.isFinite(row[input.value])
-    ));
-    if (!valueIsStrictlyNumeric) errors.push("The selected value field must contain only finite numeric values, not formatted text.");
-  }
 
   let evidence: ReturnType<typeof prepareOperatingReviewEvidence> | undefined;
   if (data && sourceOption

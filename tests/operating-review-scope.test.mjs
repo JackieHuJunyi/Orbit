@@ -7,6 +7,7 @@ import {
   formatOperatingReviewScopePredicate,
   normalizeOperatingReviewScope,
   operatingReviewScopeValueKey,
+  prepareOperatingReviewNumericColumns,
   prepareOperatingReviewScope,
 } from "../app/lib/operating-review-scope.ts";
 
@@ -44,4 +45,20 @@ test("emits a safe DuckDB predicate for strings, numbers, and booleans", () => {
   assert.equal(formatOperatingReviewScopePredicate({ field: "Year", value: 2026 }), "  AND \"Year\" = 2026\n");
   assert.equal(formatOperatingReviewScopePredicate({ field: "Active", value: false }), "  AND \"Active\" = FALSE\n");
   assert.equal(formatOperatingReviewScopePredicate(null), "");
+});
+
+test("derives numeric fields only from rows eligible for the exact scope", () => {
+  const rows = [
+    { Period: "July", Value: 100, Mixed: "N/A" },
+    { Period: "July", Value: 80, Mixed: 20 },
+    { Period: "June", Value: "N/A", Mixed: 10 },
+  ];
+  assert.deepEqual(
+    prepareOperatingReviewNumericColumns(rows, ["Period", "Value", "Mixed"], { field: "Period", value: "July" }),
+    { columns: ["Value"], matchedRowCount: 2, errors: [] },
+  );
+  assert.deepEqual(
+    prepareOperatingReviewNumericColumns(rows, ["Period", "Value", "Mixed"], null),
+    { columns: [], matchedRowCount: 3, errors: [] },
+  );
 });

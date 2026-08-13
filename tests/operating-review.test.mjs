@@ -89,7 +89,7 @@ test("creates an English Document + Slides review chain with exact evidence bind
     explicit: true,
     errors: [],
   });
-  assert.match(created.query.source, /SUM\("Net Revenue"\) AS "Net Revenue"/);
+  assert.match(created.query.source, /SUM\(CAST\("Net Revenue" AS DOUBLE\)\) AS "Net Revenue"/);
   assert.match(created.query.source, /GROUP BY "Region"/);
 
   assert.deepEqual(parseChartSource(created.chart.source).spec, {
@@ -163,6 +163,26 @@ test("applies one exact Data scope consistently to evidence, SQL, charts, and de
   assert.match(created.document.source, /Within \*\*Period = July\*\*/u);
   assert.match(created.slides.source, /Data scope · Period = July/u);
   assert.deepEqual(validateWorkspaceArtifacts([data, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
+});
+
+test("validates numeric evidence only inside the exact eligible Data scope", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJuly,Europe,80\nJune,APAC,N/A\nJune,Europe,$700\n",
+  });
+  const julyInput = reviewInput({ scope: { field: "Period", value: "July" } });
+
+  const evidence = prepareOperatingReviewEvidence([data], julyInput);
+  assert.deepEqual(evidence.errors, []);
+  assert.equal(evidence.matchedRowCount, 2);
+  assert.deepEqual(evidence.evidenceRows.map((row) => row.value), [100, 80]);
+
+  const scoped = prepareOperatingReviewWorkflow([data], julyInput);
+  assert.deepEqual(scoped.errors, []);
+  assert.match(creationsByKind(scoped).query.source, /AND "Period" = 'July'/u);
+
+  const allRows = prepareOperatingReviewWorkflow([data], reviewInput({ scope: null }));
+  assert.equal(allRows.plan, undefined);
+  assert.match(allRows.errors.join(" "), /finite numeric values, not formatted text/u);
 });
 
 test("escapes exact text scope values and fails closed when a saved scope no longer matches", () => {
@@ -300,7 +320,7 @@ test("creates a Chinese Document + Slides review chain without translating canon
     explicit: true,
     errors: [],
   });
-  assert.match(created.query.source, /AVG\("净收入"\) AS "净收入"/);
+  assert.match(created.query.source, /AVG\(CAST\("净收入" AS DOUBLE\)\) AS "净收入"/);
   assert.match(created.query.source, /GROUP BY "地区"/);
   assert.equal(parseChartSource(created.chart.source).spec.source, created.query.id);
   assert.deepEqual({
@@ -346,7 +366,7 @@ test("creates a complete Traditional Chinese review chain while preserving exact
   assert.deepEqual(result.errors, []);
   assert.match(result.plan.summary, /建立一條可核驗經營彙報鏈/);
   const created = creationsByKind(result);
-  assert.match(created.query.source, /SUM\("淨收入"\) AS "淨收入"/);
+  assert.match(created.query.source, /SUM\(CAST\("淨收入" AS DOUBLE\)\) AS "淨收入"/);
   assert.match(created.document.source, /## 本次目標/);
   assert.match(created.document.source, /董事會/);
   assert.match(created.slides.source, /\nlang: zh-TW\n/);

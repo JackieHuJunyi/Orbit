@@ -630,6 +630,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "Facultatif. Une fois sélectionné, les preuves locales, SQL, les graphiques et le contexte du modèle utilisent uniquement les lignes qui correspondent exactement.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "Seules les 100 premières valeurs distinctes sont affichées ; choisissez si nécessaire un champ de période avec moins de valeurs distinctes.",
   "Choose one exact scope value, or return to all Data rows.": "Choisissez une valeur exacte pour le périmètre, ou revenez à toutes les lignes de données.",
+  "Only fields that are numeric throughout the current Data scope are shown.": "Seuls les champs numériques dans tout le périmètre de données actuel sont affichés.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Data scope": "Ámbito de los datos",
@@ -640,6 +641,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "Opcional. Al seleccionarlo, la evidencia local, SQL, los gráficos y el contexto del modelo usan solo las filas que coinciden exactamente.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "Solo se muestran los primeros 100 valores distintos; si hace falta, elige un campo de periodo con menos valores distintos.",
   "Choose one exact scope value, or return to all Data rows.": "Elige un valor exacto para el ámbito o vuelve a todas las filas de datos.",
+  "Only fields that are numeric throughout the current Data scope are shown.": "Solo se muestran los campos que son numéricos en todo el ámbito de datos actual.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Data scope": "Область данных",
@@ -650,6 +652,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "Необязательно. После выбора локальные доказательства, SQL, диаграммы и контекст модели используют только строки с точным совпадением.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "Показаны только первые 100 уникальных значений; при необходимости выберите поле периода с меньшим числом значений.",
   "Choose one exact scope value, or return to all Data rows.": "Выберите точное значение области или вернитесь ко всем строкам данных.",
+  "Only fields that are numeric throughout the current Data scope are shown.": "Показаны только поля, которые являются числовыми во всей текущей области данных.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Data scope": "نطاق البيانات",
@@ -660,6 +663,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "اختياري. عند التحديد، تستخدم الأدلة المحلية وSQL والرسوم البيانية وسياق النموذج الصفوف المطابقة تمامًا فقط.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "تظهر أول 100 قيمة مختلفة فقط؛ اختر حقل فترة بعدد قيم أقل عند الحاجة.",
   "Choose one exact scope value, or return to all Data rows.": "اختر قيمة نطاق مطابقة، أو عُد إلى كل صفوف البيانات.",
+  "Only fields that are numeric throughout the current Data scope are shown.": "تظهر فقط الحقول الرقمية في كامل نطاق البيانات الحالي.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Data scope": "データ範囲",
@@ -670,6 +674,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "任意です。選択すると、ローカルの根拠、SQL、グラフ、モデルコンテキストには完全一致する行だけを使用します。",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "異なる値は先頭100件だけ表示します。必要に応じて、値の種類が少ない期間フィールドを選択してください。",
   "Choose one exact scope value, or return to all Data rows.": "完全一致する範囲値を選ぶか、すべてのデータ行に戻してください。",
+  "Only fields that are numeric throughout the current Data scope are shown.": "現在のデータ範囲全体で数値になっているフィールドだけを表示します。",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Data scope": "데이터 범위",
@@ -680,4 +685,5 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "선택 사항입니다. 선택하면 로컬 근거, SQL, 차트, 모델 컨텍스트는 정확히 일치하는 행만 사용합니다.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "서로 다른 값은 처음 100개만 표시합니다. 필요하면 값 종류가 더 적은 기간 필드를 선택하세요.",
   "Choose one exact scope value, or return to all Data rows.": "정확히 일치하는 범위 값을 선택하거나 모든 데이터 행으로 돌아가세요.",
+  "Only fields that are numeric throughout the current Data scope are shown.": "현재 데이터 범위 전체에서 숫자인 필드만 표시합니다.",
 });

@@ -14,7 +14,7 @@ const artifact = {
   name: "source-data.csv",
   kind: "data",
   language: "CSV / JSON",
-  source: "Period,Region,Net Revenue\nJuly,APAC,100\nJuly,Europe,80\nJuly,APAC,50\nJune,APAC,900\n",
+  source: "Period,Region,Net Revenue\nJuly,APAC,100\nJuly,Europe,80\nJuly,APAC,50\nJune,APAC,N/A\n",
 };
 
 const input = {
@@ -119,7 +119,7 @@ test("sends only bounded aggregate evidence to the active personal model and ret
   ]);
   assert.deepEqual(modelInput.measure.scope, { field: "Period", value: "July" });
   assert.doesNotMatch(providerRequest.body.input[1].content, /Period,Region,Net Revenue/u);
-  assert.doesNotMatch(providerRequest.body.input[1].content, /900/u);
+  assert.doesNotMatch(providerRequest.body.input[1].content, /N\/A/u);
   assert.doesNotMatch(JSON.stringify(payload), /operating-review-secret/u);
 });
 
