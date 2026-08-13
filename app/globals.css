@@ -7220,7 +7220,7 @@ body {
 }
 
 .workspace {
-  gap: 10px;
+  gap: 0;
   padding: 10px;
   background: transparent;
 }
@@ -7231,9 +7231,31 @@ body {
 .preview-pane {
   overflow: hidden;
   border: 1px solid rgba(20, 22, 26, .07);
-  border-radius: 18px;
+  border-radius: 0;
   background: rgba(255, 255, 255, .8);
-  box-shadow: 0 5px 24px rgba(26, 30, 36, .04), inset 0 1px rgba(255, 255, 255, .7);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .7);
+}
+
+.activity-rail { border-radius: 18px 0 0 18px; }
+.preview-pane { border-radius: 0 18px 18px 0; }
+.workspace.without-file-rail > .source-pane { border-radius: 0; }
+.workspace.with-file-rail > .file-rail,
+.workspace.with-file-rail > .source-pane,
+.workspace > .preview-pane { border-left: 0; }
+
+.workspace.view-source.with-file-rail > .source-pane,
+.workspace.view-preview.with-file-rail > .preview-pane,
+.workspace.view-source.without-file-rail > .source-pane,
+.workspace.view-preview.without-file-rail > .preview-pane {
+  border-radius: 0 18px 18px 0;
+}
+
+.workspace-splitter {
+  min-width: 10px;
+  margin: 0;
+  border-block: 1px solid rgba(20, 22, 26, .07);
+  border-radius: 0;
+  background: rgba(255, 255, 255, .8);
 }
 
 .activity-rail {
@@ -7262,6 +7284,13 @@ body {
 }
 
 .source-pane { border-right: 1px solid rgba(20, 22, 26, .07); }
+
+html[dir="rtl"] .activity-rail { border-radius: 0 18px 18px 0; }
+html[dir="rtl"] .preview-pane,
+html[dir="rtl"] .workspace.view-source.with-file-rail > .source-pane,
+html[dir="rtl"] .workspace.view-preview.with-file-rail > .preview-pane,
+html[dir="rtl"] .workspace.view-source.without-file-rail > .source-pane,
+html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { border-radius: 18px 0 0 18px; }
 
 .pane-header,
 .file-rail-header {
@@ -7577,6 +7606,21 @@ html[dir="rtl"] [data-preview-source-id] {
 @media (max-width: 960px) {
   .rune-shell { grid-template-rows: 64px auto 25px; }
   .workspace { gap: 8px; padding: 8px; }
+
+  .activity-rail,
+  .file-rail,
+  .source-pane,
+  .preview-pane,
+  .workspace.view-source.with-file-rail > .source-pane,
+  .workspace.view-preview.with-file-rail > .preview-pane,
+  .workspace.view-source.without-file-rail > .source-pane,
+  .workspace.view-preview.without-file-rail > .preview-pane,
+  html[dir="rtl"] .activity-rail,
+  html[dir="rtl"] .preview-pane {
+    border: 1px solid rgba(20, 22, 26, .07);
+    border-radius: 16px;
+    box-shadow: 0 5px 24px rgba(26, 30, 36, .04), inset 0 1px rgba(255, 255, 255, .7);
+  }
 }
 
 @media (max-width: 680px) {

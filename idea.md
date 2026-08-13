@@ -2010,4 +2010,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 主题不再弹出第二层菜单，而是在工具面板底部直接呈现五个色点与当前选择；每个选项仍是 `menuitemradio`，拥有 9-locale label。More Tools 与 Export 互斥打开，点击外部或 Escape 都关闭，RTL 与窄屏有明确落点。这里只移动入口，不修改任何 command、permission 或 source transaction；高频任务变得可见，低频工具仍一击可达。
 
+## 70. v0.65 工作区应该像一台工具，而不是五张并排的卡片
+
+活动栏、文件栏、源编辑器、分隔器和成品此前各有独立圆角、边框、阴影与间距，整体像 dashboard widgets。v0.65 在桌面把它们合成一块连续材料：只有最左和最右外缘拥有 18px 圆角，相邻栏去掉重复边线，分隔器本身成为同一表面内可抓取的中缝。Source-only 与 Preview-only 仍让最后可见 pane 接管右外缘，隐藏文件栏不会留下断裂。
+
+连续不等于混淆。文件 rail 保持独立背景层级，source 与 preview 继续有各自 header、滚动和语义 label，separator 的 pointer/keyboard 行为完全不变；960px 以下恢复 8px 间距、完整 16px 圆角与独立阴影，因为上下长页面需要更明确的分区。RTL 只镜像物理外缘，不改变 canonical source 方向或列语义。空态仍保留中央 drop surface，不被强行嵌成编辑 pane。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

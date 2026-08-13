@@ -101,7 +101,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.64/);
+  assert.match(html, /Rune v0\.65/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -372,4 +372,14 @@ test("keeps primary creation and handoff actions visible while disclosing worksp
   assert.match(source, /role="menuitemradio"/);
   assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, 35px\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
+});
+
+test("uses one continuous desktop workspace surface while retaining separated responsive panes", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(styles, /\.workspace\s*\{\s*gap:\s*0;/);
+  assert.match(styles, /\.activity-rail\s*\{\s*border-radius:\s*18px 0 0 18px;/);
+  assert.match(styles, /\.preview-pane\s*\{\s*border-radius:\s*0 18px 18px 0;/);
+  assert.match(styles, /\.workspace\.with-file-rail > \.file-rail,[\s\S]*border-left:\s*0;/);
+  assert.match(styles, /html\[dir="rtl"\] \.activity-rail\s*\{\s*border-radius:\s*0 18px 18px 0;/);
+  assert.match(styles, /@media \(max-width: 960px\)[\s\S]*\.activity-rail,[\s\S]*border-radius:\s*16px;/);
 });

@@ -544,6 +544,8 @@ Preview provenance uses progressive disclosure only at the presentation boundary
 
 Top-bar disclosure is likewise presentation-only. Review creation, artifact creation, import, and contextual export remain direct task actions. Help/onboarding, model setup, directory connect/Pull/Push, and appearance reuse their existing handlers from one localized menu; appearance choices remain five explicit `menuitemradio` controls. The More Tools and Export surfaces are mutually exclusive and share outside-click/Escape dismissal, but neither menu owns command, credential, directory, or artifact state.
 
+Desktop workspace material is a CSS-only continuous surface: activity/file rails, source, separator, and preview keep their component, scroll, aria, and revision boundaries, while adjacent borders/gaps/shadows collapse and only physical outer panes own corner radii. Focus modes transfer the trailing radius to the last visible pane, and RTL mirrors physical edges. At 960px and below, panes recover independent borders, radii, shadows, and spacing for the existing stacked document flow.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |
