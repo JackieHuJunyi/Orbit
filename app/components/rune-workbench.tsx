@@ -11,8 +11,10 @@ import {
   CircleDot,
   ClipboardList,
   Code2,
+  Columns2,
   Database,
   Download,
+  Eye,
   FileArchive,
   FileCode2,
   FilePlus2,
@@ -185,9 +187,12 @@ import {
 import {
   clampWorkspaceSourcePercent,
   DEFAULT_WORKSPACE_SOURCE_PERCENT,
+  normalizeRuneWorkspaceView,
   normalizeWorkspaceSourcePercent,
   RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
+  RUNE_WORKSPACE_VIEW_STORAGE_KEY,
   workspaceSplitTracks,
+  type RuneWorkspaceView,
 } from "../lib/workspace-layout";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
@@ -634,6 +639,7 @@ export function RuneWorkbench() {
   const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
   const [appearanceMenuOpen, setAppearanceMenuOpen] = useState(false);
   const [workspaceSourcePercent, setWorkspaceSourcePercent] = useState(DEFAULT_WORKSPACE_SOURCE_PERCENT);
+  const [workspaceView, setWorkspaceView] = useState<RuneWorkspaceView>("split");
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
   const [visualSourceDraft, setVisualSourceDraft] = useState<VisualSourceDraft | null>(null);
@@ -909,11 +915,13 @@ export function RuneWorkbench() {
         const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
         const storedAppearance = normalizeRuneAppearanceTheme(localStorage.getItem(RUNE_APPEARANCE_STORAGE_KEY));
         const storedWorkspaceSplit = normalizeWorkspaceSourcePercent(localStorage.getItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY));
+        const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
         setDetectedLocale(detected);
         setLocale(storedLocale ?? detected);
         setModelMode(storedModelMode ?? "auto");
         setAppearanceTheme(storedAppearance ?? "mist-blue");
         setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
+        setWorkspaceView(storedWorkspaceView ?? "split");
         setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -949,6 +957,15 @@ export function RuneWorkbench() {
       localStorage.setItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, String(next));
     } catch {
       // The presentation-only split remains usable in memory.
+    }
+  }, []);
+
+  const setPreferredWorkspaceView = useCallback((view: RuneWorkspaceView) => {
+    setWorkspaceView(view);
+    try {
+      localStorage.setItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view);
+    } catch {
+      // The presentation-only view remains usable in memory.
     }
   }, []);
 
@@ -1017,7 +1034,7 @@ export function RuneWorkbench() {
   }, [artifacts, checkpoints, hydrated, locale, savedOperatingReviews, selectedId]);
 
   useEffect(() => {
-    if (!activePreviewTargetId) return;
+    if (!activePreviewTargetId || workspaceView === "source") return;
     const frame = window.requestAnimationFrame(() => {
       const linkedElements = [...(previewScrollRef.current?.querySelectorAll<HTMLElement>(
         "[data-preview-source-id], [data-preview-section-id]",
@@ -1036,7 +1053,7 @@ export function RuneWorkbench() {
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [activePreviewTargetId, activePreviewTargetKind, selectedArtifact?.id]);
+  }, [activePreviewTargetId, activePreviewTargetKind, selectedArtifact?.id, workspaceView]);
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -1556,6 +1573,7 @@ export function RuneWorkbench() {
     }
     const contextLabel = viaLabel ? `${target.label} · via ${viaLabel}` : target.label;
     const changesArtifact = currentTargetArtifact.id !== selectedArtifact.id;
+    const revealsSource = workspaceView === "preview";
     const selection: ActiveSourceSelection = {
       artifactId: currentTargetArtifact.id,
       sourceRevision: currentTargetArtifact.source,
@@ -1563,6 +1581,7 @@ export function RuneWorkbench() {
       end: target.end,
     };
     if (changesArtifact) setSelectedId(currentTargetArtifact.id);
+    if (revealsSource) setPreferredWorkspaceView("split");
     setSourceSelection(selection);
     setSourceCursor(selection);
     setAgentScope("selection");
@@ -1578,7 +1597,7 @@ export function RuneWorkbench() {
       editor.setSelectionRange(target.start, target.end, "forward");
     };
     window.requestAnimationFrame(() => {
-      if (changesArtifact) window.requestAnimationFrame(focusSelection);
+      if (changesArtifact || revealsSource) window.requestAnimationFrame(focusSelection);
       else focusSelection();
     });
   }
@@ -2959,7 +2978,7 @@ export function RuneWorkbench() {
 
       <div
         ref={workspaceRef}
-        className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"}`}
+        className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"} view-${workspaceView}`}
         style={{
           "--workspace-source-track": workspaceSplitTracks(workspaceSourcePercent).source,
           "--workspace-preview-track": workspaceSplitTracks(workspaceSourcePercent).preview,
@@ -3140,6 +3159,11 @@ export function RuneWorkbench() {
               <div><span className="overline">{ui.source}</span><strong>{selectedArtifact.name}</strong></div>
             </div>
             <div className="pane-actions">
+              <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
+                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} title={ui.showSplitView} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
+                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} title={ui.showSourceView} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
+                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} title={ui.showPreviewView} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
+              </div>
               <span className="language-badge"><Code2 aria-hidden="true" /> {selectedArtifact.language}</span>
               <button
                 className={`history-trigger ${historyOpen ? "active" : ""}`}
@@ -3385,6 +3409,11 @@ export function RuneWorkbench() {
               <div><span className="overline">{ui.output}</span><strong>{ui.livePreview}</strong></div>
             </div>
             <div className="preview-actions">
+              <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
+                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} title={ui.showSplitView} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
+                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} title={ui.showSourceView} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
+                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} title={ui.showPreviewView} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
+              </div>
               {activePreviewTarget && (
                 <span className="source-link-badge" title={ui.sourceLinked(activePreviewTarget.label)}>
                   <CircleDot aria-hidden="true" /><span>{activePreviewTarget.label}</span>
@@ -3476,7 +3505,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.60</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.61</span></div>
       </footer>
 
       {newArtifactOpen && (

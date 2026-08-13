@@ -1871,3 +1871,9 @@ Rune 以后所有产品决策都回到这十句话：
 适配器只改变 transport，不改变能力。所有输出继续经过 Zod、typed operation compiler、selection/workspace 边界、dependency/runtime proof、checkpoint 和人工 Review；provider 不能返回整份任意文件并直接写入。请求限时 60 秒、响应限 2 MB、模型目录限 1 MB，重定向关闭，认证错误不把 provider 正文或密钥返给浏览器。Rune 不做未经用户确认的跨供应商 fallback，避免一次失败把工作区内容泄露到第二家服务；真实 input/output token 仅按各 provider 返回的字段归一化记录。
 
 如果未来的新方向违背这些原则，必须先修改本文并写清楚证据和代价，而不是在代码里悄悄改变产品。
+
+### 17.6 v0.61 三种工作区视图服务不同任务，但共享一个事实
+
+Split 用于逐段对照，Source 用于集中写作，Preview 用于检查最终交付；三者都是同一工作区的 presentation mode，不创建副本，也不改变 canonical source、草稿、selection、checkpoint、Agent context 或导出。设备记住用户上次选择，窄屏给出对应的单栏或上下布局，所有 9 种语言都有同一套可访问控件。
+
+双向定位的合同不随视图消失：Source 模式产生的 target 会在 Preview 再出现时滚到对应成品；Preview 模式点击可证明的内容会自动恢复 Split，并聚焦精确源码范围。任何无法从 parser/compiler identity 证明的像素或 DOM 文本仍不参与同步。

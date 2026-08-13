@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.61 with persistent localized Split/Source/Preview focus modes that keep one canonical synchronized workspace mounted, preserve responsive behavior, and reveal exact source when a preview target is opened.
 - 2026-08-13 — Shipped Rune v0.60 with a bounded, persistent, pointer-and-keyboard adjustable source/preview splitter that respects Arabic RTL and collapses back to the stacked responsive layout.
 - 2026-08-13 — Shipped Rune v0.59 with nine greeting-backed interface locales (all UN official languages plus Japanese and Korean), true Arabic RTL with canonical-source LTR boundaries, five persistent airy character-color themes inspired by current iPhone palettes, and a distinct vermilion Rune mark.
 

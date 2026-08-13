@@ -1986,4 +1986,10 @@ Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分�
 
 固定 47:53 的编辑器会迫使所有任务使用同一种注意力分配：写长文时 source 太窄，检查成品时 preview 又不够大。v0.60 在两个语义 pane 之间加入真正的 `role="separator"`；鼠标或触控笔拖动可在 35%–65% 之间连续调整，左右键以 2% 微调、Shift 加速到 5%，Home 或双击恢复默认。阿拉伯语 RTL 下物理方向与 source 比例的含义保持一致，960px 以下继续使用原来的上下堆叠并隐藏分隔器。
 
+## 66. v0.61 注意力模式是显示状态，不是第二份文档状态
+
+用户写长文、核对成品和做逐段对照时需要不同的画布，但“隐藏一边”不能让同步模型分叉。v0.61 增加 Split、Source、Preview 三种本机持久化视图：Split 保留可调比例，Source 和 Preview 让所选 pane 占满内容区域；窄屏下 Split 仍上下排列，单 pane 模式只保留一层画布。切换只改变 CSS presentation state，源码编辑器、成品编译器、草稿 projection、selection 和 revision 都保持同一棵已挂载的 React 工作区，因此重新显示时不需要复制、恢复或重新解释内容。
+
+定位仍比视觉模式优先。source caret 在 Source 模式产生的精确目标会保留，用户切回 Split/Preview 后成品自动滚到当前 target；在 Preview-only 中点击 section、block、cell、slide 或 Chart provenance 时，Rune 自动切回 Split，再选择、滚动并聚焦精确 canonical range。三态控件使用原生 button、`aria-pressed` 和完整 9-locale label；选择存入独立的 device preference，不进入 artifact、checkpoint、folder manifest、Agent context 或 export。视图是用户注意力偏好，不是事实，也不会扩大任何写能力。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

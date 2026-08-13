@@ -534,6 +534,10 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 ## Evolution path
 
+### Workspace presentation state
+
+The source/preview ratio and the `split | source | preview` focus mode are bounded device-local presentation preferences. Focus modes hide a mounted pane with CSS rather than creating, copying, or replacing artifact state. Canonical source, revision-bound visual drafts, preview targets, checkpoints, dependency state, folder manifests, Agent context, and exports never read these preferences. Opening a proven preview target while Source is hidden restores Split before applying the exact canonical selection; returning from Source to a preview-capable mode replays scrolling from the retained parser-derived target identity.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

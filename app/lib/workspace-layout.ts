@@ -1,7 +1,10 @@
 export const RUNE_WORKSPACE_SPLIT_STORAGE_KEY = "rune-workspace-split-v1";
+export const RUNE_WORKSPACE_VIEW_STORAGE_KEY = "rune-workspace-view-v1";
 export const DEFAULT_WORKSPACE_SOURCE_PERCENT = 47;
 export const MIN_WORKSPACE_SOURCE_PERCENT = 35;
 export const MAX_WORKSPACE_SOURCE_PERCENT = 65;
+export const RUNE_WORKSPACE_VIEWS = ["split", "source", "preview"] as const;
+export type RuneWorkspaceView = (typeof RUNE_WORKSPACE_VIEWS)[number];
 
 export function clampWorkspaceSourcePercent(value: number) {
   if (!Number.isFinite(value)) return DEFAULT_WORKSPACE_SOURCE_PERCENT;
@@ -13,6 +16,10 @@ export function normalizeWorkspaceSourcePercent(value: unknown): number | null {
   const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed) || parsed < MIN_WORKSPACE_SOURCE_PERCENT || parsed > MAX_WORKSPACE_SOURCE_PERCENT) return null;
   return clampWorkspaceSourcePercent(parsed);
+}
+
+export function normalizeRuneWorkspaceView(value: unknown): RuneWorkspaceView | null {
+  return RUNE_WORKSPACE_VIEWS.includes(value as RuneWorkspaceView) ? value as RuneWorkspaceView : null;
 }
 
 export function workspaceSplitTracks(sourcePercent: number) {

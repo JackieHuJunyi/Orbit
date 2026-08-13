@@ -1086,6 +1086,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "無法連線該資料夾"
   ],
   [
+    "显示源内容与成品",
+    "顯示源內容與成品"
+  ],
+  [
     "本地工作区已就绪",
     "本地工作區已就緒"
   ],
@@ -1328,6 +1332,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "口径和交付对象",
     "口徑和交付物件"
+  ],
+  [
+    "只显示实时成品",
+    "只顯示即時成品"
   ],
   [
     "可分析的数据表",
@@ -1692,6 +1700,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "只创建可复用",
     "只建立可複用"
+  ],
+  [
+    "只显示源内容",
+    "只顯示源內容"
   ],
   [
     "因此保持只读",
@@ -2208,6 +2220,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "工作区文件",
     "工作區檔案"
+  ],
+  [
+    "工作区视图",
+    "工作區檢視"
   ],
   [
     "已保存任务",

@@ -7,17 +7,28 @@ import {
   MAX_WORKSPACE_SOURCE_PERCENT,
   MIN_WORKSPACE_SOURCE_PERCENT,
   normalizeWorkspaceSourcePercent,
+  normalizeRuneWorkspaceView,
   RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
+  RUNE_WORKSPACE_VIEW_STORAGE_KEY,
+  RUNE_WORKSPACE_VIEWS,
   workspaceSplitTracks,
 } from "../app/lib/workspace-layout.ts";
 
 test("keeps a bounded source/preview split as presentation-only local state", () => {
   assert.equal(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, "rune-workspace-split-v1");
+  assert.equal(RUNE_WORKSPACE_VIEW_STORAGE_KEY, "rune-workspace-view-v1");
   assert.equal(DEFAULT_WORKSPACE_SOURCE_PERCENT, 47);
   assert.equal(clampWorkspaceSourcePercent(-10), MIN_WORKSPACE_SOURCE_PERCENT);
   assert.equal(clampWorkspaceSourcePercent(90), MAX_WORKSPACE_SOURCE_PERCENT);
   assert.equal(clampWorkspaceSourcePercent(Number.NaN), DEFAULT_WORKSPACE_SOURCE_PERCENT);
   assert.equal(clampWorkspaceSourcePercent(48.26), 48.3);
+});
+
+test("accepts only the three explicit presentation views", () => {
+  assert.deepEqual(RUNE_WORKSPACE_VIEWS, ["split", "source", "preview"]);
+  for (const view of RUNE_WORKSPACE_VIEWS) assert.equal(normalizeRuneWorkspaceView(view), view);
+  assert.equal(normalizeRuneWorkspaceView("focus"), null);
+  assert.equal(normalizeRuneWorkspaceView(null), null);
 });
 
 test("rejects corrupt persisted split values and emits complementary grid tracks", () => {

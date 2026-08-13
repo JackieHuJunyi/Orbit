@@ -75,6 +75,11 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /aria-valuemin="35"/);
   assert.match(html, /aria-valuemax="65"/);
   assert.match(html, /Resize source and preview/);
+  assert.match(html, /class="workspace with-file-rail view-split"/);
+  assert.match(html, /role="group" aria-label="Workspace view"/);
+  assert.match(html, /aria-label="Show source and preview"/);
+  assert.match(html, /aria-label="Show source only"/);
+  assert.match(html, /aria-label="Show preview only"/);
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /SQL metrics/);
   assert.match(html, /Saved on device/);
@@ -96,7 +101,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.60/);
+  assert.match(html, /Rune v0\.61/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -321,4 +326,17 @@ test("keeps an expanded transaction review scrollable inside the source pane", a
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(styles, /\.agent-dock\s*\{[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto;/s);
   assert.match(styles, /\.transaction-edge-list\s*\{[^}]*max-height:\s*170px;[^}]*overflow:\s*auto;/s);
+});
+
+test("ships persistent presentation-only workspace focus modes without unmounting either synchronized pane", async () => {
+  const [styles, source] = await Promise.all([
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(styles, /\.workspace\.view-source > \.preview-pane,[\s\S]*\.workspace\.view-preview > \.source-pane[\s\S]*display:\s*none;/);
+  assert.match(styles, /\.workspace\.view-source\.with-file-rail > \.source-pane,[\s\S]*grid-column:\s*3 \/ -1;/);
+  assert.match(styles, /\.workspace\.view-preview \.preview-header \.workspace-view-switch\s*\{\s*display:\s*inline-flex;/);
+  assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
+  assert.match(source, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
+  assert.match(source, /activePreviewTargetId, activePreviewTargetKind, selectedArtifact\?\.id, workspaceView/);
 });
