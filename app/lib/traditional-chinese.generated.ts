@@ -1850,6 +1850,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "描述選區內修改"
   ],
   [
+    "搜索操作与视图",
+    "搜尋操作與檢視"
+  ],
+  [
     "支持的工作方式",
     "支援的工作方式"
   ],
@@ -1928,6 +1932,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "正文定位按钮按",
     "正文定位按鈕按"
+  ],
+  [
+    "没有匹配的操作",
+    "沒有匹配的操作"
   ],
   [
     "没有配置模型时",
@@ -2132,6 +2140,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "关闭当前文件",
     "關閉當前檔案"
+  ],
+  [
+    "关闭快速操作",
+    "關閉快速操作"
   ],
   [
     "内容块源内容",
@@ -2834,6 +2846,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "應用前只讀"
   ],
   [
+    "当前不可用",
+    "當前不可用"
+  ],
+  [
     "恢复点历史",
     "恢復點歷史"
   ],
@@ -3004,6 +3020,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "设备内识别",
     "裝置內識別"
+  ],
+  [
+    "设置与帮助",
+    "設定與幫助"
   ],
   [
     "证据已连接",
@@ -3986,8 +4006,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "待稽核"
   ],
   [
+    "恢复点",
+    "恢復點"
+  ],
+  [
     "折线图",
     "折線圖"
+  ],
+  [
+    "文件夹",
+    "資料夾"
   ],
   [
     "新文件",
@@ -4076,6 +4104,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "管理层",
     "管理層"
+  ],
+  [
+    "编辑器",
+    "編輯器"
   ],
   [
     "董事会",
@@ -4170,6 +4202,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "餘白"
   ],
   [
+    "侧栏",
+    "側欄"
+  ],
+  [
     "保存",
     "儲存"
   ],
@@ -4180,6 +4216,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "全局",
     "全域性"
+  ],
+  [
+    "关闭",
+    "關閉"
   ],
   [
     "其实",
@@ -4304,6 +4344,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "地区",
     "地區"
+  ],
+  [
+    "复盘",
+    "復盤"
   ],
   [
     "外观",
@@ -4498,6 +4542,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "彙總"
   ],
   [
+    "汇报",
+    "彙報"
+  ],
+  [
     "浅金",
     "淺金"
   ],
@@ -4530,12 +4578,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "番號"
   ],
   [
+    "目录",
+    "目錄"
+  ],
+  [
     "目标",
     "目標"
   ],
   [
     "眉题",
     "眉題"
+  ],
+  [
+    "视图",
+    "檢視"
   ],
   [
     "简中",
@@ -4556,6 +4612,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "精简",
     "精簡"
+  ],
+  [
+    "经营",
+    "經營"
   ],
   [
     "绑定",
@@ -4712,6 +4772,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "顺序",
     "順序"
+  ],
+  [
+    "预览",
+    "預覽"
   ],
   [
     "个",

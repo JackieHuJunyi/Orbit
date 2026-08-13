@@ -81,6 +81,7 @@ select { letter-spacing: inherit; }
   .empty-drop-zone,
   .tools-popover,
   .export-popover,
+  .command-menu,
   .import-review-dialog,
   .chart-card,
   .deck-slide,

@@ -660,7 +660,17 @@ Image insertion is revision-bound and review-before-write. Rune stores/deduplica
 
 ## Quality gates
 
-The production-dependency audit (`npm run audit:production`) is a release gate alongside the build, typecheck, lint, and test suite.
+The production-dependency audit (`npm run audit:production`) is a release gate alongside the build, typecheck, lint, test suite, and synthetic Golden Task Eval. GitHub runs that same sequence on main and pull requests.
+
+### Static human-command seam
+
+`workbench-commands.ts` is the definition side of Rune's human-command seam. It owns stable command ids, grouping, localized presentation copy, keywords, shortcuts, deterministic ranking, and capability-derived availability. `WorkbenchCommandMenu` is a presentation-only consumer: it owns query state, keyboard navigation, focus restoration, and an `onRun(id)` event, but cannot import persistence, Artifact mutation, providers, or fetch. `RuneWorkbench` remains the composition and execution boundary and dispatches each id to its existing capability owner. This adopts DeepSeek Harness's command/service separation without adding a runtime plugin tree before Rune has real unload or third-party composition requirements.
+
+### Golden Task evidence boundary
+
+`evals/` is development evidence and is never imported by the production client. Versioned synthetic fixtures enter the same public task-provider, transaction, parser, and DuckDB-Wasm seams as the product. The runner freezes inputs, proves expected success or zero-output rejection, applies the ordinary whole-workspace gate, executes ten generated Queries, and checks Chart/live-deliverable or Document-origin contracts. `evals/BASELINE.md` is deterministic and checked on every `npm test`.
+
+Synthetic tasks are evidence grade E1 only. They can prove deterministic regression behavior but cannot prove demand, usability, time saved, delivery, retention, or payment. Human outcome scoring stays empty until an authorized licensed or redacted task is reviewed on the seven product-plan dimensions; number correctness below 4 cannot be hidden by averaging. The real-pilot threshold remains twenty tasks.
 
 The v0.89 Query-metric gate additionally proves optional quoted row parsing, backward-compatible scalar keys, exact row identity, 0–499 bounds, missing-row/truncated/nonnumeric refusal, and deterministic formatting. Operating-review model fixtures prove aggregate ordering matches the generated Query, provider input excludes raw source, result ids and qualitative text fail closed, every number remains a row-specific live binding, saved reruns restore exact output identities, all provider failures retain deterministic fallback, and frozen inputs stay unchanged.
 

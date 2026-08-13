@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.97 with a Harness-informed static Quick Actions registry and multilingual `⌘⇧P` command surface, plus a release-gated 20-task synthetic Golden Task baseline that explicitly separates deterministic regression evidence from licensed human outcome proof.
 - 2026-08-14 — Shipped Rune v0.96 with a versioned forward migration that makes one exact-source/all-output evidence ledger authoritative for both focused tasks while preserving older Operating Review records as read-only history.
 - 2026-08-14 — Shipped Rune v0.95 with one bounded, content-free device task-evidence ledger for Document-to-Presentation runs and exact-revision delivery ratings, plus visible recent history across all nine interface locales.
 - 2026-08-14 — Shipped Rune v0.94 with compiler-owned paired exact-scope comparisons across preview, DuckDB SQL, Chart, model evidence, live deliverables, and saved reruns, plus mounted 240ms Source/Preview focus transitions informed by a pinned DeepSeek Harness architecture review.

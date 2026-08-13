@@ -2281,3 +2281,19 @@ Rune 因此把 `RuneTaskEvidence` 前向升级为 storage v2。原 v1 里已经�
 经营汇报现在和文档转演示一样，在候选事务形成时声明 exact source 与全部 outputs；成功 Apply 将 source、checkpoint、recipe 和 run 一次持久化，失败与取消走同一个 bounded stopped path。交付检查也从“下载的报告源码没变”升级为“Data 与 Query、Chart、报告、演示全部没变”。这是必要的，因为 Query 或 Chart 可以改变最终渲染数字，而 Markdown 字节保持相同。任何一环变化，旧 run 都不能被计为这次真实交付。
 
 这一迁移不增加 cloud analytics、用户身份、后台任务或新的 writer。ledger 仍不含正文、数据行、prompt、模型 response 或 credential；它只让两条已存在的 focused task 使用同一种运行事实。下一条真实任务可以直接复用 task id、source/output identity、stop 与 delivery port，而不需要复制一套产品证据系统。
+
+## 102. v0.97 统一命令面不等于把产品改造成聊天或插件外壳
+
+DeepSeek Harness 最值得 Rune 学习的不是聊天布局，而是人类命令的目录、选择界面和执行服务互不冒充。Rune 之前已经有清晰的 New、Import、Task、View、Checkpoint、Guide 和 Model handlers，但发现入口分散在顶栏、活动栏、菜单与快捷键里；继续在 Workbench 里手写更多入口，会让文案、可用状态和快捷键逐渐分叉。
+
+v0.97 增加静态 `workbench-commands` definition。它只描述十四个稳定 id、分组、九语言 copy、关键词、shortcut 和 capability-derived disabled state，并提供确定性搜索排序。`WorkbenchCommandMenu` 只持有 query、active row 和 focus；它不能写 Artifact、持久化、访问凭据或发起网络。Workbench 仍是 composition root，把选择分发回已经存在的业务 owner。因此用户获得 `⌘⇧P` 的轻量、键盘优先统一入口，代码却没有第二套执行逻辑。
+
+这里刻意没有采用 Cordis runtime、dynamic slot、plugin unload 或 profile patch tree。Rune 还没有第三方 command owner 与运行时装卸需求；静态 discriminated union 更容易 tree-shake、审计、翻译和做 exhaustive dispatch。未来若真实扩展证明需要插件，现有 definition/consumer/executor 三层会成为迁移基础，而不是提前支付生命周期复杂度。
+
+## 103. v0.97 测试通过不能冒充产品被真实用户需要
+
+大量单元测试可以证明 parser、compiler 和 transaction 没有回退，却不能回答成品是否有用、是否节时、是否能直接交付。反过来，等待真实 pilot 数据才建立 task-level regression，又会让两条 focused workflow 缺少一个贯穿编译、运行和成品的发布门禁。正确做法不是二选一，而是把证据等级写进系统。
+
+首个 Rune Golden Task Set 因而使用二十个明确 synthetic fixtures，并把 provenance 固定为 synthetic。十四条成功任务走真实 task provider 与 transaction，其中十条 Operating Review 实际执行生成的 DuckDB-Wasm SQL，再核对 evidence、Chart 和 live deliverables；六条失败任务必须在零输出时给出预期原因。Document briefing 同时检查 exact origin/revision、页数、source-unit coverage 和 refresh identity/theme。输入在成功与失败路径都深冻结，避免 compiler 静默修改测试事实。
+
+baseline 标记为 E1，只证明 deterministic regression。真实任务仍是 0/20，human ratings 仍是 0；没有任何代码可以把 synthetic pass 自动升级成需求、可用性、留存或付费证据。拿到授权或脱敏任务后，仍要逐项进行七维人工评分，且 number correctness 低于 4 不得靠其他平均分隐藏。这样发布门禁会更强，产品结论反而更诚实。

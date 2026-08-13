@@ -49,7 +49,13 @@ Rune 的规则：
 - 所有动作在 reduced-motion 下必须可瞬时完成；
 - 不以 blur、漂浮光晕或弹跳来掩盖未完成的状态设计。
 
-### 1.5 扩展点必须先属于业务域
+### 1.5 命令目录应描述能力，不应复制业务执行
+
+Harness 将人类命令的目录、筛选和选择界面与具体能力分开：命令 UI 只呈现候选项，真正行为仍由拥有该能力的服务执行。Rune v0.97 采用这一窄边界，新增静态 `workbench-commands` 注册表和 Quick Actions 消费者。注册表拥有十四个稳定 id、分组、九语言文案、快捷键、搜索关键词和 capability-derived availability；命令面板只负责搜索、键盘移动、焦点恢复和选择事件，不能导入持久化、Artifact 写入或网络能力。Workbench 把选择分发回现有 New、Import、Task、View、Checkpoint、Guide 和 Model handlers。
+
+这不是动态插件系统，也不是把每个按钮再封装一层。它先消除散落命令目录和快捷入口的重复；只有出现第三方运行时装卸、冲突排序和 effect 撤销需求时，才重新评估 Harness 的 slot/plugin host。
+
+### 1.6 扩展点必须先属于业务域
 
 Harness 把 session、agent、capability events 分域，并要求新行为挂到文档化 extension point。Rune 也必须先回答“谁拥有这个能力”：导入、scope、模型 transport、compiler、runtime preflight、transaction、persistence、export 各有唯一 owner。
 
@@ -64,6 +70,7 @@ Harness 把 session、agent、capability events 分域，并要求新行为挂�
 | Capability seams | 采用 | 同字段 primary/comparison scopes 由一个纯模块验证和编译 |
 | Mounted collapsible panels | 采用 | Source/Preview 零宽收放、`inert`、保留 scroll/selection/runtime |
 | Typed UI slots | 暂缓 | 只有两个 focused tasks，静态组合成本更低 |
+| Human command registry | 采用静态版本 | `workbench-commands` 描述能力，Quick Actions 只消费，Workbench 执行现有 handler |
 | Dynamic profiles/bundles/patch tree | 不采用 | Rune 不是 agent harness，暂无第三方 runtime composition 需求 |
 | Chat/session-first shell | 不采用 | Rune 继续以文档、数据、分析和成品为中心 |
 

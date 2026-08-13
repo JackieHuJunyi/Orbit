@@ -2031,3 +2031,19 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 成功 Apply 必须把 workspace、checkpoint、saved recipe 与 shared run 一次持久化；第三条任务只需提交相同 task identity，不得再引入 task-specific evidence store 或第二种 delivery dialog。
 - 交付资格不只检查被下载的 Markdown。当前 Data source 与该 run 的全部 Query、Chart、Document、Slides outputs 都必须逐一匹配 portable revision；任何依赖或另一份成品变化都要求完整重跑后再确认。
 - 交付记录仍只保存 handoff、rating、elapsed time 和选定 output 的 SHA-256，不保存正文、数据行、prompt、模型输出、凭据、身份或后台 telemetry；本机证据仍不能替代真实用户、复用、付费和业务正确性验证。
+
+### 17.31 v0.97 命令入口应统一发现能力，但不能成为第二个业务所有者
+
+- 学习 DeepSeek Harness 的 command catalog / consumer 分离：稳定 id、分组、九语言文案、关键词、快捷键与 eligibility 属于纯静态 registry；搜索、键盘移动、焦点恢复和选择属于轻量 UI consumer。
+- `⌘⇧P / Ctrl Shift P` 与顶栏入口打开同一 Quick Actions，覆盖 New、Import、两条 focused task、文件夹、checkpoint、关闭文件、文件栏、Agent focus、三种工作区视图、Guide 与 Models；当前不能执行的能力保持可见且禁用。
+- command UI 不得导入 Artifact mutation、持久化、provider 或 fetch；Workbench 只把当前 capability facts 注入 registry，并把选中 id 分发到已有 handler，避免复制业务状态机。
+- 当前不引入 Harness 的动态 plugin/slot host。只有运行时装卸、第三方 owner、冲突排序和 effect 撤销成为真实需求时，才升级静态 registry。
+- 阿拉伯语 RTL、其余八种界面语言、Arrow/Home/End/Enter/Escape、焦点恢复、reduced-motion、移动端底部材质面与桌面轻量浮层必须共享同一合同。
+
+### 17.32 v0.97 合成回归与真实用户结果必须是两层证据
+
+- 首个版本化 Golden Task Set 固定为 20 个明确 synthetic fixtures：14 条预期成功、6 条预期 fail closed，覆盖两条 focused workflow、范围/对比/字段/格式/碰撞/多语言/refresh/来源身份和零输出失败。
+- 成功经营汇报必须实际执行生成的 DuckDB-Wasm Query；十条数值路径的运行结果必须与本地 evidence、Chart 字段和 Document/Deck live binding 一致。所有输入深冻结，成功与失败都不得被 provider/compiler 修改。
+- `evals/BASELINE.md` 明确标为 E1 deterministic regression evidence；它不能增加真实用户任务、交付、留存、付费、节省时间或 north-star deliverable 数字。
+- 真实 pilot 门槛仍是 20 个获授权或脱敏任务，并由人按数字正确性、证据完整性、结论价值、结构清晰、视觉可交付、修改可理解与总体节时七项 1–5 分审核；数字正确性低于 4 不得被平均分掩盖。
+- main 与 PR 的发布门禁统一执行 build、Golden Task Eval、完整 tests、lint、typecheck 与 production audit；生产客户端不得导入 eval runner。

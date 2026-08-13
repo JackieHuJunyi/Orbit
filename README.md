@@ -4,7 +4,9 @@ Rune is an AI-native workspace for documents, data, and presentations. It keeps 
 
 ## Status
 
-Rune v0.96 completes the forward migration to one current result-evidence authority for both focused tasks. Operating Review and Document-to-Presentation now record applied/stopped status, exact source and every output revision, real provider and token usage, runtime impact, and elapsed task time through the same bounded device ledger. A report or presentation can receive a post-handoff usability judgment only while its source, Query/Chart dependencies, and every generated output still match that applied run. The v1 ledger migrates without loss; older Operating Review records that never captured revisions remain visible read-only and are never rewritten as stronger proof. The ledger stores no source, prompt, model response, Query rows, credential, or identity, and never gains write authority. See [ADR 0014](docs/decisions/0014-task-evidence-authority-migrates-forward-once.md).
+Rune v0.97 adds one lightweight, multilingual Quick Actions surface and one honest task-quality gate. `⌘⇧P / Ctrl Shift P` searches fourteen capability-derived actions across creation, workspace, view, and settings without making the UI a chat shell; a pure static command registry owns identity, copy, order, search, shortcuts, and availability while the Workbench remains the only execution consumer. Separately, twenty explicitly synthetic Golden Tasks exercise both focused workflows, including ten real DuckDB-Wasm numeric runs and six expected fail-closed paths. The checked-in report is labeled E1 regression evidence with zero licensed real tasks and zero human ratings, so deterministic correctness cannot be mistaken for market or delivery proof. GitHub now runs the same build, eval, test, lint, typecheck, and production audit gate on main and pull requests. See [ADR 0015](docs/decisions/0015-static-command-surface-before-runtime-plugins.md), [ADR 0016](docs/decisions/0016-synthetic-evals-do-not-prove-user-outcomes.md), and the [Golden Task baseline](evals/BASELINE.md).
+
+Rune v0.96 completed the forward migration to one current result-evidence authority for both focused tasks. Operating Review and Document-to-Presentation record applied/stopped status, exact source and every output revision, real provider and token usage, runtime impact, and elapsed task time through the same bounded device ledger. A report or presentation can receive a post-handoff usability judgment only while its source, Query/Chart dependencies, and every generated output still match that applied run. The v1 ledger migrates without loss; older Operating Review records that never captured revisions remain visible read-only and are never rewritten as stronger proof. The ledger stores no source, prompt, model response, Query rows, credential, or identity, and never gains write authority. See [ADR 0014](docs/decisions/0014-task-evidence-authority-migrates-forward-once.md).
 
 Rune v0.95 introduced the reusable result-evidence boundary with Document-to-Presentation as its first consumer. See [ADR 0013](docs/decisions/0013-task-results-use-a-shared-device-evidence-ledger.md).
 
@@ -47,6 +49,7 @@ Interface locale is explicit state, never an ambient formatter input. SSR starts
 ```bash
 npm install
 npm run dev
+npm run eval:golden
 ```
 
 Then open the local URL printed by the development server.

@@ -33,6 +33,7 @@ import {
   Play,
   Presentation,
   RotateCcw,
+  Search,
   RefreshCw,
   Save,
   Settings,
@@ -62,6 +63,7 @@ import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
 import { OperatingReviewDialog, operatingReviewCopy } from "./operating-review-dialog";
+import { WorkbenchCommandMenu } from "./workbench-command-menu";
 import {
   PdfOcrSetupDialog,
   type PdfOcrCandidate,
@@ -242,6 +244,11 @@ import {
 } from "../lib/document-briefing";
 import { prepareRuneTaskProvider } from "../lib/task-providers";
 import { prepareRuneTaskModelAssistance } from "../lib/task-model-planning";
+import {
+  createRuneWorkbenchCommands,
+  runeCommandMenuCopy,
+  type RuneWorkbenchCommandId,
+} from "../lib/workbench-commands";
 import {
   EMPTY_RUNE_TASK_EVIDENCE,
   MAX_RUNE_TASK_DURATION_MS,
@@ -734,6 +741,7 @@ export function RuneWorkbench() {
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
   const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
+  const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const [workspaceSourcePercent, setWorkspaceSourcePercent] = useState(DEFAULT_WORKSPACE_SOURCE_PERCENT);
   const [workspaceView, setWorkspaceView] = useState<RuneWorkspaceView>("split");
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
@@ -1095,6 +1103,16 @@ export function RuneWorkbench() {
     || documentBriefingState !== "idle"
     || visualEditState !== "idle"
     || Boolean(activeVisualSourceDraft);
+  const commandMenuCopy = useMemo(() => runeCommandMenuCopy(locale), [locale]);
+  const workbenchCommands = useMemo(() => createRuneWorkbenchCommands({
+    ui,
+    locale,
+    artifactCreationDisabled,
+    canCreateBriefing: artifacts.some((artifact) => artifact.kind === "document"),
+    canUseWorkspace: hydrated && !emptyWorkspace,
+    canCheckpoint: Boolean(selectedArtifact && canCheckpointSource(selectedArtifact.source)),
+    canOpenFolder: hydrated && directoryState !== "syncing" && supportsDirectoryWorkspace(),
+  }), [artifactCreationDisabled, artifacts, directoryState, emptyWorkspace, hydrated, locale, selectedArtifact, ui]);
 
   useEffect(() => {
     if (!proposalArtifact) return;
@@ -1278,6 +1296,7 @@ export function RuneWorkbench() {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (visualEditState !== "idle"
         || activeVisualSourceDraft
+        || commandMenuOpen
         || pendingDocumentStructure
         || pendingLocalImage
         || operatingReviewOpen
@@ -1289,6 +1308,13 @@ export function RuneWorkbench() {
         || pendingExport
         || pendingDeliveryConfirmation
         || pendingChange) return;
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        setExportMenuOpen(false);
+        setToolsMenuOpen(false);
+        setCommandMenuOpen(true);
+        return;
+      }
       const shortcutView = workspaceViewFromKeyboardShortcut(event);
       if (shortcutView && !emptyWorkspace) {
         event.preventDefault();
@@ -1335,7 +1361,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, documentBriefingOpen, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, commandMenuOpen, documentBriefingOpen, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact || !presentedArtifact) return null;
 
@@ -3675,6 +3701,58 @@ export function RuneWorkbench() {
     }
   }
 
+  function runWorkbenchCommand(commandId: RuneWorkbenchCommandId) {
+    setCommandMenuOpen(false);
+    setExportMenuOpen(false);
+    setToolsMenuOpen(false);
+    switch (commandId) {
+      case "new-artifact":
+        openNewArtifact();
+        return;
+      case "import-files":
+        beginStandardImport();
+        return;
+      case "open-folder":
+        void connectWorkspaceFolder();
+        return;
+      case "operating-review":
+        openOperatingReview();
+        return;
+      case "document-briefing":
+        openDocumentBriefing();
+        return;
+      case "focus-agent":
+        window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
+        setNotice(ui.focusAgent);
+        return;
+      case "show-split":
+      case "show-source":
+      case "show-preview": {
+        const view = commandId === "show-split" ? "split" : commandId === "show-source" ? "source" : "preview";
+        setPreferredWorkspaceView(view);
+        setNotice(view === "split" ? ui.showSplitView : view === "source" ? ui.showSourceView : ui.showPreviewView);
+        return;
+      }
+      case "save-checkpoint":
+        saveManualCheckpoint();
+        return;
+      case "close-file":
+        closeCurrentArtifact();
+        return;
+      case "toggle-files":
+        setFileRailOpen((open) => !open);
+        return;
+      case "open-guide":
+        openWelcomeGuide();
+        return;
+      case "open-models":
+        setWelcomeStartAt("model");
+        setWelcomeDismissible(true);
+        setWelcomeOpen(true);
+        return;
+    }
+  }
+
   const artifactGroups = [
     { id: "sources", label: ui.sources, artifacts: artifacts.filter((artifact) => artifact.kind === "data") },
     { id: "analysis", label: ui.analysis, artifacts: artifacts.filter((artifact) => artifact.kind === "query" || artifact.kind === "chart") },
@@ -3689,6 +3767,15 @@ export function RuneWorkbench() {
 
   return (
     <main className="rune-shell" ref={shellRef}>
+      {commandMenuOpen && (
+        <WorkbenchCommandMenu
+          commands={workbenchCommands}
+          locale={locale}
+          direction={localeDirection(locale)}
+          onClose={() => setCommandMenuOpen(false)}
+          onRun={runWorkbenchCommand}
+        />
+      )}
       <header className="topbar">
         <div className="topbar-left">
           <button
@@ -3709,6 +3796,13 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span className="visually-hidden">{saveStatusLabel}</span>
           </div>
+          <button
+            className="icon-button command-menu-trigger"
+            type="button"
+            onClick={() => { setExportMenuOpen(false); setToolsMenuOpen(false); setCommandMenuOpen(true); }}
+            aria-label={`${commandMenuCopy.title} · ⌘ ⇧ P`}
+            title={`${commandMenuCopy.title} · ⌘ ⇧ P / Ctrl Shift P`}
+          ><Search aria-hidden="true" /></button>
           <button
             className="button ghost-button"
             onClick={openNewArtifact}
@@ -3800,7 +3894,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.96</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.97</strong></footer>
               </div>
             )}
           </div>
