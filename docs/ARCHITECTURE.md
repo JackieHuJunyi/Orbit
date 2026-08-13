@@ -546,6 +546,8 @@ Top-bar disclosure is likewise presentation-only. Review creation, artifact crea
 
 Desktop workspace material is a CSS-only continuous surface: activity/file rails, source, separator, and preview keep their component, scroll, aria, and revision boundaries, while adjacent borders/gaps/shadows collapse and only physical outer panes own corner radii. Focus modes transfer the trailing radius to the last visible pane, and RTL mirrors physical edges. At 960px and below, panes recover independent borders, radii, shadows, and spacing for the existing stacked document flow.
 
+Source header disclosure reuses the existing `historyOpen` boolean and checkpoint panel rather than introducing another version model. Its summary combines the selected artifact's language and current checkpoint count; the panel adds the unchanged nearest-different undo handler beside manual checkpoint save and exact checkpoint restore. All enablement still derives from current source equality and visual-draft locks, and only the presentation/placement changes.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

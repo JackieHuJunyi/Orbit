@@ -2016,4 +2016,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 连续不等于混淆。文件 rail 保持独立背景层级，source 与 preview 继续有各自 header、滚动和语义 label，separator 的 pointer/keyboard 行为完全不变；960px 以下恢复 8px 间距、完整 16px 圆角与独立阴影，因为上下长页面需要更明确的分区。RTL 只镜像物理外缘，不改变 canonical source 方向或列语义。空态仍保留中央 drop surface，不被强行嵌成编辑 pane。
 
+## 71. v0.66 源类型、恢复点与撤销属于一个版本心智
+
+源码标题过去依次放置 language badge、恢复点数量和独立撤销按钮，用户需要自己理解三者关系。v0.66 合并为一个 Source and Versions 入口：常态显示 source language 与 checkpoint count；展开原有 checkpoint panel 后，同时提供保存当前版本、撤销到最近不同版本和任意历史恢复。没有新增 history store，也没有改变 checkpoint identity、current detection 或 restore transaction。
+
+这个入口仍使用原生 button、`aria-expanded` 和九语言 label；窄屏隐藏 language 与分隔符，只保留 history icon 和数量。撤销按钮并没有因为被收进去而改变禁用条件，视觉草稿时仍不可恢复；保存、恢复和 Agent 写入继续走原来的 checkpoint/persistence 边界。标题栏因此只剩视图、版本和关闭三个任务域，而不是一排相邻但缺少关系的控件。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

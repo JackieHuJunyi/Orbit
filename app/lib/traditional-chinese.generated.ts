@@ -1926,6 +1926,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "沒有可用欄位"
   ],
   [
+    "源内容与版本",
+    "源內容與版本"
+  ],
+  [
     "源内容编辑器",
     "源內容編輯器"
   ],

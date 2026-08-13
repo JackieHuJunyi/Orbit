@@ -1291,6 +1291,41 @@ body.workspace-resizing iframe { pointer-events: none; }
   height: 13px;
 }
 
+.source-version-trigger {
+  gap: 5px;
+  padding-inline: 8px 5px;
+  font-family: var(--font-sans);
+}
+
+.source-version-trigger > i {
+  width: 1px;
+  height: 13px;
+  background: rgba(20, 22, 26, .1);
+}
+
+.source-version-trigger > span:nth-of-type(1) {
+  max-width: 72px;
+  overflow: hidden;
+  color: var(--subtle);
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-version-trigger > span:nth-of-type(2) {
+  min-width: 10px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.source-version-trigger .source-version-chevron {
+  width: 11px;
+  transition: transform .18s ease;
+}
+
+.source-version-trigger.active .source-version-chevron { transform: rotate(180deg); }
+
 .checkpoint-panel {
   z-index: 3;
   display: grid;
@@ -1313,6 +1348,18 @@ body.workspace-resizing iframe { pointer-events: none; }
 
 .checkpoint-panel-header > div {
   display: grid;
+}
+
+.checkpoint-panel-header > div:first-child small {
+  color: var(--subtle);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.checkpoint-panel-actions {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
 }
 
 .checkpoint-panel-header strong {
@@ -7884,6 +7931,12 @@ html[dir="rtl"] [data-preview-source-id] {
   }
 
   .language-badge {
+    display: none;
+  }
+
+  .source-version-trigger > span:nth-of-type(1),
+  .source-version-trigger > i,
+  .source-version-trigger > svg:first-child {
     display: none;
   }
 

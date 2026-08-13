@@ -3162,21 +3162,13 @@ export function RuneWorkbench() {
                 <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
                 <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
-              <span className="language-badge"><Code2 aria-hidden="true" /> {selectedArtifact.language}</span>
               <button
-                className={`history-trigger ${historyOpen ? "active" : ""}`}
+                className={`history-trigger source-version-trigger ${historyOpen ? "active" : ""}`}
                 onClick={() => setHistoryOpen((open) => !open)}
                 aria-expanded={historyOpen}
-                aria-label={ui.checkpoints}
-                title={ui.checkpoints}
-              ><History /><span>{selectedCheckpoints.length}</span></button>
-              <button
-                className="icon-button small"
-                onClick={undoLastAgentChange}
-                disabled={!selectedCheckpoints.some((checkpoint) => checkpoint.source !== selectedArtifact.source)}
-                aria-label={ui.restoreLatestDifferent}
-                title={ui.restoreLatest}
-              ><Undo2 /></button>
+                aria-label={ui.sourceVersions}
+                title={ui.sourceVersions}
+              ><Code2 aria-hidden="true" /><span>{selectedArtifact.language}</span><i aria-hidden="true" /><History aria-hidden="true" /><span>{selectedCheckpoints.length}</span><ChevronDown className="source-version-chevron" aria-hidden="true" /></button>
               <button
                 className="icon-button small close-file-button"
                 onClick={closeCurrentArtifact}
@@ -3189,8 +3181,17 @@ export function RuneWorkbench() {
           {historyOpen && (
             <section className="checkpoint-panel" aria-label={ui.checkpoints}>
               <div className="checkpoint-panel-header">
-                <div><span className="overline">{ui.deviceHistory}</span><strong>{ui.checkpointCount(selectedCheckpoints.length)}</strong></div>
-                <button className="button checkpoint-save" onClick={saveManualCheckpoint}><Check aria-hidden="true" /> {ui.saveCurrent}</button>
+                <div><span className="overline">{ui.sourceVersions}</span><strong>{ui.checkpointCount(selectedCheckpoints.length)}</strong><small>{selectedArtifact.language}</small></div>
+                <div className="checkpoint-panel-actions">
+                  <button
+                    className="icon-button small"
+                    onClick={undoLastAgentChange}
+                    disabled={!selectedCheckpoints.some((checkpoint) => checkpoint.source !== selectedArtifact.source)}
+                    aria-label={ui.restoreLatestDifferent}
+                    title={ui.restoreLatest}
+                  ><Undo2 /></button>
+                  <button className="button checkpoint-save" onClick={saveManualCheckpoint}><Check aria-hidden="true" /> {ui.saveCurrent}</button>
+                </div>
               </div>
               {selectedCheckpoints.length ? (
                 <div className="checkpoint-list">
@@ -3518,7 +3519,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.65</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.66</span></div>
       </footer>
 
       {newArtifactOpen && (

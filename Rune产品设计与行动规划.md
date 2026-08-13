@@ -1893,3 +1893,7 @@ Split 用于逐段对照，Source 用于集中写作，Preview 用于检查最�
 ### 17.10 v0.65 桌面工作区是一块连续材料
 
 桌面活动栏、文件栏、源码、分隔器与成品共享一块连续表面，只保留左右外缘圆角并去掉相邻重复边框和漂浮阴影。专注模式把右外缘交给最后可见 pane；RTL 镜像外缘。960px 以下恢复独立卡片，以便上下长页面仍清楚分区。此调整不得改变 pane、滚动、separator、空态或任何 source state。
+
+### 17.11 v0.66 版本动作归入同一入口
+
+Source 标题栏用一个九语言 Source and Versions 控件同时表达 source language 与 checkpoint count；展开既有 history panel 后提供保存、撤销最近不同版本和任意 checkpoint 恢复。不得创建第二份 history state，也不得改变恢复条件、视觉草稿锁、持久化或 checkpoint identity。窄屏只保留图标与数量。

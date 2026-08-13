@@ -329,6 +329,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       dataGraph: zh ? "数据关系图" : "Data graph",
       resetSample: zh ? "重置示例工作区" : "Reset sample workspace",
       checkpoints: zh ? "恢复点历史" : "Checkpoint history",
+      sourceVersions: zh ? "源内容与版本" : "Source and versions",
       closeFile: zh ? "关闭当前文件" : "Close current file",
       describeWorkspaceChange: zh ? "描述工作区修改" : "Describe a workspace change",
       describeSelectionChange: zh ? "描述选区内修改" : "Describe a selected-source change",
