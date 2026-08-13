@@ -1,6 +1,6 @@
 # ADR 0009: Period labels do not prove Data scope
 
-**Status:** Accepted  
+**Status:** Accepted
 **Date:** 2026-08-14
 
 ## Context
