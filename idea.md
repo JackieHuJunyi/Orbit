@@ -2219,3 +2219,13 @@ v0.89 因而把模型能力压缩成“审核问题规划器”。Rune 先按用
 验证继续是三层的：API 对 provider structured output 做动态证据集合检查；浏览器用捕获的 workspace 重算 aggregates 再检查；pure operating-review compiler 在生成完整 candidate 前第三次验证。任何 unconfigured、local-only、网络失败、schema 失败、证据不匹配或超过 100,000 字符的输入都回到确定性 workflow，而不是切换 provider 或放弃任务。保存任务重跑时，临时生成的 Query/Chart 引用会被重写回原 exact identities，避免启用模型后产生副本或失去 lineage。
 
 对 DeepSeek Harness 的代码与文档审查进一步确认了 Rune 的架构方向：可以学习它的 capability seam、显式生命周期事实、稳定挂载面板、keyed snapshot 渲染、渐进 disclosure 和 animation-frame 节流，但不应该把聊天产品的 plugin tree、agent session log 与动态 UI slot host 整套搬进 Office workspace。Rune 当前保留三层静态合同——task definition/session、optional bounded model contract、pure task compiler——并让 workbench 只负责 assembly。只有三个以上真实任务证明需要运行时注册、第三方替换或独立卸载 UI 时，才引入动态 registry；低成本扩展来自边界清楚，而不是抽象数量更多。
+
+## 95. v0.90 周期名称不是数据范围，可信汇报必须把 eligible rows 写成合同
+
+此前经营汇报同时要求“报告周期”和 Data 字段，但这两者没有执行关系。用户输入“七月经营复盘”只能改变标题；若 CSV 同时包含六月与七月，Query 仍会聚合全表。这是一种比明显报错更危险的失败：成品看起来合理，数据、图表、报告和演示却在同一条错误范围上保持一致。
+
+Rune 不应猜测哪个字段是日期，也不应把任意字符串解析成月份。CSV/JSON 里的周期可能是 `July`、`FY26 Q3`、数值年份或业务布尔标记。v0.90 因而增加一个可选 exact Data scope：用户选择一个 visible field，再选择一个保留 string/number/boolean 类型的 exact value；“全部数据行”也是明确选项。UI 最多展示源顺序中的一百个 distinct 值，避免把高基数字段变成无界菜单。字段不存在、值消失、类型改变、非有限数值或控制字符都会在联系 provider 和 workspace mutation 之前失败。
+
+这个范围不是 React 里的筛选状态。纯 `operating-review-scope.ts` 负责 typed equality、bounded option、DuckDB identifier/literal escaping 和可读标签；evidence compiler 先过滤再聚合，生成的 SQL 写入同义 predicate，Chart description、Markdown、Deck 与模型输入同时声明相同范围。真实 DuckDB fixture 证明六月的高值不会泄漏到七月结果；模型只收到过滤后的 aggregates 与 scope 描述，永远看不到被排除的 raw rows。
+
+保存任务继续保留 exact output identities，并把 scope 作为 typed recipe 一部分。下一周期可从 July 改为 June，重新生成同一 Query/Chart/report/Deck 的审核 patch；若旧 scope 已经不再匹配，任务零写入停止。`period` 仍是面向人的展示标签，Rune 不假装它与 scope 等价。未来的日期区间、多选和复合条件必须升级成 typed filter expression 与可审核 UI，不能退回自由 SQL 字符串或隐式推断。

@@ -21,6 +21,13 @@ import {
   type OperatingReviewNarrative,
 } from "./operating-review-contract.ts";
 import {
+  formatOperatingReviewScopeLabel,
+  formatOperatingReviewScopePredicate,
+  normalizeOperatingReviewScope,
+  prepareOperatingReviewScope,
+  type OperatingReviewScope,
+} from "./operating-review-scope.ts";
+import {
   appendOperatingReviewDeliveryOutcome as appendDeliveryOutcome,
   createOperatingReviewDeliveryOutcome,
   normalizeOperatingReviewDeliveryOutcomes,
@@ -47,6 +54,7 @@ export type OperatingReviewInput = {
   aggregation: OperatingReviewAggregation;
   mark: ChartCreationMark;
   format: ChartCreationFormat;
+  scope?: OperatingReviewScope | null;
   period: string;
   audience: OperatingReviewAudience;
   focus: string;
@@ -175,13 +183,15 @@ export function prepareOperatingReviewEvidence(
   if (!parsed.columns.includes(input.category) || !parsed.columns.includes(input.value)) {
     return { errors: ["The selected evidence fields are missing from the current Data source."] };
   }
+  const preparedScope = prepareOperatingReviewScope(parsed.rows, parsed.columns, input.scope);
+  if (preparedScope.errors.length) return { errors: preparedScope.errors };
   const groups = new Map<string, {
     category: string;
     sum: number;
     count: number;
     sourceOrder: number;
   }>();
-  for (const [rowIndex, row] of parsed.rows.entries()) {
+  for (const [rowIndex, row] of preparedScope.rows.entries()) {
     const categoryValue = row[input.category];
     const numericValue = row[input.value];
     if (categoryValue == null || !String(categoryValue).trim()) continue;
@@ -220,10 +230,16 @@ export function prepareOperatingReviewEvidence(
       value: group.value,
       sourceRowCount: group.count,
     }));
-  return { data, evidenceRows, errors: [] };
+  return {
+    data,
+    evidenceRows,
+    scope: preparedScope.scope,
+    matchedRowCount: preparedScope.rows.length,
+    errors: [],
+  };
 }
 
-function querySource(input: OperatingReviewInput) {
+function querySource(input: OperatingReviewInput, scope: OperatingReviewScope | null) {
   const category = quoteSqlIdentifier(input.category);
   const value = quoteSqlIdentifier(input.value);
   const aggregate = input.aggregation === "average" ? "AVG" : "SUM";
@@ -235,11 +251,16 @@ SELECT
 FROM workspace_data
 WHERE ${category} IS NOT NULL
   AND TRIM(CAST(${category} AS VARCHAR)) <> ''
-  AND ${value} IS NOT NULL
+${formatOperatingReviewScopePredicate(scope)}  AND ${value} IS NOT NULL
 GROUP BY ${category}
 ORDER BY ${order}
 LIMIT 20;
 `;
+}
+
+function operatingReviewScopeText(locale: RuneLocale, scope: OperatingReviewScope | null) {
+  if (!scope) return isChineseRuneLocale(locale) ? "全部数据行" : "all Data rows";
+  return formatOperatingReviewScopeLabel(scope);
 }
 
 function narrativeEvidenceBinding(
@@ -312,6 +333,7 @@ function reportSource(
   data: WorkspaceArtifact,
   query: WorkspaceArtifact,
   chart: WorkspaceArtifact,
+  scope: OperatingReviewScope | null,
   narrative?: OperatingReviewNarrative,
 ) {
   const zh = isChineseRuneLocale(input.locale);
@@ -326,12 +348,13 @@ function reportSource(
     ? zh ? "平均值" : "average"
     : zh ? "合计值" : "sum";
   const chartBinding = formatChartReference(chart.id);
+  const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope));
   const narrativeSource = reportNarrativeSource(input, query, narrative);
 
   if (zh) {
     const source = `# ${title}
 
-> **任务范围** · ${period} · ${audience} · 本地来源 \`${sourceName}\`
+> **任务范围** · ${period} · ${audience} · ${scopeText} · 本地来源 \`${sourceName}\`
 
 ## 本次目标
 
@@ -339,7 +362,7 @@ ${focus}
 
 ## 可核验视图
 
-以下视图按 **${category}** 汇总 **${value}** 的${aggregation}。Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
+以下视图仅在 **${scopeText}** 范围内按 **${category}** 汇总 **${value}** 的${aggregation}。Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
 
 ${chartBinding}
 
@@ -355,12 +378,12 @@ ${narrativeSource}## 审核问题
 | --- | --- | --- | --- |
 | 待审核后填写 | — | — | ${sourceName} |
 `;
-    return runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding]);
+    return runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding, ...(scope ? [scopeText] : [])]);
   }
 
   return `# ${title}
 
-> **Task scope** · ${period} · ${audience} · local source \`${sourceName}\`
+> **Task scope** · ${period} · ${audience} · ${scopeText} · local source \`${sourceName}\`
 
 ## Objective
 
@@ -368,7 +391,7 @@ ${focus}
 
 ## Verifiable view
 
-This view uses the ${aggregation} of **${value}** grouped by **${category}**. Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
+Within **${scopeText}**, this view uses the ${aggregation} of **${value}** grouped by **${category}**. Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
 
 ${chartBinding}
 
@@ -391,6 +414,7 @@ function deckSource(
   data: WorkspaceArtifact,
   query: WorkspaceArtifact,
   chart: WorkspaceArtifact,
+  scope: OperatingReviewScope | null,
   narrative?: OperatingReviewNarrative,
 ) {
   const zh = isChineseRuneLocale(input.locale);
@@ -402,6 +426,7 @@ function deckSource(
   const sourceName = markdownInline(data.name);
   const audience = audienceLabel(input.locale, input.audience);
   const chartBinding = formatChartReference(chart.id);
+  const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope));
   const narrativeSource = deckNarrativeSource(input, query, narrative);
   const source = `---
 version: 1
@@ -416,7 +441,7 @@ lang: ${input.locale}
 
 # ${title}
 
-${period} · ${audience}
+${period} · ${audience} · ${scopeText}
 
 ---
 
@@ -424,6 +449,8 @@ ${period} · ${audience}
 <!-- eyebrow: ${zh ? "可核验证据" : "Verifiable evidence"} -->
 
 ## ${value} ${zh ? "按" : "by"} ${category}
+
+${zh ? "数据范围" : "Data scope"} · ${scopeText}
 
 ${chartBinding}
 
@@ -449,7 +476,7 @@ ${narrative ? narrativeSource : `${focus}
 
 ${zh ? "所有应用动作仍需在 Rune 的事务审核中明确确认。" : "Every apply remains subject to an explicit Rune transaction review."}
 `;
-  return zh ? runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding]) : source;
+  return zh ? runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding, ...(scope ? [scopeText] : [])]) : source;
 }
 
 function uniqueDeliverables(deliverables: OperatingReviewDeliverable[]) {
@@ -498,10 +525,18 @@ export function prepareOperatingReviewWorkflow(
     ));
     if (!valueIsStrictlyNumeric) errors.push("The selected value field must contain only finite numeric values, not formatted text.");
   }
-  if (errors.length || !data) return { errors: [...new Set(errors)] };
+
+  let evidence: ReturnType<typeof prepareOperatingReviewEvidence> | undefined;
+  if (data && sourceOption
+    && fieldIsSafe(input.category) && sourceOption.columns.includes(input.category)
+    && fieldIsSafe(input.value) && sourceOption.columns.includes(input.value)
+    && input.category !== input.value) {
+    evidence = prepareOperatingReviewEvidence(artifacts, input);
+    if (evidence.errors.length) errors.push(...evidence.errors);
+  }
+  if (errors.length || !data || !evidence?.evidenceRows) return { errors: [...new Set(errors)] };
+  const scope = evidence.scope ?? null;
   if (narrative) {
-    const evidence = prepareOperatingReviewEvidence(artifacts, input);
-    if (!evidence.evidenceRows || evidence.errors.length) return { errors: evidence.errors };
     const validatedNarrative = validateOperatingReviewNarrative(narrative, evidence.evidenceRows);
     if (!validatedNarrative.narrative || validatedNarrative.errors.length) {
       return { errors: validatedNarrative.errors };
@@ -518,7 +553,7 @@ export function prepareOperatingReviewWorkflow(
   if (!queryPrepared.artifact || queryPrepared.errors.length) {
     return { errors: queryPrepared.errors.length ? queryPrepared.errors : ["Rune could not prepare the mapped analysis."] };
   }
-  const query = { ...queryPrepared.artifact, source: querySource(input) };
+  const query = { ...queryPrepared.artifact, source: querySource(input, scope) };
   let workingArtifacts = [...artifacts, query];
 
   const chartPrepared = prepareArtifactCreation(workingArtifacts, {
@@ -538,7 +573,7 @@ export function prepareOperatingReviewWorkflow(
     source: `${JSON.stringify({
       version: 1,
       title: clipped(`${input.value} by ${input.category}`, 120),
-      description: clipped(`${input.aggregation === "average" ? "Average" : "Sum"} for ${normalizeTaskText(input.period)} · ${data.name}`, 240),
+      description: clipped(`${input.aggregation === "average" ? "Average" : "Sum"} for ${normalizeTaskText(input.period)} · ${operatingReviewScopeText(input.locale, scope)} · ${data.name}`, 240),
       source: query.id,
       mark: input.mark,
       category: input.category,
@@ -555,7 +590,7 @@ export function prepareOperatingReviewWorkflow(
     {
       artifact: query,
       summary: `Aggregate ${input.value} by ${input.category} from ${data.name}`,
-      detail: `The Query keeps an exact Data binding and ${input.aggregation === "average" ? "averages" : "sums"} one explicitly selected numeric field.`,
+      detail: `The Query keeps an exact Data binding, applies ${scope ? `the exact ${formatOperatingReviewScopeLabel(scope)} scope` : "all Data rows"}, and ${input.aggregation === "average" ? "averages" : "sums"} one explicitly selected numeric field.`,
     },
     {
       artifact: chart,
@@ -575,8 +610,8 @@ export function prepareOperatingReviewWorkflow(
     const artifact = {
       ...prepared.artifact,
       source: deliverable === "document"
-        ? reportSource(input, data, query, chart, narrative)
-        : deckSource(input, data, query, chart, narrative),
+        ? reportSource(input, data, query, chart, scope, narrative)
+        : deckSource(input, data, query, chart, scope, narrative),
     };
     creations.push({
       artifact,
@@ -613,6 +648,7 @@ function savedReviewId(artifactIds: OperatingReviewArtifactIds) {
 function copyOperatingReviewInput(input: OperatingReviewInput): OperatingReviewInput {
   return {
     ...input,
+    scope: normalizeOperatingReviewScope(input.scope) ?? null,
     deliverables: [...input.deliverables],
   };
 }
@@ -781,6 +817,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       ? [...new Set(input.deliverables)].filter((item): item is OperatingReviewDeliverable => item === "document" || item === "slides")
       : [];
     const normalizedLocale = normalizeRuneLocale(input?.locale);
+    const normalizedScope = normalizeOperatingReviewScope(input?.scope);
     if (candidate.version !== 1 || !id || ids.has(id) || !title || !dataArtifactId || !category
       || !numericValue || !period || !focus || !query || !chart || !deliverables.length
       || !normalizedArtifactIds || id !== savedReviewId(normalizedArtifactIds)
@@ -793,6 +830,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       || !["number", "currency", "percent"].includes(input?.format ?? "")
       || !["leadership", "board", "team"].includes(input?.audience ?? "")
       || !normalizedLocale
+      || normalizedScope === undefined
       || (deliverables.includes("document") !== Boolean(document))
       || (deliverables.includes("slides") !== Boolean(slides))) continue;
     ids.add(id);
@@ -809,6 +847,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
         aggregation: input?.aggregation as OperatingReviewAggregation,
         mark: input?.mark as ChartCreationMark,
         format: input?.format as ChartCreationFormat,
+        scope: normalizedScope,
         period,
         audience: input?.audience as OperatingReviewAudience,
         focus,

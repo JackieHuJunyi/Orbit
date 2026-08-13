@@ -17,13 +17,14 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, styles] = await Promise.all([
+  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, styles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
     source("../app/components/operating-review-dialog.tsx"),
     source("../app/lib/operating-review.ts"),
     source("../app/lib/operating-review-contract.ts"),
+    source("../app/lib/operating-review-scope.ts"),
     source("../app/api/tasks/operating-review/route.ts"),
     source("../app/components/document-briefing-dialog.tsx"),
     source("../app/lib/document-briefing.ts"),
@@ -47,6 +48,11 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(operatingDialog, /modelMode: RuneModelMode/);
   assert.match(operatingCompiler, /prepareOperatingReviewEvidence/);
   assert.match(operatingCompiler, /formatQueryMetricReference/);
+  assert.match(operatingCompiler, /prepareOperatingReviewScope/);
+  assert.match(operatingCompiler, /formatOperatingReviewScopePredicate/);
+  assert.match(operatingScope, /MAX_OPERATING_REVIEW_SCOPE_OPTIONS = 100/);
+  assert.doesNotMatch(operatingScope, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
+  assert.match(operatingDialog, /collectOperatingReviewScopeValues/);
   assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);
   assert.match(operatingRoute, /resolveActiveModelConnection/);
   assert.match(operatingRoute, /validateOperatingReviewNarrative/);

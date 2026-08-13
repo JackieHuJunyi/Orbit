@@ -20,6 +20,12 @@ import {
   type OperatingReviewDeliverable,
   type OperatingReviewInput,
 } from "../lib/operating-review";
+import {
+  collectOperatingReviewScopeValues,
+  formatOperatingReviewScopeLabel,
+  operatingReviewScopeValueKey,
+  type OperatingReviewScopeValue,
+} from "../lib/operating-review-scope";
 import { parseDataSource, type WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
 
@@ -49,6 +55,14 @@ export const OPERATING_REVIEW_BASE_COPY = {
     noField: "没有可用字段",
     noNumericField: "没有严格数值字段",
     numericHint: "只显示 Rune 识别为数值的字段。",
+    dataScope: "数据范围",
+    allRows: "全部数据行",
+    scopeValue: "精确范围值",
+    chooseScopeValue: "选择一个值",
+    noScopeValue: "这个字段没有可用值",
+    scopeHint: "可选。选择后，本地证据、SQL、图表与模型上下文只使用完全匹配的行。",
+    scopeTooMany: "只显示前 100 个不同值；可改选更适合分期的字段。",
+    scopeValueRequired: "选择一个精确范围值，或改回全部数据行。",
     aggregation: "汇总方式",
     sum: "求和",
     average: "平均值",
@@ -111,6 +125,14 @@ export const OPERATING_REVIEW_BASE_COPY = {
     noField: "No available field",
     noNumericField: "No strictly numeric field",
     numericHint: "Only fields Rune recognizes as numeric are shown.",
+    dataScope: "Data scope",
+    allRows: "All Data rows",
+    scopeValue: "Exact scope value",
+    chooseScopeValue: "Choose one value",
+    noScopeValue: "No usable value in this field",
+    scopeHint: "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.",
+    scopeTooMany: "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.",
+    scopeValueRequired: "Choose one exact scope value, or return to all Data rows.",
     aggregation: "Aggregation",
     sum: "Sum",
     average: "Average",
@@ -190,6 +212,8 @@ export function OperatingReviewDialog({
   const [aggregation, setAggregation] = useState<OperatingReviewInput["aggregation"]>(initialInput?.aggregation ?? "sum");
   const [mark, setMark] = useState<OperatingReviewInput["mark"]>(initialInput?.mark ?? "bar");
   const [format, setFormat] = useState<OperatingReviewInput["format"]>(initialInput?.format ?? "currency");
+  const [scopeField, setScopeField] = useState(initialInput?.scope?.field ?? "");
+  const [scopeValue, setScopeValue] = useState<OperatingReviewScopeValue | null>(initialInput?.scope?.value ?? null);
   const [period, setPeriod] = useState(initialInput?.period ?? "");
   const [audience, setAudience] = useState<OperatingReviewInput["audience"]>(initialInput?.audience ?? "leadership");
   const [focus, setFocus] = useState(initialInput?.focus ?? "");
@@ -212,15 +236,39 @@ export function OperatingReviewDialog({
     : initialInput
       ? category
       : preferredCategory;
-  const strictNumericColumns = useMemo(() => {
+  const parsedData = useMemo(() => {
     const source = artifacts.find((artifact) => artifact.id === sourceOption?.artifactId);
-    if (!source || source.kind !== "data") return [];
+    if (!source || source.kind !== "data") return null;
     const parsed = parseDataSource(source.source);
-    if (parsed.errors.length || !parsed.rows.length) return [];
-    return parsed.columns.filter((column) => parsed.rows.every((row) => (
+    return parsed.errors.length || !parsed.rows.length ? null : parsed;
+  }, [artifacts, sourceOption?.artifactId]);
+  const effectiveScopeField = sourceOption?.columns.includes(scopeField)
+    ? scopeField
+    : initialInput?.scope
+      ? scopeField
+      : "";
+  const scopeOptions = useMemo(
+    () => parsedData && effectiveScopeField && parsedData.columns.includes(effectiveScopeField)
+      ? collectOperatingReviewScopeValues(parsedData.rows, effectiveScopeField)
+      : { values: [], truncated: false },
+    [effectiveScopeField, parsedData],
+  );
+  const scopeValueAvailable = scopeValue != null && scopeOptions.values.some((candidate) => (
+    operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(scopeValue)
+  ));
+  const scopeReady = !effectiveScopeField || scopeValue != null;
+  const effectiveScope = useMemo(
+    () => effectiveScopeField && scopeValue != null
+      ? { field: effectiveScopeField, value: scopeValue }
+      : null,
+    [effectiveScopeField, scopeValue],
+  );
+  const strictNumericColumns = useMemo(() => {
+    if (!parsedData) return [];
+    return parsedData.columns.filter((column) => parsedData.rows.every((row) => (
       typeof row[column] === "number" && Number.isFinite(row[column])
     )));
-  }, [artifacts, sourceOption?.artifactId]);
+  }, [parsedData]);
   const effectiveValue = strictNumericColumns.includes(value) && value !== effectiveCategory
     ? value
     : initialInput
@@ -238,6 +286,7 @@ export function OperatingReviewDialog({
     aggregation,
     mark,
     format,
+    scope: effectiveScope,
     period,
     audience,
     focus,
@@ -251,6 +300,7 @@ export function OperatingReviewDialog({
     effectiveValue,
     focus,
     format,
+    effectiveScope,
     locale,
     mark,
     period,
@@ -268,16 +318,17 @@ export function OperatingReviewDialog({
   const aggregationLabel = aggregation === "average" ? copy.average : copy.sum;
   const markLabel = mark === "line" ? copy.line : copy.bar;
   const audienceLabel = audience === "board" ? copy.board : audience === "team" ? copy.team : copy.leadership;
+  const scopeLabel = effectiveScope ? formatOperatingReviewScopeLabel(effectiveScope) : copy.allRows;
   const liveSummary = sourceOption && effectiveCategory && effectiveValue && deliverableNames.length
     ? locale !== "en"
-      ? runeText(locale, "", `从 ${sourceOption.name} 按「${effectiveCategory}」${aggregationLabel}「${effectiveValue}」，生成${markLabel}并交付${deliverableNames.join("和")}。`, [sourceOption.name, effectiveCategory, effectiveValue])
-      : `Use ${aggregationLabel.toLowerCase()} of “${effectiveValue}” by “${effectiveCategory}” from ${sourceOption.name}, then create a ${markLabel.toLowerCase()} and ${deliverableNames.join(" plus ").toLowerCase()}.`
+      ? runeText(locale, "", `从 ${sourceOption.name} 的「${scopeLabel}」范围按「${effectiveCategory}」${aggregationLabel}「${effectiveValue}」，生成${markLabel}并交付${deliverableNames.join("和")}。`, [sourceOption.name, scopeLabel, effectiveCategory, effectiveValue])
+      : `Within “${scopeLabel}” from ${sourceOption.name}, use ${aggregationLabel.toLowerCase()} of “${effectiveValue}” by “${effectiveCategory}”, then create a ${markLabel.toLowerCase()} and ${deliverableNames.join(" plus ").toLowerCase()}.`
     : copy.incomplete;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAttempted(true);
-    if (!prepared.plan || preparing) return;
+    if (!prepared.plan || preparing || !scopeReady) return;
     setPreparing(true);
     try {
       await onPrepare(input);
@@ -308,7 +359,7 @@ export function OperatingReviewDialog({
               className="button primary-button"
               type="submit"
               form="operating-review-form"
-              disabled={preparing || !sourceOptions.length}
+              disabled={preparing || !sourceOptions.length || !scopeReady}
             >
               {preparing ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Check aria-hidden="true" />}
               {preparing ? copy.preparing : initialInput ? copy.update : copy.prepare}
@@ -342,6 +393,8 @@ export function OperatingReviewDialog({
                 setSourceArtifactId(event.target.value);
                 setCategory("");
                 setValue("");
+                setScopeField("");
+                setScopeValue(null);
               }}
               disabled={!sourceOptions.length}
               required
@@ -397,6 +450,53 @@ export function OperatingReviewDialog({
                 .map((column) => <option key={column} value={column}>{column}</option>)}
             </select>
             <small id="operating-review-value-help">{copy.numericHint}</small>
+          </label>
+
+          <label className="operating-review-field" htmlFor="operating-review-scope-field">
+            <span>{copy.dataScope}</span>
+            <select
+              id="operating-review-scope-field"
+              value={effectiveScopeField}
+              onChange={(event) => {
+                setScopeField(event.target.value);
+                setScopeValue(null);
+              }}
+              aria-describedby="operating-review-scope-help"
+            >
+              <option value="">{copy.allRows}</option>
+              {initialInput?.scope && effectiveScopeField && !sourceOption?.columns.includes(effectiveScopeField) && (
+                <option value={effectiveScopeField}>{effectiveScopeField} · {copy.noField}</option>
+              )}
+              {sourceOption?.columns.map((column) => <option key={column} value={column}>{column}</option>)}
+            </select>
+            <small id="operating-review-scope-help">{copy.scopeHint}</small>
+          </label>
+
+          <label className="operating-review-field" htmlFor="operating-review-scope-value">
+            <span>{copy.scopeValue}</span>
+            <select
+              id="operating-review-scope-value"
+              value={scopeValue == null ? "" : operatingReviewScopeValueKey(scopeValue)}
+              onChange={(event) => {
+                const selected = scopeOptions.values.find((candidate) => (
+                  operatingReviewScopeValueKey(candidate) === event.target.value
+                ));
+                setScopeValue(selected ?? null);
+              }}
+              disabled={!effectiveScopeField || !scopeOptions.values.length}
+              required={Boolean(effectiveScopeField)}
+              aria-invalid={attempted && !scopeReady}
+            >
+              <option value="">{effectiveScopeField && !scopeOptions.values.length ? copy.noScopeValue : copy.chooseScopeValue}</option>
+              {scopeValue != null && !scopeValueAvailable && (
+                <option value={operatingReviewScopeValueKey(scopeValue)}>{String(scopeValue)} · {copy.noScopeValue}</option>
+              )}
+              {scopeOptions.values.map((candidate) => (
+                <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>{String(candidate)}</option>
+              ))}
+            </select>
+            {scopeOptions.truncated && <small>{copy.scopeTooMany}</small>}
+            {attempted && !scopeReady && <small className="operating-review-field-error">{copy.scopeValueRequired}</small>}
           </label>
 
           <fieldset className="operating-review-field">
@@ -483,7 +583,7 @@ export function OperatingReviewDialog({
           <p>{liveSummary}</p>
           <dl>
             <div><dt>{copy.fields}</dt><dd>{effectiveCategory && effectiveValue ? `${effectiveCategory} → ${aggregationLabel}(${effectiveValue})` : "—"}</dd></div>
-            <div><dt>{copy.scope}</dt><dd>{period.trim() ? `${period.trim()} · ${audienceLabel}` : audienceLabel}</dd></div>
+            <div><dt>{copy.scope}</dt><dd>{period.trim() ? `${period.trim()} · ${audienceLabel} · ${scopeLabel}` : `${audienceLabel} · ${scopeLabel}`}</dd></div>
             <div><dt>{copy.focusSummary}</dt><dd>{focus.trim() || "—"}</dd></div>
             <div><dt>{copy.planner}</dt><dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd></div>
             <div><dt>{copy.chain}</dt><dd>{deliverableNames.length ? `Data → Query → Chart → ${deliverableNames.join(" + ")}` : "—"}</dd></div>

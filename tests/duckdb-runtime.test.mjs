@@ -5,6 +5,7 @@ import test from "node:test";
 import * as duckdb from "@duckdb/duckdb-wasm/blocking";
 import { findChartReferences, resolveChartModel } from "../app/lib/charts.ts";
 import { planLocalWorkspaceAgentChange } from "../app/lib/local-workspace-agent.ts";
+import { prepareOperatingReviewWorkflow } from "../app/lib/operating-review.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
 import {
@@ -140,6 +141,52 @@ test("executes the shipped no-key analysis workflow and resolves its linked Char
     assert.equal(resolution.model.data[0].label, "APAC");
     assert.equal(resolution.model.data[0].formatted, "$1.84M");
     assert.deepEqual(findChartReferences(report.source), [chart.id]);
+  } finally {
+    connection.close();
+  }
+});
+
+test("executes an exact-scope operating review Query in real DuckDB without leaking other periods", async () => {
+  const data = {
+    id: "period-data",
+    name: "period-data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Period,Region,Revenue\nJuly,APAC,100\nJune,APAC,900\nJuly,Europe,80\nJune,Europe,700\n",
+  };
+  const prepared = prepareOperatingReviewWorkflow([data], {
+    title: "July review",
+    dataArtifactId: data.id,
+    category: "Region",
+    value: "Revenue",
+    aggregation: "sum",
+    mark: "bar",
+    format: "number",
+    scope: { field: "Period", value: "July" },
+    period: "July 2026",
+    audience: "leadership",
+    focus: "Review the current period evidence.",
+    deliverables: ["document"],
+    locale: "en",
+  });
+  assert.deepEqual(prepared.errors, []);
+  const query = prepared.plan.creations.find((creation) => creation.artifact.kind === "query")?.artifact;
+  assert.ok(query);
+
+  const dist = path.resolve("node_modules/@duckdb/duckdb-wasm/dist");
+  const database = await duckdb.createDuckDB({
+    mvp: { mainModule: path.join(dist, "duckdb-mvp.wasm"), mainWorker: "" },
+    eh: { mainModule: path.join(dist, "duckdb-eh.wasm"), mainWorker: "" },
+  }, new duckdb.VoidLogger(), duckdb.NODE_RUNTIME);
+  await database.instantiate(() => {});
+  database.open({});
+  database.registerFileText("period-data.csv", data.source);
+  const connection = database.connect();
+  try {
+    connection.query("CREATE TABLE workspace_data AS SELECT * FROM read_csv_auto('period-data.csv', header = true, sample_size = -1)");
+    const result = connection.query(buildBoundedQuery(query.source));
+    const rows = result.toArray().map((row) => row.toJSON());
+    assert.deepEqual(rows.map((row) => [row.Region, Number(row.Revenue)]), [["APAC", 100], ["Europe", 80]]);
   } finally {
     connection.close();
   }

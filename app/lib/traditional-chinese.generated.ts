@@ -50,6 +50,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "以下問題由模型根據有界聚合證據提出"
   ],
   [
+    "图表与模型上下文只使用完全匹配的行",
+    "圖表與模型上下文只使用完全匹配的行"
+  ],
+  [
     "导入和导出会明确说明无法保留的内容",
     "匯入和匯出會明確說明無法保留的內容"
   ],
@@ -564,6 +568,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "只会在你审核事务后写入",
     "只會在你稽核事務後寫入"
+  ],
+  [
+    "可改选更适合分期的字段",
+    "可改選更適合分期的欄位"
   ],
   [
     "向你的模型发送有界聚合",
@@ -1138,8 +1146,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "還沒有個人模型配置"
   ],
   [
+    "这个字段没有可用值",
+    "這個欄位沒有可用值"
+  ],
+  [
     "这次演示要推动什么",
     "這次演示要推動什麼"
+  ],
+  [
+    "选择一个精确范围值",
+    "選擇一個精確範圍值"
   ],
   [
     "选择或编辑文档章节",
@@ -1352,6 +1368,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "或打开示例工作区",
     "或開啟示例工作區"
+  ],
+  [
+    "或改回全部数据行",
+    "或改回全部資料行"
   ],
   [
     "或者打开其他内容",
@@ -2066,6 +2086,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "從可讀源開始"
   ],
   [
+    "以下视图仅在",
+    "以下檢視僅在"
+  ],
+  [
     "会先审核导入",
     "會先稽核匯入"
   ],
@@ -2514,10 +2538,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "從這裡開始"
   ],
   [
-    "以下视图按",
-    "以下檢視按"
-  ],
-  [
     "份可读内容",
     "份可讀內容"
   ],
@@ -2576,6 +2596,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "先选择数据",
     "先選擇資料"
+  ],
+  [
+    "全部数据行",
+    "全部資料行"
   ],
   [
     "内容加载到",
@@ -2906,6 +2930,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "移動或刪除"
   ],
   [
+    "精确范围值",
+    "精確範圍值"
+  ],
+  [
     "绑定与验证",
     "繫結與驗證"
   ],
@@ -2948,6 +2976,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "选区内补丁",
     "選區內補丁"
+  ],
+  [
+    "选择一个值",
+    "選擇一個值"
   ],
   [
     "选择或编辑",
@@ -3000,6 +3032,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "两端空格",
     "兩端空格"
+  ],
+  [
+    "个不同值",
+    "個不同值"
   ],
   [
     "个已固定",
@@ -3132,6 +3168,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "取締役会",
     "取締役會"
+  ],
+  [
+    "只显示前",
+    "只顯示前"
   ],
   [
     "可以保存",
@@ -3350,6 +3390,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "資料來源"
   ],
   [
+    "数据范围",
+    "資料範圍"
+  ],
+  [
     "文件补丁",
     "檔案補丁"
   ],
@@ -3424,6 +3468,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "本地规则",
     "本地規則"
+  ],
+  [
+    "本地证据",
+    "本地證據"
   ],
   [
     "本地转换",
@@ -3600,6 +3648,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "编辑精确",
     "編輯精確"
+  ],
+  [
+    "范围内按",
+    "範圍內按"
   ],
   [
     "草稿预览",
@@ -3966,6 +4018,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "管理層"
   ],
   [
+    "范围按",
+    "範圍按"
+  ],
+  [
     "董事会",
     "董事會"
   ],
@@ -4008,6 +4064,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "输入框",
     "輸入框"
+  ],
+  [
+    "选择后",
+    "選擇後"
   ],
   [
     "页演示",

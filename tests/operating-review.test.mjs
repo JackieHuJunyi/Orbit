@@ -95,7 +95,7 @@ test("creates an English Document + Slides review chain with exact evidence bind
   assert.deepEqual(parseChartSource(created.chart.source).spec, {
     version: 1,
     title: "Net Revenue by Region",
-    description: "Sum for FY26 H1 · source-data.csv",
+    description: "Sum for FY26 H1 · all Data rows · source-data.csv",
     source: created.query.id,
     mark: "bar",
     category: "Region",
@@ -135,6 +135,57 @@ test("derives bounded aggregate evidence in the same order as the generated Quer
     { id: "result-2", category: "Europe", value: 80, sourceRowCount: 1 },
     { id: "result-3", category: "North America", value: 120, sourceRowCount: 1 },
   ]);
+});
+
+test("applies one exact Data scope consistently to evidence, SQL, charts, and deliverables", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,900\nJuly,Europe,80\nJune,Europe,700\n",
+  });
+  const input = reviewInput({
+    period: "July 2026",
+    scope: { field: "Period", value: "July" },
+  });
+
+  const evidence = prepareOperatingReviewEvidence([data], input);
+  assert.deepEqual(evidence.errors, []);
+  assert.equal(evidence.matchedRowCount, 2);
+  assert.deepEqual(evidence.scope, { field: "Period", value: "July" });
+  assert.deepEqual(evidence.evidenceRows, [
+    { id: "result-1", category: "APAC", value: 100, sourceRowCount: 1 },
+    { id: "result-2", category: "Europe", value: 80, sourceRowCount: 1 },
+  ]);
+
+  const result = prepareOperatingReviewWorkflow([data], input);
+  assert.deepEqual(result.errors, []);
+  const created = creationsByKind(result);
+  assert.match(created.query.source, /AND "Period" = 'July'/u);
+  assert.match(parseChartSource(created.chart.source).spec.description, /Period = July/u);
+  assert.match(created.document.source, /Within \*\*Period = July\*\*/u);
+  assert.match(created.slides.source, /Data scope · Period = July/u);
+  assert.deepEqual(validateWorkspaceArtifacts([data, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
+});
+
+test("escapes exact text scope values and fails closed when a saved scope no longer matches", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nQ4's,APAC,100\nQ3,Europe,80\n",
+  });
+  const prepared = prepareOperatingReviewWorkflow([data], reviewInput({
+    scope: { field: "Period", value: "Q4's" },
+  }));
+  assert.deepEqual(prepared.errors, []);
+  assert.match(creationsByKind(prepared).query.source, /AND "Period" = 'Q4''s'/u);
+
+  const stale = prepareOperatingReviewWorkflow([data], reviewInput({
+    scope: { field: "Period", value: "Q2" },
+  }));
+  assert.equal(stale.plan, undefined);
+  assert.match(stale.errors.join(" "), /no longer matches any current Data row/u);
+
+  const missingField = prepareOperatingReviewWorkflow([data], reviewInput({
+    scope: { field: "period", value: "Q3" },
+  }));
+  assert.equal(missingField.plan, undefined);
+  assert.match(missingField.errors.join(" "), /exact visible scope field/u);
 });
 
 test("compiles model-proposed review questions with every number kept in a live Query-row binding", () => {
@@ -461,6 +512,29 @@ test("saves one exact workflow identity and reruns it as patches instead of dupl
   }
   assert.equal(rerun.workflow.id, workflow.id);
   assert.equal(rerun.workflow.input.period, "FY26 Q3");
+});
+
+test("persists and changes an exact Data scope while retaining saved output identities", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJuly,Europe,80\nJune,APAC,90\nJune,Europe,70\n",
+  });
+  const initialInput = reviewInput({ scope: { field: "Period", value: "July" } });
+  const initial = prepareOperatingReviewWorkflow([data], initialInput);
+  const workflow = createSavedOperatingReview(initialInput, initial.plan);
+  assert.deepEqual(workflow.input.scope, { field: "Period", value: "July" });
+  assert.deepEqual(normalizeSavedOperatingReviews([workflow])[0].input.scope, { field: "Period", value: "July" });
+  const workspace = [data, ...initial.plan.creations.map(({ artifact }) => artifact)];
+
+  const rerun = prepareSavedOperatingReviewRerun(
+    workspace,
+    workflow,
+    reviewInput({ period: "June 2026", scope: { field: "Period", value: "June" } }),
+  );
+  assert.deepEqual(rerun.errors, []);
+  assert.deepEqual(rerun.plan.creations, []);
+  assert.deepEqual(rerun.workflow.input.scope, { field: "Period", value: "June" });
+  const queryPatch = rerun.plan.patches.find((patch) => patch.artifactId === workflow.artifactIds.query);
+  assert.match(queryPatch.nextSource, /AND "Period" = 'June'/u);
 });
 
 test("rewires model narrative bindings to the saved Query identity during rerun", () => {

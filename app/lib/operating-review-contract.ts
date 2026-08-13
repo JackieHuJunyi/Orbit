@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RUNE_LOCALE_REGISTRY } from "./localization.ts";
+import { MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS } from "./operating-review-scope.ts";
 
 export const MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS = 100_000;
 export const MAX_OPERATING_REVIEW_EVIDENCE_ROWS = 20;
@@ -13,6 +14,15 @@ const OperatingReviewArtifactSchema = z.object({
   source: z.string().min(1).max(MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS),
 }).strict();
 
+const OperatingReviewScopeSchema = z.object({
+  field: z.string().min(1).max(120).refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
+  value: z.union([
+    z.string().max(MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS).refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
+    z.number().finite(),
+    z.boolean(),
+  ]),
+}).strict();
+
 const OperatingReviewInputSchema = z.object({
   title: z.string().trim().min(1).max(60),
   dataArtifactId: z.string().min(1).max(120),
@@ -21,6 +31,7 @@ const OperatingReviewInputSchema = z.object({
   aggregation: z.enum(["sum", "average"]),
   mark: z.enum(["bar", "line"]),
   format: z.enum(["number", "currency", "percent"]),
+  scope: OperatingReviewScopeSchema.nullable().optional(),
   period: z.string().trim().min(1).max(60),
   audience: z.enum(["leadership", "board", "team"]),
   focus: z.string().trim().min(1).max(140),
@@ -111,6 +122,7 @@ export function buildOperatingReviewModelInput({
   category,
   value,
   aggregation,
+  scope,
   evidenceRows,
 }: {
   sourceName: string;
@@ -122,11 +134,12 @@ export function buildOperatingReviewModelInput({
   category: string;
   value: string;
   aggregation: string;
+  scope?: { field: string; value: string | number | boolean } | null;
   evidenceRows: readonly OperatingReviewEvidenceRow[];
 }) {
   return JSON.stringify({
     task: { title, audience, purpose: focus, period, language: locale },
-    measure: { sourceName, category, value, aggregation },
+    measure: { sourceName, category, value, aggregation, scope: scope ?? null },
     aggregateEvidence: evidenceRows,
   }, null, 2);
 }

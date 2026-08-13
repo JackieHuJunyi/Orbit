@@ -619,3 +619,65 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Review-question planner": "리뷰 질문 플래너",
   "The model is preparing review questions from bounded aggregate evidence…": "모델이 범위가 제한된 집계 근거에서 리뷰 질문을 준비하고 있습니다…",
 });
+
+// Human-reviewed copy for exact Data scope selection in repeatable operating reviews.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Data scope": "Périmètre des données",
+  "All Data rows": "Toutes les lignes de données",
+  "Exact scope value": "Valeur exacte du périmètre",
+  "Choose one value": "Choisir une valeur",
+  "No usable value in this field": "Aucune valeur utilisable dans ce champ",
+  "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "Facultatif. Une fois sélectionné, les preuves locales, SQL, les graphiques et le contexte du modèle utilisent uniquement les lignes qui correspondent exactement.",
+  "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "Seules les 100 premières valeurs distinctes sont affichées ; choisissez si nécessaire un champ de période avec moins de valeurs distinctes.",
+  "Choose one exact scope value, or return to all Data rows.": "Choisissez une valeur exacte pour le périmètre, ou revenez à toutes les lignes de données.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Data scope": "Ámbito de los datos",
+  "All Data rows": "Todas las filas de datos",
+  "Exact scope value": "Valor exacto del ámbito",
+  "Choose one value": "Elige un valor",
+  "No usable value in this field": "No hay valores utilizables en este campo",
+  "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "Opcional. Al seleccionarlo, la evidencia local, SQL, los gráficos y el contexto del modelo usan solo las filas que coinciden exactamente.",
+  "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "Solo se muestran los primeros 100 valores distintos; si hace falta, elige un campo de periodo con menos valores distintos.",
+  "Choose one exact scope value, or return to all Data rows.": "Elige un valor exacto para el ámbito o vuelve a todas las filas de datos.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Data scope": "Область данных",
+  "All Data rows": "Все строки данных",
+  "Exact scope value": "Точное значение области",
+  "Choose one value": "Выберите значение",
+  "No usable value in this field": "В этом поле нет подходящих значений",
+  "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "Необязательно. После выбора локальные доказательства, SQL, диаграммы и контекст модели используют только строки с точным совпадением.",
+  "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "Показаны только первые 100 уникальных значений; при необходимости выберите поле периода с меньшим числом значений.",
+  "Choose one exact scope value, or return to all Data rows.": "Выберите точное значение области или вернитесь ко всем строкам данных.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Data scope": "نطاق البيانات",
+  "All Data rows": "كل صفوف البيانات",
+  "Exact scope value": "قيمة النطاق المطابقة",
+  "Choose one value": "اختر قيمة واحدة",
+  "No usable value in this field": "لا توجد قيمة صالحة في هذا الحقل",
+  "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "اختياري. عند التحديد، تستخدم الأدلة المحلية وSQL والرسوم البيانية وسياق النموذج الصفوف المطابقة تمامًا فقط.",
+  "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "تظهر أول 100 قيمة مختلفة فقط؛ اختر حقل فترة بعدد قيم أقل عند الحاجة.",
+  "Choose one exact scope value, or return to all Data rows.": "اختر قيمة نطاق مطابقة، أو عُد إلى كل صفوف البيانات.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Data scope": "データ範囲",
+  "All Data rows": "すべてのデータ行",
+  "Exact scope value": "完全一致する範囲値",
+  "Choose one value": "値を選択",
+  "No usable value in this field": "このフィールドに使用できる値がありません",
+  "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "任意です。選択すると、ローカルの根拠、SQL、グラフ、モデルコンテキストには完全一致する行だけを使用します。",
+  "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "異なる値は先頭100件だけ表示します。必要に応じて、値の種類が少ない期間フィールドを選択してください。",
+  "Choose one exact scope value, or return to all Data rows.": "完全一致する範囲値を選ぶか、すべてのデータ行に戻してください。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Data scope": "데이터 범위",
+  "All Data rows": "모든 데이터 행",
+  "Exact scope value": "정확히 일치하는 범위 값",
+  "Choose one value": "값 선택",
+  "No usable value in this field": "이 필드에 사용할 수 있는 값이 없습니다",
+  "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.": "선택 사항입니다. 선택하면 로컬 근거, SQL, 차트, 모델 컨텍스트는 정확히 일치하는 행만 사용합니다.",
+  "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.": "서로 다른 값은 처음 100개만 표시합니다. 필요하면 값 종류가 더 적은 기간 필드를 선택하세요.",
+  "Choose one exact scope value, or return to all Data rows.": "정확히 일치하는 범위 값을 선택하거나 모든 데이터 행으로 돌아가세요.",
+});

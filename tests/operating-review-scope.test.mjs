@@ -1,0 +1,47 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  MAX_OPERATING_REVIEW_SCOPE_OPTIONS,
+  collectOperatingReviewScopeValues,
+  formatOperatingReviewScopePredicate,
+  normalizeOperatingReviewScope,
+  operatingReviewScopeValueKey,
+  prepareOperatingReviewScope,
+} from "../app/lib/operating-review-scope.ts";
+
+test("keeps scope values typed, ordered, distinct, and explicitly bounded", () => {
+  const rows = [
+    { Period: true },
+    { Period: "true" },
+    { Period: true },
+    ...Array.from({ length: MAX_OPERATING_REVIEW_SCOPE_OPTIONS + 1 }, (_, index) => ({ Period: index })),
+  ];
+  const result = collectOperatingReviewScopeValues(rows, "Period");
+  assert.equal(result.values.length, MAX_OPERATING_REVIEW_SCOPE_OPTIONS);
+  assert.equal(result.truncated, true);
+  assert.notEqual(operatingReviewScopeValueKey(true), operatingReviewScopeValueKey("true"));
+  assert.deepEqual(result.values.slice(0, 4), [true, "true", 0, 1]);
+});
+
+test("matches one exact typed scope and rejects stale or malformed scope values", () => {
+  const rows = [
+    { Period: true, Region: "APAC" },
+    { Period: "true", Region: "Europe" },
+  ];
+  const prepared = prepareOperatingReviewScope(rows, ["Period", "Region"], { field: "Period", value: true });
+  assert.deepEqual(prepared.errors, []);
+  assert.deepEqual(prepared.rows, [rows[0]]);
+  assert.deepEqual(prepareOperatingReviewScope(rows, ["Period", "Region"], {
+    field: "Period",
+    value: false,
+  }).errors, ["The selected scope value no longer matches any current Data row."]);
+  assert.equal(normalizeOperatingReviewScope({ field: "Period", value: Number.NaN }), undefined);
+});
+
+test("emits a safe DuckDB predicate for strings, numbers, and booleans", () => {
+  assert.equal(formatOperatingReviewScopePredicate({ field: "Period", value: "Q4's" }), "  AND \"Period\" = 'Q4''s'\n");
+  assert.equal(formatOperatingReviewScopePredicate({ field: "Year", value: 2026 }), "  AND \"Year\" = 2026\n");
+  assert.equal(formatOperatingReviewScopePredicate({ field: "Active", value: false }), "  AND \"Active\" = FALSE\n");
+  assert.equal(formatOperatingReviewScopePredicate(null), "");
+});

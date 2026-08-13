@@ -14,7 +14,7 @@ const artifact = {
   name: "source-data.csv",
   kind: "data",
   language: "CSV / JSON",
-  source: "Region,Net Revenue\nAPAC,100\nEurope,80\nAPAC,50\n",
+  source: "Period,Region,Net Revenue\nJuly,APAC,100\nJuly,Europe,80\nJuly,APAC,50\nJune,APAC,900\n",
 };
 
 const input = {
@@ -25,6 +25,7 @@ const input = {
   aggregation: "sum",
   mark: "bar",
   format: "currency",
+  scope: { field: "Period", value: "July" },
   period: "Current period",
   audience: "leadership",
   focus: "Choose the next operating priority.",
@@ -116,7 +117,9 @@ test("sends only bounded aggregate evidence to the active personal model and ret
     { id: "result-1", category: "APAC", value: 150, sourceRowCount: 2 },
     { id: "result-2", category: "Europe", value: 80, sourceRowCount: 1 },
   ]);
-  assert.doesNotMatch(providerRequest.body.input[1].content, /Region,Net Revenue/u);
+  assert.deepEqual(modelInput.measure.scope, { field: "Period", value: "July" });
+  assert.doesNotMatch(providerRequest.body.input[1].content, /Period,Region,Net Revenue/u);
+  assert.doesNotMatch(providerRequest.body.input[1].content, /900/u);
   assert.doesNotMatch(JSON.stringify(payload), /operating-review-secret/u);
 });
 
@@ -150,4 +153,18 @@ test("returns an explicit unconfigured result without contacting a provider", as
   }));
   assert.equal(response.status, 503);
   assert.equal((await response.json()).code, "MODEL_UNCONFIGURED");
+});
+
+test("rejects a stale exact Data scope before contacting any model provider", async () => {
+  globalThis.fetch = async () => { throw new Error("provider must not be called"); };
+  const response = await POST(new Request("http://localhost/api/tasks/operating-review", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      artifact,
+      input: { ...input, scope: { field: "Period", value: "August" } },
+    }),
+  }));
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /no longer matches any current Data row/u);
 });
