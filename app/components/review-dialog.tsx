@@ -34,7 +34,7 @@ export function ReviewDialog({
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const focusableSelector = "button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+    const focusableSelector = "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
     const focusables = dialog ? [...dialog.querySelectorAll<HTMLElement>(focusableSelector)] : [];
     const initialFocus = dialog?.querySelector<HTMLElement>("[data-dialog-initial-focus]") ?? focusables[0];
     initialFocus?.focus();

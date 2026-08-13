@@ -22,23 +22,28 @@ import { localeDisplayName, type RuneLocale } from "../lib/localization";
 import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
 
 export type WelcomeAction = "guide" | "import" | "sample";
-export type WelcomeStep = "welcome" | "language" | "model" | "shortcuts" | "ready";
+export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
 type ShortcutId = "open" | "save" | "agent";
+
+const GREETINGS = {
+  "zh-CN": ["你好", "Hello", "Bonjour", "こんにちは", "안녕하세요", "Hola", "Halo"],
+  en: ["Hello", "你好", "Bonjour", "Hola", "こんにちは", "안녕하세요", "Halo"],
+} as const;
 
 const copy = {
   "zh-CN": {
     skip: "跳过",
     close: "关闭教程",
     welcomeEyebrow: "欢迎来到 Rune",
-    welcomeTitle: "让想法成为可核验的作品。",
-    welcomeBody: "文档、数据、图表和演示在一个本地优先的工作台里协同。源内容保持可读，每一次 AI 修改都由你决定。",
-    begin: "开始设置",
+    welcomeTitle: "让每一份工作，都有清晰的来处。",
+    welcomeBody: "文档、数据、图表和演示共享同一套可读源内容。你专注判断，Rune 负责把变化实时连接起来。",
+    begin: "继续设置",
     local: "本地优先",
     review: "先审后写",
     live: "实时编译",
     languageEyebrow: "语言",
     languageTitle: "选择 Rune 使用的语言",
-    languageBody: "我们已经根据这台设备做出推荐。你可以随时从帮助菜单中更改。",
+    languageBody: "已根据这台设备做出推荐，之后可随时更改。",
     recommended: "系统推荐",
     continue: "继续",
     modelEyebrow: "模型连接",
@@ -81,15 +86,15 @@ const copy = {
     skip: "Skip",
     close: "Close tutorial",
     welcomeEyebrow: "Welcome to Rune",
-    welcomeTitle: "Turn intent into verifiable work.",
-    welcomeBody: "Documents, data, charts, and presentations work together in one local-first space. Source stays readable, and you decide every AI write.",
-    begin: "Set up Rune",
+    welcomeTitle: "Every piece of work, with a clear source.",
+    welcomeBody: "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.",
+    begin: "Continue setup",
     local: "Local first",
     review: "Review before write",
     live: "Live compilation",
     languageEyebrow: "Language",
     languageTitle: "Choose your Rune language",
-    languageBody: "We made a recommendation from this device. You can change it later from Help.",
+    languageBody: "Recommended from this device. You can change it whenever you like.",
     recommended: "System recommendation",
     continue: "Continue",
     modelEyebrow: "Model connection",
@@ -160,10 +165,23 @@ export function WelcomeExperience({
   const [modelStatus, setModelStatus] = useState<ModelProviderStatus | null>(null);
   const [modelStatusError, setModelStatusError] = useState("");
   const [checkingModel, setCheckingModel] = useState(true);
+  const [greetingIndex, setGreetingIndex] = useState(0);
+  const [modifier] = useState(() => (
+    typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
+      ? "Ctrl"
+      : "⌘"
+  ));
   const text = copy[locale];
-  const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
-  const modifier = isMac ? "⌘" : "Ctrl";
-  const steps = useMemo<WelcomeStep[]>(() => ["welcome", "language", "model", "shortcuts", "ready"], []);
+  const greetings = GREETINGS[locale];
+  const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
+
+  useEffect(() => {
+    if (step !== "welcome" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      setGreetingIndex((current) => (current + 1) % greetings.length);
+    }, 1_850);
+    return () => window.clearInterval(timer);
+  }, [greetings, step]);
 
   async function checkModelStatus() {
     setCheckingModel(true);
@@ -238,7 +256,7 @@ export function WelcomeExperience({
     <div className="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
       <section className="welcome-window">
         <header className="welcome-chrome">
-          <div className="welcome-traffic" aria-hidden="true"><span /><span /><span /></div>
+          <div className="welcome-chrome-brand" aria-hidden="true"><span>R</span><strong>Rune</strong></div>
           <div className="welcome-progress" aria-label={String(steps.indexOf(step) + 1) + " of " + String(steps.length)}>
             {steps.map((item) => (
               <span
@@ -257,45 +275,51 @@ export function WelcomeExperience({
         <div className={"welcome-page welcome-" + step}>
           {step === "welcome" && (
             <>
-              <div className="rune-welcome-symbol" aria-hidden="true"><span>R</span></div>
-              <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
-              <h1 id="welcome-title">{text.welcomeTitle}</h1>
-              <p>{text.welcomeBody}</p>
-              <div className="welcome-promises" aria-label="Rune principles">
-                <span><ShieldCheck />{text.local}</span>
-                <span><Check />{text.review}</span>
-                <span><Sparkles />{text.live}</span>
+              <div className="welcome-intro-grid">
+                <div className="welcome-intro-copy">
+                  <div className="welcome-greeting-stage" aria-hidden="true">
+                    <span className="welcome-greeting" key={`${locale}-${greetingIndex}`}>{greetings[greetingIndex]}</span>
+                    <i>Rune</i>
+                  </div>
+                  <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
+                  <h1 id="welcome-title">{text.welcomeTitle}</h1>
+                  <p>{text.welcomeBody}</p>
+                  <div className="welcome-promises" aria-label="Rune principles">
+                    <span><ShieldCheck /><b>{text.local}</b></span>
+                    <span><Check /><b>{text.review}</b></span>
+                    <span><Sparkles /><b>{text.live}</b></span>
+                  </div>
+                </div>
+                <section className="welcome-language-card" aria-labelledby="welcome-language-title">
+                  <div className="welcome-language-heading">
+                    <span><Globe2 aria-hidden="true" /></span>
+                    <div>
+                      <strong id="welcome-language-title">{text.languageTitle}</strong>
+                      <small>{text.languageBody}</small>
+                    </div>
+                  </div>
+                  <div className="language-options" role="radiogroup" aria-label={text.languageTitle}>
+                    {(["zh-CN", "en"] as const).map((option) => (
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={locale === option}
+                        className={locale === option ? "selected" : ""}
+                        onClick={() => onLocaleChange(option)}
+                        key={option}
+                      >
+                        <span className="language-monogram">{option === "zh-CN" ? "文" : "A"}</span>
+                        <span>
+                          <strong>{localeDisplayName(option)}</strong>
+                          <small>{option === detectedLocale ? text.recommended : option === "zh-CN" ? "Chinese (Simplified)" : "英语"}</small>
+                        </span>
+                        {locale === option && <Check />}
+                      </button>
+                    ))}
+                  </div>
+                </section>
               </div>
-              <button className="welcome-primary" type="button" onClick={() => setStep("language")}>{text.begin}<ArrowRight /></button>
-            </>
-          )}
-
-          {step === "language" && (
-            <>
-              <div className="welcome-icon-disc"><Globe2 /></div>
-              <span className="welcome-eyebrow">{text.languageEyebrow}</span>
-              <h1 id="welcome-title">{text.languageTitle}</h1>
-              <p>{text.languageBody}</p>
-              <div className="language-options" role="radiogroup" aria-label={text.languageTitle}>
-                {(["zh-CN", "en"] as const).map((option) => (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={locale === option}
-                    className={locale === option ? "selected" : ""}
-                    onClick={() => onLocaleChange(option)}
-                    key={option}
-                  >
-                    <span className="language-monogram">{option === "zh-CN" ? "文" : "A"}</span>
-                    <span>
-                      <strong>{localeDisplayName(option)}</strong>
-                      <small>{option === detectedLocale ? text.recommended : option === "zh-CN" ? "Chinese (Simplified)" : "英语"}</small>
-                    </span>
-                    {locale === option && <Check />}
-                  </button>
-                ))}
-              </div>
-              <button className="welcome-primary" type="button" onClick={() => { setCheckingModel(true); setStep("model"); }}>{text.continue}<ArrowRight /></button>
+              <button className="welcome-primary" type="button" onClick={() => { setCheckingModel(true); setStep("model"); }}>{text.begin}<ArrowRight /></button>
             </>
           )}
 

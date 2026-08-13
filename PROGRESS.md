@@ -57,3 +57,4 @@
 - 2026-08-13 — Added reviewed Document block insertion, adjacent movement, and deletion with AST/revision proof, exact source diffs, warnings, checkpoints, and atomic saves.
 - 2026-08-13 — Linked source-editor carets and selections back to the smallest proven Document, Data, Deck, or Chart preview target with automatic accessible scrolling.
 - 2026-08-13 — Froze Rune's complete feature map and shipped encrypted CC Switch-style OpenAI/OpenRouter/custom Responses profiles with model discovery and one-click switching.
+- 2026-08-13 — Added an animated language-first welcome, a quieter Rune-owned content visual system, localized core chrome, and a runtime-verified task-first operating-review chain behind one atomic review.

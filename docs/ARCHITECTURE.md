@@ -409,6 +409,12 @@ The same lazy coordinator serves Query-backed scalar metrics and Charts in stand
 
 The npm wrapper is pinned to a stable version, and matching worker/Wasm binaries are loaded from a version-pinned CDN URL. The row-preserving lineage subset is a local compiler, not a DuckDB extension or hosted service; unsupported query shapes simply keep their normal read-only result. This keeps the deployed application small and infrastructure-free while rows remain inside the browser. A future offline distribution can serve the same pinned binaries from an asset origin without changing the query contract.
 
+## Task-first operating-review compiler
+
+The operating-review entry is an orchestration layer over existing canonical compilers, not a privileged Agent path. Its input contains one exact Data artifact id, exact case-sensitive category and finite-number fields, aggregation, Chart mark/format, plain-text title/period/focus, audience, locale, and a unique non-empty set of Document/Slides deliverables. It creates a readable identity-bound Query, a Query-backed Chart, and one or two source-native deliverables. Generated titles pass the normal collision-safe artifact factory; generated bindings pass the normal whole-workspace validator. The compiler never writes conclusions that were not present in the input or evidence.
+
+The workbench captures the complete source revision before preparation, compiles the full creation list, repeats the whole-workspace mutation check, and runs the existing browser-local runtime-impact preflight. A stale revision or any SQL/Chart/downstream failure returns no pending change. Success produces the same transaction map, per-file source diffs, runtime evidence card, explicit Apply, and atomic device persistence as every Workspace Agent change; the task layer receives no direct persistence capability. Cancel and every error path leave the caller's artifacts and input immutable. Seven deterministic fixtures cover bilingual chains, exact ids/bindings, invalid sources/field case, nonnumeric values, duplicate deliverables, case-insensitive collisions, and frozen-input success/failure paths.
+
 ## Checkpoint log
 
 Device history is an append-only, per-artifact list of source snapshots. Applying a file or workspace Agent mutation records every patched pre-change source before the atomic write; a newly created artifact has no prior source to checkpoint. ⌘S records an explicit manual snapshot; restoring an older snapshot first records a safety checkpoint of the current source. Consecutive identical snapshots are deduplicated, malformed storage is ignored, and each artifact retains at most 24 checkpoints within a 500,000-character budget. Sources over 200,000 characters require export instead of a localStorage snapshot, and quota failures remain visible in the save indicator. Both drafts and checkpoints share the local workspace storage envelope, so refresh no longer destroys the normal undo boundary.
@@ -463,9 +469,10 @@ Folder reads are bounded to 50 artifacts, 2 MB per file, and 8 MB total. Rune pa
 40. v0.45 resolves each current source caret or selection to the smallest containing compiler-proven preview target and scrolls that exact target into view without granting the caret any write capability.
 41. v0.46 adds encrypted per-browser OpenAI/OpenRouter/custom Responses profiles, bounded model discovery, and explicit switching without changing Agent write permissions.
 42. v0.46 also updates the production dependency chain, pins the build-only image parser away from unsupported vulnerable formats, and makes the production audit a release gate.
-43. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
-44. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-45. D1/R2 remain undeclared until durable hosted projects or assets are required.
+43. v0.47 adds a deterministic task-first Data → Query → Chart → Document/Slides operating-review compiler behind the unchanged runtime and atomic review gates, and merges animated device-language welcome into Rune's quieter content-first visual system.
+44. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
+45. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+46. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

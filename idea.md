@@ -1873,7 +1873,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | Agent | Selection/File/Workspace typed operation、创建完整 Data→Query→Chart→成品链、review、一次修复：已交付 | bounded context、query evidence、runtime impact | provider 不能直接写；所有 concrete diff 可解释且 Apply 原子化 |
 | 导入 | `.md/.csv/.json/.sql/.html`、DOCX/XLSX/PPTX、ODT/ODS/ODP、selectable PDF：已交付 | 本地 parser、大小上限、fidelity review | 多文件单事务；脚本/OCR/丢失项明确；取消零写入 |
 | 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Deck PDF：已交付 | deterministic compiler、当前 Query snapshot | review 后一次下载；byte/结构 fixture；canonical source 不变 |
-| 通用经营汇报向导 | 一句话生成 Data→Query→Chart→报告/演示：下一阶段，已有本地编译草稿未发布 | 明确字段映射、日期/维度/指标语义、workflow review | 用户必须确认源、字段、产物；一次 transaction 可运行；空壳或错误字段失败关闭 |
+| 通用经营汇报向导 | Data→Query→Chart→报告/演示的任务式入口：v0.47 已交付 | 明确字段映射、周期/对象/重点、workflow review | 用户确认源、严格数值字段与产物；整链 runtime preflight；一次 transaction Apply；错误字段和中途版本变化零写入 |
 | 原生 `.doc/.ppt` | 暂不做浏览器内解析 | 受控 LibreOffice conversion service 或桌面壳 | 先隔离执行、病毒扫描、超时/资源限制、转换 fidelity review |
 | 扫描 PDF OCR | 下一阶段 | 本地/可选远端 OCR、页面权限与数据披露 | 用户明确选择上传范围；页级 provenance；置信度与遗漏可见 |
 | 富媒体 | 图片、附件、来源摘录：下一阶段 | asset store、hash identity、引用许可 | 不把 base64 混入 source；导入/导出/删除/同步可追踪 |
@@ -1883,3 +1883,13 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 商业与治理 | 预算、额度、用量、数据地域、审计：下一阶段 | identity、provider usage、policy engine | 单任务预算可见；模型/供应商切换需符合数据政策；key 从不入日志 |
 
 实现顺序被冻结为四条串行主线。第一，先用真实经营汇报任务验证“来源到成品”的时间节省，而不是继续横向加格式；第二，补桌面安全存储、旧 Office 转换和 OCR，使目标用户的现实输入可进入同一 canonical model；第三，在重复使用成立后做资产、模板、连接器与自动刷新；第四，只有多人重复协作和付费证据同时出现，才引入账号、云同步、CRDT 与组织治理。停止条件同样明确：不能建立 source provenance 的入口不做可视化回写，不能安全持有 credential 的平台不开放 BYOK，不能在 compiler fixture 中 round-trip 的格式不标“支持”，没有实际用户复用证据不建设 marketplace 或企业后台。
+
+## 53. v0.47 从“AI 功能工作台”转向 Rune 自己的任务与视觉语言
+
+[ColaMD](https://github.com/marswaveai/ColaMD) 值得学习的是 content-first：默认界面安静、永久控件少、内容宽度受控、文件与编辑模式按需出现；[MarkText](https://github.com/marktext/marktext) 和 [Moraya](https://github.com/zouwei/moraya) 证明 Source/Visual/Split 模式必须让用户理解当前编辑对象；[Slidev](https://github.com/slidevjs/slidev) 证明演示的长期优势来自 Markdown、主题、预览和导出共享一份 source。Rune 不复制它们的窗口、图标或排版，而采用自己的朱砂印记、雾白材料、石墨文字和 Artifact 语义浅色。v0.47 因而移除仿 macOS 三色窗钮和黑色 AI 活动栏，降低渐变、彩色实心块、机器人头像与胶囊标签的视觉权重；工作区名称不再硬编码成 Q2 demo，模型入口也退回工具位置。AI 仍是能力层，但产品第一眼是一个人的内容工作区。
+
+首次启动把“欢迎”和“语言”合并为同一决策页。Hello、你好、Bonjour、Hola、こんにちは、안녕하세요与 Halo 在本地按固定节奏轮换，设备语言只决定首次推荐，不替用户确认；reduced-motion 用户不轮换。首屏不读取时间、随机数或运行时 locale formatter，平台快捷键只在 onboarding 客户端挂载后确定，因此不会再次制造 SSR hydration 文本分叉。语言之后仍先设置模型 profile，再亲手完成快捷键，最后进入可编辑本地指南、导入或示例。
+
+真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Rune 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
+
+这一版本也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；它们等待桌面壳或隔离、限时、限资源、带恶意文件扫描的转换服务。扫描 PDF 仍等待带页面范围披露、置信度和 provenance 的 OCR port。主工作区已有中英文核心导航，但历史提示、专业 review 细节和少数编辑器文案还需继续进入统一 localization catalog。连续像素 scroll-lock 仍不做；现有双向同步以 source identity 精确选择、高亮和居中滚动，只有获得更细 source map 的 inline/list/table 对象才扩展。

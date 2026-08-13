@@ -30,9 +30,9 @@ test("server-renders the Rune artifact workbench", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
-  assert.match(html, /Artifact workspace/);
+  assert.match(html, /Content workspace/);
   assert.match(html, /q2-review\.md/);
-  assert.match(html, /Rune Agent/);
+  assert.match(html, /Create review/);
   assert.match(html, /Open folder/);
   assert.match(html, /\.docx,\.xlsx,\.pptx/);
   assert.match(html, /Live preview/);
@@ -66,7 +66,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Select Executive summary in canonical source for Agent context/);
   assert.match(html, /SQL metrics/);
   assert.match(html, /Saved on device/);
-  assert.match(html, /> New</);
+  assert.match(html, /New<\/button>/);
   assert.match(html, /aria-label="Create a new artifact"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
@@ -84,15 +84,15 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.46/);
+  assert.match(html, /Rune v0\.47/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
   assert.match(html, /Export q2-review\.md as DOCX/);
   assert.match(html, /Export q2-review\.md as ODT/);
   assert.match(html, /Export q2-review\.md as PDF/);
-  assert.match(html, /Compiled output/);
-  assert.match(html, /Every write is reviewable and undoable/);
+  assert.match(html, /Live output/);
+  assert.match(html, /every write remains reviewable and undoable/i);
 });
 
 test("keeps compatibility parsers and heavy runtimes out of the initial client bundle", async () => {
@@ -206,7 +206,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /source-bound analysis workflow/);
   assert.match(clientSource, /把选中内容压缩成一句话/);
   assert.match(clientSource, /把选中数值乘以 1\.1/);
-  assert.match(clientSource, /Nothing outside the selected source may change/);
+  assert.match(clientSource, /change confined to this selection/);
   assert.match(clientSource, /selection-confined patch/);
   assert.match(clientSource, /Selection Agent is limited to/);
   assert.match(clientSource, /selection boundary verification failed/);
@@ -258,6 +258,13 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /encrypted into an HttpOnly credential/);
   assert.match(clientSource, /never written to localStorage, the workspace, an Artifact, or Git/);
   assert.match(clientSource, /bounded local Query/);
+  assert.match(clientSource, /Create operating review/);
+  assert.match(clientSource, /Prepare a verifiable operating-review chain/);
+  assert.match(clientSource, /One atomic transaction · no local file upload/);
+  assert.match(clientSource, /Data → Query → Chart/);
+  assert.match(clientSource, /Hello/);
+  assert.match(clientSource, /Bonjour/);
+  assert.match(clientSource, /prefers-reduced-motion: reduce/);
   assert.match(clientSource, /evidence is not persisted/);
   assert.match(clientSource, /QUERY_EVIDENCE_REQUIRED/);
   assert.match(clientSource, /Runtime impact preflight passed/);

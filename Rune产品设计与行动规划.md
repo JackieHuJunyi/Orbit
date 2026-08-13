@@ -1162,6 +1162,14 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 统一验收规则：任何入口都要列出输入上限、数据去向、canonical 结果、可逆路径和失败状态；任何 AI 写入都要有 exact revision、bounded capability、concrete diff、compiler/runtime proof 和人的确认；任何“支持格式”都要有真实 fixture、fidelity notes 与外部 handler/render QA；任何秘密都不能进入浏览器可读存储、workspace、日志或 Git。详细状态矩阵记录在 `idea.md` 第 52 节，路线图阶段 P0–P6 继续作为商业验证门，而不是被工程版本号替代。
 
+### 6.27 v0.47 Apple 式首次进入与任务式经营汇报
+
+首次页把动态多语言问候与语言确认放在同一屏：设备语言决定推荐，不替用户选择；问候轮换是纯展示且服从 reduced-motion。确认后依次进入个人模型 profile、本地模式兜底、真实快捷键练习和本地指南/导入/示例选择。视觉采用 Rune 自己的朱砂主色、雾白材料与石墨文字，去掉仿 macOS 三色按钮、黑色活动栏、强渐变和高饱和实心 Artifact 块。核心工作区导航开始随语言变化，固定的 Q2 demo 名称改为本地工作区或用户连接的目录名。
+
+工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
+
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 已转 Markdown，扫描 PDF 尚无 OCR。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；连续像素 scroll lock、inline span、嵌套 list/table 粒度仍等待更细 source map。完整状态与参考项目取舍写入 `idea.md` 第 53 节。
+
 ---
 
 ## 7. 指标、Eval 与结果验证
