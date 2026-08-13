@@ -14,6 +14,7 @@ import {
   Columns2,
   Database,
   Download,
+  Ellipsis,
   Eye,
   FileArchive,
   FileCode2,
@@ -638,7 +639,7 @@ export function RuneWorkbench() {
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
   const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
-  const [appearanceMenuOpen, setAppearanceMenuOpen] = useState(false);
+  const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [workspaceSourcePercent, setWorkspaceSourcePercent] = useState(DEFAULT_WORKSPACE_SOURCE_PERCENT);
   const [workspaceView, setWorkspaceView] = useState<RuneWorkspaceView>("split");
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
@@ -649,7 +650,7 @@ export function RuneWorkbench() {
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
-  const appearanceMenuRef = useRef<HTMLDivElement>(null);
+  const toolsMenuRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
@@ -689,15 +690,15 @@ export function RuneWorkbench() {
   }, []);
 
   useEffect(() => {
-    if (!exportMenuOpen && !appearanceMenuOpen) return;
+    if (!exportMenuOpen && !toolsMenuOpen) return;
     const closeOutside = (event: globalThis.PointerEvent) => {
       if (!exportMenuRef.current?.contains(event.target as Node)) setExportMenuOpen(false);
-      if (!appearanceMenuRef.current?.contains(event.target as Node)) setAppearanceMenuOpen(false);
+      if (!toolsMenuRef.current?.contains(event.target as Node)) setToolsMenuOpen(false);
     };
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
         setExportMenuOpen(false);
-        setAppearanceMenuOpen(false);
+        setToolsMenuOpen(false);
       }
     };
     window.addEventListener("pointerdown", closeOutside);
@@ -706,7 +707,7 @@ export function RuneWorkbench() {
       window.removeEventListener("pointerdown", closeOutside);
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [appearanceMenuOpen, exportMenuOpen]);
+  }, [exportMenuOpen, toolsMenuOpen]);
   const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
     setModelMode(nextMode);
     try {
@@ -2874,44 +2875,47 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? ui.saved : saveState === "error" ? ui.storageFull : ui.saving}</span>
           </div>
-          <button className="icon-button help-button" disabled={Boolean(activeVisualSourceDraft)} onClick={openWelcomeGuide} aria-label={ui.help} title={ui.help}>
-            <BookOpen />
-          </button>
-          <div className="appearance-menu" ref={appearanceMenuRef}>
+          <div className="tools-menu" ref={toolsMenuRef}>
             <button
-              className={`icon-button appearance-trigger ${appearanceMenuOpen ? "active" : ""}`.trim()}
+              className={`icon-button tools-menu-trigger ${toolsMenuOpen ? "active" : ""}`.trim()}
               type="button"
-              onClick={() => setAppearanceMenuOpen((open) => !open)}
-              aria-label={ui.appearance}
-              aria-expanded={appearanceMenuOpen}
+              onClick={() => { setExportMenuOpen(false); setToolsMenuOpen((open) => !open); }}
+              aria-label={ui.moreTools}
+              aria-expanded={toolsMenuOpen}
               aria-haspopup="menu"
-              title={ui.appearance}
-            ><Palette /></button>
-            {appearanceMenuOpen && (
-              <div className="appearance-popover" role="menu" aria-label={ui.appearanceBody}>
-                <header><span className="overline">{ui.appearance}</span><strong>{ui.appearanceBody}</strong></header>
-                <div className="appearance-swatches">
+              title={ui.moreTools}
+            ><Ellipsis /></button>
+            {toolsMenuOpen && (
+              <div className="tools-popover" role="menu" aria-label={ui.workspaceTools}>
+                <header><span className="overline">{ui.workspaceTools}</span><strong>{ui.workspaceToolsBody}</strong></header>
+                <div className="tools-menu-actions">
+                  <button type="button" role="menuitem" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); openWelcomeGuide(); }}><BookOpen aria-hidden="true" /><span><strong>{ui.help}</strong><small>{ui.brandSubtitle}</small></span></button>
+                  <button type="button" role="menuitem" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }}><Settings aria-hidden="true" /><span><strong>{ui.models}</strong><small>{ui.localFirst}</small></span></button>
+                  <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void connectWorkspaceFolder(); }}><FolderOpen aria-hidden="true" /><span><strong>{directoryHandle?.name ?? ui.openFolder}</strong><small>{ui.workspace}</small></span></button>
+                  {directoryHandle && <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void pullWorkspaceFolder(); }}><RefreshCw aria-hidden="true" /><span><strong>{ui.pull}</strong><small>{directoryHandle.name}</small></span></button>}
+                  {directoryHandle && <button type="button" role="menuitem" disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} onClick={() => { setToolsMenuOpen(false); void pushWorkspaceFolder(); }}><Save aria-hidden="true" /><span><strong>{ui.push}</strong><small>{directoryHandle.name}</small></span></button>}
+                </div>
+                <div className="tools-appearance-header"><Palette aria-hidden="true" /><span><strong>{ui.appearance}</strong><small>{ui.appearanceBody}</small></span></div>
+                <div className="tools-theme-grid" aria-label={ui.appearanceBody}>
                   {RUNE_APPEARANCE_THEMES.map((theme) => (
                     <button
                       type="button"
                       role="menuitemradio"
                       aria-checked={appearanceTheme === theme.id}
                       className={appearanceTheme === theme.id ? "selected" : ""}
-                      onClick={() => { setAppearanceTheme(theme.id); setAppearanceMenuOpen(false); }}
+                      aria-label={runeText(locale, theme.english, theme.chinese)}
+                      title={runeText(locale, theme.english, theme.chinese)}
+                      onClick={() => setAppearanceTheme(theme.id)}
                       key={theme.id}
                     >
                       <span className="appearance-swatch" style={{ background: `linear-gradient(145deg, ${theme.soft} 0 48%, ${theme.color} 50% 100%)` }} />
-                      <span><strong>{runeText(locale, theme.english, theme.chinese)}</strong>{appearanceTheme === theme.id && <small>{ui.activeTheme}</small>}</span>
-                      {appearanceTheme === theme.id && <Check />}
+                      {appearanceTheme === theme.id && <Check aria-hidden="true" />}
                     </button>
                   ))}
                 </div>
               </div>
             )}
           </div>
-          <button className="icon-button" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }} aria-label={ui.models} title={ui.models}>
-            <Settings />
-          </button>
           <button
             className="button review-task-button"
             onClick={openOperatingReview}
@@ -2929,26 +2933,12 @@ export function RuneWorkbench() {
           <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} {ui.import}
           </button>
-          <button
-            className={`button ghost-button folder-button ${directoryState}`}
-            onClick={() => void connectWorkspaceFolder()}
-            disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)}
-            title={directoryHandle ? `${ui.workspace} · ${directoryHandle.name}` : ui.openFolder}
-          >
-            <FolderOpen aria-hidden="true" /> <span>{directoryHandle?.name ?? ui.openFolder}</span>
-          </button>
-          {directoryHandle && (
-            <>
-              <button className="icon-button" onClick={() => void pullWorkspaceFolder()} disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} aria-label={`${ui.pull} · ${directoryHandle.name}`} title={ui.pull}><RefreshCw /></button>
-              <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} aria-label={`${ui.push} · ${directoryHandle.name}`} title={ui.push}><Save /></button>
-            </>
-          )}
           {!emptyWorkspace && (
             <div className="export-menu" ref={exportMenuRef}>
               <button
                 className={`button ghost-button export-menu-trigger ${exportMenuOpen ? "active" : ""}`.trim()}
                 type="button"
-                onClick={() => setExportMenuOpen((open) => !open)}
+                onClick={() => { setToolsMenuOpen(false); setExportMenuOpen((open) => !open); }}
                 disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
                 aria-haspopup="menu"
                 aria-expanded={exportMenuOpen}
@@ -3528,7 +3518,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.63</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.64</span></div>
       </footer>
 
       {newArtifactOpen && (

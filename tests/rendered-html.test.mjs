@@ -34,7 +34,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Content workspace/);
   assert.match(html, /q2-review\.md/);
   assert.match(html, /Create review/);
-  assert.match(html, /Open folder/);
+  assert.match(html, /More tools/);
   assert.match(html, /\.docx,\.xlsx,\.pptx/);
   assert.match(html, /Live preview/);
   assert.match(html, /metrics compiled live/);
@@ -101,7 +101,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.63/);
+  assert.match(html, /Rune v0\.64/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -353,4 +353,23 @@ test("keeps preview validation visible while progressively disclosing detailed e
   assert.match(styles, /\.preview-evidence-popover\s*\{[^}]*position:\s*absolute;[^}]*z-index:\s*80;/s);
   assert.match(styles, /\.workspace\.view-split \.workspace-view-switch button span\s*\{\s*display:\s*none;/);
   assert.match(styles, /html\[dir="rtl"\] \.preview-evidence-popover/);
+});
+
+test("keeps primary creation and handoff actions visible while disclosing workspace tools in one menu", async () => {
+  const response = await render();
+  const html = await response.text();
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(html, /aria-label="More tools"/);
+  assert.match(html, /aria-haspopup="menu"/);
+  assert.match(html, />Create review</);
+  assert.match(html, />New</);
+  assert.match(html, />Import</);
+  assert.match(html, />Export</);
+  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  assert.match(source, /className="tools-popover" role="menu"/);
+  assert.match(source, /ui\.openFolder/);
+  assert.match(source, /role="menuitem"[^>]*onClick=\{\(\) => \{ setToolsMenuOpen\(false\); openWelcomeGuide\(\); \}\}/);
+  assert.match(source, /role="menuitemradio"/);
+  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, 35px\)/s);
+  assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
 });

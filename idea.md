@@ -2004,4 +2004,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 证据只是渐进披露，没有被降级或重新计算。popover 读取的仍是当前 artifact revision、binding compiler 与 validation result；没有新缓存，也不影响 source linking、Agent scope 或写入。Split 模式下三态视图切换缩成可辨识图标，Source/Preview 专注模式仍显示文字，形成“日常对照更轻、单项任务更明确”的层级。RTL、窄屏固定定位和 reduced-motion 都沿用同一视觉合同。
 
+## 69. v0.64 工具栏首先表达产品的任务，而不是功能库存
+
+过去顶部把帮助、主题、模型、创建汇报、新建、导入、文件夹、Pull、Push、导出全部同级排开；功能越完整越像工程控制台。v0.64 常驻保存状态与五个直接任务：创建汇报、新建、导入、导出，加上一个轻量 More Tools。帮助、模型配置、连接文件夹、Pull/Push 和主题色进入同一面板；目录已经连接时仍显示确切目录名，连接、读取与写回仍是三个明确动作。
+
+主题不再弹出第二层菜单，而是在工具面板底部直接呈现五个色点与当前选择；每个选项仍是 `menuitemradio`，拥有 9-locale label。More Tools 与 Export 互斥打开，点击外部或 Escape 都关闭，RTL 与窄屏有明确落点。这里只移动入口，不修改任何 command、permission 或 source transaction；高频任务变得可见，低频工具仍一击可达。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

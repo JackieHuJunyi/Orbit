@@ -1885,3 +1885,7 @@ Split 用于逐段对照，Source 用于集中写作，Preview 用于检查最�
 ### 17.8 v0.63 视觉层级服从用户当前任务
 
 成品标题栏常驻唯一 validation 结果；来源 target、Data/Query source、metric 和 Chart binding 进入可键盘展开的证据详情。它们仍从当前 revision 实时编译，不缓存、不隐藏问题、不改变 Agent 或写权限。Split 模式的视图按钮只显示图标，Source/Preview 专注模式显示文字，使常用对照轻巧、单项任务明确。
+
+### 17.9 v0.64 顶部只表达直接任务
+
+顶部常驻保存状态、创建汇报、新建、导入和导出；帮助、模型、文件夹连接/Pull/Push 与五种主题色统一进入 More Tools。面板是可键盘操作的九语言菜单，Export 与 More Tools 互斥，Escape 和点击外部关闭。入口重排不能改变原命令、权限、review 或 source transaction。

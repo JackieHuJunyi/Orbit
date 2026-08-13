@@ -1818,6 +1818,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "改成紫色強調"
   ],
   [
+    "文件夹与外观",
+    "資料夾與外觀"
+  ],
+  [
     "文件身份不变",
     "檔案身份不變"
   ],
@@ -2224,6 +2228,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "工作区修改",
     "工作區修改"
+  ],
+  [
+    "工作区工具",
+    "工作區工具"
   ],
   [
     "工作区数据",
@@ -3548,6 +3556,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "已将",
     "已將"
+  ],
+  [
+    "帮助",
+    "幫助"
   ],
   [
     "幻灯",

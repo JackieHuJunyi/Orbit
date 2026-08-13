@@ -542,6 +542,8 @@ The shared shortcut resolver accepts only `Meta/Control + Alt + physical Digit1/
 
 Preview provenance uses progressive disclosure only at the presentation boundary. The always-visible summary is derived from the current validation error count; its native details body renders the same current source target, exact Data/Query source, metric/Chart binding counts, and validation result that previously occupied the header. It owns no copied evidence state, has no influence on compilation or permissions, and retains native keyboard semantics plus RTL/mobile placement.
 
+Top-bar disclosure is likewise presentation-only. Review creation, artifact creation, import, and contextual export remain direct task actions. Help/onboarding, model setup, directory connect/Pull/Push, and appearance reuse their existing handlers from one localized menu; appearance choices remain five explicit `menuitemradio` controls. The More Tools and Export surfaces are mutually exclusive and share outside-click/Escape dismissal, but neither menu owns command, credential, directory, or artifact state.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |
