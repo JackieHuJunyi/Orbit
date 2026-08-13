@@ -5,6 +5,7 @@ import { compileDeckSource, parseDeckSource } from "../app/lib/deck.ts";
 import { derivePreviewSourceTargets } from "../app/lib/preview-targets.ts";
 import {
   canVisualEditDeckSlide,
+  projectVisualDeckSlideDraft,
   prepareVisualDeckSlideEdit,
   visualDeckSlideDraft,
   visualDeckSlidePreviewSource,
@@ -56,6 +57,21 @@ test("builds a sandbox-ready one-slide preview from the controlled fields", () =
   assert.equal(parsed.deck?.slides[0].layout, "metrics");
   assert.equal(parsed.deck?.slides[0].eyebrow, "Live result");
   assert.equal(compileDeckSource(preview.source).slideCount, 1);
+});
+
+test("projects one unsaved slide into the complete Deck source", () => {
+  const artifact = Object.freeze(deck(source));
+  const target = derivePreviewSourceTargets(artifact).find((candidate) => candidate.label === "Decision");
+  assert.ok(target);
+  const projection = projectVisualDeckSlideDraft(artifact, target, {
+    layout: "conclusion",
+    eyebrow: "Decision",
+    draft: "## Proceed\n\nShip.",
+  });
+  assert.deepEqual(projection.errors, []);
+  assert.match(projection.nextSource.slice(projection.start, projection.end), /^<!-- layout: conclusion -->/u);
+  assert.match(projection.nextSource.slice(projection.start, projection.end), /## Proceed/u);
+  assert.equal(artifact.source, source);
 });
 
 test("rejects stale, empty, unchanged, cross-slide, and unsafe metadata edits", () => {

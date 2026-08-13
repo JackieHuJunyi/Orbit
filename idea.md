@@ -1707,7 +1707,7 @@ Gemini Notebook 类产品值得借鉴的是 Sources 作为所有回答和产物�
 
 v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装整个旧工作台已完成国际化。它也不因为用户希望打开 DOC、PPT、PDF、ODF 就把扩展名加入 accept 列表：DOC/PPT 是旧二进制格式，需要未来桌面壳或受控 conversion service；PDF 到 Markdown 是语义提取/OCR，不是原版式 round-trip；ODF 要分别实现 ODT、ODS、ODP。每一种格式仍必须有 parser limit、review、fidelity warning、fixture 和独立 handler QA。
 
-双向编辑同样保持 source-first。当前左侧修改已经实时重编译右侧，右侧 heading、cell、row、Query direct field、Chart datum 和 Deck slide 已能定位精确 source。下一阶段先让直接 Data cell 通过 typed visual editor 编译回 CSV/JSON，再逐步加入 Document block、Deck block 和 Chart property operation。Rune 不会把整个 preview 设成 contenteditable 后猜测如何还原 Markdown，因为那会制造第二份状态、格式漂移和不可证明的写入范围。所谓双向同步，是两个受控投影修改同一个 canonical source。
+双向编辑同样保持 source-first。当前左侧修改已经实时重编译右侧，右侧 heading、cell、row、Query direct field、Chart datum 和 Deck slide 已能定位精确 source；Data cell、Document section/block、Deck slide 与 Chart spec 也已通过 typed visual editor 编译回同一 source。v0.51 进一步让这些右侧草稿在保存前就把完整 source candidate 实时镜像并高亮到左侧，但镜像不获得持久化权。Rune 不会把整个 preview 设成 contenteditable 后猜测如何还原 Markdown，因为那会制造第二份状态、格式漂移和不可证明的写入范围。所谓双向同步，是两个受控投影修改同一个 canonical source。
 
 ## 40. 语言之后先决定模型边界，并让第一种右侧编辑回到 source
 
@@ -1909,3 +1909,11 @@ v0.45 已经证明左侧 caret 可以回到右侧 block，但一个整张 GFM �
 语言同时影响可执行建议，而不只影响按钮。过去英文界面仍显示中文 quick commands，用户可以点击，但产品心智已经断裂；现在 Selection、File 和 Workspace 三种范围都有等价的双语确定性指令，既保留本地 planner 的意图匹配，也让模型请求与界面一致。高频状态在渲染边界按当前 locale 转换，因此用户切换语言时当前状态立即变化，workspace、checkpoint 和 source 不需要被改写。
 
 稳定渲染仍优先。SSR 输出英文壳且 `<html lang="en">` 与首屏内容一致，hydration 后才读取已确认的设备偏好并更新根 `lang`；catalog 不读取时间、随机数或 ambient ICU formatter。技术证据保留一条明确边界：parser、provider、DuckDB 和 import/export adapter 的原始错误可能仍是英文，因为没有稳定 code 时翻译自由文本可能掩盖真正修复动作。下一步不是补一个巨型模糊词典，而是让这些端口返回 `code + parameters + original detail`，再由 UI 翻译标题与建议、保留可展开的原始证据。
+
+## 56. v0.51 双向同步必须同时展示完整源，但不能制造第二个事实
+
+过去的右侧编辑已经实时渲染局部草稿，保存后也会精确回写左侧；用户仍看不到保存前完整 Markdown/CSV/JSON/Deck source 会变成什么，这会让“左右实时同步”在操作感受上只完成一半。v0.51 因此给每个已证明写 capability 增加纯内存 projection：Document section/block、Data scalar cell、Deck slide 与 Chart property controls 都把当前输入编译成完整 source candidate，并附带 exact replacement range 和 errors。左侧以同一字体、换行和滚动显示整个 candidate，高亮唯一被替换的范围；状态明确区分未改变、可保存和需要修正。
+
+projection 不是 canonical source。右侧仍是这次草稿的唯一 writer，左侧只读；artifact state、localStorage、checkpoint、依赖图、Agent context、folder Push 与各种 export 始终读取原 revision。Cancel/Escape 只销毁 projection，不需要 undo；Save 不信任已有 mirror，而是对当前 base revision 再编译一次，运行完整 workspace/downstream proof，创建 checkpoint 后才单次持久化。编辑期间暂停文件切换、导入导出、目录同步、Agent 和全局保存，避免异步上下文把临时草稿误当成已保存事实。
+
+这不是任意 contenteditable。右侧只能编辑已有 compiler 已授权的语义范围，invalid draft 即使可以显示文本候选也会标红、禁用保存；Query 派生值、legacy HTML、嵌套 JSON、不可证明 DOM selection 和连续像素 scroll lock 仍不获得写权限。下一步若要允许左侧在同一临时 session 继续改，必须引入统一 draft document 与 selection transform，而不是让两个 textarea 分别维护自己的字符串。

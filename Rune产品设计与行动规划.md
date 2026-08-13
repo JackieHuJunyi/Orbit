@@ -1188,6 +1188,12 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 SSR 仍固定输出稳定英文壳，hydration 后才读取设备建议或已确认偏好，并同步根节点 `lang`；因此语言扩展不会重新引入 `Date.now`、浏览器 formatter 或服务端/客户端分叉。状态栏在展示时翻译高频生命周期消息，切换语言无需重写工作区状态。parser、模型供应商、DuckDB 与格式 adapter 返回的原始诊断和 fidelity evidence 暂时保留来源语言，避免无错误码条件下的松散翻译改变技术含义；下一阶段若要覆盖这些错误，先把它们升级为稳定 code + parameters，再由 UI 本地化。
 
+### 6.30 v0.51 可视化编辑的完整源草稿同步
+
+右侧 Document section/block、Data scalar cell、Deck slide 和完整 Chart spec 的受控编辑现在不再只更新各自局部预览。每次输入都通过该编辑器已有的 revision-bound compiler 投影成一份完整 source candidate，并在左侧主源区域实时显示、精确高亮实际替换范围；换行和行号跟随完整草稿，invalid/no-op/ready 状态明确可见。用户因此能同时看到“成品会怎样变”和“规范源会怎样变”，而不需要先保存或打开另一个 diff 弹层。
+
+这仍然只有一份草稿写权限。右侧编辑存在时，左侧镜像只读，并暂停文件切换、导入、导出、目录同步、Agent 和全局 checkpoint；这样不会出现两个输入端互相覆盖。镜像从不写入 artifact、localStorage、checkpoint、dependency graph、export 或 folder source，Cancel/Escape 立即销毁；Save 重新以未改变的 canonical revision 编译，继续通过完整 workspace validation、受影响 Query/Chart runtime preflight、checkpoint 和一次持久化。Query 派生结果、legacy HTML 和无 exact provenance 的视觉元素仍只读。
+
 ---
 
 ## 7. 指标、Eval 与结果验证

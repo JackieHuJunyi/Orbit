@@ -4,6 +4,7 @@ import test from "node:test";
 import { deriveDocumentBlockPreviewSourceTargets } from "../app/lib/preview-targets.ts";
 import {
   canVisualEditDocumentBlock,
+  projectVisualDocumentBlockDraft,
   prepareVisualDocumentBlockEdit,
   visualDocumentBlockDraft,
 } from "../app/lib/visual-document-block-edit.ts";
@@ -126,4 +127,23 @@ test("rejects malformed binding syntax even when the current block has no bindin
     prepareVisualDocumentBlockEdit(artifact, target, { draft: "Revenue is {{ unfinished." }).errors[0],
     /bindings unchanged/u,
   );
+});
+
+test("projects an unsaved block draft as a full-source mirror with an exact highlight range", () => {
+  const source = "# Brief\n\nOpening.\n\n## Decision\n\nWait.\n";
+  const artifact = Object.freeze(document(source));
+  const target = deriveDocumentBlockPreviewSourceTargets(artifact).find((candidate) => candidate.label === "Wait.");
+  assert.ok(target);
+
+  const projected = projectVisualDocumentBlockDraft(artifact, target, { draft: "Proceed now." });
+  assert.deepEqual(projected.errors, []);
+  assert.equal(artifact.source, source);
+  assert.equal(projected.start, target.start);
+  assert.equal(projected.end, target.start + "Proceed now.".length);
+  assert.equal(projected.nextSource, `${source.slice(0, target.start)}Proceed now.${source.slice(target.end)}`);
+
+  const invalid = projectVisualDocumentBlockDraft(artifact, target, { draft: "- Changed type" });
+  assert.match(invalid.errors[0], /one paragraph block/u);
+  assert.match(invalid.nextSource, /- Changed type/u);
+  assert.equal(artifact.source, source);
 });

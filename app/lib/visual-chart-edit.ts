@@ -24,6 +24,13 @@ export type PreparedVisualChartSpecEdit = {
   errors: string[];
 };
 
+export type VisualChartSpecDraftProjection = {
+  nextSource: string;
+  start: number;
+  end: number;
+  errors: string[];
+};
+
 export type VisualChartSourceFields = {
   sourceName: string;
   columns: string[];
@@ -69,6 +76,27 @@ function specForInput(
     maxItems: input.maxItems,
   });
   return parseChartSource(source);
+}
+
+function sourceForInput(
+  artifact: WorkspaceArtifact,
+  input: VisualChartSpecEditInput,
+) {
+  const current = parseChartSource(artifact.source).spec;
+  if (!current) return artifact.source;
+  return `${JSON.stringify({
+    version: 1,
+    title: input.title,
+    description: input.description,
+    source: current.source,
+    mark: input.mark,
+    category: input.category,
+    value: input.value,
+    sort: input.sort,
+    format: input.format,
+    color: typeof input.color === "string" ? input.color.toLowerCase() : input.color,
+    maxItems: input.maxItems,
+  }, null, 2)}${artifact.source.endsWith("\n") ? "\n" : ""}`;
 }
 
 function serializeSpec(spec: ChartSpec, trailingNewline: boolean) {
@@ -136,6 +164,36 @@ export function canVisualEditChartSpec(
   if (artifact.kind !== "chart" || artifact.language !== "Chart JSON" || target.kind !== "chart-spec") return false;
   const current = currentTargetForRevision(artifact, target);
   return Boolean(current && current.end - current.start <= MAX_VISUAL_CHART_SOURCE_CHARS);
+}
+
+export function projectVisualChartSpecDraft(
+  artifact: WorkspaceArtifact,
+  requestedTarget: PreviewSourceTarget,
+  input: VisualChartSpecEditInput,
+): VisualChartSpecDraftProjection {
+  const target = artifact.kind === "chart"
+    ? currentTargetForRevision(artifact, requestedTarget)
+    : undefined;
+  if (!target) {
+    return {
+      nextSource: artifact.source,
+      start: requestedTarget.start,
+      end: requestedTarget.end,
+      errors: ["The Chart properties no longer match the current source revision."],
+    };
+  }
+  const preview = visualChartSpecPreviewSource(artifact, input);
+  const prepared = prepareVisualChartSpecEdit(artifact, target, input);
+  const nextSource = preview.source || sourceForInput(artifact, input);
+  return {
+    nextSource,
+    start: 0,
+    end: nextSource.length,
+    errors: [...new Set([
+      ...preview.errors,
+      ...prepared.errors.filter((error) => !/unchanged\.?$/iu.test(error)),
+    ])],
+  };
 }
 
 export function prepareVisualChartSpecEdit(

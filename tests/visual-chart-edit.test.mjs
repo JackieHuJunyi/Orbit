@@ -5,6 +5,7 @@ import { parseChartSource } from "../app/lib/charts.ts";
 import { derivePreviewSourceTargets } from "../app/lib/preview-targets.ts";
 import {
   canVisualEditChartSpec,
+  projectVisualChartSpecDraft,
   prepareVisualChartSpecEdit,
   visualChartSourceFields,
   visualChartSpecDraft,
@@ -62,6 +63,24 @@ test("keeps the bound source identity outside the visual Chart draft", () => {
   const preview = visualChartSpecPreviewSource(artifact, { ...draft, value: "Q1 Revenue" });
   assert.deepEqual(preview.errors, []);
   assert.equal(parseChartSource(preview.source).spec?.source, "regional-revenue");
+});
+
+test("projects unsaved Chart controls as complete canonical Chart JSON", () => {
+  const artifact = Object.freeze(chartArtifact());
+  const [target] = derivePreviewSourceTargets(artifact);
+  const draft = visualChartSpecDraft(artifact);
+  assert.ok(draft);
+  const projection = projectVisualChartSpecDraft(artifact, target, { ...draft, title: "Projected title" });
+  assert.deepEqual(projection.errors, []);
+  assert.equal(projection.start, 0);
+  assert.equal(projection.end, projection.nextSource.length);
+  assert.equal(parseChartSource(projection.nextSource).spec?.title, "Projected title");
+  assert.notEqual(projection.nextSource, artifact.source);
+
+  const invalid = projectVisualChartSpecDraft(artifact, target, { ...draft, color: "orange" });
+  assert.match(invalid.errors[0], /color/i);
+  assert.match(invalid.nextSource, /"color": "orange"/u);
+  assert.equal(parseChartSource(invalid.nextSource).spec, undefined);
 });
 
 test("derives exact Data and Query field choices from current readable sources", () => {

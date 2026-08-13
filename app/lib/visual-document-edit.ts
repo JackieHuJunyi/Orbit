@@ -20,6 +20,13 @@ export type PreparedVisualDocumentSectionEdit = {
   errors: string[];
 };
 
+export type VisualDocumentDraftProjection = {
+  nextSource: string;
+  start: number;
+  end: number;
+  errors: string[];
+};
+
 type VisibleHeading = {
   level: number;
   start: number;
@@ -97,6 +104,33 @@ export function canVisualEditDocumentSection(
   if (artifact.kind !== "document" || target.kind !== "document-section") return false;
   const current = currentTargetForRevision(artifact, target);
   return Boolean(current && current.end - current.start <= MAX_VISUAL_DOCUMENT_SECTION_CHARS);
+}
+
+export function projectVisualDocumentSectionDraft(
+  artifact: WorkspaceArtifact,
+  requestedTarget: PreviewSourceTarget,
+  input: VisualDocumentSectionEditInput,
+): VisualDocumentDraftProjection {
+  const target = artifact.kind === "document"
+    ? currentTargetForRevision(artifact, requestedTarget)
+    : undefined;
+  if (!target) {
+    return {
+      nextSource: artifact.source,
+      start: requestedTarget.start,
+      end: requestedTarget.end,
+      errors: ["The section no longer matches the current source revision."],
+    };
+  }
+  const replacement = normalizeDraft(input.draft, artifact.source);
+  const nextSource = `${artifact.source.slice(0, target.start)}${replacement}${artifact.source.slice(target.end)}`;
+  const prepared = prepareVisualDocumentSectionEdit(artifact, target, input);
+  return {
+    nextSource,
+    start: target.start,
+    end: target.start + replacement.length,
+    errors: prepared.errors.filter((error) => !/unchanged\.?$/iu.test(error)),
+  };
 }
 
 export function prepareVisualDocumentSectionEdit(

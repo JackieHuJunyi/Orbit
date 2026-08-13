@@ -34,6 +34,13 @@ export type PreparedVisualDeckSlideEdit = {
   errors: string[];
 };
 
+export type VisualDeckSlideDraftProjection = {
+  nextSource: string;
+  start: number;
+  end: number;
+  errors: string[];
+};
+
 export type VisualDeckSlidePreview = {
   source: string;
   errors: string[];
@@ -138,6 +145,32 @@ export function canVisualEditDeckSlide(
   if (artifact.kind !== "slides" || artifact.language !== "Deck Markdown" || target.kind !== "deck-slide") return false;
   const current = currentTargetForRevision(artifact, target);
   return Boolean(current && current.end - current.start <= MAX_VISUAL_DECK_SLIDE_CHARS);
+}
+
+export function projectVisualDeckSlideDraft(
+  artifact: WorkspaceArtifact,
+  requestedTarget: PreviewSourceTarget,
+  input: VisualDeckSlideEditInput,
+): VisualDeckSlideDraftProjection {
+  const target = artifact.kind === "slides"
+    ? currentTargetForRevision(artifact, requestedTarget)
+    : undefined;
+  if (!target) {
+    return {
+      nextSource: artifact.source,
+      start: requestedTarget.start,
+      end: requestedTarget.end,
+      errors: ["The slide no longer matches the current source revision."],
+    };
+  }
+  const replacement = composeSlideFragment(input, newlineFor(artifact.source));
+  const prepared = prepareVisualDeckSlideEdit(artifact, target, input);
+  return {
+    nextSource: `${artifact.source.slice(0, target.start)}${replacement}${artifact.source.slice(target.end)}`,
+    start: target.start,
+    end: target.start + replacement.length,
+    errors: prepared.errors.filter((error) => !/unchanged\.?$/iu.test(error)),
+  };
 }
 
 export function visualDeckSlidePreviewSource(

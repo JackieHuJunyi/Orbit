@@ -61,3 +61,4 @@
 - 2026-08-13 — Extended compiler-proven Document synchronization to individual list items, GFM table cells, and inline Markdown semantics in both directions.
 - 2026-08-13 — Unified the main workbench, dependency graph, review dialogs, localized Agent suggestions, and Document/Data/Chart/Deck visual editors behind one explicit English/Simplified-Chinese UI contract.
 - 2026-08-13 — Added explicit-page English/Simplified-Chinese browser-local OCR for scanned PDFs with same-origin assets, stoppable progress, page provenance, visible confidence, and the unchanged atomic import review.
+- 2026-08-13 — Mirrored every revision-bound Document, Data, Chart, and Deck visual draft into the complete highlighted canonical source live, while retaining explicit save, checkpoint, validation, and cancel-without-write boundaries.

@@ -91,7 +91,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.50/);
+  assert.match(html, /Rune v0\.51/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -123,6 +123,23 @@ test("keeps compatibility parsers and heavy runtimes out of the initial client b
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/agent-evidence.ts"));
   assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
   assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/query-preflight.ts"));
+});
+
+test("ships a complete-source live mirror for revision-bound visual Document drafts", async () => {
+  const clientDir = new URL("../dist/client/assets/", import.meta.url);
+  const bundle = (await Promise.all(
+    (await readdir(clientDir)).filter((name) => name.endsWith(".js")).map((name) => readFile(new URL(name, clientDir), "utf8")),
+  )).join("\n");
+  assert.match(bundle, /complete source draft synced live/);
+  assert.match(bundle, /Unsaved synchronized source draft/);
+  assert.match(bundle, /visual-source-sync-state/);
+  assert.match(bundle, /source-draft-mirror/);
+  const previewSource = await readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8");
+  assert.match(previewSource, /projectVisualDocumentSectionDraft/);
+  assert.match(previewSource, /projectVisualDocumentBlockDraft/);
+  assert.match(previewSource, /projectVisualDataCellDraft/);
+  assert.match(previewSource, /projectVisualDeckSlideDraft/);
+  assert.match(previewSource, /projectVisualChartSpecDraft/);
 });
 
 test("ships exactly one compiler-guided repair request site before the repeated runtime gate", async () => {

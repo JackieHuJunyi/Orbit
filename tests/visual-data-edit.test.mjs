@@ -4,6 +4,7 @@ import test from "node:test";
 import { deriveDataPreviewSourceTargets } from "../app/lib/preview-targets.ts";
 import {
   canVisualEditDataCell,
+  projectVisualDataCellDraft,
   prepareVisualDataCellEdit,
   visualDataCellValueType,
 } from "../app/lib/visual-data-edit.ts";
@@ -66,4 +67,21 @@ test("rejects stale, unchanged, invalid numeric, and nested JSON cell edits", ()
   const meta = targetFor(sourceArtifact, 0, "Meta");
   assert.equal(canVisualEditDataCell(sourceArtifact, meta), false);
   assert.match(prepareVisualDataCellEdit(sourceArtifact, meta, { draft: "flat", valueType: "string" }).errors[0], /flat JSON/i);
+});
+
+test("projects an unsaved Data cell into the complete CSV or JSON source", () => {
+  const csv = Object.freeze(artifact("regions.csv", "Region,Revenue\nAPAC,1840000\n"));
+  const csvTarget = targetFor(csv, 0, "Region");
+  const csvProjection = projectVisualDataCellDraft(csv, csvTarget, { draft: "North, East", valueType: "auto" });
+  assert.deepEqual(csvProjection.errors, []);
+  assert.equal(csvProjection.nextSource, 'Region,Revenue\n"North, East",1840000\n');
+  assert.equal(csvProjection.nextSource.slice(csvProjection.start, csvProjection.end), '"North, East"');
+  assert.equal(csv.source, "Region,Revenue\nAPAC,1840000\n");
+
+  const json = Object.freeze(artifact("regions.json", '[{"Revenue":42}]'));
+  const jsonTarget = targetFor(json, 0, "Revenue");
+  const invalid = projectVisualDataCellDraft(json, jsonTarget, { draft: "2x", valueType: "number" });
+  assert.match(invalid.errors[0], /finite decimal/u);
+  assert.equal(invalid.nextSource, '[{"Revenue":2x}]');
+  assert.equal(json.source, '[{"Revenue":42}]');
 });

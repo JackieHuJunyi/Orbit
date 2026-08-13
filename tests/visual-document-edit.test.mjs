@@ -4,6 +4,7 @@ import test from "node:test";
 import { derivePreviewSourceTargets } from "../app/lib/preview-targets.ts";
 import {
   canVisualEditDocumentSection,
+  projectVisualDocumentSectionDraft,
   prepareVisualDocumentSectionEdit,
 } from "../app/lib/visual-document-edit.ts";
 
@@ -77,4 +78,25 @@ test("keeps source-owned live bindings byte-stable during a visual text edit", (
     draft: '## Result\n\nRevenue is {{ metric("Q3 Revenue", "currency") }}.',
   });
   assert.match(rejected.errors[0], /bindings unchanged/u);
+});
+
+test("projects an unsaved section draft into the complete canonical source without mutating input", () => {
+  const source = "# Brief\n\nOpening.\n\n## Decision\n\nWait.\n\n## Owner\n\nMina.\n";
+  const artifact = Object.freeze(document(source));
+  const target = derivePreviewSourceTargets(artifact).find((candidate) => candidate.label === "Decision");
+  assert.ok(target);
+
+  const projected = projectVisualDocumentSectionDraft(artifact, target, {
+    draft: "## Decision\n\nShip the verified plan.",
+  });
+  assert.deepEqual(projected.errors, []);
+  assert.equal(artifact.source, source);
+  assert.equal(projected.nextSource.slice(0, projected.start), source.slice(0, target.start));
+  assert.equal(projected.nextSource.slice(projected.start, projected.end), "## Decision\n\nShip the verified plan.");
+  assert.equal(projected.nextSource.slice(projected.end), source.slice(target.end));
+
+  const invalid = projectVisualDocumentSectionDraft(artifact, target, { draft: "" });
+  assert.match(invalid.errors[0], /cannot be empty/u);
+  assert.equal(invalid.nextSource, `${source.slice(0, target.start)}${source.slice(target.end)}`);
+  assert.equal(artifact.source, source);
 });

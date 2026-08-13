@@ -46,6 +46,7 @@ import {
   type DocumentBlockEditHandler,
   type DocumentBlockStructureReviewHandler,
   type DocumentSectionEditHandler,
+  type VisualSourceDraft,
 } from "./artifact-previews";
 import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
@@ -563,8 +564,10 @@ export function RuneWorkbench() {
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
+  const [visualSourceDraft, setVisualSourceDraft] = useState<VisualSourceDraft | null>(null);
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
+  const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
@@ -592,7 +595,38 @@ export function RuneWorkbench() {
     }
   }, []);
 
+  const handleVisualSourceDraftChange = useCallback((draft: VisualSourceDraft | null) => {
+    setVisualSourceDraft((current) => {
+      if (!current || !draft) return current === draft ? current : draft;
+      return current.artifactId === draft.artifactId
+        && current.sourceRevision === draft.sourceRevision
+        && current.nextSource === draft.nextSource
+        && current.start === draft.start
+        && current.end === draft.end
+        && current.errors.length === draft.errors.length
+        && current.errors.every((error, index) => error === draft.errors[index])
+        ? current
+        : draft;
+    });
+    if (!draft) return;
+    window.requestAnimationFrame(() => {
+      const editor = sourceEditorRef.current;
+      if (!editor || editor.value !== draft.nextSource) return;
+      editor.setSelectionRange(draft.start, draft.end, "forward");
+      const line = draft.nextSource.slice(0, draft.start).split("\n").length;
+      editor.scrollTop = Math.max(0, (line - 3) * 20.4);
+      if (gutterRef.current) gutterRef.current.scrollTop = editor.scrollTop;
+      if (sourceDraftMirrorRef.current) sourceDraftMirrorRef.current.scrollTop = editor.scrollTop;
+    });
+  }, []);
+
   const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
+  const activeVisualSourceDraft = selectedArtifact
+    && visualSourceDraft?.artifactId === selectedArtifact.id
+    && visualSourceDraft.sourceRevision === selectedArtifact.source
+    ? visualSourceDraft
+    : null;
+  const editorSource = activeVisualSourceDraft?.nextSource ?? selectedArtifact?.source ?? "";
   const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
   const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
@@ -680,8 +714,8 @@ export function RuneWorkbench() {
     [bindingState?.metricBindingErrors, bindingState?.unresolved, bindingState?.unresolvedCharts, bindingState?.unresolvedQueryMetrics, selectedArtifact, selectedChartBindingErrors, selectedQueryDataResolution?.errors],
   );
   const lineNumbers = useMemo(
-    () => Array.from({ length: selectedArtifact?.source.split("\n").length ?? 1 }, (_, index) => index + 1).join("\n"),
-    [selectedArtifact?.source],
+    () => Array.from({ length: editorSource.split("\n").length || 1 }, (_, index) => index + 1).join("\n"),
+    [editorSource],
   );
   const pendingStats = useMemo(() => {
     if (!pendingChange) return [];
@@ -746,7 +780,8 @@ export function RuneWorkbench() {
     || Boolean(pendingDocumentStructure)
     || operatingReviewOpen
     || operatingReviewState !== "idle"
-    || visualEditState !== "idle";
+    || visualEditState !== "idle"
+    || Boolean(activeVisualSourceDraft);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -824,6 +859,7 @@ export function RuneWorkbench() {
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (visualEditState !== "idle"
+        || activeVisualSourceDraft
         || pendingDocumentStructure
         || operatingReviewOpen
         || newArtifactOpen
@@ -870,26 +906,30 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, selectedId, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, selectedId, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact) return null;
 
   function selectArtifact(id: string) {
+    if (activeVisualSourceDraft) return;
     setSaveState("saving");
     setSelectedId(id);
     setEmptyWorkspace(false);
     setSourceSelection(null);
     setSourceCursor(null);
+    setVisualSourceDraft(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setAgentError("");
     setNotice("Switched artifact context");
   }
 
   function closeCurrentArtifact() {
+    if (activeVisualSourceDraft) return;
     setEmptyWorkspace(true);
     setHistoryOpen(false);
     setSourceSelection(null);
     setSourceCursor(null);
+    setVisualSourceDraft(null);
     if (agentScope === "selection") setAgentScope("artifact");
     setAgentError("");
     setNotice("Closed the current file — every source remains safely in the workspace");
@@ -978,7 +1018,7 @@ export function RuneWorkbench() {
   }
 
   function updateSource(source: string, cursor?: SourceSelection) {
-    if (pendingDocumentStructure) return;
+    if (pendingDocumentStructure || activeVisualSourceDraft) return;
     setSaveState("saving");
     setArtifacts((current) => current.map((artifact) => (
       artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact
@@ -1249,6 +1289,7 @@ export function RuneWorkbench() {
   });
 
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
+    if (activeVisualSourceDraft) return;
     const start = event.currentTarget.selectionStart;
     const end = event.currentTarget.selectionEnd;
     const sourceRevision = event.currentTarget.value;
@@ -1491,6 +1532,7 @@ export function RuneWorkbench() {
   }
 
   function restoreCheckpoint(checkpoint: WorkspaceCheckpoint) {
+    if (activeVisualSourceDraft) return;
     if (checkpoint.artifactId !== selectedArtifact.id || checkpoint.source === selectedArtifact.source) {
       setNotice("That checkpoint already matches the current source");
       return;
@@ -1511,7 +1553,7 @@ export function RuneWorkbench() {
 
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
-    if (!instruction || agentState === "planning" || visualEditState !== "idle" || pendingDocumentStructure) return;
+    if (!instruction || agentState === "planning" || visualEditState !== "idle" || activeVisualSourceDraft || pendingDocumentStructure) return;
     const scope = agentScope;
     const targetSelection = scope === "selection" ? validSourceSelection : null;
     if (scope === "selection" && !targetSelection) {
@@ -2335,7 +2377,7 @@ export function RuneWorkbench() {
       : destination === "html"
         ? selectedHtmlExport ? "HTML" : null
         : selectedPdfExport ? "PDF" : null;
-    if (!targetType || exportState !== "idle" || pendingExport || pendingImport || pendingPdfOcr || pendingDocumentStructure || importInFlightRef.current || exportInFlightRef.current) return;
+    if (!targetType || exportState !== "idle" || activeVisualSourceDraft || pendingExport || pendingImport || pendingPdfOcr || pendingDocumentStructure || importInFlightRef.current || exportInFlightRef.current) return;
     const targetArtifact = selectedArtifact;
     const baseArtifacts = artifacts;
     exportInFlightRef.current = true;
@@ -2463,10 +2505,10 @@ export function RuneWorkbench() {
             {saveState === "saved" ? <Check /> : <CircleDot />}
             <span>{saveState === "saved" ? ui.saved : saveState === "error" ? ui.storageFull : ui.saving}</span>
           </div>
-          <button className="icon-button help-button" onClick={openWelcomeGuide} aria-label={ui.help} title={ui.help}>
+          <button className="icon-button help-button" disabled={Boolean(activeVisualSourceDraft)} onClick={openWelcomeGuide} aria-label={ui.help} title={ui.help}>
             <BookOpen />
           </button>
-          <button className="icon-button" onClick={() => { setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }} aria-label={ui.models} title={ui.models}>
+          <button className="icon-button" disabled={Boolean(activeVisualSourceDraft)} onClick={() => { setWelcomeStartAt("model"); setWelcomeDismissible(true); setWelcomeOpen(true); }} aria-label={ui.models} title={ui.models}>
             <Settings />
           </button>
           <button
@@ -2483,28 +2525,28 @@ export function RuneWorkbench() {
           >
             <FilePlus2 aria-hidden="true" /> {ui.newArtifact}
           </button>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
+          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} {ui.import}
           </button>
           <button
             className={`button ghost-button folder-button ${directoryState}`}
             onClick={() => void connectWorkspaceFolder()}
-            disabled={directoryState === "syncing"}
+            disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)}
             title={directoryHandle ? `${ui.workspace} · ${directoryHandle.name}` : ui.openFolder}
           >
             <FolderOpen aria-hidden="true" /> <span>{directoryHandle?.name ?? ui.openFolder}</span>
           </button>
           {directoryHandle && (
             <>
-              <button className="icon-button" onClick={() => void pullWorkspaceFolder()} disabled={directoryState === "syncing"} aria-label={`${ui.pull} · ${directoryHandle.name}`} title={ui.pull}><RefreshCw /></button>
-              <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing"} aria-label={`${ui.push} · ${directoryHandle.name}`} title={ui.push}><Save /></button>
+              <button className="icon-button" onClick={() => void pullWorkspaceFolder()} disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} aria-label={`${ui.pull} · ${directoryHandle.name}`} title={ui.pull}><RefreshCw /></button>
+              <button className="icon-button" onClick={() => void pushWorkspaceFolder()} disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)} aria-label={`${ui.push} · ${directoryHandle.name}`} title={ui.push}><Save /></button>
             </>
           )}
           {!emptyWorkspace && selectedOfficeExportType && (
             <button
               className="icon-button"
               onClick={() => void prepareExport("office")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOfficeExportType)}
               title={ui.exportAs(selectedOfficeExportType)}
             >
@@ -2515,7 +2557,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("odf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOdfExportType)}
               title={ui.exportAsOpenDocument(selectedOdfExportType)}
             >
@@ -2526,7 +2568,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("html")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, "HTML")}
               title={ui.exportStandaloneHtml}
             >
@@ -2537,7 +2579,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("pdf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, "PDF")}
               title={ui.exportFixedPdf}
             >
@@ -2545,11 +2587,11 @@ export function RuneWorkbench() {
             </button>
           )}
           {!emptyWorkspace && (
-            <button className="icon-button" onClick={() => downloadArtifact(selectedArtifact)} aria-label={`${ui.download} · ${selectedArtifact.name}`} title={ui.download}>
+            <button className="icon-button" disabled={Boolean(activeVisualSourceDraft)} onClick={() => downloadArtifact(selectedArtifact)} aria-label={`${ui.download} · ${selectedArtifact.name}`} title={ui.download}>
               <Download />
             </button>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
         </div>
       </header>
 
@@ -2624,6 +2666,7 @@ export function RuneWorkbench() {
                   >
                     <button
                       className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
+                      disabled={Boolean(activeVisualSourceDraft)}
                       onClick={() => selectArtifact(artifact.id)}
                     >
                       <span className={`artifact-icon ${artifact.kind}`}><ArtifactIcon kind={artifact.kind} /></span>
@@ -2636,6 +2679,7 @@ export function RuneWorkbench() {
                       aria-label={ui.pinContext(artifact.name, pinned)}
                       aria-pressed={pinned}
                       title={pinned ? ui.removePin : ui.keepPin}
+                      disabled={Boolean(activeVisualSourceDraft)}
                       onClick={() => toggleWorkspaceContextPin(artifact.id)}
                     >
                       <Pin aria-hidden="true" />
@@ -2720,7 +2764,7 @@ export function RuneWorkbench() {
                         <div><strong>{checkpoint.label}</strong><small>{ui.checkpointReasons[checkpoint.reason]} · {checkpointTime(checkpoint.createdAt, locale)}</small></div>
                         {current
                           ? <span className="checkpoint-current">{ui.current}</span>
-                          : <button onClick={() => restoreCheckpoint(checkpoint)}>{ui.restore}</button>}
+                          : <button disabled={Boolean(activeVisualSourceDraft)} onClick={() => restoreCheckpoint(checkpoint)}>{ui.restore}</button>}
                       </div>
                     );
                   })}
@@ -2732,22 +2776,47 @@ export function RuneWorkbench() {
           )}
 
           <div className="editor-wrap">
-            <pre ref={gutterRef} className="line-gutter" aria-hidden="true">{lineNumbers}</pre>
+            <pre ref={gutterRef} className={`line-gutter ${activeVisualSourceDraft ? "visual-source-draft" : ""}`.trim()} aria-hidden="true">{lineNumbers}</pre>
+            {activeVisualSourceDraft && (
+              <div className={`visual-source-sync-state ${activeVisualSourceDraft.errors.length ? "has-error" : "valid"}`} role="status">
+                <span>{ui.unsavedVisualDraft}</span>
+                <strong>{activeVisualSourceDraft.errors.length
+                  ? ui.draftNeedsFix
+                  : activeVisualSourceDraft.nextSource === activeVisualSourceDraft.sourceRevision
+                    ? ui.draftUnchanged
+                    : ui.draftReady}</strong>
+              </div>
+            )}
             <textarea
               ref={sourceEditorRef}
-              className="source-editor"
-              value={selectedArtifact.source}
+              className={`source-editor ${activeVisualSourceDraft ? "visual-source-draft" : ""}`.trim()}
+              value={editorSource}
               onChange={(event) => updateSource(event.target.value, {
                 start: event.currentTarget.selectionStart,
                 end: event.currentTarget.selectionEnd,
               })}
               onSelect={captureSourceSelection}
-              onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }}
+              onScroll={(event) => {
+                if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop;
+                if (sourceDraftMirrorRef.current) {
+                  sourceDraftMirrorRef.current.scrollTop = event.currentTarget.scrollTop;
+                  sourceDraftMirrorRef.current.scrollLeft = event.currentTarget.scrollLeft;
+                }
+              }}
               spellCheck={false}
+              readOnly={Boolean(activeVisualSourceDraft)}
               disabled={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
               aria-busy={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
-              aria-label={ui.editSource(selectedArtifact.name)}
+              aria-readonly={Boolean(activeVisualSourceDraft)}
+              aria-label={activeVisualSourceDraft ? ui.syncedDraftSource(selectedArtifact.name) : ui.editSource(selectedArtifact.name)}
             />
+            {activeVisualSourceDraft && (
+              <pre ref={sourceDraftMirrorRef} className="source-draft-mirror" aria-hidden="true">
+                {editorSource.slice(0, activeVisualSourceDraft.start)}
+                <mark>{editorSource.slice(activeVisualSourceDraft.start, activeVisualSourceDraft.end) || "\u200b"}</mark>
+                {editorSource.slice(activeVisualSourceDraft.end)}
+              </pre>
+            )}
           </div>
 
           <div className="agent-dock">
@@ -2769,7 +2838,7 @@ export function RuneWorkbench() {
                             ? `${formatInteger(selectedCharacterCount)} selected characters bound to Agent scope`
                             : "Current-file Agent scope enabled");
                       }}
-                      disabled={agentState === "planning" || visualEditState !== "idle" || (scope === "selection" && !validSourceSelection)}
+                      disabled={agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || (scope === "selection" && !validSourceSelection)}
                       aria-pressed={agentScope === scope}
                     >
                       {scope === "selection" ? ui.selection : scope === "artifact" ? ui.file : ui.workspaceScope}
@@ -2782,7 +2851,7 @@ export function RuneWorkbench() {
 
             <div className="quick-commands" aria-label={ui.suggestedActions}>
               {runeQuickCommands(locale, agentScope, selectedArtifact.kind).map((command) => (
-                <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning" || visualEditState !== "idle"}>{command}</button>
+                <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft)}>{command}</button>
               ))}
             </div>
 
@@ -2871,7 +2940,7 @@ export function RuneWorkbench() {
                 rows={1}
                 aria-label={agentScope === "workspace" ? ui.describeWorkspaceChange : agentScope === "selection" ? ui.describeSelectionChange : ui.describeArtifactChange}
               />
-              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || visualEditState !== "idle" || (agentScope === "selection" && !validSourceSelection)} aria-label={ui.planChange} title={`${ui.planChange} (⌘ Enter)`}>{agentState === "planning" || visualEditState !== "idle" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
+              <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || (agentScope === "selection" && !validSourceSelection)} aria-label={ui.planChange} title={`${ui.planChange} (⌘ Enter)`}>{agentState === "planning" || visualEditState !== "idle" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
             <p className="agent-hint">{ui.planHint}</p>
           </div>
@@ -2964,6 +3033,7 @@ export function RuneWorkbench() {
                 onReviewDocumentBlockStructure={visualEditState === "idle" && !pendingDocumentStructure ? reviewVisualDocumentBlockStructure : undefined}
                 onEditDeckSlide={visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined}
                 onEditChartSpec={visualEditState === "idle" ? commitVisualChartSpecEdit : undefined}
+                onVisualSourceDraftChange={handleVisualSourceDraftChange}
               />
             </div>
           </div>
@@ -2974,7 +3044,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.50</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.51</span></div>
       </footer>
 
       {newArtifactOpen && (

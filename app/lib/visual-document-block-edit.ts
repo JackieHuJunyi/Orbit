@@ -24,6 +24,13 @@ export type PreparedVisualDocumentBlockEdit = {
   errors: string[];
 };
 
+export type VisualDocumentBlockDraftProjection = {
+  nextSource: string;
+  start: number;
+  end: number;
+  errors: string[];
+};
+
 type MarkdownBlockNode = {
   type: string;
   depth?: number;
@@ -121,6 +128,33 @@ export function canVisualEditDocumentBlock(
     && EDITABLE_DOCUMENT_BLOCK_TYPES.has(current.blockType)
     && current.end - current.start <= MAX_VISUAL_DOCUMENT_BLOCK_CHARS,
   );
+}
+
+export function projectVisualDocumentBlockDraft(
+  artifact: WorkspaceArtifact,
+  requestedTarget: DocumentBlockPreviewSourceTarget,
+  input: VisualDocumentBlockEditInput,
+): VisualDocumentBlockDraftProjection {
+  const target = artifact.kind === "document"
+    ? currentTargetForRevision(artifact, requestedTarget)
+    : undefined;
+  if (!target) {
+    return {
+      nextSource: artifact.source,
+      start: requestedTarget.start,
+      end: requestedTarget.end,
+      errors: ["The block no longer matches the current source revision."],
+    };
+  }
+  const replacement = normalizeDraft(input.draft, artifact.source);
+  const nextSource = `${artifact.source.slice(0, target.start)}${replacement}${artifact.source.slice(target.end)}`;
+  const prepared = prepareVisualDocumentBlockEdit(artifact, target, input);
+  return {
+    nextSource,
+    start: target.start,
+    end: target.start + replacement.length,
+    errors: prepared.errors.filter((error) => !/unchanged\.?$/iu.test(error)),
+  };
 }
 
 export function prepareVisualDocumentBlockEdit(

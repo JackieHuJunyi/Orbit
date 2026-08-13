@@ -65,6 +65,7 @@ import type { SourceSelection } from "../lib/source-selection";
 import {
   MAX_VISUAL_DATA_CELL_CHARS,
   canVisualEditDataCell,
+  projectVisualDataCellDraft,
   visualDataCellDraft,
   visualDataCellValueType,
   type VisualDataCellEditInput,
@@ -73,6 +74,7 @@ import {
 import {
   MAX_VISUAL_DOCUMENT_SECTION_CHARS,
   canVisualEditDocumentSection,
+  projectVisualDocumentSectionDraft,
   visualDocumentSectionDraft,
   type VisualDocumentSectionEditInput,
 } from "../lib/visual-document-edit";
@@ -80,6 +82,7 @@ import {
   MAX_VISUAL_DOCUMENT_BLOCK_CHARS,
   canVisualEditDocumentBlock,
   prepareVisualDocumentBlockEdit,
+  projectVisualDocumentBlockDraft,
   visualDocumentBlockDraft,
   type VisualDocumentBlockEditInput,
 } from "../lib/visual-document-block-edit";
@@ -98,12 +101,14 @@ import {
   MAX_VISUAL_DECK_SLIDE_CHARS,
   VISUAL_DECK_LAYOUTS,
   canVisualEditDeckSlide,
+  projectVisualDeckSlideDraft,
   visualDeckSlideDraft,
   visualDeckSlidePreviewSource,
   type VisualDeckSlideEditInput,
 } from "../lib/visual-deck-edit";
 import {
   canVisualEditChartSpec,
+  projectVisualChartSpecDraft,
   visualChartSourceFields,
   visualChartSpecDraft,
   visualChartSpecPreviewSource,
@@ -152,6 +157,17 @@ export type ChartSpecEditHandler = (
   target: PreviewSourceTarget,
   input: VisualChartSpecEditInput,
 ) => Promise<string | null>;
+
+export type VisualSourceDraft = {
+  artifactId: string;
+  sourceRevision: string;
+  nextSource: string;
+  start: number;
+  end: number;
+  errors: string[];
+};
+
+export type VisualSourceDraftHandler = (draft: VisualSourceDraft | null) => void;
 
 type QueryRuntimeEntry =
   | { status: "loading" }
@@ -851,6 +867,7 @@ function DocumentPreview({
   onEditDocumentSection,
   onEditDocumentBlock,
   onReviewDocumentBlockStructure,
+  onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -861,6 +878,7 @@ function DocumentPreview({
   onEditDocumentSection?: DocumentSectionEditHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
   const compiled = compileArtifactSource(
@@ -952,6 +970,34 @@ function DocumentPreview({
     ? ""
     : preparedInsertDraft?.errors[0] ?? "";
   const insertDraftCanReview = Boolean(preparedInsertDraft && !preparedInsertDraft.errors.length);
+
+  useEffect(() => {
+    const currentSectionTarget = editingSection
+      ? derivePreviewSourceTargets(artifact).find((target) => target.id === editingSection.targetId)
+      : undefined;
+    if (editingSection && currentSectionTarget) {
+      onVisualSourceDraftChange?.({
+        artifactId: artifact.id,
+        sourceRevision: artifact.source,
+        ...projectVisualDocumentSectionDraft(artifact, currentSectionTarget, { draft: editingSection.draft }),
+      });
+      return;
+    }
+    const currentBlockTarget = editingBlock
+      ? deriveDocumentBlockPreviewSourceTargets(artifact).find((target) => target.id === editingBlock.targetId)
+      : undefined;
+    if (editingBlock && currentBlockTarget) {
+      onVisualSourceDraftChange?.({
+        artifactId: artifact.id,
+        sourceRevision: artifact.source,
+        ...projectVisualDocumentBlockDraft(artifact, currentBlockTarget, { draft: editingBlock.draft }),
+      });
+      return;
+    }
+    onVisualSourceDraftChange?.(null);
+  }, [artifact, editingBlock, editingSection, onVisualSourceDraftChange]);
+
+  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
 
   useEffect(() => {
     if (!editingBlockTarget) return;
@@ -1478,6 +1524,7 @@ function ResultGrid({
   onTargetSource,
   editableFormat,
   onEditDataCell,
+  onVisualSourceDraftChange,
 }: {
   columns: string[];
   rows: GridCell[][];
@@ -1492,6 +1539,7 @@ function ResultGrid({
   onTargetSource?: PreviewTargetHandler;
   editableFormat?: "CSV" | "JSON";
   onEditDataCell?: DataCellEditHandler;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
   const icons = {
@@ -1511,6 +1559,31 @@ function ResultGrid({
     error: string;
     submitting: boolean;
   } | null>(null);
+
+  useEffect(() => {
+    if (!editingCell || !targetArtifact) {
+      onVisualSourceDraftChange?.(null);
+      return;
+    }
+    const [rowIndex, columnIndex] = editingCell.key.split(":").map(Number);
+    const target = cellTargets?.find((candidate) => (
+      candidate.rowIndex === rowIndex && candidate.columnIndex === columnIndex
+    ));
+    if (!target) {
+      onVisualSourceDraftChange?.(null);
+      return;
+    }
+    onVisualSourceDraftChange?.({
+      artifactId: targetArtifact.id,
+      sourceRevision: targetArtifact.source,
+      ...projectVisualDataCellDraft(targetArtifact, target, {
+        draft: editingCell.draft,
+        valueType: editingCell.valueType,
+      }),
+    });
+  }, [cellTargets, editingCell, onVisualSourceDraftChange, targetArtifact]);
+
+  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
 
   function beginCellEdit(
     target: DataCellPreviewSourceTarget,
@@ -1743,6 +1816,7 @@ function DataPreview({
   activeSelection,
   onTargetSource,
   onEditDataCell,
+  onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
   rowTargets: PreviewSourceTarget[];
@@ -1750,6 +1824,7 @@ function DataPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
   const parsed = parseDataSource(artifact.source);
@@ -1777,6 +1852,7 @@ function DataPreview({
       onTargetSource={onTargetSource}
       editableFormat={parsed.format}
       onEditDataCell={onEditDataCell}
+      onVisualSourceDraftChange={onVisualSourceDraftChange}
     />
   );
 }
@@ -1845,6 +1921,7 @@ function ChartPreview({
   activeSelection,
   onTargetSource,
   onEditChartSpec,
+  onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -1853,6 +1930,7 @@ function ChartPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditChartSpec?: ChartSpecEditHandler;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
   const [editingChart, setEditingChart] = useState<{
@@ -1887,6 +1965,20 @@ function ChartPreview({
     ?? draftResolution?.errors[0]
     ?? "";
   const resolution = resolvePreviewChart(artifact, artifacts, queryRuntime);
+
+  useEffect(() => {
+    if (!editingChart || !editingTarget) {
+      onVisualSourceDraftChange?.(null);
+      return;
+    }
+    onVisualSourceDraftChange?.({
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      ...projectVisualChartSpecDraft(artifact, editingTarget, editingChart.input),
+    });
+  }, [artifact, editingChart, editingTarget, onVisualSourceDraftChange]);
+
+  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
   if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? copy.chartCouldNotCompile} />;
 
   function beginChartEdit() {
@@ -2097,6 +2189,7 @@ function SlidesPreview({
   activeSelection,
   onTargetSource,
   onEditDeckSlide,
+  onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
   source: string;
@@ -2106,6 +2199,7 @@ function SlidesPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
   const [editingSlide, setEditingSlide] = useState<{
@@ -2119,7 +2213,6 @@ function SlidesPreview({
     submitting: boolean;
   } | null>(null);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source) : null;
-  if (deckCompilation?.errors.length) return <EmptyPreview message={deckCompilation.errors[0]} />;
   const runtimeSource = deckCompilation?.html ?? source;
   const slideCount = deckCompilation?.slideCount ?? source.match(/<section[\s>]/gi)?.length ?? 0;
   const renderedSource = renderChartReferencesToHtml(runtimeSource, (chartArtifactId) => {
@@ -2132,11 +2225,11 @@ function SlidesPreview({
     && editingSlide.sourceRevision === artifact.source
     ? targets.find((target) => target.id === editingSlide.targetId)
     : undefined;
-  const draftInput: VisualDeckSlideEditInput | null = editingSlide ? {
+  const draftInput = useMemo<VisualDeckSlideEditInput | null>(() => editingSlide ? {
     layout: editingSlide.layout,
     eyebrow: editingSlide.eyebrow,
     draft: editingSlide.draft,
-  } : null;
+  } : null, [editingSlide]);
   const draftCandidate = draftInput
     ? visualDeckSlidePreviewSource(artifact, draftInput)
     : null;
@@ -2158,6 +2251,22 @@ function SlidesPreview({
     ?? draftBindings?.unresolvedQueryMetrics[0]
     ?? draftBindings?.queryMetricRuntimeErrors[0]
     ?? "";
+
+  useEffect(() => {
+    if (!editingSlide || !editingTarget || !draftInput) {
+      onVisualSourceDraftChange?.(null);
+      return;
+    }
+    onVisualSourceDraftChange?.({
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      ...projectVisualDeckSlideDraft(artifact, editingTarget, draftInput),
+    });
+  }, [artifact, draftInput, editingSlide, editingTarget, onVisualSourceDraftChange]);
+
+  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
+
+  if (deckCompilation?.errors.length) return <EmptyPreview message={deckCompilation.errors[0]} />;
 
   function beginSlideEdit(target: PreviewSourceTarget) {
     if (!onEditDeckSlide || !canVisualEditDeckSlide(artifact, target)) return;
@@ -2334,6 +2443,7 @@ export function ArtifactPreview({
   onReviewDocumentBlockStructure,
   onEditDeckSlide,
   onEditChartSpec,
+  onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -2346,6 +2456,7 @@ export function ArtifactPreview({
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
   onEditChartSpec?: ChartSpecEditHandler;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
   const copy = useMemo(() => runeUICopy(locale).preview, [locale]);
@@ -2360,15 +2471,15 @@ export function ArtifactPreview({
     );
     if (artifact.kind === "data") {
     const targets = deriveDataPreviewSourceTargets(artifact);
-      content = <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} />;
+      content = <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
     } else {
       const targets = derivePreviewSourceTargets(artifact);
-      if (artifact.kind === "document") content = <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} />;
+      if (artifact.kind === "document") content = <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
       else if (artifact.kind === "query") {
         const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
         content = <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
-      } else if (artifact.kind === "chart") content = <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} />;
-      else content = <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} />;
+      } else if (artifact.kind === "chart") content = <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
+      else content = <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
     }
   }
   return <PreviewCopyContext.Provider value={copy}>{content}</PreviewCopyContext.Provider>;

@@ -1188,6 +1188,39 @@ textarea:focus-visible {
   background: #fdfdfe;
 }
 
+.visual-source-sync-state {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 72px);
+  padding: 5px 9px;
+  border: 1px solid #d9e7dd;
+  border-radius: 999px;
+  background: rgba(247, 251, 248, .94);
+  box-shadow: 0 4px 16px rgba(39, 117, 83, .08);
+  color: #426151;
+  font-size: 9px;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.visual-source-sync-state strong {
+  color: #277553;
+  font-weight: 650;
+}
+
+.visual-source-sync-state.has-error {
+  border-color: #eed3c7;
+  background: rgba(255, 249, 246, .95);
+  color: #80584a;
+}
+
+.visual-source-sync-state.has-error strong { color: #9a432a; }
+
 .line-gutter {
   height: 100%;
   margin: 0;
@@ -1202,6 +1235,8 @@ textarea:focus-visible {
   text-align: right;
   user-select: none;
 }
+
+.line-gutter.visual-source-draft { padding-top: 48px; }
 
 .source-editor {
   width: 100%;
@@ -1228,6 +1263,45 @@ textarea:focus-visible {
 .source-editor::selection {
   background: color-mix(in srgb, var(--data) 28%, transparent);
   color: var(--ink);
+}
+
+.source-editor.visual-source-draft {
+  padding-top: 48px;
+  background: linear-gradient(180deg, rgba(239, 247, 242, .6), transparent 84px);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.source-editor.visual-source-draft::selection {
+  background: color-mix(in srgb, #277553 25%, transparent);
+}
+
+.source-draft-mirror {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 42px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 48px 20px 60px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(239, 247, 242, .6), transparent 84px);
+  color: #3a4941;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  tab-size: 2;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.source-draft-mirror mark {
+  border-radius: 3px;
+  background: color-mix(in srgb, #277553 23%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #277553 18%, transparent);
+  color: #253e32;
 }
 
 .agent-dock {

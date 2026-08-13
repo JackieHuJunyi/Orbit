@@ -26,6 +26,13 @@ export type PreparedVisualDataCellEdit = {
   errors: string[];
 };
 
+export type VisualDataCellDraftProjection = {
+  nextSource: string;
+  start: number;
+  end: number;
+  errors: string[];
+};
+
 function emptyResult(source: string, error: string): PreparedVisualDataCellEdit {
   return { nextSource: source, nextTarget: null, value: null, errors: [error] };
 }
@@ -127,6 +134,44 @@ export function canVisualEditDataCell(
     if (literal.startsWith("{") || literal.startsWith("[")) return false;
   }
   return parsed.rows[current.rowIndex]?.[current.column] !== undefined;
+}
+
+export function projectVisualDataCellDraft(
+  artifact: WorkspaceArtifact,
+  requestedTarget: DataCellPreviewSourceTarget,
+  input: VisualDataCellEditInput,
+): VisualDataCellDraftProjection {
+  const target = artifact.kind === "data"
+    ? targetForCurrentRevision(artifact, requestedTarget)
+    : undefined;
+  if (!target) {
+    return {
+      nextSource: artifact.source,
+      start: requestedTarget.start,
+      end: requestedTarget.end,
+      errors: ["The cell no longer matches the current source revision."],
+    };
+  }
+  const parsed = parseDataSource(artifact.source);
+  let replacement = input.draft;
+  try {
+    replacement = serializeCell(parseDraft(input.draft, input.valueType, parsed.format), parsed.format);
+  } catch {
+    if (parsed.format === "JSON") {
+      replacement = input.valueType === "string"
+        ? JSON.stringify(input.draft)
+        : input.valueType === "null"
+          ? "null"
+          : input.draft;
+    }
+  }
+  const prepared = prepareVisualDataCellEdit(artifact, target, input);
+  return {
+    nextSource: `${artifact.source.slice(0, target.start)}${replacement}${artifact.source.slice(target.end)}`,
+    start: target.start,
+    end: target.start + replacement.length,
+    errors: prepared.errors.filter((error) => !/unchanged\.?$/iu.test(error)),
+  };
 }
 
 export function prepareVisualDataCellEdit(
