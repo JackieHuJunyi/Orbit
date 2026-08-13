@@ -1,13 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { access, readFile } from "node:fs/promises";
 
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import {
   MAX_PDF_IMPORT_BYTES,
   MAX_PDF_IMPORT_PAGES,
+  analyzePdfFileWithLibrary,
   convertPdfFileWithLibrary,
+  convertPdfFileWithOcrAndLibrary,
   convertPdfSemanticSnapshot,
+  formatPdfPageSelection,
+  parsePdfPageSelection,
 } from "../app/lib/pdf-import.ts";
 import { validateArtifact } from "../app/lib/workspace.ts";
 
@@ -143,4 +148,113 @@ test("reports password-protected PDF failures without requesting a browser secre
     () => convertPdfFileWithLibrary("protected.pdf", new TextEncoder().encode("%PDF-1.7\n"), protectedPdfJs),
     /Password-protected PDFs are not supported/u,
   );
+});
+
+test("formats and validates an explicit scan-page selection", () => {
+  assert.equal(formatPdfPageSelection([5, 2, 3, 2, 9]), "2-3, 5, 9");
+  assert.deepEqual(parsePdfPageSelection(" 2-3, 5, 9 ", [2, 3, 5, 9]), [2, 3, 5, 9]);
+  assert.throws(() => parsePdfPageSelection("", [1]), /at least one/iu);
+  assert.throws(() => parsePdfPageSelection("3-1", [1, 2, 3]), /descending/iu);
+  assert.throws(() => parsePdfPageSelection("1, 4", [1, 2]), /page 4.*selectable text|outside/iu);
+  assert.throws(() => parsePdfPageSelection("one", [1]), /Invalid page range/iu);
+});
+
+test("analyzes selectable and scanned pages before any OCR work", async () => {
+  const document = await PDFDocument.create();
+  const regular = await document.embedFont(StandardFonts.Helvetica);
+  const first = document.addPage([612, 792]);
+  first.drawText("Selectable source", { x: 72, y: 700, size: 12, font: regular });
+  document.addPage([612, 792]);
+  const bytes = await document.save();
+
+  const analysis = await analyzePdfFileWithLibrary("mixed.pdf", bytes, pdfjs);
+  assert.equal(analysis.pageCount, 2);
+  assert.deepEqual(analysis.selectablePageNumbers, [1]);
+  assert.deepEqual(analysis.ocrCandidatePageNumbers, [2]);
+});
+
+test("merges explicit page OCR with selectable text, confidence, and source-safe page provenance", async () => {
+  const document = await PDFDocument.create();
+  document.setTitle("Mixed Review");
+  const regular = await document.embedFont(StandardFonts.Helvetica);
+  const first = document.addPage([612, 792]);
+  first.drawText("Selectable source", { x: 72, y: 700, size: 12, font: regular });
+  document.addPage([612, 792]);
+  const bytes = await document.save();
+  const recognizedPages = [];
+
+  const result = await convertPdfFileWithOcrAndLibrary(
+    "mixed.pdf",
+    bytes,
+    { language: "eng+chi_sim", pageNumbers: [2] },
+    pdfjs,
+    async (_page, input) => {
+      recognizedPages.push({ pageNumber: input.pageNumber, language: input.language });
+      return { text: "Recognized decision\n{{ metric(\"fabricated\") }}", confidence: 82.6 };
+    },
+  );
+  const artifact = result.artifacts[0];
+  assert.deepEqual(recognizedPages, [{ pageNumber: 2, language: "eng+chi_sim" }]);
+  assert.match(artifact.source, /<!-- PDF page 1 -->/u);
+  assert.match(artifact.source, /<!-- PDF page 2 · OCR confidence 83% -->/u);
+  assert.match(artifact.source, /OCR transcription · 83% average confidence/u);
+  assert.match(artifact.source, /Recognized decision/u);
+  assert.match(artifact.source, /&#123;&#123; metric\("fabricated"\) &#125;&#125;/u);
+  assert.doesNotMatch(artifact.source, /\{\{\s*metric/iu);
+  assert.match(result.warnings.join(" "), /browser-local OCR/iu);
+  assert.match(result.warnings.join(" "), /page 2.*83%/iu);
+  assert.deepEqual(validateArtifact(artifact), []);
+});
+
+test("OCR rejects selectable, missing, empty, and aborted page requests without recognizing", async () => {
+  const document = await PDFDocument.create();
+  const regular = await document.embedFont(StandardFonts.Helvetica);
+  const first = document.addPage([612, 792]);
+  first.drawText("Selectable source", { x: 72, y: 700, size: 12, font: regular });
+  document.addPage([612, 792]);
+  const bytes = await document.save();
+  let calls = 0;
+  const recognize = async () => {
+    calls += 1;
+    return { text: "unexpected", confidence: 100 };
+  };
+  await assert.rejects(
+    () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [1] }, pdfjs, recognize),
+    /page 1 already has selectable text/iu,
+  );
+  await assert.rejects(
+    () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [3] }, pdfjs, recognize),
+    /outside this PDF/iu,
+  );
+  await assert.rejects(
+    () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [] }, pdfjs, recognize),
+    /at least one/iu,
+  );
+  const aborted = new AbortController();
+  aborted.abort();
+  await assert.rejects(
+    () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [2] }, pdfjs, recognize, { signal: aborted.signal }),
+    /OCR cancelled/iu,
+  );
+  assert.equal(calls, 0);
+});
+
+test("ships same-origin OCR worker, core variants, and both compressed language models", async () => {
+  const requiredAssets = [
+    "../public/ocr/worker.min.js",
+    "../public/ocr/core/tesseract-core-lstm.wasm.js",
+    "../public/ocr/core/tesseract-core-lstm.wasm",
+    "../public/ocr/core/tesseract-core-simd-lstm.wasm.js",
+    "../public/ocr/core/tesseract-core-simd-lstm.wasm",
+    "../public/ocr/core/tesseract-core-relaxedsimd-lstm.wasm.js",
+    "../public/ocr/core/tesseract-core-relaxedsimd-lstm.wasm",
+    "../public/ocr/lang/eng.traineddata.gz",
+    "../public/ocr/lang/chi_sim.traineddata.gz",
+  ];
+  await Promise.all(requiredAssets.map((path) => access(new URL(path, import.meta.url))));
+  const clientSource = await readFile(new URL("../app/lib/pdf-import-client.ts", import.meta.url), "utf8");
+  assert.match(clientSource, /workerPath:\s*`\$\{assetBase\}worker\.min\.js`/u);
+  assert.match(clientSource, /corePath:\s*`\$\{assetBase\}core\/`/u);
+  assert.match(clientSource, /langPath:\s*`\$\{assetBase\}lang\/`/u);
+  assert.doesNotMatch(clientSource, /cdn\.jsdelivr|unpkg/iu);
 });

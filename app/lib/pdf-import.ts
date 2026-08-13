@@ -19,10 +19,11 @@ type PdfTextContent = {
   items: Array<PdfTextItem | { type: string }>;
 };
 
-type PdfPageProxy = {
+export type PdfPageProxy = {
   getViewport(input: { scale: number }): { width: number; height: number };
   getTextContent(input?: { disableNormalization?: boolean; includeMarkedContent?: boolean }): Promise<PdfTextContent>;
   getAnnotations(input?: { intent?: string }): Promise<unknown[]>;
+  render?(input: Record<string, unknown>): { promise: Promise<void>; cancel?: () => void };
   cleanup?: () => void;
 };
 
@@ -49,6 +50,87 @@ export type PdfImportResult = {
   warnings: string[];
   sourceType: "pdf";
 };
+
+export type PdfOcrLanguage = "eng" | "chi_sim" | "eng+chi_sim";
+
+export type PdfImportAnalysis = {
+  title: string;
+  pageCount: number;
+  selectablePageNumbers: number[];
+  ocrCandidatePageNumbers: number[];
+};
+
+export type PdfOcrPageResult = {
+  pageNumber: number;
+  text: string;
+  confidence: number;
+};
+
+export type PdfOcrRequest = {
+  language: PdfOcrLanguage;
+  pageNumbers: number[];
+};
+
+export type PdfOcrProgress = {
+  stage: "loading-model" | "rendering-page" | "recognizing-page";
+  pageNumber?: number;
+  completedPages: number;
+  totalPages: number;
+  progress: number;
+};
+
+export type PdfPageOcrRecognizer = (
+  page: PdfPageProxy,
+  input: {
+    pageNumber: number;
+    language: PdfOcrLanguage;
+    completedPages: number;
+    totalPages: number;
+    signal?: AbortSignal;
+    onProgress?: (progress: PdfOcrProgress) => void;
+  },
+) => Promise<{ text: string; confidence: number }>;
+
+const PDF_OCR_LANGUAGES = new Set<PdfOcrLanguage>(["eng", "chi_sim", "eng+chi_sim"]);
+
+export function formatPdfPageSelection(pageNumbers: readonly number[]) {
+  const pages = [...new Set(pageNumbers)].filter(Number.isInteger).sort((left, right) => left - right);
+  if (!pages.length) return "";
+  const ranges: string[] = [];
+  let start = pages[0];
+  let end = start;
+  for (const page of pages.slice(1)) {
+    if (page === end + 1) {
+      end = page;
+      continue;
+    }
+    ranges.push(start === end ? String(start) : `${start}-${end}`);
+    start = page;
+    end = page;
+  }
+  ranges.push(start === end ? String(start) : `${start}-${end}`);
+  return ranges.join(", ");
+}
+
+export function parsePdfPageSelection(value: string, allowedPageNumbers: readonly number[]) {
+  const allowed = new Set(allowedPageNumbers);
+  if (!value.trim()) throw new Error("Choose at least one detected scan page for OCR.");
+  const selected = new Set<number>();
+  for (const rawPart of value.split(",")) {
+    const part = rawPart.trim();
+    const match = /^(\d+)(?:\s*-\s*(\d+))?$/u.exec(part);
+    if (!match) throw new Error(`Invalid page range “${part || rawPart}”. Use values like 1-3, 5.`);
+    const start = Number(match[1]);
+    const end = Number(match[2] ?? match[1]);
+    if (start > end) throw new Error(`Invalid descending page range “${part}”.`);
+    if (end - start > MAX_PDF_IMPORT_PAGES) throw new Error("A page range cannot exceed Rune's 200-page PDF limit.");
+    for (let page = start; page <= end; page += 1) {
+      if (!allowed.has(page)) throw new Error(`Page ${page} already has selectable text or is outside this PDF.`);
+      selected.add(page);
+    }
+  }
+  return [...selected].sort((left, right) => left - right);
+}
 
 export type PdfTextItemSnapshot = {
   str: string;
@@ -131,6 +213,19 @@ function escapeMarkdown(value: string) {
     .replace(/([`*_[\]#>+!|~<>])/gu, "\\$1")
     .replaceAll("{", "&#123;")
     .replaceAll("}", "&#125;");
+}
+
+function escapeOcrMarkdown(value: string) {
+  return value
+    .normalize("NFKC")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, "")
+    .replaceAll("{", "&#123;")
+    .replaceAll("}", "&#125;")
+    .split(/\r?\n/gu)
+    .map((line) => line.replace(/\\/gu, "\\\\").replace(/^\s*([#>*+_-])/u, "\\$1").trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/gu, "\n\n")
+    .trim();
 }
 
 function signature(bytes: Uint8Array) {
@@ -307,6 +402,7 @@ function markdownForLines(lines: PdfLine[], bodyFontSize: number, title: string,
 export function convertPdfSemanticSnapshot(
   fileName: string,
   snapshot: PdfSemanticSnapshot,
+  ocrPages: PdfOcrPageResult[] = [],
 ): PdfImportResult {
   if (!snapshot.pages.length) throw new Error("The PDF does not contain any pages.");
   if (snapshot.pages.length > MAX_PDF_IMPORT_PAGES) {
@@ -321,22 +417,45 @@ export function convertPdfSemanticSnapshot(
     if (remove) repeatedLineCount += 1;
     return !remove;
   }));
-  const allLines = filteredByPage.flat();
-  if (!allLines.length) {
-    throw new Error("This PDF has no selectable text. Rune does not perform OCR on scanned pages yet.");
+  const ocrByPage = new Map(ocrPages.map((page) => [page.pageNumber, page]));
+  for (const page of ocrPages) {
+    if (!snapshot.pages.some((candidate) => candidate.pageNumber === page.pageNumber)) {
+      throw new Error(`OCR result references missing PDF page ${page.pageNumber}.`);
+    }
+    if (!Number.isFinite(page.confidence) || page.confidence < 0 || page.confidence > 100) {
+      throw new Error(`OCR confidence for PDF page ${page.pageNumber} must be between 0 and 100.`);
+    }
   }
-  const bodyFontSize = weightedMedianFont(allLines);
+  const allLines = filteredByPage.flat();
+  if (!allLines.length && !ocrPages.some((page) => cleanText(page.text))) {
+    throw new Error("This PDF has no selectable text. Choose its detected scan pages in Rune's OCR setup first.");
+  }
+  const bodyFontSize = allLines.length ? weightedMedianFont(allLines) : 12;
   const pageSections = filteredByPage.map((lines, index) => {
-    const marker = `<!-- PDF page ${index + 1} -->`;
+    const pageNumber = snapshot.pages[index]?.pageNumber ?? index + 1;
+    const ocr = ocrByPage.get(pageNumber);
+    const marker = ocr
+      ? `<!-- PDF page ${pageNumber} · OCR confidence ${Math.round(ocr.confidence)}% -->`
+      : `<!-- PDF page ${pageNumber} -->`;
     const content = markdownForLines(lines, bodyFontSize, title, index === 0);
-    return content ? `${marker}\n\n${content}` : `${marker}\n\n> This page had no selectable text; OCR was not performed.`;
+    if (content) return `${marker}\n\n${content}`;
+    if (ocr) {
+      const transcription = escapeOcrMarkdown(ocr.text);
+      const disclosure = `> **OCR transcription · ${Math.round(ocr.confidence)}% average confidence. Verify against PDF page ${pageNumber}.**`;
+      return transcription
+        ? `${marker}\n\n${disclosure}\n\n${transcription}`
+        : `${marker}\n\n${disclosure}\n\n> No text was recognized on this page.`;
+    }
+    return `${marker}\n\n> This page had no selectable text; OCR was not performed.`;
   });
   const source = `# ${escapeMarkdown(title)}\n\n${pageSections.join("\n\n")}\n`;
   if (source.length > MAX_PDF_OUTPUT_CHARS) {
     throw new Error("The extracted PDF text exceeds Rune's 200,000-character Document limit.");
   }
 
-  const emptyPages = filteredByPage.filter((lines) => !lines.length).length;
+  const emptyPages = filteredByPage.filter((lines, index) => (
+    !lines.length && !ocrByPage.has(snapshot.pages[index]?.pageNumber ?? index + 1)
+  )).length;
   const annotationCount = snapshot.pages.reduce((total, page) => total + page.annotationCount, 0);
   const hasLargeGaps = allLines.some((line) => line.hasLargeGap);
   const warnings = [
@@ -345,6 +464,12 @@ export function convertPdfSemanticSnapshot(
   if (hasLargeGaps) warnings.push("Large horizontal gaps were flattened; review possible columns or tables in the generated Markdown.");
   if (repeatedLineCount) warnings.push(`${repeatedLineCount} repeated header or footer lines were omitted.`);
   if (emptyPages) warnings.push(`${emptyPages} ${emptyPages === 1 ? "page had" : "pages had"} no selectable text; OCR was not performed.`);
+  if (ocrPages.length) {
+    warnings.push(`${ocrPages.length} scanned ${ocrPages.length === 1 ? "page was" : "pages were"} transcribed by browser-local OCR; recognition may omit, reorder, or misread content.`);
+    for (const page of [...ocrPages].sort((left, right) => left.pageNumber - right.pageNumber)) {
+      warnings.push(`PDF page ${page.pageNumber}: OCR average confidence ${Math.round(page.confidence)}%; verify the transcription against the original page.`);
+    }
+  }
   if (annotationCount) warnings.push(`${annotationCount} PDF ${annotationCount === 1 ? "annotation was" : "annotations were"} omitted, including links, comments, or form controls.`);
   if (snapshot.outlineCount) warnings.push(`${snapshot.outlineCount} PDF ${snapshot.outlineCount === 1 ? "bookmark was" : "bookmarks were"} not preserved as navigation.`);
   if (snapshot.hasJavaScript) warnings.push("Document JavaScript was ignored and never executed.");
@@ -362,15 +487,17 @@ export function convertPdfSemanticSnapshot(
   };
 }
 
-export async function convertPdfFileWithLibrary(
-  fileName: string,
-  input: ArrayBuffer | Uint8Array,
-  pdfjs: PdfJsLibrary,
-): Promise<PdfImportResult> {
-  const bytes = toBytes(input);
-  validatePdfInput(fileName, bytes);
-  let passwordRequired = false;
-  const loadingTask = pdfjs.getDocument({
+export function analyzePdfSemanticSnapshot(snapshot: PdfSemanticSnapshot): PdfImportAnalysis {
+  return {
+    title: safeTitle(snapshot.title, "Imported PDF"),
+    pageCount: snapshot.pages.length,
+    selectablePageNumbers: snapshot.pages.filter((page) => pageLines(page).length > 0).map((page) => page.pageNumber),
+    ocrCandidatePageNumbers: snapshot.pages.filter((page) => pageLines(page).length === 0).map((page) => page.pageNumber),
+  };
+}
+
+function pdfLoadingTask(bytes: Uint8Array, pdfjs: PdfJsLibrary) {
+  return pdfjs.getDocument({
     data: bytes,
     disableAutoFetch: true,
     disableRange: true,
@@ -379,69 +506,167 @@ export async function convertPdfFileWithLibrary(
     stopAtErrors: true,
     useSystemFonts: true,
   });
+}
+
+async function readPdfSemanticSnapshot(document: PdfDocumentProxy) {
+  if (document.numPages < 1) throw new Error("The PDF does not contain any pages.");
+  if (document.numPages > MAX_PDF_IMPORT_PAGES) {
+    throw new Error(`PDF import is limited to ${MAX_PDF_IMPORT_PAGES} pages per file.`);
+  }
+  const metadata = await document.getMetadata().catch(() => ({ info: {} }));
+  const metadataTitle = (metadata.info as { Title?: unknown } | undefined)?.Title;
+  const rawTitle = typeof metadataTitle === "string" ? metadataTitle : "";
+  const outline = await document.getOutline().catch(() => null);
+  const hasJavaScript = document.hasJSActions ? await document.hasJSActions().catch(() => false) : false;
+  const pages: PdfPageSnapshot[] = [];
+  let textItemCount = 0;
+  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    const page = await document.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1 });
+    const content = await page.getTextContent({ disableNormalization: false, includeMarkedContent: false });
+    const items = content.items.flatMap((item) => {
+      if (!("str" in item) || typeof item.str !== "string") return [];
+      textItemCount += 1;
+      if (textItemCount > MAX_PDF_TEXT_ITEMS) {
+        throw new Error("The PDF contains more than 100,000 text fragments.");
+      }
+      const transform = item.transform ?? [];
+      return [{
+        str: item.str,
+        x: Number(transform[4] ?? 0),
+        y: Number(transform[5] ?? 0),
+        width: Math.max(0, Number(item.width ?? 0)),
+        height: Math.max(0.1, Number(item.height ?? (Math.abs(Number(transform[3] ?? 0)) || 1))),
+        hasEOL: Boolean(item.hasEOL),
+        direction: item.dir ?? "ltr",
+      }];
+    });
+    const annotations = await page.getAnnotations({ intent: "display" }).catch(() => []);
+    pages.push({
+      pageNumber,
+      width: viewport.width,
+      height: viewport.height,
+      items,
+      annotationCount: annotations.length,
+    });
+    page.cleanup?.();
+  }
+  return {
+    title: rawTitle,
+    pages,
+    outlineCount: outline?.length ?? 0,
+    hasJavaScript,
+  } satisfies PdfSemanticSnapshot;
+}
+
+function pdfImportError(error: unknown, passwordRequired: boolean) {
+  if (passwordRequired || (error instanceof Error && /password/i.test(`${error.name} ${error.message}`))) {
+    return new Error("Password-protected PDFs are not supported. Remove the password and import a copy.");
+  }
+  const detail = error instanceof Error ? error.message : "The PDF could not be parsed.";
+  return new Error(detail.startsWith("PDF import") || detail.startsWith("The PDF") || detail.startsWith("This PDF")
+    ? detail
+    : `PDF import failed: ${detail}`);
+}
+
+export async function analyzePdfFileWithLibrary(
+  fileName: string,
+  input: ArrayBuffer | Uint8Array,
+  pdfjs: PdfJsLibrary,
+): Promise<PdfImportAnalysis> {
+  const bytes = toBytes(input);
+  validatePdfInput(fileName, bytes);
+  let passwordRequired = false;
+  const loadingTask = pdfLoadingTask(bytes, pdfjs);
+  loadingTask.onPassword = () => {
+    passwordRequired = true;
+    void loadingTask.destroy();
+  };
+  try {
+    const snapshot = await readPdfSemanticSnapshot(await loadingTask.promise);
+    const analysis = analyzePdfSemanticSnapshot(snapshot);
+    return { ...analysis, title: safeTitle(snapshot.title, baseName(fileName)) };
+  } catch (error) {
+    throw pdfImportError(error, passwordRequired);
+  } finally {
+    await loadingTask.destroy().catch(() => undefined);
+  }
+}
+
+export async function convertPdfFileWithLibrary(
+  fileName: string,
+  input: ArrayBuffer | Uint8Array,
+  pdfjs: PdfJsLibrary,
+): Promise<PdfImportResult> {
+  const bytes = toBytes(input);
+  validatePdfInput(fileName, bytes);
+  let passwordRequired = false;
+  const loadingTask = pdfLoadingTask(bytes, pdfjs);
   loadingTask.onPassword = () => {
     passwordRequired = true;
     void loadingTask.destroy();
   };
 
   try {
+    return convertPdfSemanticSnapshot(fileName, await readPdfSemanticSnapshot(await loadingTask.promise));
+  } catch (error) {
+    throw pdfImportError(error, passwordRequired);
+  } finally {
+    await loadingTask.destroy().catch(() => undefined);
+  }
+}
+
+export async function convertPdfFileWithOcrAndLibrary(
+  fileName: string,
+  input: ArrayBuffer | Uint8Array,
+  request: PdfOcrRequest,
+  pdfjs: PdfJsLibrary,
+  recognizePage: PdfPageOcrRecognizer,
+  options: { signal?: AbortSignal; onProgress?: (progress: PdfOcrProgress) => void } = {},
+): Promise<PdfImportResult> {
+  if (!PDF_OCR_LANGUAGES.has(request.language)) throw new Error("Choose a supported English or Simplified Chinese OCR model.");
+  const bytes = toBytes(input);
+  validatePdfInput(fileName, bytes);
+  let passwordRequired = false;
+  const loadingTask = pdfLoadingTask(bytes, pdfjs);
+  loadingTask.onPassword = () => {
+    passwordRequired = true;
+    void loadingTask.destroy();
+  };
+  try {
     const document = await loadingTask.promise;
-    if (document.numPages < 1) throw new Error("The PDF does not contain any pages.");
-    if (document.numPages > MAX_PDF_IMPORT_PAGES) {
-      throw new Error(`PDF import is limited to ${MAX_PDF_IMPORT_PAGES} pages per file.`);
+    const snapshot = await readPdfSemanticSnapshot(document);
+    const analysis = analyzePdfSemanticSnapshot(snapshot);
+    const pageNumbers = [...new Set(request.pageNumbers)].sort((left, right) => left - right);
+    if (!pageNumbers.length) throw new Error("Choose at least one detected scan page for OCR.");
+    for (const pageNumber of pageNumbers) {
+      if (!analysis.ocrCandidatePageNumbers.includes(pageNumber)) {
+        throw new Error(`PDF page ${pageNumber} already has selectable text or is outside this PDF.`);
+      }
     }
-    const metadata = await document.getMetadata().catch(() => ({ info: {} }));
-    const metadataTitle = (metadata.info as { Title?: unknown } | undefined)?.Title;
-    const rawTitle = typeof metadataTitle === "string" ? metadataTitle : "";
-    const outline = await document.getOutline().catch(() => null);
-    const hasJavaScript = document.hasJSActions ? await document.hasJSActions().catch(() => false) : false;
-    const pages: PdfPageSnapshot[] = [];
-    let textItemCount = 0;
-    for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    const results: PdfOcrPageResult[] = [];
+    for (const [index, pageNumber] of pageNumbers.entries()) {
+      if (options.signal?.aborted) throw new DOMException("OCR cancelled", "AbortError");
       const page = await document.getPage(pageNumber);
-      const viewport = page.getViewport({ scale: 1 });
-      const content = await page.getTextContent({ disableNormalization: false, includeMarkedContent: false });
-      const items = content.items.flatMap((item) => {
-        if (!("str" in item) || typeof item.str !== "string") return [];
-        textItemCount += 1;
-        if (textItemCount > MAX_PDF_TEXT_ITEMS) {
-          throw new Error("The PDF contains more than 100,000 text fragments.");
-        }
-        const transform = item.transform ?? [];
-        return [{
-          str: item.str,
-          x: Number(transform[4] ?? 0),
-          y: Number(transform[5] ?? 0),
-          width: Math.max(0, Number(item.width ?? 0)),
-          height: Math.max(0.1, Number(item.height ?? (Math.abs(Number(transform[3] ?? 0)) || 1))),
-          hasEOL: Boolean(item.hasEOL),
-          direction: item.dir ?? "ltr",
-        }];
-      });
-      const annotations = await page.getAnnotations({ intent: "display" }).catch(() => []);
-      pages.push({
+      const recognized = await recognizePage(page, {
         pageNumber,
-        width: viewport.width,
-        height: viewport.height,
-        items,
-        annotationCount: annotations.length,
+        language: request.language,
+        completedPages: index,
+        totalPages: pageNumbers.length,
+        signal: options.signal,
+        onProgress: options.onProgress,
+      });
+      results.push({
+        pageNumber,
+        text: recognized.text,
+        confidence: Math.max(0, Math.min(100, recognized.confidence)),
       });
       page.cleanup?.();
     }
-    return convertPdfSemanticSnapshot(fileName, {
-      title: rawTitle,
-      pages,
-      outlineCount: outline?.length ?? 0,
-      hasJavaScript,
-    });
+    return convertPdfSemanticSnapshot(fileName, snapshot, results);
   } catch (error) {
-    if (passwordRequired || (error instanceof Error && /password/i.test(`${error.name} ${error.message}`))) {
-      throw new Error("Password-protected PDFs are not supported. Remove the password and import a copy.");
-    }
-    const detail = error instanceof Error ? error.message : "The PDF could not be parsed.";
-    throw new Error(detail.startsWith("PDF import") || detail.startsWith("The PDF") || detail.startsWith("This PDF")
-      ? detail
-      : `PDF import failed: ${detail}`);
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw pdfImportError(error, passwordRequired);
   } finally {
     await loadingTask.destroy().catch(() => undefined);
   }

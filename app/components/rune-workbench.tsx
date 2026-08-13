@@ -53,6 +53,11 @@ import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
 import { OperatingReviewDialog } from "./operating-review-dialog";
+import {
+  PdfOcrSetupDialog,
+  type PdfOcrCandidate,
+  type PdfOcrSelection,
+} from "./pdf-ocr-setup-dialog";
 import { TransactionReviewMap } from "./transaction-review-map";
 import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
 import {
@@ -146,6 +151,7 @@ import {
   type SourceSelection,
 } from "../lib/source-selection";
 import { formatInteger } from "../lib/number-format";
+import type { PdfOcrProgress } from "../lib/pdf-import";
 import {
   createRuneGuideArtifact,
   detectPreferredLocale,
@@ -237,6 +243,13 @@ type PendingChange = {
   selectAfterApplyArtifactId?: string;
   runtimeRepair?: Pick<AgentRuntimeRepair, "attempt" | "failure">;
   runtimePreflight?: RuntimeImpactPreflight;
+};
+
+type PendingPdfOcr = {
+  files: File[];
+  baseArtifacts: WorkspaceArtifact[];
+  sourceName: string;
+  candidates: PdfOcrCandidate[];
 };
 
 type PendingExport = {
@@ -524,6 +537,11 @@ export function RuneWorkbench() {
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
   const [importError, setImportError] = useState("");
   const [importState, setImportState] = useState<"idle" | "reading">("idle");
+  const [pendingPdfOcr, setPendingPdfOcr] = useState<PendingPdfOcr | null>(null);
+  const [pdfOcrProcessing, setPdfOcrProcessing] = useState(false);
+  const [pdfOcrProgress, setPdfOcrProgress] = useState<PdfOcrProgress | null>(null);
+  const [pdfOcrActiveFileName, setPdfOcrActiveFileName] = useState("");
+  const [pdfOcrError, setPdfOcrError] = useState("");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [exportError, setExportError] = useState("");
@@ -552,6 +570,7 @@ export function RuneWorkbench() {
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
+  const pdfOcrAbortRef = useRef<AbortController | null>(null);
   const exportInFlightRef = useRef(false);
   const visualEditInFlightRef = useRef(false);
   const artifactsRef = useRef(artifacts);
@@ -722,6 +741,7 @@ export function RuneWorkbench() {
     || exportState !== "idle"
     || Boolean(pendingChange)
     || Boolean(pendingImport)
+    || Boolean(pendingPdfOcr)
     || Boolean(pendingExport)
     || Boolean(pendingDocumentStructure)
     || operatingReviewOpen
@@ -809,6 +829,7 @@ export function RuneWorkbench() {
         || newArtifactOpen
         || welcomeOpen
         || pendingImport
+        || pendingPdfOcr
         || pendingExport
         || pendingChange) return;
       if (!(event.metaKey || event.ctrlKey)) return;
@@ -849,7 +870,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, selectedId, visualEditState, welcomeOpen]);
+  }, [artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, selectedId, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact) return null;
 
@@ -998,6 +1019,7 @@ export function RuneWorkbench() {
     if (visualEditInFlightRef.current) return "Another visual edit is still being verified.";
     if (pendingChange
       || pendingImport
+      || pendingPdfOcr
       || pendingExport
       || (pendingDocumentStructure && !allowDocumentStructureReview)
       || agentState === "planning") {
@@ -1145,7 +1167,7 @@ export function RuneWorkbench() {
     if (visualEditInFlightRef.current || visualEditState !== "idle") {
       return "Another visual edit is still being verified.";
     }
-    if (pendingChange || pendingImport || pendingExport || pendingDocumentStructure || agentState === "planning") {
+    if (pendingChange || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || agentState === "planning") {
       return "Finish or cancel the current review before changing Document structure.";
     }
     const currentArtifact = artifactsRef.current.find((artifact) => artifact.id === targetArtifact.id);
@@ -2078,7 +2100,7 @@ export function RuneWorkbench() {
   }
 
   async function prepareFileImport(files: File[]) {
-    if (!files.length || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingExport || pendingDocumentStructure || exportState !== "idle") return;
+    if (!files.length || importInFlightRef.current || exportInFlightRef.current || pendingImport || pendingPdfOcr || pendingExport || pendingDocumentStructure || exportState !== "idle") return;
     if (files.length > 20) {
       setNotice("Import up to 20 files in one review transaction");
       return;
@@ -2109,6 +2131,24 @@ export function RuneWorkbench() {
     setImportError("");
     setNotice(files.length === 1 ? "Reading " + files[0].name + " locally…" : "Reading " + String(files.length) + " files locally…");
     try {
+      const ocrCandidates: PdfOcrCandidate[] = [];
+      for (const [fileIndex, file] of files.entries()) {
+        if (!PDF_IMPORT_PATTERN.test(file.name)) continue;
+        const { analyzePdfFile } = await import("../lib/pdf-import-client");
+        const analysis = await analyzePdfFile(file.name, await file.arrayBuffer());
+        if (analysis.ocrCandidatePageNumbers.length) {
+          ocrCandidates.push({ fileIndex, fileName: file.name, analysis });
+        }
+      }
+      if (ocrCandidates.length) {
+        setPendingPdfOcr({ files, baseArtifacts, sourceName, candidates: ocrCandidates });
+        setPdfOcrError("");
+        setPdfOcrProgress(null);
+        setNotice(locale === "zh-CN"
+          ? `请确认 ${ocrCandidates.length} 份 PDF 的扫描页与 OCR 语言`
+          : `Choose scan pages and OCR language for ${ocrCandidates.length} ${ocrCandidates.length === 1 ? "PDF" : "PDFs"}`);
+        return;
+      }
       const incoming: WorkspaceArtifact[] = [];
       const warnings: string[] = [];
       for (const file of files) {
@@ -2151,6 +2191,99 @@ export function RuneWorkbench() {
       importInFlightRef.current = false;
       setImportState("idle");
     }
+  }
+
+  async function recognizePendingPdfPages(selections: PdfOcrSelection[]) {
+    const pending = pendingPdfOcr;
+    if (!pending || pdfOcrProcessing || importInFlightRef.current) return;
+    if (artifacts !== pending.baseArtifacts) {
+      setPdfOcrError(locale === "zh-CN"
+        ? "OCR 设置期间工作区已经变化。请取消并重新导入，以审核最新事务。"
+        : "The workspace changed during OCR setup. Cancel and import again to review a fresh transaction.");
+      return;
+    }
+    const selectionByIndex = new Map(selections.map((selection) => [selection.fileIndex, selection]));
+    const abortController = new AbortController();
+    pdfOcrAbortRef.current = abortController;
+    importInFlightRef.current = true;
+    setPdfOcrProcessing(true);
+    setPdfOcrError("");
+    setPdfOcrProgress({ stage: "loading-model", completedPages: 0, totalPages: selections.reduce((total, selection) => total + selection.pageNumbers.length, 0), progress: 0 });
+    setImportState("reading");
+    try {
+      const incoming: WorkspaceArtifact[] = [];
+      const warnings: string[] = [];
+      for (const [fileIndex, file] of pending.files.entries()) {
+        if (abortController.signal.aborted) throw new DOMException("OCR cancelled", "AbortError");
+        setPdfOcrActiveFileName(file.name);
+        if (OFFICE_IMPORT_PATTERN.test(file.name)) {
+          const { convertOfficeFile } = await import("../lib/office-import");
+          const result = convertOfficeFile(file.name, await file.arrayBuffer());
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
+        if (ODF_IMPORT_PATTERN.test(file.name)) {
+          const { convertOdfFile } = await import("../lib/odf-import");
+          const result = convertOdfFile(file.name, await file.arrayBuffer());
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
+        if (PDF_IMPORT_PATTERN.test(file.name)) {
+          const selection = selectionByIndex.get(fileIndex);
+          const { convertPdfFile, convertPdfFileWithOcr } = await import("../lib/pdf-import-client");
+          const result = selection
+            ? await convertPdfFileWithOcr(file.name, await file.arrayBuffer(), selection, {
+              signal: abortController.signal,
+              onProgress: setPdfOcrProgress,
+            })
+            : await convertPdfFile(file.name, await file.arrayBuffer());
+          incoming.push(...result.artifacts);
+          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
+          continue;
+        }
+        const artifact = detectArtifact(file.name, await file.text());
+        if (!artifact) {
+          throw new Error(file.name + ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP.");
+        }
+        incoming.push(artifact);
+      }
+      const prepared = prepareWorkspaceImportReview(pending.baseArtifacts, incoming, pending.sourceName, warnings);
+      if (prepared.errors.length) throw new Error(prepared.errors[0]);
+      if (!prepared.review) throw new Error("Rune could not prepare an import review.");
+      setPendingImport(prepared.review);
+      setPendingPdfOcr(null);
+      setNotice(locale === "zh-CN"
+        ? `请在写入前审核 ${prepared.review.importedArtifacts.length} 份生成的源内容与逐页 OCR 置信度`
+        : `Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} and page-level OCR confidence before import`);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setNotice(locale === "zh-CN" ? "OCR 已停止 — 工作区保持不变" : "OCR stopped — the workspace is unchanged");
+        setPendingPdfOcr(null);
+      } else {
+        setPdfOcrError(error instanceof Error ? error.message : (locale === "zh-CN" ? "Rune 无法识别这些扫描页。" : "Rune could not recognize those scanned pages."));
+      }
+    } finally {
+      pdfOcrAbortRef.current = null;
+      importInFlightRef.current = false;
+      setPdfOcrProcessing(false);
+      setPdfOcrProgress(null);
+      setPdfOcrActiveFileName("");
+      setImportState("idle");
+    }
+  }
+
+  function cancelPendingPdfOcr() {
+    if (!pendingPdfOcr) return;
+    if (pdfOcrProcessing) {
+      pdfOcrAbortRef.current?.abort();
+      return;
+    }
+    setPendingPdfOcr(null);
+    setPdfOcrError("");
+    setPdfOcrProgress(null);
+    setNotice(locale === "zh-CN" ? "已取消 OCR — 工作区保持不变" : "OCR cancelled — the workspace is unchanged");
   }
 
   function cancelPendingImport() {
@@ -2202,7 +2335,7 @@ export function RuneWorkbench() {
       : destination === "html"
         ? selectedHtmlExport ? "HTML" : null
         : selectedPdfExport ? "PDF" : null;
-    if (!targetType || exportState !== "idle" || pendingExport || pendingImport || pendingDocumentStructure || importInFlightRef.current || exportInFlightRef.current) return;
+    if (!targetType || exportState !== "idle" || pendingExport || pendingImport || pendingPdfOcr || pendingDocumentStructure || importInFlightRef.current || exportInFlightRef.current) return;
     const targetArtifact = selectedArtifact;
     const baseArtifacts = artifacts;
     exportInFlightRef.current = true;
@@ -2350,7 +2483,7 @@ export function RuneWorkbench() {
           >
             <FilePlus2 aria-hidden="true" /> {ui.newArtifact}
           </button>
-          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
+          <button className="button ghost-button" onClick={() => importRef.current?.click()} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}>
             {importState === "reading" ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Upload aria-hidden="true" />} {ui.import}
           </button>
           <button
@@ -2371,7 +2504,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("office")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOfficeExportType)}
               title={ui.exportAs(selectedOfficeExportType)}
             >
@@ -2382,7 +2515,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("odf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, selectedOdfExportType)}
               title={ui.exportAsOpenDocument(selectedOdfExportType)}
             >
@@ -2393,7 +2526,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("html")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, "HTML")}
               title={ui.exportStandaloneHtml}
             >
@@ -2404,7 +2537,7 @@ export function RuneWorkbench() {
             <button
               className="icon-button"
               onClick={() => void prepareExport("pdf")}
-              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
+              disabled={!hydrated || exportState !== "idle" || importState === "reading" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)}
               aria-label={ui.exportArtifactAs(selectedArtifact.name, "PDF")}
               title={ui.exportFixedPdf}
             >
@@ -2416,7 +2549,7 @@ export function RuneWorkbench() {
               <Download />
             </button>
           )}
-          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
+          <input ref={importRef} className="visually-hidden" type="file" multiple accept=".docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm" onChange={importFile} disabled={!hydrated || importState === "reading" || exportState !== "idle" || visualEditState !== "idle" || Boolean(pendingImport) || Boolean(pendingPdfOcr) || Boolean(pendingExport) || Boolean(pendingDocumentStructure)} />
         </div>
       </header>
 
@@ -2841,7 +2974,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.49</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.50</span></div>
       </footer>
 
       {newArtifactOpen && (
@@ -2882,6 +3015,19 @@ export function RuneWorkbench() {
           locale={locale}
           onCancel={cancelPendingImport}
           onConfirm={applyPendingImport}
+        />
+      )}
+      {pendingPdfOcr && (
+        <PdfOcrSetupDialog
+          key={pendingPdfOcr.candidates.map((candidate) => `${candidate.fileIndex}:${candidate.analysis.ocrCandidatePageNumbers.join(",")}`).join("|")}
+          candidates={pendingPdfOcr.candidates}
+          locale={locale}
+          processing={pdfOcrProcessing}
+          progress={pdfOcrProgress}
+          activeFileName={pdfOcrActiveFileName}
+          error={pdfOcrError}
+          onCancel={cancelPendingPdfOcr}
+          onRecognize={(selections) => void recognizePendingPdfPages(selections)}
         />
       )}
       {pendingExport && (

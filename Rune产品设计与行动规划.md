@@ -1012,7 +1012,7 @@ Rune 不照搬“聊天 + 笔记”的产品模型。Rune 的独特闭环仍是�
 
 | 家族 | 导入 | 导出 | 产品合同 |
 | --- | --- | --- | --- |
-| Document | 当前：MD、Markdown、DOCX、ODT、PDF 可选文本到 MD；计划：带置信度 OCR | 当前：MD、DOCX、ODT、PDF | 结构与语义优先，不承诺像素级 round-trip |
+| Document | 当前：MD、Markdown、DOCX、ODT、PDF 可选文本与显式选择扫描页 OCR 到 MD | 当前：MD、DOCX、ODT、PDF | 结构与语义优先；OCR 标页码与置信度，不承诺像素级 round-trip |
 | Data | 当前：CSV、JSON、XLSX、ODS | 当前：CSV/JSON source、XLSX、ODS；计划：表格 PDF | 值、类型、列序和工作表边界明确 |
 | Presentation | 当前：Deck Markdown、HTML、PPTX、ODP | 当前：Deck Markdown、PPTX、ODP、HTML、PDF | 语义布局优先，动画与复杂母版明确警告 |
 | Legacy binary | DOC、PPT 需要可靠转换边界 | DOC、PPT 不作为默认交付 | Web 版不伪装解析；由未来桌面壳或受控转换服务提供 |
@@ -1087,7 +1087,13 @@ PDF 现在进入与 DOCX/XLSX/PPTX 相同的多文件导入事务，但使用独
 
 转换器以文字坐标组合行，保留 `<!-- PDF page N -->` 页来源，处理 CJK 相邻文字、主导 RTL 顺序、断词、段落、项目符号、编号列表和字体尺寸推断标题，并移除在至少半数页面边缘重复出现的页眉页脚。原文花括号会编码，避免恶意 PDF 伪造 `metric` 或 `chart` binding。生成的 Markdown 与其它导入一样先解决名字冲突、验证整个 workspace，并在审核弹层展示预览和所有 fidelity warning；只有确认才单次写入。
 
-当前合同只承诺“可选择文本到可继续编辑的 Markdown”，不承诺还原 PDF 版式。扫描页不做 OCR，图片、字体、列、表格、链接、批注、表单和书签会省略或展平；完全没有可选择文本的 PDF 明确失败。单文件限制 12 MB、200 页、100,000 个文字片段和 200,000 个输出字符。后续 OCR 必须携带页级置信度和原图对照再进入审核，不能静默混入确定文本。
+v0.39 的合同只承诺“可选择文本到可继续编辑的 Markdown”，不承诺还原 PDF 版式。v0.50 在同一边界内补上扫描页 OCR：先本地检测无可选文本页，再由用户明确缩小页码范围并选择 English、简体中文或双语；确认后才以浏览器画布渲染相应页，并调用同源打包的 Tesseract worker、WASM 与语言数据。页面图像和识别文本不上传，操作可停止且停止零写入。每页结果写入页码、平均置信度和“对照原 PDF 核验”提示，并在最终原子导入审核逐页披露；它仍不承诺还原图片、字体、列、表格、链接、批注、表单和书签。单文件限制 12 MB、200 页、100,000 个文字片段、每 OCR 页 800 万像素和 200,000 个输出字符。
+
+### 6.19 v0.50 扫描 PDF OCR 审核端口
+
+OCR 是“先检测、再授权、后转录、最后审核”的独立端口。多文件事务可以同时包含 Office、OpenDocument、普通 PDF 与多份扫描 PDF；Rune 先完成所有 PDF 的文字层分析，再把每份文件检测出的扫描页作为可编辑范围展示。用户不能把已经有文字层或不存在的页加入 OCR，页码输入支持如 `1-3, 5` 的明确范围，语言设置按文件选择。确认后一个 worker 顺序处理页面并显示加载模型、渲染页面和识别页面三种阶段，停止会终止 worker 且不生成半份导入。
+
+识别结果不会伪装成普通 PDF 原文。Markdown 页标记包含 OCR 置信度，正文前固定出现核验提示，最终 import review 同时列出 OCR 总体损失与每页置信度。识别出来的花括号继续编码，因此扫描图中看似 Rune binding 的文字没有执行或依赖权限。英文/简体中文 worker、三种 WASM 能力回退和压缩语言数据与应用同源发布；真实 QA 使用一页只有光栅图、`pdftotext` 无正文的扫描 PDF，经 Poppler 渲染目检，并由同版 Tesseract 运行库实际得到 95% 平均置信度的完整夹具文本。
 
 ### 6.19 v0.40 OpenDocument 语义导入导出
 
@@ -1156,7 +1162,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 1. **Welcome & Trust**：设备语言、欢迎、模型/隐私选择、快捷键教程、本地指南与空态；v0.49 已让主要工作区与专业审核延续同一中英文选择，形成首次与持续帮助闭环。
 2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
-4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、HTML 与固定 PDF 已按语义端口落地；旧 `.doc/.ppt` 等待隔离转换服务，扫描 PDF 等待可披露的 OCR port。
+4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；旧 `.doc/.ppt` 等待隔离转换服务。
 5. **Model Platform**：v0.46 先完成 Responses profile；下一步才是 Anthropic/Gemini/Chat adapters、capability manifest、故障转移、用量和预算路由。
 6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
 
@@ -1168,7 +1174,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
 
-这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 已转 Markdown，扫描 PDF 尚无 OCR。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–55 节。
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，但 OCR 不是确定事实、不是原排版恢复，也没有任意语言或区域级框选。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–55 节。
 
 ### 6.28 v0.48 Markdown 细粒度双向定位
 

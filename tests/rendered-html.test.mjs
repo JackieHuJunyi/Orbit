@@ -91,7 +91,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.49/);
+  assert.match(html, /Rune v0\.50/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -142,7 +142,10 @@ test("ships a review-before-write import surface in the client", async () => {
   const clientSource = (await Promise.all(files.map((name) => readFile(new URL(name, assetsUrl), "utf8")))).join("\n");
   assert.match(clientSource, /Review imported sources/);
   assert.match(clientSource, /PDF import recovers selectable text and approximate reading order/);
-  assert.match(clientSource, /scanned PDFs do not receive OCR yet/);
+  assert.match(clientSource, /scanned PDFs require explicit page and English\/Simplified-Chinese OCR choices/);
+  assert.match(clientSource, /Choose pages for OCR/);
+  assert.match(clientSource, /Page images stay on device/);
+  assert.match(clientSource, /On-device recognition/);
   assert.match(clientSource, /\.docx,\.xlsx,\.pptx,\.odt,\.ods,\.odp,\.pdf/);
   assert.match(clientSource, /OpenDocument import is limited to 12 MB per file/);
   assert.match(clientSource, /Review OpenDocument export/);

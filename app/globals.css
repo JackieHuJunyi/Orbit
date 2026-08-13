@@ -2168,6 +2168,186 @@ button.transaction-node:hover,
   gap: 8px;
 }
 
+.pdf-ocr-setup {
+  display: grid;
+  gap: 12px;
+}
+
+.pdf-ocr-privacy {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid #cbded1;
+  border-radius: 12px;
+  background: #f3faf5;
+}
+
+.pdf-ocr-privacy > svg {
+  width: 19px;
+  height: 19px;
+  margin: 2px auto 0;
+  color: #277553;
+}
+
+.pdf-ocr-privacy strong,
+.pdf-ocr-file strong,
+.pdf-ocr-progress strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.pdf-ocr-privacy p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.pdf-ocr-file {
+  overflow: hidden;
+  border: 1px solid #d8d7cf;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.pdf-ocr-file > header {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-bottom: 1px solid #e7e5dd;
+}
+
+.pdf-ocr-file > header > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: #edf5ef;
+  color: #277553;
+}
+
+.pdf-ocr-file > header svg {
+  width: 15px;
+  height: 15px;
+}
+
+.pdf-ocr-file > header > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.pdf-ocr-file > header strong,
+.pdf-ocr-file > header small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-ocr-file > header strong {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.pdf-ocr-file > header small,
+.pdf-ocr-progress small {
+  color: var(--subtle);
+  font-size: 9px;
+}
+
+.pdf-ocr-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 13px;
+}
+
+.pdf-ocr-fields label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.pdf-ocr-fields label > span {
+  color: #526158;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.pdf-ocr-fields input,
+.pdf-ocr-fields select {
+  width: 100%;
+  height: 39px;
+  min-width: 0;
+  padding: 0 11px;
+  border: 1px solid #d3d5ce;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font: 500 10px/1 var(--font-sans);
+}
+
+.pdf-ocr-fields input {
+  font-family: var(--font-mono);
+}
+
+.pdf-ocr-fields input:focus,
+.pdf-ocr-fields select:focus {
+  border-color: #579272;
+  outline: 3px solid rgba(39, 117, 83, .12);
+}
+
+.pdf-ocr-fields input:disabled,
+.pdf-ocr-fields select:disabled {
+  background: #f2f2ee;
+  color: var(--subtle);
+}
+
+.pdf-ocr-fields label > small {
+  color: var(--subtle);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.pdf-ocr-progress {
+  display: grid;
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid #cbded1;
+  border-radius: 11px;
+  background: #f7fbf8;
+}
+
+.pdf-ocr-progress > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pdf-ocr-progress > div > span {
+  color: #277553;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.pdf-ocr-progress progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: #dfeae2;
+}
+
+.pdf-ocr-progress progress::-webkit-progress-bar { background: #dfeae2; }
+.pdf-ocr-progress progress::-webkit-progress-value { background: #277553; }
+.pdf-ocr-progress progress::-moz-progress-bar { background: #277553; }
+
 .operating-review-form {
   display: grid;
   gap: 18px;
@@ -6757,6 +6937,10 @@ button.chart-line-point {
   }
 
   .import-review-files {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pdf-ocr-fields {
     grid-template-columns: minmax(0, 1fr);
   }
 
