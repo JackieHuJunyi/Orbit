@@ -2207,3 +2207,15 @@ v0.88 在两者之间建立一条 task-specific model planning seam。Rune 先�
 模型不可用不应让任务消失。local-only、未配置、网络失败、无效输出或 Document 超过 100,000 字符安全上限时，Rune 透明回到原有确定性 compiler，继续生成相同身份与来源合同的候选事务。设置摘要会提前说明“模型可用时辅助 + 本地确定性回退”，准备期间和审核卡则显示实际 planner；Responses、Chat Completions、Anthropic、Gemini 和 custom profile 都按非本地模型正确标记，不再把非 OpenAI provider 误写成 local plan。
 
 这条架构也为低成本扩展给出明确模板：以后“文档→网页”“文档→报告”“数据→叙事”若需要模型判断，应新增一个窄的 task output schema，再交给 Rune-owned compiler，而不是复制 provider 协议或授予完整 Artifact 写入。共享 model adapter 现在接受任务自己的 structured-response description，因此各协议只实现一次；React 仍只负责 assembly，task provider 仍是纯函数，workspace mutation、candidate preview、checkpoint、persistence 与 Apply 仍是唯一写入边界。模型能力可以增长，但 writer 数量保持为一。
+
+## 94. v0.89 经营汇报里的模型可以选择问题，但数字必须永远属于编译器
+
+第一条经营汇报任务已经拥有真实的 Data → Query → Chart → Document/Slides 结果，却仍然使用固定审核问题。若直接让模型生成整份报告，它不仅会成为第二个文件作者，还会把当时看到的数字复制进 Markdown；源数据下一次变化后，图表更新而叙事数字不更新，恰好破坏 Rune 最重要的实时同步承诺。
+
+v0.89 因而把模型能力压缩成“审核问题规划器”。Rune 先按用户明确选择的 category、value、sum/average 与 bar/line 顺序，在本地确定性地产生最多二十条聚合证据，并给它们分配仅在本次请求有效的 `result-N`。模型最多返回两个问题：每个问题只能选择一个独立 primary evidence id，并可选择另一个 comparison id；title、question 和 decision prompt 不得复制分类标签、数字、金额、百分比、日期、Markdown、HTML 或 binding。模型不能返回 SQL、Chart、Artifact id、文件名、patch、creation、结论或写入动作。
+
+数值由 Rune 在完整成品中重新接回。Query metric 新增可选的第四个字符串参数作为零基 result row index，例如 `{{ metric("review-analysis", "Net Revenue", "currency", "0") }}`。缺少第四参数时仍必须严格返回一行，保持旧 scalar 合同；存在第四参数时仍要验证当前 Query/Data revision、非 truncated result、精确列、现存行与有限数值。这样模型只决定“看哪一条证据、问什么问题”，显示值始终来自当前 Query snapshot，数据变化后不会留下复制的旧数字。
+
+验证继续是三层的：API 对 provider structured output 做动态证据集合检查；浏览器用捕获的 workspace 重算 aggregates 再检查；pure operating-review compiler 在生成完整 candidate 前第三次验证。任何 unconfigured、local-only、网络失败、schema 失败、证据不匹配或超过 100,000 字符的输入都回到确定性 workflow，而不是切换 provider 或放弃任务。保存任务重跑时，临时生成的 Query/Chart 引用会被重写回原 exact identities，避免启用模型后产生副本或失去 lineage。
+
+对 DeepSeek Harness 的代码与文档审查进一步确认了 Rune 的架构方向：可以学习它的 capability seam、显式生命周期事实、稳定挂载面板、keyed snapshot 渲染、渐进 disclosure 和 animation-frame 节流，但不应该把聊天产品的 plugin tree、agent session log 与动态 UI slot host 整套搬进 Office workspace。Rune 当前保留三层静态合同——task definition/session、optional bounded model contract、pure task compiler——并让 workbench 只负责 assembly。只有三个以上真实任务证明需要运行时注册、第三方替换或独立卸载 UI 时，才引入动态 registry；低成本扩展来自边界清楚，而不是抽象数量更多。

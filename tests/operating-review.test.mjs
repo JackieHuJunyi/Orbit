@@ -2,17 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseChartSource } from "../app/lib/charts.ts";
+import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import {
   appendOperatingReviewRun,
   createSavedOperatingReview,
   normalizeSavedOperatingReviews,
+  prepareOperatingReviewEvidence,
   prepareOperatingReviewWorkflow,
   prepareSavedOperatingReviewRerun,
   summarizeOperatingReviewRuns,
 } from "../app/lib/operating-review.ts";
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
+import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
 
 function dataArtifact(overrides = {}) {
   return {
@@ -112,6 +115,108 @@ test("creates an English Document + Slides review chain with exact evidence bind
   assert.deepEqual(validateWorkspaceArtifacts([...artifacts, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
   assert.deepEqual(artifacts, artifactsBefore);
   assert.deepEqual(input, inputBefore);
+});
+
+test("derives bounded aggregate evidence in the same order as the generated Query", () => {
+  const data = dataArtifact({
+    source: "Region,Net Revenue\nAPAC,100\nEurope,80\nAPAC,50\nNorth America,120\n",
+  });
+  const sum = prepareOperatingReviewEvidence([data], reviewInput());
+  assert.deepEqual(sum.errors, []);
+  assert.deepEqual(sum.evidenceRows, [
+    { id: "result-1", category: "APAC", value: 150, sourceRowCount: 2 },
+    { id: "result-2", category: "North America", value: 120, sourceRowCount: 1 },
+    { id: "result-3", category: "Europe", value: 80, sourceRowCount: 1 },
+  ]);
+
+  const averageLine = prepareOperatingReviewEvidence([data], reviewInput({ aggregation: "average", mark: "line" }));
+  assert.deepEqual(averageLine.evidenceRows, [
+    { id: "result-1", category: "APAC", value: 75, sourceRowCount: 2 },
+    { id: "result-2", category: "Europe", value: 80, sourceRowCount: 1 },
+    { id: "result-3", category: "North America", value: 120, sourceRowCount: 1 },
+  ]);
+});
+
+test("compiles model-proposed review questions with every number kept in a live Query-row binding", () => {
+  const data = dataArtifact();
+  const input = reviewInput();
+  const narrative = {
+    insights: [
+      {
+        primaryEvidenceRowId: "result-1",
+        supportingEvidenceRowId: "result-2",
+        title: "Where is the result concentrated?",
+        question: "What evidence explains the gap between the leading and comparison aggregates?",
+        decisionPrompt: "Review whether the current allocation should change before assigning an owner.",
+      },
+      {
+        primaryEvidenceRowId: "result-2",
+        supportingEvidenceRowId: null,
+        title: "What needs closer review?",
+        question: "Could scope or definition choices materially affect this visible pattern?",
+        decisionPrompt: "Confirm the evidence boundary before making a final operating decision.",
+      },
+    ],
+  };
+  const result = prepareOperatingReviewWorkflow([data], input, narrative);
+  assert.deepEqual(result.errors, []);
+  const created = creationsByKind(result);
+  const firstBinding = `{{ metric("${created.query.id}", "Net Revenue", "currency", "0") }}`;
+  const secondBinding = `{{ metric("${created.query.id}", "Net Revenue", "currency", "1") }}`;
+  for (const artifact of [created.document, created.slides]) {
+    assert.ok(artifact.source.includes(firstBinding));
+    assert.ok(artifact.source.includes(secondBinding));
+    assert.doesNotMatch(artifact.source, /What evidence explains[^\n]*1840000/u);
+  }
+  assert.match(created.document.source, /Evidence-led review prompts/u);
+  assert.match(created.slides.source, /What the evidence must decide/u);
+  assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
+  const workspace = [data, ...result.plan.creations.map(({ artifact }) => artifact)];
+  assert.deepEqual(validateWorkspaceArtifacts(workspace), []);
+
+  const snapshot = createWorkspaceQuerySnapshot(created.query, data, {
+    columns: ["Region", "Net Revenue"],
+    rows: [["APAC", 1_840_000], ["Europe", 970_000]],
+    sourceRowIndices: [null, null],
+    cellLineage: [[null, null], [null, null]],
+    lineageMode: "read-only",
+    elapsedMs: 2,
+    truncated: false,
+    engine: "DuckDB-Wasm test fixture",
+  });
+  const compiled = compileArtifactSource(created.document.source, workspace, [snapshot]);
+  assert.deepEqual(compiled.queryMetricRuntimeErrors, []);
+  assert.match(compiled.source, /\$1\.84M/u);
+  assert.match(compiled.source, /\$970K/u);
+});
+
+test("rejects model review text that duplicates evidence, copies category labels, or contains static numbers", () => {
+  const baseInsights = [
+    {
+      primaryEvidenceRowId: "result-1",
+      supportingEvidenceRowId: null,
+      title: "Where is the result concentrated?",
+      question: "What evidence explains the visible gap?",
+      decisionPrompt: "Review whether the current allocation should change.",
+    },
+    {
+      primaryEvidenceRowId: "result-2",
+      supportingEvidenceRowId: null,
+      title: "What needs closer review?",
+      question: "Could scope choices affect this pattern?",
+      decisionPrompt: "Confirm the evidence boundary before deciding.",
+    },
+  ];
+  const scenarios = [
+    [baseInsights.map((insight) => ({ ...insight, primaryEvidenceRowId: "result-1" })), /unique exact primary evidence row/i],
+    [[{ ...baseInsights[0], title: "Why does APAC lead?" }, baseInsights[1]], /generic qualitative text/i],
+    [[{ ...baseInsights[0], question: "Why is the result 20 percent higher?" }, baseInsights[1]], /generic qualitative text/i],
+  ];
+  for (const [insights, expected] of scenarios) {
+    const prepared = prepareOperatingReviewWorkflow([dataArtifact()], reviewInput(), { insights });
+    assert.equal(prepared.plan, undefined);
+    assert.match(prepared.errors.join(" "), expected);
+  }
 });
 
 test("creates a Chinese Document + Slides review chain without translating canonical field identities", () => {
@@ -356,6 +461,49 @@ test("saves one exact workflow identity and reruns it as patches instead of dupl
   }
   assert.equal(rerun.workflow.id, workflow.id);
   assert.equal(rerun.workflow.input.period, "FY26 Q3");
+});
+
+test("rewires model narrative bindings to the saved Query identity during rerun", () => {
+  const data = dataArtifact();
+  const input = reviewInput();
+  const initial = prepareOperatingReviewWorkflow([data], input);
+  const workflow = createSavedOperatingReview(input, initial.plan);
+  const workspace = [data, ...initial.plan.creations.map(({ artifact }) => artifact)];
+  const narrative = {
+    insights: [
+      {
+        primaryEvidenceRowId: "result-1",
+        supportingEvidenceRowId: null,
+        title: "Where is the result concentrated?",
+        question: "What evidence explains the visible leading pattern?",
+        decisionPrompt: "Review whether the current allocation should change.",
+      },
+      {
+        primaryEvidenceRowId: "result-2",
+        supportingEvidenceRowId: null,
+        title: "What needs closer review?",
+        question: "Could scope choices materially affect this pattern?",
+        decisionPrompt: "Confirm the evidence boundary before deciding.",
+      },
+    ],
+  };
+  const rerun = prepareSavedOperatingReviewRerun(
+    workspace,
+    workflow,
+    reviewInput({ period: "FY26 Q3" }),
+    narrative,
+  );
+  assert.deepEqual(rerun.errors, []);
+  for (const artifactId of [workflow.artifactIds.document, workflow.artifactIds.slides]) {
+    const source = rerun.plan.patches.find((patch) => patch.artifactId === artifactId)?.nextSource ?? "";
+    assert.ok(source.includes(`{{ metric("${workflow.artifactIds.query}", "Net Revenue", "currency", "0") }}`));
+    assert.doesNotMatch(source, /fy26-growth-review-analysis-2/u);
+  }
+  const next = workspace.map((artifact) => ({
+    ...artifact,
+    source: rerun.plan.patches.find((patch) => patch.artifactId === artifact.id)?.nextSource ?? artifact.source,
+  }));
+  assert.deepEqual(validateWorkspaceArtifacts(next), []);
 });
 
 test("rerun fails closed when a saved output disappears or the Data schema drifts", () => {

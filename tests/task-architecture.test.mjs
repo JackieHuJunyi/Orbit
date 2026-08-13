@@ -17,11 +17,14 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, styles] = await Promise.all([
+  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, styles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
     source("../app/components/operating-review-dialog.tsx"),
+    source("../app/lib/operating-review.ts"),
+    source("../app/lib/operating-review-contract.ts"),
+    source("../app/api/tasks/operating-review/route.ts"),
     source("../app/components/document-briefing-dialog.tsx"),
     source("../app/lib/document-briefing.ts"),
     source("../app/lib/document-briefing-contract.ts"),
@@ -41,6 +44,13 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(reviewDialog, /continuationTask\?: RuneTaskId/);
   assert.match(reviewDialog, /className="import-task-continuation"/);
   assert.match(operatingDialog, /initialInput\?\.dataArtifactId \?\? preferredDataArtifactId \?\? ""/);
+  assert.match(operatingDialog, /modelMode: RuneModelMode/);
+  assert.match(operatingCompiler, /prepareOperatingReviewEvidence/);
+  assert.match(operatingCompiler, /formatQueryMetricReference/);
+  assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);
+  assert.match(operatingRoute, /resolveActiveModelConnection/);
+  assert.match(operatingRoute, /validateOperatingReviewNarrative/);
+  assert.doesNotMatch(operatingRoute, /prepareWorkspaceMutation|setArtifacts|persistDeviceWorkspace/);
   assert.match(briefingDialog, /preferredDocumentArtifactId/);
   assert.match(briefingDialog, /preferredPresentationArtifactId/);
   assert.match(briefingDialog, /initialTarget\?\.audience \?\? "leadership"/);
@@ -61,10 +71,12 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(providers, /case "document-briefing"/);
   assert.match(providers, /satisfies Record<RuneTaskId, true>/);
   assert.doesNotMatch(providers, /react|localStorage|indexedDB|window\.|fetch\(|persist/i);
-  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{ taskId: "operating-review", input \}\)/);
+  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "operating-review",\s*input,\s*\.\.\.\(narrative/);
   assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "document-briefing",\s*input,/);
   assert.match(workbench, /fetch\("\/api\/tasks\/document-briefing"/);
+  assert.match(workbench, /fetch\("\/api\/tasks\/operating-review"/);
   assert.match(workbench, /planningKind: "task-outline"/);
+  assert.match(workbench, /planningKind: "task-narrative"/);
   assert.match(workbench, /documentBriefingTargetsById/);
   assert.match(workbench, /briefingFreshness === "changed"/);
   assert.match(workbench, /function reviewLinkedPresentationRefresh\(artifactId: string\)/);

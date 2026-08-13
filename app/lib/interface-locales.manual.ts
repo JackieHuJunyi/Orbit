@@ -545,3 +545,77 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Narrative planner": "내러티브 플래너", "Shaping and verifying…": "구성하고 확인하는 중…",
   "The model is shaping this presentation from bounded source evidence…": "모델이 범위가 제한된 원본 근거로 프레젠테이션을 구성하고 있습니다…",
 });
+
+// Human-reviewed copy for the bounded model-assisted operating-review planner.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Bounded aggregates to your model · review before write": "Agrégats limités transmis à votre modèle · vérification avant écriture",
+  "Data exceeds the model context safety limit; deterministic local operating review prepared for review": "Les données dépassent la limite de sécurité du contexte du modèle ; une revue opérationnelle locale déterministe est prête à être vérifiée",
+  "Deterministic local operating review prepared; nothing writes until review": "Revue opérationnelle locale déterministe préparée ; aucune écriture avant vérification",
+  "Model unavailable; deterministic local operating review prepared for review": "Modèle indisponible ; une revue opérationnelle locale déterministe est prête à être vérifiée",
+  "Model when available · bounded aggregates only · deterministic local fallback": "Modèle si disponible · agrégats limités uniquement · repli local déterministe",
+  "Model-assisted evidence questions": "Questions fondées sur les preuves assistées par modèle",
+  "Model-assisted operating review prepared with live-bound numbers; nothing writes until review": "Revue opérationnelle assistée par modèle préparée avec des chiffres liés en direct ; aucune écriture avant vérification",
+  "One atomic transaction · compiled locally": "Une transaction atomique · compilée en local",
+  "Review-question planner": "Planificateur de questions de revue",
+  "The model is preparing review questions from bounded aggregate evidence…": "Le modèle prépare des questions de revue à partir de preuves agrégées limitées…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Bounded aggregates to your model · review before write": "Agregados acotados para tu modelo · revisión antes de escribir",
+  "Data exceeds the model context safety limit; deterministic local operating review prepared for review": "Los datos superan el límite seguro de contexto del modelo; se ha preparado una revisión operativa local determinista para su revisión",
+  "Deterministic local operating review prepared; nothing writes until review": "Revisión operativa local determinista preparada; no se escribe nada antes de revisarla",
+  "Model unavailable; deterministic local operating review prepared for review": "Modelo no disponible; se ha preparado una revisión operativa local determinista para su revisión",
+  "Model when available · bounded aggregates only · deterministic local fallback": "Modelo cuando esté disponible · solo agregados acotados · alternativa local determinista",
+  "Model-assisted evidence questions": "Preguntas sobre la evidencia asistidas por modelo",
+  "Model-assisted operating review prepared with live-bound numbers; nothing writes until review": "Revisión operativa asistida por modelo preparada con cifras vinculadas en vivo; no se escribe nada antes de revisarla",
+  "One atomic transaction · compiled locally": "Una transacción atómica · compilada localmente",
+  "Review-question planner": "Planificador de preguntas de revisión",
+  "The model is preparing review questions from bounded aggregate evidence…": "El modelo está preparando preguntas de revisión a partir de evidencia agregada acotada…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Bounded aggregates to your model · review before write": "Ограниченные агрегаты для вашей модели · проверка до записи",
+  "Data exceeds the model context safety limit; deterministic local operating review prepared for review": "Данные превышают безопасный предел контекста модели; для проверки подготовлен локальный детерминированный операционный обзор",
+  "Deterministic local operating review prepared; nothing writes until review": "Локальный детерминированный операционный обзор подготовлен; до проверки ничего не записывается",
+  "Model unavailable; deterministic local operating review prepared for review": "Модель недоступна; для проверки подготовлен локальный детерминированный операционный обзор",
+  "Model when available · bounded aggregates only · deterministic local fallback": "Модель при наличии · только ограниченные агрегаты · детерминированный локальный резерв",
+  "Model-assisted evidence questions": "Вопросы по доказательствам с помощью модели",
+  "Model-assisted operating review prepared with live-bound numbers; nothing writes until review": "Операционный обзор с помощью модели и живыми числовыми связями подготовлен; до проверки ничего не записывается",
+  "One atomic transaction · compiled locally": "Одна атомарная транзакция · локальная компиляция",
+  "Review-question planner": "Планировщик вопросов обзора",
+  "The model is preparing review questions from bounded aggregate evidence…": "Модель готовит вопросы обзора на основе ограниченных агрегированных доказательств…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Bounded aggregates to your model · review before write": "تجميعات محدودة إلى نموذجك · مراجعة قبل الكتابة",
+  "Data exceeds the model context safety limit; deterministic local operating review prepared for review": "تتجاوز البيانات حد أمان سياق النموذج؛ أُعدت مراجعة تشغيلية محلية حتمية للمراجعة",
+  "Deterministic local operating review prepared; nothing writes until review": "أُعدت مراجعة تشغيلية محلية حتمية؛ لن يُكتب شيء قبل المراجعة",
+  "Model unavailable; deterministic local operating review prepared for review": "النموذج غير متاح؛ أُعدت مراجعة تشغيلية محلية حتمية للمراجعة",
+  "Model when available · bounded aggregates only · deterministic local fallback": "النموذج عند توفره · تجميعات محدودة فقط · رجوع محلي حتمي",
+  "Model-assisted evidence questions": "أسئلة أدلة بمساعدة النموذج",
+  "Model-assisted operating review prepared with live-bound numbers; nothing writes until review": "أُعدت مراجعة تشغيلية بمساعدة النموذج بأرقام مرتبطة مباشرة؛ لن يُكتب شيء قبل المراجعة",
+  "One atomic transaction · compiled locally": "معاملة ذرية واحدة · مجمّعة محليًا",
+  "Review-question planner": "مخطط أسئلة المراجعة",
+  "The model is preparing review questions from bounded aggregate evidence…": "يُعد النموذج أسئلة مراجعة من أدلة تجميعية محدودة…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Bounded aggregates to your model · review before write": "範囲を限定した集計をモデルへ · 書き込み前に確認",
+  "Data exceeds the model context safety limit; deterministic local operating review prepared for review": "データがモデルの安全なコンテキスト上限を超えています。確認用に決定的なローカル業務レビューを準備しました",
+  "Deterministic local operating review prepared; nothing writes until review": "決定的なローカル業務レビューを準備しました。確認するまで書き込みません",
+  "Model unavailable; deterministic local operating review prepared for review": "モデルを利用できません。確認用に決定的なローカル業務レビューを準備しました",
+  "Model when available · bounded aggregates only · deterministic local fallback": "利用可能な場合はモデル · 範囲を限定した集計のみ · 決定的なローカル代替",
+  "Model-assisted evidence questions": "モデル支援の根拠確認質問",
+  "Model-assisted operating review prepared with live-bound numbers; nothing writes until review": "ライブ連携された数値を使うモデル支援業務レビューを準備しました。確認するまで書き込みません",
+  "One atomic transaction · compiled locally": "一つのアトミックなトランザクション · ローカルでコンパイル",
+  "Review-question planner": "レビュー質問プランナー",
+  "The model is preparing review questions from bounded aggregate evidence…": "モデルが範囲を限定した集計根拠からレビュー質問を準備しています…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Bounded aggregates to your model · review before write": "범위가 제한된 집계를 모델로 전송 · 쓰기 전 검토",
+  "Data exceeds the model context safety limit; deterministic local operating review prepared for review": "데이터가 모델 컨텍스트 안전 한도를 초과했습니다. 검토할 결정적 로컬 운영 리뷰를 준비했습니다",
+  "Deterministic local operating review prepared; nothing writes until review": "결정적 로컬 운영 리뷰를 준비했습니다. 검토 전에는 쓰지 않습니다",
+  "Model unavailable; deterministic local operating review prepared for review": "모델을 사용할 수 없습니다. 검토할 결정적 로컬 운영 리뷰를 준비했습니다",
+  "Model when available · bounded aggregates only · deterministic local fallback": "사용 가능할 때 모델 · 범위가 제한된 집계만 · 결정적 로컬 대체",
+  "Model-assisted evidence questions": "모델 보조 근거 검토 질문",
+  "Model-assisted operating review prepared with live-bound numbers; nothing writes until review": "실시간 연결 수치를 사용하는 모델 보조 운영 리뷰를 준비했습니다. 검토 전에는 쓰지 않습니다",
+  "One atomic transaction · compiled locally": "하나의 원자적 트랜잭션 · 로컬 컴파일",
+  "Review-question planner": "리뷰 질문 플래너",
+  "The model is preparing review questions from bounded aggregate evidence…": "모델이 범위가 제한된 집계 근거에서 리뷰 질문을 준비하고 있습니다…",
+});

@@ -432,6 +432,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       proposedChange: (scope: "workspace" | "selection" | "file") => zh ? `建议的${scope === "workspace" ? "工作区修改" : scope === "selection" ? "选区内补丁" : "文件补丁"}` : `Proposed ${scope === "workspace" ? "workspace change" : scope === "selection" ? "selection-confined patch" : "file patch"}`,
       typedOperations: (value: number) => zh ? `${value} 个类型化源操作` : `${value} typed source ${value === 1 ? "operation" : "operations"}`,
       modelOutline: zh ? "模型辅助来源提纲" : "Model-assisted source outline",
+      modelNarrative: zh ? "模型辅助证据问题" : "Model-assisted evidence questions",
       localPlan: zh ? "本地确定性方案" : "Local deterministic plan",
       repairedOnce: zh ? "已修复一次" : "repaired once",
       repairPassed: zh ? "编译器引导修复已通过" : "Compiler-guided repair passed",

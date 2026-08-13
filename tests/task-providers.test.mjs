@@ -85,3 +85,52 @@ test("routes a typed operating-review task through the same provider boundary", 
     "query", "chart", "document",
   ]);
 });
+
+test("passes evidence-bound operating questions through the same pure compiler boundary", () => {
+  const data = {
+    id: "source-data",
+    name: "source-data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Revenue\nAPAC,120\nEMEA,90\n",
+  };
+  const prepared = prepareRuneTaskProvider([data], {
+    taskId: "operating-review",
+    input: {
+      title: "Weekly review",
+      dataArtifactId: data.id,
+      category: "Region",
+      value: "Revenue",
+      aggregation: "sum",
+      mark: "bar",
+      format: "currency",
+      period: "This week",
+      audience: "leadership",
+      focus: "Choose the next regional priority.",
+      deliverables: ["document"],
+      locale: "en",
+    },
+    narrative: {
+      insights: [
+        {
+          primaryEvidenceRowId: "result-1",
+          supportingEvidenceRowId: null,
+          title: "Where is the result concentrated?",
+          question: "What evidence explains the visible leading pattern?",
+          decisionPrompt: "Review whether the current allocation should change.",
+        },
+        {
+          primaryEvidenceRowId: "result-2",
+          supportingEvidenceRowId: null,
+          title: "What needs closer review?",
+          question: "Could scope choices materially affect this pattern?",
+          decisionPrompt: "Confirm the evidence boundary before deciding.",
+        },
+      ],
+    },
+  });
+  assert.deepEqual(prepared.errors, []);
+  const report = prepared.plan?.creations.find((creation) => creation.artifact.kind === "document")?.artifact;
+  const query = prepared.plan?.creations.find((creation) => creation.artifact.kind === "query")?.artifact;
+  assert.ok(report?.source.includes(`{{ metric("${query?.id}", "Revenue", "currency", "0") }}`));
+});

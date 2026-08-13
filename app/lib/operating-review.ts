@@ -5,6 +5,7 @@ import {
   type ChartCreationMark,
 } from "./artifact-creation.ts";
 import { formatChartReference } from "./charts.ts";
+import { formatQueryMetricReference } from "./bindings.ts";
 import {
   prepareWorkspaceMutation,
   type ArtifactCreationChange,
@@ -13,6 +14,12 @@ import {
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 import { isChineseRuneLocale, normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
+import {
+  MAX_OPERATING_REVIEW_EVIDENCE_ROWS,
+  validateOperatingReviewNarrative,
+  type OperatingReviewEvidenceRow,
+  type OperatingReviewNarrative,
+} from "./operating-review-contract.ts";
 import {
   appendOperatingReviewDeliveryOutcome as appendDeliveryOutcome,
   createOperatingReviewDeliveryOutcome,
@@ -98,6 +105,8 @@ export type PreparedOperatingReview = {
   errors: string[];
 };
 
+export type { OperatingReviewNarrative } from "./operating-review-contract.ts";
+
 const audienceLabels = {
   "zh-CN": {
     leadership: "管理层",
@@ -153,6 +162,67 @@ function clipped(value: string, maxChars: number) {
   return characters.length <= maxChars ? value : `${characters.slice(0, Math.max(1, maxChars - 1)).join("")}…`;
 }
 
+export function prepareOperatingReviewEvidence(
+  artifacts: WorkspaceArtifact[],
+  input: OperatingReviewInput,
+) {
+  const data = artifacts.find((artifact) => artifact.id === input.dataArtifactId);
+  if (!data || data.kind !== "data") return { errors: ["Choose one exact valid Data source."] };
+  const parsed = parseDataSource(data.source);
+  if (parsed.errors.length || !parsed.rows.length) {
+    return { errors: ["The selected Data source needs at least one valid row."] };
+  }
+  if (!parsed.columns.includes(input.category) || !parsed.columns.includes(input.value)) {
+    return { errors: ["The selected evidence fields are missing from the current Data source."] };
+  }
+  const groups = new Map<string, {
+    category: string;
+    sum: number;
+    count: number;
+    sourceOrder: number;
+  }>();
+  for (const [rowIndex, row] of parsed.rows.entries()) {
+    const categoryValue = row[input.category];
+    const numericValue = row[input.value];
+    if (categoryValue == null || !String(categoryValue).trim()) continue;
+    if (typeof numericValue !== "number" || !Number.isFinite(numericValue)) {
+      return { errors: ["The selected value field must contain only finite numeric values, not formatted text."] };
+    }
+    const key = JSON.stringify([typeof categoryValue, categoryValue]);
+    const current = groups.get(key);
+    if (current) {
+      current.sum += numericValue;
+      current.count += 1;
+    } else {
+      groups.set(key, {
+        category: clipped(String(categoryValue).replace(/[\r\n]+/gu, " ").trim(), 120),
+        sum: numericValue,
+        count: 1,
+        sourceOrder: rowIndex,
+      });
+    }
+  }
+  if (!groups.size) return { errors: ["The selected category field has no usable values."] };
+  const aggregated = [...groups.values()].map((group) => ({
+    ...group,
+    value: input.aggregation === "average" ? group.sum / group.count : group.sum,
+  }));
+  if (input.mark === "bar") {
+    aggregated.sort((left, right) => right.value - left.value || left.sourceOrder - right.sourceOrder);
+  } else {
+    aggregated.sort((left, right) => left.sourceOrder - right.sourceOrder);
+  }
+  const evidenceRows: OperatingReviewEvidenceRow[] = aggregated
+    .slice(0, MAX_OPERATING_REVIEW_EVIDENCE_ROWS)
+    .map((group, index) => ({
+      id: `result-${index + 1}`,
+      category: group.category,
+      value: group.value,
+      sourceRowCount: group.count,
+    }));
+  return { data, evidenceRows, errors: [] };
+}
+
 function querySource(input: OperatingReviewInput) {
   const category = quoteSqlIdentifier(input.category);
   const value = quoteSqlIdentifier(input.value);
@@ -172,10 +242,77 @@ LIMIT 20;
 `;
 }
 
+function narrativeEvidenceBinding(
+  query: WorkspaceArtifact,
+  input: OperatingReviewInput,
+  evidenceRowId: string,
+) {
+  const rowIndex = Number(evidenceRowId.replace(/^result-/u, "")) - 1;
+  return formatQueryMetricReference({
+    queryArtifactId: query.id,
+    column: input.value,
+    format: input.format,
+    rowIndex,
+  });
+}
+
+function reportNarrativeSource(
+  input: OperatingReviewInput,
+  query: WorkspaceArtifact,
+  narrative?: OperatingReviewNarrative,
+) {
+  if (!narrative) return "";
+  const zh = isChineseRuneLocale(input.locale);
+  const prompts = narrative.insights.map((insight) => {
+    const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
+    const supporting = insight.supportingEvidenceRowId
+      ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
+      : "";
+    return `<!-- rune:evidence ${query.id} ${insight.primaryEvidenceRowId}${insight.supportingEvidenceRowId ? ` ${insight.supportingEvidenceRowId}` : ""} -->
+### ${markdownInline(normalizeTaskText(insight.title))}
+
+${markdownInline(normalizeTaskText(insight.question))}
+
+> **${zh ? "实时证据" : "Live evidence"}** · ${zh ? "主要汇总" : "Primary aggregate"} ${primary}${supporting ? ` · ${zh ? "对照汇总" : "Comparison aggregate"} ${supporting}` : ""}
+
+**${zh ? "待审核的决策提示" : "Decision prompt to review"}** · ${markdownInline(normalizeTaskText(insight.decisionPrompt))}`;
+  }).join("\n\n");
+  return `## ${zh ? "证据驱动的审核提示" : "Evidence-led review prompts"}
+
+${zh ? "以下问题由模型根据有界聚合证据提出；数字仍由当前 Query 实时编译，问题与决策提示必须由你审核。" : "A configured model proposed these questions from bounded aggregate evidence. Every number still compiles live from the current Query; review each question and decision prompt."}
+
+${prompts}
+
+`;
+}
+
+function deckNarrativeSource(
+  input: OperatingReviewInput,
+  query: WorkspaceArtifact,
+  narrative?: OperatingReviewNarrative,
+) {
+  if (!narrative) return "";
+  const zh = isChineseRuneLocale(input.locale);
+  return narrative.insights.map((insight) => {
+    const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
+    const supporting = insight.supportingEvidenceRowId
+      ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
+      : "";
+    return `### ${markdownInline(normalizeTaskText(insight.title))}
+
+${markdownInline(normalizeTaskText(insight.question))}
+
+- **${zh ? "实时证据" : "Live evidence"}** · ${primary}${supporting ? ` · ${supporting}` : ""}
+- **${zh ? "待审核" : "Review"}** · ${markdownInline(normalizeTaskText(insight.decisionPrompt))}`;
+  }).join("\n\n");
+}
+
 function reportSource(
   input: OperatingReviewInput,
   data: WorkspaceArtifact,
+  query: WorkspaceArtifact,
   chart: WorkspaceArtifact,
+  narrative?: OperatingReviewNarrative,
 ) {
   const zh = isChineseRuneLocale(input.locale);
   const title = markdownInline(normalizeTaskText(input.title));
@@ -189,6 +326,7 @@ function reportSource(
     ? zh ? "平均值" : "average"
     : zh ? "合计值" : "sum";
   const chartBinding = formatChartReference(chart.id);
+  const narrativeSource = reportNarrativeSource(input, query, narrative);
 
   if (zh) {
     const source = `# ${title}
@@ -205,7 +343,7 @@ ${focus}
 
 ${chartBinding}
 
-## 审核问题
+${narrativeSource}## 审核问题
 
 - 哪些 ${category} 对 ${value} 的贡献最高或变化最明显？
 - 当前结果是否受到缺失值、口径变化或样本范围影响？
@@ -234,7 +372,7 @@ This view uses the ${aggregation} of **${value}** grouped by **${category}**. Ru
 
 ${chartBinding}
 
-## Review questions
+${narrativeSource}## Review questions
 
 - Which ${category} entries contribute most to ${value}, or changed most materially?
 - Could missing values, definition changes, or scope affect the result?
@@ -251,7 +389,9 @@ ${chartBinding}
 function deckSource(
   input: OperatingReviewInput,
   data: WorkspaceArtifact,
+  query: WorkspaceArtifact,
   chart: WorkspaceArtifact,
+  narrative?: OperatingReviewNarrative,
 ) {
   const zh = isChineseRuneLocale(input.locale);
   const title = markdownInline(normalizeTaskText(input.title));
@@ -262,6 +402,7 @@ function deckSource(
   const sourceName = markdownInline(data.name);
   const audience = audienceLabel(input.locale, input.audience);
   const chartBinding = formatChartReference(chart.id);
+  const narrativeSource = deckNarrativeSource(input, query, narrative);
   const source = `---
 version: 1
 title: ${normalizeTaskText(input.title)}
@@ -291,13 +432,13 @@ ${chartBinding}
 <!-- layout: content -->
 <!-- eyebrow: ${zh ? "任务重点" : "Task focus"} -->
 
-## ${zh ? "本次需要回答什么" : "What this review must answer"}
+## ${narrative ? zh ? "哪些证据需要决定" : "What the evidence must decide" : zh ? "本次需要回答什么" : "What this review must answer"}
 
-${focus}
+${narrative ? narrativeSource : `${focus}
 
 - ${zh ? `检查 ${sourceName} 的范围与口径` : `Confirm the scope and definitions in ${sourceName}`}
 - ${zh ? "对关键变化补充负责人和下一步" : "Assign an owner and next step to material changes"}
-- ${zh ? "审核后再形成最终经营结论" : "Form the final business conclusion only after review"}
+- ${zh ? "审核后再形成最终经营结论" : "Form the final business conclusion only after review"}`}
 
 ---
 
@@ -320,6 +461,7 @@ function uniqueDeliverables(deliverables: OperatingReviewDeliverable[]) {
 export function prepareOperatingReviewWorkflow(
   artifacts: WorkspaceArtifact[],
   input: OperatingReviewInput,
+  narrative?: OperatingReviewNarrative,
 ): PreparedOperatingReview {
   const errors = [
     validateTaskText(input.title, "Review title", MAX_OPERATING_REVIEW_TITLE_CHARS),
@@ -357,6 +499,15 @@ export function prepareOperatingReviewWorkflow(
     if (!valueIsStrictlyNumeric) errors.push("The selected value field must contain only finite numeric values, not formatted text.");
   }
   if (errors.length || !data) return { errors: [...new Set(errors)] };
+  if (narrative) {
+    const evidence = prepareOperatingReviewEvidence(artifacts, input);
+    if (!evidence.evidenceRows || evidence.errors.length) return { errors: evidence.errors };
+    const validatedNarrative = validateOperatingReviewNarrative(narrative, evidence.evidenceRows);
+    if (!validatedNarrative.narrative || validatedNarrative.errors.length) {
+      return { errors: validatedNarrative.errors };
+    }
+    narrative = validatedNarrative.narrative;
+  }
 
   const title = normalizeTaskText(input.title);
   const queryPrepared = prepareArtifactCreation(artifacts, {
@@ -424,13 +575,13 @@ export function prepareOperatingReviewWorkflow(
     const artifact = {
       ...prepared.artifact,
       source: deliverable === "document"
-        ? reportSource(input, data, chart)
-        : deckSource(input, data, chart),
+        ? reportSource(input, data, query, chart, narrative)
+        : deckSource(input, data, query, chart, narrative),
     };
     creations.push({
       artifact,
       summary: `Create ${artifact.name} with one live Chart binding`,
-      detail: `The ${deliverable === "document" ? "report" : "presentation"} records the chosen period, audience, focus, and exact evidence route without inventing unsupported conclusions.`,
+      detail: `The ${deliverable === "document" ? "report" : "presentation"} records the chosen period, audience, focus, and exact evidence route${narrative ? " with model-proposed questions whose numbers stay live Query bindings" : " without inventing unsupported conclusions"}.`,
     });
     workingArtifacts = [...workingArtifacts, artifact];
   }
@@ -680,6 +831,7 @@ export function prepareSavedOperatingReviewRerun(
   artifacts: WorkspaceArtifact[],
   workflow: SavedOperatingReview,
   input: OperatingReviewInput,
+  narrative?: OperatingReviewNarrative,
 ): PreparedSavedOperatingReview {
   const normalized = normalizeSavedOperatingReviews([workflow])[0];
   if (!normalized || normalized.id !== workflow.id) return { errors: ["The saved operating review is invalid."] };
@@ -707,7 +859,7 @@ export function prepareSavedOperatingReviewRerun(
   if (targetArtifacts.some((artifact) => artifact.id === input.dataArtifactId)) {
     return { errors: ["The saved review Data source cannot be one of its generated outputs."] };
   }
-  const prepared = prepareOperatingReviewWorkflow(artifacts, input);
+  const prepared = prepareOperatingReviewWorkflow(artifacts, input, narrative);
   if (!prepared.plan || prepared.errors.length) return prepared;
   const generatedByKind = new Map(prepared.plan.creations.map((creation) => [creation.artifact.kind, creation] as const));
   const generatedQuery = generatedByKind.get("query")?.artifact;
@@ -731,6 +883,7 @@ export function prepareSavedOperatingReviewRerun(
         formatChartReference(generatedChart.id),
         formatChartReference(actualChart.id),
       );
+      nextSource = nextSource.replaceAll(generatedQuery.id, actualQuery.id);
     }
     if (nextSource === target.source) continue;
     patches.push({

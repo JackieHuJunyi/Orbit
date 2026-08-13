@@ -7,6 +7,7 @@ import {
 import {
   prepareOperatingReviewWorkflow,
   type OperatingReviewInput,
+  type OperatingReviewNarrative,
   type PreparedOperatingReview,
 } from "./operating-review.ts";
 import type { RuneTaskId } from "./task-runtime.ts";
@@ -18,18 +19,26 @@ export const RUNE_TASK_PROVIDER_IDS = {
 } as const satisfies Record<RuneTaskId, true>;
 
 export type RuneTaskProviderRequest =
-  | { taskId: "operating-review"; input: OperatingReviewInput }
+  | { taskId: "operating-review"; input: OperatingReviewInput; narrative?: OperatingReviewNarrative }
   | { taskId: "document-briefing"; input: DocumentBriefingInput; outline?: DocumentBriefingModelOutline };
 
 export type PreparedRuneTaskProvider = PreparedOperatingReview | PreparedDocumentBriefing;
 
 export function prepareRuneTaskProvider(
   artifacts: WorkspaceArtifact[],
+  request: Extract<RuneTaskProviderRequest, { taskId: "operating-review" }>,
+): PreparedOperatingReview;
+export function prepareRuneTaskProvider(
+  artifacts: WorkspaceArtifact[],
+  request: Extract<RuneTaskProviderRequest, { taskId: "document-briefing" }>,
+): PreparedDocumentBriefing;
+export function prepareRuneTaskProvider(
+  artifacts: WorkspaceArtifact[],
   request: RuneTaskProviderRequest,
 ): PreparedRuneTaskProvider {
   switch (request.taskId) {
     case "operating-review":
-      return prepareOperatingReviewWorkflow(artifacts, request.input);
+      return prepareOperatingReviewWorkflow(artifacts, request.input, request.narrative);
     case "document-briefing":
       return prepareDocumentBriefingWorkflow(artifacts, request.input, request.outline);
   }

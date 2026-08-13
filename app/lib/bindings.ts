@@ -29,6 +29,7 @@ export type QueryMetricReference = {
   queryArtifactId: string;
   column: string;
   format: QueryMetricFormat;
+  rowIndex?: number;
 };
 
 export type WorkspaceQueryMetric = QueryMetricReference & {
@@ -160,11 +161,19 @@ function validMetricIdentity(value: string) {
 }
 
 export function queryMetricReferenceKey(reference: QueryMetricReference) {
-  return JSON.stringify([reference.queryArtifactId, reference.column, reference.format]);
+  return JSON.stringify(reference.rowIndex == null
+    ? [reference.queryArtifactId, reference.column, reference.format]
+    : [reference.queryArtifactId, reference.column, reference.format, reference.rowIndex]);
 }
 
 export function queryMetricReferenceLabel(reference: QueryMetricReference) {
-  return `${reference.queryArtifactId}.${reference.column}`;
+  return `${reference.queryArtifactId}.${reference.column}${reference.rowIndex == null ? "" : `[${reference.rowIndex}]`}`;
+}
+
+export function formatQueryMetricReference(reference: QueryMetricReference) {
+  const values = [reference.queryArtifactId, reference.column, reference.format];
+  if (reference.rowIndex != null) values.push(String(reference.rowIndex));
+  return `{{ metric(${values.map((value) => JSON.stringify(value)).join(", ")}) }}`;
 }
 
 export function parseMetricBindings(source: string): ParsedMetricBindings {
@@ -187,7 +196,7 @@ export function parseMetricBindings(source: string): ParsedMetricBindings {
     if (!/^metric\b/iu.test(inner)) continue;
     const invocation = inner.match(/^metric\s*\(([\s\S]*)\)$/iu);
     if (!invocation) {
-      errors.push('Use {{ metric("key") }} or {{ metric("query-id", "column", "currency|number|percent") }}.');
+      errors.push('Use {{ metric("key") }}, {{ metric("query-id", "column", "format") }}, or add a quoted result row index as the fourth argument.');
       continue;
     }
     const rawArguments = splitMetricArguments(invocation[1]);
@@ -206,11 +215,11 @@ export function parseMetricBindings(source: string): ParsedMetricBindings {
       bindings.push({ kind: "legacy", key, start, end });
       continue;
     }
-    if (values.length !== 3) {
-      errors.push('A Query metric needs exactly three arguments: metric("query-id", "column", "format").');
+    if (values.length !== 3 && values.length !== 4) {
+      errors.push('A Query metric needs three arguments, plus an optional quoted result row index.');
       continue;
     }
-    const [queryArtifactId, column, format] = values;
+    const [queryArtifactId, column, format, rawRowIndex] = values;
     if (!validMetricIdentity(queryArtifactId) || !validMetricIdentity(column)) {
       errors.push("Query metric ids and columns must be 1–120 visible characters.");
       continue;
@@ -219,9 +228,23 @@ export function parseMetricBindings(source: string): ParsedMetricBindings {
       errors.push(`Query metric format must be ${QUERY_METRIC_FORMATS.join(", ")}.`);
       continue;
     }
+    const rowIndex = rawRowIndex == null
+      ? undefined
+      : /^(?:0|[1-9]\d{0,2})$/u.test(rawRowIndex) && Number(rawRowIndex) <= 499
+        ? Number(rawRowIndex)
+        : null;
+    if (rowIndex === null) {
+      errors.push("Query metric result row index must be a quoted integer from 0 to 499.");
+      continue;
+    }
     bindings.push({
       kind: "query",
-      reference: { queryArtifactId, column, format: format as QueryMetricFormat },
+      reference: {
+        queryArtifactId,
+        column,
+        format: format as QueryMetricFormat,
+        ...(rowIndex == null ? {} : { rowIndex }),
+      },
       start,
       end,
     });
@@ -385,7 +408,7 @@ function resolveQueryMetricReference(
       errors: [`Query metric source exceeds 500 rows: ${reference.queryArtifactId}`],
     };
   }
-  if (snapshot.result.rows.length !== 1) {
+  if (reference.rowIndex == null && snapshot.result.rows.length !== 1) {
     return {
       ...validation,
       pending: false,
@@ -404,7 +427,16 @@ function resolveQueryMetricReference(
       errors: [`Query metric column is missing or ambiguous at runtime: ${reference.column}`],
     };
   }
-  const value = queryMetricNumber(snapshot.result.rows[0]?.[columnIndices[0]]);
+  const rowIndex = reference.rowIndex ?? 0;
+  if (rowIndex >= snapshot.result.rows.length) {
+    return {
+      ...validation,
+      pending: false,
+      staticValid: true,
+      errors: [`Query metric result row is missing: ${queryMetricReferenceLabel(reference)}`],
+    };
+  }
+  const value = queryMetricNumber(snapshot.result.rows[rowIndex]?.[columnIndices[0]]);
   if (value == null) {
     return {
       ...validation,

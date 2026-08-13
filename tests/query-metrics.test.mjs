@@ -12,6 +12,7 @@ import {
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
+import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 const scalarSource = [
   '{{ metric("regional-summary", "total_q2_revenue", "currency") }}',
@@ -44,6 +45,25 @@ test("compiles one current Query row into explicitly formatted scalar values", (
   assert.deepEqual(compiled.metricBindingErrors, []);
   assert.deepEqual(compiled.unresolvedQueryMetrics, []);
   assert.deepEqual(compiled.pendingQueryMetrics, []);
+  assert.deepEqual(compiled.queryMetricRuntimeErrors, []);
+  assert.equal(Object.keys(compiled.queryMetrics).length, 3);
+});
+
+test("compiles an explicitly selected row from a multi-row Query without changing scalar compatibility", () => {
+  const source = [
+    '{{ metric("regional-analysis", "q2_revenue", "currency", "0") }}',
+    '{{ metric("regional-analysis", "q2_revenue", "currency", "2") }}',
+    '{{ metric("regional-analysis", "Customers", "number", "3") }}',
+  ].join(" · ");
+  assert.deepEqual(findQueryMetricReferences(source), [
+    { queryArtifactId: "regional-analysis", column: "q2_revenue", format: "currency", rowIndex: 0 },
+    { queryArtifactId: "regional-analysis", column: "q2_revenue", format: "currency", rowIndex: 2 },
+    { queryArtifactId: "regional-analysis", column: "Customers", format: "number", rowIndex: 3 },
+  ]);
+
+  const compiled = compileArtifactSource(source, defaultArtifacts, [defaultQuerySnapshot()]);
+  assert.equal(compiled.source, "$1.84M · $970K · 39");
+  assert.deepEqual(compiled.metricBindingErrors, []);
   assert.deepEqual(compiled.queryMetricRuntimeErrors, []);
   assert.equal(Object.keys(compiled.queryMetrics).length, 3);
 });
@@ -109,6 +129,41 @@ test("fails closed for malformed, unresolved, multi-row, or non-numeric Query me
   };
   assert.match(
     compileArtifactSource(scalarSource, defaultArtifacts, [textSnapshot]).queryMetricRuntimeErrors.join(" "),
+    /finite number/i,
+  );
+});
+
+test("fails closed for invalid, missing, truncated, or nonnumeric selected Query rows", () => {
+  const invalidIndex = '{{ metric("regional-analysis", "q2_revenue", "currency", "500") }}';
+  assert.match(parseMetricBindings(invalidIndex).errors.join(" "), /0 to 499/i);
+
+  const missingRow = '{{ metric("regional-analysis", "q2_revenue", "currency", "4") }}';
+  assert.match(
+    compileArtifactSource(missingRow, defaultArtifacts, [defaultQuerySnapshot()]).queryMetricRuntimeErrors.join(" "),
+    /result row is missing/i,
+  );
+
+  const truncatedSnapshot = {
+    ...defaultQuerySnapshot(),
+    result: { ...defaultQuerySnapshot().result, truncated: true },
+  };
+  assert.match(
+    compileArtifactSource(missingRow, defaultArtifacts, [truncatedSnapshot]).queryMetricRuntimeErrors.join(" "),
+    /exceeds 500 rows/i,
+  );
+
+  const textSnapshot = {
+    ...defaultQuerySnapshot(),
+    result: {
+      ...defaultQuerySnapshot().result,
+      rows: defaultQuerySnapshot().result.rows.map((row, index) => (
+        index === 2 ? [row[0], "not numeric", ...row.slice(2)] : row
+      )),
+    },
+  };
+  const textRow = '{{ metric("regional-analysis", "q2_revenue", "currency", "2") }}';
+  assert.match(
+    compileArtifactSource(textRow, defaultArtifacts, [textSnapshot]).queryMetricRuntimeErrors.join(" "),
     /finite number/i,
   );
 });

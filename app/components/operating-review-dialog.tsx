@@ -11,6 +11,7 @@ import {
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
 import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
+import type { RuneModelMode } from "../lib/model-preference";
 import {
   MAX_OPERATING_REVIEW_FOCUS_CHARS,
   MAX_OPERATING_REVIEW_PERIOD_CHARS,
@@ -28,6 +29,7 @@ type OperatingReviewDialogProps = {
   error?: string;
   initialInput?: OperatingReviewInput;
   preferredDataArtifactId?: string;
+  modelMode: RuneModelMode;
   onCancel: () => void;
   onPrepare: (input: OperatingReviewInput) => void | Promise<void>;
 };
@@ -73,13 +75,22 @@ export const OPERATING_REVIEW_BASE_COPY = {
     summary: "实时任务摘要",
     incomplete: "补齐必填信息后，Rune 会在提交前验证完整工作流。",
     cancel: "取消",
-    preparing: "正在验证来源…",
+    preparing: "正在编排并验证…",
     prepare: "准备审核",
     update: "准备更新审核",
     savedDescription: "调整本期范围后重新编译既有分析、图表和成品。文件身份保持不变，所有变化仍需审核。",
     savedKicker: "已保存任务 · 可重复运行",
     savedTitle: "更新这条经营汇报任务",
-    footer: "一次原子事务 · 不上传本地文件",
+    planner: "审核问题编排",
+    modelPlanner: "模型可用时启用 · 只发送有界聚合证据 · 本地确定性回退",
+    localPlanner: "本地确定性编译器",
+    modelFooter: "向你的模型发送有界聚合 · 审核后写入",
+    localFooter: "一次原子事务 · 仅在本地编译",
+    modelShaping: "模型正在根据有界聚合证据准备审核问题…",
+    modelPrepared: "已准备模型辅助、数字保持实时绑定的经营汇报；审核后才会写入",
+    localPrepared: "已准备本地确定性经营汇报；审核后才会写入",
+    localFallback: "模型当前不可用，已准备本地确定性经营汇报；审核后才会写入",
+    sourceTooLargeFallback: "数据超过模型上下文安全上限，已准备本地确定性经营汇报；审核后才会写入",
     localErrors: "请先检查以下设置：",
     chain: "交付链",
     fields: "字段与口径",
@@ -126,13 +137,22 @@ export const OPERATING_REVIEW_BASE_COPY = {
     summary: "Live task summary",
     incomplete: "Complete the required fields and Rune will validate the whole workflow before review.",
     cancel: "Cancel",
-    preparing: "Verifying sources…",
+    preparing: "Shaping and verifying…",
     prepare: "Prepare review",
     update: "Prepare update review",
     savedDescription: "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.",
     savedKicker: "Saved task · repeatable",
     savedTitle: "Update this operating-review task",
-    footer: "One atomic transaction · no local file upload",
+    planner: "Review-question planner",
+    modelPlanner: "Model when available · bounded aggregates only · deterministic local fallback",
+    localPlanner: "Deterministic local compiler",
+    modelFooter: "Bounded aggregates to your model · review before write",
+    localFooter: "One atomic transaction · compiled locally",
+    modelShaping: "The model is preparing review questions from bounded aggregate evidence…",
+    modelPrepared: "Model-assisted operating review prepared with live-bound numbers; nothing writes until review",
+    localPrepared: "Deterministic local operating review prepared; nothing writes until review",
+    localFallback: "Model unavailable; deterministic local operating review prepared for review",
+    sourceTooLargeFallback: "Data exceeds the model context safety limit; deterministic local operating review prepared for review",
     localErrors: "Check these settings first:",
     chain: "Delivery chain",
     fields: "Fields and measure",
@@ -141,7 +161,7 @@ export const OPERATING_REVIEW_BASE_COPY = {
   },
 } as const;
 
-function operatingReviewCopy(locale: RuneLocale) {
+export function operatingReviewCopy(locale: RuneLocale) {
   return localizeRuneCopy(locale, OPERATING_REVIEW_BASE_COPY.en, OPERATING_REVIEW_BASE_COPY["zh-CN"]);
 }
 
@@ -156,6 +176,7 @@ export function OperatingReviewDialog({
   error,
   initialInput,
   preferredDataArtifactId,
+  modelMode,
   onCancel,
   onPrepare,
 }: OperatingReviewDialogProps) {
@@ -280,7 +301,7 @@ export function OperatingReviewDialog({
       onCancel={cancel}
       footer={(
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.footer}</div>
+          <div><ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}</div>
           <span>
             <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>{copy.cancel}</button>
             <button
@@ -464,6 +485,7 @@ export function OperatingReviewDialog({
             <div><dt>{copy.fields}</dt><dd>{effectiveCategory && effectiveValue ? `${effectiveCategory} → ${aggregationLabel}(${effectiveValue})` : "—"}</dd></div>
             <div><dt>{copy.scope}</dt><dd>{period.trim() ? `${period.trim()} · ${audienceLabel}` : audienceLabel}</dd></div>
             <div><dt>{copy.focusSummary}</dt><dd>{focus.trim() || "—"}</dd></div>
+            <div><dt>{copy.planner}</dt><dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd></div>
             <div><dt>{copy.chain}</dt><dd>{deliverableNames.length ? `Data → Query → Chart → ${deliverableNames.join(" + ")}` : "—"}</dd></div>
           </dl>
         </section>

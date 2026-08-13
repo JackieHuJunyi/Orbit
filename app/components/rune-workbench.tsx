@@ -61,7 +61,7 @@ import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
 import { ImportReviewDialog } from "./import-review-dialog";
 import { NewArtifactDialog } from "./new-artifact-dialog";
-import { OperatingReviewDialog } from "./operating-review-dialog";
+import { OperatingReviewDialog, operatingReviewCopy } from "./operating-review-dialog";
 import {
   PdfOcrSetupDialog,
   type PdfOcrCandidate,
@@ -230,6 +230,7 @@ import {
   createSavedOperatingReview,
   MAX_SAVED_OPERATING_REVIEWS,
   normalizeSavedOperatingReviews,
+  prepareOperatingReviewEvidence,
   prepareSavedOperatingReviewRerun,
   recordOperatingReviewDelivery,
   summarizeOperatingReviewDeliveryOutcomes,
@@ -238,8 +239,13 @@ import {
   type OperatingReviewDeliveryRating,
   type OperatingReviewDeliveryTarget,
   type OperatingReviewInput,
+  type OperatingReviewNarrative,
   type SavedOperatingReview,
 } from "../lib/operating-review";
+import {
+  MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS,
+  validateOperatingReviewNarrative,
+} from "../lib/operating-review-contract";
 import {
   documentBriefingSourceIdForPresentation,
   documentBriefingTargets,
@@ -329,7 +335,7 @@ type ActiveSourceCursor = SourceSelection & {
 type PendingChange = {
   prompt: string;
   provider: string;
-  planningKind?: "task-outline";
+  planningKind?: "task-outline" | "task-narrative";
   scope: AgentScope;
   selection?: SourceSelection;
   baseRevision: WorkspaceSourceRevision;
@@ -421,6 +427,16 @@ type RemoteDocumentBriefingResponse = {
   model?: string;
   profileName?: string;
   outline?: unknown;
+  usage?: { inputTokens?: unknown; outputTokens?: unknown };
+};
+
+type RemoteOperatingReviewResponse = {
+  error?: string;
+  code?: string;
+  provider?: string;
+  model?: string;
+  profileName?: string;
+  narrative?: unknown;
   usage?: { inputTokens?: unknown; outputTokens?: unknown };
 };
 
@@ -2850,19 +2866,71 @@ export function RuneWorkbench() {
     setOperatingReviewState("checking");
     const baseArtifacts = artifactsRef.current;
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
+    const copy = operatingReviewCopy(locale);
     try {
       const savedWorkflow = savedOperatingReviewsRef.current.find((workflow) => workflow.id === editingOperatingReviewId);
-      const prepared = savedWorkflow
-        ? prepareSavedOperatingReviewRerun(baseArtifacts, savedWorkflow, input)
-        : prepareRuneTaskProvider(baseArtifacts, { taskId: "operating-review", input });
+      const compileReview = (narrative?: OperatingReviewNarrative) => savedWorkflow
+        ? prepareSavedOperatingReviewRerun(baseArtifacts, savedWorkflow, input, narrative)
+        : prepareRuneTaskProvider(baseArtifacts, {
+            taskId: "operating-review",
+            input,
+            ...(narrative ? { narrative } : {}),
+          });
+      let prepared = compileReview();
       if (!prepared.plan || prepared.errors.length) {
         setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
         return;
       }
+      const dataArtifact = baseArtifacts.find((artifact) => (
+        artifact.id === input.dataArtifactId && artifact.kind === "data"
+      ));
+      let narrative: OperatingReviewNarrative | undefined;
+      let provider = "local";
+      let modelLabel = "";
+      let usage: PendingChange["usage"];
+      let fallbackNotice: string = modelMode === "local" ? copy.localPrepared : copy.localFallback;
+      if (modelMode === "auto" && dataArtifact
+        && dataArtifact.source.length <= MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS) {
+        setNotice(copy.modelShaping);
+        try {
+          const response = await fetch("/api/tasks/operating-review", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ artifact: dataArtifact, input }),
+          });
+          const payload = await response.json().catch(() => ({})) as RemoteOperatingReviewResponse;
+          if (response.ok) {
+            const evidence = prepareOperatingReviewEvidence(baseArtifacts, input);
+            const validated = evidence.evidenceRows
+              ? validateOperatingReviewNarrative(payload.narrative, evidence.evidenceRows)
+              : { errors: evidence.errors };
+            if (validated.narrative && !validated.errors.length) {
+              const modelPrepared = compileReview(validated.narrative);
+              if (modelPrepared.plan && !modelPrepared.errors.length) {
+                narrative = validated.narrative;
+                prepared = modelPrepared;
+                provider = payload.provider ?? "model";
+                modelLabel = payload.profileName ?? payload.model ?? provider;
+                usage = normalizeAgentUsage(payload.usage);
+              }
+            }
+          }
+        } catch {
+          // The deterministic task compiler remains available without changing write authority.
+        }
+      } else if (modelMode === "auto" && dataArtifact
+        && dataArtifact.source.length > MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS) {
+        fallbackNotice = copy.sourceTooLargeFallback;
+      }
+      if (!prepared.plan || prepared.errors.length) {
+        setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
+        return;
+      }
+      const reviewPlan = prepared.plan;
       const transaction = prepareWorkspaceMutation(
         baseArtifacts,
-        prepared.plan.patches,
-        prepared.plan.creations,
+        reviewPlan.patches,
+        reviewPlan.creations,
       );
       if (transaction.errors.length) {
         setOperatingReviewError(transaction.errors.slice(0, 3).join(" "));
@@ -2870,25 +2938,26 @@ export function RuneWorkbench() {
       }
       const runtimePreflight = await preflightRuntimeMutation(
         baseArtifacts,
-        prepared.plan.patches,
-        prepared.plan.creations,
+        reviewPlan.patches,
+        reviewPlan.creations,
       );
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
         setOperatingReviewError(runeText(locale, "The workspace changed during validation. Prepare the review again from the current data.", "验证期间工作区已发生变化。请按当前数据重新准备。"));
         setNotice(runeText(locale, "Review not prepared — workspace revision changed", "汇报未生成 — 工作区版本已变化"));
         return;
       }
-      const preferredArtifact = [...prepared.plan.creations]
+      const preferredArtifact = [...reviewPlan.creations]
         .reverse()
         .find((creation) => creation.artifact.kind === "document")
-        ?? [...prepared.plan.creations].reverse().find((creation) => creation.artifact.kind === "slides")
-        ?? prepared.plan.creations.at(-1);
+        ?? [...reviewPlan.creations].reverse().find((creation) => creation.artifact.kind === "slides")
+        ?? reviewPlan.creations.at(-1);
       const savedOperatingReviewAfterApply: SavedOperatingReview | undefined = savedWorkflow
         ? { ...savedWorkflow, input: { ...input, deliverables: [...input.deliverables] } }
-        : createSavedOperatingReview(input, prepared.plan);
+        : createSavedOperatingReview(input, reviewPlan);
       setPendingChange({
         prompt: input.focus,
-        provider: "local",
+        provider,
+        ...(narrative ? { planningKind: "task-narrative" as const } : {}),
         scope: "workspace",
         baseRevision,
         selectAfterApplyArtifactId: preferredArtifact?.artifact.id
@@ -2897,16 +2966,21 @@ export function RuneWorkbench() {
           ?? savedOperatingReviewAfterApply?.artifactIds.chart,
         savedOperatingReviewAfterApply,
         preparedAt: Date.now(),
-        ...prepared.plan,
+        usage,
+        ...reviewPlan,
         runtimePreflight,
       });
-      setPendingReviewId(prepared.plan.creations[0]?.artifact.id ?? prepared.plan.patches[0]?.artifactId ?? "");
-      setAgentMode("local");
+      setPendingReviewId(reviewPlan.creations[0]?.artifact.id ?? reviewPlan.patches[0]?.artifactId ?? "");
+      setAgentMode(narrative ? "openai" : "local");
       setOperatingReviewOpen(false);
       setEditingOperatingReviewId("");
       setTaskSession(null);
       setEmptyWorkspace(false);
-      setNotice(runeText(locale, `${prepared.plan.patches.length + prepared.plan.creations.length} linked files prepared; nothing writes until you approve the transaction`, `已准备 ${prepared.plan.patches.length + prepared.plan.creations.length} 个互相绑定的文件；审核后才会写入`));
+      setNotice(narrative && modelLabel
+        ? `${copy.modelPrepared} · ${modelLabel}`
+        : narrative
+          ? copy.modelPrepared
+          : fallbackNotice);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Rune could not validate this operating review.";
       setOperatingReviewError(message);
@@ -3712,7 +3786,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.88</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.89</strong></footer>
               </div>
             )}
           </div>
@@ -4083,7 +4157,7 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">{ui.proposedChange(pendingChange.scope === "workspace" ? "workspace" : pendingChange.scope === "selection" ? "selection" : "file")} · {pendingChange.planningKind === "task-outline" ? ui.modelOutline : pendingChange.provider !== "local" ? ui.typedOperations(pendingOperationCount) : ui.localPlan}{pendingChange.runtimeRepair ? ` · ${ui.repairedOnce}` : ""}</span>
+                  <span className="overline">{ui.proposedChange(pendingChange.scope === "workspace" ? "workspace" : pendingChange.scope === "selection" ? "selection" : "file")} · {pendingChange.planningKind === "task-outline" ? ui.modelOutline : pendingChange.planningKind === "task-narrative" ? ui.modelNarrative : pendingChange.provider !== "local" ? ui.typedOperations(pendingOperationCount) : ui.localPlan}{pendingChange.runtimeRepair ? ` · ${ui.repairedOnce}` : ""}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   {pendingChange.runtimeRepair && (
@@ -4367,6 +4441,7 @@ export function RuneWorkbench() {
           error={operatingReviewError}
           initialInput={savedOperatingReviews.find((workflow) => workflow.id === editingOperatingReviewId)?.input}
           preferredDataArtifactId={taskSession?.phase === "configuring" ? taskSession.preferredArtifactId ?? undefined : undefined}
+          modelMode={modelMode}
           onCancel={() => {
             if (operatingReviewState !== "idle") return;
             setOperatingReviewOpen(false);

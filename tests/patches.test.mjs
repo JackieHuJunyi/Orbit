@@ -199,7 +199,7 @@ test("rejects malformed scalar metric syntax atomically", () => {
     detail: "Malformed source bindings must not reach persistence.",
     nextSource: `${document.source}\n\nBroken: {{ metric("regional-summary", "total_q2_revenue") }}`,
   }]);
-  assert.match(result.errors.join(" "), /needs exactly three arguments/);
+  assert.match(result.errors.join(" "), /needs three arguments, plus an optional quoted result row index/);
   assert.equal(result.nextArtifacts, defaultArtifacts);
 });
 
