@@ -9,8 +9,10 @@ import {
   normalizeWorkspaceSourcePercent,
   normalizeRuneWorkspaceView,
   RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
+  RUNE_WORKSPACE_VIEW_CONTRIBUTIONS,
   RUNE_WORKSPACE_VIEW_STORAGE_KEY,
   RUNE_WORKSPACE_VIEWS,
+  workspaceSplitPercentFromDrag,
   workspaceViewFromKeyboardShortcut,
   workspaceSplitTracks,
 } from "../app/lib/workspace-layout.ts";
@@ -33,6 +35,11 @@ test("accepts only the three explicit presentation views", () => {
 });
 
 test("maps one explicit cross-platform shortcut family to presentation views", () => {
+  assert.deepEqual(RUNE_WORKSPACE_VIEW_CONTRIBUTIONS, [
+    { id: "split", shortcutCode: "Digit1", shortcutNumber: 1 },
+    { id: "source", shortcutCode: "Digit2", shortcutNumber: 2 },
+    { id: "preview", shortcutCode: "Digit3", shortcutNumber: 3 },
+  ]);
   const shortcut = (code, overrides = {}) => workspaceViewFromKeyboardShortcut({
     altKey: true,
     code,
@@ -48,6 +55,14 @@ test("maps one explicit cross-platform shortcut family to presentation views", (
   assert.equal(shortcut("Digit1", { altKey: false }), null);
   assert.equal(shortcut("Digit1", { shiftKey: true }), null);
   assert.equal(shortcut("Digit1", { ctrlKey: false }), null);
+});
+
+test("maps pointer geometry to a bounded logical split in LTR and RTL", () => {
+  assert.equal(workspaceSplitPercentFromDrag(520, { basePercent: 44, originX: 480, width: 800, rtl: false }), 49);
+  assert.equal(workspaceSplitPercentFromDrag(520, { basePercent: 44, originX: 480, width: 800, rtl: true }), 39);
+  assert.equal(workspaceSplitPercentFromDrag(-100, { basePercent: 44, originX: 480, width: 800, rtl: false }), MIN_WORKSPACE_SOURCE_PERCENT);
+  assert.equal(workspaceSplitPercentFromDrag(1200, { basePercent: 44, originX: 480, width: 800, rtl: false }), MAX_WORKSPACE_SOURCE_PERCENT);
+  assert.equal(workspaceSplitPercentFromDrag(480, { basePercent: 44, originX: 480, width: 0, rtl: false }), DEFAULT_WORKSPACE_SOURCE_PERCENT);
 });
 
 test("rejects corrupt persisted split values and emits complementary grid tracks", () => {

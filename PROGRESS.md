@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v1.04 with a small React-free and reversible UI surface registry, registry-backed workspace views and Quick Actions, one shared pane view switch, and a lighter rAF-throttled pointer-captured separator that preserves mounted editor state, RTL, keyboard control, and settle-only persistence.
 - 2026-08-14 — Shipped Rune v1.03 with strict offline Pilot Evidence package validation, one-final-package pseudonymous cohort aggregation, weighted quality/number/reuse gates, a non-overwriting private CLI, and an executable P1/P2 runbook without adding identity, content storage, or upload.
 - 2026-08-14 — Shipped Rune v1.02 with a deterministic, 128 KB-bounded and explicitly reviewed device-local Pilot Evidence JSON export that pseudonymizes task/output identity, removes content and revision fingerprints, retains only valid outcome facts and authorized/redacted human ratings, covers all nine interface locales, and performs no upload; this enables pilot aggregation but does not change the current 0/20 verified-human-task baseline by itself.
 - 2026-08-14 — Shipped Rune v1.01 with compiler-owned single-slide Deck previews, exact Source ↔ Presentation navigation, and one current-page Chart runtime without weakening the scriptless sandbox.

@@ -31,6 +31,22 @@ Workbench UI
 
 ## Stable contracts
 
+### Interface composition boundary
+
+Rune's page remains a product workbench, not a generic plugin host. The shell owns geometry, persistence coordination, and business dispatch; feature code may contribute discoverable interface metadata through the React-free `surface-registry` without gaining those capabilities.
+
+```text
+surface owner declares kind (single | ordered list)
+  └─ feature registers { surface, stable id, order, value }
+       ├─ collision / unknown surface / invalid cardinality → fail loud
+       ├─ consumer reads a deterministic immutable snapshot
+       └─ disposer removes exactly that contribution
+```
+
+Workspace view definitions and Quick Actions are the first consumers. React components receive snapshots and callbacks; the registry cannot render, fetch, persist, access credentials, or mutate Artifacts. This keeps a migration path toward independently owned feature surfaces without paying for Cordis profiles, runtime package loading, or a third-party plugin security model before those are real requirements.
+
+The workspace frame separately owns panel interaction. Source and Preview remain mounted while focus views change only grid tracks and accessibility state. The separator captures one pointer on its element, coalesces movement to one update per animation frame, disables track easing during the gesture, and commits the preference once after settle. Keyboard arrows, Shift increments, Home reset, RTL logical direction, reduced motion, and the responsive single-pane boundary are part of the same contract.
+
 An artifact adapter owns its default source, source language, validation, display metadata, and preview. The workbench owns selection, persistence, history, and agent actions. This boundary lets us extend SQL, charts, Deck Markdown, Office import, or a desktop filesystem without rewriting the shell.
 
 Deck compilation has two presentation consumers but one semantic owner. `compileDeckSource` returns the complete scriptless HTML document used by export plus ordered standalone one-slide documents derived from the same parsed model and block compiler. The workbench renders only the current page and binds its exact `PreviewSourceTarget` to an accessible outer hit target; it never reaches into the sandbox or recreates slide HTML in React. Canonical source selection chooses the visible page, and activating the page delegates back to the existing revision-checked source-selection capability. Legacy semantic HTML remains a single compatibility iframe because no exact slide source identity can be proven.

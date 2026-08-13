@@ -1,4 +1,5 @@
 import type { RuneLocale, RuneUICopy } from "./localization";
+import { createRuneSurfaceRegistry } from "./surface-registry.ts";
 
 export type RuneWorkbenchCommandId =
   | "new-artifact"
@@ -134,7 +135,7 @@ export function createRuneWorkbenchCommands({
   canCheckpoint,
   canOpenFolder,
 }: RuneWorkbenchCommandContext): RuneWorkbenchCommand[] {
-  return [
+  const builtInCommands: RuneWorkbenchCommand[] = [
     {
       id: "new-artifact",
       group: "create",
@@ -251,6 +252,18 @@ export function createRuneWorkbenchCommands({
       keywords: ["model", "api", "provider", "key", "模型", "配置"],
     },
   ];
+  const registry = createRuneSurfaceRegistry<"command-menu", RuneWorkbenchCommand>([
+    { id: "command-menu", kind: "list" },
+  ]);
+  builtInCommands.forEach((command, index) => {
+    registry.register({
+      id: command.id,
+      surface: "command-menu",
+      order: index * 10,
+      value: command,
+    });
+  });
+  return registry.entries("command-menu").map((entry) => entry.value);
 }
 
 function normalizeCommandText(value: string) {

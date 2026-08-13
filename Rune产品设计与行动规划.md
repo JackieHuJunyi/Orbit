@@ -2076,3 +2076,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 输出只保留群组 run/delivery、weighted seven-dimension average、number gate、task mix 和 28 天内跨不同日期的 evaluated repeat signal；participant id、package/run/output record、文件名、路径和任务日期不得进入 JSON/Markdown。
 - CLI manifest 只接受目录内相对常规 JSON，拒绝 symlink、path escape、重复 path 和超过 128 KB；默认 stdout，显式写入使用 user-only、non-overwrite 与补偿清理。所有真实包和报告默认 Git-ignore。
 - [真实试点 runbook](docs/pilot/README.md) 固定 P1 招募、授权/脱敏、人工基线、Rune 对照、详细评分、最终导出、汇总与 P2/P3 判定流程；工具上线不改变 0/20，只有实际获授权完整评分才能改变。
+
+### 17.36 v1.04 界面扩展先使用小型可撤销 surface，不引入完整插件主机
+
+- 参考 DeepSeek Harness 的 owner/contribution/lifecycle 分离，建立 React-free surface registry：owner 声明 `single/list`，feature 提交 stable kebab id、finite order 与纯 value，注册返回幂等 disposer。
+- unknown surface、重复 definition/contribution、非法 order 和 single 多占用必须加载时失败；consumer 只得到按 order 与注册顺序稳定排列的 immutable snapshot。
+- Workspace view 定义与 Quick Actions 先消费该 seam；registry 不得导入 React、浏览器、provider、credential、persistence 或 Artifact mutation，现有 Workbench handler 仍是业务执行 owner。
+- Source 与 Preview header 使用一个 props-only view switch，不能再复制三种 view 的 label、shortcut、active 与 accessibility 合同；九语言、Arabic RTL 和跨平台快捷键继续共享同一组 definition。
+- 分栏 gesture 归 frame control 所有：element pointer capture、每 animation frame 最多一次 React update、拖动时关闭 grid easing、结束后一次 preference commit，并对 pointer cancel/lost capture/unmount 完整清理。
+- Separator 静止时只保留 12px 命中区，hover/focus/drag 才显示小胶囊；键盘 Arrow、Shift step、Home reset、RTL logical math、960px 单面板和 reduced-motion 都必须保持。
+- 当前不引入 Cordis profiles、dynamic package loader、session-scoped injection 或第三方 executable UI。只有独立 runtime owners、隔离与配置 patch 成为真实需求时才重新评估。

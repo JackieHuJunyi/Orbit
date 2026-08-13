@@ -17,8 +17,9 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, modelPlanning, styles, shellStyles] = await Promise.all([
+  const [workbench, frameControls, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, modelPlanning, styles, shellStyles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
+    source("../app/components/workspace-frame-controls.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
     source("../app/components/operating-review-dialog.tsx"),
@@ -123,7 +124,10 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(workbench, /inert=\{workspaceView === "preview"/);
   assert.match(workbench, /inert=\{workspaceView === "source"/);
   assert.match(workbench, /paneLeavingFocus\?\.contains\(document\.activeElement\)/);
-  assert.match(workbench, /data-workspace-view-option="preview"/);
+  assert.match(workbench, /<WorkspaceViewSwitch ui=\{ui\} view=\{workspaceView\}/);
+  assert.match(frameControls, /data-workspace-view-option=\{contribution\.id\}/);
+  assert.match(frameControls, /setPointerCapture/);
+  assert.match(frameControls, /requestAnimationFrame/);
   assert.match(shellStyles, /Focus views keep both editor surfaces mounted/);
   assert.match(shellStyles, /transition: grid-template-columns var\(--rune-duration-layout\)/);
   assert.match(shellStyles, /prefers-reduced-motion|rune-duration-layout/);

@@ -2343,3 +2343,11 @@ v1.02 新增纯 `pilot-evidence` compiler，只消费规范化后的 v3 ledger�
 纯 cohort compiler 把每个包当作非可信输入，重新验证 provenance、alias、日期、状态、数值上限、task/output link、method/format、完整 rubric 与顺序，重新计算 summary 后才允许聚合。内容相同但导出日期不同的重复包也拒绝。输出只保留群组 counts、weighted averages、任务类型、独立 number gate，以及同一匿名包内跨不同日期且不超过 28 天的复用信号；participant id、run/output record 和任务日期都不会进入结果。
 
 CLI 只读 manifest 目录内的显式相对常规文件，拒绝 symlink、越界路径、超过 128 KB 与重复路径；默认只打印，显式输出时以 user-only、non-overwrite 和失败补偿方式生成 JSON/Markdown。`pilot-private/`、原始包和 cohort 报告默认不进 Git。这个能力不自动得到任何真实样本，但让 P1/P2 一旦开始就不会用临时 spreadsheet 重新制造一套不可审计的证据系统。
+
+## 110. v1.04 学习 Harness 应先抽出可撤销界面边界，而不是移植完整插件运行时
+
+DeepSeek Harness 的 UI 真正轻盈之处，不只是配色，而是布局 owner、功能 contribution 与业务能力互不冒充：主框架只决定面板几何，功能通过有序 slot 出现，面板缩到零也不销毁内容树，拖动只在浏览器准备绘制时更新。Rune 已经有 source-first、review-before-write 与 mounted Source/Preview，但视图按钮仍复制两份，分栏 gesture 仍塞在 Workbench 并以 window listener 驱动每个 pointer event。
+
+v1.04 增加最小 React-free `surface-registry`。Owner 声明 `single/list`，feature 注册 stable id、有限 order 与纯 value；unknown、duplicate、非法 id/order 和 single 冲突都 fail loud，disposer 幂等撤销，consumer 只拿有序 immutable snapshot。Workspace views 与 Quick Actions 是首批使用者。它没有 React、fetch、credential、persistence 或 Artifact mutation，因此建立低成本扩展 seam，却没有提前引入 Cordis profile、dynamic loader、session scope 或第三方代码安全面。
+
+Source/Preview 两个 pane header 现在消费同一个 view-switch 组件。中间 separator 使用 element pointer capture，不再把 gesture 生命周期散到 window；pointer move 通过 `requestAnimationFrame` 合并，拖动期间关闭 grid easing，落定后只持久化一次。逻辑百分比继续支持 RTL，Arrow、Shift 与 Home 继续键盘可达，窄屏与 reduced-motion 合同不变。视觉上保留足够命中宽度，但静止时隐藏 chrome，只在 hover、focus 或 drag 时出现 30px 浮动胶囊。轻盈来自状态边界清楚，而不是再叠一层光效。

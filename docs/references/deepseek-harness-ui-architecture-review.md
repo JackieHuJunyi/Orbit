@@ -53,7 +53,9 @@ Rune 的规则：
 
 Harness 将人类命令的目录、筛选和选择界面与具体能力分开：命令 UI 只呈现候选项，真正行为仍由拥有该能力的服务执行。Rune v0.97 采用这一窄边界，新增静态 `workbench-commands` 注册表和 Quick Actions 消费者。注册表拥有十四个稳定 id、分组、九语言文案、快捷键、搜索关键词和 capability-derived availability；命令面板只负责搜索、键盘移动、焦点恢复和选择事件，不能导入持久化、Artifact 写入或网络能力。Workbench 把选择分发回现有 New、Import、Task、View、Checkpoint、Guide 和 Model handlers。
 
-这不是动态插件系统，也不是把每个按钮再封装一层。它先消除散落命令目录和快捷入口的重复；只有出现第三方运行时装卸、冲突排序和 effect 撤销需求时，才重新评估 Harness 的 slot/plugin host。
+v1.04 又把目录下方的最小组合原语抽成 React-free `surface-registry`：surface owner 只声明 `single/list` cardinality，feature 提交 stable id、order 与纯 value，重复、未知 surface、非法 id 和 single 冲突立即失败，注册返回幂等 disposer。Workspace views 与 Quick Actions 共同使用它；registry 仍不能渲染、执行命令、读取浏览器状态或写 workspace。
+
+这不是动态插件系统，也不是把每个按钮再封装一层。它先消除散落命令目录、视图定义和快捷入口的重复，并证明可撤销 contribution 合同；只有出现第三方运行时装卸、隔离、配置 patch 和跨包生命周期需求时，才重新评估 Harness 的完整 slot/plugin host。
 
 ### 1.6 扩展点必须先属于业务域
 
@@ -75,12 +77,20 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 | Durable session log | 转译为 source-derived facts | comparison evidence 从 canonical Data 重算，保存任务只存 typed scopes |
 | Capability seams | 采用 | 同字段 primary/comparison scopes 由一个纯模块验证和编译 |
 | Mounted collapsible panels | 采用 | Source/Preview 零宽收放、`inert`、保留 scroll/selection/runtime |
-| Typed UI slots | 暂缓 | 只有两个 focused tasks，静态组合成本更低 |
+| Typed UI slots | 采用最小静态子集 | React-free reversible surface registry 承载 Workspace views 与 Quick Actions；不含动态 loader、session scope 或第三方代码 |
 | Human command registry | 采用静态版本 | `workbench-commands` 描述能力，Quick Actions 只消费，Workbench 执行现有 handler |
 | Theme owner + semantic aliases | 采用 | token/appearance 独占共享视觉事实，功能样式不复制 palette |
 | Data → binding → presentation 单向层 | 采用 | pure `app/lib` 端口、Workbench effect、props-only review component |
 | Dynamic profiles/bundles/patch tree | 不采用 | Rune 不是 agent harness，暂无第三方 runtime composition 需求 |
 | Chat/session-first shell | 不采用 | Rune 继续以文档、数据、分析和成品为中心 |
+
+## 2.1 v1.04 新增落点
+
+- Workbench 不再复制 Source/Preview 两份 view switch；一个 props-only 组件消费同一组 registry contributions。
+- Separator 的 gesture 从 window listeners 改为 element pointer capture；移动按 `requestAnimationFrame` 合并，结束时才持久化，避免 React 更新、浏览器绘制与存储写入互相追赶。
+- 拖动时暂停 grid-track easing，指针和面板边界保持贴合；静止时 separator chrome 隐藏，hover、focus 与 dragging 才显示轻量浮动胶囊。
+- Source 与 Preview 继续 mounted，因而 selection、scroll、DuckDB/Chart preview 和撤销上下文不因视图切换重建。
+- 没有复制上游组件、品牌色或聊天信息架构；Rune 只采用可组合边界、稳定 DOM identity 与细粒度交互反馈。
 
 ## 3. 后续架构门槛
 

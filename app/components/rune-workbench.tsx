@@ -10,7 +10,6 @@ import {
   CircleDot,
   ClipboardList,
   Code2,
-  Columns2,
   Database,
   Download,
   Ellipsis,
@@ -43,7 +42,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { ChangeEvent, KeyboardEvent, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { ChangeEvent, KeyboardEvent, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ArtifactPreview,
   type ChartSpecEditHandler,
@@ -65,6 +64,7 @@ import { NewArtifactDialog } from "./new-artifact-dialog";
 import { OperatingReviewDialog, operatingReviewCopy } from "./operating-review-dialog";
 import { PilotEvidenceReviewDialog, pilotEvidenceCopy } from "./pilot-evidence-review-dialog";
 import { WorkbenchCommandMenu } from "./workbench-command-menu";
+import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
 import {
   PdfOcrSetupDialog,
   type PdfOcrCandidate,
@@ -1217,55 +1217,6 @@ export function RuneWorkbench() {
       // The presentation-only view remains usable in memory.
     }
   }, []);
-
-  const resizeWorkspaceFromPointer = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || window.matchMedia("(max-width: 960px)").matches) return;
-    const workspace = workspaceRef.current;
-    if (!workspace) return;
-    const sourcePane = workspace.querySelector<HTMLElement>(":scope > .source-pane");
-    const previewPane = workspace.querySelector<HTMLElement>(":scope > .preview-pane");
-    if (!sourcePane || !previewPane) return;
-    const sourceRect = sourcePane.getBoundingClientRect();
-    const previewRect = previewPane.getBoundingClientRect();
-    const start = Math.min(sourceRect.left, previewRect.left);
-    const end = Math.max(sourceRect.right, previewRect.right);
-    const width = end - start;
-    if (width <= 0) return;
-    document.body.classList.add("workspace-resizing");
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const onMove = (moveEvent: PointerEvent) => {
-      const physicalPercent = ((moveEvent.clientX - start) / width) * 100;
-      setWorkspaceSourcePercent(clampWorkspaceSourcePercent(document.documentElement.dir === "rtl" ? 100 - physicalPercent : physicalPercent));
-    };
-    const onEnd = () => {
-      document.body.classList.remove("workspace-resizing");
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onEnd);
-      window.removeEventListener("pointercancel", onEnd);
-      setWorkspaceSourcePercent((current) => {
-        try { localStorage.setItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, String(current)); } catch { /* memory-only */ }
-        return current;
-      });
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onEnd);
-    window.addEventListener("pointercancel", onEnd);
-  }, []);
-
-  const resizeWorkspaceFromKeyboard = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    const direction = document.documentElement.dir === "rtl" ? -1 : 1;
-    const step = event.shiftKey ? 5 : 2;
-    if (event.key === "Home") {
-      event.preventDefault();
-      setPreferredWorkspaceSplit(DEFAULT_WORKSPACE_SOURCE_PERCENT);
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      setPreferredWorkspaceSplit(workspaceSourcePercent - step * direction);
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      setPreferredWorkspaceSplit(workspaceSourcePercent + step * direction);
-    }
-  }, [setPreferredWorkspaceSplit, workspaceSourcePercent]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -3991,7 +3942,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.03</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.04</strong></footer>
               </div>
             )}
           </div>
@@ -4316,11 +4267,7 @@ export function RuneWorkbench() {
                   title={localImageCopy(locale).insertLocalAtCursor}
                 ><ImagePlus aria-hidden="true" /></button>
               )}
-              <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
-                <button data-workspace-view-option="split" type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
-                <button data-workspace-view-option="source" type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
-                <button data-workspace-view-option="preview" type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
-              </div>
+              <WorkspaceViewSwitch ui={ui} view={workspaceView} onChange={setPreferredWorkspaceView} />
               {proposalReviewActive ? (
                 <span className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`} role="status">
                   <Eye aria-hidden="true" /><span>{proposalPreviewActive ? ui.proposalReadOnly : ui.proposalPreviewUnavailable}</span>
@@ -4559,21 +4506,15 @@ export function RuneWorkbench() {
           </div>
         </section>
 
-        <div
-          className="workspace-splitter"
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={ui.resizeWorkspace}
-          aria-valuemin={35}
-          aria-valuemax={65}
-          aria-valuenow={Math.round(workspaceSourcePercent)}
-          aria-valuetext={workspaceSplitValueLabel(locale, Math.round(workspaceSourcePercent))}
-          tabIndex={0}
-          title={`${ui.resizeWorkspace} · ${ui.resetWorkspaceSplit}`}
-          onPointerDown={resizeWorkspaceFromPointer}
-          onKeyDown={resizeWorkspaceFromKeyboard}
-          onDoubleClick={() => setPreferredWorkspaceSplit(DEFAULT_WORKSPACE_SOURCE_PERCENT)}
-        ><span aria-hidden="true" /></div>
+        <WorkspaceSplitter
+          workspaceRef={workspaceRef}
+          value={workspaceSourcePercent}
+          label={ui.resizeWorkspace}
+          valueText={workspaceSplitValueLabel(locale, Math.round(workspaceSourcePercent))}
+          resetLabel={ui.resetWorkspaceSplit}
+          onChange={setWorkspaceSourcePercent}
+          onCommit={setPreferredWorkspaceSplit}
+        />
 
         <section
           className="preview-pane"
@@ -4588,11 +4529,7 @@ export function RuneWorkbench() {
               <div><span className="overline">{ui.output}</span><strong>{proposalReviewActive ? ui.proposalPreview : ui.livePreview}</strong></div>
             </div>
             <div className="preview-actions">
-              <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
-                <button data-workspace-view-option="split" type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
-                <button data-workspace-view-option="source" type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
-                <button data-workspace-view-option="preview" type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
-              </div>
+              <WorkspaceViewSwitch ui={ui} view={workspaceView} onChange={setPreferredWorkspaceView} />
               {proposalReviewActive ? (
                 <span className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`} role="status">
                   <Eye aria-hidden="true" /><span>{proposalPreviewActive ? ui.proposalOutput : ui.proposalPreviewUnavailable}</span>

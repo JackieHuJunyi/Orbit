@@ -353,16 +353,18 @@ test("keeps an expanded transaction review scrollable inside the source pane", a
 });
 
 test("ships persistent presentation-only workspace focus modes without unmounting either synchronized pane", async () => {
-  const [styles, source] = await Promise.all([
+  const [styles, source, response] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    render(),
   ]);
+  const html = await response.text();
   assert.match(styles, /\.workspace\.view-source > \.preview-pane,[\s\S]*\.workspace\.view-preview > \.source-pane[\s\S]*display:\s*none;/);
   assert.match(styles, /\.workspace\.view-source\.with-file-rail > \.source-pane,[\s\S]*grid-column:\s*3 \/ -1;/);
   assert.match(styles, /\.workspace\.view-preview \.preview-header \.workspace-view-switch\s*\{\s*display:\s*inline-flex;/);
   assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
   assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
-  assert.match(source, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
+  assert.match(html, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
   assert.match(source, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
   assert.match(source, /activePreviewTargetId, activePreviewTargetKind, selectedArtifact\?\.id, workspaceView/);
 });
@@ -451,7 +453,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.03<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.04<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

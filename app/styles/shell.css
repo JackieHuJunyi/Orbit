@@ -84,6 +84,56 @@ html[dir="rtl"] .workspace.view-source.without-file-rail > .source-pane,
 html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { border-radius: var(--rune-radius-workspace) 0 0 var(--rune-radius-workspace); }
 
 /*
+ * The separator owns a generous invisible hit strip, but keeps its chrome
+ * quiet until hover, keyboard focus, or an active drag asks for it.
+ */
+.workspace-splitter {
+  min-width: 12px;
+  border-block-color: transparent;
+  background: transparent;
+}
+.workspace-splitter::before {
+  inset-inline: 2px;
+  background: transparent;
+  box-shadow: none;
+}
+.workspace-splitter > span {
+  width: 8px;
+  height: 30px;
+  border: 1px solid var(--rune-hairline-strong);
+  background: rgba(255, 255, 255, .86);
+  box-shadow: 0 3px 10px rgba(24, 24, 28, .08), inset 0 1px rgba(255, 255, 255, .86);
+  opacity: 0;
+  transform: scale(.82);
+  transition:
+    opacity var(--rune-duration-micro) var(--rune-ease-smooth),
+    transform var(--rune-duration-micro) var(--rune-ease-out),
+    background-color var(--rune-duration-micro) ease,
+    border-color var(--rune-duration-micro) ease,
+    box-shadow var(--rune-duration-micro) ease;
+}
+.workspace-splitter:hover::before,
+.workspace-splitter:focus-visible::before,
+.workspace-splitter[data-dragging]::before {
+  background: transparent;
+  box-shadow: none;
+}
+.workspace-splitter:hover > span,
+.workspace-splitter:focus-visible > span,
+.workspace-splitter[data-dragging] > span {
+  height: 30px;
+  background: rgba(255, 255, 255, .94);
+  opacity: 1;
+  transform: scale(1);
+}
+.workspace-splitter[data-dragging] > span {
+  border-color: rgba(var(--theme-rgb), .28);
+  background: color-mix(in srgb, var(--theme-soft) 72%, white);
+  box-shadow: 0 4px 14px rgba(var(--theme-rgb), .14), inset 0 0 0 1px rgba(255, 255, 255, .62);
+}
+body.workspace-resizing .workspace { transition: none !important; }
+
+/*
  * Focus views keep both editor surfaces mounted. Only the grid tracks and
  * interaction state change, so selection, scroll, preview runtime, and undo
  * context survive a light source/preview transition.
