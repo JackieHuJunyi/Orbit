@@ -13,6 +13,16 @@ import {
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 import { isChineseRuneLocale, normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
+import {
+  appendOperatingReviewDeliveryOutcome as appendDeliveryOutcome,
+  createOperatingReviewDeliveryOutcome,
+  normalizeOperatingReviewDeliveryOutcomes,
+  summarizeOperatingReviewDeliveryOutcomes,
+  type OperatingReviewDeliveryMethod,
+  type OperatingReviewDeliveryOutcome,
+  type OperatingReviewDeliveryRating,
+  type OperatingReviewDeliveryTarget,
+} from "./delivery-outcomes.ts";
 
 export const MAX_OPERATING_REVIEW_TITLE_CHARS = 60;
 export const MAX_OPERATING_REVIEW_PERIOD_CHARS = 60;
@@ -53,6 +63,7 @@ export type SavedOperatingReview = {
   input: OperatingReviewInput;
   artifactIds: OperatingReviewArtifactIds;
   runs: OperatingReviewRun[];
+  deliveries: OperatingReviewDeliveryOutcome[];
 };
 
 export type OperatingReviewRun = {
@@ -471,6 +482,7 @@ export function createSavedOperatingReview(
     input: copyOperatingReviewInput(input),
     artifactIds: { query, chart, ...(document ? { document } : {}), ...(slides ? { slides } : {}) },
     runs: [],
+    deliveries: [],
   };
 }
 
@@ -550,6 +562,43 @@ export function summarizeOperatingReviewRuns(runs: OperatingReviewRun[]) {
   };
 }
 
+export async function recordOperatingReviewDelivery(input: {
+  workflow: SavedOperatingReview;
+  runId: string;
+  artifactId: string;
+  source: string;
+  method: OperatingReviewDeliveryMethod;
+  target: OperatingReviewDeliveryTarget;
+  rating: OperatingReviewDeliveryRating;
+  now?: Date;
+}) {
+  const workflow = normalizeSavedOperatingReviews([input.workflow])[0];
+  if (!workflow) throw new Error("The saved operating review is no longer valid.");
+  const run = workflow.runs.find((candidate) => candidate.id === input.runId);
+  if (!run || run.status !== "applied") throw new Error("The applied task run is no longer available.");
+  const deliverableArtifactIds = [workflow.artifactIds.document, workflow.artifactIds.slides].filter((value): value is string => Boolean(value));
+  if (!deliverableArtifactIds.includes(input.artifactId)) throw new Error("This file is not an exact deliverable of the saved task.");
+  const outcome = await createOperatingReviewDeliveryOutcome({
+    run,
+    artifactId: input.artifactId,
+    source: input.source,
+    method: input.method,
+    target: input.target,
+    rating: input.rating,
+    now: input.now,
+  });
+  return {
+    ...workflow,
+    deliveries: appendDeliveryOutcome(workflow.deliveries, outcome, {
+      appliedRunIds: workflow.runs.filter((candidate) => candidate.status === "applied").map((candidate) => candidate.id),
+      deliverableArtifactIds,
+    }),
+  };
+}
+
+export { summarizeOperatingReviewDeliveryOutcomes };
+export type { OperatingReviewDeliveryMethod, OperatingReviewDeliveryOutcome, OperatingReviewDeliveryRating, OperatingReviewDeliveryTarget };
+
 function stringValue(value: unknown, maxChars: number) {
   return typeof value === "string" && value.length <= maxChars ? value : undefined;
 }
@@ -580,6 +629,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
     const deliverables = Array.isArray(input?.deliverables)
       ? [...new Set(input.deliverables)].filter((item): item is OperatingReviewDeliverable => item === "document" || item === "slides")
       : [];
+    const normalizedLocale = normalizeRuneLocale(input?.locale);
     if (candidate.version !== 1 || !id || ids.has(id) || !title || !dataArtifactId || !category
       || !numericValue || !period || !focus || !query || !chart || !deliverables.length
       || !normalizedArtifactIds || id !== savedReviewId(normalizedArtifactIds)
@@ -591,10 +641,12 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       || !["bar", "line"].includes(input?.mark ?? "")
       || !["number", "currency", "percent"].includes(input?.format ?? "")
       || !["leadership", "board", "team"].includes(input?.audience ?? "")
-      || (input?.locale !== "zh-CN" && input?.locale !== "zh-TW" && input?.locale !== "en")
+      || !normalizedLocale
       || (deliverables.includes("document") !== Boolean(document))
       || (deliverables.includes("slides") !== Boolean(slides))) continue;
     ids.add(id);
+    const runs = normalizeOperatingReviewRuns(candidate.runs);
+    const deliverableArtifactIds = [document, slides].filter((value): value is string => Boolean(value));
     normalized.push({
       version: 1,
       id,
@@ -603,17 +655,21 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
         dataArtifactId,
         category,
         value: numericValue,
-        aggregation: input.aggregation as OperatingReviewAggregation,
-        mark: input.mark as ChartCreationMark,
-        format: input.format as ChartCreationFormat,
+        aggregation: input?.aggregation as OperatingReviewAggregation,
+        mark: input?.mark as ChartCreationMark,
+        format: input?.format as ChartCreationFormat,
         period,
-        audience: input.audience as OperatingReviewAudience,
+        audience: input?.audience as OperatingReviewAudience,
         focus,
         deliverables,
-        locale: input.locale,
+        locale: normalizedLocale,
       },
       artifactIds: normalizedArtifactIds,
-      runs: normalizeOperatingReviewRuns(candidate.runs),
+      runs,
+      deliveries: normalizeOperatingReviewDeliveryOutcomes(candidate.deliveries, {
+        appliedRunIds: runs.filter((run) => run.status === "applied").map((run) => run.id),
+        deliverableArtifactIds,
+      }),
     });
     if (normalized.length >= MAX_SAVED_OPERATING_REVIEWS) break;
   }

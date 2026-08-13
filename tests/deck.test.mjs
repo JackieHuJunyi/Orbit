@@ -25,6 +25,16 @@ test("parses the bounded Deck Markdown grammar", () => {
   assert.equal(detectArtifact("briefing.deck.md", deckArtifact().source)?.language, "Deck Markdown");
 });
 
+test("accepts every registered Rune interface language as explicit Deck document metadata", () => {
+  for (const locale of ["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]) {
+    const source = deckArtifact().source.replace("lang: en", `lang: ${locale}`);
+    const parsed = parseDeckSource(source);
+    assert.deepEqual(parsed.errors, []);
+    assert.equal(parsed.deck?.frontmatter.lang, locale);
+    assert.match(compileDeckSource(source).html ?? "", new RegExp(`<html lang="${locale}">`));
+  }
+});
+
 test("compiles metrics, numbering, and a shared chart into static deck HTML", () => {
   const compiledBindings = compileArtifactSource(
     deckArtifact().source,

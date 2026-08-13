@@ -54,6 +54,7 @@ import {
   type VisualSourceDraft,
 } from "./artifact-previews";
 import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
+import { DeliveryOutcomeDialog } from "./delivery-outcome-dialog";
 import { LocalImageReviewDialog, localImageCopy } from "./local-image-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
@@ -229,7 +230,12 @@ import {
   normalizeSavedOperatingReviews,
   prepareOperatingReviewWorkflow,
   prepareSavedOperatingReviewRerun,
+  recordOperatingReviewDelivery,
+  summarizeOperatingReviewDeliveryOutcomes,
   summarizeOperatingReviewRuns,
+  type OperatingReviewDeliveryMethod,
+  type OperatingReviewDeliveryRating,
+  type OperatingReviewDeliveryTarget,
   type OperatingReviewInput,
   type SavedOperatingReview,
 } from "../lib/operating-review";
@@ -324,9 +330,23 @@ type PendingPdfOcr = {
 };
 
 type PendingExport = {
+  sourceArtifactId: string;
   sourceArtifactName: string;
+  sourceRevision: string;
   baseArtifacts: WorkspaceArtifact[];
   result: ArtifactExportResult;
+};
+
+type PendingDeliveryConfirmation = {
+  workflowId: string;
+  runId: string;
+  workflowTitle: string;
+  artifactId: string;
+  artifactName: string;
+  sourceRevision: string;
+  method: OperatingReviewDeliveryMethod;
+  target: OperatingReviewDeliveryTarget;
+  handoffLabel: string;
 };
 
 type PendingDocumentStructure = {
@@ -645,6 +665,9 @@ export function RuneWorkbench() {
   const [pdfOcrActiveFileName, setPdfOcrActiveFileName] = useState("");
   const [pdfOcrError, setPdfOcrError] = useState("");
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
+  const [pendingDeliveryConfirmation, setPendingDeliveryConfirmation] = useState<PendingDeliveryConfirmation | null>(null);
+  const [deliveryOutcomeError, setDeliveryOutcomeError] = useState("");
+  const [deliveryOutcomeState, setDeliveryOutcomeState] = useState<"idle" | "recording">("idle");
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [pendingLocalImage, setPendingLocalImage] = useState<PendingLocalImage | null>(null);
   const [localAssetUrls, setLocalAssetUrls] = useState<Record<string, string>>({});
@@ -997,6 +1020,7 @@ export function RuneWorkbench() {
     || Boolean(pendingImport)
     || Boolean(pendingPdfOcr)
     || Boolean(pendingExport)
+    || Boolean(pendingDeliveryConfirmation)
     || Boolean(pendingDocumentStructure)
     || Boolean(pendingLocalImage)
     || operatingReviewOpen
@@ -1164,6 +1188,7 @@ export function RuneWorkbench() {
         || pendingImport
         || pendingPdfOcr
         || pendingExport
+        || pendingDeliveryConfirmation
         || pendingChange) return;
       const shortcutView = workspaceViewFromKeyboardShortcut(event);
       if (shortcutView && !emptyWorkspace) {
@@ -1210,7 +1235,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDeliveryConfirmation, pendingDocumentStructure, pendingExport, pendingImport, pendingLocalImage, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact) return null;
 
@@ -1902,6 +1927,62 @@ export function RuneWorkbench() {
     return assets;
   }
 
+  function openDeliveryConfirmationForArtifact(
+    artifact: WorkspaceArtifact,
+    method: OperatingReviewDeliveryMethod,
+    target: OperatingReviewDeliveryTarget,
+    handoffLabel: string,
+  ) {
+    const workflow = savedOperatingReviewsRef.current.find((candidate) => (
+      candidate.artifactIds.document === artifact.id || candidate.artifactIds.slides === artifact.id
+    ));
+    const run = workflow?.runs.find((candidate) => candidate.status === "applied");
+    if (!workflow || !run) return;
+    setDeliveryOutcomeError("");
+    setPendingDeliveryConfirmation({
+      workflowId: workflow.id,
+      runId: run.id,
+      workflowTitle: workflow.input.title,
+      artifactId: artifact.id,
+      artifactName: artifact.name,
+      sourceRevision: artifact.source,
+      method,
+      target,
+      handoffLabel,
+    });
+  }
+
+  async function confirmDeliveryOutcome(rating: OperatingReviewDeliveryRating) {
+    const pending = pendingDeliveryConfirmation;
+    if (!pending || deliveryOutcomeState !== "idle") return;
+    setDeliveryOutcomeState("recording");
+    setDeliveryOutcomeError("");
+    try {
+      const workflow = savedOperatingReviewsRef.current.find((candidate) => candidate.id === pending.workflowId);
+      if (!workflow) throw new Error("The saved task is no longer available.");
+      const recorded = await recordOperatingReviewDelivery({
+        workflow,
+        runId: pending.runId,
+        artifactId: pending.artifactId,
+        source: pending.sourceRevision,
+        method: pending.method,
+        target: pending.target,
+        rating,
+      });
+      const nextSavedReviews = savedOperatingReviewsRef.current.map((candidate) => (
+        candidate.id === recorded.id ? recorded : candidate
+      ));
+      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews);
+      setSavedOperatingReviews(nextSavedReviews);
+      setPendingDeliveryConfirmation(null);
+      setNotice(ui.deliveryOutcomeRecorded);
+    } catch (error) {
+      setDeliveryOutcomeError(error instanceof Error ? error.message : ui.deliveryOutcomeFailed);
+    } finally {
+      setDeliveryOutcomeState("idle");
+    }
+  }
+
   async function applyDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
     if (result.errors.length) throw new Error(result.errors[0]);
     if (!result.artifacts.length) throw new Error("The selected folder does not contain a Rune workspace yet.");
@@ -1974,6 +2055,7 @@ export function RuneWorkbench() {
         setDirectoryHandle(handle);
         setDirectoryState("connected");
         setNotice(`Connected ${handle.name} · wrote ${artifacts.length} readable source files`);
+        openDeliveryConfirmationForArtifact(selectedArtifact, "folder", "folder", `${handle.name} · ${ui.push}`);
         return;
       }
       if (!(await applyDirectoryWorkspace(handle, result))) setDirectoryState(directoryHandle ? "connected" : "disconnected");
@@ -2007,11 +2089,13 @@ export function RuneWorkbench() {
       return;
     }
     setDirectoryState("syncing");
+    const handoffArtifact = selectedArtifact;
     try {
       const localAssets = await collectWorkspaceLocalAssets(artifacts);
       await writeWorkspaceDirectory(directoryHandle, artifacts, localAssets);
       setDirectoryState("connected");
       setNotice(`Pushed ${artifacts.length} source files${localAssets.length ? ` and ${localAssets.length} local images` : ""} with rune.workspace.json to ${directoryHandle.name}`);
+      openDeliveryConfirmationForArtifact(handoffArtifact, "folder", "folder", `${directoryHandle.name} · ${ui.push}`);
     } catch (error) {
       setDirectoryState("error");
       setNotice(error instanceof Error ? error.message : "Rune could not push that folder");
@@ -2985,6 +3069,17 @@ export function RuneWorkbench() {
     setNotice(`Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`);
   }
 
+  function downloadSelectedArtifactSource() {
+    const artifact = selectedArtifact;
+    downloadArtifact(artifact);
+    const target: OperatingReviewDeliveryTarget | null = artifact.kind === "document"
+      ? "md"
+      : artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
+        ? "deck-md"
+        : null;
+    if (target) openDeliveryConfirmationForArtifact(artifact, "download", target, `${target.toUpperCase()} · ${ui.download}`);
+  }
+
   async function prepareExport(destination: "office" | "legacy-office" | "odf" | "html" | "pdf" | "csv" | "json") {
     const targetType = destination === "office"
       ? selectedOfficeExportType
@@ -3074,7 +3169,13 @@ export function RuneWorkbench() {
         const { exportPdfArtifact } = await import("../lib/pdf-export");
         result = await exportPdfArtifact(targetArtifact, baseArtifacts, querySnapshots, undefined, imageAssets);
       }
-      setPendingExport({ sourceArtifactName: targetArtifact.name, baseArtifacts, result });
+      setPendingExport({
+        sourceArtifactId: targetArtifact.id,
+        sourceArtifactName: targetArtifact.name,
+        sourceRevision: targetArtifact.source,
+        baseArtifacts,
+        result,
+      });
       setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Rune could not prepare that export");
@@ -3099,7 +3200,7 @@ export function RuneWorkbench() {
       setNotice("Export held for review — workspace context changed");
       return;
     }
-    const { result } = pendingExport;
+    const { result, sourceArtifactId, sourceRevision } = pendingExport;
     const bytes = new Uint8Array(result.bytes).buffer;
     const url = URL.createObjectURL(new Blob([bytes], { type: result.mimeType }));
     const anchor = document.createElement("a");
@@ -3119,6 +3220,12 @@ export function RuneWorkbench() {
           ? `portable ${result.targetType.toUpperCase()}`
         : `semantic ${result.targetType.toUpperCase()}`;
     setNotice(`Downloaded ${result.fileName} · ${exportLabel} export`);
+    const exportedArtifact = pendingExport.baseArtifacts.find((artifact) => (
+      artifact.id === sourceArtifactId && artifact.source === sourceRevision
+    ));
+    if (exportedArtifact) {
+      openDeliveryConfirmationForArtifact(exportedArtifact, "download", result.targetType, `${result.targetType.toUpperCase()} · ${ui.download}`);
+    }
   }
 
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -3184,7 +3291,7 @@ export function RuneWorkbench() {
               {exportMenuOpen && (
                 <div className="export-popover" role="menu" aria-label={ui.exportMenuBody}>
                   <div><span className="overline">{ui.exportMenu}</span><strong>{ui.exportMenuBody}</strong></div>
-                  <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); downloadArtifact(selectedArtifact); }}>
+                  <button type="button" role="menuitem" onClick={() => { setExportMenuOpen(false); downloadSelectedArtifactSource(); }}>
                     <Download aria-hidden="true" /><span><strong>{ui.canonicalSource}</strong><small>{selectedArtifact.name}</small></span>
                   </button>
                   {selectedArtifact.kind === "data" && (
@@ -3249,7 +3356,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.79</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.80</strong></footer>
               </div>
             )}
           </div>
@@ -3377,6 +3484,7 @@ export function RuneWorkbench() {
                     && Object.values(workflow.artifactIds).every((artifactId) => artifacts.some((artifact) => artifact.id === artifactId));
                   const latestRun = workflow.runs[0];
                   const runSummary = summarizeOperatingReviewRuns(workflow.runs);
+                  const deliverySummary = summarizeOperatingReviewDeliveryOutcomes(workflow.deliveries);
                   return (
                     <article className="saved-review-card" key={workflow.id}>
                       <button
@@ -3391,23 +3499,28 @@ export function RuneWorkbench() {
                         <Play aria-hidden="true" />
                       </button>
                       <div className="saved-review-metrics">
-                        <span>{ui.taskRuns(workflow.runs.length)}</span>
-                        <span>{latestRun ? `${ui.lastRun} · ${latestRun.status === "applied" ? ui.runApplied : ui.runStopped} · ${ui.successRate(runSummary.successRate)}` : ui.noTaskRuns}</span>
-                        {latestRun && <span>{ui.averageReviewTime(runSummary.averageDurationMs)} · {ui.runImpact(latestRun.changedFileCount, latestRun.queryCount, latestRun.chartConsumerCount)}</span>}
-                        {latestRun && <span>{latestRun.provider === "local" ? ui.localPlanner : "Model"} · {ui.tokenUse(latestRun.inputTokens, latestRun.outputTokens)}</span>}
+                        <span>{latestRun ? `${ui.taskRuns(workflow.runs.length)} · ${ui.lastRun} ${latestRun.status === "applied" ? ui.runApplied : ui.runStopped}` : ui.noTaskRuns}</span>
+                        {latestRun && <span>{ui.successRate(runSummary.successRate)} · {ui.averageReviewTime(runSummary.averageDurationMs)}</span>}
+                        <span>{deliverySummary.total
+                          ? `${deliverySummary.total} ${ui.confirmedDeliverables} · ${deliverySummary.usableRate}% ${ui.usableDeliverables}`
+                          : ui.noDeliveryOutcomes}</span>
                       </div>
                       {!!workflow.runs.length && (
                         <details className="saved-review-history">
                           <summary>{ui.runHistory}</summary>
                           <ol>
-                            {workflow.runs.map((run) => (
-                              <li key={run.id}>
-                                <span className={run.status}>{run.status === "applied" ? ui.runApplied : ui.runStopped}</span>
-                                <strong>{run.period}</strong>
-                                <small>{run.completedAt.slice(0, 10)} · {ui.runImpact(run.changedFileCount, run.queryCount, run.chartConsumerCount)}</small>
-                                <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
-                              </li>
-                            ))}
+                            {workflow.runs.map((run) => {
+                              const runDeliveries = workflow.deliveries.filter((delivery) => delivery.runId === run.id);
+                              return (
+                                <li key={run.id}>
+                                  <span className={run.status}>{run.status === "applied" ? ui.runApplied : ui.runStopped}</span>
+                                  <strong>{run.period}</strong>
+                                  <small>{run.completedAt.slice(0, 10)} · {ui.runImpact(run.changedFileCount, run.queryCount, run.chartConsumerCount)}</small>
+                                  <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
+                                  {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}</small>)}
+                                </li>
+                              );
+                            })}
                           </ol>
                         </details>
                       )}
@@ -3889,6 +4002,24 @@ export function RuneWorkbench() {
           locale={locale}
           onCancel={cancelExport}
           onConfirm={confirmExport}
+        />
+      )}
+      {pendingDeliveryConfirmation && (
+        <DeliveryOutcomeDialog
+          key={`${pendingDeliveryConfirmation.runId}:${pendingDeliveryConfirmation.artifactId}:${pendingDeliveryConfirmation.target}`}
+          workflowTitle={pendingDeliveryConfirmation.workflowTitle}
+          artifactName={pendingDeliveryConfirmation.artifactName}
+          handoffLabel={pendingDeliveryConfirmation.handoffLabel}
+          locale={locale}
+          submitting={deliveryOutcomeState === "recording"}
+          error={deliveryOutcomeError}
+          onCancel={() => {
+            if (deliveryOutcomeState !== "idle") return;
+            setPendingDeliveryConfirmation(null);
+            setDeliveryOutcomeError("");
+            setNotice(ui.noDeliveryOutcomes);
+          }}
+          onConfirm={confirmDeliveryOutcome}
         />
       )}
       {pendingDocumentStructure && (

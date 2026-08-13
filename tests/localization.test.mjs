@@ -110,6 +110,8 @@ test("keeps one complete typed UI contract across all nine interface locales", (
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     assert.notEqual(runeUICopy(locale).workbench.livePreview, english.workbench.livePreview);
     assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
+    assert.notEqual(runeUICopy(locale).workbench.deliveryOutcomeRecorded, english.workbench.deliveryOutcomeRecorded);
+    assert.notEqual(runeUICopy(locale).workbench.deliveryRatings.ready, english.workbench.deliveryRatings.ready);
   }
 });
 

@@ -63,4 +63,6 @@
   .import-review-header,
   .import-review-body,
   .import-review-actions { padding-inline: 18px; }
+  .delivery-outcome-context { grid-template-columns: 1fr; }
+  .delivery-outcome-options label { grid-template-columns: 18px 22px minmax(0, 1fr); padding-inline: 13px; border-radius: 18px; }
 }

@@ -72,6 +72,46 @@
 .import-review-body { padding: 24px 28px; }
 .import-review-actions { padding: 18px 28px 22px; }
 
+.delivery-outcome-dialog { width: min(720px, calc(100vw - 32px)); }
+.delivery-outcome-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--rune-space-2);
+  margin: 0 0 var(--rune-space-5);
+}
+.delivery-outcome-context > div {
+  min-width: 0;
+  padding: var(--rune-space-3) var(--rune-space-4);
+  border: 1px solid rgba(118, 118, 128, .13);
+  border-radius: var(--rune-radius-control);
+  background: rgba(255, 255, 255, .68);
+}
+.delivery-outcome-context dt { color: var(--muted); font-size: var(--rune-type-caption); }
+.delivery-outcome-context dd { margin: var(--rune-space-1) 0 0; overflow: hidden; font-size: var(--rune-type-ui); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.delivery-outcome-options { display: grid; gap: var(--rune-space-2); padding: 0; border: 0; }
+.delivery-outcome-options label {
+  display: grid;
+  min-height: 70px;
+  grid-template-columns: 18px 24px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--rune-space-3);
+  padding: var(--rune-space-3) var(--rune-space-4);
+  border: 1px solid rgba(118, 118, 128, .14);
+  border-radius: var(--rune-radius-card);
+  background: rgba(255, 255, 255, .72);
+  cursor: pointer;
+  transition: border-color var(--rune-duration-micro) var(--rune-ease-smooth), background var(--rune-duration-micro) var(--rune-ease-smooth), transform var(--rune-duration-micro) var(--rune-ease-out);
+}
+.delivery-outcome-options label:hover { background: rgba(var(--theme-rgb), .055); }
+.delivery-outcome-options label:active { transform: scale(.992); }
+.delivery-outcome-options label.selected { border-color: rgba(var(--theme-rgb), .34); background: rgba(var(--theme-rgb), .085); }
+.delivery-outcome-options label:focus-within { outline: 3px solid rgba(var(--theme-rgb), .16); outline-offset: 2px; }
+.delivery-outcome-options input { width: 16px; height: 16px; margin: 0; accent-color: var(--theme-accent); }
+.delivery-outcome-options svg { width: 20px; height: 20px; color: var(--theme-accent); }
+.delivery-outcome-options span { display: grid; min-width: 0; gap: 3px; }
+.delivery-outcome-options strong { font-size: var(--rune-type-ui); }
+.delivery-outcome-options small { color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.4; }
+
 html[dir="rtl"] .tools-popover { transform-origin: top left; text-align: right; }
 html[dir="rtl"] .tools-menu-actions > button,
 html[dir="rtl"] .tools-material-preview { text-align: right; }

@@ -319,6 +319,16 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         ? (zh ? "尚无确认耗时" : "No review time yet")
         : (zh ? `平均确认 ${Math.max(1, Math.round(milliseconds / 1000))} 秒` : `${Math.max(1, Math.round(milliseconds / 1000))}s average review`),
       runHistory: zh ? "运行历史" : "Run history",
+      confirmedDeliverables: zh ? "项已确认成品" : "confirmed deliverables",
+      usableDeliverables: zh ? "可交付或只需轻改" : "usable or minor edits",
+      noDeliveryOutcomes: zh ? "交付后可确认真实可用性" : "Confirm real usability after a handoff",
+      deliveryOutcomeRecorded: zh ? "交付结果已记录在本机" : "Delivery outcome recorded on this device",
+      deliveryOutcomeFailed: zh ? "无法记录这次交付结果" : "Rune could not record this delivery outcome",
+      deliveryRatings: {
+        ready: zh ? "可以直接交付" : "Ready to deliver",
+        "minor-edits": zh ? "少量修改后可交付" : "Deliverable after minor edits",
+        "not-ready": zh ? "目前不能交付" : "Not ready to deliver",
+      },
       runImpact: (files: number, queries: number, charts: number) => zh
         ? `${files} 个文件 · ${queries} 个 Query · ${charts} 个 Chart`
         : `${files} files · ${queries} Queries · ${charts} Charts`,

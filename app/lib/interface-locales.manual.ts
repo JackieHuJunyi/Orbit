@@ -154,3 +154,58 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Try four shortcuts yourself": "네 가지 단축키 직접 사용해 보기", "Enter a focus view": "집중 보기로 전환", "Move instantly among Split, Source, and Preview without changing source": "소스를 변경하지 않고 분할, 소스, 미리보기 사이를 즉시 전환합니다",
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| 분할 / 소스 / 미리보기 전환 | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "A material error, omission, or rework still blocks delivery.": "Une erreur importante, une omission ou une reprise empêche encore la livraison.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.": "Un téléchargement ou une écriture dans un dossier réussis ne prouvent pas que le résultat est utile. Choisissez l’issue la plus proche afin que Rune distingue la réussite technique d’un livrable réel.",
+  "Confirm outcome": "Confirmer le résultat", "Confirm real usability after a handoff": "Confirmez l’utilité réelle après une remise", "confirmed deliverables": "livrables confirmés", "Decide later": "Décider plus tard",
+  Deliverable: "Livrable", "Deliverable after minor edits": "Livrable après quelques retouches", "Deliverable outcome": "Résultat du livrable", "Delivery confirmation · on device": "Confirmation de livraison · sur l’appareil", "Delivery outcome recorded on this device": "Résultat de livraison enregistré sur cet appareil",
+  "Did this result become usable in real work?": "Ce résultat est-il devenu utilisable dans un travail réel ?", Handoff: "Remise", "Not ready to deliver": "Pas prêt à livrer", "Ready to deliver": "Prêt à livrer", "Recording…": "Enregistrement…", "Rune could not record this delivery outcome": "Rune n’a pas pu enregistrer ce résultat de livraison",
+  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "Rune conserve uniquement le jugement, le format, le temps écoulé et l’empreinte de révision de la source sur cet appareil, jamais le texte du document ni les invites.",
+  Task: "Tâche", "The direction is right and only limited manual changes remain.": "La direction est bonne et seules quelques modifications manuelles restent à faire.", "The numbers, structure, and language meet this task.": "Les chiffres, la structure et le langage répondent à cette tâche.", "usable or minor edits": "utilisables ou avec retouches mineures",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "A material error, omission, or rework still blocks delivery.": "Un error importante, una omisión o una reelaboración todavía impide la entrega.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.": "Una descarga o escritura en carpeta correcta no demuestra que el resultado sea útil. Elige el resultado más cercano para que Rune distinga el éxito técnico de un entregable real.",
+  "Confirm outcome": "Confirmar resultado", "Confirm real usability after a handoff": "Confirma la utilidad real después de una entrega", "confirmed deliverables": "entregables confirmados", "Decide later": "Decidir más tarde",
+  Deliverable: "Entregable", "Deliverable after minor edits": "Entregable tras pequeños ajustes", "Deliverable outcome": "Resultado del entregable", "Delivery confirmation · on device": "Confirmación de entrega · en el dispositivo", "Delivery outcome recorded on this device": "Resultado de entrega guardado en este dispositivo",
+  "Did this result become usable in real work?": "¿Este resultado llegó a ser útil en un trabajo real?", Handoff: "Entrega", "Not ready to deliver": "Aún no se puede entregar", "Ready to deliver": "Listo para entregar", "Recording…": "Guardando…", "Rune could not record this delivery outcome": "Rune no pudo guardar este resultado de entrega",
+  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "Rune guarda en este dispositivo solo la valoración, el formato, el tiempo transcurrido y la huella de revisión de la fuente; nunca el texto del documento ni las instrucciones.",
+  Task: "Tarea", "The direction is right and only limited manual changes remain.": "La dirección es correcta y solo quedan cambios manuales limitados.", "The numbers, structure, and language meet this task.": "Las cifras, la estructura y el lenguaje cumplen esta tarea.", "usable or minor edits": "utilizables o con ajustes menores",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "A material error, omission, or rework still blocks delivery.": "Существенная ошибка, пропуск или необходимость переработки всё ещё мешают передаче результата.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.": "Успешное скачивание или запись в папку не доказывают полезность результата. Выберите наиболее близкий исход, чтобы Rune отличал технический успех от реального готового материала.",
+  "Confirm outcome": "Подтвердить результат", "Confirm real usability after a handoff": "Подтвердите реальную пригодность после передачи", "confirmed deliverables": "подтверждённых материалов", "Decide later": "Решить позже",
+  Deliverable: "Готовый материал", "Deliverable after minor edits": "Готово после небольших правок", "Deliverable outcome": "Итог готового материала", "Delivery confirmation · on device": "Подтверждение результата · на устройстве", "Delivery outcome recorded on this device": "Результат передачи сохранён на этом устройстве",
+  "Did this result become usable in real work?": "Стал ли этот результат пригоден для реальной работы?", Handoff: "Передача", "Not ready to deliver": "Пока не готово", "Ready to deliver": "Готово к передаче", "Recording…": "Сохранение…", "Rune could not record this delivery outcome": "Rune не удалось сохранить итог передачи",
+  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "Rune хранит на этом устройстве только оценку, формат, затраченное время и отпечаток версии исходника — без текста документа и запросов.",
+  Task: "Задача", "The direction is right and only limited manual changes remain.": "Направление верное, остались лишь небольшие ручные правки.", "The numbers, structure, and language meet this task.": "Числа, структура и язык соответствуют задаче.", "usable or minor edits": "пригодны или требуют мелких правок",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "A material error, omission, or rework still blocks delivery.": "لا يزال خطأ جوهري أو نقص أو عمل إضافي يمنع التسليم.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.": "لا يثبت نجاح التنزيل أو الكتابة إلى المجلد أن النتيجة مفيدة. اختر النتيجة الأقرب كي يميّز Rune بين النجاح التقني والمخرج الحقيقي القابل للتسليم.",
+  "Confirm outcome": "تأكيد النتيجة", "Confirm real usability after a handoff": "أكّد قابلية الاستخدام الفعلية بعد التسليم", "confirmed deliverables": "مخرجات مؤكدة", "Decide later": "القرار لاحقًا",
+  Deliverable: "المخرج", "Deliverable after minor edits": "قابل للتسليم بعد تعديلات بسيطة", "Deliverable outcome": "نتيجة المخرج", "Delivery confirmation · on device": "تأكيد التسليم · على الجهاز", "Delivery outcome recorded on this device": "تم تسجيل نتيجة التسليم على هذا الجهاز",
+  "Did this result become usable in real work?": "هل أصبحت هذه النتيجة قابلة للاستخدام في عمل حقيقي؟", Handoff: "التسليم", "Not ready to deliver": "غير جاهز للتسليم", "Ready to deliver": "جاهز للتسليم", "Recording…": "جارٍ التسجيل…", "Rune could not record this delivery outcome": "تعذّر على Rune تسجيل نتيجة التسليم",
+  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "يخزّن Rune على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
+  Task: "المهمة", "The direction is right and only limited manual changes remain.": "الاتجاه صحيح ولا يتبقى سوى تعديلات يدوية محدودة.", "The numbers, structure, and language meet this task.": "الأرقام والبنية واللغة مناسبة لهذه المهمة.", "usable or minor edits": "قابلة للاستخدام أو تحتاج تعديلات بسيطة",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "A material error, omission, or rework still blocks delivery.": "重大な誤り、欠落、または手戻りがあり、まだ納品できません。",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.": "ダウンロードやフォルダへの書き込みが成功しても、結果が有用だったとは限りません。Rune が技術的な成功と実際の成果物を区別できるよう、最も近い結果を選んでください。",
+  "Confirm outcome": "結果を確定", "Confirm real usability after a handoff": "受け渡し後に実際の有用性を確認", "confirmed deliverables": "件の確認済み成果物", "Decide later": "後で決める",
+  Deliverable: "成果物", "Deliverable after minor edits": "軽微な修正後に納品可能", "Deliverable outcome": "成果物の結果", "Delivery confirmation · on device": "納品確認 · デバイス内", "Delivery outcome recorded on this device": "納品結果をこのデバイスに記録しました",
+  "Did this result become usable in real work?": "この結果は実際の業務で使えるものになりましたか？", Handoff: "受け渡し", "Not ready to deliver": "まだ納品できない", "Ready to deliver": "そのまま納品できる", "Recording…": "記録中…", "Rune could not record this delivery outcome": "Rune はこの納品結果を記録できませんでした",
+  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "Rune がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
+  Task: "タスク", "The direction is right and only limited manual changes remain.": "方向性は正しく、残るのは限定的な手作業の修正だけです。", "The numbers, structure, and language meet this task.": "数値、構成、表現がこのタスクを満たしています。", "usable or minor edits": "利用可能または軽微な修正のみ",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "A material error, omission, or rework still blocks delivery.": "중대한 오류, 누락 또는 재작업이 남아 있어 아직 전달할 수 없습니다.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.": "다운로드나 폴더 쓰기가 성공했다고 결과가 유용했다는 뜻은 아닙니다. Rune이 기술적 성공과 실제 결과물을 구분할 수 있도록 가장 가까운 결과를 선택하세요.",
+  "Confirm outcome": "결과 확인", "Confirm real usability after a handoff": "전달 후 실제 사용 가능 여부 확인", "confirmed deliverables": "개 확인된 결과물", "Decide later": "나중에 결정",
+  Deliverable: "결과물", "Deliverable after minor edits": "조금 수정하면 전달 가능", "Deliverable outcome": "결과물 평가", "Delivery confirmation · on device": "전달 확인 · 기기 내", "Delivery outcome recorded on this device": "전달 결과를 이 기기에 기록했습니다",
+  "Did this result become usable in real work?": "이 결과를 실제 업무에 사용할 수 있었나요?", Handoff: "전달", "Not ready to deliver": "아직 전달할 수 없음", "Ready to deliver": "바로 전달 가능", "Recording…": "기록 중…", "Rune could not record this delivery outcome": "Rune이 전달 결과를 기록하지 못했습니다",
+  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.": "Rune은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
+  Task: "작업", "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.", "The numbers, structure, and language meet this task.": "수치, 구조, 표현이 이 작업의 요구를 충족합니다.", "usable or minor edits": "사용 가능 또는 가벼운 수정 필요",
+});

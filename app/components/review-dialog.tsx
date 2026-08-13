@@ -10,6 +10,7 @@ export function ReviewDialog({
   title,
   description,
   detailsLabel,
+  dialogClassName,
   children,
   footer,
   locale,
@@ -20,6 +21,7 @@ export function ReviewDialog({
   title: string;
   description: ReactNode;
   detailsLabel: string;
+  dialogClassName?: string;
   children: ReactNode;
   footer: ReactNode;
   locale: RuneLocale;
@@ -75,7 +77,7 @@ export function ReviewDialog({
     <div className="import-review-backdrop">
       <section
         ref={dialogRef}
-        className="import-review-dialog"
+        className={`import-review-dialog ${dialogClassName ?? ""}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${dialogId}-title`}
