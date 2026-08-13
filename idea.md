@@ -2165,3 +2165,13 @@ Document → Presentation 的第一次创建已经证明 canonical source 可以
 刷新仍然不是自动同步。Document 改动不会暗中重写 Deck；用户发起、看见完整 candidate、检查 Document input → edited Deck 与 retained origin edge，再 Apply。missing、wrong-kind、malformed、unrelated、unchanged、stale 或下游验证失败都不产生 checkpoint、device write 或文件变化。这样“重复使用”建立在显式意图和稳定身份上，而不是后台双写。
 
 架构上增加的不是 plugin host，而是 `task-providers.ts` 这一条静态 discriminated seam。workbench 只提交 `{ taskId, input }`，provider 路由到纯 operating-review 或 document-briefing compiler；lifecycle、UI、credentials、storage 和 Apply 权限都留在原边界。这个 seam 让下一条任务增加 provider 时不必继续扩大 consumer import 面，同时仍保持普通 TypeScript、可 tree-shake、可单测和零运行时注册成本。
+
+## 90. v0.85 任务的记忆应写在可读成品里，而不是再造一份隐藏状态
+
+原位刷新解决了文件身份，却没有解决任务配置的身份：用户再次打开一个关联 Deck 时，标题和页数可以从成品推导，但受众和汇报重点只存在于上一次弹窗的瞬时 React state。若为此单独增加 localStorage 记录，文件经文件夹同步、Git、导入或交给 AI 后，任务配方会与成品分离；浏览器记录与源码发生冲突时还会出现第二份真相。
+
+v0.85 因而把最小可移植配方放回 Deck Markdown。严格 frontmatter 在既有 `title`、`lang`、`origin` 之外允许有界的 `audience` 与 `purpose`；slide 数直接来自实际语法树。任务生成时写入这些字段，选择关联 Deck 时再从当前 canonical source 恢复标题、受众、重点、页数和输出语言。配置跟着文件进入 folder workspace、Git diff、导入和 Agent context，且仍然是人类可读文本。
+
+这不是把执行历史塞进文件。运行耗时、provider token、交付判断等设备证据仍属于经营汇报的本机记录；Deck 只保存重建下一次确定性输入所需的少量意图。旧文件可省略新增字段，新文件的枚举与长度由 Zod 严格验证，未知字段继续失败。Document 更新仍需用户显式发起、预览事务并 Apply，配方不会获得后台写权限。
+
+这一边界比通用 workflow store 更低成本：纯 compiler、parser 和 dialog 共享一种 source-owned truth，没有迁移器、同步冲突或额外 persistence lifecycle。以后若第三条任务需要可重复配置，先判断它是否也能由可读 artifact source 表达；只有运行证据或跨多个不可归属成品的编排状态，才进入独立的设备级任务模型。

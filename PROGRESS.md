@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.85 with portable source-owned Document briefing recipes: linked Deck Markdown now restores its bounded title, audience, purpose, slide count, and presentation language for the next reviewed in-place refresh without a duplicate browser-only task record.
 - 2026-08-14 — Shipped Rune v0.84 with repeatable source-linked presentation refresh: an existing Deck keeps its id, filename, theme, and exact Document origin while a reviewed in-place patch replaces its slides through the shared typed task-provider boundary.
 - 2026-08-14 — Shipped Rune v0.83 with a second registry-backed task that carries reviewed Markdown/Word/ODT/PDF (including selected scanned-PDF OCR) into a source-linked 4/6/8-slide Deck Markdown proposal, exposes the exact Document → Presentation edge in the transaction graph, and retains nine-locale review-before-write behavior.
 - 2026-08-14 — Shipped Rune v0.82 with a Cordis/Harness-informed static task runtime and an outcome-first onboarding/empty path that carries one reviewed CSV/JSON/XLSX/ODS import directly into exact operating-review field mapping without hidden writes.

@@ -37,6 +37,9 @@ export type DocumentBriefingTarget = {
   name: string;
   title: string;
   slideCount: number;
+  locale: RuneLocale;
+  audience?: DocumentBriefingAudience;
+  purpose?: string;
 };
 
 export type PreparedDocumentBriefing = {
@@ -66,6 +69,9 @@ export function documentBriefingTargets(
       name: artifact.name,
       title: parsed.deck.frontmatter.title,
       slideCount: parsed.deck.slides.length,
+      locale: parsed.deck.frontmatter.lang,
+      audience: parsed.deck.frontmatter.audience,
+      purpose: parsed.deck.frontmatter.purpose,
     }];
   });
 }
@@ -191,6 +197,8 @@ theme: ${theme}
 ratio: 16:9
 lang: ${input.locale}
 origin: ${source.id}
+audience: ${input.audience}
+purpose: ${normalizePlainText(input.focus)}
 ---
 
 <!-- layout: cover -->

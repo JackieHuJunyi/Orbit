@@ -7,6 +7,8 @@ const DeckFrontmatterSchema = z.object({
   ratio: z.literal("16:9"),
   lang: z.enum(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]).default("en"),
   origin: z.string().trim().min(1).max(128).optional(),
+  audience: z.enum(["leadership", "team", "customer"]).optional(),
+  purpose: z.string().trim().min(1).max(180).optional(),
 }).strict();
 
 const DeckLayoutSchema = z.enum(["cover", "content", "metrics", "split", "conclusion"]);

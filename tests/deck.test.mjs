@@ -36,10 +36,24 @@ test("accepts every registered Rune interface language as explicit Deck document
 });
 
 test("accepts an optional exact Document origin in Deck frontmatter", () => {
-  const source = deckArtifact().source.replace("lang: en", "lang: en\norigin: q2-review");
+  const source = deckArtifact().source.replace(
+    "lang: en",
+    "lang: en\norigin: q2-review\naudience: leadership\npurpose: Decide whether to approve the reviewed plan.",
+  );
   const parsed = parseDeckSource(source);
   assert.deepEqual(parsed.errors, []);
   assert.equal(parsed.deck?.frontmatter.origin, "q2-review");
+  assert.equal(parsed.deck?.frontmatter.audience, "leadership");
+  assert.equal(parsed.deck?.frontmatter.purpose, "Decide whether to approve the reviewed plan.");
+});
+
+test("keeps briefing recipe metadata bounded and rejects unknown Deck fields", () => {
+  const invalidAudience = deckArtifact().source.replace("lang: en", "lang: en\naudience: everyone");
+  assert.match(parseDeckSource(invalidAudience).errors.join(" "), /audience/);
+  const longPurpose = deckArtifact().source.replace("lang: en", `lang: en\npurpose: ${"x".repeat(181)}`);
+  assert.match(parseDeckSource(longPurpose).errors.join(" "), /purpose/);
+  const unknown = deckArtifact().source.replace("lang: en", "lang: en\nworkflow: briefing");
+  assert.match(parseDeckSource(unknown).errors.join(" "), /Unrecognized key/);
 });
 
 test("compiles metrics, numbering, and a shared chart into static deck HTML", () => {

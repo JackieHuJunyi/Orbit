@@ -41,7 +41,12 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(operatingDialog, /initialInput\?\.dataArtifactId \?\? preferredDataArtifactId \?\? ""/);
   assert.match(briefingDialog, /preferredDocumentArtifactId/);
   assert.match(briefingDialog, /preferredPresentationArtifactId/);
+  assert.match(briefingDialog, /initialTarget\?\.audience \?\? "leadership"/);
+  assert.match(briefingDialog, /initialTarget\?\.purpose \?\? ""/);
+  assert.match(briefingDialog, /locale: target\?\.locale \?\? locale/);
   assert.match(briefingCompiler, /origin: \$\{source\.id\}/);
+  assert.match(briefingCompiler, /audience: \$\{input\.audience\}/);
+  assert.match(briefingCompiler, /purpose: \$\{normalizePlainText\(input\.focus\)\}/);
   assert.match(briefingCompiler, /Refresh/);
   assert.doesNotMatch(briefingCompiler, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
   assert.match(providers, /case "operating-review"/);

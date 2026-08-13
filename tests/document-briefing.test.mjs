@@ -62,6 +62,8 @@ test("compiles one reviewed Document into an exact source-linked Deck transactio
   assert.equal(parsed.deck?.slides.length, 6);
   assert.equal(parsed.deck?.frontmatter.origin, sourceDocument.id);
   assert.equal(parsed.deck?.frontmatter.lang, "en");
+  assert.equal(parsed.deck?.frontmatter.audience, "leadership");
+  assert.equal(parsed.deck?.frontmatter.purpose, "Decide whether the launch is ready for the next cohort.");
 
   const graph = buildWorkspaceDependencyGraph([...artifacts, deck]);
   assert.deepEqual(graph.issues, []);
@@ -97,6 +99,9 @@ test("refreshes one linked presentation in place while retaining identity and li
     name: themedDeck.name,
     title: "Launch briefing",
     slideCount: 6,
+    locale: "en",
+    audience: "leadership",
+    purpose: "Decide whether the launch is ready for the next cohort.",
   }]);
 
   const updatedDocument = {
@@ -120,6 +125,7 @@ test("refreshes one linked presentation in place while retaining identity and li
   assert.equal(nextDeck.name, themedDeck.name);
   assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.origin, sourceDocument.id);
   assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.theme, "rune-dark");
+  assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.purpose, "Approve the launch plan for this month.");
 
   const review = buildWorkspaceTransactionReview([updatedDocument, themedDeck], refreshed.plan?.patches ?? [], []);
   assert.deepEqual(review.errors, []);
@@ -128,6 +134,36 @@ test("refreshes one linked presentation in place while retaining identity and li
     [themedDeck.id, "edited"],
   ]);
   assert.deepEqual(review.edges.map((edge) => [edge.kind, edge.status]), [["deck-origin", "retained"]]);
+});
+
+test("round-trips a portable briefing recipe from Deck source into the next refresh", () => {
+  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({
+    audience: "customer",
+    focus: "  Confirm   the customer launch story.  ",
+    slideCount: 4,
+  })).plan?.creations[0].artifact;
+  assert.ok(created);
+  const [recipe] = documentBriefingTargets([sourceDocument, created], sourceDocument.id);
+  assert.deepEqual(recipe, {
+    artifactId: created.id,
+    name: created.name,
+    title: "Launch briefing",
+    slideCount: 4,
+    locale: "en",
+    audience: "customer",
+    purpose: "Confirm the customer launch story.",
+  });
+  const refreshed = prepareDocumentBriefingWorkflow([sourceDocument, created], {
+    sourceArtifactId: sourceDocument.id,
+    targetArtifactId: recipe.artifactId,
+    title: recipe.title,
+    audience: recipe.audience,
+    focus: recipe.purpose,
+    slideCount: recipe.slideCount,
+    locale: recipe.locale,
+  });
+  assert.equal(refreshed.plan, undefined);
+  assert.match(refreshed.errors.join(" "), /proposed source is unchanged/);
 });
 
 test("sanitizes imported document syntax instead of creating executable or implicit bindings", () => {

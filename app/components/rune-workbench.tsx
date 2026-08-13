@@ -3619,7 +3619,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.84</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.85</strong></footer>
               </div>
             )}
           </div>

@@ -120,13 +120,13 @@ export function DocumentBriefingDialog({
   const [sourceArtifactId, setSourceArtifactId] = useState(initialSourceArtifactId);
   const [targetArtifactId, setTargetArtifactId] = useState(initialTarget?.artifactId ?? "");
   const [title, setTitle] = useState(initialTarget?.title ?? "");
-  const [audience, setAudience] = useState<DocumentBriefingInput["audience"]>("leadership");
+  const [audience, setAudience] = useState<DocumentBriefingInput["audience"]>(initialTarget?.audience ?? "leadership");
   const [slideCount, setSlideCount] = useState<DocumentBriefingSlideCount>(
     initialTarget && [4, 6, 8].includes(initialTarget.slideCount)
       ? initialTarget.slideCount as DocumentBriefingSlideCount
       : 6,
   );
-  const [focus, setFocus] = useState("");
+  const [focus, setFocus] = useState(initialTarget?.purpose ?? "");
   const [attempted, setAttempted] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const source = sourceOptions.find((artifact) => artifact.id === sourceArtifactId) ?? sourceOptions[0];
@@ -142,7 +142,7 @@ export function DocumentBriefingDialog({
     audience,
     focus,
     slideCount,
-    locale,
+    locale: target?.locale ?? locale,
   }), [audience, focus, locale, slideCount, source?.id, target, title]);
   const prepared = useMemo(() => prepareDocumentBriefingWorkflow(artifacts, input), [artifacts, input]);
 
@@ -203,7 +203,12 @@ export function DocumentBriefingDialog({
             <select id="document-briefing-source" value={source?.id ?? ""} onChange={(event) => {
               setSourceArtifactId(event.target.value);
               setTargetArtifactId("");
-              if (target) setTitle("");
+              if (target) {
+                setTitle("");
+                setAudience("leadership");
+                setSlideCount(6);
+                setFocus("");
+              }
             }} disabled={!sourceOptions.length} required>
               {!sourceOptions.length && <option value="">{copy.noSource}</option>}
               {sourceOptions.map((artifact) => <option key={artifact.id} value={artifact.id}>{artifact.name} · Document</option>)}
@@ -217,10 +222,17 @@ export function DocumentBriefingDialog({
               setTargetArtifactId(nextTarget?.artifactId ?? "");
               if (nextTarget) {
                 setTitle(nextTarget.title);
+                setAudience(nextTarget.audience ?? "leadership");
+                setFocus(nextTarget.purpose ?? "");
                 if ([4, 6, 8].includes(nextTarget.slideCount)) {
                   setSlideCount(nextTarget.slideCount as DocumentBriefingSlideCount);
                 }
-              } else setTitle("");
+              } else {
+                setTitle("");
+                setAudience("leadership");
+                setSlideCount(6);
+                setFocus("");
+              }
             }}>
               <option value="">{copy.newPresentation}</option>
               {targetOptions.map((option) => <option key={option.artifactId} value={option.artifactId}>{copy.refreshPresentation} · {option.name}</option>)}

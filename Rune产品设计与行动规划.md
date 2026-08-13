@@ -1989,3 +1989,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - missing、wrong-kind、invalid Deck、unrelated origin、no-op、stale 或完整验证失败都必须零写入；选中一个有效关联 Deck 时，活动栏入口直接预选它及其 exact Document。
 - `task-providers.ts` 作为静态 discriminated provider seam 统一调用两条纯任务 compiler；它不拥有 React、浏览器、持久化、模型或 Apply，也不升级为动态插件 host。
 - 新增目标选择、身份提示与刷新状态覆盖九种界面语言，并继续服从 RTL、焦点陷阱、键盘取消和 reduced-motion 合同。
+
+### 17.26 v0.85 可重复任务的配方应跟随成品，而不是困在浏览器状态里
+
+- 新生成的 Deck 在严格 frontmatter 中保存可读、可移植的 `audience` 与 `purpose`，并继续以 `title`、`lang`、`origin` 和实际 slide 数表达其余任务配置。
+- 用户再次选择关联 Deck 时，界面从当前 canonical source 恢复标题、受众、重点、页数和演示语言；不得从最近一次弹窗、本地缓存或文件名猜测。
+- 旧 Deck 的新字段保持可选，因此可继续打开和刷新；新字段若受众不在枚举内、重点为空或超过 180 字符、或出现未声明字段，则严格解析失败且不进入写入审核。
+- 任务配方是帮助用户显式重跑的输入，不是后台同步授权。Document 变化仍不会自动写 Deck，每一次刷新继续经过 candidate preview、事务审核、revision 检查和 Apply。
+- 不为 Document briefing 增加第二套 localStorage task 记录；文件夹同步、Git、导入和 AI 都能读取同一份源码事实，降低未来迁移与扩展成本。
