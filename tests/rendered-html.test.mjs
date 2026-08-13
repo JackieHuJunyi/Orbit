@@ -51,9 +51,15 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /Select or edit one exact block/);
   assert.match(html, /data-preview-source-target="document-section"/);
   assert.match(html, /data-preview-source-target="document-block"/);
+  assert.match(html, /data-preview-source-target="document-fragment"/);
   assert.match(html, /data-document-block-type="heading"/);
   assert.match(html, /data-document-block-type="paragraph"/);
   assert.match(html, /data-document-heading-level="1"/);
+  assert.match(html, /data-document-fragment-type="bold"/);
+  assert.match(html, /data-document-fragment-type="list-item"/);
+  assert.match(html, /data-document-fragment-type="table-header-cell"/);
+  assert.match(html, /data-document-fragment-type="table-cell"/);
+  assert.match(html, /Select exact Bold · live value source/);
   assert.match(html, /class="contains-task-list"/);
   assert.match(html, /class="document-block-edit"/);
   assert.match(html, /class="document-block-locate"/);
@@ -84,7 +90,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.47/);
+  assert.match(html, /Rune v0\.48/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);

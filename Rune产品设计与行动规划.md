@@ -1139,7 +1139,7 @@ move 不根据 DOM、label 或像素猜顺序，只交换两个相邻 AST siblin
 
 解析结果只携带既有 target id、kind、label 与 exact UTF-16 range。右侧元素的 `data-preview-source-id` 只用于找到已被 parser 证明的元素并调用 `scrollIntoView`，DOM 文本、像素或 iframe 从不参与目标推断，也不会因此获得写权限。高亮和顶部 link badge 使用同一个 target identity；自动滚动居中且遵循系统“减少动态效果”偏好。普通 caret 不会自动升级成 Selection Agent，只有非空且合法的 source selection 继续进入现有 16,000 字符、revision-bound Agent capability。
 
-这一步补齐了 Overleaf 式日常双侧导航的另一半，同时保留 Rune 的 source-of-truth。当前不做连续滚动比例同步、DOM 文本 selection、嵌套 list item、Markdown inline span、空 CSV cell 或 Query 派生行的反向定位；这些对象必须先获得更细且可证明的 source map，不能从视觉近似推断。
+这一步补齐了 Overleaf 式日常双侧导航的另一半，同时保留 Rune 的 source-of-truth。v0.45 当时不处理嵌套 list item、Markdown inline span、空 CSV cell 或 Query 派生行；v0.48 已用同一 AST source map 补齐可证明的 list item、GFM cell 与 inline semantics。连续滚动比例同步、DOM 文本 selection、空 CSV cell 和无精确 lineage 的派生 Query 仍不从视觉近似推断。
 
 ### 6.25 v0.46 CC Switch 式个人模型配置
 
@@ -1168,7 +1168,13 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
 
-这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 已转 Markdown，扫描 PDF 尚无 OCR。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；连续像素 scroll lock、inline span、嵌套 list/table 粒度仍等待更细 source map。完整状态与参考项目取舍写入 `idea.md` 第 53 节。
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移，旧 `.doc/.ppt` 尚未支持；selectable PDF 已转 Markdown，扫描 PDF 尚无 OCR。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–54 节。
+
+### 6.28 v0.48 Markdown 细粒度双向定位
+
+在 block 与 section 之间新增 `document-fragment` capability。Rune 使用与渲染相同的 CommonMark/GFM AST，为单个列表项、表头/表体单元格、粗体、斜体、删除线、行内代码、链接和图片生成 exact UTF-16 range；表格 target 还保留行列坐标。右侧普通点击或键盘激活直接选择完整 Markdown 语法（包括标记符、链接地址和表格分隔符），链接使用 ⌘/Ctrl 点击仍可正常打开。左侧 caret/selection 则按“fragment → block → section”的最小包含范围解析，并滚动到同一个 parser-proven id；嵌套列表项按更小范围胜出，表格共享边界优先起始于该位置的 cell。
+
+这一层仍只是现有 Selection capability，不增加 DOM 回写权。编译后的 metric 显示必须先经 source-offset map 返回 exact canonical fragment 才可交互；包含 Chart binding 的 fragment 主动让位给 Chart 的跨文件 data-cell provenance。普通文本仍由 paragraph block 承担定位，跨 fragment 选择只有在同一个 block/section 完整包含时才回退；连续像素滚动比例、任意 DOM 文本 selection 和无法证明 source range 的派生视图仍不实现。
 
 ---
 

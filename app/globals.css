@@ -3572,6 +3572,37 @@ button.transaction-node:hover,
   box-shadow: 0 0 0 5px rgba(255, 92, 53, .11);
 }
 
+.markdown-body .document-source-fragment.targetable {
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color .14s ease, box-shadow .14s ease;
+}
+
+.markdown-body .document-source-fragment.targetable:hover {
+  background: rgba(255, 92, 53, .12);
+  box-shadow: 0 0 0 2px rgba(255, 92, 53, .12);
+}
+
+.markdown-body .document-source-fragment.targetable:focus-visible {
+  outline: 2px solid rgba(255, 92, 53, .72);
+  outline-offset: 2px;
+}
+
+.markdown-body .document-source-fragment.active {
+  background: rgba(255, 92, 53, .18);
+  box-shadow: 0 0 0 2px rgba(255, 92, 53, .2);
+}
+
+.markdown-body th.document-source-fragment,
+.markdown-body td.document-source-fragment {
+  position: relative;
+}
+
+.markdown-body th.document-source-fragment.active,
+.markdown-body td.document-source-fragment.active {
+  box-shadow: inset 0 0 0 2px rgba(255, 92, 53, .48);
+}
+
 .markdown-body .document-source-block > :first-child {
   margin: 0;
 }

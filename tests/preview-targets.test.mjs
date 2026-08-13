@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   deriveDataPreviewSourceTargets,
   deriveDocumentBlockPreviewSourceTargets,
+  deriveDocumentFragmentPreviewSourceTargets,
   derivePreviewSourceTargets,
   deriveSourceLinkedPreviewTargets,
   previewTargetIsActive,
@@ -89,6 +90,97 @@ Opening **note** with {{ metric("total_revenue") }}.
   ]);
   assert.match(targets[1].label, /Opening note with live value/u);
   assert.equal(targets.every((target, index) => index === 0 || target.start > targets[index - 1].end), true);
+});
+
+test("maps exact Markdown list items, table cells, and inline semantics without rendered-text guessing", () => {
+  const source = `# Report
+
+Use **strong** and *emphasis*, ~~remove this~~, \`code\`, [the source](https://example.com), and ![trend](trend.png).
+
+- First item
+  - Nested item
+- Second item
+
+| Region | Revenue |
+| --- | ---: |
+| APAC | 42 |
+`;
+  const document = artifact("document", "Markdown", "report.md", source);
+  const targets = deriveDocumentFragmentPreviewSourceTargets(document);
+
+  assert.deepEqual(targets.map((target) => target.fragmentType), [
+    "bold",
+    "italic",
+    "strikethrough",
+    "inline-code",
+    "link",
+    "image",
+    "list-item",
+    "list-item",
+    "list-item",
+    "table-header-cell",
+    "table-header-cell",
+    "table-cell",
+    "table-cell",
+  ]);
+  const exactSources = new Map(targets.map((target) => [target.fragmentType + ":" + target.label, source.slice(target.start, target.end)]));
+  assert.equal(exactSources.get("bold:Bold · strong"), "**strong**");
+  assert.equal(exactSources.get("link:Link · the source"), "[the source](https://example.com)");
+  assert.equal(exactSources.get("image:Image · trend"), "![trend](trend.png)");
+  assert.equal(targets.filter((target) => target.fragmentType === "list-item").map((target) => source.slice(target.start, target.end))[1], "- Nested item");
+  assert.equal(exactSources.get("table-header-cell:Table header · Revenue"), "| Revenue |");
+  assert.equal(exactSources.get("table-cell:Table row 1 · Revenue · 42"), "| 42 |");
+  assert.deepEqual(
+    targets.filter((target) => target.fragmentType.includes("table")).map(({ rowIndex, columnIndex }) => [rowIndex, columnIndex]),
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+  );
+});
+
+test("links source positions to the smallest proven Markdown fragment before its containing block", () => {
+  const source = `# Report
+
+Opening **exact phrase** remains here.
+
+- First item
+- Second item
+
+| Region | Revenue |
+| --- | ---: |
+| APAC | 42 |`;
+  const document = artifact("document", "Markdown", "report.md", source);
+
+  const boldStart = source.indexOf("exact phrase");
+  const bold = resolveSourceLinkedPreviewTarget(document, { start: boldStart + 2, end: boldStart + 2 });
+  assert.equal(bold?.kind, "document-fragment");
+  assert.equal(bold?.label, "Bold · exact phrase");
+  assert.equal(source.slice(bold.start, bold.end), "**exact phrase**");
+
+  const bareStart = source.indexOf("Opening");
+  const bare = resolveSourceLinkedPreviewTarget(document, { start: bareStart + 2, end: bareStart + 2 });
+  assert.equal(bare?.kind, "document-block");
+
+  const secondItemStart = source.indexOf("- Second item");
+  const item = resolveSourceLinkedPreviewTarget(document, { start: secondItemStart + 4, end: secondItemStart + 4 });
+  assert.equal(item?.kind, "document-fragment");
+  assert.equal(item?.fragmentType, "list-item");
+  assert.equal(source.slice(item.start, item.end), "- Second item");
+
+  const revenueStart = source.lastIndexOf("42");
+  const cell = resolveSourceLinkedPreviewTarget(document, { start: revenueStart, end: revenueStart + 2 });
+  assert.equal(cell?.kind, "document-fragment");
+  assert.equal(cell?.fragmentType, "table-cell");
+  assert.equal(source.slice(cell.start, cell.end), "| 42 |");
+});
+
+test("withholds fine-grained Document fragments that contain embedded Chart bindings", () => {
+  const source = `# Report
+
+- **{{ chart("regional-revenue") }}**
+
+Safe **inline** text.`;
+  const targets = deriveDocumentFragmentPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
+  assert.equal(targets.some((target) => source.slice(target.start, target.end).includes("chart(")), false);
+  assert.equal(targets.some((target) => target.label === "Bold · inline"), true);
 });
 
 test("withholds Document block targets for non-Document or empty source", () => {

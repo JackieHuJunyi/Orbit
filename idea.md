@@ -1848,7 +1848,7 @@ Overleaf 式体验经常被概括成“两边一起滚动”，但滚动百分�
 
 解析结果的 id 被放到对应 React 元素的 data attribute，唯一用途是让右侧容器找到目标并滚动到中部。DOM 自己不参与推断，也不能授予编辑权限；section 没有额外包裹时，可以通过起始 block 上的独立 section id 滚到该节。高亮、顶部 badge 与滚动共享同一个 target object，系统减少动态效果时关闭平滑动画。用户只是放置 caret 时，Selection Agent 仍保持 File scope；只有非空且通过 revision、UTF-16 和长度验证的 selection 才获得原来的窄 Agent capability。
 
-这完成的是身份同步，不是滚动锁定。连续按像素同步容易和用户主动浏览冲突，也会在 iframe、表格和折叠 UI 中漂移；嵌套 list item、table cell、inline span 与派生 Query 结果则需要新的 source map 才能进入。Rune 以后可以观察用户是否需要 source-scroll 驱动的“当前可见块”同步，但任何扩展都必须继续从 compiler provenance 出发。
+这完成的是身份同步，不是滚动锁定。连续按像素同步容易和用户主动浏览冲突，也会在 iframe、表格和折叠 UI 中漂移；v0.45 当时尚无嵌套 list item、table cell 与 inline span source map，v0.48 已沿同一 compiler-provenance 原则补齐这些可证明对象。派生 Query 结果仍只有现有 direct lineage 能定位。Rune 以后可以观察用户是否需要 source-scroll 驱动的“当前可见块”同步，但任何扩展都必须继续从 compiler provenance 出发。
 
 ## 51. 模型配置不是一个 Key 输入框，而是一套可切换的信任边界
 
@@ -1869,7 +1869,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 进入 Rune | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放：已交付 | hydration 稳定壳、本地偏好 | 首次/再次打开都可进入；SSR/CSR 文本一致；指南是普通可编辑 Artifact |
 | 模型 | 多 profile BYOK、OpenAI/OpenRouter/自定义 Responses、读取模型、启用/编辑/删除：v0.46 | 同源 API、AES-GCM vault、端点验证、local fallback | UI/route 实测；响应与 cookie 不出现明文；篡改失败关闭；旧部署模型兼容 |
 | Artifact 核心 | Document/Data/Query/Chart/Deck 可读 source、实时 preview、依赖图：已交付 | strict adapters、revision identity | 完整 workspace 每次变化都可重新编译；无隐藏 graph state |
-| 双向同步 | source → preview 与 preview → source 定位；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
+| 双向同步 | source → preview 与 preview → source 定位；v0.48 已细化到 Markdown list item/table cell/inline semantics；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | fragment→block→section 最小范围；stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
 | Agent | Selection/File/Workspace typed operation、创建完整 Data→Query→Chart→成品链、review、一次修复：已交付 | bounded context、query evidence、runtime impact | provider 不能直接写；所有 concrete diff 可解释且 Apply 原子化 |
 | 导入 | `.md/.csv/.json/.sql/.html`、DOCX/XLSX/PPTX、ODT/ODS/ODP、selectable PDF：已交付 | 本地 parser、大小上限、fidelity review | 多文件单事务；脚本/OCR/丢失项明确；取消零写入 |
 | 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Deck PDF：已交付 | deterministic compiler、当前 Query snapshot | review 后一次下载；byte/结构 fixture；canonical source 不变 |
@@ -1892,4 +1892,12 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Rune 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
 
-这一版本也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；它们等待桌面壳或隔离、限时、限资源、带恶意文件扫描的转换服务。扫描 PDF 仍等待带页面范围披露、置信度和 provenance 的 OCR port。主工作区已有中英文核心导航，但历史提示、专业 review 细节和少数编辑器文案还需继续进入统一 localization catalog。连续像素 scroll-lock 仍不做；现有双向同步以 source identity 精确选择、高亮和居中滚动，只有获得更细 source map 的 inline/list/table 对象才扩展。
+这一版本也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；它们等待桌面壳或隔离、限时、限资源、带恶意文件扫描的转换服务。扫描 PDF 仍等待带页面范围披露、置信度和 provenance 的 OCR port。主工作区已有中英文核心导航，但历史提示、专业 review 细节和少数编辑器文案还需继续进入统一 localization catalog。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
+
+## 54. v0.48 细粒度同步仍然来自 Markdown AST，而不是点击坐标
+
+v0.45 已经证明左侧 caret 可以回到右侧 block，但一个整张 GFM 表或整份列表仍太粗。v0.48 在同一 CommonMark/GFM AST 上增加 `document-fragment`：单个 list item、表头/表体 cell、strong、emphasis、delete、inline code、link 与 image 都携带 exact UTF-16 source range。表格 fragment 额外保留 row/column，链接 target 包含完整 `[label](url)`，行内格式 target 包含标记符，嵌套 list item 按更小 source span 胜出。这样右侧选中的不是一段相似文字，而是 parser 已证明的 source capability。
+
+渲染端只把这些 target id 附在对应 React Markdown 元素上。普通点击、Enter 或 Space 选择 canonical range、聚焦左侧并进入既有 Selection scope；链接普通点击用于定位，⌘/Ctrl 点击仍保留打开行为。反向链路从当前 source revision 的 caret/selection 选择最小包含范围，顺序是 fragment → block → section，再用 DOM id 做居中滚动。DOM 文本、浏览器 Range、元素坐标、标签文案和像素位置都不参与推断。
+
+编译后的 live metric 仍经过 monotonic offset map 返回完整 canonical binding syntax，只有映射结果与 canonical fragment exact match 才能交互；任何包含 Chart binding 的 fragment 都主动让位给 Chart → Query/Data cell 的更精确跨文件 provenance。跨 fragment 的选择只在同一 block 或 section 完整包含时回退，普通未格式化文字继续以 paragraph block 为最小粒度。连续像素 scroll-lock 和任意 rendered-text selection 仍不做，因为它们不能提高 source 可证明性，反而会制造滚动争夺和错误权限。

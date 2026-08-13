@@ -6,9 +6,11 @@ import { parseChartSource } from "./charts.ts";
 import type { SourceSelection } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
-export type PreviewSourceTargetKind = "document-section" | "document-block" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
+export type PreviewSourceTargetKind = "document-section" | "document-block" | "document-fragment" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
 
 export type DocumentBlockType = "heading" | "paragraph" | "list" | "quote" | "code" | "table" | "rule";
+
+export type DocumentFragmentType = "list-item" | "table-header-cell" | "table-cell" | "bold" | "italic" | "strikethrough" | "inline-code" | "link" | "image";
 
 export type PreviewSourceTarget = SourceSelection & {
   id: string;
@@ -28,6 +30,13 @@ export type DocumentBlockPreviewSourceTarget = PreviewSourceTarget & {
   kind: "document-block";
   blockType: DocumentBlockType;
   headingLevel?: number;
+};
+
+export type DocumentFragmentPreviewSourceTarget = PreviewSourceTarget & {
+  kind: "document-fragment";
+  fragmentType: DocumentFragmentType;
+  rowIndex?: number;
+  columnIndex?: number;
 };
 
 export type DataPreviewSourceTargets = {
@@ -50,6 +59,7 @@ export type ResolvedDataPreviewSourceTargets = DataPreviewSourceTargets & {
 };
 
 const SOURCE_LINK_TARGET_PRIORITY: Record<PreviewSourceTargetKind, number> = {
+  "document-fragment": 0,
   "data-cell": 0,
   "document-block": 1,
   "data-row": 2,
@@ -182,13 +192,16 @@ function documentNodeText(node: MarkdownNode): string {
   return (node.children ?? []).map(documentNodeText).join(" ");
 }
 
-function documentBlockTargets(source: string): DocumentBlockPreviewSourceTarget[] {
-  let children: MarkdownNode[];
+function parseDocumentTree(source: string): MarkdownNode | null {
   try {
-    children = (unified().use(remarkParse).use(remarkGfm).parse(source) as MarkdownNode).children ?? [];
+    return unified().use(remarkParse).use(remarkGfm).parse(source) as MarkdownNode;
   } catch {
-    return [];
+    return null;
   }
+}
+
+function documentBlockTargets(source: string, root: MarkdownNode): DocumentBlockPreviewSourceTarget[] {
+  const children = root.children ?? [];
   return children.flatMap((node, index) => {
     const blockType = DOCUMENT_BLOCK_TYPES[node.type];
     const start = node.position?.start?.offset;
@@ -208,6 +221,102 @@ function documentBlockTargets(source: string): DocumentBlockPreviewSourceTarget[
       label: boundedLabel(documentNodeText(node), DOCUMENT_BLOCK_FALLBACKS[blockType]),
     }];
   });
+}
+
+const DOCUMENT_INLINE_FRAGMENT_TYPES: Partial<Record<string, DocumentFragmentType>> = {
+  strong: "bold",
+  emphasis: "italic",
+  delete: "strikethrough",
+  inlineCode: "inline-code",
+  link: "link",
+  image: "image",
+};
+
+const DOCUMENT_FRAGMENT_LABELS: Record<DocumentFragmentType, string> = {
+  "list-item": "List item",
+  "table-header-cell": "Table header",
+  "table-cell": "Table cell",
+  bold: "Bold",
+  italic: "Italic",
+  strikethrough: "Strikethrough",
+  "inline-code": "Inline code",
+  link: "Link",
+  image: "Image",
+};
+
+function documentFragmentTargets(source: string, root: MarkdownNode): DocumentFragmentPreviewSourceTarget[] {
+  const targets: DocumentFragmentPreviewSourceTarget[] = [];
+  const append = (
+    node: MarkdownNode,
+    fragmentType: DocumentFragmentType,
+    labelPrefix = DOCUMENT_FRAGMENT_LABELS[fragmentType],
+    rowIndex?: number,
+    columnIndex?: number,
+  ) => {
+    const start = node.position?.start?.offset;
+    const end = node.position?.end?.offset;
+    if (start == null || end == null || start >= end) return;
+    const fragment = source.slice(start, end);
+    if (DOCUMENT_CHART_BINDING.test(fragment)) return;
+    const index = targets.length;
+    const readable = boundedLabel(documentNodeText(node), labelPrefix);
+    targets.push({
+      start,
+      end,
+      id: `document-fragment:${index}:${start}`,
+      index,
+      kind: "document-fragment",
+      fragmentType,
+      label: readable === labelPrefix ? labelPrefix : `${labelPrefix} · ${readable}`,
+      ...(rowIndex == null ? {} : { rowIndex }),
+      ...(columnIndex == null ? {} : { columnIndex }),
+    });
+  };
+  const visit = (node: MarkdownNode) => {
+    if (node.type === "table") {
+      const rows = node.children ?? [];
+      const headerLabels = (rows[0]?.children ?? []).map((cell, columnIndex) => (
+        boundedLabel(documentNodeText(cell), `Column ${columnIndex + 1}`)
+      ));
+      rows.forEach((row, rowIndex) => {
+        (row.children ?? []).forEach((cell, columnIndex) => {
+          const fragmentType = rowIndex === 0 ? "table-header-cell" : "table-cell";
+          const column = headerLabels[columnIndex] ?? `Column ${columnIndex + 1}`;
+          const prefix = rowIndex === 0 ? "Table header" : `Table row ${rowIndex} · ${column}`;
+          append(cell, fragmentType, prefix, rowIndex, columnIndex);
+          (cell.children ?? []).forEach(visit);
+        });
+      });
+      return;
+    }
+    if (node.type === "listItem") append(node, "list-item");
+    const inlineType = DOCUMENT_INLINE_FRAGMENT_TYPES[node.type];
+    if (inlineType) append(node, inlineType);
+    (node.children ?? []).forEach(visit);
+  };
+  visit(root);
+  return targets;
+}
+
+type CachedDocumentSyntaxTargets = {
+  source: string;
+  blocks: DocumentBlockPreviewSourceTarget[];
+  fragments: DocumentFragmentPreviewSourceTarget[];
+};
+
+const DOCUMENT_SYNTAX_TARGET_CACHE = new WeakMap<WorkspaceArtifact, CachedDocumentSyntaxTargets>();
+
+function documentSyntaxTargets(artifact: WorkspaceArtifact): CachedDocumentSyntaxTargets {
+  const cached = DOCUMENT_SYNTAX_TARGET_CACHE.get(artifact);
+  if (cached?.source === artifact.source) return cached;
+  const root = parseDocumentTree(artifact.source);
+  const targets = {
+    source: artifact.source,
+    blocks: root ? documentBlockTargets(artifact.source, root) : [],
+    fragments: root ? documentFragmentTargets(artifact.source, root) : [],
+  };
+  DOCUMENT_SYNTAX_TARGET_CACHE.set(artifact, targets);
+  return targets;
 }
 
 function csvRecordRanges(source: string): SourceSelection[] {
@@ -492,7 +601,14 @@ export function deriveDocumentBlockPreviewSourceTargets(
   artifact: WorkspaceArtifact,
 ): DocumentBlockPreviewSourceTarget[] {
   if (artifact.kind !== "document" || !artifact.source.trim()) return [];
-  return documentBlockTargets(artifact.source);
+  return documentSyntaxTargets(artifact).blocks;
+}
+
+export function deriveDocumentFragmentPreviewSourceTargets(
+  artifact: WorkspaceArtifact,
+): DocumentFragmentPreviewSourceTarget[] {
+  if (artifact.kind !== "document" || !artifact.source.trim()) return [];
+  return documentSyntaxTargets(artifact).fragments;
 }
 
 export function deriveDataPreviewSourceTargets(artifact: WorkspaceArtifact): DataPreviewSourceTargets {
@@ -511,6 +627,7 @@ export function deriveSourceLinkedPreviewTargets(
   if (!artifact.source.trim()) return [];
   if (artifact.kind === "document") {
     return [
+      ...deriveDocumentFragmentPreviewSourceTargets(artifact),
       ...deriveDocumentBlockPreviewSourceTargets(artifact),
       ...derivePreviewSourceTargets(artifact),
     ];

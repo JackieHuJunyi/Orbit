@@ -51,11 +51,13 @@ import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
   deriveDataPreviewSourceTargets,
   deriveDocumentBlockPreviewSourceTargets,
+  deriveDocumentFragmentPreviewSourceTargets,
   derivePreviewSourceTargets,
   previewTargetIsActive,
   resolveDataPreviewSourceTargets,
   type DataCellPreviewSourceTarget,
   type DocumentBlockPreviewSourceTarget,
+  type DocumentFragmentPreviewSourceTarget,
   type PreviewSourceTarget,
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
@@ -559,6 +561,7 @@ function MarkdownSource({
   artifacts,
   queryRuntime,
   documentBlockTargets,
+  documentFragmentTargets,
   documentSectionTargets,
   activeSelection,
   onTargetSource,
@@ -572,6 +575,7 @@ function MarkdownSource({
   artifacts: WorkspaceArtifact[];
   queryRuntime: QueryRuntime;
   documentBlockTargets?: DocumentBlockPreviewSourceTarget[];
+  documentFragmentTargets?: DocumentFragmentPreviewSourceTarget[];
   documentSectionTargets?: PreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
@@ -586,6 +590,9 @@ function MarkdownSource({
   const blockByRange = useMemo(() => new Map((documentBlockTargets ?? []).map((target) => (
     [`${target.start}:${target.end}`, target]
   ))), [documentBlockTargets]);
+  const fragmentByRange = useMemo(() => new Map((documentFragmentTargets ?? []).map((target) => (
+    [`${target.start}:${target.end}`, target]
+  ))), [documentFragmentTargets]);
   const sectionByFirstBlockId = useMemo(() => {
     const sections = new Map<string, PreviewSourceTarget>();
     (documentSectionTargets ?? []).forEach((section) => {
@@ -606,6 +613,57 @@ function MarkdownSource({
       : { start: compiledStart, end: compiledEnd };
     return canonicalRange ? blockByRange.get(`${canonicalRange.start}:${canonicalRange.end}`) : undefined;
   }, [blockByRange, source, sourceOffsets]);
+
+  const fragmentTargetForNode = useCallback((node: { position?: { start?: { offset?: number }; end?: { offset?: number } } }) => {
+    const compiledStart = node.position?.start?.offset;
+    const compiledEnd = node.position?.end?.offset;
+    if (compiledStart == null || compiledEnd == null) return undefined;
+    const canonicalRange = sourceOffsets
+      ? compiledSourceRangeToCanonical({ source, sourceOffsets }, compiledStart, compiledEnd)
+      : { start: compiledStart, end: compiledEnd };
+    return canonicalRange ? fragmentByRange.get(`${canonicalRange.start}:${canonicalRange.end}`) : undefined;
+  }, [fragmentByRange, source, sourceOffsets]);
+
+  const interactiveFragment = useCallback((
+    tag: "li" | "th" | "td" | "strong" | "em" | "del" | "code" | "a" | "img",
+    props: Record<string, unknown> & { node?: Parameters<typeof fragmentTargetForNode>[0]; children?: ReactNode },
+  ) => {
+    const { node, children, ...elementProps } = props;
+    const target = node ? fragmentTargetForNode(node) : undefined;
+    const renderElement = (nextProps: Record<string, unknown>) => (
+      tag === "img" ? createElement(tag, nextProps) : createElement(tag, nextProps, children)
+    );
+    if (!target || !targetArtifact || !onTargetSource) return renderElement(elementProps);
+    const active = previewTargetIsActive(target, activeSelection);
+    const inheritedClassName = typeof elementProps.className === "string" ? elementProps.className : "";
+    const opensLink = tag === "a";
+    const selectSource = () => onTargetSource(targetArtifact, target);
+    return renderElement({
+      ...elementProps,
+      className: `${inheritedClassName} document-source-fragment targetable ${active ? "active" : ""}`.trim(),
+      "data-preview-source-target": target.kind,
+      "data-preview-source-id": target.id,
+      "data-document-fragment-type": target.fragmentType,
+      tabIndex: 0,
+      role: ["strong", "em", "del", "code", "img"].includes(tag) ? "button" : undefined,
+      "aria-label": `Select exact ${target.label} source${opensLink ? "; Command-click or Control-click opens the link" : ""}`,
+      "aria-pressed": ["strong", "em", "del", "code", "img"].includes(tag) ? active : undefined,
+      title: `Select exact ${target.label} source${opensLink ? " · Command-click or Control-click opens link" : ""}`,
+      onClick: (event: ReactMouseEvent<HTMLElement>) => {
+        if (opensLink && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        selectSource();
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+        if (event.key === "Enter" && opensLink) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        event.stopPropagation();
+        selectSource();
+      },
+    });
+  }, [activeSelection, fragmentTargetForNode, onTargetSource, targetArtifact]);
 
   const interactiveBlock = useCallback((
     tag: "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "ul" | "ol" | "blockquote" | "pre" | "table" | "hr",
@@ -747,10 +805,14 @@ function MarkdownSource({
     }, createElement(Plus, { "aria-hidden": true })))));
   }, [activeSelection, onBeginDocumentBlockEdit, onBeginDocumentBlockStructure, onEditDocumentBlock, onTargetSource, sectionByFirstBlockId, targetArtifact, targetForNode]);
 
-  const blockComponents = useMemo(() => Object.fromEntries([
-    "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr",
-  ].map((tag) => [tag, (props: Record<string, unknown>) => interactiveBlock(tag as Parameters<typeof interactiveBlock>[0], props)])) as Components,
-  [interactiveBlock]);
+  const markdownComponents = useMemo(() => Object.fromEntries([
+    ...[
+      "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr",
+    ].map((tag) => [tag, (props: Record<string, unknown>) => interactiveBlock(tag as Parameters<typeof interactiveBlock>[0], props)]),
+    ...[
+      "li", "th", "td", "strong", "em", "del", "code", "a", "img",
+    ].map((tag) => [tag, (props: Record<string, unknown>) => interactiveFragment(tag as Parameters<typeof interactiveFragment>[0], props)]),
+  ]) as Components, [interactiveBlock, interactiveFragment]);
   return (
     <>
       {parts.map((part, index) => (
@@ -760,7 +822,7 @@ function MarkdownSource({
                 key={`${part.type}-${index}`}
                 source={part.value}
                 sourceOffset={part.start}
-                components={blockComponents}
+                components={markdownComponents}
               />
             : <EmbeddedChart chartId={part.value} artifacts={artifacts} queryRuntime={queryRuntime} onTargetSource={onTargetSource} />}
         </Fragment>
@@ -797,6 +859,10 @@ function DocumentPreview({
   );
   const blockTargets = useMemo(
     () => deriveDocumentBlockPreviewSourceTargets(artifact),
+    [artifact],
+  );
+  const fragmentTargets = useMemo(
+    () => deriveDocumentFragmentPreviewSourceTargets(artifact),
     [artifact],
   );
   const [editingSection, setEditingSection] = useState<{
@@ -1362,6 +1428,7 @@ function DocumentPreview({
             artifacts={artifacts}
             queryRuntime={queryRuntime}
             documentBlockTargets={blockTargets}
+            documentFragmentTargets={fragmentTargets}
             documentSectionTargets={targets}
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
