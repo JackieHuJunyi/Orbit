@@ -1881,3 +1881,7 @@ Split 用于逐段对照，Source 用于集中写作，Preview 用于检查最�
 ### 17.7 v0.62 把高频视图动作纳入真实教学
 
 工作区用 `⌘⌥ 1/2/3` 或 `Ctrl Alt 1/2/3` 快速进入 Split、Source、Preview；按钮、辅助技术标签、首启按键练习和九语言本地指南共享这一合同。视图快捷键在任何写入审核或视觉草稿期间停用，也不作用于 Empty Workspace；它只能改变本机显示偏好，不能改变或保存 Artifact。
+
+### 17.8 v0.63 视觉层级服从用户当前任务
+
+成品标题栏常驻唯一 validation 结果；来源 target、Data/Query source、metric 和 Chart binding 进入可键盘展开的证据详情。它们仍从当前 revision 实时编译，不缓存、不隐藏问题、不改变 Agent 或写权限。Split 模式的视图按钮只显示图标，Source/Preview 专注模式显示文字，使常用对照轻巧、单项任务明确。

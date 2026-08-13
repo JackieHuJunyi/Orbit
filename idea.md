@@ -1998,4 +1998,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 首启教程从三个动作扩展为四个，必须亲自按一次视图快捷键才能显示完成；本地说明文档的九种语言也包含同一合同。按钮通过 `aria-keyshortcuts` 告知辅助技术，title 同时显示 macOS 与 Windows/Linux 组合。快捷键仍只调用同一个 presentation-state setter，所以教学和实际产品不是两套模拟逻辑，canonical source、恢复点与写入边界均不受影响。
 
+## 68. v0.63 可信证据不等于把所有证据永久铺在标题栏
+
+成品 header 曾同时显示当前 source target、Data/Query source、legacy/query metric、Chart binding 与 validation 结果。这些状态都是真实的，但同时常驻会把 Rune 拉回工程仪表盘的气质，也让 artifact 名称和成品本身失去主次。v0.63 只保留一个始终可见的 Valid 或 issue count；点击后用原生 `details/summary` 展开完整来源、binding 和 validation badges，键盘与辅助技术无需自定义事件即可访问。
+
+证据只是渐进披露，没有被降级或重新计算。popover 读取的仍是当前 artifact revision、binding compiler 与 validation result；没有新缓存，也不影响 source linking、Agent scope 或写入。Split 模式下三态视图切换缩成可辨识图标，Source/Preview 专注模式仍显示文字，形成“日常对照更轻、单项任务更明确”的层级。RTL、窄屏固定定位和 reduced-motion 都沿用同一视觉合同。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

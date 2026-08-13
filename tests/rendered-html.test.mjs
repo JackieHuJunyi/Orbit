@@ -101,7 +101,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.62/);
+  assert.match(html, /Rune v0\.63/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -341,4 +341,16 @@ test("ships persistent presentation-only workspace focus modes without unmountin
   assert.match(source, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
   assert.match(source, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
   assert.match(source, /activePreviewTargetId, activePreviewTargetKind, selectedArtifact\?\.id, workspaceView/);
+});
+
+test("keeps preview validation visible while progressively disclosing detailed evidence", async () => {
+  const response = await render();
+  const html = await response.text();
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(html, /<details class="preview-evidence">/);
+  assert.match(html, /aria-label="Preview evidence"/);
+  assert.match(html, /Source, bindings, and validation/);
+  assert.match(styles, /\.preview-evidence-popover\s*\{[^}]*position:\s*absolute;[^}]*z-index:\s*80;/s);
+  assert.match(styles, /\.workspace\.view-split \.workspace-view-switch button span\s*\{\s*display:\s*none;/);
+  assert.match(styles, /html\[dir="rtl"\] \.preview-evidence-popover/);
 });

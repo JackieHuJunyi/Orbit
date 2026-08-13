@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.63 with a quieter preview header: one persistent validation result, full localized provenance evidence on demand, and compact view controls in Split mode.
 - 2026-08-13 — Shipped Rune v0.62 with localized, tutorial-backed, assistive-technology-labelled keyboard shortcuts for switching Split, Source, and Preview without changing canonical workspace state.
 - 2026-08-13 — Shipped Rune v0.61 with persistent localized Split/Source/Preview focus modes that keep one canonical synchronized workspace mounted, preserve responsive behavior, and reveal exact source when a preview target is opened.
 - 2026-08-13 — Shipped Rune v0.60 with a bounded, persistent, pointer-and-keyboard adjustable source/preview splitter that respects Arabic RTL and collapses back to the stacked responsive layout.

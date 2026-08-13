@@ -570,6 +570,14 @@ textarea:focus-visible {
   stroke-width: 1.8;
 }
 
+.workspace.view-split .workspace-view-switch button {
+  width: 25px;
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.workspace.view-split .workspace-view-switch button span { display: none; }
+
 .preview-header .workspace-view-switch { display: none; }
 .workspace.view-preview .preview-header .workspace-view-switch { display: inline-flex; }
 
@@ -3525,6 +3533,74 @@ button.transaction-node:hover,
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.preview-evidence {
+  position: relative;
+}
+
+.preview-evidence > summary {
+  display: inline-flex;
+  height: 29px;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.preview-evidence > summary::-webkit-details-marker { display: none; }
+
+.preview-evidence > summary:hover,
+.preview-evidence[open] > summary {
+  background: rgba(118, 118, 128, .075);
+}
+
+.preview-evidence-chevron {
+  width: 11px;
+  height: 11px;
+  color: var(--subtle);
+  transition: transform .18s ease;
+}
+
+.preview-evidence[open] .preview-evidence-chevron { transform: rotate(180deg); }
+
+.preview-evidence-popover {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: 80;
+  width: min(290px, calc(100vw - 32px));
+  padding: 13px;
+  border: 1px solid rgba(20, 22, 26, .09);
+  border-radius: 15px;
+  background: rgba(252, 252, 253, .96);
+  box-shadow: 0 18px 55px rgba(25, 28, 34, .14), inset 0 1px rgba(255, 255, 255, .8);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
+.preview-evidence-popover header {
+  display: grid;
+  gap: 1px;
+  margin-bottom: 10px;
+}
+
+.preview-evidence-popover header strong {
+  font-size: 11px;
+  font-weight: 670;
+}
+
+.preview-evidence-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+html[dir="rtl"] .preview-evidence-popover {
+  right: auto;
+  left: 0;
 }
 
 .source-link-badge {
@@ -7701,6 +7777,17 @@ html[dir="rtl"] [data-preview-source-id] {
 
   .workspace-view-switch button span {
     display: none;
+  }
+
+  .preview-evidence-popover {
+    position: fixed;
+    top: 118px;
+    right: 12px;
+  }
+
+  html[dir="rtl"] .preview-evidence-popover {
+    right: auto;
+    left: 12px;
   }
 
   .agent-dock {

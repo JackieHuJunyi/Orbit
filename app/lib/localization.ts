@@ -253,6 +253,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       splitView: zh ? "左右" : "Split",
       sourceView: zh ? "源内容" : "Source",
       previewView: zh ? "成品" : "Preview",
+      previewDetails: zh ? "成品证据" : "Preview evidence",
+      previewDetailsBody: zh ? "来源、绑定与验证" : "Source, bindings, and validation",
       showSplitView: zh ? "显示源内容与成品" : "Show source and preview",
       showSourceView: zh ? "只显示源内容" : "Show source only",
       showPreviewView: zh ? "只显示实时成品" : "Show preview only",

@@ -3422,21 +3422,36 @@ export function RuneWorkbench() {
                 <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
                 <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
-              {activePreviewTarget && (
-                <span className="source-link-badge" title={ui.sourceLinked(activePreviewTarget.label)}>
-                  <CircleDot aria-hidden="true" /><span>{activePreviewTarget.label}</span>
-                </span>
-              )}
-              {selectedArtifact.kind === "query" && selectedQueryDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.oneSource}</span>}
-              {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && <span className="binding-badge chart">{selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />} {ui.oneSource}</span>}
-              {!!bindingState?.queryMetricReferences.length && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.sqlMetricBadge(bindingState.queryMetricReferences.length)}</span>}
-              {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {ui.chartBadge(bindingState.chartReferences.length)}</span>}
-              {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {ui.liveBadge(bindingState.references.length)}</span>}
-              {validationErrors.length ? (
-                <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
-              ) : (
-                <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
-              )}
+              <details className="preview-evidence">
+                <summary aria-label={ui.previewDetails} title={ui.previewDetailsBody}>
+                  {validationErrors.length ? (
+                    <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
+                  ) : (
+                    <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
+                  )}
+                  <ChevronDown className="preview-evidence-chevron" aria-hidden="true" />
+                </summary>
+                <div className="preview-evidence-popover">
+                  <header><span className="overline">{ui.previewDetails}</span><strong>{ui.previewDetailsBody}</strong></header>
+                  <div className="preview-evidence-badges">
+                    {activePreviewTarget && (
+                      <span className="source-link-badge" title={ui.sourceLinked(activePreviewTarget.label)}>
+                        <CircleDot aria-hidden="true" /><span>{activePreviewTarget.label}</span>
+                      </span>
+                    )}
+                    {selectedArtifact.kind === "query" && selectedQueryDataArtifact && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.oneSource}</span>}
+                    {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && <span className="binding-badge chart">{selectedChartSourceArtifact.kind === "query" ? <Database aria-hidden="true" /> : <TableProperties aria-hidden="true" />} {ui.oneSource}</span>}
+                    {!!bindingState?.queryMetricReferences.length && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.sqlMetricBadge(bindingState.queryMetricReferences.length)}</span>}
+                    {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {ui.chartBadge(bindingState.chartReferences.length)}</span>}
+                    {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {ui.liveBadge(bindingState.references.length)}</span>}
+                    {validationErrors.length ? (
+                      <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
+                    ) : (
+                      <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
+                    )}
+                  </div>
+                </div>
+              </details>
             </div>
           </header>
           <div className="preview-body">
@@ -3513,7 +3528,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.62</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.63</span></div>
       </footer>
 
       {newArtifactOpen && (

@@ -540,6 +540,8 @@ The source/preview ratio and the `split | source | preview` focus mode are bound
 
 The shared shortcut resolver accepts only `Meta/Control + Alt + physical Digit1/2/3`, rejects Shift and other keys, and is reused by both onboarding practice and the workbench. The workbench suppresses this presentation action while any modal review, import/export, model setup, pending Agent proposal, or revision-bound visual draft owns interaction. Controls expose the same contract through localized labels and `aria-keyshortcuts`.
 
+Preview provenance uses progressive disclosure only at the presentation boundary. The always-visible summary is derived from the current validation error count; its native details body renders the same current source target, exact Data/Query source, metric/Chart binding counts, and validation result that previously occupied the header. It owns no copied evidence state, has no influence on compilation or permissions, and retains native keyboard semantics plus RTL/mobile placement.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

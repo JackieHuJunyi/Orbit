@@ -2394,6 +2394,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "移動或刪除"
   ],
   [
+    "绑定与验证",
+    "繫結與驗證"
+  ],
+  [
     "绑定数据或",
     "繫結資料或"
   ],
@@ -2720,6 +2724,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "成品视图",
     "成品檢視"
+  ],
+  [
+    "成品证据",
+    "成品證據"
   ],
   [
     "或正文块",
