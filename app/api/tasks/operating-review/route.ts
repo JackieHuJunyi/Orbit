@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         value: input.value,
         aggregation: input.aggregation,
         scope: input.scope,
+        comparisonScope: input.comparisonScope,
         evidenceRows: evidence.evidenceRows,
       }),
       schema: OperatingReviewNarrativeSchema,

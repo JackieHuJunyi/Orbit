@@ -77,3 +77,69 @@ html[dir="rtl"] .workspace.view-source.with-file-rail > .source-pane,
 html[dir="rtl"] .workspace.view-preview.with-file-rail > .preview-pane,
 html[dir="rtl"] .workspace.view-source.without-file-rail > .source-pane,
 html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { border-radius: var(--rune-radius-workspace) 0 0 var(--rune-radius-workspace); }
+
+/*
+ * Focus views keep both editor surfaces mounted. Only the grid tracks and
+ * interaction state change, so selection, scroll, preview runtime, and undo
+ * context survive a light source/preview transition.
+ */
+@media (min-width: 961px) {
+  .workspace {
+    transition: grid-template-columns var(--rune-duration-layout) var(--rune-ease-smooth);
+  }
+
+  .workspace.view-source.with-file-rail {
+    grid-template-columns: var(--rune-activity-width) var(--rune-file-width) minmax(0, 100fr) 0 minmax(0, 0fr);
+  }
+
+  .workspace.view-preview.with-file-rail {
+    grid-template-columns: var(--rune-activity-width) var(--rune-file-width) minmax(0, 0fr) 0 minmax(0, 100fr);
+  }
+
+  .workspace.view-source.without-file-rail {
+    grid-template-columns: var(--rune-activity-width) minmax(0, 100fr) 0 minmax(0, 0fr);
+  }
+
+  .workspace.view-preview.without-file-rail {
+    grid-template-columns: var(--rune-activity-width) minmax(0, 0fr) 0 minmax(0, 100fr);
+  }
+
+  .workspace.view-source.with-file-rail > .source-pane,
+  .workspace.view-preview.with-file-rail > .preview-pane,
+  .workspace.view-source.without-file-rail > .source-pane,
+  .workspace.view-preview.without-file-rail > .preview-pane {
+    grid-column: auto;
+  }
+
+  .workspace.view-source > .preview-pane,
+  .workspace.view-preview > .source-pane {
+    display: flex;
+    min-width: 0;
+    border-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      opacity 140ms ease,
+      visibility 0s linear var(--rune-duration-layout);
+  }
+
+  .workspace.view-source > .workspace-splitter,
+  .workspace.view-preview > .workspace-splitter {
+    display: grid;
+    min-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .workspace.view-source > .source-pane,
+  .workspace.view-preview > .preview-pane,
+  .workspace.view-split > .source-pane,
+  .workspace.view-split > .preview-pane {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 160ms ease 40ms;
+  }
+}

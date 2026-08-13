@@ -180,6 +180,83 @@ test("applies one exact Data scope consistently to evidence, SQL, charts, and de
   assert.deepEqual(validateWorkspaceArtifacts([data, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
 });
 
+test("compares two exact same-field scopes through evidence, SQL, Chart, and live-bound deliverables", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nJuly,Europe,80\nJune,Europe,100\nJuly,LATAM,40\nJune,North America,30\nMay,APAC,N/A\n",
+  });
+  const input = reviewInput({
+    period: "July vs June 2026",
+    scope: { field: "Period", value: "July" },
+    comparisonScope: { field: "Period", value: "June" },
+  });
+  const narrative = {
+    insights: [
+      {
+        primaryEvidenceRowId: "result-1",
+        supportingEvidenceRowId: "result-2",
+        title: "Where did momentum change?",
+        question: "What operating evidence explains the leading change and the contrasting movement?",
+        decisionPrompt: "Decide which movement needs an owner before the next review.",
+      },
+      {
+        primaryEvidenceRowId: "result-2",
+        supportingEvidenceRowId: null,
+        title: "Which change needs intervention?",
+        question: "Could execution choices materially alter this comparative pattern?",
+        decisionPrompt: "Confirm the evidence boundary before changing the operating plan.",
+      },
+    ],
+  };
+
+  const evidence = prepareOperatingReviewEvidence([data], input);
+  assert.deepEqual(evidence.errors, []);
+  assert.deepEqual(evidence.scope, { field: "Period", value: "July" });
+  assert.deepEqual(evidence.comparisonScope, { field: "Period", value: "June" });
+  assert.equal(evidence.matchedRowCount, 3);
+  assert.equal(evidence.comparisonMatchedRowCount, 3);
+  assert.equal(evidence.groupCount, 2);
+  assert.deepEqual(evidence.evidenceRows, [
+    {
+      id: "result-1", category: "APAC", value: 10, sourceRowCount: 2,
+      primaryValue: 100, comparisonValue: 90,
+      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+    },
+    {
+      id: "result-2", category: "Europe", value: -20, sourceRowCount: 2,
+      primaryValue: 80, comparisonValue: 100,
+      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+    },
+  ]);
+
+  const result = prepareOperatingReviewWorkflow([data], input, narrative);
+  assert.deepEqual(result.errors, []);
+  const created = creationsByKind(result);
+  assert.match(created.query.source, /SUM\(CASE WHEN "Period" = 'July' THEN CAST\("Net Revenue" AS DOUBLE\) END\) AS "Net Revenue"/u);
+  assert.match(created.query.source, /AS "Net Revenue comparison"/u);
+  assert.match(created.query.source, /AS "Net Revenue change"/u);
+  assert.match(created.query.source, /HAVING COUNT\(CASE WHEN "Period" = 'July' THEN 1 END\) > 0/u);
+  assert.match(created.query.source, /COUNT\(CASE WHEN "Period" = 'June' THEN 1 END\) > 0/u);
+  assert.deepEqual(parseChartSource(created.chart.source).spec, {
+    version: 1,
+    title: "Change in Net Revenue by Region",
+    description: "Sum change for July vs June 2026 · Period = July vs June · source-data.csv",
+    source: created.query.id,
+    mark: "bar",
+    category: "Region",
+    value: "Net Revenue change",
+    sort: "descending",
+    format: "currency",
+    color: "#ff5c35",
+    maxItems: 8,
+  });
+  const metricBinding = `{{ metric("${created.query.id}", "Net Revenue change", "currency", "0") }}`;
+  assert.ok(created.document.source.includes(metricBinding));
+  assert.ok(created.slides.source.includes(metricBinding));
+  assert.match(created.document.source, /primary minus comparison/u);
+  assert.match(created.slides.source, /Change in Net Revenue by Region/u);
+  assert.deepEqual(validateWorkspaceArtifacts([data, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
+});
+
 test("validates numeric evidence only inside the exact eligible Data scope", () => {
   const data = dataArtifact({
     source: "Period,Region,Net Revenue\nJuly,APAC,100\nJuly,Europe,80\nJune,APAC,N/A\nJune,Europe,$700\n",
@@ -221,6 +298,24 @@ test("escapes exact text scope values and fails closed when a saved scope no lon
   }));
   assert.equal(missingField.plan, undefined);
   assert.match(missingField.errors.join(" "), /exact visible scope field/u);
+});
+
+test("rejects malformed, stale, or unpaired comparison scopes before creating outputs", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,Europe,90\n",
+  });
+  const scenarios = [
+    [reviewInput({ comparisonScope: { field: "Period", value: "June" } }), /primary exact scope/i],
+    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Region", value: "Europe" } }), /same exact visible scope field/i],
+    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "July" } }), /different exact scope value/i],
+    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "May" } }), /no longer matches any current Data row/i],
+    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "June" } }), /shared category/i],
+  ];
+  for (const [input, expected] of scenarios) {
+    const result = prepareOperatingReviewWorkflow([data], input);
+    assert.equal(result.plan, undefined);
+    assert.match(result.errors.join(" "), expected);
+  }
 });
 
 test("compiles model-proposed review questions with every number kept in a live Query-row binding", () => {
@@ -570,6 +665,33 @@ test("persists and changes an exact Data scope while retaining saved output iden
   assert.deepEqual(rerun.workflow.input.scope, { field: "Period", value: "June" });
   const queryPatch = rerun.plan.patches.find((patch) => patch.artifactId === workflow.artifactIds.query);
   assert.match(queryPatch.nextSource, /AND "Period" = 'June'/u);
+});
+
+test("persists and changes an exact comparison while retaining saved output identities", () => {
+  const data = dataArtifact({
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nMay,APAC,70\nJuly,Europe,80\nJune,Europe,100\nMay,Europe,60\n",
+  });
+  const initialInput = reviewInput({
+    scope: { field: "Period", value: "July" },
+    comparisonScope: { field: "Period", value: "June" },
+  });
+  const initial = prepareOperatingReviewWorkflow([data], initialInput);
+  const workflow = createSavedOperatingReview(initialInput, initial.plan);
+  assert.deepEqual(workflow.input.comparisonScope, { field: "Period", value: "June" });
+  assert.deepEqual(normalizeSavedOperatingReviews([workflow])[0].input.comparisonScope, { field: "Period", value: "June" });
+  const workspace = [data, ...initial.plan.creations.map(({ artifact }) => artifact)];
+
+  const rerun = prepareSavedOperatingReviewRerun(workspace, workflow, reviewInput({
+    period: "July vs May 2026",
+    scope: { field: "Period", value: "July" },
+    comparisonScope: { field: "Period", value: "May" },
+  }));
+  assert.deepEqual(rerun.errors, []);
+  assert.deepEqual(rerun.plan.creations, []);
+  assert.deepEqual(rerun.workflow.input.comparisonScope, { field: "Period", value: "May" });
+  const queryPatch = rerun.plan.patches.find((patch) => patch.artifactId === workflow.artifactIds.query);
+  assert.match(queryPatch.nextSource, /"Period" = 'May'/u);
+  assert.match(queryPatch.nextSource, /AS "Net Revenue change"/u);
 });
 
 test("rewires model narrative bindings to the saved Query identity during rerun", () => {

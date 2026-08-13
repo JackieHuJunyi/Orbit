@@ -17,7 +17,7 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, modelPlanning, styles] = await Promise.all([
+  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, modelPlanning, styles, shellStyles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
@@ -33,6 +33,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
     source("../app/lib/task-providers.ts"),
     source("../app/lib/task-model-planning.ts"),
     source("../app/styles/content.css"),
+    source("../app/styles/shell.css"),
   ]);
 
   assert.match(workbench, /accept=\{RUNE_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/);
@@ -53,14 +54,19 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(operatingCompiler, /formatOperatingReviewScopePredicate/);
   assert.match(operatingScope, /MAX_OPERATING_REVIEW_SCOPE_OPTIONS = 100/);
   assert.match(operatingScope, /prepareOperatingReviewNumericColumns/);
+  assert.match(operatingScope, /prepareOperatingReviewScopes/);
   assert.doesNotMatch(operatingScope, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
   assert.match(operatingDialog, /collectOperatingReviewScopeValues/);
   assert.match(operatingDialog, /prepareOperatingReviewNumericColumns/);
   assert.match(operatingDialog, /prepareOperatingReviewEvidence/);
+  assert.match(operatingDialog, /id="operating-review-comparison-value"/);
+  assert.match(operatingDialog, /comparisonScope: effectiveComparisonScope/);
   assert.match(operatingDialog, /MAX_OPERATING_REVIEW_PREVIEW_ROWS = 5/);
   assert.match(operatingDialog, /formatChartValue\(row\.value, format\)/);
   assert.match(operatingDialog, /aria-labelledby="operating-review-evidence-title"/);
   assert.match(operatingCompiler, /groupCount: aggregated\.length/);
+  assert.match(operatingCompiler, /primaryValue - comparisonValue/);
+  assert.match(operatingCompiler, /HAVING COUNT\(CASE WHEN/);
   assert.ok(operatingDialog.indexOf('id="operating-review-scope-field"') < operatingDialog.indexOf('id="operating-review-category"'));
   assert.ok(operatingDialog.indexOf('id="operating-review-scope-value"') < operatingDialog.indexOf('id="operating-review-value"'));
   assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);
@@ -114,4 +120,11 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.doesNotMatch(directRefresh, /setArtifacts|persistDeviceWorkspace|prepareRuneTaskProvider/);
   assert.match(styles, /\.empty-task-primary/);
   assert.match(styles, /\.import-task-continuation/);
+  assert.match(workbench, /inert=\{workspaceView === "preview"/);
+  assert.match(workbench, /inert=\{workspaceView === "source"/);
+  assert.match(workbench, /paneLeavingFocus\?\.contains\(document\.activeElement\)/);
+  assert.match(workbench, /data-workspace-view-option="preview"/);
+  assert.match(shellStyles, /Focus views keep both editor surfaces mounted/);
+  assert.match(shellStyles, /transition: grid-template-columns var\(--rune-duration-layout\)/);
+  assert.match(shellStyles, /prefers-reduced-motion|rune-duration-layout/);
 });

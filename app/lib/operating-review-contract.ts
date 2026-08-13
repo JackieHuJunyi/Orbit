@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { RUNE_LOCALE_REGISTRY } from "./localization.ts";
-import { MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS } from "./operating-review-scope.ts";
+import {
+  MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS,
+  operatingReviewScopeValueKey,
+} from "./operating-review-scope.ts";
 
 export const MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS = 100_000;
 export const MAX_OPERATING_REVIEW_EVIDENCE_ROWS = 20;
@@ -32,6 +35,7 @@ const OperatingReviewInputSchema = z.object({
   mark: z.enum(["bar", "line"]),
   format: z.enum(["number", "currency", "percent"]),
   scope: OperatingReviewScopeSchema.nullable().optional(),
+  comparisonScope: OperatingReviewScopeSchema.nullable().optional(),
   period: z.string().trim().min(1).max(60),
   audience: z.enum(["leadership", "board", "team"]),
   focus: z.string().trim().min(1).max(140),
@@ -40,6 +44,12 @@ const OperatingReviewInputSchema = z.object({
 }).strict().superRefine((input, context) => {
   if (new Set(input.deliverables).size !== input.deliverables.length) {
     context.addIssue({ code: "custom", message: "Deliverable choices must be unique." });
+  }
+  if (input.comparisonScope && (!input.scope
+    || input.comparisonScope.field !== input.scope.field
+    || operatingReviewScopeValueKey(input.comparisonScope.value)
+      === operatingReviewScopeValueKey(input.scope.value))) {
+    context.addIssue({ code: "custom", message: "Comparison needs the same scope field and a different exact value." });
   }
 });
 
@@ -67,6 +77,10 @@ export type OperatingReviewEvidenceRow = {
   category: string;
   value: number;
   sourceRowCount: number;
+  primaryValue?: number;
+  comparisonValue?: number;
+  primarySourceRowCount?: number;
+  comparisonSourceRowCount?: number;
 };
 
 export type OperatingReviewNarrative = z.infer<typeof OperatingReviewNarrativeSchema>;
@@ -109,7 +123,7 @@ export function validateOperatingReviewNarrative(
 }
 
 export function buildOperatingReviewModelInstructions(insightCount: number) {
-  return `You are Rune's bounded operating-review question planner. Return exactly ${insightCount} evidence-led review prompts. Each prompt must use a unique primaryEvidenceRowId from the supplied aggregate evidence and must set supportingEvidenceRowId to a different exact evidence id or null. Rune will insert live category context and every numeric value deterministically; do not copy category labels or include digits, written numbers, currencies, percentages, dates, Markdown, HTML, binding braces, or line breaks in title, question, or decisionPrompt. Do not claim causation, forecasts, people, events, or facts absent from the evidence. Ask a concise question about the visible pattern and offer a cautious decision prompt for the requested audience and purpose. Return only the required structured narrative.`;
+  return `You are Rune's bounded operating-review question planner. Return exactly ${insightCount} evidence-led review prompts. Each prompt must use a unique primaryEvidenceRowId from the supplied aggregate evidence and must set supportingEvidenceRowId to a different exact evidence id or null. The measure.evidenceValue field states whether each evidence value is a primary aggregate or primary minus comparison; never infer another baseline. Rune will insert live category context and every numeric value deterministically; do not copy category labels or include digits, written numbers, currencies, percentages, dates, Markdown, HTML, binding braces, or line breaks in title, question, or decisionPrompt. Do not claim causation, forecasts, people, events, or facts absent from the evidence. Ask a concise question about the visible pattern and offer a cautious decision prompt for the requested audience and purpose. Return only the required structured narrative.`;
 }
 
 export function buildOperatingReviewModelInput({
@@ -123,6 +137,7 @@ export function buildOperatingReviewModelInput({
   value,
   aggregation,
   scope,
+  comparisonScope,
   evidenceRows,
 }: {
   sourceName: string;
@@ -135,11 +150,20 @@ export function buildOperatingReviewModelInput({
   value: string;
   aggregation: string;
   scope?: { field: string; value: string | number | boolean } | null;
+  comparisonScope?: { field: string; value: string | number | boolean } | null;
   evidenceRows: readonly OperatingReviewEvidenceRow[];
 }) {
   return JSON.stringify({
     task: { title, audience, purpose: focus, period, language: locale },
-    measure: { sourceName, category, value, aggregation, scope: scope ?? null },
+    measure: {
+      sourceName,
+      category,
+      value,
+      aggregation,
+      scope: scope ?? null,
+      comparisonScope: comparisonScope ?? null,
+      evidenceValue: comparisonScope ? "primary minus comparison" : "primary aggregate",
+    },
     aggregateEvidence: evidenceRows,
   }, null, 2);
 }

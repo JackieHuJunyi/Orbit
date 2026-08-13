@@ -11,7 +11,7 @@ import {
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
 import { formatChartValue } from "../lib/charts";
-import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
+import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 import type { RuneModelMode } from "../lib/model-preference";
 import {
   MAX_OPERATING_REVIEW_FOCUS_CHARS,
@@ -66,6 +66,9 @@ export const OPERATING_REVIEW_BASE_COPY = {
     chooseScopeValue: "选择一个值",
     noScopeValue: "这个字段没有可用值",
     scopeHint: "可选。选择后，本地证据、SQL、图表与模型上下文只使用完全匹配的行。",
+    compareWith: "对比范围",
+    noComparison: "不对比",
+    comparisonHint: "可选。用同一字段的另一个精确值作为对比，变化值按主范围减去对比范围计算。",
     scopeTooMany: "只显示前 100 个不同值；可改选更适合分期的字段。",
     scopeValueRequired: "选择一个精确范围值，或改回全部数据行。",
     aggregation: "汇总方式",
@@ -118,8 +121,10 @@ export const OPERATING_REVIEW_BASE_COPY = {
     evidencePreview: "聚合证据预览",
     evidenceDescription: "在请求模型前，Rune 已按当前范围在本地编译这些结果。",
     eligibleRows: "命中行",
+    comparisonRows: "对比行",
     excludedRows: "排除行",
     sourceRows: "来源行",
+    change: "变化",
     showing: "显示",
     of: "共",
     groups: "项",
@@ -144,6 +149,9 @@ export const OPERATING_REVIEW_BASE_COPY = {
     chooseScopeValue: "Choose one value",
     noScopeValue: "No usable value in this field",
     scopeHint: "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.",
+    compareWith: "Compare with",
+    noComparison: "No comparison",
+    comparisonHint: "Optional. Compare another exact value from the same field; change is primary minus comparison.",
     scopeTooMany: "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.",
     scopeValueRequired: "Choose one exact scope value, or return to all Data rows.",
     aggregation: "Aggregation",
@@ -196,8 +204,10 @@ export const OPERATING_REVIEW_BASE_COPY = {
     evidencePreview: "Aggregate evidence preview",
     evidenceDescription: "Rune compiled these results locally from the current scope before any model request.",
     eligibleRows: "Eligible rows",
+    comparisonRows: "Comparison rows",
     excludedRows: "Excluded rows",
     sourceRows: "Source rows",
+    change: "Change",
     showing: "Showing",
     of: "of",
     groups: "groups",
@@ -211,6 +221,20 @@ export function operatingReviewCopy(locale: RuneLocale) {
 function selectedDeliverables(report: boolean, slides: boolean): OperatingReviewDeliverable[] {
   return [report ? "document" : null, slides ? "slides" : null]
     .filter((item): item is OperatingReviewDeliverable => item !== null);
+}
+
+function comparisonConnector(locale: RuneLocale) {
+  return ({
+    "zh-CN": "对比",
+    "zh-TW": "對比",
+    en: "vs",
+    fr: "contre",
+    es: "frente a",
+    ru: "против",
+    ar: "مقابل",
+    ja: "対",
+    ko: "대비",
+  } satisfies Record<RuneLocale, string>)[locale];
 }
 
 export function OperatingReviewDialog({
@@ -235,6 +259,7 @@ export function OperatingReviewDialog({
   const [format, setFormat] = useState<OperatingReviewInput["format"]>(initialInput?.format ?? "currency");
   const [scopeField, setScopeField] = useState(initialInput?.scope?.field ?? "");
   const [scopeValue, setScopeValue] = useState<OperatingReviewScopeValue | null>(initialInput?.scope?.value ?? null);
+  const [comparisonValue, setComparisonValue] = useState<OperatingReviewScopeValue | null>(initialInput?.comparisonScope?.value ?? null);
   const [period, setPeriod] = useState(initialInput?.period ?? "");
   const [audience, setAudience] = useState<OperatingReviewInput["audience"]>(initialInput?.audience ?? "leadership");
   const [focus, setFocus] = useState(initialInput?.focus ?? "");
@@ -284,14 +309,24 @@ export function OperatingReviewDialog({
       : null,
     [effectiveScopeField, scopeValue],
   );
+  const comparisonValueAvailable = comparisonValue != null && scopeOptions.values.some((candidate) => (
+    operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(comparisonValue)
+  ));
+  const effectiveComparisonScope = useMemo(
+    () => effectiveScopeField && comparisonValue != null
+      ? { field: effectiveScopeField, value: comparisonValue }
+      : null,
+    [comparisonValue, effectiveScopeField],
+  );
   const strictNumericColumns = useMemo(() => {
     if (!parsedData) return [];
     return prepareOperatingReviewNumericColumns(
       parsedData.rows,
       parsedData.columns,
       effectiveScope,
+      effectiveComparisonScope,
     ).columns;
-  }, [effectiveScope, parsedData]);
+  }, [effectiveComparisonScope, effectiveScope, parsedData]);
   const effectiveValue = strictNumericColumns.includes(value) && value !== effectiveCategory
     ? value
     : initialInput
@@ -310,6 +345,7 @@ export function OperatingReviewDialog({
     mark,
     format,
     scope: effectiveScope,
+    comparisonScope: effectiveComparisonScope,
     period,
     audience,
     focus,
@@ -324,6 +360,7 @@ export function OperatingReviewDialog({
     focus,
     format,
     effectiveScope,
+    effectiveComparisonScope,
     locale,
     mark,
     period,
@@ -340,7 +377,8 @@ export function OperatingReviewDialog({
   );
   const evidenceRows = evidence.evidenceRows?.slice(0, MAX_OPERATING_REVIEW_PREVIEW_ROWS) ?? [];
   const eligibleRowCount = evidence.matchedRowCount ?? 0;
-  const excludedRowCount = Math.max(0, (parsedData?.rows.length ?? 0) - eligibleRowCount);
+  const comparisonRowCount = evidence.comparisonMatchedRowCount ?? 0;
+  const excludedRowCount = Math.max(0, (parsedData?.rows.length ?? 0) - eligibleRowCount - comparisonRowCount);
 
   const deliverableNames = deliverables.map((deliverable) => (
     deliverable === "document" ? copy.report : copy.slides
@@ -348,11 +386,12 @@ export function OperatingReviewDialog({
   const aggregationLabel = aggregation === "average" ? copy.average : copy.sum;
   const markLabel = mark === "line" ? copy.line : copy.bar;
   const audienceLabel = audience === "board" ? copy.board : audience === "team" ? copy.team : copy.leadership;
-  const scopeLabel = effectiveScope ? formatOperatingReviewScopeLabel(effectiveScope) : copy.allRows;
+  const primaryScopeLabel = effectiveScope ? formatOperatingReviewScopeLabel(effectiveScope) : copy.allRows;
+  const scopeLabel = effectiveComparisonScope
+    ? `${primaryScopeLabel} ${comparisonConnector(locale)} ${String(effectiveComparisonScope.value)}`
+    : primaryScopeLabel;
   const liveSummary = sourceOption && effectiveCategory && effectiveValue && deliverableNames.length
-    ? locale !== "en"
-      ? runeText(locale, "", `从 ${sourceOption.name} 的「${scopeLabel}」范围按「${effectiveCategory}」${aggregationLabel}「${effectiveValue}」，生成${markLabel}并交付${deliverableNames.join("和")}。`, [sourceOption.name, scopeLabel, effectiveCategory, effectiveValue])
-      : `Within “${scopeLabel}” from ${sourceOption.name}, use ${aggregationLabel.toLowerCase()} of “${effectiveValue}” by “${effectiveCategory}”, then create a ${markLabel.toLowerCase()} and ${deliverableNames.join(" plus ").toLowerCase()}.`
+    ? `${sourceOption.name} · ${effectiveCategory} → ${aggregationLabel}(${effectiveValue}) · ${scopeLabel} · ${markLabel} → ${deliverableNames.join(" + ")}`
     : copy.incomplete;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -425,6 +464,7 @@ export function OperatingReviewDialog({
                 setValue("");
                 setScopeField("");
                 setScopeValue(null);
+                setComparisonValue(null);
               }}
               disabled={!sourceOptions.length}
               required
@@ -445,6 +485,7 @@ export function OperatingReviewDialog({
               onChange={(event) => {
                 setScopeField(event.target.value);
                 setScopeValue(null);
+                setComparisonValue(null);
               }}
               aria-describedby="operating-review-scope-help"
             >
@@ -467,6 +508,10 @@ export function OperatingReviewDialog({
                   operatingReviewScopeValueKey(candidate) === event.target.value
                 ));
                 setScopeValue(selected ?? null);
+                if (selected != null && comparisonValue != null
+                  && operatingReviewScopeValueKey(selected) === operatingReviewScopeValueKey(comparisonValue)) {
+                  setComparisonValue(null);
+                }
               }}
               disabled={!effectiveScopeField || !scopeOptions.values.length}
               required={Boolean(effectiveScopeField)}
@@ -482,6 +527,34 @@ export function OperatingReviewDialog({
             </select>
             {scopeOptions.truncated && <small>{copy.scopeTooMany}</small>}
             {attempted && !scopeReady && <small className="operating-review-field-error">{copy.scopeValueRequired}</small>}
+          </label>
+
+          <label className="operating-review-field" htmlFor="operating-review-comparison-value">
+            <span>{copy.compareWith}</span>
+            <select
+              id="operating-review-comparison-value"
+              value={comparisonValue == null ? "" : operatingReviewScopeValueKey(comparisonValue)}
+              onChange={(event) => {
+                const selected = scopeOptions.values.find((candidate) => (
+                  operatingReviewScopeValueKey(candidate) === event.target.value
+                ));
+                setComparisonValue(selected ?? null);
+              }}
+              disabled={!effectiveScopeField || scopeValue == null || scopeOptions.values.length < 2}
+              aria-describedby="operating-review-comparison-help"
+            >
+              <option value="">{copy.noComparison}</option>
+              {comparisonValue != null && !comparisonValueAvailable && (
+                <option value={operatingReviewScopeValueKey(comparisonValue)}>{String(comparisonValue)} · {copy.noScopeValue}</option>
+              )}
+              {scopeOptions.values
+                .filter((candidate) => scopeValue == null
+                  || operatingReviewScopeValueKey(candidate) !== operatingReviewScopeValueKey(scopeValue))
+                .map((candidate) => (
+                  <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>{String(candidate)}</option>
+                ))}
+            </select>
+            <small id="operating-review-comparison-help">{copy.comparisonHint}</small>
           </label>
 
           <label className="operating-review-field" htmlFor="operating-review-category">
@@ -620,17 +693,34 @@ export function OperatingReviewDialog({
                 </div>
                 <dl aria-label={copy.evidencePreview}>
                   <div><dt>{copy.eligibleRows}</dt><dd>{eligibleRowCount}</dd></div>
+                  {effectiveComparisonScope && <div><dt>{copy.comparisonRows}</dt><dd>{comparisonRowCount}</dd></div>}
                   <div><dt>{copy.excludedRows}</dt><dd>{excludedRowCount}</dd></div>
                 </dl>
               </header>
               <div className="operating-review-evidence-table">
                 <table>
-                  <thead><tr><th scope="col">{effectiveCategory}</th><th scope="col">{effectiveValue}</th><th scope="col">{copy.sourceRows}</th></tr></thead>
+                  <thead><tr>
+                    <th scope="col">{effectiveCategory}</th>
+                    {effectiveComparisonScope ? (
+                      <>
+                        <th scope="col">{effectiveValue} · {String(effectiveScope?.value ?? "")}</th>
+                        <th scope="col">{effectiveValue} · {String(effectiveComparisonScope.value)}</th>
+                        <th scope="col">{copy.change}</th>
+                      </>
+                    ) : <th scope="col">{effectiveValue}</th>}
+                    <th scope="col">{copy.sourceRows}</th>
+                  </tr></thead>
                   <tbody>
                     {evidenceRows.map((row) => (
                       <tr key={row.id}>
                         <th scope="row">{row.category}</th>
-                        <td>{formatChartValue(row.value, format)}</td>
+                        {effectiveComparisonScope ? (
+                          <>
+                            <td>{formatChartValue(row.primaryValue ?? 0, format)}</td>
+                            <td>{formatChartValue(row.comparisonValue ?? 0, format)}</td>
+                            <td>{formatChartValue(row.value, format)}</td>
+                          </>
+                        ) : <td>{formatChartValue(row.value, format)}</td>}
                         <td>{row.sourceRowCount}</td>
                       </tr>
                     ))}

@@ -1144,7 +1144,23 @@ export function RuneWorkbench() {
   }, []);
 
   const setPreferredWorkspaceView = useCallback((view: RuneWorkspaceView) => {
+    const workspace = workspaceRef.current;
+    const paneLeavingFocus = view === "preview"
+      ? workspace?.querySelector<HTMLElement>(":scope > .source-pane")
+      : view === "source"
+        ? workspace?.querySelector<HTMLElement>(":scope > .preview-pane")
+        : null;
+    const moveFocus = Boolean(paneLeavingFocus?.contains(document.activeElement));
     setWorkspaceView(view);
+    if (moveFocus) {
+      window.requestAnimationFrame(() => {
+        const visiblePane = workspace?.querySelector<HTMLElement>(
+          view === "preview" ? ":scope > .preview-pane" : ":scope > .source-pane",
+        );
+        visiblePane?.querySelector<HTMLButtonElement>(`[data-workspace-view-option="${view}"]`)
+          ?.focus({ preventScroll: true });
+      });
+    }
     try {
       localStorage.setItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view);
     } catch {
@@ -3715,7 +3731,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.93</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.94</strong></footer>
               </div>
             )}
           </div>
@@ -3944,7 +3960,12 @@ export function RuneWorkbench() {
           />
         ) : (
           <>
-        <section className="source-pane" aria-label={ui.sourceEditor}>
+        <section
+          className="source-pane"
+          aria-label={ui.sourceEditor}
+          aria-hidden={workspaceView === "preview" ? true : undefined}
+          inert={workspaceView === "preview" ? true : undefined}
+        >
           <header className="pane-header">
             <div className="pane-title">
               <span className={`artifact-icon ${presentedArtifact.kind}`}><ArtifactIcon kind={presentedArtifact.kind} /></span>
@@ -3962,9 +3983,9 @@ export function RuneWorkbench() {
                 ><ImagePlus aria-hidden="true" /></button>
               )}
               <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
-                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
-                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
-                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
+                <button data-workspace-view-option="split" type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
+                <button data-workspace-view-option="source" type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
+                <button data-workspace-view-option="preview" type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
               {proposalReviewActive ? (
                 <span className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`} role="status">
@@ -4220,7 +4241,13 @@ export function RuneWorkbench() {
           onDoubleClick={() => setPreferredWorkspaceSplit(DEFAULT_WORKSPACE_SOURCE_PERCENT)}
         ><span aria-hidden="true" /></div>
 
-        <section className="preview-pane" aria-label={proposalReviewActive ? `${ui.preview} · ${ui.proposalPreview}` : ui.preview} data-proposal-preview={proposalReviewActive ? "true" : undefined}>
+        <section
+          className="preview-pane"
+          aria-label={proposalReviewActive ? `${ui.preview} · ${ui.proposalPreview}` : ui.preview}
+          aria-hidden={workspaceView === "source" ? true : undefined}
+          inert={workspaceView === "source" ? true : undefined}
+          data-proposal-preview={proposalReviewActive ? "true" : undefined}
+        >
           <header className="pane-header preview-header">
             <div className="pane-title">
               <span className="preview-mark"><FileCode2 aria-hidden="true" /></span>
@@ -4228,9 +4255,9 @@ export function RuneWorkbench() {
             </div>
             <div className="preview-actions">
               <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
-                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
-                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
-                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
+                <button data-workspace-view-option="split" type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
+                <button data-workspace-view-option="source" type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
+                <button data-workspace-view-option="preview" type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
               {proposalReviewActive ? (
                 <span className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`} role="status">

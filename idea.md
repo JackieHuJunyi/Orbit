@@ -2253,3 +2253,11 @@ v0.92 因此把既有 `prepareOperatingReviewEvidence` 直接作为只读 previe
 v0.93 新增静态 discriminated `task-model-planning` port。React 只把当前 artifacts、typed task request、model mode 和一个显式 `fetcher` capability 交给它；port 负责精确来源与上限、同源 endpoint、最多 128 KB response stream、非可信 metadata/token 归一化、本地 evidence 重算和 task-specific validator。成功只返回 narrative/outline 以及实际 planner metadata，失败只返回 local、source-too-large 或 unavailable 结果。它不能读取 credential、localStorage、IndexedDB，也不能生成 canonical source、patch、creation、checkpoint 或 Apply。
 
 这不是为了少写一个 switch 而引入 plugin framework。Cordis 与 DeepSeek Harness 值得学习的是声明式 capability 和显式生命周期，不是产品尚未需要的动态注册复杂度。下一条模型任务现在有一条固定路径：定义输入与 evidence capability、增加服务端窄 schema、在同一 typed port 增加分支、交给既有纯 compiler 和事务边界。测试可以注入一个会报错的 fetcher，直接证明 local-only 零网络；也可以送入超大、无效或与当前证据不符的 response，证明全部确定性回退。扩展成本下降，但 writer 仍只有一个。
+
+## 99. v0.94 对比不是一个文案标签，而是两个成对的 exact scope
+
+Golden Task Set 里的周环比、月环比和目标差异不能靠 `period = "July vs June"` 证明。v0.94 允许经营汇报在主 exact scope 之外选择同一字段的另一个 typed value；两者必须都命中当前 Data、类型保持不变且值不同。纯 scope capability 先得到两组行，数值字段资格检查覆盖两组并集，但不会被两组以外的 `N/A` 误伤。
+
+Evidence compiler 分别聚合两边，只保留两个范围都真正存在的分类，并把唯一变化口径定义为 `primary − comparison`。这个字段同时进入本地预览、conditional aggregate SQL、Chart、发送给模型的有界 aggregate evidence、报告与 Deck 的 live Query metric binding，以及保存任务的重跑 recipe。缺一侧的分类不会被偷偷当作零；任一侧范围内存在格式化文本或非有限数值都会在 provider 与写入之前失败。真实 DuckDB-Wasm fixture 证明 SQL 返回当前值、对比值和变化，单边分类被 `HAVING` 排除。
+
+本轮也重新审阅了 DeepSeek Harness 的实际源码与架构文档。Rune 采用它最适合 Office workspace 的原则：入口薄、能力有 owner、持久事实可重建、折叠面板保持 mounted、布局切换短而克制。桌面 Source/Preview focus mode 不再 `display:none` 跳切，而是在 240ms 内收放 grid tracks；隐藏侧同时 `inert`、`aria-hidden`、零宽并不可交互，滚动、选择与 preview runtime 仍保留。我们不引入 Harness 的动态 plugin/session host：它仍处于 developer preview，而 Rune 目前只有两个 focused tasks，静态 typed composition 的审计和迁移成本更低。只有至少三个任务证明运行时注册、替换或第三方分发需求后，才重新评估 plugin host。

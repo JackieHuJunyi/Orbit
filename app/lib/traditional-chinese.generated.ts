@@ -54,6 +54,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "以下問題由模型根據有界聚合證據提出"
   ],
   [
+    "只有两个范围都存在的分类才进入结果",
+    "只有兩個範圍都存在的分類才進入結果"
+  ],
+  [
     "图表与模型上下文只使用完全匹配的行",
     "圖表與模型上下文只使用完全匹配的行"
   ],
@@ -90,6 +94,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "不會自動把內容轉發給另一家供應商"
   ],
   [
+    "图表显示主范围减去对比范围的变化",
+    "圖表顯示主範圍減去對比範圍的變化"
+  ],
+  [
     "报告和演示可通过同一图表绑定复用",
     "報告和演示可通過同一圖表繫結複用"
   ],
@@ -100,6 +108,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "没有在没有证据时自动补写经营结论",
     "沒有在沒有證據時自動補寫經營結論"
+  ],
+  [
+    "用同一字段的另一个精确值作为对比",
+    "用同一欄位的另一個精確值作為對比"
   ],
   [
     "的服务端适配器生成先审后写的修改",
@@ -120,6 +132,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "你也可以稍后从本地指南重新学习",
     "你也可以稍後從本地指南重新學習"
+  ],
+  [
+    "变化值按主范围减去对比范围计算",
+    "變化值按主範圍減去對比範圍計算"
   ],
   [
     "只在保存前短暂存在于当前输入框",
@@ -2550,6 +2566,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "從這裡開始"
   ],
   [
+    "以下视图按",
+    "以下檢視按"
+  ],
+  [
     "份可读内容",
     "份可讀內容"
   ],
@@ -3274,6 +3294,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "稽核問題"
   ],
   [
+    "对比范围",
+    "對比範圍"
+  ],
+  [
     "对照汇总",
     "對照彙總"
   ],
@@ -3770,6 +3794,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "不儲存"
   ],
   [
+    "不对比",
+    "不對比"
+  ],
+  [
     "个图形",
     "個圖形"
   ],
@@ -3878,6 +3906,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "在分欄"
   ],
   [
+    "对比行",
+    "對比行"
+  ],
+  [
     "导出为",
     "匯出為"
   ],
@@ -3924,10 +3956,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "布尔值",
     "布林值"
-  ],
-  [
-    "并交付",
-    "並交付"
   ],
   [
     "应用前",
@@ -4032,10 +4060,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "管理层",
     "管理層"
-  ],
-  [
-    "范围按",
-    "範圍按"
   ],
   [
     "董事会",
@@ -4224,6 +4248,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "受众",
     "受眾"
+  ],
+  [
+    "变化",
+    "變化"
   ],
   [
     "口径",
@@ -4672,10 +4700,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "为",
     "為"
-  ],
-  [
-    "从",
-    "從"
   ],
   [
     "体",

@@ -21,10 +21,12 @@ import {
   type OperatingReviewNarrative,
 } from "./operating-review-contract.ts";
 import {
+  formatOperatingReviewScopeCondition,
   formatOperatingReviewScopeLabel,
   formatOperatingReviewScopePredicate,
   normalizeOperatingReviewScope,
-  prepareOperatingReviewScope,
+  operatingReviewScopeValueKey,
+  prepareOperatingReviewScopes,
   type OperatingReviewScope,
 } from "./operating-review-scope.ts";
 import {
@@ -55,6 +57,7 @@ export type OperatingReviewInput = {
   mark: ChartCreationMark;
   format: ChartCreationFormat;
   scope?: OperatingReviewScope | null;
+  comparisonScope?: OperatingReviewScope | null;
   period: string;
   audience: OperatingReviewAudience;
   focus: string;
@@ -117,7 +120,9 @@ export type PreparedOperatingReviewEvidence = {
   data?: WorkspaceArtifact;
   evidenceRows?: OperatingReviewEvidenceRow[];
   scope?: OperatingReviewScope | null;
+  comparisonScope?: OperatingReviewScope | null;
   matchedRowCount?: number;
+  comparisonMatchedRowCount?: number;
   groupCount?: number;
   errors: string[];
 };
@@ -192,40 +197,74 @@ export function prepareOperatingReviewEvidence(
   if (!parsed.columns.includes(input.category) || !parsed.columns.includes(input.value)) {
     return { errors: ["The selected evidence fields are missing from the current Data source."] };
   }
-  const preparedScope = prepareOperatingReviewScope(parsed.rows, parsed.columns, input.scope);
-  if (preparedScope.errors.length) return { errors: preparedScope.errors };
-  const groups = new Map<string, {
+  const preparedScopes = prepareOperatingReviewScopes(
+    parsed.rows,
+    parsed.columns,
+    input.scope,
+    input.comparisonScope,
+  );
+  if (preparedScopes.errors.length) return { errors: preparedScopes.errors };
+  type AggregateGroup = {
     category: string;
     sum: number;
     count: number;
     sourceOrder: number;
-  }>();
-  for (const [rowIndex, row] of preparedScope.rows.entries()) {
-    const categoryValue = row[input.category];
-    const numericValue = row[input.value];
-    if (categoryValue == null || !String(categoryValue).trim()) continue;
-    if (typeof numericValue !== "number" || !Number.isFinite(numericValue)) {
-      return { errors: ["The selected value field must contain only finite numeric values, not formatted text."] };
+  };
+  const aggregateRows = (rows: typeof preparedScopes.rows) => {
+    const groups = new Map<string, AggregateGroup>();
+    for (const [rowIndex, row] of rows.entries()) {
+      const categoryValue = row[input.category];
+      const numericValue = row[input.value];
+      if (categoryValue == null || !String(categoryValue).trim()) continue;
+      if (typeof numericValue !== "number" || !Number.isFinite(numericValue)) {
+        return {
+          groups,
+          errors: ["The selected value field must contain only finite numeric values, not formatted text."],
+        };
+      }
+      const key = JSON.stringify([typeof categoryValue, categoryValue]);
+      const current = groups.get(key);
+      if (current) {
+        current.sum += numericValue;
+        current.count += 1;
+      } else {
+        groups.set(key, {
+          category: clipped(String(categoryValue).replace(/[\r\n]+/gu, " ").trim(), 120),
+          sum: numericValue,
+          count: 1,
+          sourceOrder: rowIndex,
+        });
+      }
     }
-    const key = JSON.stringify([typeof categoryValue, categoryValue]);
-    const current = groups.get(key);
-    if (current) {
-      current.sum += numericValue;
-      current.count += 1;
-    } else {
-      groups.set(key, {
-        category: clipped(String(categoryValue).replace(/[\r\n]+/gu, " ").trim(), 120),
-        sum: numericValue,
-        count: 1,
-        sourceOrder: rowIndex,
-      });
-    }
+    return { groups, errors: [] };
+  };
+  const primary = aggregateRows(preparedScopes.rows);
+  if (primary.errors.length) return { errors: primary.errors };
+  if (!primary.groups.size) return { errors: ["The selected category field has no usable values."] };
+  const comparison = preparedScopes.comparisonScope
+    ? aggregateRows(preparedScopes.comparisonRows)
+    : { groups: new Map<string, AggregateGroup>(), errors: [] as string[] };
+  if (comparison.errors.length) return { errors: comparison.errors };
+  const aggregateValue = (group: AggregateGroup) => (
+    input.aggregation === "average" ? group.sum / group.count : group.sum
+  );
+  const aggregated = [...primary.groups.entries()].flatMap(([key, group]) => {
+    const comparisonGroup = comparison.groups.get(key);
+    if (preparedScopes.comparisonScope && !comparisonGroup) return [];
+    const primaryValue = aggregateValue(group);
+    const comparisonValue = comparisonGroup ? aggregateValue(comparisonGroup) : undefined;
+    return [{
+      ...group,
+      value: comparisonValue == null ? primaryValue : primaryValue - comparisonValue,
+      primaryValue,
+      comparisonValue,
+      primarySourceRowCount: group.count,
+      comparisonSourceRowCount: comparisonGroup?.count,
+    }];
+  });
+  if (preparedScopes.comparisonScope && !aggregated.length) {
+    return { errors: ["Primary and comparison scopes need at least one shared category."] };
   }
-  if (!groups.size) return { errors: ["The selected category field has no usable values."] };
-  const aggregated = [...groups.values()].map((group) => ({
-    ...group,
-    value: input.aggregation === "average" ? group.sum / group.count : group.sum,
-  }));
   if (input.mark === "bar") {
     aggregated.sort((left, right) => right.value - left.value || left.sourceOrder - right.sourceOrder);
   } else {
@@ -237,22 +276,70 @@ export function prepareOperatingReviewEvidence(
       id: `result-${index + 1}`,
       category: group.category,
       value: group.value,
-      sourceRowCount: group.count,
+      sourceRowCount: group.primarySourceRowCount + (group.comparisonSourceRowCount ?? 0),
+      ...(preparedScopes.comparisonScope ? {
+        primaryValue: group.primaryValue,
+        comparisonValue: group.comparisonValue,
+        primarySourceRowCount: group.primarySourceRowCount,
+        comparisonSourceRowCount: group.comparisonSourceRowCount,
+      } : {}),
     }));
   return {
     data,
     evidenceRows,
-    scope: preparedScope.scope,
-    matchedRowCount: preparedScope.rows.length,
+    scope: preparedScopes.scope,
+    comparisonScope: preparedScopes.comparisonScope,
+    matchedRowCount: preparedScopes.rows.length,
+    comparisonMatchedRowCount: preparedScopes.comparisonRows.length,
     groupCount: aggregated.length,
     errors: [],
   };
 }
 
-function querySource(input: OperatingReviewInput, scope: OperatingReviewScope | null) {
+export function operatingReviewMetricField(input: Pick<OperatingReviewInput, "value" | "comparisonScope">) {
+  return input.comparisonScope ? clipped(`${input.value} change`, 120) : input.value;
+}
+
+function comparisonValueField(value: string) {
+  return clipped(`${value} comparison`, 120);
+}
+
+function querySource(
+  input: OperatingReviewInput,
+  scope: OperatingReviewScope | null,
+  comparisonScope: OperatingReviewScope | null,
+) {
   const category = quoteSqlIdentifier(input.category);
   const value = quoteSqlIdentifier(input.value);
   const aggregate = input.aggregation === "average" ? "AVG" : "SUM";
+  if (scope && comparisonScope) {
+    const primaryCondition = formatOperatingReviewScopeCondition(scope);
+    const comparisonCondition = formatOperatingReviewScopeCondition(comparisonScope);
+    const comparisonField = quoteSqlIdentifier(comparisonValueField(input.value));
+    const changeField = quoteSqlIdentifier(operatingReviewMetricField(input));
+    const primaryAggregate = `${aggregate}(CASE WHEN ${primaryCondition} THEN CAST(${value} AS DOUBLE) END)`;
+    const comparisonAggregate = `${aggregate}(CASE WHEN ${comparisonCondition} THEN CAST(${value} AS DOUBLE) END)`;
+    const order = input.mark === "line"
+      ? `MIN(CASE WHEN ${primaryCondition} THEN rowid END)`
+      : `${changeField} DESC`;
+    return `${formatQueryDataSourceDirective(input.dataArtifactId)}
+SELECT
+  ${category},
+  ${primaryAggregate} AS ${value},
+  ${comparisonAggregate} AS ${comparisonField},
+  ${primaryAggregate} - ${comparisonAggregate} AS ${changeField}
+FROM workspace_data
+WHERE ${category} IS NOT NULL
+  AND TRIM(CAST(${category} AS VARCHAR)) <> ''
+  AND (${primaryCondition} OR ${comparisonCondition})
+  AND ${value} IS NOT NULL
+GROUP BY ${category}
+HAVING COUNT(CASE WHEN ${primaryCondition} THEN 1 END) > 0
+  AND COUNT(CASE WHEN ${comparisonCondition} THEN 1 END) > 0
+ORDER BY ${order}
+LIMIT 20;
+`;
+  }
   const order = input.mark === "line" ? "MIN(rowid)" : `${value} DESC`;
   return `${formatQueryDataSourceDirective(input.dataArtifactId)}
 SELECT
@@ -268,9 +355,18 @@ LIMIT 20;
 `;
 }
 
-function operatingReviewScopeText(locale: RuneLocale, scope: OperatingReviewScope | null) {
+function operatingReviewScopeText(
+  locale: RuneLocale,
+  scope: OperatingReviewScope | null,
+  comparisonScope: OperatingReviewScope | null = null,
+) {
   if (!scope) return isChineseRuneLocale(locale) ? "全部数据行" : "all Data rows";
-  return formatOperatingReviewScopeLabel(scope);
+  const primary = formatOperatingReviewScopeLabel(scope);
+  if (!comparisonScope) return primary;
+  const comparison = String(comparisonScope.value);
+  return isChineseRuneLocale(locale)
+    ? `${primary} 对比 ${comparison}`
+    : `${primary} vs ${comparison}`;
 }
 
 function narrativeEvidenceBinding(
@@ -281,7 +377,7 @@ function narrativeEvidenceBinding(
   const rowIndex = Number(evidenceRowId.replace(/^result-/u, "")) - 1;
   return formatQueryMetricReference({
     queryArtifactId: query.id,
-    column: input.value,
+    column: operatingReviewMetricField(input),
     format: input.format,
     rowIndex,
   });
@@ -344,6 +440,7 @@ function reportSource(
   query: WorkspaceArtifact,
   chart: WorkspaceArtifact,
   scope: OperatingReviewScope | null,
+  comparisonScope: OperatingReviewScope | null,
   narrative?: OperatingReviewNarrative,
 ) {
   const zh = isChineseRuneLocale(input.locale);
@@ -358,7 +455,7 @@ function reportSource(
     ? zh ? "平均值" : "average"
     : zh ? "合计值" : "sum";
   const chartBinding = formatChartReference(chart.id);
-  const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope));
+  const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope, comparisonScope));
   const narrativeSource = reportNarrativeSource(input, query, narrative);
 
   if (zh) {
@@ -372,7 +469,9 @@ ${focus}
 
 ## 可核验视图
 
-以下视图仅在 **${scopeText}** 范围内按 **${category}** 汇总 **${value}** 的${aggregation}。Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
+${comparisonScope
+  ? `以下视图按 **${category}** 对比 **${value}** 的${aggregation}，图表显示主范围减去对比范围的变化。只有两个范围都存在的分类才进入结果。`
+  : `以下视图仅在 **${scopeText}** 范围内按 **${category}** 汇总 **${value}** 的${aggregation}。`}Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
 
 ${chartBinding}
 
@@ -401,7 +500,9 @@ ${focus}
 
 ## Verifiable view
 
-Within **${scopeText}**, this view uses the ${aggregation} of **${value}** grouped by **${category}**. Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
+${comparisonScope
+  ? `This view compares the ${aggregation} of **${value}** by **${category}** and charts primary minus comparison. Only categories present in both exact scopes enter the result.`
+  : `Within **${scopeText}**, this view uses the ${aggregation} of **${value}** grouped by **${category}**.`} Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
 
 ${chartBinding}
 
@@ -425,6 +526,7 @@ function deckSource(
   query: WorkspaceArtifact,
   chart: WorkspaceArtifact,
   scope: OperatingReviewScope | null,
+  comparisonScope: OperatingReviewScope | null,
   narrative?: OperatingReviewNarrative,
 ) {
   const zh = isChineseRuneLocale(input.locale);
@@ -436,7 +538,7 @@ function deckSource(
   const sourceName = markdownInline(data.name);
   const audience = audienceLabel(input.locale, input.audience);
   const chartBinding = formatChartReference(chart.id);
-  const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope));
+  const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope, comparisonScope));
   const narrativeSource = deckNarrativeSource(input, query, narrative);
   const source = `---
 version: 1
@@ -458,7 +560,7 @@ ${period} · ${audience} · ${scopeText}
 <!-- layout: split -->
 <!-- eyebrow: ${zh ? "可核验证据" : "Verifiable evidence"} -->
 
-## ${value} ${zh ? "按" : "by"} ${category}
+## ${comparisonScope ? zh ? `${value} 变化，按` : `Change in ${value} by` : zh ? `${value} 按` : `${value} by`} ${category}
 
 ${zh ? "数据范围" : "Data scope"} · ${scopeText}
 
@@ -537,6 +639,7 @@ export function prepareOperatingReviewWorkflow(
   }
   if (errors.length || !data || !evidence?.evidenceRows) return { errors: [...new Set(errors)] };
   const scope = evidence.scope ?? null;
+  const comparisonScope = evidence.comparisonScope ?? null;
   if (narrative) {
     const validatedNarrative = validateOperatingReviewNarrative(narrative, evidence.evidenceRows);
     if (!validatedNarrative.narrative || validatedNarrative.errors.length) {
@@ -554,7 +657,8 @@ export function prepareOperatingReviewWorkflow(
   if (!queryPrepared.artifact || queryPrepared.errors.length) {
     return { errors: queryPrepared.errors.length ? queryPrepared.errors : ["Rune could not prepare the mapped analysis."] };
   }
-  const query = { ...queryPrepared.artifact, source: querySource(input, scope) };
+  const metricField = operatingReviewMetricField({ ...input, comparisonScope });
+  const query = { ...queryPrepared.artifact, source: querySource(input, scope, comparisonScope) };
   let workingArtifacts = [...artifacts, query];
 
   const chartPrepared = prepareArtifactCreation(workingArtifacts, {
@@ -562,7 +666,7 @@ export function prepareOperatingReviewWorkflow(
     title: `${title} View`,
     sourceArtifactId: query.id,
     category: input.category,
-    value: input.value,
+    value: metricField,
     mark: input.mark,
     format: input.format,
   });
@@ -573,12 +677,12 @@ export function prepareOperatingReviewWorkflow(
     ...chartPrepared.artifact,
     source: `${JSON.stringify({
       version: 1,
-      title: clipped(`${input.value} by ${input.category}`, 120),
-      description: clipped(`${input.aggregation === "average" ? "Average" : "Sum"} for ${normalizeTaskText(input.period)} · ${operatingReviewScopeText(input.locale, scope)} · ${data.name}`, 240),
+      title: clipped(`${comparisonScope ? "Change in " : ""}${input.value} by ${input.category}`, 120),
+      description: clipped(`${input.aggregation === "average" ? "Average" : "Sum"}${comparisonScope ? " change" : ""} for ${normalizeTaskText(input.period)} · ${operatingReviewScopeText(input.locale, scope, comparisonScope)} · ${data.name}`, 240),
       source: query.id,
       mark: input.mark,
       category: input.category,
-      value: input.value,
+      value: metricField,
       sort: input.mark === "line" ? "source" : "descending",
       format: input.format,
       color: "#ff5c35",
@@ -591,7 +695,7 @@ export function prepareOperatingReviewWorkflow(
     {
       artifact: query,
       summary: `Aggregate ${input.value} by ${input.category} from ${data.name}`,
-      detail: `The Query keeps an exact Data binding, applies ${scope ? `the exact ${formatOperatingReviewScopeLabel(scope)} scope` : "all Data rows"}, and ${input.aggregation === "average" ? "averages" : "sums"} one explicitly selected numeric field.`,
+      detail: `The Query keeps an exact Data binding, applies ${scope ? `the exact ${operatingReviewScopeText(input.locale, scope, comparisonScope)} scope${comparisonScope ? " pair" : ""}` : "all Data rows"}, and ${comparisonScope ? "computes primary minus comparison for shared categories" : `${input.aggregation === "average" ? "averages" : "sums"} one explicitly selected numeric field`}.`,
     },
     {
       artifact: chart,
@@ -611,8 +715,8 @@ export function prepareOperatingReviewWorkflow(
     const artifact = {
       ...prepared.artifact,
       source: deliverable === "document"
-        ? reportSource(input, data, query, chart, scope, narrative)
-        : deckSource(input, data, query, chart, scope, narrative),
+        ? reportSource(input, data, query, chart, scope, comparisonScope, narrative)
+        : deckSource(input, data, query, chart, scope, comparisonScope, narrative),
     };
     creations.push({
       artifact,
@@ -650,6 +754,7 @@ function copyOperatingReviewInput(input: OperatingReviewInput): OperatingReviewI
   return {
     ...input,
     scope: normalizeOperatingReviewScope(input.scope) ?? null,
+    comparisonScope: normalizeOperatingReviewScope(input.comparisonScope) ?? null,
     deliverables: [...input.deliverables],
   };
 }
@@ -819,6 +924,14 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       : [];
     const normalizedLocale = normalizeRuneLocale(input?.locale);
     const normalizedScope = normalizeOperatingReviewScope(input?.scope);
+    const normalizedComparisonScope = normalizeOperatingReviewScope(input?.comparisonScope);
+    const comparisonIsValid = normalizedComparisonScope === null || Boolean(
+      normalizedScope
+      && normalizedComparisonScope
+      && normalizedComparisonScope.field === normalizedScope.field
+      && operatingReviewScopeValueKey(normalizedComparisonScope.value)
+        !== operatingReviewScopeValueKey(normalizedScope.value),
+    );
     if (candidate.version !== 1 || !id || ids.has(id) || !title || !dataArtifactId || !category
       || !numericValue || !period || !focus || !query || !chart || !deliverables.length
       || !normalizedArtifactIds || id !== savedReviewId(normalizedArtifactIds)
@@ -832,6 +945,8 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       || !["leadership", "board", "team"].includes(input?.audience ?? "")
       || !normalizedLocale
       || normalizedScope === undefined
+      || normalizedComparisonScope === undefined
+      || !comparisonIsValid
       || (deliverables.includes("document") !== Boolean(document))
       || (deliverables.includes("slides") !== Boolean(slides))) continue;
     ids.add(id);
@@ -849,6 +964,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
         mark: input?.mark as ChartCreationMark,
         format: input?.format as ChartCreationFormat,
         scope: normalizedScope,
+        comparisonScope: normalizedComparisonScope,
         period,
         audience: input?.audience as OperatingReviewAudience,
         focus,

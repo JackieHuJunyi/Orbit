@@ -725,3 +725,29 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Eligible rows": "포함된 행", "Excluded rows": "제외된 행", "Source rows": "원본 행",
   Showing: "표시", of: "/", groups: "개 그룹",
 });
+
+// Human-reviewed copy for paired exact-scope comparisons.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Compare with": "Comparer avec", "No comparison": "Aucune comparaison", "Comparison rows": "Lignes de comparaison", Change: "Variation",
+  "Optional. Compare another exact value from the same field; change is primary minus comparison.": "Facultatif. Comparez une autre valeur exacte du même champ ; la variation correspond à la valeur principale moins la valeur de comparaison.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Compare with": "Comparar con", "No comparison": "Sin comparación", "Comparison rows": "Filas de comparación", Change: "Cambio",
+  "Optional. Compare another exact value from the same field; change is primary minus comparison.": "Opcional. Compara otro valor exacto del mismo campo; el cambio es el valor principal menos el de comparación.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Compare with": "Сравнить с", "No comparison": "Без сравнения", "Comparison rows": "Строки сравнения", Change: "Изменение",
+  "Optional. Compare another exact value from the same field; change is primary minus comparison.": "Необязательно. Сравните с другим точным значением того же поля; изменение равно основному значению минус сравнительное.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Compare with": "المقارنة مع", "No comparison": "بلا مقارنة", "Comparison rows": "صفوف المقارنة", Change: "التغيّر",
+  "Optional. Compare another exact value from the same field; change is primary minus comparison.": "اختياري. قارن بقيمة مطابقة أخرى من الحقل نفسه؛ التغيّر هو القيمة الأساسية ناقص قيمة المقارنة.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Compare with": "比較対象", "No comparison": "比較しない", "Comparison rows": "比較対象の行", Change: "変化",
+  "Optional. Compare another exact value from the same field; change is primary minus comparison.": "任意です。同じフィールドの別の完全一致値と比較します。変化は主範囲から比較範囲を引いて算出します。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Compare with": "비교 대상", "No comparison": "비교 안 함", "Comparison rows": "비교 행", Change: "변화",
+  "Optional. Compare another exact value from the same field; change is primary minus comparison.": "선택 사항입니다. 같은 필드의 다른 정확한 값과 비교하며, 변화는 기본 범위에서 비교 범위를 뺀 값입니다.",
+});

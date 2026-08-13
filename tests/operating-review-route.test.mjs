@@ -123,6 +123,52 @@ test("sends only bounded aggregate evidence to the active personal model and ret
   assert.doesNotMatch(JSON.stringify(payload), /operating-review-secret/u);
 });
 
+test("sends paired exact-scope deltas without raw rows to the active personal model", async () => {
+  const cookie = await personalCookie();
+  const comparisonArtifact = {
+    ...artifact,
+    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nJuly,Europe,80\nJune,Europe,100\nMay,APAC,N/A\n",
+  };
+  let providerRequest;
+  globalThis.fetch = async (_url, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify(providerResponse(validNarrative)), {
+      headers: { "content-type": "application/json" },
+    });
+  };
+  const response = await POST(new Request("https://rune.example/api/tasks/operating-review", {
+    method: "POST",
+    headers: { cookie, "content-type": "application/json" },
+    body: JSON.stringify({
+      artifact: comparisonArtifact,
+      input: {
+        ...input,
+        scope: { field: "Period", value: "July" },
+        comparisonScope: { field: "Period", value: "June" },
+      },
+    }),
+  }));
+  assert.equal(response.status, 200);
+  const modelInput = JSON.parse(providerRequest.input[1].content);
+  assert.deepEqual(modelInput.measure.scope, { field: "Period", value: "July" });
+  assert.deepEqual(modelInput.measure.comparisonScope, { field: "Period", value: "June" });
+  assert.equal(modelInput.measure.evidenceValue, "primary minus comparison");
+  assert.deepEqual(modelInput.aggregateEvidence, [
+    {
+      id: "result-1", category: "APAC", value: 10, sourceRowCount: 2,
+      primaryValue: 100, comparisonValue: 90,
+      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+    },
+    {
+      id: "result-2", category: "Europe", value: -20, sourceRowCount: 2,
+      primaryValue: 80, comparisonValue: 100,
+      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+    },
+  ]);
+  assert.doesNotMatch(providerRequest.input[1].content, /Period,Region,Net Revenue/u);
+  assert.doesNotMatch(providerRequest.input[1].content, /N\/A/u);
+});
+
 test("rejects model prose that copies a source category instead of broadening write authority", async () => {
   const cookie = await personalCookie();
   globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
@@ -167,4 +213,21 @@ test("rejects a stale exact Data scope before contacting any model provider", as
   }));
   assert.equal(response.status, 400);
   assert.match((await response.json()).error, /no longer matches any current Data row/u);
+});
+
+test("rejects an invalid comparison contract before contacting any model provider", async () => {
+  globalThis.fetch = async () => { throw new Error("provider must not be called"); };
+  const response = await POST(new Request("http://localhost/api/tasks/operating-review", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      artifact,
+      input: {
+        ...input,
+        comparisonScope: { field: "Period", value: "July" },
+      },
+    }),
+  }));
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, "The operating-review request is invalid.");
 });

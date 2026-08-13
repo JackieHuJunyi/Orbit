@@ -191,3 +191,58 @@ test("executes an exact-scope operating review Query in real DuckDB without leak
     connection.close();
   }
 });
+
+test("executes a paired exact-scope operating review delta in real DuckDB", async () => {
+  const data = {
+    id: "comparison-data",
+    name: "comparison-data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Period,Region,Revenue\nJuly,APAC,100\nJune,APAC,90\nJuly,Europe,80\nJune,Europe,100\nJuly,LATAM,40\nJune,North America,30\nMay,APAC,N/A\n",
+  };
+  const prepared = prepareOperatingReviewWorkflow([data], {
+    title: "July comparison",
+    dataArtifactId: data.id,
+    category: "Region",
+    value: "Revenue",
+    aggregation: "sum",
+    mark: "bar",
+    format: "number",
+    scope: { field: "Period", value: "July" },
+    comparisonScope: { field: "Period", value: "June" },
+    period: "July vs June 2026",
+    audience: "leadership",
+    focus: "Review exact period changes.",
+    deliverables: ["document"],
+    locale: "en",
+  });
+  assert.deepEqual(prepared.errors, []);
+  const query = prepared.plan.creations.find((creation) => creation.artifact.kind === "query")?.artifact;
+  assert.ok(query);
+
+  const dist = path.resolve("node_modules/@duckdb/duckdb-wasm/dist");
+  const database = await duckdb.createDuckDB({
+    mvp: { mainModule: path.join(dist, "duckdb-mvp.wasm"), mainWorker: "" },
+    eh: { mainModule: path.join(dist, "duckdb-eh.wasm"), mainWorker: "" },
+  }, new duckdb.VoidLogger(), duckdb.NODE_RUNTIME);
+  await database.instantiate(() => {});
+  database.open({});
+  database.registerFileText("comparison-data.csv", data.source);
+  const connection = database.connect();
+  try {
+    connection.query("CREATE TABLE workspace_data AS SELECT * FROM read_csv_auto('comparison-data.csv', header = true, sample_size = -1)");
+    const result = connection.query(buildBoundedQuery(query.source));
+    const rows = result.toArray().map((row) => row.toJSON());
+    assert.deepEqual(rows.map((row) => [
+      row.Region,
+      Number(row.Revenue),
+      Number(row["Revenue comparison"]),
+      Number(row["Revenue change"]),
+    ]), [
+      ["APAC", 100, 90, 10],
+      ["Europe", 80, 100, -20],
+    ]);
+  } finally {
+    connection.close();
+  }
+});

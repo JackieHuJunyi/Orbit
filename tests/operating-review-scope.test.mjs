@@ -9,6 +9,7 @@ import {
   operatingReviewScopeValueKey,
   prepareOperatingReviewNumericColumns,
   prepareOperatingReviewScope,
+  prepareOperatingReviewScopes,
 } from "../app/lib/operating-review-scope.ts";
 
 test("keeps scope values typed, ordered, distinct, and explicitly bounded", () => {
@@ -61,4 +62,57 @@ test("derives numeric fields only from rows eligible for the exact scope", () =>
     prepareOperatingReviewNumericColumns(rows, ["Period", "Value", "Mixed"], null),
     { columns: [], matchedRowCount: 3, errors: [] },
   );
+});
+
+test("prepares one distinct same-field comparison and validates numeric fields across both exact scopes", () => {
+  const rows = [
+    { Period: "July", Region: "APAC", Value: 100, Mixed: 20 },
+    { Period: "June", Region: "APAC", Value: 90, Mixed: "N/A" },
+    { Period: "May", Region: "APAC", Value: "outside", Mixed: 10 },
+  ];
+  const prepared = prepareOperatingReviewScopes(
+    rows,
+    ["Period", "Region", "Value", "Mixed"],
+    { field: "Period", value: "July" },
+    { field: "Period", value: "June" },
+  );
+  assert.deepEqual(prepared.errors, []);
+  assert.deepEqual(prepared.rows, [rows[0]]);
+  assert.deepEqual(prepared.comparisonRows, [rows[1]]);
+  assert.deepEqual(prepareOperatingReviewNumericColumns(
+    rows,
+    ["Period", "Region", "Value", "Mixed"],
+    { field: "Period", value: "July" },
+    { field: "Period", value: "June" },
+  ), {
+    columns: ["Value"],
+    matchedRowCount: 1,
+    comparisonMatchedRowCount: 1,
+    errors: [],
+  });
+
+  assert.match(prepareOperatingReviewScopes(
+    rows,
+    ["Period", "Region", "Value"],
+    null,
+    { field: "Period", value: "June" },
+  ).errors.join(" "), /primary exact scope/i);
+  assert.match(prepareOperatingReviewScopes(
+    rows,
+    ["Period", "Region", "Value"],
+    { field: "Period", value: "July" },
+    { field: "Region", value: "APAC" },
+  ).errors.join(" "), /same exact visible scope field/i);
+  assert.match(prepareOperatingReviewScopes(
+    rows,
+    ["Period", "Region", "Value"],
+    { field: "Period", value: "July" },
+    { field: "Period", value: "July" },
+  ).errors.join(" "), /different exact scope value/i);
+  assert.match(prepareOperatingReviewScopes(
+    rows,
+    ["Period", "Region", "Value"],
+    { field: "Period", value: "July" },
+    { field: "Period", value: "April" },
+  ).errors.join(" "), /no longer matches any current Data row/i);
 });
