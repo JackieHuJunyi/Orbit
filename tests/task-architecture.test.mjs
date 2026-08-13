@@ -58,6 +58,16 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{ taskId: "document-briefing", input \}\)/);
   assert.match(workbench, /documentBriefingTargetsById/);
   assert.match(workbench, /briefingFreshness === "changed"/);
+  assert.match(workbench, /function reviewLinkedPresentationRefresh\(artifactId: string\)/);
+  assert.match(workbench, /onClick=\{\(\) => reviewLinkedPresentationRefresh\(artifact\.id\)\}/);
+  assert.match(workbench, /openDocumentBriefingForArtifact\(target\)/);
+  const directRefresh = workbench.slice(
+    workbench.indexOf("function reviewLinkedPresentationRefresh"),
+    workbench.indexOf("function openSavedOperatingReview"),
+  );
+  assert.match(directRefresh, /documentBriefingSourceIdForPresentation\(target\)/);
+  assert.match(directRefresh, /targetFreshness !== "changed"/);
+  assert.doesNotMatch(directRefresh, /setArtifacts|persistDeviceWorkspace|prepareRuneTaskProvider/);
   assert.match(styles, /\.empty-task-primary/);
   assert.match(styles, /\.import-task-continuation/);
 });

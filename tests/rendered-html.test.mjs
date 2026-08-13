@@ -450,7 +450,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.86<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.87<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -481,6 +481,17 @@ test("organizes workspace files by product workflow rather than internal artifac
   assert.doesNotMatch(html, /class="active-notch"/);
   assert.match(styles, /\.artifact-row\.active\s*\{[^}]*background:\s*rgba\(var\(--theme-rgb\),\s*\.085\);[^}]*box-shadow:\s*inset 2px 0 var\(--theme-accent\);/s);
   assert.match(styles, /\.artifact-context-pin\s*\{[^}]*opacity:\s*0;/s);
+});
+
+test("makes a changed linked presentation directly refreshable without adding a writer", async () => {
+  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(source, /className="artifact-refresh-action"/);
+  assert.match(source, /aria-label=\{`\$\{ui\.reviewRefresh\} · \$\{artifact\.name\}`\}/);
+  assert.match(source, /disabled=\{artifactCreationDisabled\}/);
+  assert.match(styles, /\.artifact-refresh-action\s*\{[^}]*inset-inline-end:\s*9px;/s);
+  assert.match(styles, /\.artifact-row-shell\.has-refresh \.artifact-context-pin\s*\{[^}]*top:\s*4px;/s);
+  assert.match(styles, /\.artifact-row\s*\{[^}]*padding-inline-end:\s*38px;/s);
 });
 
 test("keeps the top bar global and moves duplicate task creation into the activity rail", async () => {

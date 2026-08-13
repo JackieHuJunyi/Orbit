@@ -2185,3 +2185,13 @@ Rune 因此在任务生成的 Deck frontmatter 中加入 `origin_revision`：一
 这个标记刻意不承担安全含义。它不是密码学 hash，不替代 Artifact id，也不能授权刷新；极端碰撞只会影响一条提示，不会影响写入正确性。真正的刷新仍捕获完整 workspace source revision，重读 Document/Deck，验证 origin 和全部依赖，展示 candidate 与事务关系，最后在 Apply 时再次比较完整源码。这样 Rune 获得接近原生应用的实时轻反馈，同时不引入轮询、数据库记录或第二个 writer。
 
 旧 Deck 不会因为缺少新字段而失效：unknown 是诚实的兼容状态，用户完成一次审核刷新后，compiler 自动补上当前基准。这个迁移方式与 Rune 的 source-first 原则一致——升级发生在用户明确写入的 canonical source 中，而不是启动时静默改文件。
+
+## 92. v0.87 每一个状态都应在原位通向下一步，而不是让用户重新找入口
+
+“可以刷新”如果只是标签，用户仍要先打开 Deck、理解活动栏图标、再确认弹窗是否选中了同一个文件。这种导航摩擦尤其伤害高频周报流程，也让轻量 UI 变成视觉上安静、操作上迟钝。Rune 需要的是 action locality：状态出现在哪里，安全的下一步就在哪里。
+
+文件栏的 changed Deck 因而获得一个与普通打开按钮并列的小型刷新动作。它不把整个文件行改成刷新，因为用户仍可能只想检查当前成品；也不在顶部增加 selected-file 专属按钮，避免破坏全局动作层级。刷新控件始终显示，context pin 仍在 hover/focus/active 时出现；两者在同一行的 inline-end 上下排列，以 20px 微控件保持 48px 行高与文件名空间。Arabic 下定位和 padding 使用 logical property 一起镜像。
+
+更重要的是，直接不等于越权。按钮传入被点击的 exact Deck id，handler 从 `artifactsRef.current` 重读目标，再解析 current origin 并重算 freshness；旧闭包、当前 selection、文件名和提示文本都不能决定目标。只有仍然 changed 才选择该 Deck 并打开已有 task session。这个 handler 明确不调用 provider、compiler、`setArtifacts` 或 persistence；真正写入仍需要配置确认、candidate preview、transaction review 和 Apply。
+
+这条规则可以复用到未来的 Query rerun、broken binding repair 与 export readiness：列表级动作只能打开一个经过当前事实重验的能力，不能自己完成不可逆结果。这样扩展快捷入口不会扩展 writer 数量，UI 越来越快，架构仍保持单一写入边界。

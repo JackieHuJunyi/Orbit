@@ -2771,10 +2771,10 @@ export function RuneWorkbench() {
     setNotice(runeText(locale, "Choose the evidence, measure, and deliverables before Rune prepares the full review chain", "先选择数据、口径和交付物，再生成整条汇报链"));
   }
 
-  function openDocumentBriefing() {
-    const selectedOriginId = documentBriefingSourceIdForPresentation(selectedArtifact);
-    const source = selectedArtifact.kind === "document"
-      ? selectedArtifact
+  function openDocumentBriefingForArtifact(entryArtifact: WorkspaceArtifact) {
+    const selectedOriginId = documentBriefingSourceIdForPresentation(entryArtifact);
+    const source = entryArtifact.kind === "document"
+      ? entryArtifact
       : selectedOriginId
         ? artifactsRef.current.find((artifact) => artifact.id === selectedOriginId && artifact.kind === "document")
         : artifactsRef.current.find((artifact) => artifact.kind === "document");
@@ -2788,10 +2788,35 @@ export function RuneWorkbench() {
       return;
     }
     setTaskSession(prepared.session);
-    setPreferredDocumentBriefingTargetId(selectedOriginId && source.id === selectedOriginId ? selectedArtifact.id : "");
+    const targetId = selectedOriginId && source.id === selectedOriginId ? entryArtifact.id : "";
+    setPreferredDocumentBriefingTargetId(targetId);
     setDocumentBriefingError("");
     setDocumentBriefingOpen(true);
-    setNotice(runeText(locale, `Using ${source.name} as the exact presentation source`, `将 ${source.name} 作为演示的明确来源`));
+    const targetFreshness = targetId
+      ? documentBriefingTargets(artifactsRef.current, source.id).find((target) => target.artifactId === targetId)?.freshness
+      : undefined;
+    setNotice(targetFreshness === "changed"
+      ? `${ui.refreshAvailable} · ${source.name} → ${entryArtifact.name}`
+      : runeText(locale, `Using ${source.name} as the exact presentation source`, `将 ${source.name} 作为演示的明确来源`));
+  }
+
+  function openDocumentBriefing() {
+    openDocumentBriefingForArtifact(selectedArtifact);
+  }
+
+  function reviewLinkedPresentationRefresh(artifactId: string) {
+    const target = artifactsRef.current.find((artifact) => artifact.id === artifactId);
+    const sourceId = target ? documentBriefingSourceIdForPresentation(target) : null;
+    const targetFreshness = sourceId
+      ? documentBriefingTargets(artifactsRef.current, sourceId).find((candidate) => candidate.artifactId === artifactId)?.freshness
+      : undefined;
+    if (!target || targetFreshness !== "changed") {
+      setNotice(ui.refreshNoLongerNeeded);
+      return;
+    }
+    setSelectedId(target.id);
+    setEmptyWorkspace(false);
+    openDocumentBriefingForArtifact(target);
   }
 
   function openSavedOperatingReview(workflow: SavedOperatingReview) {
@@ -3626,7 +3651,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.86</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.87</strong></footer>
               </div>
             )}
           </div>
@@ -3725,7 +3750,7 @@ export function RuneWorkbench() {
                       const briefingFreshness = documentBriefingTargetsById.get(artifact.id)?.freshness;
                       return (
                         <div
-                          className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""}`.trim()}
+                          className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""} ${briefingFreshness === "changed" ? "has-refresh" : ""}`.trim()}
                           data-agent-context={inAgentContext ? "true" : undefined}
                           key={artifact.id}
                         >
@@ -3754,6 +3779,16 @@ export function RuneWorkbench() {
                           >
                             <Pin aria-hidden="true" />
                           </button>
+                          {briefingFreshness === "changed" && (
+                            <button
+                              type="button"
+                              className="artifact-refresh-action"
+                              aria-label={`${ui.reviewRefresh} · ${artifact.name}`}
+                              title={ui.reviewRefresh}
+                              disabled={artifactCreationDisabled}
+                              onClick={() => reviewLinkedPresentationRefresh(artifact.id)}
+                            ><RefreshCw aria-hidden="true" /></button>
+                          )}
                         </div>
                       );
                     })}

@@ -2005,3 +2005,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - v0.86 之前没有版本字段的 Deck 明确显示 unknown，而不是假装最新或过期；它仍可刷新，成功刷新后自然写入当前基准。
 - 来源版本是快速变化提示，不是密码学身份、完整性证明或写入权限。即使显示 current，刷新仍必须重读完整 Document 与 Deck，通过 exact id、workspace revision、compiler、transaction review、checkpoint 和 Apply。
 - 不增加轮询、后台写入或额外持久化状态；Document 每次编辑后，新鲜度由现有 React artifact state 同步派生，文件夹与 Git 中的 Deck 仍可独立携带基准。
+
+### 17.28 v0.87 状态提示必须就地通向正确任务，但不能获得写权限
+
+- 文件栏中 `changed` 的关联 Deck 除了显示“可以刷新”，还提供单独、可键盘聚焦的刷新动作；普通文件按钮仍只负责打开，不混淆两个意图。
+- 动作参数必须是用户点击的 exact Deck id，执行时从当前 workspace ref 重新解析 Deck、origin 和 freshness；若目标缺失、关系失效或已恢复 current，停止并说明，不根据当前选中项或旧闭包猜测。
+- 有效动作只选择目标并打开现有 Document briefing `configuring` session，预选 exact source 和 target，恢复 source-owned recipe；它不得调用 compiler、修改 Artifact 或写持久化。
+- pending transaction、导入/导出、OCR、视觉编辑或其他审核期间复用统一禁用合同，避免叠加写入面。
+- 文件行的刷新和 Agent context pin 使用逻辑 inline-end 定位与留白，在 Arabic RTL 中整体镜像；桌面和窄屏保持同一 44px 以上文件行触控区域与明确的辅助技术标签。

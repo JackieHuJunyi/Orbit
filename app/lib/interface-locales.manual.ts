@@ -454,20 +454,20 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 
 // Human-reviewed source-freshness copy for linked presentations.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
-  "Source freshness": "Actualité de la source", "Refresh available": "Actualisation disponible", "Source changed · refresh available": "Source modifiée · actualisation disponible", "Baseline not recorded": "Version de référence non enregistrée", "Current source revision will be recorded": "La version actuelle de la source sera enregistrée",
+  "Source freshness": "Actualité de la source", "Refresh available": "Actualisation disponible", "Review refresh": "Vérifier l’actualisation", "This presentation no longer needs a source refresh": "Cette présentation n’a plus besoin d’être actualisée depuis sa source", "Source changed · refresh available": "Source modifiée · actualisation disponible", "Baseline not recorded": "Version de référence non enregistrée", "Current source revision will be recorded": "La version actuelle de la source sera enregistrée",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
-  "Source freshness": "Actualidad del origen", "Refresh available": "Actualización disponible", "Source changed · refresh available": "El origen cambió · actualización disponible", "Baseline not recorded": "Versión de referencia no registrada", "Current source revision will be recorded": "Se registrará la versión actual del origen",
+  "Source freshness": "Actualidad del origen", "Refresh available": "Actualización disponible", "Review refresh": "Revisar actualización", "This presentation no longer needs a source refresh": "Esta presentación ya no necesita actualizarse desde el origen", "Source changed · refresh available": "El origen cambió · actualización disponible", "Baseline not recorded": "Versión de referencia no registrada", "Current source revision will be recorded": "Se registrará la versión actual del origen",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
-  "Source freshness": "Актуальность источника", "Refresh available": "Доступно обновление", "Source changed · refresh available": "Источник изменён · доступно обновление", "Baseline not recorded": "Исходная версия не записана", "Current source revision will be recorded": "Текущая версия источника будет записана",
+  "Source freshness": "Актуальность источника", "Refresh available": "Доступно обновление", "Review refresh": "Проверить обновление", "This presentation no longer needs a source refresh": "Этой презентации больше не требуется обновление из источника", "Source changed · refresh available": "Источник изменён · доступно обновление", "Baseline not recorded": "Исходная версия не записана", "Current source revision will be recorded": "Текущая версия источника будет записана",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
-  "Source freshness": "حداثة المصدر", "Refresh available": "يتوفر تحديث", "Source changed · refresh available": "تغيّر المصدر · يتوفر تحديث", "Baseline not recorded": "لم يُسجّل الإصدار المرجعي", "Current source revision will be recorded": "سيُسجّل إصدار المصدر الحالي",
+  "Source freshness": "حداثة المصدر", "Refresh available": "يتوفر تحديث", "Review refresh": "مراجعة التحديث", "This presentation no longer needs a source refresh": "لم يعد هذا العرض بحاجة إلى تحديث من المصدر", "Source changed · refresh available": "تغيّر المصدر · يتوفر تحديث", "Baseline not recorded": "لم يُسجّل الإصدار المرجعي", "Current source revision will be recorded": "سيُسجّل إصدار المصدر الحالي",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
-  "Source freshness": "ソースの更新状態", "Refresh available": "更新できます", "Source changed · refresh available": "元文書が変更されました · 更新できます", "Baseline not recorded": "基準バージョンは未記録です", "Current source revision will be recorded": "現在のソース版を記録します",
+  "Source freshness": "ソースの更新状態", "Refresh available": "更新できます", "Review refresh": "更新を確認", "This presentation no longer needs a source refresh": "このプレゼンテーションは元文書から更新する必要がなくなりました", "Source changed · refresh available": "元文書が変更されました · 更新できます", "Baseline not recorded": "基準バージョンは未記録です", "Current source revision will be recorded": "現在のソース版を記録します",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
-  "Source freshness": "원본 최신 상태", "Refresh available": "갱신 가능", "Source changed · refresh available": "원본 변경됨 · 갱신 가능", "Baseline not recorded": "기준 버전이 기록되지 않음", "Current source revision will be recorded": "현재 원본 버전을 기록합니다",
+  "Source freshness": "원본 최신 상태", "Refresh available": "갱신 가능", "Review refresh": "갱신 검토", "This presentation no longer needs a source refresh": "이 프레젠테이션은 더 이상 원본에서 갱신할 필요가 없습니다", "Source changed · refresh available": "원본 변경됨 · 갱신 가능", "Baseline not recorded": "기준 버전이 기록되지 않음", "Current source revision will be recorded": "현재 원본 버전을 기록합니다",
 });

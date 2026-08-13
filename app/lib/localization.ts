@@ -403,6 +403,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       saveCurrent: zh ? "保存当前版本" : "Save current",
       current: zh ? "当前" : "Current",
       refreshAvailable: zh ? "可以刷新" : "Refresh available",
+      reviewRefresh: zh ? "审核刷新" : "Review refresh",
+      refreshNoLongerNeeded: zh ? "这份演示已不再需要来源刷新" : "This presentation no longer needs a source refresh",
       restore: zh ? "恢复" : "Restore",
       checkpointEmpty: zh ? "应用 Agent 补丁或按 ⌘S，即可保存当前源内容。" : "Apply an Agent patch or press ⌘S to capture the current source.",
       checkpointReasons: {

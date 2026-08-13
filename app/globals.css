@@ -732,7 +732,8 @@ body.workspace-resizing iframe { pointer-events: none; }
   grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  padding: 8px 38px 8px 8px;
+  padding: 8px;
+  padding-inline-end: 38px;
   border-radius: 8px;
   background: transparent;
   text-align: left;
@@ -755,7 +756,7 @@ body.workspace-resizing iframe { pointer-events: none; }
 .artifact-context-pin {
   position: absolute;
   top: 50%;
-  right: 8px;
+  inset-inline-end: 8px;
   z-index: 1;
   display: grid;
   width: 23px;
@@ -788,6 +789,44 @@ body.workspace-resizing iframe { pointer-events: none; }
 }
 
 .artifact-context-pin svg {
+  width: 11px;
+  height: 11px;
+}
+
+.artifact-row-shell.has-refresh .artifact-context-pin {
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  transform: none;
+}
+
+.artifact-refresh-action {
+  position: absolute;
+  inset-inline-end: 9px;
+  bottom: 4px;
+  z-index: 1;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid rgba(154, 90, 22, .18);
+  border-radius: 7px;
+  background: rgba(255, 247, 235, .92);
+  color: #9a5a16;
+}
+
+.artifact-refresh-action:hover {
+  border-color: rgba(154, 90, 22, .34);
+  background: #fff5e5;
+  color: #7b430d;
+}
+
+.artifact-refresh-action:disabled {
+  cursor: default;
+  opacity: .42;
+}
+
+.artifact-refresh-action svg {
   width: 11px;
   height: 11px;
 }
@@ -7599,7 +7638,8 @@ body {
   min-height: 48px;
   grid-template-columns: 32px minmax(0, 1fr);
   gap: 9px;
-  padding: 7px 38px 7px 8px;
+  padding: 7px 8px;
+  padding-inline-end: 38px;
   border-radius: 12px;
 }
 .artifact-row:hover,
@@ -7609,7 +7649,7 @@ body {
 .artifact-label { gap: 3px; }
 .artifact-label strong { font-size: 11px; font-weight: 610; }
 .artifact-label small { font-size: 10px; }
-.artifact-context-pin { right: 9px; width: 25px; height: 25px; border-radius: 8px; }
+.artifact-context-pin { inset-inline-end: 9px; width: 25px; height: 25px; border-radius: 8px; }
 
 .editor-wrap { grid-template-columns: 48px minmax(0, 1fr); background: #fff; }
 .line-gutter {
