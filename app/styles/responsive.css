@@ -1,0 +1,66 @@
+@media (max-width: 1180px) {
+  .workspace { padding: 11px 12px 13px; }
+  .welcome-intro-grid { gap: 54px; }
+  .welcome-greeting { font-size: clamp(78px, 8.4vw, 108px); }
+  .welcome-greeting.long { font-size: clamp(52px, 5.7vw, 76px); }
+}
+
+@media (max-width: 960px) {
+  .rune-shell { overflow: visible; }
+  .workspace { gap: 11px; padding: 11px; }
+  .activity-rail,
+  .file-rail,
+  .source-pane,
+  .preview-pane,
+  .workspace.view-source.with-file-rail > .source-pane,
+  .workspace.view-preview.with-file-rail > .preview-pane,
+  .workspace.view-source.without-file-rail > .source-pane,
+  .workspace.view-preview.without-file-rail > .preview-pane,
+  html[dir="rtl"] .activity-rail,
+  html[dir="rtl"] .preview-pane { border-radius: 20px; }
+  .welcome-page { padding-inline: 6.25%; }
+  .welcome-intro-grid { gap: 42px; }
+}
+
+@media (max-width: 860px) {
+  .project-separator,
+  .project-name { display: none; }
+  .topbar .ghost-button { width: var(--rune-control-height); padding-inline: 0; gap: 0; overflow: hidden; font-size: 0; }
+  .topbar .ghost-button > svg { flex: 0 0 auto; }
+  .topbar .export-menu-trigger > svg:last-child { display: none; }
+}
+
+@media (max-height: 780px) and (min-width: 681px) {
+  .welcome-page { justify-content: flex-start; padding-block: 44px 56px; }
+  .welcome-greeting-stage { height: 104px; }
+  .welcome-greeting { font-size: clamp(72px, 8vw, 102px); }
+  .welcome-language-card { padding: 20px; }
+  .language-options { max-height: min(34vh, 280px); }
+}
+
+@media (max-width: 680px) {
+  :root { --rune-type-display: clamp(36px, 10.8vw, 48px); }
+  .topbar { gap: 8px; padding-inline: 10px 12px; }
+  .topbar-actions { gap: 5px; }
+  .workspace { gap: 8px; padding: 8px; }
+  .welcome-page { padding: 46px 20px 58px; }
+  .welcome-greeting-stage { height: 92px; margin-bottom: 12px; overflow: hidden; }
+  .welcome-greeting { font-size: clamp(62px, 19vw, 82px); }
+  .welcome-greeting.long { font-size: clamp(42px, 12vw, 58px); }
+  .welcome-intro-grid { gap: 30px; }
+  .welcome-intro-copy > p,
+  .welcome-page > p { font-size: 15px; }
+  .welcome-language-card { padding: 19px; border-radius: 26px; }
+  .welcome-language-heading { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; }
+  .welcome-language-heading > span { width: 42px; height: 42px; border-radius: 14px; }
+  .language-options { max-height: 340px; }
+  .language-options button { min-height: 58px; border-radius: 15px; }
+  .welcome-language-card > .welcome-primary { margin-top: 14px; }
+  .tools-popover,
+  .export-popover { max-height: calc(100dvh - var(--rune-topbar-height) - 18px); }
+  .tools-popover { top: 62px; width: calc(100vw - 20px); border-radius: 23px; }
+  .import-review-dialog { border-radius: 22px; }
+  .import-review-header,
+  .import-review-body,
+  .import-review-actions { padding-inline: 18px; }
+}

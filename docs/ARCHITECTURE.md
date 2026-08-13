@@ -534,6 +534,16 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 ## Evolution path
 
+### Interface design-system boundary
+
+Rune treats interface architecture as a stable product contract rather than a growing cascade of component exceptions. `app/globals.css` is now a frozen compatibility layer for the existing inventory; all new design-system authority loads once from `app/styles/index.css` in this dependency order: tokens, shell, content, overlays, onboarding, motion, responsive. Tokens own the spacing/type/curve/content-width/motion scales and the only numeric layer map. Shell may place the top bar, rails and panes; content may style canonical source and compiled output; overlays may place menus and modal surfaces but cannot change page layout; onboarding owns only setup; motion cannot define geometry; responsive may adapt existing semantics but cannot invent a parallel component design.
+
+The root layer order is canvas → workspace → status → pane disclosure → top bar → global float → blocking modal → onboarding. Every module other than tokens consumes semantic `--rune-layer-*` values; numeric `z-index` values are forbidden there. The app shell deliberately avoids `isolation` and overflow clipping, the top bar and pane headers expose their overlay anchors, and every viewport-bound popover has a maximum block size plus its own scrolling. Structural entry animations use `animation-fill-mode: backwards`, so their finished transforms do not remain as accidental stacking contexts. A future portal root may replace top-bar containment without changing the layer contract.
+
+The geometry follows a content-first baseline informed by ColaMD without copying its product shape: compiled prose stays at 780px with 16–16.5px text and approximately 1.72–1.75 line height, while the workflow rail settles at 220px. Rune retains the simultaneous source/preview workspace that ColaMD does not need. Appearance shows one named current material and a compact swatch strip; locale names remain in accessible labels rather than forcing nine long localized names into a small popover. The welcome primary action sits inside the language decision surface, preventing a detached control from colliding with short-height content.
+
+`tests/design-system-architecture.test.mjs` enforces module order, single-source layer authority, unclipped overlay anchors, tier relationships, the content geometry, and welcome-action placement. New UI work must extend these semantic modules and tests instead of appending a versioned “cascade seal.”
+
 ### Workspace presentation state
 
 The source/preview ratio and the `split | source | preview` focus mode are bounded device-local presentation preferences. Focus modes hide a mounted pane with CSS rather than creating, copying, or replacing artifact state. Canonical source, revision-bound visual drafts, preview targets, checkpoints, dependency state, folder manifests, Agent context, and exports never read these preferences. Opening a proven preview target while Source is hidden restores Split before applying the exact canonical selection; returning from Source to a preview-capable mode replays scrolling from the retained parser-derived target identity.

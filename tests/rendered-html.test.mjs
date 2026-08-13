@@ -357,7 +357,7 @@ test("keeps preview validation visible while progressively disclosing detailed e
 test("keeps primary file and handoff actions visible while disclosing workspace tools in one menu", async () => {
   const response = await render();
   const html = await response.text();
-  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8");
   assert.match(html, /aria-label="More tools"/);
   assert.match(html, /aria-haspopup="menu"/);
   assert.match(html, /aria-label="Create operating review"/);
@@ -370,7 +370,7 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(source, /role="menuitem"[^>]*onClick=\{\(\) => \{ setToolsMenuOpen\(false\); openWelcomeGuide\(\); \}\}/);
   assert.match(source, /role="menuitemradio"/);
   assert.match(source, /className="tools-theme-name"/);
-  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s);
+  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(9, minmax\(0, 1fr\)\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
 });
 
@@ -402,7 +402,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.78<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.79<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -496,18 +496,22 @@ test("ships reviewed device-local images as content-hash Markdown references wit
 });
 
 test("ships one Apple-informed optical and motion system across onboarding and the editing workspace", async () => {
-  const [styles, source, welcome] = await Promise.all([
+  const [legacyStyles, styleFiles, source, welcome] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    Promise.all(["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) => (
+      readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8")
+    ))),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
   ]);
+  const styles = [legacyStyles, ...styleFiles].join("\n");
   assert.match(styles, /--rune-content-wide:\s*1260px;/);
   assert.match(styles, /--rune-frame-width:\s*87\.5%;/);
-  assert.match(styles, /Rune 0\.78[^]*--rune-radius-window:\s*32px;/);
-  assert.match(styles, /Rune 0\.78[^]*--rune-radius-workspace:\s*24px;/);
+  assert.match(styles, /--rune-radius-window:\s*32px;/);
+  assert.match(styles, /--rune-radius-workspace:\s*24px;/);
   assert.match(styles, /--rune-type-display:\s*clamp\(46px,\s*5\.1vw,\s*70px\);/);
   assert.match(styles, /--rune-duration-scene:\s*760ms;/);
-  assert.match(styles, /--rune-file-width:\s*232px;/);
+  assert.match(styles, /--rune-file-width:\s*220px;/);
   assert.match(styles, /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(var\(--rune-frame-width\),\s*var\(--rune-content-wide\)\);/s);
   assert.match(styles, /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s);
   assert.match(styles, /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--rune-stage\);[^}]*background-image:\s*none;/s);

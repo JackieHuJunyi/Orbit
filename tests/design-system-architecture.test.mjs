@@ -1,0 +1,65 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const modules = ["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"];
+
+test("loads the modular design system in one explicit responsibility order", async () => {
+  const [layout, entry] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/index.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(layout, /import "\.\/globals\.css";\s*import "\.\/styles\/index\.css";/);
+  assert.deepEqual(
+    [...entry.matchAll(/@import "\.\/(.+?)\.css";/g)].map((match) => match[1]),
+    modules,
+  );
+});
+
+test("keeps the authoritative layer scale in tokens and consumes semantic layers elsewhere", async () => {
+  const [tokens, ...responsibilityStyles] = await Promise.all(modules.map((name) => (
+    readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8")
+  )));
+  assert.match(tokens, /--rune-layer-canvas:\s*0;/);
+  assert.match(tokens, /--rune-layer-workspace:\s*10;/);
+  assert.match(tokens, /--rune-layer-pane-float:\s*80;/);
+  assert.match(tokens, /--rune-layer-topbar:\s*100;/);
+  assert.match(tokens, /--rune-layer-global-float:\s*500;/);
+  assert.match(tokens, /--rune-layer-modal:\s*1000;/);
+  assert.match(tokens, /--rune-layer-onboarding:\s*1100;/);
+  for (const styles of responsibilityStyles) {
+    assert.doesNotMatch(styles, /z-index:\s*-?\d/);
+    for (const match of styles.matchAll(/z-index:\s*([^;]+);/g)) {
+      assert.match(match[1], /var\(--rune-layer-|calc\(var\(--rune-layer-/);
+    }
+  }
+});
+
+test("prevents global and pane overlays from being clipped and keeps modal tiers above chrome", async () => {
+  const [shell, content, overlays, onboarding] = await Promise.all([
+    readFile(new URL("../app/styles/shell.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(shell, /\.rune-shell\s*\{[^}]*isolation:\s*auto;[^}]*overflow:\s*visible;/s);
+  assert.match(shell, /\.rune-shell > \.topbar\s*\{[^}]*var\(--rune-layer-topbar\)/s);
+  assert.match(content, /\.preview-header\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(overlays, /\.tools-popover,\s*\.export-popover\s*\{[^}]*var\(--rune-layer-global-float\)[^}]*max-height:[^}]*overflow-y:\s*auto;/s);
+  assert.match(overlays, /\.import-review-backdrop\s*\{[^}]*var\(--rune-layer-modal\)/s);
+  assert.match(onboarding, /\.welcome-backdrop\s*\{[^}]*var\(--rune-layer-onboarding\)/s);
+});
+
+test("keeps ColaMD-informed content geometry and places the primary welcome action with language choice", async () => {
+  const [tokens, onboarding, component] = await Promise.all([
+    readFile(new URL("../app/styles/tokens.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(tokens, /--rune-content-reading:\s*780px;/);
+  assert.match(tokens, /--rune-file-width:\s*220px;/);
+  assert.match(onboarding, /\.welcome-language-card > \.welcome-primary\s*\{[^}]*width:\s*100%;/s);
+  const cardStart = component.indexOf('<section className="welcome-language-card"');
+  const cardEnd = component.indexOf("</section>", cardStart);
+  assert.match(component.slice(cardStart, cardEnd), /className="welcome-primary"/);
+});

@@ -359,9 +359,9 @@ export function WelcomeExperience({
                       </button>
                     ))}
                   </div>
+                  <button className="welcome-primary" type="button" onClick={() => { setCheckingModel(true); setStep("model"); }}>{text.begin}<ArrowRight /></button>
                 </section>
               </div>
-              <button className="welcome-primary" type="button" onClick={() => { setCheckingModel(true); setStep("model"); }}>{text.begin}<ArrowRight /></button>
             </>
           )}
 

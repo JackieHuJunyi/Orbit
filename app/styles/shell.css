@@ -1,0 +1,74 @@
+.rune-shell {
+  --rune-pointer-x: 72vw;
+  --rune-pointer-y: 12vh;
+  --rune-pointer-opacity: 0;
+  position: relative;
+  isolation: auto;
+  overflow: visible;
+}
+
+.rune-shell::before {
+  position: fixed;
+  z-index: var(--rune-layer-canvas);
+  inset: 0;
+  background: radial-gradient(520px circle at var(--rune-pointer-x) var(--rune-pointer-y), rgba(var(--theme-rgb), .09), transparent 68%);
+  content: "";
+  opacity: var(--rune-pointer-opacity);
+  pointer-events: none;
+  transition: opacity var(--rune-duration-surface) var(--rune-ease-smooth);
+}
+
+.rune-shell > .workspace { position: relative; z-index: var(--rune-layer-workspace); }
+.rune-shell > .statusbar { position: relative; z-index: var(--rune-layer-status); }
+.rune-shell > .topbar { position: relative; z-index: var(--rune-layer-topbar); }
+
+.topbar {
+  gap: var(--rune-space-4);
+  padding-inline: 18px 20px;
+  overflow: visible;
+}
+.topbar-left,
+.topbar-actions { min-width: 0; gap: var(--rune-space-2); }
+.topbar-left { flex: 1 1 auto; }
+.topbar-actions { flex: 0 1 auto; justify-content: flex-end; overflow: visible; }
+.project-separator { margin-inline: var(--rune-space-1); }
+.project-name { max-width: min(22vw, 260px); font-size: 12px; line-height: 1.3; }
+.brand-copy strong { font-size: 18px; }
+
+.button { padding-inline: 13px; font-size: var(--rune-type-ui); }
+.button,
+.icon-button { border-radius: var(--rune-radius-control); }
+.icon-button.small { border-radius: 11px; }
+.brand-mark { border-radius: 10px 10px 10px 5px; }
+.activity-button { border-radius: 13px; }
+
+.workspace { padding: 14px 16px 16px; }
+.workspace.with-file-rail { grid-template-columns: var(--rune-activity-width) var(--rune-file-width) minmax(350px, var(--workspace-source-track, 44fr)) 12px minmax(420px, var(--workspace-preview-track, 56fr)); }
+.activity-rail { padding-block: var(--rune-space-3); border-radius: var(--rune-radius-workspace) 0 0 var(--rune-radius-workspace); }
+.preview-pane { border-radius: 0 var(--rune-radius-workspace) var(--rune-radius-workspace) 0; }
+.workspace.view-source.with-file-rail > .source-pane,
+.workspace.view-preview.with-file-rail > .preview-pane,
+.workspace.view-source.without-file-rail > .source-pane,
+.workspace.view-preview.without-file-rail > .preview-pane { border-radius: 0 var(--rune-radius-workspace) var(--rune-radius-workspace) 0; }
+.file-rail-header,
+.pane-header { min-height: 66px; padding-inline: 18px; }
+.file-rail-header strong,
+.pane-title strong { font-size: 15px; font-weight: 650; letter-spacing: -.02em; }
+.pane-title { min-width: 0; gap: var(--rune-space-3); }
+.pane-actions { min-width: 0; gap: var(--rune-space-2); }
+
+.artifact-group-label { padding: 17px 16px 8px; font-size: var(--rune-type-caption); letter-spacing: .07em; }
+.artifact-row { min-height: 51px; padding: 7px 12px; border-radius: 13px; }
+.artifact-row.active { transform: translateX(1px); }
+.artifact-label strong { font-size: 12px; line-height: 1.25; }
+.artifact-label small { font-size: var(--rune-type-caption); line-height: 1.25; }
+.artifact-icon { border-radius: 11px; }
+.history-trigger,
+.workspace-view-switch button { font-size: var(--rune-type-caption); }
+
+html[dir="rtl"] .activity-rail { border-radius: 0 var(--rune-radius-workspace) var(--rune-radius-workspace) 0; }
+html[dir="rtl"] .preview-pane,
+html[dir="rtl"] .workspace.view-source.with-file-rail > .source-pane,
+html[dir="rtl"] .workspace.view-preview.with-file-rail > .preview-pane,
+html[dir="rtl"] .workspace.view-source.without-file-rail > .source-pane,
+html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { border-radius: var(--rune-radius-workspace) 0 0 var(--rune-radius-workspace); }

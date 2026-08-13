@@ -1,0 +1,91 @@
+/*
+ * Rune design-system authority.
+ * Components consume these semantic values; layer numbers must not be repeated.
+ */
+:root {
+  --rune-space-1: 4px;
+  --rune-space-2: 8px;
+  --rune-space-3: 12px;
+  --rune-space-4: 16px;
+  --rune-space-5: 20px;
+  --rune-space-6: 24px;
+  --rune-space-8: 32px;
+  --rune-space-10: 40px;
+  --rune-space-12: 48px;
+  --rune-space-16: 64px;
+
+  --rune-radius-window: 32px;
+  --rune-radius-workspace: 24px;
+  --rune-radius-card: 22px;
+  --rune-radius-control: 13px;
+  --rune-radius-small: 10px;
+
+  --rune-type-display: clamp(46px, 5.1vw, 70px);
+  --rune-type-title: 28px;
+  --rune-type-heading: 17px;
+  --rune-type-body: 15px;
+  --rune-type-ui: 13px;
+  --rune-type-caption: 11px;
+
+  --rune-content-reading: 780px;
+  --rune-file-width: 220px;
+
+  --rune-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --rune-ease-smooth: cubic-bezier(.2, .8, .2, 1);
+  --rune-duration-micro: 180ms;
+  --rune-duration-surface: 420ms;
+  --rune-duration-scene: 760ms;
+
+  --rune-layer-canvas: 0;
+  --rune-layer-workspace: 10;
+  --rune-layer-status: 30;
+  --rune-layer-pane-float: 80;
+  --rune-layer-topbar: 100;
+  --rune-layer-global-float: 500;
+  --rune-layer-modal: 1000;
+  --rune-layer-onboarding: 1100;
+}
+
+html {
+  color-scheme: light;
+  font-size: 16px;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-synthesis: none;
+  letter-spacing: -.006em;
+}
+
+button,
+input,
+textarea,
+select { letter-spacing: inherit; }
+
+.rune-shell button,
+.welcome-backdrop button,
+.import-review-dialog button { font-size: max(11px, .8125rem); }
+.rune-shell small,
+.welcome-backdrop small,
+.import-review-dialog small { font-size: max(10px, .6875rem); line-height: 1.4; }
+.rune-shell input,
+.rune-shell select,
+.import-review-dialog input,
+.import-review-dialog select,
+.import-review-dialog textarea { font-size: var(--rune-type-ui); }
+.overline { font-size: 10px; line-height: 1.3; }
+
+@supports (corner-shape: squircle) {
+  .welcome-language-card,
+  .empty-drop-zone,
+  .tools-popover,
+  .export-popover,
+  .import-review-dialog,
+  .chart-card,
+  .deck-slide,
+  .data-grid-wrap,
+  .visual-document-editor,
+  .visual-chart-editor,
+  .visual-deck-editor,
+  .welcome-actions button { corner-shape: squircle; }
+}

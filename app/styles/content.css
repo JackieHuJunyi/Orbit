@@ -1,0 +1,37 @@
+.source-editor,
+.source-draft-mirror { font-size: 13px; line-height: 1.72; }
+.source-editor { scroll-padding-block: 45%; }
+.line-gutter { font-size: var(--rune-type-caption); line-height: 1.72; }
+.agent-composer { border-radius: 19px; }
+.agent-composer textarea { font-size: var(--rune-type-ui); line-height: 1.5; }
+.agent-scope-switch button,
+.local-planner-badge { font-size: 10px; }
+.validation-badge,
+.data-summary span,
+.slides-stage-meta { font-size: var(--rune-type-caption); }
+.paper-meta,
+.lineage-strip,
+.chart-stage-toolbar > div:first-child span { font-size: 10px; }
+
+.preview-header { position: relative; z-index: var(--rune-layer-pane-float); overflow: visible; }
+.preview-body { position: relative; }
+.preview-evidence { position: relative; z-index: var(--rune-layer-pane-float); }
+.preview-evidence-popover { z-index: calc(var(--rune-layer-pane-float) + 1); }
+.checkpoint-panel { z-index: var(--rune-layer-pane-float); }
+
+.document-paper { width: min(var(--rune-content-reading), 100%); border-radius: 8px; }
+.markdown-body { font-size: 16.5px; line-height: 1.72; letter-spacing: -.008em; }
+.markdown-body h1 { font-size: clamp(40px, 4.4vw, 56px); letter-spacing: -.045em; text-wrap: balance; }
+.markdown-body h2 { font-size: 27px; letter-spacing: -.035em; }
+.markdown-body h3 { font-size: 20px; letter-spacing: -.025em; }
+.markdown-body p,
+.markdown-body li { text-wrap: pretty; }
+.markdown-body blockquote { border-radius: 0 15px 15px 0; }
+.markdown-body pre { border-radius: 16px; }
+.markdown-body img.rune-local-image { border-radius: var(--rune-radius-card); }
+.chart-card,
+.deck-slide,
+.data-grid-wrap,
+.visual-document-editor,
+.visual-chart-editor,
+.visual-deck-editor { border-radius: var(--rune-radius-card); }
