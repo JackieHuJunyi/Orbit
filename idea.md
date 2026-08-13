@@ -1856,9 +1856,9 @@ CC Switch 最值得借鉴的不是界面形状，而是把供应商当作可命�
 
 Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中的 key 只存在于当前 React draft，保存时通过同源 HTTPS 发到 `/api/model-profiles`，服务端以 `RUNE_CREDENTIAL_ENCRYPTION_KEY` 派生 AES-GCM key，把 profile metadata 与 credential 一起加密、认证后写入 `HttpOnly; SameSite=Strict; Path=/api` cookie。浏览器脚本、localStorage、workspace、Artifact、checkpoint、folder manifest、Git、URL、日志与模型 prompt 都无法读回或持久化明文。服务器主密钥缺失时，生产环境直接关闭个人凭据库；密文被改动或主密钥轮换后按空 vault 处理。当前三份/30 天上限是 cookie-backed 单设备阶段的明确产品限制，不是假装已有账号云同步。
 
-端点能力也必须诚实。首版支持 OpenAI Responses、OpenRouter Responses 和用户明确声明兼容 OpenAI Responses 的自定义 HTTPS 基础地址。自定义地址必须是公共 DNS、标准 443 端口、无 userinfo/query/fragment，且不能是 localhost、IP literal、`.local` 或 `.internal` 等私网名称；输入完整 `/responses` 或 `/chat/completions` 会被拒绝，减少 SSRF 和路径误配。读取模型只调用该供应商的 `GET /models`，设置 8 秒超时、1 MB 响应上限和最多 80 个唯一模型 ID，不发送 workspace 内容，也不触发模型生成；真正是否支持 Structured Outputs 仍由第一次受约束 Agent plan 证明。Anthropic Messages、Gemini、Chat Completions 转换、多端点故障转移、费用/延迟路由以后通过独立 adapter/proxy 实现，不在一个“兼容”标签里假装完成。
+端点能力也必须诚实。v0.46 首版只支持 OpenAI Responses、当时的 OpenRouter Responses 路径和用户明确声明兼容 Responses 的自定义 HTTPS 基础地址；v0.58 已把 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages、Gemini generateContent 拆成四个显式协议 adapter，自定义端点也必须选择协议。自定义地址始终要求公共 DNS、标准 443 端口、无 userinfo/query/fragment，不能是 localhost、IP literal、`.local` 或 `.internal` 等私网名称，也不能填最终 generation path，以减少 SSRF 和路径误配。读取模型只调用该供应商的模型目录，设置 8 秒超时、1 MB 响应上限和最多 80 个唯一模型 ID，不发送 workspace 内容，也不触发生成；真正是否兼容所选结构化协议仍由第一次受约束 Agent plan 证明。多端点故障转移、费用/延迟路由继续等待明确的数据授权与 capability contract，不能藏进一个“兼容”标签。
 
-这仍不改变 Agent 权限。active profile 只决定 `apiKey + baseURL + model` 的 transport，供应商仍只能返回既有 typed operations；source revision、context graph、Query evidence、runtime impact、一次修复、review、checkpoint 和 atomic Apply 全部保持原样。用户选择 local 后浏览器不会调用远端 Agent route。个人配置优先于部署配置，但响应只返回 provider、profile name 与 model，绝不返回 credential；跨 origin 的配置写请求也被拒绝。
+这仍不改变 Agent 权限。active profile 只决定 `provider + protocol + apiKey + baseURL + model` 的 transport，供应商仍只能返回既有 typed operations；source revision、context graph、Query evidence、runtime impact、一次修复、review、checkpoint 和 atomic Apply 全部保持原样。用户选择 local 后浏览器不会调用远端 Agent route。个人配置优先于部署配置，但响应只返回脱敏的 provider、protocol、profile name 与 model 等元数据，绝不返回 credential；跨 origin 的配置写请求也被拒绝。
 
 ## 52. 一小时设计冻结：全功能地图、依赖与发布门槛
 
@@ -1867,7 +1867,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 产品层 | 功能与状态 | 必须依赖 | 可发布验收 |
 | --- | --- | --- | --- |
 | 进入 Rune | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放，以及 v0.49 主要工作面统一中英文：已交付 | hydration 稳定壳、本地偏好、typed copy contract | 首次/再次打开都可进入；SSR/CSR 文本一致；语言切换覆盖专业操作；指南是普通可编辑 Artifact |
-| 模型 | 多 profile BYOK、OpenAI/OpenRouter/自定义 Responses、读取模型、启用/编辑/删除：v0.46 | 同源 API、AES-GCM vault、端点验证、local fallback | UI/route 实测；响应与 cookie 不出现明文；篡改失败关闭；旧部署模型兼容 |
+| 模型 | 多 profile BYOK、OpenAI Responses、OpenRouter/兼容 Chat、Anthropic Messages、Gemini generateContent、自定义协议、读取模型、启用/编辑/删除：已交付 | 同源 API、AES-GCM vault、显式 protocol、端点验证、local fallback | UI/route 实测；四协议 adapter；响应与 cookie 不出现明文；篡改失败关闭；旧部署模型兼容 |
 | Artifact 核心 | Document/Data/Query/Chart/Deck 可读 source、实时 preview、依赖图：已交付 | strict adapters、revision identity | 完整 workspace 每次变化都可重新编译；无隐藏 graph state |
 | 双向同步 | source → preview 与 preview → source 定位；v0.48 已细化到 Markdown list item/table cell/inline semantics；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | fragment→block→section 最小范围；stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
 | Agent | Selection/File/Workspace typed operation、创建完整 Data→Query→Chart→成品链、review、一次修复：已交付 | bounded context、query evidence、runtime impact | provider 不能直接写；所有 concrete diff 可解释且 Apply 原子化 |
@@ -1879,7 +1879,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 富媒体 | 图片、附件、来源摘录：下一阶段 | asset store、hash identity、引用许可 | 不把 base64 混入 source；导入/导出/删除/同步可追踪 |
 | 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
 | 云与桌面 | 先桌面 Keychain/系统文件能力，再可选端到端加密云同步 | storage port、secret port、账号恢复 | Web cookie profile 不假装跨设备；桌面 key 不进 renderer；云端无法读取明文 workspace |
-| 供应商路由 | Anthropic/Gemini/Chat adapter、fallback、成本/延迟/健康度：下一阶段 | protocol adapters、capability manifest、usage ledger | 每个 model 声明 Structured Outputs/tool/context 能力；失败不自动泄露到新供应商 |
+| 供应商路由 | OpenAI Responses、OpenRouter/兼容 Chat、Anthropic Messages、Gemini generateContent 显式 adapter 与真实 token usage：已交付；fallback、预算/延迟/健康度待后续 | protocol adapters、capability manifest、usage ledger | 每个 model 声明 Structured Outputs/tool/context 能力；失败不自动泄露到新供应商 |
 | 商业与治理 | 预算、额度、用量、数据地域、审计：下一阶段 | identity、provider usage、policy engine | 单任务预算可见；模型/供应商切换需符合数据政策；key 从不入日志 |
 
 实现顺序被冻结为四条串行主线。第一，先用真实经营汇报任务验证“来源到成品”的时间节省，而不是继续横向加格式；第二，补桌面安全存储、旧 Office 转换和 OCR，使目标用户的现实输入可进入同一 canonical model；第三，在重复使用成立后做资产、模板、连接器与自动刷新；第四，只有多人重复协作和付费证据同时出现，才引入账号、云同步、CRDT 与组织治理。停止条件同样明确：不能建立 source provenance 的入口不做可视化回写，不能安全持有 credential 的平台不开放 BYOK，不能在 compiler fixture 中 round-trip 的格式不标“支持”，没有实际用户复用证据不建设 marketplace 或企业后台。
@@ -1965,3 +1965,11 @@ Rune 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改
 桌面 main process 把现代包写入 0600 的独立临时目录，通过参数数组调用 `/usr/bin/osascript`，让本机 Word 使用 `format document97`、PowerPoint 使用 legacy presentation 格式保存。两条自动化链均强制 `msoAutomationSecurityForceDisable`，输入输出各限 12 MB、转换限 30 秒，成功与失败都递归清理临时目录。renderer 没有 Node 权限；preload 只暴露一次请求/一次结果，没有任意路径、命令或文件系统能力。Web 既不显示旧格式菜单，也不上传或伪造输出；Data 的 `.xls` 没有被顺手扩大进合同。
 
 这条链用真实安装的 Word 和 PowerPoint 验收，而不是只测 AppleScript 字符串。默认 Document 经生产 `exportLegacyOffice` 得到 35,328-byte DOC，再经生产 import bridge 恢复 DOCX 并解析回 Markdown；默认 Deck 得到 69,120-byte PPT，再恢复 PPTX 并解析回 Deck Markdown，两者核心标题与内容均保留。测试同时覆盖 Web 不可用、类型不匹配、空/超限结果、IPC 暴露、宏禁用和 review-before-download。产品仍明确提醒字体、分页、布局、矢量图表、表格、媒体和可访问性可能变化，交付前必须在 Office 中复核。
+
+## 63. v0.58 CC Switch 式配置首先要诚实区分协议
+
+同一个“API Key + Base URL + Model”表单不能证明供应商兼容。[OpenAI Responses](https://platform.openai.com/docs/api-reference/responses) 把 JSON Schema 放在 `text.format`；[OpenAI-compatible Chat Completions](https://platform.openai.com/docs/api-reference/chat) 使用 `response_format.json_schema`；[Anthropic Messages](https://docs.anthropic.com/en/api/messages) 使用 `x-api-key` 与版本头，并可把 schema 作为一个被强制选择的 tool input；[Gemini generateContent](https://ai.google.dev/api/generate-content) 使用 `x-goog-api-key` 与 `generationConfig.responseJsonSchema`。v0.58 因而把 `protocol` 作为每个加密 profile 的显式字段，内置 OpenAI、OpenRouter、Anthropic、Gemini 预设固定到官方协议，自定义端点则要求用户明确选择。既有 profile 在 vault normalization 时按 provider 迁移到固定默认协议，不根据 model 字符串猜测。
+
+四个 adapter 的输出都必须成为同一个 Rune-owned operation schema，而不是各自获得写权限。Responses/Chat/Gemini 的文本先作为 JSON 解析，再由既有 Zod schema验证；Anthropic 只接受名字精确匹配的强制 tool input。之后仍由相同 operation compiler 生成 concrete source、证明 selection/workspace 边界、执行完整 artifact/dependency/runtime gate，并停在 Review。真实 provider token usage 映射为统一 input/output 字段；无法提供时写 null，不估算。
+
+安全边界也跟协议显式化一起收紧：模型目录和生成请求都拒绝 redirect，目录响应限 1 MB、Agent 响应限 2 MB、调用限 60 秒，供应商错误只向前端返回状态而不回显可能含敏感信息的正文。认证头按协议隔离，密钥仍只存在加密 HttpOnly vault 或桌面 Keychain。Rune 不自动把失败任务转发到另一家供应商，因为 fallback 本质上是一次新的数据授权；未来若做故障转移，必须由用户为明确的供应商链和数据范围单独确认。隔离测试与完整 Agent route 测试证明四条 transport 都落回相同 Markdown typed operation 和安全编译器。

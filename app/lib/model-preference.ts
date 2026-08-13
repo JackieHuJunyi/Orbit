@@ -5,7 +5,7 @@ export type RuneModelMode = "auto" | "local";
 
 export type ModelProviderStatus = {
   configured: boolean;
-  provider: "openai" | "openrouter" | "custom" | null;
+  provider: "openai" | "openrouter" | "anthropic" | "gemini" | "custom" | null;
   model: string | null;
   source?: "personal" | "deployment" | null;
   profileName?: string | null;

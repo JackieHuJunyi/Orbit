@@ -2,14 +2,17 @@ export const MAX_MODEL_PROFILES = 3;
 export const MODEL_PROFILE_COOKIE = "rune_model_profiles_v1";
 export const MODEL_PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
-export type ModelProviderKind = "openai" | "openrouter" | "custom";
+export type ModelProviderKind = "openai" | "openrouter" | "anthropic" | "gemini" | "custom";
+export type ModelProtocol = "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
 
 export type ModelProviderPreset = {
   id: ModelProviderKind;
   label: string;
   baseURL: string;
   defaultModel: string;
+  protocol: ModelProtocol;
   editableEndpoint: boolean;
+  editableProtocol: boolean;
 };
 
 export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
@@ -18,21 +21,45 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     label: "OpenAI",
     baseURL: "https://api.openai.com/v1",
     defaultModel: "gpt-5.6",
+    protocol: "responses",
     editableEndpoint: false,
+    editableProtocol: false,
   },
   {
     id: "openrouter",
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     defaultModel: "openai/gpt-5.6",
+    protocol: "chat-completions",
     editableEndpoint: false,
+    editableProtocol: false,
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    baseURL: "https://api.anthropic.com/v1",
+    defaultModel: "claude-sonnet-5",
+    protocol: "anthropic-messages",
+    editableEndpoint: false,
+    editableProtocol: false,
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta",
+    defaultModel: "gemini-2.5-pro",
+    protocol: "gemini-generate-content",
+    editableEndpoint: false,
+    editableProtocol: false,
   },
   {
     id: "custom",
-    label: "Custom Responses API",
+    label: "Custom API",
     baseURL: "",
     defaultModel: "",
+    protocol: "responses",
     editableEndpoint: true,
+    editableProtocol: true,
   },
 ] as const;
 
@@ -40,6 +67,7 @@ export type StoredModelProfile = {
   id: string;
   name: string;
   provider: ModelProviderKind;
+  protocol: ModelProtocol;
   baseURL: string;
   model: string;
   apiKey: string;
@@ -66,7 +94,7 @@ export type ModelProfilesState = {
   profiles: PublicModelProfile[];
   deployment: {
     configured: boolean;
-    provider: "openai" | "openrouter" | "custom" | null;
+    provider: ModelProviderKind | null;
     model: string | null;
   };
 };
@@ -75,6 +103,7 @@ export type ModelProfileDraft = {
   id?: unknown;
   name?: unknown;
   provider?: unknown;
+  protocol?: unknown;
   baseURL?: unknown;
   model?: unknown;
   apiKey?: unknown;
@@ -102,7 +131,7 @@ function isIpLiteral(hostname: string) {
 
 export function normalizeCustomModelBaseURL(value: unknown) {
   const input = cleanText(value, 300);
-  if (!input) throw new Error("Enter the HTTPS base URL for this Responses API.");
+  if (!input) throw new Error("Enter the HTTPS base URL for this model API.");
   let url: URL;
   try {
     url = new URL(input);
@@ -123,8 +152,8 @@ export function normalizeCustomModelBaseURL(value: unknown) {
     throw new Error("Custom model endpoints must use a public DNS hostname, not a local or IP address.");
   }
   const path = url.pathname.replace(/\/+$/u, "");
-  if (/\/(?:responses|chat\/completions)$/iu.test(path)) {
-    throw new Error("Enter the API base URL, not the final /responses or /chat/completions path.");
+  if (/(?:\/(?:responses|chat\/completions|messages)|\/models\/[^/]+:generateContent)$/iu.test(path)) {
+    throw new Error("Enter the API base URL, not a final generation endpoint.");
   }
   return `${url.origin}${path}`;
 }
@@ -136,10 +165,18 @@ export function normalizeModelProfileDraft(
   createId: () => string = () => crypto.randomUUID(),
 ): StoredModelProfile {
   const provider = draft.provider;
-  if (provider !== "openai" && provider !== "openrouter" && provider !== "custom") {
+  if (provider !== "openai" && provider !== "openrouter" && provider !== "anthropic" && provider !== "gemini" && provider !== "custom") {
     throw new Error("Choose a supported model provider.");
   }
   const preset = MODEL_PROVIDER_PRESETS.find((item) => item.id === provider)!;
+  const requestedProtocol = draft.protocol;
+  const protocol = preset.editableProtocol
+    && (requestedProtocol === "responses"
+      || requestedProtocol === "chat-completions"
+      || requestedProtocol === "anthropic-messages"
+      || requestedProtocol === "gemini-generate-content")
+    ? requestedProtocol
+    : preset.protocol;
   const name = cleanText(draft.name, 60) || preset.label;
   const model = cleanText(draft.model, 120);
   if (!model || !/^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model)) {
@@ -147,8 +184,8 @@ export function normalizeModelProfileDraft(
   }
   const baseURL = preset.editableEndpoint ? normalizeCustomModelBaseURL(draft.baseURL) : preset.baseURL;
   const suppliedKey = cleanText(draft.apiKey, 512);
-  if (!suppliedKey && existing && (existing.provider !== provider || existing.baseURL !== baseURL)) {
-    throw new Error("Enter a new API key when changing the provider or endpoint.");
+  if (!suppliedKey && existing && (existing.provider !== provider || existing.baseURL !== baseURL || existing.protocol !== protocol)) {
+    throw new Error("Enter a new API key when changing the provider, protocol, or endpoint.");
   }
   const apiKey = suppliedKey || existing?.apiKey || "";
   if (!apiKey) throw new Error("Enter an API key. Rune will clear the field after saving it.");
@@ -158,6 +195,7 @@ export function normalizeModelProfileDraft(
     id: existing?.id ?? createId(),
     name,
     provider,
+    protocol,
     baseURL,
     model,
     apiKey,
@@ -171,6 +209,7 @@ export function publicModelProfile(profile: StoredModelProfile): PublicModelProf
     id: profile.id,
     name: profile.name,
     provider: profile.provider,
+    protocol: profile.protocol,
     baseURL: profile.baseURL,
     model: profile.model,
     createdAt: profile.createdAt,

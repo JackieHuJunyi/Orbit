@@ -20,6 +20,7 @@ import {
   MAX_MODEL_PROFILES,
   MODEL_PROVIDER_PRESETS,
   type ModelProfilesState,
+  type ModelProtocol,
   type ModelProviderKind,
   type PublicModelProfile,
 } from "../lib/model-profiles";
@@ -43,7 +44,8 @@ const managerCopy = {
     formEdit: "编辑模型供应商",
     preset: "供应商",
     name: "配置名称",
-    endpoint: "Responses API 基础地址",
+    endpoint: "API 基础地址",
+    protocol: "调用协议",
     model: "默认模型 ID",
     apiKey: "API Key",
     keepKey: "留空则继续使用已加密保存的密钥",
@@ -53,7 +55,7 @@ const managerCopy = {
     save: "保存并启用",
     saving: "正在加密保存…",
     cancel: "取消",
-    modelHint: "读取模型只验证认证与 /models；首次 Agent 计划仍会验证 Responses Structured Outputs。",
+    modelHint: "读取模型只验证认证与模型目录；首次 Agent 计划仍会验证所选协议的结构化输出。Rune 不会自动把内容转发给另一家供应商。",
     safety: "密钥经同源 HTTPS 发送后加密进入 HttpOnly 凭据，绝不写入 localStorage、工作区、Artifact 或 Git。自定义端点会收到你交给 Agent 的内容，请只使用可信服务。",
     chooseModel: "选择读取到的模型",
   },
@@ -73,7 +75,8 @@ const managerCopy = {
     formEdit: "Edit model provider",
     preset: "Provider",
     name: "Profile name",
-    endpoint: "Responses API base URL",
+    endpoint: "API base URL",
+    protocol: "API protocol",
     model: "Default model ID",
     apiKey: "API Key",
     keepKey: "Leave empty to keep the encrypted credential",
@@ -83,7 +86,7 @@ const managerCopy = {
     save: "Save & enable",
     saving: "Encrypting…",
     cancel: "Cancel",
-    modelHint: "Fetching models checks authentication and /models only. The first Agent plan still verifies Responses Structured Outputs.",
+    modelHint: "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Rune never forwards content to another provider automatically.",
     safety: "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.",
     chooseModel: "Choose a fetched model",
   },
@@ -100,6 +103,7 @@ function modelManagerCopy(locale: RuneLocale) {
 type EditableProfile = {
   id?: string;
   provider: ModelProviderKind;
+  protocol: ModelProtocol;
   name: string;
   baseURL: string;
   model: string;
@@ -108,18 +112,26 @@ type EditableProfile = {
 
 function blankProfile(provider: ModelProviderKind = "openai"): EditableProfile {
   const preset = MODEL_PROVIDER_PRESETS.find((item) => item.id === provider)!;
-  return { provider, name: preset.label, baseURL: preset.baseURL, model: preset.defaultModel, apiKey: "" };
+  return { provider, protocol: preset.protocol, name: preset.label, baseURL: preset.baseURL, model: preset.defaultModel, apiKey: "" };
 }
 
 function editableProfile(profile: PublicModelProfile): EditableProfile {
   return {
     id: profile.id,
     provider: profile.provider,
+    protocol: profile.protocol,
     name: profile.name,
     baseURL: profile.baseURL,
     model: profile.model,
     apiKey: "",
   };
+}
+
+function modelProtocolLabel(protocol: ModelProtocol) {
+  if (protocol === "responses") return "OpenAI Responses";
+  if (protocol === "chat-completions") return "Chat Completions";
+  if (protocol === "anthropic-messages") return "Anthropic Messages";
+  return "Gemini generateContent";
 }
 
 function statusFromState(state: ModelProfilesState): ModelProviderStatus {
@@ -233,7 +245,7 @@ export function ModelProfileManager({
   function chooseProvider(provider: ModelProviderKind) {
     if (!editor) return;
     const next = blankProfile(provider);
-    setEditor({ ...editor, provider, name: next.name, baseURL: next.baseURL, model: next.model });
+    setEditor({ ...editor, provider, protocol: next.protocol, name: next.name, baseURL: next.baseURL, model: next.model });
     setModels([]);
     setError("");
   }
@@ -245,7 +257,7 @@ export function ModelProfileManager({
       {state?.deployment.configured && (
         <div className={`model-profile-card deployment ${state.activeSource === "deployment" ? "active" : ""}`}>
           <span><Server /></span>
-          <div><strong>{text.deployment}</strong><small>OpenAI · {state.deployment.model}</small><p>{text.deploymentBody}</p></div>
+          <div><strong>{text.deployment}</strong><small>OpenAI · {state.deployment.model}</small><p>OpenAI Responses · {text.deploymentBody}</p></div>
           {state.activeSource === "deployment"
             ? <em><Check />{text.active}</em>
             : <div className="model-profile-actions"><button type="button" disabled={submitting} onClick={() => void mutate("deployment")}><Check />{text.enable}</button></div>}
@@ -254,7 +266,7 @@ export function ModelProfileManager({
       {state?.profiles.map((profile) => (
         <div className={`model-profile-card ${state.activeProfileId === profile.id ? "active" : ""}`} key={profile.id}>
           <span><KeyRound /></span>
-          <div><strong>{profile.name}</strong><small>{MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}</small><p>{profile.baseURL}</p></div>
+          <div><strong>{profile.name}</strong><small>{MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}</small><p>{modelProtocolLabel(profile.protocol)} · {profile.baseURL}</p></div>
           <div className="model-profile-actions">
             {state.activeProfileId === profile.id ? <em><Check />{text.active}</em> : <button type="button" disabled={submitting} onClick={() => void mutate("activate", profile.id)}><Check />{text.enable}</button>}
             <button type="button" disabled={submitting} onClick={() => { setEditor(editableProfile(profile)); setModels([]); setError(""); }}><Pencil />{text.edit}</button>
@@ -287,6 +299,7 @@ export function ModelProfileManager({
             <label><span>{text.name}</span><input value={editor.name} maxLength={60} onChange={(event) => setEditor({ ...editor, name: event.target.value })} required /></label>
             <label><span>{text.model}</span><input value={editor.model} maxLength={120} onChange={(event) => setEditor({ ...editor, model: event.target.value })} required /></label>
             <label className="wide"><span>{text.endpoint}</span><input value={editor.baseURL} maxLength={300} disabled={!preset?.editableEndpoint} onChange={(event) => setEditor({ ...editor, baseURL: event.target.value })} required /></label>
+            {preset?.editableProtocol && <label className="wide"><span>{text.protocol}</span><span className="model-protocol-select"><select value={editor.protocol} onChange={(event) => setEditor({ ...editor, protocol: event.target.value as ModelProtocol })}><option value="responses">OpenAI Responses</option><option value="chat-completions">OpenAI-compatible Chat Completions</option><option value="anthropic-messages">Anthropic Messages</option><option value="gemini-generate-content">Gemini generateContent</option></select><ChevronDown /></span></label>}
             <label className="wide"><span>{text.apiKey}</span><span className="model-key-input"><input type={showKey ? "text" : "password"} value={editor.apiKey} maxLength={512} placeholder={editor.id ? text.keepKey : text.keyPlaceholder} onChange={(event) => setEditor({ ...editor, apiKey: event.target.value })} required={!editor.id} autoComplete="off" spellCheck={false} /><button type="button" onClick={() => setShowKey((shown) => !shown)} aria-label={showKey ? "Hide API key" : "Show API key"}>{showKey ? <EyeOff /> : <Eye />}</button></span></label>
           </div>
           {!!models.length && <label className="model-list-select"><span>{text.chooseModel}</span><span><select value={editor.model} onChange={(event) => setEditor({ ...editor, model: event.target.value })}>{!models.includes(editor.model) && <option value={editor.model}>{editor.model}</option>}{models.map((model) => <option value={model} key={model}>{model}</option>)}</select><ChevronDown /></span></label>}

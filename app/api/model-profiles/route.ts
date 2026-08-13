@@ -12,6 +12,7 @@ import {
   serializeModelProfileVaultCookie,
 } from "../../lib/model-credential-vault.ts";
 import { modelProviderStatus } from "../../lib/model-preference.ts";
+import { listProviderModels } from "../../lib/model-provider-adapters.ts";
 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
@@ -20,34 +21,6 @@ function sameOrigin(request: Request) {
     return new URL(origin).origin === new URL(request.url).origin;
   } catch {
     return false;
-  }
-}
-
-async function readBoundedJson(response: Response, maximumBytes = 1_000_000) {
-  if (!response.body) throw new Error("The provider returned an empty response.");
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    received += value.byteLength;
-    if (received > maximumBytes) {
-      await reader.cancel();
-      throw new Error("The provider returned an unexpectedly large model list.");
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(received);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  try {
-    return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
-  } catch {
-    throw new Error("The provider returned an invalid model-list response.");
   }
 }
 
@@ -102,24 +75,16 @@ export async function POST(request: Request) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8_000);
       try {
-        const response = await fetch(`${profile.baseURL}/models`, {
-          headers: { authorization: `Bearer ${profile.apiKey}`, accept: "application/json" },
-          redirect: "error",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`The provider rejected the model-list request (${response.status}).`);
-        const declaredLength = Number(response.headers.get("content-length") ?? "0");
-        if (declaredLength > 1_000_000) throw new Error("The provider returned an unexpectedly large model list.");
-        const payload = await readBoundedJson(response) as { data?: unknown };
-        const models = Array.isArray(payload.data)
-          ? payload.data.flatMap((item) => {
-              const id = item && typeof item === "object" && typeof (item as { id?: unknown }).id === "string"
-                ? (item as { id: string }).id.trim()
-                : "";
-              return id && id.length <= 120 ? [id] : [];
-            }).filter((id, index, all) => all.indexOf(id) === index).sort().slice(0, 80)
-          : [];
-        if (!models.length) throw new Error("The provider returned no usable model IDs.");
+        const models = await listProviderModels({
+          source: "personal",
+          profileId: profile.id,
+          profileName: profile.name,
+          provider: profile.provider,
+          protocol: profile.protocol,
+          apiKey: profile.apiKey,
+          baseURL: profile.baseURL,
+          model: profile.model,
+        }, controller.signal);
         return Response.json({ models }, { headers: { "cache-control": "no-store" } });
       } catch (error) {
         if (controller.signal.aborted) throw new Error("The provider model-list request timed out.");

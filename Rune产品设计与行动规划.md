@@ -1149,11 +1149,11 @@ move 不根据 DOM、label 或像素猜顺序，只交换两个相邻 AST siblin
 
 ### 6.25 v0.46 CC Switch 式个人模型配置
 
-Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址、可命名 profile、读取模型、编辑、删除与一键启用；不照搬桌面明文配置文件。首版 profile 上限为三份，支持 OpenAI Responses、OpenRouter Responses 和声明兼容 Responses 的自定义公共 HTTPS 端点。个人 profile 优先于部署环境的 OpenAI 配置；全部个人 profile 删除后，Rune 自动回到部署模型或本地规划器。
+Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址、可命名 profile、读取模型、编辑、删除与一键启用；不照搬桌面明文配置文件。首版 profile 上限为三份；v0.46 先支持 OpenAI 与自定义 Responses，v0.58 扩展为 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages、Gemini generateContent 以及显式选择协议的自定义公共 HTTPS 端点。个人 profile 优先于部署环境的 OpenAI 配置；全部个人 profile 删除后，Rune 自动回到部署模型或本地规划器。
 
 个人 key 在 React 里只存在到 Save。它经同源 HTTPS 进入服务端，用独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY` 做 AES-GCM 加密和完整性认证，写入 30 天、`HttpOnly; SameSite=Strict; Path=/api` cookie；浏览器脚本只能读取脱敏 metadata。生产环境缺少主密钥时不开放个人配置，密文篡改、密钥轮换和 schema 损坏都失败关闭。自定义 endpoint 拒绝 HTTP、IP、localhost、私网后缀、非 443 端口、userinfo/query/fragment 和最终 API path；配置写入同时要求 same-origin。读取模型具有八秒超时、1 MB response ceiling 与 80 个 model 上限，不携带 workspace source。
 
-本阶段不实现协议转换。Anthropic Messages、Gemini 和只支持 Chat Completions 的服务必须等待各自 adapter 或本地/服务端 route；界面不会把“OpenAI-compatible”当成无条件兼容。模型 profile 只改变 transport，不扩大 context、operation 或写权限，既有 graph-bounded context、Query evidence、runtime impact、review、revision、checkpoint 与 atomic Apply 合同全部保留。
+v0.46 当时不实现协议转换；v0.58 已把各协议隔离成独立 adapter，并继续拒绝把“OpenAI-compatible”当成无条件兼容。模型 profile 只改变 transport，不扩大 context、operation 或写权限，既有 graph-bounded context、Query evidence、runtime impact、review、revision、checkpoint 与 atomic Apply 合同全部保留。跨供应商自动 fallback 仍不做，因为它会扩大用户内容的数据去向。
 
 ### 6.26 全功能设计冻结与落地顺序
 
@@ -1163,7 +1163,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
 4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；v0.53 已让旧 `.doc/.ppt` 在 macOS 桌面壳通过本机 Office 的受限转换进入同一导入审核，v0.57 又从已验证 DOCX/PPTX 包建立经审核的本机 DOC/PPT 导出，Web 仍明确拒绝导入且不显示旧格式导出。
-5. **Model Platform**：v0.46 先完成 Responses profile；下一步才是 Anthropic/Gemini/Chat adapters、capability manifest、故障转移、用量和预算路由。
+5. **Model Platform**：v0.46 先完成 Responses profile；v0.58 已把 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages 与 Gemini generateContent 变成显式协议端口，并归一化真实 token usage。capability manifest、用户明确授权的故障转移、预算和健康度路由仍是后续能力。
 6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
 
 统一验收规则：任何入口都要列出输入上限、数据去向、canonical 结果、可逆路径和失败状态；任何 AI 写入都要有 exact revision、bounded capability、concrete diff、compiler/runtime proof 和人的确认；任何“支持格式”都要有真实 fixture、fidelity notes 与外部 handler/render QA；任何秘密都不能进入浏览器可读存储、workspace、日志或 Git。详细状态矩阵记录在 `idea.md` 第 52 节，路线图阶段 P0–P6 继续作为商业验证门，而不是被工程版本号替代。
@@ -1863,5 +1863,11 @@ Rune 以后所有产品决策都回到这十句话：
 旧 DOC/PPT 只是一种兼容交付，不成为 Rune 的事实源。Document 和 Deck 必须先经过现有确定性导出器编译成已验证 DOCX/PPTX，冻结当前 Query、Chart 与指标快照，再由 macOS Rune Desktop 通过本机 Word/PowerPoint 转成 DOC/PPT；用户仍会看到文件名、格式、大小与全部 fidelity warnings，并在明确确认后才下载。转换输入与输出各限 12 MB、执行限 30 秒，Office 自动化宏强制关闭，文件只进入权限收紧的独立临时目录且成功或失败后都会清理。
 
 这项能力只在检测到窄 desktop bridge 时出现。Web 不显示 DOC/PPT 导出，不上传现代包，也不制造改后缀的假文件；`.xls` 仍不支持。发布验收必须调用生产转换函数，让真实 Word/PowerPoint 完成 Document→DOC→DOCX→Markdown 和 Deck→PPT→PPTX→Deck Markdown 两条往返链，并验证核心语义可读。旧格式可能改变字体、分页、布局、矢量图表、表格、媒体与可访问性，因此 Rune 必须要求交付前在 Office 中再次核对。
+
+### 17.5 v0.58 多协议模型端口仍只产生一类 Rune 提议
+
+个人 profile 显式保存 provider、protocol、base URL、model 与加密 credential。内置端口为 OpenAI Responses、OpenRouter/OpenAI-compatible Chat Completions、Anthropic Messages 和 Gemini generateContent；自定义端点允许用户明确选择其中一种协议，但 Rune 不根据模型名或返回错误猜协议。模型目录使用各协议自己的认证头；Agent 请求分别使用 JSON Schema response format、强制 Anthropic tool input 或 Gemini response JSON Schema，最后统一解析为同一个 `AgentOperationPatch`/`AgentWorkspaceOperationPlan`。
+
+适配器只改变 transport，不改变能力。所有输出继续经过 Zod、typed operation compiler、selection/workspace 边界、dependency/runtime proof、checkpoint 和人工 Review；provider 不能返回整份任意文件并直接写入。请求限时 60 秒、响应限 2 MB、模型目录限 1 MB，重定向关闭，认证错误不把 provider 正文或密钥返给浏览器。Rune 不做未经用户确认的跨供应商 fallback，避免一次失败把工作区内容泄露到第二家服务；真实 input/output token 仅按各 provider 返回的字段归一化记录。
 
 如果未来的新方向违背这些原则，必须先修改本文并写清楚证据和代价，而不是在代码里悄悄改变产品。

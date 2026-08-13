@@ -1,5 +1,3 @@
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
 import {
   AgentCompiledPatchSchema,
   AgentCompiledWorkspacePatchSchema,
@@ -29,6 +27,7 @@ import {
 import { validateAgentQueryEvidenceContext } from "../../lib/agent-evidence.ts";
 import { DEFAULT_OPENAI_MODEL } from "../../lib/model-preference.ts";
 import { resolveActiveModelConnection } from "../../lib/model-credential-vault.ts";
+import { requestProviderPlan } from "../../lib/model-provider-adapters.ts";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -104,47 +103,30 @@ export async function POST(request: Request) {
   }
 
   const model = connection.model || DEFAULT_OPENAI_MODEL;
-  const client = new OpenAI({ apiKey: connection.apiKey, baseURL: connection.baseURL });
-
-  const responseUsage = (response: { usage?: { input_tokens?: number; output_tokens?: number } | null }) => ({
-    inputTokens: Number.isInteger(response.usage?.input_tokens) && Number(response.usage?.input_tokens) >= 0
-      ? Number(response.usage?.input_tokens)
-      : null,
-    outputTokens: Number.isInteger(response.usage?.output_tokens) && Number(response.usage?.output_tokens) >= 0
-      ? Number(response.usage?.output_tokens)
-      : null,
-  });
-
   try {
     const workspaceScope = parsed.data.scope === "workspace";
     const providerController = new AbortController();
     const providerTimeout = setTimeout(() => providerController.abort(), 60_000);
     let response;
     try {
-      response = await client.responses.parse({
-        model,
-        store: false,
-        input: [
-          { role: "system", content: buildAgentInstructions(parsed.data) },
-          { role: "user", content: buildAgentInput(parsed.data) },
-        ],
-        text: {
-          format: workspaceScope
-            ? zodTextFormat(AgentWorkspaceOperationPlanSchema, "workspace_operations")
-            : zodTextFormat(AgentOperationPatchSchema, "artifact_operations"),
-        },
-        max_output_tokens: 8_000,
-      }, { signal: providerController.signal });
+      response = await requestProviderPlan({
+        connection,
+        instructions: buildAgentInstructions(parsed.data),
+        input: buildAgentInput(parsed.data),
+        schema: workspaceScope ? AgentWorkspaceOperationPlanSchema : AgentOperationPatchSchema,
+        schemaName: workspaceScope ? "workspace_operations" : "artifact_operations",
+        signal: providerController.signal,
+      });
     } finally {
       clearTimeout(providerTimeout);
     }
 
-    if (!response.output_parsed) {
+    if (!response.output) {
       return Response.json({ error: "The model did not return a usable patch." }, { status: 502 });
     }
 
     if (workspaceScope) {
-      const operationPlan = AgentWorkspaceOperationPlanSchema.safeParse(response.output_parsed);
+      const operationPlan = AgentWorkspaceOperationPlanSchema.safeParse(response.output);
       if (!operationPlan.success) {
         return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
@@ -182,12 +164,12 @@ export async function POST(request: Request) {
         profileName: connection.profileName,
         model,
         repairAttempt: parsed.data.runtimeRepair?.attempt,
-        usage: responseUsage(response),
+        usage: response.usage,
         plan: workspacePlan.data,
       });
     }
 
-    const operationPlan = AgentOperationPatchSchema.safeParse(response.output_parsed);
+    const operationPlan = AgentOperationPatchSchema.safeParse(response.output);
     if (!operationPlan.success) {
       return Response.json({ error: "The model returned an invalid artifact operation plan." }, { status: 502 });
     }
@@ -249,7 +231,7 @@ export async function POST(request: Request) {
       profileName: connection.profileName,
       model,
       repairAttempt: parsed.data.runtimeRepair?.attempt,
-      usage: responseUsage(response),
+      usage: response.usage,
       plan: artifactPlan.data,
     });
   } catch {

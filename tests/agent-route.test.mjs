@@ -64,6 +64,89 @@ test("uses the active personal provider endpoint without exposing its credential
   assert.doesNotMatch(JSON.stringify(payload), /personal-agent-secret/);
 });
 
+test("routes an Anthropic profile through Messages and the unchanged Rune operation compiler", async () => {
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-anthropic-vault-key-1234567";
+  delete process.env.OPENAI_API_KEY;
+  const profile = normalizeModelProfileDraft({
+    provider: "anthropic",
+    name: "Claude work",
+    model: "claude-sonnet-5",
+    apiKey: "anthropic-agent-secret",
+  }, undefined, "2026-08-13T00:00:00.000Z", () => "anthropic");
+  const cookie = await serializeModelProfileVaultCookie(
+    new Request("https://rune.example/api/model-profiles"),
+    { version: 1, activeProfileId: profile.id, profiles: [profile] },
+  );
+  let providerRequest;
+  globalThis.fetch = async (input, init) => {
+    providerRequest = { url: String(input), headers: new Headers(init?.headers), body: JSON.parse(String(init?.body)) };
+    return new Response(JSON.stringify({
+      content: [{ type: "tool_use", name: "submit_rune_plan", input: {
+        summary: "Shorten the conclusion",
+        detail: "One Markdown section changes.",
+        edits: [{ type: "replace_markdown_section", heading: "Report", body: "Claude conclusion." }],
+      } }],
+      usage: { input_tokens: 21, output_tokens: 9 },
+    }), { headers: { "content-type": "application/json" } });
+  };
+  const response = await POST(new Request("https://rune.example/api/agent", {
+    method: "POST",
+    headers: { cookie: cookie.split(";", 1)[0], "content-type": "application/json" },
+    body: JSON.stringify(requestBody()),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.provider, "anthropic");
+  assert.equal(payload.profileName, "Claude work");
+  assert.equal(payload.plan.nextSource, "# Report\n\nClaude conclusion.");
+  assert.deepEqual(payload.usage, { inputTokens: 21, outputTokens: 9 });
+  assert.equal(providerRequest.url, "https://api.anthropic.com/v1/messages");
+  assert.equal(providerRequest.headers.get("x-api-key"), "anthropic-agent-secret");
+  assert.equal(providerRequest.body.tool_choice.name, "submit_rune_plan");
+  assert.doesNotMatch(JSON.stringify(payload), /anthropic-agent-secret/);
+});
+
+test("routes a Gemini profile through generateContent and the unchanged Rune operation compiler", async () => {
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-gemini-vault-key-123456789";
+  delete process.env.OPENAI_API_KEY;
+  const profile = normalizeModelProfileDraft({
+    provider: "gemini",
+    name: "Gemini work",
+    model: "gemini-2.5-pro",
+    apiKey: "gemini-agent-secret",
+  }, undefined, "2026-08-13T00:00:00.000Z", () => "gemini");
+  const cookie = await serializeModelProfileVaultCookie(
+    new Request("https://rune.example/api/model-profiles"),
+    { version: 1, activeProfileId: profile.id, profiles: [profile] },
+  );
+  let providerRequest;
+  globalThis.fetch = async (input, init) => {
+    providerRequest = { url: String(input), headers: new Headers(init?.headers), body: JSON.parse(String(init?.body)) };
+    return new Response(JSON.stringify({
+      candidates: [{ content: { parts: [{ text: JSON.stringify({
+        summary: "Shorten the conclusion",
+        detail: "One Markdown section changes.",
+        edits: [{ type: "replace_markdown_section", heading: "Report", body: "Gemini conclusion." }],
+      }) }] } }],
+      usageMetadata: { promptTokenCount: 23, candidatesTokenCount: 10 },
+    }), { headers: { "content-type": "application/json" } });
+  };
+  const response = await POST(new Request("https://rune.example/api/agent", {
+    method: "POST",
+    headers: { cookie: cookie.split(";", 1)[0], "content-type": "application/json" },
+    body: JSON.stringify(requestBody()),
+  }));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.provider, "gemini");
+  assert.equal(payload.plan.nextSource, "# Report\n\nGemini conclusion.");
+  assert.deepEqual(payload.usage, { inputTokens: 23, outputTokens: 10 });
+  assert.equal(providerRequest.url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent");
+  assert.equal(providerRequest.headers.get("x-goog-api-key"), "gemini-agent-secret");
+  assert.equal(providerRequest.body.generationConfig.responseMimeType, "application/json");
+  assert.doesNotMatch(JSON.stringify(payload), /gemini-agent-secret/);
+});
+
 function providerResponse(output) {
   return {
     id: "resp_rune_test",

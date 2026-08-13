@@ -6377,7 +6377,7 @@ button.chart-line-point {
 .model-profile-editor > header svg,
 .model-key-input svg { width: 13px; height: 13px; }
 
-.model-provider-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.model-provider-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 6px; }
 .model-provider-tabs button {
   min-height: 32px;
   padding: 0 8px;
@@ -6396,7 +6396,8 @@ button.chart-line-point {
 .model-list-select { display: grid; gap: 4px; color: #696970; font-size: 9px; font-weight: 680; }
 .model-editor-grid label.wide { grid-column: 1 / -1; }
 .model-editor-grid input,
-.model-list-select select {
+.model-list-select select,
+.model-protocol-select select {
   width: 100%;
   height: 34px;
   padding: 0 9px;
@@ -6409,14 +6410,18 @@ button.chart-line-point {
   font-size: 10px;
 }
 .model-editor-grid input:focus,
-.model-list-select select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(220, 75, 54, .08); }
+.model-list-select select:focus,
+.model-protocol-select select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(220, 75, 54, .08); }
 .model-editor-grid input:disabled { background: #f0f0f3; color: #797980; }
 .model-key-input { display: grid; grid-template-columns: minmax(0, 1fr) 30px; align-items: center; border: 1px solid #d7d7dc; border-radius: 9px; background: #fff; }
 .model-key-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(220, 75, 54, .08); }
 .model-key-input input { border: 0; box-shadow: none !important; }
-.model-list-select > span:last-child { position: relative; }
-.model-list-select select { appearance: none; padding-right: 28px; }
-.model-list-select svg { position: absolute; top: 10px; right: 9px; width: 13px; height: 13px; pointer-events: none; }
+.model-list-select > span:last-child,
+.model-protocol-select { position: relative; }
+.model-list-select select,
+.model-protocol-select select { width: 100%; appearance: none; padding-right: 28px; }
+.model-list-select svg,
+.model-protocol-select svg { position: absolute; top: 10px; right: 9px; width: 13px; height: 13px; pointer-events: none; }
 .model-editor-hint { margin: 0; color: #8c8c93; font-size: 9px; line-height: 1.45; }
 .model-profile-editor footer { display: flex; justify-content: flex-end; gap: 6px; }
 .model-profile-editor footer button {

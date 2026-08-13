@@ -11,6 +11,7 @@ import {
   MAX_MODEL_PROFILES,
   normalizeCustomModelBaseURL,
   normalizeModelProfileDraft,
+  normalizeModelProfileVault,
   publicModelProfile,
 } from "../app/lib/model-profiles.ts";
 import {
@@ -95,6 +96,7 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
     apiKey: "secret-key",
   }, undefined, "2026-08-13T00:00:00.000Z", () => "profile-1");
   assert.equal(openAI.baseURL, "https://api.openai.com/v1");
+  assert.equal(openAI.protocol, "responses");
   assert.equal(openAI.id, "profile-1");
   assert.doesNotMatch(JSON.stringify(publicModelProfile(openAI)), /secret-key/);
   assert.throws(() => normalizeModelProfileDraft({
@@ -108,6 +110,33 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
     baseURL: "https://different.example.com/v1",
     apiKey: "",
   }, { ...openAI, provider: "custom", baseURL: "https://models.example.com/v1" }), /new API key/i);
+  const anthropic = normalizeModelProfileDraft({
+    provider: "anthropic",
+    protocol: "responses",
+    model: "claude-sonnet-5",
+    apiKey: "anthropic-secret",
+  });
+  assert.equal(anthropic.baseURL, "https://api.anthropic.com/v1");
+  assert.equal(anthropic.protocol, "anthropic-messages");
+  const gemini = normalizeModelProfileDraft({
+    provider: "gemini",
+    model: "gemini-2.5-pro",
+    apiKey: "gemini-secret",
+  });
+  assert.equal(gemini.protocol, "gemini-generate-content");
+  const chat = normalizeModelProfileDraft({
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://models.example.com/v1",
+    model: "chat-model",
+    apiKey: "chat-secret",
+  });
+  assert.equal(chat.protocol, "chat-completions");
+  assert.throws(() => normalizeModelProfileDraft({
+    ...chat,
+    protocol: "responses",
+    apiKey: "",
+  }, chat), /new API key/i);
 });
 
 test("encrypts personal credentials in an HttpOnly cookie and rejects tampering", async () => {
@@ -140,6 +169,23 @@ test("encrypts personal credentials in an HttpOnly cookie and rejects tampering"
   const tampered = `${name}=${value.slice(0, tamperIndex)}${value[tamperIndex] === "a" ? "b" : "a"}${value.slice(tamperIndex + 1)}`;
   const empty = await readModelProfileVault(new Request("https://rune.example", { headers: { cookie: tampered } }), environment);
   assert.deepEqual(empty.profiles, []);
+});
+
+test("migrates existing v1 profiles without a protocol to the provider's explicit default", () => {
+  const legacy = {
+    id: "legacy",
+    name: "Legacy OpenRouter",
+    provider: "openrouter",
+    baseURL: "https://openrouter.ai/api/v1",
+    model: "openai/gpt-5.6",
+    apiKey: "legacy-secret",
+    createdAt: "2026-08-12T00:00:00.000Z",
+    updatedAt: "2026-08-12T00:00:00.000Z",
+  };
+  const normalized = normalizeModelProfileVault({ version: 1, activeProfileId: "legacy", profiles: [legacy] });
+  assert.equal(normalized.profiles.length, 1);
+  assert.equal(normalized.profiles[0].protocol, "chat-completions");
+  assert.equal(normalized.profiles[0].apiKey, "legacy-secret");
 });
 
 test("model profile route saves, redacts, activates, and deletes personal profiles", async () => {
@@ -231,7 +277,7 @@ test("fetches a bounded model catalog without following redirects or returning t
     assert.deepEqual(payload, { models: ["gpt-5.6", "gpt-5.6-terra"] });
     assert.equal(providerRequest.input, "https://api.openai.com/v1/models");
     assert.equal(providerRequest.init.redirect, "error");
-    assert.equal(providerRequest.init.headers.authorization, "Bearer catalog-secret");
+    assert.equal(new Headers(providerRequest.init.headers).get("authorization"), "Bearer catalog-secret");
     assert.doesNotMatch(JSON.stringify(payload), /catalog-secret/);
   } finally {
     globalThis.fetch = previousFetch;

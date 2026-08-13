@@ -4,6 +4,8 @@ import {
   MODEL_PROFILE_COOKIE_MAX_AGE,
   normalizeModelProfileVault,
   type ModelProfileVault,
+  type ModelProtocol,
+  type ModelProviderKind,
   type StoredModelProfile,
 } from "./model-profiles.ts";
 import { DEFAULT_OPENAI_MODEL } from "./model-preference.ts";
@@ -93,7 +95,8 @@ export type ActiveModelConnection = {
   source: "personal" | "deployment";
   profileId: string | null;
   profileName: string;
-  provider: "openai" | "openrouter" | "custom";
+  provider: ModelProviderKind;
+  protocol: ModelProtocol;
   apiKey: string;
   baseURL: string;
   model: string;
@@ -111,6 +114,7 @@ export async function resolveActiveModelConnection(
       profileId: active.id,
       profileName: active.name,
       provider: active.provider,
+      protocol: active.protocol,
       apiKey: active.apiKey,
       baseURL: active.baseURL,
       model: active.model,
@@ -124,6 +128,7 @@ export async function resolveActiveModelConnection(
     profileId: null,
     profileName: "Deployment OpenAI",
     provider: "openai",
+    protocol: "responses",
     apiKey,
     baseURL: "https://api.openai.com/v1",
     model: model && /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model) ? model : DEFAULT_OPENAI_MODEL,

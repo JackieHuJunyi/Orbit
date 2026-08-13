@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-13 — Added explicit, no-cross-provider-fallback model adapters for OpenAI Responses, OpenAI-compatible Chat Completions/OpenRouter, Anthropic Messages, and Gemini generateContent while preserving one Rune typed-plan safety and review contract.
+
 - 2026-08-13 — Added reviewed Rune Desktop DOC/PPT export by compiling canonical sources to verified DOCX/PPTX first, then using macro-disabled local Word/PowerPoint conversion with real round-trip QA and no web fallback.
 
 - 2026-08-13 — Added a complete Traditional Chinese interface, guide, task compiler, and device-language route from the same locale registry while simplifying the welcome screen into a quieter Apple-inspired setup assistant.
