@@ -369,7 +369,8 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(source, /ui\.openFolder/);
   assert.match(source, /role="menuitem"[^>]*onClick=\{\(\) => \{ setToolsMenuOpen\(false\); openWelcomeGuide\(\); \}\}/);
   assert.match(source, /role="menuitemradio"/);
-  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, 35px\)/s);
+  assert.match(source, /className="tools-theme-name"/);
+  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
 });
 
@@ -401,7 +402,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.72<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.73<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

@@ -2959,12 +2959,13 @@ export function RuneWorkbench() {
                       onClick={() => setAppearanceTheme(theme.id)}
                       key={theme.id}
                     >
-                      <span className="appearance-swatch" style={{ background: `linear-gradient(145deg, ${theme.soft} 0 48%, ${theme.color} 50% 100%)` }} />
+                      <span className="appearance-swatch" aria-hidden="true" style={{ background: `linear-gradient(145deg, ${theme.finish[0]}, ${theme.finish[1]})` }} />
+                      <span className="tools-theme-name">{runeText(locale, theme.english, theme.chinese)}</span>
                       {appearanceTheme === theme.id && <Check aria-hidden="true" />}
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.72</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.73</strong></footer>
               </div>
             )}
           </div>

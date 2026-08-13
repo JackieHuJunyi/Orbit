@@ -2058,4 +2058,10 @@ Preview header 已经拥有可展开的来源、binding 与 validation 证据，
 
 这不是删除证据。每条 lineage 仍读取当前 selected artifact、resolved Data/Query、binding compiler 和 live Chart references，名称、方向、明确/legacy binding 和编译状态全部保留；badge 与完整链在同一原生 details 中可键盘访问。popover 加宽并用紧凑多行关系表达，窄屏继续固定到可见区域。没有建立证据缓存，也不改变 preview-to-source 定位、validation、Agent 或导出。
 
+## 78. v0.73 主题色应该像设备材质，而不是生成式 AI 渐变
+
+用户提出从 Apple 当季新产品配色建立 Rune 的主题语言。官方当前 iPhone 17 提供雾蓝、鼠尾草绿、薰衣草、黑与白，iPhone Air 提供天蓝、浅金、云白与太空黑，iPhone 17 Pro 提供深蓝、宇宙橙与银色。Rune 不复制产品照片，也不把硬件色值生硬地覆盖在界面上，而是从中选出九种有辨识度的材质主题：雾蓝、鼠尾草绿、薰衣草、天蓝、浅金、深蓝、宇宙橙、银色、太空黑。
+
+每种主题拆成两层：圆形 swatch 表达接近设备表面高光与阴影的 `finish`，实际按钮、焦点框和选中态使用经过对比度收敛的 `color` 与 `soft`。因此浅金和银色仍能保留轻巧气质，却不会让白底文字失去可读性。外观入口从五个无名色点升级为九个具名的 `menuitemradio`；选择即时生效、继续写入原有设备偏好，并在九种界面语言下显示明确名称。Rune 的朱红品牌符号不随主题变化，避免视觉身份被主题吞没。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

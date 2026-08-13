@@ -1921,3 +1921,9 @@ Source 底部常驻一个与画布连续的轻量输入区，不再用头像、A
 ### 17.17 v0.72 成品默认从内容开始
 
 Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条带，而是与来源 target、binding badges 和 validation 一同进入 Preview evidence 原生 disclosure。完整名称、方向、binding 类型和编译状态必须继续从当前 workspace 实时派生。收拢只改变 DOM 位置和样式，不能缓存证据、隐藏错误或影响成品定位、Agent、导出与 source authority。
+
+### 17.18 v0.73 当季设备材质主题
+
+- 将当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的代表性 finish 转译为九个 Rune 主题，不把硬件营销色直接当作控件颜色。
+- 每个主题拥有独立的材质 swatch、对比度安全的交互 accent 与柔和 surface tint；Rune 朱红标志始终独立。
+- 外观面板显示主题名称、当前选择和原生 `menuitemradio` 状态，支持全部九种界面语言与设备本地持久化。

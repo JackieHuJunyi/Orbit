@@ -8,13 +8,15 @@ import {
   RUNE_APPEARANCE_THEMES,
 } from "../app/lib/appearance.ts";
 
-test("ships five restrained character colors with one stable default", () => {
+test("ships a restrained current-iPhone-inspired material palette with one stable default", () => {
   assert.equal(RUNE_APPEARANCE_STORAGE_KEY, "rune-appearance-theme-v1");
-  assert.deepEqual(RUNE_APPEARANCE_THEMES.map(({ id }) => id), ["mist-blue", "sage", "lavender", "deep-blue", "cosmic-orange"]);
+  assert.deepEqual(RUNE_APPEARANCE_THEMES.map(({ id }) => id), ["mist-blue", "sage", "lavender", "sky-blue", "light-gold", "deep-blue", "cosmic-orange", "silver", "space-black"]);
   assert.equal(new Set(RUNE_APPEARANCE_THEMES.map(({ color }) => color)).size, RUNE_APPEARANCE_THEMES.length);
   for (const theme of RUNE_APPEARANCE_THEMES) {
     assert.match(theme.color, /^#[0-9a-f]{6}$/i);
     assert.match(theme.soft, /^#[0-9a-f]{6}$/i);
+    assert.equal(theme.finish.length, 2);
+    assert.ok(theme.finish.every((color) => /^#[0-9a-f]{6}$/i.test(color)));
     assert.equal(normalizeRuneAppearanceTheme(theme.id), theme.id);
   }
   assert.equal(normalizeRuneAppearanceTheme("black"), null);

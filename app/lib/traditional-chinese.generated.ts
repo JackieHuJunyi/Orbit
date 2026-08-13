@@ -3518,6 +3518,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "大寫"
   ],
   [
+    "天蓝",
+    "天藍"
+  ],
+  [
     "审核",
     "稽核"
   ],
@@ -3690,6 +3694,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "彙總"
   ],
   [
+    "浅金",
+    "淺金"
+  ],
+  [
     "深蓝",
     "深藍"
   ],
@@ -3848,6 +3856,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "金额",
     "金額"
+  ],
+  [
+    "银色",
+    "銀色"
   ],
   [
     "链接",
