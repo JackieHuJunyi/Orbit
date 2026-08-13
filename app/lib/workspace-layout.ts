@@ -6,6 +6,8 @@ export const MAX_WORKSPACE_SOURCE_PERCENT = 65;
 export const RUNE_WORKSPACE_VIEWS = ["split", "source", "preview"] as const;
 export type RuneWorkspaceView = (typeof RUNE_WORKSPACE_VIEWS)[number];
 
+export type RuneWorkspaceViewShortcutEvent = Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey">;
+
 export function clampWorkspaceSourcePercent(value: number) {
   if (!Number.isFinite(value)) return DEFAULT_WORKSPACE_SOURCE_PERCENT;
   return Math.min(MAX_WORKSPACE_SOURCE_PERCENT, Math.max(MIN_WORKSPACE_SOURCE_PERCENT, Math.round(value * 10) / 10));
@@ -20,6 +22,14 @@ export function normalizeWorkspaceSourcePercent(value: unknown): number | null {
 
 export function normalizeRuneWorkspaceView(value: unknown): RuneWorkspaceView | null {
   return RUNE_WORKSPACE_VIEWS.includes(value as RuneWorkspaceView) ? value as RuneWorkspaceView : null;
+}
+
+export function workspaceViewFromKeyboardShortcut(event: RuneWorkspaceViewShortcutEvent): RuneWorkspaceView | null {
+  if (!(event.metaKey || event.ctrlKey) || !event.altKey || event.shiftKey) return null;
+  if (event.code === "Digit1") return "split";
+  if (event.code === "Digit2") return "source";
+  if (event.code === "Digit3") return "preview";
+  return null;
 }
 
 export function workspaceSplitTracks(sourcePercent: number) {

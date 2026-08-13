@@ -370,6 +370,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "新增後即可在這裡一鍵切換"
   ],
   [
+    "源内容和成品之间立即切换",
+    "源內容和成品之間立即切換"
+  ],
+  [
     "点击行号将完整记录绑定为",
     "點選行號將完整記錄繫結為"
   ],
@@ -726,8 +730,8 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "個人金鑰會被加密為"
   ],
   [
-    "亲手试试三个快捷键",
-    "親手試試三個快捷鍵"
+    "亲手试试四个快捷键",
+    "親手試試四個快捷鍵"
   ],
   [
     "依赖变化和运行验证",
@@ -1622,6 +1626,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "不會寫入檔案"
   ],
   [
+    "不改变源文件",
+    "不改變原始檔"
+  ],
+  [
     "丢弃建议补丁",
     "丟棄建議補丁"
   ],
@@ -1684,6 +1692,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "准备更新审核",
     "準備更新稽核"
+  ],
+  [
+    "切换专注视图",
+    "切換專注檢視"
   ],
   [
     "创建经营汇报",
@@ -2574,6 +2586,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "分類欄位"
   ],
   [
+    "切换分栏",
+    "切換分欄"
+  ],
+  [
     "创建汇报",
     "建立彙報"
   ],
@@ -2700,6 +2716,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "恢复保护",
     "恢復保護"
+  ],
+  [
+    "成品视图",
+    "成品檢視"
   ],
   [
     "或正文块",
@@ -3136,6 +3156,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "图表和",
     "圖表和"
+  ],
+  [
+    "在分栏",
+    "在分欄"
   ],
   [
     "导出为",

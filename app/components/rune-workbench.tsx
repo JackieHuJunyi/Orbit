@@ -191,6 +191,7 @@ import {
   normalizeWorkspaceSourcePercent,
   RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
   RUNE_WORKSPACE_VIEW_STORAGE_KEY,
+  workspaceViewFromKeyboardShortcut,
   workspaceSplitTracks,
   type RuneWorkspaceView,
 } from "../lib/workspace-layout";
@@ -1067,6 +1068,13 @@ export function RuneWorkbench() {
         || pendingPdfOcr
         || pendingExport
         || pendingChange) return;
+      const shortcutView = workspaceViewFromKeyboardShortcut(event);
+      if (shortcutView && !emptyWorkspace) {
+        event.preventDefault();
+        setPreferredWorkspaceView(shortcutView);
+        setNotice(shortcutView === "split" ? ui.showSplitView : shortcutView === "source" ? ui.showSourceView : ui.showPreviewView);
+        return;
+      }
       if (!(event.metaKey || event.ctrlKey)) return;
       if (event.key.toLowerCase() === "o") {
         event.preventDefault();
@@ -1105,7 +1113,7 @@ export function RuneWorkbench() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeVisualSourceDraft, artifacts, checkpoints, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, savedOperatingReviews, selectedId, visualEditState, welcomeOpen]);
+  }, [activeVisualSourceDraft, artifacts, checkpoints, emptyWorkspace, newArtifactOpen, operatingReviewOpen, pendingChange, pendingDocumentStructure, pendingExport, pendingImport, pendingPdfOcr, savedOperatingReviews, selectedId, setPreferredWorkspaceView, ui.showPreviewView, ui.showSourceView, ui.showSplitView, visualEditState, welcomeOpen]);
 
   if (!selectedArtifact) return null;
 
@@ -3160,9 +3168,9 @@ export function RuneWorkbench() {
             </div>
             <div className="pane-actions">
               <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
-                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} title={ui.showSplitView} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
-                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} title={ui.showSourceView} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
-                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} title={ui.showPreviewView} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
+                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
+                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
+                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
               <span className="language-badge"><Code2 aria-hidden="true" /> {selectedArtifact.language}</span>
               <button
@@ -3410,9 +3418,9 @@ export function RuneWorkbench() {
             </div>
             <div className="preview-actions">
               <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView}>
-                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} title={ui.showSplitView} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
-                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} title={ui.showSourceView} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
-                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} title={ui.showPreviewView} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
+                <button type="button" className={workspaceView === "split" ? "active" : ""} aria-pressed={workspaceView === "split"} aria-label={ui.showSplitView} aria-keyshortcuts="Meta+Alt+1 Control+Alt+1" title={`${ui.showSplitView} · ⌘⌥1 / Ctrl Alt 1`} onClick={() => setPreferredWorkspaceView("split")}><Columns2 aria-hidden="true" /><span>{ui.splitView}</span></button>
+                <button type="button" className={workspaceView === "source" ? "active" : ""} aria-pressed={workspaceView === "source"} aria-label={ui.showSourceView} aria-keyshortcuts="Meta+Alt+2 Control+Alt+2" title={`${ui.showSourceView} · ⌘⌥2 / Ctrl Alt 2`} onClick={() => setPreferredWorkspaceView("source")}><Code2 aria-hidden="true" /><span>{ui.sourceView}</span></button>
+                <button type="button" className={workspaceView === "preview" ? "active" : ""} aria-pressed={workspaceView === "preview"} aria-label={ui.showPreviewView} aria-keyshortcuts="Meta+Alt+3 Control+Alt+3" title={`${ui.showPreviewView} · ⌘⌥3 / Ctrl Alt 3`} onClick={() => setPreferredWorkspaceView("preview")}><Eye aria-hidden="true" /><span>{ui.previewView}</span></button>
               </div>
               {activePreviewTarget && (
                 <span className="source-link-badge" title={ui.sourceLinked(activePreviewTarget.label)}>
@@ -3505,7 +3513,7 @@ export function RuneWorkbench() {
 
       <footer className="statusbar">
         <div><span className="status-agent-dot" /> {visibleNotice}</div>
-        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.61</span></div>
+        <div className="statusbar-right"><span>{artifactStats(selectedArtifact)}</span>{!!bindingState?.references.length && <span>{ui.legacyMetrics(bindingState.references.length)}</span>}{!!bindingState?.queryMetricReferences.length && <span>{ui.sqlMetrics(bindingState.queryMetricReferences.length)}</span>}{!!bindingState?.chartReferences.length && <span>{ui.linkedCharts(bindingState.chartReferences.length)}</span>}<span>UTF-8</span><span>Rune v0.62</span></div>
       </footer>
 
       {newArtifactOpen && (

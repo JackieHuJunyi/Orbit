@@ -71,6 +71,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Resize source and preview": "Redimensionner la source et l’aperçu", "Reset source and preview widths": "Rétablir les largeurs par défaut",
   "Workspace view": "Vue de l’espace de travail", Split: "Partagé", Source: "Source", Preview: "Aperçu",
   "Show source and preview": "Afficher la source et l’aperçu", "Show source only": "Afficher uniquement la source", "Show preview only": "Afficher uniquement l’aperçu",
+  "Try four shortcuts yourself": "Essayez vous-même quatre raccourcis", "Enter a focus view": "Passer à une vue ciblée", "Move instantly among Split, Source, and Preview without changing source": "Basculez instantanément entre Partagé, Source et Aperçu sans modifier la source",
+  "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| Basculer entre Partagé / Source / Aperçu | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   Appearance: "Apariencia", "Choose Rune's character color": "Elige el color de carácter de Rune", "Current theme": "Tema actual",
@@ -79,6 +81,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Resize source and preview": "Cambiar el tamaño de la fuente y la vista previa", "Reset source and preview widths": "Restablecer los anchos predeterminados",
   "Workspace view": "Vista del espacio de trabajo", Split: "Dividida", Source: "Fuente", Preview: "Vista previa",
   "Show source and preview": "Mostrar fuente y vista previa", "Show source only": "Mostrar solo la fuente", "Show preview only": "Mostrar solo la vista previa",
+  "Try four shortcuts yourself": "Prueba cuatro atajos", "Enter a focus view": "Entrar en una vista de enfoque", "Move instantly among Split, Source, and Preview without changing source": "Cambia al instante entre Dividida, Fuente y Vista previa sin modificar la fuente",
+  "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| Cambiar vista Dividida / Fuente / Vista previa | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   Appearance: "Оформление", "Choose Rune's character color": "Выберите характерный цвет Rune", "Current theme": "Текущая тема",
@@ -87,6 +91,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Resize source and preview": "Изменить ширину исходника и предпросмотра", "Reset source and preview widths": "Восстановить ширину по умолчанию",
   "Workspace view": "Вид рабочей области", Split: "Оба", Source: "Исходник", Preview: "Предпросмотр",
   "Show source and preview": "Показать исходник и предпросмотр", "Show source only": "Показать только исходник", "Show preview only": "Показать только предпросмотр",
+  "Try four shortcuts yourself": "Попробуйте четыре сочетания клавиш", "Enter a focus view": "Перейти в режим фокуса", "Move instantly among Split, Source, and Preview without changing source": "Мгновенно переключайтесь между обоими окнами, исходником и предпросмотром, не меняя исходник",
+  "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| Вид: оба окна / исходник / предпросмотр | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   Appearance: "المظهر", "Choose Rune's character color": "اختر لون طابع Rune", "Current theme": "السمة الحالية",
@@ -95,6 +101,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Resize source and preview": "تغيير عرض المصدر والمعاينة", "Reset source and preview widths": "استعادة العرض الافتراضي",
   "Workspace view": "عرض مساحة العمل", Split: "مقسّم", Source: "المصدر", Preview: "المعاينة",
   "Show source and preview": "إظهار المصدر والمعاينة", "Show source only": "إظهار المصدر فقط", "Show preview only": "إظهار المعاينة فقط",
+  "Try four shortcuts yourself": "جرّب أربعة اختصارات بنفسك", "Enter a focus view": "انتقل إلى عرض التركيز", "Move instantly among Split, Source, and Preview without changing source": "انتقل فورًا بين العرض المقسّم والمصدر والمعاينة من دون تغيير المصدر",
+  "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| تبديل عرض مقسّم / المصدر / المعاينة | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   Appearance: "外観", "Choose Rune's character color": "Rune のテーマカラーを選択", "Current theme": "現在のテーマ",
@@ -103,6 +111,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Resize source and preview": "ソースとプレビューの幅を調整", "Reset source and preview widths": "既定の幅に戻す",
   "Workspace view": "ワークスペース表示", Split: "分割", Source: "ソース", Preview: "プレビュー",
   "Show source and preview": "ソースとプレビューを表示", "Show source only": "ソースだけを表示", "Show preview only": "プレビューだけを表示",
+  "Try four shortcuts yourself": "4 つのショートカットを試す", "Enter a focus view": "フォーカス表示に切り替える", "Move instantly among Split, Source, and Preview without changing source": "ソースを変更せずに、分割・ソース・プレビューをすぐ切り替えます",
+  "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| 分割 / ソース / プレビュー表示を切り替える | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   Appearance: "화면 스타일", "Choose Rune's character color": "Rune의 테마 색상 선택", "Current theme": "현재 테마",
@@ -111,4 +121,6 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Resize source and preview": "소스와 미리보기 너비 조절", "Reset source and preview widths": "기본 너비로 복원",
   "Workspace view": "작업 공간 보기", Split: "분할", Source: "소스", Preview: "미리보기",
   "Show source and preview": "소스와 미리보기 표시", "Show source only": "소스만 표시", "Show preview only": "미리보기만 표시",
+  "Try four shortcuts yourself": "네 가지 단축키 직접 사용해 보기", "Enter a focus view": "집중 보기로 전환", "Move instantly among Split, Source, and Preview without changing source": "소스를 변경하지 않고 분할, 소스, 미리보기 사이를 즉시 전환합니다",
+  "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| 분할 / 소스 / 미리보기 전환 | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });

@@ -538,6 +538,8 @@ This avoids paying for identity, databases, and sync before they improve the cor
 
 The source/preview ratio and the `split | source | preview` focus mode are bounded device-local presentation preferences. Focus modes hide a mounted pane with CSS rather than creating, copying, or replacing artifact state. Canonical source, revision-bound visual drafts, preview targets, checkpoints, dependency state, folder manifests, Agent context, and exports never read these preferences. Opening a proven preview target while Source is hidden restores Split before applying the exact canonical selection; returning from Source to a preview-capable mode replays scrolling from the retained parser-derived target identity.
 
+The shared shortcut resolver accepts only `Meta/Control + Alt + physical Digit1/2/3`, rejects Shift and other keys, and is reused by both onboarding practice and the workbench. The workbench suppresses this presentation action while any modal review, import/export, model setup, pending Agent proposal, or revision-bound visual draft owns interaction. Controls expose the same contract through localized labels and `aria-keyshortcuts`.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

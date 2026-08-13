@@ -27,10 +27,11 @@ import {
   type RuneLocale,
 } from "../lib/localization";
 import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
+import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
 export type WelcomeAction = "guide" | "import" | "sample";
 export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
-type ShortcutId = "open" | "save" | "agent";
+type ShortcutId = "open" | "save" | "agent" | "view";
 
 export const WELCOME_BASE_COPY = {
   "zh-CN": {
@@ -64,7 +65,7 @@ export const WELCOME_BASE_COPY = {
     modelSafety: "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Rune 也不会把它写进工作区、localStorage、Artifact 或 Git。",
     modelUnavailable: "无法读取模型状态；你可以先使用本地模式。",
     shortcutEyebrow: "快速上手",
-    shortcutTitle: "亲手试试三个快捷键",
+    shortcutTitle: "亲手试试四个快捷键",
     shortcutBody: "按下对应按键，Rune 会在这里确认。你也可以稍后从本地指南重新学习。",
     openTitle: "打开文件",
     openBody: "选择一个本地文件开始工作",
@@ -72,6 +73,8 @@ export const WELCOME_BASE_COPY = {
     saveBody: "为当前源内容建立可恢复版本",
     agentTitle: "规划 AI 修改",
     agentBody: "让 Agent 提出改动，但暂不写入",
+    viewTitle: "切换专注视图",
+    viewBody: "在分栏、源内容和成品之间立即切换，不改变源文件",
     tried: "已完成",
     skipTutorial: "稍后学习",
     readyEyebrow: "准备好了",
@@ -115,7 +118,7 @@ export const WELCOME_BASE_COPY = {
     modelSafety: "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.",
     modelUnavailable: "Rune could not read model status. You can continue in local mode.",
     shortcutEyebrow: "Quick start",
-    shortcutTitle: "Try three shortcuts yourself",
+    shortcutTitle: "Try four shortcuts yourself",
     shortcutBody: "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.",
     openTitle: "Open a file",
     openBody: "Choose a local file to begin",
@@ -123,6 +126,8 @@ export const WELCOME_BASE_COPY = {
     saveBody: "Capture a recoverable source version",
     agentTitle: "Plan an AI change",
     agentBody: "Ask the Agent to propose, without writing",
+    viewTitle: "Enter a focus view",
+    viewBody: "Move instantly among Split, Source, and Preview without changing source",
     tried: "Done",
     skipTutorial: "Learn later",
     readyEyebrow: "Ready",
@@ -176,6 +181,11 @@ export function WelcomeExperience({
     typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
       ? "Ctrl"
       : "⌘"
+  ));
+  const [optionModifier] = useState(() => (
+    typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
+      ? "Alt"
+      : "⌥"
   ));
   const text = welcomeCopy(locale);
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
@@ -238,6 +248,7 @@ export function WelcomeExperience({
       if (modified && event.key.toLowerCase() === "o") shortcut = "open";
       if (modified && event.key.toLowerCase() === "s") shortcut = "save";
       if (modified && event.key === "Enter") shortcut = "agent";
+      if (workspaceViewFromKeyboardShortcut(event)) shortcut = "view";
       if (!shortcut) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -248,9 +259,10 @@ export function WelcomeExperience({
   }, [step]);
 
   const shortcutRows = [
-    { id: "open" as const, title: text.openTitle, body: text.openBody, keyName: "O" },
-    { id: "save" as const, title: text.saveTitle, body: text.saveBody, keyName: "S" },
-    { id: "agent" as const, title: text.agentTitle, body: text.agentBody, keyName: "↵" },
+    { id: "open" as const, title: text.openTitle, body: text.openBody, keyName: "O", optionKey: "" },
+    { id: "save" as const, title: text.saveTitle, body: text.saveBody, keyName: "S", optionKey: "" },
+    { id: "agent" as const, title: text.agentTitle, body: text.agentBody, keyName: "↵", optionKey: "" },
+    { id: "view" as const, title: text.viewTitle, body: text.viewBody, keyName: "1 / 2 / 3", optionKey: optionModifier },
   ];
   const handleProfileStatus = useCallback((status: ModelProviderStatus) => {
     setModelStatus(status);
@@ -386,7 +398,7 @@ export function WelcomeExperience({
                     <div className={complete ? "complete" : ""} key={item.id}>
                       <span className="shortcut-status">{complete ? <Check /> : <Command />}</span>
                       <span><strong>{item.title}</strong><small>{complete ? text.tried : item.body}</small></span>
-                      <span className="shortcut-keys"><ShortcutKey>{modifier}</ShortcutKey><ShortcutKey>{item.keyName}</ShortcutKey></span>
+                      <span className="shortcut-keys"><ShortcutKey>{modifier}</ShortcutKey>{item.optionKey && <ShortcutKey>{item.optionKey}</ShortcutKey>}<ShortcutKey>{item.keyName}</ShortcutKey></span>
                     </div>
                   );
                 })}

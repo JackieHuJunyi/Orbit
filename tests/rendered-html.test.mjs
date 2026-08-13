@@ -101,7 +101,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /Chart JSON/);
   assert.match(html, /board-briefing\.deck\.md/);
   assert.match(html, /Deck Markdown/);
-  assert.match(html, /Rune v0\.61/);
+  assert.match(html, /Rune v0\.62/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -337,6 +337,8 @@ test("ships persistent presentation-only workspace focus modes without unmountin
   assert.match(styles, /\.workspace\.view-source\.with-file-rail > \.source-pane,[\s\S]*grid-column:\s*3 \/ -1;/);
   assert.match(styles, /\.workspace\.view-preview \.preview-header \.workspace-view-switch\s*\{\s*display:\s*inline-flex;/);
   assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
+  assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
+  assert.match(source, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
   assert.match(source, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
   assert.match(source, /activePreviewTargetId, activePreviewTargetKind, selectedArtifact\?\.id, workspaceView/);
 });

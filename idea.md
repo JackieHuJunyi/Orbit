@@ -1992,4 +1992,10 @@ Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分�
 
 定位仍比视觉模式优先。source caret 在 Source 模式产生的精确目标会保留，用户切回 Split/Preview 后成品自动滚到当前 target；在 Preview-only 中点击 section、block、cell、slide 或 Chart provenance 时，Rune 自动切回 Split，再选择、滚动并聚焦精确 canonical range。三态控件使用原生 button、`aria-pressed` 和完整 9-locale label；选择存入独立的 device preference，不进入 artifact、checkpoint、folder manifest、Agent context 或 export。视图是用户注意力偏好，不是事实，也不会扩大任何写能力。
 
+## 67. v0.62 高频注意力切换必须被教会，而不是藏在 tooltip
+
+Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在工作台上的功能。v0.62 把三态映射为一组稳定、跨平台且不侵占 macOS 截图组合的快捷键：`⌘⌥ 1/2/3` 或 `Ctrl Alt 1/2/3`。键位按物理 `Digit` 识别，不依赖当前输入语言产生的字符；只有没有 review、导入、导出、模型设置或视觉草稿阻塞时才生效，而且 Empty Workspace 不会因按键凭空打开 pane。
+
+首启教程从三个动作扩展为四个，必须亲自按一次视图快捷键才能显示完成；本地说明文档的九种语言也包含同一合同。按钮通过 `aria-keyshortcuts` 告知辅助技术，title 同时显示 macOS 与 Windows/Linux 组合。快捷键仍只调用同一个 presentation-state setter，所以教学和实际产品不是两套模拟逻辑，canonical source、恢复点与写入边界均不受影响。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

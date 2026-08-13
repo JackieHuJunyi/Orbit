@@ -1877,3 +1877,7 @@ Rune 以后所有产品决策都回到这十句话：
 Split 用于逐段对照，Source 用于集中写作，Preview 用于检查最终交付；三者都是同一工作区的 presentation mode，不创建副本，也不改变 canonical source、草稿、selection、checkpoint、Agent context 或导出。设备记住用户上次选择，窄屏给出对应的单栏或上下布局，所有 9 种语言都有同一套可访问控件。
 
 双向定位的合同不随视图消失：Source 模式产生的 target 会在 Preview 再出现时滚到对应成品；Preview 模式点击可证明的内容会自动恢复 Split，并聚焦精确源码范围。任何无法从 parser/compiler identity 证明的像素或 DOM 文本仍不参与同步。
+
+### 17.7 v0.62 把高频视图动作纳入真实教学
+
+工作区用 `⌘⌥ 1/2/3` 或 `Ctrl Alt 1/2/3` 快速进入 Split、Source、Preview；按钮、辅助技术标签、首启按键练习和九语言本地指南共享这一合同。视图快捷键在任何写入审核或视觉草稿期间停用，也不作用于 Empty Workspace；它只能改变本机显示偏好，不能改变或保存 Artifact。

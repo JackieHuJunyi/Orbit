@@ -11,6 +11,7 @@ import {
   RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
   RUNE_WORKSPACE_VIEW_STORAGE_KEY,
   RUNE_WORKSPACE_VIEWS,
+  workspaceViewFromKeyboardShortcut,
   workspaceSplitTracks,
 } from "../app/lib/workspace-layout.ts";
 
@@ -29,6 +30,24 @@ test("accepts only the three explicit presentation views", () => {
   for (const view of RUNE_WORKSPACE_VIEWS) assert.equal(normalizeRuneWorkspaceView(view), view);
   assert.equal(normalizeRuneWorkspaceView("focus"), null);
   assert.equal(normalizeRuneWorkspaceView(null), null);
+});
+
+test("maps one explicit cross-platform shortcut family to presentation views", () => {
+  const shortcut = (code, overrides = {}) => workspaceViewFromKeyboardShortcut({
+    altKey: true,
+    code,
+    ctrlKey: true,
+    metaKey: false,
+    shiftKey: false,
+    ...overrides,
+  });
+  assert.equal(shortcut("Digit1"), "split");
+  assert.equal(shortcut("Digit2", { ctrlKey: false, metaKey: true }), "source");
+  assert.equal(shortcut("Digit3"), "preview");
+  assert.equal(shortcut("Digit4"), null);
+  assert.equal(shortcut("Digit1", { altKey: false }), null);
+  assert.equal(shortcut("Digit1", { shiftKey: true }), null);
+  assert.equal(shortcut("Digit1", { ctrlKey: false }), null);
 });
 
 test("rejects corrupt persisted split values and emits complementary grid tracks", () => {
