@@ -1,6 +1,6 @@
 # ADR 0013: Task results use a shared device evidence ledger
 
-- Status: accepted
+- Status: accepted; authority migration completed by ADR 0014
 - Date: 2026-08-14
 
 ## Context
@@ -19,7 +19,7 @@ After an exact Deck output is downloaded or pushed to a folder, Rune may ask for
 
 The ledger never stores canonical source, filenames as measurement fields, prompts, Query rows, model responses, credentials, user identity, or background telemetry. Source-owned task recipes remain in readable Artifacts; operational evidence belongs to the device ledger.
 
-Operating Review keeps its existing saved-workflow evidence schema for backward compatibility in this milestone, but the delivery dialog now consumes the task-neutral rating contract. A later migration may move legacy records into the shared ledger only with an explicit, tested storage-version transition; Rune will not maintain two authoritative copies of the same run.
+Operating Review keeps its existing saved-workflow evidence schema for backward compatibility in this milestone, but the delivery dialog now consumes the task-neutral rating contract. [ADR 0014](0014-task-evidence-authority-migrates-forward-once.md) subsequently performs the explicit storage-version transition: new Operating Review evidence uses the shared ledger, while records that lack historical revision proof remain read-only instead of being rewritten as exact evidence.
 
 ## Consequences
 

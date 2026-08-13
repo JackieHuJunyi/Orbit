@@ -2022,3 +2022,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 交付记录最多 24 条，绑定 run、task、output、handoff、rating、elapsed time 与 output SHA-256；同一 run/output 的再次确认覆盖旧值。
 - 账本不保存 canonical source、文件名作为测量字段、prompt、模型 response、Query rows、credential、用户身份或后台 telemetry；设备结果不能冒充 Demand、Retention、付费或商业结论证据。
 - recipe 继续属于可读 Artifact，phase 属于纯 task runtime，model I/O 属于 injected port，运行证据属于 device ledger，唯一 writer 仍是既有 Apply transaction。Operating Review 旧记录只有在显式 storage migration 后才能迁入，当前不双写。
+
+### 17.30 v0.96 证据迁移不能伪造历史，也不能让依赖变化冒充原交付
+
+- `RuneTaskEvidence` 设备存储从 v1 前向迁移到 v2；有效的 v1 精确记录无损保留，此后 Operating Review 与 Document → Presentation 的 applied/stopped、provider、token、耗时、运行影响和精确身份只写同一个账本。
+- Operating Review 保存对象继续只拥有可重复 recipe 和 exact Artifact ids。旧 `runs/deliveries` 因为没有历史 source/output revision，保留为只读“早期本机记录”，不再追加、不计入当前成功率，也不能获得新的交付确认。
+- 经营汇报的候选事务在 runtime preflight 之前就声明 exact Data source 与 Query/Chart/Document/Slides outputs，因此 validation、runtime、stale、Apply cancellation 和 persistence failure 复用同一 stopped-run 边界；记录失败仍不得改变零写入结果。
+- 成功 Apply 必须把 workspace、checkpoint、saved recipe 与 shared run 一次持久化；第三条任务只需提交相同 task identity，不得再引入 task-specific evidence store 或第二种 delivery dialog。
+- 交付资格不只检查被下载的 Markdown。当前 Data source 与该 run 的全部 Query、Chart、Document、Slides outputs 都必须逐一匹配 portable revision；任何依赖或另一份成品变化都要求完整重跑后再确认。
+- 交付记录仍只保存 handoff、rating、elapsed time 和选定 output 的 SHA-256，不保存正文、数据行、prompt、模型输出、凭据、身份或后台 telemetry；本机证据仍不能替代真实用户、复用、付费和业务正确性验证。

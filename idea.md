@@ -2271,3 +2271,13 @@ v0.95 增加静态 typed `RuneTaskEvidence` ledger。Document briefing 的成功
 交付评价必须比 Artifact id 更严格。Rune 只有在当前 Document 与 Deck 都仍匹配那次 applied run 的版本时，才在 Deck Markdown、PPTX、ODP、HTML、PDF 下载或 folder Push 后询问可用性；任一侧后来被编辑，旧 run 不再获得评价入口。确认记录再以 SHA-256 绑定当时输出，reconfirm 覆盖同一 run/output，避免虚增数量。账本最多保留 24 次运行和 24 次交付，不保存正文、文件名内容、prompt、模型 response、Query 行、credential、用户 identity 或后台 telemetry。
 
 这次复用的是 DeepSeek Harness 值得借鉴的 owner/capability 思路，而不是它的 session shell：task recipe 仍属于 readable Artifact，短期 phase 属于纯 runtime，网络属于 injected model port，运行证据属于 device ledger，writer 仍只有既有 Apply transaction。Operating Review 的旧 schema 为兼容当前设备暂不迁移；未来只能通过显式 storage version 与测试完成一次性迁移，不能长期双写同一个 run。
+
+## 101. v0.96 迁移证据权威时，宁可诚实保留旧记录，也不能补造不存在的版本证明
+
+v0.95 已经证明第二条任务可以复用 shared ledger，但经营汇报仍在保存对象里追加自己的 run 和 delivery。继续维持两条路径，会迫使第三条任务选择一套复制，也会让 UI、隐私上限、停止原因和交付校验逐渐分叉。真正低成本的扩展不是再抽象一个接口包住两份真相，而是让新证据只拥有一个 owner。
+
+Rune 因此把 `RuneTaskEvidence` 前向升级为 storage v2。原 v1 里已经有 exact source/output revision 的 Document briefing 记录可以无损规范化；Operating Review 的旧记录没有这些字段，不能把今天的 Data、Query 或成品版本写回过去，假装当时已经证明。它们继续以只读“早期本机记录”出现，但不再被生产路径追加，不计入当前 applied/usable 指标，也不能触发新的 delivery confirmation。用户重新运行一次，新的精确证据自然进入 shared ledger。
+
+经营汇报现在和文档转演示一样，在候选事务形成时声明 exact source 与全部 outputs；成功 Apply 将 source、checkpoint、recipe 和 run 一次持久化，失败与取消走同一个 bounded stopped path。交付检查也从“下载的报告源码没变”升级为“Data 与 Query、Chart、报告、演示全部没变”。这是必要的，因为 Query 或 Chart 可以改变最终渲染数字，而 Markdown 字节保持相同。任何一环变化，旧 run 都不能被计为这次真实交付。
+
+这一迁移不增加 cloud analytics、用户身份、后台任务或新的 writer。ledger 仍不含正文、数据行、prompt、模型 response 或 credential；它只让两条已存在的 focused task 使用同一种运行事实。下一条真实任务可以直接复用 task id、source/output identity、stop 与 delivery port，而不需要复制一套产品证据系统。

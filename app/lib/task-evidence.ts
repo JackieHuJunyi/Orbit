@@ -48,15 +48,21 @@ export type RuneTaskDeliveryOutcome = {
 };
 
 export type RuneTaskEvidence = {
-  version: 1;
+  version: 2;
   runs: RuneTaskRun[];
   deliveries: RuneTaskDeliveryOutcome[];
 };
 
 export const EMPTY_RUNE_TASK_EVIDENCE: RuneTaskEvidence = {
-  version: 1,
+  version: 2,
   runs: [],
   deliveries: [],
+};
+
+export type RuneTaskRunIdentity = {
+  taskId: RuneTaskId;
+  sourceArtifactId: string;
+  outputArtifactIds: readonly string[];
 };
 
 const TASK_IDS = new Set<RuneTaskId>(["operating-review", "document-briefing"]);
@@ -161,7 +167,7 @@ export function normalizeRuneTaskRuns(value: unknown): RuneTaskRun[] {
 
 export function appendRuneTaskRun(evidence: RuneTaskEvidence, run: RuneTaskRun): RuneTaskEvidence {
   const runs = normalizeRuneTaskRuns([run, ...evidence.runs]);
-  return normalizeRuneTaskEvidence({ ...evidence, runs });
+  return normalizeRuneTaskEvidence({ ...evidence, version: 2, runs });
 }
 
 export function summarizeRuneTaskRuns(runs: RuneTaskRun[]) {
@@ -240,13 +246,26 @@ function normalizeRuneTaskDeliveries(value: unknown, runs: RuneTaskRun[]): RuneT
 export function normalizeRuneTaskEvidence(value: unknown): RuneTaskEvidence {
   if (!value || typeof value !== "object") return { ...EMPTY_RUNE_TASK_EVIDENCE };
   const candidate = value as Partial<RuneTaskEvidence>;
-  if (candidate.version !== 1) return { ...EMPTY_RUNE_TASK_EVIDENCE };
+  const version = (candidate as { version?: unknown }).version;
+  if (version !== 1 && version !== 2) return { ...EMPTY_RUNE_TASK_EVIDENCE };
   const runs = normalizeRuneTaskRuns(candidate.runs);
   return {
-    version: 1,
+    version: 2,
     runs,
     deliveries: normalizeRuneTaskDeliveries(candidate.deliveries, runs),
   };
+}
+
+export function runeTaskRunMatchesIdentity(run: RuneTaskRun, identity: RuneTaskRunIdentity) {
+  if (run.taskId !== identity.taskId || run.sourceArtifactId !== identity.sourceArtifactId
+    || run.outputArtifactIds.length !== identity.outputArtifactIds.length) return false;
+  const expectedOutputs = new Set(identity.outputArtifactIds);
+  return expectedOutputs.size === identity.outputArtifactIds.length
+    && run.outputArtifactIds.every((artifactId) => expectedOutputs.has(artifactId));
+}
+
+export function runeTaskRunsForIdentity(evidence: RuneTaskEvidence, identity: RuneTaskRunIdentity) {
+  return normalizeRuneTaskEvidence(evidence).runs.filter((run) => runeTaskRunMatchesIdentity(run, identity));
 }
 
 export async function recordRuneTaskDelivery(input: {
@@ -255,6 +274,7 @@ export async function recordRuneTaskDelivery(input: {
   artifactId: string;
   source: string;
   currentSourceRevision: string;
+  currentOutputRevisions: Record<string, string>;
   method: RuneTaskDeliveryMethod;
   target: RuneTaskDeliveryTarget;
   rating: RuneTaskDeliveryRating;
@@ -266,6 +286,11 @@ export async function recordRuneTaskDelivery(input: {
   if (!run.outputArtifactIds.includes(input.artifactId)) throw new Error("This file is not an exact output of the applied task.");
   if (run.sourceRevision !== input.currentSourceRevision) {
     throw new Error("The task source changed after this run. Refresh the output before confirming delivery.");
+  }
+  const currentOutputIds = Object.keys(input.currentOutputRevisions);
+  if (currentOutputIds.length !== run.outputArtifactIds.length
+    || run.outputArtifactIds.some((artifactId) => input.currentOutputRevisions[artifactId] !== run.outputRevisions[artifactId])) {
+    throw new Error("One or more task outputs changed after this run. Run or refresh the complete task before confirming delivery.");
   }
   if (run.outputRevisions[input.artifactId] !== portableSourceRevision(input.source)) {
     throw new Error("This output changed after the applied task. Run or refresh the task again before confirming delivery.");

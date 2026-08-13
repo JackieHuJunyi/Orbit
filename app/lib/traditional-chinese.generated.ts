@@ -2350,6 +2350,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "新源內容預覽"
   ],
   [
+    "早期本机记录",
+    "早期本機記錄"
+  ],
+  [
     "更新已保存的",
     "更新已儲存的"
   ],
@@ -4268,6 +4272,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "口径",
     "口徑"
+  ],
+  [
+    "只读",
+    "只讀"
   ],
   [
     "可读",

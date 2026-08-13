@@ -227,14 +227,10 @@ import {
 import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
 import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 import {
-  appendOperatingReviewRun,
   createSavedOperatingReview,
   MAX_SAVED_OPERATING_REVIEWS,
   normalizeSavedOperatingReviews,
   prepareSavedOperatingReviewRerun,
-  recordOperatingReviewDelivery,
-  summarizeOperatingReviewDeliveryOutcomes,
-  summarizeOperatingReviewRuns,
   type OperatingReviewInput,
   type OperatingReviewNarrative,
   type SavedOperatingReview,
@@ -252,6 +248,7 @@ import {
   appendRuneTaskRun,
   normalizeRuneTaskEvidence,
   recordRuneTaskDelivery,
+  runeTaskRunsForIdentity,
   summarizeRuneTaskDeliveries,
   summarizeRuneTaskRuns,
   type RuneTaskDeliveryMethod,
@@ -376,11 +373,9 @@ type PendingExport = {
 };
 
 type PendingDeliveryConfirmation = {
-  recordKind: "operating-review" | "task-evidence";
-  workflowId?: string;
   runId: string;
   workflowTitle: string;
-  taskSourceArtifactId?: string;
+  taskSourceArtifactId: string;
   artifactId: string;
   artifactName: string;
   sourceRevision: string;
@@ -767,7 +762,6 @@ export function RuneWorkbench() {
   const checkpointsRef = useRef(checkpoints);
   const savedOperatingReviewsRef = useRef(savedOperatingReviews);
   const taskEvidenceRef = useRef(taskEvidence);
-  const recordedStoppedReviewIdsRef = useRef(new Set<string>());
   const recordedStoppedTaskIdsRef = useRef(new Set<string>());
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
@@ -2080,23 +2074,24 @@ export function RuneWorkbench() {
     const workflow = savedOperatingReviewsRef.current.find((candidate) => (
       candidate.artifactIds.document === artifact.id || candidate.artifactIds.slides === artifact.id
     ));
-    const run = workflow?.runs.find((candidate) => candidate.status === "applied");
     const taskRun = taskEvidenceRef.current.runs.find((candidate) => {
       const taskSource = artifactsRef.current.find((item) => item.id === candidate.sourceArtifactId);
+      const outputsAreCurrent = candidate.outputArtifactIds.every((artifactId) => {
+        const output = artifactsRef.current.find((item) => item.id === artifactId);
+        return Boolean(output) && candidate.outputRevisions[artifactId] === portableSourceRevision(output?.source ?? "");
+      });
       return candidate.status === "applied"
         && candidate.outputArtifactIds.includes(artifact.id)
-        && candidate.outputRevisions[artifact.id] === portableSourceRevision(artifact.source)
+        && outputsAreCurrent
         && Boolean(taskSource)
         && candidate.sourceRevision === portableSourceRevision(taskSource?.source ?? "");
     });
-    if ((!workflow || !run) && !taskRun) return;
+    if (!taskRun) return;
     setDeliveryOutcomeError("");
     setPendingDeliveryConfirmation({
-      recordKind: workflow && run ? "operating-review" : "task-evidence",
-      ...(workflow && run ? { workflowId: workflow.id } : {}),
-      runId: run?.id ?? taskRun?.id ?? "",
+      runId: taskRun.id,
       workflowTitle: workflow?.input.title ?? artifact.name,
-      ...(taskRun ? { taskSourceArtifactId: taskRun.sourceArtifactId } : {}),
+      taskSourceArtifactId: taskRun.sourceArtifactId,
       artifactId: artifact.id,
       artifactName: artifact.name,
       sourceRevision: artifact.source,
@@ -2116,39 +2111,27 @@ export function RuneWorkbench() {
       if (!currentOutput || currentOutput.source !== pending.sourceRevision) {
         throw new Error("The deliverable changed after this confirmation opened. Export or hand it off again.");
       }
-      if (pending.recordKind === "operating-review") {
-        const workflow = savedOperatingReviewsRef.current.find((candidate) => candidate.id === pending.workflowId);
-        if (!workflow) throw new Error("The saved task is no longer available.");
-        const recorded = await recordOperatingReviewDelivery({
-          workflow,
-          runId: pending.runId,
-          artifactId: pending.artifactId,
-          source: pending.sourceRevision,
-          method: pending.method,
-          target: pending.target,
-          rating,
-        });
-        const nextSavedReviews = savedOperatingReviewsRef.current.map((candidate) => (
-          candidate.id === recorded.id ? recorded : candidate
-        ));
-        persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews, taskEvidenceRef.current);
-        setSavedOperatingReviews(nextSavedReviews);
-      } else {
-        const taskSource = artifactsRef.current.find((artifact) => artifact.id === pending.taskSourceArtifactId);
-        if (!taskSource) throw new Error("The exact task source is no longer available.");
-        const nextEvidence = await recordRuneTaskDelivery({
-          evidence: taskEvidenceRef.current,
-          runId: pending.runId,
-          artifactId: pending.artifactId,
-          source: pending.sourceRevision,
-          currentSourceRevision: portableSourceRevision(taskSource.source),
-          method: pending.method,
-          target: pending.target,
-          rating,
-        });
-        persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, savedOperatingReviewsRef.current, nextEvidence);
-        setTaskEvidence(nextEvidence);
-      }
+      const taskSource = artifactsRef.current.find((artifact) => artifact.id === pending.taskSourceArtifactId);
+      if (!taskSource) throw new Error("The exact task source is no longer available.");
+      const currentOutputRevisions = Object.fromEntries(
+        taskEvidenceRef.current.runs.find((run) => run.id === pending.runId)?.outputArtifactIds.flatMap((artifactId) => {
+          const output = artifactsRef.current.find((artifact) => artifact.id === artifactId);
+          return output ? [[artifactId, portableSourceRevision(output.source)] as const] : [];
+        }) ?? [],
+      );
+      const nextEvidence = await recordRuneTaskDelivery({
+        evidence: taskEvidenceRef.current,
+        runId: pending.runId,
+        artifactId: pending.artifactId,
+        source: pending.sourceRevision,
+        currentSourceRevision: portableSourceRevision(taskSource.source),
+        currentOutputRevisions,
+        method: pending.method,
+        target: pending.target,
+        rating,
+      });
+      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, savedOperatingReviewsRef.current, nextEvidence);
+      setTaskEvidence(nextEvidence);
       setPendingDeliveryConfirmation(null);
       setNotice(ui.deliveryOutcomeRecorded);
     } catch (error) {
@@ -2608,43 +2591,6 @@ export function RuneWorkbench() {
     }
   }
 
-  function recordStoppedOperatingReview(
-    workflow: SavedOperatingReview | undefined,
-    stopReason: "validation" | "runtime" | "stale" | "persistence" | "cancelled",
-    startedAt: number,
-    changeCount = 0,
-    runtimePreflight?: RuntimeImpactPreflight,
-  ) {
-    if (!workflow) return;
-    const runIdentity = `${workflow.id}:${startedAt}:${stopReason}`;
-    if (recordedStoppedReviewIdsRef.current.has(runIdentity)) return;
-    recordedStoppedReviewIdsRef.current.add(runIdentity);
-    const stopped = appendOperatingReviewRun(workflow, {
-      version: 1,
-      id: `run:${workflow.id}:stopped:${Date.now()}`,
-      completedAt: new Date().toISOString(),
-      period: workflow.input.period,
-      status: "stopped",
-      stopReason,
-      provider: "local",
-      changedFileCount: changeCount,
-      queryCount: runtimePreflight?.queryCount ?? 0,
-      chartConsumerCount: runtimePreflight?.chartConsumerCount ?? 0,
-      durationMs: Math.max(0, Date.now() - startedAt),
-      inputTokens: null,
-      outputTokens: null,
-    });
-    const nextSavedReviews = savedOperatingReviewsRef.current.map((item) => (
-      item.id === stopped.id ? stopped : item
-    ));
-    try {
-      persistDeviceWorkspace(artifactsRef.current, selectedId, checkpointsRef.current, nextSavedReviews, taskEvidenceRef.current);
-      setSavedOperatingReviews(nextSavedReviews);
-    } catch {
-      // A stopped run is evidence only; it must never weaken the zero-source-write guarantee.
-    }
-  }
-
   function runeTaskRunFromPendingChange(
     change: PendingChange,
     status: RuneTaskRun["status"],
@@ -2704,13 +2650,6 @@ export function RuneWorkbench() {
   function applyPendingChange() {
     if (!pendingChange) return;
     if (!workspaceMatchesSourceRevision(artifacts, pendingChange.baseRevision)) {
-      recordStoppedOperatingReview(
-        pendingChange.savedOperatingReviewAfterApply,
-        "stale",
-        pendingChange.preparedAt ?? Date.now(),
-        pendingChange.patches.length + pendingChange.creations.length,
-        pendingChange.runtimePreflight,
-      );
       recordStoppedRuneTask(pendingChange, "stale");
       setAgentError("The workspace changed while this Agent plan was being prepared. Discard it and plan again from the current source revision.");
       setNotice("Patch held for review — workspace source revision changed");
@@ -2721,13 +2660,6 @@ export function RuneWorkbench() {
       return artifact ? [artifact] : [];
     });
     if (targetArtifacts.length !== pendingChange.patches.length) {
-      recordStoppedOperatingReview(
-        pendingChange.savedOperatingReviewAfterApply,
-        "stale",
-        pendingChange.preparedAt ?? Date.now(),
-        pendingChange.patches.length + pendingChange.creations.length,
-        pendingChange.runtimePreflight,
-      );
       recordStoppedRuneTask(pendingChange, "stale");
       setAgentError("The plan references a file that is no longer in this workspace.");
       setNotice("Patch held for review — workspace context changed");
@@ -2760,13 +2692,6 @@ export function RuneWorkbench() {
       pendingChange.creations,
     );
     if (prepared.errors.length) {
-      recordStoppedOperatingReview(
-        pendingChange.savedOperatingReviewAfterApply,
-        "validation",
-        pendingChange.preparedAt ?? Date.now(),
-        pendingChange.patches.length + pendingChange.creations.length,
-        pendingChange.runtimePreflight,
-      );
       recordStoppedRuneTask(pendingChange, "validation");
       setAgentError(prepared.errors.slice(0, 3).join(" "));
       setNotice("Nothing applied — the complete workspace did not pass validation");
@@ -2794,30 +2719,13 @@ export function RuneWorkbench() {
     const nextSelectedId = pendingChange.selectAfterApplyArtifactId
       ?? pendingChange.creations[0]?.artifact.id
       ?? selectedId;
-    const completedWorkflow = pendingChange.savedOperatingReviewAfterApply
-      ? appendOperatingReviewRun(pendingChange.savedOperatingReviewAfterApply, {
-          version: 1,
-          id: `run:${pendingChange.savedOperatingReviewAfterApply.id}:${Date.now()}`,
-          completedAt: new Date().toISOString(),
-          period: pendingChange.savedOperatingReviewAfterApply.input.period,
-          status: "applied",
-          stopReason: null,
-          provider: pendingChange.provider === "local" ? "local" : "openai",
-          changedFileCount: pendingChange.patches.length + pendingChange.creations.length,
-          queryCount: pendingChange.runtimePreflight?.queryCount ?? 0,
-          chartConsumerCount: pendingChange.runtimePreflight?.chartConsumerCount ?? 0,
-          durationMs: pendingChange.preparedAt == null ? 0 : Math.max(0, Date.now() - pendingChange.preparedAt),
-          inputTokens: pendingChange.usage?.inputTokens ?? null,
-          outputTokens: pendingChange.usage?.outputTokens ?? null,
-        })
-      : undefined;
     const completedTaskRun = runeTaskRunFromPendingChange(pendingChange, "applied", null);
     const nextTaskEvidence = completedTaskRun
       ? appendRuneTaskRun(taskEvidenceRef.current, completedTaskRun)
       : taskEvidenceRef.current;
-    const nextSavedReviews = completedWorkflow
+    const nextSavedReviews = pendingChange.savedOperatingReviewAfterApply
       ? [
-          completedWorkflow,
+          pendingChange.savedOperatingReviewAfterApply,
           ...savedOperatingReviews.filter((workflow) => workflow.id !== pendingChange.savedOperatingReviewAfterApply?.id),
         ].slice(0, MAX_SAVED_OPERATING_REVIEWS)
       : savedOperatingReviews;
@@ -2827,13 +2735,6 @@ export function RuneWorkbench() {
       setSaveState("error");
       setAgentError("Device storage is full, so Rune kept every source unchanged.");
       setNotice("Nothing applied — atomic persistence failed");
-      recordStoppedOperatingReview(
-        pendingChange.savedOperatingReviewAfterApply,
-        "persistence",
-        pendingChange.preparedAt ?? Date.now(),
-        pendingChange.patches.length + pendingChange.creations.length,
-        pendingChange.runtimePreflight,
-      );
       recordStoppedRuneTask(pendingChange, "persistence");
       return;
     }
@@ -2860,13 +2761,6 @@ export function RuneWorkbench() {
 
   function discardPendingChange() {
     if (!pendingChange) return;
-    recordStoppedOperatingReview(
-      pendingChange.savedOperatingReviewAfterApply,
-      "cancelled",
-      pendingChange.preparedAt ?? Date.now(),
-      pendingChange.patches.length + pendingChange.creations.length,
-      pendingChange.runtimePreflight,
-    );
     recordStoppedRuneTask(pendingChange, "cancelled");
     setPendingChange(null);
     setPendingReviewId("");
@@ -2981,6 +2875,7 @@ export function RuneWorkbench() {
 
   async function prepareOperatingReview(input: OperatingReviewInput) {
     if (operatingReviewState !== "idle" || pendingChange) return;
+    const taskStartedAt = Date.now();
     setOperatingReviewError("");
     setOperatingReviewState("checking");
     const baseArtifacts = artifactsRef.current;
@@ -3029,21 +2924,52 @@ export function RuneWorkbench() {
         return;
       }
       const reviewPlan = prepared.plan;
+      const savedOperatingReviewAfterApply: SavedOperatingReview | undefined = savedWorkflow
+        ? { ...savedWorkflow, input: { ...input, deliverables: [...input.deliverables] } }
+        : createSavedOperatingReview(input, reviewPlan);
+      if (!savedOperatingReviewAfterApply) {
+        setOperatingReviewError("Rune could not resolve the exact outputs for this operating review.");
+        return;
+      }
+      const pendingTaskChange: PendingChange = {
+        prompt: input.focus,
+        provider,
+        ...(narrative ? { planningKind: "task-narrative" as const } : {}),
+        scope: "workspace",
+        baseRevision,
+        savedOperatingReviewAfterApply,
+        taskRun: {
+          taskId: "operating-review",
+          sourceArtifactId: input.dataArtifactId,
+          outputArtifactIds: Object.values(savedOperatingReviewAfterApply.artifactIds),
+        },
+        preparedAt: taskStartedAt,
+        usage,
+        ...reviewPlan,
+      };
       const transaction = prepareWorkspaceMutation(
         baseArtifacts,
         reviewPlan.patches,
         reviewPlan.creations,
       );
       if (transaction.errors.length) {
+        recordStoppedRuneTask(pendingTaskChange, "validation");
         setOperatingReviewError(transaction.errors.slice(0, 3).join(" "));
         return;
       }
-      const runtimePreflight = await preflightRuntimeMutation(
-        baseArtifacts,
-        reviewPlan.patches,
-        reviewPlan.creations,
-      );
+      let runtimePreflight: RuntimeImpactPreflight | undefined;
+      try {
+        runtimePreflight = await preflightRuntimeMutation(
+          baseArtifacts,
+          reviewPlan.patches,
+          reviewPlan.creations,
+        );
+      } catch (error) {
+        recordStoppedRuneTask(pendingTaskChange, "runtime");
+        throw error;
+      }
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
+        recordStoppedRuneTask({ ...pendingTaskChange, runtimePreflight }, "stale");
         setOperatingReviewError(runeText(locale, "The workspace changed during validation. Prepare the review again from the current data.", "验证期间工作区已发生变化。请按当前数据重新准备。"));
         setNotice(runeText(locale, "Review not prepared — workspace revision changed", "汇报未生成 — 工作区版本已变化"));
         return;
@@ -3053,23 +2979,12 @@ export function RuneWorkbench() {
         .find((creation) => creation.artifact.kind === "document")
         ?? [...reviewPlan.creations].reverse().find((creation) => creation.artifact.kind === "slides")
         ?? reviewPlan.creations.at(-1);
-      const savedOperatingReviewAfterApply: SavedOperatingReview | undefined = savedWorkflow
-        ? { ...savedWorkflow, input: { ...input, deliverables: [...input.deliverables] } }
-        : createSavedOperatingReview(input, reviewPlan);
       setPendingChange({
-        prompt: input.focus,
-        provider,
-        ...(narrative ? { planningKind: "task-narrative" as const } : {}),
-        scope: "workspace",
-        baseRevision,
+        ...pendingTaskChange,
         selectAfterApplyArtifactId: preferredArtifact?.artifact.id
-          ?? savedOperatingReviewAfterApply?.artifactIds.document
-          ?? savedOperatingReviewAfterApply?.artifactIds.slides
-          ?? savedOperatingReviewAfterApply?.artifactIds.chart,
-        savedOperatingReviewAfterApply,
-        preparedAt: Date.now(),
-        usage,
-        ...reviewPlan,
+          ?? savedOperatingReviewAfterApply.artifactIds.document
+          ?? savedOperatingReviewAfterApply.artifactIds.slides
+          ?? savedOperatingReviewAfterApply.artifactIds.chart,
         runtimePreflight,
       });
       setPendingReviewId(reviewPlan.creations[0]?.artifact.id ?? reviewPlan.patches[0]?.artifactId ?? "");
@@ -3885,7 +3800,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.95</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.96</strong></footer>
               </div>
             )}
           </div>
@@ -4036,9 +3951,18 @@ export function RuneWorkbench() {
                 {savedOperatingReviews.map((workflow) => {
                   const complete = artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId)
                     && Object.values(workflow.artifactIds).every((artifactId) => artifacts.some((artifact) => artifact.id === artifactId));
-                  const latestRun = workflow.runs[0];
-                  const runSummary = summarizeOperatingReviewRuns(workflow.runs);
-                  const deliverySummary = summarizeOperatingReviewDeliveryOutcomes(workflow.deliveries);
+                  const workflowRuns = runeTaskRunsForIdentity(taskEvidence, {
+                    taskId: "operating-review",
+                    sourceArtifactId: workflow.input.dataArtifactId,
+                    outputArtifactIds: Object.values(workflow.artifactIds),
+                  });
+                  const latestRun = workflowRuns[0];
+                  const runSummary = summarizeRuneTaskRuns(workflowRuns);
+                  const workflowRunIds = new Set(workflowRuns.map((run) => run.id));
+                  const workflowDeliveries = taskEvidence.deliveries.filter((delivery) => (
+                    delivery.taskId === "operating-review" && workflowRunIds.has(delivery.runId)
+                  ));
+                  const deliverySummary = summarizeRuneTaskDeliveries(workflowDeliveries);
                   return (
                     <article className="saved-review-card" key={workflow.id}>
                       <button
@@ -4053,15 +3977,35 @@ export function RuneWorkbench() {
                         <Play aria-hidden="true" />
                       </button>
                       <div className="saved-review-metrics">
-                        <span>{latestRun ? `${ui.taskRuns(workflow.runs.length)} · ${ui.lastRun} ${latestRun.status === "applied" ? ui.runApplied : ui.runStopped}` : ui.noTaskRuns}</span>
+                        <span>{ui.operatingReviewTask} · {latestRun ? `${ui.taskRuns(workflowRuns.length)} · ${ui.lastRun} ${latestRun.status === "applied" ? ui.runApplied : ui.runStopped}` : ui.noTaskRuns}</span>
                         {latestRun && <span>{ui.successRate(runSummary.successRate)} · {ui.averageReviewTime(runSummary.averageDurationMs)}</span>}
                         <span>{deliverySummary.total
                           ? `${deliverySummary.total} ${ui.confirmedDeliverables} · ${deliverySummary.usableRate}% ${ui.usableDeliverables}`
                           : ui.noDeliveryOutcomes}</span>
                       </div>
-                      {!!workflow.runs.length && (
+                      {!!workflowRuns.length && (
                         <details className="saved-review-history">
                           <summary>{ui.runHistory}</summary>
+                          <ol>
+                            {workflowRuns.map((run) => {
+                              const runDeliveries = workflowDeliveries.filter((delivery) => delivery.runId === run.id);
+                              return (
+                                <li key={run.id}>
+                                  <span className={run.status}>{run.status === "applied" ? ui.runApplied : ui.runStopped}</span>
+                                  <strong>{workflow.input.period}</strong>
+                                  <small>{run.completedAt.slice(0, 10)} · {ui.runImpact(run.changedFileCount, run.queryCount, run.chartConsumerCount)}</small>
+                                  <small>{ui.taskTime} {Math.max(1, Math.round(run.durationMs / 1000))}s · {run.provider}</small>
+                                  <small>{run.status === "stopped" && run.stopReason ? ui.stopReasons[run.stopReason] : ui.tokenUse(run.inputTokens, run.outputTokens)}</small>
+                                  {runDeliveries.map((delivery) => <small key={delivery.id}>{ui.deliveryRatings[delivery.rating]} · {delivery.target.toUpperCase()}</small>)}
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        </details>
+                      )}
+                      {!!workflow.runs.length && (
+                        <details className="saved-review-history legacy-task-evidence">
+                          <summary>{ui.earlierDeviceRecords} · {workflow.runs.length}</summary>
                           <ol>
                             {workflow.runs.map((run) => {
                               const runDeliveries = workflow.deliveries.filter((delivery) => delivery.runId === run.id);

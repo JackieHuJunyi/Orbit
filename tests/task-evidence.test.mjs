@@ -11,6 +11,8 @@ import {
   normalizeRuneTaskEvidence,
   recordRuneTaskDelivery,
   runeTaskDeliveryId,
+  runeTaskRunMatchesIdentity,
+  runeTaskRunsForIdentity,
   summarizeRuneTaskDeliveries,
   summarizeRuneTaskRuns,
 } from "../app/lib/task-evidence.ts";
@@ -42,6 +44,7 @@ function briefingRun(overrides = {}) {
 
 test("records one normalized content-free task run and summary", () => {
   const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
+  assert.equal(evidence.version, 2);
   assert.equal(evidence.runs.length, 1);
   assert.deepEqual(summarizeRuneTaskRuns(evidence.runs), {
     total: 1,
@@ -56,6 +59,46 @@ test("records one normalized content-free task run and summary", () => {
   assert.doesNotMatch(JSON.stringify(evidence), /strategy body|prompt|sourceText|documentText/u);
 });
 
+test("migrates the v1 ledger forward without losing exact runs or deliveries", () => {
+  const operatingReview = briefingRun({
+    id: "task-run:operating-review:one",
+    taskId: "operating-review",
+    sourceArtifactId: "review-data",
+    sourceRevision: portableSourceRevision("Region,Revenue\nNorth,120\n"),
+    outputArtifactIds: ["review-query", "review-chart", "review-document", "review-slides"],
+    outputSources: ["SELECT 1;", "{}", "# Review\n", "---\ntitle: Review\n---\n"],
+  });
+  const migrated = normalizeRuneTaskEvidence({
+    version: 1,
+    runs: [operatingReview],
+    deliveries: [{
+      version: 1,
+      id: runeTaskDeliveryId(operatingReview.id, "review-document"),
+      confirmedAt: "2026-08-14T08:01:00.000Z",
+      runId: operatingReview.id,
+      taskId: "operating-review",
+      artifactId: "review-document",
+      method: "download",
+      target: "pdf",
+      rating: "ready",
+      sourceSha256: "a".repeat(64),
+      taskDurationMs: 64_000,
+    }],
+  });
+  const identity = {
+    taskId: "operating-review",
+    sourceArtifactId: "review-data",
+    outputArtifactIds: ["review-slides", "review-document", "review-chart", "review-query"],
+  };
+
+  assert.equal(migrated.version, 2);
+  assert.equal(migrated.deliveries.length, 1);
+  assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], identity), true);
+  assert.deepEqual(runeTaskRunsForIdentity(migrated, identity).map((run) => run.id), [operatingReview.id]);
+  assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, outputArtifactIds: ["review-document"] }), false);
+  assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, sourceArtifactId: "another-data" }), false);
+});
+
 test("binds a delivery judgment to the exact applied task output and revision", async () => {
   const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
   const source = "# strategy-briefing\n";
@@ -65,6 +108,7 @@ test("binds a delivery judgment to the exact applied task output and revision", 
     artifactId: "strategy-briefing",
     source,
     currentSourceRevision: evidence.runs[0].sourceRevision,
+    currentOutputRevisions: evidence.runs[0].outputRevisions,
     method: "download",
     target: "pptx",
     rating: "minor-edits",
@@ -87,6 +131,31 @@ test("binds a delivery judgment to the exact applied task output and revision", 
   assert.doesNotMatch(JSON.stringify(recorded), /Strategy briefing|Direction/u);
 });
 
+test("refuses an operating-review handoff when any linked task output changed", async () => {
+  const run = briefingRun({
+    id: "task-run:operating-review:delivery",
+    taskId: "operating-review",
+    sourceArtifactId: "review-data",
+    outputArtifactIds: ["review-query", "review-chart", "review-document"],
+    outputSources: ["SELECT 1;", "{}", "# Review\n"],
+  });
+  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
+  await assert.rejects(() => recordRuneTaskDelivery({
+    evidence,
+    runId: run.id,
+    artifactId: "review-document",
+    source: "# Review\n",
+    currentSourceRevision: run.sourceRevision,
+    currentOutputRevisions: {
+      ...run.outputRevisions,
+      "review-chart": portableSourceRevision('{"changed":true}'),
+    },
+    method: "download",
+    target: "pdf",
+    rating: "ready",
+  }), /task outputs changed/i);
+});
+
 test("fails closed for fabricated, stopped, mismatched, or malformed task evidence", async () => {
   const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
   await assert.rejects(() => recordRuneTaskDelivery({
@@ -95,6 +164,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
     artifactId: "another-deck",
     source: "# Forged\n",
     currentSourceRevision: evidence.runs[0].sourceRevision,
+    currentOutputRevisions: evidence.runs[0].outputRevisions,
     method: "download",
     target: "pptx",
     rating: "ready",
@@ -105,6 +175,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
     artifactId: "strategy-briefing",
     source: "# Changed after Apply\n",
     currentSourceRevision: evidence.runs[0].sourceRevision,
+    currentOutputRevisions: evidence.runs[0].outputRevisions,
     method: "download",
     target: "pptx",
     rating: "ready",
@@ -115,6 +186,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
     artifactId: "strategy-briefing",
     source: "# strategy-briefing\n",
     currentSourceRevision: portableSourceRevision("# Revised strategy memo\n"),
+    currentOutputRevisions: evidence.runs[0].outputRevisions,
     method: "download",
     target: "pptx",
     rating: "ready",
@@ -126,6 +198,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
     artifactId: "strategy-briefing",
     source: "# Stopped\n",
     currentSourceRevision: stopped.runs[0].sourceRevision,
+    currentOutputRevisions: stopped.runs[0].outputRevisions,
     method: "folder",
     target: "folder",
     rating: "ready",
@@ -169,6 +242,7 @@ test("keeps run and delivery history bounded, newest first, and reconfirmation s
       artifactId: `delivery-deck-${index}`,
       source: `# Deck ${index}\n`,
       currentSourceRevision: run.sourceRevision,
+      currentOutputRevisions: run.outputRevisions,
       method: "download",
       target: "pdf",
       rating: "ready",
@@ -183,6 +257,7 @@ test("keeps run and delivery history bounded, newest first, and reconfirmation s
     artifactId: latest.artifactId,
     source: `# Deck ${MAX_RUNE_TASK_DELIVERIES + 5}\n`,
     currentSourceRevision: deliveryEvidence.runs.find((run) => run.id === latest.runId).sourceRevision,
+    currentOutputRevisions: deliveryEvidence.runs.find((run) => run.id === latest.runId).outputRevisions,
     method: "folder",
     target: "folder",
     rating: "not-ready",

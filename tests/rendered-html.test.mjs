@@ -399,24 +399,25 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
 });
 
-test("records user-confirmed deliverable outcomes after exact downloads or folder handoffs", async () => {
+test("records user-confirmed deliverable outcomes through the shared exact-revision ledger", async () => {
   const [workbench, dialog, outcomes, overlays] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/delivery-outcome-dialog.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/delivery-outcomes.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/task-evidence.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
   ]);
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(exportedArtifact, "download", result\.targetType/);
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(handoffArtifact, "folder", "folder"/);
-  assert.match(workbench, /recordOperatingReviewDelivery\(/);
-  assert.match(workbench, /persistDeviceWorkspace\(artifactsRef\.current, selectedId, checkpointsRef\.current, nextSavedReviews, taskEvidenceRef\.current\)/);
-  assert.match(workbench, /summarizeOperatingReviewDeliveryOutcomes\(workflow\.deliveries\)/);
+  assert.match(workbench, /recordRuneTaskDelivery\(\{/);
+  assert.match(workbench, /persistDeviceWorkspace\(artifactsRef\.current, selectedId, checkpointsRef\.current, savedOperatingReviewsRef\.current, nextEvidence\)/);
+  assert.match(workbench, /summarizeRuneTaskDeliveries\(workflowDeliveries\)/);
+  assert.doesNotMatch(workbench, /recordOperatingReviewDelivery\(/);
   assert.match(dialog, /Did this result become usable in real work\?/);
   assert.match(dialog, /type="radio"/);
   assert.match(dialog, /never document text or prompts/);
   assert.match(outcomes, /crypto\.subtle\.digest\("SHA-256"/);
-  assert.match(outcomes, /operatingReviewDeliveryId\(runId, artifactId\)/);
-  assert.match(outcomes, /MAX_OPERATING_REVIEW_DELIVERIES = 12/);
+  assert.match(outcomes, /runeTaskDeliveryId\(runId, artifactId\)/);
+  assert.match(outcomes, /MAX_RUNE_TASK_DELIVERIES = 24/);
   assert.doesNotMatch(outcomes, /prompt|documentText|sourceText/);
   assert.match(overlays, /\.delivery-outcome-options label\.selected/);
   assert.match(overlays, /\.delivery-outcome-context\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
@@ -450,7 +451,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.95<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.96<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

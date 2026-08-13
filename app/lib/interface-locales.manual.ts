@@ -65,7 +65,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
 } as Record<"fr" | "es" | "ru" | "ar" | "ja" | "ko", Record<string, string>>;
 
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
-  "Recent task runs": "Exécutions récentes", "Document to presentation": "Du document à la présentation", "Task time": "Durée de la tâche",
+  "Recent task runs": "Exécutions récentes", "Operating review": "Revue d’activité", "Document to presentation": "Du document à la présentation", "Task time": "Durée de la tâche", "Earlier device records (read only)": "Anciens enregistrements de l’appareil (lecture seule)",
   Appearance: "Apparence", "Choose Rune's character color": "Choisissez la couleur de caractère de Rune", "Current theme": "Thème actuel",
   "More tools": "Plus d’outils", "Workspace tools": "Outils de l’espace de travail", "Help, models, folder, and appearance": "Aide, modèles, dossier et apparence",
   "Source and versions": "Source et versions",
@@ -81,7 +81,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| Basculer entre Partagé / Source / Aperçu | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
-  "Recent task runs": "Ejecuciones recientes", "Document to presentation": "De documento a presentación", "Task time": "Duración de la tarea",
+  "Recent task runs": "Ejecuciones recientes", "Operating review": "Revisión operativa", "Document to presentation": "De documento a presentación", "Task time": "Duración de la tarea", "Earlier device records (read only)": "Registros anteriores del dispositivo (solo lectura)",
   Appearance: "Apariencia", "Choose Rune's character color": "Elige el color de carácter de Rune", "Current theme": "Tema actual",
   "More tools": "Más herramientas", "Workspace tools": "Herramientas del espacio de trabajo", "Help, models, folder, and appearance": "Ayuda, modelos, carpeta y apariencia",
   "Source and versions": "Fuente y versiones",
@@ -97,7 +97,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| Cambiar vista Dividida / Fuente / Vista previa | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
-  "Recent task runs": "Недавние запуски задач", "Document to presentation": "Из документа в презентацию", "Task time": "Время задачи",
+  "Recent task runs": "Недавние запуски задач", "Operating review": "Операционный обзор", "Document to presentation": "Из документа в презентацию", "Task time": "Время задачи", "Earlier device records (read only)": "Ранние записи на устройстве (только чтение)",
   Appearance: "Оформление", "Choose Rune's character color": "Выберите характерный цвет Rune", "Current theme": "Текущая тема",
   "More tools": "Другие инструменты", "Workspace tools": "Инструменты рабочей области", "Help, models, folder, and appearance": "Справка, модели, папка и оформление",
   "Source and versions": "Исходник и версии",
@@ -113,7 +113,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| Вид: оба окна / исходник / предпросмотр | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
-  "Recent task runs": "عمليات المهام الأخيرة", "Document to presentation": "من مستند إلى عرض تقديمي", "Task time": "مدة المهمة",
+  "Recent task runs": "عمليات المهام الأخيرة", "Operating review": "مراجعة التشغيل", "Document to presentation": "من مستند إلى عرض تقديمي", "Task time": "مدة المهمة", "Earlier device records (read only)": "سجلات سابقة على الجهاز (للقراءة فقط)",
   Appearance: "المظهر", "Choose Rune's character color": "اختر لون طابع Rune", "Current theme": "السمة الحالية",
   "More tools": "المزيد من الأدوات", "Workspace tools": "أدوات مساحة العمل", "Help, models, folder, and appearance": "المساعدة والنماذج والمجلد والمظهر",
   "Source and versions": "المصدر والإصدارات",
@@ -129,7 +129,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| تبديل عرض مقسّم / المصدر / المعاينة | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
-  "Recent task runs": "最近のタスク実行", "Document to presentation": "文書からプレゼンテーションへ", "Task time": "タスク時間",
+  "Recent task runs": "最近のタスク実行", "Operating review": "経営レビュー", "Document to presentation": "文書からプレゼンテーションへ", "Task time": "タスク時間", "Earlier device records (read only)": "以前のデバイス記録（読み取り専用）",
   Appearance: "外観", "Choose Rune's character color": "Rune のテーマカラーを選択", "Current theme": "現在のテーマ",
   "More tools": "その他のツール", "Workspace tools": "ワークスペースツール", "Help, models, folder, and appearance": "ヘルプ・モデル・フォルダ・外観",
   "Source and versions": "ソースとバージョン",
@@ -145,7 +145,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |": "| 分割 / ソース / プレビュー表示を切り替える | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
-  "Recent task runs": "최근 작업 실행", "Document to presentation": "문서에서 프레젠테이션으로", "Task time": "작업 시간",
+  "Recent task runs": "최근 작업 실행", "Operating review": "운영 검토", "Document to presentation": "문서에서 프레젠테이션으로", "Task time": "작업 시간", "Earlier device records (read only)": "이전 기기 기록(읽기 전용)",
   Appearance: "화면 스타일", "Choose Rune's character color": "Rune의 테마 색상 선택", "Current theme": "현재 테마",
   "More tools": "도구 더 보기", "Workspace tools": "작업 공간 도구", "Help, models, folder, and appearance": "도움말, 모델, 폴더 및 화면 스타일",
   "Source and versions": "소스 및 버전",
