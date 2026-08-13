@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { prepareDocumentBriefingWorkflow } from "../app/lib/document-briefing.ts";
+import {
+  documentBriefingSourceIdForPresentation,
+  documentBriefingTargets,
+  prepareDocumentBriefingWorkflow,
+} from "../app/lib/document-briefing.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { buildWorkspaceDependencyGraph } from "../app/lib/dependency-graph.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
@@ -83,6 +87,49 @@ test("preserves all nine interface locales as Deck document metadata", () => {
   }
 });
 
+test("refreshes one linked presentation in place while retaining identity and lineage", () => {
+  const created = prepareDocumentBriefingWorkflow([sourceDocument], input()).plan?.creations[0].artifact;
+  assert.ok(created);
+  const themedDeck = { ...created, source: created.source.replace("theme: rune", "theme: rune-dark") };
+  assert.equal(documentBriefingSourceIdForPresentation(themedDeck), sourceDocument.id);
+  assert.deepEqual(documentBriefingTargets([sourceDocument, themedDeck], sourceDocument.id), [{
+    artifactId: themedDeck.id,
+    name: themedDeck.name,
+    title: "Launch briefing",
+    slideCount: 6,
+  }]);
+
+  const updatedDocument = {
+    ...sourceDocument,
+    source: sourceDocument.source.replace(
+      "Launch with a focused workflow",
+      "Launch the reviewed workflow this month",
+    ),
+  };
+  const refreshed = prepareDocumentBriefingWorkflow(
+    [updatedDocument, themedDeck],
+    input({ targetArtifactId: themedDeck.id, focus: "Approve the launch plan for this month." }),
+  );
+  assert.deepEqual(refreshed.errors, []);
+  assert.equal(refreshed.plan?.creations.length, 0);
+  assert.equal(refreshed.plan?.patches.length, 1);
+  assert.equal(refreshed.plan?.patches[0].artifactId, themedDeck.id);
+  assert.notEqual(refreshed.plan?.patches[0].nextSource, themedDeck.source);
+  const nextDeck = { ...themedDeck, source: refreshed.plan?.patches[0].nextSource ?? "" };
+  assert.equal(nextDeck.id, themedDeck.id);
+  assert.equal(nextDeck.name, themedDeck.name);
+  assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.origin, sourceDocument.id);
+  assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.theme, "rune-dark");
+
+  const review = buildWorkspaceTransactionReview([updatedDocument, themedDeck], refreshed.plan?.patches ?? [], []);
+  assert.deepEqual(review.errors, []);
+  assert.deepEqual(review.nodes.map((node) => [node.artifactId, node.status]), [
+    [updatedDocument.id, "input"],
+    [themedDeck.id, "edited"],
+  ]);
+  assert.deepEqual(review.edges.map((edge) => [edge.kind, edge.status]), [["deck-origin", "retained"]]);
+});
+
 test("sanitizes imported document syntax instead of creating executable or implicit bindings", () => {
   const unsafe = {
     ...sourceDocument,
@@ -129,6 +176,30 @@ test("fails without mutating frozen inputs when the source identity, kind, or co
   ], input({ slideCount: 8 }));
   assert.equal(short.plan, undefined);
   assert.match(short.errors.join(" "), /enough readable material/);
+  assert.equal(JSON.stringify(frozen), before);
+});
+
+test("refuses missing, wrong-kind, unrelated, and unchanged refresh targets without mutation", () => {
+  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0].artifact;
+  assert.ok(created);
+  const frozen = Object.freeze([Object.freeze({ ...sourceDocument }), Object.freeze({ ...created })]);
+  const before = JSON.stringify(frozen);
+  const missing = prepareDocumentBriefingWorkflow(frozen, input({ slideCount: 4, targetArtifactId: "missing" }));
+  assert.equal(missing.plan, undefined);
+  assert.match(missing.errors.join(" "), /target is missing/);
+  const wrongKind = prepareDocumentBriefingWorkflow(frozen, input({ slideCount: 4, targetArtifactId: sourceDocument.id }));
+  assert.equal(wrongKind.plan, undefined);
+  assert.match(wrongKind.errors.join(" "), /must be a Deck Markdown/);
+  const otherSource = { ...sourceDocument, id: "other-source", name: "other.md" };
+  const unrelated = prepareDocumentBriefingWorkflow(
+    [otherSource, created],
+    input({ sourceArtifactId: otherSource.id, slideCount: 4, targetArtifactId: created.id }),
+  );
+  assert.equal(unrelated.plan, undefined);
+  assert.match(unrelated.errors.join(" "), /is not linked to Document source/);
+  const unchanged = prepareDocumentBriefingWorkflow(frozen, input({ slideCount: 4, targetArtifactId: created.id }));
+  assert.equal(unchanged.plan, undefined);
+  assert.match(unchanged.errors.join(" "), /proposed source is unchanged/);
   assert.equal(JSON.stringify(frozen), before);
 });
 

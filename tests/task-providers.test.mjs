@@ -1,0 +1,65 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { RUNE_TASK_DEFINITIONS } from "../app/lib/task-runtime.ts";
+import { RUNE_TASK_PROVIDER_IDS, prepareRuneTaskProvider } from "../app/lib/task-providers.ts";
+
+const document = {
+  id: "source",
+  name: "source.md",
+  kind: "document",
+  language: "Markdown",
+  source: "# Source\n\n## Context\n\nA sufficiently detailed context statement for a presentation.\n\n## Decision\n\nA sufficiently detailed decision statement for the final slide.",
+};
+
+test("keeps every registered task paired with one static provider", () => {
+  assert.deepEqual(Object.keys(RUNE_TASK_PROVIDER_IDS).sort(), Object.keys(RUNE_TASK_DEFINITIONS).sort());
+});
+
+test("routes a typed document task through the shared pure provider boundary", () => {
+  const prepared = prepareRuneTaskProvider([document], {
+    taskId: "document-briefing",
+    input: {
+      sourceArtifactId: document.id,
+      title: "Source briefing",
+      audience: "team",
+      focus: "Agree the next decision.",
+      slideCount: 4,
+      locale: "en",
+    },
+  });
+  assert.deepEqual(prepared.errors, []);
+  assert.equal(prepared.plan?.patches.length, 0);
+  assert.equal(prepared.plan?.creations[0].artifact.kind, "slides");
+});
+
+test("routes a typed operating-review task through the same provider boundary", () => {
+  const data = {
+    id: "source-data",
+    name: "source-data.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Region,Revenue\nAPAC,120\nEMEA,90\n",
+  };
+  const prepared = prepareRuneTaskProvider([data], {
+    taskId: "operating-review",
+    input: {
+      title: "Weekly review",
+      dataArtifactId: data.id,
+      category: "Region",
+      value: "Revenue",
+      aggregation: "sum",
+      mark: "bar",
+      format: "currency",
+      period: "This week",
+      audience: "leadership",
+      focus: "Choose the next regional priority.",
+      deliverables: ["document"],
+      locale: "en",
+    },
+  });
+  assert.deepEqual(prepared.errors, []);
+  assert.deepEqual(prepared.plan?.creations.map((creation) => creation.artifact.kind), [
+    "query", "chart", "document",
+  ]);
+});

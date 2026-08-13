@@ -425,3 +425,29 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Next: choose audience and presentation purpose": "다음: 대상과 프레젠테이션 목적 선택", "No usable Document in this workspace": "이 작업 공간에 사용할 수 있는 Document가 없습니다", "Presentation length": "프레젠테이션 길이", "Presentation title": "프레젠테이션 제목", slides: "슬라이드", "Source identity": "소스 ID",
   "State what the audience needs to understand and the decision the presentation should support.": "대상이 이해해야 할 내용과 프레젠테이션이 뒷받침할 결정을 적으세요.", Team: "팀", "Turn one document into a light presentation": "한 문서를 가벼운 프레젠테이션으로", "Verifying source…": "소스 확인 중…", "What should this presentation move forward?": "이 프레젠테이션으로 무엇을 진전시킬까요?",
 });
+
+// Human-reviewed refresh copy for repeatable source-linked presentations.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "Choisissez un document vérifié, un public et un objectif. Rune peut créer une présentation ou actualiser une présentation liée tout en conservant l’identité du fichier et sa relation avec la source.",
+  "Create a new presentation": "Créer une nouvelle présentation", "Create or refresh a light presentation": "Créer ou actualiser une présentation légère", "New Deck Markdown": "Nouveau Deck Markdown", "Presentation destination": "Destination de la présentation", "Refresh linked presentation in place": "Actualiser la présentation liée sur place", "Update in place · identity preserved": "Mise à jour sur place · identité préservée",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "Elige un documento revisado, el público y el objetivo. Rune puede crear una presentación nueva o actualizar una vinculada conservando la identidad del archivo y su relación con el origen.",
+  "Create a new presentation": "Crear una presentación nueva", "Create or refresh a light presentation": "Crear o actualizar una presentación ligera", "New Deck Markdown": "Nuevo Deck Markdown", "Presentation destination": "Destino de la presentación", "Refresh linked presentation in place": "Actualizar la presentación vinculada en el mismo archivo", "Update in place · identity preserved": "Actualización en el mismo archivo · identidad conservada",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "Выберите проверенный документ, аудиторию и цель. Rune может создать новую презентацию или обновить связанную, сохранив идентичность файла и связь с источником.",
+  "Create a new presentation": "Создать новую презентацию", "Create or refresh a light presentation": "Создайте или обновите лёгкую презентацию", "New Deck Markdown": "Новый Deck Markdown", "Presentation destination": "Куда сохранить презентацию", "Refresh linked presentation in place": "Обновить связанную презентацию на месте", "Update in place · identity preserved": "Обновление на месте · идентичность сохранена",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Rune إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
+  "Create a new presentation": "إنشاء عرض جديد", "Create or refresh a light presentation": "أنشئ عرضًا خفيفًا أو حدّثه", "New Deck Markdown": "Deck Markdown جديد", "Presentation destination": "وجهة العرض", "Refresh linked presentation in place": "تحديث العرض المرتبط في مكانه", "Update in place · identity preserved": "تحديث في المكان · الهوية محفوظة",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "確認済みの文書、対象者、目的を選択してください。Rune は新しいプレゼンテーションを作成することも、ファイル ID と元文書との関係を保ったまま既存の連携プレゼンテーションを更新することもできます。",
+  "Create a new presentation": "新しいプレゼンテーションを作成", "Create or refresh a light presentation": "軽やかなプレゼンテーションを作成・更新", "New Deck Markdown": "新しい Deck Markdown", "Presentation destination": "プレゼンテーションの保存先", "Refresh linked presentation in place": "連携プレゼンテーションをそのまま更新", "Update in place · identity preserved": "同じファイルを更新 · ID を保持",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.": "검토된 문서, 대상, 목적을 선택하세요. Rune은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
+  "Create a new presentation": "새 프레젠테이션 만들기", "Create or refresh a light presentation": "가벼운 프레젠테이션 만들기 또는 갱신", "New Deck Markdown": "새 Deck Markdown", "Presentation destination": "프레젠테이션 대상", "Refresh linked presentation in place": "연결된 프레젠테이션을 제자리에서 갱신", "Update in place · identity preserved": "제자리 업데이트 · ID 유지",
+});

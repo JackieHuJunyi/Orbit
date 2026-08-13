@@ -1979,3 +1979,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - `origin` 是 lineage，不是自动双写。Document 后续变化不会暗中覆盖 Deck；更新演示仍需重跑任务或提交可审核 Agent proposal。
 - UI 学习 DeepSeek Harness 的窄 action、mounted identity、能力 seam 和 overlay 边界，但保持 Rune 的 Apple-informed 材质、内容比例和 source-linked Office 心智；不复制其聊天外观，也不在两个任务时引入完整插件 host。
 - 所有新增入口、导入续接、设置弹层和错误状态覆盖简中、繁中、英、法、西、俄、阿、日、韩；Arabic RTL 与 reduced-motion 继续沿用既有全局合同。
+
+### 17.25 v0.84 来源相连的演示必须可重复刷新
+
+- Document → Presentation 不能每次都创建带序号的新文件；设置界面必须明确选择“新建演示”或只从当前 Document 的有效 `origin` 边中选择一个现有 Deck 原位刷新。
+- 刷新目标必须使用 exact Artifact id，并重新验证 Deck Markdown、当前 `origin`、完整 workspace revision 与生成后的完整依赖图；不得通过标题、文件名或最近使用记录猜测。
+- 成功刷新只产生一个 `ArtifactSourcePatch`，保留目标 id、filename、Rune light/dark theme 与 Document origin；title、locale、audience、focus 和 4/6/8 页内容按当前输入重新编译。
+- 事务审核必须显示 unchanged Document input、edited Deck 与 retained `deck-origin`；Apply 前 candidate workspace 可读，checkpoint、device storage、folder 与 canonical source 均不变化。
+- missing、wrong-kind、invalid Deck、unrelated origin、no-op、stale 或完整验证失败都必须零写入；选中一个有效关联 Deck 时，活动栏入口直接预选它及其 exact Document。
+- `task-providers.ts` 作为静态 discriminated provider seam 统一调用两条纯任务 compiler；它不拥有 React、浏览器、持久化、模型或 Apply，也不升级为动态插件 host。
+- 新增目标选择、身份提示与刷新状态覆盖九种界面语言，并继续服从 RTL、焦点陷阱、键盘取消和 reduced-motion 合同。

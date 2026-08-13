@@ -11,6 +11,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import {
   MAX_DOCUMENT_BRIEFING_FOCUS_CHARS,
   MAX_DOCUMENT_BRIEFING_TITLE_CHARS,
+  documentBriefingTargets,
   prepareDocumentBriefingWorkflow,
   type DocumentBriefingInput,
   type DocumentBriefingSlideCount,
@@ -24,6 +25,7 @@ type DocumentBriefingDialogProps = {
   locale: RuneLocale;
   error?: string;
   preferredDocumentArtifactId?: string;
+  preferredPresentationArtifactId?: string;
   onCancel: () => void;
   onPrepare: (input: DocumentBriefingInput) => void | Promise<void>;
 };
@@ -31,13 +33,16 @@ type DocumentBriefingDialogProps = {
 export const DOCUMENT_BRIEFING_BASE_COPY = {
   "zh-CN": {
     kicker: "文档到演示 · 来源相连",
-    title: "把一份文档变成轻盈的演示",
-    description: "选择已审核的文档、受众和重点。Rune 会生成可编辑的 Deck Markdown，并保留到原文档的明确来源关系。",
+    title: "创建或刷新一份轻盈的演示",
+    description: "选择已审核的文档、受众和重点。Rune 可以创建新演示，也可以刷新一份已关联的演示，同时保留原文件身份与来源关系。",
     details: "文档演示任务设置",
     presentationTitle: "演示标题",
     titlePlaceholder: "例如：产品发布简报",
     source: "文档来源",
     noSource: "工作区中没有可用的 Document",
+    destination: "演示去向",
+    newPresentation: "创建一份新演示",
+    refreshPresentation: "原位刷新已关联演示",
     audience: "受众",
     leadership: "管理层",
     team: "团队",
@@ -50,7 +55,8 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     sourceIdentity: "来源身份",
     output: "可编辑成品",
     export: "现有导出",
-    outputValue: "Deck Markdown",
+    newOutputValue: "新的 Deck Markdown",
+    refreshOutputValue: "原位更新并保留文件身份",
     exportValue: "HTML · PPTX · ODP · PDF",
     cancel: "取消",
     preparing: "正在验证来源…",
@@ -60,13 +66,16 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
   },
   en: {
     kicker: "Document to presentation · source linked",
-    title: "Turn one document into a light presentation",
-    description: "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.",
+    title: "Create or refresh a light presentation",
+    description: "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.",
     details: "Document-presentation task settings",
     presentationTitle: "Presentation title",
     titlePlaceholder: "For example: Product launch briefing",
     source: "Document source",
     noSource: "No usable Document in this workspace",
+    destination: "Presentation destination",
+    newPresentation: "Create a new presentation",
+    refreshPresentation: "Refresh linked presentation in place",
     audience: "Audience",
     leadership: "Leadership",
     team: "Team",
@@ -79,7 +88,8 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     sourceIdentity: "Source identity",
     output: "Editable output",
     export: "Existing exports",
-    outputValue: "Deck Markdown",
+    newOutputValue: "New Deck Markdown",
+    refreshOutputValue: "Update in place · identity preserved",
     exportValue: "HTML · PPTX · ODP · PDF",
     cancel: "Cancel",
     preparing: "Verifying source…",
@@ -98,27 +108,42 @@ export function DocumentBriefingDialog({
   locale,
   error,
   preferredDocumentArtifactId,
+  preferredPresentationArtifactId,
   onCancel,
   onPrepare,
 }: DocumentBriefingDialogProps) {
   const copy = documentBriefingCopy(locale);
   const sourceOptions = useMemo(() => artifacts.filter((artifact) => artifact.kind === "document"), [artifacts]);
-  const [sourceArtifactId, setSourceArtifactId] = useState(preferredDocumentArtifactId ?? "");
-  const [title, setTitle] = useState("");
+  const initialSourceArtifactId = preferredDocumentArtifactId ?? sourceOptions[0]?.id ?? "";
+  const initialTarget = documentBriefingTargets(artifacts, initialSourceArtifactId)
+    .find((target) => target.artifactId === preferredPresentationArtifactId);
+  const [sourceArtifactId, setSourceArtifactId] = useState(initialSourceArtifactId);
+  const [targetArtifactId, setTargetArtifactId] = useState(initialTarget?.artifactId ?? "");
+  const [title, setTitle] = useState(initialTarget?.title ?? "");
   const [audience, setAudience] = useState<DocumentBriefingInput["audience"]>("leadership");
-  const [slideCount, setSlideCount] = useState<DocumentBriefingSlideCount>(6);
+  const [slideCount, setSlideCount] = useState<DocumentBriefingSlideCount>(
+    initialTarget && [4, 6, 8].includes(initialTarget.slideCount)
+      ? initialTarget.slideCount as DocumentBriefingSlideCount
+      : 6,
+  );
   const [focus, setFocus] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const source = sourceOptions.find((artifact) => artifact.id === sourceArtifactId) ?? sourceOptions[0];
+  const targetOptions = useMemo(
+    () => documentBriefingTargets(artifacts, source?.id ?? ""),
+    [artifacts, source?.id],
+  );
+  const target = targetOptions.find((option) => option.artifactId === targetArtifactId);
   const input = useMemo<DocumentBriefingInput>(() => ({
     sourceArtifactId: source?.id ?? "",
+    ...(target ? { targetArtifactId: target.artifactId } : {}),
     title,
     audience,
     focus,
     slideCount,
     locale,
-  }), [audience, focus, locale, slideCount, source?.id, title]);
+  }), [audience, focus, locale, slideCount, source?.id, target, title]);
   const prepared = useMemo(() => prepareDocumentBriefingWorkflow(artifacts, input), [artifacts, input]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -175,9 +200,30 @@ export function DocumentBriefingDialog({
 
           <label className="operating-review-field wide" htmlFor="document-briefing-source">
             <span>{copy.source}</span>
-            <select id="document-briefing-source" value={source?.id ?? ""} onChange={(event) => setSourceArtifactId(event.target.value)} disabled={!sourceOptions.length} required>
+            <select id="document-briefing-source" value={source?.id ?? ""} onChange={(event) => {
+              setSourceArtifactId(event.target.value);
+              setTargetArtifactId("");
+              if (target) setTitle("");
+            }} disabled={!sourceOptions.length} required>
               {!sourceOptions.length && <option value="">{copy.noSource}</option>}
               {sourceOptions.map((artifact) => <option key={artifact.id} value={artifact.id}>{artifact.name} · Document</option>)}
+            </select>
+          </label>
+
+          <label className="operating-review-field wide" htmlFor="document-briefing-target">
+            <span>{copy.destination}</span>
+            <select id="document-briefing-target" value={target?.artifactId ?? ""} onChange={(event) => {
+              const nextTarget = targetOptions.find((option) => option.artifactId === event.target.value);
+              setTargetArtifactId(nextTarget?.artifactId ?? "");
+              if (nextTarget) {
+                setTitle(nextTarget.title);
+                if ([4, 6, 8].includes(nextTarget.slideCount)) {
+                  setSlideCount(nextTarget.slideCount as DocumentBriefingSlideCount);
+                }
+              } else setTitle("");
+            }}>
+              <option value="">{copy.newPresentation}</option>
+              {targetOptions.map((option) => <option key={option.artifactId} value={option.artifactId}>{copy.refreshPresentation} · {option.name}</option>)}
             </select>
           </label>
 
@@ -222,11 +268,11 @@ export function DocumentBriefingDialog({
             <FileText aria-hidden="true" />
             <div><span>{copy.summary}</span><strong id="document-briefing-summary-title">{title.trim() || copy.titlePlaceholder}</strong></div>
           </header>
-          <p>{source ? `${source.name} → ${slideCount} ${copy.slides} → ${copy.outputValue}` : copy.noSource}</p>
+          <p>{source ? `${source.name} → ${slideCount} ${copy.slides} → ${target?.name ?? copy.newOutputValue}` : copy.noSource}</p>
           <dl>
             <div><dt>{copy.sourceIdentity}</dt><dd>{source?.id ?? "—"}</dd></div>
             <div><dt>{copy.audience}</dt><dd>{audience === "customer" ? copy.customer : audience === "team" ? copy.team : copy.leadership}</dd></div>
-            <div><dt>{copy.output}</dt><dd>{copy.outputValue}</dd></div>
+            <div><dt>{copy.output}</dt><dd>{target ? copy.refreshOutputValue : copy.newOutputValue}</dd></div>
             <div><dt>{copy.export}</dt><dd>{copy.exportValue}</dd></div>
           </dl>
         </section>

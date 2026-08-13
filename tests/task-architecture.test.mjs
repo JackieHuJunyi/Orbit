@@ -17,13 +17,14 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, briefingDialog, briefingCompiler, styles] = await Promise.all([
+  const [workbench, empty, reviewDialog, operatingDialog, briefingDialog, briefingCompiler, providers, styles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
     source("../app/components/operating-review-dialog.tsx"),
     source("../app/components/document-briefing-dialog.tsx"),
     source("../app/lib/document-briefing.ts"),
+    source("../app/lib/task-providers.ts"),
     source("../app/styles/content.css"),
   ]);
 
@@ -39,8 +40,16 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(reviewDialog, /className="import-task-continuation"/);
   assert.match(operatingDialog, /initialInput\?\.dataArtifactId \?\? preferredDataArtifactId \?\? ""/);
   assert.match(briefingDialog, /preferredDocumentArtifactId/);
+  assert.match(briefingDialog, /preferredPresentationArtifactId/);
   assert.match(briefingCompiler, /origin: \$\{source\.id\}/);
+  assert.match(briefingCompiler, /Refresh/);
   assert.doesNotMatch(briefingCompiler, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
+  assert.match(providers, /case "operating-review"/);
+  assert.match(providers, /case "document-briefing"/);
+  assert.match(providers, /satisfies Record<RuneTaskId, true>/);
+  assert.doesNotMatch(providers, /react|localStorage|indexedDB|window\.|fetch\(|persist/i);
+  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{ taskId: "operating-review", input \}\)/);
+  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{ taskId: "document-briefing", input \}\)/);
   assert.match(styles, /\.empty-task-primary/);
   assert.match(styles, /\.import-task-continuation/);
 });

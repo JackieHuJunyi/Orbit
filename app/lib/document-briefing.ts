@@ -1,8 +1,10 @@
 import { prepareArtifactCreation } from "./artifact-creation.ts";
+import { isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { derivePreviewSourceTargets } from "./preview-targets.ts";
 import {
   prepareWorkspaceMutation,
   type ArtifactCreationChange,
+  type ArtifactSourcePatch,
 } from "./patches.ts";
 import { runeText, type RuneLocale } from "./localization.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
@@ -15,6 +17,7 @@ export type DocumentBriefingSlideCount = 4 | 6 | 8;
 
 export type DocumentBriefingInput = {
   sourceArtifactId: string;
+  targetArtifactId?: string;
   title: string;
   audience: DocumentBriefingAudience;
   focus: string;
@@ -25,8 +28,15 @@ export type DocumentBriefingInput = {
 export type DocumentBriefingPlan = {
   summary: string;
   detail: string;
-  patches: [];
-  creations: [ArtifactCreationChange];
+  patches: ArtifactSourcePatch[];
+  creations: ArtifactCreationChange[];
+};
+
+export type DocumentBriefingTarget = {
+  artifactId: string;
+  name: string;
+  title: string;
+  slideCount: number;
 };
 
 export type PreparedDocumentBriefing = {
@@ -35,6 +45,30 @@ export type PreparedDocumentBriefing = {
 };
 
 type BriefingUnit = { label: string; body: string };
+
+export function documentBriefingSourceIdForPresentation(artifact: WorkspaceArtifact) {
+  if (artifact.kind !== "slides" || !isDeckMarkdownArtifact(artifact)) return null;
+  const parsed = parseDeckSource(artifact.source);
+  if (!parsed.deck || parsed.errors.length) return null;
+  return parsed.deck.frontmatter.origin ?? null;
+}
+
+export function documentBriefingTargets(
+  artifacts: WorkspaceArtifact[],
+  sourceArtifactId: string,
+): DocumentBriefingTarget[] {
+  return artifacts.flatMap((artifact): DocumentBriefingTarget[] => {
+    if (documentBriefingSourceIdForPresentation(artifact) !== sourceArtifactId) return [];
+    const parsed = parseDeckSource(artifact.source);
+    if (!parsed.deck || parsed.errors.length) return [];
+    return [{
+      artifactId: artifact.id,
+      name: artifact.name,
+      title: parsed.deck.frontmatter.title,
+      slideCount: parsed.deck.slides.length,
+    }];
+  });
+}
 
 function normalizePlainText(value: string) {
   return value.normalize("NFKC").replace(/[\t ]+/gu, " ").trim();
@@ -133,7 +167,12 @@ function audienceLabel(locale: RuneLocale, audience: DocumentBriefingAudience) {
   return runeText(locale, english, chinese);
 }
 
-function deckSource(source: WorkspaceArtifact, input: DocumentBriefingInput, units: BriefingUnit[]) {
+function deckSource(
+  source: WorkspaceArtifact,
+  input: DocumentBriefingInput,
+  units: BriefingUnit[],
+  theme: "rune" | "rune-dark" = "rune",
+) {
   const title = markdownInline(normalizePlainText(input.title));
   const focus = markdownInline(normalizePlainText(input.focus));
   const audience = audienceLabel(input.locale, input.audience);
@@ -148,7 +187,7 @@ ${unit.body}`).join("\n\n---\n\n");
   return `---
 version: 1
 title: ${normalizePlainText(input.title)}
-theme: rune
+theme: ${theme}
 ratio: 16:9
 lang: ${input.locale}
 origin: ${source.id}
@@ -190,6 +229,26 @@ export function prepareDocumentBriefingWorkflow(
   const source = artifacts.find((artifact) => artifact.id === input.sourceArtifactId);
   if (!source) errors.push(`Document source is missing: ${input.sourceArtifactId}`);
   else if (source.kind !== "document") errors.push(`Presentation source must be a Document artifact: ${input.sourceArtifactId}`);
+  const target = input.targetArtifactId
+    ? artifacts.find((artifact) => artifact.id === input.targetArtifactId)
+    : undefined;
+  let targetTheme: "rune" | "rune-dark" = "rune";
+  if (input.targetArtifactId && !target) {
+    errors.push(`Presentation target is missing: ${input.targetArtifactId}`);
+  } else if (target) {
+    if (target.kind !== "slides" || !isDeckMarkdownArtifact(target)) {
+      errors.push(`Presentation target must be a Deck Markdown artifact: ${target.id}`);
+    } else {
+      const parsedTarget = parseDeckSource(target.source);
+      if (!parsedTarget.deck || parsedTarget.errors.length) {
+        errors.push(`${target.name} is not a valid Deck Markdown presentation.`);
+      } else if (parsedTarget.deck.frontmatter.origin !== input.sourceArtifactId) {
+        errors.push(`${target.name} is not linked to Document source ${input.sourceArtifactId}.`);
+      } else {
+        targetTheme = parsedTarget.deck.frontmatter.theme;
+      }
+    }
+  }
   if (errors.length || !source || source.kind !== "document") return { errors };
 
   const units = briefingUnits(source, input.slideCount - 2);
@@ -197,23 +256,37 @@ export function prepareDocumentBriefingWorkflow(
     return { errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`] };
   }
 
-  const prepared = prepareArtifactCreation(artifacts, { kind: "slides", title: input.title });
-  if (!prepared.artifact || prepared.errors.length) return { errors: prepared.errors };
-  const artifact = { ...prepared.artifact, source: deckSource(source, input, units) };
-  const creation: ArtifactCreationChange = {
-    artifact,
-    summary: `Create “${artifact.name}” from ${source.name}`,
-    detail: `${input.slideCount} editable Deck Markdown slides with an explicit origin link to ${source.id}.`,
-    operationCount: input.slideCount,
-  };
-  const transaction = prepareWorkspaceMutation(artifacts, [], [creation]);
+  const nextSource = deckSource(source, input, units, targetTheme);
+  let patches: ArtifactSourcePatch[] = [];
+  let creations: ArtifactCreationChange[] = [];
+  if (target) {
+    patches = [{
+      artifactId: target.id,
+      nextSource,
+      summary: `Refresh “${target.name}” from ${source.name}`,
+      detail: `Replace the current slide source with ${input.slideCount} reviewed slides while preserving ${target.id} and its explicit origin link.`,
+      operationCount: input.slideCount,
+    }];
+  } else {
+    const prepared = prepareArtifactCreation(artifacts, { kind: "slides", title: input.title });
+    if (!prepared.artifact || prepared.errors.length) return { errors: prepared.errors };
+    const artifact = { ...prepared.artifact, source: nextSource };
+    creations = [{
+      artifact,
+      summary: `Create “${artifact.name}” from ${source.name}`,
+      detail: `${input.slideCount} editable Deck Markdown slides with an explicit origin link to ${source.id}.`,
+      operationCount: input.slideCount,
+    }];
+  }
+  const transaction = prepareWorkspaceMutation(artifacts, patches, creations);
   if (transaction.errors.length) return { errors: transaction.errors };
+  const updating = Boolean(target);
   return {
     plan: {
-      summary: `Create a source-linked presentation from “${source.name}”`,
-      detail: `Compile ${input.slideCount} editable slides for ${audienceLabel(input.locale, input.audience)}; source identity remains explicit and every write requires review.`,
-      patches: [],
-      creations: [creation],
+      summary: `${updating ? "Refresh" : "Create"} a source-linked presentation from “${source.name}”`,
+      detail: `Compile ${input.slideCount} editable slides for ${audienceLabel(input.locale, input.audience)}; ${updating ? "the existing presentation identity" : "source identity"} remains explicit and every write requires review.`,
+      patches,
+      creations,
     },
     errors: [],
   };

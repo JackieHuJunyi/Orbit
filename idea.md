@@ -2155,3 +2155,13 @@ Document → Presentation 是现有 format capability 之间最短、最有用�
 Deck frontmatter 新增可选 `origin`。任务生成的 Deck 必须把原 Document id 写进去，dependency compiler 将其变成 `deck-origin`；transaction map 因而显示一份 unchanged input 如何产生一份 created presentation。missing 或 wrong-kind origin 在 mutation 边界失败，不能留下看似可用但已经失去来源的演示。这个关系只表达 lineage，不自动双写；未来更新仍必须是显式可审核任务，从而保持一个 canonical writer。
 
 从 DeepSeek Harness 学到的关键在这里落成四层：task capability、task session、pure provider、UI consumer。UI 入口可以增加，compiler 可以替换，导入/OCR 可以暂停再恢复，但 source authority、revision、persistence 和 Apply 不移动。等第三条真实任务出现时，再评估 typed task slot registry；在此之前不为抽象本身引入动态插件 host。
+
+## 89. v0.84 AI Native 任务必须能更新同一个成果，而不是不断生成副本
+
+Document → Presentation 的第一次创建已经证明 canonical source 可以跨格式编译，但真实周报、月报和项目简报要求用户下次仍然更新同一份演示。如果每轮只生成 `briefing-2`、`briefing-3`，Rune 仍然只是一次性生成器，文件夹交付、链接、版本和用户心智都会逐渐失去稳定身份。
+
+因此演示设置新增明确 destination：创建 collision-safe 新 Deck，或只列出 `origin` 精确指向当前 Document 的有效 Deck。刷新请求携带 exact target id；pure compiler 重读并验证当前 Deck Markdown 和 origin，随后产生一个 patch 而不是 creation。目标 id、文件名、Rune light/dark theme 与 origin 保持不变，title、language、audience、focus 和 4/6/8 页内容按本次输入重新编译。用户从一个已关联 Deck 启动任务时，Rune 由可读 origin 反向找到 exact Document 并预选原位刷新，不靠标题或最近记录猜测。
+
+刷新仍然不是自动同步。Document 改动不会暗中重写 Deck；用户发起、看见完整 candidate、检查 Document input → edited Deck 与 retained origin edge，再 Apply。missing、wrong-kind、malformed、unrelated、unchanged、stale 或下游验证失败都不产生 checkpoint、device write 或文件变化。这样“重复使用”建立在显式意图和稳定身份上，而不是后台双写。
+
+架构上增加的不是 plugin host，而是 `task-providers.ts` 这一条静态 discriminated seam。workbench 只提交 `{ taskId, input }`，provider 路由到纯 operating-review 或 document-briefing compiler；lifecycle、UI、credentials、storage 和 Apply 权限都留在原边界。这个 seam 让下一条任务增加 provider 时不必继续扩大 consumer import 面，同时仍保持普通 TypeScript、可 tree-shake、可单测和零运行时注册成本。

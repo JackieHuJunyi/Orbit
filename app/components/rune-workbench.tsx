@@ -230,7 +230,6 @@ import {
   createSavedOperatingReview,
   MAX_SAVED_OPERATING_REVIEWS,
   normalizeSavedOperatingReviews,
-  prepareOperatingReviewWorkflow,
   prepareSavedOperatingReviewRerun,
   recordOperatingReviewDelivery,
   summarizeOperatingReviewDeliveryOutcomes,
@@ -242,9 +241,10 @@ import {
   type SavedOperatingReview,
 } from "../lib/operating-review";
 import {
-  prepareDocumentBriefingWorkflow,
+  documentBriefingSourceIdForPresentation,
   type DocumentBriefingInput,
 } from "../lib/document-briefing";
+import { prepareRuneTaskProvider } from "../lib/task-providers";
 import {
   bindRuneTaskImportReview,
   prepareRuneTaskAfterImport,
@@ -674,6 +674,7 @@ export function RuneWorkbench() {
   const [documentBriefingOpen, setDocumentBriefingOpen] = useState(false);
   const [documentBriefingError, setDocumentBriefingError] = useState("");
   const [documentBriefingState, setDocumentBriefingState] = useState<"idle" | "checking">("idle");
+  const [preferredDocumentBriefingTargetId, setPreferredDocumentBriefingTargetId] = useState("");
   const [taskSession, setTaskSession] = useState<RuneTaskSession | null>(null);
   const [savedOperatingReviews, setSavedOperatingReviews] = useState<SavedOperatingReview[]>([]);
   const [editingOperatingReviewId, setEditingOperatingReviewId] = useState("");
@@ -1352,6 +1353,7 @@ export function RuneWorkbench() {
     setTaskSession(startRuneTaskSession(taskId, artifactsRef.current));
     setOperatingReviewError("");
     setDocumentBriefingError("");
+    setPreferredDocumentBriefingTargetId("");
     setEditingOperatingReviewId("");
     setEmptyWorkspace(true);
     setNotice(taskId === "document-briefing"
@@ -2739,6 +2741,7 @@ export function RuneWorkbench() {
     setOperatingReviewError("");
     setDocumentBriefingOpen(false);
     setDocumentBriefingError("");
+    setPreferredDocumentBriefingTargetId("");
     setHistoryOpen(false);
     setNewArtifactOpen(false);
     setNewArtifactError("");
@@ -2762,9 +2765,12 @@ export function RuneWorkbench() {
   }
 
   function openDocumentBriefing() {
+    const selectedOriginId = documentBriefingSourceIdForPresentation(selectedArtifact);
     const source = selectedArtifact.kind === "document"
       ? selectedArtifact
-      : artifactsRef.current.find((artifact) => artifact.kind === "document");
+      : selectedOriginId
+        ? artifactsRef.current.find((artifact) => artifact.id === selectedOriginId && artifact.kind === "document")
+        : artifactsRef.current.find((artifact) => artifact.kind === "document");
     if (!source) {
       setNotice(runeText(locale, "Open or import a Document before creating a presentation", "请先打开或导入一份 Document，再创建演示"));
       return;
@@ -2775,6 +2781,7 @@ export function RuneWorkbench() {
       return;
     }
     setTaskSession(prepared.session);
+    setPreferredDocumentBriefingTargetId(selectedOriginId && source.id === selectedOriginId ? selectedArtifact.id : "");
     setDocumentBriefingError("");
     setDocumentBriefingOpen(true);
     setNotice(runeText(locale, `Using ${source.name} as the exact presentation source`, `将 ${source.name} 作为演示的明确来源`));
@@ -2798,7 +2805,7 @@ export function RuneWorkbench() {
       const savedWorkflow = savedOperatingReviewsRef.current.find((workflow) => workflow.id === editingOperatingReviewId);
       const prepared = savedWorkflow
         ? prepareSavedOperatingReviewRerun(baseArtifacts, savedWorkflow, input)
-        : prepareOperatingReviewWorkflow(baseArtifacts, input);
+        : prepareRuneTaskProvider(baseArtifacts, { taskId: "operating-review", input });
       if (!prepared.plan || prepared.errors.length) {
         setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
         return;
@@ -2867,39 +2874,46 @@ export function RuneWorkbench() {
     const baseArtifacts = artifactsRef.current;
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
     try {
-      const prepared = prepareDocumentBriefingWorkflow(baseArtifacts, input);
+      const prepared = prepareRuneTaskProvider(baseArtifacts, { taskId: "document-briefing", input });
       if (!prepared.plan || prepared.errors.length) {
         setDocumentBriefingError(prepared.errors[0] ?? "Rune could not prepare this presentation.");
         return;
       }
-      const transaction = prepareWorkspaceMutation(baseArtifacts, [], prepared.plan.creations);
+      const transaction = prepareWorkspaceMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
       if (transaction.errors.length) {
         setDocumentBriefingError(transaction.errors.slice(0, 3).join(" "));
         return;
       }
-      const runtimePreflight = await preflightRuntimeMutation(baseArtifacts, [], prepared.plan.creations);
+      const runtimePreflight = await preflightRuntimeMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
         setDocumentBriefingError(runeText(locale, "The workspace changed during validation. Prepare the presentation again from the current document.", "验证期间工作区已发生变化。请按当前文档重新准备演示。"));
         setNotice(runeText(locale, "Presentation not prepared — workspace revision changed", "演示未生成 — 工作区版本已变化"));
         return;
       }
-      const creation = prepared.plan.creations[0];
+      const outputArtifactId = prepared.plan.patches[0]?.artifactId ?? prepared.plan.creations[0]?.artifact.id;
+      if (!outputArtifactId) {
+        setDocumentBriefingError("Rune could not resolve the presentation output.");
+        return;
+      }
       setPendingChange({
         prompt: input.focus,
         provider: "local",
         scope: "workspace",
         baseRevision,
-        selectAfterApplyArtifactId: creation.artifact.id,
+        selectAfterApplyArtifactId: outputArtifactId,
         preparedAt: Date.now(),
         ...prepared.plan,
         runtimePreflight,
       });
-      setPendingReviewId(creation.artifact.id);
+      setPendingReviewId(outputArtifactId);
       setAgentMode("local");
       setDocumentBriefingOpen(false);
+      setPreferredDocumentBriefingTargetId("");
       setTaskSession(null);
       setEmptyWorkspace(false);
-      setNotice(runeText(locale, `${input.slideCount} source-linked slides prepared; nothing writes until you approve the transaction`, `已准备 ${input.slideCount} 页保留来源关系的演示；审核后才会写入`));
+      setNotice(input.targetArtifactId
+        ? runeText(locale, `${input.slideCount} refreshed slides prepared in place; nothing writes until you approve the transaction`, `已准备原位刷新 ${input.slideCount} 页演示；审核后才会写入`)
+        : runeText(locale, `${input.slideCount} source-linked slides prepared; nothing writes until you approve the transaction`, `已准备 ${input.slideCount} 页保留来源关系的演示；审核后才会写入`));
     } catch (error) {
       setDocumentBriefingError(error instanceof Error ? error.message : "Rune could not validate this presentation.");
       setNotice(runeText(locale, "Presentation not prepared — runtime validation failed", "演示未生成 — 运行验证未通过"));
@@ -3605,7 +3619,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.83</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.84</strong></footer>
               </div>
             )}
           </div>
@@ -3647,8 +3661,8 @@ export function RuneWorkbench() {
               className="activity-button"
               onClick={openDocumentBriefing}
               disabled={artifactCreationDisabled || !artifacts.some((artifact) => artifact.kind === "document")}
-              aria-label={runeText(locale, "Create presentation from document", "从文档创建演示")}
-              title={runeText(locale, "Create presentation from document", "从文档创建演示")}
+              aria-label={runeText(locale, "Create or refresh presentation from document", "从文档创建或刷新演示")}
+              title={runeText(locale, "Create or refresh presentation from document", "从文档创建或刷新演示")}
             ><Presentation /></button>
             <button
               className="activity-button"
@@ -4256,17 +4270,19 @@ export function RuneWorkbench() {
       )}
       {documentBriefingOpen && (
         <DocumentBriefingDialog
-          key={`new-document-briefing:${taskSession?.phase === "configuring" ? taskSession.preferredArtifactId ?? "default" : "default"}`}
+          key={`document-briefing:${taskSession?.phase === "configuring" ? taskSession.preferredArtifactId ?? "default" : "default"}:${preferredDocumentBriefingTargetId || "new"}`}
           artifacts={artifacts}
           locale={locale}
           error={documentBriefingError}
           preferredDocumentArtifactId={taskSession?.phase === "configuring" && taskSession.taskId === "document-briefing"
             ? taskSession.preferredArtifactId ?? undefined
             : undefined}
+          preferredPresentationArtifactId={preferredDocumentBriefingTargetId || undefined}
           onCancel={() => {
             if (documentBriefingState !== "idle") return;
             setDocumentBriefingOpen(false);
             setDocumentBriefingError("");
+            setPreferredDocumentBriefingTargetId("");
             setTaskSession(null);
             setNotice(runeText(locale, "Document presentation cancelled — the workspace is unchanged", "已取消文档演示 — 工作区保持不变"));
           }}

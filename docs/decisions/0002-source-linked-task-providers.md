@@ -48,3 +48,5 @@ Rune still does not need a runtime plugin loader. At three independent tasks, we
 - `tests/task-runtime.test.mjs` proves both tasks share exact lifecycle rules.
 - `tests/document-briefing.test.mjs` proves deterministic generation, nine locale metadata, sanitization, collision handling, frozen-input zero-write failures, exact lineage, transaction review, and unresolved-origin refusal.
 - `tests/task-architecture.test.mjs` prevents UI, storage, provider, and network dependencies from entering either pure task boundary.
+
+The repeatable refresh amendment is recorded separately in [ADR 0003](0003-repeatable-source-linked-refresh.md).
