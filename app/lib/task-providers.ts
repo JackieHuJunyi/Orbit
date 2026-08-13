@@ -1,6 +1,7 @@
 import {
   prepareDocumentBriefingWorkflow,
   type DocumentBriefingInput,
+  type DocumentBriefingModelOutline,
   type PreparedDocumentBriefing,
 } from "./document-briefing.ts";
 import {
@@ -18,7 +19,7 @@ export const RUNE_TASK_PROVIDER_IDS = {
 
 export type RuneTaskProviderRequest =
   | { taskId: "operating-review"; input: OperatingReviewInput }
-  | { taskId: "document-briefing"; input: DocumentBriefingInput };
+  | { taskId: "document-briefing"; input: DocumentBriefingInput; outline?: DocumentBriefingModelOutline };
 
 export type PreparedRuneTaskProvider = PreparedOperatingReview | PreparedDocumentBriefing;
 
@@ -30,6 +31,6 @@ export function prepareRuneTaskProvider(
     case "operating-review":
       return prepareOperatingReviewWorkflow(artifacts, request.input);
     case "document-briefing":
-      return prepareDocumentBriefingWorkflow(artifacts, request.input);
+      return prepareDocumentBriefingWorkflow(artifacts, request.input, request.outline);
   }
 }

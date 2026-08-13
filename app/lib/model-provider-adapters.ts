@@ -111,6 +111,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
   input,
   schema,
   schemaName,
+  responseDescription = "Return Rune's required structured plan for local validation.",
   signal,
 }: {
   connection: ActiveModelConnection;
@@ -118,6 +119,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
   input: string;
   schema: T;
   schemaName: string;
+  responseDescription?: string;
   signal: AbortSignal;
 }): Promise<ProviderPlan> {
   const format = schemaFormat(schema, schemaName);
@@ -186,7 +188,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
         max_tokens: MAX_OUTPUT_TOKENS,
         system: instructions,
         messages: [{ role: "user", content: input }],
-        tools: [{ name: toolName, description: "Return Rune's proposed typed source-operation plan for local validation.", input_schema: format.schema }],
+        tools: [{ name: toolName, description: responseDescription, input_schema: format.schema }],
         tool_choice: { type: "tool", name: toolName, disable_parallel_tool_use: true },
       }),
     }, signal) as {

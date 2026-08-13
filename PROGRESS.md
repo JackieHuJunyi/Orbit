@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v0.88 with evidence-bound model-assisted Document-to-Presentation shaping across every configured provider, a transparent deterministic fallback, triple outline validation, and the unchanged single review-before-write mutation boundary.
 - 2026-08-14 — Shipped Rune v0.87 with an exact, localized, RTL-correct file-row action that opens a changed linked Deck directly into its restored refresh review without adding any write authority.
 - 2026-08-14 — Shipped Rune v0.86 with source-owned Document revision markers and localized current/changed/unknown presentation freshness in the file rail and refresh setup, while retaining explicit review-before-write.
 - 2026-08-14 — Shipped Rune v0.85 with portable source-owned Document briefing recipes: linked Deck Markdown now restores its bounded title, audience, purpose, slide count, and presentation language for the next reviewed in-place refresh without a duplicate browser-only task record.

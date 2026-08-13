@@ -9,6 +9,11 @@ import {
 import { runeText, type RuneLocale } from "./localization.ts";
 import { portableSourceRevision } from "./source-revision.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
+import {
+  validateDocumentBriefingModelOutline,
+  type DocumentBriefingEvidenceUnit,
+  type DocumentBriefingModelOutline,
+} from "./document-briefing-contract.ts";
 
 export const MAX_DOCUMENT_BRIEFING_TITLE_CHARS = 80;
 export const MAX_DOCUMENT_BRIEFING_FOCUS_CHARS = 180;
@@ -50,7 +55,10 @@ export type PreparedDocumentBriefing = {
   errors: string[];
 };
 
-type BriefingUnit = { label: string; body: string };
+type BriefingUnit = DocumentBriefingEvidenceUnit;
+type RawBriefingUnit = Omit<BriefingUnit, "id">;
+
+export type { DocumentBriefingModelOutline } from "./document-briefing-contract.ts";
 
 export function documentBriefingSourceIdForPresentation(artifact: WorkspaceArtifact) {
   if (artifact.kind !== "slides" || !isDeckMarkdownArtifact(artifact)) return null;
@@ -119,7 +127,7 @@ function readableMarkdown(value: string) {
     .trim();
 }
 
-function splitReadableUnits(source: WorkspaceArtifact): BriefingUnit[] {
+function splitReadableUnits(source: WorkspaceArtifact): RawBriefingUnit[] {
   const sections = derivePreviewSourceTargets(source)
     .filter((target) => target.kind === "document-section")
     .flatMap((target) => {
@@ -133,7 +141,7 @@ function splitReadableUnits(source: WorkspaceArtifact): BriefingUnit[] {
   return body ? [{ label: "Document body", body }] : [];
 }
 
-function splitLongestUnit(units: BriefingUnit[]) {
+function splitLongestUnit(units: RawBriefingUnit[]) {
   let index = -1;
   let splitAt = -1;
   units.forEach((unit, unitIndex) => {
@@ -160,7 +168,7 @@ function splitLongestUnit(units: BriefingUnit[]) {
   return true;
 }
 
-function briefingUnits(source: WorkspaceArtifact, count: number) {
+function briefingUnits(source: WorkspaceArtifact, count: number): BriefingUnit[] {
   const units = splitReadableUnits(source);
   while (units.length < count && splitLongestUnit(units)) {
     // Keep splitting the longest readable source block until every requested slide has evidence.
@@ -172,10 +180,27 @@ function briefingUnits(source: WorkspaceArtifact, count: number) {
     const group = units.slice(start, Math.max(start + 1, end));
     const body = group.map((unit) => unit.body).join("\n\n");
     return {
+      id: `source-${index + 1}`,
       label: group[0]?.label ?? `Source ${index + 1}`,
       body: body.length > 1_300 ? `${body.slice(0, 1_299).trimEnd()}…` : body,
     };
   });
+}
+
+export function prepareDocumentBriefingEvidence(
+  artifacts: WorkspaceArtifact[],
+  input: DocumentBriefingInput,
+) {
+  const source = artifacts.find((artifact) => artifact.id === input.sourceArtifactId);
+  if (!source) return { errors: [`Document source is missing: ${input.sourceArtifactId}`] };
+  if (source.kind !== "document") {
+    return { errors: [`Presentation source must be a Document artifact: ${input.sourceArtifactId}`] };
+  }
+  const evidenceUnits = briefingUnits(source, input.slideCount - 2);
+  if (evidenceUnits.length !== input.slideCount - 2) {
+    return { errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`] };
+  }
+  return { source, evidenceUnits, errors: [] };
 }
 
 function audienceLabel(locale: RuneLocale, audience: DocumentBriefingAudience) {
@@ -189,17 +214,27 @@ function deckSource(
   input: DocumentBriefingInput,
   units: BriefingUnit[],
   theme: "rune" | "rune-dark" = "rune",
+  outline?: DocumentBriefingModelOutline,
 ) {
   const title = markdownInline(normalizePlainText(input.title));
   const focus = markdownInline(normalizePlainText(input.focus));
   const audience = audienceLabel(input.locale, input.audience);
   const sourceName = markdownInline(source.name);
-  const contentSlides = units.map((unit, index) => `<!-- layout: content -->
+  const unitById = new Map(units.map((unit) => [unit.id, unit] as const));
+  const content = outline
+    ? outline.slides.map((slide) => ({
+        unit: unitById.get(slide.sourceUnitId) as BriefingUnit,
+        title: slide.title,
+        body: slide.bullets.map((bullet) => `- ${markdownInline(normalizePlainText(bullet))}`).join("\n"),
+      }))
+    : units.map((unit) => ({ unit, title: unit.label, body: unit.body }));
+  const contentSlides = content.map(({ unit, title: slideTitle, body }, index) => `<!-- layout: content -->
 <!-- eyebrow: ${runeText(input.locale, `Source ${index + 1}`, `来源 ${index + 1}`)} · ${sourceName} -->
+<!-- source-unit: ${unit.id} -->
 
-## ${markdownInline(unit.label)}
+## ${markdownInline(normalizePlainText(slideTitle))}
 
-${unit.body}`).join("\n\n---\n\n");
+${body}`).join("\n\n---\n\n");
 
   return `---
 version: 1
@@ -240,6 +275,7 @@ ${runeText(input.locale, "Source identity stays attached to this presentation; r
 export function prepareDocumentBriefingWorkflow(
   artifacts: WorkspaceArtifact[],
   input: DocumentBriefingInput,
+  outline?: DocumentBriefingModelOutline,
 ): PreparedDocumentBriefing {
   const errors = [
     validatePlainText(input.title, "Presentation title", MAX_DOCUMENT_BRIEFING_TITLE_CHARS),
@@ -276,7 +312,13 @@ export function prepareDocumentBriefingWorkflow(
     return { errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`] };
   }
 
-  const nextSource = deckSource(source, input, units, targetTheme);
+  if (outline) {
+    const validatedOutline = validateDocumentBriefingModelOutline(outline, units);
+    if (!validatedOutline.outline || validatedOutline.errors.length) return { errors: validatedOutline.errors };
+    outline = validatedOutline.outline;
+  }
+
+  const nextSource = deckSource(source, input, units, targetTheme, outline);
   let patches: ArtifactSourcePatch[] = [];
   let creations: ArtifactCreationChange[] = [];
   if (target) {

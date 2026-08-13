@@ -17,13 +17,15 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, briefingDialog, briefingCompiler, providers, styles] = await Promise.all([
+  const [workbench, empty, reviewDialog, operatingDialog, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, styles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
     source("../app/components/operating-review-dialog.tsx"),
     source("../app/components/document-briefing-dialog.tsx"),
     source("../app/lib/document-briefing.ts"),
+    source("../app/lib/document-briefing-contract.ts"),
+    source("../app/api/tasks/document-briefing/route.ts"),
     source("../app/lib/task-providers.ts"),
     source("../app/styles/content.css"),
   ]);
@@ -50,12 +52,19 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(briefingCompiler, /purpose: \$\{normalizePlainText\(input\.focus\)\}/);
   assert.match(briefingCompiler, /Refresh/);
   assert.doesNotMatch(briefingCompiler, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
+  assert.match(briefingContract, /Every bounded source unit must support exactly one content slide/);
+  assert.match(briefingContract, /Rune owns the cover, conclusion, file identity, source metadata, and every write/);
+  assert.match(briefingRoute, /resolveActiveModelConnection/);
+  assert.match(briefingRoute, /validateDocumentBriefingModelOutline/);
+  assert.doesNotMatch(briefingRoute, /prepareWorkspaceMutation|setArtifacts|persistDeviceWorkspace/);
   assert.match(providers, /case "operating-review"/);
   assert.match(providers, /case "document-briefing"/);
   assert.match(providers, /satisfies Record<RuneTaskId, true>/);
   assert.doesNotMatch(providers, /react|localStorage|indexedDB|window\.|fetch\(|persist/i);
   assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{ taskId: "operating-review", input \}\)/);
-  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{ taskId: "document-briefing", input \}\)/);
+  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "document-briefing",\s*input,/);
+  assert.match(workbench, /fetch\("\/api\/tasks\/document-briefing"/);
+  assert.match(workbench, /planningKind: "task-outline"/);
   assert.match(workbench, /documentBriefingTargetsById/);
   assert.match(workbench, /briefingFreshness === "changed"/);
   assert.match(workbench, /function reviewLinkedPresentationRefresh\(artifactId: string\)/);

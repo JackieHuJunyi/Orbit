@@ -2195,3 +2195,15 @@ Rune 因此在任务生成的 Deck frontmatter 中加入 `origin_revision`：一
 更重要的是，直接不等于越权。按钮传入被点击的 exact Deck id，handler 从 `artifactsRef.current` 重读目标，再解析 current origin 并重算 freshness；旧闭包、当前 selection、文件名和提示文本都不能决定目标。只有仍然 changed 才选择该 Deck 并打开已有 task session。这个 handler 明确不调用 provider、compiler、`setArtifacts` 或 persistence；真正写入仍需要配置确认、candidate preview、transaction review 和 Apply。
 
 这条规则可以复用到未来的 Query rerun、broken binding repair 与 export readiness：列表级动作只能打开一个经过当前事实重验的能力，不能自己完成不可逆结果。这样扩展快捷入口不会扩展 writer 数量，UI 越来越快，架构仍保持单一写入边界。
+
+## 93. v0.88 AI Native 不是让模型接管文件，而是把判断力放进最窄的任务合同
+
+Document → Presentation 已经能确定性地产生可编辑、可刷新、保留来源的 Deck，但如果用户配置的模型只存在于通用 Agent 输入框，这条核心任务仍然没有利用模型对叙事、受众和信息层级的判断。反过来，如果直接让模型输出整份 Deck Markdown，它就会同时控制 frontmatter、文件关系、分隔符、binding 与完整正文；这既扩大攻击面，也让同一任务出现第二套文件作者和写入逻辑。
+
+v0.88 在两者之间建立一条 task-specific model planning seam。Rune 先从当前已审核 Document 中确定性提取 `slideCount - 2` 个有界来源单元，每个单元得到只在本次请求中有效的 `source-N` capability id。模型只能为每个 exact id 返回一个纯文本标题和一到四条纯文本要点，并且必须把所有单元各使用一次；不能返回 Artifact id、文件名、frontmatter、来源修订、patch、creation 或写入动作。cover、conclusion、`origin`、`origin_revision`、受众/目标配方、目标 identity、冲突命名和 theme 仍全部由 Rune compiler 决定。
+
+验证不是只相信 provider 的 JSON schema。服务端在结构化输出之后检查动态页数和来源集合；客户端用捕获的 workspace 再验一次；pure compiler 在生成完整 candidate Deck 前第三次验证。换言之，`source-N` 是能力而不是提示：缺失、重复、外来 id、换行、HTML、binding braces 或控制字符都会失败。模型得到的是有界 excerpt，不是整个 workspace，也不会收到目标 Deck 内容或凭据；所有 provider 继续沿用用户显式选择的协议，失败时绝不偷偷切换另一家。
+
+模型不可用不应让任务消失。local-only、未配置、网络失败、无效输出或 Document 超过 100,000 字符安全上限时，Rune 透明回到原有确定性 compiler，继续生成相同身份与来源合同的候选事务。设置摘要会提前说明“模型可用时辅助 + 本地确定性回退”，准备期间和审核卡则显示实际 planner；Responses、Chat Completions、Anthropic、Gemini 和 custom profile 都按非本地模型正确标记，不再把非 OpenAI provider 误写成 local plan。
+
+这条架构也为低成本扩展给出明确模板：以后“文档→网页”“文档→报告”“数据→叙事”若需要模型判断，应新增一个窄的 task output schema，再交给 Rune-owned compiler，而不是复制 provider 协议或授予完整 Artifact 写入。共享 model adapter 现在接受任务自己的 structured-response description，因此各协议只实现一次；React 仍只负责 assembly，task provider 仍是纯函数，workspace mutation、candidate preview、checkpoint、persistence 与 Apply 仍是唯一写入边界。模型能力可以增长，但 writer 数量保持为一。

@@ -17,6 +17,7 @@ import {
   type DocumentBriefingSlideCount,
 } from "../lib/document-briefing";
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
+import type { RuneModelMode } from "../lib/model-preference";
 import type { WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
 
@@ -26,6 +27,7 @@ type DocumentBriefingDialogProps = {
   error?: string;
   preferredDocumentArtifactId?: string;
   preferredPresentationArtifactId?: string;
+  modelMode: RuneModelMode;
   onCancel: () => void;
   onPrepare: (input: DocumentBriefingInput) => void | Promise<void>;
 };
@@ -55,6 +57,9 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     sourceIdentity: "来源身份",
     output: "可编辑成品",
     export: "现有导出",
+    planner: "内容编排",
+    modelPlanner: "模型可用时启用 · 有界来源证据 · 本地确定性回退",
+    localPlanner: "本地确定性编译器",
     freshness: "来源新鲜度",
     current: "已是当前版本",
     changed: "来源已变化 · 可以刷新",
@@ -64,9 +69,15 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     refreshOutputValue: "原位更新并保留文件身份",
     exportValue: "HTML · PPTX · ODP · PDF",
     cancel: "取消",
-    preparing: "正在验证来源…",
+    preparing: "正在编排并验证…",
     prepare: "准备审核",
-    footer: "本地确定性编译 · 审核后写入",
+    modelFooter: "模型可用时辅助提纲 · Rune 编译 · 审核后写入",
+    localFooter: "本地确定性编译 · 审核后写入",
+    modelShaping: "模型正在根据有界来源证据编排演示…",
+    modelPrepared: "已准备模型辅助、保留来源关系的演示；审核后才会写入",
+    localPrepared: "已准备本地确定性演示；审核后才会写入",
+    localFallback: "模型当前不可用，已准备本地确定性演示；审核后才会写入",
+    sourceTooLargeFallback: "文档超过模型上下文安全上限，已准备本地确定性演示；审核后才会写入",
     localErrors: "请先检查以下设置：",
   },
   en: {
@@ -93,6 +104,9 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     sourceIdentity: "Source identity",
     output: "Editable output",
     export: "Existing exports",
+    planner: "Narrative planner",
+    modelPlanner: "Model when available · bounded source evidence · deterministic local fallback",
+    localPlanner: "Deterministic local compiler",
     freshness: "Source freshness",
     current: "Current",
     changed: "Source changed · refresh available",
@@ -102,14 +116,20 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     refreshOutputValue: "Update in place · identity preserved",
     exportValue: "HTML · PPTX · ODP · PDF",
     cancel: "Cancel",
-    preparing: "Verifying source…",
+    preparing: "Shaping and verifying…",
     prepare: "Prepare review",
-    footer: "Deterministic local compile · review before write",
+    modelFooter: "Model-assisted outline when available · Rune compile · review before write",
+    localFooter: "Deterministic local compile · review before write",
+    modelShaping: "The model is shaping this presentation from bounded source evidence…",
+    modelPrepared: "Model-assisted source-linked presentation prepared; nothing writes until review",
+    localPrepared: "Deterministic local presentation prepared; nothing writes until review",
+    localFallback: "Model unavailable; deterministic local presentation prepared for review",
+    sourceTooLargeFallback: "Document exceeds the model context safety limit; deterministic local presentation prepared for review",
     localErrors: "Check these settings first:",
   },
 } as const;
 
-function documentBriefingCopy(locale: RuneLocale) {
+export function documentBriefingCopy(locale: RuneLocale) {
   return localizeRuneCopy(locale, DOCUMENT_BRIEFING_BASE_COPY.en, DOCUMENT_BRIEFING_BASE_COPY["zh-CN"]);
 }
 
@@ -126,6 +146,7 @@ export function DocumentBriefingDialog({
   error,
   preferredDocumentArtifactId,
   preferredPresentationArtifactId,
+  modelMode,
   onCancel,
   onPrepare,
 }: DocumentBriefingDialogProps) {
@@ -188,7 +209,7 @@ export function DocumentBriefingDialog({
       onCancel={cancel}
       footer={(
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.footer}</div>
+          <div><ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}</div>
           <span>
             <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>{copy.cancel}</button>
             <button className="button primary-button" type="submit" form="document-briefing-form" disabled={preparing || !sourceOptions.length}>
@@ -303,6 +324,7 @@ export function DocumentBriefingDialog({
             <div><dt>{copy.audience}</dt><dd>{audience === "customer" ? copy.customer : audience === "team" ? copy.team : copy.leadership}</dd></div>
             <div><dt>{copy.freshness}</dt><dd><span className={`briefing-freshness ${target?.freshness ?? "new"}`}>{target ? freshnessLabel(copy, target.freshness) : copy.newBaseline}</span></dd></div>
             <div><dt>{copy.output}</dt><dd>{target ? copy.refreshOutputValue : copy.newOutputValue}</dd></div>
+            <div><dt>{copy.planner}</dt><dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd></div>
             <div><dt>{copy.export}</dt><dd>{copy.exportValue}</dd></div>
           </dl>
         </section>

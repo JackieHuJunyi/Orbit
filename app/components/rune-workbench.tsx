@@ -55,7 +55,7 @@ import {
 } from "./artifact-previews";
 import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
 import { DeliveryOutcomeDialog } from "./delivery-outcome-dialog";
-import { DocumentBriefingDialog } from "./document-briefing-dialog";
+import { DocumentBriefingDialog, documentBriefingCopy } from "./document-briefing-dialog";
 import { LocalImageReviewDialog, localImageCopy } from "./local-image-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
 import { ExportReviewDialog } from "./export-review-dialog";
@@ -243,8 +243,14 @@ import {
 import {
   documentBriefingSourceIdForPresentation,
   documentBriefingTargets,
+  prepareDocumentBriefingEvidence,
   type DocumentBriefingInput,
+  type DocumentBriefingModelOutline,
 } from "../lib/document-briefing";
+import {
+  MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS,
+  validateDocumentBriefingModelOutline,
+} from "../lib/document-briefing-contract";
 import { prepareRuneTaskProvider } from "../lib/task-providers";
 import {
   bindRuneTaskImportReview,
@@ -323,6 +329,7 @@ type ActiveSourceCursor = SourceSelection & {
 type PendingChange = {
   prompt: string;
   provider: string;
+  planningKind?: "task-outline";
   scope: AgentScope;
   selection?: SourceSelection;
   baseRevision: WorkspaceSourceRevision;
@@ -404,6 +411,16 @@ type RemoteAgentResponse = {
   plan?: unknown;
   queryArtifactIds?: string[];
   repairAttempt?: number;
+  usage?: { inputTokens?: unknown; outputTokens?: unknown };
+};
+
+type RemoteDocumentBriefingResponse = {
+  error?: string;
+  code?: string;
+  provider?: string;
+  model?: string;
+  profileName?: string;
+  outline?: unknown;
   usage?: { inputTokens?: unknown; outputTokens?: unknown };
 };
 
@@ -2905,8 +2922,52 @@ export function RuneWorkbench() {
     setDocumentBriefingState("checking");
     const baseArtifacts = artifactsRef.current;
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
+    const copy = documentBriefingCopy(locale);
     try {
-      const prepared = prepareRuneTaskProvider(baseArtifacts, { taskId: "document-briefing", input });
+      const sourceArtifact = baseArtifacts.find((artifact) => (
+        artifact.id === input.sourceArtifactId && artifact.kind === "document"
+      ));
+      let outline: DocumentBriefingModelOutline | undefined;
+      let provider = "local";
+      let modelLabel = "";
+      let usage: PendingChange["usage"];
+      let fallbackNotice: string = modelMode === "local" ? copy.localPrepared : copy.localFallback;
+
+      if (modelMode === "auto" && sourceArtifact
+        && sourceArtifact.source.length <= MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS) {
+        setNotice(copy.modelShaping);
+        try {
+          const response = await fetch("/api/tasks/document-briefing", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ artifact: sourceArtifact, input }),
+          });
+          const payload = await response.json().catch(() => ({})) as RemoteDocumentBriefingResponse;
+          if (response.ok) {
+            const evidence = prepareDocumentBriefingEvidence(baseArtifacts, input);
+            const validated = evidence.evidenceUnits
+              ? validateDocumentBriefingModelOutline(payload.outline, evidence.evidenceUnits)
+              : { errors: evidence.errors };
+            if (validated.outline && !validated.errors.length) {
+              outline = validated.outline;
+              provider = payload.provider ?? "model";
+              modelLabel = payload.profileName ?? payload.model ?? provider;
+              usage = normalizeAgentUsage(payload.usage);
+            }
+          }
+        } catch {
+          // The deterministic compiler remains available without changing the write boundary.
+        }
+      } else if (modelMode === "auto" && sourceArtifact
+        && sourceArtifact.source.length > MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS) {
+        fallbackNotice = copy.sourceTooLargeFallback;
+      }
+
+      const prepared = prepareRuneTaskProvider(baseArtifacts, {
+        taskId: "document-briefing",
+        input,
+        ...(outline ? { outline } : {}),
+      });
       if (!prepared.plan || prepared.errors.length) {
         setDocumentBriefingError(prepared.errors[0] ?? "Rune could not prepare this presentation.");
         return;
@@ -2929,23 +2990,23 @@ export function RuneWorkbench() {
       }
       setPendingChange({
         prompt: input.focus,
-        provider: "local",
+        provider,
+        ...(outline ? { planningKind: "task-outline" as const } : {}),
         scope: "workspace",
         baseRevision,
         selectAfterApplyArtifactId: outputArtifactId,
         preparedAt: Date.now(),
+        usage,
         ...prepared.plan,
         runtimePreflight,
       });
       setPendingReviewId(outputArtifactId);
-      setAgentMode("local");
+      setAgentMode(outline ? "openai" : "local");
       setDocumentBriefingOpen(false);
       setPreferredDocumentBriefingTargetId("");
       setTaskSession(null);
       setEmptyWorkspace(false);
-      setNotice(input.targetArtifactId
-        ? runeText(locale, `${input.slideCount} refreshed slides prepared in place; nothing writes until you approve the transaction`, `已准备原位刷新 ${input.slideCount} 页演示；审核后才会写入`)
-        : runeText(locale, `${input.slideCount} source-linked slides prepared; nothing writes until you approve the transaction`, `已准备 ${input.slideCount} 页保留来源关系的演示；审核后才会写入`));
+      setNotice(outline && modelLabel ? `${copy.modelPrepared} · ${modelLabel}` : outline ? copy.modelPrepared : fallbackNotice);
     } catch (error) {
       setDocumentBriefingError(error instanceof Error ? error.message : "Rune could not validate this presentation.");
       setNotice(runeText(locale, "Presentation not prepared — runtime validation failed", "演示未生成 — 运行验证未通过"));
@@ -3651,7 +3712,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.87</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.88</strong></footer>
               </div>
             )}
           </div>
@@ -4022,7 +4083,7 @@ export function RuneWorkbench() {
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
                 <div className="patch-copy">
-                  <span className="overline">{ui.proposedChange(pendingChange.scope === "workspace" ? "workspace" : pendingChange.scope === "selection" ? "selection" : "file")} · {pendingChange.provider === "openai" ? ui.typedOperations(pendingOperationCount) : ui.localPlan}{pendingChange.runtimeRepair ? ` · ${ui.repairedOnce}` : ""}</span>
+                  <span className="overline">{ui.proposedChange(pendingChange.scope === "workspace" ? "workspace" : pendingChange.scope === "selection" ? "selection" : "file")} · {pendingChange.planningKind === "task-outline" ? ui.modelOutline : pendingChange.provider !== "local" ? ui.typedOperations(pendingOperationCount) : ui.localPlan}{pendingChange.runtimeRepair ? ` · ${ui.repairedOnce}` : ""}</span>
                   <strong>{pendingChange.summary}</strong>
                   <p>{pendingChange.detail}</p>
                   {pendingChange.runtimeRepair && (
@@ -4327,6 +4388,7 @@ export function RuneWorkbench() {
             ? taskSession.preferredArtifactId ?? undefined
             : undefined}
           preferredPresentationArtifactId={preferredDocumentBriefingTargetId || undefined}
+          modelMode={modelMode}
           onCancel={() => {
             if (documentBriefingState !== "idle") return;
             setDocumentBriefingOpen(false);

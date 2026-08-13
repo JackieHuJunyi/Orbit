@@ -115,6 +115,7 @@ export async function POST(request: Request) {
         input: buildAgentInput(parsed.data),
         schema: workspaceScope ? AgentWorkspaceOperationPlanSchema : AgentOperationPatchSchema,
         schemaName: workspaceScope ? "workspace_operations" : "artifact_operations",
+        responseDescription: "Return Rune's proposed typed source-operation plan for local validation.",
         signal: providerController.signal,
       });
     } finally {

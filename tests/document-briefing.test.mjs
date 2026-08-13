@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   documentBriefingSourceIdForPresentation,
   documentBriefingTargets,
+  prepareDocumentBriefingEvidence,
   prepareDocumentBriefingWorkflow,
 } from "../app/lib/document-briefing.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
@@ -79,6 +80,50 @@ test("compiles one reviewed Document into an exact source-linked Deck transactio
     [deck.id, "created"],
   ]);
   assert.deepEqual(review.edges.map((edge) => [edge.kind, edge.status]), [["deck-origin", "added"]]);
+});
+
+test("compiles a model-shaped outline only when every bounded source unit remains exact", () => {
+  const evidence = prepareDocumentBriefingEvidence([sourceDocument], input());
+  assert.deepEqual(evidence.errors, []);
+  assert.equal(evidence.evidenceUnits?.length, 4);
+  const outline = {
+    slides: evidence.evidenceUnits.map((unit, index) => ({
+      sourceUnitId: unit.id,
+      title: `Decision signal ${index + 1}`,
+      bullets: [`Evidence-grounded point ${index + 1}`, `Implication for leadership ${index + 1}`],
+    })),
+  };
+  const result = prepareDocumentBriefingWorkflow([sourceDocument], input(), outline);
+  assert.deepEqual(result.errors, []);
+  const source = result.plan?.creations[0].artifact.source ?? "";
+  for (const unit of evidence.evidenceUnits) assert.match(source, new RegExp(`source-unit: ${unit.id}`, "u"));
+  assert.match(source, /## Decision signal 1/u);
+  assert.match(source, /- Evidence-grounded point 4/u);
+  assert.equal(parseDeckSource(source).deck?.slides.length, 6);
+
+  const duplicateEvidence = {
+    slides: outline.slides.map((slide) => ({ ...slide, sourceUnitId: "source-1" })),
+  };
+  const rejected = prepareDocumentBriefingWorkflow([sourceDocument], input(), duplicateEvidence);
+  assert.equal(rejected.plan, undefined);
+  assert.match(rejected.errors.join(" "), /Every bounded source unit/);
+});
+
+test("rejects executable model text without mutating the reviewed Document", () => {
+  const frozen = Object.freeze([Object.freeze({ ...sourceDocument })]);
+  const before = JSON.stringify(frozen);
+  const evidence = prepareDocumentBriefingEvidence(frozen, input());
+  const outline = {
+    slides: evidence.evidenceUnits.map((unit, index) => ({
+      sourceUnitId: unit.id,
+      title: index ? `Signal ${index}` : "<script>alert(1)</script>",
+      bullets: ["Grounded point"],
+    })),
+  };
+  const result = prepareDocumentBriefingWorkflow(frozen, input(), outline);
+  assert.equal(result.plan, undefined);
+  assert.match(result.errors.join(" "), /plain text|invalid presentation outline/);
+  assert.equal(JSON.stringify(frozen), before);
 });
 
 test("preserves all nine interface locales as Deck document metadata", () => {

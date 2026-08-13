@@ -33,6 +33,28 @@ test("routes a typed document task through the shared pure provider boundary", (
   assert.equal(prepared.plan?.creations[0].artifact.kind, "slides");
 });
 
+test("passes an evidence-bound model outline through the same pure compiler boundary", () => {
+  const prepared = prepareRuneTaskProvider([document], {
+    taskId: "document-briefing",
+    input: {
+      sourceArtifactId: document.id,
+      title: "Source briefing",
+      audience: "team",
+      focus: "Agree the next decision.",
+      slideCount: 4,
+      locale: "en",
+    },
+    outline: {
+      slides: [
+        { sourceUnitId: "source-1", title: "Context", bullets: ["A detailed context supports the presentation."] },
+        { sourceUnitId: "source-2", title: "Decision", bullets: ["Agree the next decision after review."] },
+      ],
+    },
+  });
+  assert.deepEqual(prepared.errors, []);
+  assert.match(prepared.plan?.creations[0].artifact.source ?? "", /## Context\n\n- A detailed context/u);
+});
+
 test("routes a typed operating-review task through the same provider boundary", () => {
   const data = {
     id: "source-data",

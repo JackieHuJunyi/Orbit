@@ -471,3 +471,77 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Source freshness": "원본 최신 상태", "Refresh available": "갱신 가능", "Review refresh": "갱신 검토", "This presentation no longer needs a source refresh": "이 프레젠테이션은 더 이상 원본에서 갱신할 필요가 없습니다", "Source changed · refresh available": "원본 변경됨 · 갱신 가능", "Baseline not recorded": "기준 버전이 기록되지 않음", "Current source revision will be recorded": "현재 원본 버전을 기록합니다",
 });
+
+// Human-reviewed copy for the bounded model-assisted Document briefing planner.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Deterministic local compiler": "Compilateur local déterministe",
+  "Deterministic local presentation prepared; nothing writes until review": "Présentation locale déterministe préparée ; aucune écriture avant vérification",
+  "Document exceeds the model context safety limit; deterministic local presentation prepared for review": "Le document dépasse la limite de sécurité du contexte du modèle ; une présentation locale déterministe est prête à être vérifiée",
+  "Model unavailable; deterministic local presentation prepared for review": "Modèle indisponible ; une présentation locale déterministe est prête à être vérifiée",
+  "Model when available · bounded source evidence · deterministic local fallback": "Modèle si disponible · preuves sources limitées · repli local déterministe",
+  "Model-assisted outline when available · Rune compile · review before write": "Plan assisté par modèle si disponible · compilation Rune · vérification avant écriture",
+  "Model-assisted source outline": "Plan source assisté par modèle",
+  "Model-assisted source-linked presentation prepared; nothing writes until review": "Présentation liée à la source et assistée par modèle préparée ; aucune écriture avant vérification",
+  "Narrative planner": "Structure narrative", "Shaping and verifying…": "Structuration et vérification…",
+  "The model is shaping this presentation from bounded source evidence…": "Le modèle structure cette présentation à partir de preuves sources limitées…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Deterministic local compiler": "Compilador local determinista",
+  "Deterministic local presentation prepared; nothing writes until review": "Presentación local determinista preparada; no se escribe nada antes de revisarla",
+  "Document exceeds the model context safety limit; deterministic local presentation prepared for review": "El documento supera el límite seguro de contexto del modelo; se ha preparado una presentación local determinista para revisión",
+  "Model unavailable; deterministic local presentation prepared for review": "Modelo no disponible; se ha preparado una presentación local determinista para revisión",
+  "Model when available · bounded source evidence · deterministic local fallback": "Modelo cuando esté disponible · evidencia de origen acotada · alternativa local determinista",
+  "Model-assisted outline when available · Rune compile · review before write": "Esquema asistido por modelo cuando esté disponible · compilación de Rune · revisión antes de escribir",
+  "Model-assisted source outline": "Esquema de origen asistido por modelo",
+  "Model-assisted source-linked presentation prepared; nothing writes until review": "Presentación vinculada al origen y asistida por modelo preparada; no se escribe nada antes de revisarla",
+  "Narrative planner": "Planificador narrativo", "Shaping and verifying…": "Estructurando y verificando…",
+  "The model is shaping this presentation from bounded source evidence…": "El modelo está estructurando esta presentación con evidencia de origen acotada…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Deterministic local compiler": "Детерминированный локальный компилятор",
+  "Deterministic local presentation prepared; nothing writes until review": "Локальная детерминированная презентация подготовлена; до проверки ничего не записывается",
+  "Document exceeds the model context safety limit; deterministic local presentation prepared for review": "Документ превышает безопасный предел контекста модели; для проверки подготовлена локальная детерминированная презентация",
+  "Model unavailable; deterministic local presentation prepared for review": "Модель недоступна; для проверки подготовлена локальная детерминированная презентация",
+  "Model when available · bounded source evidence · deterministic local fallback": "Модель при наличии · ограниченные свидетельства источника · детерминированный локальный резерв",
+  "Model-assisted outline when available · Rune compile · review before write": "План с помощью модели при наличии · компиляция Rune · проверка до записи",
+  "Model-assisted source outline": "План источника с помощью модели",
+  "Model-assisted source-linked presentation prepared; nothing writes until review": "Связанная с источником презентация с помощью модели подготовлена; до проверки ничего не записывается",
+  "Narrative planner": "Планировщик повествования", "Shaping and verifying…": "Формирование и проверка…",
+  "The model is shaping this presentation from bounded source evidence…": "Модель формирует презентацию на основе ограниченных свидетельств источника…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Deterministic local compiler": "مُصرّف محلي حتمي",
+  "Deterministic local presentation prepared; nothing writes until review": "أُعد عرض محلي حتمي؛ لن يُكتب شيء قبل المراجعة",
+  "Document exceeds the model context safety limit; deterministic local presentation prepared for review": "يتجاوز المستند حد أمان سياق النموذج؛ أُعد عرض محلي حتمي للمراجعة",
+  "Model unavailable; deterministic local presentation prepared for review": "النموذج غير متاح؛ أُعد عرض محلي حتمي للمراجعة",
+  "Model when available · bounded source evidence · deterministic local fallback": "النموذج عند توفره · أدلة مصدر محدودة · رجوع محلي حتمي",
+  "Model-assisted outline when available · Rune compile · review before write": "مخطط بمساعدة النموذج عند توفره · تجميع Rune · مراجعة قبل الكتابة",
+  "Model-assisted source outline": "مخطط مصدر بمساعدة النموذج",
+  "Model-assisted source-linked presentation prepared; nothing writes until review": "أُعد عرض مرتبط بالمصدر بمساعدة النموذج؛ لن يُكتب شيء قبل المراجعة",
+  "Narrative planner": "مخطط السرد", "Shaping and verifying…": "جارٍ التشكيل والتحقق…",
+  "The model is shaping this presentation from bounded source evidence…": "يشكّل النموذج هذا العرض من أدلة مصدر محدودة…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Deterministic local compiler": "決定的なローカルコンパイラ",
+  "Deterministic local presentation prepared; nothing writes until review": "決定的なローカルプレゼンテーションを準備しました。確認するまで書き込みません",
+  "Document exceeds the model context safety limit; deterministic local presentation prepared for review": "文書がモデルの安全なコンテキスト上限を超えています。確認用に決定的なローカルプレゼンテーションを準備しました",
+  "Model unavailable; deterministic local presentation prepared for review": "モデルを利用できません。確認用に決定的なローカルプレゼンテーションを準備しました",
+  "Model when available · bounded source evidence · deterministic local fallback": "利用可能な場合はモデル · 範囲を限定したソース根拠 · 決定的なローカル代替",
+  "Model-assisted outline when available · Rune compile · review before write": "利用可能な場合はモデル支援アウトライン · Rune がコンパイル · 書き込み前に確認",
+  "Model-assisted source outline": "モデル支援のソースアウトライン",
+  "Model-assisted source-linked presentation prepared; nothing writes until review": "モデル支援のソース連携プレゼンテーションを準備しました。確認するまで書き込みません",
+  "Narrative planner": "構成プランナー", "Shaping and verifying…": "構成して検証中…",
+  "The model is shaping this presentation from bounded source evidence…": "モデルが範囲を限定したソース根拠からプレゼンテーションを構成しています…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Deterministic local compiler": "결정적 로컬 컴파일러",
+  "Deterministic local presentation prepared; nothing writes until review": "결정적 로컬 프레젠테이션을 준비했습니다. 검토 전에는 쓰지 않습니다",
+  "Document exceeds the model context safety limit; deterministic local presentation prepared for review": "문서가 모델 컨텍스트 안전 한도를 초과했습니다. 검토할 결정적 로컬 프레젠테이션을 준비했습니다",
+  "Model unavailable; deterministic local presentation prepared for review": "모델을 사용할 수 없습니다. 검토할 결정적 로컬 프레젠테이션을 준비했습니다",
+  "Model when available · bounded source evidence · deterministic local fallback": "사용 가능할 때 모델 · 범위가 제한된 원본 근거 · 결정적 로컬 대체",
+  "Model-assisted outline when available · Rune compile · review before write": "사용 가능할 때 모델 보조 개요 · Rune 컴파일 · 쓰기 전 검토",
+  "Model-assisted source outline": "모델 보조 원본 개요",
+  "Model-assisted source-linked presentation prepared; nothing writes until review": "모델 보조 원본 연결 프레젠테이션을 준비했습니다. 검토 전에는 쓰지 않습니다",
+  "Narrative planner": "내러티브 플래너", "Shaping and verifying…": "구성하고 확인하는 중…",
+  "The model is shaping this presentation from bounded source evidence…": "모델이 범위가 제한된 원본 근거로 프레젠테이션을 구성하고 있습니다…",
+});
