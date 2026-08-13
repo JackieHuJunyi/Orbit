@@ -230,7 +230,6 @@ import {
   createSavedOperatingReview,
   MAX_SAVED_OPERATING_REVIEWS,
   normalizeSavedOperatingReviews,
-  prepareOperatingReviewEvidence,
   prepareSavedOperatingReviewRerun,
   recordOperatingReviewDelivery,
   summarizeOperatingReviewDeliveryOutcomes,
@@ -243,21 +242,12 @@ import {
   type SavedOperatingReview,
 } from "../lib/operating-review";
 import {
-  MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS,
-  validateOperatingReviewNarrative,
-} from "../lib/operating-review-contract";
-import {
   documentBriefingSourceIdForPresentation,
   documentBriefingTargets,
-  prepareDocumentBriefingEvidence,
   type DocumentBriefingInput,
-  type DocumentBriefingModelOutline,
 } from "../lib/document-briefing";
-import {
-  MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS,
-  validateDocumentBriefingModelOutline,
-} from "../lib/document-briefing-contract";
 import { prepareRuneTaskProvider } from "../lib/task-providers";
+import { prepareRuneTaskModelAssistance } from "../lib/task-model-planning";
 import {
   bindRuneTaskImportReview,
   prepareRuneTaskAfterImport,
@@ -417,26 +407,6 @@ type RemoteAgentResponse = {
   plan?: unknown;
   queryArtifactIds?: string[];
   repairAttempt?: number;
-  usage?: { inputTokens?: unknown; outputTokens?: unknown };
-};
-
-type RemoteDocumentBriefingResponse = {
-  error?: string;
-  code?: string;
-  provider?: string;
-  model?: string;
-  profileName?: string;
-  outline?: unknown;
-  usage?: { inputTokens?: unknown; outputTokens?: unknown };
-};
-
-type RemoteOperatingReviewResponse = {
-  error?: string;
-  code?: string;
-  provider?: string;
-  model?: string;
-  profileName?: string;
-  narrative?: unknown;
   usage?: { inputTokens?: unknown; outputTokens?: unknown };
 };
 
@@ -2881,46 +2851,29 @@ export function RuneWorkbench() {
         setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
         return;
       }
-      const dataArtifact = baseArtifacts.find((artifact) => (
-        artifact.id === input.dataArtifactId && artifact.kind === "data"
-      ));
       let narrative: OperatingReviewNarrative | undefined;
       let provider = "local";
       let modelLabel = "";
       let usage: PendingChange["usage"];
-      let fallbackNotice: string = modelMode === "local" ? copy.localPrepared : copy.localFallback;
-      if (modelMode === "auto" && dataArtifact
-        && dataArtifact.source.length <= MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS) {
-        setNotice(copy.modelShaping);
-        try {
-          const response = await fetch("/api/tasks/operating-review", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ artifact: dataArtifact, input }),
-          });
-          const payload = await response.json().catch(() => ({})) as RemoteOperatingReviewResponse;
-          if (response.ok) {
-            const evidence = prepareOperatingReviewEvidence(baseArtifacts, input);
-            const validated = evidence.evidenceRows
-              ? validateOperatingReviewNarrative(payload.narrative, evidence.evidenceRows)
-              : { errors: evidence.errors };
-            if (validated.narrative && !validated.errors.length) {
-              const modelPrepared = compileReview(validated.narrative);
-              if (modelPrepared.plan && !modelPrepared.errors.length) {
-                narrative = validated.narrative;
-                prepared = modelPrepared;
-                provider = payload.provider ?? "model";
-                modelLabel = payload.profileName ?? payload.model ?? provider;
-                usage = normalizeAgentUsage(payload.usage);
-              }
-            }
-          }
-        } catch {
-          // The deterministic task compiler remains available without changing write authority.
+      const assistance = await prepareRuneTaskModelAssistance(
+        baseArtifacts,
+        { taskId: "operating-review", input },
+        { mode: modelMode, fetcher: fetch, onModelRequest: () => setNotice(copy.modelShaping) },
+      );
+      const fallbackNotice: string = assistance.outcome === "local"
+        ? copy.localPrepared
+        : assistance.outcome === "source-too-large"
+          ? copy.sourceTooLargeFallback
+          : copy.localFallback;
+      if (assistance.narrative) {
+        const modelPrepared = compileReview(assistance.narrative);
+        if (modelPrepared.plan && !modelPrepared.errors.length) {
+          narrative = assistance.narrative;
+          prepared = modelPrepared;
+          provider = assistance.provider;
+          modelLabel = assistance.modelLabel;
+          usage = assistance.usage;
         }
-      } else if (modelMode === "auto" && dataArtifact
-        && dataArtifact.source.length > MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS) {
-        fallbackNotice = copy.sourceTooLargeFallback;
       }
       if (!prepared.plan || prepared.errors.length) {
         setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
@@ -2998,44 +2951,20 @@ export function RuneWorkbench() {
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
     const copy = documentBriefingCopy(locale);
     try {
-      const sourceArtifact = baseArtifacts.find((artifact) => (
-        artifact.id === input.sourceArtifactId && artifact.kind === "document"
-      ));
-      let outline: DocumentBriefingModelOutline | undefined;
-      let provider = "local";
-      let modelLabel = "";
-      let usage: PendingChange["usage"];
-      let fallbackNotice: string = modelMode === "local" ? copy.localPrepared : copy.localFallback;
-
-      if (modelMode === "auto" && sourceArtifact
-        && sourceArtifact.source.length <= MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS) {
-        setNotice(copy.modelShaping);
-        try {
-          const response = await fetch("/api/tasks/document-briefing", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ artifact: sourceArtifact, input }),
-          });
-          const payload = await response.json().catch(() => ({})) as RemoteDocumentBriefingResponse;
-          if (response.ok) {
-            const evidence = prepareDocumentBriefingEvidence(baseArtifacts, input);
-            const validated = evidence.evidenceUnits
-              ? validateDocumentBriefingModelOutline(payload.outline, evidence.evidenceUnits)
-              : { errors: evidence.errors };
-            if (validated.outline && !validated.errors.length) {
-              outline = validated.outline;
-              provider = payload.provider ?? "model";
-              modelLabel = payload.profileName ?? payload.model ?? provider;
-              usage = normalizeAgentUsage(payload.usage);
-            }
-          }
-        } catch {
-          // The deterministic compiler remains available without changing the write boundary.
-        }
-      } else if (modelMode === "auto" && sourceArtifact
-        && sourceArtifact.source.length > MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS) {
-        fallbackNotice = copy.sourceTooLargeFallback;
-      }
+      const assistance = await prepareRuneTaskModelAssistance(
+        baseArtifacts,
+        { taskId: "document-briefing", input },
+        { mode: modelMode, fetcher: fetch, onModelRequest: () => setNotice(copy.modelShaping) },
+      );
+      const outline = assistance.outline;
+      const provider = assistance.provider;
+      const modelLabel = assistance.modelLabel;
+      const usage = assistance.usage;
+      const fallbackNotice: string = assistance.outcome === "local"
+        ? copy.localPrepared
+        : assistance.outcome === "source-too-large"
+          ? copy.sourceTooLargeFallback
+          : copy.localFallback;
 
       const prepared = prepareRuneTaskProvider(baseArtifacts, {
         taskId: "document-briefing",
@@ -3786,7 +3715,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.92</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.93</strong></footer>
               </div>
             )}
           </div>

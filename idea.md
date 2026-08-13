@@ -2245,3 +2245,11 @@ v0.91 把 numeric-column discovery 收回同一个纯 scope port。`prepareOpera
 v0.92 因此把既有 `prepareOperatingReviewEvidence` 直接作为只读 preview port。用户选择有效 Data、exact scope、category 和 numeric value 后，界面即时展示命中行、排除行，以及按真实 Query 顺序排列的前五组聚合；同时保留完整 group count，让“显示 5 / 共 25”不会被模型二十行上限误导。数值格式不在对话框里重写，而是调用 Chart 渲染器同一个 deterministic formatter，因此货币、百分比和缩写不会再次产生 hydration 差异。
 
 这份预览不会联系 provider，也不会生成 SQL、patch 或写入 workspace；字段不完整、scope 过期、范围内存在非数值、或没有可用分类时直接不显示推测结果。React 只能投影 compiler 输出，不能扩展其行集。未来新增筛选、聚合和模型任务时，应先扩展纯 compiler 的 typed result，再让各个界面选择性展示，而不是让每个组件拥有自己的数据逻辑。低成本迭代来自单一事实来源和窄能力边界，而不只是把文件拆得更多。
+
+## 98. v0.93 新任务不应复制一套 fetch 状态机，网络也必须是一项被注入的能力
+
+经营汇报与文档转演示已经各自拥有窄模型 schema、服务端 route 和纯 compiler，但客户端仍在 `rune-workbench.tsx` 分别执行来源查找、auto/local 判断、100,000 字符限制、fetch、JSON 解析、证据复算、动态 schema 验证、provider 标签、token 归一化与本地回退。两条路径看似独立，实际上是同一种 lifecycle 的复制；第三个任务如果照抄，任何响应上限、安全修复或状态文案都要改三次，workbench 也会继续成为所有能力的隐式 owner。
+
+v0.93 新增静态 discriminated `task-model-planning` port。React 只把当前 artifacts、typed task request、model mode 和一个显式 `fetcher` capability 交给它；port 负责精确来源与上限、同源 endpoint、最多 128 KB response stream、非可信 metadata/token 归一化、本地 evidence 重算和 task-specific validator。成功只返回 narrative/outline 以及实际 planner metadata，失败只返回 local、source-too-large 或 unavailable 结果。它不能读取 credential、localStorage、IndexedDB，也不能生成 canonical source、patch、creation、checkpoint 或 Apply。
+
+这不是为了少写一个 switch 而引入 plugin framework。Cordis 与 DeepSeek Harness 值得学习的是声明式 capability 和显式生命周期，不是产品尚未需要的动态注册复杂度。下一条模型任务现在有一条固定路径：定义输入与 evidence capability、增加服务端窄 schema、在同一 typed port 增加分支、交给既有纯 compiler 和事务边界。测试可以注入一个会报错的 fetcher，直接证明 local-only 零网络；也可以送入超大、无效或与当前证据不符的 response，证明全部确定性回退。扩展成本下降，但 writer 仍只有一个。

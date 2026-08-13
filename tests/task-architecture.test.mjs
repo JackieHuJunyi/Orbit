@@ -17,7 +17,7 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, styles] = await Promise.all([
+  const [workbench, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, modelPlanning, styles] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
@@ -31,6 +31,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
     source("../app/lib/document-briefing-contract.ts"),
     source("../app/api/tasks/document-briefing/route.ts"),
     source("../app/lib/task-providers.ts"),
+    source("../app/lib/task-model-planning.ts"),
     source("../app/styles/content.css"),
   ]);
 
@@ -88,8 +89,15 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.doesNotMatch(providers, /react|localStorage|indexedDB|window\.|fetch\(|persist/i);
   assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "operating-review",\s*input,\s*\.\.\.\(narrative/);
   assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "document-briefing",\s*input,/);
-  assert.match(workbench, /fetch\("\/api\/tasks\/document-briefing"/);
-  assert.match(workbench, /fetch\("\/api\/tasks\/operating-review"/);
+  assert.match(workbench, /prepareRuneTaskModelAssistance/);
+  assert.doesNotMatch(workbench, /fetch\("\/api\/tasks\/(?:document-briefing|operating-review)"/);
+  assert.match(modelPlanning, /fetcher: RuneTaskModelFetch/);
+  assert.match(modelPlanning, /MAX_RUNE_TASK_MODEL_RESPONSE_BYTES = 128_000/);
+  assert.match(modelPlanning, /prepareOperatingReviewEvidence/);
+  assert.match(modelPlanning, /prepareDocumentBriefingEvidence/);
+  assert.match(modelPlanning, /validateOperatingReviewNarrative/);
+  assert.match(modelPlanning, /validateDocumentBriefingModelOutline/);
+  assert.doesNotMatch(modelPlanning, /react|localStorage|indexedDB|document\.|window\.|persist/i);
   assert.match(workbench, /planningKind: "task-outline"/);
   assert.match(workbench, /planningKind: "task-narrative"/);
   assert.match(workbench, /documentBriefingTargetsById/);
