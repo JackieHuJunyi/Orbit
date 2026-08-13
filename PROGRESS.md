@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-13 — Shipped Rune v0.68 with a source-integrated assistance composer, compact explicit scope controls, and native progressive disclosure for suggestions and Query evidence.
 - 2026-08-13 — Shipped Rune v0.67 with a task-focused status bar that retains only current operation state and artifact statistics while moving product version into More Tools.
 - 2026-08-13 — Shipped Rune v0.66 with one localized Source and Versions control that consolidates source language, checkpoint count, save, undo, and exact restore actions behind the existing history state.
 - 2026-08-13 — Shipped Rune v0.65 with one continuous desktop workspace surface across navigation, sources, editor, splitter, and preview while preserving separated responsive panes and RTL outer edges.

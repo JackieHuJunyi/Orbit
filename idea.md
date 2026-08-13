@@ -2028,4 +2028,10 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 产品版本仍然可发现，但移动到 More Tools 的底部，并使用九语言 `Version` 标签与固定 `Rune 0.67` 值。该调整没有新增或复制任何状态：操作提示继续来自现有 `visibleNotice`，制品统计继续由当前 source 派生，完整来源与 validation 继续属于 Preview 证据面板。状态栏因此更接近 Apple 式“按任务显露”的层级，同时保持 Rune 对真实来源、错误与当前结果的可验证性。
 
+## 73. v0.68 智能能力应该融入编辑动作，而不是占据一张“机器人卡片”
+
+常驻机器人头像、Assistant 标题、能力说明和整排建议会先让用户看见“AI 产品”，再看见正在编辑的内容。v0.68 移除这层人格化包装，让输入框直接成为 source 画布底部的一层轻工具；只有获得焦点时才用用户所选气质色加强边界。它仍然先准备修改、再进入同一 patch/transaction review，不能绕过 selection、artifact 或 workspace 范围。
+
+范围选择保留为输入框下方的紧凑原生按钮，因为授权边界必须始终可见；模型/本地状态继续诚实显示。快捷建议和 Workspace Query 证据进入原生 `details/summary`，用户需要时一击展开，键盘和辅助技术不依赖自定义弹层。pending patch、runtime preflight、repair 证据与错误仍完整展开，因为它们属于一次正在发生的审核任务，不是装饰。这里只改变信息出现的时机和材料关系，没有减少可验证性或创建第二套 Agent 状态。
+
 这项状态只是一条经验证的本机外观偏好，不进入 Artifact、workspace manifest、checkpoint、folder sync、export 或 Agent context。拖动时暂时关闭 iframe pointer events，避免 Deck preview 抢走 pointer；结束后才持久化，损坏或越界值回到默认。分隔器不改变既有 preview-to-source 与 source-to-preview 的 AST identity、scroll target 或写权限，因此“更灵活”没有制造第二套事实或像素级授权。

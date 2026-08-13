@@ -401,8 +401,21 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.67<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 0\.68<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
+});
+
+test("integrates assistance into the source surface and progressively discloses suggestions", async () => {
+  const response = await render();
+  const html = await response.text();
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(html, /class="agent-composer"[\s\S]*class="agent-context-row"/);
+  assert.match(html, /<details class="agent-suggestions"><summary>/);
+  assert.match(html, /role="group" aria-label="Agent change scope"/);
+  assert.doesNotMatch(html, /class="agent-title-row"/);
+  assert.doesNotMatch(html, /class="agent-avatar"/);
+  assert.match(styles, /\.agent-dock\s*\{[^}]*margin:\s*0;[^}]*border:\s*0;[^}]*border-top:/s);
+  assert.match(styles, /\.agent-composer:focus-within\s*\{/);
 });

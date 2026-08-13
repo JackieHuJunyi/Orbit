@@ -550,6 +550,8 @@ Source header disclosure reuses the existing `historyOpen` boolean and checkpoin
 
 Status-bar simplification is presentation-only. The left side continues to render the existing bounded `visibleNotice`; the right side derives artifact statistics directly from the selected canonical source. Encoding, binding counts, validation evidence, and product version are not copied into new state: provenance remains in the Preview disclosure, while the static version moves to the More Tools footer. This keeps the bottom edge task-focused without weakening any validation or source contract.
 
+Assistance chrome is likewise presentation-only. The source-integrated composer, existing three-way scope setter, planner-status badge, and native suggestions disclosure all read the same prompt, selection, dependency context, provider mode, and Query-evidence count. Suggested commands still call the same `runAgent` boundary, while a pending mutation continues to expand the complete patch/runtime/transaction review above the composer. Removing the persistent avatar/title card and collapsing idle suggestions does not alter context authority, runtime gates, checkpoints, or Apply/Discard behavior.
+
 | Stage | Capability | Infrastructure added only then |
 | --- | --- | --- |
 | Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |

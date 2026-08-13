@@ -1901,3 +1901,7 @@ Source 标题栏用一个九语言 Source and Versions 控件同时表达 source
 ### 17.12 v0.67 状态栏只表达当前任务
 
 状态栏常驻内容收敛为当前操作提示和当前制品统计；来源、Query/Chart binding 与 validation 证据继续在 Preview 中按需展开，不在底部重复，UTF-8 不作为不可操作的装饰信息出现。产品版本移动到 More Tools 底部并完整本地化标签。此层级调整只读取现有 notice 与 source-derived statistics，不得成为第二份运行状态、验证结果或制品元数据。
+
+### 17.13 v0.68 辅助输入属于编辑器，不属于机器人面板
+
+Source 底部常驻一个与画布连续的轻量输入区，不再用头像、Assistant 标题和能力说明制造独立 AI 卡片。Selection/File/Workspace 范围保持直接可见；快捷建议和 Query evidence 通过原生 disclosure 按需展开；provider/local 状态保持诚实。pending change、runtime proof、diff、错误与 Apply/Discard 仍使用现有完整审核面，任何视觉收敛都不得隐藏权限范围、减少验证或改变写入路径。

@@ -3,7 +3,6 @@
 import {
   BarChart3,
   BookOpen,
-  Bot,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -2913,7 +2912,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.67</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 0.68</strong></footer>
               </div>
             )}
           </div>
@@ -3260,47 +3259,6 @@ export function RuneWorkbench() {
           </div>
 
           <div className="agent-dock">
-            <div className="agent-title-row">
-              <div className="agent-identity"><span className="agent-avatar"><Bot aria-hidden="true" /></span><div><strong>{ui.assistant}</strong><small>{agentScope === "workspace" ? ui.contextSources(workspaceAgentContext.length, workspacePinnedArtifactIds.length) : agentScope === "selection" ? ui.charactersBound(formatInteger(selectedCharacterCount)) : ui.assistantBody}</small></div></div>
-              <div className="agent-controls">
-                <div className="agent-scope-switch" role="group" aria-label={ui.agentScope}>
-                  {(["selection", "artifact", "workspace"] as const).map((scope) => (
-                    <button
-                      key={scope}
-                      className={agentScope === scope ? "active" : ""}
-                      onClick={() => {
-                        setAgentScope(scope);
-                        setPendingChange(null);
-                        setAgentError("");
-                        setNotice(scope === "workspace"
-                          ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}`
-                          : scope === "selection"
-                            ? `${formatInteger(selectedCharacterCount)} selected characters bound to Agent scope`
-                            : "Current-file Agent scope enabled");
-                      }}
-                      disabled={agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || (scope === "selection" && !validSourceSelection)}
-                      aria-pressed={agentScope === scope}
-                    >
-                      {scope === "selection" ? ui.selection : scope === "artifact" ? ui.file : ui.workspaceScope}
-                    </button>
-                  ))}
-                </div>
-                <span className={`local-planner-badge ${agentMode}`}>{agentMode === "openai" ? ui.modelConnected : ui.localFallback}</span>
-              </div>
-            </div>
-
-            <div className="quick-commands" aria-label={ui.suggestedActions}>
-              {runeQuickCommands(locale, agentScope, selectedArtifact.kind).map((command) => (
-                <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft)}>{command}</button>
-              ))}
-            </div>
-
-            {agentScope === "workspace" && workspaceAgentQueryCount > 0 && (
-              <p className="agent-evidence-hint">
-                {ui.queryEvidence(workspaceAgentQueryCount)}
-              </p>
-            )}
-
             {pendingChange && (
               <div className="patch-card">
                 <div className="patch-icon"><History aria-hidden="true" /></div>
@@ -3382,7 +3340,43 @@ export function RuneWorkbench() {
               />
               <button className="run-button" onClick={() => void runAgent()} disabled={!prompt.trim() || agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || (agentScope === "selection" && !validSourceSelection)} aria-label={ui.planChange} title={`${ui.planChange} (⌘ Enter)`}>{agentState === "planning" || visualEditState !== "idle" ? <LoaderCircle className="agent-spinner" /> : <Play />}</button>
             </div>
-            <p className="agent-hint">{ui.planHint}</p>
+            <div className="agent-context-row">
+              <div className="agent-scope-switch" role="group" aria-label={ui.agentScope}>
+                {(["selection", "artifact", "workspace"] as const).map((scope) => (
+                  <button
+                    key={scope}
+                    className={agentScope === scope ? "active" : ""}
+                    onClick={() => {
+                      setAgentScope(scope);
+                      setPendingChange(null);
+                      setAgentError("");
+                      setNotice(scope === "workspace"
+                        ? `Workspace Agent scope enabled · ${workspaceAgentContext.length} context sources${workspacePinnedArtifactIds.length ? ` · ${workspacePinnedArtifactIds.length} pinned` : ""}`
+                        : scope === "selection"
+                          ? `${formatInteger(selectedCharacterCount)} selected characters bound to Agent scope`
+                          : "Current-file Agent scope enabled");
+                    }}
+                    disabled={agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft) || (scope === "selection" && !validSourceSelection)}
+                    aria-pressed={agentScope === scope}
+                  >
+                    {scope === "selection" ? ui.selection : scope === "artifact" ? ui.file : ui.workspaceScope}
+                  </button>
+                ))}
+              </div>
+              <details className="agent-suggestions">
+                <summary><Sparkles aria-hidden="true" /><span>{ui.suggestedActions}</span><ChevronDown aria-hidden="true" /></summary>
+                <div className="quick-commands" aria-label={ui.suggestedActions}>
+                  {runeQuickCommands(locale, agentScope, selectedArtifact.kind).map((command) => (
+                    <button key={command} onClick={() => void runAgent(command)} disabled={agentState === "planning" || visualEditState !== "idle" || Boolean(activeVisualSourceDraft)}>{command}</button>
+                  ))}
+                </div>
+                {agentScope === "workspace" && workspaceAgentQueryCount > 0 && (
+                  <p className="agent-evidence-hint">{ui.queryEvidence(workspaceAgentQueryCount)}</p>
+                )}
+              </details>
+              <span className={`local-planner-badge ${agentMode}`}>{agentMode === "openai" ? ui.modelConnected : ui.localFallback}</span>
+              <p className="agent-hint">{ui.planHint}</p>
+            </div>
           </div>
         </section>
 
