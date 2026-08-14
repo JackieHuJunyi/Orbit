@@ -12,6 +12,18 @@
 .tools-theme-grid > button { transition: color var(--rune-duration-micro) ease, background-color var(--rune-duration-micro) ease, border-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-surface) var(--rune-ease-out), transform var(--rune-duration-micro) var(--rune-ease-out); }
 .command-menu-group > button { transition: background-color var(--rune-duration-micro) var(--rune-ease-smooth), opacity var(--rune-duration-micro) ease; }
 
+/* Content floats: cards and papers lift on hover with a spring, and their
+   shadow deepens toward --rune-shadow-float-hover. */
+.document-paper,
+.chart-card,
+.deck-slide,
+.data-grid-wrap,
+.saved-review-card,
+.patch-card,
+.visual-document-editor,
+.visual-chart-editor,
+.visual-deck-editor { transition: box-shadow var(--rune-duration-hover) var(--rune-ease-out), transform var(--rune-duration-hover) var(--rune-ease-spring), border-color var(--rune-duration-micro) ease; }
+
 .workspace > .activity-rail,
 .workspace > .file-rail,
 .workspace > .source-pane,
@@ -51,6 +63,14 @@
   .language-options button:hover,
   .welcome-actions button:hover,
   .shortcut-lessons > div:hover { transform: translateY(-2px); }
+  .artifact-row:hover { box-shadow: var(--rune-shadow-card-hover); }
+  .ghost-button:hover:not(:disabled) { box-shadow: var(--rune-shadow-card); }
+  .document-paper:hover,
+  .chart-card:hover,
+  .deck-slide:hover,
+  .data-grid-wrap:hover,
+  .saved-review-card:hover,
+  .patch-card:hover { transform: translateY(-4px); box-shadow: var(--rune-shadow-float-hover); }
 }
 .button:active:not(:disabled),
 .icon-button:active:not(:disabled),
@@ -71,6 +91,15 @@
 @keyframes rune-greeting-write { 0% { opacity: 0; filter: blur(6px); clip-path: inset(0 100% 0 0); transform: translate3d(0, 8px, 0) rotate(-1.5deg); } 52% { opacity: 1; filter: blur(1px); } 100% { opacity: 1; filter: blur(0); clip-path: inset(0); transform: translate3d(0, 0, 0) rotate(0); } }
 @keyframes rune-greeting-write-rtl { 0% { opacity: 0; filter: blur(6px); clip-path: inset(0 0 0 100%); transform: translate3d(0, 8px, 0) rotate(1.5deg); } 52% { opacity: 1; filter: blur(1px); } 100% { opacity: 1; filter: blur(0); clip-path: inset(0); transform: translate3d(0, 0, 0) rotate(0); } }
 @keyframes rune-ambient-drift { from { transform: translate3d(-2%, -1%, 0) scale(.96); } to { transform: translate3d(4%, 3%, 0) scale(1.05); } }
+
+/* Quiet levitation for hero surfaces (Apple-style floating board). */
+@keyframes rune-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -7px, 0) rotate(.4deg); }
+}
+
+.empty-file-stack,
+.welcome-window { animation: rune-float var(--rune-duration-float) var(--rune-ease-smooth) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

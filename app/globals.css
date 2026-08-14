@@ -576,8 +576,10 @@ body.workspace-resizing iframe { pointer-events: none; }
   align-items: center;
   justify-content: space-between;
   padding: 11px 0;
-  border-right: 1px solid var(--line);
-  background: #f8f8f9;
+  border-right: 1px solid var(--rune-hairline);
+  background: var(--rune-glass);
+  backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%);
   color: #77777d;
 }
 
@@ -623,9 +625,10 @@ body.workspace-resizing iframe { pointer-events: none; }
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  border-right: 1px solid var(--line);
-  background: rgba(245, 245, 247, .9);
-  backdrop-filter: blur(18px);
+  border-right: 1px solid var(--rune-hairline);
+  background: var(--rune-glass);
+  backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%);
 }
 
 .file-rail-header {
@@ -1295,8 +1298,10 @@ body.workspace-resizing iframe { pointer-events: none; }
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(252, 252, 253, .96);
+  border-bottom: 1px solid var(--rune-hairline);
+  background: var(--rune-glass-strong);
+  backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%);
 }
 
 .pane-title {
@@ -7583,8 +7588,13 @@ button.chart-line-point {
   --rune-material: rgba(255, 255, 255, .82);
   --rune-material-strong: rgba(255, 255, 255, .94);
   --rune-stage: #f5f5f7;
+  --rune-glass: rgba(255, 255, 255, .7);
+  --rune-glass-strong: rgba(255, 255, 255, .84);
+  --rune-glass-blur: 22px;
   --rune-shadow-float: 0 24px 70px rgba(24, 24, 28, .12), 0 2px 10px rgba(24, 24, 28, .04);
+  --rune-shadow-float-hover: 0 32px 84px rgba(24, 24, 28, .16), 0 4px 16px rgba(24, 24, 28, .05);
   --rune-shadow-card: 0 12px 38px rgba(24, 24, 28, .075), 0 1px 3px rgba(24, 24, 28, .035);
+  --rune-shadow-card-hover: 0 20px 52px rgba(24, 24, 28, .11), 0 2px 8px rgba(24, 24, 28, .045);
   --rune-ease: cubic-bezier(.2, .8, .2, 1);
 }
 
@@ -7844,7 +7854,7 @@ body {
   min-height: calc(100vh - 220px);
   padding: clamp(48px, 7vw, 82px);
   border: 1px solid rgba(29, 29, 31, .065);
-  border-radius: 6px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: 0 20px 58px rgba(24, 24, 28, .1), 0 2px 8px rgba(24, 24, 28, .035);
 }
@@ -7939,7 +7949,7 @@ body {
 .chart-stage,
 .slides-stage { background: var(--rune-stage); background-image: none; }
 .document-stage { padding: clamp(32px, 4.8vw, 68px); }
-.document-paper { width: min(var(--rune-content-reading), 100%); padding: clamp(48px, 7vw, 82px); border-color: var(--rune-hairline); border-radius: 6px; background: #fff; box-shadow: 0 20px 58px rgba(24, 24, 28, .1), 0 2px 8px rgba(24, 24, 28, .035); }
+.document-paper { width: min(var(--rune-content-reading), 100%); padding: clamp(48px, 7vw, 82px); border-color: var(--rune-hairline); border-radius: 16px; background: #fff; box-shadow: 0 20px 58px rgba(24, 24, 28, .1), 0 2px 8px rgba(24, 24, 28, .035); }
 .markdown-body { color: #27272a; font-family: var(--font-sans); font-size: 16px; line-height: 1.68; }
 .markdown-body h1 { font-size: clamp(38px, 4.4vw, 56px); }
 .markdown-body h2 { font-size: 26px; }
@@ -8089,7 +8099,7 @@ body {
 .empty-drop-zone > small,
 .empty-guide-note { font-size: 11px; }
 
-.statusbar { min-height: 28px; border-top-color: var(--rune-hairline); background: rgba(248, 248, 250, .84); }
+.statusbar { min-height: 28px; border-top-color: var(--rune-hairline); background: var(--rune-glass-strong); backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%); -webkit-backdrop-filter: blur(var(--rune-glass-blur)) saturate(160%); }
 
 html[dir="rtl"] .activity-rail { border-radius: 0 var(--rune-radius-workspace) var(--rune-radius-workspace) 0; }
 html[dir="rtl"] .preview-pane,
@@ -8159,7 +8169,7 @@ html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { bord
   .document-stage,
   .data-stage,
   .chart-stage { padding: 14px; }
-  .document-paper { padding: 38px 26px; border-radius: 5px; }
+  .document-paper { padding: 38px 26px; border-radius: 14px; }
   .import-review-backdrop { padding: 8px; }
   .import-review-dialog { width: calc(100vw - 16px); max-height: calc(100vh - 16px); border-radius: 20px; }
   .import-review-header { padding: 22px 18px 18px; }
