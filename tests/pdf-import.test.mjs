@@ -283,3 +283,8 @@ test("ships same-origin OCR worker, core variants, and both compressed language 
   assert.match(clientSource, /langPath:\s*`\$\{assetBase\}lang\/`/u);
   assert.doesNotMatch(clientSource, /cdn\.jsdelivr|unpkg/iu);
 });
+
+test("prepares ignored OCR runtime assets before the direct unit suite", async () => {
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.match(packageJson.scripts["test:unit"], /^npm run prepare:ocr && node /u);
+});
