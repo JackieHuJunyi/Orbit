@@ -128,6 +128,14 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 - 草稿高度由 onChange 本地测量并封顶 132px；外部清空（例如计划成功后）由 value 驱动的 effect 收缩，不引入第二高度来源。
 - 组件通过 React 19 ref-as-prop 暴露 textarea 节点，Workbench 的 ⌘Enter 提交与 focus-agent 命令行为不变。
 
+## 2.6 v1.09 新增落点
+
+- More Tools 的完整内容从顶部 chrome 移到 activity rail 底部的单一 Settings 入口；Workbench 仍拥有打开状态和所有设置 effect，activity rail 只接收状态、无障碍属性和回调。
+- Settings popover 以触发器为定位锚点并在 Arabic RTL 下镜像，避免建立第二套全局导航或 overlay authority；顶部只保留跨文件工作需要的动作。
+- 全局 token 增加统一的玻璃材质、hairline、交互抬升和 motion 曲线，欢迎页、工作台与浮层复用同一视觉语法，而不是在组件内硬编码独立效果。
+- Space Black 使用完整的语义颜色覆盖，不依赖简单反色；pointer glow、欢迎内容抬升和 Preview 滚动阴影都只是可取消的呈现反馈，不携带 workspace 状态或写权限。
+- Activity rail 与 Status bar 抽成 props-only 组件；OCR core 改为安装/构建阶段从固定依赖生成，并加入 Chromium smoke 与 critical accessibility 检查，降低后续界面迭代的验证成本。
+
 ## 3. 后续架构门槛
 
 只有同时满足以下条件，才引入 runtime task registry 或 UI slot host：
