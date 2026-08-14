@@ -11,7 +11,11 @@
   position: fixed;
   z-index: var(--rune-layer-canvas);
   inset: 0;
-  background: radial-gradient(520px circle at var(--rune-pointer-x) var(--rune-pointer-y), rgba(var(--theme-rgb), .09), transparent 68%);
+  /* A two-layer material light: a bright tight core over a wide soft halo,
+     following the pointer like the ambient highlights on Apple product pages. */
+  background:
+    radial-gradient(300px circle at var(--rune-pointer-x) var(--rune-pointer-y), rgba(var(--theme-rgb), .16), transparent 64%),
+    radial-gradient(760px circle at var(--rune-pointer-x) var(--rune-pointer-y), rgba(var(--theme-rgb), .07), transparent 72%);
   content: "";
   opacity: var(--rune-pointer-opacity);
   pointer-events: none;

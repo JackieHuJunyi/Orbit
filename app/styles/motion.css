@@ -41,6 +41,7 @@
 .command-menu { animation: rune-command-menu-in 280ms var(--rune-ease-out) backwards; }
 .import-review-dialog { animation: rune-dialog-in var(--rune-duration-surface) var(--rune-ease-out) backwards; }
 .welcome-page { animation: rune-scene-enter var(--rune-duration-scene) var(--rune-ease-out) backwards; }
+.welcome-window { animation: rune-window-enter 640ms var(--rune-ease-out) backwards; }
 .welcome-page > :not(.welcome-intro-grid),
 .welcome-intro-grid > * { animation: rune-content-reveal var(--rune-duration-scene) var(--rune-ease-out) backwards; }
 .welcome-intro-grid > :nth-child(2) { animation-delay: 90ms; }
@@ -87,6 +88,7 @@
 @keyframes rune-dialog-in { from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.975); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-command-menu-in { from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-scene-enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes rune-window-enter { from { opacity: 0; transform: translate3d(0, 26px, 0) scale(.975); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-content-reveal { from { opacity: 0; filter: blur(8px); transform: translate3d(0, 18px, 0); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); } }
 @keyframes rune-greeting-write { 0% { opacity: 0; filter: blur(6px); clip-path: inset(0 100% 0 0); transform: translate3d(0, 8px, 0) rotate(-1.5deg); } 52% { opacity: 1; filter: blur(1px); } 100% { opacity: 1; filter: blur(0); clip-path: inset(0); transform: translate3d(0, 0, 0) rotate(0); } }
 @keyframes rune-greeting-write-rtl { 0% { opacity: 0; filter: blur(6px); clip-path: inset(0 0 0 100%); transform: translate3d(0, 8px, 0) rotate(1.5deg); } 52% { opacity: 1; filter: blur(1px); } 100% { opacity: 1; filter: blur(0); clip-path: inset(0); transform: translate3d(0, 0, 0) rotate(0); } }

@@ -9314,3 +9314,94 @@ html[dir="rtl"] .workspace.view-preview.without-file-rail > .preview-pane { bord
   .activity-button { width: 34px; height: 34px; }
   .empty-drop-zone { width: 100%; min-height: 430px; padding: 42px 22px; border-radius: 26px; }
 }
+
+/* Rune dark mode — Space Black turns the light material system into a deep
+   graphite theme. Core variables flip first, then the few hardcoded light
+   surfaces that do not already consume a token are overridden. */
+html[data-theme="space-black"] {
+  color-scheme: dark;
+  --ink: #f5f5f7;
+  --muted: #a1a1a6;
+  --subtle: #86868b;
+  --paper: #1c1c1e;
+  --canvas: #000000;
+  --panel: #2c2c2e;
+  --line: #3a3a3c;
+  --line-strong: #48484a;
+  --forest: #f5f5f7;
+  --forest-soft: #d1d1d6;
+  --theme-accent: #7e8289;
+  --theme-soft: #26282c;
+  --theme-rgb: 126, 130, 137;
+  --rune-stage: #161618;
+  --rune-material: rgba(28, 28, 30, .8);
+  --rune-material-strong: rgba(28, 28, 30, .92);
+  --rune-glass: rgba(28, 28, 30, .68);
+  --rune-glass-strong: rgba(28, 28, 30, .84);
+  --rune-hairline: rgba(255, 255, 255, .1);
+  --rune-hairline-strong: rgba(255, 255, 255, .16);
+  --rune-shadow-float: 0 24px 70px rgba(0, 0, 0, .55), 0 2px 10px rgba(0, 0, 0, .35);
+  --rune-shadow-float-hover: 0 32px 84px rgba(0, 0, 0, .62), 0 4px 16px rgba(0, 0, 0, .4);
+  --rune-shadow-card: 0 12px 38px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .3);
+  --rune-shadow-card-hover: 0 20px 52px rgba(0, 0, 0, .58), 0 2px 8px rgba(0, 0, 0, .38);
+}
+
+html[data-theme="space-black"] body { background: #000000; color: #f5f5f7; }
+
+html[data-theme="space-black"] .rune-shell {
+  background: radial-gradient(circle at 74% -20%, rgba(126, 130, 137, .14), transparent 42%), #000000;
+}
+
+html[data-theme="space-black"] .topbar {
+  border-bottom-color: var(--rune-hairline);
+  background: rgba(22, 22, 24, .72);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .06);
+}
+
+html[data-theme="space-black"] .activity-rail { color: #9a9aa0; }
+html[data-theme="space-black"] .activity-button:hover,
+html[data-theme="space-black"] .activity-button.active { background: rgba(255, 255, 255, .09); color: #f5f5f7; }
+
+html[data-theme="space-black"] .editor-wrap,
+html[data-theme="space-black"] .source-pane,
+html[data-theme="space-black"] .preview-pane { background: #1c1c1e; }
+html[data-theme="space-black"] .source-editor { color: #e8e8ea; }
+html[data-theme="space-black"] .preview-body,
+html[data-theme="space-black"] .document-stage,
+html[data-theme="space-black"] .slides-stage { background: #161618; }
+
+html[data-theme="space-black"] .document-paper,
+html[data-theme="space-black"] .chart-card,
+html[data-theme="space-black"] .data-grid-wrap,
+html[data-theme="space-black"] .saved-review-card,
+html[data-theme="space-black"] .empty-drop-zone { background: #1c1c1e; border-color: var(--rune-hairline); }
+html[data-theme="space-black"] .document-paper { box-shadow: 0 20px 58px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .3); }
+html[data-theme="space-black"] .markdown-body { color: #e8e8ea; }
+
+html[data-theme="space-black"] .welcome-backdrop { background: #0a0a0b; }
+html[data-theme="space-black"] .welcome-window {
+  background: rgba(24, 24, 26, .9);
+  border-color: rgba(255, 255, 255, .1);
+  box-shadow: 0 28px 76px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+html[data-theme="space-black"] .welcome-chrome { background: rgba(28, 28, 30, .6); border-bottom-color: var(--rune-hairline); }
+html[data-theme="space-black"] .welcome-chrome-brand { color: #f5f5f7; }
+html[data-theme="space-black"] .welcome-greeting { color: #f5f5f7; }
+
+html[data-theme="space-black"] .command-menu { background: rgba(30, 30, 32, .94); border-color: rgba(255, 255, 255, .1); }
+html[data-theme="space-black"] .command-menu-backdrop { background: rgba(0, 0, 0, .55); }
+html[data-theme="space-black"] .import-review-dialog { background: #1c1c1e; }
+html[data-theme="space-black"] .import-review-backdrop { background: rgba(0, 0, 0, .6); }
+
+html[data-theme="space-black"] .tools-popover,
+html[data-theme="space-black"] .export-popover { background: rgba(30, 30, 32, .9); border-color: rgba(255, 255, 255, .1); }
+
+html[data-theme="space-black"] .agent-composer { background: #1c1c1e; }
+html[data-theme="space-black"] .agent-composer textarea { color: var(--ink); }
+html[data-theme="space-black"] .quick-commands button { background: rgba(255, 255, 255, .05); color: var(--muted); }
+html[data-theme="space-black"] .quick-commands button:hover { background: rgba(255, 255, 255, .1); color: var(--ink); }
+
+/* Scroll-driven preview chrome: the header lifts once content scrolls. */
+.preview-header { transition: box-shadow var(--rune-duration-micro) ease, background-color var(--rune-duration-micro) ease; }
+.preview-pane[data-scrolled] .preview-header { box-shadow: 0 10px 28px rgba(24, 24, 28, .07); }
+html[data-theme="space-black"] .preview-pane[data-scrolled] .preview-header { box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }

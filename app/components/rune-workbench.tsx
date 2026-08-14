@@ -921,6 +921,19 @@ export function RuneWorkbench() {
     };
   }, []);
 
+  // Scroll-driven chrome: the preview header gains a quiet shadow once its
+  // content has scrolled, like the sticky bars on Apple product pages.
+  useEffect(() => {
+    if (!hydrated) return;
+    const scroll = previewScrollRef.current;
+    const pane = scroll?.closest<HTMLElement>(".preview-pane");
+    if (!scroll || !pane) return;
+    const onScroll = () => pane.toggleAttribute("data-scrolled", scroll.scrollTop > 8);
+    onScroll();
+    scroll.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroll.removeEventListener("scroll", onScroll);
+  }, [hydrated]);
+
   useEffect(() => {
     if (!hydrated) return;
     const referencedIds = [...new Set(artifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)))];
