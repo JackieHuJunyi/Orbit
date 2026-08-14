@@ -2240,7 +2240,7 @@ function SlidesPreview({
     error: string;
     submitting: boolean;
   } | null>(null);
-  const [visibleSlideIndex, setVisibleSlideIndex] = useState(0);
+  const slideFlowRef = useRef<HTMLDivElement>(null);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source, { resolveLocalAssetUrl }) : null;
   const runtimeSource = deckCompilation?.html ?? source;
   const slideCount = deckCompilation?.slideCount ?? source.match(/<section[\s>]/gi)?.length ?? 0;
@@ -2253,16 +2253,10 @@ function SlidesPreview({
   const renderedSource = deckCompilation ? "" : renderChartReferencesToHtml(runtimeSource, resolveDeckChart);
   const previewSlides = deckCompilation?.previewSlides ?? [];
   const sourceLinkedSlideIndex = targets.findIndex((target) => previewTargetIsActive(target, activeSelection));
-  const requestedVisibleSlideIndex = sourceLinkedSlideIndex >= 0 ? sourceLinkedSlideIndex : visibleSlideIndex;
-  const boundedVisibleSlideIndex = Math.max(0, Math.min(
-    Math.max(0, previewSlides.length - 1),
-    requestedVisibleSlideIndex,
-  ));
-  const visibleSlide = previewSlides[boundedVisibleSlideIndex];
-  const renderedVisibleSlide = visibleSlide
-    ? renderChartReferencesToHtml(visibleSlide.html, resolveDeckChart)
-    : "";
-  const visibleTarget = targets[boundedVisibleSlideIndex];
+  const renderedPreviewSlides = previewSlides.map((slide) => ({
+    ...slide,
+    html: renderChartReferencesToHtml(slide.html, resolveDeckChart),
+  }));
   const editingTarget = editingSlide?.artifactId === artifact.id
     && editingSlide.sourceRevision === artifact.source
     ? targets.find((target) => target.id === editingSlide.targetId)
@@ -2314,7 +2308,6 @@ function SlidesPreview({
     if (!onEditDeckSlide || !canVisualEditDeckSlide(artifact, target)) return;
     const draft = visualDeckSlideDraft(artifact, target);
     if (!draft) return;
-    setVisibleSlideIndex(Math.max(0, targets.findIndex((candidate) => candidate.id === target.id)));
     setEditingSlide({
       targetId: target.id,
       artifactId: artifact.id,
@@ -2323,6 +2316,16 @@ function SlidesPreview({
       error: "",
       submitting: false,
     });
+  }
+
+  function scrollToSlide(slideIndex: number) {
+    slideFlowRef.current
+      ?.querySelector<HTMLElement>(`[data-deck-slide-index="${slideIndex}"]`)
+      ?.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
   }
 
   async function submitSlideEdit(target: PreviewSourceTarget) {
@@ -2346,7 +2349,7 @@ function SlidesPreview({
       {deckCompilation && targets.length > 0 && (
         <nav className="slide-targets" aria-label={copy.selectDeckSlide}>
           {targets.map((target, targetIndex) => {
-            const active = targetIndex === boundedVisibleSlideIndex;
+            const active = targetIndex === sourceLinkedSlideIndex;
             const editable = Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target));
             const editing = editingTarget?.id === target.id;
             return (
@@ -2361,7 +2364,7 @@ function SlidesPreview({
                   type="button"
                   aria-pressed={active}
                   onClick={() => {
-                    setVisibleSlideIndex(targetIndex);
+                    scrollToSlide(targetIndex);
                     onTargetSource?.(artifact, target);
                   }}
                   title={onTargetSource ? copy.selectExact(target.label) : target.label}
@@ -2465,32 +2468,48 @@ function SlidesPreview({
           </footer>
         </form>
       )}
-      {deckCompilation && visibleSlide ? (
-        <div
-          className={`deck-slide-canvas ${onTargetSource && visibleTarget ? "targetable" : ""} ${visibleTarget && previewTargetIsActive(visibleTarget, activeSelection) ? "active" : ""}`.trim()}
-          data-preview-source-id={visibleTarget?.id}
-          data-preview-source-primary="true"
-        >
-          <iframe
-            className="slides-frame"
-            srcDoc={renderedVisibleSlide}
-            sandbox=""
-            tabIndex={-1}
-            title={visibleTarget ? `${copy.renderedPresentation} · ${visibleTarget.label}` : copy.renderedPresentation}
-          />
-          {onTargetSource && visibleTarget && (
-            <button
-              className="deck-slide-source-hit"
-              data-preview-source-target={visibleTarget.kind}
-              type="button"
-              aria-label={copy.selectForAgent(visibleTarget.label)}
-              aria-pressed={previewTargetIsActive(visibleTarget, activeSelection)}
-              title={copy.selectExact(visibleTarget.label)}
-              onClick={() => onTargetSource(artifact, visibleTarget)}
-            >
-              <span><MousePointer2 aria-hidden="true" />{visibleTarget.label}</span>
-            </button>
-          )}
+      {deckCompilation && renderedPreviewSlides.length ? (
+        <div className="deck-slide-flow" aria-label={copy.renderedPresentation} ref={slideFlowRef}>
+          {renderedPreviewSlides.map((slide, slideIndex) => {
+            const target = targets[slideIndex];
+            const active = Boolean(target && previewTargetIsActive(target, activeSelection));
+            return (
+              <section className="deck-slide-page" key={`${artifact.id}-${slide.index}`}>
+                <header className="deck-slide-page-meta">
+                  <span>{String(slideIndex + 1).padStart(2, "0")}</span>
+                  <strong>{target?.label ?? `${copy.renderedPresentation} ${slideIndex + 1}`}</strong>
+                </header>
+                <div
+                  className={`deck-slide-canvas ${onTargetSource && target ? "targetable" : ""} ${active ? "active" : ""}`.trim()}
+                  data-deck-slide-index={slideIndex}
+                  data-preview-source-id={target?.id}
+                  data-preview-source-primary="true"
+                >
+                  <iframe
+                    className="slides-frame"
+                    srcDoc={slide.html}
+                    sandbox=""
+                    loading="lazy"
+                    tabIndex={-1}
+                    title={target ? `${copy.renderedPresentation} · ${target.label}` : `${copy.renderedPresentation} ${slideIndex + 1}`}
+                  />
+                  {onTargetSource && target && (
+                    <button
+                      className="deck-slide-source-hit"
+                      data-preview-source-target={target.kind}
+                      type="button"
+                      aria-label={copy.selectForAgent(target.label)}
+                      aria-pressed={active}
+                      title={copy.selectExact(target.label)}
+                      onClick={() => onTargetSource(artifact, target)}
+                    >
+                      <span><MousePointer2 aria-hidden="true" />{target.label}</span>
+                    </button>
+                  )}
+                </div>
+              </section>
+            );
+          })}
         </div>
       ) : (
         <iframe

@@ -51,15 +51,23 @@ test("workbench applies preview selection, source scrolling, and gutter synchron
   assert.match(workbench, /sourceSelectionScrollTop\(\{/);
   assert.match(workbench, /editor\.scrollTo\(\{[\s\S]*behavior:[\s\S]*prefers-reduced-motion/);
   assert.match(workbench, /gutterRef\.current\.scrollTop = nextScrollTop/);
-  assert.match(workbench, /element\.dataset\.previewSourcePrimary === "true"[\s\S]*element\.dataset\.previewSourceId === activePreviewTargetId/);
+  assert.match(workbench, /selectPreviewNavigationCandidate\([\s\S]*previewSourcePrimary === "true"/);
   assert.match(workbench, /wrap="off"/);
 });
 
-test("Deck preview exposes one primary slide canvas that can drive the same source-selection path", async () => {
+test("Deck preview exposes every slide in one continuous source-linked flow", async () => {
   const preview = await readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8");
+  const content = await readFile(new URL("../app/styles/content.css", import.meta.url), "utf8");
   assert.match(preview, /deckCompilation\?\.previewSlides/);
+  assert.match(preview, /renderedPreviewSlides\.map\(\(slide, slideIndex\)/);
+  assert.match(preview, /className="deck-slide-flow"/);
+  assert.match(preview, /scrollToSlide\(targetIndex\)/);
+  assert.match(preview, /data-deck-slide-index=\{slideIndex\}/);
   assert.match(preview, /className="deck-slide-source-hit"/);
   assert.match(preview, /data-preview-source-primary="true"/);
-  assert.match(preview, /onClick=\{\(\) => onTargetSource\(artifact, visibleTarget\)\}/);
-  assert.match(preview, /requestedVisibleSlideIndex = sourceLinkedSlideIndex >= 0 \? sourceLinkedSlideIndex : visibleSlideIndex/);
+  assert.match(preview, /onClick=\{\(\) => onTargetSource\(artifact, target\)\}/);
+  assert.match(preview, /loading="lazy"/);
+  assert.doesNotMatch(preview, /visibleSlideIndex/);
+  assert.match(content, /\.deck-slide-flow\s*\{[^}]*display:\s*grid[^}]*gap:/s);
+  assert.match(content, /\.deck-slide-flow \.deck-slide-canvas\s*\{[^}]*aspect-ratio:\s*16 \/ 9[^}]*flex:\s*none/s);
 });

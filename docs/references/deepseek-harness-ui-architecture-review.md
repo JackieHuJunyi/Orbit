@@ -69,7 +69,7 @@ Harness 把 session、agent、capability events 分域，并要求新行为挂�
 
 Harness 的 `ui-theme` 独占静态色阶、语义别名、字体、motion、shadow 和 light/dark preference；功能组件只消费语义 token。其客户端又把纯数据对象、React 绑定层和纯 props 呈现组件做成单向依赖，避免业务组件直接读取全局 context。
 
-Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance registry 是颜色、字体、圆角、阴影和 motion 的唯一共享权威；功能样式使用语义变量，不另建主题；`app/lib` 的 compiler/port 不导入 React，组件只接收已经准备好的数据与回调。v1.00 的图片兼容导入进一步把 package parser、共享 hash validator、review transaction 和 IndexedDB effect 分开；v1.01 则让同一个 Deck compiler 同时供应完整交付 HTML 与逐页预览，组件只选择当前呈现并转交既有 selection capability。两者都证明无需动态插件树也能获得清晰、可替换且单向的数据边界。
+Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance registry 是颜色、字体、圆角、阴影和 motion 的唯一共享权威；功能样式使用语义变量，不另建主题；`app/lib` 的 compiler/port 不导入 React，组件只接收已经准备好的数据与回调。v1.00 的图片兼容导入进一步把 package parser、共享 hash validator、review transaction 和 IndexedDB effect 分开；v1.01 让同一个 Deck compiler 同时供应完整交付 HTML 与逐页预览，v1.07 再让 presentation 把所有 compiler-owned 页面组成连续编辑流，并把 revision/range proof 与 DOM focus/scroll effect 分开。它们都证明无需动态插件树也能获得清晰、可替换且单向的数据边界。
 
 ## 2. 本轮采用与不采用
 
@@ -110,6 +110,14 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 - “打开 Source 修复”是 Workbench effect：Preview-only 先恢复 Split，再聚焦 textarea；能找到精确 reference 时选中并居中，否则落在首行。动作不改 source、不调用模型、不持久化。
 - 诊断面板使用同一 design token、viewport 内滚动、移动端重排和既有 Arabic RTL，不引入第二套 error palette、numeric layer 或 overlay owner。
 - 这采用 Harness input machine 的 `events/facts in, effects out` 思路，但不把 Rune 编辑器迁成通用 agent session state machine。
+
+## 2.4 v1.07 新增落点
+
+- Deck compiler 继续输出完整交付 HTML 与 ordered standalone pages；Presentation 只把后者组成一个 lazy、连续的 16:9 页面流，不建立第二个 renderer。
+- 顶部页索引不再拥有当前页业务状态，只把 exact target 交回共享 navigation；Source caret 与实际页面使用同一 compiler identity 双向滚动。
+- `source-navigation` 在 React 和 DOM 之外完成 artifact/revision/range proof，并声明 layout/selection/Agent effects；Workbench 才执行 focus、scroll 与 view change。
+- diagnostic repair 复用同一个 effect executor，但它的 plan 明确不激活 Selection Agent；相似的视觉动作因此共享实现而不混淆权限。
+- 这对应 Harness 对 pure machine 与 effect 的分离，同时保留 Rune 的 canonical Artifact、review-before-write 和无 iframe privilege 边界。
 
 ## 3. 后续架构门槛
 

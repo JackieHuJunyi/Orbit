@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — Rune v1.01.
+Superseded in part by ADR 0026 — Rune v1.07 keeps the same compiler and source identity but presents every slide in a continuous flow.
 
 ## Context
 

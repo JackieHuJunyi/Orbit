@@ -294,7 +294,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Runtime-validated draft/);
   assert.match(clientSource, /One strict spec.*runtime impact verified.*save rewrites canonical Chart JSON/);
   assert.match(clientSource, /Preview target is too large or no longer matches the current source/);
-  assert.match(clientSource, /The preview target artifact is no longer in this workspace/);
+  assert.match(clientSource, /The source artifact is no longer in this workspace/);
   assert.match(clientSource, /Open exact/);
   assert.match(clientSource, /result row numbers and direct fields, when present, open canonical source; derived cells stay read-only/);
   assert.match(clientSource, /this query shape stays read-only because no one-to-one lineage was proven/);
@@ -365,7 +365,7 @@ test("ships persistent presentation-only workspace focus modes without unmountin
   assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
   assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
   assert.match(html, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
-  assert.match(source, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
+  assert.match(source, /if \(plan\.revealsSource\) setPreferredWorkspaceView\("split"\)/);
   assert.match(source, /activePreviewTargetId, activePreviewTargetKind, selectedArtifact\?\.id, workspaceView/);
 });
 
@@ -390,7 +390,7 @@ test("turns compiler failures into bounded actionable Preview diagnostics", asyn
   assert.match(workbench, /prepareArtifactDiagnostics\(selectedArtifact/);
   assert.match(workbench, /className="preview-diagnostics"/);
   assert.match(workbench, /onClick=\{openValidationIssueSource\}/);
-  assert.match(workbench, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
+  assert.match(workbench, /if \(plan\.revealsSource\) setPreferredWorkspaceView\("split"\)/);
   assert.match(workbench, /sourceSelectionScrollTop\(\{/);
   assert.match(workbench, /ui\.diagnostics\.technicalDetail/);
   assert.match(diagnostics, /MAX_ARTIFACT_DIAGNOSTICS = 12/);
@@ -474,7 +474,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.06<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.07<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

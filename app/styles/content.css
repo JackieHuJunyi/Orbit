@@ -272,6 +272,47 @@
   box-shadow: var(--rune-shadow-card);
   transition: border-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-surface) var(--rune-ease-out), transform var(--rune-duration-micro) var(--rune-ease-out);
 }
+.deck-slide-flow {
+  display: grid;
+  width: min(100%, 1120px);
+  align-self: center;
+  gap: clamp(30px, 5vw, 64px);
+  padding-block: var(--rune-space-2) clamp(24px, 4vw, 52px);
+}
+.deck-slide-page {
+  display: grid;
+  min-width: 0;
+  gap: var(--rune-space-3);
+  scroll-margin-block: calc(var(--rune-pane-header-height) + var(--rune-space-6));
+}
+.deck-slide-page-meta {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--rune-space-3);
+  padding-inline: var(--rune-space-2);
+  color: var(--muted);
+}
+.deck-slide-page-meta span {
+  flex: 0 0 auto;
+  font: 600 var(--rune-type-caption)/1 var(--font-mono);
+  letter-spacing: .08em;
+}
+.deck-slide-page-meta strong {
+  overflow: hidden;
+  font-size: var(--rune-type-caption);
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deck-slide-flow .deck-slide-canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  flex: none;
+}
+.deck-slide-flow .deck-slide-canvas .slides-frame {
+  min-height: 0;
+}
 .deck-slide-canvas .slides-frame {
   height: 100%;
   border: 0;

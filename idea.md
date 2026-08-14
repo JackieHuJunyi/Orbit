@@ -2367,3 +2367,11 @@ Preview 过去能准确统计 validation error，却把真实错误留在组件�
 v1.06 引入 React-free `artifact-diagnostics`。它只接收 source、metric、Query、Chart 各 owner 已产生的事实，映射为十三个稳定 code，保留原始 detail，并对最多 12 项、2,000 字符 detail、200 字符 reference 做严格边界和去重；返回值及每一项都冻结。它不翻译、不猜 repair、不访问 DOM、不持久化、不 fetch，也不修改 Artifact。
 
 Preview 用 code 映射九语言的简明标题与下一步，把原始 compiler detail 放在原生 details 内按需展开。唯一动作“打开 Source 修复”属于 Workbench：若当前只看 Preview，先恢复 Split；若 reference 仍存在，选择其精确 UTF-16 范围并居中，否则选首行。这个动作只导航，不修复、不调用模型、不产生 checkpoint。这里学习 DeepSeek Harness 纯状态机的 `facts/events in, effects out`，但继续保持 Rune 是 artifact-first workspace，而不是 agent chat shell。
+
+## 113. v1.07 演示编辑预览应该是一条连续叙事，而不是逐页播放器
+
+v1.01 的单页画布解决了 iframe 内页面无法与源码精确对应的问题，却把编辑工作变成反复切换页签。播放器适合放映，不适合快速浏览结构、比较前后页和连续修改。Rune 的右侧首先是编辑 Preview，因此默认交互应该和文档一样自然向下滚动，同时保留每一页清晰的 16:9 边界。
+
+v1.07 继续让 `compileDeckSource` 成为唯一语义 owner，不复制 React slide renderer，也不给 iframe script 或 same-origin 权限。编译器产生的每个独立页面按源码顺序进入同一纵向流，并使用浏览器 lazy loading；页码和标题只是安静的身份标记，顶部索引变成跳转/编辑入口而非控制当前唯一页面。完整 HTML、PPTX、ODP 和 PDF 导出合同不变，legacy HTML 因没有可证明的逐页源码身份仍保持单个兼容 iframe。
+
+双向导航也不再散落计算。React-free `source-navigation` 只校验 exact artifact、source revision、UTF-16 range 或 bounded diagnostic reference，返回 immutable effect plan；Workbench 独占 Split reveal、artifact switch、focus、selection、scroll、Agent scope 和 history effects。左侧光标用同一纯 selector 找到右侧真实页面并滚动，点击任意页面用同一 planner 选择并居中左侧范围。这样连续预览、错误修复和未来其他 Preview 定位共享边界，却都没有写入权。

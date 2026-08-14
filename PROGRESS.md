@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-14 — Shipped Rune v1.07 with a continuous vertical Deck Markdown preview, lazy independent 16:9 sandboxes for every page, exact bidirectional Source scrolling, and one React-free revision-bound navigation planner shared by Preview selection and diagnostic repair.
 - 2026-08-14 — Shipped Rune v1.06 with bounded React-free Preview diagnostics, stable issue codes, nine-language repair guidance, progressively disclosed compiler evidence, and one exact action that restores Source and selects the relevant reference without adding write authority.
 - 2026-08-14 — Shipped Rune v1.05 with one exhaustive React-free Artifact Adapter Registry for creation metadata, starter source, detection, validation, statistics, and Quick Actions, plus compile-time exhaustive Preview dispatch; adding a kind can no longer silently fall through across consumers.
 - 2026-08-14 — Shipped Rune v1.04 with a small React-free and reversible UI surface registry, registry-backed workspace views and Quick Actions, one shared pane view switch, and a lighter rAF-throttled pointer-captured separator that preserves mounted editor state, RTL, keyboard control, and settle-only persistence.

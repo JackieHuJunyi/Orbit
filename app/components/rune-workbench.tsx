@@ -222,6 +222,11 @@ import {
   type RuneWorkspaceView,
 } from "../lib/workspace-layout";
 import { sourceSelectionScrollTop } from "../lib/source-editor-scroll";
+import {
+  prepareSourceNavigation,
+  selectPreviewNavigationCandidate,
+  type PreparedSourceNavigation,
+} from "../lib/source-navigation";
 import { portableSourceRevision } from "../lib/source-revision";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
@@ -769,6 +774,7 @@ export function RuneWorkbench() {
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
+  const inspectSourceNavigationRef = useRef(false);
   const importRef = useRef<HTMLInputElement>(null);
   const taskImportRef = useRef<HTMLInputElement>(null);
   const taskImportIdRef = useRef<RuneTaskId>("operating-review");
@@ -1249,15 +1255,15 @@ export function RuneWorkbench() {
       const linkedElements = [...(previewScrollRef.current?.querySelectorAll<HTMLElement>(
         "[data-preview-source-id], [data-preview-section-id]",
       ) ?? [])];
-      const linkedElement = linkedElements.find((element) => (
-        element.dataset.previewSourcePrimary === "true"
-        && element.dataset.previewSourceId === activePreviewTargetId
-      )) ?? linkedElements.find((element) => (
-        activePreviewTargetKind === "document-section"
-        && element.dataset.previewSectionId === activePreviewTargetId
-      )) ?? linkedElements.find((element) => (
-        element.dataset.previewSourceId === activePreviewTargetId
-      ));
+      const linkedIndex = selectPreviewNavigationCandidate(
+        { id: activePreviewTargetId, kind: activePreviewTargetKind ?? "" },
+        linkedElements.map((element) => ({
+          sourceId: element.dataset.previewSourceId,
+          sectionId: element.dataset.previewSectionId,
+          primary: element.dataset.previewSourcePrimary === "true",
+        })),
+      );
+      const linkedElement = linkedElements[linkedIndex];
       if (!linkedElement) return;
       linkedElement.scrollIntoView({
         block: "center",
@@ -1923,6 +1929,16 @@ export function RuneWorkbench() {
       end,
     };
     setSourceCursor(cursor);
+    if (inspectSourceNavigationRef.current) {
+      inspectSourceNavigationRef.current = false;
+      setSourceSelection(start < end ? {
+        artifactId: selectedArtifact.id,
+        sourceRevision,
+        start,
+        end,
+      } : null);
+      return;
+    }
     const sourceArtifact = sourceRevision === selectedArtifact.source
       ? selectedArtifact
       : { ...selectedArtifact, source: sourceRevision };
@@ -1969,59 +1985,42 @@ export function RuneWorkbench() {
         : `${formatInteger(end - start)} source characters selected · Selection Agent ready`);
   }
 
-  function focusPreviewTarget(
-    targetArtifact: WorkspaceArtifact,
-    target: PreviewSourceTarget,
-    viaLabel?: string,
+  function executeSourceNavigation(
+    plan: PreparedSourceNavigation,
+    options: Readonly<{
+      notice: string;
+      previewTarget?: PreviewSourceTarget;
+    }>,
   ) {
-    previewSelectionNoticeRef.current = null;
-    const currentTargetArtifact = artifacts.find((artifact) => artifact.id === targetArtifact.id);
-    if (!currentTargetArtifact) {
-      setSourceSelection(null);
-      setSourceCursor(null);
-      if (agentScope === "selection") setAgentScope("artifact");
-      setAgentError("The preview target artifact is no longer in this workspace.");
-      setNotice("Preview target is too large or no longer matches the current source");
-      return;
-    }
-    const error = sourceSelectionError(currentTargetArtifact.source, target);
-    if (error) {
-      setSourceSelection(null);
-      setSourceCursor(null);
-      if (agentScope === "selection") setAgentScope("artifact");
-      setAgentError(error);
-      setNotice("Preview target is too large or no longer matches the current source");
-      return;
-    }
-    const contextLabel = viaLabel ? `${target.label} · via ${viaLabel}` : target.label;
-    const changesArtifact = currentTargetArtifact.id !== selectedArtifact.id;
-    const revealsSource = workspaceView === "preview";
     const selection: ActiveSourceSelection = {
-      artifactId: currentTargetArtifact.id,
-      sourceRevision: currentTargetArtifact.source,
-      start: target.start,
-      end: target.end,
+      artifactId: plan.artifactId,
+      sourceRevision: plan.sourceRevision,
+      start: plan.start,
+      end: plan.end,
     };
-    if (changesArtifact) setSelectedId(currentTargetArtifact.id);
-    if (revealsSource) setPreferredWorkspaceView("split");
-    setSourceSelection(selection);
+    if (plan.changesArtifact) setSelectedId(plan.artifactId);
+    if (plan.revealsSource) setPreferredWorkspaceView("split");
+    setSourceSelection(plan.start < plan.end ? selection : null);
     setSourceCursor(selection);
-    setAgentScope("selection");
-    setPendingChange(null);
     setHistoryOpen(false);
-    setAgentError("");
-    setNotice(`${contextLabel} selected from preview · Selection Agent ready`);
-    previewSelectionNoticeRef.current = { ...target, label: contextLabel };
+    setNotice(options.notice);
+    if (plan.activateSelectionAgent) {
+      setAgentScope("selection");
+      setPendingChange(null);
+      setAgentError("");
+    }
+    previewSelectionNoticeRef.current = options.previewTarget ?? null;
     const focusSelection = () => {
       const editor = sourceEditorRef.current;
       if (!editor) return;
+      inspectSourceNavigationRef.current = !plan.activateSelectionAgent;
       editor.focus({ preventScroll: true });
-      editor.setSelectionRange(target.start, target.end, "forward");
+      editor.setSelectionRange(plan.start, plan.end, "forward");
       const computedLineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight);
       const nextScrollTop = sourceSelectionScrollTop({
-        source: currentTargetArtifact.source,
-        start: target.start,
-        end: target.end,
+        source: plan.sourceRevision,
+        start: plan.start,
+        end: plan.end,
         lineHeight: computedLineHeight,
         viewportHeight: editor.clientHeight,
         scrollHeight: editor.scrollHeight,
@@ -2031,54 +2030,70 @@ export function RuneWorkbench() {
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       });
       if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
+      if (!plan.activateSelectionAgent) {
+        window.setTimeout(() => { inspectSourceNavigationRef.current = false; }, 0);
+      }
     };
     window.requestAnimationFrame(() => {
-      if (changesArtifact || revealsSource) window.requestAnimationFrame(focusSelection);
+      if (plan.changesArtifact || plan.revealsSource) window.requestAnimationFrame(focusSelection);
       else focusSelection();
+    });
+  }
+
+  function focusPreviewTarget(
+    targetArtifact: WorkspaceArtifact,
+    target: PreviewSourceTarget,
+    viaLabel?: string,
+  ) {
+    previewSelectionNoticeRef.current = null;
+    const contextLabel = viaLabel ? `${target.label} · via ${viaLabel}` : target.label;
+    const navigation = prepareSourceNavigation({
+      artifacts,
+      selectedArtifactId: selectedArtifact.id,
+      workspaceView,
+      request: {
+        origin: "preview",
+        artifactId: targetArtifact.id,
+        sourceRevision: targetArtifact.source,
+        start: target.start,
+        end: target.end,
+        label: contextLabel,
+      },
+    });
+    if (!navigation.plan) {
+      setSourceSelection(null);
+      setSourceCursor(null);
+      if (agentScope === "selection") setAgentScope("artifact");
+      setAgentError(navigation.error);
+      setNotice("Preview target is too large or no longer matches the current source");
+      return;
+    }
+    executeSourceNavigation(navigation.plan, {
+      notice: `${contextLabel} selected from preview · Selection Agent ready`,
+      previewTarget: { ...target, label: contextLabel },
     });
   }
 
   function openValidationIssueSource() {
     const diagnostic = validationDiagnostics[0];
     if (!diagnostic || !selectedArtifact) return;
-    const referenceStart = diagnostic.reference
-      ? selectedArtifact.source.indexOf(diagnostic.reference)
-      : -1;
-    const start = referenceStart >= 0 ? referenceStart : 0;
-    const firstLineEnd = selectedArtifact.source.indexOf("\n");
-    const end = referenceStart >= 0
-      ? start + diagnostic.reference!.length
-      : firstLineEnd >= 0
-        ? firstLineEnd
-        : selectedArtifact.source.length;
-    const revealsSource = workspaceView === "preview";
-    if (revealsSource) setPreferredWorkspaceView("split");
-    setHistoryOpen(false);
-    setNotice(ui.diagnostics.sourceFocused);
-    const focusSource = () => {
-      const editor = sourceEditorRef.current;
-      if (!editor) return;
-      editor.focus({ preventScroll: true });
-      editor.setSelectionRange(start, end, "forward");
-      const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight);
-      const nextScrollTop = sourceSelectionScrollTop({
-        source: selectedArtifact.source,
-        start,
-        end,
-        lineHeight,
-        viewportHeight: editor.clientHeight,
-        scrollHeight: editor.scrollHeight,
-      });
-      editor.scrollTo({
-        top: nextScrollTop,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      });
-      if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
-    };
-    window.requestAnimationFrame(() => {
-      if (revealsSource) window.requestAnimationFrame(focusSource);
-      else focusSource();
+    const navigation = prepareSourceNavigation({
+      artifacts,
+      selectedArtifactId: selectedArtifact.id,
+      workspaceView,
+      request: {
+        origin: "diagnostic",
+        artifactId: selectedArtifact.id,
+        sourceRevision: selectedArtifact.source,
+        reference: diagnostic.reference,
+        label: ui.diagnostics.heading,
+      },
     });
+    if (!navigation.plan) {
+      setNotice(navigation.error);
+      return;
+    }
+    executeSourceNavigation(navigation.plan, { notice: ui.diagnostics.sourceFocused });
   }
 
   function saveManualCheckpoint() {
@@ -3995,7 +4010,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.06</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.07</strong></footer>
               </div>
             )}
           </div>

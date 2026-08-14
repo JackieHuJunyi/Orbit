@@ -2104,3 +2104,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - “打开 Source 修复”必须复用既有 mounted-pane 与 source selection 能力：Preview-only 恢复 Split，精确 reference 存在时选中并滚动到舒适位置，否则定位首行；Arabic RTL、移动端和 reduced-motion 共享同一行为合同。
 - 诊断只拥有导航能力，不得自动调用模型、生成 patch、创建 checkpoint 或写入 workspace。未来的“建议修复”若需要 AI，仍必须进入现有 proposed workspace、runtime preflight、Review 和 Apply。
 - 样式只能消费 Rune semantic tokens 与 layer map，popover 必须有 viewport-bounded scrolling；不为错误态复制品牌 palette、numeric z-index 或新的 overlay root。
+
+### 17.39 v1.07 演示预览默认连续滚动，放映式逐页切换不得阻碍编辑
+
+- 有效 Deck Markdown 的全部页面必须按 Source 顺序同时存在于一个纵向 Preview 流；每页保持独立 16:9 边界、清晰间距和轻量页码/标题，普通滚轮或触控板即可浏览整个叙事。
+- 每页继续消费同一个 Deck compiler 生成的 standalone scriptless HTML，不建立 React slide renderer；iframe 不获得 script 或 same-origin 权限，并使用 lazy loading 控制初始渲染压力。
+- 顶部 slide index 只作为快速跳转和现有视觉编辑入口，不再拥有“唯一当前页”状态；Proposal Preview 缺少写入 handler 时仍保持只读。
+- 点击任意真实页面必须验证 exact artifact、source revision 与 UTF-16 target，必要时恢复 Split，再聚焦、选择并居中左侧 Source，同时进入 Selection Agent；左侧 caret/selection 必须把右侧滚到同一个 exact page。
+- Preview、diagnostic 与未来 provenance navigation 共享 React-free immutable navigation plan；DOM collection、view change、focus、scroll、Agent scope、history 和 persistence effects 只能由 Workbench 执行。
+- legacy semantic HTML 没有可证明的逐页 Source identity，继续保留单个 sandbox compatibility iframe，不解析 DOM 猜页面，也不伪造双向定位。
+- HTML、PPTX、ODP 与 PDF 导出继续消费完整 Deck compiler 输出；连续工作台布局只能改变 Preview presentation，不能改变 canonical source 或交付分页。
