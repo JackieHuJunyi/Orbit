@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  CircleAlert,
   CircleDot,
   ClipboardList,
   Code2,
@@ -89,6 +90,7 @@ import {
   type WorkspaceArtifact,
 } from "../lib/workspace";
 import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
+import { prepareArtifactDiagnostics } from "../lib/artifact-diagnostics";
 import { planLocalSelectionChange } from "../lib/local-selection-agent";
 import {
   compileArtifactSource,
@@ -1012,18 +1014,26 @@ export function RuneWorkbench() {
   );
   const workspaceAgentQueryCount = workspaceAgentContext
     .filter((artifact) => artifact.kind === "query").length;
-  const validationErrors = useMemo(
+  const validationDiagnostics = useMemo(
     () => selectedArtifact
-      ? [...new Set([
-          ...validateArtifact(selectedArtifact),
-          ...(bindingState?.metricBindingErrors ?? []),
-          ...(bindingState?.unresolved.map((key) => `Unresolved metric: ${key}`) ?? []),
-          ...(bindingState?.unresolvedQueryMetrics ?? []),
-          ...(bindingState?.unresolvedCharts.map((key) => `Unresolved chart: ${key}`) ?? []),
-          ...selectedChartBindingErrors,
-          ...(selectedQueryDataResolution?.errors ?? []),
-        ])]
-      : ["No artifact selected."],
+      ? prepareArtifactDiagnostics(selectedArtifact, [
+          ...validateArtifact(selectedArtifact).map((detail) => ({ category: "source" as const, detail })),
+          ...(bindingState?.metricBindingErrors.map((detail) => ({ category: "metric-binding" as const, detail })) ?? []),
+          ...(bindingState?.unresolved.map((reference) => ({
+            category: "unresolved-metric" as const,
+            detail: `Unresolved metric: ${reference}`,
+            reference,
+          })) ?? []),
+          ...(bindingState?.unresolvedQueryMetrics.map((detail) => ({ category: "query-metric-binding" as const, detail })) ?? []),
+          ...(bindingState?.unresolvedCharts.map((reference) => ({
+            category: "unresolved-chart" as const,
+            detail: `Unresolved chart: ${reference}`,
+            reference,
+          })) ?? []),
+          ...selectedChartBindingErrors.map((detail) => ({ category: "chart-binding" as const, detail })),
+          ...(selectedQueryDataResolution?.errors.map((detail) => ({ category: "query-binding" as const, detail })) ?? []),
+        ])
+      : [],
     [bindingState?.metricBindingErrors, bindingState?.unresolved, bindingState?.unresolvedCharts, bindingState?.unresolvedQueryMetrics, selectedArtifact, selectedChartBindingErrors, selectedQueryDataResolution?.errors],
   );
   const pendingStats = useMemo(() => {
@@ -2025,6 +2035,49 @@ export function RuneWorkbench() {
     window.requestAnimationFrame(() => {
       if (changesArtifact || revealsSource) window.requestAnimationFrame(focusSelection);
       else focusSelection();
+    });
+  }
+
+  function openValidationIssueSource() {
+    const diagnostic = validationDiagnostics[0];
+    if (!diagnostic || !selectedArtifact) return;
+    const referenceStart = diagnostic.reference
+      ? selectedArtifact.source.indexOf(diagnostic.reference)
+      : -1;
+    const start = referenceStart >= 0 ? referenceStart : 0;
+    const firstLineEnd = selectedArtifact.source.indexOf("\n");
+    const end = referenceStart >= 0
+      ? start + diagnostic.reference!.length
+      : firstLineEnd >= 0
+        ? firstLineEnd
+        : selectedArtifact.source.length;
+    const revealsSource = workspaceView === "preview";
+    if (revealsSource) setPreferredWorkspaceView("split");
+    setHistoryOpen(false);
+    setNotice(ui.diagnostics.sourceFocused);
+    const focusSource = () => {
+      const editor = sourceEditorRef.current;
+      if (!editor) return;
+      editor.focus({ preventScroll: true });
+      editor.setSelectionRange(start, end, "forward");
+      const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight);
+      const nextScrollTop = sourceSelectionScrollTop({
+        source: selectedArtifact.source,
+        start,
+        end,
+        lineHeight,
+        viewportHeight: editor.clientHeight,
+        scrollHeight: editor.scrollHeight,
+      });
+      editor.scrollTo({
+        top: nextScrollTop,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
+      if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
+    };
+    window.requestAnimationFrame(() => {
+      if (revealsSource) window.requestAnimationFrame(focusSource);
+      else focusSource();
     });
   }
 
@@ -3942,7 +3995,7 @@ export function RuneWorkbench() {
                     </button>
                   ))}
                 </div>
-                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.05</strong></footer>
+                <footer className="tools-version"><span>{ui.version}</span><strong>Rune 1.06</strong></footer>
               </div>
             )}
           </div>
@@ -4536,14 +4589,14 @@ export function RuneWorkbench() {
                 </span>
               ) : <details className="preview-evidence">
                 <summary aria-label={ui.previewDetails} title={ui.previewDetailsBody}>
-                  {validationErrors.length ? (
-                    <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
+                  {validationDiagnostics.length ? (
+                    <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationDiagnostics.length)}</span>
                   ) : (
                     <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
                   )}
                   <ChevronDown className="preview-evidence-chevron" aria-hidden="true" />
                 </summary>
-                <div className="preview-evidence-popover">
+                <div className={validationDiagnostics.length ? "preview-evidence-popover has-issues" : "preview-evidence-popover"}>
                   <header><span className="overline">{ui.previewDetails}</span><strong>{ui.previewDetailsBody}</strong></header>
                   <div className="preview-evidence-badges">
                     {activePreviewTarget && (
@@ -4556,12 +4609,38 @@ export function RuneWorkbench() {
                     {!!bindingState?.queryMetricReferences.length && <span className="binding-badge query"><Database aria-hidden="true" /> {ui.sqlMetricBadge(bindingState.queryMetricReferences.length)}</span>}
                     {!!bindingState?.chartReferences.length && <span className="binding-badge chart"><BarChart3 aria-hidden="true" /> {ui.chartBadge(bindingState.chartReferences.length)}</span>}
                     {!!bindingState?.references.length && <span className="binding-badge"><Link2 aria-hidden="true" /> {ui.liveBadge(bindingState.references.length)}</span>}
-                    {validationErrors.length ? (
-                      <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationErrors.length)}</span>
+                    {validationDiagnostics.length ? (
+                      <span className="validation-badge error"><X aria-hidden="true" /> {ui.issues(validationDiagnostics.length)}</span>
                     ) : (
                       <span className="validation-badge"><CheckCircle2 aria-hidden="true" /> {ui.valid}</span>
                     )}
                   </div>
+                  {!!validationDiagnostics.length && (
+                    <section className="preview-diagnostics" aria-label={ui.diagnostics.heading}>
+                      <div className="preview-diagnostics-heading">
+                        <span><CircleAlert aria-hidden="true" /></span>
+                        <div><strong>{ui.diagnostics.heading}</strong><small>{ui.diagnostics.body}</small></div>
+                        <button type="button" onClick={openValidationIssueSource}>{ui.diagnostics.openSource}</button>
+                      </div>
+                      <ol>
+                        {validationDiagnostics.map((diagnostic) => {
+                          const copy = ui.diagnostics.codes[diagnostic.code];
+                          return (
+                            <li key={diagnostic.id}>
+                              <strong>{copy.title}</strong>
+                              <p>{copy.action}</p>
+                              {diagnostic.reference && <div className="preview-diagnostic-reference"><span>{ui.diagnostics.reference}</span><code>{diagnostic.reference}</code></div>}
+                              <details>
+                                <summary>{ui.diagnostics.technicalDetail}</summary>
+                                <code>{diagnostic.detail}</code>
+                                {diagnostic.detailTruncated && <small>{ui.diagnostics.detailTruncated}</small>}
+                              </details>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </section>
+                  )}
                   <div className="preview-evidence-lineage">
                     {selectedArtifact.kind === "chart" && selectedChartSourceArtifact && !selectedChartBindingErrors.length && (
                       <div className="lineage-strip chart-lineage">

@@ -83,6 +83,7 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 | Human command registry | 采用静态版本 | `workbench-commands` 描述能力，Quick Actions 只消费，Workbench 执行现有 handler |
 | Theme owner + semantic aliases | 采用 | token/appearance 独占共享视觉事实，功能样式不复制 palette |
 | Data → binding → presentation 单向层 | 采用 | pure `app/lib` 端口、Workbench effect、props-only review component |
+| Pure state/effect boundary | 采用窄版本 | compiler facts 进入 React-free diagnostic contract；Workbench 只执行 Source focus effect，UI 只拥有本地化与展开状态 |
 | Dynamic profiles/bundles/patch tree | 不采用 | Rune 不是 agent harness，暂无第三方 runtime composition 需求 |
 | Chat/session-first shell | 不采用 | Rune 继续以文档、数据、分析和成品为中心 |
 
@@ -101,6 +102,14 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 - `.deck.md` 与 `.chart.json` 的专用识别由 adapter 明确排除通用 Markdown/JSON shadowing。
 - Preview 使用 compile-time exhaustive renderer record；React 不进入 adapter registry，registry 也不获得 workspace writer。
 - 继续不引入 runtime unload、第三方代码、profile tree 或 service locator。
+
+## 2.3 v1.06 新增落点
+
+- 原始 parser/compiler/binding 错误先进入 React-free `artifact-diagnostics`，分类成十三个稳定 code，并对数量、detail 与 reference 做边界控制和 immutable 输出。
+- UI 只把 code 映射为九语言标题与修复方向；未经改写的编译器信息放进原生 disclosure，需要时才展开，技术事实与产品文案不互相冒充。
+- “打开 Source 修复”是 Workbench effect：Preview-only 先恢复 Split，再聚焦 textarea；能找到精确 reference 时选中并居中，否则落在首行。动作不改 source、不调用模型、不持久化。
+- 诊断面板使用同一 design token、viewport 内滚动、移动端重排和既有 Arabic RTL，不引入第二套 error palette、numeric layer 或 overlay owner。
+- 这采用 Harness input machine 的 `events/facts in, effects out` 思路，但不把 Rune 编辑器迁成通用 agent session state machine。
 
 ## 3. 后续架构门槛
 

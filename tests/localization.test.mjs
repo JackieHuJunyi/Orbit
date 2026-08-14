@@ -116,6 +116,18 @@ test("keeps one complete typed UI contract across all nine interface locales", (
     assert.notEqual(runeUICopy(locale).workbench.proposalSourceUnchanged, english.workbench.proposalSourceUnchanged);
     assert.notEqual(runeUICopy(locale).workbench.refreshAvailable, english.workbench.refreshAvailable);
     assert.notEqual(runeUICopy(locale).workbench.reviewRefresh, english.workbench.reviewRefresh);
+    assert.notEqual(runeUICopy(locale).workbench.diagnostics.openSource, english.workbench.diagnostics.openSource);
+    assert.notEqual(runeUICopy(locale).workbench.diagnostics.codes["chart-binding-invalid"].title, english.workbench.diagnostics.codes["chart-binding-invalid"].title);
+  }
+  for (const { locale } of RUNE_LOCALE_REGISTRY) {
+    const diagnostics = runeUICopy(locale).workbench.diagnostics;
+    assert.ok(diagnostics.heading);
+    assert.ok(diagnostics.openSource);
+    assert.equal(Object.keys(diagnostics.codes).length, 13);
+    for (const copy of Object.values(diagnostics.codes)) {
+      assert.ok(copy.title);
+      assert.ok(copy.action);
+    }
   }
 });
 

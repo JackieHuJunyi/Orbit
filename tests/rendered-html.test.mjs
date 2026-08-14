@@ -381,6 +381,27 @@ test("keeps preview validation visible while progressively disclosing detailed e
   assert.match(styles, /html\[dir="rtl"\] \.preview-evidence-popover/);
 });
 
+test("turns compiler failures into bounded actionable Preview diagnostics", async () => {
+  const [workbench, diagnostics, styles] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/artifact-diagnostics.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(workbench, /prepareArtifactDiagnostics\(selectedArtifact/);
+  assert.match(workbench, /className="preview-diagnostics"/);
+  assert.match(workbench, /onClick=\{openValidationIssueSource\}/);
+  assert.match(workbench, /if \(revealsSource\) setPreferredWorkspaceView\("split"\)/);
+  assert.match(workbench, /sourceSelectionScrollTop\(\{/);
+  assert.match(workbench, /ui\.diagnostics\.technicalDetail/);
+  assert.match(diagnostics, /MAX_ARTIFACT_DIAGNOSTICS = 12/);
+  assert.match(diagnostics, /MAX_ARTIFACT_DIAGNOSTIC_DETAIL_CHARS = 2_000/);
+  assert.doesNotMatch(diagnostics, /from ["']react|window\.|document\.|localStorage|indexedDB|fetch\(/i);
+  assert.match(styles, /\.preview-evidence-popover\.has-issues\s*\{[^}]*max-height:[^}]*overflow-y:\s*auto;/s);
+  assert.match(styles, /\.preview-diagnostics-heading\s*\{[^}]*grid-template-columns:\s*28px minmax\(0, 1fr\) auto;/s);
+  assert.match(styles, /@media \(max-width:\s*560px\)[\s\S]*\.preview-diagnostics-heading/);
+  assert.doesNotMatch(styles, /\.preview-diagnostics[\s\S]{0,220}z-index:\s*\d+/);
+});
+
 test("keeps primary file and handoff actions visible while disclosing workspace tools in one menu", async () => {
   const response = await render();
   const html = await response.text();
@@ -453,7 +474,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.05<\/strong>/);
+  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.06<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

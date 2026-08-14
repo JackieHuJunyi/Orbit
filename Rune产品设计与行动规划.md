@@ -2095,3 +2095,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - adapter snapshot、creation metadata 与 suggestions 只读；registry 不得导入 React、browser、provider、credential、persistence 或 workspace mutation。
 - React Preview 使用独立的 `Record<ArtifactKind, renderer>` 穷尽分发；新增 kind 未实现 renderer 时必须 typecheck 失败，且未知类型不能静默落入 Slides。
 - Workbench 继续独占 selection、history、import/export、review、checkpoint、persistence 与 Agent dispatch。当前不允许 runtime replacement、第三方 executable adapter 或 global service locator。
+
+### 17.38 v1.06 Preview 问题必须先给修复方向，再按需披露原始证据
+
+- source、metric、Query 与 Chart owner 继续产生原始 validation/compiler facts；一个 React-free diagnostic adapter 只负责稳定分类、去重与边界控制，不能翻译、渲染、fetch、persist 或改 source。
+- 问题目录固定为十三个稳定 code，最多显示 12 项；detail 最多 2,000 字符、reference 最多 200 字符，输出 immutable，避免异常文件把 Preview popover 变成第二个日志终端。
+- 九种界面语言必须为每个 code 提供短标题和明确下一步；原始 compiler detail 不机器改写，只放入按需展开区域，技术证据与产品解释分层。
+- “打开 Source 修复”必须复用既有 mounted-pane 与 source selection 能力：Preview-only 恢复 Split，精确 reference 存在时选中并滚动到舒适位置，否则定位首行；Arabic RTL、移动端和 reduced-motion 共享同一行为合同。
+- 诊断只拥有导航能力，不得自动调用模型、生成 patch、创建 checkpoint 或写入 workspace。未来的“建议修复”若需要 AI，仍必须进入现有 proposed workspace、runtime preflight、Review 和 Apply。
+- 样式只能消费 Rune semantic tokens 与 layer map，popover 必须有 viewport-bounded scrolling；不为错误态复制品牌 palette、numeric z-index 或新的 overlay root。

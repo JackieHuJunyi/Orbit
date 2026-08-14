@@ -2359,3 +2359,11 @@ Source/Preview 两个 pane header 现在消费同一个 view-switch 组件。中
 v1.05 建立 React-free `artifact-adapter-registry`，要求 `document / data / query / chart / slides` 每种恰好一个 adapter。adapter 统一拥有 creation metadata、extension、starter source、language/detection、validation、stats 与 deterministic local suggestions；missing、duplicate、unknown、非法 order/extension 全部 fail loud，snapshot、metadata 和 commands 都 immutable。`.deck.md` 与 `.chart.json` 由专用 detector 明确避免被普通 Markdown/JSON 抢先识别。
 
 React preview 不注册进这份 domain authority，而是使用 compile-time exhaustive renderer record。这样新增 kind 必须同时补 adapter 与 renderer，但 adapter 不能渲染、fetch、持久化、拿 credential 或修改 workspace；唯一 writer 仍是现有 review/checkpoint/transaction。这里学习的是 Harness/Cordis 的 capability owner 与完整 composition，不是 dynamic package、service locator 或第三方运行时。
+
+## 112. v1.06 错误提示不能只是红色数字，必须成为可执行但无写权限的修复导航
+
+Preview 过去能准确统计 validation error，却把真实错误留在组件内部；用户看到“3 个问题”后仍不知道先修什么、去哪一行修。直接把英文 compiler 文本平铺到弹层会让九语言体验失真，也会让 parser 的实现措辞变成产品合同。更危险的方案是让错误卡直接触发自动 AI 修复：一个提示组件因此获得模型与写入权，破坏 Rune 的 review-before-write 边界。
+
+v1.06 引入 React-free `artifact-diagnostics`。它只接收 source、metric、Query、Chart 各 owner 已产生的事实，映射为十三个稳定 code，保留原始 detail，并对最多 12 项、2,000 字符 detail、200 字符 reference 做严格边界和去重；返回值及每一项都冻结。它不翻译、不猜 repair、不访问 DOM、不持久化、不 fetch，也不修改 Artifact。
+
+Preview 用 code 映射九语言的简明标题与下一步，把原始 compiler detail 放在原生 details 内按需展开。唯一动作“打开 Source 修复”属于 Workbench：若当前只看 Preview，先恢复 Split；若 reference 仍存在，选择其精确 UTF-16 范围并居中，否则选首行。这个动作只导航，不修复、不调用模型、不产生 checkpoint。这里学习 DeepSeek Harness 纯状态机的 `facts/events in, effects out`，但继续保持 Rune 是 artifact-first workspace，而不是 agent chat shell。

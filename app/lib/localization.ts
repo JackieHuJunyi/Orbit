@@ -360,6 +360,69 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       sourceLinked: (label: string) => zh ? `已链接到规范源内容：${label}` : `Canonical source linked to ${label}`,
       oneSource: zh ? "1 个来源" : "1 source",
       issues: (value: number) => count(value, "issue", "issues", "个问题"),
+      diagnostics: {
+        heading: zh ? "需要处理" : "Needs attention",
+        body: zh ? "先看修复方向，需要时再展开编译器原始信息。" : "Start with the repair direction, then reveal exact compiler evidence when needed.",
+        openSource: zh ? "打开源内容修复" : "Open Source to fix",
+        sourceFocused: zh ? "已打开需要处理的源内容" : "Opened the source that needs attention",
+        technicalDetail: zh ? "编译器原始信息" : "Exact compiler detail",
+        detailTruncated: zh ? "原始信息过长，已在界面中截断。" : "The original detail was too long and is truncated in this view.",
+        reference: zh ? "相关引用" : "Related reference",
+        codes: {
+          "source-empty": {
+            title: zh ? "先添加源内容" : "Add source content",
+            action: zh ? "在左侧输入内容，实时成品会立即重新编译。" : "Write in Source and the live output will recompile immediately.",
+          },
+          "source-unsafe": {
+            title: zh ? "移除不安全内容" : "Remove unsafe content",
+            action: zh ? "删除脚本或可执行标记；Rune 的成品预览只接受无脚本内容。" : "Remove scripts or executable markup; Rune previews only script-free content.",
+          },
+          "document-source-invalid": {
+            title: zh ? "修正文档源内容" : "Repair the Document source",
+            action: zh ? "保持可读 Markdown 结构，并检查未闭合的语法或绑定。" : "Keep readable Markdown structure and check unfinished syntax or bindings.",
+          },
+          "data-source-invalid": {
+            title: zh ? "修正表格源内容" : "Repair the Data source",
+            action: zh ? "使用带表头的矩形 CSV，或只含标量值的扁平 JSON。" : "Use rectangular CSV with headers, or flat JSON containing scalar values.",
+          },
+          "query-source-invalid": {
+            title: zh ? "修正只读 Query" : "Repair the read-only Query",
+            action: zh ? "保留一个 SELECT 或 WITH 语句，并检查明确的 Data 来源。" : "Keep one SELECT or WITH statement and verify its explicit Data source.",
+          },
+          "chart-source-invalid": {
+            title: zh ? "修正 Chart 定义" : "Repair the Chart definition",
+            action: zh ? "使用受支持的图形、字段、格式和一个现有的 Data 或 Query 来源。" : "Use a supported mark, fields, format, and one existing Data or Query source.",
+          },
+          "slides-source-invalid": {
+            title: zh ? "修正演示源内容" : "Repair the Presentation source",
+            action: zh ? "保持有效的 Deck Markdown，或使用不含脚本的语义 HTML。" : "Keep valid Deck Markdown or script-free semantic HTML.",
+          },
+          "live-binding-invalid": {
+            title: zh ? "修正实时数值绑定" : "Repair the live value binding",
+            action: zh ? "检查绑定语法，并选择当前工作区中唯一存在的指标。" : "Check the binding syntax and choose one metric that exists in this workspace.",
+          },
+          "metric-missing": {
+            title: zh ? "重新连接缺失指标" : "Reconnect the missing metric",
+            action: zh ? "选择已有指标键，或把引用改为一个明确的 Query 输出字段。" : "Choose an existing metric key or an explicit Query output field.",
+          },
+          "query-metric-invalid": {
+            title: zh ? "修正 SQL 指标绑定" : "Repair the SQL metric binding",
+            action: zh ? "检查 Query、结果字段和聚合行是否仍与当前版本一致。" : "Verify that the Query, result field, and aggregate row still match this revision.",
+          },
+          "chart-missing": {
+            title: zh ? "重新连接缺失 Chart" : "Reconnect the missing Chart",
+            action: zh ? "选择一个已有 Chart ID，或先创建并验证对应图表。" : "Choose an existing Chart id or create and validate that Chart first.",
+          },
+          "chart-binding-invalid": {
+            title: zh ? "修正 Chart 来源" : "Repair the Chart source",
+            action: zh ? "重新选择现有 Data/Query 和其中唯一存在的分类与数值字段。" : "Reconnect existing Data or Query and exact category and value fields.",
+          },
+          "query-binding-invalid": {
+            title: zh ? "重新连接 Query 数据来源" : "Reconnect the Query Data source",
+            action: zh ? "把 Query 绑定到当前工作区中一份明确存在的 Data。" : "Bind the Query to one exact Data artifact in the current workspace.",
+          },
+        },
+      },
       linkedCharts: (value: number) => count(value, "linked chart", "linked charts", "个关联图表"),
       initialNotice: zh ? "本地工作区已就绪" : "Local workspace ready",
       newCancelled: zh ? "已取消新建 — 工作区保持不变" : "New artifact cancelled — the workspace is unchanged",
