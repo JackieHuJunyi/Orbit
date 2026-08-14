@@ -10,7 +10,8 @@ export const PILOT_EVIDENCE_BASE_COPY = {
   "zh-CN": {
     kicker: "Pilot Evidence · 设备本地",
     title: "审阅即将导出的试点证据",
-    description: "Rune 已把本机任务记录整理成匿名 JSON。它可用于汇总真实试点结果，但不会上传，也不代表已经完成产品市场验证。",
+    description:
+      "Rune 已把本机任务记录整理成匿名 JSON。它可用于汇总真实试点结果，但不会上传，也不代表已经完成产品市场验证。",
     details: "Pilot Evidence 导出内容",
     taskRuns: "任务运行",
     deliveryOutcomes: "交付结果",
@@ -39,7 +40,8 @@ export const PILOT_EVIDENCE_BASE_COPY = {
       "API 密钥、模型供应商名称、来源版本和交付指纹",
       "Golden Task 等合成测试结果，以及任何网络上传",
     ],
-    evidenceWarning: "这是设备本地的候选人工结果证据。只有完整、已授权或已脱敏的评分才计入真实任务数量；它不能单独证明 PMF 或达到试点门槛。",
+    evidenceWarning:
+      "这是设备本地的候选人工结果证据。只有完整、已授权或已脱敏的评分才计入真实任务数量；它不能单独证明 PMF 或达到试点门槛。",
     reviewConfirmation: "我已审阅导出范围，并理解这是一份候选证据文件，而不是 PMF 证明。",
     privacy: "确认后只下载到本机；Rune 不会上传或发送此文件。",
     cancel: "取消",
@@ -48,7 +50,8 @@ export const PILOT_EVIDENCE_BASE_COPY = {
   en: {
     kicker: "Pilot Evidence · on device",
     title: "Review the pilot evidence export",
-    description: "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.",
+    description:
+      "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.",
     details: "Pilot Evidence export contents",
     taskRuns: "Task runs",
     deliveryOutcomes: "Delivery outcomes",
@@ -77,8 +80,10 @@ export const PILOT_EVIDENCE_BASE_COPY = {
       "API keys, model provider names, source revisions, and delivery fingerprints",
       "Synthetic Golden Task results and every form of network upload",
     ],
-    evidenceWarning: "This is device-local candidate human-outcome evidence. Only complete, authorized or redacted ratings count as reviewed real tasks; the file alone cannot prove PMF or a completed pilot threshold.",
-    reviewConfirmation: "I reviewed the export scope and understand this is a candidate evidence file, not proof of PMF.",
+    evidenceWarning:
+      "This is device-local candidate human-outcome evidence. Only complete, authorized or redacted ratings count as reviewed real tasks; the file alone cannot prove PMF or a completed pilot threshold.",
+    reviewConfirmation:
+      "I reviewed the export scope and understand this is a candidate evidence file, not proof of PMF.",
     privacy: "Confirming only downloads to this device; Rune does not upload or send the file.",
     cancel: "Cancel",
     download: "Download anonymous JSON",
@@ -122,42 +127,78 @@ export function PilotEvidenceReviewDialog({
     <ReviewDialog
       dialogId="pilot-evidence-review"
       dialogClassName="pilot-evidence-dialog"
-      kicker={<><ShieldCheck aria-hidden="true" /> {copy.kicker}</>}
+      kicker={
+        <>
+          <ShieldCheck aria-hidden="true" /> {copy.kicker}
+        </>
+      }
       title={copy.title}
       description={copy.description}
       detailsLabel={copy.details}
       locale={locale}
       onCancel={onCancel}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.privacy}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {copy.privacy}
+          </div>
           <span>
-            <button className="button ghost-button" type="button" onClick={onCancel}>{copy.cancel}</button>
-            <button className="button primary-button" type="button" disabled={!reviewed} onClick={onConfirm}><Check aria-hidden="true" /> {copy.download}</button>
+            <button className="button ghost-button" type="button" onClick={onCancel}>
+              {copy.cancel}
+            </button>
+            <button className="button primary-button" type="button" disabled={!reviewed} onClick={onConfirm}>
+              <Check aria-hidden="true" /> {copy.download}
+            </button>
           </span>
         </>
-      )}
+      }
     >
       <div className="pilot-evidence-file">
         <FileJson2 aria-hidden="true" />
-        <span><strong>{result.fileName}</strong><small>JSON · {readableBytes(result.bytes.byteLength)} · device-local</small></span>
+        <span>
+          <strong>{result.fileName}</strong>
+          <small>JSON · {readableBytes(result.bytes.byteLength)} · device-local</small>
+        </span>
         <span>{ui.common.ready}</span>
       </div>
       <dl className="pilot-evidence-metrics">
-        {metrics.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+        {metrics.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
       </dl>
       <div className="pilot-evidence-scope">
         <section>
-          <h3><ListChecks aria-hidden="true" /> {copy.includedTitle}</h3>
-          <ul>{copy.included.map((item) => <li key={item}>{item}</li>)}</ul>
+          <h3>
+            <ListChecks aria-hidden="true" /> {copy.includedTitle}
+          </h3>
+          <ul>
+            {copy.included.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </section>
         <section>
-          <h3><ShieldCheck aria-hidden="true" /> {copy.excludedTitle}</h3>
-          <ul>{copy.excluded.map((item) => <li key={item}>{item}</li>)}</ul>
+          <h3>
+            <ShieldCheck aria-hidden="true" /> {copy.excludedTitle}
+          </h3>
+          <ul>
+            {copy.excluded.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </section>
       </div>
-      <p className="pilot-evidence-warning"><TriangleAlert aria-hidden="true" /> <span>{copy.evidenceWarning}</span></p>
-      {error && <div className="import-review-error" role="alert">{error}</div>}
+      <p className="pilot-evidence-warning">
+        <TriangleAlert aria-hidden="true" /> <span>{copy.evidenceWarning}</span>
+      </p>
+      {error && (
+        <div className="import-review-error" role="alert">
+          {error}
+        </div>
+      )}
       <label className="pilot-evidence-confirmation">
         <input
           data-dialog-initial-focus="true"

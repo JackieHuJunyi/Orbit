@@ -35,27 +35,39 @@ test("skips runtime impact work when an Agent plan changes neither Data, Query, 
   let called = false;
   const report = defaultArtifacts.find((artifact) => artifact.id === "q2-review");
   assert.ok(report);
-  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [{
-    artifactId: report.id,
-    summary: "Clarify a heading",
-    detail: "Only one Markdown heading changes.",
-    nextSource: report.source.replace("## Decisions", "## Decisions and owners"),
-  }], [], async () => {
-    called = true;
-    throw new Error("must not run");
-  });
+  const result = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [
+      {
+        artifactId: report.id,
+        summary: "Clarify a heading",
+        detail: "Only one Markdown heading changes.",
+        nextSource: report.source.replace("## Decisions", "## Decisions and owners"),
+      },
+    ],
+    [],
+    async () => {
+      called = true;
+      throw new Error("must not run");
+    },
+  );
   assert.equal(result, null);
   assert.equal(called, false);
 });
 
 test("executes a changed Query against its exact Data revision before review", async () => {
-  const patch = patchFor("regional-analysis", (source) => source.replace("ORDER BY \"Q2 Revenue\" DESC;", "ORDER BY \"Q2 Revenue\" DESC LIMIT 4;"));
+  const patch = patchFor("regional-analysis", (source) =>
+    source.replace('ORDER BY "Q2 Revenue" DESC;', 'ORDER BY "Q2 Revenue" DESC LIMIT 4;'),
+  );
   const calls = [];
   const result = await preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) => {
     calls.push([query.id, data.id, query.source]);
     return currentSnapshot(query, data, defaultQuerySnapshot());
   });
-  assert.deepEqual(calls.map(([queryId, dataId]) => [queryId, dataId]), [["regional-analysis", "regional-revenue"]]);
+  assert.deepEqual(
+    calls.map(([queryId, dataId]) => [queryId, dataId]),
+    [["regional-analysis", "regional-revenue"]],
+  );
   assert.match(calls[0][2], /LIMIT 4/);
   assert.deepEqual(result, {
     dataCount: 0,
@@ -79,7 +91,9 @@ test("rejects a proposed Query when DuckDB reports a runtime error", async () =>
 });
 
 test("rejects a stale snapshot even when its Query and Data ids still match", async () => {
-  const patch = patchFor("regional-analysis", (source) => source.replace("ORDER BY \"Q2 Revenue\" DESC;", "ORDER BY \"Q2 Revenue\" ASC;"));
+  const patch = patchFor("regional-analysis", (source) =>
+    source.replace('ORDER BY "Q2 Revenue" DESC;', 'ORDER BY "Q2 Revenue" ASC;'),
+  );
   await assert.rejects(
     preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async () => defaultQuerySnapshot()),
     /stale during runtime preflight/i,
@@ -87,42 +101,52 @@ test("rejects a stale snapshot even when its Query and Data ids still match", as
 });
 
 test("rejects a runtime-valid Query that breaks downstream scalar semantics", async () => {
-  const patch = patchFor("regional-summary", (source) => source.replace("FROM workspace_data;", "FROM workspace_data\nGROUP BY Region;"));
+  const patch = patchFor("regional-summary", (source) =>
+    source.replace("FROM workspace_data;", "FROM workspace_data\nGROUP BY Region;"),
+  );
   const fixture = defaultSummaryQuerySnapshot();
   await assert.rejects(
-    preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) => currentSnapshot(query, data, {
-      ...fixture,
-      result: {
-        ...fixture.result,
-        rows: [fixture.result.rows[0], fixture.result.rows[0]],
-        sourceRowIndices: [null, null],
-        cellLineage: [fixture.result.cellLineage[0], fixture.result.cellLineage[0]],
-      },
-    })),
+    preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) =>
+      currentSnapshot(query, data, {
+        ...fixture,
+        result: {
+          ...fixture.result,
+          rows: [fixture.result.rows[0], fixture.result.rows[0]],
+          sourceRowIndices: [null, null],
+          cellLineage: [fixture.result.cellLineage[0], fixture.result.cellLineage[0]],
+        },
+      }),
+    ),
     /exactly one row/i,
   );
 });
 
 test("rejects a runtime-valid Query that breaks a Query-backed Chart", async () => {
-  const patch = patchFor("regional-analysis", (source) => source.replace("ORDER BY \"Q2 Revenue\" DESC;", "ORDER BY \"Q2 Revenue\" ASC;"));
+  const patch = patchFor("regional-analysis", (source) =>
+    source.replace('ORDER BY "Q2 Revenue" DESC;', 'ORDER BY "Q2 Revenue" ASC;'),
+  );
   const fixture = defaultQuerySnapshot();
   await assert.rejects(
-    preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) => currentSnapshot(query, data, {
-      ...fixture,
-      result: {
-        ...fixture.result,
-        rows: fixture.result.rows.map((row) => [row[0], row[1], row[2], "not numeric", row[4]]),
-      },
-    })),
+    preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) =>
+      currentSnapshot(query, data, {
+        ...fixture,
+        result: {
+          ...fixture.result,
+          rows: fixture.result.rows.map((row) => [row[0], row[1], row[2], "not numeric", row[4]]),
+        },
+      }),
+    ),
     /regional-margin\.chart\.json.*non-numeric/i,
   );
 });
 
 test("verifies every existing scalar consumer of a valid summary Query", async () => {
-  const patch = patchFor("regional-summary", (source) => source.replace("SUM(Customers)", "COALESCE(SUM(Customers), 0)"));
-  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) => (
-    currentSnapshot(query, data, defaultSummaryQuerySnapshot())
-  ));
+  const patch = patchFor("regional-summary", (source) =>
+    source.replace("SUM(Customers)", "COALESCE(SUM(Customers), 0)"),
+  );
+  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [patch], [], async (query, data) =>
+    currentSnapshot(query, data, defaultSummaryQuerySnapshot()),
+  );
   assert.deepEqual(result, {
     dataCount: 0,
     queryCount: 1,
@@ -145,10 +169,13 @@ test("executes every Query bound to proposed Data and verifies all downstream co
       query.id === "regional-summary" ? defaultSummaryQuerySnapshot() : defaultQuerySnapshot(),
     );
   });
-  assert.deepEqual(calls.map(([queryId, dataId]) => [queryId, dataId]), [
-    ["regional-analysis", "regional-revenue"],
-    ["regional-summary", "regional-revenue"],
-  ]);
+  assert.deepEqual(
+    calls.map(([queryId, dataId]) => [queryId, dataId]),
+    [
+      ["regional-analysis", "regional-revenue"],
+      ["regional-summary", "regional-revenue"],
+    ],
+  );
   assert.ok(calls.every((call) => call[2].includes("APAC,1900000")));
   assert.deepEqual(result, {
     dataCount: 1,
@@ -164,31 +191,44 @@ test("executes every Query bound to proposed Data and verifies all downstream co
 test("runs a compiled keyed column addition through the complete Data impact graph", async () => {
   const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
   assert.ok(data);
-  const compiled = compileAgentOperationPatch(data, AgentOperationPatchSchema.parse({
-    summary: "Add review status",
-    detail: "Every current region receives one typed status keyed by Region.",
-    edits: [{
-      type: "upsert_data_column",
-      keyColumn: "Region",
-      column: "Review status",
-      values: [
-        { keyValue: "APAC", value: "approved" },
-        { keyValue: "North America", value: "review" },
-        { keyValue: "Europe", value: "approved" },
-        { keyValue: "LATAM", value: "review" },
+  const compiled = compileAgentOperationPatch(
+    data,
+    AgentOperationPatchSchema.parse({
+      summary: "Add review status",
+      detail: "Every current region receives one typed status keyed by Region.",
+      edits: [
+        {
+          type: "upsert_data_column",
+          keyColumn: "Region",
+          column: "Review status",
+          values: [
+            { keyValue: "APAC", value: "approved" },
+            { keyValue: "North America", value: "review" },
+            { keyValue: "Europe", value: "approved" },
+            { keyValue: "LATAM", value: "review" },
+          ],
+        },
       ],
-    }],
-  }));
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   assert.match(compiled.plan.nextSource, /Review status/);
-  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [{
-    artifactId: data.id,
-    ...compiled.plan,
-  }], [], async (query, proposedData) => currentSnapshot(
-    query,
-    proposedData,
-    query.id === "regional-summary" ? defaultSummaryQuerySnapshot() : defaultQuerySnapshot(),
-  ));
+  const result = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [
+      {
+        artifactId: data.id,
+        ...compiled.plan,
+      },
+    ],
+    [],
+    async (query, proposedData) =>
+      currentSnapshot(
+        query,
+        proposedData,
+        query.id === "regional-summary" ? defaultSummaryQuerySnapshot() : defaultQuerySnapshot(),
+      ),
+  );
   assert.deepEqual(result, {
     dataCount: 1,
     queryCount: 2,
@@ -203,20 +243,33 @@ test("runs a compiled keyed column addition through the complete Data impact gra
 test("rejects a compiled column rename that breaks an existing Chart before Query execution", async () => {
   const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
   assert.ok(data);
-  const compiled = compileAgentOperationPatch(data, AgentOperationPatchSchema.parse({
-    summary: "Rename revenue",
-    detail: "The downstream Chart must veto an uncoordinated header rename.",
-    edits: [{ type: "rename_data_column", column: "Q2 Revenue", nextColumn: "Q2 Net Revenue" }],
-  }));
+  const compiled = compileAgentOperationPatch(
+    data,
+    AgentOperationPatchSchema.parse({
+      summary: "Rename revenue",
+      detail: "The downstream Chart must veto an uncoordinated header rename.",
+      edits: [{ type: "rename_data_column", column: "Q2 Revenue", nextColumn: "Q2 Net Revenue" }],
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   let called = false;
-  await assert.rejects(preflightAgentRuntimeImpact(defaultArtifacts, [{
-    artifactId: data.id,
-    ...compiled.plan,
-  }], [], async () => {
-    called = true;
-    throw new Error("DuckDB must not start after static Chart validation fails");
-  }), /regional-revenue\.chart\.json.*Q2 Revenue/i);
+  await assert.rejects(
+    preflightAgentRuntimeImpact(
+      defaultArtifacts,
+      [
+        {
+          artifactId: data.id,
+          ...compiled.plan,
+        },
+      ],
+      [],
+      async () => {
+        called = true;
+        throw new Error("DuckDB must not start after static Chart validation fails");
+      },
+    ),
+    /regional-revenue\.chart\.json.*Q2 Revenue/i,
+  );
   assert.equal(called, false);
 });
 
@@ -266,20 +319,27 @@ test("rejects runtime-valid proposed Data when an impacted scalar changes cardin
 
 test("validates a new disconnected Data source without running unrelated Queries", async () => {
   let called = false;
-  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [], [{
-    artifact: {
-      id: "supplement",
-      name: "supplement.csv",
-      kind: "data",
-      language: "CSV / JSON",
-      source: "Item,Value\n",
+  const result = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [],
+    [
+      {
+        artifact: {
+          id: "supplement",
+          name: "supplement.csv",
+          kind: "data",
+          language: "CSV / JSON",
+          source: "Item,Value\n",
+        },
+        summary: "Create supplemental data",
+        detail: "The new table has no consumers yet.",
+      },
+    ],
+    async () => {
+      called = true;
+      throw new Error("unrelated Query must not run");
     },
-    summary: "Create supplemental data",
-    detail: "The new table has no consumers yet.",
-  }], async () => {
-    called = true;
-    throw new Error("unrelated Query must not run");
-  });
+  );
   assert.equal(called, false);
   assert.deepEqual(result, {
     dataCount: 1,
@@ -312,13 +372,15 @@ test("executes a newly created Query against its exact bound Data source", async
       rows: [["APAC", 1840000, 1540000, 1120000, 148]],
       truncated: false,
       sourceRowIndices: [0],
-      cellLineage: [[
-        { sourceRowIndex: 0, sourceColumn: "Region" },
-        { sourceRowIndex: 0, sourceColumn: "Q2 Revenue" },
-        { sourceRowIndex: 0, sourceColumn: "Q1 Revenue" },
-        { sourceRowIndex: 0, sourceColumn: "Cost" },
-        { sourceRowIndex: 0, sourceColumn: "Customers" },
-      ]],
+      cellLineage: [
+        [
+          { sourceRowIndex: 0, sourceColumn: "Region" },
+          { sourceRowIndex: 0, sourceColumn: "Q2 Revenue" },
+          { sourceRowIndex: 0, sourceColumn: "Q1 Revenue" },
+          { sourceRowIndex: 0, sourceColumn: "Cost" },
+          { sourceRowIndex: 0, sourceColumn: "Customers" },
+        ],
+      ],
     });
   });
   assert.deepEqual(calls, [["regional-detail", "regional-revenue"]]);
@@ -345,14 +407,21 @@ test("runtime-validates a newly created direct or Query-backed Chart before revi
   });
   assert.deepEqual(direct.errors, []);
   let directRunnerCalled = false;
-  const directImpact = await preflightAgentRuntimeImpact(defaultArtifacts, [], [{
-    artifact: direct.artifact,
-    summary: "Create direct Chart",
-    detail: "Bind exact Data fields.",
-  }], async () => {
-    directRunnerCalled = true;
-    throw new Error("A direct Data Chart must not start DuckDB.");
-  });
+  const directImpact = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [],
+    [
+      {
+        artifact: direct.artifact,
+        summary: "Create direct Chart",
+        detail: "Bind exact Data fields.",
+      },
+    ],
+    async () => {
+      directRunnerCalled = true;
+      throw new Error("A direct Data Chart must not start DuckDB.");
+    },
+  );
   assert.equal(directRunnerCalled, false);
   assert.equal(directImpact.chartConsumerCount, 1);
   assert.equal(directImpact.queryCount, 0);
@@ -368,14 +437,21 @@ test("runtime-validates a newly created direct or Query-backed Chart before revi
   });
   assert.deepEqual(queryBacked.errors, []);
   const calls = [];
-  const queryImpact = await preflightAgentRuntimeImpact(defaultArtifacts, [], [{
-    artifact: queryBacked.artifact,
-    summary: "Create Query Chart",
-    detail: "Bind exact Query output fields.",
-  }], async (query, data) => {
-    calls.push([query.id, data.id]);
-    return currentSnapshot(query, data, defaultQuerySnapshot());
-  });
+  const queryImpact = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [],
+    [
+      {
+        artifact: queryBacked.artifact,
+        summary: "Create Query Chart",
+        detail: "Bind exact Query output fields.",
+      },
+    ],
+    async (query, data) => {
+      calls.push([query.id, data.id]);
+      return currentSnapshot(query, data, defaultQuerySnapshot());
+    },
+  );
   assert.deepEqual(calls, [["regional-analysis", "regional-revenue"]]);
   assert.equal(queryImpact.queryCount, 1);
   assert.equal(queryImpact.chartConsumerCount, 2);
@@ -393,24 +469,32 @@ test("rejects a new Query-backed Chart whose selected value fails at runtime", a
   });
   assert.deepEqual(prepared.errors, []);
   const fixture = defaultQuerySnapshot();
-  await assert.rejects(preflightAgentRuntimeImpact(defaultArtifacts, [], [{
-    artifact: prepared.artifact,
-    summary: "Create Query Chart",
-    detail: "Runtime values must remain numeric.",
-  }], async (query, data) => currentSnapshot(query, data, {
-    ...fixture,
-    result: {
-      ...fixture.result,
-      rows: fixture.result.rows.map((row) => [...row.slice(0, 4), "not numeric"]),
-    },
-})), /query-customers\.chart\.json.*non-numeric/i);
+  await assert.rejects(
+    preflightAgentRuntimeImpact(
+      defaultArtifacts,
+      [],
+      [
+        {
+          artifact: prepared.artifact,
+          summary: "Create Query Chart",
+          detail: "Runtime values must remain numeric.",
+        },
+      ],
+      async (query, data) =>
+        currentSnapshot(query, data, {
+          ...fixture,
+          result: {
+            ...fixture.result,
+            rows: fixture.result.rows.map((row) => [...row.slice(0, 4), "not numeric"]),
+          },
+        }),
+    ),
+    /query-customers\.chart\.json.*non-numeric/i,
+  );
 });
 
 test("runtime-verifies the complete no-key analysis workflow before review", async () => {
-  const plan = planLocalWorkspaceAgentChange(
-    defaultArtifacts,
-    "根据收入数据创建 SQL 分析、图表和报告",
-  );
+  const plan = planLocalWorkspaceAgentChange(defaultArtifacts, "根据收入数据创建 SQL 分析、图表和报告");
   const calls = [];
   const result = await preflightAgentRuntimeImpact(defaultArtifacts, [], plan.creations, async (query, data) => {
     calls.push([query.id, data.id]);
@@ -444,60 +528,71 @@ test("runtime-verifies the complete no-key analysis workflow before review", asy
 });
 
 test("runtime-verifies a symbolic new Data-to-Query-to-Chart chain as one impact graph", async () => {
-  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, AgentWorkspaceOperationPlanSchema.parse({
-    summary: "Create one new runtime-bound analysis chain",
-    detail: "Every dependent creation uses an earlier symbolic handle.",
-    actions: [
-      {
-        type: "create_artifact",
-        kind: "data",
-        title: "Runtime Pipeline Data",
-        handle: "runtime_data",
-        summary: "Create Data",
-        detail: "Define visible source rows.",
-        edits: [{ type: "replace_text", find: "Item,Value\n", replace: "Region,Revenue\nAPAC,48\nEMEA,31\n" }],
-      },
-      {
-        type: "create_artifact",
-        kind: "query",
-        title: "Runtime Pipeline Query",
-        handle: "runtime_query",
-        source: { kind: "creation", handle: "runtime_data" },
-        summary: "Create Query",
-        detail: "Bind the earlier Data creation.",
-        edits: [],
-      },
-      {
-        type: "create_artifact",
-        kind: "chart",
-        title: "Runtime Pipeline Chart",
-        handle: "runtime_chart",
-        source: { kind: "creation", handle: "runtime_query" },
-        category: "Region",
-        value: "Revenue",
-        mark: "bar",
-        format: "currency",
-        summary: "Create Chart",
-        detail: "Bind exact Query output fields.",
-        edits: [],
-      },
-    ],
-  }));
+  const compiled = compileAgentWorkspaceOperations(
+    defaultArtifacts,
+    AgentWorkspaceOperationPlanSchema.parse({
+      summary: "Create one new runtime-bound analysis chain",
+      detail: "Every dependent creation uses an earlier symbolic handle.",
+      actions: [
+        {
+          type: "create_artifact",
+          kind: "data",
+          title: "Runtime Pipeline Data",
+          handle: "runtime_data",
+          summary: "Create Data",
+          detail: "Define visible source rows.",
+          edits: [{ type: "replace_text", find: "Item,Value\n", replace: "Region,Revenue\nAPAC,48\nEMEA,31\n" }],
+        },
+        {
+          type: "create_artifact",
+          kind: "query",
+          title: "Runtime Pipeline Query",
+          handle: "runtime_query",
+          source: { kind: "creation", handle: "runtime_data" },
+          summary: "Create Query",
+          detail: "Bind the earlier Data creation.",
+          edits: [],
+        },
+        {
+          type: "create_artifact",
+          kind: "chart",
+          title: "Runtime Pipeline Chart",
+          handle: "runtime_chart",
+          source: { kind: "creation", handle: "runtime_query" },
+          category: "Region",
+          value: "Revenue",
+          mark: "bar",
+          format: "currency",
+          summary: "Create Chart",
+          detail: "Bind exact Query output fields.",
+          edits: [],
+        },
+      ],
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   const calls = [];
-  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [], compiled.plan.creations, async (query, data) => {
-    calls.push([query.id, data.id]);
-    return createWorkspaceQuerySnapshot(query, data, {
-      columns: ["Region", "Revenue"],
-      rows: [["APAC", 48], ["EMEA", 31]],
-      truncated: false,
-      sourceRowIndices: [0, 1],
-      cellLineage: [0, 1].map((sourceRowIndex) => [
-        { sourceRowIndex, sourceColumn: "Region" },
-        { sourceRowIndex, sourceColumn: "Revenue" },
-      ]),
-    });
-  });
+  const result = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [],
+    compiled.plan.creations,
+    async (query, data) => {
+      calls.push([query.id, data.id]);
+      return createWorkspaceQuerySnapshot(query, data, {
+        columns: ["Region", "Revenue"],
+        rows: [
+          ["APAC", 48],
+          ["EMEA", 31],
+        ],
+        truncated: false,
+        sourceRowIndices: [0, 1],
+        cellLineage: [0, 1].map((sourceRowIndex) => [
+          { sourceRowIndex, sourceColumn: "Region" },
+          { sourceRowIndex, sourceColumn: "Revenue" },
+        ]),
+      });
+    },
+  );
   assert.deepEqual(calls, [["runtime-pipeline-query", "runtime-pipeline-data"]]);
   assert.deepEqual(result, {
     dataCount: 1,
@@ -515,14 +610,22 @@ test("runs the shipped local Data quick action through the complete impact graph
   assert.ok(data);
   const localPlan = planLocalChange(data, "增加利润率列");
   assert.match(localPlan.nextSource, /Margin/);
-  const result = await preflightAgentRuntimeImpact(defaultArtifacts, [{
-    artifactId: data.id,
-    ...localPlan,
-  }], [], async (query, proposedData) => currentSnapshot(
-    query,
-    proposedData,
-    query.id === "regional-summary" ? defaultSummaryQuerySnapshot() : defaultQuerySnapshot(),
-  ));
+  const result = await preflightAgentRuntimeImpact(
+    defaultArtifacts,
+    [
+      {
+        artifactId: data.id,
+        ...localPlan,
+      },
+    ],
+    [],
+    async (query, proposedData) =>
+      currentSnapshot(
+        query,
+        proposedData,
+        query.id === "regional-summary" ? defaultSummaryQuerySnapshot() : defaultQuerySnapshot(),
+      ),
+  );
   assert.equal(result?.dataCount, 1);
   assert.equal(result?.queryCount, 2);
   assert.equal(result?.scalarConsumerCount, 7);

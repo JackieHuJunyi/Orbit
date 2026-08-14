@@ -14,7 +14,10 @@ Inferring date columns or parsing arbitrary date text would merely move the gues
 An operating review may carry one optional exact Data scope:
 
 ```ts
-{ field: string; value: string | number | boolean }
+{
+  field: string;
+  value: string | number | boolean;
+}
 ```
 
 1. Rune lists at most one hundred distinct, typed values from one exact visible field in source order. “All Data rows” remains explicit and backwards compatible.

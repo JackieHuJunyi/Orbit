@@ -13,9 +13,7 @@ export type ModelProviderStatus = {
 
 function safeModelName(value: string | undefined) {
   const candidate = value?.trim();
-  return candidate && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/u.test(candidate)
-    ? candidate
-    : DEFAULT_OPENAI_MODEL;
+  return candidate && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/u.test(candidate) ? candidate : DEFAULT_OPENAI_MODEL;
 }
 
 export function normalizeRuneModelMode(value: unknown): RuneModelMode | null {
@@ -23,9 +21,7 @@ export function normalizeRuneModelMode(value: unknown): RuneModelMode | null {
   return null;
 }
 
-export function modelProviderStatus(
-  environment: Record<string, string | undefined>,
-): ModelProviderStatus {
+export function modelProviderStatus(environment: Record<string, string | undefined>): ModelProviderStatus {
   const configured = Boolean(environment.OPENAI_API_KEY?.trim());
   return {
     configured,

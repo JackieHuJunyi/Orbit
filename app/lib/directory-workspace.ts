@@ -50,52 +50,77 @@ export type DirectoryWorkspaceHandle = {
   entries(): AsyncIterableIterator<[string, DirectoryEntryHandle]>;
 };
 
-const safeFileName = z.string().min(1).max(240).refine(
-  (name) => name !== WORKSPACE_MANIFEST_NAME
-    && name !== "."
-    && name !== ".."
-    && !name.startsWith(".")
-    && !/[\\/\0]/.test(name),
-  "Artifact names must be plain, non-hidden file names.",
-);
+const safeFileName = z
+  .string()
+  .min(1)
+  .max(240)
+  .refine(
+    (name) =>
+      name !== WORKSPACE_MANIFEST_NAME &&
+      name !== "." &&
+      name !== ".." &&
+      !name.startsWith(".") &&
+      !/[\\/\0]/.test(name),
+    "Artifact names must be plain, non-hidden file names.",
+  );
 
-const ManifestArtifactSchema = z.object({
-  id: z.string().min(1).max(120),
-  name: safeFileName,
-  kind: z.enum(["document", "data", "query", "chart", "slides"]),
-  language: z.string().min(1).max(80),
-}).strict();
+const ManifestArtifactSchema = z
+  .object({
+    id: z.string().min(1).max(120),
+    name: safeFileName,
+    kind: z.enum(["document", "data", "query", "chart", "slides"]),
+    language: z.string().min(1).max(80),
+  })
+  .strict();
 
-const ManifestAssetSchema = z.object({
-  id: z.string().regex(/^[0-9a-f]{64}$/u),
-  name: z.string().min(1).max(180).refine((name) => !/[\\/\0]/u.test(name), "Asset names must be plain file names."),
-  mimeType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
-  size: z.number().int().min(1).max(MAX_RUNE_IMAGE_BYTES),
-}).strict();
+const ManifestAssetSchema = z
+  .object({
+    id: z.string().regex(/^[0-9a-f]{64}$/u),
+    name: z
+      .string()
+      .min(1)
+      .max(180)
+      .refine((name) => !/[\\/\0]/u.test(name), "Asset names must be plain file names."),
+    mimeType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
+    size: z.number().int().min(1).max(MAX_RUNE_IMAGE_BYTES),
+  })
+  .strict();
 
-export const WorkspaceManifestSchema = z.object({
-  version: z.union([z.literal(1), z.literal(2)]),
-  artifacts: z.array(ManifestArtifactSchema).min(1).max(MAX_DIRECTORY_ARTIFACTS),
-  assets: z.array(ManifestAssetSchema).max(MAX_RUNE_LOCAL_IMAGES).optional(),
-}).strict().superRefine((manifest, context) => {
-  const ids = new Set<string>();
-  const names = new Set<string>();
-  manifest.artifacts.forEach((artifact, index) => {
-    if (ids.has(artifact.id)) context.addIssue({ code: "custom", path: ["artifacts", index, "id"], message: "Artifact ids must be unique." });
-    if (names.has(artifact.name)) context.addIssue({ code: "custom", path: ["artifacts", index, "name"], message: "Artifact names must be unique." });
-    ids.add(artifact.id);
-    names.add(artifact.name);
+export const WorkspaceManifestSchema = z
+  .object({
+    version: z.union([z.literal(1), z.literal(2)]),
+    artifacts: z.array(ManifestArtifactSchema).min(1).max(MAX_DIRECTORY_ARTIFACTS),
+    assets: z.array(ManifestAssetSchema).max(MAX_RUNE_LOCAL_IMAGES).optional(),
+  })
+  .strict()
+  .superRefine((manifest, context) => {
+    const ids = new Set<string>();
+    const names = new Set<string>();
+    manifest.artifacts.forEach((artifact, index) => {
+      if (ids.has(artifact.id))
+        context.addIssue({ code: "custom", path: ["artifacts", index, "id"], message: "Artifact ids must be unique." });
+      if (names.has(artifact.name))
+        context.addIssue({
+          code: "custom",
+          path: ["artifacts", index, "name"],
+          message: "Artifact names must be unique.",
+        });
+      ids.add(artifact.id);
+      names.add(artifact.name);
+    });
+    if (manifest.version === 1 && manifest.assets?.length)
+      context.addIssue({ code: "custom", path: ["assets"], message: "Version 1 manifests cannot declare assets." });
+    const assetIds = new Set<string>();
+    let assetBytes = 0;
+    (manifest.assets ?? []).forEach((asset, index) => {
+      if (assetIds.has(asset.id))
+        context.addIssue({ code: "custom", path: ["assets", index, "id"], message: "Asset ids must be unique." });
+      assetIds.add(asset.id);
+      assetBytes += asset.size;
+    });
+    if (assetBytes > MAX_RUNE_LOCAL_IMAGE_BYTES)
+      context.addIssue({ code: "custom", path: ["assets"], message: "Asset bytes exceed Rune's 64 MB folder limit." });
   });
-  if (manifest.version === 1 && manifest.assets?.length) context.addIssue({ code: "custom", path: ["assets"], message: "Version 1 manifests cannot declare assets." });
-  const assetIds = new Set<string>();
-  let assetBytes = 0;
-  (manifest.assets ?? []).forEach((asset, index) => {
-    if (assetIds.has(asset.id)) context.addIssue({ code: "custom", path: ["assets", index, "id"], message: "Asset ids must be unique." });
-    assetIds.add(asset.id);
-    assetBytes += asset.size;
-  });
-  if (assetBytes > MAX_RUNE_LOCAL_IMAGE_BYTES) context.addIssue({ code: "custom", path: ["assets"], message: "Asset bytes exceed Rune's 64 MB folder limit." });
-});
 
 export type WorkspaceManifest = z.infer<typeof WorkspaceManifestSchema>;
 
@@ -114,14 +139,23 @@ function formatManifestError(error: z.ZodError) {
 }
 
 function assetExtension(mimeType: PreparedRuneImageAsset["mimeType"]) {
-  return mimeType === "image/png" ? "png" : mimeType === "image/jpeg" ? "jpg" : mimeType === "image/webp" ? "webp" : "gif";
+  return mimeType === "image/png"
+    ? "png"
+    : mimeType === "image/jpeg"
+      ? "jpg"
+      : mimeType === "image/webp"
+        ? "webp"
+        : "gif";
 }
 
 export function workspaceAssetFileName(asset: Pick<PreparedRuneImageAsset, "id" | "mimeType">) {
   return `${asset.id}.${assetExtension(asset.mimeType)}`;
 }
 
-export function buildWorkspaceManifest(artifacts: WorkspaceArtifact[], assets: PreparedRuneImageAsset[] = []): WorkspaceManifest {
+export function buildWorkspaceManifest(
+  artifacts: WorkspaceArtifact[],
+  assets: PreparedRuneImageAsset[] = [],
+): WorkspaceManifest {
   const mismatched = artifacts.find((artifact) => !validateDetectedKind(artifact.name, artifact.source, artifact.kind));
   if (mismatched) throw new Error(`${mismatched.name} does not match its declared ${mismatched.kind} kind.`);
   const referencedIds = new Set(artifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)));
@@ -146,17 +180,21 @@ export function parseWorkspaceManifest(source: string): { manifest?: WorkspaceMa
   try {
     value = JSON.parse(source);
   } catch (error) {
-    return { errors: [error instanceof Error ? `Invalid workspace manifest: ${error.message}` : "Invalid workspace manifest."] };
+    return {
+      errors: [error instanceof Error ? `Invalid workspace manifest: ${error.message}` : "Invalid workspace manifest."],
+    };
   }
   const parsed = WorkspaceManifestSchema.safeParse(value);
   return parsed.success ? { manifest: parsed.data, errors: [] } : { errors: formatManifestError(parsed.error) };
 }
 
 function stableArtifactId(name: string, usedIds: Set<string>) {
-  const base = name.toLowerCase()
-    .replace(/\.(?:chart\.json|deck\.md|md|markdown|csv|json|sql|html|htm)$/i, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "artifact";
+  const base =
+    name
+      .toLowerCase()
+      .replace(/\.(?:chart\.json|deck\.md|md|markdown|csv|json|sql|html|htm)$/i, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "artifact";
   let id = base;
   let suffix = 2;
   while (usedIds.has(id)) {
@@ -179,7 +217,8 @@ async function optionalFileHandle(directory: DirectoryWorkspaceHandle, name: str
   try {
     return await directory.getFileHandle(name);
   } catch (error) {
-    if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "NotFoundError") return null;
+    if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "NotFoundError")
+      return null;
     if (error instanceof Error && /not found/i.test(error.message)) return null;
     throw error;
   }
@@ -189,7 +228,8 @@ async function optionalAssetDirectory(directory: DirectoryWorkspaceHandle) {
   try {
     return await directory.getDirectoryHandle(WORKSPACE_ASSET_DIRECTORY_NAME);
   } catch (error) {
-    if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "NotFoundError") return null;
+    if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "NotFoundError")
+      return null;
     if (error instanceof Error && /not found/i.test(error.message)) return null;
     throw error;
   }
@@ -216,7 +256,12 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
       }
       const source = await readBoundedFile(fileHandle, budget);
       if (!validateDetectedKind(entry.name, source, entry.kind)) {
-        return { artifacts: [], assets: [], errors: [`${entry.name} does not match its declared ${entry.kind} kind.`], source: "manifest" };
+        return {
+          artifacts: [],
+          assets: [],
+          errors: [`${entry.name} does not match its declared ${entry.kind} kind.`],
+          source: "manifest",
+        };
       }
       artifacts.push({ ...entry, source });
     }
@@ -230,20 +275,28 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
     if (manifestAssets.length) {
       const assetDirectory = await optionalAssetDirectory(directory);
       if (!assetDirectory) errors.push(`Manifest asset folder not found: ${WORKSPACE_ASSET_DIRECTORY_NAME}`);
-      else for (const asset of manifestAssets) {
-        try {
-          const handle = await assetDirectory.getFileHandle(workspaceAssetFileName(asset));
-          const file = await handle.getFile();
-          if (file.size !== asset.size) throw new Error("size does not match the manifest");
-          const prepared = await prepareRuneImageAsset(asset.name, asset.mimeType, await file.arrayBuffer());
-          if (prepared.id !== asset.id) throw new Error("content hash does not match the manifest");
-          assets.push(prepared);
-        } catch (error) {
-          errors.push(`Invalid folder asset ${asset.id}: ${error instanceof Error ? error.message : "could not be read"}`);
+      else
+        for (const asset of manifestAssets) {
+          try {
+            const handle = await assetDirectory.getFileHandle(workspaceAssetFileName(asset));
+            const file = await handle.getFile();
+            if (file.size !== asset.size) throw new Error("size does not match the manifest");
+            const prepared = await prepareRuneImageAsset(asset.name, asset.mimeType, await file.arrayBuffer());
+            if (prepared.id !== asset.id) throw new Error("content hash does not match the manifest");
+            assets.push(prepared);
+          } catch (error) {
+            errors.push(
+              `Invalid folder asset ${asset.id}: ${error instanceof Error ? error.message : "could not be read"}`,
+            );
+          }
         }
-      }
     }
-    return { artifacts: errors.length ? [] : artifacts, assets: errors.length ? [] : assets, errors, source: "manifest" };
+    return {
+      artifacts: errors.length ? [] : artifacts,
+      assets: errors.length ? [] : assets,
+      errors,
+      source: "manifest",
+    };
   }
 
   const candidates: Array<{ name: string; handle: DirectoryFileHandle }> = [];
@@ -254,7 +307,12 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
   candidates.sort((left, right) => left.name.localeCompare(right.name));
   if (!candidates.length) return { artifacts: [], assets: [], errors: [], source: "empty" };
   if (candidates.length > MAX_DIRECTORY_ARTIFACTS) {
-    return { artifacts: [], assets: [], errors: [`The folder contains more than ${MAX_DIRECTORY_ARTIFACTS} supported source files.`], source: "scan" };
+    return {
+      artifacts: [],
+      assets: [],
+      errors: [`The folder contains more than ${MAX_DIRECTORY_ARTIFACTS} supported source files.`],
+      source: "scan",
+    };
   }
 
   const usedIds = new Set<string>();
@@ -265,7 +323,8 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
     if (detected) artifacts.push({ ...detected, id: stableArtifactId(candidate.name, usedIds) });
   }
   const errors = validateWorkspaceArtifacts(artifacts);
-  if (artifacts.some((artifact) => extractRuneAssetIds(artifact.source).length)) errors.push("A manifest-free folder cannot resolve Rune local image references.");
+  if (artifacts.some((artifact) => extractRuneAssetIds(artifact.source).length))
+    errors.push("A manifest-free folder cannot resolve Rune local image references.");
   return { artifacts: errors.length ? [] : artifacts, assets: [], errors, source: "scan" };
 }
 
@@ -279,7 +338,8 @@ export async function writeWorkspaceDirectory(
   buildWorkspaceManifest(artifacts, assets);
   for (const asset of assets) {
     const verified = await prepareRuneImageAsset(asset.name, asset.mimeType, asset.bytes.slice().buffer as ArrayBuffer);
-    if (verified.id !== asset.id || verified.size !== asset.size) throw new Error(`Folder asset failed content verification: ${asset.id}`);
+    if (verified.id !== asset.id || verified.size !== asset.size)
+      throw new Error(`Folder asset failed content verification: ${asset.id}`);
   }
   const totalBytes = artifacts.reduce((total, artifact) => {
     const size = new TextEncoder().encode(artifact.source).byteLength;

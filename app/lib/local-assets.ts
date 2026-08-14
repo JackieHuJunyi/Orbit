@@ -42,26 +42,42 @@ function startsWith(bytes: Uint8Array, signature: readonly number[]) {
 export function detectRuneImageMimeType(bytes: Uint8Array): RuneImageMimeType | null {
   if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
-  if (bytes.length >= 12
-    && startsWith(bytes, [0x52, 0x49, 0x46, 0x46])
-    && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return "image/webp";
-  if (startsWith(bytes, [0x47, 0x49, 0x46, 0x38, 0x37, 0x61])
-    || startsWith(bytes, [0x47, 0x49, 0x46, 0x38, 0x39, 0x61])) return "image/gif";
+  if (
+    bytes.length >= 12 &&
+    startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  )
+    return "image/webp";
+  if (
+    startsWith(bytes, [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]) ||
+    startsWith(bytes, [0x47, 0x49, 0x46, 0x38, 0x39, 0x61])
+  )
+    return "image/gif";
   return null;
 }
 
 function normalizedAssetName(name: string) {
-  const normalized = name.normalize("NFKC").replace(/[\u0000-\u001f\u007f]/gu, " ").trim();
+  const normalized = name
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .trim();
   return (normalized || "image").slice(0, 180);
 }
 
 export function runeImageAltFromName(name: string) {
-  const base = normalizedAssetName(name).replace(/\.(?:png|jpe?g|webp|gif)$/iu, "").trim() || "Image";
+  const base =
+    normalizedAssetName(name)
+      .replace(/\.(?:png|jpe?g|webp|gif)$/iu, "")
+      .trim() || "Image";
   return base.replace(/\s+/gu, " ").slice(0, 120);
 }
 
 function escapeMarkdownAlt(value: string) {
-  return value.normalize("NFKC")
+  return value
+    .normalize("NFKC")
     .replace(/[\u0000-\u001f\u007f]/gu, " ")
     .replace(/\s+/gu, " ")
     .trim()
@@ -112,7 +128,13 @@ export function extractRuneAssetIds(source: string) {
 }
 
 export function runeImageExtension(mimeType: RuneImageMimeType) {
-  return mimeType === "image/png" ? "png" : mimeType === "image/jpeg" ? "jpg" : mimeType === "image/webp" ? "webp" : "gif";
+  return mimeType === "image/png"
+    ? "png"
+    : mimeType === "image/jpeg"
+      ? "jpg"
+      : mimeType === "image/webp"
+        ? "webp"
+        : "gif";
 }
 
 function uint16Le(bytes: Uint8Array, offset: number) {
@@ -124,10 +146,13 @@ function uint24Le(bytes: Uint8Array, offset: number) {
 }
 
 function uint32Be(bytes: Uint8Array, offset: number) {
-  return ((bytes[offset] * 0x1_000_000) + (bytes[offset + 1] << 16) + (bytes[offset + 2] << 8) + bytes[offset + 3]) >>> 0;
+  return (bytes[offset] * 0x1_000_000 + (bytes[offset + 1] << 16) + (bytes[offset + 2] << 8) + bytes[offset + 3]) >>> 0;
 }
 
-export function runeImageDimensions(bytes: Uint8Array, mimeType = detectRuneImageMimeType(bytes)): RuneImageDimensions | null {
+export function runeImageDimensions(
+  bytes: Uint8Array,
+  mimeType = detectRuneImageMimeType(bytes),
+): RuneImageDimensions | null {
   let dimensions: RuneImageDimensions | null = null;
   if (mimeType === "image/png" && bytes.length >= 24) {
     dimensions = { width: uint32Be(bytes, 16), height: uint32Be(bytes, 20) };
@@ -136,31 +161,51 @@ export function runeImageDimensions(bytes: Uint8Array, mimeType = detectRuneImag
   } else if (mimeType === "image/webp" && bytes.length >= 30) {
     const kind = String.fromCharCode(...bytes.slice(12, 16));
     if (kind === "VP8X") dimensions = { width: uint24Le(bytes, 24) + 1, height: uint24Le(bytes, 27) + 1 };
-    else if (kind === "VP8L" && bytes[20] === 0x2f) dimensions = {
-      width: 1 + bytes[21] + ((bytes[22] & 0x3f) << 8),
-      height: 1 + (bytes[22] >> 6) + (bytes[23] << 2) + ((bytes[24] & 0x0f) << 10),
-    };
-    else if (kind === "VP8 " && bytes[23] === 0x9d && bytes[24] === 0x01 && bytes[25] === 0x2a) dimensions = {
-      width: uint16Le(bytes, 26) & 0x3fff,
-      height: uint16Le(bytes, 28) & 0x3fff,
-    };
+    else if (kind === "VP8L" && bytes[20] === 0x2f)
+      dimensions = {
+        width: 1 + bytes[21] + ((bytes[22] & 0x3f) << 8),
+        height: 1 + (bytes[22] >> 6) + (bytes[23] << 2) + ((bytes[24] & 0x0f) << 10),
+      };
+    else if (kind === "VP8 " && bytes[23] === 0x9d && bytes[24] === 0x01 && bytes[25] === 0x2a)
+      dimensions = {
+        width: uint16Le(bytes, 26) & 0x3fff,
+        height: uint16Le(bytes, 28) & 0x3fff,
+      };
   } else if (mimeType === "image/jpeg") {
     let offset = 2;
     while (offset + 8 < bytes.length) {
-      if (bytes[offset] !== 0xff) { offset += 1; continue; }
+      if (bytes[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
       const marker = bytes[offset + 1];
       if (marker === 0xda || marker === 0xd9) break;
-      if (marker === 0x00 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { offset += 2; continue; }
+      if (marker === 0x00 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+        offset += 2;
+        continue;
+      }
       const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
       if (length < 2 || offset + 2 + length > bytes.length) break;
-      if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker) && length >= 7) {
-        dimensions = { height: (bytes[offset + 5] << 8) | bytes[offset + 6], width: (bytes[offset + 7] << 8) | bytes[offset + 8] };
+      if (
+        [0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker) &&
+        length >= 7
+      ) {
+        dimensions = {
+          height: (bytes[offset + 5] << 8) | bytes[offset + 6],
+          width: (bytes[offset + 7] << 8) | bytes[offset + 8],
+        };
         break;
       }
       offset += 2 + length;
     }
   }
-  return dimensions && dimensions.width > 0 && dimensions.height > 0 && dimensions.width <= 32_768 && dimensions.height <= 32_768 ? dimensions : null;
+  return dimensions &&
+    dimensions.width > 0 &&
+    dimensions.height > 0 &&
+    dimensions.width <= 32_768 &&
+    dimensions.height <= 32_768
+    ? dimensions
+    : null;
 }
 
 export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) {
@@ -169,7 +214,14 @@ export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) 
     if (!SHA256_ID.test(asset.id)) throw new Error("Rune export image identity must be one lowercase SHA-256 digest.");
     if (byId.has(asset.id)) throw new Error(`Rune export image is duplicated: ${asset.id}`);
     const detected = detectRuneImageMimeType(asset.bytes);
-    if (!detected || detected !== asset.mimeType || !runeImageDimensions(asset.bytes, detected) || asset.size !== asset.bytes.length || !asset.bytes.length || asset.bytes.length > MAX_RUNE_IMAGE_BYTES) {
+    if (
+      !detected ||
+      detected !== asset.mimeType ||
+      !runeImageDimensions(asset.bytes, detected) ||
+      asset.size !== asset.bytes.length ||
+      !asset.bytes.length ||
+      asset.bytes.length > MAX_RUNE_IMAGE_BYTES
+    ) {
       throw new Error(`Rune export image is invalid: ${asset.id}`);
     }
     byId.set(asset.id, asset);
@@ -193,7 +245,12 @@ export function runeImageDataUrl(asset: RuneExportImageAsset) {
   return `data:${asset.mimeType};base64,${encoded}`;
 }
 
-export function buildRuneImageInsertion(source: string, offset: number, alt: string, assetId: string): RuneImageInsertion {
+export function buildRuneImageInsertion(
+  source: string,
+  offset: number,
+  alt: string,
+  assetId: string,
+): RuneImageInsertion {
   if (!validUtf16Boundary(source, offset)) throw new Error("The image insertion point is no longer valid.");
   const safeAlt = escapeMarkdownAlt(alt);
   if (!safeAlt) throw new Error("Describe the image before inserting it.");
@@ -211,13 +268,22 @@ export function buildRuneImageInsertion(source: string, offset: number, alt: str
   };
 }
 
-export async function prepareRuneImageAsset(name: string, claimedMimeType: string, input: ArrayBuffer): Promise<PreparedRuneImageAsset> {
+export async function prepareRuneImageAsset(
+  name: string,
+  claimedMimeType: string,
+  input: ArrayBuffer,
+): Promise<PreparedRuneImageAsset> {
   const bytes = new Uint8Array(input.slice(0));
   if (!bytes.length) throw new Error("The selected image is empty.");
-  if (bytes.length > MAX_RUNE_IMAGE_BYTES) throw new Error(`Images are limited to ${MAX_RUNE_IMAGE_BYTES / 1_048_576} MB each.`);
+  if (bytes.length > MAX_RUNE_IMAGE_BYTES)
+    throw new Error(`Images are limited to ${MAX_RUNE_IMAGE_BYTES / 1_048_576} MB each.`);
   const mimeType = detectRuneImageMimeType(bytes);
   if (!mimeType) throw new Error("Choose a real PNG, JPEG, WebP, or GIF image.");
-  if (claimedMimeType && claimedMimeType !== mimeType && !(claimedMimeType === "image/jpg" && mimeType === "image/jpeg")) {
+  if (
+    claimedMimeType &&
+    claimedMimeType !== mimeType &&
+    !(claimedMimeType === "image/jpg" && mimeType === "image/jpeg")
+  ) {
     throw new Error("The image contents do not match its declared file type.");
   }
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -226,11 +292,13 @@ export async function prepareRuneImageAsset(name: string, claimedMimeType: strin
 }
 
 function openAssetDatabase() {
-  if (typeof indexedDB === "undefined") return Promise.reject(new Error("This browser cannot store local image assets."));
+  if (typeof indexedDB === "undefined")
+    return Promise.reject(new Error("This browser cannot store local image assets."));
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
     request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(IMAGE_STORE)) request.result.createObjectStore(IMAGE_STORE, { keyPath: "id" });
+      if (!request.result.objectStoreNames.contains(IMAGE_STORE))
+        request.result.createObjectStore(IMAGE_STORE, { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error("Rune could not open its local image store."));
@@ -251,15 +319,20 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
         if (lookup.result) return;
         const all = store.getAll();
         all.onsuccess = () => {
-          const records = Array.isArray(all.result) ? all.result as RuneLocalAssetRecord[] : [];
+          const records = Array.isArray(all.result) ? (all.result as RuneLocalAssetRecord[]) : [];
           if (records.length >= MAX_RUNE_LOCAL_IMAGES) {
             policyError = new Error(`Rune stores at most ${MAX_RUNE_LOCAL_IMAGES} local images on one device.`);
             transaction.abort();
             return;
           }
-          const currentBytes = records.reduce((total, record) => total + (Number.isFinite(record.size) ? record.size : 0), 0);
+          const currentBytes = records.reduce(
+            (total, record) => total + (Number.isFinite(record.size) ? record.size : 0),
+            0,
+          );
           if (currentBytes + asset.size > MAX_RUNE_LOCAL_IMAGE_BYTES) {
-            policyError = new Error(`Rune local images are limited to ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB on one device.`);
+            policyError = new Error(
+              `Rune local images are limited to ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB on one device.`,
+            );
             transaction.abort();
             return;
           }
@@ -276,7 +349,8 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
         };
       };
       transaction.oncomplete = () => resolve(created);
-      transaction.onabort = () => reject(policyError ?? transaction.error ?? new Error("Rune could not store this image locally."));
+      transaction.onabort = () =>
+        reject(policyError ?? transaction.error ?? new Error("Rune could not store this image locally."));
       transaction.onerror = () => reject(transaction.error ?? new Error("Rune could not store this image locally."));
     });
   } finally {
@@ -290,7 +364,8 @@ export async function getRuneImageAsset(id: string): Promise<PreparedRuneImageAs
   try {
     const record = await new Promise<RuneLocalAssetRecord | null>((resolve, reject) => {
       const request = database.transaction(IMAGE_STORE, "readonly").objectStore(IMAGE_STORE).get(id);
-      request.onsuccess = () => resolve(request.result?.blob instanceof Blob ? request.result as RuneLocalAssetRecord : null);
+      request.onsuccess = () =>
+        resolve(request.result?.blob instanceof Blob ? (request.result as RuneLocalAssetRecord) : null);
       request.onerror = () => reject(request.error ?? new Error("Rune could not read this local image."));
     });
     if (!record || !record.blob.size || record.blob.size > MAX_RUNE_IMAGE_BYTES) return null;

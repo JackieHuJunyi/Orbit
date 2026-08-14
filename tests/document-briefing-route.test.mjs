@@ -14,7 +14,8 @@ const artifact = {
   name: "launch-source.md",
   kind: "document",
   language: "Markdown",
-  source: "# Launch\n\n## Context\n\nTeams need a source-linked review workflow with visible proposed changes.\n\n## Decision\n\nApprove the next cohort only after the reviewed workflow passes.",
+  source:
+    "# Launch\n\n## Context\n\nTeams need a source-linked review workflow with visible proposed changes.\n\n## Decision\n\nApprove the next cohort only after the reviewed workflow passes.",
 };
 
 const input = {
@@ -37,17 +38,25 @@ test.after(() => {
 async function personalCookie() {
   process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "document-briefing-vault-key-123456789";
   delete process.env.OPENAI_API_KEY;
-  const profile = normalizeModelProfileDraft({
-    provider: "custom",
-    name: "Private narrative model",
-    baseURL: "https://models.example.com/v1",
-    model: "narrative-1",
-    apiKey: "document-briefing-secret",
-  }, undefined, "2026-08-14T00:00:00.000Z", () => "briefing");
-  return (await serializeModelProfileVaultCookie(
-    new Request("https://rune.example/api/model-profiles"),
-    { version: 1, activeProfileId: profile.id, profiles: [profile] },
-  )).split(";", 1)[0];
+  const profile = normalizeModelProfileDraft(
+    {
+      provider: "custom",
+      name: "Private narrative model",
+      baseURL: "https://models.example.com/v1",
+      model: "narrative-1",
+      apiKey: "document-briefing-secret",
+    },
+    undefined,
+    "2026-08-14T00:00:00.000Z",
+    () => "briefing",
+  );
+  return (
+    await serializeModelProfileVaultCookie(new Request("https://rune.example/api/model-profiles"), {
+      version: 1,
+      activeProfileId: profile.id,
+      profiles: [profile],
+    })
+  ).split(";", 1)[0];
 }
 
 function providerResponse(outline) {
@@ -62,18 +71,33 @@ test("shapes a bounded source-evidenced outline through the active personal mode
   let providerRequest;
   globalThis.fetch = async (url, init) => {
     providerRequest = { url: String(url), headers: new Headers(init?.headers), body: JSON.parse(String(init?.body)) };
-    return new Response(JSON.stringify(providerResponse({
-      slides: [
-        { sourceUnitId: "source-1", title: "A visible workflow", bullets: ["Every proposed change remains reviewable."] },
-        { sourceUnitId: "source-2", title: "A bounded decision", bullets: ["Approve only after the workflow passes."] },
-      ],
-    })), { headers: { "content-type": "application/json" } });
+    return new Response(
+      JSON.stringify(
+        providerResponse({
+          slides: [
+            {
+              sourceUnitId: "source-1",
+              title: "A visible workflow",
+              bullets: ["Every proposed change remains reviewable."],
+            },
+            {
+              sourceUnitId: "source-2",
+              title: "A bounded decision",
+              bullets: ["Approve only after the workflow passes."],
+            },
+          ],
+        }),
+      ),
+      { headers: { "content-type": "application/json" } },
+    );
   };
-  const response = await POST(new Request("https://rune.example/api/tasks/document-briefing", {
-    method: "POST",
-    headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({ artifact, input }),
-  }));
+  const response = await POST(
+    new Request("https://rune.example/api/tasks/document-briefing", {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ artifact, input }),
+    }),
+  );
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.provider, "custom");
@@ -91,17 +115,25 @@ test("shapes a bounded source-evidenced outline through the active personal mode
 
 test("rejects a model outline that reuses evidence instead of broadening model authority", async () => {
   const cookie = await personalCookie();
-  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
-    slides: [
-      { sourceUnitId: "source-1", title: "First", bullets: ["One"] },
-      { sourceUnitId: "source-1", title: "Repeated", bullets: ["Two"] },
-    ],
-  })), { headers: { "content-type": "application/json" } });
-  const response = await POST(new Request("https://rune.example/api/tasks/document-briefing", {
-    method: "POST",
-    headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({ artifact, input }),
-  }));
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify(
+        providerResponse({
+          slides: [
+            { sourceUnitId: "source-1", title: "First", bullets: ["One"] },
+            { sourceUnitId: "source-1", title: "Repeated", bullets: ["Two"] },
+          ],
+        }),
+      ),
+      { headers: { "content-type": "application/json" } },
+    );
+  const response = await POST(
+    new Request("https://rune.example/api/tasks/document-briefing", {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ artifact, input }),
+    }),
+  );
   assert.equal(response.status, 502);
   const payload = await response.json();
   assert.equal(payload.code, "MODEL_OUTLINE_INVALID");
@@ -111,12 +143,16 @@ test("rejects a model outline that reuses evidence instead of broadening model a
 test("returns an explicit unconfigured result without contacting a provider", async () => {
   delete process.env.OPENAI_API_KEY;
   delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-  globalThis.fetch = async () => { throw new Error("provider must not be called"); };
-  const response = await POST(new Request("http://localhost/api/tasks/document-briefing", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ artifact, input }),
-  }));
+  globalThis.fetch = async () => {
+    throw new Error("provider must not be called");
+  };
+  const response = await POST(
+    new Request("http://localhost/api/tasks/document-briefing", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ artifact, input }),
+    }),
+  );
   assert.equal(response.status, 503);
   assert.equal((await response.json()).code, "MODEL_UNCONFIGURED");
 });

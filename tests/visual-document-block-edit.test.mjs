@@ -34,10 +34,7 @@ test("replaces one exact paragraph block and preserves every byte outside its ra
   assert.equal(result.nextTarget.label, "Verified opening note.");
   assert.equal(result.nextSource.slice(0, target.start), source.slice(0, target.start));
   assert.equal(result.nextSource.slice(result.nextTarget.end), source.slice(target.end));
-  assert.equal(
-    result.nextSource.slice(result.nextTarget.start, result.nextTarget.end),
-    "Verified **opening** note.",
-  );
+  assert.equal(result.nextSource.slice(result.nextTarget.start, result.nextTarget.end), "Verified **opening** note.");
 });
 
 test("keeps headings at the same level and returns the renamed block target", () => {
@@ -75,10 +72,16 @@ test("rejects stale, empty, unchanged, multi-block, and type-changing edits", ()
   const artifact = document("# Brief\n\nOpening.\n");
   const target = targetOf(artifact, "paragraph");
   assert.ok(target);
-  assert.match(prepareVisualDocumentBlockEdit(artifact, { ...target, start: target.start + 1 }, { draft: "Updated." }).errors[0], /no longer matches/u);
+  assert.match(
+    prepareVisualDocumentBlockEdit(artifact, { ...target, start: target.start + 1 }, { draft: "Updated." }).errors[0],
+    /no longer matches/u,
+  );
   assert.match(prepareVisualDocumentBlockEdit(artifact, target, { draft: " \n" }).errors[0], /cannot be empty/u);
   assert.match(prepareVisualDocumentBlockEdit(artifact, target, { draft: "Opening." }).errors[0], /unchanged/u);
-  assert.match(prepareVisualDocumentBlockEdit(artifact, target, { draft: "One.\n\nTwo." }).errors[0], /one paragraph block/u);
+  assert.match(
+    prepareVisualDocumentBlockEdit(artifact, target, { draft: "One.\n\nTwo." }).errors[0],
+    /one paragraph block/u,
+  );
   assert.match(prepareVisualDocumentBlockEdit(artifact, target, { draft: "- One" }).errors[0], /one paragraph block/u);
 });
 

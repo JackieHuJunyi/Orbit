@@ -70,16 +70,23 @@ test("compiles one reviewed Document into an exact source-linked Deck transactio
 
   const graph = buildWorkspaceDependencyGraph([...artifacts, deck]);
   assert.deepEqual(graph.issues, []);
-  assert.deepEqual(graph.edges.map((edge) => [edge.fromArtifactId, edge.toArtifactId, edge.kind]), [
-    [sourceDocument.id, deck.id, "deck-origin"],
-  ]);
+  assert.deepEqual(
+    graph.edges.map((edge) => [edge.fromArtifactId, edge.toArtifactId, edge.kind]),
+    [[sourceDocument.id, deck.id, "deck-origin"]],
+  );
   const review = buildWorkspaceTransactionReview(artifacts, [], result.plan.creations);
   assert.deepEqual(review.errors, []);
-  assert.deepEqual(review.nodes.map((node) => [node.artifactId, node.status]), [
-    [sourceDocument.id, "input"],
-    [deck.id, "created"],
-  ]);
-  assert.deepEqual(review.edges.map((edge) => [edge.kind, edge.status]), [["deck-origin", "added"]]);
+  assert.deepEqual(
+    review.nodes.map((node) => [node.artifactId, node.status]),
+    [
+      [sourceDocument.id, "input"],
+      [deck.id, "created"],
+    ],
+  );
+  assert.deepEqual(
+    review.edges.map((edge) => [edge.kind, edge.status]),
+    [["deck-origin", "added"]],
+  );
 });
 
 test("compiles a model-shaped outline only when every bounded source unit remains exact", () => {
@@ -141,23 +148,22 @@ test("refreshes one linked presentation in place while retaining identity and li
   assert.ok(created);
   const themedDeck = { ...created, source: created.source.replace("theme: rune", "theme: rune-dark") };
   assert.equal(documentBriefingSourceIdForPresentation(themedDeck), sourceDocument.id);
-  assert.deepEqual(documentBriefingTargets([sourceDocument, themedDeck], sourceDocument.id), [{
-    artifactId: themedDeck.id,
-    name: themedDeck.name,
-    title: "Launch briefing",
-    slideCount: 6,
-    locale: "en",
-    audience: "leadership",
-    purpose: "Decide whether the launch is ready for the next cohort.",
-    freshness: "current",
-  }]);
+  assert.deepEqual(documentBriefingTargets([sourceDocument, themedDeck], sourceDocument.id), [
+    {
+      artifactId: themedDeck.id,
+      name: themedDeck.name,
+      title: "Launch briefing",
+      slideCount: 6,
+      locale: "en",
+      audience: "leadership",
+      purpose: "Decide whether the launch is ready for the next cohort.",
+      freshness: "current",
+    },
+  ]);
 
   const updatedDocument = {
     ...sourceDocument,
-    source: sourceDocument.source.replace(
-      "Launch with a focused workflow",
-      "Launch the reviewed workflow this month",
-    ),
+    source: sourceDocument.source.replace("Launch with a focused workflow", "Launch the reviewed workflow this month"),
   };
   assert.equal(documentBriefingTargets([updatedDocument, themedDeck], updatedDocument.id)[0]?.freshness, "changed");
   const refreshed = prepareDocumentBriefingWorkflow(
@@ -179,19 +185,28 @@ test("refreshes one linked presentation in place while retaining identity and li
 
   const review = buildWorkspaceTransactionReview([updatedDocument, themedDeck], refreshed.plan?.patches ?? [], []);
   assert.deepEqual(review.errors, []);
-  assert.deepEqual(review.nodes.map((node) => [node.artifactId, node.status]), [
-    [updatedDocument.id, "input"],
-    [themedDeck.id, "edited"],
-  ]);
-  assert.deepEqual(review.edges.map((edge) => [edge.kind, edge.status]), [["deck-origin", "retained"]]);
+  assert.deepEqual(
+    review.nodes.map((node) => [node.artifactId, node.status]),
+    [
+      [updatedDocument.id, "input"],
+      [themedDeck.id, "edited"],
+    ],
+  );
+  assert.deepEqual(
+    review.edges.map((edge) => [edge.kind, edge.status]),
+    [["deck-origin", "retained"]],
+  );
 });
 
 test("round-trips a portable briefing recipe from Deck source into the next refresh", () => {
-  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({
-    audience: "customer",
-    focus: "  Confirm   the customer launch story.  ",
-    slideCount: 4,
-  })).plan?.creations[0].artifact;
+  const created = prepareDocumentBriefingWorkflow(
+    [sourceDocument],
+    input({
+      audience: "customer",
+      focus: "  Confirm   the customer launch story.  ",
+      slideCount: 4,
+    }),
+  ).plan?.creations[0].artifact;
   assert.ok(created);
   const [recipe] = documentBriefingTargets([sourceDocument, created], sourceDocument.id);
   assert.deepEqual(recipe, {
@@ -218,7 +233,8 @@ test("round-trips a portable briefing recipe from Deck source into the next refr
 });
 
 test("keeps pre-freshness Decks refreshable with an explicit unknown baseline", () => {
-  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0].artifact;
+  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0]
+    .artifact;
   assert.ok(created);
   const legacy = { ...created, source: created.source.replace(/^origin_revision: .*\n/mu, "") };
   assert.deepEqual(parseDeckSource(legacy.source).errors, []);
@@ -268,28 +284,34 @@ test("fails without mutating frozen inputs when the source identity, kind, or co
   const missing = prepareDocumentBriefingWorkflow(frozen, input({ sourceArtifactId: "missing" }));
   assert.equal(missing.plan, undefined);
   assert.match(missing.errors.join(" "), /missing/);
-  const wrongKind = prepareDocumentBriefingWorkflow([
-    { ...sourceDocument, kind: "data", source: "Item,Value\nA,1" },
-  ], input());
+  const wrongKind = prepareDocumentBriefingWorkflow(
+    [{ ...sourceDocument, kind: "data", source: "Item,Value\nA,1" }],
+    input(),
+  );
   assert.equal(wrongKind.plan, undefined);
   assert.match(wrongKind.errors.join(" "), /must be a Document/);
-  const short = prepareDocumentBriefingWorkflow([
-    { ...sourceDocument, source: "# Short\n\nTiny." },
-  ], input({ slideCount: 8 }));
+  const short = prepareDocumentBriefingWorkflow(
+    [{ ...sourceDocument, source: "# Short\n\nTiny." }],
+    input({ slideCount: 8 }),
+  );
   assert.equal(short.plan, undefined);
   assert.match(short.errors.join(" "), /enough readable material/);
   assert.equal(JSON.stringify(frozen), before);
 });
 
 test("refuses missing, wrong-kind, unrelated, and unchanged refresh targets without mutation", () => {
-  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0].artifact;
+  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0]
+    .artifact;
   assert.ok(created);
   const frozen = Object.freeze([Object.freeze({ ...sourceDocument }), Object.freeze({ ...created })]);
   const before = JSON.stringify(frozen);
   const missing = prepareDocumentBriefingWorkflow(frozen, input({ slideCount: 4, targetArtifactId: "missing" }));
   assert.equal(missing.plan, undefined);
   assert.match(missing.errors.join(" "), /target is missing/);
-  const wrongKind = prepareDocumentBriefingWorkflow(frozen, input({ slideCount: 4, targetArtifactId: sourceDocument.id }));
+  const wrongKind = prepareDocumentBriefingWorkflow(
+    frozen,
+    input({ slideCount: 4, targetArtifactId: sourceDocument.id }),
+  );
   assert.equal(wrongKind.plan, undefined);
   assert.match(wrongKind.errors.join(" "), /must be a Deck Markdown/);
   const otherSource = { ...sourceDocument, id: "other-source", name: "other.md" };
@@ -310,7 +332,10 @@ test("rejects a created Deck whose explicit Document origin cannot resolve", () 
   assert.ok(creation);
   const invalid = {
     ...creation,
-    artifact: { ...creation.artifact, source: creation.artifact.source.replace("origin: launch-source", "origin: missing") },
+    artifact: {
+      ...creation.artifact,
+      source: creation.artifact.source.replace("origin: launch-source", "origin: missing"),
+    },
   };
   const result = prepareWorkspaceMutation([sourceDocument], [], [invalid]);
   assert.match(result.errors.join(" "), /Presentation Document source is unresolved/);

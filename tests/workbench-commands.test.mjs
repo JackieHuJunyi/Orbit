@@ -25,7 +25,10 @@ test("declares one stable command identity with capability-derived availability"
   const available = commands();
   assert.equal(available.length, 14);
   assert.equal(new Set(available.map((command) => command.id)).size, available.length);
-  assert.equal(available.every((command) => !command.disabled), true);
+  assert.equal(
+    available.every((command) => !command.disabled),
+    true,
+  );
 
   const bounded = commands({
     artifactCreationDisabled: true,
@@ -45,12 +48,20 @@ test("declares one stable command identity with capability-derived availability"
 
 test("ranks labels before detail and keyword matches while retaining declaration order", () => {
   const registry = commands();
-  assert.deepEqual(filterRuneWorkbenchCommands(registry, "preview").map((command) => command.id).slice(0, 2), [
-    "show-preview",
-    "show-split",
-  ]);
-  assert.deepEqual(filterRuneWorkbenchCommands(registry, "folder").map((command) => command.id), ["open-folder"]);
-  assert.deepEqual(filterRuneWorkbenchCommands(registry, "docx").map((command) => command.id), ["import-files"]);
+  assert.deepEqual(
+    filterRuneWorkbenchCommands(registry, "preview")
+      .map((command) => command.id)
+      .slice(0, 2),
+    ["show-preview", "show-split"],
+  );
+  assert.deepEqual(
+    filterRuneWorkbenchCommands(registry, "folder").map((command) => command.id),
+    ["open-folder"],
+  );
+  assert.deepEqual(
+    filterRuneWorkbenchCommands(registry, "docx").map((command) => command.id),
+    ["import-files"],
+  );
   assert.deepEqual(filterRuneWorkbenchCommands(registry, "does not exist"), []);
   assert.deepEqual(filterRuneWorkbenchCommands(registry, ""), registry);
 });

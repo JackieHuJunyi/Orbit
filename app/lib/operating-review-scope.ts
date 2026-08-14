@@ -13,9 +13,11 @@ export type OperatingReviewScope = {
 function isScopeValue(value: unknown): value is OperatingReviewScopeValue {
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value === "boolean") return true;
-  return typeof value === "string"
-    && [...value].length <= MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS
-    && !/[\u0000-\u001f\u007f]/u.test(value);
+  return (
+    typeof value === "string" &&
+    [...value].length <= MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS &&
+    !/[\u0000-\u001f\u007f]/u.test(value)
+  );
 }
 
 function sameScopeValue(left: DataCell, right: OperatingReviewScopeValue) {
@@ -30,18 +32,18 @@ export function normalizeOperatingReviewScope(candidate: unknown): OperatingRevi
   if (candidate == null) return null;
   if (!candidate || typeof candidate !== "object") return undefined;
   const value = candidate as Partial<OperatingReviewScope>;
-  if (typeof value.field !== "string"
-    || !value.field
-    || value.field.length > 120
-    || /[\u0000-\u001f\u007f]/u.test(value.field)
-    || !isScopeValue(value.value)) return undefined;
+  if (
+    typeof value.field !== "string" ||
+    !value.field ||
+    value.field.length > 120 ||
+    /[\u0000-\u001f\u007f]/u.test(value.field) ||
+    !isScopeValue(value.value)
+  )
+    return undefined;
   return { field: value.field, value: value.value };
 }
 
-export function collectOperatingReviewScopeValues(
-  rows: Array<Record<string, DataCell>>,
-  field: string,
-) {
+export function collectOperatingReviewScopeValues(rows: Array<Record<string, DataCell>>, field: string) {
   const values: OperatingReviewScopeValue[] = [];
   const seen = new Set<string>();
   let truncated = false;
@@ -119,8 +121,7 @@ export function prepareOperatingReviewScopes(
       errors: ["Comparison must use the same exact visible scope field."],
     };
   }
-  if (operatingReviewScopeValueKey(normalizedComparison.value)
-    === operatingReviewScopeValueKey(primary.scope.value)) {
+  if (operatingReviewScopeValueKey(normalizedComparison.value) === operatingReviewScopeValueKey(primary.scope.value)) {
     return {
       scope: primary.scope,
       comparisonScope: null,
@@ -156,13 +157,11 @@ export function prepareOperatingReviewNumericColumns(
 ) {
   const prepared = prepareOperatingReviewScopes(rows, columns, candidate, comparisonCandidate);
   if (prepared.errors.length) return { columns: [], matchedRowCount: 0, errors: prepared.errors };
-  const eligibleRows = prepared.comparisonScope
-    ? [...prepared.rows, ...prepared.comparisonRows]
-    : prepared.rows;
+  const eligibleRows = prepared.comparisonScope ? [...prepared.rows, ...prepared.comparisonRows] : prepared.rows;
   return {
-    columns: columns.filter((column) => eligibleRows.every((row) => (
-      typeof row[column] === "number" && Number.isFinite(row[column])
-    ))),
+    columns: columns.filter((column) =>
+      eligibleRows.every((row) => typeof row[column] === "number" && Number.isFinite(row[column])),
+    ),
     matchedRowCount: prepared.rows.length,
     ...(prepared.comparisonScope ? { comparisonMatchedRowCount: prepared.comparisonRows.length } : {}),
     errors: [],

@@ -9,7 +9,13 @@ import {
 } from "../app/lib/source-navigation.ts";
 
 const artifacts = Object.freeze([
-  Object.freeze({ id: "report", name: "report.md", kind: "document", language: "markdown", source: "# Report\n\nRevenue is {{ metric(\"revenue\") }}." }),
+  Object.freeze({
+    id: "report",
+    name: "report.md",
+    kind: "document",
+    language: "markdown",
+    source: '# Report\n\nRevenue is {{ metric("revenue") }}.',
+  }),
   Object.freeze({ id: "data", name: "data.csv", kind: "data", language: "csv", source: "region,revenue\nNorth,12" }),
 ]);
 
@@ -21,7 +27,14 @@ test("prepares one exact preview-to-Source selection and its layout effects", ()
     artifacts,
     selectedArtifactId: "report",
     workspaceView: "preview",
-    request: { origin: "preview", artifactId: "data", sourceRevision: source, start, end: start + 5, label: "Row 1 · region" },
+    request: {
+      origin: "preview",
+      artifactId: "data",
+      sourceRevision: source,
+      start,
+      end: start + 5,
+      label: "Row 1 · region",
+    },
   });
   assert.equal(result.error, "");
   assert.deepEqual(result.plan, {
@@ -47,7 +60,13 @@ test("resolves diagnostic references exactly and falls back to the first Source 
     artifacts,
     selectedArtifactId: "report",
     workspaceView: "split",
-    request: { origin: "diagnostic", artifactId: "report", sourceRevision: source, reference: "revenue", label: "Needs attention" },
+    request: {
+      origin: "diagnostic",
+      artifactId: "report",
+      sourceRevision: source,
+      reference: "revenue",
+      label: "Needs attention",
+    },
   });
   assert.equal(exact.plan.start, source.indexOf("revenue"));
   assert.equal(exact.plan.end, source.indexOf("revenue") + "revenue".length);
@@ -58,7 +77,13 @@ test("resolves diagnostic references exactly and falls back to the first Source 
     artifacts,
     selectedArtifactId: "report",
     workspaceView: "preview",
-    request: { origin: "diagnostic", artifactId: "report", sourceRevision: source, reference: "missing", label: "Needs attention" },
+    request: {
+      origin: "diagnostic",
+      artifactId: "report",
+      sourceRevision: source,
+      reference: "missing",
+      label: "Needs attention",
+    },
   });
   assert.deepEqual({ start: fallback.plan.start, end: fallback.plan.end }, { start: 0, end: "# Report".length });
   assert.equal(fallback.plan.revealsSource, true);
@@ -79,22 +104,47 @@ test("allows an empty Source repair focus without manufacturing a selection", ()
 
 test("fails closed for missing artifacts, stale revisions, unsafe ranges, and oversized references", () => {
   const base = { artifacts, selectedArtifactId: "report", workspaceView: "split" };
-  assert.match(prepareSourceNavigation({
-    ...base,
-    request: { origin: "preview", artifactId: "missing", sourceRevision: "", start: 0, end: 1, label: "Missing" },
-  }).error, /no longer in this workspace/);
-  assert.match(prepareSourceNavigation({
-    ...base,
-    request: { origin: "preview", artifactId: "report", sourceRevision: "stale", start: 0, end: 1, label: "Stale" },
-  }).error, /current artifact revision/);
-  assert.match(prepareSourceNavigation({
-    ...base,
-    request: { origin: "preview", artifactId: "report", sourceRevision: artifacts[0].source, start: -1, end: 2, label: "Unsafe" },
-  }).error, /does not match/);
-  assert.match(prepareSourceNavigation({
-    ...base,
-    request: { origin: "diagnostic", artifactId: "report", sourceRevision: artifacts[0].source, reference: "x".repeat(MAX_SOURCE_NAVIGATION_REFERENCE_CHARS + 1), label: "Long" },
-  }).error, /limited/);
+  assert.match(
+    prepareSourceNavigation({
+      ...base,
+      request: { origin: "preview", artifactId: "missing", sourceRevision: "", start: 0, end: 1, label: "Missing" },
+    }).error,
+    /no longer in this workspace/,
+  );
+  assert.match(
+    prepareSourceNavigation({
+      ...base,
+      request: { origin: "preview", artifactId: "report", sourceRevision: "stale", start: 0, end: 1, label: "Stale" },
+    }).error,
+    /current artifact revision/,
+  );
+  assert.match(
+    prepareSourceNavigation({
+      ...base,
+      request: {
+        origin: "preview",
+        artifactId: "report",
+        sourceRevision: artifacts[0].source,
+        start: -1,
+        end: 2,
+        label: "Unsafe",
+      },
+    }).error,
+    /does not match/,
+  );
+  assert.match(
+    prepareSourceNavigation({
+      ...base,
+      request: {
+        origin: "diagnostic",
+        artifactId: "report",
+        sourceRevision: artifacts[0].source,
+        reference: "x".repeat(MAX_SOURCE_NAVIGATION_REFERENCE_CHARS + 1),
+        label: "Long",
+      },
+    }).error,
+    /limited/,
+  );
 });
 
 test("chooses the most exact rendered Preview node for Source-driven scrolling", () => {
@@ -111,7 +161,10 @@ test("chooses the most exact rendered Preview node for Source-driven scrolling",
 
 test("keeps navigation planning outside React, DOM, provider, persistence, and mutation boundaries", async () => {
   const source = await readFile(new URL("../app/lib/source-navigation.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /from ["']react|window\.|document\.|querySelector|localStorage|indexedDB|fetch\(|setArtifacts|persistDeviceWorkspace|model-provider/i);
+  assert.doesNotMatch(
+    source,
+    /from ["']react|window\.|document\.|querySelector|localStorage|indexedDB|fetch\(|setArtifacts|persistDeviceWorkspace|model-provider/i,
+  );
 });
 
 test("routes Preview clicks and diagnostic repair through one Workbench effect executor", async () => {

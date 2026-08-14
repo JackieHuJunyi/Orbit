@@ -1,17 +1,15 @@
 import fontkit from "@pdf-lib/fontkit";
-import {
-  PDFDocument,
-  StandardFonts,
-  type PDFFont,
-  type PDFImage,
-  type PDFPage,
-  rgb,
-} from "pdf-lib";
+import { PDFDocument, StandardFonts, type PDFFont, type PDFImage, type PDFPage, rgb } from "pdf-lib";
 import { compileArtifactSource } from "./bindings.ts";
 import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
-import { extractRuneAssetIds, parseRuneMarkdownImage, runeImageAssetMap, type RuneExportImageAsset } from "./local-assets.ts";
+import {
+  extractRuneAssetIds,
+  parseRuneMarkdownImage,
+  runeImageAssetMap,
+  type RuneExportImageAsset,
+} from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
@@ -65,7 +63,8 @@ function unique(values: Iterable<string>) {
 function validateFontBytes(bytes: Uint8Array) {
   if (!bytes.length) throw new Error("Rune's PDF font asset is empty.");
   if (bytes.length > MAX_PDF_FONT_BYTES) throw new Error("Rune's PDF font asset exceeds the 4 MB safety limit.");
-  if (String.fromCharCode(...bytes.slice(0, 4)) !== "wOF2") throw new Error("Rune's PDF font asset is not a valid WOFF2 file.");
+  if (String.fromCharCode(...bytes.slice(0, 4)) !== "wOF2")
+    throw new Error("Rune's PDF font asset is not a valid WOFF2 file.");
 }
 
 export async function loadRunePdfFont() {
@@ -79,7 +78,9 @@ export async function loadRunePdfFont() {
 function plainInline(source: string, warnings: Set<string>) {
   let result = source;
   result = result.replace(/\{\{\s*chart\(["']([a-z0-9_.-]+)["']\)\s*\}\}/gi, (_token, chartId: string) => {
-    warnings.add("Inline chart references use a visible marker in PDF export; put the chart on its own line to render its current-data snapshot.");
+    warnings.add(
+      "Inline chart references use a visible marker in PDF export; put the chart on its own line to render its current-data snapshot.",
+    );
     return `[Chart: ${chartId}]`;
   });
   result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, (_token, alt: string) => {
@@ -102,9 +103,15 @@ function plainInline(source: string, warnings: Set<string>) {
 }
 
 async function pdfCompatibleImage(asset: RuneExportImageAsset) {
-  if (asset.mimeType === "image/png" || asset.mimeType === "image/jpeg") return { bytes: asset.bytes, mimeType: asset.mimeType } as const;
-  if (typeof createImageBitmap !== "function") throw new Error(`PDF export cannot decode ${asset.mimeType} on this device; replace ${asset.name} with PNG or JPEG.`);
-  const bitmap = await createImageBitmap(new Blob([asset.bytes.slice().buffer as ArrayBuffer], { type: asset.mimeType }));
+  if (asset.mimeType === "image/png" || asset.mimeType === "image/jpeg")
+    return { bytes: asset.bytes, mimeType: asset.mimeType } as const;
+  if (typeof createImageBitmap !== "function")
+    throw new Error(
+      `PDF export cannot decode ${asset.mimeType} on this device; replace ${asset.name} with PNG or JPEG.`,
+    );
+  const bitmap = await createImageBitmap(
+    new Blob([asset.bytes.slice().buffer as ArrayBuffer], { type: asset.mimeType }),
+  );
   try {
     let blob: Blob;
     if (typeof OffscreenCanvas !== "undefined") {
@@ -120,9 +127,16 @@ async function pdfCompatibleImage(asset: RuneExportImageAsset) {
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Rune could not prepare the image canvas for PDF export.");
       context.drawImage(bitmap, 0, 0);
-      blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("Rune could not convert the image for PDF export.")), "image/png"));
+      blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (value) => (value ? resolve(value) : reject(new Error("Rune could not convert the image for PDF export."))),
+          "image/png",
+        ),
+      );
     } else {
-      throw new Error(`PDF export cannot decode ${asset.mimeType} on this device; replace ${asset.name} with PNG or JPEG.`);
+      throw new Error(
+        `PDF export cannot decode ${asset.mimeType} on this device; replace ${asset.name} with PNG or JPEG.`,
+      );
     }
     return { bytes: new Uint8Array(await blob.arrayBuffer()), mimeType: "image/png" as const };
   } finally {
@@ -141,7 +155,8 @@ function safeText(value: string, supported: Set<number>, warnings: Set<string>) 
       replaced = true;
     }
   }
-  if (replaced) warnings.add("Characters unavailable in Rune's embedded Unicode font were replaced with visible question marks.");
+  if (replaced)
+    warnings.add("Characters unavailable in Rune's embedded Unicode font were replaced with visible question marks.");
   return output;
 }
 
@@ -169,11 +184,13 @@ function splitLongToken(token: string, font: PDFFont, size: number, maxWidth: nu
 
 function wrapText(value: string, font: PDFFont, options: TextOptions) {
   const { size, maxWidth, maxLines = Number.POSITIVE_INFINITY } = options;
-  const tokens = value.trim().split(/(\s+)/).filter(Boolean).flatMap((token) => (
-    font.widthOfTextAtSize(token, size) > maxWidth
-      ? splitLongToken(token, font, size, maxWidth)
-      : [token]
-  ));
+  const tokens = value
+    .trim()
+    .split(/(\s+)/)
+    .filter(Boolean)
+    .flatMap((token) =>
+      font.widthOfTextAtSize(token, size) > maxWidth ? splitLongToken(token, font, size, maxWidth) : [token],
+    );
   const lines: string[] = [];
   let line = "";
   tokens.forEach((token) => {
@@ -205,25 +222,25 @@ function assertCompiledSource(
   snapshots: WorkspaceQuerySnapshot[],
 ) {
   const compiled = compileArtifactSource(artifact.source, workspace, snapshots);
-  const error = compiled.metricBindingErrors[0]
-    ?? compiled.unresolvedQueryMetrics[0]
-    ?? compiled.queryMetricRuntimeErrors[0];
+  const error =
+    compiled.metricBindingErrors[0] ?? compiled.unresolvedQueryMetrics[0] ?? compiled.queryMetricRuntimeErrors[0];
   if (error) throw new Error(error);
-  if (compiled.unresolved.length) throw new Error(`Resolve missing metric reference before PDF export: ${compiled.unresolved[0]}`);
+  if (compiled.unresolved.length)
+    throw new Error(`Resolve missing metric reference before PDF export: ${compiled.unresolved[0]}`);
   if (compiled.pendingQueryMetrics.length) throw new Error(`Run ${compiled.pendingQueryMetrics[0]} before PDF export.`);
-  if (compiled.unresolvedCharts.length) throw new Error(`Resolve missing chart reference before PDF export: ${compiled.unresolvedCharts[0]}`);
+  if (compiled.unresolvedCharts.length)
+    throw new Error(`Resolve missing chart reference before PDF export: ${compiled.unresolvedCharts[0]}`);
   return compiled.source;
 }
 
-function resolvePdfChart(
-  chartId: string,
-  workspace: WorkspaceArtifact[],
-  snapshots: WorkspaceQuerySnapshot[],
-) {
+function resolvePdfChart(chartId: string, workspace: WorkspaceArtifact[], snapshots: WorkspaceQuerySnapshot[]) {
   const chartArtifact = workspace.find((candidate) => candidate.id === chartId && candidate.kind === "chart");
   if (!chartArtifact) throw new Error(`Chart source not found: ${chartId}`);
   const resolution = resolveChartModel(chartArtifact, workspace, parseDataSource, snapshots);
-  if (!resolution.model) throw new Error(`Chart ${chartId} could not compile for PDF export: ${resolution.errors[0] ?? "unknown chart error"}`);
+  if (!resolution.model)
+    throw new Error(
+      `Chart ${chartId} could not compile for PDF export: ${resolution.errors[0] ?? "unknown chart error"}`,
+    );
   return resolution.model;
 }
 
@@ -254,13 +271,15 @@ function drawLines(
   lineHeight: number,
   color = COLORS.ink,
 ) {
-  lines.forEach((line, index) => page.drawText(line || " ", {
-    x,
-    y: y - index * lineHeight,
-    size,
-    font,
-    color,
-  }));
+  lines.forEach((line, index) =>
+    page.drawText(line || " ", {
+      x,
+      y: y - index * lineHeight,
+      size,
+      font,
+      color,
+    }),
+  );
   return y - lines.length * lineHeight;
 }
 
@@ -317,13 +336,28 @@ function drawDocumentImage(context: DocumentContext, reference: { id: string; al
   const caption = reference.alt || embedded.asset.name;
   const captionText = safeText(caption, context.supported, context.warnings);
   const captionFont = fontForText(captionText, context);
-  const captionLines = captionText ? wrapText(captionText, captionFont, { size: 7.5, maxWidth, maxLines: 2 }).lines : [];
+  const captionLines = captionText
+    ? wrapText(captionText, captionFont, { size: 7.5, maxWidth, maxLines: 2 }).lines
+    : [];
   const totalHeight = height + (captionLines.length ? captionLines.length * 10 + 10 : 8);
   documentSpace(context, totalHeight);
   context.page.drawImage(embedded.image, { x: 48 + (maxWidth - width) / 2, y: context.y - height, width, height });
   context.y -= height + 7;
-  if (captionLines.length) context.y = drawLines(context.page, captionLines, captionFont, 48 + (maxWidth - captionFont.widthOfTextAtSize(captionLines[0], 7.5)) / 2, context.y, 7.5, 10, COLORS.muted) - 7;
-  context.warnings.add("Rune local images are embedded as portable, static PDF image snapshots; the content-hash source reference remains only in canonical Markdown.");
+  if (captionLines.length)
+    context.y =
+      drawLines(
+        context.page,
+        captionLines,
+        captionFont,
+        48 + (maxWidth - captionFont.widthOfTextAtSize(captionLines[0], 7.5)) / 2,
+        context.y,
+        7.5,
+        10,
+        COLORS.muted,
+      ) - 7;
+  context.warnings.add(
+    "Rune local images are embedded as portable, static PDF image snapshots; the content-hash source reference remains only in canonical Markdown.",
+  );
 }
 
 function documentText(
@@ -339,23 +373,25 @@ function documentText(
     maxWidth: A4_WIDTH - 96 - indent,
   });
   documentSpace(context, wrapped.lines.length * options.lineHeight + (options.gap ?? 8));
-  context.y = drawLines(
-    context.page,
-    wrapped.lines,
-    textFont,
-    48 + indent,
-    context.y,
-    options.size,
-    options.lineHeight,
-    options.color,
-  ) - (options.gap ?? 8);
+  context.y =
+    drawLines(
+      context.page,
+      wrapped.lines,
+      textFont,
+      48 + indent,
+      context.y,
+      options.size,
+      options.lineHeight,
+      options.color,
+    ) - (options.gap ?? 8);
 }
 
 function drawDocumentTable(context: DocumentContext, block: Extract<MarkdownBlock, { type: "table" }>) {
   const originalColumns = Math.max(...block.rows.map((row) => row.length), 0);
   const columnCount = Math.min(originalColumns, 8);
   if (!columnCount) return;
-  if (originalColumns > columnCount) context.warnings.add("Wide Markdown tables are limited to eight visible columns in fixed PDF export.");
+  if (originalColumns > columnCount)
+    context.warnings.add("Wide Markdown tables are limited to eight visible columns in fixed PDF export.");
   const tableWidth = A4_WIDTH - 96;
   const columnWidth = tableWidth / columnCount;
   const size = columnCount > 5 ? 6.5 : 8;
@@ -381,13 +417,23 @@ function drawDocumentTable(context: DocumentContext, block: Extract<MarkdownBloc
     });
     cells.forEach((cell, columnIndex) => {
       const x = 53 + columnIndex * columnWidth;
-      drawLines(context.page, cell.lines, cell.font, x, context.y - 6, size, lineHeight, rowIndex === 0 ? COLORS.ink : COLORS.muted);
-      if (columnIndex > 0) context.page.drawLine({
-        start: { x: 48 + columnIndex * columnWidth, y: context.y + 4 },
-        end: { x: 48 + columnIndex * columnWidth, y: context.y - rowHeight + 4 },
-        thickness: 0.35,
-        color: COLORS.line,
-      });
+      drawLines(
+        context.page,
+        cell.lines,
+        cell.font,
+        x,
+        context.y - 6,
+        size,
+        lineHeight,
+        rowIndex === 0 ? COLORS.ink : COLORS.muted,
+      );
+      if (columnIndex > 0)
+        context.page.drawLine({
+          start: { x: 48 + columnIndex * columnWidth, y: context.y + 4 },
+          end: { x: 48 + columnIndex * columnWidth, y: context.y - rowHeight + 4 },
+          thickness: 0.35,
+          color: COLORS.line,
+        });
     });
     context.y -= rowHeight;
   };
@@ -415,7 +461,11 @@ function drawPdfChart(
   const titleFont = fontForText(title, context);
   const titleLines = wrapText(title, titleFont, { size: 11, maxWidth: box.width - 24, maxLines: 1 });
   drawLines(page, titleLines.lines, titleFont, box.x + 12, box.y + box.height - 20, 11, 13, theme.ink);
-  const description = safeText(model.spec.description || `${model.spec.value} by ${model.spec.category}`, context.supported, context.warnings);
+  const description = safeText(
+    model.spec.description || `${model.spec.value} by ${model.spec.category}`,
+    context.supported,
+    context.warnings,
+  );
   const descriptionFont = fontForText(description, context);
   const descriptionLines = wrapText(description, descriptionFont, { size: 6.5, maxWidth: box.width - 24, maxLines: 2 });
   drawLines(page, descriptionLines.lines, descriptionFont, box.x + 12, box.y + box.height - 36, 6.5, 8, theme.muted);
@@ -444,7 +494,14 @@ function drawPdfChart(
     });
     const labelStep = Math.max(1, Math.ceil(points.length / 8));
     points.forEach(({ point, x, y }, index) => {
-      page.drawCircle({ x, y, size: 3.5, color: theme.paper, borderColor: hexColor(model.spec.color), borderWidth: 1.7 });
+      page.drawCircle({
+        x,
+        y,
+        size: 3.5,
+        color: theme.paper,
+        borderColor: hexColor(model.spec.color),
+        borderWidth: 1.7,
+      });
       if (index % labelStep !== 0 && index !== points.length - 1) return;
       const label = safeText(point.datum.label, context.supported, context.warnings);
       const value = safeText(point.datum.formatted, context.supported, context.warnings);
@@ -455,7 +512,13 @@ function drawPdfChart(
       const valueLine = wrapText(value, valueFont, { size: 5.5, maxWidth: columnWidth, maxLines: 1 }).lines[0];
       const labelX = Math.max(box.x + 4, Math.min(box.x + box.width - columnWidth - 4, x - columnWidth / 2));
       page.drawText(labelLine, { x: labelX, y: box.y + 13, size: 5.5, font: labelFont, color: theme.muted });
-      page.drawText(valueLine, { x: labelX, y: Math.min(plotTop + 6, y + 7), size: 5.5, font: valueFont, color: theme.ink });
+      page.drawText(valueLine, {
+        x: labelX,
+        y: Math.min(plotTop + 6, y + 7),
+        size: 5.5,
+        font: valueFont,
+        color: theme.ink,
+      });
     });
     return;
   }
@@ -475,7 +538,13 @@ function drawPdfChart(
     const valueLine = wrapText(value, valueFont, { size: 6.7, maxWidth: valueWidth - 4, maxLines: 1 }).lines[0];
     page.drawText(labelLine, { x: box.x + 12, y: y - 5, size: 6.7, font: labelFont, color: theme.muted });
     page.drawRectangle({ x: trackX, y: y - 4, width: trackWidth, height: 5, color: theme.line });
-    page.drawRectangle({ x: trackX, y: y - 4, width: Math.max(1.5, trackWidth * datum.ratio), height: 5, color: hexColor(model.spec.color) });
+    page.drawRectangle({
+      x: trackX,
+      y: y - 4,
+      width: Math.max(1.5, trackWidth * datum.ratio),
+      height: 5,
+      color: hexColor(model.spec.color),
+    });
     page.drawText(valueLine, { x: trackX + trackWidth + 8, y: y - 5, size: 6.7, font: valueFont, color: theme.ink });
   });
 }
@@ -509,7 +578,11 @@ async function renderDocumentPdf(
   const source = assertCompiledSource(artifact, workspace, snapshots);
   const { document, font, unicodeFont, supported } = await createPdf(artifact.name, fontBytes);
   const verifiedImages = runeImageAssetMap(imageAssets);
-  const referencedImageIds = parseMarkdownBlocks(source).flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id)) : []);
+  const referencedImageIds = parseMarkdownBlocks(source).flatMap((block) =>
+    block.type === "paragraph"
+      ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
+      : [],
+  );
   const inlineImage = extractRuneAssetIds(source).find((id) => !referencedImageIds.includes(id));
   if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before PDF export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
@@ -517,11 +590,25 @@ async function renderDocumentPdf(
   const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
   for (const [id, asset] of verifiedImages) {
     const compatible = await pdfCompatibleImage(asset);
-    const image = compatible.mimeType === "image/png" ? await document.embedPng(compatible.bytes) : await document.embedJpg(compatible.bytes);
+    const image =
+      compatible.mimeType === "image/png"
+        ? await document.embedPng(compatible.bytes)
+        : await document.embedJpg(compatible.bytes);
     images.set(id, { asset, image });
   }
   const pages: PDFPage[] = [];
-  const first = addDocumentPage({ document, font, unicodeFont, supported, warnings, artifactName: artifact.name, workspace, snapshots, pages, images });
+  const first = addDocumentPage({
+    document,
+    font,
+    unicodeFont,
+    supported,
+    warnings,
+    artifactName: artifact.name,
+    workspace,
+    snapshots,
+    pages,
+    images,
+  });
   const context: DocumentContext = {
     document,
     font,
@@ -587,17 +674,28 @@ async function renderDocumentPdf(
     if (block.type === "code") {
       const codeText = safeText(block.source || " ", supported, warnings);
       const codeFont = fontForText(codeText, context);
-      const lines = codeText.split("\n").flatMap((line) => wrapText(line || " ", codeFont, {
-        size: 7.2,
-        maxWidth: A4_WIDTH - 120,
-      }).lines);
+      const lines = codeText.split("\n").flatMap(
+        (line) =>
+          wrapText(line || " ", codeFont, {
+            size: 7.2,
+            maxWidth: A4_WIDTH - 120,
+          }).lines,
+      );
       let offset = 0;
       while (offset < lines.length) {
         const capacity = Math.max(1, Math.floor((context.y - 72) / 11));
         const visible = lines.slice(offset, offset + capacity);
         const height = visible.length * 11 + 16;
         documentSpace(context, height + 8);
-        context.page.drawRectangle({ x: 48, y: context.y - height + 6, width: A4_WIDTH - 96, height, color: COLORS.paper, borderColor: COLORS.line, borderWidth: 0.5 });
+        context.page.drawRectangle({
+          x: 48,
+          y: context.y - height + 6,
+          width: A4_WIDTH - 96,
+          height,
+          color: COLORS.paper,
+          borderColor: COLORS.line,
+          borderWidth: 0.5,
+        });
         context.y = drawLines(context.page, visible, codeFont, 58, context.y - 5, 7.2, 11, COLORS.ink) - 10;
         offset += visible.length;
       }
@@ -609,16 +707,19 @@ async function renderDocumentPdf(
     const label = `${index + 1} / ${pages.length}`;
     page.drawLine({ start: { x: 48, y: 42 }, end: { x: A4_WIDTH - 48, y: 42 }, thickness: 0.5, color: COLORS.line });
     page.drawText("Generated locally by Rune", { x: 48, y: 27, size: 6.5, font, color: COLORS.muted });
-    page.drawText(label, { x: A4_WIDTH - 48 - font.widthOfTextAtSize(label, 6.5), y: 27, size: 6.5, font, color: COLORS.muted });
+    page.drawText(label, {
+      x: A4_WIDTH - 48 - font.widthOfTextAtSize(label, 6.5),
+      y: 27,
+      size: 6.5,
+      font,
+      color: COLORS.muted,
+    });
   });
   const bytes = await document.save({ addDefaultPage: false, updateFieldAppearances: false });
   return { bytes, warnings: unique(warnings) };
 }
 
-async function renderDataPdf(
-  artifact: WorkspaceArtifact,
-  fontBytes: Uint8Array,
-) {
+async function renderDataPdf(artifact: WorkspaceArtifact, fontBytes: Uint8Array) {
   const parsed = parseDataSource(artifact.source);
   if (parsed.errors.length) throw new Error(parsed.errors[0]);
   if (!parsed.columns.length) throw new Error("Add at least one Data column before PDF export.");
@@ -659,7 +760,15 @@ async function renderDataPdf(
     const headerY = height - top - headerHeight;
     parsed.columns.forEach((column, columnIndex) => {
       const x = left + columnIndex * columnWidth;
-      page.drawRectangle({ x, y: headerY, width: columnWidth, height: headerHeight, color: COLORS.paper, borderColor: COLORS.line, borderWidth: 0.5 });
+      page.drawRectangle({
+        x,
+        y: headerY,
+        width: columnWidth,
+        height: headerHeight,
+        color: COLORS.paper,
+        borderColor: COLORS.line,
+        borderWidth: 0.5,
+      });
       const text = safeText(column, supported, warnings);
       const textFont = fontForText(text, { font, unicodeFont });
       const wrapped = wrapText(text, textFont, { size: 7.5, maxWidth: columnWidth - 10, maxLines: 2 });
@@ -695,8 +804,20 @@ async function renderDataPdf(
   });
   pages.forEach((page, index) => {
     const label = `${index + 1} / ${pages.length}`;
-    page.drawText(`${parsed.rows.length} rows · ${parsed.columns.length} columns`, { x: left, y: 19, size: 6.5, font, color: COLORS.muted });
-    page.drawText(label, { x: width - right - font.widthOfTextAtSize(label, 6.5), y: 19, size: 6.5, font, color: COLORS.muted });
+    page.drawText(`${parsed.rows.length} rows · ${parsed.columns.length} columns`, {
+      x: left,
+      y: 19,
+      size: 6.5,
+      font,
+      color: COLORS.muted,
+    });
+    page.drawText(label, {
+      x: width - right - font.widthOfTextAtSize(label, 6.5),
+      y: 19,
+      size: 6.5,
+      font,
+      color: COLORS.muted,
+    });
   });
   const bytes = await document.save({ addDefaultPage: false, updateFieldAppearances: false });
   return { bytes, warnings: unique(warnings) };
@@ -719,7 +840,15 @@ function drawDeckWrapped(
   page: PDFPage,
   source: string,
   context: DeckContext,
-  options: { x: number; y: number; width: number; size: number; lineHeight: number; maxLines: number; color?: ReturnType<typeof rgb> },
+  options: {
+    x: number;
+    y: number;
+    width: number;
+    size: number;
+    lineHeight: number;
+    maxLines: number;
+    color?: ReturnType<typeof rgb>;
+  },
 ) {
   const text = deckPlain(source, context);
   const textFont = fontForText(text, context);
@@ -728,7 +857,8 @@ function drawDeckWrapped(
     maxWidth: options.width,
     maxLines: options.maxLines,
   });
-  if (wrapped.truncated) context.warnings.add("Slide text that exceeded the fixed 16:9 frame was visibly shortened with an ellipsis.");
+  if (wrapped.truncated)
+    context.warnings.add("Slide text that exceeded the fixed 16:9 frame was visibly shortened with an ellipsis.");
   return drawLines(
     page,
     wrapped.lines,
@@ -749,9 +879,11 @@ function drawDeckTable(
 ) {
   const columnCount = Math.min(Math.max(...rows.map((row) => row.length), 0), 6);
   if (!columnCount || !rows.length) return;
-  if (rows.some((row) => row.length > columnCount)) context.warnings.add("Wide slide tables are limited to six visible columns in fixed PDF export.");
+  if (rows.some((row) => row.length > columnCount))
+    context.warnings.add("Wide slide tables are limited to six visible columns in fixed PDF export.");
   const visibleRows = rows.slice(0, 8);
-  if (rows.length > visibleRows.length) context.warnings.add("Long slide tables are limited to eight visible rows in fixed PDF export.");
+  if (rows.length > visibleRows.length)
+    context.warnings.add("Long slide tables are limited to eight visible rows in fixed PDF export.");
   const cellWidth = box.width / columnCount;
   const rowHeight = Math.min(34, box.height / visibleRows.length);
   visibleRows.forEach((row, rowIndex) => {
@@ -769,14 +901,25 @@ function drawDeckTable(
       const text = deckPlain(cell, context);
       const textFont = fontForText(text, context);
       const wrapped = wrapText(text, textFont, { size: 8.5, maxWidth: cellWidth - 14, maxLines: 2 });
-      if (wrapped.truncated) context.warnings.add("Long slide table cells were visibly shortened to fit the fixed frame.");
-      drawLines(page, wrapped.lines, textFont, box.x + columnIndex * cellWidth + 7, y + rowHeight - 13, 8.5, 10, rowIndex === 0 ? context.theme.ink : context.theme.muted);
-      if (columnIndex > 0) page.drawLine({
-        start: { x: box.x + columnIndex * cellWidth, y },
-        end: { x: box.x + columnIndex * cellWidth, y: y + rowHeight },
-        thickness: 0.4,
-        color: context.theme.line,
-      });
+      if (wrapped.truncated)
+        context.warnings.add("Long slide table cells were visibly shortened to fit the fixed frame.");
+      drawLines(
+        page,
+        wrapped.lines,
+        textFont,
+        box.x + columnIndex * cellWidth + 7,
+        y + rowHeight - 13,
+        8.5,
+        10,
+        rowIndex === 0 ? context.theme.ink : context.theme.muted,
+      );
+      if (columnIndex > 0)
+        page.drawLine({
+          start: { x: box.x + columnIndex * cellWidth, y },
+          end: { x: box.x + columnIndex * cellWidth, y: y + rowHeight },
+          thickness: 0.4,
+          color: context.theme.line,
+        });
     });
   });
 }
@@ -786,7 +929,8 @@ function drawMetricCards(page: PDFPage, table: Extract<MarkdownBlock, { type: "t
   const values = table.rows[1] ?? [];
   const count = Math.min(headers.length, values.length, 4);
   if (!count) return;
-  if (headers.length > count || values.length > count) context.warnings.add("Metric slides show at most four metric cards in fixed PDF export.");
+  if (headers.length > count || values.length > count)
+    context.warnings.add("Metric slides show at most four metric cards in fixed PDF export.");
   const gap = 16;
   const x = 66;
   const width = (DECK_WIDTH - 132 - gap * (count - 1)) / count;
@@ -839,9 +983,15 @@ function drawDeckBody(
   let y = box.y + box.height;
   const bottom = box.y;
   for (const block of blocks) {
-    if (block.type === "heading" || (block.type === "paragraph" && (CHART_TOKEN.test(block.source) || parseRuneMarkdownImage(block.source)))) continue;
+    if (
+      block.type === "heading" ||
+      (block.type === "paragraph" && (CHART_TOKEN.test(block.source) || parseRuneMarkdownImage(block.source)))
+    )
+      continue;
     if (y < bottom + 20) {
-      context.warnings.add("Slide content that exceeded the fixed 16:9 frame was omitted after a visible layout boundary.");
+      context.warnings.add(
+        "Slide content that exceeded the fixed 16:9 frame was omitted after a visible layout boundary.",
+      );
       break;
     }
     if (block.type === "table") {
@@ -853,15 +1003,16 @@ function drawDeckBody(
     const prefix = block.type === "list" ? (block.ordered ? "1. " : "• ") : block.type === "quote" ? "| " : "";
     const source = block.type === "code" ? block.source.replace(/\n/g, "  /  ") : `${prefix}${block.source}`;
     const size = block.type === "code" ? 10 : block.type === "list" ? 13 : 14;
-    y = drawDeckWrapped(page, source, context, {
-      x: box.x + (block.type === "list" ? 8 : 0),
-      y,
-      width: box.width - (block.type === "list" ? 8 : 0),
-      size,
-      lineHeight: size * 1.42,
-      maxLines: block.type === "paragraph" ? 4 : 3,
-      color: context.theme.muted,
-    }) - 10;
+    y =
+      drawDeckWrapped(page, source, context, {
+        x: box.x + (block.type === "list" ? 8 : 0),
+        y,
+        width: box.width - (block.type === "list" ? 8 : 0),
+        size,
+        lineHeight: size * 1.42,
+        maxLines: block.type === "paragraph" ? 4 : 3,
+        color: context.theme.muted,
+      }) - 10;
   }
 }
 
@@ -882,7 +1033,9 @@ function drawDeckImage(
     width,
     height,
   });
-  context.warnings.add("Rune local images are embedded as portable, static PDF media; content-hash references remain only in canonical Deck Markdown.");
+  context.warnings.add(
+    "Rune local images are embedded as portable, static PDF media; content-hash references remain only in canonical Deck Markdown.",
+  );
 }
 
 function drawDeckSlide(
@@ -897,13 +1050,20 @@ function drawDeckSlide(
   page.drawRectangle({ x: 0, y: 0, width: DECK_WIDTH, height: DECK_HEIGHT, color: context.theme.paper });
   page.drawRectangle({ x: 0, y: DECK_HEIGHT - 8, width: DECK_WIDTH, height: 8, color: COLORS.accent });
   const blocks = parseMarkdownBlocks(slide.source);
-  const heading = blocks.find((block): block is Extract<MarkdownBlock, { type: "heading" }> => block.type === "heading");
+  const heading = blocks.find(
+    (block): block is Extract<MarkdownBlock, { type: "heading" }> => block.type === "heading",
+  );
   const body = heading ? blocks.filter((block) => block !== heading) : blocks;
-  const imageReference = body.flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)].filter((value): value is { id: string; alt: string } => Boolean(value)) : [])[0];
+  const imageReference = body.flatMap((block) =>
+    block.type === "paragraph"
+      ? [parseRuneMarkdownImage(block.source)].filter((value): value is { id: string; alt: string } => Boolean(value))
+      : [],
+  )[0];
   const chartIds = chartIdsFromBlocks(blocks);
   const chartModels = chartIds.map((id) => resolvePdfChart(id, workspace, snapshots));
   const eyebrow = safeText(slide.eyebrow.toLocaleUpperCase("en-US"), context.supported, context.warnings);
-  if (eyebrow) page.drawText(eyebrow, { x: 66, y: 474, size: 10, font: fontForText(eyebrow, context), color: COLORS.accent });
+  if (eyebrow)
+    page.drawText(eyebrow, { x: 66, y: 474, size: 10, font: fontForText(eyebrow, context), color: COLORS.accent });
   const number = `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
   page.drawText(number, {
     x: DECK_WIDTH - 66 - context.font.widthOfTextAtSize(number, 8),
@@ -913,31 +1073,38 @@ function drawDeckSlide(
     color: context.theme.muted,
   });
   if (slide.layout === "cover" || slide.layout === "conclusion") {
-    if (heading) drawDeckWrapped(page, heading.source, context, {
-      x: 66,
-      y: 352,
-      width: imageReference ? 500 : 820,
-      size: 50,
-      lineHeight: 56,
-      maxLines: 3,
-    });
+    if (heading)
+      drawDeckWrapped(page, heading.source, context, {
+        x: 66,
+        y: 352,
+        width: imageReference ? 500 : 820,
+        size: 50,
+        lineHeight: 56,
+        maxLines: 3,
+      });
     drawDeckBody(page, body, context, { x: 68, y: 90, width: imageReference ? 440 : 650, height: 145 });
     if (imageReference) drawDeckImage(page, imageReference, context, { x: 605, y: 92, width: 289, height: 345 });
     page.drawRectangle({ x: 66, y: 256, width: 64, height: 5, color: COLORS.accent });
     return;
   }
-  if (heading) drawDeckWrapped(page, heading.source, context, {
-    x: 66,
-    y: 418,
-    width: slide.layout === "split" || imageReference ? 420 : 828,
-    size: slide.layout === "split" ? 31 : 34,
-    lineHeight: slide.layout === "split" ? 36 : 40,
-    maxLines: 3,
-  });
+  if (heading)
+    drawDeckWrapped(page, heading.source, context, {
+      x: 66,
+      y: 418,
+      width: slide.layout === "split" || imageReference ? 420 : 828,
+      size: slide.layout === "split" ? 31 : 34,
+      lineHeight: slide.layout === "split" ? 36 : 40,
+      maxLines: 3,
+    });
   if (slide.layout === "metrics") {
     const table = body.find((block): block is Extract<MarkdownBlock, { type: "table" }> => block.type === "table");
     if (table) drawMetricCards(page, table, context);
-    drawDeckBody(page, body.filter((block) => block !== table), context, { x: 66, y: 286, width: 828, height: 66 });
+    drawDeckBody(
+      page,
+      body.filter((block) => block !== table),
+      context,
+      { x: 66, y: 286, width: 828, height: 66 },
+    );
     return;
   }
   if (slide.layout === "split") {
@@ -945,15 +1112,24 @@ function drawDeckSlide(
     if (imageReference) drawDeckImage(page, imageReference, context, { x: 500, y: 94, width: 394, height: 312 });
     else if (chartModels[0]) {
       drawPdfChart(page, chartModels[0], context, { x: 500, y: 94, width: 394, height: 312 }, context.theme);
-      context.warnings.add("Charts are frozen as vector snapshots of the exact current workspace data used for this PDF.");
+      context.warnings.add(
+        "Charts are frozen as vector snapshots of the exact current workspace data used for this PDF.",
+      );
     }
     return;
   }
-  drawDeckBody(page, body, context, { x: 66, y: 76, width: chartModels.length || imageReference ? 390 : 828, height: 266 });
+  drawDeckBody(page, body, context, {
+    x: 66,
+    y: 76,
+    width: chartModels.length || imageReference ? 390 : 828,
+    height: 266,
+  });
   if (imageReference) drawDeckImage(page, imageReference, context, { x: 500, y: 78, width: 394, height: 264 });
   else if (chartModels[0]) {
     drawPdfChart(page, chartModels[0], context, { x: 500, y: 78, width: 394, height: 264 }, context.theme);
-    context.warnings.add("Charts are frozen as vector snapshots of the exact current workspace data used for this PDF.");
+    context.warnings.add(
+      "Charts are frozen as vector snapshots of the exact current workspace data used for this PDF.",
+    );
   }
 }
 
@@ -981,7 +1157,10 @@ async function renderDeckPdf(
   const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
   for (const [id, asset] of verifiedImages) {
     const compatible = await pdfCompatibleImage(asset);
-    const image = compatible.mimeType === "image/png" ? await document.embedPng(compatible.bytes) : await document.embedJpg(compatible.bytes);
+    const image =
+      compatible.mimeType === "image/png"
+        ? await document.embedPng(compatible.bytes)
+        : await document.embedJpg(compatible.bytes);
     images.set(id, { asset, image });
   }
   const dark = parsed.deck.frontmatter.theme === "rune-dark";
@@ -998,9 +1177,11 @@ async function renderDeckPdf(
 }
 
 export function isPdfExportArtifact(artifact: WorkspaceArtifact) {
-  return artifact.kind === "document"
-    || artifact.kind === "data"
-    || (artifact.kind === "slides" && artifact.language === "Deck Markdown");
+  return (
+    artifact.kind === "document" ||
+    artifact.kind === "data" ||
+    (artifact.kind === "slides" && artifact.language === "Deck Markdown")
+  );
 }
 
 export async function exportPdfArtifact(
@@ -1010,16 +1191,22 @@ export async function exportPdfArtifact(
   providedFontBytes?: Uint8Array,
   imageAssets: readonly RuneExportImageAsset[] = [],
 ): Promise<PdfExportResult> {
-  if (!isPdfExportArtifact(artifact)) throw new Error("Direct PDF export supports Markdown Documents, Data, and Deck Markdown artifacts.");
+  if (!isPdfExportArtifact(artifact))
+    throw new Error("Direct PDF export supports Markdown Documents, Data, and Deck Markdown artifacts.");
   const sourceLimit = artifact.kind === "data" ? 2_000_000 : 200_000;
-  if (artifact.source.length > sourceLimit) throw new Error(`PDF export is limited to ${sourceLimit.toLocaleString("en-US")} source characters for this artifact.`);
-  const fontBytes = providedFontBytes ?? await loadRunePdfFont();
-  const rendered = artifact.kind === "document"
-    ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets)
-    : artifact.kind === "data"
-      ? await renderDataPdf(artifact, fontBytes)
-      : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets);
-  if (rendered.bytes.length > MAX_PDF_EXPORT_BYTES) throw new Error("The generated PDF exceeds Rune's 12 MB export limit.");
+  if (artifact.source.length > sourceLimit)
+    throw new Error(
+      `PDF export is limited to ${sourceLimit.toLocaleString("en-US")} source characters for this artifact.`,
+    );
+  const fontBytes = providedFontBytes ?? (await loadRunePdfFont());
+  const rendered =
+    artifact.kind === "document"
+      ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets)
+      : artifact.kind === "data"
+        ? await renderDataPdf(artifact, fontBytes)
+        : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets);
+  if (rendered.bytes.length > MAX_PDF_EXPORT_BYTES)
+    throw new Error("The generated PDF exceeds Rune's 12 MB export limit.");
   return {
     bytes: rendered.bytes,
     fileName: `${safeExportBaseName(artifact.name)}.pdf`,

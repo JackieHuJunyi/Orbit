@@ -12,7 +12,10 @@ function boundedFractionDigits(value: number) {
 function formatAbsolute(value: number, maximumFractionDigits: number) {
   const digits = boundedFractionDigits(maximumFractionDigits);
   if (value >= 1e21) {
-    return value.toExponential(digits).replace(/\.0+(?=e)/, "").replace(/(\.\d*?)0+(?=e)/, "$1");
+    return value
+      .toExponential(digits)
+      .replace(/\.0+(?=e)/, "")
+      .replace(/(\.\d*?)0+(?=e)/, "$1");
   }
   const [integer = "0", fraction = ""] = value.toFixed(digits).split(".");
   const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",");

@@ -8,10 +8,7 @@ import {
   buildDocumentBriefingModelInstructions,
   validateDocumentBriefingModelOutline,
 } from "../../../lib/document-briefing-contract.ts";
-import {
-  prepareDocumentBriefingEvidence,
-  type DocumentBriefingInput,
-} from "../../../lib/document-briefing.ts";
+import { prepareDocumentBriefingEvidence, type DocumentBriefingInput } from "../../../lib/document-briefing.ts";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -34,10 +31,7 @@ export async function POST(request: Request) {
 
   const connection = await resolveActiveModelConnection(request);
   if (!connection) {
-    return Response.json(
-      { error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" },
-      { status: 503 },
-    );
+    return Response.json({ error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" }, { status: 503 });
   }
 
   const model = connection.model || DEFAULT_OPENAI_MODEL;
@@ -63,10 +57,13 @@ export async function POST(request: Request) {
     });
     const validated = validateDocumentBriefingModelOutline(response.output, evidence.evidenceUnits);
     if (!validated.outline || validated.errors.length) {
-      return Response.json({
-        error: validated.errors[0] ?? "The model returned an invalid presentation outline.",
-        code: "MODEL_OUTLINE_INVALID",
-      }, { status: 502 });
+      return Response.json(
+        {
+          error: validated.errors[0] ?? "The model returned an invalid presentation outline.",
+          code: "MODEL_OUTLINE_INVALID",
+        },
+        { status: 502 },
+      );
     }
     return Response.json({
       provider: connection.provider,
@@ -76,10 +73,13 @@ export async function POST(request: Request) {
       outline: validated.outline,
     });
   } catch {
-    return Response.json({
-      error: "The model provider could not shape this presentation. Rune kept the source unchanged.",
-      code: "MODEL_OUTLINE_UNAVAILABLE",
-    }, { status: 502 });
+    return Response.json(
+      {
+        error: "The model provider could not shape this presentation. Rune kept the source unchanged.",
+        code: "MODEL_OUTLINE_UNAVAILABLE",
+      },
+      { status: 502 },
+    );
   } finally {
     clearTimeout(providerTimeout);
   }

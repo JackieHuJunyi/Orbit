@@ -82,8 +82,14 @@ test("preserves an older custom Query without injecting an incompatible default 
   };
   const restored = normalizeWorkspaceArtifacts([data, customQuery]);
   assert.equal(restored.find((item) => item.id === query.id)?.source, customQuery.source);
-  assert.equal(restored.some((item) => item.id === "regional-margin-chart"), false);
-  assert.equal(restored.some((item) => item.source.includes('{{ chart("regional-margin-chart") }}')), false);
+  assert.equal(
+    restored.some((item) => item.id === "regional-margin-chart"),
+    false,
+  );
+  assert.equal(
+    restored.some((item) => item.source.includes('{{ chart("regional-margin-chart") }}')),
+    false,
+  );
   assert.deepEqual(validateWorkspaceArtifacts(restored), []);
 });
 
@@ -128,9 +134,11 @@ test("compiles document and slide metrics from the shared CSV source", () => {
 });
 
 test("recompiles every artifact when the canonical data changes", () => {
-  const changed = defaultArtifacts.map((artifact) => artifact.kind === "data"
-    ? { ...artifact, source: artifact.source.replace("APAC,1840000", "APAC,2840000") }
-    : artifact);
+  const changed = defaultArtifacts.map((artifact) =>
+    artifact.kind === "data"
+      ? { ...artifact, source: artifact.source.replace("APAC,1840000", "APAC,2840000") }
+      : artifact,
+  );
   const metrics = deriveWorkspaceMetrics(changed);
   assert.equal(metrics.total_revenue.formatted, "$5.82M");
   const document = changed.find((item) => item.kind === "document");
@@ -157,7 +165,10 @@ test("coordinates analysis, report, and slides as one valid local workspace plan
   );
   const prepared = prepareWorkspacePatch(defaultArtifacts, plan.patches);
   assert.deepEqual(prepared.errors, []);
-  assert.equal(prepared.nextArtifacts.find((artifact) => artifact.kind === "query")?.source, defaultArtifacts.find((artifact) => artifact.kind === "query")?.source);
+  assert.equal(
+    prepared.nextArtifacts.find((artifact) => artifact.kind === "query")?.source,
+    defaultArtifacts.find((artifact) => artifact.kind === "query")?.source,
+  );
   const nextSlides = prepared.nextArtifacts.find((artifact) => artifact.kind === "slides")?.source ?? "";
   assert.match(nextSlides, /layout: conclusion/);
   const compiledDeck = compileDeckSource(nextSlides);

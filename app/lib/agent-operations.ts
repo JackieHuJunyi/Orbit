@@ -10,10 +10,7 @@ import {
   type AgentSourceOperation,
   type AgentWorkspaceOperationPlan,
 } from "./agent-contract.ts";
-import {
-  prepareArtifactCreation,
-  type ArtifactCreationInput,
-} from "./artifact-creation.ts";
+import { prepareArtifactCreation, type ArtifactCreationInput } from "./artifact-creation.ts";
 import { findChartReferences, formatChartReference } from "./charts.ts";
 import { isDeckMarkdownArtifact } from "./deck.ts";
 import { buildWorkspaceDependencyGraph } from "./dependency-graph.ts";
@@ -68,10 +65,13 @@ function exactMatch(source: string, find: string) {
 }
 
 function applyExactTextOperation(source: string, edit: ExactTextOperation): SourceOperationCompilation {
-  if (edit.find === edit.replace) return { nextSource: source, errors: ["The exact replacement does not change its anchor."] };
+  if (edit.find === edit.replace)
+    return { nextSource: source, errors: ["The exact replacement does not change its anchor."] };
   const match = exactMatch(source, edit.find);
-  if (match.count === 0) return { nextSource: source, errors: ["The exact anchor does not match the current source revision."] };
-  if (match.count > 1) return { nextSource: source, errors: ["The exact anchor is ambiguous in the current source revision."] };
+  if (match.count === 0)
+    return { nextSource: source, errors: ["The exact anchor does not match the current source revision."] };
+  if (match.count > 1)
+    return { nextSource: source, errors: ["The exact anchor is ambiguous in the current source revision."] };
   return {
     nextSource: `${source.slice(0, match.index)}${edit.replace}${source.slice(match.index + edit.find.length)}`,
     errors: [],
@@ -86,9 +86,8 @@ function markdownSections(source: string): MarkdownSection[] {
     const fenceMatch = line.match(/^[\t ]{0,3}(`{3,}|~{3,})/);
     if (fence) {
       const closingFence = line.match(/^[\t ]{0,3}(`{3,}|~{3,})[\t ]*$/);
-      if (closingFence
-        && closingFence[1][0] === fence.marker
-        && closingFence[1].length >= fence.length) fence = undefined;
+      if (closingFence && closingFence[1][0] === fence.marker && closingFence[1].length >= fence.length)
+        fence = undefined;
       offset += line.length + 1;
       return;
     }
@@ -127,7 +126,8 @@ function replaceMarkdownSection(
 ): SourceOperationCompilation {
   const normalized = source.replace(/\r\n?/g, "\n");
   const resolved = oneMarkdownSection(normalized, edit.heading);
-  if (!resolved.section) return { nextSource: source, errors: [resolved.error ?? "The Markdown section could not be resolved."] };
+  if (!resolved.section)
+    return { nextSource: source, errors: [resolved.error ?? "The Markdown section could not be resolved."] };
   const before = normalized.slice(0, resolved.section.headingEnd);
   const after = normalized.slice(resolved.section.end).trimStart();
   const body = edit.body.trim();
@@ -143,7 +143,8 @@ function insertMarkdownSection(
 ): SourceOperationCompilation {
   const normalized = source.replace(/\r\n?/g, "\n");
   const resolved = oneMarkdownSection(normalized, edit.heading);
-  if (!resolved.section) return { nextSource: source, errors: [resolved.error ?? "The Markdown section could not be resolved."] };
+  if (!resolved.section)
+    return { nextSource: source, errors: [resolved.error ?? "The Markdown section could not be resolved."] };
   const inserted = edit.section.trim();
   if (!/^#{1,6}[\t ]+\S/.test(inserted)) {
     return { nextSource: source, errors: ["An inserted Markdown section must start with its own heading."] };
@@ -200,11 +201,12 @@ function serializeDataRows(
   rows: Array<Record<string, DataCell>>,
   jsonArray: boolean,
 ) {
-  let result = format === "CSV"
-    ? rows.length
-      ? Papa.unparse(rows, { columns, newline: sourceNewline(source) })
-      : Papa.unparse({ fields: columns, data: [] }, { newline: sourceNewline(source) })
-    : JSON.stringify(jsonArray ? rows : rows[0], null, 2);
+  let result =
+    format === "CSV"
+      ? rows.length
+        ? Papa.unparse(rows, { columns, newline: sourceNewline(source) })
+        : Papa.unparse({ fields: columns, data: [] }, { newline: sourceNewline(source) })
+      : JSON.stringify(jsonArray ? rows : rows[0], null, 2);
   if (source.endsWith("\n") && !result.endsWith("\n")) result += sourceNewline(source);
   return result;
 }
@@ -220,8 +222,11 @@ function upsertDataRow(
   if (!parsed.columns.includes(edit.keyColumn)) {
     return { nextSource: source, errors: [`Data key column not found: ${edit.keyColumn}`] };
   }
-  const duplicateCells = edit.cells.filter((cell, index) => edit.cells.findIndex((candidate) => candidate.column === cell.column) !== index);
-  if (duplicateCells.length) return { nextSource: source, errors: [`Data operation repeats column: ${duplicateCells[0].column}`] };
+  const duplicateCells = edit.cells.filter(
+    (cell, index) => edit.cells.findIndex((candidate) => candidate.column === cell.column) !== index,
+  );
+  if (duplicateCells.length)
+    return { nextSource: source, errors: [`Data operation repeats column: ${duplicateCells[0].column}`] };
   const unknownCell = edit.cells.find((cell) => !parsed.columns.includes(cell.column));
   if (unknownCell) return { nextSource: source, errors: [`Data column not found: ${unknownCell.column}`] };
   const keyCell = edit.cells.find((cell) => cell.column === edit.keyColumn);
@@ -239,7 +244,7 @@ function upsertDataRow(
   const rows = parsed.rows.map((row) => ({ ...row }));
   const invalidKey = validateUniqueDataKey(rows, edit.keyColumn);
   if (invalidKey) return { nextSource: source, errors: [invalidKey] };
-  const matches = rows.flatMap((row, index) => cellsEqual(row[edit.keyColumn] ?? null, edit.keyValue) ? [index] : []);
+  const matches = rows.flatMap((row, index) => (cellsEqual(row[edit.keyColumn] ?? null, edit.keyValue) ? [index] : []));
   if (matches.length > 1) {
     return { nextSource: source, errors: [`Data key is ambiguous in ${edit.keyColumn}.`] };
   }
@@ -249,12 +254,14 @@ function upsertDataRow(
 
   const row = matches.length
     ? { ...rows[matches[0]] }
-    : Object.fromEntries(parsed.columns.map((column) => [column, null])) as Record<string, DataCell>;
+    : (Object.fromEntries(parsed.columns.map((column) => [column, null])) as Record<string, DataCell>);
   if (matches.length && edit.cells.every((cell) => cellsEqual(row[cell.column] ?? null, cell.value))) {
     return { nextSource: source, errors: ["The data-row operation does not change the targeted row."] };
   }
   if (!matches.length) row[edit.keyColumn] = edit.keyValue;
-  edit.cells.forEach((cell) => { row[cell.column] = cell.value; });
+  edit.cells.forEach((cell) => {
+    row[cell.column] = cell.value;
+  });
   if (!matches.length && !cellsEqual(row[edit.keyColumn] ?? null, edit.keyValue)) {
     return { nextSource: source, errors: ["A new data row cannot override its own key value."] };
   }
@@ -296,10 +303,16 @@ function upsertDataColumn(
     return { nextSource: source, errors: [`Data key column not found: ${edit.keyColumn}`] };
   }
   if (!edit.column.trim() || edit.column !== edit.column.trim() || /[\r\n]/.test(edit.column)) {
-    return { nextSource: source, errors: ["A data column name must be non-empty, single-line, and have no outer whitespace."] };
+    return {
+      nextSource: source,
+      errors: ["A data column name must be non-empty, single-line, and have no outer whitespace."],
+    };
   }
   if (edit.column === edit.keyColumn) {
-    return { nextSource: source, errors: ["A data-column operation cannot change the key column used to identify rows."] };
+    return {
+      nextSource: source,
+      errors: ["A data-column operation cannot change the key column used to identify rows."],
+    };
   }
 
   const rows = parsed.rows.map((row) => ({ ...row }));
@@ -334,7 +347,9 @@ function upsertDataColumn(
   if (existing && updates.every(({ rowIndex, value }) => cellsEqual(rows[rowIndex][edit.column] ?? null, value))) {
     return { nextSource: source, errors: ["The data-column operation does not change any targeted value."] };
   }
-  updates.forEach(({ rowIndex, value }) => { rows[rowIndex][edit.column] = value; });
+  updates.forEach(({ rowIndex, value }) => {
+    rows[rowIndex][edit.column] = value;
+  });
   const columns = existing ? parsed.columns : [...parsed.columns, edit.column];
   return {
     nextSource: serializeDataRows(source, parsed.format, columns, rows, jsonArray),
@@ -352,10 +367,11 @@ function renameDataColumn(
   if (!parsed.columns.includes(edit.column)) {
     return { nextSource: source, errors: [`Data column not found: ${edit.column}`] };
   }
-  if (!edit.nextColumn.trim()
-    || edit.nextColumn !== edit.nextColumn.trim()
-    || /[\r\n]/.test(edit.nextColumn)) {
-    return { nextSource: source, errors: ["A renamed data column must be non-empty, single-line, and have no outer whitespace."] };
+  if (!edit.nextColumn.trim() || edit.nextColumn !== edit.nextColumn.trim() || /[\r\n]/.test(edit.nextColumn)) {
+    return {
+      nextSource: source,
+      errors: ["A renamed data column must be non-empty, single-line, and have no outer whitespace."],
+    };
   }
   if (edit.nextColumn === edit.column) {
     return { nextSource: source, errors: ["The renamed data column is unchanged."] };
@@ -363,12 +379,15 @@ function renameDataColumn(
   if (parsed.columns.includes(edit.nextColumn)) {
     return { nextSource: source, errors: [`Data column already exists: ${edit.nextColumn}`] };
   }
-  const rows = parsed.rows.map((row) => Object.fromEntries(
-    Object.entries(row).map(([column, value]) => (
-      column === edit.column ? [edit.nextColumn, value] : [column, value]
-    )),
-  ) as Record<string, DataCell>);
-  const columns = parsed.columns.map((column) => column === edit.column ? edit.nextColumn : column);
+  const rows = parsed.rows.map(
+    (row) =>
+      Object.fromEntries(
+        Object.entries(row).map(([column, value]) =>
+          column === edit.column ? [edit.nextColumn, value] : [column, value],
+        ),
+      ) as Record<string, DataCell>,
+  );
+  const columns = parsed.columns.map((column) => (column === edit.column ? edit.nextColumn : column));
   return {
     nextSource: serializeDataRows(source, parsed.format, columns, rows, jsonArray),
     errors: [],
@@ -381,8 +400,14 @@ function splitDeck(source: string): { deck?: DeckParts; error?: string } {
   if (lines[0]?.trim() !== "---") return { error: "Deck Markdown must start with frontmatter." };
   const closing = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
   if (closing < 0) return { error: "Deck frontmatter is missing its closing delimiter." };
-  const body = lines.slice(closing + 1).join("\n").trim();
-  const slides = body.split(/^\s*---\s*$/m).map((slide) => slide.trim()).filter(Boolean);
+  const body = lines
+    .slice(closing + 1)
+    .join("\n")
+    .trim();
+  const slides = body
+    .split(/^\s*---\s*$/m)
+    .map((slide) => slide.trim())
+    .filter(Boolean);
   if (!slides.length) return { error: "Deck Markdown has no slides." };
   return {
     deck: {
@@ -408,7 +433,7 @@ function validateSlideFragment(slide: string) {
 
 function deckSlideIndex(deck: DeckParts, title: string) {
   const target = title.trim();
-  const matches = deck.slides.flatMap((slide, index) => deckSlideTitle(slide) === target ? [index] : []);
+  const matches = deck.slides.flatMap((slide, index) => (deckSlideTitle(slide) === target ? [index] : []));
   if (!matches.length) return { error: `Deck slide title not found: ${target}` };
   if (matches.length > 1) return { error: `Deck slide title is ambiguous: ${target}` };
   return { index: matches[0] };
@@ -428,7 +453,8 @@ function replaceDeckSlide(
   const invalid = validateSlideFragment(edit.slide);
   if (invalid) return { nextSource: source, errors: [invalid] };
   const resolved = deckSlideIndex(parsed.deck, edit.title);
-  if (resolved.index == null) return { nextSource: source, errors: [resolved.error ?? "The Deck slide could not be resolved."] };
+  if (resolved.index == null)
+    return { nextSource: source, errors: [resolved.error ?? "The Deck slide could not be resolved."] };
   parsed.deck.slides[resolved.index] = edit.slide.trim();
   return { nextSource: serializeDeck(source, parsed.deck), errors: [] };
 }
@@ -442,7 +468,8 @@ function insertDeckSlide(
   const invalid = validateSlideFragment(edit.slide);
   if (invalid) return { nextSource: source, errors: [invalid] };
   const resolved = deckSlideIndex(parsed.deck, edit.title);
-  if (resolved.index == null) return { nextSource: source, errors: [resolved.error ?? "The Deck slide could not be resolved."] };
+  if (resolved.index == null)
+    return { nextSource: source, errors: [resolved.error ?? "The Deck slide could not be resolved."] };
   parsed.deck.slides.splice(resolved.index + 1, 0, edit.slide.trim());
   return { nextSource: serializeDeck(source, parsed.deck), errors: [] };
 }
@@ -526,10 +553,7 @@ function applyArtifactOperation(
   return appendChart(artifact, source, edit);
 }
 
-export function applyAgentSourceOperations(
-  source: string,
-  edits: ExactTextOperation[],
-): SourceOperationCompilation {
+export function applyAgentSourceOperations(source: string, edits: ExactTextOperation[]): SourceOperationCompilation {
   if (!edits.length) return { nextSource: source, errors: ["The plan does not contain any source operations."] };
   let nextSource = source;
   for (let index = 0; index < edits.length; index += 1) {
@@ -539,10 +563,14 @@ export function applyAgentSourceOperations(
     }
     nextSource = compiled.nextSource;
     if (nextSource.length > MAX_COMPILED_AGENT_SOURCE_CHARS) {
-      return { nextSource: source, errors: [`Operation ${index + 1} would exceed Rune's 120,000-character Agent output limit.`] };
+      return {
+        nextSource: source,
+        errors: [`Operation ${index + 1} would exceed Rune's 120,000-character Agent output limit.`],
+      };
     }
   }
-  if (nextSource === source) return { nextSource: source, errors: ["The ordered source operations cancel out without changing the file."] };
+  if (nextSource === source)
+    return { nextSource: source, errors: ["The ordered source operations cancel out without changing the file."] };
   return { nextSource, errors: [] };
 }
 
@@ -550,7 +578,8 @@ export function applyAgentArtifactOperations(
   artifact: WorkspaceArtifact,
   edits: AgentSourceOperation[],
 ): SourceOperationCompilation {
-  if (!edits.length) return { nextSource: artifact.source, errors: ["The plan does not contain any source operations."] };
+  if (!edits.length)
+    return { nextSource: artifact.source, errors: ["The plan does not contain any source operations."] };
   let nextSource = artifact.source;
   for (let index = 0; index < edits.length; index += 1) {
     const compiled = applyArtifactOperation(artifact, nextSource, edits[index]);
@@ -562,11 +591,17 @@ export function applyAgentArtifactOperations(
     }
     nextSource = compiled.nextSource;
     if (nextSource.length > MAX_COMPILED_AGENT_SOURCE_CHARS) {
-      return { nextSource: artifact.source, errors: [`Operation ${index + 1} would exceed Rune's 120,000-character Agent output limit.`] };
+      return {
+        nextSource: artifact.source,
+        errors: [`Operation ${index + 1} would exceed Rune's 120,000-character Agent output limit.`],
+      };
     }
   }
   if (nextSource === artifact.source) {
-    return { nextSource: artifact.source, errors: ["The ordered source operations cancel out without changing the file."] };
+    return {
+      nextSource: artifact.source,
+      errors: ["The ordered source operations cancel out without changing the file."],
+    };
   }
   return { nextSource, errors: [] };
 }
@@ -593,9 +628,7 @@ export function validateCompiledSelectionPatch(
   selection: AgentSourceSelection,
   nextSource: string,
 ): string[] {
-  if (selection.start < 0
-    || selection.start >= selection.end
-    || selection.end > artifact.source.length) {
+  if (selection.start < 0 || selection.start >= selection.end || selection.end > artifact.source.length) {
     return ["The selected source range does not match the current artifact revision."];
   }
   if (!sourceOutsideSelectionIsUnchanged(artifact.source, nextSource, selection)) {
@@ -616,9 +649,7 @@ export function compileAgentWorkspaceOperations(
   const authorizedSamePlanDependencies = new Set<string>();
   let workingArtifacts = artifacts;
 
-  const dependencyKey = (fromArtifactId: string, toArtifactId: string) => (
-    `${fromArtifactId}\u0000${toArtifactId}`
-  );
+  const dependencyKey = (fromArtifactId: string, toArtifactId: string) => `${fromArtifactId}\u0000${toArtifactId}`;
   const resolveReference = (
     reference: AgentArtifactReference | undefined,
     expectedKinds: WorkspaceArtifact["kind"][],
@@ -626,15 +657,17 @@ export function compileAgentWorkspaceOperations(
     if (!reference || (reference.kind !== "artifact" && reference.kind !== "creation")) {
       return { error: "Artifact reference is missing or malformed." };
     }
-    const artifact = reference.kind === "artifact"
-      ? artifacts.find((candidate) => candidate.id === reference.artifactId)
-      : creationHandles.get(reference.handle);
+    const artifact =
+      reference.kind === "artifact"
+        ? artifacts.find((candidate) => candidate.id === reference.artifactId)
+        : creationHandles.get(reference.handle);
     const label = reference.kind === "artifact" ? reference.artifactId : reference.handle;
     if (!artifact) {
       return {
-        error: reference.kind === "artifact"
-          ? `Artifact reference must name an exact existing visible artifact: ${label}`
-          : `Creation handle must name an earlier successful creation: ${label}`,
+        error:
+          reference.kind === "artifact"
+            ? `Artifact reference must name an exact existing visible artifact: ${label}`
+            : `Creation handle must name an earlier successful creation: ${label}`,
       };
     }
     if (!expectedKinds.includes(artifact.kind)) {
@@ -675,32 +708,34 @@ export function compileAgentWorkspaceOperations(
         errors.push(`${action.title}: creation handles must be unique: ${action.handle}`);
         return;
       }
-      const resolvedSource = action.kind === "query"
-        ? resolveReference(action.source, ["data"])
-        : action.kind === "chart"
-          ? resolveReference(action.source, ["data", "query"])
-          : undefined;
+      const resolvedSource =
+        action.kind === "query"
+          ? resolveReference(action.source, ["data"])
+          : action.kind === "chart"
+            ? resolveReference(action.source, ["data", "query"])
+            : undefined;
       if (resolvedSource && !resolvedSource.artifact) {
         errors.push(`${action.title}: ${resolvedSource.error}`);
         return;
       }
-      const input: ArtifactCreationInput = action.kind === "query"
-        ? {
-            kind: action.kind,
-            title: action.title,
-            sourceArtifactId: resolvedSource?.artifact?.id ?? "",
-          }
-        : action.kind === "chart"
+      const input: ArtifactCreationInput =
+        action.kind === "query"
           ? {
               kind: action.kind,
               title: action.title,
               sourceArtifactId: resolvedSource?.artifact?.id ?? "",
-              category: action.category,
-              value: action.value,
-              mark: action.mark,
-              format: action.format,
             }
-          : { kind: action.kind, title: action.title };
+          : action.kind === "chart"
+            ? {
+                kind: action.kind,
+                title: action.title,
+                sourceArtifactId: resolvedSource?.artifact?.id ?? "",
+                category: action.category,
+                value: action.value,
+                mark: action.mark,
+                format: action.format,
+              }
+            : { kind: action.kind, title: action.title };
       const prepared = prepareArtifactCreation(workingArtifacts, input);
       if (!prepared.artifact || prepared.errors.length) {
         prepared.errors.forEach((error) => errors.push(`${action.title}: ${error}`));
@@ -754,9 +789,11 @@ export function compileAgentWorkspaceOperations(
       return;
     }
     compiledPatches.push({ artifactId: action.artifactId, ...compiled.plan });
-    workingArtifacts = workingArtifacts.map((candidate) => candidate.id === action.artifactId
-      ? { ...candidate, source: compiled.plan?.nextSource ?? candidate.source }
-      : candidate);
+    workingArtifacts = workingArtifacts.map((candidate) =>
+      candidate.id === action.artifactId
+        ? { ...candidate, source: compiled.plan?.nextSource ?? candidate.source }
+        : candidate,
+    );
   });
 
   if (errors.length) return { errors: [...new Set(errors)] };
@@ -765,17 +802,18 @@ export function compileAgentWorkspaceOperations(
     ...compiledPatches.map((patch) => patch.artifactId),
     ...compiledCreations.map((creation) => creation.artifact.id),
   ]);
-  const samePlanDependency = buildWorkspaceDependencyGraph(workingArtifacts).edges.find((edge) => (
-    createdArtifactIds.has(edge.fromArtifactId)
-    && touchedArtifactIds.has(edge.toArtifactId)
-    && edge.fromArtifactId !== edge.toArtifactId
-    && !authorizedSamePlanDependencies.has(dependencyKey(edge.fromArtifactId, edge.toArtifactId))
-  ));
+  const samePlanDependency = buildWorkspaceDependencyGraph(workingArtifacts).edges.find(
+    (edge) =>
+      createdArtifactIds.has(edge.fromArtifactId) &&
+      touchedArtifactIds.has(edge.toArtifactId) &&
+      edge.fromArtifactId !== edge.toArtifactId &&
+      !authorizedSamePlanDependencies.has(dependencyKey(edge.fromArtifactId, edge.toArtifactId)),
+  );
   if (samePlanDependency) {
     return {
       errors: [
-        `${samePlanDependency.toArtifactId}: a source cannot reference the guessed identity of `
-          + `same-plan creation ${samePlanDependency.fromArtifactId}; use an explicit earlier creation handle.`,
+        `${samePlanDependency.toArtifactId}: a source cannot reference the guessed identity of ` +
+          `same-plan creation ${samePlanDependency.fromArtifactId}; use an explicit earlier creation handle.`,
       ],
     };
   }

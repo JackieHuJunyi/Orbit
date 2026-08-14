@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Papa from "papaparse";
-import {
-  MAX_PORTABLE_DATA_EXPORT_BYTES,
-  exportPortableDataArtifact,
-} from "../app/lib/data-export.ts";
+import { MAX_PORTABLE_DATA_EXPORT_BYTES, exportPortableDataArtifact } from "../app/lib/data-export.ts";
 
 const artifact = {
   id: "typed-data",
@@ -42,7 +39,11 @@ test("exports deterministic formula-safe CSV from flat JSON", () => {
   assert.deepEqual(first.bytes, second.bytes);
   assert.equal(first.fileName, "typed-data.csv");
   assert.equal(first.targetType, "csv");
-  const parsed = Papa.parse(new TextDecoder().decode(first.bytes), { header: true, dynamicTyping: true, skipEmptyLines: true });
+  const parsed = Papa.parse(new TextDecoder().decode(first.bytes), {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+  });
   assert.equal(parsed.data[0].Note, "'=SUM(A1:A2)");
   assert.equal(parsed.data[1].Note, null);
   assert.match(first.warnings.join(" "), /does not carry a schema/i);

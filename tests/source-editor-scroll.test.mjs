@@ -20,30 +20,39 @@ test("centers a preview-selected canonical range in the unwrapped source editor"
 });
 
 test("clamps first and last source targets and handles a non-scrollable editor", () => {
-  assert.equal(sourceSelectionScrollTop({
-    source,
-    start: 0,
-    end: 6,
-    lineHeight: 20,
-    viewportHeight: 200,
-    scrollHeight: 2_000,
-  }), 0);
-  assert.equal(sourceSelectionScrollTop({
-    source,
-    start: source.length - 7,
-    end: source.length,
-    lineHeight: 20,
-    viewportHeight: 200,
-    scrollHeight: 2_000,
-  }), 1_800);
-  assert.equal(sourceSelectionScrollTop({
-    source,
-    start: 10,
-    end: 20,
-    lineHeight: 20,
-    viewportHeight: 300,
-    scrollHeight: 300,
-  }), 0);
+  assert.equal(
+    sourceSelectionScrollTop({
+      source,
+      start: 0,
+      end: 6,
+      lineHeight: 20,
+      viewportHeight: 200,
+      scrollHeight: 2_000,
+    }),
+    0,
+  );
+  assert.equal(
+    sourceSelectionScrollTop({
+      source,
+      start: source.length - 7,
+      end: source.length,
+      lineHeight: 20,
+      viewportHeight: 200,
+      scrollHeight: 2_000,
+    }),
+    1_800,
+  );
+  assert.equal(
+    sourceSelectionScrollTop({
+      source,
+      start: 10,
+      end: 20,
+      lineHeight: 20,
+      viewportHeight: 300,
+      scrollHeight: 300,
+    }),
+    0,
+  );
 });
 
 test("workbench applies preview selection, source scrolling, and gutter synchronization together", async () => {

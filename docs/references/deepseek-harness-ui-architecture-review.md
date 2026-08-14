@@ -73,19 +73,19 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 
 ## 2. 本轮采用与不采用
 
-| Harness 方法 | Rune 决定 | 本轮落点 |
-| --- | --- | --- |
-| Everything is a Plugin | 采用原则，不引入运行时 | 保持 pure scope、model port、compiler、transaction 四层能力边界 |
-| Durable session log | 转译为 source-derived facts | comparison evidence 从 canonical Data 重算，保存任务只存 typed scopes |
-| Capability seams | 采用 | 同字段 primary/comparison scopes 由一个纯模块验证和编译 |
-| Mounted collapsible panels | 采用 | Source/Preview 零宽收放、`inert`、保留 scroll/selection/runtime |
-| Typed UI slots | 采用最小静态子集 | React-free reversible surface registry 承载 Workspace views 与 Quick Actions；不含动态 loader、session scope 或第三方代码 |
-| Human command registry | 采用静态版本 | `workbench-commands` 描述能力，Quick Actions 只消费，Workbench 执行现有 handler |
-| Theme owner + semantic aliases | 采用 | token/appearance 独占共享视觉事实，功能样式不复制 palette |
-| Data → binding → presentation 单向层 | 采用 | pure `app/lib` 端口、Workbench effect、props-only review component |
-| Pure state/effect boundary | 采用窄版本 | compiler facts 进入 React-free diagnostic contract；Workbench 只执行 Source focus effect，UI 只拥有本地化与展开状态 |
-| Dynamic profiles/bundles/patch tree | 不采用 | Rune 不是 agent harness，暂无第三方 runtime composition 需求 |
-| Chat/session-first shell | 不采用 | Rune 继续以文档、数据、分析和成品为中心 |
+| Harness 方法                         | Rune 决定                   | 本轮落点                                                                                                                  |
+| ------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Everything is a Plugin               | 采用原则，不引入运行时      | 保持 pure scope、model port、compiler、transaction 四层能力边界                                                           |
+| Durable session log                  | 转译为 source-derived facts | comparison evidence 从 canonical Data 重算，保存任务只存 typed scopes                                                     |
+| Capability seams                     | 采用                        | 同字段 primary/comparison scopes 由一个纯模块验证和编译                                                                   |
+| Mounted collapsible panels           | 采用                        | Source/Preview 零宽收放、`inert`、保留 scroll/selection/runtime                                                           |
+| Typed UI slots                       | 采用最小静态子集            | React-free reversible surface registry 承载 Workspace views 与 Quick Actions；不含动态 loader、session scope 或第三方代码 |
+| Human command registry               | 采用静态版本                | `workbench-commands` 描述能力，Quick Actions 只消费，Workbench 执行现有 handler                                           |
+| Theme owner + semantic aliases       | 采用                        | token/appearance 独占共享视觉事实，功能样式不复制 palette                                                                 |
+| Data → binding → presentation 单向层 | 采用                        | pure `app/lib` 端口、Workbench effect、props-only review component                                                        |
+| Pure state/effect boundary           | 采用窄版本                  | compiler facts 进入 React-free diagnostic contract；Workbench 只执行 Source focus effect，UI 只拥有本地化与展开状态       |
+| Dynamic profiles/bundles/patch tree  | 不采用                      | Rune 不是 agent harness，暂无第三方 runtime composition 需求                                                              |
+| Chat/session-first shell             | 不采用                      | Rune 继续以文档、数据、分析和成品为中心                                                                                   |
 
 ## 2.1 v1.04 新增落点
 
@@ -118,6 +118,15 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 - `source-navigation` 在 React 和 DOM 之外完成 artifact/revision/range proof，并声明 layout/selection/Agent effects；Workbench 才执行 focus、scroll 与 view change。
 - diagnostic repair 复用同一个 effect executor，但它的 plan 明确不激活 Selection Agent；相似的视觉动作因此共享实现而不混淆权限。
 - 这对应 Harness 对 pure machine 与 effect 的分离，同时保留 Rune 的 canonical Artifact、review-before-write 和无 iframe privilege 边界。
+
+## 2.5 v1.08 新增落点
+
+- Agent composer 从 Workbench 内联 JSX 抽成独立 props-only 组件；Workbench 继续独占 scope 状态、计划调用、评审与持久化，组件只声明草稿、作用域 chips、建议动作与发送控件的呈现和回调。
+- 卡片采用 Harness InputBar 的信息架构而不复制其视觉资产：可折叠建议区、无边框自适应 textarea、底部工具行（左侧作用域 pill chips，右侧 planner 徽章与 34px 圆形发送钮）、22px 胶囊圆角、hairline 描边、主题色 focus ring，以及 180ms 微过渡；品牌色仍来自 Rune theme token，而非上游 business blue。
+- 建议动作作为卡片内首个 disclosure，展开时在同一卡片内以换行 chips 呈现，避免第二浮层菜单；query evidence 提示随 disclosure 一起展开。
+- 发送/作用域/建议的禁用状态全部由 Workbench 传入的 busy/locked/selectionUnavailable 布尔值派生，组件自身不拥有任何任务或 workspace 状态。
+- 草稿高度由 onChange 本地测量并封顶 132px；外部清空（例如计划成功后）由 value 驱动的 effect 收缩，不引入第二高度来源。
+- 组件通过 React 19 ref-as-prop 暴露 textarea 节点，Workbench 的 ⌘Enter 提交与 focus-agent 命令行为不变。
 
 ## 3. 后续架构门槛
 

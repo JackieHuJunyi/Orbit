@@ -1,8 +1,4 @@
-import {
-  replaceSourceSelection,
-  sourceSelectionError,
-  type SourceSelection,
-} from "./source-selection.ts";
+import { replaceSourceSelection, sourceSelectionError, type SourceSelection } from "./source-selection.ts";
 import type { ArtifactKind, LocalPlan, WorkspaceArtifact } from "./workspace.ts";
 
 export const selectionQuickCommands: Record<ArtifactKind, string[]> = {
@@ -26,9 +22,7 @@ function selectedParts(source: string, selection: SourceSelection) {
 }
 
 function sentenceUnits(value: string) {
-  return (value.match(/[^.!?。！？\n]+[.!?。！？]?/gu) ?? [])
-    .map((unit) => unit.trim())
-    .filter(Boolean);
+  return (value.match(/[^.!?。！？\n]+[.!?。！？]?/gu) ?? []).map((unit) => unit.trim()).filter(Boolean);
 }
 
 function conciseSelection(value: string) {
@@ -43,7 +37,10 @@ function conciseSelection(value: string) {
     concise = `${concise[0].toUpperCase()}${concise.slice(1)}`;
   }
   if (concise.length > 180) {
-    const boundary = concise.slice(0, 177).replace(/\s+\S*$/, "").trimEnd();
+    const boundary = concise
+      .slice(0, 177)
+      .replace(/\s+\S*$/, "")
+      .trimEnd();
     concise = `${boundary || concise.slice(0, 177)}…`;
   }
   return concise;
@@ -53,9 +50,15 @@ function bulletSelection(value: string) {
   const normalized = value.replace(/[\t ]+/g, " ").trim();
   let units = sentenceUnits(normalized);
   if (units.length < 2) {
-    units = normalized.split(/[,，;；]\s*/u).map((unit) => unit.trim()).filter(Boolean);
+    units = normalized
+      .split(/[,，;；]\s*/u)
+      .map((unit) => unit.trim())
+      .filter(Boolean);
   }
-  return units.slice(0, 3).map((unit) => `- ${unit.replace(/^[-*+]\s+/, "")}`).join("\n");
+  return units
+    .slice(0, 3)
+    .map((unit) => `- ${unit.replace(/^[-*+]\s+/, "")}`)
+    .join("\n");
 }
 
 function scaleNumericSelection(value: string) {
@@ -87,7 +90,8 @@ export function planLocalSelectionChange(
   if (/乘以\s*1\.1|multiply(?:\s+it)?\s+by\s+1\.1/i.test(instruction)) {
     replacement = `${parts.leading}${scaleNumericSelection(parts.core)}${parts.trailing}`;
     summary = "Scale the selected numeric source by 1.1";
-    detail = "Only the exact unquoted CSV or JSON number changes; the complete artifact and its dependencies are revalidated before Apply.";
+    detail =
+      "Only the exact unquoted CSV or JSON number changes; the complete artifact and its dependencies are revalidated before Apply.";
   } else if (/大写|uppercase/i.test(instruction)) {
     replacement = artifact.source.slice(selection.start, selection.end).toLocaleUpperCase();
     summary = "Uppercase the selected source";
@@ -105,12 +109,16 @@ export function planLocalSelectionChange(
     summary = "Condense the selected source";
     detail = "Only the exact selected source range is reduced to one concise statement.";
   } else {
-    throw new Error("Try condensing the selection, turning it into points, multiplying one number by 1.1, uppercasing it, or trimming its edges.");
+    throw new Error(
+      "Try condensing the selection, turning it into points, multiplying one number by 1.1, uppercasing it, or trimming its edges.",
+    );
   }
 
   const nextSource = replaceSourceSelection(artifact.source, selection, replacement);
   if (nextSource === artifact.source) {
-    throw new Error("The deterministic selection plan would not change this source. Select a different range or choose another action.");
+    throw new Error(
+      "The deterministic selection plan would not change this source. Select a different range or choose another action.",
+    );
   }
   return { nextSource, summary, detail };
 }

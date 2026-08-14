@@ -20,9 +20,7 @@ const QUERY_DATA_DIRECTIVE_PREFIX = "-- rune:data";
 const MAX_QUERY_DATA_ARTIFACT_ID_CHARS = 120;
 
 function validArtifactId(value: string) {
-  return value.length > 0
-    && value.length <= MAX_QUERY_DATA_ARTIFACT_ID_CHARS
-    && !/[\u0000-\u001f\u007f]/u.test(value);
+  return value.length > 0 && value.length <= MAX_QUERY_DATA_ARTIFACT_ID_CHARS && !/[\u0000-\u001f\u007f]/u.test(value);
 }
 
 export function formatQueryDataSourceDirective(artifactId: string) {
@@ -32,9 +30,7 @@ export function formatQueryDataSourceDirective(artifactId: string) {
 
 export function parseQueryDataSourceDirective(source: string): QueryDataSourceDirective {
   const lines = source.split(/\r?\n/u);
-  const directiveLines = lines.flatMap((line, index) => (
-    /^\s*--\s*rune:data\b/iu.test(line) ? [{ line, index }] : []
-  ));
+  const directiveLines = lines.flatMap((line, index) => (/^\s*--\s*rune:data\b/iu.test(line) ? [{ line, index }] : []));
   if (!directiveLines.length) return { explicit: false, errors: [] };
   if (directiveLines.length > 1) {
     return { explicit: true, errors: ["A Query can declare only one -- rune:data source."] };

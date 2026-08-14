@@ -40,14 +40,15 @@ test("maps one explicit cross-platform shortcut family to presentation views", (
     { id: "source", shortcutCode: "Digit2", shortcutNumber: 2 },
     { id: "preview", shortcutCode: "Digit3", shortcutNumber: 3 },
   ]);
-  const shortcut = (code, overrides = {}) => workspaceViewFromKeyboardShortcut({
-    altKey: true,
-    code,
-    ctrlKey: true,
-    metaKey: false,
-    shiftKey: false,
-    ...overrides,
-  });
+  const shortcut = (code, overrides = {}) =>
+    workspaceViewFromKeyboardShortcut({
+      altKey: true,
+      code,
+      ctrlKey: true,
+      metaKey: false,
+      shiftKey: false,
+      ...overrides,
+    });
   assert.equal(shortcut("Digit1"), "split");
   assert.equal(shortcut("Digit2", { ctrlKey: false, metaKey: true }), "source");
   assert.equal(shortcut("Digit3"), "preview");
@@ -60,9 +61,18 @@ test("maps one explicit cross-platform shortcut family to presentation views", (
 test("maps pointer geometry to a bounded logical split in LTR and RTL", () => {
   assert.equal(workspaceSplitPercentFromDrag(520, { basePercent: 44, originX: 480, width: 800, rtl: false }), 49);
   assert.equal(workspaceSplitPercentFromDrag(520, { basePercent: 44, originX: 480, width: 800, rtl: true }), 39);
-  assert.equal(workspaceSplitPercentFromDrag(-100, { basePercent: 44, originX: 480, width: 800, rtl: false }), MIN_WORKSPACE_SOURCE_PERCENT);
-  assert.equal(workspaceSplitPercentFromDrag(1200, { basePercent: 44, originX: 480, width: 800, rtl: false }), MAX_WORKSPACE_SOURCE_PERCENT);
-  assert.equal(workspaceSplitPercentFromDrag(480, { basePercent: 44, originX: 480, width: 0, rtl: false }), DEFAULT_WORKSPACE_SOURCE_PERCENT);
+  assert.equal(
+    workspaceSplitPercentFromDrag(-100, { basePercent: 44, originX: 480, width: 800, rtl: false }),
+    MIN_WORKSPACE_SOURCE_PERCENT,
+  );
+  assert.equal(
+    workspaceSplitPercentFromDrag(1200, { basePercent: 44, originX: 480, width: 800, rtl: false }),
+    MAX_WORKSPACE_SOURCE_PERCENT,
+  );
+  assert.equal(
+    workspaceSplitPercentFromDrag(480, { basePercent: 44, originX: 480, width: 0, rtl: false }),
+    DEFAULT_WORKSPACE_SOURCE_PERCENT,
+  );
 });
 
 test("rejects corrupt persisted split values and emits complementary grid tracks", () => {

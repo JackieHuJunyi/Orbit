@@ -2,11 +2,14 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("runeDesktop", Object.freeze({
-  convertLegacyOffice(input) {
-    return ipcRenderer.invoke("rune:convert-legacy-office", input);
-  },
-  exportLegacyOffice(input) {
-    return ipcRenderer.invoke("rune:export-legacy-office", input);
-  },
-}));
+contextBridge.exposeInMainWorld(
+  "runeDesktop",
+  Object.freeze({
+    convertLegacyOffice(input) {
+      return ipcRenderer.invoke("rune:convert-legacy-office", input);
+    },
+    exportLegacyOffice(input) {
+      return ipcRenderer.invoke("rune:export-legacy-office", input);
+    },
+  }),
+);

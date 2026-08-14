@@ -24,10 +24,13 @@ export function sourceSelectionScrollTop({
   viewportHeight,
   scrollHeight,
 }: SourceEditorScrollInput) {
-  if (![lineHeight, viewportHeight, scrollHeight].every(Number.isFinite)
-    || lineHeight <= 0
-    || viewportHeight <= 0
-    || scrollHeight <= viewportHeight) return 0;
+  if (
+    ![lineHeight, viewportHeight, scrollHeight].every(Number.isFinite) ||
+    lineHeight <= 0 ||
+    viewportHeight <= 0 ||
+    scrollHeight <= viewportHeight
+  )
+    return 0;
   const firstLine = lineIndexAt(source, Math.min(start, end));
   const lastLine = lineIndexAt(source, Math.max(start, end));
   const selectionCenter = ((firstLine + lastLine + 1) / 2) * lineHeight;

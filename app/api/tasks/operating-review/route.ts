@@ -41,10 +41,7 @@ export async function POST(request: Request) {
 
   const connection = await resolveActiveModelConnection(request);
   if (!connection) {
-    return Response.json(
-      { error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" },
-      { status: 503 },
-    );
+    return Response.json({ error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" }, { status: 503 });
   }
 
   const model = connection.model || DEFAULT_OPENAI_MODEL;
@@ -76,10 +73,13 @@ export async function POST(request: Request) {
     });
     const validated = validateOperatingReviewNarrative(response.output, evidence.evidenceRows);
     if (!validated.narrative || validated.errors.length) {
-      return Response.json({
-        error: validated.errors[0] ?? "The model returned an invalid operating-review narrative.",
-        code: "MODEL_NARRATIVE_INVALID",
-      }, { status: 502 });
+      return Response.json(
+        {
+          error: validated.errors[0] ?? "The model returned an invalid operating-review narrative.",
+          code: "MODEL_NARRATIVE_INVALID",
+        },
+        { status: 502 },
+      );
     }
     return Response.json({
       provider: connection.provider,
@@ -89,10 +89,13 @@ export async function POST(request: Request) {
       narrative: validated.narrative,
     });
   } catch {
-    return Response.json({
-      error: "The model provider could not shape this review. Rune kept the source unchanged.",
-      code: "MODEL_NARRATIVE_UNAVAILABLE",
-    }, { status: 502 });
+    return Response.json(
+      {
+        error: "The model provider could not shape this review. Rune kept the source unchanged.",
+        code: "MODEL_NARRATIVE_UNAVAILABLE",
+      },
+      { status: 502 },
+    );
   } finally {
     clearTimeout(providerTimeout);
   }

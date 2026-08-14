@@ -13,10 +13,7 @@ import {
 
 import { runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
 import type { WorkspaceDependencyKind } from "../lib/dependency-graph";
-import type {
-  WorkspaceTransactionNode,
-  WorkspaceTransactionReview,
-} from "../lib/transaction-review";
+import type { WorkspaceTransactionNode, WorkspaceTransactionReview } from "../lib/transaction-review";
 import type { ArtifactKind } from "../lib/workspace";
 
 function ArtifactIcon({ kind, size = 11 }: { kind: ArtifactKind; size?: number }) {
@@ -56,9 +53,7 @@ function TransactionNode({
         <ArtifactIcon kind={node.kind} size={compact ? 10 : 11} />
       </span>
       <span className="transaction-node-name">{node.name}</span>
-      {!compact && (
-        <em className={`transaction-node-status ${node.status}`}>{statusLabel}</em>
-      )}
+      {!compact && <em className={`transaction-node-status ${node.status}`}>{statusLabel}</em>}
     </>
   );
   const className = `transaction-node ${node.status} ${active ? "active" : ""} ${compact ? "compact" : ""}`.trim();
@@ -104,7 +99,9 @@ export function TransactionReviewMap({
           <strong>{copy.transaction.title}</strong>
           <small>{copy.transaction.summary(review.changeCount, review.nodes.length, bindingChanges)}</small>
         </span>
-        <span className="transaction-edge-count" aria-label={copy.transaction.dependencyEdges(review.edges.length)}>{review.edges.length}</span>
+        <span className="transaction-edge-count" aria-label={copy.transaction.dependencyEdges(review.edges.length)}>
+          {review.edges.length}
+        </span>
       </summary>
       <div className="transaction-review-content">
         <div className="transaction-node-list" role="list" aria-label={copy.transaction.sources}>
@@ -124,30 +121,48 @@ export function TransactionReviewMap({
             const source = nodeById.get(edge.fromArtifactId);
             const consumer = nodeById.get(edge.toArtifactId);
             if (!source || !consumer) return null;
-            const relation = edge.status === "updated" && edge.previousLabel
-              ? `${edge.previousLabel} → ${edge.label}`
-              : edge.label;
+            const relation =
+              edge.status === "updated" && edge.previousLabel ? `${edge.previousLabel} → ${edge.label}` : edge.label;
             return (
               <div
                 className={`transaction-edge ${edge.status}`}
                 role="listitem"
                 key={`${edge.fromArtifactId}-${edge.toArtifactId}-${edge.kind}`}
               >
-                <TransactionNode node={source} compact active={activeArtifactId === source.artifactId} copy={copy} onSelect={onSelect} />
+                <TransactionNode
+                  node={source}
+                  compact
+                  active={activeArtifactId === source.artifactId}
+                  copy={copy}
+                  onSelect={onSelect}
+                />
                 <span className={`transaction-edge-relation ${edge.kind}`} title={edge.references.join(", ")}>
                   <DependencyKindIcon kind={edge.kind} />
-                  <span>{edge.status === "added" ? "+" : edge.status === "removed" ? "−" : edge.status === "updated" ? "~" : ""} {relation}</span>
+                  <span>
+                    {edge.status === "added"
+                      ? "+"
+                      : edge.status === "removed"
+                        ? "−"
+                        : edge.status === "updated"
+                          ? "~"
+                          : ""}{" "}
+                    {relation}
+                  </span>
                   <ChevronRight aria-hidden="true" />
                 </span>
-                <TransactionNode node={consumer} compact active={activeArtifactId === consumer.artifactId} copy={copy} onSelect={onSelect} />
+                <TransactionNode
+                  node={consumer}
+                  compact
+                  active={activeArtifactId === consumer.artifactId}
+                  copy={copy}
+                  onSelect={onSelect}
+                />
               </div>
             );
           })}
           {!review.edges.length && <p>{copy.transaction.noBindings}</p>}
         </div>
-        <p className="transaction-review-note">
-          {copy.transaction.note}
-        </p>
+        <p className="transaction-review-note">{copy.transaction.note}</p>
       </div>
     </details>
   );

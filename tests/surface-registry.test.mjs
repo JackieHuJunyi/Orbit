@@ -14,7 +14,10 @@ test("orders list contributions without mutating their input values", () => {
   registry.register({ id: "tied", surface: "toolbar", order: 20, value: tied });
 
   const entries = registry.entries("toolbar");
-  assert.deepEqual(entries.map((entry) => entry.id), ["first", "second", "tied"]);
+  assert.deepEqual(
+    entries.map((entry) => entry.id),
+    ["first", "second", "tied"],
+  );
   assert.equal(entries[0].value, first);
   assert.equal(entries[1].value, second);
   assert.equal(Object.isFrozen(entries), true);
@@ -27,7 +30,10 @@ test("disposes exactly the contribution that was registered", () => {
   registry.register({ id: "second", surface: "toolbar", value: 2 });
   disposeFirst();
   disposeFirst();
-  assert.deepEqual(registry.entries("toolbar").map((entry) => entry.value), [2]);
+  assert.deepEqual(
+    registry.entries("toolbar").map((entry) => entry.value),
+    [2],
+  );
 });
 
 test("fails loud on undeclared, duplicate, malformed, and overfilled surfaces", () => {
@@ -36,18 +42,9 @@ test("fails loud on undeclared, duplicate, malformed, and overfilled surfaces", 
     { id: "root", kind: "single" },
   ]);
   registry.register({ id: "files", surface: "toolbar", value: "files" });
-  assert.throws(
-    () => registry.register({ id: "files", surface: "toolbar", value: "duplicate" }),
-    /already registered/,
-  );
-  assert.throws(
-    () => registry.register({ id: "Bad id", surface: "toolbar", value: "bad" }),
-    /lowercase kebab-case/,
-  );
-  assert.throws(
-    () => registry.register({ id: "unknown", surface: "missing", value: "bad" }),
-    /not declared/,
-  );
+  assert.throws(() => registry.register({ id: "files", surface: "toolbar", value: "duplicate" }), /already registered/);
+  assert.throws(() => registry.register({ id: "Bad id", surface: "toolbar", value: "bad" }), /lowercase kebab-case/);
+  assert.throws(() => registry.register({ id: "unknown", surface: "missing", value: "bad" }), /not declared/);
   registry.register({ id: "shell", surface: "root", value: "shell" });
   assert.throws(
     () => registry.register({ id: "second-shell", surface: "root", value: "bad" }),
@@ -57,10 +54,11 @@ test("fails loud on undeclared, duplicate, malformed, and overfilled surfaces", 
 
 test("rejects duplicate surface definitions and non-finite order", () => {
   assert.throws(
-    () => createRuneSurfaceRegistry([
-      { id: "toolbar", kind: "list" },
-      { id: "toolbar", kind: "single" },
-    ]),
+    () =>
+      createRuneSurfaceRegistry([
+        { id: "toolbar", kind: "list" },
+        { id: "toolbar", kind: "single" },
+      ]),
     /declared more than once/,
   );
   const registry = createRuneSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
@@ -72,5 +70,8 @@ test("rejects duplicate surface definitions and non-finite order", () => {
 
 test("keeps the registry outside React, browser, persistence, and network boundaries", async () => {
   const source = await readFile(new URL("../app/lib/surface-registry.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /from ["']react|window\.|document\.|localStorage|indexedDB|fetch\(|setArtifacts|persist/i);
+  assert.doesNotMatch(
+    source,
+    /from ["']react|window\.|document\.|localStorage|indexedDB|fetch\(|setArtifacts|persist/i,
+  );
 });

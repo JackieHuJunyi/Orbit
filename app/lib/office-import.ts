@@ -5,11 +5,7 @@ import {
   type Node as XmlNode,
 } from "@xmldom/xmldom";
 import { strFromU8, unzipSync, type Unzipped } from "fflate";
-import {
-  createImportedImageToken,
-  finalizeImportedImages,
-  type ImportedImageCandidate,
-} from "./imported-images.ts";
+import { createImportedImageToken, finalizeImportedImages, type ImportedImageCandidate } from "./imported-images.ts";
 import {
   MAX_RUNE_IMAGE_BYTES,
   MAX_RUNE_LOCAL_IMAGE_BYTES,
@@ -105,9 +101,11 @@ function openPackage(input: ArrayBuffer | Uint8Array, importImages = false): Pac
         if (!relevant) return false;
         if (imagePart) {
           imageEntries += 1;
-          if (imageEntries > MAX_RUNE_LOCAL_IMAGES
-            || file.originalSize > MAX_RUNE_IMAGE_BYTES
-            || expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES) {
+          if (
+            imageEntries > MAX_RUNE_LOCAL_IMAGES ||
+            file.originalSize > MAX_RUNE_IMAGE_BYTES ||
+            expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES
+          ) {
             imageLimitWarning = true;
             return false;
           }
@@ -116,7 +114,8 @@ function openPackage(input: ArrayBuffer | Uint8Array, importImages = false): Pac
         }
         if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
         expandedXmlBytes += file.originalSize;
-        if (expandedXmlBytes > MAX_XML_TOTAL_BYTES) throw new Error("The Office package expands beyond Rune's 24 MB XML limit.");
+        if (expandedXmlBytes > MAX_XML_TOTAL_BYTES)
+          throw new Error("The Office package expands beyond Rune's 24 MB XML limit.");
         return true;
       },
     });
@@ -126,11 +125,14 @@ function openPackage(input: ArrayBuffer | Uint8Array, importImages = false): Pac
       if (data.length > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
       return total + data.length;
     }, 0);
-    if (actualXmlBytes > MAX_XML_TOTAL_BYTES) throw new Error("The Office package expands beyond Rune's 24 MB XML limit.");
+    if (actualXmlBytes > MAX_XML_TOTAL_BYTES)
+      throw new Error("The Office package expands beyond Rune's 24 MB XML limit.");
     return {
       files,
       warnings: imageLimitWarning
-        ? [`Embedded Office images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`]
+        ? [
+            `Embedded Office images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
+          ]
         : [],
       importImages,
       imageCandidates: [],
@@ -284,7 +286,9 @@ function officeImageToken(
     return "";
   }
   if (relation.targetMode === "External") {
-    context.warnings.push("An externally linked Office image was not fetched; Rune imports only embedded local images.");
+    context.warnings.push(
+      "An externally linked Office image was not fetched; Rune imports only embedded local images.",
+    );
     return "";
   }
   const partPath = resolvePartPath(sourcePart, relation.target);
@@ -294,7 +298,9 @@ function officeImageToken(
   }
   const bytes = context.files[partPath];
   if (!bytes) {
-    context.warnings.push(`Embedded Office image “${partPath.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`);
+    context.warnings.push(
+      `Embedded Office image “${partPath.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`,
+    );
     return "";
   }
   const token = createImportedImageToken(context.imageRequests - 1);
@@ -313,11 +319,13 @@ function baseName(name: string) {
 }
 
 function safeFileSegment(value: string) {
-  return value
-    .normalize("NFKC")
-    .replace(/[^\p{L}\p{N}._-]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 72) || "artifact";
+  return (
+    value
+      .normalize("NFKC")
+      .replace(/[^\p{L}\p{N}._-]+/gu, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 72) || "artifact"
+  );
 }
 
 function stableImportId(fileName: string, suffix = "") {
@@ -326,9 +334,7 @@ function stableImportId(fileName: string, suffix = "") {
 }
 
 function escapeMarkdown(value: string) {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/([`*_[\]{}#>+!~<>])/g, "\\$1");
+  return value.replace(/\\/g, "\\\\").replace(/([`*_[\]{}#>+!~<>])/g, "\\$1");
 }
 
 function oneLine(value: string) {
@@ -338,7 +344,8 @@ function oneLine(value: string) {
 function boundedSource(source: string, label: string) {
   const normalized = `${source.trim()}\n`;
   if (!normalized.trim()) throw new Error(`${label} did not contain importable text.`);
-  if (normalized.length > MAX_OUTPUT_CHARS) throw new Error(`${label} converts to more than 200,000 source characters.`);
+  if (normalized.length > MAX_OUTPUT_CHARS)
+    throw new Error(`${label} converts to more than 200,000 source characters.`);
   return normalized;
 }
 
@@ -387,15 +394,13 @@ function wordRunText(run: XmlElement) {
   return decorateRun(value, run);
 }
 
-function wordRunContent(
-  run: XmlElement,
-  imageToken?: (relationId: string, alt: string) => string,
-) {
+function wordRunContent(run: XmlElement, imageToken?: (relationId: string, alt: string) => string) {
   const text = wordRunText(run);
   if (!imageToken) return text;
-  const alt = attribute(firstDescendant(run, "docPr"), "descr")
-    || attribute(firstDescendant(run, "docPr"), "title")
-    || attribute(firstDescendant(run, "docPr"), "name");
+  const alt =
+    attribute(firstDescendant(run, "docPr"), "descr") ||
+    attribute(firstDescendant(run, "docPr"), "title") ||
+    attribute(firstDescendant(run, "docPr"), "name");
   const relationIds = [
     ...descendantElements(run, "blip").map((element) => attribute(element, "embed") || attribute(element, "link")),
     ...descendantElements(run, "imagedata").map((element) => relationshipId(element)),
@@ -445,7 +450,13 @@ function wordStyleHeadings(context: PackageContext) {
     const outlineValue = attribute(firstDescendant(style, "outlineLvl"), "val");
     const outline = outlineValue === "" ? Number.NaN : Number(outlineValue);
     const headingMatch = `${id} ${name}`.match(/heading\s*([1-6])/i);
-    const heading = headingMatch ? Number(headingMatch[1]) : Number.isInteger(outline) && outline >= 0 && outline <= 5 ? outline + 1 : /^(?:title|subtitle)$/i.test(name) ? 1 : undefined;
+    const heading = headingMatch
+      ? Number(headingMatch[1])
+      : Number.isInteger(outline) && outline >= 0 && outline <= 5
+        ? outline + 1
+        : /^(?:title|subtitle)$/i.test(name)
+          ? 1
+          : undefined;
     result.set(id, { heading, quote: /quote/i.test(name) });
   });
   return result;
@@ -499,7 +510,9 @@ function wordParagraph(
 function markdownTable(rows: string[][]) {
   const width = Math.max(0, ...rows.map((row) => row.length));
   if (!width) return "";
-  const normalized = rows.map((row) => Array.from({ length: width }, (_, index) => oneLine(row[index] ?? "").replaceAll("|", "\\|")));
+  const normalized = rows.map((row) =>
+    Array.from({ length: width }, (_, index) => oneLine(row[index] ?? "").replaceAll("|", "\\|")),
+  );
   const header = normalized[0];
   const body = normalized.slice(1);
   return [
@@ -516,12 +529,14 @@ function wordTable(
   numbering: Map<string, string>,
   imageToken?: (relationId: string, alt: string) => string,
 ) {
-  const rows = childElements(table, "tr").map((row) => childElements(row, "tc").map((cell) => (
-    descendantElements(cell, "p")
-      .map((paragraph) => wordParagraph(paragraph, rels, styles, numbering, imageToken))
-      .filter(Boolean)
-      .join(" / ")
-  )));
+  const rows = childElements(table, "tr").map((row) =>
+    childElements(row, "tc").map((cell) =>
+      descendantElements(cell, "p")
+        .map((paragraph) => wordParagraph(paragraph, rels, styles, numbering, imageToken))
+        .filter(Boolean)
+        .join(" / "),
+    ),
+  );
   return markdownTable(rows);
 }
 
@@ -552,26 +567,35 @@ function convertDocx(fileName: string, context: PackageContext): OfficeImportRes
   });
   const imageCount = descendantElements(document, "drawing").length + descendantElements(document, "pict").length;
   if (imageCount && !context.importImages) {
-    context.warnings.push(`${imageCount} embedded image${imageCount === 1 ? " was" : "s were"} omitted from the semantic DOCX import.`);
+    context.warnings.push(
+      `${imageCount} embedded image${imageCount === 1 ? " was" : "s were"} omitted from the semantic DOCX import.`,
+    );
   } else if (imageCount && context.imageRequests - requestStart < imageCount) {
     const unmapped = imageCount - (context.imageRequests - requestStart);
-    context.warnings.push(`${unmapped} embedded DOCX visual${unmapped === 1 ? " had" : "s had"} no supported image reference and ${unmapped === 1 ? "was" : "were"} omitted.`);
+    context.warnings.push(
+      `${unmapped} embedded DOCX visual${unmapped === 1 ? " had" : "s had"} no supported image reference and ${unmapped === 1 ? "was" : "were"} omitted.`,
+    );
   }
   if (context.importImages && context.imageCandidates.length - candidateStart > 0) {
-    context.warnings.push("DOCX image positions were preserved in canonical Markdown; page wrapping and exact geometry remain semantic approximations.");
+    context.warnings.push(
+      "DOCX image positions were preserved in canonical Markdown; page wrapping and exact geometry remain semantic approximations.",
+    );
   }
-  if (context.files["word/comments.xml"]) context.warnings.push("DOCX comments were not imported into canonical Markdown.");
+  if (context.files["word/comments.xml"])
+    context.warnings.push("DOCX comments were not imported into canonical Markdown.");
   const source = boundedSource(blocks.join("\n\n"), "DOCX");
   return {
     sourceType: "docx",
     warnings: context.warnings,
-    artifacts: [{
-      id: artifactId,
-      name: `${safeFileSegment(baseName(fileName))}.md`,
-      kind: "document",
-      language: "Markdown",
-      source,
-    }],
+    artifacts: [
+      {
+        id: artifactId,
+        name: `${safeFileSegment(baseName(fileName))}.md`,
+        kind: "document",
+        language: "Markdown",
+        source,
+      },
+    ],
   };
 }
 
@@ -586,9 +610,7 @@ function excelColumnIndex(reference: string) {
 function sharedStrings(context: PackageContext) {
   const document = xmlPart(context, "xl/sharedStrings.xml", false);
   if (!document) return [];
-  return descendantElements(document, "si").map((item) => (
-    descendantElements(item, "t").map(elementText).join("")
-  ));
+  return descendantElements(document, "si").map((item) => descendantElements(item, "t").map(elementText).join(""));
 }
 
 function dateStyleIndexes(context: PackageContext) {
@@ -652,14 +674,16 @@ function worksheetRows(
   descendantElements(document, "row").forEach((row, rowOffset) => {
     const declaredRow = Number(attribute(row, "r"));
     const rowIndex = Number.isInteger(declaredRow) && declaredRow > 0 ? declaredRow - 1 : rowOffset;
-    if (rowIndex >= MAX_WORKBOOK_ROWS) throw new Error("An XLSX worksheet exceeds the 10,000-row semantic import limit.");
+    if (rowIndex >= MAX_WORKBOOK_ROWS)
+      throw new Error("An XLSX worksheet exceeds the 10,000-row semantic import limit.");
     const values = new Map<number, DataCell>();
     let inferredColumn = 0;
     childElements(row, "c").forEach((cell) => {
       const referenceColumn = excelColumnIndex(attribute(cell, "r"));
       const column = referenceColumn >= 0 ? referenceColumn : inferredColumn;
       inferredColumn = column + 1;
-      if (column >= MAX_WORKBOOK_COLUMNS) throw new Error("An XLSX worksheet exceeds the 256-column semantic import limit.");
+      if (column >= MAX_WORKBOOK_COLUMNS)
+        throw new Error("An XLSX worksheet exceeds the 256-column semantic import limit.");
       cellBudget.count += 1;
       if (cellBudget.count > MAX_WORKBOOK_CELLS) throw new Error("The XLSX contains more than 50,000 imported cells.");
       values.set(column, excelCellValue(cell, strings, dateStyles, uses1904Epoch, formulaBudget));
@@ -669,9 +693,9 @@ function worksheetRows(
   });
   if (!sparseRows.size || maximumColumn < 0) return [];
   const maximumRow = Math.max(...sparseRows.keys());
-  return Array.from({ length: maximumRow + 1 }, (_, rowIndex) => (
-    Array.from({ length: maximumColumn + 1 }, (_, columnIndex) => sparseRows.get(rowIndex)?.get(columnIndex) ?? null)
-  ));
+  return Array.from({ length: maximumRow + 1 }, (_, rowIndex) =>
+    Array.from({ length: maximumColumn + 1 }, (_, columnIndex) => sparseRows.get(rowIndex)?.get(columnIndex) ?? null),
+  );
 }
 
 function csvCell(value: DataCell, injectionBudget: { count: number }) {
@@ -697,8 +721,12 @@ function convertXlsx(fileName: string, context: PackageContext): OfficeImportRes
   const uses1904Epoch = /^(?:1|true)$/i.test(attribute(workbookProperties, "date1904"));
   const allSheets = descendantElements(workbook, "sheet");
   const visibleSheets = allSheets.filter((sheet) => !/^(?:hidden|veryHidden)$/i.test(attribute(sheet, "state")));
-  if (visibleSheets.length < allSheets.length) context.warnings.push(`${allSheets.length - visibleSheets.length} hidden worksheet${allSheets.length - visibleSheets.length === 1 ? " was" : "s were"} not imported.`);
-  if (visibleSheets.length > MAX_WORKBOOK_SHEETS) context.warnings.push(`Only the first ${MAX_WORKBOOK_SHEETS} visible worksheets were imported.`);
+  if (visibleSheets.length < allSheets.length)
+    context.warnings.push(
+      `${allSheets.length - visibleSheets.length} hidden worksheet${allSheets.length - visibleSheets.length === 1 ? " was" : "s were"} not imported.`,
+    );
+  if (visibleSheets.length > MAX_WORKBOOK_SHEETS)
+    context.warnings.push(`Only the first ${MAX_WORKBOOK_SHEETS} visible worksheets were imported.`);
   const selectedSheets = visibleSheets.slice(0, MAX_WORKBOOK_SHEETS);
   const artifacts: WorkspaceArtifact[] = [];
   const usedNames = new Set<string>();
@@ -736,8 +764,14 @@ function convertXlsx(fileName: string, context: PackageContext): OfficeImportRes
   if (artifacts.reduce((total, artifact) => total + artifact.source.length, 0) > MAX_TOTAL_OUTPUT_CHARS) {
     throw new Error("The XLSX converts to more than 500,000 total source characters.");
   }
-  if (formulaBudget.count) context.warnings.push(`${formulaBudget.count} formula cell${formulaBudget.count === 1 ? " was" : "s were"} imported using the cached workbook value.`);
-  if (injectionBudget.count) context.warnings.push(`${injectionBudget.count} formula-leading text cell${injectionBudget.count === 1 ? " was" : "s were"} prefixed with an apostrophe for CSV safety.`);
+  if (formulaBudget.count)
+    context.warnings.push(
+      `${formulaBudget.count} formula cell${formulaBudget.count === 1 ? " was" : "s were"} imported using the cached workbook value.`,
+    );
+  if (injectionBudget.count)
+    context.warnings.push(
+      `${injectionBudget.count} formula-leading text cell${injectionBudget.count === 1 ? " was" : "s were"} prefixed with an apostrophe for CSV safety.`,
+    );
   return { sourceType: "xlsx", artifacts, warnings: context.warnings };
 }
 
@@ -747,13 +781,17 @@ type SlideShape = { title: boolean; paragraphs: SlideParagraph[] };
 function pptParagraphs(shape: XmlElement): SlideParagraph[] {
   const textBody = firstDescendant(shape, "txBody");
   if (!textBody) return [];
-  return descendantElements(textBody, "p").map((paragraph) => {
-    const text = oneLine(descendantElements(paragraph, "t").map(elementText).join(""));
-    const properties = firstChild(paragraph, "pPr");
-    const bullet = Boolean(properties && (firstDescendant(properties, "buChar") || firstDescendant(properties, "buAutoNum")));
-    const level = Math.max(0, Math.min(6, Number(attribute(properties, "lvl")) || 0));
-    return { text, bullet, level };
-  }).filter((paragraph) => paragraph.text);
+  return descendantElements(textBody, "p")
+    .map((paragraph) => {
+      const text = oneLine(descendantElements(paragraph, "t").map(elementText).join(""));
+      const properties = firstChild(paragraph, "pPr");
+      const bullet = Boolean(
+        properties && (firstDescendant(properties, "buChar") || firstDescendant(properties, "buAutoNum")),
+      );
+      const level = Math.max(0, Math.min(6, Number(attribute(properties, "lvl")) || 0));
+      return { text, bullet, level };
+    })
+    .filter((paragraph) => paragraph.text);
 }
 
 function pptShape(shape: XmlElement): SlideShape | null {
@@ -765,9 +803,9 @@ function pptShape(shape: XmlElement): SlideShape | null {
 }
 
 function pptTable(table: XmlElement) {
-  const rows = childElements(table, "tr").map((row) => childElements(row, "tc").map((cell) => (
-    oneLine(descendantElements(cell, "t").map(elementText).join(""))
-  )));
+  const rows = childElements(table, "tr").map((row) =>
+    childElements(row, "tc").map((cell) => oneLine(descendantElements(cell, "t").map(elementText).join(""))),
+  );
   return markdownTable(rows.map((row) => row.map(escapeMarkdown)));
 }
 
@@ -807,34 +845,32 @@ function presentationTitle(context: PackageContext, fileName: string) {
   return (title || baseName(fileName)).slice(0, 120);
 }
 
-function pptImageTokens(
-  context: PackageContext,
-  artifactId: string,
-  sourcePart: string,
-  slide: XmlDocument,
-) {
+function pptImageTokens(context: PackageContext, artifactId: string, sourcePart: string, slide: XmlDocument) {
   if (!context.importImages) return [];
   const rels = relationships(context, relationshipPartPath(sourcePart));
-  return descendantElements(slide, "pic").map((picture) => {
-    const properties = firstDescendant(picture, "cNvPr");
-    const alt = attribute(properties, "descr") || attribute(properties, "title") || attribute(properties, "name");
-    const blip = firstDescendant(picture, "blip");
-    return officeImageToken(
-      context,
-      artifactId,
-      sourcePart,
-      rels,
-      attribute(blip, "embed") || attribute(blip, "link"),
-      alt,
-    );
-  }).filter(Boolean);
+  return descendantElements(slide, "pic")
+    .map((picture) => {
+      const properties = firstDescendant(picture, "cNvPr");
+      const alt = attribute(properties, "descr") || attribute(properties, "title") || attribute(properties, "name");
+      const blip = firstDescendant(picture, "blip");
+      return officeImageToken(
+        context,
+        artifactId,
+        sourcePart,
+        rels,
+        attribute(blip, "embed") || attribute(blip, "link"),
+        alt,
+      );
+    })
+    .filter(Boolean);
 }
 
 function convertPptx(fileName: string, context: PackageContext): OfficeImportResult {
   const presentation = xmlPart(context, "ppt/presentation.xml");
   const rels = relationships(context, "ppt/_rels/presentation.xml.rels");
   const slideIds = descendantElements(presentation, "sldId");
-  if (slideIds.length > MAX_PRESENTATION_SLIDES) context.warnings.push(`Only the first ${MAX_PRESENTATION_SLIDES} slides were imported.`);
+  if (slideIds.length > MAX_PRESENTATION_SLIDES)
+    context.warnings.push(`Only the first ${MAX_PRESENTATION_SLIDES} slides were imported.`);
   const selectedSlides = slideIds.slice(0, MAX_PRESENTATION_SLIDES);
   const slideSources: string[] = [];
   const artifactId = stableImportId(fileName);
@@ -849,7 +885,10 @@ function convertPptx(fileName: string, context: PackageContext): OfficeImportRes
     if (!context.importImages) omittedImages += pictureCount;
     omittedCharts += descendantElements(slide, "chart").length;
     const content = slideContent(slide);
-    const explicitTitle = content.shapes.find((shape) => shape.title)?.paragraphs.map((paragraph) => paragraph.text).join(" ");
+    const explicitTitle = content.shapes
+      .find((shape) => shape.title)
+      ?.paragraphs.map((paragraph) => paragraph.text)
+      .join(" ");
     const firstShape = content.shapes[0];
     const title = explicitTitle || firstShape?.paragraphs[0]?.text || `Slide ${index + 1}`;
     let consumedFallbackTitle = !explicitTitle && Boolean(firstShape?.paragraphs[0]?.text);
@@ -864,22 +903,23 @@ function convertPptx(fileName: string, context: PackageContext): OfficeImportRes
         }
         const text = escapeDeckText(paragraph.text);
         if (!text) return;
-        body.push(paragraph.bullet || inheritedBullet
-          ? `${"  ".repeat(paragraph.level)}- ${text}`
-          : text);
+        body.push(paragraph.bullet || inheritedBullet ? `${"  ".repeat(paragraph.level)}- ${text}` : text);
       });
     });
     body.push(...content.tables);
     const imageTokens = pptImageTokens(context, artifactId, partPath, slide);
-    const firstImageToken = content.tables.length ? "" : imageTokens.shift() ?? "";
+    const firstImageToken = content.tables.length ? "" : (imageTokens.shift() ?? "");
     if (firstImageToken) body.push(firstImageToken);
-    const layout = firstImageToken ? "split" : index === 0 && body.length <= 1 && !content.tables.length ? "cover" : "content";
-    slideSources.push([
-      `<!-- layout: ${layout} -->`,
-      "",
-      `# ${escapeDeckText(title)}`,
-      ...(body.length ? ["", ...body] : []),
-    ].join("\n"));
+    const layout = firstImageToken
+      ? "split"
+      : index === 0 && body.length <= 1 && !content.tables.length
+        ? "cover"
+        : "content";
+    slideSources.push(
+      [`<!-- layout: ${layout} -->`, "", `# ${escapeDeckText(title)}`, ...(body.length ? ["", ...body] : [])].join(
+        "\n",
+      ),
+    );
     imageTokens.forEach((token, imageIndex) => {
       const remainingSourceSlides = selectedSlides.length - index - 1;
       if (slideSources.length + remainingSourceSlides >= MAX_PRESENTATION_SLIDES) {
@@ -888,44 +928,59 @@ function convertPptx(fileName: string, context: PackageContext): OfficeImportRes
         if (candidateIndex >= 0) context.imageCandidates.splice(candidateIndex, 1);
         return;
       }
-      slideSources.push([
-        "<!-- layout: split -->",
-        "",
-        `# ${escapeDeckText(title)} · Image ${imageIndex + (firstImageToken ? 2 : 1)}`,
-        "",
-        token,
-      ].join("\n"));
+      slideSources.push(
+        [
+          "<!-- layout: split -->",
+          "",
+          `# ${escapeDeckText(title)} · Image ${imageIndex + (firstImageToken ? 2 : 1)}`,
+          "",
+          token,
+        ].join("\n"),
+      );
     });
   });
   if (!slideSources.length) throw new Error("The PPTX did not contain any slides.");
-  if (omittedImages) context.warnings.push(`${omittedImages} slide image${omittedImages === 1 ? " was" : "s were"} omitted because the semantic Deck reached its visual or 40-slide limit.`);
+  if (omittedImages)
+    context.warnings.push(
+      `${omittedImages} slide image${omittedImages === 1 ? " was" : "s were"} omitted because the semantic Deck reached its visual or 40-slide limit.`,
+    );
   if (context.importImages && context.imageCandidates.length) {
-    context.warnings.push("PPTX images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.");
+    context.warnings.push(
+      "PPTX images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.",
+    );
   }
-  if (omittedCharts) context.warnings.push(`${omittedCharts} embedded chart${omittedCharts === 1 ? " was" : "s were"} omitted; import its source data as CSV to rebuild a live Rune chart.`);
+  if (omittedCharts)
+    context.warnings.push(
+      `${omittedCharts} embedded chart${omittedCharts === 1 ? " was" : "s were"} omitted; import its source data as CSV to rebuild a live Rune chart.`,
+    );
   const title = presentationTitle(context, fileName);
   const language = /[\u3400-\u9fff]/.test(`${title} ${slideSources.join(" ")}`) ? "zh-CN" : "en";
-  const source = boundedSource([
-    "---",
-    "version: 1",
-    `title: ${oneLine(title)}`,
-    "theme: rune",
-    "ratio: 16:9",
-    `lang: ${language}`,
-    "---",
-    "",
-    slideSources.join("\n\n---\n\n"),
-  ].join("\n"), "PPTX");
+  const source = boundedSource(
+    [
+      "---",
+      "version: 1",
+      `title: ${oneLine(title)}`,
+      "theme: rune",
+      "ratio: 16:9",
+      `lang: ${language}`,
+      "---",
+      "",
+      slideSources.join("\n\n---\n\n"),
+    ].join("\n"),
+    "PPTX",
+  );
   return {
     sourceType: "pptx",
     warnings: context.warnings,
-    artifacts: [{
-      id: artifactId,
-      name: `${safeFileSegment(baseName(fileName))}.deck.md`,
-      kind: "slides",
-      language: "Deck Markdown",
-      source,
-    }],
+    artifacts: [
+      {
+        id: artifactId,
+        name: `${safeFileSegment(baseName(fileName))}.deck.md`,
+        kind: "slides",
+        language: "Deck Markdown",
+        source,
+      },
+    ],
   };
 }
 
@@ -943,11 +998,12 @@ export async function convertOfficeFileWithAssets(
 ): Promise<OfficeImportWithAssetsResult> {
   const kind = officeKind(fileName);
   const context = openPackage(input, true);
-  const result = kind === "docx"
-    ? convertDocx(fileName, context)
-    : kind === "xlsx"
-      ? convertXlsx(fileName, context)
-      : convertPptx(fileName, context);
+  const result =
+    kind === "docx"
+      ? convertDocx(fileName, context)
+      : kind === "xlsx"
+        ? convertXlsx(fileName, context)
+        : convertPptx(fileName, context);
   const finalized = await finalizeImportedImages(result.artifacts, context.imageCandidates, result.warnings);
   return { sourceType: result.sourceType, ...finalized };
 }

@@ -1,9 +1,6 @@
 import { findChartReferences } from "./charts.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
-import {
-  workspaceQuerySnapshotIsCurrent,
-  type WorkspaceQuerySnapshot,
-} from "./query-snapshot.ts";
+import { workspaceQuerySnapshotIsCurrent, type WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { inferQueryOutputColumns } from "./sql.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 import {
@@ -15,7 +12,7 @@ import {
 
 export const QUERY_METRIC_FORMATS = ["currency", "number", "percent"] as const;
 
-export type QueryMetricFormat = typeof QUERY_METRIC_FORMATS[number];
+export type QueryMetricFormat = (typeof QUERY_METRIC_FORMATS)[number];
 
 export type WorkspaceMetric = {
   key: string;
@@ -98,12 +95,15 @@ function formatPercent(value: number, showSign = false) {
 }
 
 function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
 }
 
 function splitMetricArguments(source: string): string[] | null {
   const parts: string[] = [];
-  let quote: "\"" | "'" | null = null;
+  let quote: '"' | "'" | null = null;
   let escaped = false;
   let start = 0;
   for (let index = 0; index < source.length; index += 1) {
@@ -114,7 +114,7 @@ function splitMetricArguments(source: string): string[] | null {
       else if (character === quote) quote = null;
       continue;
     }
-    if (character === "\"" || character === "'") {
+    if (character === '"' || character === "'") {
       quote = character;
       continue;
     }
@@ -129,7 +129,7 @@ function splitMetricArguments(source: string): string[] | null {
 }
 
 function decodeMetricString(source: string): string | null {
-  if (source.startsWith("\"") && source.endsWith("\"")) {
+  if (source.startsWith('"') && source.endsWith('"')) {
     try {
       const value: unknown = JSON.parse(source);
       return typeof value === "string" ? value : null;
@@ -155,15 +155,15 @@ function decodeMetricString(source: string): string | null {
 }
 
 function validMetricIdentity(value: string) {
-  return value.length > 0
-    && value.length <= MAX_METRIC_IDENTITY_CHARS
-    && !/[\u0000-\u001f\u007f]/u.test(value);
+  return value.length > 0 && value.length <= MAX_METRIC_IDENTITY_CHARS && !/[\u0000-\u001f\u007f]/u.test(value);
 }
 
 export function queryMetricReferenceKey(reference: QueryMetricReference) {
-  return JSON.stringify(reference.rowIndex == null
-    ? [reference.queryArtifactId, reference.column, reference.format]
-    : [reference.queryArtifactId, reference.column, reference.format, reference.rowIndex]);
+  return JSON.stringify(
+    reference.rowIndex == null
+      ? [reference.queryArtifactId, reference.column, reference.format]
+      : [reference.queryArtifactId, reference.column, reference.format, reference.rowIndex],
+  );
 }
 
 export function queryMetricReferenceLabel(reference: QueryMetricReference) {
@@ -196,7 +196,9 @@ export function parseMetricBindings(source: string): ParsedMetricBindings {
     if (!/^metric\b/iu.test(inner)) continue;
     const invocation = inner.match(/^metric\s*\(([\s\S]*)\)$/iu);
     if (!invocation) {
-      errors.push('Use {{ metric("key") }}, {{ metric("query-id", "column", "format") }}, or add a quoted result row index as the fourth argument.');
+      errors.push(
+        'Use {{ metric("key") }}, {{ metric("query-id", "column", "format") }}, or add a quoted result row index as the fourth argument.',
+      );
       continue;
     }
     const rawArguments = splitMetricArguments(invocation[1]);
@@ -216,7 +218,7 @@ export function parseMetricBindings(source: string): ParsedMetricBindings {
       continue;
     }
     if (values.length !== 3 && values.length !== 4) {
-      errors.push('A Query metric needs three arguments, plus an optional quoted result row index.');
+      errors.push("A Query metric needs three arguments, plus an optional quoted result row index.");
       continue;
     }
     const [queryArtifactId, column, format, rawRowIndex] = values;
@@ -228,11 +230,12 @@ export function parseMetricBindings(source: string): ParsedMetricBindings {
       errors.push(`Query metric format must be ${QUERY_METRIC_FORMATS.join(", ")}.`);
       continue;
     }
-    const rowIndex = rawRowIndex == null
-      ? undefined
-      : /^(?:0|[1-9]\d{0,2})$/u.test(rawRowIndex) && Number(rawRowIndex) <= 499
-        ? Number(rawRowIndex)
-        : null;
+    const rowIndex =
+      rawRowIndex == null
+        ? undefined
+        : /^(?:0|[1-9]\d{0,2})$/u.test(rawRowIndex) && Number(rawRowIndex) <= 499
+          ? Number(rawRowIndex)
+          : null;
     if (rowIndex === null) {
       errors.push("Query metric result row index must be a quoted integer from 0 to 499.");
       continue;
@@ -296,11 +299,41 @@ export function deriveWorkspaceMetrics(artifacts: WorkspaceArtifact[]): Record<s
   const topRegion = regionColumn ? String(topRow?.[regionColumn] ?? "—") : "—";
 
   const values: WorkspaceMetric[] = [
-    { key: "total_revenue", label: "Total revenue", value: totalRevenue, formatted: formatCurrency(totalRevenue), sourceArtifactId: dataArtifact.id },
-    { key: "qoq_growth", label: "Quarter-over-quarter growth", value: qoqGrowth, formatted: formatPercent(qoqGrowth, true), sourceArtifactId: dataArtifact.id },
-    { key: "gross_margin", label: "Gross margin", value: grossMargin, formatted: formatPercent(grossMargin), sourceArtifactId: dataArtifact.id },
-    { key: "top_region", label: "Top region", value: topRegion, formatted: topRegion, sourceArtifactId: dataArtifact.id },
-    { key: "total_customers", label: "Customers", value: totalCustomers, formatted: formatInteger(totalCustomers), sourceArtifactId: dataArtifact.id },
+    {
+      key: "total_revenue",
+      label: "Total revenue",
+      value: totalRevenue,
+      formatted: formatCurrency(totalRevenue),
+      sourceArtifactId: dataArtifact.id,
+    },
+    {
+      key: "qoq_growth",
+      label: "Quarter-over-quarter growth",
+      value: qoqGrowth,
+      formatted: formatPercent(qoqGrowth, true),
+      sourceArtifactId: dataArtifact.id,
+    },
+    {
+      key: "gross_margin",
+      label: "Gross margin",
+      value: grossMargin,
+      formatted: formatPercent(grossMargin),
+      sourceArtifactId: dataArtifact.id,
+    },
+    {
+      key: "top_region",
+      label: "Top region",
+      value: topRegion,
+      formatted: topRegion,
+      sourceArtifactId: dataArtifact.id,
+    },
+    {
+      key: "total_customers",
+      label: "Customers",
+      value: totalCustomers,
+      formatted: formatInteger(totalCustomers),
+      sourceArtifactId: dataArtifact.id,
+    },
   ];
 
   if (regionColumn) {
@@ -344,8 +377,9 @@ export function validateQueryMetricReference(
     return {
       queryArtifact,
       dataArtifact,
-      errors: (parsedData.errors.length ? parsedData.errors : ["The bound Data artifact has no columns."])
-        .map((error) => `Query metric Data source: ${error}`),
+      errors: (parsedData.errors.length ? parsedData.errors : ["The bound Data artifact has no columns."]).map(
+        (error) => `Query metric Data source: ${error}`,
+      ),
     };
   }
   const output = inferQueryOutputColumns(queryArtifact.source, parsedData.columns);
@@ -388,9 +422,7 @@ function resolveQueryMetricReference(
   if (!validation.queryArtifact || !validation.dataArtifact || validation.errors.length) {
     return { ...validation, pending: false, staticValid: false };
   }
-  const snapshot = querySnapshots.find((candidate) => (
-    candidate.queryArtifactId === validation.queryArtifact?.id
-  ));
+  const snapshot = querySnapshots.find((candidate) => candidate.queryArtifactId === validation.queryArtifact?.id);
   if (!snapshot) return { ...validation, pending: true, staticValid: true };
   if (!workspaceQuerySnapshotIsCurrent(snapshot, validation.queryArtifact, validation.dataArtifact)) {
     return {
@@ -413,12 +445,14 @@ function resolveQueryMetricReference(
       ...validation,
       pending: false,
       staticValid: true,
-      errors: [`Query metric source must return exactly one row: ${reference.queryArtifactId} returned ${snapshot.result.rows.length}.`],
+      errors: [
+        `Query metric source must return exactly one row: ${reference.queryArtifactId} returned ${snapshot.result.rows.length}.`,
+      ],
     };
   }
-  const columnIndices = snapshot.result.columns.flatMap((column, index) => (
-    column === reference.column ? [index] : []
-  ));
+  const columnIndices = snapshot.result.columns.flatMap((column, index) =>
+    column === reference.column ? [index] : [],
+  );
   if (columnIndices.length !== 1) {
     return {
       ...validation,
@@ -471,28 +505,30 @@ export function compileArtifactSource(
   const references = findMetricReferences(source);
   const unresolved = references.filter((reference) => !metrics[reference]);
   const queryMetricReferences = findQueryMetricReferences(source);
-  const queryResolutions = new Map(queryMetricReferences.map((reference) => [
-    queryMetricReferenceKey(reference),
-    resolveQueryMetricReference(reference, artifacts, querySnapshots),
-  ]));
-  const unresolvedQueryMetrics = [...queryResolutions.values()].flatMap((resolution) => (
-    !resolution.staticValid ? resolution.errors : []
-  ));
+  const queryResolutions = new Map(
+    queryMetricReferences.map((reference) => [
+      queryMetricReferenceKey(reference),
+      resolveQueryMetricReference(reference, artifacts, querySnapshots),
+    ]),
+  );
+  const unresolvedQueryMetrics = [...queryResolutions.values()].flatMap((resolution) =>
+    !resolution.staticValid ? resolution.errors : [],
+  );
   const pendingQueryMetrics = queryMetricReferences
     .filter((reference) => queryResolutions.get(queryMetricReferenceKey(reference))?.pending)
     .map(queryMetricReferenceLabel);
-  const queryMetricRuntimeErrors = [...queryResolutions.values()].flatMap((resolution) => (
-    resolution.staticValid && !resolution.pending && !resolution.metric
-      ? resolution.errors
-      : []
-  ));
-  const queryMetrics = Object.fromEntries([...queryResolutions.entries()].flatMap(([key, resolution]) => (
-    resolution.metric ? [[key, resolution.metric]] : []
-  )));
+  const queryMetricRuntimeErrors = [...queryResolutions.values()].flatMap((resolution) =>
+    resolution.staticValid && !resolution.pending && !resolution.metric ? resolution.errors : [],
+  );
+  const queryMetrics = Object.fromEntries(
+    [...queryResolutions.entries()].flatMap(([key, resolution]) =>
+      resolution.metric ? [[key, resolution.metric]] : [],
+    ),
+  );
   const chartReferences = findChartReferences(source);
-  const unresolvedCharts = chartReferences.filter((reference) => (
-    !artifacts.some((artifact) => artifact.id === reference && artifact.kind === "chart")
-  ));
+  const unresolvedCharts = chartReferences.filter(
+    (reference) => !artifacts.some((artifact) => artifact.id === reference && artifact.kind === "chart"),
+  );
 
   let compiledSource = "";
   const sourceOffsets: number[] = [0];
@@ -520,8 +556,9 @@ export function compileArtifactSource(
       replacement = metrics[binding.key]?.formatted ?? `⚠ ${binding.key}`;
     } else {
       const resolution = queryResolutions.get(queryMetricReferenceKey(binding.reference));
-      replacement = resolution?.metric?.formatted
-        ?? (resolution?.pending ? "…" : `⚠ ${queryMetricReferenceLabel(binding.reference)}`);
+      replacement =
+        resolution?.metric?.formatted ??
+        (resolution?.pending ? "…" : `⚠ ${queryMetricReferenceLabel(binding.reference)}`);
     }
     appendReplacement(replacement, binding.start, binding.end);
     cursor = binding.end;
@@ -550,12 +587,15 @@ export function compiledSourceRangeToCanonical(
   start: number,
   end: number,
 ): { start: number; end: number } | null {
-  if (!Number.isInteger(start)
-    || !Number.isInteger(end)
-    || start < 0
-    || end <= start
-    || end > compiled.source.length
-    || compiled.sourceOffsets.length !== compiled.source.length + 1) return null;
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    start < 0 ||
+    end <= start ||
+    end > compiled.source.length ||
+    compiled.sourceOffsets.length !== compiled.source.length + 1
+  )
+    return null;
   const canonicalStart = compiled.sourceOffsets[start];
   const canonicalEnd = compiled.sourceOffsets[end];
   return Number.isInteger(canonicalStart) && Number.isInteger(canonicalEnd) && canonicalStart < canonicalEnd

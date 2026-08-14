@@ -4,11 +4,7 @@ import {
   type WorkspaceDependencyIssue,
   type WorkspaceDependencyKind,
 } from "./dependency-graph.ts";
-import {
-  prepareWorkspaceMutation,
-  type ArtifactCreationChange,
-  type ArtifactSourcePatch,
-} from "./patches.ts";
+import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSourcePatch } from "./patches.ts";
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
 
 export type WorkspaceTransactionNodeStatus = "created" | "edited" | "validated" | "input";
@@ -65,13 +61,9 @@ function traverseDependencies(
     const artifactId = queue.shift();
     if (!artifactId) continue;
     edges.forEach((edge) => {
-      const matches = direction === "upstream"
-        ? edge.toArtifactId === artifactId
-        : edge.fromArtifactId === artifactId;
+      const matches = direction === "upstream" ? edge.toArtifactId === artifactId : edge.fromArtifactId === artifactId;
       if (!matches) return;
-      const nextArtifactId = direction === "upstream"
-        ? edge.fromArtifactId
-        : edge.toArtifactId;
+      const nextArtifactId = direction === "upstream" ? edge.fromArtifactId : edge.toArtifactId;
       if (reached.has(nextArtifactId)) return;
       reached.add(nextArtifactId);
       queue.push(nextArtifactId);
@@ -110,22 +102,16 @@ export function buildWorkspaceTransactionReview(
   const proposedGraph = buildWorkspaceDependencyGraph(prepared.nextArtifacts);
   const currentEdges = new Map(currentGraph.edges.map((edge) => [edgeKey(edge), edge] as const));
   const proposedEdges = new Map(proposedGraph.edges.map((edge) => [edgeKey(edge), edge] as const));
-  const unionEdges = [...new Map(
-    [...currentGraph.edges, ...proposedGraph.edges].map((edge) => [edgeKey(edge), edge] as const),
-  ).values()];
+  const unionEdges = [
+    ...new Map([...currentGraph.edges, ...proposedGraph.edges].map((edge) => [edgeKey(edge), edge] as const)).values(),
+  ];
   const createdArtifactIds = new Set(creations.map((creation) => creation.artifact.id));
   const editedArtifactIds = new Set(patches.map((patch) => patch.artifactId));
   const changedArtifactIds = new Set([...createdArtifactIds, ...editedArtifactIds]);
   const upstreamArtifactIds = traverseDependencies(changedArtifactIds, unionEdges, "upstream");
   const downstreamArtifactIds = traverseDependencies(changedArtifactIds, unionEdges, "downstream");
-  const relevantArtifactIds = new Set([
-    ...changedArtifactIds,
-    ...upstreamArtifactIds,
-    ...downstreamArtifactIds,
-  ]);
-  const proposedArtifactById = new Map(
-    prepared.nextArtifacts.map((artifact) => [artifact.id, artifact] as const),
-  );
+  const relevantArtifactIds = new Set([...changedArtifactIds, ...upstreamArtifactIds, ...downstreamArtifactIds]);
+  const proposedArtifactById = new Map(prepared.nextArtifacts.map((artifact) => [artifact.id, artifact] as const));
   const orderedArtifacts = [
     ...prepared.nextArtifacts,
     ...artifacts.filter((artifact) => !proposedArtifactById.has(artifact.id)),
@@ -143,36 +129,40 @@ export function buildWorkspaceTransactionReview(
     return [{ artifactId: artifact.id, name: artifact.name, kind: artifact.kind, status }];
   });
   const nodeOrder = new Map(nodes.map((node, index) => [node.artifactId, index] as const));
-  const edges = [...new Set([...proposedEdges.keys(), ...currentEdges.keys()])].flatMap((key) => {
-    const current = currentEdges.get(key);
-    const proposed = proposedEdges.get(key);
-    const edge = proposed ?? current;
-    if (!edge
-      || !relevantArtifactIds.has(edge.fromArtifactId)
-      || !relevantArtifactIds.has(edge.toArtifactId)) return [];
-    const status: WorkspaceTransactionEdgeStatus = !current
-      ? "added"
-      : !proposed
-        ? "removed"
-        : edgeContentKey(current) === edgeContentKey(proposed)
-          ? "retained"
-          : "updated";
-    return [{
-      fromArtifactId: edge.fromArtifactId,
-      toArtifactId: edge.toArtifactId,
-      kind: edge.kind,
-      status,
-      label: (proposed ?? current)?.label ?? "dependency",
-      previousLabel: status === "updated" ? current?.label : undefined,
-      references: [...((proposed ?? current)?.references ?? [])],
-    } satisfies WorkspaceTransactionEdge];
-  }).sort((left, right) => (
-    (nodeOrder.get(left.fromArtifactId) ?? Number.MAX_SAFE_INTEGER)
-      - (nodeOrder.get(right.fromArtifactId) ?? Number.MAX_SAFE_INTEGER)
-    || (nodeOrder.get(left.toArtifactId) ?? Number.MAX_SAFE_INTEGER)
-      - (nodeOrder.get(right.toArtifactId) ?? Number.MAX_SAFE_INTEGER)
-    || left.kind.localeCompare(right.kind)
-  ));
+  const edges = [...new Set([...proposedEdges.keys(), ...currentEdges.keys()])]
+    .flatMap((key) => {
+      const current = currentEdges.get(key);
+      const proposed = proposedEdges.get(key);
+      const edge = proposed ?? current;
+      if (!edge || !relevantArtifactIds.has(edge.fromArtifactId) || !relevantArtifactIds.has(edge.toArtifactId))
+        return [];
+      const status: WorkspaceTransactionEdgeStatus = !current
+        ? "added"
+        : !proposed
+          ? "removed"
+          : edgeContentKey(current) === edgeContentKey(proposed)
+            ? "retained"
+            : "updated";
+      return [
+        {
+          fromArtifactId: edge.fromArtifactId,
+          toArtifactId: edge.toArtifactId,
+          kind: edge.kind,
+          status,
+          label: (proposed ?? current)?.label ?? "dependency",
+          previousLabel: status === "updated" ? current?.label : undefined,
+          references: [...((proposed ?? current)?.references ?? [])],
+        } satisfies WorkspaceTransactionEdge,
+      ];
+    })
+    .sort(
+      (left, right) =>
+        (nodeOrder.get(left.fromArtifactId) ?? Number.MAX_SAFE_INTEGER) -
+          (nodeOrder.get(right.fromArtifactId) ?? Number.MAX_SAFE_INTEGER) ||
+        (nodeOrder.get(left.toArtifactId) ?? Number.MAX_SAFE_INTEGER) -
+          (nodeOrder.get(right.toArtifactId) ?? Number.MAX_SAFE_INTEGER) ||
+        left.kind.localeCompare(right.kind),
+    );
   const relevantIssues = proposedGraph.issues.filter((issue) => relevantArtifactIds.has(issue.artifactId));
 
   return {

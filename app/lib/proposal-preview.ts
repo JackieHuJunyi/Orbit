@@ -50,12 +50,13 @@ export function prepareWorkspaceProposalPreview(input: {
   const requestedArtifact = input.requestedArtifactId
     ? prepared.nextArtifacts.find((artifact) => artifact.id === input.requestedArtifactId)
     : undefined;
-  const artifact = requestedArtifact
-    ?? changedArtifactIds.flatMap((artifactId) => {
+  const artifact =
+    requestedArtifact ??
+    changedArtifactIds.flatMap((artifactId) => {
       const candidate = prepared.nextArtifacts.find((item) => item.id === artifactId);
       return candidate ? [candidate] : [];
-    })[0]
-    ?? null;
+    })[0] ??
+    null;
   const creationIds = new Set(input.creations.map((creation) => creation.artifact.id));
 
   return {

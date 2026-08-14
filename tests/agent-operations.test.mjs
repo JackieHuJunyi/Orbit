@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  AgentOperationPatchSchema,
-  AgentWorkspaceOperationPlanSchema,
-} from "../app/lib/agent-contract.ts";
+import { AgentOperationPatchSchema, AgentWorkspaceOperationPlanSchema } from "../app/lib/agent-contract.ts";
 import {
   MAX_COMPILED_AGENT_SOURCE_CHARS,
   applyAgentSourceOperations,
@@ -80,22 +77,34 @@ test("accepts compiled edits inside an exact selection and rejects every outside
   const start = artifact.source.indexOf("Selected conclusion.");
   const end = start + "Selected conclusion.".length;
   const selection = { start, end };
-  const inside = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_text",
-    find: "Selected conclusion.",
-    replace: "Concise conclusion.",
-  }));
+  const inside = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_text",
+      find: "Selected conclusion.",
+      replace: "Concise conclusion.",
+    }),
+  );
   assert.deepEqual(inside.errors, []);
   assert.deepEqual(validateCompiledSelectionPatch(artifact, selection, inside.plan.nextSource), []);
 
-  const outside = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_text",
-    find: "Untouched ending.",
-    replace: "Changed outside selection.",
-  }));
+  const outside = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_text",
+      find: "Untouched ending.",
+      replace: "Changed outside selection.",
+    }),
+  );
   assert.deepEqual(outside.errors, []);
-  assert.match(validateCompiledSelectionPatch(artifact, selection, outside.plan.nextSource).join(" "), /cross the selected source range/i);
-  assert.match(validateCompiledSelectionPatch(artifact, { start: end, end: end }, inside.plan.nextSource).join(" "), /does not match the current artifact revision/i);
+  assert.match(
+    validateCompiledSelectionPatch(artifact, selection, outside.plan.nextSource).join(" "),
+    /cross the selected source range/i,
+  );
+  assert.match(
+    validateCompiledSelectionPatch(artifact, { start: end, end: end }, inside.plan.nextSource).join(" "),
+    /does not match the current artifact revision/i,
+  );
 });
 
 test("applies ordered exact-text fallbacks against the evolving revision", () => {
@@ -114,24 +123,35 @@ test("applies ordered exact-text fallbacks against the evolving revision", () =>
 });
 
 test("rejects missing, ambiguous, no-op, cancelling, and oversized exact fallbacks", () => {
-  assert.match(applyAgentSourceOperations("same same", [
-    { type: "replace_text", find: "same", replace: "new" },
-  ]).errors[0], /ambiguous/i);
-  assert.match(applyAgentSourceOperations("current", [
-    { type: "replace_text", find: "missing", replace: "new" },
-  ]).errors[0], /current source revision/i);
-  assert.match(applyAgentSourceOperations("current", [
-    { type: "replace_text", find: "current", replace: "current" },
-  ]).errors[0], /does not change/i);
-  assert.match(applyAgentSourceOperations("a", [
-    { type: "replace_text", find: "a", replace: "b" },
-    { type: "replace_text", find: "b", replace: "a" },
-  ]).errors[0], /cancel out/i);
-  assert.match(applyAgentSourceOperations("anchor", [{
-    type: "replace_text",
-    find: "anchor",
-    replace: "x".repeat(MAX_COMPILED_AGENT_SOURCE_CHARS + 1),
-  }]).errors[0], /120,000-character/i);
+  assert.match(
+    applyAgentSourceOperations("same same", [{ type: "replace_text", find: "same", replace: "new" }]).errors[0],
+    /ambiguous/i,
+  );
+  assert.match(
+    applyAgentSourceOperations("current", [{ type: "replace_text", find: "missing", replace: "new" }]).errors[0],
+    /current source revision/i,
+  );
+  assert.match(
+    applyAgentSourceOperations("current", [{ type: "replace_text", find: "current", replace: "current" }]).errors[0],
+    /does not change/i,
+  );
+  assert.match(
+    applyAgentSourceOperations("a", [
+      { type: "replace_text", find: "a", replace: "b" },
+      { type: "replace_text", find: "b", replace: "a" },
+    ]).errors[0],
+    /cancel out/i,
+  );
+  assert.match(
+    applyAgentSourceOperations("anchor", [
+      {
+        type: "replace_text",
+        find: "anchor",
+        replace: "x".repeat(MAX_COMPILED_AGENT_SOURCE_CHARS + 1),
+      },
+    ]).errors[0],
+    /120,000-character/i,
+  );
 });
 
 test("replaces one unique Markdown section without disturbing the next section", () => {
@@ -151,11 +171,14 @@ Old detail.
 
 Keep this.
 `);
-  const compiled = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_markdown_section",
-    heading: "Summary",
-    body: "A concise summary with **evidence**.",
-  }));
+  const compiled = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_markdown_section",
+      heading: "Summary",
+      body: "A concise summary with **evidence**.",
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   assert.match(compiled.plan.nextSource, /## Summary\n\nA concise summary with \*\*evidence\*\*\./);
   assert.doesNotMatch(compiled.plan.nextSource, /Old detail/);
@@ -164,46 +187,61 @@ Keep this.
 
 test("inserts a complete Markdown section after the targeted section", () => {
   const artifact = documentArtifact("# Report\n\n## Summary\n\nStable.\n\n## Next\n\nKeep this.\n");
-  const compiled = compileAgentOperationPatch(artifact, operationPlan({
-    type: "insert_markdown_section_after",
-    heading: "Summary",
-    section: "## Risks\n\n- One visible risk.",
-  }));
+  const compiled = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "insert_markdown_section_after",
+      heading: "Summary",
+      section: "## Risks\n\n- One visible risk.",
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   assert.ok(compiled.plan.nextSource.indexOf("## Summary") < compiled.plan.nextSource.indexOf("## Risks"));
   assert.ok(compiled.plan.nextSource.indexOf("## Risks") < compiled.plan.nextSource.indexOf("## Next"));
 
-  const invalid = compileAgentOperationPatch(artifact, operationPlan({
-    type: "insert_markdown_section_after",
-    heading: "Summary",
-    section: "This has no heading.",
-  }));
+  const invalid = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "insert_markdown_section_after",
+      heading: "Summary",
+      section: "This has no heading.",
+    }),
+  );
   assert.match(invalid.errors.join(" "), /must start with its own heading/i);
 });
 
 test("rejects missing and duplicate Markdown headings", () => {
   const artifact = documentArtifact("# Report\n\n## Result\n\nOne.\n\n## Result\n\nTwo.");
-  const ambiguous = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_markdown_section",
-    heading: "Result",
-    body: "Updated.",
-  }));
+  const ambiguous = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_markdown_section",
+      heading: "Result",
+      body: "Updated.",
+    }),
+  );
   assert.match(ambiguous.errors.join(" "), /ambiguous/i);
-  const missing = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_markdown_section",
-    heading: "Missing",
-    body: "Updated.",
-  }));
+  const missing = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_markdown_section",
+      heading: "Missing",
+      body: "Updated.",
+    }),
+  );
   assert.match(missing.errors.join(" "), /not found/i);
 });
 
 test("ignores heading-like text inside fenced Markdown code", () => {
   const artifact = documentArtifact("# Report\n\n## Summary\n\nOld.\n\n```md\n## Summary\n```\n\n## Next\n\nKeep.");
-  const compiled = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_markdown_section",
-    heading: "Summary",
-    body: "Updated.\n\n```md\n## Summary\n```",
-  }));
+  const compiled = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_markdown_section",
+      heading: "Summary",
+      body: "Updated.\n\n```md\n## Summary\n```",
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   assert.match(compiled.plan.nextSource, /Updated\.\n\n```md\n## Summary\n```/);
   assert.match(compiled.plan.nextSource, /## Next\n\nKeep\./);
@@ -211,15 +249,18 @@ test("ignores heading-like text inside fenced Markdown code", () => {
 
 test("updates and inserts CSV rows by an exact typed key", () => {
   const artifact = dataArtifact("Region,Revenue,Approved\nAPAC,42,true\nEMEA,31,false\n");
-  const updated = compileAgentOperationPatch(artifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "Region",
-    keyValue: "APAC",
-    cells: [
-      { column: "Revenue", value: 48.5 },
-      { column: "Approved", value: false },
-    ],
-  }));
+  const updated = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "Region",
+      keyValue: "APAC",
+      cells: [
+        { column: "Revenue", value: 48.5 },
+        { column: "Approved", value: false },
+      ],
+    }),
+  );
   assert.deepEqual(updated.errors, []);
   const updatedData = parseDataSource(updated.plan.nextSource);
   assert.deepEqual(updatedData.rows, [
@@ -244,117 +285,156 @@ test("updates and inserts CSV rows by an exact typed key", () => {
 
 test("preserves typed flat JSON values and its array or object shape", () => {
   const arrayArtifact = dataArtifact('[{"id":1,"name":"Alpha","active":true,"note":null}]\n');
-  const arrayUpdate = compileAgentOperationPatch(arrayArtifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [
-      { column: "name", value: "Beta" },
-      { column: "active", value: false },
-      { column: "note", value: 7.5 },
-    ],
-  }));
+  const arrayUpdate = compileAgentOperationPatch(
+    arrayArtifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [
+        { column: "name", value: "Beta" },
+        { column: "active", value: false },
+        { column: "note", value: 7.5 },
+      ],
+    }),
+  );
   assert.deepEqual(arrayUpdate.errors, []);
   assert.deepEqual(JSON.parse(arrayUpdate.plan.nextSource), [{ id: 1, name: "Beta", active: false, note: 7.5 }]);
   assert.equal(arrayUpdate.plan.nextSource.endsWith("\n"), true);
 
   const objectArtifact = dataArtifact('{"id":"only","count":1,"active":true}');
-  const objectUpdate = compileAgentOperationPatch(objectArtifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: "only",
-    cells: [{ column: "count", value: 2 }],
-  }));
+  const objectUpdate = compileAgentOperationPatch(
+    objectArtifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: "only",
+      cells: [{ column: "count", value: 2 }],
+    }),
+  );
   assert.deepEqual(JSON.parse(objectUpdate.plan.nextSource), { id: "only", count: 2, active: true });
-  const objectInsert = compileAgentOperationPatch(objectArtifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: "second",
-    cells: [{ column: "count", value: 2 }],
-  }));
+  const objectInsert = compileAgentOperationPatch(
+    objectArtifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: "second",
+      cells: [{ column: "count", value: 2 }],
+    }),
+  );
   assert.match(objectInsert.errors.join(" "), /single-object JSON/i);
 });
 
 test("rejects ambiguous keys, unknown or repeated cells, and nested JSON", () => {
   const duplicateKeys = dataArtifact("id,value\n1,a\n1,b");
-  const ambiguous = compileAgentOperationPatch(duplicateKeys, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "value", value: "c" }],
-  }));
+  const ambiguous = compileAgentOperationPatch(
+    duplicateKeys,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "value", value: "c" }],
+    }),
+  );
   assert.match(ambiguous.errors.join(" "), /ambiguous/i);
 
   const artifact = dataArtifact("id,value\n1,a");
-  const unknown = compileAgentOperationPatch(artifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "missing", value: "c" }],
-  }));
+  const unknown = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "missing", value: "c" }],
+    }),
+  );
   assert.match(unknown.errors.join(" "), /column not found/i);
-  const repeated = compileAgentOperationPatch(artifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "value", value: "b" }, { column: "value", value: "c" }],
-  }));
+  const repeated = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [
+        { column: "value", value: "b" },
+        { column: "value", value: "c" },
+      ],
+    }),
+  );
   assert.match(repeated.errors.join(" "), /repeats column/i);
-  const nested = compileAgentOperationPatch(dataArtifact('[{"id":1,"meta":{"region":"APAC"}}]'), operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "meta", value: "flat" }],
-  }));
+  const nested = compileAgentOperationPatch(
+    dataArtifact('[{"id":1,"meta":{"region":"APAC"}}]'),
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "meta", value: "flat" }],
+    }),
+  );
   assert.match(nested.errors.join(" "), /flat JSON/i);
 });
 
 test("requires a globally unique non-empty data key and keeps row identity fixed", () => {
   const duplicateElsewhere = dataArtifact("id,value\n1,a\n2,b\n2,c");
-  const duplicate = compileAgentOperationPatch(duplicateElsewhere, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "value", value: "updated" }],
-  }));
+  const duplicate = compileAgentOperationPatch(
+    duplicateElsewhere,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "value", value: "updated" }],
+    }),
+  );
   assert.match(duplicate.errors.join(" "), /not unique/i);
 
-  const missingKey = compileAgentOperationPatch(dataArtifact("id,value\n1,a\n,b"), operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "value", value: "updated" }],
-  }));
+  const missingKey = compileAgentOperationPatch(
+    dataArtifact("id,value\n1,a\n,b"),
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "value", value: "updated" }],
+    }),
+  );
   assert.match(missingKey.errors.join(" "), /empty value/i);
 
   const artifact = dataArtifact("id,value\n1,a\n2,b");
-  const renamed = compileAgentOperationPatch(artifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "id", value: 3 }],
-  }));
+  const renamed = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "id", value: 3 }],
+    }),
+  );
   assert.match(renamed.errors.join(" "), /cannot change the key/i);
-  const noOp = compileAgentOperationPatch(artifact, operationPlan({
-    type: "upsert_data_row",
-    keyColumn: "id",
-    keyValue: 1,
-    cells: [{ column: "value", value: "a" }],
-  }));
+  const noOp = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "upsert_data_row",
+      keyColumn: "id",
+      keyValue: 1,
+      cells: [{ column: "value", value: "a" }],
+    }),
+  );
   assert.match(noOp.errors.join(" "), /does not change/i);
 });
 
 test("adds and updates a typed CSV column by exact unique row keys", () => {
   const artifact = dataArtifact("Region,Revenue\nAPAC,42\nEMEA,31\n");
-  const added = compileAgentOperationPatch(artifact, operationPlan({
-    type: "upsert_data_column",
-    keyColumn: "Region",
-    column: "Margin",
-    values: [
-      { keyValue: "APAC", value: 0.34 },
-      { keyValue: "EMEA", value: 0.29 },
-    ],
-  }));
+  const added = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "upsert_data_column",
+      keyColumn: "Region",
+      column: "Margin",
+      values: [
+        { keyValue: "APAC", value: 0.34 },
+        { keyValue: "EMEA", value: 0.29 },
+      ],
+    }),
+  );
   assert.deepEqual(added.errors, []);
   assert.deepEqual(parseDataSource(added.plan.nextSource), {
     columns: ["Region", "Revenue", "Margin"],
@@ -382,12 +462,15 @@ test("adds and updates a typed CSV column by exact unique row keys", () => {
     { Region: "EMEA", Revenue: 31, Margin: 0.29 },
   ]);
 
-  const empty = compileAgentOperationPatch(dataArtifact("Item,Value\n"), operationPlan({
-    type: "upsert_data_column",
-    keyColumn: "Item",
-    column: "Status",
-    values: [],
-  }));
+  const empty = compileAgentOperationPatch(
+    dataArtifact("Item,Value\n"),
+    operationPlan({
+      type: "upsert_data_column",
+      keyColumn: "Item",
+      column: "Status",
+      values: [],
+    }),
+  );
   assert.deepEqual(empty.errors, []);
   assert.deepEqual(parseDataSource(empty.plan.nextSource).columns, ["Item", "Value", "Status"]);
   assert.deepEqual(parseDataSource(empty.plan.nextSource).rows, []);
@@ -395,12 +478,18 @@ test("adds and updates a typed CSV column by exact unique row keys", () => {
 
 test("preserves flat JSON shape and scalar types for column upserts and renames", () => {
   const arrayArtifact = dataArtifact('[{"id":1,"name":"Alpha"},{"id":2,"name":"Beta"}]\n');
-  const added = compileAgentOperationPatch(arrayArtifact, operationPlan({
-    type: "upsert_data_column",
-    keyColumn: "id",
-    column: "active",
-    values: [{ keyValue: 1, value: true }, { keyValue: 2, value: false }],
-  }));
+  const added = compileAgentOperationPatch(
+    arrayArtifact,
+    operationPlan({
+      type: "upsert_data_column",
+      keyColumn: "id",
+      column: "active",
+      values: [
+        { keyValue: 1, value: true },
+        { keyValue: 2, value: false },
+      ],
+    }),
+  );
   assert.deepEqual(added.errors, []);
   assert.deepEqual(JSON.parse(added.plan.nextSource), [
     { id: 1, name: "Alpha", active: true },
@@ -418,42 +507,58 @@ test("preserves flat JSON shape and scalar types for column upserts and renames"
   assert.equal(renamed.plan.nextSource.endsWith("\n"), true);
 
   const objectArtifact = dataArtifact('{"id":"only","count":1}');
-  const objectAdded = compileAgentOperationPatch(objectArtifact, operationPlan({
-    type: "upsert_data_column",
-    keyColumn: "id",
-    column: "approved",
-    values: [{ keyValue: "only", value: true }],
-  }));
+  const objectAdded = compileAgentOperationPatch(
+    objectArtifact,
+    operationPlan({
+      type: "upsert_data_column",
+      keyColumn: "id",
+      column: "approved",
+      values: [{ keyValue: "only", value: true }],
+    }),
+  );
   assert.deepEqual(JSON.parse(objectAdded.plan.nextSource), { id: "only", count: 1, approved: true });
 });
 
 test("renames one exact CSV column while preserving order and exact header selection", () => {
   const artifact = dataArtifact("Region,Revenue,Approved\r\nAPAC,42,true\r\n");
-  const renamed = compileAgentOperationPatch(artifact, operationPlan({
-    type: "rename_data_column",
-    column: "Revenue",
-    nextColumn: "Net revenue",
-  }));
+  const renamed = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "rename_data_column",
+      column: "Revenue",
+      nextColumn: "Net revenue",
+    }),
+  );
   assert.deepEqual(renamed.errors, []);
   assert.deepEqual(parseDataSource(renamed.plan.nextSource).columns, ["Region", "Net revenue", "Approved"]);
   assert.equal(renamed.plan.nextSource.includes("\r\n"), true);
-  assert.deepEqual(validateCompiledSelectionPatch(
-    artifact,
-    { start: 0, end: artifact.source.length },
-    renamed.plan.nextSource,
-  ), []);
-  assert.deepEqual(validateCompiledSelectionPatch(
-    artifact,
-    { start: artifact.source.indexOf("Revenue"), end: artifact.source.indexOf("Revenue") + "Revenue".length },
-    renamed.plan.nextSource,
-  ), []);
+  assert.deepEqual(
+    validateCompiledSelectionPatch(artifact, { start: 0, end: artifact.source.length }, renamed.plan.nextSource),
+    [],
+  );
+  assert.deepEqual(
+    validateCompiledSelectionPatch(
+      artifact,
+      { start: artifact.source.indexOf("Revenue"), end: artifact.source.indexOf("Revenue") + "Revenue".length },
+      renamed.plan.nextSource,
+    ),
+    [],
+  );
 });
 
 test("rejects incomplete, ambiguous, fabricated, or no-op data-column operations", () => {
   const artifact = dataArtifact("id,value\n1,a\n2,b");
   const cases = [
     [
-      { type: "upsert_data_column", keyColumn: "missing", column: "score", values: [{ keyValue: 1, value: 10 }, { keyValue: 2, value: 20 }] },
+      {
+        type: "upsert_data_column",
+        keyColumn: "missing",
+        column: "score",
+        values: [
+          { keyValue: 1, value: 10 },
+          { keyValue: 2, value: 20 },
+        ],
+      },
       /key column not found/i,
     ],
     [
@@ -461,21 +566,34 @@ test("rejects incomplete, ambiguous, fabricated, or no-op data-column operations
       /every current row/i,
     ],
     [
-      { type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 10 }, { keyValue: 1, value: 11 }] },
+      {
+        type: "upsert_data_column",
+        keyColumn: "id",
+        column: "score",
+        values: [
+          { keyValue: 1, value: 10 },
+          { keyValue: 1, value: 11 },
+        ],
+      },
       /repeats key/i,
     ],
     [
-      { type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 10 }, { keyValue: 3, value: 30 }] },
+      {
+        type: "upsert_data_column",
+        keyColumn: "id",
+        column: "score",
+        values: [
+          { keyValue: 1, value: 10 },
+          { keyValue: 3, value: 30 },
+        ],
+      },
       /row not found/i,
     ],
     [
       { type: "upsert_data_column", keyColumn: "id", column: "id", values: [{ keyValue: 1, value: 2 }] },
       /cannot change the key/i,
     ],
-    [
-      { type: "upsert_data_column", keyColumn: "id", column: "value", values: [] },
-      /at least one keyed value/i,
-    ],
+    [{ type: "upsert_data_column", keyColumn: "id", column: "value", values: [] }, /at least one keyed value/i],
     [
       { type: "upsert_data_column", keyColumn: "id", column: "value", values: [{ keyValue: 1, value: "a" }] },
       /does not change/i,
@@ -490,28 +608,37 @@ test("rejects incomplete, ambiguous, fabricated, or no-op data-column operations
     assert.match(compiled.errors.join(" "), expected);
   });
 
-  const ambiguous = compileAgentOperationPatch(dataArtifact("id,value\n1,a\n1,b"), operationPlan({
-    type: "upsert_data_column",
-    keyColumn: "id",
-    column: "score",
-    values: [{ keyValue: 1, value: 10 }],
-  }));
+  const ambiguous = compileAgentOperationPatch(
+    dataArtifact("id,value\n1,a\n1,b"),
+    operationPlan({
+      type: "upsert_data_column",
+      keyColumn: "id",
+      column: "score",
+      values: [{ keyValue: 1, value: 10 }],
+    }),
+  );
   assert.match(ambiguous.errors.join(" "), /not unique/i);
-  const nested = compileAgentOperationPatch(dataArtifact('[{"id":1,"meta":{"score":2}}]'), operationPlan({
-    type: "rename_data_column",
-    column: "meta",
-    nextColumn: "details",
-  }));
+  const nested = compileAgentOperationPatch(
+    dataArtifact('[{"id":1,"meta":{"score":2}}]'),
+    operationPlan({
+      type: "rename_data_column",
+      column: "meta",
+      nextColumn: "details",
+    }),
+  );
   assert.match(nested.errors.join(" "), /flat JSON/i);
 });
 
 test("replaces and inserts Deck slides by an exact unique title", () => {
   const artifact = deckArtifact(deckSource);
-  const replaced = compileAgentOperationPatch(artifact, operationPlan({
-    type: "replace_deck_slide",
-    title: "Results",
-    slide: "<!-- layout: conclusion -->\n\n## Results\n\nReviewed result.",
-  }));
+  const replaced = compileAgentOperationPatch(
+    artifact,
+    operationPlan({
+      type: "replace_deck_slide",
+      title: "Results",
+      slide: "<!-- layout: conclusion -->\n\n## Results\n\nReviewed result.",
+    }),
+  );
   assert.deepEqual(replaced.errors, []);
   assert.match(replaced.plan.nextSource, /title: Board update/);
   assert.match(replaced.plan.nextSource, /# Opening\n\nOriginal opening\./);
@@ -535,37 +662,70 @@ test("replaces and inserts Deck slides by an exact unique title", () => {
 
 test("rejects ambiguous Deck titles and separator injection", () => {
   const duplicate = deckArtifact(`${deckSource}\n---\n\n# Opening\n\nDuplicate.\n`);
-  const ambiguous = compileAgentOperationPatch(duplicate, operationPlan({
-    type: "replace_deck_slide",
-    title: "Opening",
-    slide: "# Opening\n\nUpdated.",
-  }));
+  const ambiguous = compileAgentOperationPatch(
+    duplicate,
+    operationPlan({
+      type: "replace_deck_slide",
+      title: "Opening",
+      slide: "# Opening\n\nUpdated.",
+    }),
+  );
   assert.match(ambiguous.errors.join(" "), /ambiguous/i);
-  const separator = compileAgentOperationPatch(deckArtifact(deckSource), operationPlan({
-    type: "insert_deck_slide_after",
-    title: "Opening",
-    slide: "# Context\n\nOne.\n\n---\n\n# Injected",
-  }));
+  const separator = compileAgentOperationPatch(
+    deckArtifact(deckSource),
+    operationPlan({
+      type: "insert_deck_slide_after",
+      title: "Opening",
+      slide: "# Context\n\nOne.\n\n---\n\n# Injected",
+    }),
+  );
   assert.match(separator.errors.join(" "), /cannot contain a slide separator/i);
 });
 
 test("rejects semantic operations on incompatible artifact kinds", () => {
   const cases = [
-    [documentArtifact("# Report"), {
-      type: "upsert_data_row", keyColumn: "id", keyValue: 1, cells: [{ column: "id", value: 1 }],
-    }],
-    [documentArtifact("# Report"), {
-      type: "upsert_data_column", keyColumn: "id", column: "score", values: [{ keyValue: 1, value: 2 }],
-    }],
-    [documentArtifact("# Report"), {
-      type: "rename_data_column", column: "old", nextColumn: "new",
-    }],
-    [dataArtifact("id,value\n1,a"), {
-      type: "replace_markdown_section", heading: "Summary", body: "Text.",
-    }],
-    [{ id: "legacy", name: "legacy.html", kind: "slides", language: "Semantic HTML", source: "<main></main>" }, {
-      type: "replace_deck_slide", title: "Opening", slide: "# Opening\n\nText.",
-    }],
+    [
+      documentArtifact("# Report"),
+      {
+        type: "upsert_data_row",
+        keyColumn: "id",
+        keyValue: 1,
+        cells: [{ column: "id", value: 1 }],
+      },
+    ],
+    [
+      documentArtifact("# Report"),
+      {
+        type: "upsert_data_column",
+        keyColumn: "id",
+        column: "score",
+        values: [{ keyValue: 1, value: 2 }],
+      },
+    ],
+    [
+      documentArtifact("# Report"),
+      {
+        type: "rename_data_column",
+        column: "old",
+        nextColumn: "new",
+      },
+    ],
+    [
+      dataArtifact("id,value\n1,a"),
+      {
+        type: "replace_markdown_section",
+        heading: "Summary",
+        body: "Text.",
+      },
+    ],
+    [
+      { id: "legacy", name: "legacy.html", kind: "slides", language: "Semantic HTML", source: "<main></main>" },
+      {
+        type: "replace_deck_slide",
+        title: "Opening",
+        slide: "# Opening\n\nText.",
+      },
+    ],
   ];
   cases.forEach(([artifact, edit]) => {
     const compiled = compileAgentOperationPatch(artifact, operationPlan(edit));
@@ -589,11 +749,13 @@ test("appends one existing Chart to Markdown and Deck sources through a typed wo
       artifactId: artifact.id,
       summary: `Append Chart to ${artifact.name}`,
       detail: "Use the typed Chart embedding operation.",
-      edits: [{
-        type: "append_chart",
-        chart: { kind: "artifact", artifactId: chart.id },
-        heading: "Regional revenue",
-      }],
+      edits: [
+        {
+          type: "append_chart",
+          chart: { kind: "artifact", artifactId: chart.id },
+          heading: "Regional revenue",
+        },
+      ],
     })),
   });
   const compiled = compileAgentWorkspaceOperations(artifacts, plan);
@@ -612,14 +774,18 @@ test("appends one existing Chart to Markdown and Deck sources through a typed wo
   const wrongKind = compileAgentWorkspaceOperations(artifacts, {
     summary: "Reject a non-Chart reference",
     detail: "A Data artifact cannot satisfy append_chart.",
-    actions: [{
-      ...plan.actions[0],
-      edits: [{
-        type: "append_chart",
-        chart: { kind: "artifact", artifactId: data.id },
-        heading: "Invalid visual",
-      }],
-    }],
+    actions: [
+      {
+        ...plan.actions[0],
+        edits: [
+          {
+            type: "append_chart",
+            chart: { kind: "artifact", artifactId: data.id },
+            heading: "Invalid visual",
+          },
+        ],
+      },
+    ],
   });
   assert.match(wrongKind.errors.join(" "), /must resolve to chart, not data/i);
 });
@@ -645,12 +811,14 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
         artifactId: data.id,
         summary: "Update APAC",
         detail: "One typed data row changes.",
-        edits: [{
-          type: "upsert_data_row",
-          keyColumn: "Region",
-          keyValue: "APAC",
-          cells: [{ column: "Revenue", value: 48 }],
-        }],
+        edits: [
+          {
+            type: "upsert_data_row",
+            keyColumn: "Region",
+            keyValue: "APAC",
+            cells: [{ column: "Revenue", value: 48 }],
+          },
+        ],
       },
       {
         type: "patch_artifact",
@@ -663,12 +831,18 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
   });
   const compiled = compileAgentWorkspaceOperations(artifacts, operationPlan);
   assert.deepEqual(compiled.errors, []);
-  assert.deepEqual(compiled.plan.patches.map((patch) => patch.operationCount), [1, 1, 1]);
+  assert.deepEqual(
+    compiled.plan.patches.map((patch) => patch.operationCount),
+    [1, 1, 1],
+  );
   const prepared = prepareWorkspacePatch(artifacts, compiled.plan.patches);
   assert.deepEqual(prepared.errors, []);
   assert.notEqual(prepared.nextArtifacts, artifacts);
   assert.match(prepared.nextArtifacts.find((artifact) => artifact.id === "review").source, /Shared result/);
-  assert.equal(parseDataSource(prepared.nextArtifacts.find((artifact) => artifact.id === "revenue").source).rows[0].Revenue, 48);
+  assert.equal(
+    parseDataSource(prepared.nextArtifacts.find((artifact) => artifact.id === "revenue").source).rows[0].Revenue,
+    48,
+  );
   assert.match(prepared.nextArtifacts.find((artifact) => artifact.id === "briefing").source, /Shared result/);
 });
 
@@ -684,11 +858,13 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         handle: "launch_brief",
         summary: "Create the brief",
         detail: "Fill the initial Markdown section.",
-        edits: [{
-          type: "replace_markdown_section",
-          heading: "Launch Brief",
-          body: "## Context\n\nVisible workspace facts only.",
-        }],
+        edits: [
+          {
+            type: "replace_markdown_section",
+            heading: "Launch Brief",
+            body: "## Context\n\nVisible workspace facts only.",
+          },
+        ],
       },
       {
         type: "create_artifact",
@@ -697,11 +873,13 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         handle: "launch_metrics",
         summary: "Create the data table",
         detail: "Replace the starter columns with a visible typed table.",
-        edits: [{
-          type: "replace_text",
-          find: "Item,Value\n",
-          replace: "Region,Revenue\nAPAC,48\nEMEA,31\n",
-        }],
+        edits: [
+          {
+            type: "replace_text",
+            find: "Item,Value\n",
+            replace: "Region,Revenue\nAPAC,48\nEMEA,31\n",
+          },
+        ],
       },
       {
         type: "create_artifact",
@@ -711,7 +889,11 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         summary: "Create the presentation",
         detail: "Refine the cover and insert one complete slide.",
         edits: [
-          { type: "replace_deck_slide", title: "Launch Review", slide: "# Launch Review\n\nA visible-source narrative." },
+          {
+            type: "replace_deck_slide",
+            title: "Launch Review",
+            slide: "# Launch Review\n\nA visible-source narrative.",
+          },
           { type: "insert_deck_slide_after", title: "Launch Review", slide: "## Decision\n\nProceed with review." },
         ],
       },
@@ -720,12 +902,14 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
   const compiled = compileAgentWorkspaceOperations(defaultArtifacts, operationPlan);
   assert.deepEqual(compiled.errors, []);
   assert.equal(compiled.plan.patches.length, 0);
-  assert.deepEqual(compiled.plan.creations.map((creation) => creation.operationCount), [1, 1, 2]);
-  assert.deepEqual(compiled.plan.creations.map((creation) => creation.artifact.name), [
-    "launch-brief.md",
-    "launch-metrics.csv",
-    "launch-review.deck.md",
-  ]);
+  assert.deepEqual(
+    compiled.plan.creations.map((creation) => creation.operationCount),
+    [1, 1, 2],
+  );
+  assert.deepEqual(
+    compiled.plan.creations.map((creation) => creation.artifact.name),
+    ["launch-brief.md", "launch-metrics.csv", "launch-review.deck.md"],
+  );
   const prepared = prepareWorkspaceMutation(defaultArtifacts, compiled.plan.patches, compiled.plan.creations);
   assert.deepEqual(prepared.errors, []);
   assert.equal(prepared.nextArtifacts.length, defaultArtifacts.length + 3);
@@ -765,11 +949,14 @@ test("compiles zero-edit Query and Chart creations from exact visible bindings",
   });
   const compiled = compileAgentWorkspaceOperations(defaultArtifacts, operationPlan);
   assert.deepEqual(compiled.errors, []);
-  assert.deepEqual(compiled.plan.creations.map((creation) => creation.operationCount), [0, 0]);
-  assert.deepEqual(compiled.plan.creations.map((creation) => creation.artifact.name), [
-    "regional-detail.sql",
-    "regional-margin-2.chart.json",
-  ]);
+  assert.deepEqual(
+    compiled.plan.creations.map((creation) => creation.operationCount),
+    [0, 0],
+  );
+  assert.deepEqual(
+    compiled.plan.creations.map((creation) => creation.artifact.name),
+    ["regional-detail.sql", "regional-margin-2.chart.json"],
+  );
   assert.deepEqual(parseQueryDataSourceDirective(compiled.plan.creations[0].artifact.source), {
     artifactId: "regional-revenue",
     explicit: true,
@@ -796,31 +983,35 @@ test("rejects invented or same-plan creation sources before identity guessing", 
   const malformed = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Omit a creation reference",
     detail: "The compiler must fail closed even before schema parsing.",
-    actions: [{
-      type: "create_artifact",
-      kind: "query",
-      title: "Malformed Query",
-      handle: "malformed_query",
-      summary: "Create malformed Query",
-      detail: "The source reference is absent.",
-      edits: [],
-    }],
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Malformed Query",
+        handle: "malformed_query",
+        summary: "Create malformed Query",
+        detail: "The source reference is absent.",
+        edits: [],
+      },
+    ],
   });
   assert.match(malformed.errors.join(" "), /reference is missing or malformed/i);
 
   const invented = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Invent a binding",
     detail: "The model must not invent source identities.",
-    actions: [{
-      type: "create_artifact",
-      kind: "query",
-      title: "Unsafe Query",
-      handle: "unsafe_query",
-      source: { kind: "artifact", artifactId: "invented-data" },
-      summary: "Create unsafe Query",
-      detail: "This source is not visible.",
-      edits: [],
-    }],
+    actions: [
+      {
+        type: "create_artifact",
+        kind: "query",
+        title: "Unsafe Query",
+        handle: "unsafe_query",
+        source: { kind: "artifact", artifactId: "invented-data" },
+        summary: "Create unsafe Query",
+        detail: "This source is not visible.",
+        edits: [],
+      },
+    ],
   });
   assert.equal(invented.plan, undefined);
   assert.match(invented.errors.join(" "), /exact existing visible artifact/i);
@@ -862,11 +1053,13 @@ test("rejects invented or same-plan creation sources before identity guessing", 
         artifactId: "q2-review",
         summary: "Embed a guessed Chart",
         detail: "This patch guesses the id produced by a later creation.",
-        edits: [{
-          type: "replace_text",
-          find: "## Next actions",
-          replace: "## Forecast\n\n{{ chart(\"forecast-chart\") }}\n\n## Next actions",
-        }],
+        edits: [
+          {
+            type: "replace_text",
+            find: "## Next actions",
+            replace: '## Forecast\n\n{{ chart("forecast-chart") }}\n\n## Next actions',
+          },
+        ],
       },
       {
         type: "create_artifact",
@@ -900,11 +1093,13 @@ test("resolves an explicit Data-to-Query-to-Chart-to-report handle chain atomica
         handle: "workflow_data",
         summary: "Create typed Data",
         detail: "Start the workflow from visible CSV rows.",
-        edits: [{
-          type: "replace_text",
-          find: "Item,Value\n",
-          replace: "Region,Revenue\nAPAC,48\nEMEA,31\n",
-        }],
+        edits: [
+          {
+            type: "replace_text",
+            find: "Item,Value\n",
+            replace: "Region,Revenue\nAPAC,48\nEMEA,31\n",
+          },
+        ],
       },
       {
         type: "create_artifact",
@@ -937,17 +1132,22 @@ test("resolves an explicit Data-to-Query-to-Chart-to-report handle chain atomica
         handle: "workflow_report",
         summary: "Create linked report",
         detail: "Append the earlier Chart through its symbolic creation handle.",
-        edits: [{
-          type: "append_chart",
-          chart: { kind: "creation", handle: "workflow_chart" },
-          heading: "Regional revenue",
-        }],
+        edits: [
+          {
+            type: "append_chart",
+            chart: { kind: "creation", handle: "workflow_chart" },
+            heading: "Regional revenue",
+          },
+        ],
       },
     ],
   });
   const compiled = compileAgentWorkspaceOperations(defaultArtifacts, operationPlan);
   assert.deepEqual(compiled.errors, []);
-  assert.deepEqual(compiled.plan.creations.map((creation) => creation.operationCount), [1, 0, 0, 1]);
+  assert.deepEqual(
+    compiled.plan.creations.map((creation) => creation.operationCount),
+    [1, 0, 0, 1],
+  );
   const [data, query, chart, report] = compiled.plan.creations.map((creation) => creation.artifact);
   assert.equal(parseQueryDataSourceDirective(query.source).artifactId, data.id);
   assert.equal(parseChartSource(chart.source).spec.source, query.id);
@@ -973,18 +1173,26 @@ test("resolves repeated creation titles and rejects incompatible creation operat
     actions: [creation, { ...creation, handle: "shared_brief_copy" }],
   });
   assert.deepEqual(repeated.errors, []);
-  assert.deepEqual(repeated.plan.creations.map((item) => item.artifact.id), ["shared-brief", "shared-brief-2"]);
-  assert.deepEqual(repeated.plan.creations.map((item) => item.artifact.name), ["shared-brief.md", "shared-brief-2.md"]);
+  assert.deepEqual(
+    repeated.plan.creations.map((item) => item.artifact.id),
+    ["shared-brief", "shared-brief-2"],
+  );
+  assert.deepEqual(
+    repeated.plan.creations.map((item) => item.artifact.name),
+    ["shared-brief.md", "shared-brief-2.md"],
+  );
 
   const incompatible = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Use the wrong operation",
     detail: "A data template cannot accept a Markdown section edit.",
-    actions: [{
-      ...creation,
-      kind: "data",
-      title: "Wrong Table",
-      handle: "wrong_table",
-    }],
+    actions: [
+      {
+        ...creation,
+        kind: "data",
+        title: "Wrong Table",
+        handle: "wrong_table",
+      },
+    ],
   });
   assert.equal(incompatible.plan, undefined);
   assert.match(incompatible.errors.join(" "), /only supports Markdown documents/i);
@@ -993,32 +1201,43 @@ test("resolves repeated creation titles and rejects incompatible creation operat
 test("keeps mixed patch-and-create plans atomic at the full-workspace safety gate", () => {
   const report = defaultArtifacts.find((artifact) => artifact.kind === "document");
   assert.ok(report);
-  const compiled = compileAgentWorkspaceOperations(defaultArtifacts, AgentWorkspaceOperationPlanSchema.parse({
-    summary: "Update the report and create a deck",
-    detail: "One existing source and one Rune-owned new source form a single transaction.",
-    actions: [
-      {
-        type: "patch_artifact",
-        artifactId: report.id,
-        summary: "Add a launch note",
-        detail: "Append one exact visible note.",
-        edits: [{ type: "replace_text", find: "## Next actions", replace: "## Launch note\n\nShared context.\n\n## Next actions" }],
-      },
-      {
-        type: "create_artifact",
-        kind: "slides",
-        title: "Unsafe Briefing",
-        handle: "unsafe_briefing",
-        summary: "Create an unsafe deck",
-        detail: "The final safety gate must reject raw HTML.",
-        edits: [{
-          type: "replace_deck_slide",
+  const compiled = compileAgentWorkspaceOperations(
+    defaultArtifacts,
+    AgentWorkspaceOperationPlanSchema.parse({
+      summary: "Update the report and create a deck",
+      detail: "One existing source and one Rune-owned new source form a single transaction.",
+      actions: [
+        {
+          type: "patch_artifact",
+          artifactId: report.id,
+          summary: "Add a launch note",
+          detail: "Append one exact visible note.",
+          edits: [
+            {
+              type: "replace_text",
+              find: "## Next actions",
+              replace: "## Launch note\n\nShared context.\n\n## Next actions",
+            },
+          ],
+        },
+        {
+          type: "create_artifact",
+          kind: "slides",
           title: "Unsafe Briefing",
-          slide: "# Unsafe Briefing\n\n<script>alert(1)</script>",
-        }],
-      },
-    ],
-  }));
+          handle: "unsafe_briefing",
+          summary: "Create an unsafe deck",
+          detail: "The final safety gate must reject raw HTML.",
+          edits: [
+            {
+              type: "replace_deck_slide",
+              title: "Unsafe Briefing",
+              slide: "# Unsafe Briefing\n\n<script>alert(1)</script>",
+            },
+          ],
+        },
+      ],
+    }),
+  );
   assert.deepEqual(compiled.errors, []);
   const prepared = prepareWorkspaceMutation(defaultArtifacts, compiled.plan.patches, compiled.plan.creations);
   assert.match(prepared.errors.join(" "), /raw HTML/i);
@@ -1069,11 +1288,13 @@ test("keeps compiled exact fallbacks behind the existing whole-workspace safety 
         artifactId: slides.id,
         summary: "Inject markup",
         detail: "This operation must not pass the Deck compiler gate.",
-        edits: [{
-          type: "replace_text",
-          find: "# Growth became more durable.",
-          replace: "# Growth became more durable.\n\n<script>alert(1)</script>",
-        }],
+        edits: [
+          {
+            type: "replace_text",
+            find: "# Growth became more durable.",
+            replace: "# Growth became more durable.\n\n<script>alert(1)</script>",
+          },
+        ],
       },
     ],
   });

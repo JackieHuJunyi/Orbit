@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  PORTABLE_SOURCE_REVISION_PATTERN,
-  portableSourceRevision,
-} from "../app/lib/source-revision.ts";
+import { PORTABLE_SOURCE_REVISION_PATTERN, portableSourceRevision } from "../app/lib/source-revision.ts";
 
 test("creates a stable bounded UTF-8 source change token", () => {
   assert.equal(portableSourceRevision("Rune"), portableSourceRevision("Rune"));

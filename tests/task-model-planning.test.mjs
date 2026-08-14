@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  MAX_RUNE_TASK_MODEL_RESPONSE_BYTES,
-  prepareRuneTaskModelAssistance,
-} from "../app/lib/task-model-planning.ts";
+import { MAX_RUNE_TASK_MODEL_RESPONSE_BYTES, prepareRuneTaskModelAssistance } from "../app/lib/task-model-planning.ts";
 
 function dataArtifact(overrides = {}) {
   return {
@@ -111,16 +108,22 @@ test("fails over locally before fetch when the exact source is missing or oversi
     fetchCount += 1;
     return response({});
   };
-  const missing = await prepareRuneTaskModelAssistance([], {
-    taskId: "operating-review",
-    input: operatingInput(),
-  }, { mode: "auto", fetcher });
-  const oversized = await prepareRuneTaskModelAssistance([
-    documentArtifact({ source: "x".repeat(100_001) }),
-  ], {
-    taskId: "document-briefing",
-    input: documentInput(),
-  }, { mode: "auto", fetcher });
+  const missing = await prepareRuneTaskModelAssistance(
+    [],
+    {
+      taskId: "operating-review",
+      input: operatingInput(),
+    },
+    { mode: "auto", fetcher },
+  );
+  const oversized = await prepareRuneTaskModelAssistance(
+    [documentArtifact({ source: "x".repeat(100_001) })],
+    {
+      taskId: "document-briefing",
+      input: documentInput(),
+    },
+    { mode: "auto", fetcher },
+  );
 
   assert.equal(missing.outcome, "unavailable");
   assert.equal(oversized.outcome, "source-too-large");
@@ -132,26 +135,32 @@ test("validates an operating-review response against locally recompiled evidence
   const input = operatingInput();
   let requestCount = 0;
   let requested = 0;
-  const result = await prepareRuneTaskModelAssistance([data], {
-    taskId: "operating-review",
-    input,
-  }, {
-    mode: "auto",
-    onModelRequest: () => { requested += 1; },
-    fetcher: async (url, init) => {
-      requestCount += 1;
-      assert.equal(url, "/api/tasks/operating-review");
-      assert.equal(init?.method, "POST");
-      assert.deepEqual(JSON.parse(String(init?.body)), { artifact: data, input });
-      return response({
-        provider: "anthropic\nignored-control",
-        profileName: `${"Board model".repeat(20)}\u0000`,
-        model: "ignored-model-label",
-        usage: { inputTokens: 420, outputTokens: "invalid" },
-        narrative: validNarrative(),
-      });
+  const result = await prepareRuneTaskModelAssistance(
+    [data],
+    {
+      taskId: "operating-review",
+      input,
     },
-  });
+    {
+      mode: "auto",
+      onModelRequest: () => {
+        requested += 1;
+      },
+      fetcher: async (url, init) => {
+        requestCount += 1;
+        assert.equal(url, "/api/tasks/operating-review");
+        assert.equal(init?.method, "POST");
+        assert.deepEqual(JSON.parse(String(init?.body)), { artifact: data, input });
+        return response({
+          provider: "anthropic\nignored-control",
+          profileName: `${"Board model".repeat(20)}\u0000`,
+          model: "ignored-model-label",
+          usage: { inputTokens: 420, outputTokens: "invalid" },
+          narrative: validNarrative(),
+        });
+      },
+    },
+  );
 
   assert.equal(requestCount, 1);
   assert.equal(requested, 1);
@@ -164,20 +173,29 @@ test("validates an operating-review response against locally recompiled evidence
 });
 
 test("rejects malformed or oversized task-model output into deterministic fallback", async () => {
-  const invalid = await prepareRuneTaskModelAssistance([dataArtifact()], {
-    taskId: "operating-review",
-    input: operatingInput(),
-  }, {
-    mode: "auto",
-    fetcher: async () => response({ narrative: { insights: [] } }),
-  });
-  const oversized = await prepareRuneTaskModelAssistance([dataArtifact()], {
-    taskId: "operating-review",
-    input: operatingInput(),
-  }, {
-    mode: "auto",
-    fetcher: async () => response({ padding: "x".repeat(MAX_RUNE_TASK_MODEL_RESPONSE_BYTES), narrative: validNarrative() }),
-  });
+  const invalid = await prepareRuneTaskModelAssistance(
+    [dataArtifact()],
+    {
+      taskId: "operating-review",
+      input: operatingInput(),
+    },
+    {
+      mode: "auto",
+      fetcher: async () => response({ narrative: { insights: [] } }),
+    },
+  );
+  const oversized = await prepareRuneTaskModelAssistance(
+    [dataArtifact()],
+    {
+      taskId: "operating-review",
+      input: operatingInput(),
+    },
+    {
+      mode: "auto",
+      fetcher: async () =>
+        response({ padding: "x".repeat(MAX_RUNE_TASK_MODEL_RESPONSE_BYTES), narrative: validNarrative() }),
+    },
+  );
 
   assert.equal(invalid.outcome, "unavailable");
   assert.equal(invalid.narrative, undefined);
@@ -193,17 +211,21 @@ test("routes Document briefing through the same injected and evidence-bound clie
       { sourceUnitId: "source-2", title: "Decision", bullets: ["Agree the next decision after review."] },
     ],
   };
-  const result = await prepareRuneTaskModelAssistance([document], {
-    taskId: "document-briefing",
-    input,
-  }, {
-    mode: "auto",
-    fetcher: async (url, init) => {
-      assert.equal(url, "/api/tasks/document-briefing");
-      assert.deepEqual(JSON.parse(String(init?.body)), { artifact: document, input });
-      return response({ provider: "gemini", model: "gemini-task", usage: {}, outline });
+  const result = await prepareRuneTaskModelAssistance(
+    [document],
+    {
+      taskId: "document-briefing",
+      input,
     },
-  });
+    {
+      mode: "auto",
+      fetcher: async (url, init) => {
+        assert.equal(url, "/api/tasks/document-briefing");
+        assert.deepEqual(JSON.parse(String(init?.body)), { artifact: document, input });
+        return response({ provider: "gemini", model: "gemini-task", usage: {}, outline });
+      },
+    },
+  );
 
   assert.equal(result.outcome, "model");
   assert.equal(result.provider, "gemini");

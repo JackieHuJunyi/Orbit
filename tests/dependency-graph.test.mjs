@@ -14,25 +14,23 @@ import { defaultArtifacts } from "../app/lib/workspace.ts";
 test("compiles canonical data, query, metric, chart, and embed dependencies", () => {
   const graph = buildWorkspaceDependencyGraph(defaultArtifacts);
   assert.deepEqual(graph.issues, []);
-  assert.deepEqual(graph.edges.map((edge) => [
-    edge.fromArtifactId,
-    edge.toArtifactId,
-    edge.kind,
-    edge.label,
-  ]), [
-    ["regional-revenue", "q2-review", "metric", "1 metric"],
-    ["regional-revenue", "regional-analysis", "query", "workspace_data · regional-revenue"],
-    ["regional-revenue", "regional-summary", "query", "workspace_data · regional-revenue"],
-    ["regional-revenue", "regional-revenue-chart", "chart-data", "Region → Q2 Revenue"],
-    ["regional-revenue", "board-briefing", "metric", "1 metric"],
-    ["regional-analysis", "regional-margin-chart", "chart-query", "query output · Region → margin_pct"],
-    ["regional-summary", "q2-review", "query-metric", "4 scalar metrics"],
-    ["regional-summary", "board-briefing", "query-metric", "3 scalar metrics"],
-    ["regional-revenue-chart", "q2-review", "chart-embed", "chart embed"],
-    ["regional-revenue-chart", "board-briefing", "chart-embed", "chart embed"],
-    ["regional-margin-chart", "q2-review", "chart-embed", "chart embed"],
-    ["regional-margin-chart", "board-briefing", "chart-embed", "chart embed"],
-  ]);
+  assert.deepEqual(
+    graph.edges.map((edge) => [edge.fromArtifactId, edge.toArtifactId, edge.kind, edge.label]),
+    [
+      ["regional-revenue", "q2-review", "metric", "1 metric"],
+      ["regional-revenue", "regional-analysis", "query", "workspace_data · regional-revenue"],
+      ["regional-revenue", "regional-summary", "query", "workspace_data · regional-revenue"],
+      ["regional-revenue", "regional-revenue-chart", "chart-data", "Region → Q2 Revenue"],
+      ["regional-revenue", "board-briefing", "metric", "1 metric"],
+      ["regional-analysis", "regional-margin-chart", "chart-query", "query output · Region → margin_pct"],
+      ["regional-summary", "q2-review", "query-metric", "4 scalar metrics"],
+      ["regional-summary", "board-briefing", "query-metric", "3 scalar metrics"],
+      ["regional-revenue-chart", "q2-review", "chart-embed", "chart embed"],
+      ["regional-revenue-chart", "board-briefing", "chart-embed", "chart embed"],
+      ["regional-margin-chart", "q2-review", "chart-embed", "chart embed"],
+      ["regional-margin-chart", "board-briefing", "chart-embed", "chart embed"],
+    ],
+  );
 });
 
 test("keeps an explicitly bound Query on its Data artifact when workspace order changes", () => {
@@ -53,11 +51,10 @@ test("keeps an explicitly bound Query on its Data artifact when workspace order 
   assert.equal(queryEdge?.fromArtifactId, "regional-revenue");
   assert.deepEqual(queryEdge?.references, ["regional-revenue"]);
   const context = selectWorkspaceAgentContext(workspace, graph, "regional-margin-chart");
-  assert.deepEqual(context.map((artifact) => artifact.id), [
-    "regional-revenue",
-    "regional-analysis",
-    "regional-margin-chart",
-  ]);
+  assert.deepEqual(
+    context.map((artifact) => artifact.id),
+    ["regional-revenue", "regional-analysis", "regional-margin-chart"],
+  );
 });
 
 test("connects a Deck Markdown presentation to its exact Document origin", () => {
@@ -71,17 +68,25 @@ test("connects a Deck Markdown presentation to its exact Document origin", () =>
   };
   const graph = buildWorkspaceDependencyGraph([document, linkedDeck]);
   assert.deepEqual(graph.issues, []);
-  assert.deepEqual(graph.edges, [{
-    fromArtifactId: document.id,
-    toArtifactId: linkedDeck.id,
-    kind: "deck-origin",
-    label: "presentation source",
-    references: [document.id],
-  }]);
+  assert.deepEqual(graph.edges, [
+    {
+      fromArtifactId: document.id,
+      toArtifactId: linkedDeck.id,
+      kind: "deck-origin",
+      label: "presentation source",
+      references: [document.id],
+    },
+  ]);
   const context = selectWorkspaceAgentContext([document, linkedDeck], graph, linkedDeck.id);
-  assert.deepEqual(context.map((artifact) => artifact.id), [document.id, linkedDeck.id]);
+  assert.deepEqual(
+    context.map((artifact) => artifact.id),
+    [document.id, linkedDeck.id],
+  );
   assert.equal(workspaceAgentContextIsClosed(graph, context), true);
-  assert.deepEqual(dependencyEdgesForContext(graph, context).map((edge) => edge.kind), ["deck-origin"]);
+  assert.deepEqual(
+    dependencyEdgesForContext(graph, context).map((edge) => edge.kind),
+    ["deck-origin"],
+  );
 });
 
 test("reports a missing Deck origin without inventing a dependency", () => {
@@ -94,7 +99,10 @@ test("reports a missing Deck origin without inventing a dependency", () => {
   };
   const graph = buildWorkspaceDependencyGraph([linkedDeck]);
   assert.deepEqual(graph.edges, []);
-  assert.deepEqual(graph.issues.map((issue) => [issue.kind, issue.target]), [["deck-origin", "missing-document"]]);
+  assert.deepEqual(
+    graph.issues.map((issue) => [issue.kind, issue.target]),
+    [["deck-origin", "missing-document"]],
+  );
 });
 
 test("selects a deterministic dependency-first Agent context instead of the whole workspace", () => {
@@ -109,21 +117,45 @@ test("selects a deterministic dependency-first Agent context instead of the whol
   const graph = buildWorkspaceDependencyGraph(workspace);
   const context = selectWorkspaceAgentContext(workspace, graph, "q2-review");
   assert.equal(context.length, MAX_WORKSPACE_AGENT_ARTIFACTS);
-  assert.deepEqual(context.map((artifact) => artifact.id), [
-    "q2-review",
-    "regional-revenue",
-    "regional-analysis",
-    "regional-summary",
-    "regional-revenue-chart",
-    "regional-margin-chart",
-    "board-briefing",
-  ]);
-  assert.equal(context.some((artifact) => artifact.id === "notes-0"), false);
-  assert.equal(context.some((artifact) => artifact.id === "notes-6"), false);
+  assert.deepEqual(
+    context.map((artifact) => artifact.id),
+    [
+      "q2-review",
+      "regional-revenue",
+      "regional-analysis",
+      "regional-summary",
+      "regional-revenue-chart",
+      "regional-margin-chart",
+      "board-briefing",
+    ],
+  );
+  assert.equal(
+    context.some((artifact) => artifact.id === "notes-0"),
+    false,
+  );
+  assert.equal(
+    context.some((artifact) => artifact.id === "notes-6"),
+    false,
+  );
   assert.equal(workspaceAgentContextIsClosed(graph, context), true);
   assert.deepEqual(
-    dependencyEdgesForContext(graph, context).map((edge) => edge.kind).sort(),
-    ["chart-data", "chart-embed", "chart-embed", "chart-embed", "chart-embed", "chart-query", "metric", "metric", "query", "query", "query-metric", "query-metric"],
+    dependencyEdgesForContext(graph, context)
+      .map((edge) => edge.kind)
+      .sort(),
+    [
+      "chart-data",
+      "chart-embed",
+      "chart-embed",
+      "chart-embed",
+      "chart-embed",
+      "chart-query",
+      "metric",
+      "metric",
+      "query",
+      "query",
+      "query-metric",
+      "query-metric",
+    ],
   );
 });
 
@@ -133,7 +165,7 @@ test("keeps the selected artifact while enforcing per-file and total context bud
     name: "report.md",
     kind: "document",
     language: "Markdown",
-    source: "# Report\n\n{{ metric(\"total_revenue\") }}",
+    source: '# Report\n\n{{ metric("total_revenue") }}',
   };
   const oversizedData = {
     id: "data",
@@ -204,16 +236,22 @@ test("adds explicit pins and their upstream closure without padding other compon
     pinnedArtifactIds: [isolated.id],
   });
   assert.equal(MAX_WORKSPACE_AGENT_PINS, 6);
-  assert.deepEqual(context.map((artifact) => artifact.id), [
-    "q2-review",
-    "regional-revenue",
-    "regional-analysis",
-    "regional-summary",
-    "regional-revenue-chart",
-    "regional-margin-chart",
-    "isolated-brief",
-  ]);
-  assert.equal(context.some((artifact) => artifact.id === unrelated.id), false);
+  assert.deepEqual(
+    context.map((artifact) => artifact.id),
+    [
+      "q2-review",
+      "regional-revenue",
+      "regional-analysis",
+      "regional-summary",
+      "regional-revenue-chart",
+      "regional-margin-chart",
+      "isolated-brief",
+    ],
+  );
+  assert.equal(
+    context.some((artifact) => artifact.id === unrelated.id),
+    false,
+  );
   assert.equal(workspaceAgentContextIsClosed(graph, context), true);
 });
 
@@ -230,7 +268,7 @@ test("keeps every explicit root visible when a pinned upstream closure cannot fi
     name: "pinned-report.md",
     kind: "document",
     language: "Markdown",
-    source: "# Pinned\n\n{{ metric(\"total_revenue\") }}",
+    source: '# Pinned\n\n{{ metric("total_revenue") }}',
   };
   const oversizedData = {
     id: "data",
@@ -244,7 +282,10 @@ test("keeps every explicit root visible when a pinned upstream closure cannot fi
   const context = selectWorkspaceAgentContext(workspace, graph, selected.id, {
     pinnedArtifactIds: [pinned.id],
   });
-  assert.deepEqual(context.map((artifact) => artifact.id), [selected.id, pinned.id]);
+  assert.deepEqual(
+    context.map((artifact) => artifact.id),
+    [selected.id, pinned.id],
+  );
   assert.equal(workspaceAgentContextIsClosed(graph, context), false);
 });
 
@@ -255,19 +296,23 @@ test("reports unresolved graph intent without inventing dependency nodes", () =>
       name: "report.md",
       kind: "document",
       language: "Markdown",
-      source: "# Report\n\n{{ metric(\"missing\") }}\n\n{{ chart(\"missing-chart\") }}",
+      source: '# Report\n\n{{ metric("missing") }}\n\n{{ chart("missing-chart") }}',
     },
     {
       id: "chart",
       name: "chart.chart.json",
       kind: "chart",
       language: "Chart JSON",
-      source: '{"version":1,"title":"Chart","description":"","source":"missing-data","mark":"bar","category":"Item","value":"Value","sort":"source","format":"number","color":"#ff5c35","maxItems":8}',
+      source:
+        '{"version":1,"title":"Chart","description":"","source":"missing-data","mark":"bar","category":"Item","value":"Value","sort":"source","format":"number","color":"#ff5c35","maxItems":8}',
     },
   ];
   const graph = buildWorkspaceDependencyGraph(workspace);
   assert.deepEqual(graph.edges, []);
-  assert.deepEqual(graph.issues.map((issue) => issue.kind), ["chart-embed", "metric", "chart-data"]);
+  assert.deepEqual(
+    graph.issues.map((issue) => issue.kind),
+    ["chart-embed", "metric", "chart-data"],
+  );
   assert.match(graph.issues[0].message, /missing-chart/);
   assert.match(graph.issues[1].message, /missing/);
   assert.match(graph.issues[2].message, /missing-data/);

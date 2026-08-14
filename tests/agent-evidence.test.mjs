@@ -48,28 +48,37 @@ test("truncates evidence rows, columns, cells, strings, and aggregate JSON deter
   assert.ok(evidence.columns.length <= MAX_AGENT_QUERY_EVIDENCE_COLUMNS);
   assert.ok(evidence.rows.length <= MAX_AGENT_QUERY_EVIDENCE_ROWS);
   assert.ok(evidence.rows.flat().length <= MAX_AGENT_QUERY_EVIDENCE_CELLS);
-  assert.ok(evidence.rows.flat().every((cell) => typeof cell !== "string" || cell.length <= MAX_AGENT_QUERY_EVIDENCE_CELL_CHARS));
+  assert.ok(
+    evidence.rows
+      .flat()
+      .every((cell) => typeof cell !== "string" || cell.length <= MAX_AGENT_QUERY_EVIDENCE_CELL_CHARS),
+  );
   assert.equal(evidence.resultTruncated, true);
   assert.equal(evidence.evidenceTruncated, true);
 
   const queryArtifacts = defaultArtifacts.filter((artifact) => artifact.kind === "query");
   const data = defaultArtifacts.find((artifact) => artifact.kind === "data");
   assert.ok(data);
-  const list = await collectWorkspaceAgentQueryEvidence(
-    [data, ...queryArtifacts],
-    async (query) => ({ ...oversized, queryArtifactId: query.id, queryArtifactName: query.name, querySource: query.source }),
-  );
+  const list = await collectWorkspaceAgentQueryEvidence([data, ...queryArtifacts], async (query) => ({
+    ...oversized,
+    queryArtifactId: query.id,
+    queryArtifactName: query.name,
+    querySource: query.source,
+  }));
   assert.ok(JSON.stringify(list).length <= MAX_AGENT_QUERY_EVIDENCE_JSON_CHARS);
   assert.equal(AgentQueryEvidenceListSchema.safeParse(list).success, true);
 });
 
 test("represents a bounded Query runtime error without pretending it is a result", () => {
   const evidence = createAgentQueryErrorEvidence("query", "data", new Error("x".repeat(800)));
-  assert.deepEqual({ queryArtifactId: evidence.queryArtifactId, dataArtifactId: evidence.dataArtifactId, status: evidence.status }, {
-    queryArtifactId: "query",
-    dataArtifactId: "data",
-    status: "error",
-  });
+  assert.deepEqual(
+    { queryArtifactId: evidence.queryArtifactId, dataArtifactId: evidence.dataArtifactId, status: evidence.status },
+    {
+      queryArtifactId: "query",
+      dataArtifactId: "data",
+      status: "error",
+    },
+  );
   assert.equal(evidence.status === "error" && evidence.error.length, 500);
 });
 
@@ -81,7 +90,10 @@ test("collects Query evidence in workspace order and retains runtime failures as
     return defaultQuerySnapshot();
   });
   assert.deepEqual(calls, ["regional-analysis", "regional-summary"]);
-  assert.deepEqual(evidence.map((item) => item.queryArtifactId), ["regional-analysis", "regional-summary"]);
+  assert.deepEqual(
+    evidence.map((item) => item.queryArtifactId),
+    ["regional-analysis", "regional-summary"],
+  );
   assert.equal(evidence[0].status, "ready");
   assert.equal(evidence[1].status, "error");
   assert.match(evidence[1].status === "error" ? evidence[1].error : "", /Binder error/);
@@ -95,19 +107,30 @@ test("accepts only exact Query/Data identities in exact workspace order", () => 
   assert.deepEqual(validateAgentQueryEvidenceContext(defaultArtifacts, exact), []);
   assert.match(validateAgentQueryEvidenceContext(defaultArtifacts, exact.slice(0, 1)).join(" "), /exactly one/i);
   assert.match(validateAgentQueryEvidenceContext(defaultArtifacts, [...exact].reverse()).join(" "), /out of order/i);
-  assert.match(validateAgentQueryEvidenceContext(defaultArtifacts, [
-    { ...exact[0], dataArtifactId: "wrong-data" },
-    exact[1],
-  ]).join(" "), /wrong Data/i);
-  assert.match(validateAgentQueryEvidenceContext(defaultArtifacts, [exact[0], exact[0]]).join(" "), /unique|out of order/i);
+  assert.match(
+    validateAgentQueryEvidenceContext(defaultArtifacts, [{ ...exact[0], dataArtifactId: "wrong-data" }, exact[1]]).join(
+      " ",
+    ),
+    /wrong Data/i,
+  );
+  assert.match(
+    validateAgentQueryEvidenceContext(defaultArtifacts, [exact[0], exact[0]]).join(" "),
+    /unique|out of order/i,
+  );
 });
 
 test("uses the shared seven-file Workspace Agent source limit", () => {
   assert.equal(defaultArtifacts.length, 7);
   assert.equal(workspaceAgentContextFitsSourceLimits(defaultArtifacts), true);
-  assert.equal(workspaceAgentContextFitsSourceLimits([...defaultArtifacts, { ...defaultArtifacts[0], id: "eighth" }]), false);
-  assert.equal(workspaceAgentContextFitsSourceLimits([
-    { ...defaultArtifacts[0], source: "x".repeat(100_001) },
-    defaultArtifacts[1],
-  ]), false);
+  assert.equal(
+    workspaceAgentContextFitsSourceLimits([...defaultArtifacts, { ...defaultArtifacts[0], id: "eighth" }]),
+    false,
+  );
+  assert.equal(
+    workspaceAgentContextFitsSourceLimits([
+      { ...defaultArtifacts[0], source: "x".repeat(100_001) },
+      defaultArtifacts[1],
+    ]),
+    false,
+  );
 });

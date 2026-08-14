@@ -19,9 +19,9 @@ export function defaultQuerySnapshot() {
     columns: ["Region", "q2_revenue", "q1_revenue", "margin_pct", "Customers"],
     rows,
     sourceRowIndices: [0, 1, 2, 3],
-    cellLineage: rows.map((_row, sourceRowIndex) => sourceColumns.map((sourceColumn) => (
-      sourceColumn ? { sourceRowIndex, sourceColumn } : null
-    ))),
+    cellLineage: rows.map((_row, sourceRowIndex) =>
+      sourceColumns.map((sourceColumn) => (sourceColumn ? { sourceRowIndex, sourceColumn } : null)),
+    ),
     lineageMode: "direct",
     elapsedMs: 4,
     truncated: false,
@@ -34,13 +34,7 @@ export function defaultSummaryQuerySnapshot() {
   const data = defaultArtifacts.find((artifact) => artifact.id === "regional-revenue");
   assert.ok(query);
   assert.ok(data);
-  const columns = [
-    "total_q2_revenue",
-    "qoq_growth_pct",
-    "gross_margin_pct",
-    "apac_revenue",
-    "total_customers",
-  ];
+  const columns = ["total_q2_revenue", "qoq_growth_pct", "gross_margin_pct", "apac_revenue", "total_customers"];
   const rows = [[4_820_000, 12.4, 35, 1_840_000, 392]];
   return createWorkspaceQuerySnapshot(query, data, {
     columns,

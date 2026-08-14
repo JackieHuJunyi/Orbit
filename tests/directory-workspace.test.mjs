@@ -26,16 +26,24 @@ class MemoryFileHandle {
     const source = this.files.get(this.name);
     return {
       size: typeof source === "string" ? new TextEncoder().encode(source).byteLength : source.byteLength,
-      async text() { return typeof source === "string" ? source : new TextDecoder().decode(source); },
-      async arrayBuffer() { return typeof source === "string" ? new TextEncoder().encode(source).buffer : source.slice().buffer; },
+      async text() {
+        return typeof source === "string" ? source : new TextDecoder().decode(source);
+      },
+      async arrayBuffer() {
+        return typeof source === "string" ? new TextEncoder().encode(source).buffer : source.slice().buffer;
+      },
     };
   }
 
   async createWritable() {
     let source = "";
     return {
-      write: async (nextSource) => { source = typeof nextSource === "string" ? nextSource : nextSource.slice(); },
-      close: async () => { this.files.set(this.name, source); },
+      write: async (nextSource) => {
+        source = typeof nextSource === "string" ? nextSource : nextSource.slice();
+      },
+      close: async () => {
+        this.files.set(this.name, source);
+      },
     };
   }
 }
@@ -100,8 +108,14 @@ test("scans a manifest-free folder into stable readable artifacts", async () => 
   const result = await readWorkspaceDirectory(directory);
   assert.equal(result.source, "scan");
   assert.deepEqual(result.errors, []);
-  assert.deepEqual(result.artifacts.map((artifact) => artifact.id), ["regional", "report"]);
-  assert.deepEqual(result.artifacts.map((artifact) => artifact.name), ["regional.csv", "report.md"]);
+  assert.deepEqual(
+    result.artifacts.map((artifact) => artifact.id),
+    ["regional", "report"],
+  );
+  assert.deepEqual(
+    result.artifacts.map((artifact) => artifact.name),
+    ["regional.csv", "report.md"],
+  );
 });
 
 test("rejects duplicate or path-like manifest entries", () => {
@@ -141,13 +155,15 @@ test("rejects missing and oversized manifest files before replacing workspace st
 test("writes and rereads exactly referenced content-hash assets through the hidden folder", async () => {
   const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 1, 2, 3]);
   const id = "0f6c3a09018d44c79811cb205e1e03f0f214fdd8728f82e6e92aaaf95da5ee49";
-  const artifacts = [{
-    id: "report",
-    name: "report.md",
-    kind: "document",
-    language: "Markdown",
-    source: `# Report\n\n![View](rune-asset:sha256:${id})`,
-  }];
+  const artifacts = [
+    {
+      id: "report",
+      name: "report.md",
+      kind: "document",
+      language: "Markdown",
+      source: `# Report\n\n![View](rune-asset:sha256:${id})`,
+    },
+  ];
   const assets = [{ id, name: "view.png", mimeType: "image/png", size: png.length, bytes: png }];
   const directory = new MemoryDirectory();
   const written = await writeWorkspaceDirectory(directory, artifacts, assets);
@@ -166,11 +182,32 @@ test("writes and rereads exactly referenced content-hash assets through the hidd
 
 test("refuses missing, corrupt, unreferenced, and manifest-free folder assets", async () => {
   const id = "a".repeat(64);
-  const artifact = { id: "report", name: "report.md", kind: "document", language: "Markdown", source: `# Report\n\n![View](rune-asset:sha256:${id})` };
+  const artifact = {
+    id: "report",
+    name: "report.md",
+    kind: "document",
+    language: "Markdown",
+    source: `# Report\n\n![View](rune-asset:sha256:${id})`,
+  };
   assert.throws(() => buildWorkspaceManifest([artifact]), /missing/);
   const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  assert.throws(() => buildWorkspaceManifest([{ ...artifact, source: "# Report" }], [{ id, name: "x.png", mimeType: "image/png", size: png.length, bytes: png }]), /not referenced/);
-  await assert.rejects(() => writeWorkspaceDirectory(new MemoryDirectory(), [artifact], [{ id, name: "x.png", mimeType: "image/png", size: png.length, bytes: png }]), /content verification/);
+  assert.throws(
+    () =>
+      buildWorkspaceManifest(
+        [{ ...artifact, source: "# Report" }],
+        [{ id, name: "x.png", mimeType: "image/png", size: png.length, bytes: png }],
+      ),
+    /not referenced/,
+  );
+  await assert.rejects(
+    () =>
+      writeWorkspaceDirectory(
+        new MemoryDirectory(),
+        [artifact],
+        [{ id, name: "x.png", mimeType: "image/png", size: png.length, bytes: png }],
+      ),
+    /content verification/,
+  );
   const loose = new MemoryDirectory("Loose", { "report.md": artifact.source });
   const looseResult = await readWorkspaceDirectory(loose);
   assert.match(looseResult.errors.join(" "), /manifest-free folder/);

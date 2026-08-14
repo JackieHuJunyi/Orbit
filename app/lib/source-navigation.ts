@@ -4,20 +4,22 @@ import type { RuneWorkspaceView } from "./workspace-layout.ts";
 
 export const MAX_SOURCE_NAVIGATION_REFERENCE_CHARS = 200;
 
-export type SourceNavigationRequest = Readonly<{
-  origin: "preview";
-  artifactId: string;
-  sourceRevision: string;
-  start: number;
-  end: number;
-  label: string;
-}> | Readonly<{
-  origin: "diagnostic";
-  artifactId: string;
-  sourceRevision: string;
-  reference?: string;
-  label: string;
-}>;
+export type SourceNavigationRequest =
+  | Readonly<{
+      origin: "preview";
+      artifactId: string;
+      sourceRevision: string;
+      start: number;
+      end: number;
+      label: string;
+    }>
+  | Readonly<{
+      origin: "diagnostic";
+      artifactId: string;
+      sourceRevision: string;
+      reference?: string;
+      label: string;
+    }>;
 
 export type PreparedSourceNavigation = Readonly<{
   origin: SourceNavigationRequest["origin"];
@@ -49,7 +51,12 @@ function frozenResult(plan: PreparedSourceNavigation | null, error = ""): Source
 
 function diagnosticRange(source: string, reference?: string) {
   if (reference && reference.length > MAX_SOURCE_NAVIGATION_REFERENCE_CHARS) {
-    return { start: 0, end: 0, matchedReference: false, error: `Source navigation references are limited to ${MAX_SOURCE_NAVIGATION_REFERENCE_CHARS} characters.` };
+    return {
+      start: 0,
+      end: 0,
+      matchedReference: false,
+      error: `Source navigation references are limited to ${MAX_SOURCE_NAVIGATION_REFERENCE_CHARS} characters.`,
+    };
   }
   const referenceStart = reference ? source.indexOf(reference) : -1;
   if (referenceStart >= 0 && reference) {
@@ -73,12 +80,14 @@ function diagnosticRange(source: string, reference?: string) {
  * Prepares one revision-bound Source navigation without reading the DOM or
  * changing workspace, selection, view, Agent, history, or persistence state.
  */
-export function prepareSourceNavigation(input: Readonly<{
-  artifacts: readonly WorkspaceArtifact[];
-  selectedArtifactId: string;
-  workspaceView: RuneWorkspaceView;
-  request: SourceNavigationRequest;
-}>): SourceNavigationResult {
+export function prepareSourceNavigation(
+  input: Readonly<{
+    artifacts: readonly WorkspaceArtifact[];
+    selectedArtifactId: string;
+    workspaceView: RuneWorkspaceView;
+    request: SourceNavigationRequest;
+  }>,
+): SourceNavigationResult {
   const artifact = input.artifacts.find((candidate) => candidate.id === input.request.artifactId);
   if (!artifact) return frozenResult(null, "The source artifact is no longer in this workspace.");
   if (artifact.source !== input.request.sourceRevision) {

@@ -18,19 +18,24 @@ test("projects a complete Agent proposal into readable source without mutating c
   const preview = prepareWorkspaceProposalPreview({
     artifacts: defaultArtifacts,
     baseRevision: captureWorkspaceSourceRevision(defaultArtifacts),
-    patches: [{
-      artifactId: data.id,
-      summary: "Update APAC revenue",
-      detail: "The proposal remains unapplied.",
-      nextSource: data.source.replace("APAC,1840000", "APAC,1900000"),
-    }],
+    patches: [
+      {
+        artifactId: data.id,
+        summary: "Update APAC revenue",
+        detail: "The proposal remains unapplied.",
+        nextSource: data.source.replace("APAC,1840000", "APAC,1900000"),
+      },
+    ],
     creations: [],
   });
 
   assert.deepEqual(preview.errors, []);
   assert.equal(preview.artifact?.id, data.id);
   assert.match(preview.artifact?.source ?? "", /APAC,1900000/);
-  assert.deepEqual(defaultArtifacts.map((candidate) => candidate.source), beforeSources);
+  assert.deepEqual(
+    defaultArtifacts.map((candidate) => candidate.source),
+    beforeSources,
+  );
   assert.equal(artifact("regional-revenue").source.includes("APAC,1900000"), false);
 });
 
@@ -40,12 +45,14 @@ test("previews an unchanged downstream deliverable against the complete proposed
   const preview = prepareWorkspaceProposalPreview({
     artifacts: defaultArtifacts,
     baseRevision: captureWorkspaceSourceRevision(defaultArtifacts),
-    patches: [{
-      artifactId: data.id,
-      summary: "Change the leading region",
-      detail: "Every dependent preview reads the proposal projection.",
-      nextSource: data.source.replace("APAC,1840000", "APAC,1000000"),
-    }],
+    patches: [
+      {
+        artifactId: data.id,
+        summary: "Change the leading region",
+        detail: "Every dependent preview reads the proposal projection.",
+        nextSource: data.source.replace("APAC,1840000", "APAC,1000000"),
+      },
+    ],
     creations: [],
     requestedArtifactId: report.id,
   });
@@ -74,12 +81,14 @@ test("selects a new artifact inside a mixed proposal without adding it to the ca
   const preview = prepareWorkspaceProposalPreview({
     artifacts: defaultArtifacts,
     baseRevision: captureWorkspaceSourceRevision(defaultArtifacts),
-    patches: [{
-      artifactId: report.id,
-      summary: "Align the report",
-      detail: "The report and brief are reviewed together.",
-      nextSource: `${report.source}\n\n> Proposal preview remains read-only.`,
-    }],
+    patches: [
+      {
+        artifactId: report.id,
+        summary: "Align the report",
+        detail: "The report and brief are reviewed together.",
+        nextSource: `${report.source}\n\n> Proposal preview remains read-only.`,
+      },
+    ],
     creations: [creation],
     requestedArtifactId: creation.artifact.id,
   });
@@ -88,24 +97,29 @@ test("selects a new artifact inside a mixed proposal without adding it to the ca
   assert.equal(preview.artifact?.id, creation.artifact.id);
   assert.equal(preview.isCreation, true);
   assert.equal(preview.artifacts.at(-1)?.id, creation.artifact.id);
-  assert.equal(defaultArtifacts.some((candidate) => candidate.id === creation.artifact.id), false);
+  assert.equal(
+    defaultArtifacts.some((candidate) => candidate.id === creation.artifact.id),
+    false,
+  );
 });
 
 test("fails closed for stale or invalid proposals and exposes no partial candidate workspace", () => {
   const report = artifact("q2-review");
   const revision = captureWorkspaceSourceRevision(defaultArtifacts);
-  const staleArtifacts = defaultArtifacts.map((candidate) => candidate.id === report.id
-    ? { ...candidate, source: `${candidate.source}\n\nChanged after planning.` }
-    : candidate);
+  const staleArtifacts = defaultArtifacts.map((candidate) =>
+    candidate.id === report.id ? { ...candidate, source: `${candidate.source}\n\nChanged after planning.` } : candidate,
+  );
   const stale = prepareWorkspaceProposalPreview({
     artifacts: staleArtifacts,
     baseRevision: revision,
-    patches: [{
-      artifactId: report.id,
-      summary: "Stale change",
-      detail: "This must not render as current.",
-      nextSource: `${report.source}\n\nProposed.`,
-    }],
+    patches: [
+      {
+        artifactId: report.id,
+        summary: "Stale change",
+        detail: "This must not render as current.",
+        nextSource: `${report.source}\n\nProposed.`,
+      },
+    ],
     creations: [],
   });
   assert.equal(stale.artifact, null);
@@ -115,12 +129,14 @@ test("fails closed for stale or invalid proposals and exposes no partial candida
   const invalid = prepareWorkspaceProposalPreview({
     artifacts: defaultArtifacts,
     baseRevision: revision,
-    patches: [{
-      artifactId: report.id,
-      summary: "Invalid change",
-      detail: "An unresolved binding must not preview.",
-      nextSource: `${report.source}\n\n{{ metric("missing") }}`,
-    }],
+    patches: [
+      {
+        artifactId: report.id,
+        summary: "Invalid change",
+        detail: "An unresolved binding must not preview.",
+        nextSource: `${report.source}\n\n{{ metric("missing") }}`,
+      },
+    ],
     creations: [],
   });
   assert.equal(invalid.artifact, null);

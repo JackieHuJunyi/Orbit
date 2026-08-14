@@ -1,8 +1,4 @@
-import {
-  findChartReferences,
-  formatChartReference,
-  parseChartSource,
-} from "./charts.ts";
+import { findChartReferences, formatChartReference, parseChartSource } from "./charts.ts";
 import { isDeckMarkdownArtifact } from "./deck.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -16,8 +12,9 @@ export type PreparedChartEmbedding = {
 
 export function chartEmbeddingTargets(artifacts: WorkspaceArtifact[]): ChartEmbeddingTarget[] {
   return artifacts
-    .filter((artifact) => artifact.kind === "document"
-      || (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)))
+    .filter(
+      (artifact) => artifact.kind === "document" || (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)),
+    )
     .map(({ id, name, kind, language }) => ({ id, name, kind, language }));
 }
 
@@ -41,8 +38,9 @@ export function prepareChartEmbedding(
 
   const title = parsed.spec.title.replace(/\s+/gu, " ").trim();
   const reference = formatChartReference(chart.id);
-  const nextSource = target.kind === "document"
-    ? `${target.source.trimEnd()}\n\n## ${title}\n\n${reference}\n`
-    : `${target.source.trimEnd()}\n\n---\n\n<!-- layout: split -->\n\n# ${title}\n\n${reference}\n`;
+  const nextSource =
+    target.kind === "document"
+      ? `${target.source.trimEnd()}\n\n## ${title}\n\n${reference}\n`
+      : `${target.source.trimEnd()}\n\n---\n\n<!-- layout: split -->\n\n# ${title}\n\n${reference}\n`;
   return { artifactId: target.id, nextSource, errors: [] };
 }

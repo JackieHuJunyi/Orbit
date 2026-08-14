@@ -6,11 +6,7 @@ import {
 } from "./artifact-creation.ts";
 import { formatChartReference } from "./charts.ts";
 import { formatQueryMetricReference } from "./bindings.ts";
-import {
-  prepareWorkspaceMutation,
-  type ArtifactCreationChange,
-  type ArtifactSourcePatch,
-} from "./patches.ts";
+import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSourcePatch } from "./patches.ts";
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 import { isChineseRuneLocale, normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
@@ -153,7 +149,10 @@ function audienceLabel(locale: RuneLocale, audience: OperatingReviewAudience) {
 }
 
 function normalizeTaskText(value: string) {
-  return value.normalize("NFKC").replace(/[\t ]+/gu, " ").trim();
+  return value
+    .normalize("NFKC")
+    .replace(/[\t ]+/gu, " ")
+    .trim();
 }
 
 function validateTaskText(value: string, label: string, maxChars: number) {
@@ -174,9 +173,7 @@ function quoteSqlIdentifier(value: string) {
 }
 
 function fieldIsSafe(value: string) {
-  return value.length > 0
-    && value.length <= 120
-    && !/[\u0000-\u001f\u007f]/u.test(value);
+  return value.length > 0 && value.length <= 120 && !/[\u0000-\u001f\u007f]/u.test(value);
 }
 
 function clipped(value: string, maxChars: number) {
@@ -197,12 +194,7 @@ export function prepareOperatingReviewEvidence(
   if (!parsed.columns.includes(input.category) || !parsed.columns.includes(input.value)) {
     return { errors: ["The selected evidence fields are missing from the current Data source."] };
   }
-  const preparedScopes = prepareOperatingReviewScopes(
-    parsed.rows,
-    parsed.columns,
-    input.scope,
-    input.comparisonScope,
-  );
+  const preparedScopes = prepareOperatingReviewScopes(parsed.rows, parsed.columns, input.scope, input.comparisonScope);
   if (preparedScopes.errors.length) return { errors: preparedScopes.errors };
   type AggregateGroup = {
     category: string;
@@ -229,7 +221,12 @@ export function prepareOperatingReviewEvidence(
         current.count += 1;
       } else {
         groups.set(key, {
-          category: clipped(String(categoryValue).replace(/[\r\n]+/gu, " ").trim(), 120),
+          category: clipped(
+            String(categoryValue)
+              .replace(/[\r\n]+/gu, " ")
+              .trim(),
+            120,
+          ),
           sum: numericValue,
           count: 1,
           sourceOrder: rowIndex,
@@ -245,22 +242,23 @@ export function prepareOperatingReviewEvidence(
     ? aggregateRows(preparedScopes.comparisonRows)
     : { groups: new Map<string, AggregateGroup>(), errors: [] as string[] };
   if (comparison.errors.length) return { errors: comparison.errors };
-  const aggregateValue = (group: AggregateGroup) => (
-    input.aggregation === "average" ? group.sum / group.count : group.sum
-  );
+  const aggregateValue = (group: AggregateGroup) =>
+    input.aggregation === "average" ? group.sum / group.count : group.sum;
   const aggregated = [...primary.groups.entries()].flatMap(([key, group]) => {
     const comparisonGroup = comparison.groups.get(key);
     if (preparedScopes.comparisonScope && !comparisonGroup) return [];
     const primaryValue = aggregateValue(group);
     const comparisonValue = comparisonGroup ? aggregateValue(comparisonGroup) : undefined;
-    return [{
-      ...group,
-      value: comparisonValue == null ? primaryValue : primaryValue - comparisonValue,
-      primaryValue,
-      comparisonValue,
-      primarySourceRowCount: group.count,
-      comparisonSourceRowCount: comparisonGroup?.count,
-    }];
+    return [
+      {
+        ...group,
+        value: comparisonValue == null ? primaryValue : primaryValue - comparisonValue,
+        primaryValue,
+        comparisonValue,
+        primarySourceRowCount: group.count,
+        comparisonSourceRowCount: comparisonGroup?.count,
+      },
+    ];
   });
   if (preparedScopes.comparisonScope && !aggregated.length) {
     return { errors: ["Primary and comparison scopes need at least one shared category."] };
@@ -277,12 +275,14 @@ export function prepareOperatingReviewEvidence(
       category: group.category,
       value: group.value,
       sourceRowCount: group.primarySourceRowCount + (group.comparisonSourceRowCount ?? 0),
-      ...(preparedScopes.comparisonScope ? {
-        primaryValue: group.primaryValue,
-        comparisonValue: group.comparisonValue,
-        primarySourceRowCount: group.primarySourceRowCount,
-        comparisonSourceRowCount: group.comparisonSourceRowCount,
-      } : {}),
+      ...(preparedScopes.comparisonScope
+        ? {
+            primaryValue: group.primaryValue,
+            comparisonValue: group.comparisonValue,
+            primarySourceRowCount: group.primarySourceRowCount,
+            comparisonSourceRowCount: group.comparisonSourceRowCount,
+          }
+        : {}),
     }));
   return {
     data,
@@ -319,9 +319,7 @@ function querySource(
     const changeField = quoteSqlIdentifier(operatingReviewMetricField(input));
     const primaryAggregate = `${aggregate}(CASE WHEN ${primaryCondition} THEN CAST(${value} AS DOUBLE) END)`;
     const comparisonAggregate = `${aggregate}(CASE WHEN ${comparisonCondition} THEN CAST(${value} AS DOUBLE) END)`;
-    const order = input.mark === "line"
-      ? `MIN(CASE WHEN ${primaryCondition} THEN rowid END)`
-      : `${changeField} DESC`;
+    const order = input.mark === "line" ? `MIN(CASE WHEN ${primaryCondition} THEN rowid END)` : `${changeField} DESC`;
     return `${formatQueryDataSourceDirective(input.dataArtifactId)}
 SELECT
   ${category},
@@ -364,16 +362,10 @@ function operatingReviewScopeText(
   const primary = formatOperatingReviewScopeLabel(scope);
   if (!comparisonScope) return primary;
   const comparison = String(comparisonScope.value);
-  return isChineseRuneLocale(locale)
-    ? `${primary} 对比 ${comparison}`
-    : `${primary} vs ${comparison}`;
+  return isChineseRuneLocale(locale) ? `${primary} 对比 ${comparison}` : `${primary} vs ${comparison}`;
 }
 
-function narrativeEvidenceBinding(
-  query: WorkspaceArtifact,
-  input: OperatingReviewInput,
-  evidenceRowId: string,
-) {
+function narrativeEvidenceBinding(query: WorkspaceArtifact, input: OperatingReviewInput, evidenceRowId: string) {
   const rowIndex = Number(evidenceRowId.replace(/^result-/u, "")) - 1;
   return formatQueryMetricReference({
     queryArtifactId: query.id,
@@ -390,12 +382,13 @@ function reportNarrativeSource(
 ) {
   if (!narrative) return "";
   const zh = isChineseRuneLocale(input.locale);
-  const prompts = narrative.insights.map((insight) => {
-    const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
-    const supporting = insight.supportingEvidenceRowId
-      ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
-      : "";
-    return `<!-- rune:evidence ${query.id} ${insight.primaryEvidenceRowId}${insight.supportingEvidenceRowId ? ` ${insight.supportingEvidenceRowId}` : ""} -->
+  const prompts = narrative.insights
+    .map((insight) => {
+      const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
+      const supporting = insight.supportingEvidenceRowId
+        ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
+        : "";
+      return `<!-- rune:evidence ${query.id} ${insight.primaryEvidenceRowId}${insight.supportingEvidenceRowId ? ` ${insight.supportingEvidenceRowId}` : ""} -->
 ### ${markdownInline(normalizeTaskText(insight.title))}
 
 ${markdownInline(normalizeTaskText(insight.question))}
@@ -403,7 +396,8 @@ ${markdownInline(normalizeTaskText(insight.question))}
 > **${zh ? "实时证据" : "Live evidence"}** · ${zh ? "主要汇总" : "Primary aggregate"} ${primary}${supporting ? ` · ${zh ? "对照汇总" : "Comparison aggregate"} ${supporting}` : ""}
 
 **${zh ? "待审核的决策提示" : "Decision prompt to review"}** · ${markdownInline(normalizeTaskText(insight.decisionPrompt))}`;
-  }).join("\n\n");
+    })
+    .join("\n\n");
   return `## ${zh ? "证据驱动的审核提示" : "Evidence-led review prompts"}
 
 ${zh ? "以下问题由模型根据有界聚合证据提出；数字仍由当前 Query 实时编译，问题与决策提示必须由你审核。" : "A configured model proposed these questions from bounded aggregate evidence. Every number still compiles live from the current Query; review each question and decision prompt."}
@@ -420,18 +414,20 @@ function deckNarrativeSource(
 ) {
   if (!narrative) return "";
   const zh = isChineseRuneLocale(input.locale);
-  return narrative.insights.map((insight) => {
-    const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
-    const supporting = insight.supportingEvidenceRowId
-      ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
-      : "";
-    return `### ${markdownInline(normalizeTaskText(insight.title))}
+  return narrative.insights
+    .map((insight) => {
+      const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
+      const supporting = insight.supportingEvidenceRowId
+        ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
+        : "";
+      return `### ${markdownInline(normalizeTaskText(insight.title))}
 
 ${markdownInline(normalizeTaskText(insight.question))}
 
 - **${zh ? "实时证据" : "Live evidence"}** · ${primary}${supporting ? ` · ${supporting}` : ""}
 - **${zh ? "待审核" : "Review"}** · ${markdownInline(normalizeTaskText(insight.decisionPrompt))}`;
-  }).join("\n\n");
+    })
+    .join("\n\n");
 }
 
 function reportSource(
@@ -451,9 +447,7 @@ function reportSource(
   const value = markdownInline(input.value);
   const sourceName = markdownInline(data.name);
   const audience = audienceLabel(input.locale, input.audience);
-  const aggregation = input.aggregation === "average"
-    ? zh ? "平均值" : "average"
-    : zh ? "合计值" : "sum";
+  const aggregation = input.aggregation === "average" ? (zh ? "平均值" : "average") : zh ? "合计值" : "sum";
   const chartBinding = formatChartReference(chart.id);
   const scopeText = markdownInline(operatingReviewScopeText(input.locale, scope, comparisonScope));
   const narrativeSource = reportNarrativeSource(input, query, narrative);
@@ -469,9 +463,11 @@ ${focus}
 
 ## 可核验视图
 
-${comparisonScope
-  ? `以下视图按 **${category}** 对比 **${value}** 的${aggregation}，图表显示主范围减去对比范围的变化。只有两个范围都存在的分类才进入结果。`
-  : `以下视图仅在 **${scopeText}** 范围内按 **${category}** 汇总 **${value}** 的${aggregation}。`}Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
+${
+  comparisonScope
+    ? `以下视图按 **${category}** 对比 **${value}** 的${aggregation}，图表显示主范围减去对比范围的变化。只有两个范围都存在的分类才进入结果。`
+    : `以下视图仅在 **${scopeText}** 范围内按 **${category}** 汇总 **${value}** 的${aggregation}。`
+}Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
 
 ${chartBinding}
 
@@ -487,7 +483,16 @@ ${narrativeSource}## 审核问题
 | --- | --- | --- | --- |
 | 待审核后填写 | — | — | ${sourceName} |
 `;
-    return runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding, ...(scope ? [scopeText] : [])]);
+    return runeText(input.locale, source, source, [
+      title,
+      period,
+      focus,
+      category,
+      value,
+      sourceName,
+      chartBinding,
+      ...(scope ? [scopeText] : []),
+    ]);
   }
 
   return `# ${title}
@@ -500,9 +505,11 @@ ${focus}
 
 ## Verifiable view
 
-${comparisonScope
-  ? `This view compares the ${aggregation} of **${value}** by **${category}** and charts primary minus comparison. Only categories present in both exact scopes enter the result.`
-  : `Within **${scopeText}**, this view uses the ${aggregation} of **${value}** grouped by **${category}**.`} Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
+${
+  comparisonScope
+    ? `This view compares the ${aggregation} of **${value}** by **${category}** and charts primary minus comparison. Only categories present in both exact scopes enter the result.`
+    : `Within **${scopeText}**, this view uses the ${aggregation} of **${value}** grouped by **${category}**.`
+} Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
 
 ${chartBinding}
 
@@ -560,7 +567,7 @@ ${period} · ${audience} · ${scopeText}
 <!-- layout: split -->
 <!-- eyebrow: ${zh ? "可核验证据" : "Verifiable evidence"} -->
 
-## ${comparisonScope ? zh ? `${value} 变化，按` : `Change in ${value} by` : zh ? `${value} 按` : `${value} by`} ${category}
+## ${comparisonScope ? (zh ? `${value} 变化，按` : `Change in ${value} by`) : zh ? `${value} 按` : `${value} by`} ${category}
 
 ${zh ? "数据范围" : "Data scope"} · ${scopeText}
 
@@ -571,13 +578,17 @@ ${chartBinding}
 <!-- layout: content -->
 <!-- eyebrow: ${zh ? "任务重点" : "Task focus"} -->
 
-## ${narrative ? zh ? "哪些证据需要决定" : "What the evidence must decide" : zh ? "本次需要回答什么" : "What this review must answer"}
+## ${narrative ? (zh ? "哪些证据需要决定" : "What the evidence must decide") : zh ? "本次需要回答什么" : "What this review must answer"}
 
-${narrative ? narrativeSource : `${focus}
+${
+  narrative
+    ? narrativeSource
+    : `${focus}
 
 - ${zh ? `检查 ${sourceName} 的范围与口径` : `Confirm the scope and definitions in ${sourceName}`}
 - ${zh ? "对关键变化补充负责人和下一步" : "Assign an owner and next step to material changes"}
-- ${zh ? "审核后再形成最终经营结论" : "Form the final business conclusion only after review"}`}
+- ${zh ? "审核后再形成最终经营结论" : "Form the final business conclusion only after review"}`
+}
 
 ---
 
@@ -588,13 +599,24 @@ ${narrative ? narrativeSource : `${focus}
 
 ${zh ? "所有应用动作仍需在 Rune 的事务审核中明确确认。" : "Every apply remains subject to an explicit Rune transaction review."}
 `;
-  return zh ? runeText(input.locale, source, source, [title, period, focus, category, value, sourceName, chartBinding, ...(scope ? [scopeText] : [])]) : source;
+  return zh
+    ? runeText(input.locale, source, source, [
+        title,
+        period,
+        focus,
+        category,
+        value,
+        sourceName,
+        chartBinding,
+        ...(scope ? [scopeText] : []),
+      ])
+    : source;
 }
 
 function uniqueDeliverables(deliverables: OperatingReviewDeliverable[]) {
-  return [...new Set(deliverables)].filter((item): item is OperatingReviewDeliverable => (
-    item === "document" || item === "slides"
-  ));
+  return [...new Set(deliverables)].filter(
+    (item): item is OperatingReviewDeliverable => item === "document" || item === "slides",
+  );
 }
 
 export function prepareOperatingReviewWorkflow(
@@ -615,13 +637,17 @@ export function prepareOperatingReviewWorkflow(
 
   const deliverables = uniqueDeliverables(input.deliverables);
   if (!deliverables.length) errors.push("Choose at least one deliverable.");
-  if (deliverables.length !== input.deliverables.length) errors.push("Deliverable choices must be unique and supported.");
+  if (deliverables.length !== input.deliverables.length)
+    errors.push("Deliverable choices must be unique and supported.");
 
   const sourceOptions = artifactCreationSourceOptions(artifacts, "query");
   const sourceOption = sourceOptions.find((option) => option.artifactId === input.dataArtifactId);
   const data = artifacts.find((artifact) => artifact.id === input.dataArtifactId);
   if (!sourceOption || !data || data.kind !== "data") errors.push("Choose one exact valid Data source.");
-  if (!fieldIsSafe(input.category) || sourceOption?.columns.filter((column) => column === input.category).length !== 1) {
+  if (
+    !fieldIsSafe(input.category) ||
+    sourceOption?.columns.filter((column) => column === input.category).length !== 1
+  ) {
     errors.push("Choose one exact visible category field from the selected Data source.");
   }
   if (!fieldIsSafe(input.value) || sourceOption?.columns.filter((column) => column === input.value).length !== 1) {
@@ -630,10 +656,15 @@ export function prepareOperatingReviewWorkflow(
   if (input.category === input.value) errors.push("Category and value must use different fields.");
 
   let evidence: ReturnType<typeof prepareOperatingReviewEvidence> | undefined;
-  if (data && sourceOption
-    && fieldIsSafe(input.category) && sourceOption.columns.includes(input.category)
-    && fieldIsSafe(input.value) && sourceOption.columns.includes(input.value)
-    && input.category !== input.value) {
+  if (
+    data &&
+    sourceOption &&
+    fieldIsSafe(input.category) &&
+    sourceOption.columns.includes(input.category) &&
+    fieldIsSafe(input.value) &&
+    sourceOption.columns.includes(input.value) &&
+    input.category !== input.value
+  ) {
     evidence = prepareOperatingReviewEvidence(artifacts, input);
     if (evidence.errors.length) errors.push(...evidence.errors);
   }
@@ -655,7 +686,9 @@ export function prepareOperatingReviewWorkflow(
     sourceArtifactId: data.id,
   });
   if (!queryPrepared.artifact || queryPrepared.errors.length) {
-    return { errors: queryPrepared.errors.length ? queryPrepared.errors : ["Rune could not prepare the mapped analysis."] };
+    return {
+      errors: queryPrepared.errors.length ? queryPrepared.errors : ["Rune could not prepare the mapped analysis."],
+    };
   }
   const metricField = operatingReviewMetricField({ ...input, comparisonScope });
   const query = { ...queryPrepared.artifact, source: querySource(input, scope, comparisonScope) };
@@ -671,23 +704,32 @@ export function prepareOperatingReviewWorkflow(
     format: input.format,
   });
   if (!chartPrepared.artifact || chartPrepared.errors.length) {
-    return { errors: chartPrepared.errors.length ? chartPrepared.errors : ["Rune could not prepare the mapped chart."] };
+    return {
+      errors: chartPrepared.errors.length ? chartPrepared.errors : ["Rune could not prepare the mapped chart."],
+    };
   }
   const chart = {
     ...chartPrepared.artifact,
-    source: `${JSON.stringify({
-      version: 1,
-      title: clipped(`${comparisonScope ? "Change in " : ""}${input.value} by ${input.category}`, 120),
-      description: clipped(`${input.aggregation === "average" ? "Average" : "Sum"}${comparisonScope ? " change" : ""} for ${normalizeTaskText(input.period)} · ${operatingReviewScopeText(input.locale, scope, comparisonScope)} · ${data.name}`, 240),
-      source: query.id,
-      mark: input.mark,
-      category: input.category,
-      value: metricField,
-      sort: input.mark === "line" ? "source" : "descending",
-      format: input.format,
-      color: "#ff5c35",
-      maxItems: 8,
-    }, null, 2)}\n`,
+    source: `${JSON.stringify(
+      {
+        version: 1,
+        title: clipped(`${comparisonScope ? "Change in " : ""}${input.value} by ${input.category}`, 120),
+        description: clipped(
+          `${input.aggregation === "average" ? "Average" : "Sum"}${comparisonScope ? " change" : ""} for ${normalizeTaskText(input.period)} · ${operatingReviewScopeText(input.locale, scope, comparisonScope)} · ${data.name}`,
+          240,
+        ),
+        source: query.id,
+        mark: input.mark,
+        category: input.category,
+        value: metricField,
+        sort: input.mark === "line" ? "source" : "descending",
+        format: input.format,
+        color: "#ff5c35",
+        maxItems: 8,
+      },
+      null,
+      2,
+    )}\n`,
   };
   workingArtifacts = [...workingArtifacts, chart];
 
@@ -710,13 +752,16 @@ export function prepareOperatingReviewWorkflow(
       title: `${title} ${deliverable === "document" ? "Report" : "Briefing"}`,
     });
     if (!prepared.artifact || prepared.errors.length) {
-      return { errors: prepared.errors.length ? prepared.errors : [`Rune could not prepare the ${deliverable} deliverable.`] };
+      return {
+        errors: prepared.errors.length ? prepared.errors : [`Rune could not prepare the ${deliverable} deliverable.`],
+      };
     }
     const artifact = {
       ...prepared.artifact,
-      source: deliverable === "document"
-        ? reportSource(input, data, query, chart, scope, comparisonScope, narrative)
-        : deckSource(input, data, query, chart, scope, comparisonScope, narrative),
+      source:
+        deliverable === "document"
+          ? reportSource(input, data, query, chart, scope, comparisonScope, narrative)
+          : deckSource(input, data, query, chart, scope, comparisonScope, narrative),
     };
     creations.push({
       artifact,
@@ -794,21 +839,37 @@ function normalizeOperatingReviewRuns(value: unknown): OperatingReviewRun[] {
     const period = stringValue(candidate.period, MAX_OPERATING_REVIEW_PERIOD_CHARS);
     const completedAt = stringValue(candidate.completedAt, 40);
     const status = candidate.status === "applied" || candidate.status === "stopped" ? candidate.status : undefined;
-    const stopReason = candidate.stopReason === null
-      || ["validation", "runtime", "stale", "persistence", "cancelled"].includes(candidate.stopReason ?? "")
-      ? candidate.stopReason as OperatingReviewRun["stopReason"]
-      : undefined;
+    const stopReason =
+      candidate.stopReason === null ||
+      ["validation", "runtime", "stale", "persistence", "cancelled"].includes(candidate.stopReason ?? "")
+        ? (candidate.stopReason as OperatingReviewRun["stopReason"])
+        : undefined;
     const changedFileCount = nonNegativeInteger(candidate.changedFileCount, 4);
     const queryCount = nonNegativeInteger(candidate.queryCount, 50);
     const chartConsumerCount = nonNegativeInteger(candidate.chartConsumerCount, 50);
     const durationMs = nonNegativeInteger(candidate.durationMs, 30 * 60 * 1000);
     const inputTokens = candidate.inputTokens === null ? null : nonNegativeInteger(candidate.inputTokens, 10_000_000);
-    const outputTokens = candidate.outputTokens === null ? null : nonNegativeInteger(candidate.outputTokens, 10_000_000);
-    if (candidate.version !== 1 || !id || ids.has(id) || !period || !completedAt || !status
-      || Number.isNaN(Date.parse(completedAt)) || (candidate.provider !== "local" && candidate.provider !== "openai")
-      || stopReason === undefined || (status === "applied" ? stopReason !== null : stopReason === null)
-      || changedFileCount == null || queryCount == null || chartConsumerCount == null || durationMs == null
-      || inputTokens === undefined || outputTokens === undefined) continue;
+    const outputTokens =
+      candidate.outputTokens === null ? null : nonNegativeInteger(candidate.outputTokens, 10_000_000);
+    if (
+      candidate.version !== 1 ||
+      !id ||
+      ids.has(id) ||
+      !period ||
+      !completedAt ||
+      !status ||
+      Number.isNaN(Date.parse(completedAt)) ||
+      (candidate.provider !== "local" && candidate.provider !== "openai") ||
+      stopReason === undefined ||
+      (status === "applied" ? stopReason !== null : stopReason === null) ||
+      changedFileCount == null ||
+      queryCount == null ||
+      chartConsumerCount == null ||
+      durationMs == null ||
+      inputTokens === undefined ||
+      outputTokens === undefined
+    )
+      continue;
     ids.add(id);
     runs.push({
       version: 1,
@@ -869,8 +930,11 @@ export async function recordOperatingReviewDelivery(input: {
   if (!workflow) throw new Error("The saved operating review is no longer valid.");
   const run = workflow.runs.find((candidate) => candidate.id === input.runId);
   if (!run || run.status !== "applied") throw new Error("The applied task run is no longer available.");
-  const deliverableArtifactIds = [workflow.artifactIds.document, workflow.artifactIds.slides].filter((value): value is string => Boolean(value));
-  if (!deliverableArtifactIds.includes(input.artifactId)) throw new Error("This file is not an exact deliverable of the saved task.");
+  const deliverableArtifactIds = [workflow.artifactIds.document, workflow.artifactIds.slides].filter(
+    (value): value is string => Boolean(value),
+  );
+  if (!deliverableArtifactIds.includes(input.artifactId))
+    throw new Error("This file is not an exact deliverable of the saved task.");
   const outcome = await createOperatingReviewDeliveryOutcome({
     run,
     artifactId: input.artifactId,
@@ -883,14 +947,21 @@ export async function recordOperatingReviewDelivery(input: {
   return {
     ...workflow,
     deliveries: appendDeliveryOutcome(workflow.deliveries, outcome, {
-      appliedRunIds: workflow.runs.filter((candidate) => candidate.status === "applied").map((candidate) => candidate.id),
+      appliedRunIds: workflow.runs
+        .filter((candidate) => candidate.status === "applied")
+        .map((candidate) => candidate.id),
       deliverableArtifactIds,
     }),
   };
 }
 
 export { summarizeOperatingReviewDeliveryOutcomes };
-export type { OperatingReviewDeliveryMethod, OperatingReviewDeliveryOutcome, OperatingReviewDeliveryRating, OperatingReviewDeliveryTarget };
+export type {
+  OperatingReviewDeliveryMethod,
+  OperatingReviewDeliveryOutcome,
+  OperatingReviewDeliveryRating,
+  OperatingReviewDeliveryTarget,
+};
 
 function stringValue(value: unknown, maxChars: number) {
   return typeof value === "string" && value.length <= maxChars ? value : undefined;
@@ -916,39 +987,58 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
     const chart = stringValue(artifactIds?.chart, 120);
     const document = artifactIds?.document == null ? undefined : stringValue(artifactIds.document, 120);
     const slides = artifactIds?.slides == null ? undefined : stringValue(artifactIds.slides, 120);
-    const normalizedArtifactIds = query && chart
-      ? { query, chart, ...(document ? { document } : {}), ...(slides ? { slides } : {}) }
-      : undefined;
+    const normalizedArtifactIds =
+      query && chart ? { query, chart, ...(document ? { document } : {}), ...(slides ? { slides } : {}) } : undefined;
     const deliverables = Array.isArray(input?.deliverables)
-      ? [...new Set(input.deliverables)].filter((item): item is OperatingReviewDeliverable => item === "document" || item === "slides")
+      ? [...new Set(input.deliverables)].filter(
+          (item): item is OperatingReviewDeliverable => item === "document" || item === "slides",
+        )
       : [];
     const normalizedLocale = normalizeRuneLocale(input?.locale);
     const normalizedScope = normalizeOperatingReviewScope(input?.scope);
     const normalizedComparisonScope = normalizeOperatingReviewScope(input?.comparisonScope);
-    const comparisonIsValid = normalizedComparisonScope === null || Boolean(
-      normalizedScope
-      && normalizedComparisonScope
-      && normalizedComparisonScope.field === normalizedScope.field
-      && operatingReviewScopeValueKey(normalizedComparisonScope.value)
-        !== operatingReviewScopeValueKey(normalizedScope.value),
-    );
-    if (candidate.version !== 1 || !id || ids.has(id) || !title || !dataArtifactId || !category
-      || !numericValue || !period || !focus || !query || !chart || !deliverables.length
-      || !normalizedArtifactIds || id !== savedReviewId(normalizedArtifactIds)
-      || Boolean(validateTaskText(title, "Review title", MAX_OPERATING_REVIEW_TITLE_CHARS))
-      || Boolean(validateTaskText(period, "Reporting period", MAX_OPERATING_REVIEW_PERIOD_CHARS))
-      || Boolean(validateTaskText(focus, "Review focus", MAX_OPERATING_REVIEW_FOCUS_CHARS))
-      || ![dataArtifactId, category, numericValue, query, chart, document, slides].filter(Boolean).every((item) => fieldIsSafe(item as string))
-      || !["sum", "average"].includes(input?.aggregation ?? "")
-      || !["bar", "line"].includes(input?.mark ?? "")
-      || !["number", "currency", "percent"].includes(input?.format ?? "")
-      || !["leadership", "board", "team"].includes(input?.audience ?? "")
-      || !normalizedLocale
-      || normalizedScope === undefined
-      || normalizedComparisonScope === undefined
-      || !comparisonIsValid
-      || (deliverables.includes("document") !== Boolean(document))
-      || (deliverables.includes("slides") !== Boolean(slides))) continue;
+    const comparisonIsValid =
+      normalizedComparisonScope === null ||
+      Boolean(
+        normalizedScope &&
+        normalizedComparisonScope &&
+        normalizedComparisonScope.field === normalizedScope.field &&
+        operatingReviewScopeValueKey(normalizedComparisonScope.value) !==
+          operatingReviewScopeValueKey(normalizedScope.value),
+      );
+    if (
+      candidate.version !== 1 ||
+      !id ||
+      ids.has(id) ||
+      !title ||
+      !dataArtifactId ||
+      !category ||
+      !numericValue ||
+      !period ||
+      !focus ||
+      !query ||
+      !chart ||
+      !deliverables.length ||
+      !normalizedArtifactIds ||
+      id !== savedReviewId(normalizedArtifactIds) ||
+      Boolean(validateTaskText(title, "Review title", MAX_OPERATING_REVIEW_TITLE_CHARS)) ||
+      Boolean(validateTaskText(period, "Reporting period", MAX_OPERATING_REVIEW_PERIOD_CHARS)) ||
+      Boolean(validateTaskText(focus, "Review focus", MAX_OPERATING_REVIEW_FOCUS_CHARS)) ||
+      ![dataArtifactId, category, numericValue, query, chart, document, slides]
+        .filter(Boolean)
+        .every((item) => fieldIsSafe(item as string)) ||
+      !["sum", "average"].includes(input?.aggregation ?? "") ||
+      !["bar", "line"].includes(input?.mark ?? "") ||
+      !["number", "currency", "percent"].includes(input?.format ?? "") ||
+      !["leadership", "board", "team"].includes(input?.audience ?? "") ||
+      !normalizedLocale ||
+      normalizedScope === undefined ||
+      normalizedComparisonScope === undefined ||
+      !comparisonIsValid ||
+      deliverables.includes("document") !== Boolean(document) ||
+      deliverables.includes("slides") !== Boolean(slides)
+    )
+      continue;
     ids.add(id);
     const runs = normalizeOperatingReviewRuns(candidate.runs);
     const deliverableArtifactIds = [document, slides].filter((value): value is string => Boolean(value));
@@ -1017,7 +1107,9 @@ export function prepareSavedOperatingReviewRerun(
   }
   const prepared = prepareOperatingReviewWorkflow(artifacts, input, narrative);
   if (!prepared.plan || prepared.errors.length) return prepared;
-  const generatedByKind = new Map(prepared.plan.creations.map((creation) => [creation.artifact.kind, creation] as const));
+  const generatedByKind = new Map(
+    prepared.plan.creations.map((creation) => [creation.artifact.kind, creation] as const),
+  );
   const generatedQuery = generatedByKind.get("query")?.artifact;
   const generatedChart = generatedByKind.get("chart")?.artifact;
   const actualQuery = targetArtifacts.find((artifact) => artifact.kind === "query");
@@ -1035,10 +1127,7 @@ export function prepareSavedOperatingReviewRerun(
       chartSource.source = actualQuery.id;
       nextSource = `${JSON.stringify(chartSource, null, 2)}\n`;
     } else if (target.kind === "document" || target.kind === "slides") {
-      nextSource = nextSource.replace(
-        formatChartReference(generatedChart.id),
-        formatChartReference(actualChart.id),
-      );
+      nextSource = nextSource.replace(formatChartReference(generatedChart.id), formatChartReference(actualChart.id));
       nextSource = nextSource.replaceAll(generatedQuery.id, actualQuery.id);
     }
     if (nextSource === target.source) continue;
@@ -1049,7 +1138,8 @@ export function prepareSavedOperatingReviewRerun(
       detail: generated.detail,
     });
   }
-  if (!patches.length) return { errors: ["The saved review already matches these settings and current source mapping."] };
+  if (!patches.length)
+    return { errors: ["The saved review already matches these settings and current source mapping."] };
   const mutation = prepareWorkspaceMutation(artifacts, patches, []);
   if (mutation.errors.length) return { errors: mutation.errors };
   const zh = isChineseRuneLocale(input.locale);
@@ -1058,7 +1148,9 @@ export function prepareSavedOperatingReviewRerun(
   return {
     errors: [],
     plan: {
-      summary: zh ? runeText(input.locale, chineseSummary, chineseSummary, [normalizeTaskText(input.title)]) : `Update saved review “${normalizeTaskText(input.title)}”`,
+      summary: zh
+        ? runeText(input.locale, chineseSummary, chineseSummary, [normalizeTaskText(input.title)])
+        : `Update saved review “${normalizeTaskText(input.title)}”`,
       detail: zh
         ? runeText(input.locale, chineseDetail, chineseDetail)
         : `Rune will recompile ${patches.length} existing files without changing their identities; every change still requires one transaction review.`,

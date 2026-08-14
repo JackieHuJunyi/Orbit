@@ -15,7 +15,9 @@ import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { parseDataSource } from "../app/lib/workspace.ts";
 
 test("creates a readable blank Markdown document without mutating the workspace", () => {
-  const existing = [{ id: "existing", name: "existing.md", kind: "document", language: "Markdown", source: "# Existing\n" }];
+  const existing = [
+    { id: "existing", name: "existing.md", kind: "document", language: "Markdown", source: "# Existing\n" },
+  ];
   const prepared = prepareArtifactCreation(existing, { kind: "document", title: "Project Brief" });
   assert.deepEqual(prepared.errors, []);
   assert.deepEqual(prepared.artifact, {
@@ -68,17 +70,20 @@ test("creates an explicit Query from one exact Data source", () => {
     sourceArtifactId: data.id,
   });
   assert.deepEqual(prepared.errors, []);
-  assert.deepEqual({
-    id: prepared.artifact.id,
-    name: prepared.artifact.name,
-    kind: prepared.artifact.kind,
-    language: prepared.artifact.language,
-  }, {
-    id: "revenue-analysis",
-    name: "revenue-analysis.sql",
-    kind: "query",
-    language: "DuckDB SQL",
-  });
+  assert.deepEqual(
+    {
+      id: prepared.artifact.id,
+      name: prepared.artifact.name,
+      kind: prepared.artifact.kind,
+      language: prepared.artifact.language,
+    },
+    {
+      id: "revenue-analysis",
+      name: "revenue-analysis.sql",
+      kind: "query",
+      language: "DuckDB SQL",
+    },
+  );
   assert.deepEqual(parseQueryDataSourceDirective(prepared.artifact.source), {
     artifactId: data.id,
     explicit: true,
@@ -102,20 +107,25 @@ test("discovers exact source fields and creates Data- or Query-backed Chart JSON
     sourceArtifactId: data.id,
   }).artifact;
   const workspace = [data, query];
-  assert.deepEqual(artifactCreationSourceOptions(workspace, "query"), [{
-    artifactId: data.id,
-    name: data.name,
-    kind: "data",
-    columns: ["Region", "Revenue"],
-    numericColumns: ["Revenue"],
-  }]);
-  assert.deepEqual(artifactCreationSourceOptions(workspace, "chart").map((option) => ({
-    artifactId: option.artifactId,
-    columns: option.columns,
-  })), [
-    { artifactId: data.id, columns: ["Region", "Revenue"] },
-    { artifactId: query.id, columns: ["Region", "Revenue"] },
+  assert.deepEqual(artifactCreationSourceOptions(workspace, "query"), [
+    {
+      artifactId: data.id,
+      name: data.name,
+      kind: "data",
+      columns: ["Region", "Revenue"],
+      numericColumns: ["Revenue"],
+    },
   ]);
+  assert.deepEqual(
+    artifactCreationSourceOptions(workspace, "chart").map((option) => ({
+      artifactId: option.artifactId,
+      columns: option.columns,
+    })),
+    [
+      { artifactId: data.id, columns: ["Region", "Revenue"] },
+      { artifactId: query.id, columns: ["Region", "Revenue"] },
+    ],
+  );
 
   const direct = prepareArtifactCreation(workspace, {
     kind: "chart",
@@ -187,13 +197,15 @@ test("rejects invented creation sources and fields without partial artifacts", (
 });
 
 test("resolves filename and id collisions case-insensitively", () => {
-  const existing = [{
-    id: "project-brief",
-    name: "PROJECT-BRIEF.MD",
-    kind: "document",
-    language: "Markdown",
-    source: "# Existing\n",
-  }];
+  const existing = [
+    {
+      id: "project-brief",
+      name: "PROJECT-BRIEF.MD",
+      kind: "document",
+      language: "Markdown",
+      source: "# Existing\n",
+    },
+  ];
   const prepared = prepareArtifactCreation(existing, { kind: "document", title: "Project Brief" });
   assert.deepEqual(prepared.errors, []);
   assert.equal(prepared.artifact.id, "project-brief-2");
@@ -211,12 +223,7 @@ test("keeps Unicode titles readable while producing portable source identity", (
 });
 
 test("rejects unsafe titles and an overfull workspace without partial artifacts", () => {
-  const invalidTitles = [
-    "",
-    "Line one\nLine two",
-    "<script>",
-    "x".repeat(MAX_ARTIFACT_TITLE_CHARS + 1),
-  ];
+  const invalidTitles = ["", "Line one\nLine two", "<script>", "x".repeat(MAX_ARTIFACT_TITLE_CHARS + 1)];
   invalidTitles.forEach((title) => {
     const prepared = prepareArtifactCreation([], { kind: "document", title });
     assert.equal(prepared.artifact, undefined);
@@ -238,13 +245,15 @@ test("rejects unsafe titles and an overfull workspace without partial artifacts"
 });
 
 test("blocks creation when the complete current workspace is invalid", () => {
-  const invalidWorkspace = [{
-    id: "broken",
-    name: "broken.md",
-    kind: "document",
-    language: "Markdown",
-    source: '# Broken\n\n{{ metric("missing") }}',
-  }];
+  const invalidWorkspace = [
+    {
+      id: "broken",
+      name: "broken.md",
+      kind: "document",
+      language: "Markdown",
+      source: '# Broken\n\n{{ metric("missing") }}',
+    },
+  ];
   const prepared = prepareArtifactCreation(invalidWorkspace, { kind: "document", title: "New report" });
   assert.equal(prepared.artifact, undefined);
   assert.equal(prepared.nextArtifacts, invalidWorkspace);
@@ -252,7 +261,9 @@ test("blocks creation when the complete current workspace is invalid", () => {
 });
 
 test("commits one prepared workspace write and exposes storage failure without mutation", () => {
-  const existing = [{ id: "existing", name: "existing.md", kind: "document", language: "Markdown", source: "# Existing\n" }];
+  const existing = [
+    { id: "existing", name: "existing.md", kind: "document", language: "Markdown", source: "# Existing\n" },
+  ];
   const prepared = prepareArtifactCreation(existing, { kind: "document", title: "New report" });
   const writes = [];
   const committed = commitPreparedArtifactCreation(prepared, (artifacts, selectedId) => {

@@ -41,7 +41,8 @@ export const PDF_OCR_BASE_COPY = {
     preparing: "Preparing OCR",
     kicker: "Scanned PDF · explicit selection",
     title: "Choose pages for OCR",
-    description: "Rune found pages without selectable text. Confirm pages and language; image content is not read until you continue.",
+    description:
+      "Rune found pages without selectable text. Confirm pages and language; image content is not read until you continue.",
     settings: "OCR settings",
     privacyFooter: "Page images stay on device · results remain reviewable",
     stop: "Stop",
@@ -51,7 +52,8 @@ export const PDF_OCR_BASE_COPY = {
     page: "page",
     pages: "pages",
     onDevice: "On-device recognition",
-    privacy: "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.",
+    privacy:
+      "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.",
     detectedScanPages: "detected scan pages",
     pagesToRecognize: "Pages to recognize",
     ocrPagesFor: "OCR pages for",
@@ -80,7 +82,8 @@ export const PDF_OCR_BASE_COPY = {
     page: "页",
     pages: "页",
     onDevice: "设备内识别",
-    privacy: "PDF 页面只在浏览器内渲染。Rune 会从当前站点加载内置 OCR 运行库和语言数据，并由浏览器缓存；不会发送页面图像或识别文本。",
+    privacy:
+      "PDF 页面只在浏览器内渲染。Rune 会从当前站点加载内置 OCR 运行库和语言数据，并由浏览器缓存；不会发送页面图像或识别文本。",
     detectedScanPages: "检测到扫描页",
     pagesToRecognize: "识别页码",
     ocrPagesFor: "OCR 页码：",
@@ -121,15 +124,19 @@ export function PdfOcrSetupDialog({
   const copy = localizeRuneCopy<typeof PDF_OCR_BASE_COPY.en>(locale, PDF_OCR_BASE_COPY.en, PDF_OCR_BASE_COPY.zh);
   const [drafts, setDrafts] = useState(() => initialDrafts(candidates, locale));
   const [validationError, setValidationError] = useState("");
-  const selectedCount = useMemo(() => drafts.reduce((total, draft) => {
-    const candidate = candidates.find((item) => item.fileIndex === draft.fileIndex);
-    if (!candidate) return total;
-    try {
-      return total + parsePdfPageSelection(draft.pages, candidate.analysis.ocrCandidatePageNumbers).length;
-    } catch {
-      return total;
-    }
-  }, 0), [candidates, drafts]);
+  const selectedCount = useMemo(
+    () =>
+      drafts.reduce((total, draft) => {
+        const candidate = candidates.find((item) => item.fileIndex === draft.fileIndex);
+        if (!candidate) return total;
+        try {
+          return total + parsePdfPageSelection(draft.pages, candidate.analysis.ocrCandidatePageNumbers).length;
+        } catch {
+          return total;
+        }
+      }, 0),
+    [candidates, drafts],
+  );
 
   function submit() {
     try {
@@ -163,24 +170,38 @@ export function PdfOcrSetupDialog({
   return (
     <ReviewDialog
       dialogId="pdf-ocr-setup"
-      kicker={<><FileScan aria-hidden="true" /> {copy.kicker}</>}
+      kicker={
+        <>
+          <FileScan aria-hidden="true" /> {copy.kicker}
+        </>
+      }
       title={copy.title}
       description={copy.description}
       detailsLabel={copy.settings}
       locale={locale}
       onCancel={onCancel}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.privacyFooter}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {copy.privacyFooter}
+          </div>
           <span>
-            <button className="button ghost-button" onClick={onCancel}>{processing ? copy.stop : copy.cancel}</button>
+            <button className="button ghost-button" onClick={onCancel}>
+              {processing ? copy.stop : copy.cancel}
+            </button>
             <button className="button primary-button" onClick={submit} disabled={processing} data-dialog-initial-focus>
-              {processing ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <ScanText aria-hidden="true" />}
-              {processing ? copy.recognizing : `${copy.recognize} ${selectedCount} ${selectedCount === 1 ? copy.page : copy.pages}`}
+              {processing ? (
+                <LoaderCircle className="agent-spinner" aria-hidden="true" />
+              ) : (
+                <ScanText aria-hidden="true" />
+              )}
+              {processing
+                ? copy.recognizing
+                : `${copy.recognize} ${selectedCount} ${selectedCount === 1 ? copy.page : copy.pages}`}
             </button>
           </span>
         </>
-      )}
+      }
     >
       <div className="pdf-ocr-setup">
         <section className="pdf-ocr-privacy">
@@ -198,10 +219,15 @@ export function PdfOcrSetupDialog({
           return (
             <section className="pdf-ocr-file" key={`${candidate.fileIndex}:${candidate.fileName}`}>
               <header>
-                <span><FileScan aria-hidden="true" /></span>
+                <span>
+                  <FileScan aria-hidden="true" />
+                </span>
                 <div>
                   <strong>{candidate.fileName}</strong>
-                  <small>{candidate.analysis.pageCount} {candidate.analysis.pageCount === 1 ? copy.page : copy.pages} · {copy.detectedScanPages} {candidatePages}</small>
+                  <small>
+                    {candidate.analysis.pageCount} {candidate.analysis.pageCount === 1 ? copy.page : copy.pages} ·{" "}
+                    {copy.detectedScanPages} {candidatePages}
+                  </small>
                 </div>
               </header>
               <div className="pdf-ocr-fields">
@@ -212,9 +238,13 @@ export function PdfOcrSetupDialog({
                     disabled={processing}
                     spellCheck={false}
                     aria-label={`${copy.ocrPagesFor} ${candidate.fileName}`}
-                    onChange={(event) => setDrafts((current) => current.map((item) => (
-                      item.fileIndex === candidate.fileIndex ? { ...item, pages: event.target.value } : item
-                    )))}
+                    onChange={(event) =>
+                      setDrafts((current) =>
+                        current.map((item) =>
+                          item.fileIndex === candidate.fileIndex ? { ...item, pages: event.target.value } : item,
+                        ),
+                      )
+                    }
                   />
                   <small>{copy.pageExample}</small>
                 </label>
@@ -224,11 +254,15 @@ export function PdfOcrSetupDialog({
                     value={draft.language}
                     disabled={processing}
                     aria-label={`${copy.ocrLanguageFor} ${candidate.fileName}`}
-                    onChange={(event) => setDrafts((current) => current.map((item) => (
-                      item.fileIndex === candidate.fileIndex
-                        ? { ...item, language: event.target.value as PdfOcrLanguage }
-                        : item
-                    )))}
+                    onChange={(event) =>
+                      setDrafts((current) =>
+                        current.map((item) =>
+                          item.fileIndex === candidate.fileIndex
+                            ? { ...item, language: event.target.value as PdfOcrLanguage }
+                            : item,
+                        ),
+                      )
+                    }
                   >
                     <option value="eng">English</option>
                     <option value="chi_sim">简体中文</option>
@@ -243,12 +277,19 @@ export function PdfOcrSetupDialog({
 
         {processing && (
           <section className="pdf-ocr-progress" aria-live="polite">
-            <div><strong>{stageLabel}</strong><span>{progressValue}%</span></div>
+            <div>
+              <strong>{stageLabel}</strong>
+              <span>{progressValue}%</span>
+            </div>
             <progress max="100" value={progressValue} />
             {activeFileName && <small>{activeFileName}</small>}
           </section>
         )}
-        {(validationError || error) && <div className="import-review-error" role="alert">{validationError || error}</div>}
+        {(validationError || error) && (
+          <div className="import-review-error" role="alert">
+            {validationError || error}
+          </div>
+        )}
       </div>
     </ReviewDialog>
   );

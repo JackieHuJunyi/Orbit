@@ -153,21 +153,31 @@ test("rejects fabricated run, artifact, format-method, fingerprint, and stopped-
   const context = { appliedRunIds: [workflow.runs[0].id], deliverableArtifactIds: [artifactId] };
 
   assert.equal(normalizeOperatingReviewDeliveryOutcomes([valid], context).length, 1);
-  assert.deepEqual(normalizeOperatingReviewDeliveryOutcomes([
-    { ...valid, runId: "run:forged" },
-    { ...valid, artifactId: workflow.artifactIds.chart },
-    { ...valid, method: "folder", target: "pdf" },
-    { ...valid, sourceSha256: "not-a-hash" },
-  ], context), []);
-  await assert.rejects(() => recordOperatingReviewDelivery({
-    workflow: { ...workflow, runs: [{ ...workflow.runs[0], status: "stopped", stopReason: "cancelled" }] },
-    runId: workflow.runs[0].id,
-    artifactId,
-    source: "# No delivery\n",
-    method: "download",
-    target: "pdf",
-    rating: "ready",
-  }), /saved operating review|applied task run/i);
+  assert.deepEqual(
+    normalizeOperatingReviewDeliveryOutcomes(
+      [
+        { ...valid, runId: "run:forged" },
+        { ...valid, artifactId: workflow.artifactIds.chart },
+        { ...valid, method: "folder", target: "pdf" },
+        { ...valid, sourceSha256: "not-a-hash" },
+      ],
+      context,
+    ),
+    [],
+  );
+  await assert.rejects(
+    () =>
+      recordOperatingReviewDelivery({
+        workflow: { ...workflow, runs: [{ ...workflow.runs[0], status: "stopped", stopReason: "cancelled" }] },
+        runId: workflow.runs[0].id,
+        artifactId,
+        source: "# No delivery\n",
+        method: "download",
+        target: "pdf",
+        rating: "ready",
+      }),
+    /saved operating review|applied task run/i,
+  );
 });
 
 test("keeps delivery records bounded and retains saved tasks in every registered interface locale", () => {

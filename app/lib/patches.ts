@@ -35,13 +35,13 @@ export function captureWorkspaceSourceRevision(artifacts: WorkspaceArtifact[]): 
   return artifacts.map(({ id, source }) => ({ id, source }));
 }
 
-export function workspaceMatchesSourceRevision(
-  artifacts: WorkspaceArtifact[],
-  revision: WorkspaceSourceRevision,
-) {
-  return artifacts.length === revision.length
-    && artifacts.every((artifact, index) => artifact.id === revision[index]?.id
-      && artifact.source === revision[index]?.source);
+export function workspaceMatchesSourceRevision(artifacts: WorkspaceArtifact[], revision: WorkspaceSourceRevision) {
+  return (
+    artifacts.length === revision.length &&
+    artifacts.every(
+      (artifact, index) => artifact.id === revision[index]?.id && artifact.source === revision[index]?.source,
+    )
+  );
 }
 
 export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): string[] {
@@ -58,12 +58,14 @@ export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): stri
     validateArtifact(artifact).forEach((error) => errors.push(`${artifact.name}: ${error}`));
   });
 
-  artifacts.filter((artifact) => artifact.kind === "query").forEach((artifact) => {
-    const resolution = resolveQueryDataArtifact(artifact, artifacts);
-    if (resolution.explicit) {
-      resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
-    }
-  });
+  artifacts
+    .filter((artifact) => artifact.kind === "query")
+    .forEach((artifact) => {
+      const resolution = resolveQueryDataArtifact(artifact, artifacts);
+      if (resolution.explicit) {
+        resolution.errors.forEach((error) => errors.push(`${artifact.name}: ${error}`));
+      }
+    });
 
   artifacts.forEach((artifact) => {
     const compiled = compileArtifactSource(artifact.source, artifacts);
@@ -73,50 +75,43 @@ export function validateWorkspaceArtifacts(artifacts: WorkspaceArtifact[]): stri
     compiled.unresolvedCharts.forEach((key) => errors.push(`${artifact.name}: unresolved chart ${key}.`));
   });
 
-  artifacts.filter((artifact) => artifact.kind === "chart").forEach((artifact) => {
-    validateChartSourceBinding(artifact, artifacts, parseDataSource)
-      .forEach((error) => errors.push(`${artifact.name}: ${error}`));
-  });
+  artifacts
+    .filter((artifact) => artifact.kind === "chart")
+    .forEach((artifact) => {
+      validateChartSourceBinding(artifact, artifacts, parseDataSource).forEach((error) =>
+        errors.push(`${artifact.name}: ${error}`),
+      );
+    });
 
-  buildWorkspaceDependencyGraph(artifacts).issues
-    .filter((issue) => issue.kind === "deck-origin")
+  buildWorkspaceDependencyGraph(artifacts)
+    .issues.filter((issue) => issue.kind === "deck-origin")
     .forEach((issue) => errors.push(`${issue.artifactId}: ${issue.message}`));
 
   return [...new Set(errors)];
 }
 
-export function createLineDiffPreview(
-  before: string,
-  after: string,
-  maxChangedLines = 14,
-): PatchDiffLine[] {
+export function createLineDiffPreview(before: string, after: string, maxChangedLines = 14): PatchDiffLine[] {
   const lineBudget = Math.max(2, maxChangedLines);
   const beforeLines = before.split("\n");
   const afterLines = after.split("\n");
   let start = 0;
-  while (start < beforeLines.length
-    && start < afterLines.length
-    && beforeLines[start] === afterLines[start]) start += 1;
+  while (start < beforeLines.length && start < afterLines.length && beforeLines[start] === afterLines[start])
+    start += 1;
 
   let beforeEnd = beforeLines.length - 1;
   let afterEnd = afterLines.length - 1;
-  while (beforeEnd >= start
-    && afterEnd >= start
-    && beforeLines[beforeEnd] === afterLines[afterEnd]) {
+  while (beforeEnd >= start && afterEnd >= start && beforeLines[beforeEnd] === afterLines[afterEnd]) {
     beforeEnd -= 1;
     afterEnd -= 1;
   }
 
-  const contextBefore = start > 0
-    ? [{ kind: "context" as const, text: beforeLines[start - 1] }]
-    : [];
+  const contextBefore = start > 0 ? [{ kind: "context" as const, text: beforeLines[start - 1] }] : [];
   const changed: PatchDiffLine[] = [
     ...beforeLines.slice(start, beforeEnd + 1).map((text) => ({ kind: "removal" as const, text })),
     ...afterLines.slice(start, afterEnd + 1).map((text) => ({ kind: "addition" as const, text })),
   ];
-  const contextAfter = afterEnd + 1 < afterLines.length
-    ? [{ kind: "context" as const, text: afterLines[afterEnd + 1] }]
-    : [];
+  const contextAfter =
+    afterEnd + 1 < afterLines.length ? [{ kind: "context" as const, text: afterLines[afterEnd + 1] }] : [];
 
   if (changed.length <= lineBudget) return [...contextBefore, ...changed, ...contextAfter];
   const leadingCount = Math.ceil(lineBudget / 2);

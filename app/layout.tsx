@@ -19,13 +19,20 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: "website",
-      images: [{ url: `${origin}/og-v2.png`, width: 1727, height: 911, alt: "Rune turns readable sources into traceable work" }],
+      images: [
+        {
+          url: `${origin}/og-v2.jpg`,
+          width: 1727,
+          height: 911,
+          alt: "Rune turns readable sources into traceable work",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [`${origin}/og-v2.png`],
+      images: [`${origin}/og-v2.jpg`],
     },
   };
 }

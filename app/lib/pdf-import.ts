@@ -183,11 +183,13 @@ function baseName(name: string) {
 }
 
 function safeFileSegment(value: string) {
-  return value
-    .normalize("NFKC")
-    .replace(/[^\p{L}\p{N}._-]+/gu, "-")
-    .replace(/^-+|-+$/gu, "")
-    .slice(0, 72) || "imported-pdf";
+  return (
+    value
+      .normalize("NFKC")
+      .replace(/[^\p{L}\p{N}._-]+/gu, "-")
+      .replace(/^-+|-+$/gu, "")
+      .slice(0, 72) || "imported-pdf"
+  );
 }
 
 function stableImportId(fileName: string) {
@@ -203,7 +205,9 @@ function cleanText(value: string) {
 }
 
 function safeTitle(value: string, fallback: string) {
-  const title = cleanText(value).replace(/[\r\n]+/gu, " ").slice(0, 120);
+  const title = cleanText(value)
+    .replace(/[\r\n]+/gu, " ")
+    .slice(0, 120);
   return title || cleanText(fallback).slice(0, 120) || "Imported PDF";
 }
 
@@ -222,7 +226,12 @@ function escapeOcrMarkdown(value: string) {
     .replaceAll("{", "&#123;")
     .replaceAll("}", "&#125;")
     .split(/\r?\n/gu)
-    .map((line) => line.replace(/\\/gu, "\\\\").replace(/^\s*([#>*+_-])/u, "\\$1").trimEnd())
+    .map((line) =>
+      line
+        .replace(/\\/gu, "\\\\")
+        .replace(/^\s*([#>*+_-])/u, "\\$1")
+        .trimEnd(),
+    )
     .join("\n")
     .replace(/\n{3,}/gu, "\n\n")
     .trim();
@@ -241,7 +250,9 @@ function validatePdfInput(fileName: string, bytes: Uint8Array) {
 }
 
 function isCjk(character: string | undefined) {
-  return Boolean(character && /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(character));
+  return Boolean(
+    character && /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(character),
+  );
 }
 
 function needsSpace(left: PdfTextItemSnapshot, right: PdfTextItemSnapshot, rtl: boolean) {
@@ -277,7 +288,7 @@ function pageLines(page: PdfPageSnapshot): PdfLine[] {
 
   return groups.flatMap((group) => {
     const rtl = group.items.filter((item) => item.direction === "rtl").length > group.items.length / 2;
-    group.items.sort((left, right) => rtl ? right.x - left.x : left.x - right.x);
+    group.items.sort((left, right) => (rtl ? right.x - left.x : left.x - right.x));
     let text = "";
     let prior: PdfTextItemSnapshot | null = null;
     let hasLargeGap = false;
@@ -294,43 +305,47 @@ function pageLines(page: PdfPageSnapshot): PdfLine[] {
     if (!cleaned) return [];
     const left = Math.min(...group.items.map((item) => item.x));
     const right = Math.max(...group.items.map((item) => item.x + item.width));
-    return [{
-      pageNumber: page.pageNumber,
-      pageHeight: page.height,
-      text: cleaned,
-      x: left,
-      y: group.y,
-      width: right - left,
-      height: group.height,
-      itemCount: group.items.length,
-      hasLargeGap,
-    }];
+    return [
+      {
+        pageNumber: page.pageNumber,
+        pageHeight: page.height,
+        text: cleaned,
+        x: left,
+        y: group.y,
+        width: right - left,
+        height: group.height,
+        itemCount: group.items.length,
+        hasLargeGap,
+      },
+    ];
   });
 }
 
 function repeatedEdgeSignatures(linesByPage: PdfLine[][]) {
   const counts = new Map<string, number>();
   linesByPage.forEach((lines) => {
-    const signatures = new Set(lines.flatMap((line) => {
-      const atEdge = line.y >= line.pageHeight * 0.88 || line.y <= line.pageHeight * 0.12;
-      const signature = line.text.toLocaleLowerCase("en-US").replace(/\d+/gu, "#").replace(/\s+/gu, " ").trim();
-      return atEdge && signature ? [signature] : [];
-    }));
+    const signatures = new Set(
+      lines.flatMap((line) => {
+        const atEdge = line.y >= line.pageHeight * 0.88 || line.y <= line.pageHeight * 0.12;
+        const signature = line.text.toLocaleLowerCase("en-US").replace(/\d+/gu, "#").replace(/\s+/gu, " ").trim();
+        return atEdge && signature ? [signature] : [];
+      }),
+    );
     signatures.forEach((value) => counts.set(value, (counts.get(value) ?? 0) + 1));
   });
   const threshold = Math.max(2, Math.ceil(linesByPage.length * 0.5));
-  return new Set([...counts].flatMap(([value, count]) => count >= threshold ? [value] : []));
+  return new Set([...counts].flatMap(([value, count]) => (count >= threshold ? [value] : [])));
 }
 
 function edgeSignature(line: PdfLine) {
   const atEdge = line.y >= line.pageHeight * 0.88 || line.y <= line.pageHeight * 0.12;
-  return atEdge
-    ? line.text.toLocaleLowerCase("en-US").replace(/\d+/gu, "#").replace(/\s+/gu, " ").trim()
-    : "";
+  return atEdge ? line.text.toLocaleLowerCase("en-US").replace(/\d+/gu, "#").replace(/\s+/gu, " ").trim() : "";
 }
 
 function weightedMedianFont(lines: PdfLine[]) {
-  const samples = lines.flatMap((line) => Array.from({ length: Math.min(200, Math.max(1, line.text.length)) }, () => line.height));
+  const samples = lines.flatMap((line) =>
+    Array.from({ length: Math.min(200, Math.max(1, line.text.length)) }, () => line.height),
+  );
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length / 2)] ?? 12;
 }
@@ -367,7 +382,11 @@ function markdownForLines(lines: PdfLine[], bodyFontSize: number, title: string,
   };
 
   lines.forEach((line, index) => {
-    if (isFirstPage && index === 0 && cleanText(line.text).toLocaleLowerCase("en-US") === cleanText(title).toLocaleLowerCase("en-US")) {
+    if (
+      isFirstPage &&
+      index === 0 &&
+      cleanText(line.text).toLocaleLowerCase("en-US") === cleanText(title).toLocaleLowerCase("en-US")
+    ) {
       previous = line;
       return;
     }
@@ -387,10 +406,11 @@ function markdownForLines(lines: PdfLine[], bodyFontSize: number, title: string,
     }
 
     const verticalGap = previous ? previous.y - line.y : 0;
-    const startsNewParagraph = Boolean(previous && (
-      verticalGap > Math.max(bodyFontSize * 1.7, previous.height * 1.7)
-      || Math.abs(previous.x - line.x) > bodyFontSize * 2.5
-    ));
+    const startsNewParagraph = Boolean(
+      previous &&
+      (verticalGap > Math.max(bodyFontSize * 1.7, previous.height * 1.7) ||
+        Math.abs(previous.x - line.x) > bodyFontSize * 2.5),
+    );
     if (startsNewParagraph) flushParagraph();
     paragraph = paragraph ? joinParagraph(paragraph, line.text) : line.text;
     previous = line;
@@ -412,11 +432,13 @@ export function convertPdfSemanticSnapshot(
   const linesByPage = snapshot.pages.map(pageLines);
   const repeated = repeatedEdgeSignatures(linesByPage);
   let repeatedLineCount = 0;
-  const filteredByPage = linesByPage.map((lines) => lines.filter((line) => {
-    const remove = repeated.has(edgeSignature(line));
-    if (remove) repeatedLineCount += 1;
-    return !remove;
-  }));
+  const filteredByPage = linesByPage.map((lines) =>
+    lines.filter((line) => {
+      const remove = repeated.has(edgeSignature(line));
+      if (remove) repeatedLineCount += 1;
+      return !remove;
+    }),
+  );
   const ocrByPage = new Map(ocrPages.map((page) => [page.pageNumber, page]));
   for (const page of ocrPages) {
     if (!snapshot.pages.some((candidate) => candidate.pageNumber === page.pageNumber)) {
@@ -453,37 +475,53 @@ export function convertPdfSemanticSnapshot(
     throw new Error("The extracted PDF text exceeds Rune's 200,000-character Document limit.");
   }
 
-  const emptyPages = filteredByPage.filter((lines, index) => (
-    !lines.length && !ocrByPage.has(snapshot.pages[index]?.pageNumber ?? index + 1)
-  )).length;
+  const emptyPages = filteredByPage.filter(
+    (lines, index) => !lines.length && !ocrByPage.has(snapshot.pages[index]?.pageNumber ?? index + 1),
+  ).length;
   const annotationCount = snapshot.pages.reduce((total, page) => total + page.annotationCount, 0);
   const hasLargeGaps = allLines.some((line) => line.hasLargeGap);
   const warnings = [
     "PDF import recovers selectable text and approximate reading order; images, scans, exact layout, fonts, tables, and columns are not preserved.",
   ];
-  if (hasLargeGaps) warnings.push("Large horizontal gaps were flattened; review possible columns or tables in the generated Markdown.");
+  if (hasLargeGaps)
+    warnings.push("Large horizontal gaps were flattened; review possible columns or tables in the generated Markdown.");
   if (repeatedLineCount) warnings.push(`${repeatedLineCount} repeated header or footer lines were omitted.`);
-  if (emptyPages) warnings.push(`${emptyPages} ${emptyPages === 1 ? "page had" : "pages had"} no selectable text; OCR was not performed.`);
+  if (emptyPages)
+    warnings.push(
+      `${emptyPages} ${emptyPages === 1 ? "page had" : "pages had"} no selectable text; OCR was not performed.`,
+    );
   if (ocrPages.length) {
-    warnings.push(`${ocrPages.length} scanned ${ocrPages.length === 1 ? "page was" : "pages were"} transcribed by browser-local OCR; recognition may omit, reorder, or misread content.`);
+    warnings.push(
+      `${ocrPages.length} scanned ${ocrPages.length === 1 ? "page was" : "pages were"} transcribed by browser-local OCR; recognition may omit, reorder, or misread content.`,
+    );
     for (const page of [...ocrPages].sort((left, right) => left.pageNumber - right.pageNumber)) {
-      warnings.push(`PDF page ${page.pageNumber}: OCR average confidence ${Math.round(page.confidence)}%; verify the transcription against the original page.`);
+      warnings.push(
+        `PDF page ${page.pageNumber}: OCR average confidence ${Math.round(page.confidence)}%; verify the transcription against the original page.`,
+      );
     }
   }
-  if (annotationCount) warnings.push(`${annotationCount} PDF ${annotationCount === 1 ? "annotation was" : "annotations were"} omitted, including links, comments, or form controls.`);
-  if (snapshot.outlineCount) warnings.push(`${snapshot.outlineCount} PDF ${snapshot.outlineCount === 1 ? "bookmark was" : "bookmarks were"} not preserved as navigation.`);
+  if (annotationCount)
+    warnings.push(
+      `${annotationCount} PDF ${annotationCount === 1 ? "annotation was" : "annotations were"} omitted, including links, comments, or form controls.`,
+    );
+  if (snapshot.outlineCount)
+    warnings.push(
+      `${snapshot.outlineCount} PDF ${snapshot.outlineCount === 1 ? "bookmark was" : "bookmarks were"} not preserved as navigation.`,
+    );
   if (snapshot.hasJavaScript) warnings.push("Document JavaScript was ignored and never executed.");
 
   return {
     sourceType: "pdf",
     warnings,
-    artifacts: [{
-      id: stableImportId(fileName),
-      name: `${safeFileSegment(baseName(fileName))}.md`,
-      kind: "document",
-      language: "Markdown",
-      source,
-    }],
+    artifacts: [
+      {
+        id: stableImportId(fileName),
+        name: `${safeFileSegment(baseName(fileName))}.md`,
+        kind: "document",
+        language: "Markdown",
+        source,
+      },
+    ],
   };
 }
 
@@ -492,7 +530,9 @@ export function analyzePdfSemanticSnapshot(snapshot: PdfSemanticSnapshot): PdfIm
     title: safeTitle(snapshot.title, "Imported PDF"),
     pageCount: snapshot.pages.length,
     selectablePageNumbers: snapshot.pages.filter((page) => pageLines(page).length > 0).map((page) => page.pageNumber),
-    ocrCandidatePageNumbers: snapshot.pages.filter((page) => pageLines(page).length === 0).map((page) => page.pageNumber),
+    ocrCandidatePageNumbers: snapshot.pages
+      .filter((page) => pageLines(page).length === 0)
+      .map((page) => page.pageNumber),
   };
 }
 
@@ -531,15 +571,17 @@ async function readPdfSemanticSnapshot(document: PdfDocumentProxy) {
         throw new Error("The PDF contains more than 100,000 text fragments.");
       }
       const transform = item.transform ?? [];
-      return [{
-        str: item.str,
-        x: Number(transform[4] ?? 0),
-        y: Number(transform[5] ?? 0),
-        width: Math.max(0, Number(item.width ?? 0)),
-        height: Math.max(0.1, Number(item.height ?? (Math.abs(Number(transform[3] ?? 0)) || 1))),
-        hasEOL: Boolean(item.hasEOL),
-        direction: item.dir ?? "ltr",
-      }];
+      return [
+        {
+          str: item.str,
+          x: Number(transform[4] ?? 0),
+          y: Number(transform[5] ?? 0),
+          width: Math.max(0, Number(item.width ?? 0)),
+          height: Math.max(0.1, Number(item.height ?? (Math.abs(Number(transform[3] ?? 0)) || 1))),
+          hasEOL: Boolean(item.hasEOL),
+          direction: item.dir ?? "ltr",
+        },
+      ];
     });
     const annotations = await page.getAnnotations({ intent: "display" }).catch(() => []);
     pages.push({
@@ -564,9 +606,11 @@ function pdfImportError(error: unknown, passwordRequired: boolean) {
     return new Error("Password-protected PDFs are not supported. Remove the password and import a copy.");
   }
   const detail = error instanceof Error ? error.message : "The PDF could not be parsed.";
-  return new Error(detail.startsWith("PDF import") || detail.startsWith("The PDF") || detail.startsWith("This PDF")
-    ? detail
-    : `PDF import failed: ${detail}`);
+  return new Error(
+    detail.startsWith("PDF import") || detail.startsWith("The PDF") || detail.startsWith("This PDF")
+      ? detail
+      : `PDF import failed: ${detail}`,
+  );
 }
 
 export async function analyzePdfFileWithLibrary(
@@ -624,7 +668,8 @@ export async function convertPdfFileWithOcrAndLibrary(
   recognizePage: PdfPageOcrRecognizer,
   options: { signal?: AbortSignal; onProgress?: (progress: PdfOcrProgress) => void } = {},
 ): Promise<PdfImportResult> {
-  if (!PDF_OCR_LANGUAGES.has(request.language)) throw new Error("Choose a supported English or Simplified Chinese OCR model.");
+  if (!PDF_OCR_LANGUAGES.has(request.language))
+    throw new Error("Choose a supported English or Simplified Chinese OCR model.");
   const bytes = toBytes(input);
   validatePdfInput(fileName, bytes);
   let passwordRequired = false;

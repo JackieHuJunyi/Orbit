@@ -8,20 +8,12 @@ import {
   type DocumentBlockType,
   type PreviewSourceTarget,
 } from "./preview-targets.ts";
-import {
-  MAX_AGENT_SELECTION_CHARS,
-  sourceOutsideSelectionIsUnchanged,
-} from "./source-selection.ts";
+import { MAX_AGENT_SELECTION_CHARS, sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_VISUAL_DOCUMENT_INSERT_CHARS = MAX_AGENT_SELECTION_CHARS;
 
-export type VisualDocumentBlockStructureAction =
-  | "insert-before"
-  | "insert-after"
-  | "move-up"
-  | "move-down"
-  | "delete";
+export type VisualDocumentBlockStructureAction = "insert-before" | "insert-after" | "move-up" | "move-down" | "delete";
 
 export type VisualDocumentBlockStructureInput = {
   action: VisualDocumentBlockStructureAction;
@@ -80,65 +72,59 @@ const EMPTY_CAPABILITIES: DocumentBlockStructureCapabilities = {
   canDelete: false,
 };
 
-function emptyResult(
-  source: string,
-  error: string,
-  warnings: string[] = [],
-): PreparedVisualDocumentBlockStructure {
+function emptyResult(source: string, error: string, warnings: string[] = []): PreparedVisualDocumentBlockStructure {
   return { nextSource: source, nextTarget: null, errors: [error], warnings };
 }
 
 function parseMarkdownBlocks(source: string): PositionedMarkdownNode[] {
   let children: MarkdownBlockNode[];
   try {
-    children = (unified().use(remarkParse).use(remarkGfm).parse(source) as {
-      children?: MarkdownBlockNode[];
-    }).children ?? [];
+    children =
+      (
+        unified().use(remarkParse).use(remarkGfm).parse(source) as {
+          children?: MarkdownBlockNode[];
+        }
+      ).children ?? [];
   } catch {
     return [];
   }
-  return children.map((node, index) => {
-    const start = node.position?.start?.offset;
-    const end = node.position?.end?.offset;
-    if (start == null || end == null || start >= end) return null;
-    const blockType = MARKDOWN_NODE_BLOCK_TYPES[node.type];
-    return {
-      index,
-      start,
-      end,
-      ...(blockType ? { blockType } : {}),
-      ...(blockType === "heading" && Number.isInteger(node.depth)
-        ? { headingLevel: node.depth }
-        : {}),
-    };
-  }).filter((node): node is PositionedMarkdownNode => Boolean(node));
+  return children
+    .map((node, index) => {
+      const start = node.position?.start?.offset;
+      const end = node.position?.end?.offset;
+      if (start == null || end == null || start >= end) return null;
+      const blockType = MARKDOWN_NODE_BLOCK_TYPES[node.type];
+      return {
+        index,
+        start,
+        end,
+        ...(blockType ? { blockType } : {}),
+        ...(blockType === "heading" && Number.isInteger(node.depth) ? { headingLevel: node.depth } : {}),
+      };
+    })
+    .filter((node): node is PositionedMarkdownNode => Boolean(node));
 }
 
-function currentTargetForRevision(
-  artifact: WorkspaceArtifact,
-  requested: DocumentBlockPreviewSourceTarget,
-) {
-  return deriveDocumentBlockPreviewSourceTargets(artifact).find((target) => (
-    target.id === requested.id
-    && target.index === requested.index
-    && target.label === requested.label
-    && target.start === requested.start
-    && target.end === requested.end
-    && target.blockType === requested.blockType
-    && target.headingLevel === requested.headingLevel
-  ));
+function currentTargetForRevision(artifact: WorkspaceArtifact, requested: DocumentBlockPreviewSourceTarget) {
+  return deriveDocumentBlockPreviewSourceTargets(artifact).find(
+    (target) =>
+      target.id === requested.id &&
+      target.index === requested.index &&
+      target.label === requested.label &&
+      target.start === requested.start &&
+      target.end === requested.end &&
+      target.blockType === requested.blockType &&
+      target.headingLevel === requested.headingLevel,
+  );
 }
 
-function positionedTarget(
-  source: string,
-  target: DocumentBlockPreviewSourceTarget,
-) {
+function positionedTarget(source: string, target: DocumentBlockPreviewSourceTarget) {
   const node = parseMarkdownBlocks(source).find((candidate) => candidate.index === target.index);
-  return node
-    && node.start === target.start
-    && node.end === target.end
-    && node.blockType === target.blockType
-    && node.headingLevel === target.headingLevel
+  return node &&
+    node.start === target.start &&
+    node.end === target.end &&
+    node.blockType === target.blockType &&
+    node.headingLevel === target.headingLevel
     ? node
     : null;
 }
@@ -170,10 +156,7 @@ function separatorFor(source: string) {
   return source.includes("\r\n") ? "\r\n\r\n" : "\n\n";
 }
 
-function nearestSurvivingTarget(
-  artifact: WorkspaceArtifact,
-  preferredOffset: number,
-): PreviewSourceTarget | null {
+function nearestSurvivingTarget(artifact: WorkspaceArtifact, preferredOffset: number): PreviewSourceTarget | null {
   const blockTargets = deriveDocumentBlockPreviewSourceTargets(artifact);
   const after = blockTargets.find((target) => target.start >= preferredOffset);
   if (after) return after;
@@ -223,30 +206,29 @@ export function documentBlockStructureCapabilities(
   const supportedNodeCount = nodes.filter((node) => node.blockType).length;
   return {
     available: true,
-    canInsertBefore: !previous || Boolean(
-      previous.blockType && whitespaceGap(artifact.source, previous, current) != null,
-    ),
-    canInsertAfter: !next || Boolean(
-      next.blockType && whitespaceGap(artifact.source, current, next) != null,
-    ),
+    canInsertBefore:
+      !previous || Boolean(previous.blockType && whitespaceGap(artifact.source, previous, current) != null),
+    canInsertAfter: !next || Boolean(next.blockType && whitespaceGap(artifact.source, current, next) != null),
     canMoveUp: Boolean(
-      previous?.blockType
-      && whitespaceGap(artifact.source, previous, current) != null
-      && rangeFitsStructureBudget(previous.start, current.end),
+      previous?.blockType &&
+      whitespaceGap(artifact.source, previous, current) != null &&
+      rangeFitsStructureBudget(previous.start, current.end),
     ),
     canMoveDown: Boolean(
-      next?.blockType
-      && whitespaceGap(artifact.source, current, next) != null
-      && rangeFitsStructureBudget(current.start, next.end),
+      next?.blockType &&
+      whitespaceGap(artifact.source, current, next) != null &&
+      rangeFitsStructureBudget(current.start, next.end),
     ),
-    canDelete: supportedNodeCount > 1 && Boolean(
-      (next
-        && whitespaceGap(artifact.source, current, next) != null
-        && rangeFitsStructureBudget(current.start, next.start))
-      || (previous
-        && whitespaceGap(artifact.source, previous, current) != null
-        && rangeFitsStructureBudget(previous.end, current.end)),
-    ),
+    canDelete:
+      supportedNodeCount > 1 &&
+      Boolean(
+        (next &&
+          whitespaceGap(artifact.source, current, next) != null &&
+          rangeFitsStructureBudget(current.start, next.start)) ||
+        (previous &&
+          whitespaceGap(artifact.source, previous, current) != null &&
+          rangeFitsStructureBudget(previous.end, current.end)),
+      ),
   };
 }
 
@@ -339,13 +321,15 @@ export function prepareVisualDocumentBlockStructure(
     }
     const insertedIndex = input.action === "insert-before" ? target.index : target.index + 1;
     const nextArtifact = { ...artifact, source: nextSource };
-    const nextTarget = deriveDocumentBlockPreviewSourceTargets(nextArtifact).find((candidate) => (
-      candidate.index === insertedIndex
-      && candidate.start === insertedStart
-      && candidate.end === insertedStart + replacement.length
-      && candidate.blockType === inserted.blockType
-      && candidate.headingLevel === inserted.headingLevel
-    )) ?? null;
+    const nextTarget =
+      deriveDocumentBlockPreviewSourceTargets(nextArtifact).find(
+        (candidate) =>
+          candidate.index === insertedIndex &&
+          candidate.start === insertedStart &&
+          candidate.end === insertedStart + replacement.length &&
+          candidate.blockType === inserted.blockType &&
+          candidate.headingLevel === inserted.headingLevel,
+      ) ?? null;
     if (!nextTarget) {
       return emptyResult(artifact.source, "Rune could not prove the inserted block's new source range.");
     }
@@ -399,18 +383,18 @@ export function prepareVisualDocumentBlockStructure(
     if (!sourceOutsideSelectionIsUnchanged(artifact.source, nextSource, range)) {
       return emptyResult(artifact.source, "The move crossed its two-block source boundary.", warnings);
     }
-    const movedStart = movingUp
-      ? neighbor.start
-      : current.start + neighborFragment.length + gap.length;
+    const movedStart = movingUp ? neighbor.start : current.start + neighborFragment.length + gap.length;
     const movedIndex = neighbor.index;
     const nextArtifact = { ...artifact, source: nextSource };
-    const nextTarget = deriveDocumentBlockPreviewSourceTargets(nextArtifact).find((candidate) => (
-      candidate.index === movedIndex
-      && candidate.start === movedStart
-      && candidate.end === movedStart + currentFragment.length
-      && candidate.blockType === target.blockType
-      && candidate.headingLevel === target.headingLevel
-    )) ?? null;
+    const nextTarget =
+      deriveDocumentBlockPreviewSourceTargets(nextArtifact).find(
+        (candidate) =>
+          candidate.index === movedIndex &&
+          candidate.start === movedStart &&
+          candidate.end === movedStart + currentFragment.length &&
+          candidate.blockType === target.blockType &&
+          candidate.headingLevel === target.headingLevel,
+      ) ?? null;
     if (!nextTarget) {
       return emptyResult(artifact.source, "Rune could not prove the moved block's new source range.", warnings);
     }

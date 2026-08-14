@@ -6,10 +6,7 @@ import {
   type DocumentBlockPreviewSourceTarget,
   type DocumentBlockType,
 } from "./preview-targets.ts";
-import {
-  MAX_AGENT_SELECTION_CHARS,
-  sourceOutsideSelectionIsUnchanged,
-} from "./source-selection.ts";
+import { MAX_AGENT_SELECTION_CHARS, sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_VISUAL_DOCUMENT_BLOCK_CHARS = MAX_AGENT_SELECTION_CHARS;
@@ -59,19 +56,17 @@ function emptyResult(source: string, error: string): PreparedVisualDocumentBlock
   return { nextSource: source, nextTarget: null, errors: [error] };
 }
 
-function currentTargetForRevision(
-  artifact: WorkspaceArtifact,
-  requested: DocumentBlockPreviewSourceTarget,
-) {
-  return deriveDocumentBlockPreviewSourceTargets(artifact).find((target) => (
-    target.id === requested.id
-    && target.index === requested.index
-    && target.label === requested.label
-    && target.start === requested.start
-    && target.end === requested.end
-    && target.blockType === requested.blockType
-    && target.headingLevel === requested.headingLevel
-  ));
+function currentTargetForRevision(artifact: WorkspaceArtifact, requested: DocumentBlockPreviewSourceTarget) {
+  return deriveDocumentBlockPreviewSourceTargets(artifact).find(
+    (target) =>
+      target.id === requested.id &&
+      target.index === requested.index &&
+      target.label === requested.label &&
+      target.start === requested.start &&
+      target.end === requested.end &&
+      target.blockType === requested.blockType &&
+      target.headingLevel === requested.headingLevel,
+  );
 }
 
 function normalizeDraft(draft: string, source: string) {
@@ -93,10 +88,12 @@ function bindingTokensAreByteStable(current: string, replacement: string) {
   const bindingPattern = /\{\{[^{}\r\n]+\}\}/gu;
   const currentText = current.replace(bindingPattern, "");
   const replacementText = replacement.replace(bindingPattern, "");
-  return !currentText.includes("{{")
-    && !currentText.includes("}}")
-    && !replacementText.includes("{{")
-    && !replacementText.includes("}}");
+  return (
+    !currentText.includes("{{") &&
+    !currentText.includes("}}") &&
+    !replacementText.includes("{{") &&
+    !replacementText.includes("}}")
+  );
 }
 
 function parseSingleBlock(source: string): MarkdownBlockNode | null {
@@ -110,23 +107,17 @@ function parseSingleBlock(source: string): MarkdownBlockNode | null {
   }
 }
 
-export function visualDocumentBlockDraft(
-  artifact: WorkspaceArtifact,
-  target: DocumentBlockPreviewSourceTarget,
-) {
+export function visualDocumentBlockDraft(artifact: WorkspaceArtifact, target: DocumentBlockPreviewSourceTarget) {
   return artifact.source.slice(target.start, target.end);
 }
 
-export function canVisualEditDocumentBlock(
-  artifact: WorkspaceArtifact,
-  target: DocumentBlockPreviewSourceTarget,
-) {
+export function canVisualEditDocumentBlock(artifact: WorkspaceArtifact, target: DocumentBlockPreviewSourceTarget) {
   if (artifact.kind !== "document" || target.kind !== "document-block") return false;
   const current = currentTargetForRevision(artifact, target);
   return Boolean(
-    current
-    && EDITABLE_DOCUMENT_BLOCK_TYPES.has(current.blockType)
-    && current.end - current.start <= MAX_VISUAL_DOCUMENT_BLOCK_CHARS,
+    current &&
+    EDITABLE_DOCUMENT_BLOCK_TYPES.has(current.blockType) &&
+    current.end - current.start <= MAX_VISUAL_DOCUMENT_BLOCK_CHARS,
   );
 }
 
@@ -135,9 +126,7 @@ export function projectVisualDocumentBlockDraft(
   requestedTarget: DocumentBlockPreviewSourceTarget,
   input: VisualDocumentBlockEditInput,
 ): VisualDocumentBlockDraftProjection {
-  const target = artifact.kind === "document"
-    ? currentTargetForRevision(artifact, requestedTarget)
-    : undefined;
+  const target = artifact.kind === "document" ? currentTargetForRevision(artifact, requestedTarget) : undefined;
   if (!target) {
     return {
       nextSource: artifact.source,
@@ -168,11 +157,16 @@ export function prepareVisualDocumentBlockEdit(
   const target = currentTargetForRevision(artifact, requestedTarget);
   if (!target) return emptyResult(artifact.source, "The block no longer matches the current source revision.");
   if (!EDITABLE_DOCUMENT_BLOCK_TYPES.has(target.blockType)) {
-    return emptyResult(artifact.source, "Divider blocks remain source-only because an empty visual edit would delete structure.");
+    return emptyResult(
+      artifact.source,
+      "Divider blocks remain source-only because an empty visual edit would delete structure.",
+    );
   }
-  if (target.end - target.start > MAX_VISUAL_DOCUMENT_BLOCK_CHARS
-    || typeof input.draft !== "string"
-    || input.draft.length > MAX_VISUAL_DOCUMENT_BLOCK_CHARS) {
+  if (
+    target.end - target.start > MAX_VISUAL_DOCUMENT_BLOCK_CHARS ||
+    typeof input.draft !== "string" ||
+    input.draft.length > MAX_VISUAL_DOCUMENT_BLOCK_CHARS
+  ) {
     return emptyResult(
       artifact.source,
       `Visual Document blocks are limited to ${MAX_VISUAL_DOCUMENT_BLOCK_CHARS.toLocaleString("en-US")} characters.`,
@@ -210,13 +204,15 @@ export function prepareVisualDocumentBlockEdit(
     return emptyResult(artifact.source, "The visual edit crossed its exact Document block boundary.");
   }
   const nextArtifact = { ...artifact, source: nextSource };
-  const nextTarget = deriveDocumentBlockPreviewSourceTargets(nextArtifact).find((candidate) => (
-    candidate.index === target.index
-    && candidate.start === target.start
-    && candidate.end === target.start + replacement.length
-    && candidate.blockType === target.blockType
-    && candidate.headingLevel === target.headingLevel
-  )) ?? null;
+  const nextTarget =
+    deriveDocumentBlockPreviewSourceTargets(nextArtifact).find(
+      (candidate) =>
+        candidate.index === target.index &&
+        candidate.start === target.start &&
+        candidate.end === target.start + replacement.length &&
+        candidate.blockType === target.blockType &&
+        candidate.headingLevel === target.headingLevel,
+    ) ?? null;
   if (!nextTarget) {
     return emptyResult(artifact.source, "Rune could not prove the edited block's new source range.");
   }

@@ -24,7 +24,10 @@ function toBase64Url(bytes: Uint8Array) {
 }
 
 function fromBase64Url(value: string) {
-  const base64 = value.replace(/-/gu, "+").replace(/_/gu, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const base64 = value
+    .replace(/-/gu, "+")
+    .replace(/_/gu, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
   const binary = atob(base64);
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
@@ -79,11 +82,13 @@ export async function serializeModelProfileVaultCookie(
     return `${MODEL_PROFILE_COOKIE}=; Path=/api; HttpOnly; SameSite=Strict; Max-Age=0`;
   }
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = new Uint8Array(await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv, additionalData: VAULT_AAD },
-    await encryptionKey(secret),
-    new TextEncoder().encode(JSON.stringify(vault)),
-  ));
+  const encrypted = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv, additionalData: VAULT_AAD },
+      await encryptionKey(secret),
+      new TextEncoder().encode(JSON.stringify(vault)),
+    ),
+  );
   const value = `${toBase64Url(iv)}.${toBase64Url(encrypted)}`;
   const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
   const cookie = `${MODEL_PROFILE_COOKIE}=${value}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=${MODEL_PROFILE_COOKIE_MAX_AGE}${secure}`;

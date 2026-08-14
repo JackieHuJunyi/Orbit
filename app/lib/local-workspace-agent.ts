@@ -5,15 +5,8 @@ import {
   type CreatableArtifactKind,
 } from "./artifact-creation.ts";
 import { prepareChartEmbedding } from "./chart-embedding.ts";
-import {
-  prepareWorkspaceMutation,
-  type ArtifactCreationChange,
-} from "./patches.ts";
-import {
-  planLocalWorkspaceChange,
-  type LocalWorkspacePlan,
-  type WorkspaceArtifact,
-} from "./workspace.ts";
+import { prepareWorkspaceMutation, type ArtifactCreationChange } from "./patches.ts";
+import { planLocalWorkspaceChange, type LocalWorkspacePlan, type WorkspaceArtifact } from "./workspace.ts";
 
 export type LocalWorkspaceAgentPlan = LocalWorkspacePlan & {
   creations: ArtifactCreationChange[];
@@ -49,9 +42,10 @@ function csvCell(value: string) {
 }
 
 function contextualSource(artifact: WorkspaceArtifact, existing: WorkspaceArtifact[]) {
-  const sourceList = existing.slice(0, 8).map((item) => (
-    `- **${item.kind}:** \`${inlineCode(item.name)}\``
-  )).join("\n");
+  const sourceList = existing
+    .slice(0, 8)
+    .map((item) => `- **${item.kind}:** \`${inlineCode(item.name)}\``)
+    .join("\n");
 
   if (artifact.kind === "document") {
     return `${artifact.source}## Workspace context\n\n${sourceList}\n\n## Starting point\n\nSynthesize the canonical sources above into a review-ready brief.\n`;
@@ -81,23 +75,19 @@ Use the canonical files above to refine this narrative without copying hidden st
 `;
 }
 
-function chartCreationFields(
-  source: ReturnType<typeof artifactCreationSourceOptions>[number],
-  prompt: string,
-) {
+function chartCreationFields(source: ReturnType<typeof artifactCreationSourceOptions>[number], prompt: string) {
   const category = source.columns[0] ?? "";
-  const value = source.numericColumns.find((column) => column !== category)
-    ?? source.columns.find((column) => column !== category)
-    ?? source.columns[0]
-    ?? "";
+  const value =
+    source.numericColumns.find((column) => column !== category) ??
+    source.columns.find((column) => column !== category) ??
+    source.columns[0] ??
+    "";
   const format = /(?:百分比|比例|percent|margin|rate)/i.test(prompt)
-    ? "percent" as const
+    ? ("percent" as const)
     : /(?:收入|营收|金额|销售|revenue|sales|currency|amount)/i.test(prompt)
-      ? "currency" as const
-      : "number" as const;
-  const mark = /(?:趋势|时间|折线|line|trend|timeline)/i.test(prompt)
-    ? "line" as const
-    : "bar" as const;
+      ? ("currency" as const)
+      : ("number" as const);
+  const mark = /(?:趋势|时间|折线|line|trend|timeline)/i.test(prompt) ? ("line" as const) : ("bar" as const);
   return { category, value, format, mark };
 }
 
@@ -115,9 +105,10 @@ function localCreationInput(
   if (kind === "chart") {
     const sources = artifactCreationSourceOptions(contextArtifacts, "chart");
     const prefersQuery = /(?:查询|分析|sql|query|analysis)/i.test(prompt);
-    const source = (prefersQuery ? sources.find((option) => option.kind === "query") : undefined)
-      ?? sources.find((option) => option.kind === "data")
-      ?? sources[0];
+    const source =
+      (prefersQuery ? sources.find((option) => option.kind === "query") : undefined) ??
+      sources.find((option) => option.kind === "data") ??
+      sources[0];
     if (!source) throw new Error("Pin or select one valid Data or Query source before creating a Chart.");
     const { category, value, format, mark } = chartCreationFields(source, prompt);
     return {
@@ -152,8 +143,9 @@ function planLocalAnalysisWorkflow(
   }
   const query = queryPrepared.artifact;
   let workingArtifacts = [...artifacts, query];
-  const queryOption = artifactCreationSourceOptions(workingArtifacts, "chart")
-    .find((option) => option.artifactId === query.id);
+  const queryOption = artifactCreationSourceOptions(workingArtifacts, "chart").find(
+    (option) => option.artifactId === query.id,
+  );
   if (!queryOption) throw new Error("The new Query does not expose a stable Chart schema.");
   const fields = chartCreationFields({ ...queryOption, numericColumns: dataSource.numericColumns }, prompt);
   const chartPrepared = prepareArtifactCreation(workingArtifacts, {
@@ -208,7 +200,8 @@ function planLocalAnalysisWorkflow(
   if (mutation.errors.length) throw new Error(mutation.errors[0]);
   return {
     summary: `Create one source-bound analysis workflow across ${creations.length} files`,
-    detail: "Rune resolves every generated identity first, validates the complete dependency chain, and holds one atomic workspace transaction for review.",
+    detail:
+      "Rune resolves every generated identity first, validates the complete dependency chain, and holds one atomic workspace transaction for review.",
     patches: [],
     creations,
   };
@@ -220,15 +213,16 @@ function planLocalCreation(
   kind: CreatableArtifactKind,
   prompt: string,
 ): LocalWorkspaceAgentPlan {
-  const title = kind === "slides"
-    ? "Workspace Briefing"
-    : kind === "data"
-      ? "Workspace Index"
-      : kind === "query"
-        ? "Workspace Analysis"
-        : kind === "chart"
-          ? "Workspace Chart"
-      : "Workspace Brief";
+  const title =
+    kind === "slides"
+      ? "Workspace Briefing"
+      : kind === "data"
+        ? "Workspace Index"
+        : kind === "query"
+          ? "Workspace Analysis"
+          : kind === "chart"
+            ? "Workspace Chart"
+            : "Workspace Brief";
   const input = localCreationInput(kind, title, contextArtifacts, prompt);
   const prepared = prepareArtifactCreation(artifacts, input);
   if (!prepared.artifact || prepared.errors.length) {

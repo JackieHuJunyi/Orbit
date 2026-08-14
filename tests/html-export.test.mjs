@@ -15,9 +15,20 @@ function defaultDeck() {
   return deck;
 }
 
-const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const onePixelPng = new Uint8Array(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
 const runeImageId = "d".repeat(64);
-const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+const runeImageAsset = {
+  id: runeImageId,
+  name: "proof.png",
+  mimeType: "image/png",
+  size: onePixelPng.length,
+  bytes: onePixelPng,
+};
 
 test("exports a deterministic self-contained Deck HTML handoff", () => {
   const deck = defaultDeck();
@@ -55,15 +66,20 @@ test("rejects unsupported or unresolved HTML export inputs", () => {
   assert.ok(document);
   assert.throws(() => exportDeckHtml(document, defaultArtifacts), /supports Deck Markdown presentations/i);
   assert.throws(
-    () => exportDeckHtml({ ...deck, source: deck.source.replace('{{ metric("top_region") }}', '{{ metric("missing_metric") }}') }, defaultArtifacts),
+    () =>
+      exportDeckHtml(
+        { ...deck, source: deck.source.replace('{{ metric("top_region") }}', '{{ metric("missing_metric") }}') },
+        defaultArtifacts,
+      ),
     /missing metric reference/i,
   );
   assert.throws(
-    () => exportDeckHtml(
-      { ...deck, source: deck.source.replace("regional-revenue-chart", "missing-chart") },
-      defaultArtifacts,
-      defaultRuntimeSnapshots(),
-    ),
+    () =>
+      exportDeckHtml(
+        { ...deck, source: deck.source.replace("regional-revenue-chart", "missing-chart") },
+        defaultArtifacts,
+        defaultRuntimeSnapshots(),
+      ),
     /missing chart reference/i,
   );
 });
@@ -104,8 +120,8 @@ test("sanitizes portable HTML filenames and hostile deck metadata", () => {
   const deck = {
     ...defaultDeck(),
     name: "CON.deck.md",
-    source: defaultDeck().source
-      .replace("title: Q2 Board Briefing", "title: <script>alert & review</script>")
+    source: defaultDeck()
+      .source.replace("title: Q2 Board Briefing", "title: <script>alert & review</script>")
       .replace("Q2 · Board Briefing", "<img src=x onerror=alert(1)>")
       .replace(/\{\{ chart\("regional-revenue-chart"\) \}\}/g, "Chart intentionally removed"),
   };
@@ -123,7 +139,13 @@ test("caps standalone HTML after local images are embedded", () => {
   imageBytes.set([0, 0, 0, 1, 0, 0, 0, 1], 16);
   const firstId = "e".repeat(64);
   const secondId = "f".repeat(64);
-  const assets = [firstId, secondId].map((id, index) => ({ id, name: `large-${index}.png`, mimeType: "image/png", size: imageBytes.length, bytes: imageBytes }));
+  const assets = [firstId, secondId].map((id, index) => ({
+    id,
+    name: `large-${index}.png`,
+    mimeType: "image/png",
+    size: imageBytes.length,
+    bytes: imageBytes,
+  }));
   const deck = {
     id: "large-html-deck",
     name: "large.deck.md",
@@ -152,13 +174,31 @@ lang: en
 });
 
 test("exports a scriptless line chart with deterministic SVG geometry", () => {
-  const data = { id: "trend-data", name: "trend.csv", kind: "data", language: "CSV / JSON", source: "Month,Value\nJan,10\nFeb,30\nMar,20\n" };
+  const data = {
+    id: "trend-data",
+    name: "trend.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Value\nJan,10\nFeb,30\nMar,20\n",
+  };
   const chart = {
     id: "trend-chart",
     name: "trend.chart.json",
     kind: "chart",
     language: "Chart JSON",
-    source: JSON.stringify({ version: 1, title: "Monthly trend", description: "", source: data.id, mark: "line", category: "Month", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 8 }),
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly trend",
+      description: "",
+      source: data.id,
+      mark: "line",
+      category: "Month",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
   };
   const deck = {
     id: "trend-deck",

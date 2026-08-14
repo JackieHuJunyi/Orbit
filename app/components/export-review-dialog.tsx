@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Check,
-  ChevronRight,
-  FileArchive,
-  FileCode2,
-  FileText,
-  ShieldCheck,
-  TriangleAlert,
-} from "lucide-react";
+import { Check, ChevronRight, FileArchive, FileCode2, FileText, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import { runeUICopy, type RuneLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
@@ -43,25 +35,42 @@ export function ExportReviewDialog({
   const copy = runeUICopy(locale);
   const reviewTitle = copy.exportReview.title(kind);
   const descriptor = copy.exportReview.descriptors[kind];
-  const outputKind = office || odf ? copy.exportReview.outputKinds.semantic : pdf ? copy.exportReview.outputKinds.fixed : data ? copy.exportReview.outputKinds.portable : copy.exportReview.outputKinds.standalone;
+  const outputKind =
+    office || odf
+      ? copy.exportReview.outputKinds.semantic
+      : pdf
+        ? copy.exportReview.outputKinds.fixed
+        : data
+          ? copy.exportReview.outputKinds.portable
+          : copy.exportReview.outputKinds.standalone;
   return (
     <ReviewDialog
       dialogId="artifact-export-review"
-      kicker={<><ShieldCheck aria-hidden="true" /> {copy.exportReview.kicker}</>}
+      kicker={
+        <>
+          <ShieldCheck aria-hidden="true" /> {copy.exportReview.kicker}
+        </>
+      }
       title={reviewTitle}
       description={copy.exportReview.description(sourceName, outputKind, target)}
       detailsLabel={copy.exportReview.details(target)}
       locale={locale}
       onCancel={onCancel}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.exportReview.noChanges}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {copy.exportReview.noChanges}
+          </div>
           <span>
-            <button className="button ghost-button" onClick={onCancel}>{copy.common.cancel}</button>
-            <button className="button primary-button" onClick={onConfirm}><Check aria-hidden="true" /> {copy.exportReview.download(target)}</button>
+            <button className="button ghost-button" onClick={onCancel}>
+              {copy.common.cancel}
+            </button>
+            <button className="button primary-button" onClick={onConfirm}>
+              <Check aria-hidden="true" /> {copy.exportReview.download(target)}
+            </button>
           </span>
         </>
-      )}
+      }
     >
       <div className="office-export-route" aria-label={copy.exportReview.route(target)}>
         <span>{sourceName}</span>
@@ -70,10 +79,20 @@ export function ExportReviewDialog({
       </div>
 
       <section className="office-export-summary" aria-label={copy.exportReview.generatedFile(target)}>
-        <span className="office-export-icon">{office || odf ? <FileArchive aria-hidden="true" /> : pdf ? <FileText aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}</span>
+        <span className="office-export-icon">
+          {office || odf ? (
+            <FileArchive aria-hidden="true" />
+          ) : pdf ? (
+            <FileText aria-hidden="true" />
+          ) : (
+            <FileCode2 aria-hidden="true" />
+          )}
+        </span>
         <div>
           <strong>{result.fileName}</strong>
-          <small>{target} · {readableBytes(result.bytes.length)} · {descriptor}</small>
+          <small>
+            {target} · {readableBytes(result.bytes.length)} · {descriptor}
+          </small>
         </div>
         <span className="office-export-ready">{copy.common.ready}</span>
       </section>
@@ -84,15 +103,35 @@ export function ExportReviewDialog({
           <h3 id="artifact-export-warning-title">{copy.exportReview.fidelityNotes}</h3>
           <span>{result.warnings.length}</span>
         </div>
-        <ul>{result.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+        <ul>
+          {result.warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
       </section>
 
-      {error && <div className="import-review-error" role="alert">{error}</div>}
+      {error && (
+        <div className="import-review-error" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="office-export-contract">
-        <div><span>01</span><strong>{copy.exportReview.canonicalTitle}</strong><p>{copy.exportReview.canonicalBody}</p></div>
-        <div><span>02</span><strong>{copy.exportReview.packageTitle(office || odf)}</strong><p>{copy.exportReview.packageBody(kind)}</p></div>
-        <div><span>03</span><strong>{copy.exportReview.handoffTitle}</strong><p>{copy.exportReview.handoffBody}</p></div>
+        <div>
+          <span>01</span>
+          <strong>{copy.exportReview.canonicalTitle}</strong>
+          <p>{copy.exportReview.canonicalBody}</p>
+        </div>
+        <div>
+          <span>02</span>
+          <strong>{copy.exportReview.packageTitle(office || odf)}</strong>
+          <p>{copy.exportReview.packageBody(kind)}</p>
+        </div>
+        <div>
+          <span>03</span>
+          <strong>{copy.exportReview.handoffTitle}</strong>
+          <p>{copy.exportReview.handoffBody}</p>
+        </div>
       </div>
     </ReviewDialog>
   );

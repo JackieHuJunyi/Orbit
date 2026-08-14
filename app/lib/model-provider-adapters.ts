@@ -57,7 +57,8 @@ function providerError(payload: unknown, status: number) {
 async function providerJson(url: string, init: RequestInit, signal: AbortSignal) {
   const response = await fetch(url, { ...init, redirect: "error", signal });
   const declaredLength = Number(response.headers.get("content-length") ?? "0");
-  if (declaredLength > PROVIDER_RESPONSE_LIMIT) throw new Error("The provider returned an unexpectedly large Agent response.");
+  if (declaredLength > PROVIDER_RESPONSE_LIMIT)
+    throw new Error("The provider returned an unexpectedly large Agent response.");
   const payload = await readBoundedJson(response, PROVIDER_RESPONSE_LIMIT, "Agent response");
   if (!response.ok) throw providerError(payload, response.status);
   return payload;
@@ -98,8 +99,13 @@ function firstResponsesText(payload: unknown) {
   for (const item of (payload as { output: unknown[] }).output) {
     if (!item || typeof item !== "object" || !Array.isArray((item as { content?: unknown }).content)) continue;
     for (const part of (item as { content: unknown[] }).content) {
-      if (part && typeof part === "object" && (part as { type?: unknown }).type === "output_text"
-        && typeof (part as { text?: unknown }).text === "string") return (part as { text: string }).text;
+      if (
+        part &&
+        typeof part === "object" &&
+        (part as { type?: unknown }).type === "output_text" &&
+        typeof (part as { text?: unknown }).text === "string"
+      )
+        return (part as { text: string }).text;
     }
   }
   return "";
@@ -124,20 +130,24 @@ export async function requestProviderPlan<T extends z.ZodType>({
 }): Promise<ProviderPlan> {
   const format = schemaFormat(schema, schemaName);
   if (connection.protocol === "responses") {
-    const payload = await providerJson(`${connection.baseURL}/responses`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        model: connection.model,
-        store: false,
-        input: [
-          { role: "system", content: instructions },
-          { role: "user", content: input },
-        ],
-        text: { format: { type: "json_schema", ...format } },
-        max_output_tokens: MAX_OUTPUT_TOKENS,
-      }),
-    }, signal) as { output?: unknown; usage?: { input_tokens?: unknown; output_tokens?: unknown } };
+    const payload = (await providerJson(
+      `${connection.baseURL}/responses`,
+      {
+        method: "POST",
+        headers: { authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          model: connection.model,
+          store: false,
+          input: [
+            { role: "system", content: instructions },
+            { role: "user", content: input },
+          ],
+          text: { format: { type: "json_schema", ...format } },
+          max_output_tokens: MAX_OUTPUT_TOKENS,
+        }),
+      },
+      signal,
+    )) as { output?: unknown; usage?: { input_tokens?: unknown; output_tokens?: unknown } };
     return {
       output: parseJsonText(firstResponsesText(payload)),
       usage: {
@@ -148,20 +158,24 @@ export async function requestProviderPlan<T extends z.ZodType>({
   }
 
   if (connection.protocol === "chat-completions") {
-    const payload = await providerJson(`${connection.baseURL}/chat/completions`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        model: connection.model,
-        messages: [
-          { role: "system", content: instructions },
-          { role: "user", content: input },
-        ],
-        response_format: { type: "json_schema", json_schema: format },
-        max_tokens: MAX_OUTPUT_TOKENS,
-        store: false,
-      }),
-    }, signal) as {
+    const payload = (await providerJson(
+      `${connection.baseURL}/chat/completions`,
+      {
+        method: "POST",
+        headers: { authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          model: connection.model,
+          messages: [
+            { role: "system", content: instructions },
+            { role: "user", content: input },
+          ],
+          response_format: { type: "json_schema", json_schema: format },
+          max_tokens: MAX_OUTPUT_TOKENS,
+          store: false,
+        }),
+      },
+      signal,
+    )) as {
       choices?: Array<{ message?: { content?: unknown } }>;
       usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
     };
@@ -176,22 +190,26 @@ export async function requestProviderPlan<T extends z.ZodType>({
 
   if (connection.protocol === "anthropic-messages") {
     const toolName = "submit_rune_plan";
-    const payload = await providerJson(`${connection.baseURL}/messages`, {
-      method: "POST",
-      headers: {
-        "x-api-key": connection.apiKey,
-        "anthropic-version": ANTHROPIC_VERSION,
-        "content-type": "application/json",
+    const payload = (await providerJson(
+      `${connection.baseURL}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "x-api-key": connection.apiKey,
+          "anthropic-version": ANTHROPIC_VERSION,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: connection.model,
+          max_tokens: MAX_OUTPUT_TOKENS,
+          system: instructions,
+          messages: [{ role: "user", content: input }],
+          tools: [{ name: toolName, description: responseDescription, input_schema: format.schema }],
+          tool_choice: { type: "tool", name: toolName, disable_parallel_tool_use: true },
+        }),
       },
-      body: JSON.stringify({
-        model: connection.model,
-        max_tokens: MAX_OUTPUT_TOKENS,
-        system: instructions,
-        messages: [{ role: "user", content: input }],
-        tools: [{ name: toolName, description: responseDescription, input_schema: format.schema }],
-        tool_choice: { type: "tool", name: toolName, disable_parallel_tool_use: true },
-      }),
-    }, signal) as {
+      signal,
+    )) as {
       content?: Array<{ type?: unknown; name?: unknown; input?: unknown }>;
       usage?: { input_tokens?: unknown; output_tokens?: unknown };
     };
@@ -207,19 +225,23 @@ export async function requestProviderPlan<T extends z.ZodType>({
   }
 
   const modelName = encodeURIComponent(connection.model.replace(/^models\//u, ""));
-  const payload = await providerJson(`${connection.baseURL}/models/${modelName}:generateContent`, {
-    method: "POST",
-    headers: { "x-goog-api-key": connection.apiKey, "content-type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: instructions }] },
-      contents: [{ role: "user", parts: [{ text: input }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseJsonSchema: geminiSchema(format.schema),
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-      },
-    }),
-  }, signal) as {
+  const payload = (await providerJson(
+    `${connection.baseURL}/models/${modelName}:generateContent`,
+    {
+      method: "POST",
+      headers: { "x-goog-api-key": connection.apiKey, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: instructions }] },
+        contents: [{ role: "user", parts: [{ text: input }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseJsonSchema: geminiSchema(format.schema),
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
+        },
+      }),
+    },
+    signal,
+  )) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }>;
     usageMetadata?: { promptTokenCount?: unknown; candidatesTokenCount?: unknown };
   };
@@ -235,11 +257,12 @@ export async function requestProviderPlan<T extends z.ZodType>({
 
 function modelId(item: unknown, protocol: ActiveModelConnection["protocol"]) {
   if (!item || typeof item !== "object") return "";
-  const raw = typeof (item as { id?: unknown }).id === "string"
-    ? (item as { id: string }).id
-    : protocol === "gemini-generate-content" && typeof (item as { name?: unknown }).name === "string"
-      ? (item as { name: string }).name.replace(/^models\//u, "")
-      : "";
+  const raw =
+    typeof (item as { id?: unknown }).id === "string"
+      ? (item as { id: string }).id
+      : protocol === "gemini-generate-content" && typeof (item as { name?: unknown }).name === "string"
+        ? (item as { name: string }).name.replace(/^models\//u, "")
+        : "";
   return raw.trim().slice(0, 120);
 }
 
@@ -257,16 +280,28 @@ export async function listProviderModels(connection: ActiveModelConnection, sign
   const response = await fetch(url, { headers, redirect: "error", signal });
   const declaredLength = Number(response.headers.get("content-length") ?? "0");
   if (declaredLength > MODEL_LIST_LIMIT) throw new Error("The provider returned an unexpectedly large model list.");
-  const payload = await readBoundedJson(response, MODEL_LIST_LIMIT, "model-list response") as { data?: unknown; models?: unknown };
+  const payload = (await readBoundedJson(response, MODEL_LIST_LIMIT, "model-list response")) as {
+    data?: unknown;
+    models?: unknown;
+  };
   if (!response.ok) throw providerError(payload, response.status);
   const items = Array.isArray(payload.data) ? payload.data : Array.isArray(payload.models) ? payload.models : [];
-  const models = items.flatMap((item) => {
-    if (connection.protocol === "gemini-generate-content" && item && typeof item === "object"
-      && Array.isArray((item as { supportedGenerationMethods?: unknown }).supportedGenerationMethods)
-      && !(item as { supportedGenerationMethods: unknown[] }).supportedGenerationMethods.includes("generateContent")) return [];
-    const id = modelId(item, connection.protocol);
-    return id ? [id] : [];
-  }).filter((id, index, all) => all.indexOf(id) === index).sort().slice(0, 80);
+  const models = items
+    .flatMap((item) => {
+      if (
+        connection.protocol === "gemini-generate-content" &&
+        item &&
+        typeof item === "object" &&
+        Array.isArray((item as { supportedGenerationMethods?: unknown }).supportedGenerationMethods) &&
+        !(item as { supportedGenerationMethods: unknown[] }).supportedGenerationMethods.includes("generateContent")
+      )
+        return [];
+      const id = modelId(item, connection.protocol);
+      return id ? [id] : [];
+    })
+    .filter((id, index, all) => all.indexOf(id) === index)
+    .sort()
+    .slice(0, 80);
   if (!models.length) throw new Error("The provider returned no usable model IDs.");
   return models;
 }

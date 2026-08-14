@@ -60,18 +60,34 @@ type DataCell = string | number | boolean | null;
 
 type SourceSelection = {
   start: number; // UTF-16 offset, matching textarea selectionStart
-  end: number;   // exclusive UTF-16 offset
+  end: number; // exclusive UTF-16 offset
 };
 
 type PreviewSourceTarget = SourceSelection & {
-  kind: "document-section" | "document-block" | "document-fragment" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
+  kind:
+    | "document-section"
+    | "document-block"
+    | "document-fragment"
+    | "data-row"
+    | "data-cell"
+    | "deck-slide"
+    | "chart-spec";
   index: number;
   label: string;
 };
 
 type DocumentFragmentPreviewSourceTarget = PreviewSourceTarget & {
   kind: "document-fragment";
-  fragmentType: "list-item" | "table-header-cell" | "table-cell" | "bold" | "italic" | "strikethrough" | "inline-code" | "link" | "image";
+  fragmentType:
+    | "list-item"
+    | "table-header-cell"
+    | "table-cell"
+    | "bold"
+    | "italic"
+    | "strikethrough"
+    | "inline-code"
+    | "link"
+    | "image";
   rowIndex?: number;
   columnIndex?: number;
 };
@@ -107,7 +123,7 @@ type QueryCellLineage = {
 
 type QueryDataSourceDirective = {
   artifactId?: string; // exact Data id from -- rune:data "artifact-id"
-  explicit: boolean;   // false preserves imported legacy first-Data behavior
+  explicit: boolean; // false preserves imported legacy first-Data behavior
   errors: string[];
 };
 
@@ -167,21 +183,31 @@ type QueryMetricReference = {
 
 type WorkspaceDependencyEdge = {
   fromArtifactId: string; // canonical source
-  toArtifactId: string;   // consumer
+  toArtifactId: string; // consumer
   kind: "metric" | "query" | "query-metric" | "chart-data" | "chart-query" | "chart-embed" | "deck-origin";
   references: string[];
 };
 
 type AgentArtifactReference =
   | { kind: "artifact"; artifactId: string } // exact visible canonical id
-  | { kind: "creation"; handle: string };   // exact earlier action-local handle
+  | { kind: "creation"; handle: string }; // exact earlier action-local handle
 
 type AgentSourceOperation =
   | { type: "replace_text"; find: string; replace: string }
   | { type: "replace_markdown_section"; heading: string; body: string }
   | { type: "insert_markdown_section_after"; heading: string; section: string }
-  | { type: "upsert_data_row"; keyColumn: string; keyValue: Exclude<DataCell, null>; cells: Array<{ column: string; value: DataCell }> }
-  | { type: "upsert_data_column"; keyColumn: string; column: string; values: Array<{ keyValue: Exclude<DataCell, null>; value: DataCell }> }
+  | {
+      type: "upsert_data_row";
+      keyColumn: string;
+      keyValue: Exclude<DataCell, null>;
+      cells: Array<{ column: string; value: DataCell }>;
+    }
+  | {
+      type: "upsert_data_column";
+      keyColumn: string;
+      column: string;
+      values: Array<{ keyValue: Exclude<DataCell, null>; value: DataCell }>;
+    }
   | { type: "rename_data_column"; column: string; nextColumn: string }
   | { type: "replace_deck_slide"; title: string; slide: string }
   | { type: "insert_deck_slide_after"; title: string; slide: string }
@@ -248,10 +274,12 @@ type WorkspaceTransactionReview = {
     artifactId: string;
     status: "created" | "edited" | "validated" | "input";
   }>;
-  edges: Array<WorkspaceDependencyEdge & {
-    status: "added" | "removed" | "updated" | "retained";
-    previousLabel?: string;
-  }>;
+  edges: Array<
+    WorkspaceDependencyEdge & {
+      status: "added" | "removed" | "updated" | "retained";
+      previousLabel?: string;
+    }
+  >;
   errors: string[];
 };
 ```
@@ -544,9 +572,9 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 46. v0.50 adds explicit-page, English/Simplified-Chinese browser-local OCR for scanned PDF pages with same-origin assets, stoppable progress, page provenance, visible confidence, and the unchanged atomic import review.
 47. v0.51 mirrors every controlled visual draft into a complete highlighted canonical-source candidate without granting that temporary projection persistence or write authority.
 48. v0.52 normalizes Data into deterministic rectangular CSV/JSON snapshots and fixed landscape PDF tables behind the same stale-context export review; canonical source, XLSX, and ODS remain adjacent explicit choices.
-48. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
-49. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
-50. D1/R2 remain undeclared until durable hosted projects or assets are required.
+49. A desktop shell can implement the same storage and secret ports with directory watching, atomic rename, and system-keychain semantics later.
+50. Collaboration adds an operation log and CRDT only after multi-user demand is proven.
+51. D1/R2 remain undeclared until durable hosted projects or assets are required.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 
@@ -677,16 +705,16 @@ Device-local Document and Deck images use one strict `rune-asset:sha256:<64 lowe
 
 Image insertion is revision-bound and review-before-write. Rune stores/deduplicates the asset first, persists the validated next workspace and pre-write checkpoint second, and removes a newly created asset when source persistence fails. Existing deduplicated bytes are never deleted by compensation. A Deck insertion must be inside one proven slide range and the complete next Deck must parse before review or write. The Deck grammar accepts one standalone local image on a non-`metrics` slide and treats image, Chart, and table as mutually exclusive primary visuals. The same verified bytes flow through directory sync, live preview, PPTX media relationships, ODP picture manifests, standalone HTML data URLs, and PDF image objects; no adapter owns a second identity or asset database. Raw source download intentionally carries only the portable reference. Hosted R2 remains undeclared.
 
-| Stage | Capability | Infrastructure added only then |
-| --- | --- | --- |
-| Foundation | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding | Deterministic source templates, target compilers, client adapters, and local persistence |
-| Trust | Selection-confined and multi-file patch review, atomic apply, persistent checkpoints | Local revision log and duplicate selection-boundary verification |
-| Intelligence | Provider-backed artifact-aware patch/create actions over graph-bounded or explicitly pinned context, with configured-only Query evidence, runtime-verified Data/SQL proposals, and one compiler-guided replacement attempt compiled into reviewed concrete workspace mutations | Agent API, derived context graph, ephemeral user pins/evidence/repair feedback, shared creation factory, runtime impact compiler, and deterministic semantic/selection-operation fixtures |
-| Data loop | Keyed row/column operations over readable CSV/flat JSON, explicit multi-Data SQL binding, shared legacy or Query-backed scalar metrics, Data- or Query-backed reusable charts, navigable dependencies, frozen exports, exact table/chart/query-to-cell provenance, and proposed Data-to-consumer runtime verification | Deterministic Data operation compiler, DuckDB-Wasm, source identity resolver, ephemeral revision-bound snapshots, and source-derived graph compiler |
-| Presentation source | Deck Markdown compiler and legacy HTML bridge | No hosted infrastructure |
-| Collaboration | Shared projects | Auth, D1 metadata, R2 assets, Yjs transport |
-| Compatibility import | Semantic DOCX/XLSX/PPTX, ODT/ODS/ODP, selectable-text PDF ingestion, and explicit browser-local scan OCR | Lazy local ZIP/XML, PDF, and same-origin OCR adapters |
-| Compatibility export | Deterministic CSV/JSON, semantic DOCX/XLSX/PPTX and ODT/ODS/ODP, standalone Deck HTML, and fixed Document/Data/Deck PDF | Lazy deterministic adapters; isolated workers only when needed |
+| Stage                | Capability                                                                                                                                                                                                                                                                                                            | Infrastructure added only then                                                                                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Foundation           | Source-bound creation plus five live artifact editors with preview-to-source targeting and optional Chart embedding                                                                                                                                                                                                   | Deterministic source templates, target compilers, client adapters, and local persistence                                                                                                  |
+| Trust                | Selection-confined and multi-file patch review, atomic apply, persistent checkpoints                                                                                                                                                                                                                                  | Local revision log and duplicate selection-boundary verification                                                                                                                          |
+| Intelligence         | Provider-backed artifact-aware patch/create actions over graph-bounded or explicitly pinned context, with configured-only Query evidence, runtime-verified Data/SQL proposals, and one compiler-guided replacement attempt compiled into reviewed concrete workspace mutations                                        | Agent API, derived context graph, ephemeral user pins/evidence/repair feedback, shared creation factory, runtime impact compiler, and deterministic semantic/selection-operation fixtures |
+| Data loop            | Keyed row/column operations over readable CSV/flat JSON, explicit multi-Data SQL binding, shared legacy or Query-backed scalar metrics, Data- or Query-backed reusable charts, navigable dependencies, frozen exports, exact table/chart/query-to-cell provenance, and proposed Data-to-consumer runtime verification | Deterministic Data operation compiler, DuckDB-Wasm, source identity resolver, ephemeral revision-bound snapshots, and source-derived graph compiler                                       |
+| Presentation source  | Deck Markdown compiler and legacy HTML bridge                                                                                                                                                                                                                                                                         | No hosted infrastructure                                                                                                                                                                  |
+| Collaboration        | Shared projects                                                                                                                                                                                                                                                                                                       | Auth, D1 metadata, R2 assets, Yjs transport                                                                                                                                               |
+| Compatibility import | Semantic DOCX/XLSX/PPTX, ODT/ODS/ODP, selectable-text PDF ingestion, and explicit browser-local scan OCR                                                                                                                                                                                                              | Lazy local ZIP/XML, PDF, and same-origin OCR adapters                                                                                                                                     |
+| Compatibility export | Deterministic CSV/JSON, semantic DOCX/XLSX/PPTX and ODT/ODS/ODP, standalone Deck HTML, and fixed Document/Data/Deck PDF                                                                                                                                                                                               | Lazy deterministic adapters; isolated workers only when needed                                                                                                                            |
 
 ## Quality gates
 

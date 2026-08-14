@@ -63,17 +63,25 @@ test.after(() => {
 async function personalCookie() {
   process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "operating-review-vault-key-123456789";
   delete process.env.OPENAI_API_KEY;
-  const profile = normalizeModelProfileDraft({
-    provider: "custom",
-    name: "Private review model",
-    baseURL: "https://models.example.com/v1",
-    model: "review-1",
-    apiKey: "operating-review-secret",
-  }, undefined, "2026-08-14T00:00:00.000Z", () => "review");
-  return (await serializeModelProfileVaultCookie(
-    new Request("https://rune.example/api/model-profiles"),
-    { version: 1, activeProfileId: profile.id, profiles: [profile] },
-  )).split(";", 1)[0];
+  const profile = normalizeModelProfileDraft(
+    {
+      provider: "custom",
+      name: "Private review model",
+      baseURL: "https://models.example.com/v1",
+      model: "review-1",
+      apiKey: "operating-review-secret",
+    },
+    undefined,
+    "2026-08-14T00:00:00.000Z",
+    () => "review",
+  );
+  return (
+    await serializeModelProfileVaultCookie(new Request("https://rune.example/api/model-profiles"), {
+      version: 1,
+      activeProfileId: profile.id,
+      profiles: [profile],
+    })
+  ).split(";", 1)[0];
 }
 
 function providerResponse(narrative) {
@@ -96,11 +104,13 @@ test("sends only bounded aggregate evidence to the active personal model and ret
       headers: { "content-type": "application/json" },
     });
   };
-  const response = await POST(new Request("https://rune.example/api/tasks/operating-review", {
-    method: "POST",
-    headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({ artifact, input }),
-  }));
+  const response = await POST(
+    new Request("https://rune.example/api/tasks/operating-review", {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ artifact, input }),
+    }),
+  );
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.provider, "custom");
@@ -111,7 +121,10 @@ test("sends only bounded aggregate evidence to the active personal model and ret
   assert.equal(providerRequest.url, "https://models.example.com/v1/responses");
   assert.equal(providerRequest.headers.get("authorization"), "Bearer operating-review-secret");
   assert.equal(providerRequest.body.text.format.name, "operating_review_questions");
-  assert.match(providerRequest.body.input[0].content, /Rune will insert live category context and every numeric value deterministically/u);
+  assert.match(
+    providerRequest.body.input[0].content,
+    /Rune will insert live category context and every numeric value deterministically/u,
+  );
   const modelInput = JSON.parse(providerRequest.body.input[1].content);
   assert.deepEqual(modelInput.aggregateEvidence, [
     { id: "result-1", category: "APAC", value: 150, sourceRowCount: 2 },
@@ -136,18 +149,20 @@ test("sends paired exact-scope deltas without raw rows to the active personal mo
       headers: { "content-type": "application/json" },
     });
   };
-  const response = await POST(new Request("https://rune.example/api/tasks/operating-review", {
-    method: "POST",
-    headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({
-      artifact: comparisonArtifact,
-      input: {
-        ...input,
-        scope: { field: "Period", value: "July" },
-        comparisonScope: { field: "Period", value: "June" },
-      },
+  const response = await POST(
+    new Request("https://rune.example/api/tasks/operating-review", {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({
+        artifact: comparisonArtifact,
+        input: {
+          ...input,
+          scope: { field: "Period", value: "July" },
+          comparisonScope: { field: "Period", value: "June" },
+        },
+      }),
     }),
-  }));
+  );
   assert.equal(response.status, 200);
   const modelInput = JSON.parse(providerRequest.input[1].content);
   assert.deepEqual(modelInput.measure.scope, { field: "Period", value: "July" });
@@ -155,14 +170,24 @@ test("sends paired exact-scope deltas without raw rows to the active personal mo
   assert.equal(modelInput.measure.evidenceValue, "primary minus comparison");
   assert.deepEqual(modelInput.aggregateEvidence, [
     {
-      id: "result-1", category: "APAC", value: 10, sourceRowCount: 2,
-      primaryValue: 100, comparisonValue: 90,
-      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+      id: "result-1",
+      category: "APAC",
+      value: 10,
+      sourceRowCount: 2,
+      primaryValue: 100,
+      comparisonValue: 90,
+      primarySourceRowCount: 1,
+      comparisonSourceRowCount: 1,
     },
     {
-      id: "result-2", category: "Europe", value: -20, sourceRowCount: 2,
-      primaryValue: 80, comparisonValue: 100,
-      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+      id: "result-2",
+      category: "Europe",
+      value: -20,
+      sourceRowCount: 2,
+      primaryValue: 80,
+      comparisonValue: 100,
+      primarySourceRowCount: 1,
+      comparisonSourceRowCount: 1,
     },
   ]);
   assert.doesNotMatch(providerRequest.input[1].content, /Period,Region,Net Revenue/u);
@@ -171,17 +196,22 @@ test("sends paired exact-scope deltas without raw rows to the active personal mo
 
 test("rejects model prose that copies a source category instead of broadening write authority", async () => {
   const cookie = await personalCookie();
-  globalThis.fetch = async () => new Response(JSON.stringify(providerResponse({
-    insights: [
-      { ...validNarrative.insights[0], title: "Why does APAC lead?" },
-      validNarrative.insights[1],
-    ],
-  })), { headers: { "content-type": "application/json" } });
-  const response = await POST(new Request("https://rune.example/api/tasks/operating-review", {
-    method: "POST",
-    headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({ artifact, input }),
-  }));
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify(
+        providerResponse({
+          insights: [{ ...validNarrative.insights[0], title: "Why does APAC lead?" }, validNarrative.insights[1]],
+        }),
+      ),
+      { headers: { "content-type": "application/json" } },
+    );
+  const response = await POST(
+    new Request("https://rune.example/api/tasks/operating-review", {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ artifact, input }),
+    }),
+  );
   assert.equal(response.status, 502);
   const payload = await response.json();
   assert.equal(payload.code, "MODEL_NARRATIVE_INVALID");
@@ -191,43 +221,55 @@ test("rejects model prose that copies a source category instead of broadening wr
 test("returns an explicit unconfigured result without contacting a provider", async () => {
   delete process.env.OPENAI_API_KEY;
   delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-  globalThis.fetch = async () => { throw new Error("provider must not be called"); };
-  const response = await POST(new Request("http://localhost/api/tasks/operating-review", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ artifact, input }),
-  }));
+  globalThis.fetch = async () => {
+    throw new Error("provider must not be called");
+  };
+  const response = await POST(
+    new Request("http://localhost/api/tasks/operating-review", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ artifact, input }),
+    }),
+  );
   assert.equal(response.status, 503);
   assert.equal((await response.json()).code, "MODEL_UNCONFIGURED");
 });
 
 test("rejects a stale exact Data scope before contacting any model provider", async () => {
-  globalThis.fetch = async () => { throw new Error("provider must not be called"); };
-  const response = await POST(new Request("http://localhost/api/tasks/operating-review", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      artifact,
-      input: { ...input, scope: { field: "Period", value: "August" } },
+  globalThis.fetch = async () => {
+    throw new Error("provider must not be called");
+  };
+  const response = await POST(
+    new Request("http://localhost/api/tasks/operating-review", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        artifact,
+        input: { ...input, scope: { field: "Period", value: "August" } },
+      }),
     }),
-  }));
+  );
   assert.equal(response.status, 400);
   assert.match((await response.json()).error, /no longer matches any current Data row/u);
 });
 
 test("rejects an invalid comparison contract before contacting any model provider", async () => {
-  globalThis.fetch = async () => { throw new Error("provider must not be called"); };
-  const response = await POST(new Request("http://localhost/api/tasks/operating-review", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      artifact,
-      input: {
-        ...input,
-        comparisonScope: { field: "Period", value: "July" },
-      },
+  globalThis.fetch = async () => {
+    throw new Error("provider must not be called");
+  };
+  const response = await POST(
+    new Request("http://localhost/api/tasks/operating-review", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        artifact,
+        input: {
+          ...input,
+          comparisonScope: { field: "Period", value: "July" },
+        },
+      }),
     }),
-  }));
+  );
   assert.equal(response.status, 400);
   assert.equal((await response.json()).error, "The operating-review request is invalid.");
 });

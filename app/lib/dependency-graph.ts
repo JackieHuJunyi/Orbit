@@ -26,7 +26,7 @@ export const MAX_WORKSPACE_AGENT_ARTIFACT_CHARS = 100_000;
 export const MAX_WORKSPACE_AGENT_CONTEXT_CHARS = 180_000;
 export const MAX_WORKSPACE_DEPENDENCY_REFERENCES = 16;
 
-export type WorkspaceDependencyKind = typeof WORKSPACE_DEPENDENCY_KINDS[number];
+export type WorkspaceDependencyKind = (typeof WORKSPACE_DEPENDENCY_KINDS)[number];
 
 export type WorkspaceDependencyEdge = {
   fromArtifactId: string;
@@ -53,16 +53,15 @@ function plural(count: number, singular: string) {
 }
 
 export function workspaceAgentContextFitsSourceLimits(artifacts: WorkspaceArtifact[]) {
-  return artifacts.length >= 2
-    && artifacts.length <= MAX_WORKSPACE_AGENT_ARTIFACTS
-    && artifacts.every((artifact) => artifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS)
-    && artifacts.reduce((total, artifact) => total + artifact.source.length, 0)
-      <= MAX_WORKSPACE_AGENT_CONTEXT_CHARS;
+  return (
+    artifacts.length >= 2 &&
+    artifacts.length <= MAX_WORKSPACE_AGENT_ARTIFACTS &&
+    artifacts.every((artifact) => artifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS) &&
+    artifacts.reduce((total, artifact) => total + artifact.source.length, 0) <= MAX_WORKSPACE_AGENT_CONTEXT_CHARS
+  );
 }
 
-export function buildWorkspaceDependencyGraph(
-  artifacts: WorkspaceArtifact[],
-): WorkspaceDependencyGraph {
+export function buildWorkspaceDependencyGraph(artifacts: WorkspaceArtifact[]): WorkspaceDependencyGraph {
   const edges: WorkspaceDependencyEdge[] = [];
   const issues: WorkspaceDependencyIssue[] = [];
   const edgeKeys = new Set<string>();
@@ -114,16 +113,18 @@ export function buildWorkspaceDependencyGraph(
           references: metricReferences.slice(0, MAX_WORKSPACE_DEPENDENCY_REFERENCES),
         });
       }
-      metricReferences.filter((reference) => !metrics[reference]).forEach((reference) => {
-        issues.push({
-          artifactId: artifact.id,
-          kind: "metric",
-          target: reference,
-          message: canonicalData
-            ? `Metric is unresolved: ${reference}`
-            : `Metric has no canonical data source: ${reference}`,
+      metricReferences
+        .filter((reference) => !metrics[reference])
+        .forEach((reference) => {
+          issues.push({
+            artifactId: artifact.id,
+            kind: "metric",
+            target: reference,
+            message: canonicalData
+              ? `Metric is unresolved: ${reference}`
+              : `Metric has no canonical data source: ${reference}`,
+          });
         });
-      });
     }
 
     const parsedMetricBindings = parseMetricBindings(artifact.source);
@@ -234,19 +235,21 @@ export function buildWorkspaceDependencyGraph(
     });
   });
 
-  edges.sort((left, right) => (
-    (artifactOrder.get(left.fromArtifactId) ?? Number.MAX_SAFE_INTEGER)
-      - (artifactOrder.get(right.fromArtifactId) ?? Number.MAX_SAFE_INTEGER)
-    || (artifactOrder.get(left.toArtifactId) ?? Number.MAX_SAFE_INTEGER)
-      - (artifactOrder.get(right.toArtifactId) ?? Number.MAX_SAFE_INTEGER)
-    || left.kind.localeCompare(right.kind)
-  ));
-  issues.sort((left, right) => (
-    (artifactOrder.get(left.artifactId) ?? Number.MAX_SAFE_INTEGER)
-      - (artifactOrder.get(right.artifactId) ?? Number.MAX_SAFE_INTEGER)
-    || left.kind.localeCompare(right.kind)
-    || left.target.localeCompare(right.target)
-  ));
+  edges.sort(
+    (left, right) =>
+      (artifactOrder.get(left.fromArtifactId) ?? Number.MAX_SAFE_INTEGER) -
+        (artifactOrder.get(right.fromArtifactId) ?? Number.MAX_SAFE_INTEGER) ||
+      (artifactOrder.get(left.toArtifactId) ?? Number.MAX_SAFE_INTEGER) -
+        (artifactOrder.get(right.toArtifactId) ?? Number.MAX_SAFE_INTEGER) ||
+      left.kind.localeCompare(right.kind),
+  );
+  issues.sort(
+    (left, right) =>
+      (artifactOrder.get(left.artifactId) ?? Number.MAX_SAFE_INTEGER) -
+        (artifactOrder.get(right.artifactId) ?? Number.MAX_SAFE_INTEGER) ||
+      left.kind.localeCompare(right.kind) ||
+      left.target.localeCompare(right.target),
+  );
 
   return { edges, issues };
 }
@@ -281,8 +284,7 @@ function orderedGraphCandidates(
     const id = queue.shift();
     if (!id) continue;
     ids.push(id);
-    const next = [...(neighbors.get(id) ?? [])]
-      .sort((left, right) => (order.get(left) ?? 0) - (order.get(right) ?? 0));
+    const next = [...(neighbors.get(id) ?? [])].sort((left, right) => (order.get(left) ?? 0) - (order.get(right) ?? 0));
     next.forEach((neighbor) => {
       if (queued.has(neighbor)) return;
       queued.add(neighbor);
@@ -340,16 +342,18 @@ export function selectWorkspaceAgentContext(
     closureFor(artifactId).forEach((requiredId) => requiredClosure.add(requiredId));
   });
   const requiredClosureArtifacts = artifacts.filter((artifact) => requiredClosure.has(artifact.id));
-  const requiredClosureFits = requiredClosureArtifacts.length <= safeLimit
-    && requiredClosureArtifacts.every((artifact) => (
-      artifact.id === selected.id || artifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS
-    ))
-    && requiredClosureArtifacts.reduce((total, artifact) => total + artifact.source.length, 0)
-      <= MAX_WORKSPACE_AGENT_CONTEXT_CHARS;
+  const requiredClosureFits =
+    requiredClosureArtifacts.length <= safeLimit &&
+    requiredClosureArtifacts.every(
+      (artifact) => artifact.id === selected.id || artifact.source.length <= MAX_WORKSPACE_AGENT_ARTIFACT_CHARS,
+    ) &&
+    requiredClosureArtifacts.reduce((total, artifact) => total + artifact.source.length, 0) <=
+      MAX_WORKSPACE_AGENT_CONTEXT_CHARS;
   const selectedIds = requiredClosureFits ? requiredClosure : new Set(rootArtifactIds);
-  let characterCount = artifacts.reduce((total, artifact) => (
-    selectedIds.has(artifact.id) ? total + artifact.source.length : total
-  ), 0);
+  let characterCount = artifacts.reduce(
+    (total, artifact) => (selectedIds.has(artifact.id) ? total + artifact.source.length : total),
+    0,
+  );
   for (const candidate of candidates) {
     if (selectedIds.has(candidate.id) || selectedIds.size >= safeLimit) continue;
     const missingIds = [...closureFor(candidate.id)].filter((id) => !selectedIds.has(id));
@@ -367,22 +371,14 @@ export function selectWorkspaceAgentContext(
   return artifacts.filter((artifact) => selectedIds.has(artifact.id));
 }
 
-export function dependencyEdgesForContext(
-  graph: WorkspaceDependencyGraph,
-  artifacts: WorkspaceArtifact[],
-) {
+export function dependencyEdgesForContext(graph: WorkspaceDependencyGraph, artifacts: WorkspaceArtifact[]) {
   const ids = new Set(artifacts.map((artifact) => artifact.id));
   return graph.edges.filter((edge) => ids.has(edge.fromArtifactId) && ids.has(edge.toArtifactId));
 }
 
-export function workspaceAgentContextIsClosed(
-  graph: WorkspaceDependencyGraph,
-  artifacts: WorkspaceArtifact[],
-) {
+export function workspaceAgentContextIsClosed(graph: WorkspaceDependencyGraph, artifacts: WorkspaceArtifact[]) {
   const ids = new Set(artifacts.map((artifact) => artifact.id));
-  return graph.edges.every((edge) => (
-    !ids.has(edge.toArtifactId)
-    || edge.fromArtifactId === edge.toArtifactId
-    || ids.has(edge.fromArtifactId)
-  ));
+  return graph.edges.every(
+    (edge) => !ids.has(edge.toArtifactId) || edge.fromArtifactId === edge.toArtifactId || ids.has(edge.fromArtifactId),
+  );
 }

@@ -35,7 +35,10 @@ export const RUNE_WORKSPACE_VIEW_CONTRIBUTIONS = Object.freeze(
   workspaceViewRegistry.entries("workspace-view").map((entry) => entry.value),
 );
 
-export type RuneWorkspaceViewShortcutEvent = Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey">;
+export type RuneWorkspaceViewShortcutEvent = Pick<
+  KeyboardEvent,
+  "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey"
+>;
 
 export type RuneWorkspaceSplitGeometry = Readonly<{
   basePercent: number;
@@ -52,12 +55,13 @@ export function clampWorkspaceSourcePercent(value: number) {
 export function normalizeWorkspaceSourcePercent(value: unknown): number | null {
   if (typeof value !== "string" && typeof value !== "number") return null;
   const parsed = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(parsed) || parsed < MIN_WORKSPACE_SOURCE_PERCENT || parsed > MAX_WORKSPACE_SOURCE_PERCENT) return null;
+  if (!Number.isFinite(parsed) || parsed < MIN_WORKSPACE_SOURCE_PERCENT || parsed > MAX_WORKSPACE_SOURCE_PERCENT)
+    return null;
   return clampWorkspaceSourcePercent(parsed);
 }
 
 export function normalizeRuneWorkspaceView(value: unknown): RuneWorkspaceView | null {
-  return RUNE_WORKSPACE_VIEWS.includes(value as RuneWorkspaceView) ? value as RuneWorkspaceView : null;
+  return RUNE_WORKSPACE_VIEWS.includes(value as RuneWorkspaceView) ? (value as RuneWorkspaceView) : null;
 }
 
 export function workspaceViewFromKeyboardShortcut(event: RuneWorkspaceViewShortcutEvent): RuneWorkspaceView | null {
@@ -74,11 +78,13 @@ export function workspaceSplitTracks(sourcePercent: number) {
 }
 
 export function workspaceSplitPercentFromDrag(clientX: number, geometry: RuneWorkspaceSplitGeometry) {
-  if (!Number.isFinite(clientX)
-    || !Number.isFinite(geometry.basePercent)
-    || !Number.isFinite(geometry.originX)
-    || !Number.isFinite(geometry.width)
-    || geometry.width <= 0) {
+  if (
+    !Number.isFinite(clientX) ||
+    !Number.isFinite(geometry.basePercent) ||
+    !Number.isFinite(geometry.originX) ||
+    !Number.isFinite(geometry.width) ||
+    geometry.width <= 0
+  ) {
     return DEFAULT_WORKSPACE_SOURCE_PERCENT;
   }
   const physicalDelta = ((clientX - geometry.originX) / geometry.width) * 100;

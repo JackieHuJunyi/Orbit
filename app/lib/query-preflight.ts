@@ -103,8 +103,9 @@ export async function preflightAgentRuntimeImpact(
 
   const scalarConsumerKeys = new Set<string>();
   for (const artifact of prepared.nextArtifacts) {
-    const impactedReferences = findQueryMetricReferences(artifact.source)
-      .filter((reference) => impactedQueryIds.has(reference.queryArtifactId));
+    const impactedReferences = findQueryMetricReferences(artifact.source).filter((reference) =>
+      impactedQueryIds.has(reference.queryArtifactId),
+    );
     impactedReferences.forEach((reference) => {
       scalarConsumerKeys.add(`${artifact.id}\u0000${queryMetricReferenceKey(reference)}`);
     });
@@ -118,16 +119,13 @@ export async function preflightAgentRuntimeImpact(
   let chartConsumerCount = 0;
   for (const chartArtifact of prepared.nextArtifacts.filter((artifact) => artifact.kind === "chart")) {
     const spec = parseChartSource(chartArtifact.source).spec;
-    if (!spec || (!changedChartIds.has(chartArtifact.id)
-      && !impactedQueryIds.has(spec.source)
-      && !changedDataIds.has(spec.source))) continue;
+    if (
+      !spec ||
+      (!changedChartIds.has(chartArtifact.id) && !impactedQueryIds.has(spec.source) && !changedDataIds.has(spec.source))
+    )
+      continue;
     chartConsumerCount += 1;
-    const resolution = resolveChartModel(
-      chartArtifact,
-      prepared.nextArtifacts,
-      parseDataSource,
-      snapshots,
-    );
+    const resolution = resolveChartModel(chartArtifact, prepared.nextArtifacts, parseDataSource, snapshots);
     if (!resolution.model) {
       throw new Error(`${chartArtifact.name}: ${resolution.errors[0] ?? "Query-backed chart runtime failed."}`);
     }

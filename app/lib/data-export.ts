@@ -16,11 +16,16 @@ function rectangularRows(columns: string[], rows: Array<Record<string, DataCell>
 
 function formulaSafeCsvRows(rows: Array<Record<string, DataCell>>) {
   let protectedCellCount = 0;
-  const safeRows = rows.map((row) => Object.fromEntries(Object.entries(row).map(([column, value]) => {
-    if (typeof value !== "string" || !/^[\t\r\n ]*[=+@-]/u.test(value) || value.startsWith("'")) return [column, value];
-    protectedCellCount += 1;
-    return [column, `'${value}`];
-  })));
+  const safeRows = rows.map((row) =>
+    Object.fromEntries(
+      Object.entries(row).map(([column, value]) => {
+        if (typeof value !== "string" || !/^[\t\r\n ]*[=+@-]/u.test(value) || value.startsWith("'"))
+          return [column, value];
+        protectedCellCount += 1;
+        return [column, `'${value}`];
+      }),
+    ),
+  );
   return { safeRows, protectedCellCount };
 }
 
@@ -39,26 +44,30 @@ export function exportPortableDataArtifact(
 
   const rows = rectangularRows(parsed.columns, parsed.rows);
   const csvRows = targetType === "csv" ? formulaSafeCsvRows(rows) : null;
-  const source = targetType === "json"
-    ? `${JSON.stringify(rows, null, 2)}\n`
-    : `${Papa.unparse({ fields: parsed.columns, data: csvRows?.safeRows ?? rows }, { newline: "\n" })}\n`;
+  const source =
+    targetType === "json"
+      ? `${JSON.stringify(rows, null, 2)}\n`
+      : `${Papa.unparse({ fields: parsed.columns, data: csvRows?.safeRows ?? rows }, { newline: "\n" })}\n`;
   const bytes = encoder.encode(source);
   if (bytes.length > MAX_PORTABLE_DATA_EXPORT_BYTES) {
     throw new Error(`The generated ${targetType.toUpperCase()} file exceeds Rune's 12 MB export limit.`);
   }
 
-  const warnings = targetType === "json"
-    ? [
-        "JSON export writes one flat object per visible row in canonical column order; absent cells become explicit null values.",
-        "The download is a deterministic data snapshot and does not retain the original CSV quoting or JSON whitespace.",
-      ]
-    : [
-        "CSV export writes the visible rectangular table with typed values serialized as text; CSV does not carry a schema.",
-        ...(csvRows?.protectedCellCount
-          ? [`${csvRows.protectedCellCount} formula-leading text ${csvRows.protectedCellCount === 1 ? "cell was" : "cells were"} prefixed with an apostrophe before spreadsheet handoff.`]
-          : []),
-        "The download is a deterministic data snapshot and does not retain the original JSON whitespace or object sparsity.",
-      ];
+  const warnings =
+    targetType === "json"
+      ? [
+          "JSON export writes one flat object per visible row in canonical column order; absent cells become explicit null values.",
+          "The download is a deterministic data snapshot and does not retain the original CSV quoting or JSON whitespace.",
+        ]
+      : [
+          "CSV export writes the visible rectangular table with typed values serialized as text; CSV does not carry a schema.",
+          ...(csvRows?.protectedCellCount
+            ? [
+                `${csvRows.protectedCellCount} formula-leading text ${csvRows.protectedCellCount === 1 ? "cell was" : "cells were"} prefixed with an apostrophe before spreadsheet handoff.`,
+              ]
+            : []),
+          "The download is a deterministic data snapshot and does not retain the original JSON whitespace or object sparsity.",
+        ];
   return {
     bytes,
     fileName: `${safeExportBaseName(artifact.name)}.${targetType}`,

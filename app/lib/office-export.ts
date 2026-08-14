@@ -2,7 +2,14 @@ import { strToU8, zipSync } from "fflate";
 import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
 import { parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
-import { extractRuneAssetIds, parseRuneMarkdownImage, runeImageAssetMap, runeImageDimensions, runeImageExtension, type RuneExportImageAsset } from "./local-assets.ts";
+import {
+  extractRuneAssetIds,
+  parseRuneMarkdownImage,
+  runeImageAssetMap,
+  runeImageDimensions,
+  runeImageExtension,
+  type RuneExportImageAsset,
+} from "./local-assets.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
@@ -43,13 +50,22 @@ type DocxContext = {
 
 type PptParagraph = { text: string; bullet: boolean; level: number };
 type PptSlideImage = { reference: { id: string; alt: string }; asset: RuneExportImageAsset };
-type PptSlideModel = { title: string; eyebrow: string; paragraphs: PptParagraph[]; tables: string[][][]; charts: ChartModel[]; image: PptSlideImage | null; layout: DeckSlide["layout"] };
+type PptSlideModel = {
+  title: string;
+  eyebrow: string;
+  paragraphs: PptParagraph[];
+  tables: string[][][];
+  charts: ChartModel[];
+  image: PptSlideImage | null;
+  layout: DeckSlide["layout"];
+};
 
 const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 const PACKAGE_RELATIONSHIPS = "http://schemas.openxmlformats.org/package/2006/relationships";
 const OFFICE_RELATIONSHIPS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 const CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types";
-const MARKDOWN_TOKEN = /(!?\[[^\]\n]*\]\([^)\n]+\)|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|`[^`\n]+`|\*[^*\n]+\*|_[^_\n]+_)/g;
+const MARKDOWN_TOKEN =
+  /(!?\[[^\]\n]*\]\([^)\n]+\)|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|`[^`\n]+`|\*[^*\n]+\*|_[^_\n]+_)/g;
 const CHART_TOKEN = /\{\{\s*chart\(["']([a-z0-9_.-]+)["']\)\s*\}\}/gi;
 const EXACT_CHART_TOKEN = /^\s*\{\{\s*chart\(["']([a-z0-9_.-]+)["']\)\s*\}\}\s*$/i;
 
@@ -57,20 +73,20 @@ function cleanXmlCharacters(value: string) {
   let result = "";
   for (const character of value) {
     const code = character.codePointAt(0) ?? 0;
-    const valid = code === 0x9 || code === 0xa || code === 0xd
-      || (code >= 0x20 && code <= 0xd7ff)
-      || (code >= 0xe000 && code <= 0xfffd)
-      || (code >= 0x10000 && code <= 0x10ffff);
+    const valid =
+      code === 0x9 ||
+      code === 0xa ||
+      code === 0xd ||
+      (code >= 0x20 && code <= 0xd7ff) ||
+      (code >= 0xe000 && code <= 0xfffd) ||
+      (code >= 0x10000 && code <= 0x10ffff);
     result += valid ? character : "�";
   }
   return result;
 }
 
 function xmlText(value: string) {
-  return cleanXmlCharacters(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+  return cleanXmlCharacters(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 function xmlAttribute(value: string) {
@@ -78,12 +94,15 @@ function xmlAttribute(value: string) {
 }
 
 function zipPackage(parts: Record<string, string | Uint8Array>) {
-  const encoded = Object.fromEntries(Object.entries(parts).map(([path, source]) => [path, typeof source === "string" ? strToU8(source) : source]));
+  const encoded = Object.fromEntries(
+    Object.entries(parts).map(([path, source]) => [path, typeof source === "string" ? strToU8(source) : source]),
+  );
   const bytes = zipSync(encoded, {
     level: 6,
     mtime: new Date(Date.UTC(1980, 0, 1)),
   });
-  if (bytes.length > MAX_OFFICE_EXPORT_BYTES) throw new Error("The generated Office package exceeds Rune's 12 MB export limit.");
+  if (bytes.length > MAX_OFFICE_EXPORT_BYTES)
+    throw new Error("The generated Office package exceeds Rune's 12 MB export limit.");
   return bytes;
 }
 
@@ -108,7 +127,9 @@ function unescapeMarkdown(value: string) {
 
 function sanitizeInlineSource(source: string, warnings: Set<string>) {
   let result = source.replace(CHART_TOKEN, (_token, id: string) => {
-    warnings.add("Inline Rune chart references use an omission marker in Office export; put a chart on its own line to export a current-data snapshot.");
+    warnings.add(
+      "Inline Rune chart references use an omission marker in Office export; put a chart on its own line to export a current-data snapshot.",
+    );
     return `[Chart omitted: ${id}]`;
   });
   result = result.replace(/(^|[^\\])<[^>]+>/g, (_token, prefix: string) => {
@@ -132,7 +153,10 @@ function inlineSegments(source: string, warnings: Set<string>): InlineSegment[] 
       warnings.add("Markdown images are not embedded in semantic Office export.");
       segments.push({ text: `[Image omitted${image[1] ? `: ${image[1]}` : ""}]` });
     } else if (link) {
-      const target = link[2].trim().replace(/^<|>$/g, "").split(/\s+["']/)[0];
+      const target = link[2]
+        .trim()
+        .replace(/^<|>$/g, "")
+        .split(/\s+["']/)[0];
       if (isSafeOfficeLink(target)) segments.push({ text: unescapeMarkdown(link[1]), link: target });
       else {
         warnings.add("A non-HTTP Markdown link was exported as plain text.");
@@ -172,19 +196,27 @@ function resolveOfficeChart(
 ) {
   const chartArtifact = workspace.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
   if (!chartArtifact) {
-    warnings.add(`Chart ${chartArtifactId} was omitted because its workspace artifact was unavailable during Office export.`);
+    warnings.add(
+      `Chart ${chartArtifactId} was omitted because its workspace artifact was unavailable during Office export.`,
+    );
     return null;
   }
   const resolution = resolveChartModel(chartArtifact, workspace, parseDataSource, querySnapshots);
   if (!resolution.model) {
-    warnings.add(`Chart ${chartArtifactId} was omitted because its current data snapshot could not compile: ${resolution.errors[0] ?? "unknown chart error"}`);
+    warnings.add(
+      `Chart ${chartArtifactId} was omitted because its current data snapshot could not compile: ${resolution.errors[0] ?? "unknown chart error"}`,
+    );
     return null;
   }
   return resolution.model;
 }
 
 function plainMarkdownInline(source: string, warnings: Set<string>) {
-  return inlineSegments(source, warnings).map((segment) => segment.text).join("").replace(/\s+/g, " ").trim();
+  return inlineSegments(source, warnings)
+    .map((segment) => segment.text)
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function tableCells(line: string) {
@@ -218,8 +250,7 @@ function isTableDivider(line: string) {
 function startsMarkdownBlock(lines: string[], index: number) {
   const line = lines[index] ?? "";
   const next = lines[index + 1] ?? "";
-  return /^\s*(?:#{1,6}\s+|>|[-*+]\s+|\d+\.\s+|```)/.test(line)
-    || (line.includes("|") && isTableDivider(next));
+  return /^\s*(?:#{1,6}\s+|>|[-*+]\s+|\d+\.\s+|```)/.test(line) || (line.includes("|") && isTableDivider(next));
 }
 
 export function parseMarkdownBlocks(source: string): MarkdownBlock[] {
@@ -307,12 +338,16 @@ function docxRun(segment: InlineSegment) {
 }
 
 function docxInline(source: string, context: DocxContext) {
-  return inlineSegments(source, context.warnings).map((segment) => {
-    if (!segment.link) return docxRun(segment);
-    const id = `rId${context.relationships.length + 3}`;
-    context.relationships.push({ id, target: segment.link, kind: "hyperlink" });
-    return `<w:hyperlink r:id="${id}" w:history="1">${docxRun(segment)}</w:hyperlink>`;
-  }).join("") || '<w:r><w:t xml:space="preserve"> </w:t></w:r>';
+  return (
+    inlineSegments(source, context.warnings)
+      .map((segment) => {
+        if (!segment.link) return docxRun(segment);
+        const id = `rId${context.relationships.length + 3}`;
+        context.relationships.push({ id, target: segment.link, kind: "hyperlink" });
+        return `<w:hyperlink r:id="${id}" w:history="1">${docxRun(segment)}</w:hyperlink>`;
+      })
+      .join("") || '<w:r><w:t xml:space="preserve"> </w:t></w:r>'
+  );
 }
 
 function docxImage(reference: { id: string; alt: string }, context: DocxContext) {
@@ -338,14 +373,22 @@ function docxImage(reference: { id: string; alt: string }, context: DocxContext)
   const height = Math.max(1, Math.round(naturalHeight * scale));
   context.drawingId += 1;
   const drawingId = context.drawingId;
-  context.warnings.add("Rune local images are embedded as portable, static DOCX media; the content-hash source reference remains only in canonical Markdown.");
+  context.warnings.add(
+    "Rune local images are embedded as portable, static DOCX media; the content-hash source reference remains only in canonical Markdown.",
+  );
   return `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="160"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${xmlAttribute(description)}" descr="${xmlAttribute(description)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${xmlAttribute(used.fileName)}" descr="${xmlAttribute(description)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${used.relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 
-function docxParagraph(source: string, context: DocxContext, options: { style?: string; ordered?: boolean; level?: number } = {}) {
+function docxParagraph(
+  source: string,
+  context: DocxContext,
+  options: { style?: string; ordered?: boolean; level?: number } = {},
+) {
   const properties = [
     options.style ? `<w:pStyle w:val="${options.style}"/>` : "",
-    options.ordered != null ? `<w:numPr><w:ilvl w:val="${options.level ?? 0}"/><w:numId w:val="${options.ordered ? 2 : 1}"/></w:numPr>` : "",
+    options.ordered != null
+      ? `<w:numPr><w:ilvl w:val="${options.level ?? 0}"/><w:numId w:val="${options.ordered ? 2 : 1}"/></w:numPr>`
+      : "",
   ].join("");
   return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ""}${docxInline(source, context)}</w:p>`;
 }
@@ -355,7 +398,12 @@ function docxTable(rows: string[][], context: DocxContext) {
   return `<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="0" w:type="auto"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid>${Array.from({ length: width }, () => '<w:gridCol w:w="2400"/>').join("")}</w:tblGrid>${rows.map((row) => `<w:tr>${Array.from({ length: width }, (_, index) => `<w:tc><w:tcPr><w:tcW w:w="2400" w:type="dxa"/></w:tcPr>${docxParagraph(row[index] ?? "", context)}</w:tc>`).join("")}</w:tr>`).join("")}</w:tbl>`;
 }
 
-function docxChartCell(source: string, context: DocxContext, width: number, options: { barColor?: string; track?: boolean } = {}) {
+function docxChartCell(
+  source: string,
+  context: DocxContext,
+  width: number,
+  options: { barColor?: string; track?: boolean } = {},
+) {
   const shading = options.track ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F3EF"/>' : "";
   const contents = options.barColor
     ? `<w:p><w:r><w:rPr><w:b/><w:color w:val="${xmlAttribute(options.barColor)}"/></w:rPr><w:t xml:space="preserve">${xmlText(source || " ")}</w:t></w:r></w:p>`
@@ -366,18 +414,36 @@ function docxChartCell(source: string, context: DocxContext, width: number, opti
 function docxChart(model: ChartModel, context: DocxContext) {
   const color = model.spec.color.slice(1).toUpperCase();
   const header = `<w:tr>${docxChartCell(model.spec.category, context, 2500)}${docxChartCell(model.spec.mark === "line" ? "Trend" : "Relative bar", context, 3600)}${docxChartCell(model.spec.value, context, 1900)}</w:tr>`;
-  const rows = model.data.map((datum, index) => {
-    const previous = model.data[index - 1];
-    const trend = !previous ? "Start" : datum.value > previous.value ? "↑ Increase" : datum.value < previous.value ? "↓ Decrease" : "→ No change";
-    const visual = model.spec.mark === "line"
-      ? docxChartCell(trend, context, 3600, { barColor: color })
-      : docxChartCell(datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12))), context, 3600, { barColor: color, track: true });
-    return `<w:tr>${docxChartCell(datum.label, context, 2500)}${visual}${docxChartCell(datum.formatted, context, 1900)}</w:tr>`;
-  }).join("");
-  context.warnings.add(`Live Rune charts are exported as static current-data snapshots from ${model.sourceArtifactName}; Office files do not retain the live data binding.`);
-  context.warnings.add(model.spec.mark === "line"
-    ? "DOCX line-chart snapshots use a readable semantic trend table so labels, direction, and values remain selectable and importable."
-    : "DOCX bar-chart snapshots use a readable semantic bar table so labels and values remain selectable and importable.");
+  const rows = model.data
+    .map((datum, index) => {
+      const previous = model.data[index - 1];
+      const trend = !previous
+        ? "Start"
+        : datum.value > previous.value
+          ? "↑ Increase"
+          : datum.value < previous.value
+            ? "↓ Decrease"
+            : "→ No change";
+      const visual =
+        model.spec.mark === "line"
+          ? docxChartCell(trend, context, 3600, { barColor: color })
+          : docxChartCell(
+              datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12))),
+              context,
+              3600,
+              { barColor: color, track: true },
+            );
+      return `<w:tr>${docxChartCell(datum.label, context, 2500)}${visual}${docxChartCell(datum.formatted, context, 1900)}</w:tr>`;
+    })
+    .join("");
+  context.warnings.add(
+    `Live Rune charts are exported as static current-data snapshots from ${model.sourceArtifactName}; Office files do not retain the live data binding.`,
+  );
+  context.warnings.add(
+    model.spec.mark === "line"
+      ? "DOCX line-chart snapshots use a readable semantic trend table so labels, direction, and values remain selectable and importable."
+      : "DOCX bar-chart snapshots use a readable semantic bar table so labels and values remain selectable and importable.",
+  );
   const description = model.spec.description ? docxParagraph(model.spec.description, context, { style: "Quote" }) : "";
   return `${docxParagraph(model.spec.title, context, { style: "Heading3" })}${description}<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="8000" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2500"/><w:gridCol w:w="3600"/><w:gridCol w:w="1900"/></w:tblGrid>${header}${rows}</w:tbl>`;
 }
@@ -393,8 +459,16 @@ function docxStyles() {
 }
 
 function docxNumbering() {
-  const bulletLevels = Array.from({ length: 7 }, (_, level) => `<w:lvl w:ilvl="${level}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:tabs><w:tab w:val="num" w:pos="${720 + level * 360}"/></w:tabs><w:ind w:left="${720 + level * 360}" w:hanging="360"/></w:pPr></w:lvl>`).join("");
-  const decimalLevels = Array.from({ length: 7 }, (_, level) => `<w:lvl w:ilvl="${level}"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%${level + 1}."/><w:lvlJc w:val="left"/><w:pPr><w:tabs><w:tab w:val="num" w:pos="${720 + level * 360}"/></w:tabs><w:ind w:left="${720 + level * 360}" w:hanging="360"/></w:pPr></w:lvl>`).join("");
+  const bulletLevels = Array.from(
+    { length: 7 },
+    (_, level) =>
+      `<w:lvl w:ilvl="${level}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:tabs><w:tab w:val="num" w:pos="${720 + level * 360}"/></w:tabs><w:ind w:left="${720 + level * 360}" w:hanging="360"/></w:pPr></w:lvl>`,
+  ).join("");
+  const decimalLevels = Array.from(
+    { length: 7 },
+    (_, level) =>
+      `<w:lvl w:ilvl="${level}"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%${level + 1}."/><w:lvlJc w:val="left"/><w:pPr><w:tabs><w:tab w:val="num" w:pos="${720 + level * 360}"/></w:tabs><w:ind w:left="${720 + level * 360}" w:hanging="360"/></w:pPr></w:lvl>`,
+  ).join("");
   return `${XML_DECLARATION}
 <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>${bulletLevels}</w:abstractNum><w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="multilevel"/>${decimalLevels}</w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num></w:numbering>`;
 }
@@ -405,43 +479,81 @@ function exportDocx(
   querySnapshots: WorkspaceQuerySnapshot[],
   imageAssets: readonly RuneExportImageAsset[],
 ): OfficeExportResult {
-  if (artifact.source.length > MAX_DOCX_EXPORT_SOURCE_CHARS) throw new Error("DOCX export is limited to 200,000 source characters.");
+  if (artifact.source.length > MAX_DOCX_EXPORT_SOURCE_CHARS)
+    throw new Error("DOCX export is limited to 200,000 source characters.");
   const warnings = new Set<string>();
-  const context: DocxContext = { relationships: [], warnings, workspace, querySnapshots, images: runeImageAssetMap(imageAssets), usedImages: new Map(), drawingId: 0 };
+  const context: DocxContext = {
+    relationships: [],
+    warnings,
+    workspace,
+    querySnapshots,
+    images: runeImageAssetMap(imageAssets),
+    usedImages: new Map(),
+    drawingId: 0,
+  };
   const blocks = parseMarkdownBlocks(artifact.source);
-  const referencedImageIds = blocks.flatMap((block) => block.type === "paragraph" ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id)) : []);
+  const referencedImageIds = blocks.flatMap((block) =>
+    block.type === "paragraph"
+      ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
+      : [],
+  );
   const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
   if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before DOCX export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
   if (blocks.length > MAX_DOCX_EXPORT_BLOCKS) throw new Error("DOCX export is limited to 10,000 semantic blocks.");
-  const body = blocks.map((block) => {
-    if (block.type === "heading") return docxParagraph(block.source, context, { style: block.level === 1 ? "Title" : `Heading${Math.min(6, block.level)}` });
-    if (block.type === "quote") return docxParagraph(block.source, context, { style: "Quote" });
-    if (block.type === "list") return docxParagraph(block.source, context, { ordered: block.ordered, level: block.level });
-    if (block.type === "table") return docxTable(block.rows, context);
-    if (block.type === "code") {
-      warnings.add("Fenced Markdown code was exported as preformatted Word text.");
-      const lines = block.source.split("\n");
-      const runs = lines.map((line, index) => `${index ? "<w:r><w:br/></w:r>" : ""}<w:r><w:rPr><w:rStyle w:val="Code"/></w:rPr><w:t xml:space="preserve">${xmlText(line || " ")}</w:t></w:r>`).join("");
-      return `<w:p><w:pPr><w:pStyle w:val="CodeBlock"/></w:pPr>${runs}</w:p>`;
-    }
-    const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
-    if (imageReference) return docxImage(imageReference, context);
-    const chartReference = block.source.match(EXACT_CHART_TOKEN)?.[1];
-    if (chartReference) {
-      const chart = resolveOfficeChart(chartReference, context.workspace, warnings, context.querySnapshots);
-      if (chart) return docxChart(chart, context);
-    }
-    return docxParagraph(block.source, context);
-  }).join("") || "<w:p/>";
-  warnings.add("DOCX export preserves semantic structure; page layout, comments, and advanced Word styling are not generated.");
-  const documentRelationships = context.relationships.map((relationship) => relationship.kind === "image"
-    ? `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/image" Target="${xmlAttribute(relationship.target)}"/>`
-    : `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/hyperlink" Target="${xmlAttribute(relationship.target)}" TargetMode="External"/>`).join("");
+  const body =
+    blocks
+      .map((block) => {
+        if (block.type === "heading")
+          return docxParagraph(block.source, context, {
+            style: block.level === 1 ? "Title" : `Heading${Math.min(6, block.level)}`,
+          });
+        if (block.type === "quote") return docxParagraph(block.source, context, { style: "Quote" });
+        if (block.type === "list")
+          return docxParagraph(block.source, context, { ordered: block.ordered, level: block.level });
+        if (block.type === "table") return docxTable(block.rows, context);
+        if (block.type === "code") {
+          warnings.add("Fenced Markdown code was exported as preformatted Word text.");
+          const lines = block.source.split("\n");
+          const runs = lines
+            .map(
+              (line, index) =>
+                `${index ? "<w:r><w:br/></w:r>" : ""}<w:r><w:rPr><w:rStyle w:val="Code"/></w:rPr><w:t xml:space="preserve">${xmlText(line || " ")}</w:t></w:r>`,
+            )
+            .join("");
+          return `<w:p><w:pPr><w:pStyle w:val="CodeBlock"/></w:pPr>${runs}</w:p>`;
+        }
+        const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
+        if (imageReference) return docxImage(imageReference, context);
+        const chartReference = block.source.match(EXACT_CHART_TOKEN)?.[1];
+        if (chartReference) {
+          const chart = resolveOfficeChart(chartReference, context.workspace, warnings, context.querySnapshots);
+          if (chart) return docxChart(chart, context);
+        }
+        return docxParagraph(block.source, context);
+      })
+      .join("") || "<w:p/>";
+  warnings.add(
+    "DOCX export preserves semantic structure; page layout, comments, and advanced Word styling are not generated.",
+  );
+  const documentRelationships = context.relationships
+    .map((relationship) =>
+      relationship.kind === "image"
+        ? `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/image" Target="${xmlAttribute(relationship.target)}"/>`
+        : `<Relationship Id="${relationship.id}" Type="${OFFICE_RELATIONSHIPS}/hyperlink" Target="${xmlAttribute(relationship.target)}" TargetMode="External"/>`,
+    )
+    .join("");
   const title = safeExportBaseName(artifact.name);
-  const imageDefaults = [...new Map([...context.usedImages.values()].map(({ asset }) => [runeImageExtension(asset.mimeType), asset.mimeType] as const))]
-    .map(([extension, mimeType]) => `<Default Extension="${extension}" ContentType="${mimeType}"/>`).join("");
+  const imageDefaults = [
+    ...new Map(
+      [...context.usedImages.values()].map(
+        ({ asset }) => [runeImageExtension(asset.mimeType), asset.mimeType] as const,
+      ),
+    ),
+  ]
+    .map(([extension, mimeType]) => `<Default Extension="${extension}" ContentType="${mimeType}"/>`)
+    .join("");
   const parts: Record<string, string | Uint8Array> = {
     "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageDefaults}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     "_rels/.rels": rootRelationships("word/document.xml"),
@@ -452,7 +564,9 @@ function exportDocx(
     "word/numbering.xml": docxNumbering(),
     "word/_rels/document.xml.rels": `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/numbering" Target="numbering.xml"/>${documentRelationships}</Relationships>`,
   };
-  context.usedImages.forEach(({ fileName, asset }) => { parts[`word/media/${fileName}`] = asset.bytes; });
+  context.usedImages.forEach(({ fileName, asset }) => {
+    parts[`word/media/${fileName}`] = asset.bytes;
+  });
   return {
     bytes: zipPackage(parts),
     fileName: `${title}.docx`,
@@ -475,7 +589,8 @@ function columnName(index: number) {
 
 function xlsxCell(reference: string, value: DataCell, style = 0) {
   const styleAttribute = style ? ` s="${style}"` : "";
-  if (typeof value === "number" && Number.isFinite(value)) return `<c r="${reference}"${styleAttribute}><v>${value}</v></c>`;
+  if (typeof value === "number" && Number.isFinite(value))
+    return `<c r="${reference}"${styleAttribute}><v>${value}</v></c>`;
   if (typeof value === "boolean") return `<c r="${reference}" t="b"${styleAttribute}><v>${value ? 1 : 0}</v></c>`;
   return `<c r="${reference}" t="inlineStr"${styleAttribute}><is><t xml:space="preserve">${xmlText(value == null ? "" : String(value))}</t></is></c>`;
 }
@@ -491,18 +606,33 @@ function exportXlsx(artifact: WorkspaceArtifact): OfficeExportResult {
   if (!parsed.columns.length) throw new Error("The data artifact does not contain any columns to export.");
   if (parsed.columns.length > 256) throw new Error("XLSX export is limited to 256 columns.");
   if (parsed.rows.length > 10_000) throw new Error("XLSX export is limited to 10,000 data rows.");
-  if ((parsed.rows.length + 1) * parsed.columns.length > 50_000) throw new Error("XLSX export is limited to 50,000 cells.");
+  if ((parsed.rows.length + 1) * parsed.columns.length > 50_000)
+    throw new Error("XLSX export is limited to 50,000 cells.");
   const title = safeExportBaseName(artifact.name);
-  const sheetName = (title.replace(/[:\\/?*\[\]]/g, "-").replace(/^'+|'+$/g, "").slice(0, 31) || "Rune data");
+  const sheetName =
+    title
+      .replace(/[:\\/?*\[\]]/g, "-")
+      .replace(/^'+|'+$/g, "")
+      .slice(0, 31) || "Rune data";
   const allRows: DataCell[][] = [
     parsed.columns,
     ...parsed.rows.map((row) => parsed.columns.map((column) => row[column] ?? null)),
   ];
-  const rowsXml = allRows.map((row, rowIndex) => `<row r="${rowIndex + 1}">${row.map((value, columnIndex) => xlsxCell(`${columnName(columnIndex)}${rowIndex + 1}`, value, rowIndex === 0 ? 1 : 2)).join("")}</row>`).join("");
-  const columnsXml = parsed.columns.map((column, index) => {
-    const widest = Math.max(column.length, ...parsed.rows.slice(0, 200).map((row) => String(row[column] ?? "").length));
-    return `<col min="${index + 1}" max="${index + 1}" width="${Math.max(10, Math.min(42, widest + 2))}" customWidth="1"/>`;
-  }).join("");
+  const rowsXml = allRows
+    .map(
+      (row, rowIndex) =>
+        `<row r="${rowIndex + 1}">${row.map((value, columnIndex) => xlsxCell(`${columnName(columnIndex)}${rowIndex + 1}`, value, rowIndex === 0 ? 1 : 2)).join("")}</row>`,
+    )
+    .join("");
+  const columnsXml = parsed.columns
+    .map((column, index) => {
+      const widest = Math.max(
+        column.length,
+        ...parsed.rows.slice(0, 200).map((row) => String(row[column] ?? "").length),
+      );
+      return `<col min="${index + 1}" max="${index + 1}" width="${Math.max(10, Math.min(42, widest + 2))}" customWidth="1"/>`;
+    })
+    .join("");
   const range = `A1:${columnName(parsed.columns.length - 1)}${Math.max(1, allRows.length)}`;
   const parts = {
     "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
@@ -518,7 +648,9 @@ function exportXlsx(artifact: WorkspaceArtifact): OfficeExportResult {
     bytes: zipPackage(parts),
     fileName: `${title}.xlsx`,
     mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    warnings: ["XLSX export writes typed values only; formulas, charts, and source-specific spreadsheet formatting are not inferred from CSV or JSON."],
+    warnings: [
+      "XLSX export writes typed values only; formulas, charts, and source-specific spreadsheet formatting are not inferred from CSV or JSON.",
+    ],
     targetType: "xlsx",
   };
 }
@@ -568,14 +700,25 @@ function deckSlideModel(
       level: block.type === "list" ? block.level : 0,
     });
   });
-  return { title, eyebrow: plainMarkdownInline(slide.eyebrow, warnings), paragraphs, tables, charts, image, layout: slide.layout };
+  return {
+    title,
+    eyebrow: plainMarkdownInline(slide.eyebrow, warnings),
+    paragraphs,
+    tables,
+    charts,
+    image,
+    layout: slide.layout,
+  };
 }
 
 function pptRun(text: string, options: { size?: number; bold?: boolean; color?: string } = {}) {
   return `<a:r><a:rPr lang="en-US" sz="${options.size ?? 1800}"${options.bold ? ' b="1"' : ""} dirty="0"><a:solidFill><a:srgbClr val="${options.color ?? "17211B"}"/></a:solidFill><a:latin typeface="Aptos"/><a:ea typeface="PingFang SC"/></a:rPr><a:t>${xmlText(text)}</a:t></a:r>`;
 }
 
-function pptParagraph(paragraph: PptParagraph, options: { size?: number; bold?: boolean; color?: string; alignment?: "l" | "r" | "ctr" } = {}) {
+function pptParagraph(
+  paragraph: PptParagraph,
+  options: { size?: number; bold?: boolean; color?: string; alignment?: "l" | "r" | "ctr" } = {},
+) {
   const bullet = paragraph.bullet ? '<a:buChar char="•"/>' : "<a:buNone/>";
   const level = Math.max(0, Math.min(6, paragraph.level));
   const margin = 342900 + level * 342900;
@@ -583,7 +726,20 @@ function pptParagraph(paragraph: PptParagraph, options: { size?: number; bold?: 
   return `<a:p><a:pPr lvl="${level}" marL="${margin}" indent="-${paragraph.bullet ? 285750 : 0}"${alignment}>${bullet}</a:pPr>${pptRun(paragraph.text, options)}<a:endParaRPr lang="en-US" sz="${options.size ?? 1800}"/></a:p>`;
 }
 
-function pptShape(id: number, name: string, paragraphs: PptParagraph[], geometry: { x: number; y: number; cx: number; cy: number }, options: { placeholder?: "title" | "body"; size?: number; bold?: boolean; color?: string; compact?: boolean; alignment?: "l" | "r" | "ctr" } = {}) {
+function pptShape(
+  id: number,
+  name: string,
+  paragraphs: PptParagraph[],
+  geometry: { x: number; y: number; cx: number; cy: number },
+  options: {
+    placeholder?: "title" | "body";
+    size?: number;
+    bold?: boolean;
+    color?: string;
+    compact?: boolean;
+    alignment?: "l" | "r" | "ctr";
+  } = {},
+) {
   const placeholder = options.placeholder ? `<p:ph type="${options.placeholder}"/>` : "";
   const content = paragraphs.length
     ? paragraphs.map((paragraph) => pptParagraph(paragraph, options)).join("")
@@ -594,11 +750,23 @@ function pptShape(id: number, name: string, paragraphs: PptParagraph[], geometry
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr txBox="1"/><p:nvPr>${placeholder}</p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr><p:txBody>${bodyProperties}<a:lstStyle/>${content}</p:txBody></p:sp>`;
 }
 
-function pptSolidShape(id: number, name: string, geometry: { x: number; y: number; cx: number; cy: number }, color: string) {
+function pptSolidShape(
+  id: number,
+  name: string,
+  geometry: { x: number; y: number; cx: number; cy: number },
+  color: string,
+) {
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr></p:sp>`;
 }
 
-function pptLineShape(id: number, name: string, start: { x: number; y: number }, end: { x: number; y: number }, color: string, width = 28_000) {
+function pptLineShape(
+  id: number,
+  name: string,
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  color: string,
+  width = 28_000,
+) {
   const x = Math.min(start.x, end.x);
   const y = Math.min(start.y, end.y);
   const cx = Math.max(1, Math.abs(end.x - start.x));
@@ -611,15 +779,35 @@ function pptPointShape(id: number, name: string, center: { x: number; y: number 
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${Math.round(center.x - diameter / 2)}" y="${Math.round(center.y - diameter / 2)}"/><a:ext cx="${diameter}" cy="${diameter}"/></a:xfrm><a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="24000"><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"/></a:solidFill></a:ln></p:spPr></p:sp>`;
 }
 
-function pptChartShapes(startId: number, model: ChartModel, geometry: { x: number; y: number; cx: number; cy: number }) {
+function pptChartShapes(
+  startId: number,
+  model: ChartModel,
+  geometry: { x: number; y: number; cx: number; cy: number },
+) {
   let nextId = startId;
   const shapes: string[] = [];
   const color = model.spec.color.slice(1).toUpperCase();
   const titleHeight = 300_000;
   const descriptionHeight = model.spec.description ? 250_000 : 0;
-  shapes.push(pptShape(nextId++, `${model.spec.title} chart title`, [{ text: model.spec.title, bullet: false, level: 0 }], { x: geometry.x, y: geometry.y, cx: geometry.cx, cy: titleHeight }, { size: 1500, bold: true, color: "17211B", compact: true }));
+  shapes.push(
+    pptShape(
+      nextId++,
+      `${model.spec.title} chart title`,
+      [{ text: model.spec.title, bullet: false, level: 0 }],
+      { x: geometry.x, y: geometry.y, cx: geometry.cx, cy: titleHeight },
+      { size: 1500, bold: true, color: "17211B", compact: true },
+    ),
+  );
   if (model.spec.description) {
-    shapes.push(pptShape(nextId++, `${model.spec.title} chart description`, [{ text: model.spec.description, bullet: false, level: 0 }], { x: geometry.x, y: geometry.y + titleHeight, cx: geometry.cx, cy: descriptionHeight }, { size: 900, color: "627068", compact: true }));
+    shapes.push(
+      pptShape(
+        nextId++,
+        `${model.spec.title} chart description`,
+        [{ text: model.spec.description, bullet: false, level: 0 }],
+        { x: geometry.x, y: geometry.y + titleHeight, cx: geometry.cx, cy: descriptionHeight },
+        { size: 900, color: "627068", compact: true },
+      ),
+    );
   }
   const rowsY = geometry.y + titleHeight + descriptionHeight + 100_000;
   const rowsHeight = Math.max(1, geometry.cy - titleHeight - descriptionHeight - 100_000);
@@ -630,7 +818,16 @@ function pptChartShapes(startId: number, model: ChartModel, geometry: { x: numbe
     const plotHeight = Math.max(500_000, rowsHeight - 640_000);
     [0, 0.5, 1].forEach((position, index) => {
       const y = Math.round(plotY + position * plotHeight);
-      shapes.push(pptLineShape(nextId++, `${model.spec.title} grid ${index + 1}`, { x: plotX, y }, { x: plotX + plotWidth, y }, "E9E7DF", 9_000));
+      shapes.push(
+        pptLineShape(
+          nextId++,
+          `${model.spec.title} grid ${index + 1}`,
+          { x: plotX, y },
+          { x: plotX + plotWidth, y },
+          "E9E7DF",
+          9_000,
+        ),
+      );
     });
     const points = chartLinePoints(model).map((point) => ({
       point,
@@ -641,21 +838,40 @@ function pptChartShapes(startId: number, model: ChartModel, geometry: { x: numbe
       const previous = points[index];
       shapes.push(pptLineShape(nextId++, `${model.spec.title} line segment ${index + 1}`, previous, current, color));
     });
-    const labelWidth = Math.max(260_000, Math.min(1_100_000, Math.floor(plotWidth / Math.max(2, model.data.length) * 1.35)));
+    const labelWidth = Math.max(
+      260_000,
+      Math.min(1_100_000, Math.floor((plotWidth / Math.max(2, model.data.length)) * 1.35)),
+    );
     points.forEach(({ point, x, y }, index) => {
       shapes.push(pptPointShape(nextId++, `${model.spec.title} point ${index + 1}`, { x, y }, 105_000, color));
-      shapes.push(pptShape(nextId++, `${model.spec.title} value ${index + 1}`, [{ text: point.datum.formatted, bullet: false, level: 0 }], {
-        x: Math.max(geometry.x, Math.min(geometry.x + geometry.cx - labelWidth, x - Math.floor(labelWidth / 2))),
-        y: Math.max(rowsY, y - 230_000),
-        cx: labelWidth,
-        cy: 180_000,
-      }, { size: 700, bold: true, color: "17211B", compact: true, alignment: "ctr" }));
-      shapes.push(pptShape(nextId++, `${model.spec.title} category ${index + 1}`, [{ text: point.datum.label, bullet: false, level: 0 }], {
-        x: Math.max(geometry.x, Math.min(geometry.x + geometry.cx - labelWidth, x - Math.floor(labelWidth / 2))),
-        y: plotY + plotHeight + 80_000,
-        cx: labelWidth,
-        cy: 220_000,
-      }, { size: 700, color: "455149", compact: true, alignment: "ctr" }));
+      shapes.push(
+        pptShape(
+          nextId++,
+          `${model.spec.title} value ${index + 1}`,
+          [{ text: point.datum.formatted, bullet: false, level: 0 }],
+          {
+            x: Math.max(geometry.x, Math.min(geometry.x + geometry.cx - labelWidth, x - Math.floor(labelWidth / 2))),
+            y: Math.max(rowsY, y - 230_000),
+            cx: labelWidth,
+            cy: 180_000,
+          },
+          { size: 700, bold: true, color: "17211B", compact: true, alignment: "ctr" },
+        ),
+      );
+      shapes.push(
+        pptShape(
+          nextId++,
+          `${model.spec.title} category ${index + 1}`,
+          [{ text: point.datum.label, bullet: false, level: 0 }],
+          {
+            x: Math.max(geometry.x, Math.min(geometry.x + geometry.cx - labelWidth, x - Math.floor(labelWidth / 2))),
+            y: plotY + plotHeight + 80_000,
+            cx: labelWidth,
+            cy: 220_000,
+          },
+          { size: 700, color: "455149", compact: true, alignment: "ctr" },
+        ),
+      );
     });
     return { xml: shapes.join(""), nextId };
   }
@@ -670,10 +886,41 @@ function pptChartShapes(startId: number, model: ChartModel, geometry: { x: numbe
     const rowY = rowsY + index * rowHeight;
     const barHeight = Math.max(55_000, Math.min(110_000, Math.floor(rowHeight * 0.42)));
     const barY = rowY + Math.max(0, Math.floor((rowHeight - barHeight) / 2));
-    shapes.push(pptShape(nextId++, `${model.spec.title} category ${index + 1}`, [{ text: datum.label, bullet: false, level: 0 }], { x: geometry.x, y: rowY, cx: labelWidth - 60_000, cy: rowHeight }, { size: fontSize, color: "455149", compact: true }));
-    shapes.push(pptSolidShape(nextId++, `${model.spec.title} track ${index + 1}`, { x: barX, y: barY, cx: barWidth, cy: barHeight }, "E9E7DF"));
-    if (datum.ratio > 0) shapes.push(pptSolidShape(nextId++, `${model.spec.title} bar ${index + 1}`, { x: barX, y: barY, cx: Math.max(40_000, Math.round(barWidth * datum.ratio)), cy: barHeight }, color));
-    shapes.push(pptShape(nextId++, `${model.spec.title} value ${index + 1}`, [{ text: datum.formatted, bullet: false, level: 0 }], { x: valueX, y: rowY, cx: valueWidth, cy: rowHeight }, { size: fontSize, bold: true, color: "17211B", compact: true, alignment: "r" }));
+    shapes.push(
+      pptShape(
+        nextId++,
+        `${model.spec.title} category ${index + 1}`,
+        [{ text: datum.label, bullet: false, level: 0 }],
+        { x: geometry.x, y: rowY, cx: labelWidth - 60_000, cy: rowHeight },
+        { size: fontSize, color: "455149", compact: true },
+      ),
+    );
+    shapes.push(
+      pptSolidShape(
+        nextId++,
+        `${model.spec.title} track ${index + 1}`,
+        { x: barX, y: barY, cx: barWidth, cy: barHeight },
+        "E9E7DF",
+      ),
+    );
+    if (datum.ratio > 0)
+      shapes.push(
+        pptSolidShape(
+          nextId++,
+          `${model.spec.title} bar ${index + 1}`,
+          { x: barX, y: barY, cx: Math.max(40_000, Math.round(barWidth * datum.ratio)), cy: barHeight },
+          color,
+        ),
+      );
+    shapes.push(
+      pptShape(
+        nextId++,
+        `${model.spec.title} value ${index + 1}`,
+        [{ text: datum.formatted, bullet: false, level: 0 }],
+        { x: valueX, y: rowY, cx: valueWidth, cy: rowHeight },
+        { size: fontSize, bold: true, color: "17211B", compact: true, alignment: "r" },
+      ),
+    );
   });
   return { xml: shapes.join(""), nextId };
 }
@@ -685,7 +932,12 @@ function pptTable(id: number, rows: string[][], y: number) {
   const columnWidth = Math.floor(totalWidth / width);
   const rowHeight = Math.max(360_000, Math.min(620_000, Math.floor(2_300_000 / Math.max(1, normalized.length))));
   const grid = Array.from({ length: width }, () => `<a:gridCol w="${columnWidth}"/>`).join("");
-  const rowXml = normalized.map((row, rowIndex) => `<a:tr h="${rowHeight}">${row.map((cell) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p>${pptRun(cell, { size: 1300, bold: rowIndex === 0, color: rowIndex === 0 ? "FFFFFF" : "17211B" })}<a:endParaRPr lang="en-US" sz="1300"/></a:p></a:txBody><a:tcPr marL="70000" marR="70000" marT="50000" marB="50000">${rowIndex === 0 ? '<a:solidFill><a:srgbClr val="2A8C69"/></a:solidFill>' : '<a:solidFill><a:srgbClr val="FBFAF6"/></a:solidFill>'}<a:lnL w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnL><a:lnR w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnR><a:lnT w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnT><a:lnB w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnB></a:tcPr></a:tc>`).join("")}</a:tr>`).join("");
+  const rowXml = normalized
+    .map(
+      (row, rowIndex) =>
+        `<a:tr h="${rowHeight}">${row.map((cell) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p>${pptRun(cell, { size: 1300, bold: rowIndex === 0, color: rowIndex === 0 ? "FFFFFF" : "17211B" })}<a:endParaRPr lang="en-US" sz="1300"/></a:p></a:txBody><a:tcPr marL="70000" marR="70000" marT="50000" marB="50000">${rowIndex === 0 ? '<a:solidFill><a:srgbClr val="2A8C69"/></a:solidFill>' : '<a:solidFill><a:srgbClr val="FBFAF6"/></a:solidFill>'}<a:lnL w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnL><a:lnR w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnR><a:lnT w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnT><a:lnB w="6350"><a:solidFill><a:srgbClr val="D9D7CF"/></a:solidFill></a:lnB></a:tcPr></a:tc>`).join("")}</a:tr>`,
+    )
+    .join("");
   const height = rowHeight * normalized.length;
   return `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="900000" y="${y}"/><a:ext cx="${totalWidth}" cy="${height}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${grid}</a:tblGrid>${rowXml}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
 }
@@ -699,7 +951,12 @@ function fitPptImage(asset: RuneExportImageAsset, box: { x: number; y: number; c
   return { x: Math.round(box.x + (box.cx - cx) / 2), y: Math.round(box.y + (box.cy - cy) / 2), cx, cy };
 }
 
-function pptImage(id: number, image: PptSlideImage, relationshipId: string, box: { x: number; y: number; cx: number; cy: number }) {
+function pptImage(
+  id: number,
+  image: PptSlideImage,
+  relationshipId: string,
+  box: { x: number; y: number; cx: number; cy: number },
+) {
   const geometry = fitPptImage(image.asset, box);
   const description = image.reference.alt || image.asset.name || "Rune image";
   return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${xmlAttribute(description)}" descr="${xmlAttribute(description)}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:ln><a:noFill/></a:ln></p:spPr></p:pic>`;
@@ -718,31 +975,70 @@ function pptSlideXml(model: PptSlideModel, imageRelationshipId?: string) {
   const tableY = model.paragraphs.length ? 3_850_000 : 2_250_000;
   let nextId = 2;
   const shapes: string[] = [];
-  if (model.eyebrow) shapes.push(pptShape(nextId++, "Eyebrow", [{ text: model.eyebrow.toUpperCase(), bullet: false, level: 0 }], { x: 900_000, y: 520_000, cx: 10_300_000, cy: 420_000 }, { size: 1100, bold: true, color: cover ? "FF8A6D" : "2A8C69" }));
-  shapes.push(pptShape(nextId++, "Title", [{ text: model.title, bullet: false, level: 0 }], { x: 900_000, y: titleY, cx: visual ? 5_000_000 : 10_400_000, cy: cover ? 1_500_000 : 900_000 }, { placeholder: "title", size: cover ? 3400 : 2700, bold: true, color: titleColor }));
+  if (model.eyebrow)
+    shapes.push(
+      pptShape(
+        nextId++,
+        "Eyebrow",
+        [{ text: model.eyebrow.toUpperCase(), bullet: false, level: 0 }],
+        { x: 900_000, y: 520_000, cx: 10_300_000, cy: 420_000 },
+        { size: 1100, bold: true, color: cover ? "FF8A6D" : "2A8C69" },
+      ),
+    );
+  shapes.push(
+    pptShape(
+      nextId++,
+      "Title",
+      [{ text: model.title, bullet: false, level: 0 }],
+      { x: 900_000, y: titleY, cx: visual ? 5_000_000 : 10_400_000, cy: cover ? 1_500_000 : 900_000 },
+      { placeholder: "title", size: cover ? 3400 : 2700, bold: true, color: titleColor },
+    ),
+  );
   if (model.paragraphs.length) {
     const contentWidth = visual ? 4_850_000 : 10_400_000;
     const contentHeight = chart && !splitVisual ? 1_050_000 : model.tables.length ? 1_650_000 : 3_600_000;
-    shapes.push(pptShape(nextId++, "Content", model.paragraphs, { x: 900_000, y: bodyY, cx: contentWidth, cy: contentHeight }, { placeholder: "body", size: cover ? 1700 : 1600, color: bodyColor }));
+    shapes.push(
+      pptShape(
+        nextId++,
+        "Content",
+        model.paragraphs,
+        { x: 900_000, y: bodyY, cx: contentWidth, cy: contentHeight },
+        { placeholder: "body", size: cover ? 1700 : 1600, color: bodyColor },
+      ),
+    );
   }
-  if (!chart) model.tables.slice(0, 2).forEach((table, index) => shapes.push(pptTable(nextId++, table, tableY + index * 1_450_000)));
+  if (!chart)
+    model.tables
+      .slice(0, 2)
+      .forEach((table, index) => shapes.push(pptTable(nextId++, table, tableY + index * 1_450_000)));
   if (chart) {
     const chartGeometry = splitVisual
       ? { x: 6_250_000, y: 1_650_000, cx: 4_950_000, cy: 4_650_000 }
-      : { x: 900_000, y: model.paragraphs.length ? 3_050_000 : 1_850_000, cx: 10_400_000, cy: model.paragraphs.length ? 3_150_000 : 4_350_000 };
+      : {
+          x: 900_000,
+          y: model.paragraphs.length ? 3_050_000 : 1_850_000,
+          cx: 10_400_000,
+          cy: model.paragraphs.length ? 3_150_000 : 4_350_000,
+        };
     const renderedChart = pptChartShapes(nextId, chart, chartGeometry);
     shapes.push(renderedChart.xml);
     nextId = renderedChart.nextId;
   }
   if (model.image && imageRelationshipId) {
-    const imageBox = { x: 6_250_000, y: cover || model.layout === "conclusion" ? 1_250_000 : 1_650_000, cx: 4_950_000, cy: cover || model.layout === "conclusion" ? 4_850_000 : 4_650_000 };
+    const imageBox = {
+      x: 6_250_000,
+      y: cover || model.layout === "conclusion" ? 1_250_000 : 1_650_000,
+      cx: 4_950_000,
+      cy: cover || model.layout === "conclusion" ? 4_850_000 : 4_650_000,
+    };
     shapes.push(pptImage(nextId++, model.image, imageRelationshipId, imageBox));
   }
   return `${XML_DECLARATION}<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="${background}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 }
 
 function pptTheme() {
-  const line = (width: number) => `<a:ln w="${width}" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>`;
+  const line = (width: number) =>
+    `<a:ln w="${width}" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>`;
   return `${XML_DECLARATION}<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Rune"><a:themeElements><a:clrScheme name="Rune"><a:dk1><a:srgbClr val="17211B"/></a:dk1><a:lt1><a:srgbClr val="FBFAF6"/></a:lt1><a:dk2><a:srgbClr val="233128"/></a:dk2><a:lt2><a:srgbClr val="E9E7DF"/></a:lt2><a:accent1><a:srgbClr val="FF5C35"/></a:accent1><a:accent2><a:srgbClr val="2A8C69"/></a:accent2><a:accent3><a:srgbClr val="3676D1"/></a:accent3><a:accent4><a:srgbClr val="8267CE"/></a:accent4><a:accent5><a:srgbClr val="C77B2C"/></a:accent5><a:accent6><a:srgbClr val="6E776F"/></a:accent6><a:hlink><a:srgbClr val="3676D1"/></a:hlink><a:folHlink><a:srgbClr val="8267CE"/></a:folHlink></a:clrScheme><a:fontScheme name="Rune"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface="PingFang SC"/><a:cs typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/><a:ea typeface="PingFang SC"/><a:cs typeface="Arial"/></a:minorFont></a:fontScheme><a:fmtScheme name="Rune"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:solidFill><a:schemeClr val="accent2"/></a:solidFill></a:fillStyleLst><a:lnStyleLst>${line(6350)}${line(12700)}${line(19050)}</a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill><a:solidFill><a:schemeClr val="lt2"/></a:solidFill><a:solidFill><a:schemeClr val="dk1"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`;
 }
 
@@ -770,19 +1066,46 @@ function exportPptx(
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
   const models = parsed.deck.slides.map((slide) => deckSlideModel(slide, warnings, workspace, querySnapshots, images));
-  if (models.some((model) => model.tables.length > 2)) warnings.add("Only the first two tables on each slide are included in semantic PPTX export.");
-  if (models.some((model) => model.charts.length > 1)) warnings.add("Only the first current-data chart snapshot on each slide is included in semantic PPTX export.");
-  if (models.some((model) => model.charts.length && model.tables.length)) warnings.add("Tables on slides with a chart snapshot are omitted to keep the generated presentation layout readable.");
+  if (models.some((model) => model.tables.length > 2))
+    warnings.add("Only the first two tables on each slide are included in semantic PPTX export.");
+  if (models.some((model) => model.charts.length > 1))
+    warnings.add("Only the first current-data chart snapshot on each slide is included in semantic PPTX export.");
+  if (models.some((model) => model.charts.length && model.tables.length))
+    warnings.add(
+      "Tables on slides with a chart snapshot are omitted to keep the generated presentation layout readable.",
+    );
   if (models.some((model) => model.charts.length)) {
-    warnings.add("Live Rune charts are exported as editable native PowerPoint text and vector shapes using the current workspace data; the live data binding is not retained.");
+    warnings.add(
+      "Live Rune charts are exported as editable native PowerPoint text and vector shapes using the current workspace data; the live data binding is not retained.",
+    );
   }
-  if (models.some((model) => model.image)) warnings.add("Rune local images are embedded as portable, static PowerPoint media; content-hash references remain only in canonical Deck Markdown.");
-  warnings.add("PPTX export preserves slide order, text, bullets, tables, local images, and current-data chart snapshots; animation, speaker notes, and exact master styling are not generated.");
+  if (models.some((model) => model.image))
+    warnings.add(
+      "Rune local images are embedded as portable, static PowerPoint media; content-hash references remain only in canonical Deck Markdown.",
+    );
+  warnings.add(
+    "PPTX export preserves slide order, text, bullets, tables, local images, and current-data chart snapshots; animation, speaker notes, and exact master styling are not generated.",
+  );
   const title = safeExportBaseName(artifact.name);
-  const slideOverrides = models.map((_model, index) => `<Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("");
-  const slideRelationships = models.map((_model, index) => `<Relationship Id="rId${index + 2}" Type="${OFFICE_RELATIONSHIPS}/slide" Target="slides/slide${index + 1}.xml"/>`).join("");
+  const slideOverrides = models
+    .map(
+      (_model, index) =>
+        `<Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`,
+    )
+    .join("");
+  const slideRelationships = models
+    .map(
+      (_model, index) =>
+        `<Relationship Id="rId${index + 2}" Type="${OFFICE_RELATIONSHIPS}/slide" Target="slides/slide${index + 1}.xml"/>`,
+    )
+    .join("");
   const slideIds = models.map((_model, index) => `<p:sldId id="${256 + index}" r:id="rId${index + 2}"/>`).join("");
-  const imageDefaults = [...new Set(imageAssets.map((asset) => runeImageExtension(asset.mimeType)))].map((extension) => `<Default Extension="${extension}" ContentType="${extension === "png" ? "image/png" : extension === "jpg" ? "image/jpeg" : extension === "webp" ? "image/webp" : "image/gif"}"/>`).join("");
+  const imageDefaults = [...new Set(imageAssets.map((asset) => runeImageExtension(asset.mimeType)))]
+    .map(
+      (extension) =>
+        `<Default Extension="${extension}" ContentType="${extension === "png" ? "image/png" : extension === "jpg" ? "image/jpeg" : extension === "webp" ? "image/webp" : "image/gif"}"/>`,
+    )
+    .join("");
   const parts: Record<string, string | Uint8Array> = {
     "[Content_Types].xml": `${XML_DECLARATION}<Types xmlns="${CONTENT_TYPES}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageDefaults}<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     "_rels/.rels": rootRelationships("ppt/presentation.xml"),
@@ -797,12 +1120,17 @@ function exportPptx(
     "ppt/slideLayouts/_rels/slideLayout1.xml.rels": `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`,
     "ppt/theme/theme1.xml": pptTheme(),
   };
-  images.forEach((asset) => { parts[`ppt/media/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`] = asset.bytes; });
+  images.forEach((asset) => {
+    parts[`ppt/media/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`] = asset.bytes;
+  });
   models.forEach((model, index) => {
     const imageRelationshipId = model.image ? "rId2" : undefined;
     parts[`ppt/slides/slide${index + 1}.xml`] = pptSlideXml(model, imageRelationshipId);
-    const imageRelationship = model.image ? `<Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/image" Target="../media/rune-${model.image.asset.id}.${runeImageExtension(model.image.asset.mimeType)}"/>` : "";
-    parts[`ppt/slides/_rels/slide${index + 1}.xml.rels`] = `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${imageRelationship}</Relationships>`;
+    const imageRelationship = model.image
+      ? `<Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/image" Target="../media/rune-${model.image.asset.id}.${runeImageExtension(model.image.asset.mimeType)}"/>`
+      : "";
+    parts[`ppt/slides/_rels/slide${index + 1}.xml.rels`] =
+      `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${imageRelationship}</Relationships>`;
   });
   return {
     bytes: zipPackage(parts),
@@ -814,9 +1142,11 @@ function exportPptx(
 }
 
 export function isOfficeExportArtifact(artifact: WorkspaceArtifact) {
-  return artifact.kind === "document"
-    || artifact.kind === "data"
-    || (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md"));
+  return (
+    artifact.kind === "document" ||
+    artifact.kind === "data" ||
+    (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md"))
+  );
 }
 
 export function exportOfficeArtifact(
@@ -826,9 +1156,11 @@ export function exportOfficeArtifact(
   imageAssets: readonly RuneExportImageAsset[] = [],
 ): OfficeExportResult {
   if (!artifact.source.trim()) throw new Error("The source is empty.");
-  if (artifact.source.length > MAX_OFFICE_EXPORT_SOURCE_CHARS) throw new Error("Office export is limited to 2,000,000 source characters.");
+  if (artifact.source.length > MAX_OFFICE_EXPORT_SOURCE_CHARS)
+    throw new Error("Office export is limited to 2,000,000 source characters.");
   if (artifact.kind === "document") return exportDocx(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportXlsx(artifact);
-  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md")) return exportPptx(artifact, workspace, querySnapshots, imageAssets);
+  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md"))
+    return exportPptx(artifact, workspace, querySnapshots, imageAssets);
   throw new Error("Office export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
 }

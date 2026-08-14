@@ -9,9 +9,10 @@ function tableCell(value) {
 }
 
 export function renderRuneGoldenTaskReport(result) {
-  const rows = result.cases.map((entry) => (
-    `| \`${tableCell(entry.id)}\` | ${entry.expected} | ${entry.result} | ${tableCell(entry.coverage.join(" · "))} |`
-  ));
+  const rows = result.cases.map(
+    (entry) =>
+      `| \`${tableCell(entry.id)}\` | ${entry.expected} | ${entry.result} | ${tableCell(entry.coverage.join(" · "))} |`,
+  );
   return `# Rune synthetic Golden Task baseline
 
 > Evidence grade E1: deterministic regression evidence from synthetic fixtures. This is not user-demand, delivery, retention, or paid validation.
@@ -54,9 +55,13 @@ async function main() {
   } else {
     const baseline = await readFile(BASELINE_URL, "utf8");
     if (baseline !== report) {
-      throw new Error(`Golden Task baseline drifted: ${fileURLToPath(BASELINE_URL)}. Review the task contract and update the baseline intentionally.`);
+      throw new Error(
+        `Golden Task baseline drifted: ${fileURLToPath(BASELINE_URL)}. Review the task contract and update the baseline intentionally.`,
+      );
     }
-    process.stdout.write(`Golden Task Eval ${result.passed}/${result.taskCount} · ${result.runtimeVerified} DuckDB executions · synthetic E1 only\n`);
+    process.stdout.write(
+      `Golden Task Eval ${result.passed}/${result.taskCount} · ${result.runtimeVerified} DuckDB executions · synthetic E1 only\n`,
+    );
   }
   if (result.failed > 0) process.exitCode = 1;
 }

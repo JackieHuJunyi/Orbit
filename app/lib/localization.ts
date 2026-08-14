@@ -118,13 +118,19 @@ function convertPreservingValues(value: string, preservedValues: readonly string
     .sort((left, right) => right.length - left.length)
     .map((preserved, index) => ({ preserved, placeholder: `\u{f0000}${index}\u{f0001}` }));
   let protectedValue = value;
-  for (const { preserved, placeholder } of replacements) protectedValue = protectedValue.replaceAll(preserved, placeholder);
+  for (const { preserved, placeholder } of replacements)
+    protectedValue = protectedValue.replaceAll(preserved, placeholder);
   let converted = toTaiwanTraditional(protectedValue);
   for (const { preserved, placeholder } of replacements) converted = converted.replaceAll(placeholder, preserved);
   return converted;
 }
 
-export function runeText(locale: RuneLocale, english: string, simplifiedChinese: string, preservedValues: readonly string[] = []) {
+export function runeText(
+  locale: RuneLocale,
+  english: string,
+  simplifiedChinese: string,
+  preservedValues: readonly string[] = [],
+) {
   if (locale === "en") return english;
   if (locale === "zh-CN") return simplifiedChinese;
   if (locale === "zh-TW") return convertPreservingValues(simplifiedChinese, preservedValues);
@@ -139,7 +145,10 @@ function localizeChineseCatalog<T>(value: T): T {
     return ((...args: unknown[]) => {
       const result = value(...args);
       return typeof result === "string"
-        ? convertPreservingValues(result, args.filter((item): item is string => typeof item === "string"))
+        ? convertPreservingValues(
+            result,
+            args.filter((item): item is string => typeof item === "string"),
+          )
         : localizeChineseCatalog(result);
     }) as T;
   }
@@ -160,7 +169,9 @@ function localizeGeneratedCatalog<T>(locale: RuneLocale, value: T): T {
   }
   if (Array.isArray(value)) return value.map((item) => localizeGeneratedCatalog(locale, item)) as T;
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeGeneratedCatalog(locale, item)])) as T;
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, localizeGeneratedCatalog(locale, item)]),
+    ) as T;
   }
   return value;
 }
@@ -173,11 +184,21 @@ export function localizeRuneCopy<T>(locale: RuneLocale, english: T, simplifiedCh
 }
 
 function localizeRuneMultiline(locale: RuneLocale, english: string, simplifiedChinese: string) {
-  const source = locale === "en" ? english : locale === "zh-CN" ? simplifiedChinese : locale === "zh-TW" ? toTaiwanTraditional(simplifiedChinese) : english;
+  const source =
+    locale === "en"
+      ? english
+      : locale === "zh-CN"
+        ? simplifiedChinese
+        : locale === "zh-TW"
+          ? toTaiwanTraditional(simplifiedChinese)
+          : english;
   if (locale === "en" || isChineseRuneLocale(locale)) return source;
   const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
   const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
-  return source.split("\n").map((line) => manual?.[line] ?? generated?.[line] ?? line).join("\n");
+  return source
+    .split("\n")
+    .map((line) => manual?.[line] ?? generated?.[line] ?? line)
+    .join("\n");
 }
 
 export const RUNE_LOCALE_STORAGE_KEY = "rune-locale-v1";
@@ -185,14 +206,13 @@ export const RUNE_ONBOARDING_STORAGE_KEY = "rune-onboarding-v1";
 export const RUNE_GUIDE_ID = "rune-guide";
 
 export function normalizeRuneLocale(value: unknown): RuneLocale | null {
-  return RUNE_LOCALE_REGISTRY.some((entry) => entry.locale === value) ? value as RuneLocale : null;
+  return RUNE_LOCALE_REGISTRY.some((entry) => entry.locale === value) ? (value as RuneLocale) : null;
 }
 
 export function detectPreferredLocale(languages: readonly string[] = []): RuneLocale {
   for (const language of languages) {
     const normalized = language.toLowerCase();
-    const match = RUNE_LOCALE_REGISTRY
-      .flatMap((entry) => entry.languagePrefixes.map((prefix) => ({ entry, prefix })))
+    const match = RUNE_LOCALE_REGISTRY.flatMap((entry) => entry.languagePrefixes.map((prefix) => ({ entry, prefix })))
       .filter(({ prefix }) => normalized === prefix || normalized.startsWith(`${prefix}-`))
       .sort((left, right) => right.prefix.length - left.prefix.length)[0]?.entry;
     if (match) return match.locale;
@@ -218,9 +238,8 @@ export function runeGreetingSequence(preferred: RuneLocale): string[] {
 
 function buildRuneUICopy(locale: "zh-CN" | "en") {
   const zh = locale === "zh-CN";
-  const count = (value: number, singular: string, plural: string, chineseUnit: string) => (
-    zh ? `${value} ${chineseUnit}` : `${value} ${value === 1 ? singular : plural}`
-  );
+  const count = (value: number, singular: string, plural: string, chineseUnit: string) =>
+    zh ? `${value} ${chineseUnit}` : `${value} ${value === 1 ? singular : plural}`;
 
   return {
     common: {
@@ -234,7 +253,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       title: zh ? "标题" : "Title",
       description: zh ? "描述" : "Description",
       numberFormat: zh ? "数字格式" : "Number format",
-      closeDialog: (title: string) => zh ? `取消“${title}”` : `Cancel ${title.toLowerCase()}`,
+      closeDialog: (title: string) => (zh ? `取消“${title}”` : `Cancel ${title.toLowerCase()}`),
     },
     workbench: {
       brandSubtitle: zh ? "内容工作台" : "Content workspace",
@@ -274,7 +293,9 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       analysis: zh ? "分析" : "Analysis",
       deliverables: zh ? "成品" : "Deliverables",
       oneWorkspace: zh ? "一个事实工作区" : "One source workspace",
-      oneWorkspaceBody: zh ? "每份内容都保持可读，并能被人和模型共同使用。" : "Every artifact stays readable to people and models.",
+      oneWorkspaceBody: zh
+        ? "每份内容都保持可读，并能被人和模型共同使用。"
+        : "Every artifact stays readable to people and models.",
       localFirst: zh ? "本地优先" : "Local first",
       source: zh ? "可读源内容" : "Readable source",
       output: zh ? "实时成品" : "Live output",
@@ -292,7 +313,9 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       askSelection: zh ? "描述只针对当前选区的修改…" : "Describe a change confined to this selection…",
       askFile: zh ? "描述你希望对当前文件做出的修改…" : "Describe the change you want in this file…",
       planChange: zh ? "准备修改" : "Prepare change",
-      planHint: zh ? "⌘ Enter 准备修改 · 写入前始终可以审核和撤销" : "⌘ Enter to prepare · every write remains reviewable and undoable",
+      planHint: zh
+        ? "⌘ Enter 准备修改 · 写入前始终可以审核和撤销"
+        : "⌘ Enter to prepare · every write remains reviewable and undoable",
       sourceEditor: zh ? "源内容编辑器" : "Source editor",
       preview: zh ? "编译后的成品预览" : "Compiled artifact preview",
       hideFiles: zh ? "隐藏工作区文件" : "Hide workspace files",
@@ -306,23 +329,35 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       documentBriefingTask: zh ? "文档转演示" : "Document to presentation",
       earlierDeviceRecords: zh ? "早期本机记录（只读）" : "Earlier device records (read only)",
       taskTime: zh ? "任务耗时" : "Task time",
-      savedReviewCount: (value: number) => zh ? `${value} 条可重复汇报` : `${value} repeatable ${value === 1 ? "review" : "reviews"}`,
-      rerunReview: (title: string) => zh ? `重新运行「${title}」` : `Rerun “${title}”`,
+      savedReviewCount: (value: number) =>
+        zh ? `${value} 条可重复汇报` : `${value} repeatable ${value === 1 ? "review" : "reviews"}`,
+      rerunReview: (title: string) => (zh ? `重新运行「${title}」` : `Rerun “${title}”`),
       rerun: zh ? "重新运行" : "Rerun",
       reviewSourceMissing: zh ? "来源或成品已缺失" : "Source or output missing",
-      taskRuns: (value: number) => zh ? `${value} 次本机运行` : `${value} device ${value === 1 ? "run" : "runs"}`,
+      taskRuns: (value: number) => (zh ? `${value} 次本机运行` : `${value} device ${value === 1 ? "run" : "runs"}`),
       lastRun: zh ? "最近运行" : "Last run",
       runApplied: zh ? "已应用" : "Applied",
       runStopped: zh ? "已停止" : "Stopped",
       noTaskRuns: zh ? "首次应用后开始记录" : "Recorded after first Apply",
       localPlanner: zh ? "本地规则" : "Local planner",
-      tokenUse: (input: number | null, output: number | null) => input == null || output == null
-        ? (zh ? "未调用模型" : "No model call")
-        : (zh ? `${input} 输入 · ${output} 输出 token` : `${input} input · ${output} output tokens`),
-      successRate: (value: number | null) => value == null ? (zh ? "尚无结果" : "No outcomes yet") : (zh ? `${value}% 应用成功` : `${value}% applied`),
-      averageReviewTime: (milliseconds: number | null) => milliseconds == null
-        ? (zh ? "尚无确认耗时" : "No review time yet")
-        : (zh ? `平均确认 ${Math.max(1, Math.round(milliseconds / 1000))} 秒` : `${Math.max(1, Math.round(milliseconds / 1000))}s average review`),
+      tokenUse: (input: number | null, output: number | null) =>
+        input == null || output == null
+          ? zh
+            ? "未调用模型"
+            : "No model call"
+          : zh
+            ? `${input} 输入 · ${output} 输出 token`
+            : `${input} input · ${output} output tokens`,
+      successRate: (value: number | null) =>
+        value == null ? (zh ? "尚无结果" : "No outcomes yet") : zh ? `${value}% 应用成功` : `${value}% applied`,
+      averageReviewTime: (milliseconds: number | null) =>
+        milliseconds == null
+          ? zh
+            ? "尚无确认耗时"
+            : "No review time yet"
+          : zh
+            ? `平均确认 ${Math.max(1, Math.round(milliseconds / 1000))} 秒`
+            : `${Math.max(1, Math.round(milliseconds / 1000))}s average review`,
       runHistory: zh ? "运行历史" : "Run history",
       confirmedDeliverables: zh ? "项已确认成品" : "confirmed deliverables",
       usableDeliverables: zh ? "可交付或只需轻改" : "usable or minor edits",
@@ -338,9 +373,10 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         "minor-edits": zh ? "少量修改后可交付" : "Deliverable after minor edits",
         "not-ready": zh ? "目前不能交付" : "Not ready to deliver",
       },
-      runImpact: (files: number, queries: number, charts: number) => zh
-        ? `${files} 个文件 · ${queries} 个 Query · ${charts} 个 Chart`
-        : `${files} files · ${queries} Queries · ${charts} Charts`,
+      runImpact: (files: number, queries: number, charts: number) =>
+        zh
+          ? `${files} 个文件 · ${queries} 个 Query · ${charts} 个 Chart`
+          : `${files} files · ${queries} Queries · ${charts} Charts`,
       stopReasons: {
         validation: zh ? "来源或设置未通过验证" : "Source or settings failed validation",
         runtime: zh ? "本地运行验证未通过" : "Local runtime validation failed",
@@ -357,135 +393,188 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       describeWorkspaceChange: zh ? "描述工作区修改" : "Describe a workspace change",
       describeSelectionChange: zh ? "描述选区内修改" : "Describe a selected-source change",
       describeArtifactChange: zh ? "描述当前内容修改" : "Describe an artifact change",
-      sourceLinked: (label: string) => zh ? `已链接到规范源内容：${label}` : `Canonical source linked to ${label}`,
+      sourceLinked: (label: string) => (zh ? `已链接到规范源内容：${label}` : `Canonical source linked to ${label}`),
       oneSource: zh ? "1 个来源" : "1 source",
       issues: (value: number) => count(value, "issue", "issues", "个问题"),
       diagnostics: {
         heading: zh ? "需要处理" : "Needs attention",
-        body: zh ? "先看修复方向，需要时再展开编译器原始信息。" : "Start with the repair direction, then reveal exact compiler evidence when needed.",
+        body: zh
+          ? "先看修复方向，需要时再展开编译器原始信息。"
+          : "Start with the repair direction, then reveal exact compiler evidence when needed.",
         openSource: zh ? "打开源内容修复" : "Open Source to fix",
         sourceFocused: zh ? "已打开需要处理的源内容" : "Opened the source that needs attention",
         technicalDetail: zh ? "编译器原始信息" : "Exact compiler detail",
-        detailTruncated: zh ? "原始信息过长，已在界面中截断。" : "The original detail was too long and is truncated in this view.",
+        detailTruncated: zh
+          ? "原始信息过长，已在界面中截断。"
+          : "The original detail was too long and is truncated in this view.",
         reference: zh ? "相关引用" : "Related reference",
         codes: {
           "source-empty": {
             title: zh ? "先添加源内容" : "Add source content",
-            action: zh ? "在左侧输入内容，实时成品会立即重新编译。" : "Write in Source and the live output will recompile immediately.",
+            action: zh
+              ? "在左侧输入内容，实时成品会立即重新编译。"
+              : "Write in Source and the live output will recompile immediately.",
           },
           "source-unsafe": {
             title: zh ? "移除不安全内容" : "Remove unsafe content",
-            action: zh ? "删除脚本或可执行标记；Rune 的成品预览只接受无脚本内容。" : "Remove scripts or executable markup; Rune previews only script-free content.",
+            action: zh
+              ? "删除脚本或可执行标记；Rune 的成品预览只接受无脚本内容。"
+              : "Remove scripts or executable markup; Rune previews only script-free content.",
           },
           "document-source-invalid": {
             title: zh ? "修正文档源内容" : "Repair the Document source",
-            action: zh ? "保持可读 Markdown 结构，并检查未闭合的语法或绑定。" : "Keep readable Markdown structure and check unfinished syntax or bindings.",
+            action: zh
+              ? "保持可读 Markdown 结构，并检查未闭合的语法或绑定。"
+              : "Keep readable Markdown structure and check unfinished syntax or bindings.",
           },
           "data-source-invalid": {
             title: zh ? "修正表格源内容" : "Repair the Data source",
-            action: zh ? "使用带表头的矩形 CSV，或只含标量值的扁平 JSON。" : "Use rectangular CSV with headers, or flat JSON containing scalar values.",
+            action: zh
+              ? "使用带表头的矩形 CSV，或只含标量值的扁平 JSON。"
+              : "Use rectangular CSV with headers, or flat JSON containing scalar values.",
           },
           "query-source-invalid": {
             title: zh ? "修正只读 Query" : "Repair the read-only Query",
-            action: zh ? "保留一个 SELECT 或 WITH 语句，并检查明确的 Data 来源。" : "Keep one SELECT or WITH statement and verify its explicit Data source.",
+            action: zh
+              ? "保留一个 SELECT 或 WITH 语句，并检查明确的 Data 来源。"
+              : "Keep one SELECT or WITH statement and verify its explicit Data source.",
           },
           "chart-source-invalid": {
             title: zh ? "修正 Chart 定义" : "Repair the Chart definition",
-            action: zh ? "使用受支持的图形、字段、格式和一个现有的 Data 或 Query 来源。" : "Use a supported mark, fields, format, and one existing Data or Query source.",
+            action: zh
+              ? "使用受支持的图形、字段、格式和一个现有的 Data 或 Query 来源。"
+              : "Use a supported mark, fields, format, and one existing Data or Query source.",
           },
           "slides-source-invalid": {
             title: zh ? "修正演示源内容" : "Repair the Presentation source",
-            action: zh ? "保持有效的 Deck Markdown，或使用不含脚本的语义 HTML。" : "Keep valid Deck Markdown or script-free semantic HTML.",
+            action: zh
+              ? "保持有效的 Deck Markdown，或使用不含脚本的语义 HTML。"
+              : "Keep valid Deck Markdown or script-free semantic HTML.",
           },
           "live-binding-invalid": {
             title: zh ? "修正实时数值绑定" : "Repair the live value binding",
-            action: zh ? "检查绑定语法，并选择当前工作区中唯一存在的指标。" : "Check the binding syntax and choose one metric that exists in this workspace.",
+            action: zh
+              ? "检查绑定语法，并选择当前工作区中唯一存在的指标。"
+              : "Check the binding syntax and choose one metric that exists in this workspace.",
           },
           "metric-missing": {
             title: zh ? "重新连接缺失指标" : "Reconnect the missing metric",
-            action: zh ? "选择已有指标键，或把引用改为一个明确的 Query 输出字段。" : "Choose an existing metric key or an explicit Query output field.",
+            action: zh
+              ? "选择已有指标键，或把引用改为一个明确的 Query 输出字段。"
+              : "Choose an existing metric key or an explicit Query output field.",
           },
           "query-metric-invalid": {
             title: zh ? "修正 SQL 指标绑定" : "Repair the SQL metric binding",
-            action: zh ? "检查 Query、结果字段和聚合行是否仍与当前版本一致。" : "Verify that the Query, result field, and aggregate row still match this revision.",
+            action: zh
+              ? "检查 Query、结果字段和聚合行是否仍与当前版本一致。"
+              : "Verify that the Query, result field, and aggregate row still match this revision.",
           },
           "chart-missing": {
             title: zh ? "重新连接缺失 Chart" : "Reconnect the missing Chart",
-            action: zh ? "选择一个已有 Chart ID，或先创建并验证对应图表。" : "Choose an existing Chart id or create and validate that Chart first.",
+            action: zh
+              ? "选择一个已有 Chart ID，或先创建并验证对应图表。"
+              : "Choose an existing Chart id or create and validate that Chart first.",
           },
           "chart-binding-invalid": {
             title: zh ? "修正 Chart 来源" : "Repair the Chart source",
-            action: zh ? "重新选择现有 Data/Query 和其中唯一存在的分类与数值字段。" : "Reconnect existing Data or Query and exact category and value fields.",
+            action: zh
+              ? "重新选择现有 Data/Query 和其中唯一存在的分类与数值字段。"
+              : "Reconnect existing Data or Query and exact category and value fields.",
           },
           "query-binding-invalid": {
             title: zh ? "重新连接 Query 数据来源" : "Reconnect the Query Data source",
-            action: zh ? "把 Query 绑定到当前工作区中一份明确存在的 Data。" : "Bind the Query to one exact Data artifact in the current workspace.",
+            action: zh
+              ? "把 Query 绑定到当前工作区中一份明确存在的 Data。"
+              : "Bind the Query to one exact Data artifact in the current workspace.",
           },
         },
       },
       linkedCharts: (value: number) => count(value, "linked chart", "linked charts", "个关联图表"),
       initialNotice: zh ? "本地工作区已就绪" : "Local workspace ready",
       newCancelled: zh ? "已取消新建 — 工作区保持不变" : "New artifact cancelled — the workspace is unchanged",
-      structureCancelled: zh ? "已取消文档结构修改 — 源内容保持不变" : "Document structure change cancelled — source stayed unchanged",
+      structureCancelled: zh
+        ? "已取消文档结构修改 — 源内容保持不变"
+        : "Document structure change cancelled — source stayed unchanged",
       dependencyGraph: zh ? "工作区依赖关系图" : "Workspace dependency graph",
       liveContext: zh ? "实时上下文" : "Live context",
       dependencyGraphTitle: zh ? "依赖关系图" : "Dependency graph",
-      dependencyEdges: (value: number) => zh ? `${value} 条依赖边` : `${value} dependency edges`,
+      dependencyEdges: (value: number) => (zh ? `${value} 条依赖边` : `${value} dependency edges`),
       agentContextPack: zh ? "工作区 Agent 上下文包" : "Workspace Agent context pack",
       agentContext: zh ? "Agent 上下文" : "Agent context",
       clearPins: zh ? "清除固定" : "Clear pins",
-      contextExplanation: zh ? "当前绑定和临时固定项共同选择一个有边界、跟随版本更新的上下文包。" : "Current bindings and temporary pins choose a bounded, revision-live context pack.",
+      contextExplanation: zh
+        ? "当前绑定和临时固定项共同选择一个有边界、跟随版本更新的上下文包。"
+        : "Current bindings and temporary pins choose a bounded, revision-live context pack.",
       artifactsInContext: zh ? "Agent 上下文中的内容" : "Artifacts in Agent context",
-      openContextArtifact: (name: string, pinned: boolean) => zh ? `打开 ${name}${pinned ? "，已手动固定到 Agent 上下文" : ""}` : `Open ${name}${pinned ? ", manually pinned in Agent context" : ""}`,
+      openContextArtifact: (name: string, pinned: boolean) =>
+        zh
+          ? `打开 ${name}${pinned ? "，已手动固定到 Agent 上下文" : ""}`
+          : `Open ${name}${pinned ? ", manually pinned in Agent context" : ""}`,
       sourceToConsumer: zh ? "来源 → 使用方" : "Source → consumer",
       liveDependencies: zh ? "实时内容依赖" : "Live artifact dependencies",
-      openDependencySource: (name: string) => zh ? `打开依赖来源 ${name}` : `Open dependency source ${name}`,
-      openDependencyConsumer: (name: string) => zh ? `打开依赖使用方 ${name}` : `Open dependency consumer ${name}`,
-      noDependency: zh ? "添加指标、Query 或 Chart 绑定以建立第一条实时关系。" : "Add a metric, query, or chart binding to create the first live edge.",
+      openDependencySource: (name: string) => (zh ? `打开依赖来源 ${name}` : `Open dependency source ${name}`),
+      openDependencyConsumer: (name: string) => (zh ? `打开依赖使用方 ${name}` : `Open dependency consumer ${name}`),
+      noDependency: zh
+        ? "添加指标、Query 或 Chart 绑定以建立第一条实时关系。"
+        : "Add a metric, query, or chart binding to create the first live edge.",
       unresolvedDependencies: zh ? "未解决的依赖" : "Unresolved dependencies",
-      needsAttention: (value: number) => zh ? `需要处理 · ${value}` : `Needs attention · ${value}`,
+      needsAttention: (value: number) => (zh ? `需要处理 · ${value}` : `Needs attention · ${value}`),
       unlinkedArtifacts: zh ? "未关联内容" : "Unlinked artifacts",
       unlinked: zh ? "未关联" : "Unlinked",
       noHiddenGraph: zh ? "没有隐藏的关系图状态" : "No hidden graph state",
-      graphRecompiles: zh ? "关系边由源内容重新编译；固定项仅在当前会话有效。" : "Edges recompile from source; pins last only for this session.",
+      graphRecompiles: zh
+        ? "关系边由源内容重新编译；固定项仅在当前会话有效。"
+        : "Edges recompile from source; pins last only for this session.",
       deviceStorageFull: zh ? "本机存储空间不足" : "Device storage is full",
-      lastSaved: (time: string) => zh ? `上次保存 ${time}` : `Last saved ${time}`,
+      lastSaved: (time: string) => (zh ? `上次保存 ${time}` : `Last saved ${time}`),
       justNow: zh ? "刚刚" : "just now",
       createReview: zh ? "创建汇报" : "Create review",
-      exportArtifactAs: (name: string, target: string) => zh ? `将 ${name} 导出为 ${target}` : `Export ${name} as ${target}`,
-      exportAs: (target: string) => zh ? `导出为 ${target}` : `Export as ${target}`,
-      exportAsOpenDocument: (target: string) => zh ? `导出为 ${target} OpenDocument` : `Export as ${target} OpenDocument`,
+      exportArtifactAs: (name: string, target: string) =>
+        zh ? `将 ${name} 导出为 ${target}` : `Export ${name} as ${target}`,
+      exportAs: (target: string) => (zh ? `导出为 ${target}` : `Export as ${target}`),
+      exportAsOpenDocument: (target: string) =>
+        zh ? `导出为 ${target} OpenDocument` : `Export as ${target} OpenDocument`,
       exportStandaloneHtml: zh ? "导出为独立 HTML" : "Export as standalone HTML",
       exportFixedPdf: zh ? "导出为固定版式 PDF" : "Export as fixed PDF",
       exportMenu: zh ? "导出" : "Export",
       exportMenuBody: zh ? "选择交付格式" : "Choose a handoff format",
       canonicalSource: zh ? "规范源" : "Canonical source",
-      pinnedCount: (value: number) => zh ? `${value} 个已固定` : `${value} pinned`,
-      liveBindings: (value: number) => zh ? `${value} 项实时绑定` : `${value} live bindings`,
-      pinContext: (name: string, pinned: boolean) => zh ? (pinned ? `从工作区 Agent 上下文移除 ${name}` : `将 ${name} 固定到工作区 Agent 上下文`) : `${pinned ? "Remove" : "Pin"} ${name} ${pinned ? "from" : "in"} Workspace Agent context`,
+      pinnedCount: (value: number) => (zh ? `${value} 个已固定` : `${value} pinned`),
+      liveBindings: (value: number) => (zh ? `${value} 项实时绑定` : `${value} live bindings`),
+      pinContext: (name: string, pinned: boolean) =>
+        zh
+          ? pinned
+            ? `从工作区 Agent 上下文移除 ${name}`
+            : `将 ${name} 固定到工作区 Agent 上下文`
+          : `${pinned ? "Remove" : "Pin"} ${name} ${pinned ? "from" : "in"} Workspace Agent context`,
       removePin: zh ? "移除临时 Agent 上下文固定" : "Remove temporary Agent context pin",
       keepPin: zh ? "在下一次工作区 Agent 上下文中保留此文件" : "Keep this file in the next Workspace Agent context",
-      temporaryPins: (value: number) => zh ? `${value} 个临时固定项` : `${value} temporary ${value === 1 ? "pin" : "pins"}`,
+      temporaryPins: (value: number) =>
+        zh ? `${value} 个临时固定项` : `${value} temporary ${value === 1 ? "pin" : "pins"}`,
       includedUpstream: zh ? "会与所需上游来源一同纳入。" : "Included with required upstream sources.",
       clear: zh ? "清除" : "Clear",
       restoreLatestDifferent: zh ? "恢复最近一个不同的恢复点" : "Restore latest different checkpoint",
       restoreLatest: zh ? "恢复最近恢复点" : "Restore latest checkpoint",
       deviceHistory: zh ? "本机历史" : "Device history",
-      checkpointCount: (value: number) => zh ? `${value} 个恢复点` : `${value} ${value === 1 ? "checkpoint" : "checkpoints"}`,
+      checkpointCount: (value: number) =>
+        zh ? `${value} 个恢复点` : `${value} ${value === 1 ? "checkpoint" : "checkpoints"}`,
       saveCurrent: zh ? "保存当前版本" : "Save current",
       current: zh ? "当前" : "Current",
       refreshAvailable: zh ? "可以刷新" : "Refresh available",
       reviewRefresh: zh ? "审核刷新" : "Review refresh",
       refreshNoLongerNeeded: zh ? "这份演示已不再需要来源刷新" : "This presentation no longer needs a source refresh",
       restore: zh ? "恢复" : "Restore",
-      checkpointEmpty: zh ? "应用 Agent 补丁或按 ⌘S，即可保存当前源内容。" : "Apply an Agent patch or press ⌘S to capture the current source.",
+      checkpointEmpty: zh
+        ? "应用 Agent 补丁或按 ⌘S，即可保存当前源内容。"
+        : "Apply an Agent patch or press ⌘S to capture the current source.",
       checkpointReasons: {
         agent: "Agent",
         manual: zh ? "手动" : "Manual",
         restore: zh ? "恢复保护" : "Restore safety",
       },
-      editSource: (name: string) => zh ? `编辑 ${name} 的源内容` : `Edit ${name} source`,
-      syncedDraftSource: (name: string) => zh ? `${name} 尚未保存的同步源草稿` : `Unsaved synchronized source draft for ${name}`,
+      editSource: (name: string) => (zh ? `编辑 ${name} 的源内容` : `Edit ${name} source`),
+      syncedDraftSource: (name: string) =>
+        zh ? `${name} 尚未保存的同步源草稿` : `Unsaved synchronized source draft for ${name}`,
       unsavedVisualDraft: zh ? "右侧编辑 · 左侧完整源草稿实时同步" : "Visual edit · complete source draft synced live",
       draftNeedsFix: zh ? "尚未保存 · 需要修正" : "Unsaved · needs attention",
       draftUnchanged: zh ? "尚未修改" : "No unsaved change",
@@ -496,13 +585,26 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       canonicalUnchanged: zh ? "应用前，规范源内容保持不变" : "Canonical source stays unchanged until Apply",
       proposalPreviewUnavailable: zh ? "无法预览此提案" : "Proposal preview unavailable",
       proposalOutput: zh ? "建议成品 · 尚未写入" : "Proposed output · nothing written",
-      proposalSourceUnchanged: zh ? "此文件的源内容未修改；实时成品正基于完整建议工作区重新编译。" : "This source is unchanged; its live output is rendered against the complete proposed workspace.",
-      contextSources: (sources: number, pins: number) => zh ? `${sources} 个上下文来源${pins ? ` · ${pins} 个已固定` : ""}` : `${sources} context sources${pins ? ` · ${pins} pinned` : ""}`,
-      charactersBound: (value: string) => zh ? `${value} 个字符已绑定到当前版本` : `${value} characters bound to this revision`,
+      proposalSourceUnchanged: zh
+        ? "此文件的源内容未修改；实时成品正基于完整建议工作区重新编译。"
+        : "This source is unchanged; its live output is rendered against the complete proposed workspace.",
+      contextSources: (sources: number, pins: number) =>
+        zh
+          ? `${sources} 个上下文来源${pins ? ` · ${pins} 个已固定` : ""}`
+          : `${sources} context sources${pins ? ` · ${pins} pinned` : ""}`,
+      charactersBound: (value: string) =>
+        zh ? `${value} 个字符已绑定到当前版本` : `${value} characters bound to this revision`,
       agentScope: zh ? "Agent 修改范围" : "Agent change scope",
-      queryEvidence: (value: number) => zh ? `配置模型后，可在你提出请求时检查 ${value} 个有边界的本地 Query 结果；证据不会持久保存。` : `A configured model can inspect ${value} bounded local Query ${value === 1 ? "result" : "results"} after you ask; evidence is not persisted.`,
-      proposedChange: (scope: "workspace" | "selection" | "file") => zh ? `建议的${scope === "workspace" ? "工作区修改" : scope === "selection" ? "选区内补丁" : "文件补丁"}` : `Proposed ${scope === "workspace" ? "workspace change" : scope === "selection" ? "selection-confined patch" : "file patch"}`,
-      typedOperations: (value: number) => zh ? `${value} 个类型化源操作` : `${value} typed source ${value === 1 ? "operation" : "operations"}`,
+      queryEvidence: (value: number) =>
+        zh
+          ? `配置模型后，可在你提出请求时检查 ${value} 个有边界的本地 Query 结果；证据不会持久保存。`
+          : `A configured model can inspect ${value} bounded local Query ${value === 1 ? "result" : "results"} after you ask; evidence is not persisted.`,
+      proposedChange: (scope: "workspace" | "selection" | "file") =>
+        zh
+          ? `建议的${scope === "workspace" ? "工作区修改" : scope === "selection" ? "选区内补丁" : "文件补丁"}`
+          : `Proposed ${scope === "workspace" ? "workspace change" : scope === "selection" ? "selection-confined patch" : "file patch"}`,
+      typedOperations: (value: number) =>
+        zh ? `${value} 个类型化源操作` : `${value} typed source ${value === 1 ? "operation" : "operations"}`,
       modelOutline: zh ? "模型辅助来源提纲" : "Model-assisted source outline",
       modelNarrative: zh ? "模型辅助证据问题" : "Model-assisted evidence questions",
       localPlan: zh ? "本地确定性方案" : "Local deterministic plan",
@@ -511,16 +613,18 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       recovered: zh ? "一次编译器引导修复后已恢复" : "Recovered after one compiler-guided repair",
       firstUnapplied: zh ? "第一版建议未应用" : "First proposal stayed unapplied",
       runtimePassed: zh ? "运行影响预检已通过" : "Runtime impact preflight passed",
-      changedFiles: (value: number) => zh ? `${value} 个文件` : `${value} ${value === 1 ? "file" : "files"}`,
+      changedFiles: (value: number) => (zh ? `${value} 个文件` : `${value} ${value === 1 ? "file" : "files"}`),
       changedLines: zh ? "变更行" : "changed lines",
       filesInPatch: zh ? "建议补丁中的文件" : "Files in proposed patch",
-      reviewArtifact: (name: string) => zh ? `审核 ${name}` : `Review ${name}`,
+      reviewArtifact: (name: string) => (zh ? `审核 ${name}` : `Review ${name}`),
       newFile: zh ? "新文件" : "New file",
-      typedOps: (value: number) => zh ? `${value} 个类型化操作` : `${value} typed ${value === 1 ? "op" : "ops"}`,
-      sourceDiffFor: (name: string) => zh ? `${name} 的源内容差异` : `Source diff for ${name}`,
+      typedOps: (value: number) => (zh ? `${value} 个类型化操作` : `${value} typed ${value === 1 ? "op" : "ops"}`),
+      sourceDiffFor: (name: string) => (zh ? `${name} 的源内容差异` : `Source diff for ${name}`),
       newSourceDiff: zh ? "新源内容差异" : "New source diff",
       sourceDiff: zh ? "源内容差异" : "Source diff",
-      selectChangedFile: zh ? "选择一个已修改文件以检查源内容差异。" : "Select a changed file to inspect its source diff.",
+      selectChangedFile: zh
+        ? "选择一个已修改文件以检查源内容差异。"
+        : "Select a changed file to inspect its source diff.",
       apply: zh ? "应用" : "Apply",
       applyAll: zh ? "全部应用" : "Apply all",
       discardPatch: zh ? "丢弃建议补丁" : "Discard proposed patch",
@@ -529,15 +633,20 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       canonicalDataLive: zh ? "规范数据实时编译" : "Canonical data compiled live",
       explicitDataBinding: zh ? "明确 Data 绑定" : "Explicit Data binding",
       legacyDataBinding: zh ? "旧版首个 Data 绑定" : "Legacy first-Data binding",
-      scalarMetricsFromSql: (value: number) => zh ? `${value} 个从 SQL 编译的标量指标` : `${value} scalar ${value === 1 ? "metric" : "metrics"} compiled from SQL`,
+      scalarMetricsFromSql: (value: number) =>
+        zh
+          ? `${value} 个从 SQL 编译的标量指标`
+          : `${value} scalar ${value === 1 ? "metric" : "metrics"} compiled from SQL`,
       workspaceData: zh ? "工作区数据" : "workspace data",
-      metricsCompiledLive: (value: number) => zh ? `${value} 个指标实时编译` : `${value} metrics compiled live`,
-      chartsCompiledLive: (value: number) => zh ? `${value} 个图表实时编译` : `${value} ${value === 1 ? "chart" : "charts"} compiled live`,
-      legacyMetrics: (value: number) => zh ? `${value} 个旧版指标` : `${value} legacy metrics`,
-      sqlMetrics: (value: number) => zh ? `${value} 个 SQL 指标` : `${value} SQL metrics`,
-      sqlMetricBadge: (value: number) => zh ? `${value} 个 SQL 指标` : `${value} SQL ${value === 1 ? "metric" : "metrics"}`,
-      chartBadge: (value: number) => zh ? `${value} 个图表` : `${value} ${value === 1 ? "chart" : "charts"}`,
-      liveBadge: (value: number) => zh ? `${value} 项实时绑定` : `${value} live`,
+      metricsCompiledLive: (value: number) => (zh ? `${value} 个指标实时编译` : `${value} metrics compiled live`),
+      chartsCompiledLive: (value: number) =>
+        zh ? `${value} 个图表实时编译` : `${value} ${value === 1 ? "chart" : "charts"} compiled live`,
+      legacyMetrics: (value: number) => (zh ? `${value} 个旧版指标` : `${value} legacy metrics`),
+      sqlMetrics: (value: number) => (zh ? `${value} 个 SQL 指标` : `${value} SQL metrics`),
+      sqlMetricBadge: (value: number) =>
+        zh ? `${value} 个 SQL 指标` : `${value} SQL ${value === 1 ? "metric" : "metrics"}`,
+      chartBadge: (value: number) => (zh ? `${value} 个图表` : `${value} ${value === 1 ? "chart" : "charts"}`),
+      liveBadge: (value: number) => (zh ? `${value} 项实时绑定` : `${value} live`),
     },
     documentStructure: {
       kicker: zh ? "文档结构 · 绑定当前版本" : "Document structure · revision-bound",
@@ -548,10 +657,11 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         "move-down": zh ? "向下移动内容块" : "Move block down",
         delete: zh ? "删除内容块" : "Delete block",
       },
-      description: (target: string) => zh
-        ? `请审核“${target}”对应规范源内容的精确变化。确认前不会写入。`
-        : `Review the exact canonical-source change for ${target}. Nothing is written until you confirm.`,
-      details: (name: string) => zh ? `${name} 的源内容变化` : `Source change for ${name}`,
+      description: (target: string) =>
+        zh
+          ? `请审核“${target}”对应规范源内容的精确变化。确认前不会写入。`
+          : `Review the exact canonical-source change for ${target}. Nothing is written until you confirm.`,
+      details: (name: string) => (zh ? `${name} 的源内容变化` : `Source change for ${name}`),
       atomic: zh ? "一次原子本机写入 · 写入前先创建恢复点" : "One atomic device write · a checkpoint is created first",
       verifying: zh ? "正在核验…" : "Verifying…",
       deleteBlock: zh ? "删除内容块" : "Delete block",
@@ -561,37 +671,56 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
     importReview: {
       kicker: zh ? "本地转换 · 不上传" : "Local conversion · no upload",
       title: zh ? "审核导入后的可读源" : "Review imported sources",
-      description: (name: string, value: number) => zh
-        ? `${name} 已生成 ${value} 份可读内容。确认前不会写入。`
-        : `${name} produced ${value} readable ${value === 1 ? "artifact" : "artifacts"}. Nothing is written until you confirm.`,
+      description: (name: string, value: number) =>
+        zh
+          ? `${name} 已生成 ${value} 份可读内容。确认前不会写入。`
+          : `${name} produced ${value} readable ${value === 1 ? "artifact" : "artifacts"}. Nothing is written until you confirm.`,
       details: zh ? "导入详情" : "Import details",
       atomic: zh ? "确认后执行一次原子本机写入" : "One atomic device write after confirmation",
-      importSources: (value: number) => zh ? `导入 ${value} 份源内容` : `Import ${value} ${value === 1 ? "source" : "sources"}`,
+      importSources: (value: number) =>
+        zh ? `导入 ${value} 份源内容` : `Import ${value} ${value === 1 ? "source" : "sources"}`,
       fidelityNotes: zh ? "保真说明" : "Fidelity notes",
       noOmissions: zh ? "转换器未报告语义缺失。" : "The adapter reported no semantic omissions.",
       generatedPreviews: zh ? "生成的源内容预览" : "Generated source previews",
-      sourceStats: (lines: string, chars: string) => zh ? `${lines} 行 · ${chars} 个字符` : `${lines} lines · ${chars} chars`,
-      previewCapped: zh ? "预览已截断 · 将导入完整且通过校验的源内容。" : "Preview capped · the complete validated source will be imported.",
+      sourceStats: (lines: string, chars: string) =>
+        zh ? `${lines} 行 · ${chars} 个字符` : `${lines} lines · ${chars} chars`,
+      previewCapped: zh
+        ? "预览已截断 · 将导入完整且通过校验的源内容。"
+        : "Preview capped · the complete validated source will be imported.",
     },
     exportReview: {
       kicker: zh ? "浏览器本地导出 · 不上传" : "Browser-local export · no upload",
-      title: (kind: "office" | "odf" | "pdf" | "html" | "data") => zh
-        ? ({ office: "审核 Office 导出", odf: "审核 OpenDocument 导出", pdf: "审核 PDF 导出", html: "审核 HTML 导出", data: "审核数据导出" })[kind]
-        : ({ office: "Review Office export", odf: "Review OpenDocument export", pdf: "Review PDF export", html: "Review HTML export", data: "Review Data export" })[kind],
-      description: (name: string, outputKind: string, target: string) => zh
-        ? `确认下载后，${name} 将生成一份${outputKind} ${target} 文件。`
-        : `${name} will become a ${outputKind} ${target} file after you confirm the download.`,
+      title: (kind: "office" | "odf" | "pdf" | "html" | "data") =>
+        zh
+          ? {
+              office: "审核 Office 导出",
+              odf: "审核 OpenDocument 导出",
+              pdf: "审核 PDF 导出",
+              html: "审核 HTML 导出",
+              data: "审核数据导出",
+            }[kind]
+          : {
+              office: "Review Office export",
+              odf: "Review OpenDocument export",
+              pdf: "Review PDF export",
+              html: "Review HTML export",
+              data: "Review Data export",
+            }[kind],
+      description: (name: string, outputKind: string, target: string) =>
+        zh
+          ? `确认下载后，${name} 将生成一份${outputKind} ${target} 文件。`
+          : `${name} will become a ${outputKind} ${target} file after you confirm the download.`,
       outputKinds: {
         semantic: zh ? "语义化" : "semantic",
         fixed: zh ? "固定版式" : "fixed-layout",
         standalone: zh ? "独立" : "standalone",
         portable: zh ? "便携数据" : "portable data",
       },
-      details: (target: string) => zh ? `${target} 导出详情` : `${target} export details`,
+      details: (target: string) => (zh ? `${target} 导出详情` : `${target} export details`),
       noChanges: zh ? "不会修改工作区或本机草稿" : "No workspace or device draft changes",
-      download: (target: string) => zh ? `下载 ${target}` : `Download ${target}`,
-      route: (target: string) => zh ? `${target} 导出路径` : `${target} export route`,
-      generatedFile: (target: string) => zh ? `已生成的 ${target} 文件` : `Generated ${target} file`,
+      download: (target: string) => (zh ? `下载 ${target}` : `Download ${target}`),
+      route: (target: string) => (zh ? `${target} 导出路径` : `${target} export route`),
+      generatedFile: (target: string) => (zh ? `已生成的 ${target} 文件` : `Generated ${target} file`),
       descriptors: {
         office: zh ? "确定性 OOXML ZIP" : "deterministic OOXML ZIP",
         odf: zh ? "确定性 ODF ZIP" : "deterministic ODF ZIP",
@@ -601,25 +730,47 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       },
       fidelityNotes: zh ? "保真说明" : "Fidelity notes",
       canonicalTitle: zh ? "规范源内容" : "Canonical source",
-      canonicalBody: zh ? "Rune 导出已校验的源内容，以及当前工作区中被引用的数据。" : "Rune exports the validated source and any referenced current workspace data.",
-      packageTitle: (packaged: boolean) => packaged ? (zh ? "标准文件包" : "Standard package") : (zh ? "便携成品" : "Portable output"),
-      packageBody: (kind: "office" | "odf" | "pdf" | "html" | "data") => zh
-        ? ({ office: "下载使用标准 Office Open XML 部件及关系。", odf: "下载使用标准 OpenDocument 内容、样式、MIME 与清单部件。", pdf: "下载在标准 PDF 中嵌入版式、Unicode 字体和当前数据快照。", html: "下载包含版式、主题、指标和图表，不依赖外部资源。", data: "下载使用确定性的 UTF-8 CSV 或 JSON，不携带隐藏公式或脚本。" })[kind]
-        : ({ office: "The download uses standard Office Open XML parts and relationships.", odf: "The download uses standard OpenDocument content, styles, MIME, and manifest parts.", pdf: "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF.", html: "The download contains its layout, theme, metrics, and charts without external assets.", data: "The download uses deterministic UTF-8 CSV or JSON without hidden formulas or scripts." })[kind],
+      canonicalBody: zh
+        ? "Rune 导出已校验的源内容，以及当前工作区中被引用的数据。"
+        : "Rune exports the validated source and any referenced current workspace data.",
+      packageTitle: (packaged: boolean) =>
+        packaged ? (zh ? "标准文件包" : "Standard package") : zh ? "便携成品" : "Portable output",
+      packageBody: (kind: "office" | "odf" | "pdf" | "html" | "data") =>
+        zh
+          ? {
+              office: "下载使用标准 Office Open XML 部件及关系。",
+              odf: "下载使用标准 OpenDocument 内容、样式、MIME 与清单部件。",
+              pdf: "下载在标准 PDF 中嵌入版式、Unicode 字体和当前数据快照。",
+              html: "下载包含版式、主题、指标和图表，不依赖外部资源。",
+              data: "下载使用确定性的 UTF-8 CSV 或 JSON，不携带隐藏公式或脚本。",
+            }[kind]
+          : {
+              office: "The download uses standard Office Open XML parts and relationships.",
+              odf: "The download uses standard OpenDocument content, styles, MIME, and manifest parts.",
+              pdf: "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF.",
+              html: "The download contains its layout, theme, metrics, and charts without external assets.",
+              data: "The download uses deterministic UTF-8 CSV or JSON without hidden formulas or scripts.",
+            }[kind],
       handoffTitle: zh ? "明确交付" : "Explicit handoff",
-      handoffBody: zh ? "只有确认后，浏览器才会启动一次本地下载。" : "The browser starts one local download only after your confirmation.",
+      handoffBody: zh
+        ? "只有确认后，浏览器才会启动一次本地下载。"
+        : "The browser starts one local download only after your confirmation.",
     },
     newArtifact: {
       kicker: zh ? "从可读源开始" : "Start from readable source",
       title: zh ? "新建内容" : "Create a new artifact",
-      description: zh ? "选择规范源格式。Query 和 Chart 从第一个版本起就绑定到精确的上游内容与字段。" : "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.",
+      description: zh
+        ? "选择规范源格式。Query 和 Chart 从第一个版本起就绑定到精确的上游内容与字段。"
+        : "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.",
       details: zh ? "新建内容详情" : "New artifact details",
       atomic: zh ? "一次原子本机写入 · 不上传" : "One atomic device write · no upload",
       verifying: zh ? "正在核验实时源内容…" : "Verifying live source…",
       create: zh ? "创建源内容" : "Create source",
       type: zh ? "内容类型" : "Artifact type",
       titleLabel: zh ? "标题" : "Title",
-      titleHelp: zh ? "Rune 会生成便携文件名和稳定工作区 ID；创建后可立即编辑源内容。" : "Rune derives a portable filename and stable workspace id. You can edit the source immediately.",
+      titleHelp: zh
+        ? "Rune 会生成便携文件名和稳定工作区 ID；创建后可立即编辑源内容。"
+        : "Rune derives a portable filename and stable workspace id. You can edit the source immediately.",
       sourceBinding: zh ? "来源绑定" : "Source binding",
       dataSource: zh ? "数据来源" : "Data source",
       dataOrQuerySource: zh ? "Data 或 Query 来源" : "Data or Query source",
@@ -638,12 +789,20 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       reusableOnly: zh ? "只创建可复用 Chart" : "Create reusable Chart only",
       document: zh ? "文档" : "Document",
       presentation: zh ? "演示" : "Presentation",
-      queryBindingHelp: zh ? "Rune 会写入明确的 -- rune:data 指令，因此文件排序变化不会改变 workspace_data。" : "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.",
-      chartBindingHelp: zh ? "Chart JSON 保存精确来源 ID 与字段名；报告和演示可通过同一图表绑定复用。" : "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.",
+      queryBindingHelp: zh
+        ? "Rune 会写入明确的 -- rune:data 指令，因此文件排序变化不会改变 workspace_data。"
+        : "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.",
+      chartBindingHelp: zh
+        ? "Chart JSON 保存精确来源 ID 与字段名；报告和演示可通过同一图表绑定复用。"
+        : "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.",
       preview: zh ? "新源内容预览" : "New source preview",
       readyToEdit: zh ? "可以编辑" : "ready to edit",
-      addDataForQuery: zh ? "请先添加有效的 Data 表，再创建 Query。" : "Add a valid Data table before creating a Query.",
-      addSourceForChart: zh ? "请先添加有效的 Data 表或 Query，再创建 Chart。" : "Add a valid Data table or Query before creating a Chart.",
+      addDataForQuery: zh
+        ? "请先添加有效的 Data 表，再创建 Query。"
+        : "Add a valid Data table before creating a Query.",
+      addSourceForChart: zh
+        ? "请先添加有效的 Data 表或 Query，再创建 Chart。"
+        : "Add a valid Data table or Query before creating a Chart.",
       typeNames: {
         document: zh ? "文档" : "Document",
         data: zh ? "数据" : "Data",
@@ -674,16 +833,20 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         input: zh ? "输入" : "Input",
       },
       title: zh ? "事务关系图" : "Transaction map",
-      summary: (changes: number, nodes: number, bindings: number) => zh
-        ? `${changes} 项修改 · ${nodes} 个源节点 · ${bindings} 项绑定变化`
-        : `${changes} ${changes === 1 ? "change" : "changes"} · ${nodes} source ${nodes === 1 ? "node" : "nodes"} · ${bindings} binding ${bindings === 1 ? "change" : "changes"}`,
-      dependencyEdges: (value: number) => zh ? `${value} 条依赖边` : `${value} dependency edges`,
+      summary: (changes: number, nodes: number, bindings: number) =>
+        zh
+          ? `${changes} 项修改 · ${nodes} 个源节点 · ${bindings} 项绑定变化`
+          : `${changes} ${changes === 1 ? "change" : "changes"} · ${nodes} source ${nodes === 1 ? "node" : "nodes"} · ${bindings} binding ${bindings === 1 ? "change" : "changes"}`,
+      dependencyEdges: (value: number) => (zh ? `${value} 条依赖边` : `${value} dependency edges`),
       sources: zh ? "建议事务中的源内容" : "Sources in proposed transaction",
       dependencies: zh ? "建议的源内容依赖变化" : "Proposed source dependency changes",
       noBindings: zh ? "此事务不会改变跨文件绑定。" : "No cross-file bindings change in this transaction.",
-      note: zh ? "可审核新建与编辑节点的差异。输入和已校验节点保持不变；Rune 会编译完整建议工作区以证明结果。" : "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Rune compiled them to prove the complete proposed workspace.",
-      reviewNode: (name: string, status: string) => zh ? `审核 ${name}，${status}` : `Review ${name}, ${status.toLowerCase()}`,
-      nodeLabel: (name: string, status: string) => zh ? `${name}，${status}` : `${name}, ${status.toLowerCase()}`,
+      note: zh
+        ? "可审核新建与编辑节点的差异。输入和已校验节点保持不变；Rune 会编译完整建议工作区以证明结果。"
+        : "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Rune compiled them to prove the complete proposed workspace.",
+      reviewNode: (name: string, status: string) =>
+        zh ? `审核 ${name}，${status}` : `Review ${name}, ${status.toLowerCase()}`,
+      nodeLabel: (name: string, status: string) => (zh ? `${name}，${status}` : `${name}, ${status.toLowerCase()}`),
     },
     preview: {
       numberLocale: zh ? "zh-CN" : "en-US",
@@ -696,23 +859,35 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       numberFormat: zh ? "数字格式" : "Number format",
       liveChart: zh ? "实时图表" : "Live chart",
       queryOutput: zh ? "Query 结果" : "Query output",
-      marks: (value: number) => zh ? `${value} 个图形` : `${value} marks`,
-      clickExactDatum: (mark: "line" | "bar") => zh ? `点击标签或${mark === "line" ? "点" : "柱"}可打开精确源单元格` : `Click a label or ${mark === "line" ? "point" : "bar"} to open its exact source cell`,
-      categoryDatum: (title: string, label: string) => zh ? `${title} · 分类 ${label}` : `${title} · category ${label}`,
-      valueDatum: (title: string, value: string) => zh ? `${title} · 数值 ${value}` : `${title} · value ${value}`,
-      openCellForAgent: (label: string, artifact: string) => zh ? `在 ${artifact} 中打开 ${label}，供 Agent 使用` : `Open ${label} in ${artifact} as Agent context`,
-      openExactCell: (column: string, artifact: string) => zh ? `打开 ${artifact} 中精确的 ${column} 源单元格` : `Open exact ${column} source cell in ${artifact}`,
-      chartNotFound: (id: string) => zh ? `找不到图表 · ${id}` : `Chart not found · ${id}`,
-      chartUnavailable: (error: string) => zh ? `图表不可用 · ${error}` : `Chart unavailable · ${error}`,
-      selectExact: (label: string) => zh ? `选择“${label}”的精确源内容` : `Select exact ${label} source`,
-      selectLinkExact: (label: string) => zh ? `选择“${label}”的精确源内容；按住 Command 或 Control 点击可打开链接` : `Select exact ${label} source; Command-click or Control-click opens the link`,
-      sourceActions: (label: string) => zh ? `${label} 的源内容操作` : `${label} source actions`,
-      selectForAgent: (label: string) => zh ? `在规范源内容中选择 ${label}，供 Agent 使用` : `Select ${label} in canonical source for Agent context`,
-      editTarget: (label: string) => zh ? `编辑 ${label}` : `Edit ${label}`,
-      editBlockTarget: (label: string, type: string) => zh ? `编辑 ${label} 的${type}内容块` : `Edit ${label} ${type}`,
-      editExactBlock: (type: string) => zh ? `编辑精确${type}内容块` : `Edit exact ${type} block`,
-      structureActions: (label: string) => zh ? `${label} 的结构操作` : `${label} structure actions`,
-      openStructureActions: (label: string) => zh ? `打开 ${label} 的结构操作` : `Open structure actions for ${label}`,
+      marks: (value: number) => (zh ? `${value} 个图形` : `${value} marks`),
+      clickExactDatum: (mark: "line" | "bar") =>
+        zh
+          ? `点击标签或${mark === "line" ? "点" : "柱"}可打开精确源单元格`
+          : `Click a label or ${mark === "line" ? "point" : "bar"} to open its exact source cell`,
+      categoryDatum: (title: string, label: string) =>
+        zh ? `${title} · 分类 ${label}` : `${title} · category ${label}`,
+      valueDatum: (title: string, value: string) => (zh ? `${title} · 数值 ${value}` : `${title} · value ${value}`),
+      openCellForAgent: (label: string, artifact: string) =>
+        zh ? `在 ${artifact} 中打开 ${label}，供 Agent 使用` : `Open ${label} in ${artifact} as Agent context`,
+      openExactCell: (column: string, artifact: string) =>
+        zh ? `打开 ${artifact} 中精确的 ${column} 源单元格` : `Open exact ${column} source cell in ${artifact}`,
+      chartNotFound: (id: string) => (zh ? `找不到图表 · ${id}` : `Chart not found · ${id}`),
+      chartUnavailable: (error: string) => (zh ? `图表不可用 · ${error}` : `Chart unavailable · ${error}`),
+      selectExact: (label: string) => (zh ? `选择“${label}”的精确源内容` : `Select exact ${label} source`),
+      selectLinkExact: (label: string) =>
+        zh
+          ? `选择“${label}”的精确源内容；按住 Command 或 Control 点击可打开链接`
+          : `Select exact ${label} source; Command-click or Control-click opens the link`,
+      sourceActions: (label: string) => (zh ? `${label} 的源内容操作` : `${label} source actions`),
+      selectForAgent: (label: string) =>
+        zh ? `在规范源内容中选择 ${label}，供 Agent 使用` : `Select ${label} in canonical source for Agent context`,
+      editTarget: (label: string) => (zh ? `编辑 ${label}` : `Edit ${label}`),
+      editBlockTarget: (label: string, type: string) =>
+        zh ? `编辑 ${label} 的${type}内容块` : `Edit ${label} ${type}`,
+      editExactBlock: (type: string) => (zh ? `编辑精确${type}内容块` : `Edit exact ${type} block`),
+      structureActions: (label: string) => (zh ? `${label} 的结构操作` : `${label} structure actions`),
+      openStructureActions: (label: string) =>
+        zh ? `打开 ${label} 的结构操作` : `Open structure actions for ${label}`,
       blockStructure: zh ? "内容块结构" : "Block structure",
       insertBefore: zh ? "在前方插入内容块" : "Insert a block before",
       insertAfter: zh ? "在后方插入内容块" : "Insert a block after",
@@ -724,62 +899,101 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       alreadyLast: zh ? "已经是最后一个" : "Already last",
       lastCannotDelete: zh ? "不能删除最后一个内容块" : "The last block cannot be deleted",
       runeDocument: zh ? "Rune 文档" : "Rune document",
-      documentMode: (mode: "block" | "section" | "select" | "live") => zh
-        ? ({ block: "选择或编辑一个精确内容块", section: "选择或编辑一个精确章节", select: "点击章节交给 Agent", live: "实时编译" })[mode]
-        : ({ block: "Select or edit one exact block", section: "Select or edit one exact section", select: "Click a section for Agent", live: "Live compilation" })[mode],
+      documentMode: (mode: "block" | "section" | "select" | "live") =>
+        zh
+          ? {
+              block: "选择或编辑一个精确内容块",
+              section: "选择或编辑一个精确章节",
+              select: "点击章节交给 Agent",
+              live: "实时编译",
+            }[mode]
+          : {
+              block: "Select or edit one exact block",
+              section: "Select or edit one exact section",
+              select: "Click a section for Agent",
+              live: "Live compilation",
+            }[mode],
       selectDocumentSection: zh ? "选择或编辑文档章节" : "Select or edit a document section",
       editingSection: zh ? "正在编辑精确章节" : "Editing exact section",
-      editingBlock: (type: string) => zh ? `正在编辑精确${type}内容块` : `Editing exact ${type}`,
-      sectionLimit: (value: string) => zh ? `可视化文档章节最多 ${value} 个字符。` : `Visual Document sections are limited to ${value} characters.`,
-      blockLimit: (value: string) => zh ? `可视化文档内容块最多 ${value} 个字符。` : `Visual Document blocks are limited to ${value} characters.`,
+      editingBlock: (type: string) => (zh ? `正在编辑精确${type}内容块` : `Editing exact ${type}`),
+      sectionLimit: (value: string) =>
+        zh ? `可视化文档章节最多 ${value} 个字符。` : `Visual Document sections are limited to ${value} characters.`,
+      blockLimit: (value: string) =>
+        zh ? `可视化文档内容块最多 ${value} 个字符。` : `Visual Document blocks are limited to ${value} characters.`,
       sourceDraft: zh ? "源内容草稿" : "Source draft",
       blockSource: zh ? "内容块源内容" : "Block source",
       syncedLive: zh ? "实时同步" : "Synced live",
       formatSection: zh ? "设置文档章节格式" : "Format Document section",
-      formatBlock: (type: string) => zh ? `设置文档${type}内容块格式` : `Format Document ${type}`,
-      editMarkdownSection: (label: string) => zh ? `编辑 ${label} 的 Markdown 章节` : `Edit ${label} Markdown section`,
-      editMarkdownBlock: (label: string, type: string) => zh ? `编辑 ${label} 的 Markdown ${type} 内容块` : `Edit ${label} Markdown ${type} block`,
+      formatBlock: (type: string) => (zh ? `设置文档${type}内容块格式` : `Format Document ${type}`),
+      editMarkdownSection: (label: string) =>
+        zh ? `编辑 ${label} 的 Markdown 章节` : `Edit ${label} Markdown section`,
+      editMarkdownBlock: (label: string, type: string) =>
+        zh ? `编辑 ${label} 的 Markdown ${type} 内容块` : `Edit ${label} Markdown ${type} block`,
       draftPreview: zh ? "草稿预览" : "Draft preview",
       blockPreview: zh ? "内容块预览" : "Block preview",
       sectionEmpty: zh ? "章节不能为空。" : "This section cannot be empty.",
       blockEmpty: zh ? "内容块不能为空。" : "This block cannot be empty.",
-      sectionContract: zh ? "一个绑定当前版本的章节 · 实时绑定保持固定 · 保存会写入规范源内容" : "One revision-bound section · live bindings stay fixed · save writes canonical source",
-      blockContract: (type: string) => zh ? `一个已证明的${type}内容块 · 类型和实时绑定保持固定 · 保存会写入规范源内容` : `One proven ${type} · type and live bindings stay fixed · save writes canonical source`,
+      sectionContract: zh
+        ? "一个绑定当前版本的章节 · 实时绑定保持固定 · 保存会写入规范源内容"
+        : "One revision-bound section · live bindings stay fixed · save writes canonical source",
+      blockContract: (type: string) =>
+        zh
+          ? `一个已证明的${type}内容块 · 类型和实时绑定保持固定 · 保存会写入规范源内容`
+          : `One proven ${type} · type and live bindings stay fixed · save writes canonical source`,
       saveSection: zh ? "保存章节" : "Save section",
       saveBlock: zh ? "保存内容块" : "Save block",
       newBefore: zh ? "在前方新建内容块" : "New block before",
       newAfter: zh ? "在后方新建内容块" : "New block after",
       oneMarkdownBlock: zh ? "一个 Markdown 内容块" : "One Markdown block",
-      blockPlaceholder: zh ? "段落、标题、列表、引用、代码块、表格或分隔线…" : "A paragraph, heading, list, quote, code block, table, or divider…",
-      insertionContract: zh ? "一个新内容块 · 不包含实时绑定 · 写入前审核精确源差异" : "One new block · no live bindings · review the exact source diff before writing",
+      blockPlaceholder: zh
+        ? "段落、标题、列表、引用、代码块、表格或分隔线…"
+        : "A paragraph, heading, list, quote, code block, table, or divider…",
+      insertionContract: zh
+        ? "一个新内容块 · 不包含实时绑定 · 写入前审核精确源差异"
+        : "One new block · no live bindings · review the exact source diff before writing",
       reviewInsertion: zh ? "审核插入" : "Review insertion",
       resultSummary: zh ? "结果摘要" : "Result summary",
-      rows: (value: number, more = false) => zh ? `${value}${more ? "+" : ""} 行` : `${value}${more ? "+" : ""} rows`,
-      columns: (value: number) => zh ? `${value} 列` : `${value} columns`,
-      valueType: (label: string) => zh ? `${label} 的值类型` : `Value type for ${label}`,
+      rows: (value: number, more = false) => (zh ? `${value}${more ? "+" : ""} 行` : `${value}${more ? "+" : ""} rows`),
+      columns: (value: number) => (zh ? `${value} 列` : `${value} columns`),
+      valueType: (label: string) => (zh ? `${label} 的值类型` : `Value type for ${label}`),
       auto: zh ? "自动" : "Auto",
       text: zh ? "文本" : "Text",
       number: zh ? "数字" : "Number",
       boolean: zh ? "布尔值" : "Boolean",
       empty: zh ? "空值" : "Empty",
-      saveCell: (label: string) => zh ? `保存 ${label}` : `Save ${label}`,
+      saveCell: (label: string) => (zh ? `保存 ${label}` : `Save ${label}`),
       saveCanonical: zh ? "保存到规范源内容" : "Save to canonical source",
       cancelCell: zh ? "取消单元格编辑" : "Cancel cell edit",
       exactRow: zh ? "选择完整规范源数据行" : "Select the complete canonical row",
       editCell: zh ? "编辑此规范源单元格" : "Edit this canonical source cell",
-      selectCellTitle: (label: string, editable: boolean) => zh
-        ? `${editable ? "按 Enter 编辑 · " : ""}选择精确规范源单元格 · ${label}`
-        : `${editable ? "Press Enter to edit · " : ""}Select the exact canonical source cell · ${label}`,
+      selectCellTitle: (label: string, editable: boolean) =>
+        zh
+          ? `${editable ? "按 Enter 编辑 · " : ""}选择精确规范源单元格 · ${label}`
+          : `${editable ? "Press Enter to edit · " : ""}Select the exact canonical source cell · ${label}`,
       noRows: zh ? "Query 已完成，但没有返回数据行。" : "Query completed with no rows.",
-      dataFootnote: (mode: "edit" | "cell" | "row" | "none") => zh
-        ? ({ edit: "已在本地解析 — 点击选择精确源内容；按 Enter 或点击铅笔可编辑已证明的标量单元格。", cell: "已在本地解析 — 点击单元格提供精确 Agent 上下文，或点击行号提供完整记录。", row: "已在本地解析 — 点击行号将完整记录绑定为 Agent 上下文。", none: "已在本地解析 — 没有可定位数据离开此设备。" })[mode]
-        : ({ edit: "Parsed locally — click selects exact source; press Enter or use the pencil to edit a proven scalar cell.", cell: "Parsed locally — click a cell for exact Agent context, or a row number for the full record.", row: "Parsed locally — click a row number to bind the full record as Agent context.", none: "Parsed locally — no targetable rows left this device." })[mode],
+      dataFootnote: (mode: "edit" | "cell" | "row" | "none") =>
+        zh
+          ? {
+              edit: "已在本地解析 — 点击选择精确源内容；按 Enter 或点击铅笔可编辑已证明的标量单元格。",
+              cell: "已在本地解析 — 点击单元格提供精确 Agent 上下文，或点击行号提供完整记录。",
+              row: "已在本地解析 — 点击行号将完整记录绑定为 Agent 上下文。",
+              none: "已在本地解析 — 没有可定位数据离开此设备。",
+            }[mode]
+          : {
+              edit: "Parsed locally — click selects exact source; press Enter or use the pencil to edit a proven scalar cell.",
+              cell: "Parsed locally — click a cell for exact Agent context, or a row number for the full record.",
+              row: "Parsed locally — click a row number to bind the full record as Agent context.",
+              none: "Parsed locally — no targetable rows left this device.",
+            }[mode],
       runningLocally: zh ? "正在本地运行" : "Running locally",
-      loadingDuckDB: zh ? "正在把绑定的 Data 内容加载到 DuckDB-Wasm…" : "Loading the bound Data artifact into DuckDB-Wasm…",
-      queryResultVia: (name: string) => zh ? `Query 结果 · ${name}` : `Query result · ${name}`,
-      queryFootnote: (engine: string, dataName: string, direct: boolean, truncated: boolean) => zh
-        ? `${engine} · ${dataName} 始终留在此浏览器${direct ? " · 可证明时，结果行号与直接字段可打开规范源内容；派生单元格保持只读" : " · 此 Query 形状无法证明一一对应关系，因此保持只读"}${truncated ? " · 预览最多显示 500 行" : ""}。`
-        : `${engine} · ${dataName} stayed in this browser${direct ? " · result row numbers and direct fields, when present, open canonical source; derived cells stay read-only" : " · this query shape stays read-only because no one-to-one lineage was proven"}${truncated ? " · preview limited to 500 rows" : ""}.`,
+      loadingDuckDB: zh
+        ? "正在把绑定的 Data 内容加载到 DuckDB-Wasm…"
+        : "Loading the bound Data artifact into DuckDB-Wasm…",
+      queryResultVia: (name: string) => (zh ? `Query 结果 · ${name}` : `Query result · ${name}`),
+      queryFootnote: (engine: string, dataName: string, direct: boolean, truncated: boolean) =>
+        zh
+          ? `${engine} · ${dataName} 始终留在此浏览器${direct ? " · 可证明时，结果行号与直接字段可打开规范源内容；派生单元格保持只读" : " · 此 Query 形状无法证明一一对应关系，因此保持只读"}${truncated ? " · 预览最多显示 500 行" : ""}。`
+          : `${engine} · ${dataName} stayed in this browser${direct ? " · result row numbers and direct fields, when present, open canonical source; derived cells stay read-only" : " · this query shape stays read-only because no one-to-one lineage was proven"}${truncated ? " · preview limited to 500 rows" : ""}.`,
       boundChartSource: zh ? "已绑定图表来源" : "Bound chart source",
       unknownSource: zh ? "未知来源" : "Unknown source",
       chartInvalid: zh ? "当前 Chart JSON 无效。" : "The current Chart JSON is invalid.",
@@ -806,28 +1020,44 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       accentColor: zh ? "主题色" : "Accent color",
       chooseAccentColor: zh ? "选择 Chart 主题色" : "Choose Chart accent color",
       editAccentHex: zh ? "编辑 Chart 主题色十六进制值" : "Edit Chart accent hex color",
-      chartSourceLock: (name: string) => zh ? `来源 · ${name} · 如需改变身份，请编辑规范源内容或使用已审核的 Agent 流程` : `Source · ${name} · change identity in canonical source or reviewed Agent flow`,
+      chartSourceLock: (name: string) =>
+        zh
+          ? `来源 · ${name} · 如需改变身份，请编辑规范源内容或使用已审核的 Agent 流程`
+          : `Source · ${name} · change identity in canonical source or reviewed Agent flow`,
       chartDraft: zh ? "Chart 草稿预览" : "Draft Chart preview",
       runtimeDraft: zh ? "已通过运行时校验的草稿" : "Runtime-validated draft",
       chooseChartProperties: zh ? "请选择有效的 Chart 属性。" : "Choose valid Chart properties.",
-      chartContract: zh ? "一个严格规范 · 已核验运行影响 · 保存会重写规范 Chart JSON" : "One strict spec · runtime impact verified · save rewrites canonical Chart JSON",
+      chartContract: zh
+        ? "一个严格规范 · 已核验运行影响 · 保存会重写规范 Chart JSON"
+        : "One strict spec · runtime impact verified · save rewrites canonical Chart JSON",
       saveChart: zh ? "保存 Chart" : "Save Chart",
-      slides: (value: number) => zh ? `${value} 页演示` : `${value} slides`,
-      deckMode: (mode: "edit" | "sandbox" | "legacy") => zh
-        ? ({ edit: "Deck Markdown → 选择或编辑一页精确演示", sandbox: "Deck Markdown → 沙盒 HTML", legacy: "旧版沙盒 HTML" })[mode]
-        : ({ edit: "Deck Markdown → select or edit one exact slide", sandbox: "Deck Markdown → sandboxed HTML", legacy: "Legacy sandboxed HTML" })[mode],
+      slides: (value: number) => (zh ? `${value} 页演示` : `${value} slides`),
+      deckMode: (mode: "edit" | "sandbox" | "legacy") =>
+        zh
+          ? {
+              edit: "Deck Markdown → 选择或编辑一页精确演示",
+              sandbox: "Deck Markdown → 沙盒 HTML",
+              legacy: "旧版沙盒 HTML",
+            }[mode]
+          : {
+              edit: "Deck Markdown → select or edit one exact slide",
+              sandbox: "Deck Markdown → sandboxed HTML",
+              legacy: "Legacy sandboxed HTML",
+            }[mode],
       selectDeckSlide: zh ? "选择或编辑 Deck 演示页" : "Select or edit a Deck slide",
-      editingSlide: (index: number) => zh ? `正在编辑第 ${index} 页精确演示` : `Editing exact slide ${index}`,
-      chooseLayout: (label: string) => zh ? `选择 ${label} 的版式` : `Choose layout for ${label}`,
-      editEyebrow: (label: string) => zh ? `编辑 ${label} 的眉题` : `Edit eyebrow for ${label}`,
-      editSlideMarkdown: (label: string) => zh ? `编辑 ${label} 的演示页 Markdown` : `Edit ${label} slide Markdown`,
-      slideDraft: (label: string) => zh ? `${label} 的草稿预览` : `Draft preview for ${label}`,
+      editingSlide: (index: number) => (zh ? `正在编辑第 ${index} 页精确演示` : `Editing exact slide ${index}`),
+      chooseLayout: (label: string) => (zh ? `选择 ${label} 的版式` : `Choose layout for ${label}`),
+      editEyebrow: (label: string) => (zh ? `编辑 ${label} 的眉题` : `Edit eyebrow for ${label}`),
+      editSlideMarkdown: (label: string) => (zh ? `编辑 ${label} 的演示页 Markdown` : `Edit ${label} slide Markdown`),
+      slideDraft: (label: string) => (zh ? `${label} 的草稿预览` : `Draft preview for ${label}`),
       layout: zh ? "版式" : "Layout",
       eyebrow: zh ? "眉题" : "Eyebrow",
       slideMarkdown: zh ? "演示页 Markdown" : "Slide Markdown",
       sandboxedSlide: zh ? "单页沙盒预览" : "Sandboxed one-slide preview",
       validSlideHeading: zh ? "请添加有效的 # 或 ## 演示页标题。" : "Add a valid # or ## slide heading.",
-      slideContract: zh ? "一页绑定当前版本的演示 · 绑定保持固定 · 保存会写入规范源内容" : "One revision-bound slide · bindings stay fixed · save writes canonical source",
+      slideContract: zh
+        ? "一页绑定当前版本的演示 · 绑定保持固定 · 保存会写入规范源内容"
+        : "One revision-bound slide · bindings stay fixed · save writes canonical source",
       saveSlide: zh ? "保存演示页" : "Save slide",
       renderedPresentation: zh ? "已渲染演示预览" : "Rendered presentation preview",
       startWriting: zh ? "开始输入即可编译预览。" : "Start writing to compile a preview.",
@@ -909,25 +1139,31 @@ const englishSelectionCommands: Record<ArtifactKind, string[]> = {
   slides: ["Condense the selection into one sentence", "Turn the selection into three points"],
 };
 
-export function runeQuickCommands(locale: RuneLocale, scope: "selection" | "artifact" | "workspace", kind: ArtifactKind) {
+export function runeQuickCommands(
+  locale: RuneLocale,
+  scope: "selection" | "artifact" | "workspace",
+  kind: ArtifactKind,
+) {
   if (locale === "en") {
     if (scope === "workspace") return englishWorkspaceCommands;
     if (scope === "selection") return englishSelectionCommands[kind];
     return englishArtifactCommands[kind];
   }
   if (!isChineseRuneLocale(locale)) {
-    const commands = scope === "workspace"
-      ? englishWorkspaceCommands
-      : scope === "selection"
-        ? englishSelectionCommands[kind]
-        : englishArtifactCommands[kind];
+    const commands =
+      scope === "workspace"
+        ? englishWorkspaceCommands
+        : scope === "selection"
+          ? englishSelectionCommands[kind]
+          : englishArtifactCommands[kind];
     return commands.map((command) => runeText(locale, command, command));
   }
-  const commands = scope === "workspace"
-    ? chineseWorkspaceCommands
-    : scope === "selection"
-      ? chineseSelectionCommands[kind]
-      : chineseArtifactCommands[kind];
+  const commands =
+    scope === "workspace"
+      ? chineseWorkspaceCommands
+      : scope === "selection"
+        ? chineseSelectionCommands[kind]
+        : chineseArtifactCommands[kind];
   return locale === "zh-TW" ? commands.map(toTaiwanTraditional) : commands;
 }
 
@@ -937,15 +1173,18 @@ const chineseStatusMessages: Record<string, string> = {
   "Started a fresh local workspace": "已创建新的本地工作区",
   "Device storage is full — download the source before leaving": "本机存储空间不足 — 离开前请下载源文件",
   "Closed the current file — every source remains in the workspace": "已关闭当前文件 — 所有源内容仍保留在工作区",
-  "Closed the current file — every source remains safely in the workspace": "已关闭当前文件 — 所有源内容仍安全保留在工作区",
+  "Closed the current file — every source remains safely in the workspace":
+    "已关闭当前文件 — 所有源内容仍安全保留在工作区",
   "This source is too large for device checkpoint history": "此源内容过大，无法写入本机恢复点历史",
   "Current source is already checkpointed": "当前源内容已保存为恢复点",
   "Manual checkpoint saved on this device": "已在此设备保存手动恢复点",
   "Device storage is full — checkpoint was not saved": "本机存储空间不足 — 未保存恢复点",
   "Switched artifact context": "已切换内容上下文",
   "Opened the editable Rune guide stored in this workspace": "已打开工作区中的可编辑 Rune 指南",
-  "Choose one or more files — Rune reads them locally before review": "请选择一个或多个文件 — Rune 会先在本地读取，再交给你审核",
-  "Sample workspace ready · every result stays linked to readable source": "示例工作区已就绪 · 每个结果都保持链接到可读源内容",
+  "Choose one or more files — Rune reads them locally before review":
+    "请选择一个或多个文件 — Rune 会先在本地读取，再交给你审核",
+  "Sample workspace ready · every result stays linked to readable source":
+    "示例工作区已就绪 · 每个结果都保持链接到可读源内容",
   "Temporary Workspace Agent context pins cleared": "已清除临时工作区 Agent 上下文固定项",
   "Visual edit rejected — every source stayed unchanged": "可视化编辑被拒绝 — 所有源内容保持不变",
   "Visual edit held — the workspace changed during verification": "可视化编辑已暂停 — 核验期间工作区发生了变化",
@@ -953,7 +1192,8 @@ const chineseStatusMessages: Record<string, string> = {
   "Document structure change ready for exact source review": "文档结构修改已就绪，可审核精确源差异",
   "Preview target is too large or no longer matches the current source": "预览目标过大，或已不再匹配当前源内容",
   "Folder pull cancelled — the device draft is unchanged": "已取消读取文件夹 — 本机草稿保持不变",
-  "Folder workspaces require a browser with the File System Access API": "文件夹工作区需要支持 File System Access API 的浏览器",
+  "Folder workspaces require a browser with the File System Access API":
+    "文件夹工作区需要支持 File System Access API 的浏览器",
   "Folder connection cancelled": "已取消连接文件夹",
   "Folder picker cancelled": "已取消选择文件夹",
   "Rune could not connect that folder": "Rune 无法连接该文件夹",
@@ -963,12 +1203,15 @@ const chineseStatusMessages: Record<string, string> = {
   "That checkpoint already matches the current source": "该恢复点已与当前源内容一致",
   "Download this large source before restoring an older checkpoint": "恢复旧版本前，请先下载此大型源文件",
   "Selection Agent needs a current non-empty source selection": "选区 Agent 需要当前且非空的源内容选区",
-  "Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged": "未生成建议 — 一次自动修复尝试后已停止；所有源内容保持不变",
-  "Agent is using the local compiler failure to prepare one replacement plan": "Agent 正使用本地编译失败信息准备一份替代方案",
+  "Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged":
+    "未生成建议 — 一次自动修复尝试后已停止；所有源内容保持不变",
+  "Agent is using the local compiler failure to prepare one replacement plan":
+    "Agent 正使用本地编译失败信息准备一份替代方案",
   "Patch held for review — workspace source revision changed": "补丁已暂停审核 — 工作区源版本发生变化",
   "Patch held for review — workspace context changed": "补丁已暂停审核 — 工作区上下文发生变化",
   "Nothing applied — selection boundary verification failed": "未应用任何修改 — 选区边界核验失败",
-  "Patch held for review — every changed file needs a safety checkpoint": "补丁已暂停审核 — 每个修改文件都需要安全恢复点",
+  "Patch held for review — every changed file needs a safety checkpoint":
+    "补丁已暂停审核 — 每个修改文件都需要安全恢复点",
   "Nothing applied — the complete workspace did not pass validation": "未应用任何修改 — 完整工作区未通过校验",
   "Nothing applied — atomic persistence failed": "未应用任何修改 — 原子持久化失败",
   "Sample workspace restored": "已恢复示例工作区",
@@ -995,21 +1238,39 @@ export function localizeRuneStatus(locale: RuneLocale, message: string) {
   const patterns: Array<[RegExp, (...parts: string[]) => string]> = [
     [/^(.+) removed from temporary Agent context pins$/, (name) => `已从临时 Agent 上下文固定项移除 ${name}`],
     [/^(.+) pinned for the next Workspace Agent plan$/, (name) => `已将 ${name} 固定到下一次工作区 Agent 方案`],
-    [/^(.+) updated in canonical source(.*)$/, (name, suffix) => `${name} 已更新到规范源内容${suffix.replace(" · Push when ready", " · 可随时写回文件夹")}`],
+    [
+      /^(.+) updated in canonical source(.*)$/,
+      (name, suffix) => `${name} 已更新到规范源内容${suffix.replace(" · Push when ready", " · 可随时写回文件夹")}`,
+    ],
     [/^(.+) linked from canonical source$/, (label) => `${label} 已从规范源内容建立链接`],
     [/^(.+) selected from preview · Selection Agent ready$/, (label) => `已从预览选择 ${label} · 选区 Agent 已就绪`],
     [/^Restored checkpoint · (.+)$/, (label) => `已恢复恢复点 · ${label}`],
-    [/^Connected (.+) · wrote (\d+) readable source files$/, (folder, value) => `已连接 ${folder} · 写入 ${value} 个可读源文件`],
-    [/^Pulled (\d+) source files from (.+) · (.+)$/, (value, folder, source) => `已从 ${folder} 读取 ${value} 个源文件 · ${source}`],
-    [/^Pushed (\d+) source files and rune\.workspace\.json to (.+)$/, (value, folder) => `已将 ${value} 个源文件和 rune.workspace.json 写回 ${folder}`],
+    [
+      /^Connected (.+) · wrote (\d+) readable source files$/,
+      (folder, value) => `已连接 ${folder} · 写入 ${value} 个可读源文件`,
+    ],
+    [
+      /^Pulled (\d+) source files from (.+) · (.+)$/,
+      (value, folder, source) => `已从 ${folder} 读取 ${value} 个源文件 · ${source}`,
+    ],
+    [
+      /^Pushed (\d+) source files and rune\.workspace\.json to (.+)$/,
+      (value, folder) => `已将 ${value} 个源文件和 rune.workspace.json 写回 ${folder}`,
+    ],
     [/^Reading (.+) locally…$/, (target) => `正在本地读取 ${target}…`],
     [/^Import cancelled — (.+) did not change the workspace$/, (name) => `已取消导入 — ${name} 未修改工作区`],
     [/^Export cancelled — (.+) was not downloaded$/, (name) => `已取消导出 — 未下载 ${name}`],
     [/^Preparing (.+) locally from (.+)…$/, (target, name) => `正在从 ${name} 本地准备 ${target}…`],
     [/^Downloaded (.+) · (.+) export$/, (name, kind) => `已下载 ${name} · ${kind} 导出`],
     [/^Verifying (.+) against its live sources…$/, (name) => `正在对照实时来源核验 ${name}…`],
-    [/^Created (.+) on this device(.*)$/, (name, suffix) => `已在此设备创建 ${name}${suffix.replace(" · Push when ready", " · 可随时写回文件夹")}`],
-    [/^(\d+) file changes? applied atomically(.*)$/, (value, suffix) => `已原子应用 ${value} 项文件修改${suffix.replace(" · Push when ready", " · 可随时写回文件夹")}`],
+    [
+      /^Created (.+) on this device(.*)$/,
+      (name, suffix) => `已在此设备创建 ${name}${suffix.replace(" · Push when ready", " · 可随时写回文件夹")}`,
+    ],
+    [
+      /^(\d+) file changes? applied atomically(.*)$/,
+      (value, suffix) => `已原子应用 ${value} 项文件修改${suffix.replace(" · Push when ready", " · 可随时写回文件夹")}`,
+    ],
   ];
   for (const [pattern, format] of patterns) {
     const match = message.match(pattern);

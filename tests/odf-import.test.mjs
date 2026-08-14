@@ -28,14 +28,29 @@ function manifest(kind, encrypted = false) {
     </manifest:manifest>`;
 }
 
-function odfPackage(kind, content, { styles = "<office:document-styles xmlns:office=\"office\" />", extra = {}, encrypted = false, compressedMimetype = false, mime = MIME[kind] } = {}) {
-  return zipSync({
-    mimetype: [strToU8(mime), { level: compressedMimetype ? 6 : 0, mtime: timestamp }],
-    "content.xml": [strToU8(content), { level: 6, mtime: timestamp }],
-    "styles.xml": [strToU8(styles), { level: 6, mtime: timestamp }],
-    "META-INF/manifest.xml": [strToU8(manifest(kind, encrypted)), { level: 6, mtime: timestamp }],
-    ...Object.fromEntries(Object.entries(extra).map(([path, value]) => [path, [strToU8(value), { level: 6, mtime: timestamp }]])),
-  }, { level: 6, mtime: timestamp });
+function odfPackage(
+  kind,
+  content,
+  {
+    styles = '<office:document-styles xmlns:office="office" />',
+    extra = {},
+    encrypted = false,
+    compressedMimetype = false,
+    mime = MIME[kind],
+  } = {},
+) {
+  return zipSync(
+    {
+      mimetype: [strToU8(mime), { level: compressedMimetype ? 6 : 0, mtime: timestamp }],
+      "content.xml": [strToU8(content), { level: 6, mtime: timestamp }],
+      "styles.xml": [strToU8(styles), { level: 6, mtime: timestamp }],
+      "META-INF/manifest.xml": [strToU8(manifest(kind, encrypted)), { level: 6, mtime: timestamp }],
+      ...Object.fromEntries(
+        Object.entries(extra).map(([path, value]) => [path, [strToU8(value), { level: 6, mtime: timestamp }]]),
+      ),
+    },
+    { level: 6, mtime: timestamp },
+  );
 }
 
 function odtFixture(options = {}) {
@@ -58,13 +73,21 @@ function odtFixture(options = {}) {
         <office:annotation><text:p>Hidden comment</text:p></office:annotation>
       </office:text></office:body>
     </office:document-content>`;
-  return odfPackage("odt", options.unsafe ? `<!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]>${content}` : content, {
-    styles,
-    encrypted: options.encrypted,
-    compressedMimetype: options.compressedMimetype,
-    mime: options.mime,
-    extra: { "Pictures/photo.png": "not-an-image", "Basic/Standard/script.xml": "<script />", "META-INF/documentsignatures.xml": "<signatures />" },
-  });
+  return odfPackage(
+    "odt",
+    options.unsafe ? `<!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]>${content}` : content,
+    {
+      styles,
+      encrypted: options.encrypted,
+      compressedMimetype: options.compressedMimetype,
+      mime: options.mime,
+      extra: {
+        "Pictures/photo.png": "not-an-image",
+        "Basic/Standard/script.xml": "<script />",
+        "META-INF/documentsignatures.xml": "<signatures />",
+      },
+    },
+  );
 }
 
 function odsFixture() {
@@ -113,8 +136,12 @@ function odpFixture({ title = "" } = {}) {
         </draw:page>
       </office:presentation></office:body>
     </office:document-content>`;
-  const meta = title ? `<?xml version="1.0" encoding="UTF-8"?><office:document-meta xmlns:office="office" xmlns:dc="dc"><office:meta><dc:title>${title}</dc:title></office:meta></office:document-meta>` : "";
-  return odfPackage("odp", content, { extra: { "Pictures/photo.png": "not-an-image", ...(meta ? { "meta.xml": meta } : {}) } });
+  const meta = title
+    ? `<?xml version="1.0" encoding="UTF-8"?><office:document-meta xmlns:office="office" xmlns:dc="dc"><office:meta><dc:title>${title}</dc:title></office:meta></office:document-meta>`
+    : "";
+  return odfPackage("odp", content, {
+    extra: { "Pictures/photo.png": "not-an-image", ...(meta ? { "meta.xml": meta } : {}) },
+  });
 }
 
 test("recognizes the three concrete OpenDocument package extensions", () => {
@@ -146,7 +173,10 @@ test("converts independent ODT text, styles, links, lists, and tables into sourc
 test("converts visible ODS sheets, typed values, cached formulas, and standard empty repeats to CSV", () => {
   const result = convertOdfFile("operating-model.ods", odsFixture());
   assert.equal(result.sourceType, "ods");
-  assert.deepEqual(result.artifacts.map((artifact) => artifact.name), ["operating-model--Revenue.csv", "operating-model--Forecast.csv"]);
+  assert.deepEqual(
+    result.artifacts.map((artifact) => artifact.name),
+    ["operating-model--Revenue.csv", "operating-model--Forecast.csv"],
+  );
   assert.match(result.artifacts[0].source, /Region,Revenue,Note\nAPAC,1840000,'=WEBSERVICE/u);
   assert.match(result.artifacts[1].source, /Date,Forecast\n2026-08-12,3/u);
   result.artifacts.forEach((artifact) => assert.deepEqual(parseDataSource(artifact.source).errors, []));
@@ -157,8 +187,14 @@ test("converts visible ODS sheets, typed values, cached formulas, and standard e
 
 test("keeps sanitized ODS sheet names and ids unique inside one import batch", () => {
   const result = convertOdfFile("model.ods", collidingOdsFixture());
-  assert.deepEqual(result.artifacts.map((artifact) => artifact.name), ["model--North-West.csv", "model--North-West-2.csv"]);
-  assert.deepEqual(result.artifacts.map((artifact) => artifact.id), ["import-model-north-west", "import-model-north-west-2"]);
+  assert.deepEqual(
+    result.artifacts.map((artifact) => artifact.name),
+    ["model--North-West.csv", "model--North-West-2.csv"],
+  );
+  assert.deepEqual(
+    result.artifacts.map((artifact) => artifact.id),
+    ["import-model-north-west", "import-model-north-west-2"],
+  );
 });
 
 test("converts independent ODP slides and tables into safe Deck Markdown", () => {
@@ -182,13 +218,34 @@ test("converts independent ODP slides and tables into safe Deck Markdown", () =>
 test("rejects oversized, malformed, compressed-MIME, mismatched, encrypted, and entity-bearing ODF packages", () => {
   assert.throws(() => convertOdfFile("large.odt", new Uint8Array(MAX_ODF_IMPORT_BYTES + 1)), /12 MB/u);
   assert.throws(() => convertOdfFile("broken.ods", new Uint8Array([0x50, 0x4b, 0, 0])), /valid OpenDocument ZIP/u);
-  assert.throws(() => convertOdfFile("compressed.odt", odtFixture({ compressedMimetype: true })), /uncompressed mimetype entry first/u);
+  assert.throws(
+    () => convertOdfFile("compressed.odt", odtFixture({ compressedMimetype: true })),
+    /uncompressed mimetype entry first/u,
+  );
   assert.throws(() => convertOdfFile("wrong.odt", odtFixture({ mime: MIME.ods })), /mimetype does not match/u);
   assert.throws(() => convertOdfFile("padded.odt", odtFixture({ mime: `${MIME.odt}\n` })), /mimetype does not match/u);
   assert.throws(() => convertOdfFile("encrypted.odt", odtFixture({ encrypted: true })), /Encrypted OpenDocument/u);
   assert.throws(() => convertOdfFile("unsafe.odt", odtFixture({ unsafe: true })), /blocked XML declaration/u);
-  assert.throws(() => convertOdfFile("traversal.odt", odfPackage("odt", "<office:document-content xmlns:office=\"office\" />", { extra: { "../outside.xml": "unsafe" } })), /unsafe part path/u);
-  assert.throws(() => convertOdfFile("absolute.odt", odfPackage("odt", "<office:document-content xmlns:office=\"office\" />", { extra: { "C:/outside.xml": "unsafe" } })), /unsafe part path/u);
+  assert.throws(
+    () =>
+      convertOdfFile(
+        "traversal.odt",
+        odfPackage("odt", '<office:document-content xmlns:office="office" />', {
+          extra: { "../outside.xml": "unsafe" },
+        }),
+      ),
+    /unsafe part path/u,
+  );
+  assert.throws(
+    () =>
+      convertOdfFile(
+        "absolute.odt",
+        odfPackage("odt", '<office:document-content xmlns:office="office" />', {
+          extra: { "C:/outside.xml": "unsafe" },
+        }),
+      ),
+    /unsafe part path/u,
+  );
 });
 
 test("asset-aware OpenDocument import rejects corrupt pictures without leaking placeholders", async () => {

@@ -49,10 +49,7 @@ export type RuneTaskModelRequest =
   | { taskId: "operating-review"; input: OperatingReviewInput }
   | { taskId: "document-briefing"; input: DocumentBriefingInput };
 
-export type RuneTaskModelFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
+export type RuneTaskModelFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export type RuneTaskModelOptions = {
   mode: RuneModelMode;
@@ -110,7 +107,10 @@ async function readBoundedTaskModelJson(response: Response): Promise<RemoteTaskM
 
 function metadataText(value: unknown, maximumCharacters: number) {
   if (typeof value !== "string") return "";
-  const normalized = value.normalize("NFKC").replace(/[\u0000-\u001f\u007f]+/gu, " ").trim();
+  const normalized = value
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]+/gu, " ")
+    .trim();
   return [...normalized].slice(0, maximumCharacters).join("");
 }
 
@@ -138,13 +138,13 @@ export async function prepareRuneTaskModelAssistance(
 ): Promise<OperatingReviewModelAssistance | DocumentBriefingModelAssistance> {
   if (options.mode === "local") return localAssistance(request.taskId, "local");
 
-  const sourceId = request.taskId === "operating-review"
-    ? request.input.dataArtifactId
-    : request.input.sourceArtifactId;
+  const sourceId =
+    request.taskId === "operating-review" ? request.input.dataArtifactId : request.input.sourceArtifactId;
   const sourceKind = request.taskId === "operating-review" ? "data" : "document";
-  const sourceLimit = request.taskId === "operating-review"
-    ? MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS
-    : MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS;
+  const sourceLimit =
+    request.taskId === "operating-review"
+      ? MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS
+      : MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS;
   const source = artifacts.find((artifact) => artifact.id === sourceId && artifact.kind === sourceKind);
   if (!source) return localAssistance(request.taskId, "unavailable");
   if (source.source.length > sourceLimit) return localAssistance(request.taskId, "source-too-large");
@@ -159,9 +159,7 @@ export async function prepareRuneTaskModelAssistance(
     if (!response.ok) return localAssistance(request.taskId, "unavailable");
     const payload = await readBoundedTaskModelJson(response);
     const provider = metadataText(payload.provider, 40) || "model";
-    const modelLabel = metadataText(payload.profileName, 120)
-      || metadataText(payload.model, 120)
-      || provider;
+    const modelLabel = metadataText(payload.profileName, 120) || metadataText(payload.model, 120) || provider;
     const usage = normalizeRuneTaskModelUsage(payload.usage);
 
     if (request.taskId === "operating-review") {

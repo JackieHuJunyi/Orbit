@@ -62,7 +62,10 @@ test("moves an operating-review task through explicit source lifecycle phases", 
   assert.deepEqual(continued.errors, []);
   assert.equal(continued.session?.phase, "configuring");
   assert.equal(continued.preferredArtifactId, importedData.id);
-  assert.equal(defaultArtifacts.some((artifact) => artifact.id === importedData.id), false);
+  assert.equal(
+    defaultArtifacts.some((artifact) => artifact.id === importedData.id),
+    false,
+  );
 });
 
 test("rejects non-Data task imports before the import can be applied", () => {
@@ -110,9 +113,9 @@ test("opens a registered task from an existing compatible artifact without an im
 test("fails closed when workspace or reviewed import identity changes between phases", () => {
   const review = reviewFor();
   const started = startRuneTaskSession("operating-review", defaultArtifacts);
-  const changed = defaultArtifacts.map((artifact, index) => index === 0
-    ? { ...artifact, source: `${artifact.source}\nChanged.` }
-    : artifact);
+  const changed = defaultArtifacts.map((artifact, index) =>
+    index === 0 ? { ...artifact, source: `${artifact.source}\nChanged.` } : artifact,
+  );
   const stale = bindRuneTaskImportReview(started, changed, review);
   assert.equal(stale.session, null);
   assert.match(stale.errors.join(" "), /workspace changed/);

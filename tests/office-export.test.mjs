@@ -23,8 +23,11 @@ function packageParts(bytes) {
   Object.entries(parts).forEach(([path, data]) => {
     if (!/\.(?:xml|rels)$/.test(path)) return;
     const issues = [];
-    const document = new DOMParser({ onError(_level, message) { issues.push(message); } })
-      .parseFromString(strFromU8(data), "application/xml");
+    const document = new DOMParser({
+      onError(_level, message) {
+        issues.push(message);
+      },
+    }).parseFromString(strFromU8(data), "application/xml");
     assert.ok(document.documentElement, `${path} needs an XML root`);
     assert.deepEqual(issues, [], `${path} should be well-formed XML`);
   });
@@ -55,9 +58,20 @@ function assertPptSlideBounds(parts) {
     });
 }
 
-const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const onePixelPng = new Uint8Array(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
 const runeImageId = "a".repeat(64);
-const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+const runeImageAsset = {
+  id: runeImageId,
+  name: "proof.png",
+  mimeType: "image/png",
+  size: onePixelPng.length,
+  bytes: onePixelPng,
+};
 
 test("embeds and reimports verified Rune local images through portable DOCX media", async () => {
   const artifact = {
@@ -82,7 +96,13 @@ test("embeds and reimports verified Rune local images through portable DOCX medi
 });
 
 test("fails DOCX export closed when a referenced Rune image is missing", () => {
-  const artifact = { id: "missing", name: "missing.md", kind: "document", language: "Markdown", source: `![Missing](rune-asset:sha256:${runeImageId})` };
+  const artifact = {
+    id: "missing",
+    name: "missing.md",
+    kind: "document",
+    language: "Markdown",
+    source: `![Missing](rune-asset:sha256:${runeImageId})`,
+  };
   assert.throws(() => exportOfficeArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
 
@@ -153,8 +173,9 @@ This has **bold text**, _emphasis_, ~~old copy~~, and a [source](https://example
   assert.deepEqual(first.bytes, second.bytes);
   assert.match(first.warnings.join(" "), /images are not embedded/i);
   const parts = packageParts(first.bytes);
-  ["[Content_Types].xml", "_rels/.rels", "word/document.xml", "word/styles.xml", "word/numbering.xml"]
-    .forEach((path) => assert.ok(parts[path], `${path} should exist`));
+  ["[Content_Types].xml", "_rels/.rels", "word/document.xml", "word/styles.xml", "word/numbering.xml"].forEach((path) =>
+    assert.ok(parts[path], `${path} should exist`),
+  );
 
   const imported = convertOfficeFile(first.fileName, first.bytes);
   const roundTrip = imported.artifacts[0];
@@ -182,8 +203,9 @@ test("exports CSV values as deterministic formula-safe XLSX and imports them bac
   assert.deepEqual(first.bytes, second.bytes);
   assert.match(first.warnings.join(" "), /typed values only/i);
   const parts = packageParts(first.bytes);
-  ["[Content_Types].xml", "xl/workbook.xml", "xl/worksheets/sheet1.xml", "xl/styles.xml"]
-    .forEach((path) => assert.ok(parts[path], `${path} should exist`));
+  ["[Content_Types].xml", "xl/workbook.xml", "xl/worksheets/sheet1.xml", "xl/styles.xml"].forEach((path) =>
+    assert.ok(parts[path], `${path} should exist`),
+  );
   const worksheet = strFromU8(parts["xl/worksheets/sheet1.xml"]);
   assert.doesNotMatch(worksheet, /<f[\s>]/);
   assert.match(worksheet, /t="inlineStr"/);
@@ -256,10 +278,7 @@ test("limits semantic Office export to supported bounded artifacts", () => {
     () => exportOfficeArtifact({ ...document, source: "x".repeat(MAX_OFFICE_EXPORT_SOURCE_CHARS + 1) }),
     /2,000,000 source characters/,
   );
-  assert.throws(
-    () => exportOfficeArtifact({ ...document, source: "x".repeat(200_001) }),
-    /200,000 source characters/,
-  );
+  assert.throws(() => exportOfficeArtifact({ ...document, source: "x".repeat(200_001) }), /200,000 source characters/);
 });
 
 test("exports compiled workspace metrics instead of canonical template tokens", () => {
@@ -376,8 +395,12 @@ lang: en
 `,
   };
   const workspace = [document, data, chart, deck];
-  const docxXml = Object.values(packageParts(exportOfficeArtifact(document, workspace).bytes)).map((bytes) => strFromU8(bytes)).join("\n");
-  const pptxXml = Object.values(packageParts(exportOfficeArtifact(deck, workspace).bytes)).map((bytes) => strFromU8(bytes)).join("\n");
+  const docxXml = Object.values(packageParts(exportOfficeArtifact(document, workspace).bytes))
+    .map((bytes) => strFromU8(bytes))
+    .join("\n");
+  const pptxXml = Object.values(packageParts(exportOfficeArtifact(deck, workspace).bytes))
+    .map((bytes) => strFromU8(bytes))
+    .join("\n");
   assert.doesNotMatch(docxXml, /<script>/i);
   assert.doesNotMatch(pptxXml, /<script>/i);
   assert.match(pptxXml, /&lt;script&gt;alert &amp; review&lt;\/script&gt;/);
@@ -398,7 +421,19 @@ test("keeps a 20-mark chart snapshot inside a content slide", () => {
     name: "full-chart.chart.json",
     kind: "chart",
     language: "Chart JSON",
-    source: JSON.stringify({ version: 1, title: "Twenty marks", description: "Bounded layout proof", source: data.id, mark: "bar", category: "Region", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 20 }),
+    source: JSON.stringify({
+      version: 1,
+      title: "Twenty marks",
+      description: "Bounded layout proof",
+      source: data.id,
+      mark: "bar",
+      category: "Region",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 20,
+    }),
   };
   const deck = {
     id: "full-chart-deck",
@@ -430,15 +465,39 @@ All twenty marks stay inside the slide canvas.
 });
 
 test("freezes line charts as semantic DOCX trends and native PPTX vector lines", () => {
-  const data = { id: "trend-data", name: "trend.csv", kind: "data", language: "CSV / JSON", source: "Month,Value\nJan,10\nFeb,30\nMar,20\n" };
+  const data = {
+    id: "trend-data",
+    name: "trend.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Value\nJan,10\nFeb,30\nMar,20\n",
+  };
   const chart = {
     id: "trend-chart",
     name: "trend.chart.json",
     kind: "chart",
     language: "Chart JSON",
-    source: JSON.stringify({ version: 1, title: "Monthly trend", description: "Ordered source values", source: data.id, mark: "line", category: "Month", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 8 }),
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly trend",
+      description: "Ordered source values",
+      source: data.id,
+      mark: "line",
+      category: "Month",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
   };
-  const document = { id: "trend-report", name: "trend.md", kind: "document", language: "Markdown", source: '# Trend\n\n{{ chart("trend-chart") }}\n' };
+  const document = {
+    id: "trend-report",
+    name: "trend.md",
+    kind: "document",
+    language: "Markdown",
+    source: '# Trend\n\n{{ chart("trend-chart") }}\n',
+  };
   const deck = {
     id: "trend-deck",
     name: "trend.deck.md",

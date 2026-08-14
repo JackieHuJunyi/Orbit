@@ -2,21 +2,28 @@ import { z } from "zod";
 import { extractRuneAssetIds, parseRuneMarkdownImage } from "./local-assets.ts";
 import { PORTABLE_SOURCE_REVISION_PATTERN } from "./source-revision.ts";
 
-const DeckFrontmatterSchema = z.object({
-  version: z.literal("1").transform(() => 1 as const),
-  title: z.string().trim().min(1).max(120),
-  theme: z.enum(["rune", "rune-dark"]),
-  ratio: z.literal("16:9"),
-  lang: z.enum(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]).default("en"),
-  origin: z.string().trim().min(1).max(128).optional(),
-  origin_revision: z.string().regex(PORTABLE_SOURCE_REVISION_PATTERN).optional(),
-  audience: z.enum(["leadership", "team", "customer"]).optional(),
-  purpose: z.string().trim().min(1).max(180).optional(),
-}).strict().superRefine((value, context) => {
-  if (value.origin_revision && !value.origin) {
-    context.addIssue({ code: "custom", path: ["origin_revision"], message: "origin_revision requires an exact origin." });
-  }
-});
+const DeckFrontmatterSchema = z
+  .object({
+    version: z.literal("1").transform(() => 1 as const),
+    title: z.string().trim().min(1).max(120),
+    theme: z.enum(["rune", "rune-dark"]),
+    ratio: z.literal("16:9"),
+    lang: z.enum(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]).default("en"),
+    origin: z.string().trim().min(1).max(128).optional(),
+    origin_revision: z.string().regex(PORTABLE_SOURCE_REVISION_PATTERN).optional(),
+    audience: z.enum(["leadership", "team", "customer"]).optional(),
+    purpose: z.string().trim().min(1).max(180).optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.origin_revision && !value.origin) {
+      context.addIssue({
+        code: "custom",
+        path: ["origin_revision"],
+        message: "origin_revision requires an exact origin.",
+      });
+    }
+  });
 
 const DeckLayoutSchema = z.enum(["cover", "content", "metrics", "split", "conclusion"]);
 
@@ -68,7 +75,8 @@ function formatZodIssues(error: z.ZodError) {
 
 function parseFrontmatter(source: string): { frontmatter?: DeckFrontmatter; body: string; errors: string[] } {
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
-  if (lines[0]?.trim() !== "---") return { body: source, errors: ["Deck Markdown must start with frontmatter delimited by ---."] };
+  if (lines[0]?.trim() !== "---")
+    return { body: source, errors: ["Deck Markdown must start with frontmatter delimited by ---."] };
   const closingIndex = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
   if (closingIndex < 0) return { body: source, errors: ["Deck frontmatter is missing its closing --- delimiter."] };
 
@@ -117,7 +125,8 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
     body = body.slice(match[0].length);
   }
   if (!body.trim()) return { errors: [`Slide ${index + 1} is empty.`] };
-  if (/(^|[^\\])<\/?[a-z][^>]*>/i.test(body)) return { errors: [`Slide ${index + 1} contains raw HTML; use Deck Markdown instead.`] };
+  if (/(^|[^\\])<\/?[a-z][^>]*>/i.test(body))
+    return { errors: [`Slide ${index + 1} contains raw HTML; use Deck Markdown instead.`] };
   if (!/^#{1,2}\s+\S/m.test(body)) return { errors: [`Slide ${index + 1} needs a # or ## heading.`] };
   const lines = body.split("\n");
   const images = lines.flatMap((line) => {
@@ -125,19 +134,26 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
     return image ? [image] : [];
   });
   const runeReferences = extractRuneAssetIds(body);
-  const unsupportedImage = lines.find((line) => /!\[[^\]\n]*\]\([^)\n]+\)/u.test(line) && !parseRuneMarkdownImage(line));
-  if (unsupportedImage) return { errors: [`Slide ${index + 1} images must use one standalone Rune local-image reference.`] };
+  const unsupportedImage = lines.find(
+    (line) => /!\[[^\]\n]*\]\([^)\n]+\)/u.test(line) && !parseRuneMarkdownImage(line),
+  );
+  if (unsupportedImage)
+    return { errors: [`Slide ${index + 1} images must use one standalone Rune local-image reference.`] };
   if (runeReferences.some((id) => !images.some((image) => image.id === id))) {
     return { errors: [`Slide ${index + 1} must place each Rune local-image reference on its own line.`] };
   }
   if (images.length > 1) return { errors: [`Slide ${index + 1} supports one primary image.`] };
-  if (images.length && layout === "metrics") return { errors: [`Slide ${index + 1} uses the metrics layout, which does not accept an image.`] };
+  if (images.length && layout === "metrics")
+    return { errors: [`Slide ${index + 1} uses the metrics layout, which does not accept an image.`] };
   if (images.length && chartTokenPattern.test(body)) {
     chartTokenPattern.lastIndex = 0;
     return { errors: [`Slide ${index + 1} must choose either one image or one chart as its primary visual.`] };
   }
   chartTokenPattern.lastIndex = 0;
-  if (images.length && lines.some((line, lineIndex) => line.includes("|") && isTableDivider(lines[lineIndex + 1] ?? ""))) {
+  if (
+    images.length &&
+    lines.some((line, lineIndex) => line.includes("|") && isTableDivider(lines[lineIndex + 1] ?? ""))
+  ) {
     return { errors: [`Slide ${index + 1} must choose either one image or one table as its primary visual.`] };
   }
   return { slide: { layout, eyebrow, source: body }, errors: [] };
@@ -148,9 +164,13 @@ export function parseDeckSource(source: string): DeckParseResult {
   if (source.length > MAX_DECK_SOURCE_CHARS) return { errors: ["Deck Markdown exceeds the 120,000-character limit."] };
   const frontmatter = parseFrontmatter(source);
   if (!frontmatter.frontmatter) return { errors: frontmatter.errors };
-  const slideSources = frontmatter.body.split(/^\s*---\s*$/m).map((slide) => slide.trim()).filter(Boolean);
+  const slideSources = frontmatter.body
+    .split(/^\s*---\s*$/m)
+    .map((slide) => slide.trim())
+    .filter(Boolean);
   if (!slideSources.length) return { errors: ["Add at least one slide after the frontmatter."] };
-  if (slideSources.length > MAX_DECK_SLIDES) return { errors: [`Deck Markdown is limited to ${MAX_DECK_SLIDES} slides.`] };
+  if (slideSources.length > MAX_DECK_SLIDES)
+    return { errors: [`Deck Markdown is limited to ${MAX_DECK_SLIDES} slides.`] };
   const slides: DeckSlide[] = [];
   const errors: string[] = [];
   slideSources.forEach((slideSource, index) => {
@@ -187,7 +207,12 @@ function compileInline(source: string) {
 }
 
 function tableCells(line: string) {
-  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
 }
 
 function isTableDivider(line: string) {
@@ -197,7 +222,10 @@ function isTableDivider(line: string) {
 
 function compileTable(lines: string[], layout: DeckLayout) {
   const headers = tableCells(lines[0]);
-  const rows = lines.slice(2).map(tableCells).filter((row) => row.length === headers.length);
+  const rows = lines
+    .slice(2)
+    .map(tableCells)
+    .filter((row) => row.length === headers.length);
   if (layout === "metrics" && rows[0]) {
     return `<div class="metric-grid">${headers.map((header, index) => `<div class="metric"><strong>${compileInline(rows[0][index] ?? "")}</strong><span>${compileInline(header)}</span></div>`).join("")}</div>`;
   }
@@ -206,7 +234,9 @@ function compileTable(lines: string[], layout: DeckLayout) {
 
 function safeDeckImageUrl(value: string | null) {
   if (!value) return null;
-  return value.startsWith("blob:") || /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(value) ? value : null;
+  return value.startsWith("blob:") || /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(value)
+    ? value
+    : null;
 }
 
 function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileOptions) {
@@ -224,9 +254,11 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
       const reference = `rune-asset:sha256:${image.id}`;
       const url = safeDeckImageUrl(options.resolveLocalAssetUrl?.(reference) ?? null);
       const alt = escapeHtml(image.alt || "Rune image");
-      blocks.push(url
-        ? `<figure class="deck-image"><img src="${escapeHtml(url)}" alt="${alt}" decoding="async" /></figure>`
-        : `<figure class="deck-image missing" data-rune-asset-state="missing" aria-label="${alt}"><span>Local image unavailable</span><strong>${alt}</strong></figure>`);
+      blocks.push(
+        url
+          ? `<figure class="deck-image"><img src="${escapeHtml(url)}" alt="${alt}" decoding="async" /></figure>`
+          : `<figure class="deck-image missing" data-rune-asset-state="missing" aria-label="${alt}"><span>Local image unavailable</span><strong>${alt}</strong></figure>`,
+      );
       index += 1;
       continue;
     }
@@ -266,7 +298,13 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
     index += 1;
     while (index < lines.length) {
       const next = lines[index].trim();
-      if (!next || /^(#{1,2})\s+/.test(next) || /^[-*]\s+/.test(next) || parseRuneMarkdownImage(next) || chartTokenPattern.test(next)) {
+      if (
+        !next ||
+        /^(#{1,2})\s+/.test(next) ||
+        /^[-*]\s+/.test(next) ||
+        parseRuneMarkdownImage(next) ||
+        chartTokenPattern.test(next)
+      ) {
         chartTokenPattern.lastIndex = 0;
         break;
       }

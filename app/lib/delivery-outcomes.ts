@@ -33,7 +33,20 @@ export type OperatingReviewDeliveryRun = {
 };
 
 const DOWNLOAD_TARGETS = new Set<OperatingReviewDeliveryTarget>([
-  "csv", "json", "doc", "ppt", "docx", "xlsx", "pptx", "odt", "ods", "odp", "html", "pdf", "md", "deck-md",
+  "csv",
+  "json",
+  "doc",
+  "ppt",
+  "docx",
+  "xlsx",
+  "pptx",
+  "odt",
+  "ods",
+  "odp",
+  "html",
+  "pdf",
+  "md",
+  "deck-md",
 ]);
 const RATINGS = new Set<OperatingReviewDeliveryRating>(["ready", "minor-edits", "not-ready"]);
 const SHA256 = /^[0-9a-f]{64}$/u;
@@ -74,16 +87,35 @@ export function normalizeOperatingReviewDeliveryOutcomes(
     const id = boundedString(candidate.id, 380);
     const confirmedAt = boundedString(candidate.confirmedAt, 40);
     const method = candidate.method === "download" || candidate.method === "folder" ? candidate.method : undefined;
-    const target = typeof candidate.target === "string" ? candidate.target as OperatingReviewDeliveryTarget : undefined;
-    const rating = typeof candidate.rating === "string" ? candidate.rating as OperatingReviewDeliveryRating : undefined;
+    const target =
+      typeof candidate.target === "string" ? (candidate.target as OperatingReviewDeliveryTarget) : undefined;
+    const rating =
+      typeof candidate.rating === "string" ? (candidate.rating as OperatingReviewDeliveryRating) : undefined;
     const taskDurationMs = boundedInteger(candidate.taskDurationMs, MAX_OPERATING_REVIEW_DELIVERY_MS);
-    const targetMatchesMethod = method === "folder" ? target === "folder" : method === "download" && DOWNLOAD_TARGETS.has(target as OperatingReviewDeliveryTarget);
-    if (candidate.version !== 1 || !id || ids.has(id) || !runId || !artifactId || !confirmedAt
-      || !appliedRunIds.has(runId) || !deliverableArtifactIds.has(artifactId)
-      || id !== operatingReviewDeliveryId(runId, artifactId)
-      || Number.isNaN(Date.parse(confirmedAt)) || !method || !target || !targetMatchesMethod
-      || !rating || !RATINGS.has(rating) || !SHA256.test(candidate.sourceSha256 ?? "")
-      || taskDurationMs == null) continue;
+    const targetMatchesMethod =
+      method === "folder"
+        ? target === "folder"
+        : method === "download" && DOWNLOAD_TARGETS.has(target as OperatingReviewDeliveryTarget);
+    if (
+      candidate.version !== 1 ||
+      !id ||
+      ids.has(id) ||
+      !runId ||
+      !artifactId ||
+      !confirmedAt ||
+      !appliedRunIds.has(runId) ||
+      !deliverableArtifactIds.has(artifactId) ||
+      id !== operatingReviewDeliveryId(runId, artifactId) ||
+      Number.isNaN(Date.parse(confirmedAt)) ||
+      !method ||
+      !target ||
+      !targetMatchesMethod ||
+      !rating ||
+      !RATINGS.has(rating) ||
+      !SHA256.test(candidate.sourceSha256 ?? "") ||
+      taskDurationMs == null
+    )
+      continue;
     ids.add(id);
     outcomes.push({
       version: 1,
@@ -114,24 +146,30 @@ export async function createOperatingReviewDeliveryOutcome(input: {
   if (input.run.status !== "applied") throw new Error("Only an applied task run can become a confirmed deliverable.");
   const confirmedAt = input.now ?? new Date();
   const completedAt = Date.parse(input.run.completedAt);
-  if (Number.isNaN(completedAt) || Number.isNaN(confirmedAt.getTime())) throw new Error("The task run has no valid completion time.");
+  if (Number.isNaN(completedAt) || Number.isNaN(confirmedAt.getTime()))
+    throw new Error("The task run has no valid completion time.");
   const delay = Math.max(0, confirmedAt.getTime() - completedAt);
   const taskDurationMs = input.run.durationMs + delay;
-  const [outcome] = normalizeOperatingReviewDeliveryOutcomes([{
-    version: 1,
-    id: operatingReviewDeliveryId(input.run.id, input.artifactId),
-    confirmedAt: confirmedAt.toISOString(),
-    runId: input.run.id,
-    artifactId: input.artifactId,
-    method: input.method,
-    target: input.target,
-    rating: input.rating,
-    sourceSha256: await sourceSha256(input.source),
-    taskDurationMs,
-  }], {
-    appliedRunIds: [input.run.id],
-    deliverableArtifactIds: [input.artifactId],
-  });
+  const [outcome] = normalizeOperatingReviewDeliveryOutcomes(
+    [
+      {
+        version: 1,
+        id: operatingReviewDeliveryId(input.run.id, input.artifactId),
+        confirmedAt: confirmedAt.toISOString(),
+        runId: input.run.id,
+        artifactId: input.artifactId,
+        method: input.method,
+        target: input.target,
+        rating: input.rating,
+        sourceSha256: await sourceSha256(input.source),
+        taskDurationMs,
+      },
+    ],
+    {
+      appliedRunIds: [input.run.id],
+      deliverableArtifactIds: [input.artifactId],
+    },
+  );
   if (!outcome) throw new Error("The delivery confirmation is outside Rune's bounded device record.");
   return outcome;
 }

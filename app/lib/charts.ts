@@ -1,32 +1,27 @@
 import { z } from "zod";
-import {
-  inferQueryOutputColumns,
-  validateReadQuery,
-} from "./sql.ts";
-import {
-  workspaceQuerySnapshotIsCurrent,
-  type WorkspaceQuerySnapshot,
-} from "./query-snapshot.ts";
+import { inferQueryOutputColumns, validateReadQuery } from "./sql.ts";
+import { workspaceQuerySnapshotIsCurrent, type WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
-import {
-  formatCompactCurrency,
-  formatCompactNumber,
-  formatFixedPercent,
-} from "./number-format.ts";
+import { formatCompactCurrency, formatCompactNumber, formatFixedPercent } from "./number-format.ts";
 
-export const ChartSpecSchema = z.object({
-  version: z.literal(1),
-  title: z.string().trim().min(1).max(120),
-  description: z.string().trim().max(240).default(""),
-  source: z.string().trim().min(1).max(120),
-  mark: z.enum(["bar", "line"]),
-  category: z.string().trim().min(1).max(120),
-  value: z.string().trim().min(1).max(120),
-  sort: z.enum(["source", "ascending", "descending"]).default("descending"),
-  format: z.enum(["currency", "number", "percent"]).default("number"),
-  color: z.string().regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex color.").default("#ff5c35"),
-  maxItems: z.number().int().min(1).max(20).default(8),
-}).strict();
+export const ChartSpecSchema = z
+  .object({
+    version: z.literal(1),
+    title: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(240).default(""),
+    source: z.string().trim().min(1).max(120),
+    mark: z.enum(["bar", "line"]),
+    category: z.string().trim().min(1).max(120),
+    value: z.string().trim().min(1).max(120),
+    sort: z.enum(["source", "ascending", "descending"]).default("descending"),
+    format: z.enum(["currency", "number", "percent"]).default("number"),
+    color: z
+      .string()
+      .regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex color.")
+      .default("#ff5c35"),
+    maxItems: z.number().int().min(1).max(20).default(8),
+  })
+  .strict();
 
 export type ChartSpec = z.infer<typeof ChartSpecSchema>;
 
@@ -172,17 +167,19 @@ export function resolveChartModel(
     rows = snapshot.result.rows;
     provenanceFor = (rowIndex, columnIndex) => {
       const lineage = snapshot.result.cellLineage[rowIndex]?.[columnIndex];
-      return lineage ? {
-        artifactId: snapshot.dataArtifactId,
-        sourceRowIndex: lineage.sourceRowIndex,
-        sourceColumn: lineage.sourceColumn,
-      } : null;
+      return lineage
+        ? {
+            artifactId: snapshot.dataArtifactId,
+            sourceRowIndex: lineage.sourceRowIndex,
+            sourceColumn: lineage.sourceColumn,
+          }
+        : null;
     };
   }
 
   const errors: string[] = [];
-  const categoryIndices = columns.flatMap((column, index) => column === spec.category ? [index] : []);
-  const valueIndices = columns.flatMap((column, index) => column === spec.value ? [index] : []);
+  const categoryIndices = columns.flatMap((column, index) => (column === spec.category ? [index] : []));
+  const valueIndices = columns.flatMap((column, index) => (column === spec.value ? [index] : []));
   if (!categoryIndices.length) errors.push(`Category column not found: ${spec.category}`);
   if (categoryIndices.length > 1) errors.push(`Category column is ambiguous: ${spec.category}`);
   if (!valueIndices.length) errors.push(`Value column not found: ${spec.value}`);
@@ -203,13 +200,14 @@ export function resolveChartModel(
     const value = toFiniteNumber(row[valueIndex]);
     if (!label) errors.push(`Row ${index + 1} has an empty ${spec.category} value.`);
     if (value == null) errors.push(`Row ${index + 1} has a non-numeric ${spec.value} value.`);
-    if (label && value != null) chartRows.push({
-      label,
-      value,
-      sourceRowIndex: index,
-      categoryProvenance: provenanceFor(index, categoryIndex, spec.category),
-      valueProvenance: provenanceFor(index, valueIndex, spec.value),
-    });
+    if (label && value != null)
+      chartRows.push({
+        label,
+        value,
+        sourceRowIndex: index,
+        categoryProvenance: provenanceFor(index, categoryIndex, spec.category),
+        valueProvenance: provenanceFor(index, valueIndex, spec.value),
+      });
   });
   if (errors.length) return { errors };
   if (!chartRows.length) return { errors: ["The chart data source has no rows."] };
@@ -273,15 +271,13 @@ export function validateChartSourceBinding(
   const output = inferQueryOutputColumns(sourceArtifact.source, parsedData.columns);
   if (output.errors.length) return output.errors.map((error) => `Query source: ${error}`);
   const errors: string[] = [];
-  if (!output.columns.includes(spec.category)) errors.push(`Category column not found in Query output: ${spec.category}`);
+  if (!output.columns.includes(spec.category))
+    errors.push(`Category column not found in Query output: ${spec.category}`);
   if (!output.columns.includes(spec.value)) errors.push(`Value column not found in Query output: ${spec.value}`);
   return errors;
 }
 
-export function chartQuerySourceIdsForArtifact(
-  artifact: ChartArtifactLike,
-  artifacts: ChartArtifactLike[],
-) {
+export function chartQuerySourceIdsForArtifact(artifact: ChartArtifactLike, artifacts: ChartArtifactLike[]) {
   const chartIds = artifact.kind === "chart" ? [artifact.id] : findChartReferences(artifact.source);
   const queryIds = new Set<string>();
   chartIds.forEach((chartId) => {
@@ -312,7 +308,8 @@ export function tokenizeChartReferences(source: string): ChartSourcePart[] {
     parts.push({ type: "chart", value: match[1], start: index, end });
     cursor = end;
   }
-  if (cursor < source.length) parts.push({ type: "source", value: source.slice(cursor), start: cursor, end: source.length });
+  if (cursor < source.length)
+    parts.push({ type: "source", value: source.slice(cursor), start: cursor, end: source.length });
   return parts.length ? parts : [{ type: "source", value: source, start: 0, end: source.length }];
 }
 
@@ -328,15 +325,21 @@ function escapeHtml(value: string) {
 export function renderChartModelHtml(model: ChartModel): string {
   if (model.spec.mark === "line") {
     const points = chartLinePoints(model);
-    const plotPoints = points.map((point) => (
-      `${(50 + point.x * 900).toFixed(2)},${(24 + point.y * 172).toFixed(2)}`
-    )).join(" ");
-    const circles = points.map((point) => {
-      const x = (50 + point.x * 900).toFixed(2);
-      const y = (24 + point.y * 172).toFixed(2);
-      return `<circle cx="${x}" cy="${y}" r="7"><title>${escapeHtml(`${point.datum.label}: ${point.datum.formatted}`)}</title></circle>`;
-    }).join("");
-    const labels = model.data.map((datum) => `<div><span>${escapeHtml(datum.label)}</span><strong>${escapeHtml(datum.formatted)}</strong></div>`).join("");
+    const plotPoints = points
+      .map((point) => `${(50 + point.x * 900).toFixed(2)},${(24 + point.y * 172).toFixed(2)}`)
+      .join(" ");
+    const circles = points
+      .map((point) => {
+        const x = (50 + point.x * 900).toFixed(2);
+        const y = (24 + point.y * 172).toFixed(2);
+        return `<circle cx="${x}" cy="${y}" r="7"><title>${escapeHtml(`${point.datum.label}: ${point.datum.formatted}`)}</title></circle>`;
+      })
+      .join("");
+    const labels = model.data
+      .map(
+        (datum) => `<div><span>${escapeHtml(datum.label)}</span><strong>${escapeHtml(datum.formatted)}</strong></div>`,
+      )
+      .join("");
     return `<figure class="rune-embedded-chart rune-line-chart" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
   <style>
     .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-line-plot{display:block;width:100%;height:auto;overflow:visible}.rune-line-grid line{stroke:rgba(98,112,104,.16);stroke-width:1}.rune-line-series{fill:none;stroke:var(--rune-chart-accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.rune-line-points circle{fill:#fff;stroke:var(--rune-chart-accent);stroke-width:5;vector-effect:non-scaling-stroke}.rune-line-labels{display:grid;grid-template-columns:repeat(var(--rune-line-count),minmax(0,1fr));gap:6px;margin-top:4px}.rune-line-labels div{display:grid;gap:2px;min-width:0;text-align:center}.rune-line-labels span{overflow:hidden;color:#627068;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.rune-line-labels strong{color:#18211c;font-size:10px;font-variant-numeric:tabular-nums}
@@ -346,11 +349,15 @@ export function renderChartModelHtml(model: ChartModel): string {
   <div class="rune-line-labels" style="--rune-line-count:${model.data.length}">${labels}</div>
 </figure>`;
   }
-  const rows = model.data.map((datum) => `<div class="rune-chart-row">
+  const rows = model.data
+    .map(
+      (datum) => `<div class="rune-chart-row">
     <span>${escapeHtml(datum.label)}</span>
     <div class="rune-chart-track"><i style="width:${(datum.ratio * 100).toFixed(2)}%"></i></div>
     <strong>${escapeHtml(datum.formatted)}</strong>
-  </div>`).join("\n");
+  </div>`,
+    )
+    .join("\n");
   return `<figure class="rune-embedded-chart" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
   <style>
     .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-chart-rows{display:grid;gap:10px}.rune-chart-row{display:grid;grid-template-columns:minmax(82px,1fr) minmax(100px,3fr) auto;align-items:center;gap:10px;color:#627068;font-size:11px}.rune-chart-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rune-chart-row>strong{color:#18211c;font-size:11px;font-variant-numeric:tabular-nums}.rune-chart-track{height:9px;overflow:hidden;border-radius:999px;background:rgba(98,112,104,.16)}.rune-chart-track i{display:block;height:100%;border-radius:inherit;background:var(--rune-chart-accent)}

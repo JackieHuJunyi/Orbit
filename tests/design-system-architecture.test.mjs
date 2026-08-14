@@ -17,9 +17,9 @@ test("loads the modular design system in one explicit responsibility order", asy
 });
 
 test("keeps the authoritative layer scale in tokens and consumes semantic layers elsewhere", async () => {
-  const [tokens, ...responsibilityStyles] = await Promise.all(modules.map((name) => (
-    readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8")
-  )));
+  const [tokens, ...responsibilityStyles] = await Promise.all(
+    modules.map((name) => readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8")),
+  );
   assert.match(tokens, /--rune-layer-canvas:\s*0;/);
   assert.match(tokens, /--rune-layer-workspace:\s*10;/);
   assert.match(tokens, /--rune-layer-pane-float:\s*80;/);
@@ -45,7 +45,10 @@ test("prevents global and pane overlays from being clipped and keeps modal tiers
   assert.match(shell, /\.rune-shell\s*\{[^}]*isolation:\s*auto;[^}]*overflow:\s*visible;/s);
   assert.match(shell, /\.rune-shell > \.topbar\s*\{[^}]*var\(--rune-layer-topbar\)/s);
   assert.match(content, /\.preview-header\s*\{[^}]*overflow:\s*visible;/s);
-  assert.match(overlays, /\.tools-popover,\s*\.export-popover\s*\{[^}]*var\(--rune-layer-global-float\)[^}]*max-height:[^}]*overflow-y:\s*auto;/s);
+  assert.match(
+    overlays,
+    /\.tools-popover,\s*\.export-popover\s*\{[^}]*var\(--rune-layer-global-float\)[^}]*max-height:[^}]*overflow-y:\s*auto;/s,
+  );
   assert.match(overlays, /\.import-review-backdrop\s*\{[^}]*var\(--rune-layer-modal\)/s);
   assert.match(onboarding, /\.welcome-backdrop\s*\{[^}]*var\(--rune-layer-onboarding\)/s);
 });
@@ -66,7 +69,10 @@ test("keeps ColaMD-informed content geometry and places the primary welcome acti
 
 test("keeps the navigable Deck canvas inside the content layer and semantic motion/layer scales", async () => {
   const content = await readFile(new URL("../app/styles/content.css", import.meta.url), "utf8");
-  assert.match(content, /\.deck-slide-canvas\s*\{[^}]*var\(--rune-radius-card\)[^}]*var\(--rune-shadow-card\)[^}]*var\(--rune-duration-micro\)/s);
+  assert.match(
+    content,
+    /\.deck-slide-canvas\s*\{[^}]*var\(--rune-radius-card\)[^}]*var\(--rune-shadow-card\)[^}]*var\(--rune-duration-micro\)/s,
+  );
   assert.match(content, /\.deck-slide-source-hit\s*\{[^}]*z-index:\s*calc\(var\(--rune-layer-canvas\) \+ 1\)/s);
   assert.match(content, /\.deck-slide-source-hit:focus-visible/);
 });

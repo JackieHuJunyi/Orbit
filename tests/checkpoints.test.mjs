@@ -24,12 +24,15 @@ test("creates an explicit checkpoint and deduplicates consecutive source", () =>
 test("caps device history per artifact", () => {
   let history = {};
   for (let index = 0; index < MAX_CHECKPOINTS_PER_ARTIFACT + 3; index += 1) {
-    history = appendCheckpoint(history, createCheckpoint(
-      { id: "report", source: `revision-${index}` },
-      `Revision ${index}`,
-      "manual",
-      new Date(1_700_000_000_000 + index),
-    ));
+    history = appendCheckpoint(
+      history,
+      createCheckpoint(
+        { id: "report", source: `revision-${index}` },
+        `Revision ${index}`,
+        "manual",
+        new Date(1_700_000_000_000 + index),
+      ),
+    );
   }
   assert.equal(history.report.length, MAX_CHECKPOINTS_PER_ARTIFACT);
   assert.equal(history.report[0].source, "revision-3");

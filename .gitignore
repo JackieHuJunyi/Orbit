@@ -50,3 +50,15 @@ next-env.d.ts
 rune-pilot-evidence-*.json
 rune-pilot-cohort-*.json
 rune-pilot-cohort-*.md
+
+# OCR runtime assets are regenerated from node_modules + vendor/tessdata by
+# `npm run prepare:ocr`; never commit the generated copies.
+/public/ocr/
+
+# Local OpenAI Sites hosting metadata (project id, optional d1/r2 bindings).
+# Copy from .openai/hosting.example.json — never commit a real project id.
+.openai/hosting.json
+
+# Playwright artifacts
+/test-results/
+/playwright-report/

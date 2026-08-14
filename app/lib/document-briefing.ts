@@ -1,11 +1,7 @@
 import { prepareArtifactCreation } from "./artifact-creation.ts";
 import { isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { derivePreviewSourceTargets } from "./preview-targets.ts";
-import {
-  prepareWorkspaceMutation,
-  type ArtifactCreationChange,
-  type ArtifactSourcePatch,
-} from "./patches.ts";
+import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSourcePatch } from "./patches.ts";
 import { runeText, type RuneLocale } from "./localization.ts";
 import { portableSourceRevision } from "./source-revision.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
@@ -78,25 +74,31 @@ export function documentBriefingTargets(
     if (documentBriefingSourceIdForPresentation(artifact) !== sourceArtifactId) return [];
     const parsed = parseDeckSource(artifact.source);
     if (!parsed.deck || parsed.errors.length) return [];
-    return [{
-      artifactId: artifact.id,
-      name: artifact.name,
-      title: parsed.deck.frontmatter.title,
-      slideCount: parsed.deck.slides.length,
-      locale: parsed.deck.frontmatter.lang,
-      audience: parsed.deck.frontmatter.audience,
-      purpose: parsed.deck.frontmatter.purpose,
-      freshness: parsed.deck.frontmatter.origin_revision == null
-        ? "unknown"
-        : parsed.deck.frontmatter.origin_revision === currentSourceRevision
-          ? "current"
-          : "changed",
-    }];
+    return [
+      {
+        artifactId: artifact.id,
+        name: artifact.name,
+        title: parsed.deck.frontmatter.title,
+        slideCount: parsed.deck.slides.length,
+        locale: parsed.deck.frontmatter.lang,
+        audience: parsed.deck.frontmatter.audience,
+        purpose: parsed.deck.frontmatter.purpose,
+        freshness:
+          parsed.deck.frontmatter.origin_revision == null
+            ? "unknown"
+            : parsed.deck.frontmatter.origin_revision === currentSourceRevision
+              ? "current"
+              : "changed",
+      },
+    ];
   });
 }
 
 function normalizePlainText(value: string) {
-  return value.normalize("NFKC").replace(/[\t ]+/gu, " ").trim();
+  return value
+    .normalize("NFKC")
+    .replace(/[\t ]+/gu, " ")
+    .trim();
 }
 
 function validatePlainText(value: string, label: string, maxChars: number) {
@@ -133,7 +135,10 @@ function splitReadableUnits(source: WorkspaceArtifact): RawBriefingUnit[] {
     .flatMap((target) => {
       const body = readableMarkdown(source.source.slice(target.start, target.end));
       if (!body) return [];
-      const blocks = body.split(/\n\s*\n/gu).map((part) => part.trim()).filter(Boolean);
+      const blocks = body
+        .split(/\n\s*\n/gu)
+        .map((part) => part.trim())
+        .filter(Boolean);
       return blocks.map((block) => ({ label: target.label, body: block }));
     });
   if (sections.length) return sections;
@@ -161,7 +166,9 @@ function splitLongestUnit(units: RawBriefingUnit[]) {
   });
   if (index < 0 || splitAt < 0) return false;
   const unit = units[index];
-  units.splice(index, 1,
+  units.splice(
+    index,
+    1,
     { ...unit, body: unit.body.slice(0, splitAt).trim() },
     { ...unit, body: unit.body.slice(splitAt).trim() },
   );
@@ -175,8 +182,8 @@ function briefingUnits(source: WorkspaceArtifact, count: number): BriefingUnit[]
   }
   if (units.length < count) return [];
   return Array.from({ length: count }, (_, index) => {
-    const start = Math.floor(index * units.length / count);
-    const end = Math.floor((index + 1) * units.length / count);
+    const start = Math.floor((index * units.length) / count);
+    const end = Math.floor(((index + 1) * units.length) / count);
     const group = units.slice(start, Math.max(start + 1, end));
     const body = group.map((unit) => unit.body).join("\n\n");
     return {
@@ -187,10 +194,7 @@ function briefingUnits(source: WorkspaceArtifact, count: number): BriefingUnit[]
   });
 }
 
-export function prepareDocumentBriefingEvidence(
-  artifacts: WorkspaceArtifact[],
-  input: DocumentBriefingInput,
-) {
+export function prepareDocumentBriefingEvidence(artifacts: WorkspaceArtifact[], input: DocumentBriefingInput) {
   const source = artifacts.find((artifact) => artifact.id === input.sourceArtifactId);
   if (!source) return { errors: [`Document source is missing: ${input.sourceArtifactId}`] };
   if (source.kind !== "document") {
@@ -198,7 +202,9 @@ export function prepareDocumentBriefingEvidence(
   }
   const evidenceUnits = briefingUnits(source, input.slideCount - 2);
   if (evidenceUnits.length !== input.slideCount - 2) {
-    return { errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`] };
+    return {
+      errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`],
+    };
   }
   return { source, evidenceUnits, errors: [] };
 }
@@ -228,13 +234,17 @@ function deckSource(
         body: slide.bullets.map((bullet) => `- ${markdownInline(normalizePlainText(bullet))}`).join("\n"),
       }))
     : units.map((unit) => ({ unit, title: unit.label, body: unit.body }));
-  const contentSlides = content.map(({ unit, title: slideTitle, body }, index) => `<!-- layout: content -->
+  const contentSlides = content
+    .map(
+      ({ unit, title: slideTitle, body }, index) => `<!-- layout: content -->
 <!-- eyebrow: ${runeText(input.locale, `Source ${index + 1}`, `来源 ${index + 1}`)} · ${sourceName} -->
 <!-- source-unit: ${unit.id} -->
 
 ## ${markdownInline(normalizePlainText(slideTitle))}
 
-${body}`).join("\n\n---\n\n");
+${body}`,
+    )
+    .join("\n\n---\n\n");
 
   return `---
 version: 1
@@ -284,7 +294,8 @@ export function prepareDocumentBriefingWorkflow(
   if (![4, 6, 8].includes(input.slideCount)) errors.push("Choose 4, 6, or 8 slides.");
   const source = artifacts.find((artifact) => artifact.id === input.sourceArtifactId);
   if (!source) errors.push(`Document source is missing: ${input.sourceArtifactId}`);
-  else if (source.kind !== "document") errors.push(`Presentation source must be a Document artifact: ${input.sourceArtifactId}`);
+  else if (source.kind !== "document")
+    errors.push(`Presentation source must be a Document artifact: ${input.sourceArtifactId}`);
   const target = input.targetArtifactId
     ? artifacts.find((artifact) => artifact.id === input.targetArtifactId)
     : undefined;
@@ -309,7 +320,9 @@ export function prepareDocumentBriefingWorkflow(
 
   const units = briefingUnits(source, input.slideCount - 2);
   if (units.length !== input.slideCount - 2) {
-    return { errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`] };
+    return {
+      errors: [`${source.name} does not contain enough readable material for ${input.slideCount} distinct slides.`],
+    };
   }
 
   if (outline) {
@@ -322,23 +335,27 @@ export function prepareDocumentBriefingWorkflow(
   let patches: ArtifactSourcePatch[] = [];
   let creations: ArtifactCreationChange[] = [];
   if (target) {
-    patches = [{
-      artifactId: target.id,
-      nextSource,
-      summary: `Refresh “${target.name}” from ${source.name}`,
-      detail: `Replace the current slide source with ${input.slideCount} reviewed slides while preserving ${target.id} and its explicit origin link.`,
-      operationCount: input.slideCount,
-    }];
+    patches = [
+      {
+        artifactId: target.id,
+        nextSource,
+        summary: `Refresh “${target.name}” from ${source.name}`,
+        detail: `Replace the current slide source with ${input.slideCount} reviewed slides while preserving ${target.id} and its explicit origin link.`,
+        operationCount: input.slideCount,
+      },
+    ];
   } else {
     const prepared = prepareArtifactCreation(artifacts, { kind: "slides", title: input.title });
     if (!prepared.artifact || prepared.errors.length) return { errors: prepared.errors };
     const artifact = { ...prepared.artifact, source: nextSource };
-    creations = [{
-      artifact,
-      summary: `Create “${artifact.name}” from ${source.name}`,
-      detail: `${input.slideCount} editable Deck Markdown slides with an explicit origin link to ${source.id}.`,
-      operationCount: input.slideCount,
-    }];
+    creations = [
+      {
+        artifact,
+        summary: `Create “${artifact.name}” from ${source.name}`,
+        detail: `${input.slideCount} editable Deck Markdown slides with an explicit origin link to ${source.id}.`,
+        operationCount: input.slideCount,
+      },
+    ];
   }
   const transaction = prepareWorkspaceMutation(artifacts, patches, creations);
   if (transaction.errors.length) return { errors: transaction.errors };

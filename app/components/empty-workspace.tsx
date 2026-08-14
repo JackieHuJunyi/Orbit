@@ -1,6 +1,15 @@
 "use client";
 
-import { ArrowRight, ClipboardList, FilePlus2, FileText, FolderOpen, Presentation, Sparkles, Upload } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardList,
+  FilePlus2,
+  FileText,
+  FolderOpen,
+  Presentation,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 import { useState, type DragEvent } from "react";
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 
@@ -74,36 +83,72 @@ export function EmptyWorkspace({
     <section className="empty-workspace-canvas" aria-label={text.title}>
       <div
         className={"empty-drop-zone " + (dragging ? "dragging" : "")}
-        onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
-        onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+          setDragging(true);
+        }}
         onDragLeave={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
         }}
         onDrop={acceptDrop}
       >
         <div className="empty-file-stack" aria-hidden="true">
-          <span><FileText /></span><span><Sparkles /></span><span><Upload /></span>
+          <span>
+            <FileText />
+          </span>
+          <span>
+            <Sparkles />
+          </span>
+          <span>
+            <Upload />
+          </span>
         </div>
         <span className="empty-eyebrow">{dragging ? text.drop : text.eyebrow}</span>
         <h1>{text.title}</h1>
         <p>{text.body}</p>
         <div className="empty-task-list">
           <button type="button" className="empty-task-primary" onClick={onStartReview}>
-            <span><ClipboardList aria-hidden="true" /></span>
-            <span><strong>{text.startReview}</strong><small>{text.startReviewBody}</small></span>
+            <span>
+              <ClipboardList aria-hidden="true" />
+            </span>
+            <span>
+              <strong>{text.startReview}</strong>
+              <small>{text.startReviewBody}</small>
+            </span>
             <ArrowRight aria-hidden="true" />
           </button>
           <button type="button" className="empty-task-primary quiet" onClick={onStartBriefing}>
-            <span><Presentation aria-hidden="true" /></span>
-            <span><strong>{text.startBriefing}</strong><small>{text.startBriefingBody}</small></span>
+            <span>
+              <Presentation aria-hidden="true" />
+            </span>
+            <span>
+              <strong>{text.startBriefing}</strong>
+              <small>{text.startBriefingBody}</small>
+            </span>
             <ArrowRight aria-hidden="true" />
           </button>
         </div>
-        <div className="empty-choice-divider"><span>{text.orOpen}</span></div>
+        <div className="empty-choice-divider">
+          <span>{text.orOpen}</span>
+        </div>
         <div className="empty-actions">
-          <button type="button" onClick={onChooseFiles}><FolderOpen />{text.choose}</button>
-          <button type="button" onClick={onCreate}><FilePlus2 />{text.create}</button>
-          <button type="button" onClick={onOpenSample}><Sparkles />{text.sample}</button>
+          <button type="button" onClick={onChooseFiles}>
+            <FolderOpen />
+            {text.choose}
+          </button>
+          <button type="button" onClick={onCreate}>
+            <FilePlus2 />
+            {text.create}
+          </button>
+          <button type="button" onClick={onOpenSample}>
+            <Sparkles />
+            {text.sample}
+          </button>
         </div>
         <small>{text.support}</small>
       </div>

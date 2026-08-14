@@ -51,10 +51,13 @@ function resultBytes(value: Uint8Array | ArrayBuffer | number[]) {
 export async function convertLegacyOfficeFile(file: File): Promise<LegacyOfficeConversion> {
   if (!legacyOfficeFileName(file.name)) throw new Error("Desktop legacy conversion supports .doc and .ppt files only.");
   if (!supportsLegacyOfficeDesktopConversion()) {
-    throw new Error("Legacy .doc/.ppt import requires the Rune desktop app with Microsoft Word or PowerPoint installed. The web app will not upload or guess this binary format.");
+    throw new Error(
+      "Legacy .doc/.ppt import requires the Rune desktop app with Microsoft Word or PowerPoint installed. The web app will not upload or guess this binary format.",
+    );
   }
   if (!file.size) throw new Error(`${file.name}: the selected legacy Office file is empty.`);
-  if (file.size > MAX_LEGACY_OFFICE_IMPORT_BYTES) throw new Error(`${file.name}: legacy Office import is limited to 12 MB.`);
+  if (file.size > MAX_LEGACY_OFFICE_IMPORT_BYTES)
+    throw new Error(`${file.name}: legacy Office import is limited to 12 MB.`);
   const inputBytes = new Uint8Array(await file.arrayBuffer());
   const result = await window.runeDesktop!.convertLegacyOffice({ fileName: file.name, bytes: inputBytes });
   if (!result || !/\.(?:docx|pptx)$/i.test(result.fileName) || typeof result.warning !== "string") {
@@ -67,11 +70,16 @@ export async function convertLegacyOfficeFile(file: File): Promise<LegacyOfficeC
   return { bytes, fileName: result.fileName, warning: result.warning };
 }
 
-
-export async function exportLegacyOfficeFile(input: { bytes: Uint8Array; fileName: string }): Promise<LegacyOfficeConversion> {
-  if (!/^[^/\\\0]+\.(?:docx|pptx)$/i.test(input.fileName)) throw new Error("Desktop legacy export supports DOCX and PPTX packages only.");
+export async function exportLegacyOfficeFile(input: {
+  bytes: Uint8Array;
+  fileName: string;
+}): Promise<LegacyOfficeConversion> {
+  if (!/^[^/\\\0]+\.(?:docx|pptx)$/i.test(input.fileName))
+    throw new Error("Desktop legacy export supports DOCX and PPTX packages only.");
   if (!supportsLegacyOfficeDesktopExport()) {
-    throw new Error("Legacy DOC/PPT export requires the Rune desktop app with Microsoft Word or PowerPoint installed. The web app will not offer a fake legacy download.");
+    throw new Error(
+      "Legacy DOC/PPT export requires the Rune desktop app with Microsoft Word or PowerPoint installed. The web app will not offer a fake legacy download.",
+    );
   }
   if (!input.bytes.length || input.bytes.length > MAX_LEGACY_OFFICE_EXPORT_BYTES) {
     throw new Error("The modern Office package must be between 1 byte and 12 MB before legacy export.");

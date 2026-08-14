@@ -91,7 +91,20 @@ const TASK_IDS = new Set<RuneTaskId>(["operating-review", "document-briefing"]);
 const STOP_REASONS = new Set<RuneTaskStopReason>(["validation", "runtime", "stale", "persistence", "cancelled"]);
 const DELIVERY_RATINGS = new Set<RuneTaskDeliveryRating>(["ready", "minor-edits", "not-ready"]);
 const DOWNLOAD_TARGETS = new Set<RuneTaskDeliveryTarget>([
-  "csv", "json", "doc", "ppt", "docx", "xlsx", "pptx", "odt", "ods", "odp", "html", "pdf", "md", "deck-md",
+  "csv",
+  "json",
+  "doc",
+  "ppt",
+  "docx",
+  "xlsx",
+  "pptx",
+  "odt",
+  "ods",
+  "odp",
+  "html",
+  "pdf",
+  "md",
+  "deck-md",
 ]);
 const SHA256 = /^[0-9a-f]{64}$/u;
 
@@ -136,32 +149,55 @@ export function normalizeRuneTaskRuns(value: unknown): RuneTaskRun[] {
     if (!entry || typeof entry !== "object") continue;
     const candidate = entry as Partial<RuneTaskRun>;
     const id = boundedText(candidate.id, 220);
-    const taskId = TASK_IDS.has(candidate.taskId as RuneTaskId) ? candidate.taskId as RuneTaskId : undefined;
+    const taskId = TASK_IDS.has(candidate.taskId as RuneTaskId) ? (candidate.taskId as RuneTaskId) : undefined;
     const completedAt = boundedText(candidate.completedAt, 40);
     const status = candidate.status === "applied" || candidate.status === "stopped" ? candidate.status : undefined;
-    const stopReason = candidate.stopReason === null
-      ? null
-      : STOP_REASONS.has(candidate.stopReason as RuneTaskStopReason)
-        ? candidate.stopReason as RuneTaskStopReason
-        : undefined;
+    const stopReason =
+      candidate.stopReason === null
+        ? null
+        : STOP_REASONS.has(candidate.stopReason as RuneTaskStopReason)
+          ? (candidate.stopReason as RuneTaskStopReason)
+          : undefined;
     const provider = boundedText(candidate.provider, 40);
     const sourceArtifactId = boundedText(candidate.sourceArtifactId, 120);
-    const sourceRevision = typeof candidate.sourceRevision === "string" && PORTABLE_SOURCE_REVISION_PATTERN.test(candidate.sourceRevision)
-      ? candidate.sourceRevision
-      : undefined;
+    const sourceRevision =
+      typeof candidate.sourceRevision === "string" && PORTABLE_SOURCE_REVISION_PATTERN.test(candidate.sourceRevision)
+        ? candidate.sourceRevision
+        : undefined;
     const outputArtifactIds = normalizedArtifactIds(candidate.outputArtifactIds);
-    const outputRevisions = outputArtifactIds ? normalizedOutputRevisions(candidate.outputRevisions, outputArtifactIds) : undefined;
+    const outputRevisions = outputArtifactIds
+      ? normalizedOutputRevisions(candidate.outputRevisions, outputArtifactIds)
+      : undefined;
     const changedFileCount = boundedInteger(candidate.changedFileCount, 7);
     const queryCount = boundedInteger(candidate.queryCount, 50);
     const chartConsumerCount = boundedInteger(candidate.chartConsumerCount, 50);
     const durationMs = boundedInteger(candidate.durationMs, MAX_RUNE_TASK_DURATION_MS);
     const inputTokens = candidate.inputTokens === null ? null : boundedInteger(candidate.inputTokens, 10_000_000);
     const outputTokens = candidate.outputTokens === null ? null : boundedInteger(candidate.outputTokens, 10_000_000);
-    if (candidate.version !== 1 || !id || ids.has(id) || !taskId || !completedAt || Number.isNaN(Date.parse(completedAt))
-      || !status || stopReason === undefined || (status === "applied" ? stopReason !== null : stopReason === null)
-      || !provider || !sourceArtifactId || !sourceRevision || !outputArtifactIds || !outputRevisions || outputArtifactIds.includes(sourceArtifactId)
-      || changedFileCount == null || queryCount == null || chartConsumerCount == null || durationMs == null
-      || inputTokens === undefined || outputTokens === undefined) continue;
+    if (
+      candidate.version !== 1 ||
+      !id ||
+      ids.has(id) ||
+      !taskId ||
+      !completedAt ||
+      Number.isNaN(Date.parse(completedAt)) ||
+      !status ||
+      stopReason === undefined ||
+      (status === "applied" ? stopReason !== null : stopReason === null) ||
+      !provider ||
+      !sourceArtifactId ||
+      !sourceRevision ||
+      !outputArtifactIds ||
+      !outputRevisions ||
+      outputArtifactIds.includes(sourceArtifactId) ||
+      changedFileCount == null ||
+      queryCount == null ||
+      chartConsumerCount == null ||
+      durationMs == null ||
+      inputTokens === undefined ||
+      outputTokens === undefined
+    )
+      continue;
     ids.add(id);
     runs.push({
       version: 1,
@@ -223,11 +259,20 @@ export async function runeTaskSourceSha256(source: string) {
 export function normalizeRuneTaskHumanEvaluation(value: unknown): RuneTaskHumanEvaluation | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as { version?: unknown; provenance?: unknown; rubric?: unknown };
-  if (candidate.version !== 1 || candidate.provenance !== "authorized-or-redacted"
-    || !candidate.rubric || typeof candidate.rubric !== "object" || Array.isArray(candidate.rubric)) return null;
+  if (
+    candidate.version !== 1 ||
+    candidate.provenance !== "authorized-or-redacted" ||
+    !candidate.rubric ||
+    typeof candidate.rubric !== "object" ||
+    Array.isArray(candidate.rubric)
+  )
+    return null;
   const entries = Object.entries(candidate.rubric as Record<string, unknown>);
-  if (entries.length !== RUNE_TASK_RUBRIC_DIMENSIONS.length
-    || entries.some(([dimension]) => !RUNE_TASK_RUBRIC_DIMENSIONS.includes(dimension as RuneTaskRubricDimension))) return null;
+  if (
+    entries.length !== RUNE_TASK_RUBRIC_DIMENSIONS.length ||
+    entries.some(([dimension]) => !RUNE_TASK_RUBRIC_DIMENSIONS.includes(dimension as RuneTaskRubricDimension))
+  )
+    return null;
   const rubric = {} as RuneTaskOutcomeRubric;
   for (const dimension of RUNE_TASK_RUBRIC_DIMENSIONS) {
     const score = (candidate.rubric as Record<string, unknown>)[dimension];
@@ -248,21 +293,41 @@ function normalizeRuneTaskDeliveries(value: unknown, runs: RuneTaskRun[]): RuneT
     const id = boundedText(candidate.id, 380);
     const confirmedAt = boundedText(candidate.confirmedAt, 40);
     const runId = boundedText(candidate.runId, 220);
-    const taskId = TASK_IDS.has(candidate.taskId as RuneTaskId) ? candidate.taskId as RuneTaskId : undefined;
+    const taskId = TASK_IDS.has(candidate.taskId as RuneTaskId) ? (candidate.taskId as RuneTaskId) : undefined;
     const artifactId = boundedText(candidate.artifactId, 120);
     const method = candidate.method === "download" || candidate.method === "folder" ? candidate.method : undefined;
-    const target = typeof candidate.target === "string" ? candidate.target as RuneTaskDeliveryTarget : undefined;
+    const target = typeof candidate.target === "string" ? (candidate.target as RuneTaskDeliveryTarget) : undefined;
     const rating = DELIVERY_RATINGS.has(candidate.rating as RuneTaskDeliveryRating)
-      ? candidate.rating as RuneTaskDeliveryRating
+      ? (candidate.rating as RuneTaskDeliveryRating)
       : undefined;
     const taskDurationMs = boundedInteger(candidate.taskDurationMs, MAX_RUNE_TASK_DELIVERY_MS);
     const run = runId ? runById.get(runId) : undefined;
-    const targetMatchesMethod = method === "folder" ? target === "folder" : method === "download" && DOWNLOAD_TARGETS.has(target as RuneTaskDeliveryTarget);
-    if ((candidate.version !== 1 && candidate.version !== 2) || !id || ids.has(id) || !confirmedAt || Number.isNaN(Date.parse(confirmedAt))
-      || !runId || !taskId || !artifactId || !run || run.status !== "applied" || run.taskId !== taskId
-      || !run.outputArtifactIds.includes(artifactId) || id !== runeTaskDeliveryId(runId, artifactId)
-      || !method || !target || !targetMatchesMethod || !rating || !SHA256.test(candidate.sourceSha256 ?? "")
-      || taskDurationMs == null) continue;
+    const targetMatchesMethod =
+      method === "folder"
+        ? target === "folder"
+        : method === "download" && DOWNLOAD_TARGETS.has(target as RuneTaskDeliveryTarget);
+    if (
+      (candidate.version !== 1 && candidate.version !== 2) ||
+      !id ||
+      ids.has(id) ||
+      !confirmedAt ||
+      Number.isNaN(Date.parse(confirmedAt)) ||
+      !runId ||
+      !taskId ||
+      !artifactId ||
+      !run ||
+      run.status !== "applied" ||
+      run.taskId !== taskId ||
+      !run.outputArtifactIds.includes(artifactId) ||
+      id !== runeTaskDeliveryId(runId, artifactId) ||
+      !method ||
+      !target ||
+      !targetMatchesMethod ||
+      !rating ||
+      !SHA256.test(candidate.sourceSha256 ?? "") ||
+      taskDurationMs == null
+    )
+      continue;
     ids.add(id);
     deliveries.push({
       version: 2,
@@ -297,11 +362,17 @@ export function normalizeRuneTaskEvidence(value: unknown): RuneTaskEvidence {
 }
 
 export function runeTaskRunMatchesIdentity(run: RuneTaskRun, identity: RuneTaskRunIdentity) {
-  if (run.taskId !== identity.taskId || run.sourceArtifactId !== identity.sourceArtifactId
-    || run.outputArtifactIds.length !== identity.outputArtifactIds.length) return false;
+  if (
+    run.taskId !== identity.taskId ||
+    run.sourceArtifactId !== identity.sourceArtifactId ||
+    run.outputArtifactIds.length !== identity.outputArtifactIds.length
+  )
+    return false;
   const expectedOutputs = new Set(identity.outputArtifactIds);
-  return expectedOutputs.size === identity.outputArtifactIds.length
-    && run.outputArtifactIds.every((artifactId) => expectedOutputs.has(artifactId));
+  return (
+    expectedOutputs.size === identity.outputArtifactIds.length &&
+    run.outputArtifactIds.every((artifactId) => expectedOutputs.has(artifactId))
+  );
 }
 
 export function runeTaskRunsForIdentity(evidence: RuneTaskEvidence, identity: RuneTaskRunIdentity) {
@@ -324,29 +395,41 @@ export async function recordRuneTaskDelivery(input: {
   const evidence = normalizeRuneTaskEvidence(input.evidence);
   const run = evidence.runs.find((candidate) => candidate.id === input.runId);
   if (!run || run.status !== "applied") throw new Error("The applied task run is no longer available.");
-  if (!run.outputArtifactIds.includes(input.artifactId)) throw new Error("This file is not an exact output of the applied task.");
+  if (!run.outputArtifactIds.includes(input.artifactId))
+    throw new Error("This file is not an exact output of the applied task.");
   if (run.sourceRevision !== input.currentSourceRevision) {
     throw new Error("The task source changed after this run. Refresh the output before confirming delivery.");
   }
   const currentOutputIds = Object.keys(input.currentOutputRevisions);
-  if (currentOutputIds.length !== run.outputArtifactIds.length
-    || run.outputArtifactIds.some((artifactId) => input.currentOutputRevisions[artifactId] !== run.outputRevisions[artifactId])) {
-    throw new Error("One or more task outputs changed after this run. Run or refresh the complete task before confirming delivery.");
+  if (
+    currentOutputIds.length !== run.outputArtifactIds.length ||
+    run.outputArtifactIds.some(
+      (artifactId) => input.currentOutputRevisions[artifactId] !== run.outputRevisions[artifactId],
+    )
+  ) {
+    throw new Error(
+      "One or more task outputs changed after this run. Run or refresh the complete task before confirming delivery.",
+    );
   }
   if (run.outputRevisions[input.artifactId] !== portableSourceRevision(input.source)) {
-    throw new Error("This output changed after the applied task. Run or refresh the task again before confirming delivery.");
+    throw new Error(
+      "This output changed after the applied task. Run or refresh the task again before confirming delivery.",
+    );
   }
   const confirmedAt = input.now ?? new Date();
   const completedAt = Date.parse(run.completedAt);
-  if (Number.isNaN(completedAt) || Number.isNaN(confirmedAt.getTime())) throw new Error("The task run has no valid completion time.");
+  if (Number.isNaN(completedAt) || Number.isNaN(confirmedAt.getTime()))
+    throw new Error("The task run has no valid completion time.");
   const outcomeId = runeTaskDeliveryId(run.id, input.artifactId);
   const previousEvaluation = evidence.deliveries.find((delivery) => delivery.id === outcomeId)?.evaluation ?? null;
-  const evaluation = input.evaluation === undefined
-    ? previousEvaluation
-    : input.evaluation === null
-      ? null
-      : normalizeRuneTaskHumanEvaluation(input.evaluation);
-  if (input.evaluation != null && !evaluation) throw new Error("The detailed task evaluation is incomplete or invalid.");
+  const evaluation =
+    input.evaluation === undefined
+      ? previousEvaluation
+      : input.evaluation === null
+        ? null
+        : normalizeRuneTaskHumanEvaluation(input.evaluation);
+  if (input.evaluation != null && !evaluation)
+    throw new Error("The detailed task evaluation is incomplete or invalid.");
   const outcome: RuneTaskDeliveryOutcome = {
     version: 2,
     id: outcomeId,
@@ -361,10 +444,10 @@ export async function recordRuneTaskDelivery(input: {
     taskDurationMs: run.durationMs + Math.max(0, confirmedAt.getTime() - completedAt),
     evaluation,
   };
-  const deliveries = normalizeRuneTaskDeliveries([
-    outcome,
-    ...evidence.deliveries.filter((delivery) => delivery.id !== outcome.id),
-  ], evidence.runs);
+  const deliveries = normalizeRuneTaskDeliveries(
+    [outcome, ...evidence.deliveries.filter((delivery) => delivery.id !== outcome.id)],
+    evidence.runs,
+  );
   const recorded = deliveries.find((delivery) => delivery.id === outcome.id);
   if (!recorded) throw new Error("The delivery confirmation is outside Rune's bounded device record.");
   return { ...evidence, deliveries };
@@ -379,15 +462,21 @@ export function summarizeRuneTaskDeliveries(deliveries: RuneTaskDeliveryOutcome[
     runOutcomes.push(outcome);
     evaluatedRuns.set(outcome.runId, runOutcomes);
   }
-  const dimensionAverages = Object.fromEntries(RUNE_TASK_RUBRIC_DIMENSIONS.map((dimension) => [
-    dimension,
-    humanEvaluated.length
-      ? Math.round((humanEvaluated.reduce((total, outcome) => total + (outcome.evaluation?.rubric[dimension] ?? 0), 0) / humanEvaluated.length) * 10) / 10
-      : null,
-  ])) as Record<RuneTaskRubricDimension, number | null>;
-  const pilotEligibleTasks = [...evaluatedRuns.values()].filter((outcomes) => (
-    outcomes.every((outcome) => (outcome.evaluation?.rubric.numberCorrectness ?? 0) >= 4)
-  )).length;
+  const dimensionAverages = Object.fromEntries(
+    RUNE_TASK_RUBRIC_DIMENSIONS.map((dimension) => [
+      dimension,
+      humanEvaluated.length
+        ? Math.round(
+            (humanEvaluated.reduce((total, outcome) => total + (outcome.evaluation?.rubric[dimension] ?? 0), 0) /
+              humanEvaluated.length) *
+              10,
+          ) / 10
+        : null,
+    ]),
+  ) as Record<RuneTaskRubricDimension, number | null>;
+  const pilotEligibleTasks = [...evaluatedRuns.values()].filter((outcomes) =>
+    outcomes.every((outcome) => (outcome.evaluation?.rubric.numberCorrectness ?? 0) >= 4),
+  ).length;
   return {
     total: deliveries.length,
     ready: deliveries.filter((outcome) => outcome.rating === "ready").length,
@@ -400,7 +489,8 @@ export function summarizeRuneTaskDeliveries(deliveries: RuneTaskDeliveryOutcome[
       : null,
     humanEvaluated: humanEvaluated.length,
     reviewedRealTasks: evaluatedRuns.size,
-    numberCorrectnessBelow4: humanEvaluated.filter((outcome) => (outcome.evaluation?.rubric.numberCorrectness ?? 0) < 4).length,
+    numberCorrectnessBelow4: humanEvaluated.filter((outcome) => (outcome.evaluation?.rubric.numberCorrectness ?? 0) < 4)
+      .length,
     pilotEligibleTasks,
     meetsPilotMinimum: pilotEligibleTasks >= 20,
     dimensionAverages,

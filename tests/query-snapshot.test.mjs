@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  createWorkspaceQuerySnapshot,
-  workspaceQuerySnapshotIsCurrent,
-} from "../app/lib/query-snapshot.ts";
+import { createWorkspaceQuerySnapshot, workspaceQuerySnapshotIsCurrent } from "../app/lib/query-snapshot.ts";
 import { runWorkspaceQuerySnapshot } from "../app/lib/duckdb-client.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot } from "./query-snapshot-fixture.mjs";

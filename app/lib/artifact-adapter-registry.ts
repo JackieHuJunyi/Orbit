@@ -26,11 +26,7 @@ export type RuneArtifactAdapter<Kind extends string, Artifact, StarterRequest> =
  * This registry makes that vocabulary exhaustive and gives every kind one
  * adapter-owned home for detection, creation, validation, and display facts.
  */
-export function createRuneArtifactAdapterRegistry<
-  Kind extends string,
-  Artifact,
-  StarterRequest,
->(
+export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact, StarterRequest>(
   requiredKinds: readonly Kind[],
   definitions: readonly RuneArtifactAdapter<Kind, Artifact, StarterRequest>[],
 ) {

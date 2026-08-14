@@ -15,9 +15,9 @@ function artifact(name, source) {
 }
 
 function targetFor(sourceArtifact, rowIndex, column) {
-  const target = deriveDataPreviewSourceTargets(sourceArtifact).cells.find((candidate) => (
-    candidate.rowIndex === rowIndex && candidate.column === column
-  ));
+  const target = deriveDataPreviewSourceTargets(sourceArtifact).cells.find(
+    (candidate) => candidate.rowIndex === rowIndex && candidate.column === column,
+  );
   assert.ok(target);
   return target;
 }
@@ -43,7 +43,10 @@ test("quotes CSV strings with delimiters and keeps automatic scalar typing expli
 });
 
 test("edits flat JSON with explicit scalar types without reformatting the document", () => {
-  const sourceArtifact = artifact("regions.json", '[\n  { "Region": "APAC", "Revenue": 42, "Ready": true, "Note": null }\n]\n');
+  const sourceArtifact = artifact(
+    "regions.json",
+    '[\n  { "Region": "APAC", "Revenue": 42, "Ready": true, "Note": null }\n]\n',
+  );
   const revenue = targetFor(sourceArtifact, 0, "Revenue");
   const asText = prepareVisualDataCellEdit(sourceArtifact, revenue, { draft: "42", valueType: "string" });
   assert.deepEqual(asText.errors, []);
@@ -60,13 +63,28 @@ test("edits flat JSON with explicit scalar types without reformatting the docume
 test("rejects stale, unchanged, invalid numeric, and nested JSON cell edits", () => {
   const sourceArtifact = artifact("data.json", '[{"Value": 2, "Meta": {"owner":"Rune"}}]');
   const value = targetFor(sourceArtifact, 0, "Value");
-  assert.match(prepareVisualDataCellEdit(sourceArtifact, value, { draft: "2", valueType: "number" }).errors[0], /unchanged/i);
-  assert.match(prepareVisualDataCellEdit(sourceArtifact, value, { draft: "2x", valueType: "number" }).errors[0], /finite decimal/i);
-  assert.match(prepareVisualDataCellEdit({ ...sourceArtifact, source: " " + sourceArtifact.source }, value, { draft: "3", valueType: "number" }).errors[0], /revision/i);
+  assert.match(
+    prepareVisualDataCellEdit(sourceArtifact, value, { draft: "2", valueType: "number" }).errors[0],
+    /unchanged/i,
+  );
+  assert.match(
+    prepareVisualDataCellEdit(sourceArtifact, value, { draft: "2x", valueType: "number" }).errors[0],
+    /finite decimal/i,
+  );
+  assert.match(
+    prepareVisualDataCellEdit({ ...sourceArtifact, source: " " + sourceArtifact.source }, value, {
+      draft: "3",
+      valueType: "number",
+    }).errors[0],
+    /revision/i,
+  );
 
   const meta = targetFor(sourceArtifact, 0, "Meta");
   assert.equal(canVisualEditDataCell(sourceArtifact, meta), false);
-  assert.match(prepareVisualDataCellEdit(sourceArtifact, meta, { draft: "flat", valueType: "string" }).errors[0], /flat JSON/i);
+  assert.match(
+    prepareVisualDataCellEdit(sourceArtifact, meta, { draft: "flat", valueType: "string" }).errors[0],
+    /flat JSON/i,
+  );
 });
 
 test("projects an unsaved Data cell into the complete CSV or JSON source", () => {

@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  deriveDocumentBlockPreviewSourceTargets,
-} from "../app/lib/preview-targets.ts";
+import { deriveDocumentBlockPreviewSourceTargets } from "../app/lib/preview-targets.ts";
 import {
   MAX_VISUAL_DOCUMENT_INSERT_CHARS,
   documentBlockStructureCapabilities,
@@ -63,35 +61,54 @@ test("rejects empty, oversized, multi-block, binding, and stale insertion drafts
   const artifact = document("# Brief\n\nOpening.");
   const target = targetAt(artifact, 1);
   assert.ok(target);
-  assert.match(prepareVisualDocumentBlockStructure(artifact, target, {
-    action: "insert-before",
-    draft: "",
-  }).errors[0], /Write one new Markdown block/u);
-  assert.match(prepareVisualDocumentBlockStructure(artifact, target, {
-    action: "insert-before",
-    draft: "a".repeat(MAX_VISUAL_DOCUMENT_INSERT_CHARS + 1),
-  }).errors[0], /limited to 16,000/u);
-  assert.match(prepareVisualDocumentBlockStructure(artifact, target, {
-    action: "insert-before",
-    draft: "One.\n\nTwo.",
-  }).errors[0], /exactly one supported/u);
-  assert.match(prepareVisualDocumentBlockStructure(artifact, target, {
-    action: "insert-before",
-    draft: '{{ metric("total") }}',
-  }).errors[0], /live metric or Chart dependencies/u);
-  assert.match(prepareVisualDocumentBlockStructure(artifact, { ...target, start: target.start + 1 }, {
-    action: "insert-before",
-    draft: "New.",
-  }).errors[0], /no longer matches/u);
+  assert.match(
+    prepareVisualDocumentBlockStructure(artifact, target, {
+      action: "insert-before",
+      draft: "",
+    }).errors[0],
+    /Write one new Markdown block/u,
+  );
+  assert.match(
+    prepareVisualDocumentBlockStructure(artifact, target, {
+      action: "insert-before",
+      draft: "a".repeat(MAX_VISUAL_DOCUMENT_INSERT_CHARS + 1),
+    }).errors[0],
+    /limited to 16,000/u,
+  );
+  assert.match(
+    prepareVisualDocumentBlockStructure(artifact, target, {
+      action: "insert-before",
+      draft: "One.\n\nTwo.",
+    }).errors[0],
+    /exactly one supported/u,
+  );
+  assert.match(
+    prepareVisualDocumentBlockStructure(artifact, target, {
+      action: "insert-before",
+      draft: '{{ metric("total") }}',
+    }).errors[0],
+    /live metric or Chart dependencies/u,
+  );
+  assert.match(
+    prepareVisualDocumentBlockStructure(
+      artifact,
+      { ...target, start: target.start + 1 },
+      {
+        action: "insert-before",
+        draft: "New.",
+      },
+    ).errors[0],
+    /no longer matches/u,
+  );
 });
 
 test("moves one exact block while preserving its bytes and the outer source", () => {
-  const artifact = document("# Brief\n\nAlpha **one**.\n\nBeta {{ metric(\"total\") }}.\n");
+  const artifact = document('# Brief\n\nAlpha **one**.\n\nBeta {{ metric("total") }}.\n');
   const alpha = targetAt(artifact, 1);
   assert.ok(alpha);
   const down = prepareVisualDocumentBlockStructure(artifact, alpha, { action: "move-down" });
   assert.deepEqual(down.errors, []);
-  assert.equal(down.nextSource, "# Brief\n\nBeta {{ metric(\"total\") }}.\n\nAlpha **one**.\n");
+  assert.equal(down.nextSource, '# Brief\n\nBeta {{ metric("total") }}.\n\nAlpha **one**.\n');
   assert.match(down.nextTarget?.label ?? "", /^Alpha one\s*\.$/u);
   assert.equal(down.nextTarget?.index, 2);
 
@@ -135,10 +152,7 @@ test("deletes one exact block and selects a deterministic surviving neighbor", (
   const only = targetAt(last, 0);
   assert.ok(only);
   assert.equal(documentBlockStructureCapabilities(last, only).canDelete, false);
-  assert.match(
-    prepareVisualDocumentBlockStructure(last, only, { action: "delete" }).errors[0],
-    /last Document block/u,
-  );
+  assert.match(prepareVisualDocumentBlockStructure(last, only, { action: "delete" }).errors[0], /last Document block/u);
 });
 
 test("warns before deleting bindings or moving a heading without its body", () => {

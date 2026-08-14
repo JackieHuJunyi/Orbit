@@ -38,7 +38,12 @@ first.drawText("970000", { x: 300, y: 538, size: 11, font: regular });
 const second = document.addPage([612, 792]);
 drawChrome(second, 2);
 second.drawText("Decision", { x: 72, y: 700, size: 18, font: bold });
-second.drawText("Fund the repeatable channel and verify the next checkpoint.", { x: 72, y: 664, size: 12, font: regular });
+second.drawText("Fund the repeatable channel and verify the next checkpoint.", {
+  x: 72,
+  y: 664,
+  size: 12,
+  font: regular,
+});
 second.drawText("1. Confirm source ownership", { x: 88, y: 628, size: 12, font: regular });
 second.drawText("2. Review the generated Markdown", { x: 88, y: 602, size: 12, font: regular });
 
@@ -72,16 +77,22 @@ const scannedPage = scannedDocument.addPage([612, 792]);
 const embeddedScan = await scannedDocument.embedPng(scanPng);
 scannedPage.drawImage(embeddedScan, { x: 0, y: 0, width: 612, height: 792 });
 const scannedBytes = await scannedDocument.save({ useObjectStreams: false });
-const scannedMarkdown = convertPdfSemanticSnapshot("rune-scanned-pdf-ocr-qa.pdf", {
-  title: "Rune Scanned PDF OCR QA",
-  outlineCount: 0,
-  hasJavaScript: false,
-  pages: [{ pageNumber: 1, width: 612, height: 792, items: [], annotationCount: 0 }],
-}, [{
-  pageNumber: 1,
-  text: "Rune Scanned PDF OCR QA\nDecision: fund the verified channel.\nOwner: Finance\nCheckpoint: 2026-08-20",
-  confidence: 96,
-}]);
+const scannedMarkdown = convertPdfSemanticSnapshot(
+  "rune-scanned-pdf-ocr-qa.pdf",
+  {
+    title: "Rune Scanned PDF OCR QA",
+    outlineCount: 0,
+    hasJavaScript: false,
+    pages: [{ pageNumber: 1, width: 612, height: 792, items: [], annotationCount: 0 }],
+  },
+  [
+    {
+      pageNumber: 1,
+      text: "Rune Scanned PDF OCR QA\nDecision: fund the verified channel.\nOwner: Finance\nCheckpoint: 2026-08-20",
+      confidence: 96,
+    },
+  ],
+);
 await writeFile(scannedPdfPath, scannedBytes);
 await writeFile(scannedImagePath, scanPng);
 await writeFile(scannedMarkdownPath, scannedMarkdown.artifacts[0].source, "utf8");

@@ -1,11 +1,5 @@
-import {
-  derivePreviewSourceTargets,
-  type PreviewSourceTarget,
-} from "./preview-targets.ts";
-import {
-  MAX_AGENT_SELECTION_CHARS,
-  sourceOutsideSelectionIsUnchanged,
-} from "./source-selection.ts";
+import { derivePreviewSourceTargets, type PreviewSourceTarget } from "./preview-targets.ts";
+import { MAX_AGENT_SELECTION_CHARS, sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_VISUAL_DOCUMENT_SECTION_CHARS = MAX_AGENT_SELECTION_CHARS;
@@ -44,9 +38,7 @@ function visibleHeadings(source: string): VisibleHeading[] {
     const line = rawLine.replace(/(?:\r?\n)$/u, "");
     if (fence) {
       const closing = line.match(/^[\t ]{0,3}(`{3,}|~{3,})[\t ]*$/u);
-      if (closing
-        && closing[1][0] === fence.marker
-        && closing[1].length >= fence.length) fence = null;
+      if (closing && closing[1][0] === fence.marker && closing[1].length >= fence.length) fence = null;
       offset += rawLine.length;
       return;
     }
@@ -63,19 +55,17 @@ function visibleHeadings(source: string): VisibleHeading[] {
   return headings;
 }
 
-function currentTargetForRevision(
-  artifact: WorkspaceArtifact,
-  requested: PreviewSourceTarget,
-) {
-  return derivePreviewSourceTargets(artifact).find((target) => (
-    target.kind === "document-section"
-    && requested.kind === "document-section"
-    && target.id === requested.id
-    && target.index === requested.index
-    && target.label === requested.label
-    && target.start === requested.start
-    && target.end === requested.end
-  ));
+function currentTargetForRevision(artifact: WorkspaceArtifact, requested: PreviewSourceTarget) {
+  return derivePreviewSourceTargets(artifact).find(
+    (target) =>
+      target.kind === "document-section" &&
+      requested.kind === "document-section" &&
+      target.id === requested.id &&
+      target.index === requested.index &&
+      target.label === requested.label &&
+      target.start === requested.start &&
+      target.end === requested.end,
+  );
 }
 
 function normalizeDraft(draft: string, source: string) {
@@ -90,17 +80,11 @@ function runeBindingTokens(source: string) {
   return source.match(/\{\{[^{}\r\n]+\}\}/gu) ?? [];
 }
 
-export function visualDocumentSectionDraft(
-  artifact: WorkspaceArtifact,
-  target: PreviewSourceTarget,
-) {
+export function visualDocumentSectionDraft(artifact: WorkspaceArtifact, target: PreviewSourceTarget) {
   return artifact.source.slice(target.start, target.end);
 }
 
-export function canVisualEditDocumentSection(
-  artifact: WorkspaceArtifact,
-  target: PreviewSourceTarget,
-) {
+export function canVisualEditDocumentSection(artifact: WorkspaceArtifact, target: PreviewSourceTarget) {
   if (artifact.kind !== "document" || target.kind !== "document-section") return false;
   const current = currentTargetForRevision(artifact, target);
   return Boolean(current && current.end - current.start <= MAX_VISUAL_DOCUMENT_SECTION_CHARS);
@@ -111,9 +95,7 @@ export function projectVisualDocumentSectionDraft(
   requestedTarget: PreviewSourceTarget,
   input: VisualDocumentSectionEditInput,
 ): VisualDocumentDraftProjection {
-  const target = artifact.kind === "document"
-    ? currentTargetForRevision(artifact, requestedTarget)
-    : undefined;
+  const target = artifact.kind === "document" ? currentTargetForRevision(artifact, requestedTarget) : undefined;
   if (!target) {
     return {
       nextSource: artifact.source,
@@ -169,10 +151,12 @@ export function prepareVisualDocumentSectionEdit(
       "Keep this visual edit inside one section. Add or remove document structure from canonical source.",
     );
   }
-  if (currentHeadings.length === 1
-    && (currentHeadings[0].start !== 0
-      || nextHeadings[0]?.start !== 0
-      || nextHeadings[0]?.level !== currentHeadings[0].level)) {
+  if (
+    currentHeadings.length === 1 &&
+    (currentHeadings[0].start !== 0 ||
+      nextHeadings[0]?.start !== 0 ||
+      nextHeadings[0]?.level !== currentHeadings[0].level)
+  ) {
     return emptyResult(
       artifact.source,
       "Keep the section's heading level unchanged. Structural changes belong in canonical source.",
@@ -190,12 +174,14 @@ export function prepareVisualDocumentSectionEdit(
     return emptyResult(artifact.source, "The visual edit crossed its exact Document section boundary.");
   }
   const nextArtifact = { ...artifact, source: nextSource };
-  const nextTarget = derivePreviewSourceTargets(nextArtifact).find((candidate) => (
-    candidate.kind === "document-section"
-    && candidate.index === target.index
-    && candidate.start === target.start
-    && candidate.end === target.start + replacement.length
-  )) ?? null;
+  const nextTarget =
+    derivePreviewSourceTargets(nextArtifact).find(
+      (candidate) =>
+        candidate.kind === "document-section" &&
+        candidate.index === target.index &&
+        candidate.start === target.start &&
+        candidate.end === target.start + replacement.length,
+    ) ?? null;
   if (!nextTarget) {
     return emptyResult(artifact.source, "Rune could not prove the edited section's new source range.");
   }

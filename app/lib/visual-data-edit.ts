@@ -1,14 +1,7 @@
 import Papa from "papaparse";
-import {
-  deriveDataPreviewSourceTargets,
-  type DataCellPreviewSourceTarget,
-} from "./preview-targets.ts";
+import { deriveDataPreviewSourceTargets, type DataCellPreviewSourceTarget } from "./preview-targets.ts";
 import { sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
-import {
-  parseDataSource,
-  type DataCell,
-  type WorkspaceArtifact,
-} from "./workspace.ts";
+import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_VISUAL_DATA_CELL_CHARS = 10_000;
 
@@ -41,17 +34,15 @@ function sameCell(left: DataCell | undefined, right: DataCell) {
   return Object.is(left ?? null, right);
 }
 
-function targetForCurrentRevision(
-  artifact: WorkspaceArtifact,
-  requested: DataCellPreviewSourceTarget,
-) {
-  return deriveDataPreviewSourceTargets(artifact).cells.find((target) => (
-    target.rowIndex === requested.rowIndex
-    && target.columnIndex === requested.columnIndex
-    && target.column === requested.column
-    && target.start === requested.start
-    && target.end === requested.end
-  ));
+function targetForCurrentRevision(artifact: WorkspaceArtifact, requested: DataCellPreviewSourceTarget) {
+  return deriveDataPreviewSourceTargets(artifact).cells.find(
+    (target) =>
+      target.rowIndex === requested.rowIndex &&
+      target.columnIndex === requested.columnIndex &&
+      target.column === requested.column &&
+      target.start === requested.start &&
+      target.end === requested.end,
+  );
 }
 
 function parseStrictNumber(draft: string) {
@@ -65,7 +56,13 @@ function parseStrictNumber(draft: string) {
 }
 
 function parseCsvAutoValue(draft: string): DataCell {
-  const singleCellSource = Papa.unparse([["value", "_rune"], [draft, "1"]], { quotes: true, newline: "\n" });
+  const singleCellSource = Papa.unparse(
+    [
+      ["value", "_rune"],
+      [draft, "1"],
+    ],
+    { quotes: true, newline: "\n" },
+  );
   const parsed = parseDataSource(singleCellSource);
   if (parsed.errors.length || parsed.rows.length !== 1) {
     throw new Error(parsed.errors[0] ?? "Rune could not parse this CSV value.");
@@ -73,13 +70,11 @@ function parseCsvAutoValue(draft: string): DataCell {
   return parsed.rows[0].value ?? null;
 }
 
-function parseDraft(
-  draft: string,
-  valueType: VisualDataCellValueType,
-  format: "CSV" | "JSON",
-): DataCell {
+function parseDraft(draft: string, valueType: VisualDataCellValueType, format: "CSV" | "JSON"): DataCell {
   if (draft.length > MAX_VISUAL_DATA_CELL_CHARS) {
-    throw new Error(`Visual cell edits are limited to ${MAX_VISUAL_DATA_CELL_CHARS.toLocaleString("en-US")} characters.`);
+    throw new Error(
+      `Visual cell edits are limited to ${MAX_VISUAL_DATA_CELL_CHARS.toLocaleString("en-US")} characters.`,
+    );
   }
   if (format === "CSV") {
     if (valueType !== "auto") throw new Error("CSV cells use automatic scalar typing.");
@@ -105,10 +100,7 @@ function serializeCell(value: DataCell, format: "CSV" | "JSON") {
   });
 }
 
-export function visualDataCellValueType(
-  value: DataCell,
-  format: "CSV" | "JSON",
-): VisualDataCellValueType {
+export function visualDataCellValueType(value: DataCell, format: "CSV" | "JSON"): VisualDataCellValueType {
   if (format === "CSV") return "auto";
   if (value === null) return "null";
   if (typeof value === "number") return "number";
@@ -120,10 +112,7 @@ export function visualDataCellDraft(value: DataCell) {
   return value === null ? "" : String(value);
 }
 
-export function canVisualEditDataCell(
-  artifact: WorkspaceArtifact,
-  target: DataCellPreviewSourceTarget,
-) {
+export function canVisualEditDataCell(artifact: WorkspaceArtifact, target: DataCellPreviewSourceTarget) {
   if (artifact.kind !== "data") return false;
   const current = targetForCurrentRevision(artifact, target);
   if (!current || current.end - current.start > MAX_VISUAL_DATA_CELL_CHARS) return false;
@@ -141,9 +130,7 @@ export function projectVisualDataCellDraft(
   requestedTarget: DataCellPreviewSourceTarget,
   input: VisualDataCellEditInput,
 ): VisualDataCellDraftProjection {
-  const target = artifact.kind === "data"
-    ? targetForCurrentRevision(artifact, requestedTarget)
-    : undefined;
+  const target = artifact.kind === "data" ? targetForCurrentRevision(artifact, requestedTarget) : undefined;
   if (!target) {
     return {
       nextSource: artifact.source,
@@ -158,11 +145,8 @@ export function projectVisualDataCellDraft(
     replacement = serializeCell(parseDraft(input.draft, input.valueType, parsed.format), parsed.format);
   } catch {
     if (parsed.format === "JSON") {
-      replacement = input.valueType === "string"
-        ? JSON.stringify(input.draft)
-        : input.valueType === "null"
-          ? "null"
-          : input.draft;
+      replacement =
+        input.valueType === "string" ? JSON.stringify(input.draft) : input.valueType === "null" ? "null" : input.draft;
     }
   }
   const prepared = prepareVisualDataCellEdit(artifact, target, input);
@@ -211,11 +195,13 @@ export function prepareVisualDataCellEdit(
   if (!sameCell(nextParsed.rows[target.rowIndex]?.[target.column], value)) {
     return emptyResult(artifact.source, "The edited value could not round-trip through the canonical source.");
   }
-  const nextTarget = deriveDataPreviewSourceTargets(nextArtifact).cells.find((candidate) => (
-    candidate.rowIndex === target.rowIndex
-    && candidate.columnIndex === target.columnIndex
-    && candidate.column === target.column
-  )) ?? null;
+  const nextTarget =
+    deriveDataPreviewSourceTargets(nextArtifact).cells.find(
+      (candidate) =>
+        candidate.rowIndex === target.rowIndex &&
+        candidate.columnIndex === target.columnIndex &&
+        candidate.column === target.column,
+    ) ?? null;
   if (!nextTarget) {
     return emptyResult(artifact.source, "Rune could not prove the edited cell's new source range.");
   }

@@ -23,21 +23,24 @@ export function exactModernKind(fileName) {
 }
 
 function coerceBytes(value) {
-  const bytes = value instanceof Uint8Array
-    ? value
-    : value instanceof ArrayBuffer
-      ? new Uint8Array(value)
-      : Array.isArray(value)
-        ? Uint8Array.from(value)
-        : new Uint8Array();
-  if (!bytes.length || bytes.length > MAX_LEGACY_BYTES) throw new Error("Legacy Office input must be between 1 byte and 12 MB.");
+  const bytes =
+    value instanceof Uint8Array
+      ? value
+      : value instanceof ArrayBuffer
+        ? new Uint8Array(value)
+        : Array.isArray(value)
+          ? Uint8Array.from(value)
+          : new Uint8Array();
+  if (!bytes.length || bytes.length > MAX_LEGACY_BYTES)
+    throw new Error("Legacy Office input must be between 1 byte and 12 MB.");
   return bytes;
 }
 
 export function legacyConversionAppleScript(kind, inputPath, outputPath) {
   const input = JSON.stringify(inputPath);
   const output = JSON.stringify(outputPath);
-  if (kind === "doc") return `
+  if (kind === "doc")
+    return `
 tell application "Microsoft Word"
   set oldSecurity to automation security
   set automation security to msoAutomationSecurityForceDisable
@@ -81,7 +84,8 @@ end tell`;
 export function legacyExportAppleScript(kind, inputPath, outputPath) {
   const input = JSON.stringify(inputPath);
   const output = JSON.stringify(outputPath);
-  if (kind === "doc") return `
+  if (kind === "doc")
+    return `
 tell application "Microsoft Word"
   set oldSecurity to automation security
   set automation security to msoAutomationSecurityForceDisable
@@ -124,8 +128,14 @@ end tell`;
 
 async function officeAvailable(kind) {
   const officePath = kind === "doc" ? WORD_PATH : POWERPOINT_PATH;
-  const available = await access(officePath).then(() => true, () => false);
-  if (!available) throw new Error(`${kind === "doc" ? "Microsoft Word" : "Microsoft PowerPoint"} is required for this local conversion.`);
+  const available = await access(officePath).then(
+    () => true,
+    () => false,
+  );
+  if (!available)
+    throw new Error(
+      `${kind === "doc" ? "Microsoft Word" : "Microsoft PowerPoint"} is required for this local conversion.`,
+    );
 }
 
 async function runConversion(source) {
@@ -136,7 +146,8 @@ async function runConversion(source) {
       windowsHide: true,
     });
   } catch (error) {
-    if (error?.killed || error?.signal) throw new Error("The local Office conversion exceeded Rune's 30 second limit and was stopped.");
+    if (error?.killed || error?.signal)
+      throw new Error("The local Office conversion exceeded Rune's 30 second limit and was stopped.");
     throw error;
   }
 }
@@ -153,14 +164,16 @@ export async function convertLegacyOffice(_event, input) {
     await writeFile(inputPath, bytes, { mode: 0o600 });
     await runConversion(legacyConversionAppleScript(kind, inputPath, outputPath));
     const converted = await readFile(outputPath);
-    if (!converted.length || converted.length > MAX_LEGACY_BYTES) throw new Error("The converted modern Office file is empty or exceeds 12 MB.");
+    if (!converted.length || converted.length > MAX_LEGACY_BYTES)
+      throw new Error("The converted modern Office file is empty or exceeds 12 MB.");
     return {
       fileName: outputName,
       bytes: new Uint8Array(converted),
       warning: `Rune Desktop converted ${input.fileName} to ${outputName} locally with Office macros force-disabled. Legacy layout, embedded objects, media, comments, and animation may change; review the generated canonical source before import.`,
     };
   } catch (error) {
-    if (error?.killed || error?.signal) throw new Error("The local Office conversion exceeded Rune's 30 second limit and was stopped.");
+    if (error?.killed || error?.signal)
+      throw new Error("The local Office conversion exceeded Rune's 30 second limit and was stopped.");
     throw new Error(error instanceof Error ? error.message : "Rune Desktop could not convert that legacy Office file.");
   } finally {
     await rm(privateDirectory, { recursive: true, force: true });
@@ -181,7 +194,8 @@ export async function exportLegacyOffice(_event, input) {
     await writeFile(inputPath, bytes, { mode: 0o600 });
     await runConversion(legacyExportAppleScript(kind, inputPath, outputPath));
     const converted = await readFile(outputPath);
-    if (!converted.length || converted.length > MAX_LEGACY_BYTES) throw new Error("The converted legacy Office file is empty or exceeds 12 MB.");
+    if (!converted.length || converted.length > MAX_LEGACY_BYTES)
+      throw new Error("The converted legacy Office file is empty or exceeds 12 MB.");
     return {
       fileName: outputName,
       bytes: new Uint8Array(converted),

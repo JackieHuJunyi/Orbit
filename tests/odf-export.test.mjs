@@ -6,11 +6,7 @@ import { strFromU8, unzipSync } from "fflate";
 
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { compileDeckSource } from "../app/lib/deck.ts";
-import {
-  MAX_ODF_EXPORT_SOURCE_CHARS,
-  exportOdfArtifact,
-  isOdfExportArtifact,
-} from "../app/lib/odf-export.ts";
+import { MAX_ODF_EXPORT_SOURCE_CHARS, exportOdfArtifact, isOdfExportArtifact } from "../app/lib/odf-export.ts";
 import { convertOdfFile, convertOdfFileWithAssets } from "../app/lib/odf-import.ts";
 import { defaultArtifacts, parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
@@ -33,20 +29,40 @@ function packageParts(bytes) {
   ["content.xml", "styles.xml", "meta.xml", "META-INF/manifest.xml"].forEach((path) => {
     assert.ok(parts[path], `${path} should exist`);
     const issues = [];
-    const document = new DOMParser({ onError(_level, message) { issues.push(message); } })
-      .parseFromString(strFromU8(parts[path]), "application/xml");
+    const document = new DOMParser({
+      onError(_level, message) {
+        issues.push(message);
+      },
+    }).parseFromString(strFromU8(parts[path]), "application/xml");
     assert.ok(document.documentElement, `${path} needs an XML root`);
     assert.deepEqual(issues, [], `${path} should be well-formed XML`);
   });
   return parts;
 }
 
-const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const onePixelPng = new Uint8Array(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
 const runeImageId = "b".repeat(64);
-const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+const runeImageAsset = {
+  id: runeImageId,
+  name: "proof.png",
+  mimeType: "image/png",
+  size: onePixelPng.length,
+  bytes: onePixelPng,
+};
 
 test("embeds and reimports verified Rune local images through portable ODT pictures", async () => {
-  const artifact = { id: "image", name: "image.md", kind: "document", language: "Markdown", source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n` };
+  const artifact = {
+    id: "image",
+    name: "image.md",
+    kind: "document",
+    language: "Markdown",
+    source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n`,
+  };
   const exported = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
   const parts = packageParts(exported.bytes);
   assert.deepEqual(parts[`Pictures/rune-${runeImageId}.png`], onePixelPng);
@@ -61,7 +77,13 @@ test("embeds and reimports verified Rune local images through portable ODT pictu
 });
 
 test("fails ODT export closed when a referenced Rune image is missing", () => {
-  const artifact = { id: "missing", name: "missing.md", kind: "document", language: "Markdown", source: `![Missing](rune-asset:sha256:${runeImageId})` };
+  const artifact = {
+    id: "missing",
+    name: "missing.md",
+    kind: "document",
+    language: "Markdown",
+    source: `![Missing](rune-asset:sha256:${runeImageId})`,
+  };
   assert.throws(() => exportOdfArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
 
@@ -215,7 +237,10 @@ test("limits OpenDocument export to bounded canonical artifacts", () => {
   assert.equal(isOdfExportArtifact(deck), true);
   assert.equal(isOdfExportArtifact(query), false);
   assert.throws(() => exportOdfArtifact(query), /supports Markdown documents/iu);
-  assert.throws(() => exportOdfArtifact({ ...document, source: "x".repeat(MAX_ODF_EXPORT_SOURCE_CHARS + 1) }), /2,000,000 source characters/u);
+  assert.throws(
+    () => exportOdfArtifact({ ...document, source: "x".repeat(MAX_ODF_EXPORT_SOURCE_CHARS + 1) }),
+    /2,000,000 source characters/u,
+  );
   assert.throws(() => exportOdfArtifact({ ...document, source: "x".repeat(200_001) }), /200,000 source characters/u);
 });
 

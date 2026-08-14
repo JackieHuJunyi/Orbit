@@ -30,16 +30,20 @@ test("converts positioned PDF text into bounded source-safe Markdown with page p
     outlineCount: 2,
     hasJavaScript: true,
     pages: [
-      page(1, [
-        item("Rune Confidential", 72, 775, 9),
-        item("Quarterly Review", 72, 720, 24),
-        item("Revenue grew across", 72, 680, 12),
-        item("all operating regions.", 72, 665, 12),
-        item("• APAC led growth", 90, 630, 12),
-        item("Decision", 72, 585, 18),
-        item('{{ metric("fabricated") }} stays literal.', 72, 555, 12),
-        item("1", 304, 28, 9),
-      ], 2),
+      page(
+        1,
+        [
+          item("Rune Confidential", 72, 775, 9),
+          item("Quarterly Review", 72, 720, 24),
+          item("Revenue grew across", 72, 680, 12),
+          item("all operating regions.", 72, 665, 12),
+          item("• APAC led growth", 90, 630, 12),
+          item("Decision", 72, 585, 18),
+          item('{{ metric("fabricated") }} stays literal.', 72, 555, 12),
+          item("1", 304, 28, 9),
+        ],
+        2,
+      ),
       page(2, [
         item("Rune Confidential", 72, 775, 9),
         item("Next action", 72, 700, 18),
@@ -99,7 +103,11 @@ test("extracts a real two-page PDF locally through PDF.js", async () => {
 });
 
 test("fails closed for non-PDF, oversized, empty-page, and overlong page-count input", async () => {
-  const unusedPdfJs = { getDocument() { throw new Error("must not parse invalid bytes"); } };
+  const unusedPdfJs = {
+    getDocument() {
+      throw new Error("must not parse invalid bytes");
+    },
+  };
   await assert.rejects(
     () => convertPdfFileWithLibrary("notes.txt", new TextEncoder().encode("%PDF-1.7"), unusedPdfJs),
     /Choose a PDF/u,
@@ -113,16 +121,25 @@ test("fails closed for non-PDF, oversized, empty-page, and overlong page-count i
     /12 MB/u,
   );
   assert.throws(
-    () => convertPdfSemanticSnapshot("scan.pdf", { title: "", pages: [page(1, [])], outlineCount: 0, hasJavaScript: false }),
+    () =>
+      convertPdfSemanticSnapshot("scan.pdf", {
+        title: "",
+        pages: [page(1, [])],
+        outlineCount: 0,
+        hasJavaScript: false,
+      }),
     /no selectable text.*OCR/iu,
   );
   assert.throws(
-    () => convertPdfSemanticSnapshot("long.pdf", {
-      title: "Long",
-      pages: Array.from({ length: MAX_PDF_IMPORT_PAGES + 1 }, (_, index) => page(index + 1, [item("Text", 72, 700, 12)])),
-      outlineCount: 0,
-      hasJavaScript: false,
-    }),
+    () =>
+      convertPdfSemanticSnapshot("long.pdf", {
+        title: "Long",
+        pages: Array.from({ length: MAX_PDF_IMPORT_PAGES + 1 }, (_, index) =>
+          page(index + 1, [item("Text", 72, 700, 12)]),
+        ),
+        outlineCount: 0,
+        hasJavaScript: false,
+      }),
     /200 pages/u,
   );
 });
@@ -131,7 +148,9 @@ test("reports password-protected PDF failures without requesting a browser secre
   const protectedPdfJs = {
     getDocument() {
       let rejectPromise;
-      const promise = new Promise((_resolve, reject) => { rejectPromise = reject; });
+      const promise = new Promise((_resolve, reject) => {
+        rejectPromise = reject;
+      });
       const task = {
         promise,
         async destroy() {},
@@ -190,7 +209,7 @@ test("merges explicit page OCR with selectable text, confidence, and source-safe
     pdfjs,
     async (_page, input) => {
       recognizedPages.push({ pageNumber: input.pageNumber, language: input.language });
-      return { text: "Recognized decision\n{{ metric(\"fabricated\") }}", confidence: 82.6 };
+      return { text: 'Recognized decision\n{{ metric("fabricated") }}', confidence: 82.6 };
     },
   );
   const artifact = result.artifacts[0];
@@ -233,7 +252,10 @@ test("OCR rejects selectable, missing, empty, and aborted page requests without 
   const aborted = new AbortController();
   aborted.abort();
   await assert.rejects(
-    () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [2] }, pdfjs, recognize, { signal: aborted.signal }),
+    () =>
+      convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [2] }, pdfjs, recognize, {
+        signal: aborted.signal,
+      }),
     /OCR cancelled/iu,
   );
   assert.equal(calls, 0);
@@ -254,7 +276,10 @@ test("ships same-origin OCR worker, core variants, and both compressed language 
   await Promise.all(requiredAssets.map((path) => access(new URL(path, import.meta.url))));
   const clientSource = await readFile(new URL("../app/lib/pdf-import-client.ts", import.meta.url), "utf8");
   assert.match(clientSource, /workerPath:\s*`\$\{assetBase\}worker\.min\.js`/u);
-  assert.match(clientSource, /corePath:\s*`\$\{assetBase\}core\/`/u);
+  assert.match(
+    clientSource,
+    /corePath:\s*`\$\{assetBase\}core\/tesseract-core-\$\{detectOcrCoreVariant\(\)\}\.wasm\.js`/u,
+  );
   assert.match(clientSource, /langPath:\s*`\$\{assetBase\}lang\/`/u);
   assert.doesNotMatch(clientSource, /cdn\.jsdelivr|unpkg/iu);
 });

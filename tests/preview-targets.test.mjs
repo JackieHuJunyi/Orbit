@@ -39,11 +39,17 @@ Proceed.
 `;
   const targets = derivePreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
 
-  assert.deepEqual(targets.map((target) => target.label), ["Document preamble", "Report", "Findings", "Decision"]);
+  assert.deepEqual(
+    targets.map((target) => target.label),
+    ["Document preamble", "Report", "Findings", "Decision"],
+  );
   assert.equal(source.slice(targets[0].start, targets[0].end), "Intro before headings.");
   assert.match(source.slice(targets[2].start, targets[2].end), /^## Findings/);
   assert.match(source.slice(targets[2].start, targets[2].end), /Not a visible section/);
-  assert.equal(targets.every((target, index) => index === 0 || target.start >= targets[index - 1].end), true);
+  assert.equal(
+    targets.every((target, index) => index === 0 || target.start >= targets[index - 1].end),
+    true,
+  );
   assert.equal(previewTargetIsActive(targets[2], { start: targets[2].start, end: targets[2].end }), true);
   assert.equal(previewTargetIsActive(targets[2], targets[2]), true);
   assert.equal(previewTargetIsActive(targets[1], targets[2]), false);
@@ -74,22 +80,29 @@ Opening **note** with {{ metric("total_revenue") }}.
 `;
   const targets = deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
 
-  assert.deepEqual(targets.map((target) => target.blockType), [
-    "heading", "paragraph", "list", "quote", "code", "table", "rule",
-  ]);
+  assert.deepEqual(
+    targets.map((target) => target.blockType),
+    ["heading", "paragraph", "list", "quote", "code", "table", "rule"],
+  );
   assert.equal(targets[0].headingLevel, 1);
   assert.equal(targets[1].headingLevel, undefined);
-  assert.deepEqual(targets.map((target) => source.slice(target.start, target.end)), [
-    "# Report",
-    'Opening **note** with {{ metric("total_revenue") }}.',
-    "- First item\n  - Nested item\n- Second item",
-    "> A quoted decision.\n>\n> With a second paragraph.",
-    "~~~md\n## Not a heading\n~~~",
-    "| Region | Revenue |\n| --- | ---: |\n| APAC | 42 |",
-    "---",
-  ]);
+  assert.deepEqual(
+    targets.map((target) => source.slice(target.start, target.end)),
+    [
+      "# Report",
+      'Opening **note** with {{ metric("total_revenue") }}.',
+      "- First item\n  - Nested item\n- Second item",
+      "> A quoted decision.\n>\n> With a second paragraph.",
+      "~~~md\n## Not a heading\n~~~",
+      "| Region | Revenue |\n| --- | ---: |\n| APAC | 42 |",
+      "---",
+    ],
+  );
   assert.match(targets[1].label, /Opening note with live value/u);
-  assert.equal(targets.every((target, index) => index === 0 || target.start > targets[index - 1].end), true);
+  assert.equal(
+    targets.every((target, index) => index === 0 || target.start > targets[index - 1].end),
+    true,
+  );
 });
 
 test("maps exact Markdown list items, table cells, and inline semantics without rendered-text guessing", () => {
@@ -108,31 +121,48 @@ Use **strong** and *emphasis*, ~~remove this~~, \`code\`, [the source](https://e
   const document = artifact("document", "Markdown", "report.md", source);
   const targets = deriveDocumentFragmentPreviewSourceTargets(document);
 
-  assert.deepEqual(targets.map((target) => target.fragmentType), [
-    "bold",
-    "italic",
-    "strikethrough",
-    "inline-code",
-    "link",
-    "image",
-    "list-item",
-    "list-item",
-    "list-item",
-    "table-header-cell",
-    "table-header-cell",
-    "table-cell",
-    "table-cell",
-  ]);
-  const exactSources = new Map(targets.map((target) => [target.fragmentType + ":" + target.label, source.slice(target.start, target.end)]));
+  assert.deepEqual(
+    targets.map((target) => target.fragmentType),
+    [
+      "bold",
+      "italic",
+      "strikethrough",
+      "inline-code",
+      "link",
+      "image",
+      "list-item",
+      "list-item",
+      "list-item",
+      "table-header-cell",
+      "table-header-cell",
+      "table-cell",
+      "table-cell",
+    ],
+  );
+  const exactSources = new Map(
+    targets.map((target) => [target.fragmentType + ":" + target.label, source.slice(target.start, target.end)]),
+  );
   assert.equal(exactSources.get("bold:Bold · strong"), "**strong**");
   assert.equal(exactSources.get("link:Link · the source"), "[the source](https://example.com)");
   assert.equal(exactSources.get("image:Image · trend"), "![trend](trend.png)");
-  assert.equal(targets.filter((target) => target.fragmentType === "list-item").map((target) => source.slice(target.start, target.end))[1], "- Nested item");
+  assert.equal(
+    targets
+      .filter((target) => target.fragmentType === "list-item")
+      .map((target) => source.slice(target.start, target.end))[1],
+    "- Nested item",
+  );
   assert.equal(exactSources.get("table-header-cell:Table header · Revenue"), "| Revenue |");
   assert.equal(exactSources.get("table-cell:Table row 1 · Revenue · 42"), "| 42 |");
   assert.deepEqual(
-    targets.filter((target) => target.fragmentType.includes("table")).map(({ rowIndex, columnIndex }) => [rowIndex, columnIndex]),
-    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    targets
+      .filter((target) => target.fragmentType.includes("table"))
+      .map(({ rowIndex, columnIndex }) => [rowIndex, columnIndex]),
+    [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ],
   );
 });
 
@@ -179,8 +209,14 @@ test("withholds fine-grained Document fragments that contain embedded Chart bind
 
 Safe **inline** text.`;
   const targets = deriveDocumentFragmentPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
-  assert.equal(targets.some((target) => source.slice(target.start, target.end).includes("chart(")), false);
-  assert.equal(targets.some((target) => target.label === "Bold · inline"), true);
+  assert.equal(
+    targets.some((target) => source.slice(target.start, target.end).includes("chart(")),
+    false,
+  );
+  assert.equal(
+    targets.some((target) => target.label === "Bold · inline"),
+    true,
+  );
 });
 
 test("withholds Document block targets for non-Document or empty source", () => {
@@ -197,8 +233,14 @@ Before.
 
 After {{ chart("regional-margin-chart") }}.`;
   const targets = deriveDocumentBlockPreviewSourceTargets(artifact("document", "Markdown", "report.md", source));
-  assert.deepEqual(targets.map((target) => target.label), ["Report", "Before."]);
-  assert.equal(targets.some((target) => source.slice(target.start, target.end).includes("chart(")), false);
+  assert.deepEqual(
+    targets.map((target) => target.label),
+    ["Report", "Before."],
+  );
+  assert.equal(
+    targets.some((target) => source.slice(target.start, target.end).includes("chart(")),
+    false,
+  );
 });
 
 test("links a source caret or contained selection to the smallest proven Document target", () => {
@@ -272,18 +314,22 @@ test("links Data source positions to cells before rows without guessing invalid 
   assert.equal(row?.label, "Row 1 · APAC");
   assert.equal(deriveSourceLinkedPreviewTargets(data).length, targets.cells.length + targets.rows.length);
 
-  const crossCells = resolveSourceLinkedPreviewTarget(data, {
-    start: source.indexOf("APAC"),
-    end: valueStart + 2,
-  }, [...targets.cells, ...targets.rows]);
+  const crossCells = resolveSourceLinkedPreviewTarget(
+    data,
+    {
+      start: source.indexOf("APAC"),
+      end: valueStart + 2,
+    },
+    [...targets.cells, ...targets.rows],
+  );
   assert.equal(crossCells?.kind, "data-row");
 
   assert.equal(resolveSourceLinkedPreviewTarget(data, { start: -1, end: 0 }), null);
   assert.equal(resolveSourceLinkedPreviewTarget(data, { start: 8, end: 7 }), null);
-  assert.equal(resolveSourceLinkedPreviewTarget(
-    artifact("data", "CSV / JSON", "unicode.csv", "Name\n😀"),
-    { start: 6, end: 6 },
-  ), null);
+  assert.equal(
+    resolveSourceLinkedPreviewTarget(artifact("data", "CSV / JSON", "unicode.csv", "Name\n😀"), { start: 6, end: 6 }),
+    null,
+  );
 });
 
 test("links Deck and Chart source while leaving Query source without a false visual target", () => {
@@ -318,16 +364,19 @@ Start here.`;
     color: "#ff5c35",
     maxItems: 8,
   });
-  const chart = resolveSourceLinkedPreviewTarget(
-    artifact("chart", "Chart JSON", "revenue.chart.json", chartSource),
-    { start: chartSource.indexOf("Revenue"), end: chartSource.indexOf("Revenue") },
-  );
+  const chart = resolveSourceLinkedPreviewTarget(artifact("chart", "Chart JSON", "revenue.chart.json", chartSource), {
+    start: chartSource.indexOf("Revenue"),
+    end: chartSource.indexOf("Revenue"),
+  });
   assert.equal(chart?.kind, "chart-spec");
 
-  assert.equal(resolveSourceLinkedPreviewTarget(
-    artifact("query", "DuckDB SQL", "report.sql", "SELECT * FROM workspace_data"),
-    { start: 4, end: 4 },
-  ), null);
+  assert.equal(
+    resolveSourceLinkedPreviewTarget(artifact("query", "DuckDB SQL", "report.sql", "SELECT * FROM workspace_data"), {
+      start: 4,
+      end: 4,
+    }),
+    null,
+  );
 });
 
 test("maps quoted multiline CSV records to the exact row source", () => {
@@ -390,14 +439,14 @@ test("maps exact JSON property values and withholds ambiguous duplicate-key cell
   assert.equal(source.slice(note.start, note.end), `"Use } and ], \\"literally\\""`);
   assert.equal(source.slice(meta.start, meta.end), `{"owner":"A"}`);
   assert.equal(source.slice(ready.start, ready.end), "true");
-  assert.equal(targets.cells.some((target) => target.rowIndex === 1 && target.column === "Note"), false);
+  assert.equal(
+    targets.cells.some((target) => target.rowIndex === 1 && target.column === "Note"),
+    false,
+  );
 
-  const duplicate = deriveDataPreviewSourceTargets(artifact(
-    "data",
-    "CSV / JSON",
-    "ambiguous.json",
-    `[{"Region":"old","Region":"new","Value":1}]`,
-  ));
+  const duplicate = deriveDataPreviewSourceTargets(
+    artifact("data", "CSV / JSON", "ambiguous.json", `[{"Region":"old","Region":"new","Value":1}]`),
+  );
   assert.equal(duplicate.rows.length, 1);
   assert.deepEqual(duplicate.cells, []);
 });
@@ -405,9 +454,18 @@ test("maps exact JSON property values and withholds ambiguous duplicate-key cell
 test("maps primitive JSON values without inventing source for synthetic row numbers", () => {
   const source = `["APAC", 42, false]`;
   const targets = deriveDataPreviewSourceTargets(artifact("data", "CSV / JSON", "values.json", source));
-  assert.deepEqual(targets.cells.map((target) => target.column), ["value", "value", "value"]);
-  assert.deepEqual(targets.cells.map((target) => source.slice(target.start, target.end)), [`"APAC"`, "42", "false"]);
-  assert.equal(targets.cells.some((target) => target.column === "row"), false);
+  assert.deepEqual(
+    targets.cells.map((target) => target.column),
+    ["value", "value", "value"],
+  );
+  assert.deepEqual(
+    targets.cells.map((target) => source.slice(target.start, target.end)),
+    [`"APAC"`, "42", "false"],
+  );
+  assert.equal(
+    targets.cells.some((target) => target.column === "row"),
+    false,
+  );
 });
 
 test("maps Deck preview controls to complete slides without frontmatter or separators", () => {
@@ -434,7 +492,10 @@ One action.
 `;
   const targets = derivePreviewSourceTargets(artifact("slides", "Deck Markdown", "briefing.deck.md", source));
 
-  assert.deepEqual(targets.map((target) => target.label), ["Opening", "Commit now"]);
+  assert.deepEqual(
+    targets.map((target) => target.label),
+    ["Opening", "Commit now"],
+  );
   assert.match(source.slice(targets[0].start, targets[0].end), /^<!-- layout: cover -->/);
   assert.doesNotMatch(source.slice(targets[0].start, targets[0].end), /^---|---$/m);
   assert.match(source.slice(targets[1].start, targets[1].end), /One action\.$/);
@@ -442,26 +503,39 @@ One action.
 
 test("returns no visual targets for invalid data, invalid Deck source, or legacy HTML", () => {
   assert.deepEqual(derivePreviewSourceTargets(artifact("data", "CSV / JSON", "broken.json", "[{")), []);
-  assert.deepEqual(derivePreviewSourceTargets(artifact("slides", "Deck Markdown", "broken.deck.md", "# No frontmatter")), []);
-  assert.deepEqual(derivePreviewSourceTargets(artifact("slides", "Semantic HTML", "legacy.html", "<main><section>Legacy</section></main>")), []);
+  assert.deepEqual(
+    derivePreviewSourceTargets(artifact("slides", "Deck Markdown", "broken.deck.md", "# No frontmatter")),
+    [],
+  );
+  assert.deepEqual(
+    derivePreviewSourceTargets(
+      artifact("slides", "Semantic HTML", "legacy.html", "<main><section>Legacy</section></main>"),
+    ),
+    [],
+  );
 });
 
 test("resolves a sorted duplicate chart mark to its exact canonical row and cells", () => {
   const data = artifact("data", "CSV / JSON", "regions.csv", "Region,Revenue\nShared,10\nShared,30\nOther,20");
   data.id = "regions";
-  const chart = artifact("chart", "Chart JSON", "revenue.chart.json", JSON.stringify({
-    version: 1,
-    title: "Revenue",
-    description: "",
-    source: "regions",
-    mark: "bar",
-    category: "Region",
-    value: "Revenue",
-    sort: "descending",
-    format: "number",
-    color: "#ff5c35",
-    maxItems: 8,
-  }));
+  const chart = artifact(
+    "chart",
+    "Chart JSON",
+    "revenue.chart.json",
+    JSON.stringify({
+      version: 1,
+      title: "Revenue",
+      description: "",
+      source: "regions",
+      mark: "bar",
+      category: "Region",
+      value: "Revenue",
+      sort: "descending",
+      format: "number",
+      color: "#ff5c35",
+      maxItems: 8,
+    }),
+  );
   chart.id = "revenue-chart";
   const model = resolveChartModel(chart, [data, chart], parseDataSource).model;
   assert.ok(model);
@@ -472,8 +546,16 @@ test("resolves a sorted duplicate chart mark to its exact canonical row and cell
   assert.ok(resolved);
   assert.equal(resolved.artifact.id, "regions");
   assert.equal(data.source.slice(resolved.target.start, resolved.target.end), "Shared,30");
-  const category = resolveDataCellPreviewTarget(model.sourceArtifactId, model.data[0].sourceRowIndex, model.spec.category, [data, chart]);
-  const value = resolveDataCellPreviewTarget(model.sourceArtifactId, model.data[0].sourceRowIndex, model.spec.value, [data, chart]);
+  const category = resolveDataCellPreviewTarget(
+    model.sourceArtifactId,
+    model.data[0].sourceRowIndex,
+    model.spec.category,
+    [data, chart],
+  );
+  const value = resolveDataCellPreviewTarget(model.sourceArtifactId, model.data[0].sourceRowIndex, model.spec.value, [
+    data,
+    chart,
+  ]);
   assert.ok(category);
   assert.ok(value);
   assert.equal(data.source.slice(category.target.start, category.target.end), "Shared");

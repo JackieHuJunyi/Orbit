@@ -54,7 +54,9 @@ export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
     }
     const surfaceRecords = records.get(contribution.surface)!;
     if (surfaceRecords.some((entry) => entry.id === contribution.id)) {
-      throw new Error(`Rune surface contribution "${contribution.id}" is already registered on "${contribution.surface}".`);
+      throw new Error(
+        `Rune surface contribution "${contribution.id}" is already registered on "${contribution.surface}".`,
+      );
     }
     if (kind === "single" && surfaceRecords.length > 0) {
       throw new Error(`Rune single surface "${contribution.surface}" already has an occupant.`);

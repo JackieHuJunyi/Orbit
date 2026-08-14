@@ -4,12 +4,7 @@ import ts from "typescript";
 import { GENERATED_INTERFACE_TRANSLATIONS } from "../app/lib/interface-locales.generated.ts";
 import { MANUAL_INTERFACE_TRANSLATIONS } from "../app/lib/interface-locales.manual.ts";
 
-import {
-  ENGLISH_RUNE_GUIDE,
-  localizeRuneStatus,
-  runeQuickCommands,
-  runeUICopy,
-} from "../app/lib/localization.ts";
+import { ENGLISH_RUNE_GUIDE, localizeRuneStatus, runeQuickCommands, runeUICopy } from "../app/lib/localization.ts";
 
 const appRoot = path.resolve(import.meta.dirname, "..");
 const outputPath = path.join(appRoot, "app", "lib", "interface-locales.generated.ts");
@@ -26,11 +21,48 @@ const componentCatalogs = [
   ["app/components/pdf-ocr-setup-dialog.tsx", "PDF_OCR_BASE_COPY"],
 ];
 const protectedTerms = [
-  "Rune", "Markdown", "CSV", "JSON", "SQL", "Chart", "Deck", "DuckDB", "Agent", "Artifact",
-  "Document", "Data", "Query", "Source", "Workspace", "Review", "Apply",
-  "OpenAI", "OpenRouter", "Anthropic", "Gemini", "Chat Completions", "Responses", "generateContent",
-  "DOC", "DOCX", "XLSX", "PPT", "PPTX", "ODT", "ODS", "ODP", "PDF", "HTML", "OCR",
-  "macOS", "Windows", "Linux", "localStorage", "HttpOnly", "API Key", "RUNE_CREDENTIAL_ENCRYPTION_KEY",
+  "Rune",
+  "Markdown",
+  "CSV",
+  "JSON",
+  "SQL",
+  "Chart",
+  "Deck",
+  "DuckDB",
+  "Agent",
+  "Artifact",
+  "Document",
+  "Data",
+  "Query",
+  "Source",
+  "Workspace",
+  "Review",
+  "Apply",
+  "OpenAI",
+  "OpenRouter",
+  "Anthropic",
+  "Gemini",
+  "Chat Completions",
+  "Responses",
+  "generateContent",
+  "DOC",
+  "DOCX",
+  "XLSX",
+  "PPT",
+  "PPTX",
+  "ODT",
+  "ODS",
+  "ODP",
+  "PDF",
+  "HTML",
+  "OCR",
+  "macOS",
+  "Windows",
+  "Linux",
+  "localStorage",
+  "HttpOnly",
+  "API Key",
+  "RUNE_CREDENTIAL_ENCRYPTION_KEY",
 ];
 
 function collectStrings(value, strings) {
@@ -59,10 +91,15 @@ async function collectComponentEnglish(file, identifier, strings) {
   for (const statement of tree.statements) {
     if (!ts.isVariableStatement(statement)) continue;
     for (const declaration of statement.declarationList.declarations) {
-      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== identifier || !declaration.initializer) continue;
-      const root = ts.isAsExpression(declaration.initializer) ? declaration.initializer.expression : declaration.initializer;
+      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== identifier || !declaration.initializer)
+        continue;
+      const root = ts.isAsExpression(declaration.initializer)
+        ? declaration.initializer.expression
+        : declaration.initializer;
       if (!ts.isObjectLiteralExpression(root)) continue;
-      const english = root.properties.find((property) => ts.isPropertyAssignment(property) && propertyName(property.name) === "en");
+      const english = root.properties.find(
+        (property) => ts.isPropertyAssignment(property) && propertyName(property.name) === "en",
+      );
       if (!english || !ts.isPropertyAssignment(english)) continue;
       collectLiteralStrings(english.initializer, strings);
       found = true;
@@ -75,9 +112,12 @@ async function collectEnglishStrings() {
   const strings = new Set();
   collectStrings(runeUICopy("en"), strings);
   for (const kind of ["document", "data", "query", "chart", "slides"]) {
-    for (const scope of ["selection", "artifact", "workspace"]) collectStrings(runeQuickCommands("en", scope, kind), strings);
+    for (const scope of ["selection", "artifact", "workspace"])
+      collectStrings(runeQuickCommands("en", scope, kind), strings);
   }
-  ENGLISH_RUNE_GUIDE.split("\n").forEach((line) => { if (line.trim()) strings.add(line); });
+  ENGLISH_RUNE_GUIDE.split("\n").forEach((line) => {
+    if (line.trim()) strings.add(line);
+  });
   for (const [file, identifier] of componentCatalogs) await collectComponentEnglish(file, identifier, strings);
 
   const localizationSource = await fs.readFile(path.join(appRoot, "app/lib/localization.ts"), "utf8");
@@ -106,8 +146,7 @@ function protectText(text) {
 function restoreText(text, replacements) {
   let value = text;
   replacements.forEach((replacement, index) => {
-    value = value.replaceAll(`{{RUNE_TOKEN_${index}}}`, replacement)
-      .replaceAll(`{{RUNE TOKEN ${index}}}`, replacement);
+    value = value.replaceAll(`{{RUNE_TOKEN_${index}}}`, replacement).replaceAll(`{{RUNE TOKEN ${index}}}`, replacement);
   });
   return value;
 }
@@ -167,7 +206,9 @@ async function translateLocale(locale, strings, existing = {}) {
   async function flush() {
     if (!batch.length) return;
     const translated = await translateBatch(locale, batch);
-    batch.forEach((entry, index) => { result[entry.source] = restoreSourceSyntax(entry.source, translated[index] || entry.source); });
+    batch.forEach((entry, index) => {
+      result[entry.source] = restoreSourceSyntax(entry.source, translated[index] || entry.source);
+    });
     batch = [];
     size = 0;
   }
@@ -189,16 +230,28 @@ function serialize(catalogs) {
 const strings = await collectEnglishStrings();
 if (process.argv.includes("--check")) {
   const catalogs = GENERATED_INTERFACE_TRANSLATIONS;
-  const missingByLocale = Object.fromEntries(targetLocales.map((locale) => [locale, strings.filter((value) => {
-    const catalog = { ...catalogs[locale], ...MANUAL_INTERFACE_TRANSLATIONS[locale] };
-    return !catalog || typeof catalog[value] !== "string" || !catalog[value].trim();
-  })]));
+  const missingByLocale = Object.fromEntries(
+    targetLocales.map((locale) => [
+      locale,
+      strings.filter((value) => {
+        const catalog = { ...catalogs[locale], ...MANUAL_INTERFACE_TRANSLATIONS[locale] };
+        return !catalog || typeof catalog[value] !== "string" || !catalog[value].trim();
+      }),
+    ]),
+  );
   const missing = Object.values(missingByLocale).flat();
   if (missing.length) {
-    const detail = Object.entries(missingByLocale).filter(([, values]) => values.length).map(([locale, values]) => `${locale}: ${values.join(" | ")}`).join("\n");
-    throw new Error(`Interface locale catalog is stale (${missing.length} missing entries). Run npm run locales:interface:generate.\n${detail}`);
+    const detail = Object.entries(missingByLocale)
+      .filter(([, values]) => values.length)
+      .map(([locale, values]) => `${locale}: ${values.join(" | ")}`)
+      .join("\n");
+    throw new Error(
+      `Interface locale catalog is stale (${missing.length} missing entries). Run npm run locales:interface:generate.\n${detail}`,
+    );
   }
-  console.log(`Interface locale catalog covers ${strings.length} English strings across ${targetLocales.length} generated locales.`);
+  console.log(
+    `Interface locale catalog covers ${strings.length} English strings across ${targetLocales.length} generated locales.`,
+  );
 } else {
   const catalogs = {};
   for (const locale of targetLocales) {

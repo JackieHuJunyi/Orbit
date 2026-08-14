@@ -70,10 +70,19 @@ test("normalizes ordered line points across negative, zero, and positive values"
   const resolution = resolveChartModel(chart, [data, chart], parseDataSource);
   assert.deepEqual(resolution.errors, []);
   assert.ok(resolution.model);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.position), [0, 1 / 3, 1]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.ratio), [0.5, 0, 1]);
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.position),
+    [0, 1 / 3, 1],
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.ratio),
+    [0.5, 0, 1],
+  );
   const points = chartLinePoints(resolution.model);
-  assert.deepEqual(points.map(({ x }) => x), [0, 0.5, 1]);
+  assert.deepEqual(
+    points.map(({ x }) => x),
+    [0, 0.5, 1],
+  );
   assert.ok(Math.abs(points[0].y - 1) < Number.EPSILON);
   assert.ok(Math.abs(points[1].y - 2 / 3) < Number.EPSILON);
   assert.ok(Math.abs(points[2].y) < Number.EPSILON);
@@ -92,12 +101,30 @@ test("centers a one-point or flat line series without fabricating a range", () =
     name: "flat.chart.json",
     kind: "chart",
     language: "Chart JSON",
-    source: JSON.stringify({ version: 1, title: "Flat", description: "", source: data.id, mark: "line", category: "Period", value: "Value", sort: "source", format: "number", color: "#ff5c35", maxItems: 8 }),
+    source: JSON.stringify({
+      version: 1,
+      title: "Flat",
+      description: "",
+      source: data.id,
+      mark: "line",
+      category: "Period",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#ff5c35",
+      maxItems: 8,
+    }),
   };
   const model = resolveChartModel(chart, [data, chart], parseDataSource).model;
   assert.ok(model);
-  assert.deepEqual(model.data.map((datum) => datum.position), [0.5, 0.5]);
-  assert.deepEqual(chartLinePoints(model).map(({ y }) => y), [0.5, 0.5]);
+  assert.deepEqual(
+    model.data.map((datum) => datum.position),
+    [0.5, 0.5],
+  );
+  assert.deepEqual(
+    chartLinePoints(model).map(({ y }) => y),
+    [0.5, 0.5],
+  );
 });
 
 test("projects canonical CSV rows into a sorted local chart model", () => {
@@ -105,8 +132,14 @@ test("projects canonical CSV rows into a sorted local chart model", () => {
   assert.deepEqual(resolution.errors, []);
   assert.ok(resolution.model);
   assert.equal(resolution.model.sourceArtifactName, "regional-revenue.csv");
-  assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["APAC", "North America", "Europe", "LATAM"]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [0, 1, 2, 3]);
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.label),
+    ["APAC", "North America", "Europe", "LATAM"],
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.sourceRowIndex),
+    [0, 1, 2, 3],
+  );
   assert.equal(resolution.model.data[0].formatted, "$1.84M");
   assert.equal(resolution.model.data[2].formatted, "$970K");
   assert.equal(resolution.model.data[0].ratio, 1);
@@ -141,8 +174,14 @@ test("keeps exact source-row provenance through chart sorting and duplicate labe
   };
   const resolution = resolveChartModel(chart, [data, chart], parseDataSource);
   assert.ok(resolution.model);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["Shared", "Other"]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [1, 2]);
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.label),
+    ["Shared", "Other"],
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.sourceRowIndex),
+    [1, 2],
+  );
 });
 
 test("projects a revision-bound Query result into a Chart without inventing cell lineage", () => {
@@ -160,15 +199,30 @@ test("projects a revision-bound Query result into a Chart without inventing cell
   assert.ok(resolution.model);
   assert.equal(resolution.model.sourceArtifactKind, "query");
   assert.equal(resolution.model.sourceArtifactName, "regional-analysis.sql");
-  assert.deepEqual(resolution.model.data.map((datum) => datum.label), ["APAC", "North America", "LATAM", "Europe"]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.formatted), ["39.1%", "35.3%", "30.0%", "28.9%"]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.sourceRowIndex), [0, 1, 3, 2]);
-  assert.deepEqual(resolution.model.data.map((datum) => datum.categoryProvenance), [0, 1, 3, 2].map((sourceRowIndex) => ({
-    artifactId: "regional-revenue",
-    sourceRowIndex,
-    sourceColumn: "Region",
-  })));
-  assert.deepEqual(resolution.model.data.map((datum) => datum.valueProvenance), [null, null, null, null]);
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.label),
+    ["APAC", "North America", "LATAM", "Europe"],
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.formatted),
+    ["39.1%", "35.3%", "30.0%", "28.9%"],
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.sourceRowIndex),
+    [0, 1, 3, 2],
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.categoryProvenance),
+    [0, 1, 3, 2].map((sourceRowIndex) => ({
+      artifactId: "regional-revenue",
+      sourceRowIndex,
+      sourceColumn: "Region",
+    })),
+  );
+  assert.deepEqual(
+    resolution.model.data.map((datum) => datum.valueProvenance),
+    [null, null, null, null],
+  );
 });
 
 test("keeps a Query-backed Chart on its explicit Data source after workspace reordering", () => {
@@ -193,23 +247,43 @@ test("rejects missing, stale, truncated, or schema-drifting Query chart snapshot
   assert.ok(chart);
   const snapshot = defaultQuerySnapshot();
   assert.match(resolveChartModel(chart, defaultArtifacts, parseDataSource).errors[0], /still running/i);
-  assert.match(resolveChartModel(chart, defaultArtifacts.map((artifact) => (
-    artifact.id === "regional-revenue" ? { ...artifact, source: `${artifact.source}\n` } : artifact
-  )), parseDataSource, [snapshot]).errors[0], /stale/i);
-  assert.match(resolveChartModel(chart, defaultArtifacts, parseDataSource, [{
-    ...snapshot,
-    result: { ...snapshot.result, truncated: true },
-  }]).errors[0], /exceeds 500 rows/i);
-  assert.match(validateChartSourceBinding({
-    ...chart,
-    source: chart.source.replace('"margin_pct"', '"missing_metric"'),
-  }, defaultArtifacts, parseDataSource)[0], /not found in Query output/i);
+  assert.match(
+    resolveChartModel(
+      chart,
+      defaultArtifacts.map((artifact) =>
+        artifact.id === "regional-revenue" ? { ...artifact, source: `${artifact.source}\n` } : artifact,
+      ),
+      parseDataSource,
+      [snapshot],
+    ).errors[0],
+    /stale/i,
+  );
+  assert.match(
+    resolveChartModel(chart, defaultArtifacts, parseDataSource, [
+      {
+        ...snapshot,
+        result: { ...snapshot.result, truncated: true },
+      },
+    ]).errors[0],
+    /exceeds 500 rows/i,
+  );
+  assert.match(
+    validateChartSourceBinding(
+      {
+        ...chart,
+        source: chart.source.replace('"margin_pct"', '"missing_metric"'),
+      },
+      defaultArtifacts,
+      parseDataSource,
+    )[0],
+    /not found in Query output/i,
+  );
 });
 
 test("escapes chart text when compiling a static slide embed", () => {
   const unsafe = {
     ...chartArtifact(),
-    source: chartArtifact().source.replace("Q2 revenue by region", "<img src=x onerror=alert(1)>")
+    source: chartArtifact().source.replace("Q2 revenue by region", "<img src=x onerror=alert(1)>"),
   };
   const resolution = resolveChartModel(unsafe, defaultArtifacts, parseDataSource);
   assert.ok(resolution.model);
@@ -223,12 +297,14 @@ test("finds and tokenizes chart references without evaluating source", () => {
   const source = '# Review\n\n{{ chart("regional-revenue-chart") }}\n\nEnd';
   assert.deepEqual(findChartReferences(source), ["regional-revenue-chart"]);
   const parts = tokenizeChartReferences(source);
-  assert.deepEqual(parts.map((part) => part.type), ["source", "chart", "source"]);
-  assert.deepEqual(parts.map((part) => source.slice(part.start, part.end)), [
-    "# Review\n\n",
-    '{{ chart("regional-revenue-chart") }}',
-    "\n\nEnd",
-  ]);
+  assert.deepEqual(
+    parts.map((part) => part.type),
+    ["source", "chart", "source"],
+  );
+  assert.deepEqual(
+    parts.map((part) => source.slice(part.start, part.end)),
+    ["# Review\n\n", '{{ chart("regional-revenue-chart") }}', "\n\nEnd"],
+  );
 });
 
 test("compiles a chart directive into static sandbox-safe slide HTML", () => {

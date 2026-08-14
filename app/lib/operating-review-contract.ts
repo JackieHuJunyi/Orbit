@@ -1,76 +1,110 @@
 import { z } from "zod";
 import { RUNE_LOCALE_REGISTRY } from "./localization.ts";
-import {
-  MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS,
-  operatingReviewScopeValueKey,
-} from "./operating-review-scope.ts";
+import { MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS, operatingReviewScopeValueKey } from "./operating-review-scope.ts";
 
 export const MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS = 100_000;
 export const MAX_OPERATING_REVIEW_EVIDENCE_ROWS = 20;
 export const MAX_OPERATING_REVIEW_INSIGHTS = 2;
 
-const OperatingReviewArtifactSchema = z.object({
-  id: z.string().min(1).max(120),
-  name: z.string().min(1).max(240),
-  kind: z.literal("data"),
-  language: z.string().min(1).max(80),
-  source: z.string().min(1).max(MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS),
-}).strict();
+const OperatingReviewArtifactSchema = z
+  .object({
+    id: z.string().min(1).max(120),
+    name: z.string().min(1).max(240),
+    kind: z.literal("data"),
+    language: z.string().min(1).max(80),
+    source: z.string().min(1).max(MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS),
+  })
+  .strict();
 
-const OperatingReviewScopeSchema = z.object({
-  field: z.string().min(1).max(120).refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
-  value: z.union([
-    z.string().max(MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS).refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
-    z.number().finite(),
-    z.boolean(),
-  ]),
-}).strict();
+const OperatingReviewScopeSchema = z
+  .object({
+    field: z
+      .string()
+      .min(1)
+      .max(120)
+      .refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
+    value: z.union([
+      z
+        .string()
+        .max(MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS)
+        .refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
+      z.number().finite(),
+      z.boolean(),
+    ]),
+  })
+  .strict();
 
-const OperatingReviewInputSchema = z.object({
-  title: z.string().trim().min(1).max(60),
-  dataArtifactId: z.string().min(1).max(120),
-  category: z.string().min(1).max(120),
-  value: z.string().min(1).max(120),
-  aggregation: z.enum(["sum", "average"]),
-  mark: z.enum(["bar", "line"]),
-  format: z.enum(["number", "currency", "percent"]),
-  scope: OperatingReviewScopeSchema.nullable().optional(),
-  comparisonScope: OperatingReviewScopeSchema.nullable().optional(),
-  period: z.string().trim().min(1).max(60),
-  audience: z.enum(["leadership", "board", "team"]),
-  focus: z.string().trim().min(1).max(140),
-  deliverables: z.array(z.enum(["document", "slides"])).min(1).max(2),
-  locale: z.enum(RUNE_LOCALE_REGISTRY.map((entry) => entry.locale)),
-}).strict().superRefine((input, context) => {
-  if (new Set(input.deliverables).size !== input.deliverables.length) {
-    context.addIssue({ code: "custom", message: "Deliverable choices must be unique." });
-  }
-  if (input.comparisonScope && (!input.scope
-    || input.comparisonScope.field !== input.scope.field
-    || operatingReviewScopeValueKey(input.comparisonScope.value)
-      === operatingReviewScopeValueKey(input.scope.value))) {
-    context.addIssue({ code: "custom", message: "Comparison needs the same scope field and a different exact value." });
-  }
-});
+const OperatingReviewInputSchema = z
+  .object({
+    title: z.string().trim().min(1).max(60),
+    dataArtifactId: z.string().min(1).max(120),
+    category: z.string().min(1).max(120),
+    value: z.string().min(1).max(120),
+    aggregation: z.enum(["sum", "average"]),
+    mark: z.enum(["bar", "line"]),
+    format: z.enum(["number", "currency", "percent"]),
+    scope: OperatingReviewScopeSchema.nullable().optional(),
+    comparisonScope: OperatingReviewScopeSchema.nullable().optional(),
+    period: z.string().trim().min(1).max(60),
+    audience: z.enum(["leadership", "board", "team"]),
+    focus: z.string().trim().min(1).max(140),
+    deliverables: z
+      .array(z.enum(["document", "slides"]))
+      .min(1)
+      .max(2),
+    locale: z.enum(RUNE_LOCALE_REGISTRY.map((entry) => entry.locale)),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if (new Set(input.deliverables).size !== input.deliverables.length) {
+      context.addIssue({ code: "custom", message: "Deliverable choices must be unique." });
+    }
+    if (
+      input.comparisonScope &&
+      (!input.scope ||
+        input.comparisonScope.field !== input.scope.field ||
+        operatingReviewScopeValueKey(input.comparisonScope.value) === operatingReviewScopeValueKey(input.scope.value))
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Comparison needs the same scope field and a different exact value.",
+      });
+    }
+  });
 
-export const OperatingReviewModelRequestSchema = z.object({
-  artifact: OperatingReviewArtifactSchema,
-  input: OperatingReviewInputSchema,
-}).strict().superRefine((request, context) => {
-  if (request.artifact.id !== request.input.dataArtifactId) {
-    context.addIssue({ code: "custom", message: "The Data identity does not match the review source." });
-  }
-});
+export const OperatingReviewModelRequestSchema = z
+  .object({
+    artifact: OperatingReviewArtifactSchema,
+    input: OperatingReviewInputSchema,
+  })
+  .strict()
+  .superRefine((request, context) => {
+    if (request.artifact.id !== request.input.dataArtifactId) {
+      context.addIssue({ code: "custom", message: "The Data identity does not match the review source." });
+    }
+  });
 
-export const OperatingReviewNarrativeSchema = z.object({
-  insights: z.array(z.object({
-    primaryEvidenceRowId: z.string().regex(/^result-(?:[1-9]|1\d|20)$/u),
-    supportingEvidenceRowId: z.string().regex(/^result-(?:[1-9]|1\d|20)$/u).nullable(),
-    title: z.string().trim().min(1).max(70),
-    question: z.string().trim().min(1).max(140),
-    decisionPrompt: z.string().trim().min(1).max(140),
-  }).strict()).min(1).max(MAX_OPERATING_REVIEW_INSIGHTS),
-}).strict();
+export const OperatingReviewNarrativeSchema = z
+  .object({
+    insights: z
+      .array(
+        z
+          .object({
+            primaryEvidenceRowId: z.string().regex(/^result-(?:[1-9]|1\d|20)$/u),
+            supportingEvidenceRowId: z
+              .string()
+              .regex(/^result-(?:[1-9]|1\d|20)$/u)
+              .nullable(),
+            title: z.string().trim().min(1).max(70),
+            question: z.string().trim().min(1).max(140),
+            decisionPrompt: z.string().trim().min(1).max(140),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(MAX_OPERATING_REVIEW_INSIGHTS),
+  })
+  .strict();
 
 export type OperatingReviewEvidenceRow = {
   id: string;
@@ -89,10 +123,7 @@ function isPlainQualitativeLine(value: string) {
   return !/[\r\n\u0000-\u001f\u007f<>{}\p{N}%$€£¥₹]/u.test(value);
 }
 
-export function validateOperatingReviewNarrative(
-  value: unknown,
-  evidenceRows: readonly OperatingReviewEvidenceRow[],
-) {
+export function validateOperatingReviewNarrative(value: unknown, evidenceRows: readonly OperatingReviewEvidenceRow[]) {
   const parsed = OperatingReviewNarrativeSchema.safeParse(value);
   if (!parsed.success) return { errors: ["The model returned an invalid operating-review narrative."] };
   const expectedInsightCount = Math.min(MAX_OPERATING_REVIEW_INSIGHTS, evidenceRows.length);
@@ -107,17 +138,27 @@ export function validateOperatingReviewNarrative(
   if (new Set(primaryIds).size !== primaryIds.length || primaryIds.some((id) => !evidenceIds.has(id))) {
     return { errors: ["Every insight needs a unique exact primary evidence row."] };
   }
-  if (parsed.data.insights.some((insight) => (
-    (insight.supportingEvidenceRowId != null
-      && (!evidenceIds.has(insight.supportingEvidenceRowId)
-        || insight.supportingEvidenceRowId === insight.primaryEvidenceRowId))
-    || !isPlainQualitativeLine(insight.title)
-    || !isPlainQualitativeLine(insight.question)
-    || !isPlainQualitativeLine(insight.decisionPrompt)
-    || evidenceLabels.some((label) => [insight.title, insight.question, insight.decisionPrompt]
-      .some((text) => text.toLocaleLowerCase("en-US").includes(label)))
-  ))) {
-    return { errors: ["Model narrative must use exact evidence ids and generic qualitative text without copied labels or numbers."] };
+  if (
+    parsed.data.insights.some(
+      (insight) =>
+        (insight.supportingEvidenceRowId != null &&
+          (!evidenceIds.has(insight.supportingEvidenceRowId) ||
+            insight.supportingEvidenceRowId === insight.primaryEvidenceRowId)) ||
+        !isPlainQualitativeLine(insight.title) ||
+        !isPlainQualitativeLine(insight.question) ||
+        !isPlainQualitativeLine(insight.decisionPrompt) ||
+        evidenceLabels.some((label) =>
+          [insight.title, insight.question, insight.decisionPrompt].some((text) =>
+            text.toLocaleLowerCase("en-US").includes(label),
+          ),
+        ),
+    )
+  ) {
+    return {
+      errors: [
+        "Model narrative must use exact evidence ids and generic qualitative text without copied labels or numbers.",
+      ],
+    };
   }
   return { narrative: parsed.data, errors: [] };
 }
@@ -153,17 +194,21 @@ export function buildOperatingReviewModelInput({
   comparisonScope?: { field: string; value: string | number | boolean } | null;
   evidenceRows: readonly OperatingReviewEvidenceRow[];
 }) {
-  return JSON.stringify({
-    task: { title, audience, purpose: focus, period, language: locale },
-    measure: {
-      sourceName,
-      category,
-      value,
-      aggregation,
-      scope: scope ?? null,
-      comparisonScope: comparisonScope ?? null,
-      evidenceValue: comparisonScope ? "primary minus comparison" : "primary aggregate",
+  return JSON.stringify(
+    {
+      task: { title, audience, purpose: focus, period, language: locale },
+      measure: {
+        sourceName,
+        category,
+        value,
+        aggregation,
+        scope: scope ?? null,
+        comparisonScope: comparisonScope ?? null,
+        evidenceValue: comparisonScope ? "primary minus comparison" : "primary aggregate",
+      },
+      aggregateEvidence: evidenceRows,
     },
-    aggregateEvidence: evidenceRows,
-  }, null, 2);
+    null,
+    2,
+  );
 }

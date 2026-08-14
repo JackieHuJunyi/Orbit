@@ -118,11 +118,23 @@ test("never serializes content identifiers, exact revision proofs, timestamps, o
     "09:10:11",
     "09:15:11",
     "03:04:05",
-  ]) assert.equal(serialized.includes(forbidden), false, forbidden);
+  ])
+    assert.equal(serialized.includes(forbidden), false, forbidden);
   assert.equal(serialized.includes("2026-08-13"), true);
   const forbiddenKeys = new Set([
-    "sourceArtifactId", "sourceRevision", "outputArtifactIds", "outputRevisions", "artifactId",
-    "sourceSha256", "provider", "prompt", "modelResponse", "queryRows", "userId", "path", "fileName",
+    "sourceArtifactId",
+    "sourceRevision",
+    "outputArtifactIds",
+    "outputRevisions",
+    "artifactId",
+    "sourceSha256",
+    "provider",
+    "prompt",
+    "modelResponse",
+    "queryRows",
+    "userId",
+    "path",
+    "fileName",
   ]);
   const visit = (value) => {
     if (!value || typeof value !== "object") return;

@@ -267,7 +267,11 @@ export function createRuneWorkbenchCommands({
 }
 
 function normalizeCommandText(value: string) {
-  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase().trim();
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .trim();
 }
 
 function commandRank(command: RuneWorkbenchCommand, normalizedQuery: string) {

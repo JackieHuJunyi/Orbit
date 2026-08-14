@@ -5,7 +5,13 @@ import { renderChartReferencesToHtml, resolveChartModel } from "../app/lib/chart
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "../app/lib/deck.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
-import { defaultArtifacts, detectArtifact, parseDataSource, planLocalChange, validateArtifact } from "../app/lib/workspace.ts";
+import {
+  defaultArtifacts,
+  detectArtifact,
+  parseDataSource,
+  planLocalChange,
+  validateArtifact,
+} from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function deckArtifact() {
@@ -21,7 +27,10 @@ test("parses the bounded Deck Markdown grammar", () => {
   assert.equal(parsed.deck?.frontmatter.version, 1);
   assert.equal(parsed.deck?.frontmatter.title, "Q2 Board Briefing");
   assert.equal(parsed.deck?.slides.length, 4);
-  assert.deepEqual(parsed.deck?.slides.map((slide) => slide.layout), ["cover", "metrics", "split", "split"]);
+  assert.deepEqual(
+    parsed.deck?.slides.map((slide) => slide.layout),
+    ["cover", "metrics", "split", "split"],
+  );
   assert.equal(detectArtifact("briefing.deck.md", deckArtifact().source)?.kind, "slides");
   assert.equal(detectArtifact("briefing.deck.md", deckArtifact().source)?.language, "Deck Markdown");
 });
@@ -56,18 +65,22 @@ test("keeps briefing recipe metadata bounded and rejects unknown Deck fields", (
   assert.match(parseDeckSource(longPurpose).errors.join(" "), /purpose/);
   const unknown = deckArtifact().source.replace("lang: en", "lang: en\nworkflow: briefing");
   assert.match(parseDeckSource(unknown).errors.join(" "), /Unrecognized key/);
-  const malformedRevision = deckArtifact().source.replace("lang: en", "lang: en\norigin: q2-review\norigin_revision: latest");
+  const malformedRevision = deckArtifact().source.replace(
+    "lang: en",
+    "lang: en\norigin: q2-review\norigin_revision: latest",
+  );
   assert.match(parseDeckSource(malformedRevision).errors.join(" "), /origin_revision/);
-  const revisionWithoutOrigin = deckArtifact().source.replace("lang: en", `lang: en\norigin_revision: ${portableSourceRevision("review source")}`);
+  const revisionWithoutOrigin = deckArtifact().source.replace(
+    "lang: en",
+    `lang: en\norigin_revision: ${portableSourceRevision("review source")}`,
+  );
   assert.match(parseDeckSource(revisionWithoutOrigin).errors.join(" "), /requires an exact origin/);
 });
 
 test("compiles metrics, numbering, and a shared chart into static deck HTML", () => {
-  const compiledBindings = compileArtifactSource(
-    deckArtifact().source,
-    defaultArtifacts,
-    [defaultSummaryQuerySnapshot()],
-  );
+  const compiledBindings = compileArtifactSource(deckArtifact().source, defaultArtifacts, [
+    defaultSummaryQuerySnapshot(),
+  ]);
   const deck = compileDeckSource(compiledBindings.source);
   assert.deepEqual(deck.errors, []);
   assert.equal(deck.slideCount, 4);
@@ -78,7 +91,9 @@ test("compiles metrics, numbering, and a shared chart into static deck HTML", ()
 
   const runtime = renderChartReferencesToHtml(deck.html ?? "", (id) => {
     const chart = defaultArtifacts.find((artifact) => artifact.id === id);
-    return chart ? resolveChartModel(chart, defaultArtifacts, parseDataSource, [defaultQuerySnapshot()]) : { errors: ["Missing chart"] };
+    return chart
+      ? resolveChartModel(chart, defaultArtifacts, parseDataSource, [defaultQuerySnapshot()])
+      : { errors: ["Missing chart"] };
   });
   assert.doesNotMatch(runtime, /\{\{\s*chart/);
   assert.match(runtime, /rune-embedded-chart/);
@@ -86,11 +101,9 @@ test("compiles metrics, numbering, and a shared chart into static deck HTML", ()
 });
 
 test("derives one safe, identity-stable preview document per slide from the same Deck compilation", () => {
-  const compiledBindings = compileArtifactSource(
-    deckArtifact().source,
-    defaultArtifacts,
-    [defaultSummaryQuerySnapshot()],
-  );
+  const compiledBindings = compileArtifactSource(deckArtifact().source, defaultArtifacts, [
+    defaultSummaryQuerySnapshot(),
+  ]);
   const deck = compileDeckSource(compiledBindings.source);
   assert.deepEqual(deck.errors, []);
   assert.equal(deck.previewSlides?.length, deck.slideCount);
@@ -105,7 +118,10 @@ test("derives one safe, identity-stable preview document per slide from the same
 });
 
 test("rejects raw HTML and unsupported layout metadata", () => {
-  const rawHtml = deckArtifact().source.replace("# Growth became more durable.", "# Growth\n\n<script>alert(1)</script>");
+  const rawHtml = deckArtifact().source.replace(
+    "# Growth became more durable.",
+    "# Growth\n\n<script>alert(1)</script>",
+  );
   assert.match(parseDeckSource(rawHtml).errors.join(" "), /raw HTML/);
   const badLayout = deckArtifact().source.replace("layout: cover", "layout: freeform");
   assert.match(parseDeckSource(badLayout).errors.join(" "), /unsupported layout/);
@@ -134,20 +150,43 @@ Readable context stays editable.
   const missing = compileDeckSource(source).html ?? "";
   assert.match(missing, /data-rune-asset-state="missing"/u);
   assert.doesNotMatch(missing, /<img\s+src=/u);
-  const rendered = compileDeckSource(source, { resolveLocalAssetUrl: () => "blob:https://rune.local/proof" }).html ?? "";
+  const rendered =
+    compileDeckSource(source, { resolveLocalAssetUrl: () => "blob:https://rune.local/proof" }).html ?? "";
   assert.match(rendered, /<img src="blob:https:\/\/rune\.local\/proof" alt="Quarterly proof"/u);
-  const hostile = compileDeckSource(source, { resolveLocalAssetUrl: () => "https://example.com/tracker.png" }).html ?? "";
+  const hostile =
+    compileDeckSource(source, { resolveLocalAssetUrl: () => "https://example.com/tracker.png" }).html ?? "";
   assert.doesNotMatch(hostile, /example\.com/u);
 
-  assert.match(parseDeckSource(source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, "![Remote](https://example.com/a.png)")).errors.join(" "), /standalone Rune local-image reference/u);
-  assert.match(parseDeckSource(source.replace("<!-- layout: split -->", "<!-- layout: metrics -->")).errors.join(" "), /metrics layout/u);
-  assert.match(parseDeckSource(source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, `![One](rune-asset:sha256:${id})\n\n![Two](rune-asset:sha256:${"b".repeat(64)})`)).errors.join(" "), /one primary image/u);
-  assert.match(parseDeckSource(source.replace("Readable context stays editable.", '{{ chart("regional-revenue-chart") }}')).errors.join(" "), /either one image or one chart/u);
+  assert.match(
+    parseDeckSource(
+      source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, "![Remote](https://example.com/a.png)"),
+    ).errors.join(" "),
+    /standalone Rune local-image reference/u,
+  );
+  assert.match(
+    parseDeckSource(source.replace("<!-- layout: split -->", "<!-- layout: metrics -->")).errors.join(" "),
+    /metrics layout/u,
+  );
+  assert.match(
+    parseDeckSource(
+      source.replace(
+        `![Quarterly proof](rune-asset:sha256:${id})`,
+        `![One](rune-asset:sha256:${id})\n\n![Two](rune-asset:sha256:${"b".repeat(64)})`,
+      ),
+    ).errors.join(" "),
+    /one primary image/u,
+  );
+  assert.match(
+    parseDeckSource(
+      source.replace("Readable context stays editable.", '{{ chart("regional-revenue-chart") }}'),
+    ).errors.join(" "),
+    /either one image or one chart/u,
+  );
 });
 
 test("escapes frontmatter and eyebrow text in compiled HTML", () => {
-  const source = deckArtifact().source
-    .replace("title: Q2 Board Briefing", "title: <img src=x>")
+  const source = deckArtifact()
+    .source.replace("title: Q2 Board Briefing", "title: <img src=x>")
     .replace("Q2 · Board Briefing", "<img src=x>");
   const compiled = compileDeckSource(source);
   assert.deepEqual(compiled.errors, []);

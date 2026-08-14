@@ -89,19 +89,22 @@ export function prepareArtifactDiagnostics(
     if (!input || typeof input.detail !== "string") continue;
     const detail = boundedText(input.detail, MAX_ARTIFACT_DIAGNOSTIC_DETAIL_CHARS);
     if (!detail.value) continue;
-    const reference = typeof input.reference === "string"
-      ? boundedText(input.reference, MAX_ARTIFACT_DIAGNOSTIC_REFERENCE_CHARS).value
-      : "";
+    const reference =
+      typeof input.reference === "string"
+        ? boundedText(input.reference, MAX_ARTIFACT_DIAGNOSTIC_REFERENCE_CHARS).value
+        : "";
     const identity = `${input.category}\u0000${detail.value}\u0000${reference}`;
     if (seen.has(identity)) continue;
     seen.add(identity);
-    diagnostics.push(Object.freeze({
-      id: `${artifact.id}:${input.category}:${diagnostics.length + 1}`,
-      code: diagnosticCode(artifact.kind, input.category, detail.value),
-      detail: detail.value,
-      detailTruncated: detail.truncated,
-      ...(reference ? { reference } : {}),
-    }));
+    diagnostics.push(
+      Object.freeze({
+        id: `${artifact.id}:${input.category}:${diagnostics.length + 1}`,
+        code: diagnosticCode(artifact.kind, input.category, detail.value),
+        detail: detail.value,
+        detailTruncated: detail.truncated,
+        ...(reference ? { reference } : {}),
+      }),
+    );
   }
 
   return Object.freeze(diagnostics);

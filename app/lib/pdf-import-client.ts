@@ -1,16 +1,8 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
-import {
-  analyzePdfFileWithLibrary,
-  convertPdfFileWithLibrary,
-  convertPdfFileWithOcrAndLibrary,
-} from "./pdf-import";
-import type {
-  PdfJsLibrary,
-  PdfOcrProgress,
-  PdfOcrRequest,
-  PdfPageOcrRecognizer,
-} from "./pdf-import";
+import { analyzePdfFileWithLibrary, convertPdfFileWithLibrary, convertPdfFileWithOcrAndLibrary } from "./pdf-import";
+import type { PdfJsLibrary, PdfOcrProgress, PdfOcrRequest, PdfPageOcrRecognizer } from "./pdf-import";
+import { detectOcrCoreVariant } from "./ocr-core";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -44,7 +36,9 @@ export async function convertPdfFileWithOcr(
   let activeCompletedPages = 0;
   const worker = await createWorker(request.language, undefined, {
     workerPath: `${assetBase}worker.min.js`,
-    corePath: `${assetBase}core/`,
+    // Resolve one core variant up front so the worker fetches a single wasm
+    // loader instead of probing the whole directory.
+    corePath: `${assetBase}core/tesseract-core-${detectOcrCoreVariant()}.wasm.js`,
     langPath: `${assetBase}lang/`,
     logger(message) {
       if (!message.status.includes("recogniz")) return;
@@ -57,7 +51,9 @@ export async function convertPdfFileWithOcr(
       });
     },
   });
-  const terminateOnAbort = () => { void worker.terminate(); };
+  const terminateOnAbort = () => {
+    void worker.terminate();
+  };
   options.signal?.addEventListener("abort", terminateOnAbort, { once: true });
   const recognizePage: PdfPageOcrRecognizer = async (page, pageInput) => {
     if (pageInput.signal?.aborted) throw new DOMException("OCR cancelled", "AbortError");

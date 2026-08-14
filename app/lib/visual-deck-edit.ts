@@ -1,26 +1,11 @@
-import {
-  derivePreviewSourceTargets,
-  type PreviewSourceTarget,
-} from "./preview-targets.ts";
-import {
-  MAX_AGENT_SELECTION_CHARS,
-  sourceOutsideSelectionIsUnchanged,
-} from "./source-selection.ts";
-import {
-  parseDeckSource,
-  type DeckLayout,
-} from "./deck.ts";
+import { derivePreviewSourceTargets, type PreviewSourceTarget } from "./preview-targets.ts";
+import { MAX_AGENT_SELECTION_CHARS, sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
+import { parseDeckSource, type DeckLayout } from "./deck.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_VISUAL_DECK_SLIDE_CHARS = MAX_AGENT_SELECTION_CHARS;
 
-export const VISUAL_DECK_LAYOUTS: DeckLayout[] = [
-  "cover",
-  "content",
-  "metrics",
-  "split",
-  "conclusion",
-];
+export const VISUAL_DECK_LAYOUTS: DeckLayout[] = ["cover", "content", "metrics", "split", "conclusion"];
 
 export type VisualDeckSlideEditInput = {
   layout: DeckLayout;
@@ -50,19 +35,17 @@ function emptyResult(source: string, error: string): PreparedVisualDeckSlideEdit
   return { nextSource: source, nextTarget: null, errors: [error] };
 }
 
-function currentTargetForRevision(
-  artifact: WorkspaceArtifact,
-  requested: PreviewSourceTarget,
-) {
-  return derivePreviewSourceTargets(artifact).find((target) => (
-    target.kind === "deck-slide"
-    && requested.kind === "deck-slide"
-    && target.id === requested.id
-    && target.index === requested.index
-    && target.label === requested.label
-    && target.start === requested.start
-    && target.end === requested.end
-  ));
+function currentTargetForRevision(artifact: WorkspaceArtifact, requested: PreviewSourceTarget) {
+  return derivePreviewSourceTargets(artifact).find(
+    (target) =>
+      target.kind === "deck-slide" &&
+      requested.kind === "deck-slide" &&
+      target.id === requested.id &&
+      target.index === requested.index &&
+      target.label === requested.label &&
+      target.start === requested.start &&
+      target.end === requested.end,
+  );
 }
 
 function newlineFor(source: string) {
@@ -100,10 +83,7 @@ function validateInput(input: VisualDeckSlideEditInput) {
   return null;
 }
 
-function composeSlideFragment(
-  input: VisualDeckSlideEditInput,
-  newline: string,
-) {
+function composeSlideFragment(input: VisualDeckSlideEditInput, newline: string) {
   const body = normalizeBody(input.draft, newline);
   const metadata = [`<!-- layout: ${input.layout} -->`];
   const eyebrow = input.eyebrow.trim();
@@ -138,10 +118,7 @@ export function visualDeckSlideDraft(
   return slide ? { layout: slide.layout, eyebrow: slide.eyebrow, draft: slide.source } : null;
 }
 
-export function canVisualEditDeckSlide(
-  artifact: WorkspaceArtifact,
-  target: PreviewSourceTarget,
-) {
+export function canVisualEditDeckSlide(artifact: WorkspaceArtifact, target: PreviewSourceTarget) {
   if (artifact.kind !== "slides" || artifact.language !== "Deck Markdown" || target.kind !== "deck-slide") return false;
   const current = currentTargetForRevision(artifact, target);
   return Boolean(current && current.end - current.start <= MAX_VISUAL_DECK_SLIDE_CHARS);
@@ -152,9 +129,7 @@ export function projectVisualDeckSlideDraft(
   requestedTarget: PreviewSourceTarget,
   input: VisualDeckSlideEditInput,
 ): VisualDeckSlideDraftProjection {
-  const target = artifact.kind === "slides"
-    ? currentTargetForRevision(artifact, requestedTarget)
-    : undefined;
+  const target = artifact.kind === "slides" ? currentTargetForRevision(artifact, requestedTarget) : undefined;
   if (!target) {
     return {
       nextSource: artifact.source,
@@ -185,7 +160,10 @@ export function visualDeckSlidePreviewSource(
   const parsed = parseDeckSource(source);
   return parsed.deck && parsed.deck.slides.length === 1
     ? { source, errors: [] }
-    : { source: "", errors: parsed.errors.length ? parsed.errors : ["Rune could not compile this draft as one slide."] };
+    : {
+        source: "",
+        errors: parsed.errors.length ? parsed.errors : ["Rune could not compile this draft as one slide."],
+      };
 }
 
 export function prepareVisualDeckSlideEdit(
@@ -212,9 +190,11 @@ export function prepareVisualDeckSlideEdit(
   if (!currentSlide) return emptyResult(artifact.source, "Rune could not resolve this slide in the current Deck.");
   const eyebrow = input.eyebrow.trim();
   const semanticBody = normalizedSemanticBody(input.draft);
-  if (currentSlide.layout === input.layout
-    && currentSlide.eyebrow === eyebrow
-    && normalizedSemanticBody(currentSlide.source) === semanticBody) {
+  if (
+    currentSlide.layout === input.layout &&
+    currentSlide.eyebrow === eyebrow &&
+    normalizedSemanticBody(currentSlide.source) === semanticBody
+  ) {
     return emptyResult(artifact.source, "The edited slide is unchanged.");
   }
 
@@ -234,16 +214,21 @@ export function prepareVisualDeckSlideEdit(
   const nextParsed = parseDeckSource(nextSource);
   if (!nextParsed.deck) return emptyResult(artifact.source, nextParsed.errors[0] ?? "The edited Deck is invalid.");
   if (nextParsed.deck.slides.length !== parsed.deck?.slides.length) {
-    return emptyResult(artifact.source, "The visual edit changed the number of slides. Structural changes belong in canonical source.");
+    return emptyResult(
+      artifact.source,
+      "The visual edit changed the number of slides. Structural changes belong in canonical source.",
+    );
   }
 
   const nextArtifact = { ...artifact, source: nextSource };
-  const nextTarget = derivePreviewSourceTargets(nextArtifact).find((candidate) => (
-    candidate.kind === "deck-slide"
-    && candidate.index === target.index
-    && candidate.start === target.start
-    && candidate.end === target.start + replacement.length
-  )) ?? null;
+  const nextTarget =
+    derivePreviewSourceTargets(nextArtifact).find(
+      (candidate) =>
+        candidate.kind === "deck-slide" &&
+        candidate.index === target.index &&
+        candidate.start === target.start &&
+        candidate.end === target.start + replacement.length,
+    ) ?? null;
   if (!nextTarget) {
     return emptyResult(artifact.source, "Rune could not prove the edited slide's new source range.");
   }

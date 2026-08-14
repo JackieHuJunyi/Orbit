@@ -6,39 +6,44 @@ import type { WorkspaceArtifact } from "./workspace.ts";
 export const MAX_AGENT_RUNTIME_REPAIR_ARTIFACTS = 4;
 export const MAX_AGENT_RUNTIME_REPAIR_ERROR_CHARS = 1_000;
 
-export const AgentRuntimeRepairProposedArtifactSchema = z.object({
-  artifactId: z.string().min(1).max(120),
-  name: z.string().min(1).max(240),
-  kind: z.enum(["document", "data", "query", "chart", "slides"]),
-  language: z.string().min(1).max(80),
-  proposedSource: z.string().min(1).max(MAX_WORKSPACE_AGENT_ARTIFACT_CHARS),
-  isCreation: z.boolean(),
-}).strict();
+export const AgentRuntimeRepairProposedArtifactSchema = z
+  .object({
+    artifactId: z.string().min(1).max(120),
+    name: z.string().min(1).max(240),
+    kind: z.enum(["document", "data", "query", "chart", "slides"]),
+    language: z.string().min(1).max(80),
+    proposedSource: z.string().min(1).max(MAX_WORKSPACE_AGENT_ARTIFACT_CHARS),
+    isCreation: z.boolean(),
+  })
+  .strict();
 
-export const AgentRuntimeRepairSchema = z.object({
-  attempt: z.literal(1),
-  failure: z.string().trim().min(1).max(MAX_AGENT_RUNTIME_REPAIR_ERROR_CHARS),
-  proposedArtifacts: z.array(AgentRuntimeRepairProposedArtifactSchema)
-    .min(1)
-    .max(MAX_AGENT_RUNTIME_REPAIR_ARTIFACTS),
-}).strict().superRefine((repair, context) => {
-  if (new Set(repair.proposedArtifacts.map((artifact) => artifact.artifactId)).size
-    !== repair.proposedArtifacts.length) {
-    context.addIssue({ code: "custom", message: "Runtime repair artifact ids must be unique." });
-  }
-  if (!repair.proposedArtifacts.some((artifact) => ["data", "query", "chart"].includes(artifact.kind))) {
-    context.addIssue({ code: "custom", message: "Runtime repair requires a proposed Data, Query, or Chart source." });
-  }
-});
+export const AgentRuntimeRepairSchema = z
+  .object({
+    attempt: z.literal(1),
+    failure: z.string().trim().min(1).max(MAX_AGENT_RUNTIME_REPAIR_ERROR_CHARS),
+    proposedArtifacts: z.array(AgentRuntimeRepairProposedArtifactSchema).min(1).max(MAX_AGENT_RUNTIME_REPAIR_ARTIFACTS),
+  })
+  .strict()
+  .superRefine((repair, context) => {
+    if (
+      new Set(repair.proposedArtifacts.map((artifact) => artifact.artifactId)).size !== repair.proposedArtifacts.length
+    ) {
+      context.addIssue({ code: "custom", message: "Runtime repair artifact ids must be unique." });
+    }
+    if (!repair.proposedArtifacts.some((artifact) => ["data", "query", "chart"].includes(artifact.kind))) {
+      context.addIssue({ code: "custom", message: "Runtime repair requires a proposed Data, Query, or Chart source." });
+    }
+  });
 
 export type AgentRuntimeRepair = z.infer<typeof AgentRuntimeRepairSchema>;
 
 function boundedFailure(error: unknown) {
-  const message = error instanceof Error
-    ? error.message
-    : typeof error === "string"
-      ? error
-      : "The first proposed runtime impact could not be verified.";
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "The first proposed runtime impact could not be verified.";
   const bounded = message
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")

@@ -76,42 +76,29 @@ export function NewArtifactDialog({
   const copy = runeUICopy(locale);
   const embeddingTargets = useMemo(() => chartEmbeddingTargets(artifacts), [artifacts]);
   const sourceOptions = useMemo(
-    () => kind === "query" || kind === "chart"
-      ? artifactCreationSourceOptions(artifacts, kind)
-      : [],
+    () => (kind === "query" || kind === "chart" ? artifactCreationSourceOptions(artifacts, kind) : []),
     [artifacts, kind],
   );
-  const sourceOption = sourceOptions.find((option) => option.artifactId === sourceArtifactId)
-    ?? sourceOptions[0];
-  const effectiveCategory = sourceOption?.columns.includes(category)
-    ? category
-    : sourceOption?.columns[0] ?? "";
-  const preferredValue = sourceOption?.numericColumns.find((column) => column !== effectiveCategory)
-    ?? sourceOption?.columns.find((column) => column !== effectiveCategory)
-    ?? sourceOption?.columns[0]
-    ?? "";
+  const sourceOption = sourceOptions.find((option) => option.artifactId === sourceArtifactId) ?? sourceOptions[0];
+  const effectiveCategory = sourceOption?.columns.includes(category) ? category : (sourceOption?.columns[0] ?? "");
+  const preferredValue =
+    sourceOption?.numericColumns.find((column) => column !== effectiveCategory) ??
+    sourceOption?.columns.find((column) => column !== effectiveCategory) ??
+    sourceOption?.columns[0] ??
+    "";
   const effectiveValue = sourceOption?.columns.includes(value) ? value : preferredValue;
   const input = useMemo(
-    () => creationInputFor(
-      kind,
-      title,
-      sourceOption?.artifactId ?? "",
-      effectiveCategory,
-      effectiveValue,
-      mark,
-      format,
-    ),
+    () =>
+      creationInputFor(kind, title, sourceOption?.artifactId ?? "", effectiveCategory, effectiveValue, mark, format),
     [effectiveCategory, effectiveValue, format, kind, mark, sourceOption?.artifactId, title],
   );
-  const prepared = useMemo(
-    () => prepareArtifactCreation(artifacts, input),
-    [artifacts, input],
-  );
-  const bindingError = (kind === "query" || kind === "chart") && !sourceOption
-    ? kind === "query"
-      ? copy.newArtifact.addDataForQuery
-      : copy.newArtifact.addSourceForChart
-    : "";
+  const prepared = useMemo(() => prepareArtifactCreation(artifacts, input), [artifacts, input]);
+  const bindingError =
+    (kind === "query" || kind === "chart") && !sourceOption
+      ? kind === "query"
+        ? copy.newArtifact.addDataForQuery
+        : copy.newArtifact.addSourceForChart
+      : "";
   const formError = error || bindingError || (title ? prepared.errors[0] : "");
 
   async function create() {
@@ -133,7 +120,11 @@ export function NewArtifactDialog({
   return (
     <ReviewDialog
       dialogId="new-artifact"
-      kicker={<><FilePlus2 aria-hidden="true" /> {copy.newArtifact.kicker}</>}
+      kicker={
+        <>
+          <FilePlus2 aria-hidden="true" /> {copy.newArtifact.kicker}
+        </>
+      }
       title={copy.newArtifact.title}
       description={copy.newArtifact.description}
       detailsLabel={copy.newArtifact.details}
@@ -141,18 +132,26 @@ export function NewArtifactDialog({
       onCancel={() => {
         if (!creating) onCancel();
       }}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.newArtifact.atomic}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {copy.newArtifact.atomic}
+          </div>
           <span>
-            <button className="button ghost-button" onClick={onCancel} disabled={creating}>{copy.common.cancel}</button>
-            <button className="button primary-button" onClick={() => void create()} disabled={!prepared.artifact || creating}>
+            <button className="button ghost-button" onClick={onCancel} disabled={creating}>
+              {copy.common.cancel}
+            </button>
+            <button
+              className="button primary-button"
+              onClick={() => void create()}
+              disabled={!prepared.artifact || creating}
+            >
               {creating ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Check aria-hidden="true" />}
               {creating ? copy.newArtifact.verifying : copy.newArtifact.create}
             </button>
           </span>
         </>
-      )}
+      }
     >
       <div className="new-artifact-form">
         <fieldset>
@@ -166,10 +165,14 @@ export function NewArtifactDialog({
                 role="radio"
                 aria-checked={kind === type.kind}
               >
-                <span className={`artifact-icon ${type.kind}`}><TypeIcon kind={type.kind} /></span>
+                <span className={`artifact-icon ${type.kind}`}>
+                  <TypeIcon kind={type.kind} />
+                </span>
                 <strong>{copy.newArtifact.typeNames[type.kind]}</strong>
                 <small>{copy.newArtifact.typeDescriptions[type.kind]}</small>
-                <code>{type.format} · {type.extension}</code>
+                <code>
+                  {type.format} · {type.extension}
+                </code>
               </button>
             ))}
           </div>
@@ -228,29 +231,46 @@ export function NewArtifactDialog({
                         if (event.target.value === effectiveValue) setValue("");
                       }}
                     >
-                      {sourceOption.columns.map((column) => <option key={column} value={column}>{column}</option>)}
+                      {sourceOption.columns.map((column) => (
+                        <option key={column} value={column}>
+                          {column}
+                        </option>
+                      ))}
                     </select>
                   </label>
                   <label htmlFor="new-artifact-value">
                     <span>{copy.newArtifact.valueField}</span>
-                    <select id="new-artifact-value" value={effectiveValue} onChange={(event) => setValue(event.target.value)}>
+                    <select
+                      id="new-artifact-value"
+                      value={effectiveValue}
+                      onChange={(event) => setValue(event.target.value)}
+                    >
                       {sourceOption.columns.map((column) => (
                         <option key={column} value={column}>
-                          {column}{sourceOption.numericColumns.includes(column) ? ` · ${copy.newArtifact.numeric}` : ""}
+                          {column}
+                          {sourceOption.numericColumns.includes(column) ? ` · ${copy.newArtifact.numeric}` : ""}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label htmlFor="new-artifact-mark">
                     <span>{copy.newArtifact.mark}</span>
-                    <select id="new-artifact-mark" value={mark} onChange={(event) => setMark(event.target.value as ChartCreationMark)}>
+                    <select
+                      id="new-artifact-mark"
+                      value={mark}
+                      onChange={(event) => setMark(event.target.value as ChartCreationMark)}
+                    >
                       <option value="bar">{copy.newArtifact.barCompare}</option>
                       <option value="line">{copy.newArtifact.lineSequence}</option>
                     </select>
                   </label>
                   <label htmlFor="new-artifact-format">
                     <span>{copy.newArtifact.format}</span>
-                    <select id="new-artifact-format" value={format} onChange={(event) => setFormat(event.target.value as ChartCreationFormat)}>
+                    <select
+                      id="new-artifact-format"
+                      value={format}
+                      onChange={(event) => setFormat(event.target.value as ChartCreationFormat)}
+                    >
                       <option value="number">{copy.newArtifact.number}</option>
                       <option value="currency">{copy.newArtifact.currency}</option>
                       <option value="percent">{copy.newArtifact.percent}</option>
@@ -258,11 +278,16 @@ export function NewArtifactDialog({
                   </label>
                   <label className="wide" htmlFor="new-artifact-embed">
                     <span>{copy.newArtifact.embedOptional}</span>
-                    <select id="new-artifact-embed" value={embedArtifactId} onChange={(event) => setEmbedArtifactId(event.target.value)}>
+                    <select
+                      id="new-artifact-embed"
+                      value={embedArtifactId}
+                      onChange={(event) => setEmbedArtifactId(event.target.value)}
+                    >
                       <option value="">{copy.newArtifact.reusableOnly}</option>
                       {embeddingTargets.map((target) => (
                         <option key={target.id} value={target.id}>
-                          {target.name} · {target.kind === "document" ? copy.newArtifact.document : copy.newArtifact.presentation}
+                          {target.name} ·{" "}
+                          {target.kind === "document" ? copy.newArtifact.document : copy.newArtifact.presentation}
                         </option>
                       ))}
                     </select>
@@ -274,15 +299,28 @@ export function NewArtifactDialog({
           </fieldset>
         )}
 
-        {formError && <div className="import-review-error" role="alert">{formError}</div>}
+        {formError && (
+          <div className="import-review-error" role="alert">
+            {formError}
+          </div>
+        )}
 
         {prepared.artifact && (
           <section className="new-artifact-preview" aria-label={copy.newArtifact.preview}>
             <header>
-              <span className={`artifact-icon ${prepared.artifact.kind}`}><TypeIcon kind={kind} /></span>
-              <div><strong>{prepared.artifact.name}</strong><small>{prepared.artifact.language} · {copy.newArtifact.readyToEdit}</small></div>
+              <span className={`artifact-icon ${prepared.artifact.kind}`}>
+                <TypeIcon kind={kind} />
+              </span>
+              <div>
+                <strong>{prepared.artifact.name}</strong>
+                <small>
+                  {prepared.artifact.language} · {copy.newArtifact.readyToEdit}
+                </small>
+              </div>
             </header>
-            <pre><code>{prepared.artifact.source}</code></pre>
+            <pre>
+              <code>{prepared.artifact.source}</code>
+            </pre>
           </section>
         )}
       </div>

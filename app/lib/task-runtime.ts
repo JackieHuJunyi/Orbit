@@ -49,10 +49,7 @@ function failed(errors: string[]): PreparedRuneTaskSession {
   return { session: null, preferredArtifactId: null, errors };
 }
 
-export function startRuneTaskSession(
-  taskId: RuneTaskId,
-  artifacts: WorkspaceArtifact[],
-): RuneTaskSession {
+export function startRuneTaskSession(taskId: RuneTaskId, artifacts: WorkspaceArtifact[]): RuneTaskSession {
   return {
     taskId,
     phase: "awaiting-source",
@@ -101,15 +98,15 @@ export function bindRuneTaskImportReview(
   if (reviewErrors.length) return failed(reviewErrors);
 
   const definition = RUNE_TASK_DEFINITIONS[session.taskId];
-  const incompatible = review.importedArtifacts.find((artifact) => (
-    !definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind)
-  ));
+  const incompatible = review.importedArtifacts.find(
+    (artifact) => !definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind),
+  );
   if (incompatible) {
     return failed([`${incompatible.name} is not a supported source for this task.`]);
   }
-  const preferredArtifact = review.importedArtifacts.find((artifact) => (
-    definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind)
-  ));
+  const preferredArtifact = review.importedArtifacts.find((artifact) =>
+    definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind),
+  );
   if (!preferredArtifact) {
     return failed([`This task needs at least one ${definition.requiredArtifactLabel}.`]);
   }
@@ -140,13 +137,13 @@ export function prepareRuneTaskAfterImport(
   const reviewErrors = validateWorkspaceImportReview(artifacts, review);
   if (reviewErrors.length) return failed(reviewErrors);
   const importedArtifactIds = review.importedArtifacts.map((artifact) => artifact.id);
-  if (importedArtifactIds.length !== session.importedArtifactIds.length
-    || importedArtifactIds.some((id, index) => id !== session.importedArtifactIds[index])) {
+  if (
+    importedArtifactIds.length !== session.importedArtifactIds.length ||
+    importedArtifactIds.some((id, index) => id !== session.importedArtifactIds[index])
+  ) {
     return failed(["The reviewed task sources no longer match this import session."]);
   }
-  const preferredArtifact = review.importedArtifacts.find((artifact) => (
-    artifact.id === session.preferredArtifactId
-  ));
+  const preferredArtifact = review.importedArtifacts.find((artifact) => artifact.id === session.preferredArtifactId);
   const definition = RUNE_TASK_DEFINITIONS[session.taskId];
   if (!preferredArtifact || !definition.acceptedArtifactKinds.some((kind) => kind === preferredArtifact.kind)) {
     return failed([`The preferred ${definition.requiredArtifactLabel} is no longer part of this reviewed import.`]);

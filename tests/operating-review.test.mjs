@@ -70,20 +70,21 @@ test("creates an English Document + Slides review chain with exact evidence bind
   assert.deepEqual(result.errors, []);
   assert.equal(result.plan.summary, "Create a verifiable operating-review chain for “FY26 Growth Review”");
   assert.deepEqual(result.plan.patches, []);
-  assert.deepEqual(result.plan.creations.map(({ artifact }) => artifact.kind), [
-    "query",
-    "chart",
-    "document",
-    "slides",
-  ]);
+  assert.deepEqual(
+    result.plan.creations.map(({ artifact }) => artifact.kind),
+    ["query", "chart", "document", "slides"],
+  );
 
   const created = creationsByKind(result);
-  assert.deepEqual(result.plan.creations.map(({ artifact }) => [artifact.id, artifact.name]), [
-    ["fy26-growth-review-analysis", "fy26-growth-review-analysis.sql"],
-    ["fy26-growth-review-view", "fy26-growth-review-view.chart.json"],
-    ["fy26-growth-review-report", "fy26-growth-review-report.md"],
-    ["fy26-growth-review-briefing", "fy26-growth-review-briefing.deck.md"],
-  ]);
+  assert.deepEqual(
+    result.plan.creations.map(({ artifact }) => [artifact.id, artifact.name]),
+    [
+      ["fy26-growth-review-analysis", "fy26-growth-review-analysis.sql"],
+      ["fy26-growth-review-view", "fy26-growth-review-view.chart.json"],
+      ["fy26-growth-review-report", "fy26-growth-review-report.md"],
+      ["fy26-growth-review-briefing", "fy26-growth-review-briefing.deck.md"],
+    ],
+  );
   assert.deepEqual(parseQueryDataSourceDirective(created.query.source), {
     artifactId: "source-data",
     explicit: true,
@@ -112,7 +113,10 @@ test("creates an English Document + Slides review chain with exact evidence bind
   assert.match(created.document.source, /Rune has not invented a business conclusion without evidence/);
   assert.match(created.slides.source, /^---\nversion: 1[\s\S]*\nlang: en\n---/);
   assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
-  assert.deepEqual(validateWorkspaceArtifacts([...artifacts, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
+  assert.deepEqual(
+    validateWorkspaceArtifacts([...artifacts, ...result.plan.creations.map(({ artifact }) => artifact)]),
+    [],
+  );
   assert.deepEqual(artifacts, artifactsBefore);
   assert.deepEqual(input, inputBefore);
 });
@@ -149,7 +153,10 @@ test("retains the complete group count while bounding model evidence rows", () =
   assert.equal(evidence.matchedRowCount, 25);
   assert.equal(evidence.groupCount, 25);
   assert.equal(evidence.evidenceRows.length, 20);
-  assert.deepEqual(evidence.evidenceRows.slice(0, 3).map((row) => row.value), [25, 24, 23]);
+  assert.deepEqual(
+    evidence.evidenceRows.slice(0, 3).map((row) => row.value),
+    [25, 24, 23],
+  );
 });
 
 test("applies one exact Data scope consistently to evidence, SQL, charts, and deliverables", () => {
@@ -182,7 +189,8 @@ test("applies one exact Data scope consistently to evidence, SQL, charts, and de
 
 test("compares two exact same-field scopes through evidence, SQL, Chart, and live-bound deliverables", () => {
   const data = dataArtifact({
-    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nJuly,Europe,80\nJune,Europe,100\nJuly,LATAM,40\nJune,North America,30\nMay,APAC,N/A\n",
+    source:
+      "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nJuly,Europe,80\nJune,Europe,100\nJuly,LATAM,40\nJune,North America,30\nMay,APAC,N/A\n",
   });
   const input = reviewInput({
     period: "July vs June 2026",
@@ -217,21 +225,34 @@ test("compares two exact same-field scopes through evidence, SQL, Chart, and liv
   assert.equal(evidence.groupCount, 2);
   assert.deepEqual(evidence.evidenceRows, [
     {
-      id: "result-1", category: "APAC", value: 10, sourceRowCount: 2,
-      primaryValue: 100, comparisonValue: 90,
-      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+      id: "result-1",
+      category: "APAC",
+      value: 10,
+      sourceRowCount: 2,
+      primaryValue: 100,
+      comparisonValue: 90,
+      primarySourceRowCount: 1,
+      comparisonSourceRowCount: 1,
     },
     {
-      id: "result-2", category: "Europe", value: -20, sourceRowCount: 2,
-      primaryValue: 80, comparisonValue: 100,
-      primarySourceRowCount: 1, comparisonSourceRowCount: 1,
+      id: "result-2",
+      category: "Europe",
+      value: -20,
+      sourceRowCount: 2,
+      primaryValue: 80,
+      comparisonValue: 100,
+      primarySourceRowCount: 1,
+      comparisonSourceRowCount: 1,
     },
   ]);
 
   const result = prepareOperatingReviewWorkflow([data], input, narrative);
   assert.deepEqual(result.errors, []);
   const created = creationsByKind(result);
-  assert.match(created.query.source, /SUM\(CASE WHEN "Period" = 'July' THEN CAST\("Net Revenue" AS DOUBLE\) END\) AS "Net Revenue"/u);
+  assert.match(
+    created.query.source,
+    /SUM\(CASE WHEN "Period" = 'July' THEN CAST\("Net Revenue" AS DOUBLE\) END\) AS "Net Revenue"/u,
+  );
   assert.match(created.query.source, /AS "Net Revenue comparison"/u);
   assert.match(created.query.source, /AS "Net Revenue change"/u);
   assert.match(created.query.source, /HAVING COUNT\(CASE WHEN "Period" = 'July' THEN 1 END\) > 0/u);
@@ -266,7 +287,10 @@ test("validates numeric evidence only inside the exact eligible Data scope", () 
   const evidence = prepareOperatingReviewEvidence([data], julyInput);
   assert.deepEqual(evidence.errors, []);
   assert.equal(evidence.matchedRowCount, 2);
-  assert.deepEqual(evidence.evidenceRows.map((row) => row.value), [100, 80]);
+  assert.deepEqual(
+    evidence.evidenceRows.map((row) => row.value),
+    [100, 80],
+  );
 
   const scoped = prepareOperatingReviewWorkflow([data], julyInput);
   assert.deepEqual(scoped.errors, []);
@@ -281,21 +305,30 @@ test("escapes exact text scope values and fails closed when a saved scope no lon
   const data = dataArtifact({
     source: "Period,Region,Net Revenue\nQ4's,APAC,100\nQ3,Europe,80\n",
   });
-  const prepared = prepareOperatingReviewWorkflow([data], reviewInput({
-    scope: { field: "Period", value: "Q4's" },
-  }));
+  const prepared = prepareOperatingReviewWorkflow(
+    [data],
+    reviewInput({
+      scope: { field: "Period", value: "Q4's" },
+    }),
+  );
   assert.deepEqual(prepared.errors, []);
   assert.match(creationsByKind(prepared).query.source, /AND "Period" = 'Q4''s'/u);
 
-  const stale = prepareOperatingReviewWorkflow([data], reviewInput({
-    scope: { field: "Period", value: "Q2" },
-  }));
+  const stale = prepareOperatingReviewWorkflow(
+    [data],
+    reviewInput({
+      scope: { field: "Period", value: "Q2" },
+    }),
+  );
   assert.equal(stale.plan, undefined);
   assert.match(stale.errors.join(" "), /no longer matches any current Data row/u);
 
-  const missingField = prepareOperatingReviewWorkflow([data], reviewInput({
-    scope: { field: "period", value: "Q3" },
-  }));
+  const missingField = prepareOperatingReviewWorkflow(
+    [data],
+    reviewInput({
+      scope: { field: "period", value: "Q3" },
+    }),
+  );
   assert.equal(missingField.plan, undefined);
   assert.match(missingField.errors.join(" "), /exact visible scope field/u);
 });
@@ -306,10 +339,22 @@ test("rejects malformed, stale, or unpaired comparison scopes before creating ou
   });
   const scenarios = [
     [reviewInput({ comparisonScope: { field: "Period", value: "June" } }), /primary exact scope/i],
-    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Region", value: "Europe" } }), /same exact visible scope field/i],
-    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "July" } }), /different exact scope value/i],
-    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "May" } }), /no longer matches any current Data row/i],
-    [reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "June" } }), /shared category/i],
+    [
+      reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Region", value: "Europe" } }),
+      /same exact visible scope field/i,
+    ],
+    [
+      reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "July" } }),
+      /different exact scope value/i,
+    ],
+    [
+      reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "May" } }),
+      /no longer matches any current Data row/i,
+    ],
+    [
+      reviewInput({ scope: { field: "Period", value: "July" }, comparisonScope: { field: "Period", value: "June" } }),
+      /shared category/i,
+    ],
   ];
   for (const [input, expected] of scenarios) {
     const result = prepareOperatingReviewWorkflow([data], input);
@@ -357,9 +402,15 @@ test("compiles model-proposed review questions with every number kept in a live 
 
   const snapshot = createWorkspaceQuerySnapshot(created.query, data, {
     columns: ["Region", "Net Revenue"],
-    rows: [["APAC", 1_840_000], ["Europe", 970_000]],
+    rows: [
+      ["APAC", 1_840_000],
+      ["Europe", 970_000],
+    ],
     sourceRowIndices: [null, null],
-    cellLineage: [[null, null], [null, null]],
+    cellLineage: [
+      [null, null],
+      [null, null],
+    ],
     lineageMode: "read-only",
     elapsedMs: 2,
     truncated: false,
@@ -389,9 +440,15 @@ test("rejects model review text that duplicates evidence, copies category labels
     },
   ];
   const scenarios = [
-    [baseInsights.map((insight) => ({ ...insight, primaryEvidenceRowId: "result-1" })), /unique exact primary evidence row/i],
+    [
+      baseInsights.map((insight) => ({ ...insight, primaryEvidenceRowId: "result-1" })),
+      /unique exact primary evidence row/i,
+    ],
     [[{ ...baseInsights[0], title: "Why does APAC lead?" }, baseInsights[1]], /generic qualitative text/i],
-    [[{ ...baseInsights[0], question: "Why is the result 20 percent higher?" }, baseInsights[1]], /generic qualitative text/i],
+    [
+      [{ ...baseInsights[0], question: "Why is the result 20 percent higher?" }, baseInsights[1]],
+      /generic qualitative text/i,
+    ],
   ];
   for (const [insights, expected] of scenarios) {
     const prepared = prepareOperatingReviewWorkflow([dataArtifact()], reviewInput(), { insights });
@@ -433,17 +490,20 @@ test("creates a Chinese Document + Slides review chain without translating canon
   assert.match(created.query.source, /AVG\(CAST\("净收入" AS DOUBLE\)\) AS "净收入"/);
   assert.match(created.query.source, /GROUP BY "地区"/);
   assert.equal(parseChartSource(created.chart.source).spec.source, created.query.id);
-  assert.deepEqual({
-    mark: parseChartSource(created.chart.source).spec.mark,
-    category: parseChartSource(created.chart.source).spec.category,
-    value: parseChartSource(created.chart.source).spec.value,
-    sort: parseChartSource(created.chart.source).spec.sort,
-  }, {
-    mark: "line",
-    category: "地区",
-    value: "净收入",
-    sort: "source",
-  });
+  assert.deepEqual(
+    {
+      mark: parseChartSource(created.chart.source).spec.mark,
+      category: parseChartSource(created.chart.source).spec.category,
+      value: parseChartSource(created.chart.source).spec.value,
+      sort: parseChartSource(created.chart.source).spec.sort,
+    },
+    {
+      mark: "line",
+      category: "地区",
+      value: "净收入",
+      sort: "source",
+    },
+  );
   const exactChartBinding = `{{ chart("${created.chart.id}") }}`;
   assert.match(created.document.source, /## 本次目标/);
   assert.match(created.document.source, /管理层/);
@@ -452,7 +512,10 @@ test("creates a Chinese Document + Slides review chain without translating canon
   assert.match(created.slides.source, /<!-- eyebrow: 可核验证据 -->/);
   assert.ok(created.slides.source.includes(exactChartBinding));
   assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
-  assert.deepEqual(validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()), []);
+  assert.deepEqual(
+    validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()),
+    [],
+  );
 });
 
 test("creates a complete Traditional Chinese review chain while preserving exact field identities", () => {
@@ -482,7 +545,10 @@ test("creates a complete Traditional Chinese review chain while preserving exact
   assert.match(created.slides.source, /\nlang: zh-TW\n/);
   assert.match(created.slides.source, /<!-- eyebrow: 可核驗證據 -->/);
   assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
-  assert.deepEqual(validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()), []);
+  assert.deepEqual(
+    validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()),
+    [],
+  );
 });
 
 test("rejects missing sources and inexact category or value fields before creating anything", () => {
@@ -536,19 +602,23 @@ test("resolves every generated id and filename collision while preserving the ne
       name: "COLLISION-REVIEW-VIEW.CHART.JSON",
       kind: "chart",
       language: "Chart JSON",
-      source: `${JSON.stringify({
-        version: 1,
-        title: "Existing view",
-        description: "",
-        source: data.id,
-        mark: "bar",
-        category: "Region",
-        value: "Net Revenue",
-        sort: "descending",
-        format: "currency",
-        color: "#ff5c35",
-        maxItems: 8,
-      }, null, 2)}\n`,
+      source: `${JSON.stringify(
+        {
+          version: 1,
+          title: "Existing view",
+          description: "",
+          source: data.id,
+          mark: "bar",
+          category: "Region",
+          value: "Net Revenue",
+          sort: "descending",
+          format: "currency",
+          color: "#ff5c35",
+          maxItems: 8,
+        },
+        null,
+        2,
+      )}\n`,
     },
     {
       id: "collision-review-report",
@@ -562,7 +632,8 @@ test("resolves every generated id and filename collision while preserving the ne
       name: "COLLISION-REVIEW-BRIEFING.DECK.MD",
       kind: "slides",
       language: "Deck Markdown",
-      source: "---\nversion: 1\ntitle: Existing briefing\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Existing briefing\n",
+      source:
+        "---\nversion: 1\ntitle: Existing briefing\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Existing briefing\n",
     },
   ];
   const before = structuredClone(existing);
@@ -571,17 +642,23 @@ test("resolves every generated id and filename collision while preserving the ne
 
   assert.deepEqual(result.errors, []);
   const created = creationsByKind(result);
-  assert.deepEqual(result.plan.creations.map(({ artifact }) => [artifact.id, artifact.name]), [
-    ["collision-review-analysis-2", "collision-review-analysis-2.sql"],
-    ["collision-review-view-2", "collision-review-view-2.chart.json"],
-    ["collision-review-report-2", "collision-review-report-2.md"],
-    ["collision-review-briefing-2", "collision-review-briefing-2.deck.md"],
-  ]);
+  assert.deepEqual(
+    result.plan.creations.map(({ artifact }) => [artifact.id, artifact.name]),
+    [
+      ["collision-review-analysis-2", "collision-review-analysis-2.sql"],
+      ["collision-review-view-2", "collision-review-view-2.chart.json"],
+      ["collision-review-report-2", "collision-review-report-2.md"],
+      ["collision-review-briefing-2", "collision-review-briefing-2.deck.md"],
+    ],
+  );
   assert.equal(parseQueryDataSourceDirective(created.query.source).artifactId, data.id);
   assert.equal(parseChartSource(created.chart.source).spec.source, created.query.id);
   assert.ok(created.document.source.includes(`{{ chart("${created.chart.id}") }}`));
   assert.ok(created.slides.source.includes(`{{ chart("${created.chart.id}") }}`));
-  assert.deepEqual(validateWorkspaceArtifacts([...existing, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
+  assert.deepEqual(
+    validateWorkspaceArtifacts([...existing, ...result.plan.creations.map(({ artifact }) => artifact)]),
+    [],
+  );
   assert.deepEqual(existing, before);
 });
 
@@ -622,12 +699,15 @@ test("saves one exact workflow identity and reruns it as patches instead of dupl
   assert.deepEqual(rerun.errors, []);
   assert.ok(rerun.plan);
   assert.deepEqual(rerun.plan.creations, []);
-  assert.deepEqual(rerun.plan.patches.map((patch) => patch.artifactId), [
-    workflow.artifactIds.query,
-    workflow.artifactIds.chart,
-    workflow.artifactIds.document,
-    workflow.artifactIds.slides,
-  ]);
+  assert.deepEqual(
+    rerun.plan.patches.map((patch) => patch.artifactId),
+    [
+      workflow.artifactIds.query,
+      workflow.artifactIds.chart,
+      workflow.artifactIds.document,
+      workflow.artifactIds.slides,
+    ],
+  );
   const next = workspace.map((artifact) => ({
     ...artifact,
     source: rerun.plan.patches.find((patch) => patch.artifactId === artifact.id)?.nextSource ?? artifact.source,
@@ -638,7 +718,9 @@ test("saves one exact workflow identity and reruns it as patches instead of dupl
   assert.equal(parseChartSource(chart.source).spec.source, workflow.artifactIds.query);
   assert.match(chart.source, /FY26 Q3/);
   for (const outputId of [workflow.artifactIds.document, workflow.artifactIds.slides]) {
-    assert.ok(next.find((artifact) => artifact.id === outputId).source.includes(`{{ chart("${workflow.artifactIds.chart}") }}`));
+    assert.ok(
+      next.find((artifact) => artifact.id === outputId).source.includes(`{{ chart("${workflow.artifactIds.chart}") }}`),
+    );
   }
   assert.equal(rerun.workflow.id, workflow.id);
   assert.equal(rerun.workflow.input.period, "FY26 Q3");
@@ -669,7 +751,8 @@ test("persists and changes an exact Data scope while retaining saved output iden
 
 test("persists and changes an exact comparison while retaining saved output identities", () => {
   const data = dataArtifact({
-    source: "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nMay,APAC,70\nJuly,Europe,80\nJune,Europe,100\nMay,Europe,60\n",
+    source:
+      "Period,Region,Net Revenue\nJuly,APAC,100\nJune,APAC,90\nMay,APAC,70\nJuly,Europe,80\nJune,Europe,100\nMay,Europe,60\n",
   });
   const initialInput = reviewInput({
     scope: { field: "Period", value: "July" },
@@ -678,14 +761,21 @@ test("persists and changes an exact comparison while retaining saved output iden
   const initial = prepareOperatingReviewWorkflow([data], initialInput);
   const workflow = createSavedOperatingReview(initialInput, initial.plan);
   assert.deepEqual(workflow.input.comparisonScope, { field: "Period", value: "June" });
-  assert.deepEqual(normalizeSavedOperatingReviews([workflow])[0].input.comparisonScope, { field: "Period", value: "June" });
+  assert.deepEqual(normalizeSavedOperatingReviews([workflow])[0].input.comparisonScope, {
+    field: "Period",
+    value: "June",
+  });
   const workspace = [data, ...initial.plan.creations.map(({ artifact }) => artifact)];
 
-  const rerun = prepareSavedOperatingReviewRerun(workspace, workflow, reviewInput({
-    period: "July vs May 2026",
-    scope: { field: "Period", value: "July" },
-    comparisonScope: { field: "Period", value: "May" },
-  }));
+  const rerun = prepareSavedOperatingReviewRerun(
+    workspace,
+    workflow,
+    reviewInput({
+      period: "July vs May 2026",
+      scope: { field: "Period", value: "July" },
+      comparisonScope: { field: "Period", value: "May" },
+    }),
+  );
   assert.deepEqual(rerun.errors, []);
   assert.deepEqual(rerun.plan.creations, []);
   assert.deepEqual(rerun.workflow.input.comparisonScope, { field: "Period", value: "May" });
@@ -718,12 +808,7 @@ test("rewires model narrative bindings to the saved Query identity during rerun"
       },
     ],
   };
-  const rerun = prepareSavedOperatingReviewRerun(
-    workspace,
-    workflow,
-    reviewInput({ period: "FY26 Q3" }),
-    narrative,
-  );
+  const rerun = prepareSavedOperatingReviewRerun(workspace, workflow, reviewInput({ period: "FY26 Q3" }), narrative);
   assert.deepEqual(rerun.errors, []);
   for (const artifactId of [workflow.artifactIds.document, workflow.artifactIds.slides]) {
     const source = rerun.plan.patches.find((patch) => patch.artifactId === artifactId)?.nextSource ?? "";
@@ -749,7 +834,9 @@ test("rerun fails closed when a saved output disappears or the Data schema drift
     reviewInput({ period: "FY26 Q3" }),
   );
   const drifted = prepareSavedOperatingReviewRerun(
-    workspace.map((artifact) => artifact.id === data.id ? { ...artifact, source: "Market,Bookings\nAPAC,2\n" } : artifact),
+    workspace.map((artifact) =>
+      artifact.id === data.id ? { ...artifact, source: "Market,Bookings\nAPAC,2\n" } : artifact,
+    ),
     workflow,
     reviewInput({ period: "FY26 Q3" }),
   );
@@ -767,7 +854,10 @@ test("normalizes bounded saved workflows and rejects malformed or mismatched del
   delete malformed.artifactIds.document;
 
   assert.deepEqual(normalizeSavedOperatingReviews([malformed]), []);
-  assert.deepEqual(normalizeSavedOperatingReviews([workflow, workflow]).map((item) => item.id), [workflow.id]);
+  assert.deepEqual(
+    normalizeSavedOperatingReviews([workflow, workflow]).map((item) => item.id),
+    [workflow.id],
+  );
   assert.deepEqual(normalizeSavedOperatingReviews([{ ...workflow, id: "forged-task-id" }]), []);
   const many = Array.from({ length: 20 }, (_, index) => {
     const query = `${workflow.artifactIds.query}-${index}`;
@@ -814,7 +904,10 @@ test("records bounded newest-first task outcomes without storing workspace conte
     outputTokens: 91,
   });
 
-  assert.deepEqual(second.runs.map((run) => run.id), ["run:second", "run:first"]);
+  assert.deepEqual(
+    second.runs.map((run) => run.id),
+    ["run:second", "run:first"],
+  );
   assert.equal(second.runs[0].inputTokens, 240);
   assert.deepEqual(summarizeOperatingReviewRuns(second.runs), {
     total: 2,
@@ -827,7 +920,12 @@ test("records bounded newest-first task outcomes without storing workspace conte
     outputTokens: 91,
   });
   assert.doesNotMatch(JSON.stringify(second.runs), /source-data\.csv|1840000|durable growth/i);
-  assert.deepEqual(normalizeSavedOperatingReviews([{ ...second, runs: [{ ...second.runs[0], status: "stopped", stopReason: null }] }])[0].runs, []);
+  assert.deepEqual(
+    normalizeSavedOperatingReviews([
+      { ...second, runs: [{ ...second.runs[0], status: "stopped", stopReason: null }] },
+    ])[0].runs,
+    [],
+  );
 });
 
 test("caps task run history and discards malformed usage, duration, and timestamps", () => {

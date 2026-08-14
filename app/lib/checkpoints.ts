@@ -59,13 +59,15 @@ function isReason(value: unknown): value is CheckpointReason {
 function isCheckpoint(value: unknown, artifactId: string): value is WorkspaceCheckpoint {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<WorkspaceCheckpoint>;
-  return typeof candidate.id === "string"
-    && candidate.artifactId === artifactId
-    && typeof candidate.source === "string"
-    && typeof candidate.label === "string"
-    && typeof candidate.createdAt === "string"
-    && !Number.isNaN(Date.parse(candidate.createdAt))
-    && isReason(candidate.reason);
+  return (
+    typeof candidate.id === "string" &&
+    candidate.artifactId === artifactId &&
+    typeof candidate.source === "string" &&
+    typeof candidate.label === "string" &&
+    typeof candidate.createdAt === "string" &&
+    !Number.isNaN(Date.parse(candidate.createdAt)) &&
+    isReason(candidate.reason)
+  );
 }
 
 export function normalizeCheckpointMap(value: unknown): CheckpointMap {

@@ -9,7 +9,8 @@ const document = {
   name: "source.md",
   kind: "document",
   language: "Markdown",
-  source: "# Source\n\n## Context\n\nA sufficiently detailed context statement for a presentation.\n\n## Decision\n\nA sufficiently detailed decision statement for the final slide.",
+  source:
+    "# Source\n\n## Context\n\nA sufficiently detailed context statement for a presentation.\n\n## Decision\n\nA sufficiently detailed decision statement for the final slide.",
 };
 
 test("keeps every registered task paired with one static provider", () => {
@@ -81,9 +82,10 @@ test("routes a typed operating-review task through the same provider boundary", 
     },
   });
   assert.deepEqual(prepared.errors, []);
-  assert.deepEqual(prepared.plan?.creations.map((creation) => creation.artifact.kind), [
-    "query", "chart", "document",
-  ]);
+  assert.deepEqual(
+    prepared.plan?.creations.map((creation) => creation.artifact.kind),
+    ["query", "chart", "document"],
+  );
 });
 
 test("passes evidence-bound operating questions through the same pure compiler boundary", () => {

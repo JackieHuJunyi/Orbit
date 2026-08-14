@@ -135,9 +135,13 @@ test("keeps compatibility parsers and heavy runtimes out of the initial client b
 
 test("ships a complete-source live mirror for revision-bound visual Document drafts", async () => {
   const clientDir = new URL("../dist/client/assets/", import.meta.url);
-  const bundle = (await Promise.all(
-    (await readdir(clientDir)).filter((name) => name.endsWith(".js")).map((name) => readFile(new URL(name, clientDir), "utf8")),
-  )).join("\n");
+  const bundle = (
+    await Promise.all(
+      (await readdir(clientDir))
+        .filter((name) => name.endsWith(".js"))
+        .map((name) => readFile(new URL(name, clientDir), "utf8")),
+    )
+  ).join("\n");
   assert.match(bundle, /complete source draft synced live/);
   assert.match(bundle, /Unsaved synchronized source draft/);
   assert.match(bundle, /visual-source-sync-state/);
@@ -296,7 +300,10 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Preview target is too large or no longer matches the current source/);
   assert.match(clientSource, /The source artifact is no longer in this workspace/);
   assert.match(clientSource, /Open exact/);
-  assert.match(clientSource, /result row numbers and direct fields, when present, open canonical source; derived cells stay read-only/);
+  assert.match(
+    clientSource,
+    /result row numbers and direct fields, when present, open canonical source; derived cells stay read-only/,
+  );
   assert.match(clientSource, /this query shape stays read-only because no one-to-one lineage was proven/);
   assert.match(clientSource, /Query result/);
   assert.match(clientSource, /-- rune:data/);
@@ -359,9 +366,15 @@ test("ships persistent presentation-only workspace focus modes without unmountin
     render(),
   ]);
   const html = await response.text();
-  assert.match(styles, /\.workspace\.view-source > \.preview-pane,[\s\S]*\.workspace\.view-preview > \.source-pane[\s\S]*display:\s*none;/);
+  assert.match(
+    styles,
+    /\.workspace\.view-source > \.preview-pane,[\s\S]*\.workspace\.view-preview > \.source-pane[\s\S]*display:\s*none;/,
+  );
   assert.match(styles, /\.workspace\.view-source\.with-file-rail > \.source-pane,[\s\S]*grid-column:\s*3 \/ -1;/);
-  assert.match(styles, /\.workspace\.view-preview \.preview-header \.workspace-view-switch\s*\{\s*display:\s*inline-flex;/);
+  assert.match(
+    styles,
+    /\.workspace\.view-preview \.preview-header \.workspace-view-switch\s*\{\s*display:\s*inline-flex;/,
+  );
   assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
   assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
   assert.match(html, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
@@ -415,7 +428,7 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
   assert.match(source, /className="tools-popover" role="menu"/);
   assert.match(source, /ui\.openFolder/);
-  assert.match(source, /role="menuitem"[^>]*onClick=\{\(\) => \{ setToolsMenuOpen\(false\); openWelcomeGuide\(\); \}\}/);
+  assert.match(source, /setToolsMenuOpen\(false\);\s*openWelcomeGuide\(\);/s);
   assert.match(source, /role="menuitemradio"/);
   assert.match(source, /className="tools-theme-name"/);
   assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(9, minmax\(0, 1fr\)\)/s);
@@ -429,10 +442,16 @@ test("records user-confirmed deliverable outcomes through the shared exact-revis
     readFile(new URL("../app/lib/task-evidence.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
   ]);
-  assert.match(workbench, /openDeliveryConfirmationForArtifact\(exportedArtifact, "download", result\.targetType/);
+  assert.match(
+    workbench,
+    /openDeliveryConfirmationForArtifact\(\s*exportedArtifact,\s*"download",\s*result\.targetType,/,
+  );
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(handoffArtifact, "folder", "folder"/);
   assert.match(workbench, /recordRuneTaskDelivery\(\{/);
-  assert.match(workbench, /persistDeviceWorkspace\(artifactsRef\.current, selectedId, checkpointsRef\.current, savedOperatingReviewsRef\.current, nextEvidence\)/);
+  assert.match(
+    workbench,
+    /persistDeviceWorkspace\(\s*artifactsRef\.current,\s*selectedId,\s*checkpointsRef\.current,\s*savedOperatingReviewsRef\.current,\s*nextEvidence,/,
+  );
   assert.match(workbench, /summarizeRuneTaskDeliveries\(workflowDeliveries\)/);
   assert.doesNotMatch(workbench, /recordOperatingReviewDelivery\(/);
   assert.match(dialog, /Did this result become usable in real work\?/);
@@ -474,7 +493,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"><span>\{ui\.version\}<\/span><strong>Rune 1\.07<\/strong>/);
+  assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune 1\.08<\/strong>/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -484,13 +503,19 @@ test("integrates assistance into the source surface and progressively discloses 
   const response = await render();
   const html = await response.text();
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(html, /class="agent-composer"[\s\S]*class="agent-context-row"/);
+  assert.match(
+    html,
+    /class="agent-composer"[\s\S]*class="agent-suggestions"[\s\S]*class="agent-scope-switch"[\s\S]*class="run-button"/,
+  );
   assert.match(html, /<details class="agent-suggestions"><summary>/);
   assert.match(html, /role="group" aria-label="Agent change scope"/);
+  assert.match(html, /class="agent-hint"/);
   assert.doesNotMatch(html, /class="agent-title-row"/);
   assert.doesNotMatch(html, /class="agent-avatar"/);
+  assert.doesNotMatch(html, /class="agent-context-row"/);
   assert.match(styles, /\.agent-dock\s*\{[^}]*margin:\s*0;[^}]*border:\s*0;[^}]*border-top:/s);
   assert.match(styles, /\.agent-composer:focus-within\s*\{/);
+  assert.match(styles, /\.run-button\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
 test("organizes workspace files by product workflow rather than internal artifact inventory", async () => {
@@ -501,9 +526,15 @@ test("organizes workspace files by product workflow rather than internal artifac
   assert.match(html, /class="artifact-group artifact-group-sources"[\s\S]*>Sources<\/h2>/);
   assert.match(html, /class="artifact-group artifact-group-analysis"[\s\S]*>Analysis<\/h2>/);
   assert.match(html, /class="artifact-group artifact-group-deliverables"[\s\S]*>Deliverables<\/h2>/);
-  assert.match(html, /artifact-group-sources[\s\S]*regional-revenue\.csv[\s\S]*artifact-group-analysis[\s\S]*regional-analysis\.sql[\s\S]*regional-revenue\.chart\.json[\s\S]*artifact-group-deliverables[\s\S]*q2-review\.md[\s\S]*board-briefing\.deck\.md/);
+  assert.match(
+    html,
+    /artifact-group-sources[\s\S]*regional-revenue\.csv[\s\S]*artifact-group-analysis[\s\S]*regional-analysis\.sql[\s\S]*regional-revenue\.chart\.json[\s\S]*artifact-group-deliverables[\s\S]*q2-review\.md[\s\S]*board-briefing\.deck\.md/,
+  );
   assert.doesNotMatch(html, /class="active-notch"/);
-  assert.match(styles, /\.artifact-row\.active\s*\{[^}]*background:\s*rgba\(var\(--theme-rgb\),\s*\.085\);[^}]*box-shadow:\s*inset 2px 0 var\(--theme-accent\);/s);
+  assert.match(
+    styles,
+    /\.artifact-row\.active\s*\{[^}]*background:\s*rgba\(var\(--theme-rgb\),\s*\.085\);[^}]*box-shadow:\s*inset 2px 0 var\(--theme-accent\);/s,
+  );
   assert.match(styles, /\.artifact-context-pin\s*\{[^}]*opacity:\s*0;/s);
 });
 
@@ -522,13 +553,20 @@ test("keeps the top bar global and moves duplicate task creation into the activi
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const activityRailSource = await readFile(
+    new URL("../app/components/workbench-activity-rail.tsx", import.meta.url),
+    "utf8",
+  );
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-  const topbarSource = source.slice(source.indexOf('<header className="topbar">'), source.indexOf("</header>", source.indexOf('<header className="topbar">')));
+  const topbarSource = source.slice(
+    source.indexOf('<header className="topbar">'),
+    source.indexOf("</header>", source.indexOf('<header className="topbar">')),
+  );
   assert.doesNotMatch(topbarSource, /openOperatingReview|review-task-button|ClipboardList/);
   assert.match(html, /class="brand-copy"><strong>Rune<\/strong><\/div><span class="project-separator"/);
   assert.match(html, /class="save-indicator saved" role="status" aria-label="Saved on device · Last saved/);
   assert.match(html, /class="visually-hidden">Saved on device<\/span>/);
-  assert.match(source, /className="activity-button"[\s\S]{0,420}onClick=\{openOperatingReview\}/);
+  assert.match(activityRailSource, /className="activity-button"[\s\S]{0,420}onClick=\{onOperatingReview\}/);
   assert.match(html, />New<\/button>[\s\S]*>Import<\/button>[\s\S]*class="export-menu"[\s\S]*class="tools-menu"/);
   assert.doesNotMatch(styles, /\.review-task-button\s*\{/);
 });
@@ -541,7 +579,10 @@ test("presents onboarding as a full-screen setup assistant with an accessible st
   assert.match(component, /aria-valuemax=\{steps\.length\}/);
   assert.match(component, /aria-valuenow=\{steps\.indexOf\(step\) \+ 1\}/);
   assert.match(styles, /\.welcome-backdrop\s*\{[^}]*display:\s*block;[^}]*padding:\s*0;[^}]*overflow:\s*hidden;/s);
-  assert.match(styles, /\.welcome-window\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-height:\s*100vh;[^}]*border-radius:\s*0;[^}]*box-shadow:\s*none;/s);
+  assert.match(
+    styles,
+    /\.welcome-window\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*min-height:\s*100vh;[^}]*border-radius:\s*0;[^}]*box-shadow:\s*none;/s,
+  );
   assert.match(styles, /\.welcome-chrome\s*\{[^}]*position:\s*sticky;[^}]*height:\s*72px;/s);
   assert.match(styles, /\.welcome-page\s*\{[^}]*min-height:\s*calc\(100vh - 72px\);/s);
 });
@@ -550,12 +591,21 @@ test("moves live lineage into preview evidence so compiled content starts immedi
   const response = await render();
   const html = await response.text();
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(html, /class="preview-evidence-popover"[\s\S]*class="preview-evidence-lineage"[\s\S]*class="lineage-strip query-lineage"/);
-  assert.match(html, /class="preview-evidence-lineage"[\s\S]*regional-summary\.sql[\s\S]*q2-review\.md[\s\S]*regional-revenue\.csv/);
+  assert.match(
+    html,
+    /class="preview-evidence-popover"[\s\S]*class="preview-evidence-lineage"[\s\S]*class="lineage-strip query-lineage"/,
+  );
+  assert.match(
+    html,
+    /class="preview-evidence-lineage"[\s\S]*regional-summary\.sql[\s\S]*q2-review\.md[\s\S]*regional-revenue\.csv/,
+  );
   assert.match(html, /<div class="preview-body"><div class="preview-scroll">/);
   assert.doesNotMatch(html, /<div class="preview-body"><div class="lineage-strip/);
   assert.match(styles, /\.preview-evidence-lineage\s*\{/);
-  assert.match(styles, /\.preview-evidence-lineage \.lineage-strip\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
+  assert.match(
+    styles,
+    /\.preview-evidence-lineage \.lineage-strip\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s,
+  );
 });
 
 test("ships reviewed device-local images as content-hash Markdown references without base64 source", async () => {
@@ -583,9 +633,11 @@ test("ships reviewed device-local images as content-hash Markdown references wit
 test("ships one Apple-informed optical and motion system across onboarding and the editing workspace", async () => {
   const [legacyStyles, styleFiles, source, welcome] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
-    Promise.all(["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) => (
-      readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8")
-    ))),
+    Promise.all(
+      ["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) =>
+        readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8"),
+      ),
+    ),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
   ]);
@@ -597,9 +649,18 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /--rune-type-display:\s*clamp\(46px,\s*5\.1vw,\s*70px\);/);
   assert.match(styles, /--rune-duration-scene:\s*760ms;/);
   assert.match(styles, /--rune-file-width:\s*220px;/);
-  assert.match(styles, /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(var\(--rune-frame-width\),\s*var\(--rune-content-wide\)\);/s);
-  assert.match(styles, /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s);
-  assert.match(styles, /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--rune-stage\);[^}]*background-image:\s*none;/s);
+  assert.match(
+    styles,
+    /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(var\(--rune-frame-width\),\s*var\(--rune-content-wide\)\);/s,
+  );
+  assert.match(
+    styles,
+    /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s,
+  );
+  assert.match(
+    styles,
+    /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--rune-stage\);[^}]*background-image:\s*none;/s,
+  );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
   assert.match(styles, /@keyframes rune-ambient-drift/);

@@ -34,7 +34,8 @@ export const DELIVERY_OUTCOME_BASE_COPY = {
     addEvaluation: "添加详细的真实任务评估",
     evaluationBody: "可选 · 七个维度 · 约一分钟",
     evaluationTitle: "真实任务评估",
-    evaluationDescription: "只有完整评分并确认内容已获授权或脱敏后，才会计入真实任务样本。每项 1 分表示需要改进，5 分表示表现优秀。",
+    evaluationDescription:
+      "只有完整评分并确认内容已获授权或脱敏后，才会计入真实任务样本。每项 1 分表示需要改进，5 分表示表现优秀。",
     numberGate: "数字正确性低于 4 分会始终单独标记，不会被平均分掩盖。",
     authorization: "我确认此任务已获准用于评估，或内容已经脱敏。",
     rubric: {
@@ -50,7 +51,8 @@ export const DELIVERY_OUTCOME_BASE_COPY = {
   en: {
     kicker: "Delivery confirmation · on device",
     title: "Did this result become usable in real work?",
-    description: "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.",
+    description:
+      "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.",
     details: "Deliverable outcome",
     task: "Task",
     deliverable: "Deliverable",
@@ -61,14 +63,16 @@ export const DELIVERY_OUTCOME_BASE_COPY = {
     minorBody: "The direction is right and only limited manual changes remain.",
     notReadyTitle: "Not ready to deliver",
     notReadyBody: "A material error, omission, or rework still blocks delivery.",
-    privacy: "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.",
+    privacy:
+      "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.",
     later: "Decide later",
     confirming: "Recording…",
     confirm: "Confirm outcome",
     addEvaluation: "Add a detailed real-task evaluation",
     evaluationBody: "Optional · seven dimensions · about one minute",
     evaluationTitle: "Real-task evaluation",
-    evaluationDescription: "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.",
+    evaluationDescription:
+      "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.",
     numberGate: "Number correctness below 4 always remains a visible blocker and is never hidden inside an average.",
     authorization: "I confirm this task is authorized for evaluation or its content is redacted.",
     rubric: {
@@ -119,17 +123,25 @@ export function DeliveryOutcomeDialog({
     <ReviewDialog
       dialogId="delivery-outcome"
       dialogClassName="delivery-outcome-dialog"
-      kicker={<><ShieldCheck aria-hidden="true" /> {copy.kicker}</>}
+      kicker={
+        <>
+          <ShieldCheck aria-hidden="true" /> {copy.kicker}
+        </>
+      }
       title={copy.title}
       description={copy.description}
       detailsLabel={copy.details}
       locale={locale}
       onCancel={onCancel}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {copy.privacy}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {copy.privacy}
+          </div>
           <span>
-            <button className="button ghost-button" type="button" disabled={submitting} onClick={onCancel}>{copy.later}</button>
+            <button className="button ghost-button" type="button" disabled={submitting} onClick={onCancel}>
+              {copy.later}
+            </button>
             <button
               className="button primary-button"
               type="button"
@@ -137,26 +149,36 @@ export function DeliveryOutcomeDialog({
               onClick={() => {
                 if (!rating || !canConfirm) return;
                 if (!detailed) void onConfirm({ rating });
-                else void onConfirm({
-                  rating,
-                  evaluation: {
-                    version: 1,
-                    provenance: "authorized-or-redacted",
-                    rubric: rubric as RuneTaskOutcomeRubric,
-                  },
-                });
+                else
+                  void onConfirm({
+                    rating,
+                    evaluation: {
+                      version: 1,
+                      provenance: "authorized-or-redacted",
+                      rubric: rubric as RuneTaskOutcomeRubric,
+                    },
+                  });
               }}
             >
               <Check aria-hidden="true" /> {submitting ? copy.confirming : copy.confirm}
             </button>
           </span>
         </>
-      )}
+      }
     >
       <dl className="delivery-outcome-context">
-        <div><dt>{copy.task}</dt><dd>{workflowTitle}</dd></div>
-        <div><dt>{copy.deliverable}</dt><dd>{artifactName}</dd></div>
-        <div><dt>{copy.handoff}</dt><dd>{handoffLabel}</dd></div>
+        <div>
+          <dt>{copy.task}</dt>
+          <dd>{workflowTitle}</dd>
+        </div>
+        <div>
+          <dt>{copy.deliverable}</dt>
+          <dd>{artifactName}</dd>
+        </div>
+        <div>
+          <dt>{copy.handoff}</dt>
+          <dd>{handoffLabel}</dd>
+        </div>
       </dl>
       <fieldset className="delivery-outcome-options">
         <legend className="visually-hidden">{copy.details}</legend>
@@ -174,7 +196,10 @@ export function DeliveryOutcomeDialog({
                 onChange={() => setRating(option.id)}
               />
               <Icon aria-hidden="true" />
-              <span><strong>{option.title}</strong><small>{option.body}</small></span>
+              <span>
+                <strong>{option.title}</strong>
+                <small>{option.body}</small>
+              </span>
             </label>
           );
         })}
@@ -188,11 +213,18 @@ export function DeliveryOutcomeDialog({
         onClick={() => setDetailed((current) => !current)}
       >
         <ListChecks aria-hidden="true" />
-        <span><strong>{copy.addEvaluation}</strong><small>{copy.evaluationBody}</small></span>
+        <span>
+          <strong>{copy.addEvaluation}</strong>
+          <small>{copy.evaluationBody}</small>
+        </span>
         <ChevronDown aria-hidden="true" />
       </button>
       {detailed && (
-        <section className="delivery-evaluation" id="delivery-detailed-evaluation" aria-labelledby="delivery-evaluation-title">
+        <section
+          className="delivery-evaluation"
+          id="delivery-detailed-evaluation"
+          aria-labelledby="delivery-evaluation-title"
+        >
           <header>
             <h3 id="delivery-evaluation-title">{copy.evaluationTitle}</h3>
             <p>{copy.evaluationDescription}</p>
@@ -201,8 +233,16 @@ export function DeliveryOutcomeDialog({
             {RUNE_TASK_RUBRIC_DIMENSIONS.map((dimension) => {
               const [title, description] = copy.rubric[dimension];
               return (
-                <div className="delivery-rubric-row" role="group" aria-labelledby={`delivery-rubric-${dimension}`} key={dimension}>
-                  <span className="delivery-rubric-copy" id={`delivery-rubric-${dimension}`}><strong>{title}</strong><small>{description}</small></span>
+                <div
+                  className="delivery-rubric-row"
+                  role="group"
+                  aria-labelledby={`delivery-rubric-${dimension}`}
+                  key={dimension}
+                >
+                  <span className="delivery-rubric-copy" id={`delivery-rubric-${dimension}`}>
+                    <strong>{title}</strong>
+                    <small>{description}</small>
+                  </span>
                   <span className="delivery-score-options">
                     {([1, 2, 3, 4, 5] as const).map((score) => (
                       <label className={rubric[dimension] === score ? "selected" : ""} key={score}>
@@ -213,7 +253,9 @@ export function DeliveryOutcomeDialog({
                           checked={rubric[dimension] === score}
                           disabled={submitting}
                           aria-label={`${title} ${score} / 5`}
-                          onChange={() => setRubric((current) => ({ ...current, [dimension]: score as RuneTaskRubricScore }))}
+                          onChange={() =>
+                            setRubric((current) => ({ ...current, [dimension]: score as RuneTaskRubricScore }))
+                          }
                         />
                         <span aria-hidden="true">{score}</span>
                       </label>
@@ -223,14 +265,25 @@ export function DeliveryOutcomeDialog({
               );
             })}
           </div>
-          <p className="delivery-number-gate"><ShieldCheck aria-hidden="true" /> {copy.numberGate}</p>
+          <p className="delivery-number-gate">
+            <ShieldCheck aria-hidden="true" /> {copy.numberGate}
+          </p>
           <label className="delivery-authorization">
-            <input type="checkbox" checked={authorized} disabled={submitting} onChange={(event) => setAuthorized(event.currentTarget.checked)} />
+            <input
+              type="checkbox"
+              checked={authorized}
+              disabled={submitting}
+              onChange={(event) => setAuthorized(event.currentTarget.checked)}
+            />
             <span>{copy.authorization}</span>
           </label>
         </section>
       )}
-      {error && <div className="import-review-error" role="alert">{error}</div>}
+      {error && (
+        <div className="import-review-error" role="alert">
+          {error}
+        </div>
+      )}
     </ReviewDialog>
   );
 }

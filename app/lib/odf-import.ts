@@ -6,11 +6,7 @@ import {
 } from "@xmldom/xmldom";
 import { strFromU8, unzipSync, type Unzipped } from "fflate";
 
-import {
-  createImportedImageToken,
-  finalizeImportedImages,
-  type ImportedImageCandidate,
-} from "./imported-images.ts";
+import { createImportedImageToken, finalizeImportedImages, type ImportedImageCandidate } from "./imported-images.ts";
 import {
   MAX_RUNE_IMAGE_BYTES,
   MAX_RUNE_LOCAL_IMAGE_BYTES,
@@ -129,18 +125,21 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
           throw new Error(`${path} exceeds Rune's 6 MB required-part limit.`);
         }
         const imagePart = importImages && /^Pictures\//u.test(path);
-        const relevant = path === "mimetype"
-          || path === "content.xml"
-          || path === "styles.xml"
-          || path === "meta.xml"
-          || path === "META-INF/manifest.xml"
-          || imagePart;
+        const relevant =
+          path === "mimetype" ||
+          path === "content.xml" ||
+          path === "styles.xml" ||
+          path === "meta.xml" ||
+          path === "META-INF/manifest.xml" ||
+          imagePart;
         if (!relevant) return false;
         if (imagePart) {
           imageEntries += 1;
-          if (imageEntries > MAX_RUNE_LOCAL_IMAGES
-            || file.originalSize > MAX_RUNE_IMAGE_BYTES
-            || expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES) {
+          if (
+            imageEntries > MAX_RUNE_LOCAL_IMAGES ||
+            file.originalSize > MAX_RUNE_IMAGE_BYTES ||
+            expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES
+          ) {
             imageLimitWarning = true;
             return false;
           }
@@ -150,7 +149,8 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
         if (path.endsWith(".xml")) {
           if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
           expandedXmlBytes += file.originalSize;
-          if (expandedXmlBytes > MAX_XML_TOTAL_BYTES) throw new Error("The OpenDocument package expands beyond Rune's 24 MB XML limit.");
+          if (expandedXmlBytes > MAX_XML_TOTAL_BYTES)
+            throw new Error("The OpenDocument package expands beyond Rune's 24 MB XML limit.");
         }
         return true;
       },
@@ -160,7 +160,8 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
       if (data.length > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
       return total + data.length;
     }, 0);
-    if (actualXmlBytes > MAX_XML_TOTAL_BYTES) throw new Error("The OpenDocument package expands beyond Rune's 24 MB XML limit.");
+    if (actualXmlBytes > MAX_XML_TOTAL_BYTES)
+      throw new Error("The OpenDocument package expands beyond Rune's 24 MB XML limit.");
     requiredEntries.forEach((path) => {
       if (!seenPaths.has(path)) throw new Error(`Required OpenDocument part is missing: ${path}`);
     });
@@ -173,7 +174,9 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
       files,
       paths,
       warnings: imageLimitWarning
-        ? [`Embedded OpenDocument images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`]
+        ? [
+            `Embedded OpenDocument images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
+          ]
         : [],
       importImages,
       imageCandidates: [],
@@ -181,9 +184,11 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
     };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "The ZIP package could not be opened.";
-    throw new Error(detail.startsWith("The OpenDocument") || detail.startsWith("A conforming") || detail.startsWith("The package")
-      ? detail
-      : `OpenDocument import failed: ${detail}`);
+    throw new Error(
+      detail.startsWith("The OpenDocument") || detail.startsWith("A conforming") || detail.startsWith("The package")
+        ? detail
+        : `OpenDocument import failed: ${detail}`,
+    );
   }
 }
 
@@ -267,11 +272,13 @@ function baseName(name: string) {
 }
 
 function safeFileSegment(value: string) {
-  return value
-    .normalize("NFKC")
-    .replace(/[^\p{L}\p{N}._-]+/gu, "-")
-    .replace(/^-+|-+$/gu, "")
-    .slice(0, 72) || "artifact";
+  return (
+    value
+      .normalize("NFKC")
+      .replace(/[^\p{L}\p{N}._-]+/gu, "-")
+      .replace(/^-+|-+$/gu, "")
+      .slice(0, 72) || "artifact"
+  );
 }
 
 function stableImportId(fileName: string, suffix = "") {
@@ -282,7 +289,8 @@ function stableImportId(fileName: string, suffix = "") {
 function boundedSource(source: string, label: string) {
   const normalized = `${source.trim()}\n`;
   if (!normalized.trim()) throw new Error(`${label} did not contain importable content.`);
-  if (normalized.length > MAX_OUTPUT_CHARS) throw new Error(`${label} converts to more than 200,000 source characters.`);
+  if (normalized.length > MAX_OUTPUT_CHARS)
+    throw new Error(`${label} converts to more than 200,000 source characters.`);
   return normalized;
 }
 
@@ -290,7 +298,8 @@ function repeatCount(element: XmlElement, name: string, maximum: number, label: 
   const raw = attribute(element, name);
   if (!raw) return 1;
   const value = Number(raw);
-  if (!Number.isInteger(value) || value < 1 || value > maximum) throw new Error(`${label} has an unsafe repeated-item count.`);
+  if (!Number.isInteger(value) || value < 1 || value > maximum)
+    throw new Error(`${label} has an unsafe repeated-item count.`);
   return value;
 }
 
@@ -303,7 +312,9 @@ function validateManifest(kind: OdfKind, context: PackageContext) {
   if (!root || attribute(root, "media-type") !== ODF_MIME_TYPES[kind]) {
     throw new Error("The OpenDocument manifest does not declare the expected document type.");
   }
-  const contentEntry = descendantElements(manifest, "file-entry").find((entry) => attribute(entry, "full-path") === "content.xml");
+  const contentEntry = descendantElements(manifest, "file-entry").find(
+    (entry) => attribute(entry, "full-path") === "content.xml",
+  );
   if (!contentEntry || attribute(contentEntry, "media-type") !== "text/xml") {
     throw new Error("The OpenDocument manifest must declare content.xml as text/xml.");
   }
@@ -312,7 +323,8 @@ function validateManifest(kind: OdfKind, context: PackageContext) {
 function packageWarnings(context: PackageContext, content: XmlDocument) {
   const scriptPaths = context.paths.filter((path) => /^(?:Basic|Scripts)\//iu.test(path));
   const scriptElements = descendantElements(content, "scripts").length + descendantElements(content, "script").length;
-  if (scriptPaths.length || scriptElements) context.warnings.push("OpenDocument macros or scripts were ignored and never executed.");
+  if (scriptPaths.length || scriptElements)
+    context.warnings.push("OpenDocument macros or scripts were ignored and never executed.");
   const signaturePaths = context.paths.filter((path) => /^META-INF\/.*signatures.*\.xml$/iu.test(path));
   if (signaturePaths.length) context.warnings.push("Digital signatures were not preserved after semantic import.");
 }
@@ -345,7 +357,9 @@ function odfImageToken(context: PackageContext, artifactId: string, image: XmlEl
   }
   const bytes = context.files[path];
   if (!bytes) {
-    context.warnings.push(`Embedded OpenDocument image “${path.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`);
+    context.warnings.push(
+      `Embedded OpenDocument image “${path.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`,
+    );
     return "";
   }
   let ancestor = image.parentNode;
@@ -373,19 +387,26 @@ function odfImageToken(context: PackageContext, artifactId: string, image: XmlEl
 }
 
 function styleMap(context: PackageContext, content: XmlDocument) {
-  const documents = [content, xmlPart(context, "styles.xml", false)].filter((value): value is XmlDocument => Boolean(value));
+  const documents = [content, xmlPart(context, "styles.xml", false)].filter((value): value is XmlDocument =>
+    Boolean(value),
+  );
   const raw = new Map<string, TextStyle & { parent: string }>();
-  documents.forEach((document) => descendantElements(document, "style").forEach((style) => {
-    const name = attribute(style, "name");
-    if (!name) return;
-    const properties = firstDescendant(style, "text-properties");
-    raw.set(name, {
-      parent: attribute(style, "parent-style-name"),
-      bold: /^(?:bold|[6-9]00)$/iu.test(attribute(properties, "font-weight")),
-      italic: attribute(properties, "font-style") === "italic",
-      strike: Boolean(attribute(properties, "text-line-through-style") && attribute(properties, "text-line-through-style") !== "none"),
-    });
-  }));
+  documents.forEach((document) =>
+    descendantElements(document, "style").forEach((style) => {
+      const name = attribute(style, "name");
+      if (!name) return;
+      const properties = firstDescendant(style, "text-properties");
+      raw.set(name, {
+        parent: attribute(style, "parent-style-name"),
+        bold: /^(?:bold|[6-9]00)$/iu.test(attribute(properties, "font-weight")),
+        italic: attribute(properties, "font-style") === "italic",
+        strike: Boolean(
+          attribute(properties, "text-line-through-style") &&
+          attribute(properties, "text-line-through-style") !== "none",
+        ),
+      });
+    }),
+  );
   const resolved = new Map<string, TextStyle>();
   function resolve(name: string, seen = new Set<string>()): TextStyle {
     if (resolved.has(name)) return resolved.get(name) as TextStyle;
@@ -393,7 +414,11 @@ function styleMap(context: PackageContext, content: XmlDocument) {
     if (!own || seen.has(name)) return { bold: false, italic: false, strike: false };
     seen.add(name);
     const parent = own.parent ? resolve(own.parent, seen) : { bold: false, italic: false, strike: false };
-    const value = { bold: own.bold || parent.bold, italic: own.italic || parent.italic, strike: own.strike || parent.strike };
+    const value = {
+      bold: own.bold || parent.bold,
+      italic: own.italic || parent.italic,
+      strike: own.strike || parent.strike,
+    };
     resolved.set(name, value);
     return value;
   }
@@ -471,17 +496,21 @@ function inlineText(
 
 function listStyles(context: PackageContext, content: XmlDocument) {
   const result = new Map<string, Map<number, boolean>>();
-  const documents = [content, xmlPart(context, "styles.xml", false)].filter((value): value is XmlDocument => Boolean(value));
-  documents.forEach((document) => descendantElements(document, "list-style").forEach((style) => {
-    const name = attribute(style, "name");
-    if (!name) return;
-    const levels = new Map<number, boolean>();
-    childElements(style).forEach((level) => {
-      const levelNumber = Math.max(1, Number(attribute(level, "level")) || 1);
-      levels.set(levelNumber, localName(level) === "list-level-style-number");
-    });
-    result.set(name, levels);
-  }));
+  const documents = [content, xmlPart(context, "styles.xml", false)].filter((value): value is XmlDocument =>
+    Boolean(value),
+  );
+  documents.forEach((document) =>
+    descendantElements(document, "list-style").forEach((style) => {
+      const name = attribute(style, "name");
+      if (!name) return;
+      const levels = new Map<number, boolean>();
+      childElements(style).forEach((level) => {
+        const levelNumber = Math.max(1, Number(attribute(level, "level")) || 1);
+        levels.set(levelNumber, localName(level) === "list-level-style-number");
+      });
+      result.set(name, levels);
+    }),
+  );
   return result;
 }
 
@@ -502,9 +531,11 @@ function listLines(
     const paragraphs = childElements(item).filter((child) => ["p", "h"].includes(localName(child)));
     paragraphs.forEach((paragraph, index) => {
       const text = oneLine(inlineText(paragraph, styles, warnings, imageToken));
-      if (text) lines.push(`${"  ".repeat(level)}${index === 0 ? ordered ? "1." : "-" : "  "} ${text}`);
+      if (text) lines.push(`${"  ".repeat(level)}${index === 0 ? (ordered ? "1." : "-") : "  "} ${text}`);
     });
-    childElements(item, "list").forEach((nested) => lines.push(...listLines(nested, styles, definitions, warnings, level + 1, styleName, imageToken)));
+    childElements(item, "list").forEach((nested) =>
+      lines.push(...listLines(nested, styles, definitions, warnings, level + 1, styleName, imageToken)),
+    );
   });
   return lines;
 }
@@ -534,14 +565,22 @@ function tableRowsForMarkdown(
         if (attribute(cell, "number-columns-spanned") || attribute(cell, "number-rows-spanned")) {
           warnings.push("Merged OpenDocument table cells were flattened during semantic import.");
         }
-        const value = cellName === "covered-table-cell"
-          ? ""
-          : oneLine(childElements(cell).filter((child) => ["p", "h"].includes(localName(child))).map((paragraph) => inlineText(paragraph, styles, warnings, imageToken)).join(" / "));
+        const value =
+          cellName === "covered-table-cell"
+            ? ""
+            : oneLine(
+                childElements(cell)
+                  .filter((child) => ["p", "h"].includes(localName(child)))
+                  .map((paragraph) => inlineText(paragraph, styles, warnings, imageToken))
+                  .join(" / "),
+              );
         for (let index = 0; index < columnRepeat; index += 1) values.push(value);
       });
-      if (values.length > MAX_COLUMNS) throw new Error("An OpenDocument table exceeds the 256-column semantic import limit.");
+      if (values.length > MAX_COLUMNS)
+        throw new Error("An OpenDocument table exceeds the 256-column semantic import limit.");
       for (let index = 0; index < repeat; index += 1) {
-        if (rows.length >= MAX_ROWS) throw new Error("An OpenDocument table exceeds the 10,000-row semantic import limit.");
+        if (rows.length >= MAX_ROWS)
+          throw new Error("An OpenDocument table exceeds the 10,000-row semantic import limit.");
         cellCount += values.length;
         if (cellCount > MAX_CELLS) throw new Error("An OpenDocument table contains more than 50,000 imported cells.");
         rows.push([...values]);
@@ -555,7 +594,9 @@ function tableRowsForMarkdown(
 function markdownTable(rows: string[][]) {
   const width = Math.max(0, ...rows.map((row) => row.length));
   if (!width) return "";
-  const normalized = rows.map((row) => Array.from({ length: width }, (_, index) => oneLine(row[index] ?? "").replaceAll("|", "\\|")));
+  const normalized = rows.map((row) =>
+    Array.from({ length: width }, (_, index) => oneLine(row[index] ?? "").replaceAll("|", "\\|")),
+  );
   return [
     `| ${normalized[0].join(" | ")} |`,
     `| ${normalized[0].map(() => "---").join(" | ")} |`,
@@ -611,34 +652,50 @@ function convertOdt(fileName: string, context: PackageContext, content: XmlDocum
   const images = descendantElements(content, "image").length;
   const packagedImages = context.paths.filter((path) => /^Pictures\//u.test(path)).length;
   const annotations = descendantElements(content, "annotation").length;
-  const trackedChanges = descendantElements(content, "tracked-changes").length + descendantElements(content, "change-start").length;
+  const trackedChanges =
+    descendantElements(content, "tracked-changes").length + descendantElements(content, "change-start").length;
   if ((images || packagedImages) && !context.importImages) {
     context.warnings.push("ODT images were omitted from canonical Markdown.");
   } else if (images && context.imageRequests - requestStart < images) {
     const unmapped = images - (context.imageRequests - requestStart);
-    context.warnings.push(`${unmapped} ODT image${unmapped === 1 ? " had" : "s had"} no readable inline reference and ${unmapped === 1 ? "was" : "were"} omitted.`);
+    context.warnings.push(
+      `${unmapped} ODT image${unmapped === 1 ? " had" : "s had"} no readable inline reference and ${unmapped === 1 ? "was" : "were"} omitted.`,
+    );
   }
   if (context.importImages && context.imageCandidates.length - candidateStart > 0) {
-    context.warnings.push("ODT image positions were preserved in canonical Markdown; page wrapping and exact frame geometry remain semantic approximations.");
+    context.warnings.push(
+      "ODT image positions were preserved in canonical Markdown; page wrapping and exact frame geometry remain semantic approximations.",
+    );
   }
-  if (annotations) context.warnings.push(`${annotations} ODT ${annotations === 1 ? "annotation was" : "annotations were"} omitted.`);
-  if (trackedChanges) context.warnings.push("ODT tracked-change markup and history were not preserved; review the imported text state.");
-  context.warnings.push("ODT page layout, headers, footers, fields, and advanced styles were not preserved in canonical Markdown.");
+  if (annotations)
+    context.warnings.push(`${annotations} ODT ${annotations === 1 ? "annotation was" : "annotations were"} omitted.`);
+  if (trackedChanges)
+    context.warnings.push("ODT tracked-change markup and history were not preserved; review the imported text state.");
+  context.warnings.push(
+    "ODT page layout, headers, footers, fields, and advanced styles were not preserved in canonical Markdown.",
+  );
   const source = boundedSource(blocks.join("\n\n"), "ODT");
   return {
     sourceType: "odt",
     warnings: [...new Set(context.warnings)],
-    artifacts: [{
-      id: artifactId,
-      name: `${safeFileSegment(baseName(fileName))}.md`,
-      kind: "document",
-      language: "Markdown",
-      source,
-    }],
+    artifacts: [
+      {
+        id: artifactId,
+        name: `${safeFileSegment(baseName(fileName))}.md`,
+        kind: "document",
+        language: "Markdown",
+        source,
+      },
+    ],
   };
 }
 
-function odsCellValue(cell: XmlElement, styles: Map<string, TextStyle>, warnings: string[], formulaBudget: { count: number }): DataCell {
+function odsCellValue(
+  cell: XmlElement,
+  styles: Map<string, TextStyle>,
+  warnings: string[],
+  formulaBudget: { count: number },
+): DataCell {
   if (attribute(cell, "formula")) formulaBudget.count += 1;
   const valueType = attribute(cell, "value-type");
   if (valueType === "float" || valueType === "currency" || valueType === "percentage") {
@@ -650,7 +707,12 @@ function odsCellValue(cell: XmlElement, styles: Map<string, TextStyle>, warnings
   if (valueType === "time") return attribute(cell, "time-value") || oneLine(cell.textContent ?? "");
   const explicit = attribute(cell, "string-value");
   if (explicit) return explicit;
-  return oneLine(childElements(cell).filter((child) => ["p", "h"].includes(localName(child))).map(plainText).join(" / "));
+  return oneLine(
+    childElements(cell)
+      .filter((child) => ["p", "h"].includes(localName(child)))
+      .map(plainText)
+      .join(" / "),
+  );
 }
 
 function odsRows(
@@ -688,13 +750,14 @@ function odsRows(
       });
       const width = valuesByColumn.size ? Math.max(...valuesByColumn.keys()) + 1 : 0;
       const values = Array.from({ length: width }, (_, column) => valuesByColumn.get(column) ?? null);
-      if (values.length) for (let index = 0; index < rowRepeat; index += 1) {
-        const rowIndex = rowCursor + index;
-        if (rowIndex >= MAX_ROWS) throw new Error("An ODS worksheet exceeds the 10,000-row semantic import limit.");
-        cellBudget.count += width;
-        if (cellBudget.count > MAX_CELLS) throw new Error("The ODS contains more than 50,000 imported cells.");
-        sparseRows.set(rowIndex, [...values]);
-      }
+      if (values.length)
+        for (let index = 0; index < rowRepeat; index += 1) {
+          const rowIndex = rowCursor + index;
+          if (rowIndex >= MAX_ROWS) throw new Error("An ODS worksheet exceeds the 10,000-row semantic import limit.");
+          cellBudget.count += width;
+          if (cellBudget.count > MAX_CELLS) throw new Error("The ODS contains more than 50,000 imported cells.");
+          sparseRows.set(rowIndex, [...values]);
+        }
       rowCursor += rowRepeat;
     });
   }
@@ -716,7 +779,9 @@ function csvCell(value: DataCell, injectionBudget: { count: number }) {
 
 function toCsv(rows: DataCell[][], injectionBudget: { count: number }) {
   const width = Math.max(0, ...rows.map((row) => row.length));
-  return rows.map((row) => Array.from({ length: width }, (_, index) => csvCell(row[index] ?? null, injectionBudget)).join(",")).join("\n");
+  return rows
+    .map((row) => Array.from({ length: width }, (_, index) => csvCell(row[index] ?? null, injectionBudget)).join(","))
+    .join("\n");
 }
 
 function convertOds(fileName: string, context: PackageContext, content: XmlDocument): OdfImportResult {
@@ -725,8 +790,12 @@ function convertOds(fileName: string, context: PackageContext, content: XmlDocum
   const styles = styleMap(context, content);
   const tables = childElements(spreadsheet, "table");
   const visible = tables.filter((table) => !/^(?:false|0)$/iu.test(attribute(table, "display")));
-  if (visible.length < tables.length) context.warnings.push(`${tables.length - visible.length} hidden ODS ${tables.length - visible.length === 1 ? "sheet was" : "sheets were"} not imported.`);
-  if (visible.length > MAX_SHEETS) context.warnings.push(`Only the first ${MAX_SHEETS} visible ODS sheets were imported.`);
+  if (visible.length < tables.length)
+    context.warnings.push(
+      `${tables.length - visible.length} hidden ODS ${tables.length - visible.length === 1 ? "sheet was" : "sheets were"} not imported.`,
+    );
+  if (visible.length > MAX_SHEETS)
+    context.warnings.push(`Only the first ${MAX_SHEETS} visible ODS sheets were imported.`);
   const selected = visible.slice(0, MAX_SHEETS);
   const cellBudget = { count: 0 };
   const formulaBudget = { count: 0 };
@@ -770,9 +839,17 @@ function convertOds(fileName: string, context: PackageContext, content: XmlDocum
   if (artifacts.reduce((total, artifact) => total + artifact.source.length, 0) > MAX_TOTAL_OUTPUT_CHARS) {
     throw new Error("The ODS converts to more than 500,000 total source characters.");
   }
-  if (formulaBudget.count) context.warnings.push(`${formulaBudget.count} ODS formula ${formulaBudget.count === 1 ? "cell was" : "cells were"} imported using the cached displayed value.`);
-  if (injectionBudget.count) context.warnings.push(`${injectionBudget.count} formula-leading text ${injectionBudget.count === 1 ? "cell was" : "cells were"} prefixed with an apostrophe for CSV safety.`);
-  context.warnings.push("ODS cell formatting, filters, validations, charts, and print layout were not preserved in canonical CSV.");
+  if (formulaBudget.count)
+    context.warnings.push(
+      `${formulaBudget.count} ODS formula ${formulaBudget.count === 1 ? "cell was" : "cells were"} imported using the cached displayed value.`,
+    );
+  if (injectionBudget.count)
+    context.warnings.push(
+      `${injectionBudget.count} formula-leading text ${injectionBudget.count === 1 ? "cell was" : "cells were"} prefixed with an apostrophe for CSV safety.`,
+    );
+  context.warnings.push(
+    "ODS cell formatting, filters, validations, charts, and print layout were not preserved in canonical CSV.",
+  );
   return { sourceType: "ods", artifacts, warnings: [...new Set(context.warnings)] };
 }
 
@@ -842,16 +919,24 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
     const frames = descendantElements(page, "frame").filter((frame) => !hasAncestor(frame, "notes", page));
     const titleFrame = frames.find((frame) => /^(?:title|subtitle)$/iu.test(attribute(frame, "class")));
     const fallbackFrame = frames.find((frame) => odpFrameParagraphs(frame, styles, context.warnings).length);
-    const titleParagraphs = titleFrame ? odpFrameParagraphs(titleFrame, styles, context.warnings) : fallbackFrame ? odpFrameParagraphs(fallbackFrame, styles, context.warnings) : [];
+    const titleParagraphs = titleFrame
+      ? odpFrameParagraphs(titleFrame, styles, context.warnings)
+      : fallbackFrame
+        ? odpFrameParagraphs(fallbackFrame, styles, context.warnings)
+        : [];
     const title = titleParagraphs[0]?.text || attribute(page, "name") || `Slide ${index + 1}`;
     const body: string[] = [];
     frames.forEach((frame) => {
       if (frame === titleFrame) return;
       const paragraphs = odpFrameParagraphs(frame, styles, context.warnings);
       if (frame === fallbackFrame && !titleFrame) paragraphs.shift();
-      paragraphs.forEach((paragraph) => body.push(paragraph.listLevel
-        ? `${"  ".repeat(Math.max(0, paragraph.listLevel - 1))}- ${escapeDeckText(paragraph.text)}`
-        : escapeDeckText(paragraph.text)));
+      paragraphs.forEach((paragraph) =>
+        body.push(
+          paragraph.listLevel
+            ? `${"  ".repeat(Math.max(0, paragraph.listLevel - 1))}- ${escapeDeckText(paragraph.text)}`
+            : escapeDeckText(paragraph.text),
+        ),
+      );
       descendantElements(frame, "table").forEach((table) => {
         const markdown = markdownTable(tableRowsForMarkdown(table, styles, context.warnings));
         if (markdown) body.push(markdown);
@@ -863,10 +948,14 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
     });
     const imageTokens = odpImageTokens(context, artifactId, page);
     const hasTable = descendantElements(page, "table").some((table) => !hasAncestor(table, "notes", page));
-    const firstImageToken = hasTable ? "" : imageTokens.shift() ?? "";
+    const firstImageToken = hasTable ? "" : (imageTokens.shift() ?? "");
     if (firstImageToken) body.push(firstImageToken);
     const layout = firstImageToken ? "split" : index === 0 && body.length <= 1 ? "cover" : "content";
-    slides.push([`<!-- layout: ${layout} -->`, "", `# ${escapeDeckText(title)}`, ...(body.length ? ["", ...body] : [])].join("\n"));
+    slides.push(
+      [`<!-- layout: ${layout} -->`, "", `# ${escapeDeckText(title)}`, ...(body.length ? ["", ...body] : [])].join(
+        "\n",
+      ),
+    );
     imageTokens.forEach((token, imageIndex) => {
       const remainingSourceSlides = selected.length - index - 1;
       if (slides.length + remainingSourceSlides >= MAX_SLIDES) {
@@ -875,47 +964,64 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
         if (candidateIndex >= 0) context.imageCandidates.splice(candidateIndex, 1);
         return;
       }
-      slides.push([
-        "<!-- layout: split -->",
-        "",
-        `# ${escapeDeckText(title)} · Image ${imageIndex + (firstImageToken ? 2 : 1)}`,
-        "",
-        token,
-      ].join("\n"));
+      slides.push(
+        [
+          "<!-- layout: split -->",
+          "",
+          `# ${escapeDeckText(title)} · Image ${imageIndex + (firstImageToken ? 2 : 1)}`,
+          "",
+          token,
+        ].join("\n"),
+      );
     });
   });
   if (!slides.length) throw new Error("The ODP did not contain any slides.");
-  if (images) context.warnings.push(`${images} ODP ${images === 1 ? "image was" : "images were"} omitted because the semantic Deck reached its visual or 40-slide limit.`);
+  if (images)
+    context.warnings.push(
+      `${images} ODP ${images === 1 ? "image was" : "images were"} omitted because the semantic Deck reached its visual or 40-slide limit.`,
+    );
   if (context.importImages && context.imageCandidates.length) {
-    context.warnings.push("ODP images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.");
+    context.warnings.push(
+      "ODP images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.",
+    );
   }
-  if (objects) context.warnings.push(`${objects} embedded ODP ${objects === 1 ? "object was" : "objects were"} omitted; import its source data to rebuild a live Rune artifact.`);
+  if (objects)
+    context.warnings.push(
+      `${objects} embedded ODP ${objects === 1 ? "object was" : "objects were"} omitted; import its source data to rebuild a live Rune artifact.`,
+    );
   if (notes) context.warnings.push("ODP speaker notes were not imported into Deck Markdown.");
-  context.warnings.push("ODP positioning, theme, master styling, transitions, animation, and inline text styling were not preserved in Deck Markdown.");
+  context.warnings.push(
+    "ODP positioning, theme, master styling, transitions, animation, and inline text styling were not preserved in Deck Markdown.",
+  );
   const title = documentTitle(context, fileName);
   const safeTitle = oneLine(title).replaceAll("{", "&#123;").replaceAll("}", "&#125;");
   const language = /[\u3400-\u9fff]/u.test(`${title} ${slides.join(" ")}`) ? "zh-CN" : "en";
-  const source = boundedSource([
-    "---",
-    "version: 1",
-    `title: ${safeTitle}`,
-    "theme: rune",
-    "ratio: 16:9",
-    `lang: ${language}`,
-    "---",
-    "",
-    slides.join("\n\n---\n\n"),
-  ].join("\n"), "ODP");
+  const source = boundedSource(
+    [
+      "---",
+      "version: 1",
+      `title: ${safeTitle}`,
+      "theme: rune",
+      "ratio: 16:9",
+      `lang: ${language}`,
+      "---",
+      "",
+      slides.join("\n\n---\n\n"),
+    ].join("\n"),
+    "ODP",
+  );
   return {
     sourceType: "odp",
     warnings: [...new Set(context.warnings)],
-    artifacts: [{
-      id: artifactId,
-      name: `${safeFileSegment(baseName(fileName))}.deck.md`,
-      kind: "slides",
-      language: "Deck Markdown",
-      source,
-    }],
+    artifacts: [
+      {
+        id: artifactId,
+        name: `${safeFileSegment(baseName(fileName))}.deck.md`,
+        kind: "slides",
+        language: "Deck Markdown",
+        source,
+      },
+    ],
   };
 }
 
@@ -939,11 +1045,12 @@ export async function convertOdfFileWithAssets(
   validateManifest(kind, context);
   const content = xmlPart(context, "content.xml");
   packageWarnings(context, content);
-  const result = kind === "odt"
-    ? convertOdt(fileName, context, content)
-    : kind === "ods"
-      ? convertOds(fileName, context, content)
-      : convertOdp(fileName, context, content);
+  const result =
+    kind === "odt"
+      ? convertOdt(fileName, context, content)
+      : kind === "ods"
+        ? convertOds(fileName, context, content)
+        : convertOdp(fileName, context, content);
   const finalized = await finalizeImportedImages(result.artifacts, context.imageCandidates, result.warnings);
   return { sourceType: result.sourceType, ...finalized };
 }

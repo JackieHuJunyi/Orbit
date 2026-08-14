@@ -64,7 +64,8 @@ export const WELCOME_BASE_COPY = {
     useLocal: "仅使用本地模式",
     useLocalBody: "不向模型服务发送内容，使用内置确定性规划器",
     recheck: "重新检查",
-    modelSafety: "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Rune 也不会把它写进工作区、localStorage、Artifact 或 Git。",
+    modelSafety:
+      "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Rune 也不会把它写进工作区、localStorage、Artifact 或 Git。",
     modelUnavailable: "无法读取模型状态；你可以先使用本地模式。",
     shortcutEyebrow: "快速上手",
     shortcutTitle: "亲手试试四个快捷键",
@@ -96,7 +97,8 @@ export const WELCOME_BASE_COPY = {
     close: "Close tutorial",
     welcomeEyebrow: "Welcome to Rune",
     welcomeTitle: "Every piece of work, with a clear source.",
-    welcomeBody: "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.",
+    welcomeBody:
+      "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.",
     begin: "Continue setup",
     local: "Local first",
     reviewFirst: "Review before write",
@@ -108,7 +110,8 @@ export const WELCOME_BASE_COPY = {
     continue: "Continue",
     modelEyebrow: "Model connection",
     modelTitle: "Choose how Rune uses a model",
-    modelBody: "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.",
+    modelBody:
+      "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.",
     checkingModel: "Checking the model connection…",
     connectedModel: "Model connected",
     connectedModelBody: "Rune will use the currently enabled secure profile.",
@@ -119,11 +122,13 @@ export const WELCOME_BASE_COPY = {
     useLocal: "Use local mode only",
     useLocalBody: "Send nothing to a model service and use built-in deterministic planners",
     recheck: "Check again",
-    modelSafety: "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.",
+    modelSafety:
+      "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.",
     modelUnavailable: "Rune could not read model status. You can continue in local mode.",
     shortcutEyebrow: "Quick start",
     shortcutTitle: "Try four shortcuts yourself",
-    shortcutBody: "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.",
+    shortcutBody:
+      "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.",
     openTitle: "Open a file",
     openBody: "Choose a local file to begin",
     saveTitle: "Save a checkpoint",
@@ -183,23 +188,24 @@ export function WelcomeExperience({
   const [modelStatusError, setModelStatusError] = useState("");
   const [checkingModel, setCheckingModel] = useState(true);
   const [greetingIndex, setGreetingIndex] = useState(0);
-  const [modifier] = useState(() => (
+  const [modifier] = useState(() =>
     typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
       ? "Ctrl"
-      : "⌘"
-  ));
-  const [optionModifier] = useState(() => (
+      : "⌘",
+  );
+  const [optionModifier] = useState(() =>
     typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
       ? "Alt"
-      : "⌥"
-  ));
+      : "⌥",
+  );
   const text = welcomeCopy(locale);
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
   const greeting = greetings[greetingIndex] ?? greetings[0] ?? "Hello";
   const greetingLocale = RUNE_LOCALE_REGISTRY.find((entry) => entry.greeting === greeting)?.locale ?? locale;
-  const greetingCharacters = localeDirection(greetingLocale) === "rtl"
-    ? [greeting]
-    : greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting);
+  const greetingCharacters =
+    localeDirection(greetingLocale) === "rtl"
+      ? [greeting]
+      : (greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting));
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
 
   useEffect(() => {
@@ -216,7 +222,7 @@ export function WelcomeExperience({
     try {
       const response = await fetch("/api/model-status", { cache: "no-store" });
       if (!response.ok) throw new Error("status unavailable");
-      const status = await response.json() as ModelProviderStatus;
+      const status = (await response.json()) as ModelProviderStatus;
       if (typeof status.configured !== "boolean") throw new Error("invalid status");
       setModelStatus(status);
     } catch {
@@ -263,7 +269,7 @@ export function WelcomeExperience({
       if (!shortcut) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      setCompletedShortcuts((current) => current.includes(shortcut) ? current : [...current, shortcut]);
+      setCompletedShortcuts((current) => (current.includes(shortcut) ? current : [...current, shortcut]));
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
@@ -273,19 +279,31 @@ export function WelcomeExperience({
     { id: "open" as const, title: text.openTitle, body: text.openBody, keyName: "O", optionKey: "" },
     { id: "save" as const, title: text.saveTitle, body: text.saveBody, keyName: "S", optionKey: "" },
     { id: "agent" as const, title: text.agentTitle, body: text.agentBody, keyName: "↵", optionKey: "" },
-    { id: "view" as const, title: text.viewTitle, body: text.viewBody, keyName: "1 / 2 / 3", optionKey: optionModifier },
+    {
+      id: "view" as const,
+      title: text.viewTitle,
+      body: text.viewBody,
+      keyName: "1 / 2 / 3",
+      optionKey: optionModifier,
+    },
   ];
-  const handleProfileStatus = useCallback((status: ModelProviderStatus) => {
-    setModelStatus(status);
-    setModelStatusError("");
-    onModelModeChange(status.configured ? "auto" : "local");
-  }, [onModelModeChange]);
+  const handleProfileStatus = useCallback(
+    (status: ModelProviderStatus) => {
+      setModelStatus(status);
+      setModelStatusError("");
+      onModelModeChange(status.configured ? "auto" : "local");
+    },
+    [onModelModeChange],
+  );
 
   return (
     <div className="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
       <section className="welcome-window">
         <header className="welcome-chrome">
-          <div className="welcome-chrome-brand" aria-hidden="true"><span>R</span><strong>Rune</strong></div>
+          <div className="welcome-chrome-brand" aria-hidden="true">
+            <span>R</span>
+            <strong>Rune</strong>
+          </div>
           <div
             className="welcome-progress"
             role="progressbar"
@@ -302,9 +320,19 @@ export function WelcomeExperience({
             ))}
           </div>
           {dismissible ? (
-            <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}><X /></button>
+            <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}>
+              <X />
+            </button>
           ) : (
-            <button type="button" onClick={() => { onModelModeChange("local"); setStep("ready"); }}>{text.skip}</button>
+            <button
+              type="button"
+              onClick={() => {
+                onModelModeChange("local");
+                setStep("ready");
+              }}
+            >
+              {text.skip}
+            </button>
           )}
         </header>
 
@@ -327,7 +355,9 @@ export function WelcomeExperience({
                           className="welcome-greeting-character"
                           style={{ "--greeting-order": index } as CSSProperties}
                           key={`${character}-${index}`}
-                        >{character}</span>
+                        >
+                          {character}
+                        </span>
                       ))}
                     </span>
                     <i>Rune</i>
@@ -335,11 +365,16 @@ export function WelcomeExperience({
                   <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
                   <h1 id="welcome-title">{text.welcomeTitle}</h1>
                   <p>{text.welcomeBody}</p>
-                  <p className="welcome-principles"><ShieldCheck aria-hidden="true" />{text.local} · {text.reviewFirst} · {text.live}</p>
+                  <p className="welcome-principles">
+                    <ShieldCheck aria-hidden="true" />
+                    {text.local} · {text.reviewFirst} · {text.live}
+                  </p>
                 </div>
                 <section className="welcome-language-card" aria-labelledby="welcome-language-title">
                   <div className="welcome-language-heading">
-                    <span><Globe2 aria-hidden="true" /></span>
+                    <span>
+                      <Globe2 aria-hidden="true" />
+                    </span>
                     <div>
                       <strong id="welcome-language-title">{text.languageTitle}</strong>
                       <small>{text.languageBody}</small>
@@ -364,7 +399,17 @@ export function WelcomeExperience({
                       </button>
                     ))}
                   </div>
-                  <button className="welcome-primary" type="button" onClick={() => { setCheckingModel(true); setStep("model"); }}>{text.begin}<ArrowRight /></button>
+                  <button
+                    className="welcome-primary"
+                    type="button"
+                    onClick={() => {
+                      setCheckingModel(true);
+                      setStep("model");
+                    }}
+                  >
+                    {text.begin}
+                    <ArrowRight />
+                  </button>
                 </section>
               </div>
             </>
@@ -372,20 +417,42 @@ export function WelcomeExperience({
 
           {step === "model" && (
             <>
-              <div className="welcome-icon-disc"><KeyRound /></div>
+              <div className="welcome-icon-disc">
+                <KeyRound />
+              </div>
               <span className="welcome-eyebrow">{text.modelEyebrow}</span>
               <h1 id="welcome-title">{text.modelTitle}</h1>
               <p>{text.modelBody}</p>
               <div className="model-setup-panel">
                 <div className={`model-status-card ${modelStatus?.configured ? "connected" : ""}`} role="status">
-                  <span>{modelStatus?.configured ? <Check /> : checkingModel ? <RefreshCw className="agent-spinner" /> : <Server />}</span>
+                  <span>
+                    {modelStatus?.configured ? (
+                      <Check />
+                    ) : checkingModel ? (
+                      <RefreshCw className="agent-spinner" />
+                    ) : (
+                      <Server />
+                    )}
+                  </span>
                   <div>
-                    <strong>{checkingModel ? text.checkingModel : modelStatus?.configured ? text.connectedModel : text.noModel}</strong>
-                    <small>{modelStatusError || (modelStatus?.configured
-                      ? `${modelStatus.profileName ?? (modelStatus.provider === "openai" ? "OpenAI" : "Model")} · ${modelStatus.model ?? "Model"} · ${text.connectedModelBody}`
-                      : text.noModelBody)}</small>
+                    <strong>
+                      {checkingModel
+                        ? text.checkingModel
+                        : modelStatus?.configured
+                          ? text.connectedModel
+                          : text.noModel}
+                    </strong>
+                    <small>
+                      {modelStatusError ||
+                        (modelStatus?.configured
+                          ? `${modelStatus.profileName ?? (modelStatus.provider === "openai" ? "OpenAI" : "Model")} · ${modelStatus.model ?? "Model"} · ${text.connectedModelBody}`
+                          : text.noModelBody)}
+                    </small>
                   </div>
-                  <button type="button" onClick={() => void checkModelStatus()} disabled={checkingModel}><RefreshCw />{text.recheck}</button>
+                  <button type="button" onClick={() => void checkModelStatus()} disabled={checkingModel}>
+                    <RefreshCw />
+                    {text.recheck}
+                  </button>
                 </div>
                 <div className="model-mode-options" role="radiogroup" aria-label={text.modelTitle}>
                   <button
@@ -396,7 +463,14 @@ export function WelcomeExperience({
                     disabled={!modelStatus?.configured}
                     onClick={() => onModelModeChange("auto")}
                   >
-                    <span><Server /></span><span><strong>{text.useConnected}</strong><small>{text.useConnectedBody}</small></span>{modelMode === "auto" && modelStatus?.configured ? <Check /> : null}
+                    <span>
+                      <Server />
+                    </span>
+                    <span>
+                      <strong>{text.useConnected}</strong>
+                      <small>{text.useConnectedBody}</small>
+                    </span>
+                    {modelMode === "auto" && modelStatus?.configured ? <Check /> : null}
                   </button>
                   <button
                     type="button"
@@ -405,22 +479,41 @@ export function WelcomeExperience({
                     className={modelMode === "local" ? "selected" : ""}
                     onClick={() => onModelModeChange("local")}
                   >
-                    <span><Laptop /></span><span><strong>{text.useLocal}</strong><small>{text.useLocalBody}</small></span>{modelMode === "local" ? <Check /> : null}
+                    <span>
+                      <Laptop />
+                    </span>
+                    <span>
+                      <strong>{text.useLocal}</strong>
+                      <small>{text.useLocalBody}</small>
+                    </span>
+                    {modelMode === "local" ? <Check /> : null}
                   </button>
                 </div>
                 {!checkingModel && <ModelProfileManager locale={locale} onStatusChange={handleProfileStatus} />}
-                <p className="model-safety-note"><ShieldCheck />{text.modelSafety}</p>
+                <p className="model-safety-note">
+                  <ShieldCheck />
+                  {text.modelSafety}
+                </p>
               </div>
-              <button className="welcome-primary" type="button" onClick={() => {
-                if (!modelStatus?.configured) onModelModeChange("local");
-                setStep("shortcuts");
-              }}>{text.continue}<ArrowRight /></button>
+              <button
+                className="welcome-primary"
+                type="button"
+                onClick={() => {
+                  if (!modelStatus?.configured) onModelModeChange("local");
+                  setStep("shortcuts");
+                }}
+              >
+                {text.continue}
+                <ArrowRight />
+              </button>
             </>
           )}
 
           {step === "shortcuts" && (
             <>
-              <div className="welcome-icon-disc"><Keyboard /></div>
+              <div className="welcome-icon-disc">
+                <Keyboard />
+              </div>
               <span className="welcome-eyebrow">{text.shortcutEyebrow}</span>
               <h1 id="welcome-title">{text.shortcutTitle}</h1>
               <p>{text.shortcutBody}</p>
@@ -430,29 +523,75 @@ export function WelcomeExperience({
                   return (
                     <div className={complete ? "complete" : ""} key={item.id}>
                       <span className="shortcut-status">{complete ? <Check /> : <Command />}</span>
-                      <span><strong>{item.title}</strong><small>{complete ? text.tried : item.body}</small></span>
-                      <span className="shortcut-keys"><ShortcutKey>{modifier}</ShortcutKey>{item.optionKey && <ShortcutKey>{item.optionKey}</ShortcutKey>}<ShortcutKey>{item.keyName}</ShortcutKey></span>
+                      <span>
+                        <strong>{item.title}</strong>
+                        <small>{complete ? text.tried : item.body}</small>
+                      </span>
+                      <span className="shortcut-keys">
+                        <ShortcutKey>{modifier}</ShortcutKey>
+                        {item.optionKey && <ShortcutKey>{item.optionKey}</ShortcutKey>}
+                        <ShortcutKey>{item.keyName}</ShortcutKey>
+                      </span>
                     </div>
                   );
                 })}
               </div>
               <button className="welcome-primary" type="button" onClick={() => setStep("ready")}>
-                {completedShortcuts.length === shortcutRows.length ? text.continue : text.skipTutorial}<ArrowRight />
+                {completedShortcuts.length === shortcutRows.length ? text.continue : text.skipTutorial}
+                <ArrowRight />
               </button>
             </>
           )}
 
           {step === "ready" && (
             <>
-              <div className="welcome-icon-disc ready"><Sparkles /></div>
+              <div className="welcome-icon-disc ready">
+                <Sparkles />
+              </div>
               <span className="welcome-eyebrow">{text.readyEyebrow}</span>
               <h1 id="welcome-title">{text.readyTitle}</h1>
               <p>{text.readyBody}</p>
               <div className="welcome-actions">
-                <button type="button" className="featured" onClick={() => onComplete("review")}><span><ClipboardList /></span><span><strong>{text.review}</strong><small>{text.reviewBody}</small></span><ArrowRight /></button>
-                <button type="button" onClick={() => onComplete("briefing")}><span><Presentation /></span><span><strong>{text.briefing}</strong><small>{text.briefingBody}</small></span><ArrowRight /></button>
-                <button type="button" onClick={() => onComplete("guide")}><span><FileText /></span><span><strong>{text.guide}</strong><small>{text.guideBody}</small></span><ArrowRight /></button>
-                <button type="button" onClick={() => onComplete("sample")}><span><Sparkles /></span><span><strong>{text.sample}</strong><small>{text.sampleBody}</small></span><ArrowRight /></button>
+                <button type="button" className="featured" onClick={() => onComplete("review")}>
+                  <span>
+                    <ClipboardList />
+                  </span>
+                  <span>
+                    <strong>{text.review}</strong>
+                    <small>{text.reviewBody}</small>
+                  </span>
+                  <ArrowRight />
+                </button>
+                <button type="button" onClick={() => onComplete("briefing")}>
+                  <span>
+                    <Presentation />
+                  </span>
+                  <span>
+                    <strong>{text.briefing}</strong>
+                    <small>{text.briefingBody}</small>
+                  </span>
+                  <ArrowRight />
+                </button>
+                <button type="button" onClick={() => onComplete("guide")}>
+                  <span>
+                    <FileText />
+                  </span>
+                  <span>
+                    <strong>{text.guide}</strong>
+                    <small>{text.guideBody}</small>
+                  </span>
+                  <ArrowRight />
+                </button>
+                <button type="button" onClick={() => onComplete("sample")}>
+                  <span>
+                    <Sparkles />
+                  </span>
+                  <span>
+                    <strong>{text.sample}</strong>
+                    <small>{text.sampleBody}</small>
+                  </span>
+                  <ArrowRight />
+                </button>
               </div>
             </>
           )}

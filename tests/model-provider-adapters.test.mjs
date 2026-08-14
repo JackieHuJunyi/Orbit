@@ -4,10 +4,14 @@ import { z } from "zod";
 
 import { listProviderModels, requestProviderPlan } from "../app/lib/model-provider-adapters.ts";
 
-const schema = z.object({
-  summary: z.string().min(1).max(160),
-  edits: z.array(z.object({ type: z.literal("replace_text"), find: z.string(), replace: z.string() }).strict()).min(1),
-}).strict();
+const schema = z
+  .object({
+    summary: z.string().min(1).max(160),
+    edits: z
+      .array(z.object({ type: z.literal("replace_text"), find: z.string(), replace: z.string() }).strict())
+      .min(1),
+  })
+  .strict();
 const output = { summary: "Replace one value", edits: [{ type: "replace_text", find: "old", replace: "new" }] };
 
 function connection(protocol) {
@@ -15,14 +19,16 @@ function connection(protocol) {
     source: "personal",
     profileId: protocol,
     profileName: "Test provider",
-    provider: protocol === "anthropic-messages" ? "anthropic" : protocol === "gemini-generate-content" ? "gemini" : "custom",
+    provider:
+      protocol === "anthropic-messages" ? "anthropic" : protocol === "gemini-generate-content" ? "gemini" : "custom",
     protocol,
     apiKey: `secret-${protocol}`,
-    baseURL: protocol === "anthropic-messages"
-      ? "https://api.anthropic.com/v1"
-      : protocol === "gemini-generate-content"
-        ? "https://generativelanguage.googleapis.com/v1beta"
-        : "https://models.example.com/v1",
+    baseURL:
+      protocol === "anthropic-messages"
+        ? "https://api.anthropic.com/v1"
+        : protocol === "gemini-generate-content"
+          ? "https://generativelanguage.googleapis.com/v1beta"
+          : "https://models.example.com/v1",
     model: protocol === "gemini-generate-content" ? "gemini-2.5-pro" : "model-1",
   };
 }
@@ -90,7 +96,11 @@ test("adapts Anthropic Messages through one forced typed tool input", async () =
   assert.equal(headers.get("x-api-key"), "secret-anthropic-messages");
   assert.equal(headers.get("anthropic-version"), "2023-06-01");
   assert.equal(headers.get("authorization"), null);
-  assert.deepEqual(request.body.tool_choice, { type: "tool", name: "submit_rune_plan", disable_parallel_tool_use: true });
+  assert.deepEqual(request.body.tool_choice, {
+    type: "tool",
+    name: "submit_rune_plan",
+    disable_parallel_tool_use: true,
+  });
   assert.equal(request.body.tools[0].input_schema.additionalProperties, false);
   assert.deepEqual(result, { output, usage: { inputTokens: 17, outputTokens: 7 } });
 });
@@ -107,8 +117,13 @@ test("adapts Gemini generateContent with JSON Schema and x-goog-api-key", async 
   assert.equal(request.body.generationConfig.responseMimeType, "application/json");
   assert.equal(request.body.generationConfig.responseJsonSchema.additionalProperties, false);
   assert.equal("$schema" in request.body.generationConfig.responseJsonSchema, false);
-  assert.deepEqual(request.body.generationConfig.responseJsonSchema.properties.edits.items.properties.type.enum, ["replace_text"]);
-  assert.equal("const" in request.body.generationConfig.responseJsonSchema.properties.edits.items.properties.type, false);
+  assert.deepEqual(request.body.generationConfig.responseJsonSchema.properties.edits.items.properties.type.enum, [
+    "replace_text",
+  ]);
+  assert.equal(
+    "const" in request.body.generationConfig.responseJsonSchema.properties.edits.items.properties.type,
+    false,
+  );
   assert.deepEqual(result, { output, usage: { inputTokens: 19, outputTokens: 8 } });
 });
 
@@ -119,14 +134,21 @@ test("lists Anthropic and Gemini model catalogs with protocol-specific authentic
     requests.push({ url: String(input), headers: new Headers(init.headers) });
     return requests.length === 1
       ? jsonResponse({ data: [{ id: "claude-sonnet-5" }, { id: "claude-opus-5" }] })
-      : jsonResponse({ models: [
-        { name: "models/gemini-2.5-pro", supportedGenerationMethods: ["generateContent"] },
-        { name: "models/text-embedding", supportedGenerationMethods: ["embedContent"] },
-      ] });
+      : jsonResponse({
+          models: [
+            { name: "models/gemini-2.5-pro", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/text-embedding", supportedGenerationMethods: ["embedContent"] },
+          ],
+        });
   };
   try {
-    assert.deepEqual(await listProviderModels(connection("anthropic-messages"), new AbortController().signal), ["claude-opus-5", "claude-sonnet-5"]);
-    assert.deepEqual(await listProviderModels(connection("gemini-generate-content"), new AbortController().signal), ["gemini-2.5-pro"]);
+    assert.deepEqual(await listProviderModels(connection("anthropic-messages"), new AbortController().signal), [
+      "claude-opus-5",
+      "claude-sonnet-5",
+    ]);
+    assert.deepEqual(await listProviderModels(connection("gemini-generate-content"), new AbortController().signal), [
+      "gemini-2.5-pro",
+    ]);
     assert.equal(requests[0].headers.get("x-api-key"), "secret-anthropic-messages");
     assert.equal(requests[1].headers.get("x-goog-api-key"), "secret-gemini-generate-content");
   } finally {
@@ -142,17 +164,35 @@ test("fails closed for invalid structured output and oversized provider response
       calls += 1;
       return jsonResponse({ choices: [{ message: { content: "not json" } }] });
     };
-    await assert.rejects(() => requestProviderPlan({
-      connection: connection("chat-completions"), instructions: "x", input: "y", schema, schemaName: "rune_test", signal: new AbortController().signal,
-    }), /invalid structured JSON/i);
+    await assert.rejects(
+      () =>
+        requestProviderPlan({
+          connection: connection("chat-completions"),
+          instructions: "x",
+          input: "y",
+          schema,
+          schemaName: "rune_test",
+          signal: new AbortController().signal,
+        }),
+      /invalid structured JSON/i,
+    );
     assert.equal(calls, 1, "an invalid response must not trigger a second provider or protocol");
     globalThis.fetch = async () => {
       calls += 1;
       return new Response("{}", { headers: { "content-length": "2000001" } });
     };
-    await assert.rejects(() => requestProviderPlan({
-      connection: connection("responses"), instructions: "x", input: "y", schema, schemaName: "rune_test", signal: new AbortController().signal,
-    }), /unexpectedly large/i);
+    await assert.rejects(
+      () =>
+        requestProviderPlan({
+          connection: connection("responses"),
+          instructions: "x",
+          input: "y",
+          schema,
+          schemaName: "rune_test",
+          signal: new AbortController().signal,
+        }),
+      /unexpectedly large/i,
+    );
     assert.equal(calls, 2, "each user request calls exactly its selected provider once");
   } finally {
     globalThis.fetch = previousFetch;
@@ -161,18 +201,28 @@ test("fails closed for invalid structured output and oversized provider response
 
 test("does not echo a provider error body that may contain sensitive evidence", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: "workspace-secret-fragment" } }), {
-    status: 401,
-    headers: { "content-type": "application/json" },
-  });
-  try {
-    await assert.rejects(() => requestProviderPlan({
-      connection: connection("responses"), instructions: "x", input: "y", schema, schemaName: "rune_test", signal: new AbortController().signal,
-    }), (error) => {
-      assert.match(error.message, /rejected Rune's request \(401\)/i);
-      assert.doesNotMatch(error.message, /workspace-secret-fragment/);
-      return true;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ error: { message: "workspace-secret-fragment" } }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
     });
+  try {
+    await assert.rejects(
+      () =>
+        requestProviderPlan({
+          connection: connection("responses"),
+          instructions: "x",
+          input: "y",
+          schema,
+          schemaName: "rune_test",
+          signal: new AbortController().signal,
+        }),
+      (error) => {
+        assert.match(error.message, /rejected Rune's request \(401\)/i);
+        assert.doesNotMatch(error.message, /workspace-secret-fragment/);
+        return true;
+      },
+    );
   } finally {
     globalThis.fetch = previousFetch;
   }

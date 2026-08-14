@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { MAX_WORKSPACE_AGENT_ARTIFACTS } from "./dependency-graph.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
-import {
-  workspaceQuerySnapshotIsCurrent,
-  type QueryCell,
-  type WorkspaceQuerySnapshot,
-} from "./query-snapshot.ts";
+import { workspaceQuerySnapshotIsCurrent, type QueryCell, type WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_AGENT_QUERY_EVIDENCE_ROWS = 20;
@@ -22,32 +18,37 @@ const EvidenceCellSchema = z.union([
   z.null(),
 ]);
 
-const AgentQueryEvidenceBaseSchema = z.object({
-  queryArtifactId: z.string().min(1).max(120),
-  dataArtifactId: z.string().min(1).max(120),
-}).strict();
+const AgentQueryEvidenceBaseSchema = z
+  .object({
+    queryArtifactId: z.string().min(1).max(120),
+    dataArtifactId: z.string().min(1).max(120),
+  })
+  .strict();
 
 export const AgentQueryReadyEvidenceSchema = AgentQueryEvidenceBaseSchema.extend({
   status: z.literal("ready"),
   columns: z.array(z.string().max(200)).max(MAX_AGENT_QUERY_EVIDENCE_COLUMNS),
-  rows: z.array(z.array(EvidenceCellSchema).max(MAX_AGENT_QUERY_EVIDENCE_COLUMNS))
-    .max(MAX_AGENT_QUERY_EVIDENCE_ROWS),
+  rows: z.array(z.array(EvidenceCellSchema).max(MAX_AGENT_QUERY_EVIDENCE_COLUMNS)).max(MAX_AGENT_QUERY_EVIDENCE_ROWS),
   visibleResultRowCount: z.number().int().min(0).max(500),
   totalColumnCount: z.number().int().min(0).max(10_000),
   resultTruncated: z.boolean(),
   evidenceTruncated: z.boolean(),
-}).strict().superRefine((evidence, context) => {
-  if (evidence.rows.some((row) => row.length !== evidence.columns.length)) {
-    context.addIssue({ code: "custom", message: "Every Query evidence row must match its column count." });
-  }
-  if (evidence.rows.reduce((total, row) => total + row.length, 0) > MAX_AGENT_QUERY_EVIDENCE_CELLS) {
-    context.addIssue({ code: "custom", message: "Query evidence exceeds the cell limit." });
-  }
-  if (evidence.visibleResultRowCount < evidence.rows.length
-    || evidence.totalColumnCount < evidence.columns.length) {
-    context.addIssue({ code: "custom", message: "Query evidence result counts cannot be smaller than the supplied sample." });
-  }
-});
+})
+  .strict()
+  .superRefine((evidence, context) => {
+    if (evidence.rows.some((row) => row.length !== evidence.columns.length)) {
+      context.addIssue({ code: "custom", message: "Every Query evidence row must match its column count." });
+    }
+    if (evidence.rows.reduce((total, row) => total + row.length, 0) > MAX_AGENT_QUERY_EVIDENCE_CELLS) {
+      context.addIssue({ code: "custom", message: "Query evidence exceeds the cell limit." });
+    }
+    if (evidence.visibleResultRowCount < evidence.rows.length || evidence.totalColumnCount < evidence.columns.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Query evidence result counts cannot be smaller than the supplied sample.",
+      });
+    }
+  });
 
 export const AgentQueryErrorEvidenceSchema = AgentQueryEvidenceBaseSchema.extend({
   status: z.literal("error"),
@@ -59,7 +60,8 @@ export const AgentQueryEvidenceSchema = z.discriminatedUnion("status", [
   AgentQueryErrorEvidenceSchema,
 ]);
 
-export const AgentQueryEvidenceListSchema = z.array(AgentQueryEvidenceSchema)
+export const AgentQueryEvidenceListSchema = z
+  .array(AgentQueryEvidenceSchema)
   .max(MAX_WORKSPACE_AGENT_ARTIFACTS)
   .superRefine((evidence, context) => {
     if (JSON.stringify(evidence).length > MAX_AGENT_QUERY_EVIDENCE_JSON_CHARS) {
@@ -94,13 +96,14 @@ export function createAgentQueryReadyEvidence(snapshot: WorkspaceQuerySnapshot):
   const rows = snapshot.result.rows
     .slice(0, Math.min(MAX_AGENT_QUERY_EVIDENCE_ROWS, maximumRowsByCellBudget))
     .map((row) => columns.map((_column, index) => boundedCell(row[index] ?? null)));
-  let evidenceTruncated = snapshot.result.columns.length > columns.length
-    || snapshot.result.rows.length > rows.length
-    || snapshot.result.rows.some((row, rowIndex) => (
-      rowIndex < rows.length && row.some((cell) => (
-        typeof cell === "string" && cell.length > MAX_AGENT_QUERY_EVIDENCE_CELL_CHARS
-      ))
-    ));
+  let evidenceTruncated =
+    snapshot.result.columns.length > columns.length ||
+    snapshot.result.rows.length > rows.length ||
+    snapshot.result.rows.some(
+      (row, rowIndex) =>
+        rowIndex < rows.length &&
+        row.some((cell) => typeof cell === "string" && cell.length > MAX_AGENT_QUERY_EVIDENCE_CELL_CHARS),
+    );
   const evidence: AgentQueryEvidence = {
     queryArtifactId: snapshot.queryArtifactId,
     dataArtifactId: snapshot.dataArtifactId,
@@ -113,9 +116,11 @@ export function createAgentQueryReadyEvidence(snapshot: WorkspaceQuerySnapshot):
     evidenceTruncated,
   };
 
-  while (JSON.stringify(evidence).length > MAX_AGENT_QUERY_EVIDENCE_JSON_CHARS
-    && evidence.status === "ready"
-    && evidence.rows.length) {
+  while (
+    JSON.stringify(evidence).length > MAX_AGENT_QUERY_EVIDENCE_JSON_CHARS &&
+    evidence.status === "ready" &&
+    evidence.rows.length
+  ) {
     evidence.rows.pop();
     evidence.evidenceTruncated = true;
     evidenceTruncated = true;

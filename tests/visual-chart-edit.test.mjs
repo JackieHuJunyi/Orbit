@@ -101,7 +101,10 @@ test("rejects stale, unchanged, oversized, and schema-invalid Chart edits", () =
   const [target] = derivePreviewSourceTargets(artifact);
   const draft = visualChartSpecDraft(artifact);
   assert.ok(draft);
-  assert.match(prepareVisualChartSpecEdit(artifact, { ...target, end: target.end - 1 }, draft).errors[0], /no longer match/u);
+  assert.match(
+    prepareVisualChartSpecEdit(artifact, { ...target, end: target.end - 1 }, draft).errors[0],
+    /no longer match/u,
+  );
   assert.match(prepareVisualChartSpecEdit(artifact, target, draft).errors[0], /unchanged/u);
   assert.match(prepareVisualChartSpecEdit(artifact, target, { ...draft, title: "" }).errors[0], /title/u);
   assert.match(prepareVisualChartSpecEdit(artifact, target, { ...draft, color: "red" }).errors[0], /color/u);
@@ -112,17 +115,27 @@ test("withholds Chart edit targets from invalid or non-Chart source", () => {
   const invalid = { ...chartArtifact(), source: "{}" };
   assert.deepEqual(derivePreviewSourceTargets(invalid), []);
   const document = { id: "brief", name: "brief.md", kind: "document", language: "Markdown", source: "# Brief" };
-  const fake = { id: "chart-spec:0:0", index: 0, kind: "chart-spec", label: "Brief", start: 0, end: document.source.length };
+  const fake = {
+    id: "chart-spec:0:0",
+    index: 0,
+    kind: "chart-spec",
+    label: "Brief",
+    start: 0,
+    end: document.source.length,
+  };
   assert.equal(canVisualEditChartSpec(document, fake), false);
-  assert.match(prepareVisualChartSpecEdit(document, fake, {
-    title: "Brief",
-    description: "",
-    mark: "bar",
-    category: "Item",
-    value: "Value",
-    sort: "source",
-    format: "number",
-    color: "#ff5c35",
-    maxItems: 8,
-  }).errors[0], /Chart JSON/u);
+  assert.match(
+    prepareVisualChartSpecEdit(document, fake, {
+      title: "Brief",
+      description: "",
+      mark: "bar",
+      category: "Item",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#ff5c35",
+      maxItems: 8,
+    }).errors[0],
+    /Chart JSON/u,
+  );
 });

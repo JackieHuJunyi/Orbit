@@ -55,7 +55,9 @@ function briefingRun(overrides = {}) {
     sourceArtifactId: "strategy-memo",
     sourceRevision: portableSourceRevision("# Strategy memo\n"),
     outputArtifactIds,
-    outputRevisions: Object.fromEntries(outputArtifactIds.map((artifactId, index) => [artifactId, portableSourceRevision(outputSources[index])])),
+    outputRevisions: Object.fromEntries(
+      outputArtifactIds.map((artifactId, index) => [artifactId, portableSourceRevision(outputSources[index])]),
+    ),
     changedFileCount: 1,
     queryCount: 0,
     chartConsumerCount: 0,
@@ -95,19 +97,21 @@ test("migrates the v1 ledger forward without losing exact runs or deliveries", (
   const migrated = normalizeRuneTaskEvidence({
     version: 1,
     runs: [operatingReview],
-    deliveries: [{
-      version: 1,
-      id: runeTaskDeliveryId(operatingReview.id, "review-document"),
-      confirmedAt: "2026-08-14T08:01:00.000Z",
-      runId: operatingReview.id,
-      taskId: "operating-review",
-      artifactId: "review-document",
-      method: "download",
-      target: "pdf",
-      rating: "ready",
-      sourceSha256: "a".repeat(64),
-      taskDurationMs: 64_000,
-    }],
+    deliveries: [
+      {
+        version: 1,
+        id: runeTaskDeliveryId(operatingReview.id, "review-document"),
+        confirmedAt: "2026-08-14T08:01:00.000Z",
+        runId: operatingReview.id,
+        taskId: "operating-review",
+        artifactId: "review-document",
+        method: "download",
+        target: "pdf",
+        rating: "ready",
+        sourceSha256: "a".repeat(64),
+        taskDurationMs: 64_000,
+      },
+    ],
   });
   const identity = {
     taskId: "operating-review",
@@ -120,8 +124,14 @@ test("migrates the v1 ledger forward without losing exact runs or deliveries", (
   assert.equal(migrated.deliveries[0].version, 2);
   assert.equal(migrated.deliveries[0].evaluation, null);
   assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], identity), true);
-  assert.deepEqual(runeTaskRunsForIdentity(migrated, identity).map((run) => run.id), [operatingReview.id]);
-  assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, outputArtifactIds: ["review-document"] }), false);
+  assert.deepEqual(
+    runeTaskRunsForIdentity(migrated, identity).map((run) => run.id),
+    [operatingReview.id],
+  );
+  assert.equal(
+    runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, outputArtifactIds: ["review-document"] }),
+    false,
+  );
   assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, sourceArtifactId: "another-data" }), false);
 });
 
@@ -208,18 +218,22 @@ test("records only complete authorized seven-dimensional evaluations and exposes
   delete incomplete.rubric.timeSaved;
   const frozenIncomplete = Object.freeze({ ...incomplete, rubric: Object.freeze(incomplete.rubric) });
   assert.equal(normalizeRuneTaskHumanEvaluation(frozenIncomplete), null);
-  await assert.rejects(() => recordRuneTaskDelivery({
-    evidence,
-    runId: run.id,
-    artifactId: "strategy-briefing",
-    source: "# strategy-briefing\n",
-    currentSourceRevision: run.sourceRevision,
-    currentOutputRevisions: run.outputRevisions,
-    method: "download",
-    target: "pptx",
-    rating: "ready",
-    evaluation: frozenIncomplete,
-  }), /evaluation is incomplete or invalid/i);
+  await assert.rejects(
+    () =>
+      recordRuneTaskDelivery({
+        evidence,
+        runId: run.id,
+        artifactId: "strategy-briefing",
+        source: "# strategy-briefing\n",
+        currentSourceRevision: run.sourceRevision,
+        currentOutputRevisions: run.outputRevisions,
+        method: "download",
+        target: "pptx",
+        rating: "ready",
+        evaluation: frozenIncomplete,
+      }),
+    /evaluation is incomplete or invalid/i,
+  );
   assert.equal(Object.hasOwn(frozenIncomplete.rubric, "timeSaved"), false);
 });
 
@@ -254,7 +268,9 @@ test("counts unique real tasks, preserves a detailed evaluation on quick reconfi
   assert.equal(summary.pilotEligibleTasks, 0);
   assert.equal(summary.dimensionAverages.numberCorrectness, 4);
 
-  const priorEvaluation = evidence.deliveries.find((delivery) => delivery.artifactId === "strategy-document").evaluation;
+  const priorEvaluation = evidence.deliveries.find(
+    (delivery) => delivery.artifactId === "strategy-document",
+  ).evaluation;
   evidence = await recordRuneTaskDelivery({
     evidence,
     runId: run.id,
@@ -267,7 +283,10 @@ test("counts unique real tasks, preserves a detailed evaluation on quick reconfi
     rating: "minor-edits",
     now: new Date("2026-08-14T09:00:00.000Z"),
   });
-  assert.deepEqual(evidence.deliveries.find((delivery) => delivery.artifactId === "strategy-document").evaluation, priorEvaluation);
+  assert.deepEqual(
+    evidence.deliveries.find((delivery) => delivery.artifactId === "strategy-document").evaluation,
+    priorEvaluation,
+  );
 });
 
 test("refuses an operating-review handoff when any linked task output changed", async () => {
@@ -279,89 +298,118 @@ test("refuses an operating-review handoff when any linked task output changed", 
     outputSources: ["SELECT 1;", "{}", "# Review\n"],
   });
   const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
-  await assert.rejects(() => recordRuneTaskDelivery({
-    evidence,
-    runId: run.id,
-    artifactId: "review-document",
-    source: "# Review\n",
-    currentSourceRevision: run.sourceRevision,
-    currentOutputRevisions: {
-      ...run.outputRevisions,
-      "review-chart": portableSourceRevision('{"changed":true}'),
-    },
-    method: "download",
-    target: "pdf",
-    rating: "ready",
-  }), /task outputs changed/i);
+  await assert.rejects(
+    () =>
+      recordRuneTaskDelivery({
+        evidence,
+        runId: run.id,
+        artifactId: "review-document",
+        source: "# Review\n",
+        currentSourceRevision: run.sourceRevision,
+        currentOutputRevisions: {
+          ...run.outputRevisions,
+          "review-chart": portableSourceRevision('{"changed":true}'),
+        },
+        method: "download",
+        target: "pdf",
+        rating: "ready",
+      }),
+    /task outputs changed/i,
+  );
 });
 
 test("fails closed for fabricated, stopped, mismatched, or malformed task evidence", async () => {
   const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
-  await assert.rejects(() => recordRuneTaskDelivery({
-    evidence,
-    runId: evidence.runs[0].id,
-    artifactId: "another-deck",
-    source: "# Forged\n",
-    currentSourceRevision: evidence.runs[0].sourceRevision,
-    currentOutputRevisions: evidence.runs[0].outputRevisions,
-    method: "download",
-    target: "pptx",
-    rating: "ready",
-  }), /exact output/i);
-  await assert.rejects(() => recordRuneTaskDelivery({
-    evidence,
-    runId: evidence.runs[0].id,
-    artifactId: "strategy-briefing",
-    source: "# Changed after Apply\n",
-    currentSourceRevision: evidence.runs[0].sourceRevision,
-    currentOutputRevisions: evidence.runs[0].outputRevisions,
-    method: "download",
-    target: "pptx",
-    rating: "ready",
-  }), /changed after the applied task/i);
-  await assert.rejects(() => recordRuneTaskDelivery({
-    evidence,
-    runId: evidence.runs[0].id,
-    artifactId: "strategy-briefing",
-    source: "# strategy-briefing\n",
-    currentSourceRevision: portableSourceRevision("# Revised strategy memo\n"),
-    currentOutputRevisions: evidence.runs[0].outputRevisions,
-    method: "download",
-    target: "pptx",
-    rating: "ready",
-  }), /task source changed/i);
-  const stopped = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun({ status: "stopped", stopReason: "cancelled" }));
-  await assert.rejects(() => recordRuneTaskDelivery({
-    evidence: stopped,
-    runId: stopped.runs[0].id,
-    artifactId: "strategy-briefing",
-    source: "# Stopped\n",
-    currentSourceRevision: stopped.runs[0].sourceRevision,
-    currentOutputRevisions: stopped.runs[0].outputRevisions,
-    method: "folder",
-    target: "folder",
-    rating: "ready",
-  }), /applied task run/i);
-  assert.deepEqual(normalizeRuneTaskEvidence({
-    version: 1,
-    runs: [
-      briefingRun({ taskId: "unknown" }),
-      briefingRun({ outputArtifactIds: ["strategy-memo"] }),
-      briefingRun({ durationMs: -1 }),
-      briefingRun({ provider: "bad\nprovider" }),
-    ],
-    deliveries: [],
-  }).runs, []);
+  await assert.rejects(
+    () =>
+      recordRuneTaskDelivery({
+        evidence,
+        runId: evidence.runs[0].id,
+        artifactId: "another-deck",
+        source: "# Forged\n",
+        currentSourceRevision: evidence.runs[0].sourceRevision,
+        currentOutputRevisions: evidence.runs[0].outputRevisions,
+        method: "download",
+        target: "pptx",
+        rating: "ready",
+      }),
+    /exact output/i,
+  );
+  await assert.rejects(
+    () =>
+      recordRuneTaskDelivery({
+        evidence,
+        runId: evidence.runs[0].id,
+        artifactId: "strategy-briefing",
+        source: "# Changed after Apply\n",
+        currentSourceRevision: evidence.runs[0].sourceRevision,
+        currentOutputRevisions: evidence.runs[0].outputRevisions,
+        method: "download",
+        target: "pptx",
+        rating: "ready",
+      }),
+    /changed after the applied task/i,
+  );
+  await assert.rejects(
+    () =>
+      recordRuneTaskDelivery({
+        evidence,
+        runId: evidence.runs[0].id,
+        artifactId: "strategy-briefing",
+        source: "# strategy-briefing\n",
+        currentSourceRevision: portableSourceRevision("# Revised strategy memo\n"),
+        currentOutputRevisions: evidence.runs[0].outputRevisions,
+        method: "download",
+        target: "pptx",
+        rating: "ready",
+      }),
+    /task source changed/i,
+  );
+  const stopped = appendRuneTaskRun(
+    EMPTY_RUNE_TASK_EVIDENCE,
+    briefingRun({ status: "stopped", stopReason: "cancelled" }),
+  );
+  await assert.rejects(
+    () =>
+      recordRuneTaskDelivery({
+        evidence: stopped,
+        runId: stopped.runs[0].id,
+        artifactId: "strategy-briefing",
+        source: "# Stopped\n",
+        currentSourceRevision: stopped.runs[0].sourceRevision,
+        currentOutputRevisions: stopped.runs[0].outputRevisions,
+        method: "folder",
+        target: "folder",
+        rating: "ready",
+      }),
+    /applied task run/i,
+  );
+  assert.deepEqual(
+    normalizeRuneTaskEvidence({
+      version: 1,
+      runs: [
+        briefingRun({ taskId: "unknown" }),
+        briefingRun({ outputArtifactIds: ["strategy-memo"] }),
+        briefingRun({ durationMs: -1 }),
+        briefingRun({ provider: "bad\nprovider" }),
+      ],
+      deliveries: [],
+    }).runs,
+    [],
+  );
 });
 
 test("keeps run and delivery history bounded, newest first, and reconfirmation stable", async () => {
   let evidence = EMPTY_RUNE_TASK_EVIDENCE;
   for (let index = 0; index < MAX_RUNE_TASK_RUNS + 8; index += 1) {
-    evidence = appendRuneTaskRun(evidence, briefingRun({
-      id: `task-run:document-briefing:${index}`,
-      completedAt: new Date(Date.UTC(2026, 7, 14, 9, index)).toISOString(),
-      outputArtifactIds: [`briefing-${index}`],
-    }));
+    evidence = appendRuneTaskRun(
+      evidence,
+      briefingRun({
+        id: `task-run:document-briefing:${index}`,
+        completedAt: new Date(Date.UTC(2026, 7, 14, 9, index)).toISOString(),
+        outputArtifactIds: [`briefing-${index}`],
+      }),
+    );
   }
   assert.equal(evidence.runs.length, MAX_RUNE_TASK_RUNS);
   assert.equal(evidence.runs[0].id, `task-run:document-briefing:${MAX_RUNE_TASK_RUNS + 7}`);

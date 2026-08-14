@@ -43,11 +43,12 @@ export function prepareWorkspaceImport(
   existing: WorkspaceArtifact[],
   imported: WorkspaceArtifact[],
 ): PreparedWorkspaceImport {
-  if (!imported.length) return {
-    importedArtifacts: [],
-    nextArtifacts: existing,
-    errors: ["The import did not produce any readable artifacts."],
-  };
+  if (!imported.length)
+    return {
+      importedArtifacts: [],
+      nextArtifacts: existing,
+      errors: ["The import did not produce any readable artifacts."],
+    };
   const importedArtifacts = resolveArtifactConflicts(existing, imported);
   const nextArtifacts = [...existing, ...importedArtifacts];
   const errors = validateWorkspaceArtifacts(nextArtifacts);
@@ -71,30 +72,44 @@ export function prepareWorkspaceImportReview(
     assets.forEach((asset) => {
       runeImageAssetMap([asset]);
       const existingAsset = assetsById.get(asset.id);
-      if (existingAsset && (existingAsset.size !== asset.size
-        || existingAsset.mimeType !== asset.mimeType
-        || existingAsset.bytes.some((value, index) => value !== asset.bytes[index]))) {
+      if (
+        existingAsset &&
+        (existingAsset.size !== asset.size ||
+          existingAsset.mimeType !== asset.mimeType ||
+          existingAsset.bytes.some((value, index) => value !== asset.bytes[index]))
+      ) {
         throw new Error(`Imported image identity is bound to conflicting bytes: ${asset.id}`);
       }
       assetsById.set(asset.id, existingAsset ?? asset);
     });
   } catch (error) {
-    return { review: null, errors: [error instanceof Error ? error.message : "The imported image assets are invalid."] };
+    return {
+      review: null,
+      errors: [error instanceof Error ? error.message : "The imported image assets are invalid."],
+    };
   }
   const reviewedAssets = [...assetsById.values()];
   if (reviewedAssets.length > MAX_RUNE_LOCAL_IMAGES) {
     return { review: null, errors: [`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGES} local images.`] };
   }
   if (reviewedAssets.reduce((total, asset) => total + asset.size, 0) > MAX_RUNE_LOCAL_IMAGE_BYTES) {
-    return { review: null, errors: [`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB of local images.`] };
+    return {
+      review: null,
+      errors: [`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB of local images.`],
+    };
   }
   if (reviewedAssets.length) {
-    const referencedIds = new Set(prepared.importedArtifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)));
+    const referencedIds = new Set(
+      prepared.importedArtifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)),
+    );
     const assetIds = new Set(reviewedAssets.map((asset) => asset.id));
     const missing = [...referencedIds].filter((id) => !assetIds.has(id));
     const unused = [...assetIds].filter((id) => !referencedIds.has(id));
     if (missing.length || unused.length) {
-      return { review: null, errors: ["Imported sources and their local image assets do not form one exact portable transaction."] };
+      return {
+        review: null,
+        errors: ["Imported sources and their local image assets do not form one exact portable transaction."],
+      };
     }
   }
   return {
@@ -110,12 +125,11 @@ export function prepareWorkspaceImportReview(
   };
 }
 
-export function validateWorkspaceImportReview(
-  current: WorkspaceArtifact[],
-  review: WorkspaceImportReview,
-) {
+export function validateWorkspaceImportReview(current: WorkspaceArtifact[], review: WorkspaceImportReview) {
   if (current !== review.baseArtifacts) {
-    return ["The workspace changed while this file was being converted. Cancel and import it again to review a fresh transaction."];
+    return [
+      "The workspace changed while this file was being converted. Cancel and import it again to review a fresh transaction.",
+    ];
   }
   try {
     runeImageAssetMap(review.assets);

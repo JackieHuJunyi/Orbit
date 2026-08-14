@@ -25,20 +25,26 @@ test("accepts one read-only SELECT or WITH query", () => {
 
 test("derives an explicit stable output contract for Query-backed Charts", () => {
   const sourceColumns = ["Region", "Revenue", "Cost"];
-  assert.deepEqual(inferQueryOutputColumns(`SELECT
+  assert.deepEqual(
+    inferQueryOutputColumns(
+      `SELECT
     Region,
     Revenue AS revenue,
     ROUND((Revenue - Cost) / Revenue * 100, 1) AS margin_pct
-  FROM workspace_data`, sourceColumns), {
-    columns: ["Region", "revenue", "margin_pct"],
-    errors: [],
-  });
-  assert.deepEqual(
-    inferQueryOutputColumns("SELECT * FROM workspace_data", sourceColumns).columns,
-    sourceColumns,
+  FROM workspace_data`,
+      sourceColumns,
+    ),
+    {
+      columns: ["Region", "revenue", "margin_pct"],
+      errors: [],
+    },
   );
+  assert.deepEqual(inferQueryOutputColumns("SELECT * FROM workspace_data", sourceColumns).columns, sourceColumns);
   assert.deepEqual(
-    inferQueryOutputColumns("WITH totals AS (SELECT Region FROM workspace_data) SELECT Region AS region FROM totals", sourceColumns).columns,
+    inferQueryOutputColumns(
+      "WITH totals AS (SELECT Region FROM workspace_data) SELECT Region AS region FROM totals",
+      sourceColumns,
+    ).columns,
     ["region"],
   );
 });
@@ -54,11 +60,15 @@ test("refuses ambiguous or implicit derived Query output contracts", () => {
     /unique/i,
   );
   assert.match(
-    inferQueryOutputColumns("WITH rows AS (SELECT Region FROM workspace_data) SELECT * FROM rows", sourceColumns).errors[0],
+    inferQueryOutputColumns("WITH rows AS (SELECT Region FROM workspace_data) SELECT * FROM rows", sourceColumns)
+      .errors[0],
     /stars.*workspace_data/i,
   );
   assert.match(
-    inferQueryOutputColumns("SELECT Region FROM workspace_data UNION ALL SELECT Region FROM workspace_data", sourceColumns).errors[0],
+    inferQueryOutputColumns(
+      "SELECT Region FROM workspace_data UNION ALL SELECT Region FROM workspace_data",
+      sourceColumns,
+    ).errors[0],
     /one outer SELECT|set-query/i,
   );
 });
@@ -90,10 +100,11 @@ ORDER BY "Q2 Revenue" DESC`);
     { kind: "column", sourceColumn: "Q2 Revenue" },
     { kind: "derived" },
   ]);
-  assert.deepEqual(
-    expandQueryLineageColumns(plan.projections, ["Region", "Q2 Revenue", "Cost", "Customers"]),
-    ["Region", "Q2 Revenue", null],
-  );
+  assert.deepEqual(expandQueryLineageColumns(plan.projections, ["Region", "Q2 Revenue", "Cost", "Customers"]), [
+    "Region",
+    "Q2 Revenue",
+    null,
+  ]);
 });
 
 test("expands a qualified star and resolves direct aliases by projection order", () => {
@@ -103,14 +114,8 @@ WHERE wd.Revenue >= 20
 LIMIT 10`);
   assert.ok(plan);
   assert.match(plan.sql, new RegExp(`wd\\.rowid AS "${QUERY_PROVENANCE_COLUMN}"`));
-  assert.deepEqual(plan.projections, [
-    { kind: "star" },
-    { kind: "column", sourceColumn: "Region" },
-  ]);
-  assert.deepEqual(
-    expandQueryLineageColumns(plan.projections, ["Region", "Revenue"]),
-    ["Region", "Revenue", "Region"],
-  );
+  assert.deepEqual(plan.projections, [{ kind: "star" }, { kind: "column", sourceColumn: "Region" }]);
+  assert.deepEqual(expandQueryLineageColumns(plan.projections, ["Region", "Revenue"]), ["Region", "Revenue", "Region"]);
 });
 
 test("withholds lineage from row-collapsing, row-expanding, or multi-source queries", () => {
@@ -138,21 +143,19 @@ test("withholds lineage from row-collapsing, row-expanding, or multi-source quer
   ];
   readOnly.forEach((query) => assert.equal(buildQueryLineagePlan(query), null, query));
 
-  assert.ok(buildQueryLineagePlan(`SELECT Region,
+  assert.ok(
+    buildQueryLineagePlan(`SELECT Region,
     CASE WHEN Revenue > 20 THEN 'high' ELSE 'low' END AS band,
     CAST(Revenue AS DOUBLE) AS numeric_revenue
   FROM workspace_data
-  ORDER BY Revenue DESC`));
-
-  const arityMismatch = buildQueryLineagePlan(
-    "SELECT * REPLACE (Revenue * 2 AS Revenue) FROM workspace_data",
+  ORDER BY Revenue DESC`),
   );
+
+  const arityMismatch = buildQueryLineagePlan("SELECT * REPLACE (Revenue * 2 AS Revenue) FROM workspace_data");
   assert.ok(arityMismatch);
   assert.equal(queryLineageColumnsForOutput(arityMismatch.projections, ["Region", "Revenue"], 2), null);
 
-  const nonColumnExpressions = buildQueryLineagePlan(
-    "SELECT current_date, wd FROM workspace_data AS wd",
-  );
+  const nonColumnExpressions = buildQueryLineagePlan("SELECT current_date, wd FROM workspace_data AS wd");
   assert.ok(nonColumnExpressions);
   assert.deepEqual(nonColumnExpressions.projections, [{ kind: "derived" }, { kind: "derived" }]);
 });
@@ -171,9 +174,32 @@ test("rejects reserved sources, unsafe row ids, and stale query/data revisions",
   assert.equal(normalizeQuerySourceRowIndex(1.5, 3), null);
   assert.equal(normalizeQuerySourceRowIndex("not-a-row", 3), null);
 
-  const revision = { querySource: "SELECT Region FROM workspace_data", dataArtifactId: "data", dataSource: "Region\nAPAC" };
-  assert.equal(queryLineageRevisionMatches(revision, revision.querySource, revision.dataArtifactId, revision.dataSource), true);
-  assert.equal(queryLineageRevisionMatches(revision, `${revision.querySource} LIMIT 1`, revision.dataArtifactId, revision.dataSource), false);
+  const revision = {
+    querySource: "SELECT Region FROM workspace_data",
+    dataArtifactId: "data",
+    dataSource: "Region\nAPAC",
+  };
+  assert.equal(
+    queryLineageRevisionMatches(revision, revision.querySource, revision.dataArtifactId, revision.dataSource),
+    true,
+  );
+  assert.equal(
+    queryLineageRevisionMatches(
+      revision,
+      `${revision.querySource} LIMIT 1`,
+      revision.dataArtifactId,
+      revision.dataSource,
+    ),
+    false,
+  );
   assert.equal(queryLineageRevisionMatches(revision, revision.querySource, "other", revision.dataSource), false);
-  assert.equal(queryLineageRevisionMatches(revision, revision.querySource, revision.dataArtifactId, `${revision.dataSource}\nEMEA`), false);
+  assert.equal(
+    queryLineageRevisionMatches(
+      revision,
+      revision.querySource,
+      revision.dataArtifactId,
+      `${revision.dataSource}\nEMEA`,
+    ),
+    false,
+  );
 });

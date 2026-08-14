@@ -24,6 +24,7 @@ The operating-review model surface is a narrow question-planning capability, not
    ```
 
    The optional quoted fourth argument is a zero-based result-row index from 0 through 499. Three-argument scalar bindings retain their existing exact-one-row behavior.
+
 6. A row-specific binding still requires one exact Query, one exact output column, a current non-truncated snapshot, an existing result row, and one finite numeric value. Pending, stale, missing, ambiguous, truncated, or nonnumeric results fail closed.
 7. Report and presentation identity, SQL, Chart JSON, live bindings, complete source, collision handling, runtime preflight, candidate preview, checkpoint, persistence, and Apply remain Rune-owned.
 8. A saved operating-review rerun rewrites generated temporary Query/Chart references back to the saved exact identities before validation. It never creates duplicate outputs merely because model assistance is enabled.

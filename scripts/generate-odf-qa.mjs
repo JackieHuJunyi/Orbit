@@ -16,13 +16,18 @@ const targets = [
 await mkdir(outputDirectory, { recursive: true });
 for (const artifact of targets) {
   if (!artifact) throw new Error("A default ODF QA artifact is missing.");
-  const compiled = artifact.kind === "document" || artifact.kind === "slides"
-    ? compileArtifactSource(artifact.source, defaultArtifacts, snapshots)
-    : null;
+  const compiled =
+    artifact.kind === "document" || artifact.kind === "slides"
+      ? compileArtifactSource(artifact.source, defaultArtifacts, snapshots)
+      : null;
   if (compiled?.metricBindingErrors.length || compiled?.unresolved.length || compiled?.unresolvedCharts.length) {
     throw new Error(`Default ${artifact.name} did not compile for ODF QA.`);
   }
-  const result = exportOdfArtifact(compiled ? { ...artifact, source: compiled.source } : artifact, defaultArtifacts, snapshots);
+  const result = exportOdfArtifact(
+    compiled ? { ...artifact, source: compiled.source } : artifact,
+    defaultArtifacts,
+    snapshots,
+  );
   await writeFile(new URL(result.fileName, outputDirectory), result.bytes);
   console.log(`${result.fileName}\t${result.bytes.length} bytes\t${result.warnings.length} fidelity notes`);
 }

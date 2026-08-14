@@ -80,23 +80,29 @@ function delivery(runRecord, { date, rating = "ready", numberCorrectness = 5 }) 
 function participantOnePackage() {
   const first = run({ id: "p1-first", date: "2026-07-01" });
   const second = run({ id: "p1-second", date: "2026-07-15", provider: "configured", tokens: true });
-  return prepareRunePilotEvidenceExport({
-    version: 3,
-    runs: [first, second],
-    deliveries: [
-      delivery(first, { date: "2026-07-01", numberCorrectness: 5 }),
-      delivery(second, { date: "2026-07-15", rating: "minor-edits", numberCorrectness: 4 }),
-    ],
-  }, new Date("2026-08-01T01:02:03.000Z")).package;
+  return prepareRunePilotEvidenceExport(
+    {
+      version: 3,
+      runs: [first, second],
+      deliveries: [
+        delivery(first, { date: "2026-07-01", numberCorrectness: 5 }),
+        delivery(second, { date: "2026-07-15", rating: "minor-edits", numberCorrectness: 4 }),
+      ],
+    },
+    new Date("2026-08-01T01:02:03.000Z"),
+  ).package;
 }
 
 function participantTwoPackage() {
   const briefing = run({ id: "p2-briefing", date: "2026-07-04", taskId: "document-briefing" });
-  return prepareRunePilotEvidenceExport({
-    version: 3,
-    runs: [briefing],
-    deliveries: [delivery(briefing, { date: "2026-07-04", rating: "not-ready", numberCorrectness: 3 })],
-  }, new Date("2026-08-02T01:02:03.000Z")).package;
+  return prepareRunePilotEvidenceExport(
+    {
+      version: 3,
+      runs: [briefing],
+      deliveries: [delivery(briefing, { date: "2026-07-04", rating: "not-ready", numberCorrectness: 3 })],
+    },
+    new Date("2026-08-02T01:02:03.000Z"),
+  ).package;
 }
 
 test("strictly parses a compiler-owned pilot package without mutating it", () => {
@@ -109,10 +115,13 @@ test("strictly parses a compiler-owned pilot package without mutating it", () =>
 });
 
 test("aggregates candidate outcomes, number gates, task mix, and 28-day recurrence", () => {
-  const report = compileRunePilotCohort([
-    { participantId: "participant-001", evidence: participantOnePackage() },
-    { participantId: "participant-002", evidence: participantTwoPackage() },
-  ], new Date("2026-08-14T12:00:00.000Z"));
+  const report = compileRunePilotCohort(
+    [
+      { participantId: "participant-001", evidence: participantOnePackage() },
+      { participantId: "participant-002", evidence: participantTwoPackage() },
+    ],
+    new Date("2026-08-14T12:00:00.000Z"),
+  );
   assert.equal(report.compiledOn, "2026-08-14");
   assert.equal(report.provenance.participantCount, 2);
   assert.equal(report.provenance.participantIdentityIncluded, false);
@@ -150,11 +159,14 @@ test("marks the pilot minimum only after twenty distinct fully evaluated eligibl
   const participants = Array.from({ length: 20 }, (_, index) => {
     const day = String(index + 1).padStart(2, "0");
     const taskRun = run({ id: `threshold-${day}`, date: `2026-07-${day}` });
-    const evidence = prepareRunePilotEvidenceExport({
-      version: 3,
-      runs: [taskRun],
-      deliveries: [delivery(taskRun, { date: `2026-07-${day}`, numberCorrectness: 4 })],
-    }, new Date("2026-08-01T00:00:00.000Z")).package;
+    const evidence = prepareRunePilotEvidenceExport(
+      {
+        version: 3,
+        runs: [taskRun],
+        deliveries: [delivery(taskRun, { date: `2026-07-${day}`, numberCorrectness: 4 })],
+      },
+      new Date("2026-08-01T00:00:00.000Z"),
+    ).package;
     return { participantId: `participant-${String(index + 1).padStart(3, "0")}`, evidence };
   });
   const report = compileRunePilotCohort(participants, new Date("2026-08-14T00:00:00.000Z"));
@@ -164,10 +176,13 @@ test("marks the pilot minimum only after twenty distinct fully evaluated eligibl
 });
 
 test("emits only aggregate report facts and never participant aliases or source records", () => {
-  const report = compileRunePilotCohort([
-    { participantId: "participant-001", evidence: participantOnePackage() },
-    { participantId: "participant-002", evidence: participantTwoPackage() },
-  ], new Date("2026-08-14T12:00:00.000Z"));
+  const report = compileRunePilotCohort(
+    [
+      { participantId: "participant-001", evidence: participantOnePackage() },
+      { participantId: "participant-002", evidence: participantTwoPackage() },
+    ],
+    new Date("2026-08-14T12:00:00.000Z"),
+  );
   const json = JSON.stringify(report);
   const markdown = renderRunePilotCohortMarkdown(report);
   for (const forbidden of ["participant-001", "participant-002", "run-001", "output-01", "source-p1", "p1-first"]) {
@@ -205,17 +220,26 @@ test("rejects altered provenance, fields, links, order, and summaries", () => {
 test("requires one unique pseudonymous package per participant and rejects duplicate content across export dates", () => {
   const first = participantOnePackage();
   const sameContentLater = { ...structuredClone(first), exportedOn: "2026-08-03" };
-  assert.throws(() => compileRunePilotCohort([
-    { participantId: "participant-001", evidence: first },
-    { participantId: "participant-002", evidence: sameContentLater },
-  ]), /duplicate evidence package content/i);
-  assert.throws(() => compileRunePilotCohort([
-    { participantId: "participant-001", evidence: first },
-    { participantId: "participant-001", evidence: participantTwoPackage() },
-  ]), /participant ids/i);
-  assert.throws(() => compileRunePilotCohort([
-    { participantId: "alice@example.com", evidence: first },
-  ]), /participant-NNN/i);
+  assert.throws(
+    () =>
+      compileRunePilotCohort([
+        { participantId: "participant-001", evidence: first },
+        { participantId: "participant-002", evidence: sameContentLater },
+      ]),
+    /duplicate evidence package content/i,
+  );
+  assert.throws(
+    () =>
+      compileRunePilotCohort([
+        { participantId: "participant-001", evidence: first },
+        { participantId: "participant-001", evidence: participantTwoPackage() },
+      ]),
+    /participant ids/i,
+  );
+  assert.throws(
+    () => compileRunePilotCohort([{ participantId: "alice@example.com", evidence: first }]),
+    /participant-NNN/i,
+  );
 });
 
 test("keeps deep-frozen cohort input unchanged on success and failure", () => {
@@ -254,19 +278,21 @@ test("CLI reads one relative regular file per alias and writes non-overwriting p
     await writeFile(path.join(evidenceDirectory, "one.json"), JSON.stringify(participantOnePackage()));
     await writeFile(path.join(evidenceDirectory, "two.json"), JSON.stringify(participantTwoPackage()));
     const manifestPath = path.join(temporary, "manifest.json");
-    await writeFile(manifestPath, JSON.stringify({
-      version: 1,
-      participants: [
-        { participantId: "participant-001", evidenceFile: "evidence/one.json" },
-        { participantId: "participant-002", evidenceFile: "evidence/two.json" },
-      ],
-    }));
-    const first = spawnSync(process.execPath, [
-      "--experimental-strip-types",
-      "scripts/aggregate-pilot-evidence.mjs",
+    await writeFile(
       manifestPath,
-      outputDirectory,
-    ], { cwd: projectRoot, encoding: "utf8" });
+      JSON.stringify({
+        version: 1,
+        participants: [
+          { participantId: "participant-001", evidenceFile: "evidence/one.json" },
+          { participantId: "participant-002", evidenceFile: "evidence/two.json" },
+        ],
+      }),
+    );
+    const first = spawnSync(
+      process.execPath,
+      ["--experimental-strip-types", "scripts/aggregate-pilot-evidence.mjs", manifestPath, outputDirectory],
+      { cwd: projectRoot, encoding: "utf8" },
+    );
     assert.equal(first.status, 0, first.stderr);
     const files = (await readdir(outputDirectory)).sort();
     assert.equal(files.length, 2);
@@ -277,12 +303,11 @@ test("CLI reads one relative regular file per alias and writes non-overwriting p
     assert.equal(json.includes("participant-001"), false);
     assert.equal(json.includes("run-001"), false);
     assert.match(markdown, /Pilot-eligible tasks: 2 \/ 20/);
-    const second = spawnSync(process.execPath, [
-      "--experimental-strip-types",
-      "scripts/aggregate-pilot-evidence.mjs",
-      manifestPath,
-      outputDirectory,
-    ], { cwd: projectRoot, encoding: "utf8" });
+    const second = spawnSync(
+      process.execPath,
+      ["--experimental-strip-types", "scripts/aggregate-pilot-evidence.mjs", manifestPath, outputDirectory],
+      { cwd: projectRoot, encoding: "utf8" },
+    );
     assert.notEqual(second.status, 0);
     assert.match(second.stderr, /already exists|could not be written atomically/i);
     assert.equal(await readFile(path.join(outputDirectory, files[0]), "utf8"), json);

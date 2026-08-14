@@ -102,15 +102,21 @@ test("fails closed for malformed, unresolved, multi-row, or non-numeric Query me
     ...document,
     source: '# Missing column\n\n{{ metric("regional-summary", "missing", "number") }}',
   };
-  assert.match(validateWorkspaceArtifacts(defaultArtifacts.map((artifact) => (
-    artifact.id === document.id ? missingColumn : artifact
-  ))).join(" "), /column not found in Query output/i);
+  assert.match(
+    validateWorkspaceArtifacts(
+      defaultArtifacts.map((artifact) => (artifact.id === document.id ? missingColumn : artifact)),
+    ).join(" "),
+    /column not found in Query output/i,
+  );
 
   const multiRowSnapshot = {
     ...defaultSummaryQuerySnapshot(),
     result: {
       ...defaultSummaryQuerySnapshot().result,
-      rows: [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]],
+      rows: [
+        [1, 2, 3, 4, 5],
+        [6, 7, 8, 9, 10],
+      ],
       sourceRowIndices: [null, null],
       cellLineage: [Array(5).fill(null), Array(5).fill(null)],
     },
@@ -156,9 +162,9 @@ test("fails closed for invalid, missing, truncated, or nonnumeric selected Query
     ...defaultQuerySnapshot(),
     result: {
       ...defaultQuerySnapshot().result,
-      rows: defaultQuerySnapshot().result.rows.map((row, index) => (
-        index === 2 ? [row[0], "not numeric", ...row.slice(2)] : row
-      )),
+      rows: defaultQuerySnapshot().result.rows.map((row, index) =>
+        index === 2 ? [row[0], "not numeric", ...row.slice(2)] : row,
+      ),
     },
   };
   const textRow = '{{ metric("regional-analysis", "q2_revenue", "currency", "2") }}';

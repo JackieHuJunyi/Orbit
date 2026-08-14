@@ -10,7 +10,10 @@ import {
 
 test("ships a restrained current-iPhone-inspired material palette with one stable default", () => {
   assert.equal(RUNE_APPEARANCE_STORAGE_KEY, "rune-appearance-theme-v1");
-  assert.deepEqual(RUNE_APPEARANCE_THEMES.map(({ id }) => id), ["mist-blue", "sage", "lavender", "sky-blue", "light-gold", "deep-blue", "cosmic-orange", "silver", "space-black"]);
+  assert.deepEqual(
+    RUNE_APPEARANCE_THEMES.map(({ id }) => id),
+    ["mist-blue", "sage", "lavender", "sky-blue", "light-gold", "deep-blue", "cosmic-orange", "silver", "space-black"],
+  );
   assert.equal(new Set(RUNE_APPEARANCE_THEMES.map(({ color }) => color)).size, RUNE_APPEARANCE_THEMES.length);
   for (const theme of RUNE_APPEARANCE_THEMES) {
     assert.match(theme.color, /^#[0-9a-f]{6}$/i);

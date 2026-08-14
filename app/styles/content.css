@@ -2,10 +2,10 @@
 .source-draft-mirror { font-size: 13px; line-height: 1.72; }
 .source-editor { scroll-padding-block: 45%; }
 .line-gutter { font-size: var(--rune-type-caption); line-height: 1.72; }
-.agent-composer { border-radius: 19px; }
+.agent-composer { border-radius: 22px; }
 .agent-composer textarea { font-size: var(--rune-type-ui); line-height: 1.5; }
 .agent-scope-switch button,
-.local-planner-badge { font-size: 10px; }
+.local-planner-badge { font-size: 11px; }
 .validation-badge,
 .data-summary span,
 .slides-stage-meta { font-size: var(--rune-type-caption); }

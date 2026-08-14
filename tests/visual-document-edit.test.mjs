@@ -59,11 +59,29 @@ test("rejects stale, empty, unchanged, and structure-changing section edits", ()
   const artifact = document("# Brief\n\nIntro.\n\n## Decision\n\nWait.\n");
   const target = derivePreviewSourceTargets(artifact).find((candidate) => candidate.label === "Decision");
   assert.ok(target);
-  assert.match(prepareVisualDocumentSectionEdit(artifact, { ...target, start: target.start + 1 }, { draft: "## Decision\n\nShip." }).errors[0], /no longer matches/u);
+  assert.match(
+    prepareVisualDocumentSectionEdit(
+      artifact,
+      { ...target, start: target.start + 1 },
+      { draft: "## Decision\n\nShip." },
+    ).errors[0],
+    /no longer matches/u,
+  );
   assert.match(prepareVisualDocumentSectionEdit(artifact, target, { draft: "  \n" }).errors[0], /cannot be empty/u);
-  assert.match(prepareVisualDocumentSectionEdit(artifact, target, { draft: artifact.source.slice(target.start, target.end) }).errors[0], /unchanged/u);
-  assert.match(prepareVisualDocumentSectionEdit(artifact, target, { draft: "### Decision\n\nShip." }).errors[0], /heading level/u);
-  assert.match(prepareVisualDocumentSectionEdit(artifact, target, { draft: "## Decision\n\nShip.\n\n## Extra\n\nLater." }).errors[0], /inside one section/u);
+  assert.match(
+    prepareVisualDocumentSectionEdit(artifact, target, { draft: artifact.source.slice(target.start, target.end) })
+      .errors[0],
+    /unchanged/u,
+  );
+  assert.match(
+    prepareVisualDocumentSectionEdit(artifact, target, { draft: "### Decision\n\nShip." }).errors[0],
+    /heading level/u,
+  );
+  assert.match(
+    prepareVisualDocumentSectionEdit(artifact, target, { draft: "## Decision\n\nShip.\n\n## Extra\n\nLater." })
+      .errors[0],
+    /inside one section/u,
+  );
 });
 
 test("keeps source-owned live bindings byte-stable during a visual text edit", () => {

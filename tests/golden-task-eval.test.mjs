@@ -5,7 +5,10 @@ import { RUNE_GOLDEN_TASKS } from "../evals/golden-task-set.ts";
 
 test("keeps the synthetic regression set distinct from licensed user proof", async () => {
   assert.equal(RUNE_GOLDEN_TASKS.length, 20);
-  assert.equal(RUNE_GOLDEN_TASKS.every((task) => task.provenance === "synthetic"), true);
+  assert.equal(
+    RUNE_GOLDEN_TASKS.every((task) => task.provenance === "synthetic"),
+    true,
+  );
   assert.equal(RUNE_GOLDEN_TASKS.filter((task) => task.expected.outcome === "success").length, 14);
   assert.equal(RUNE_GOLDEN_TASKS.filter((task) => task.expected.outcome === "rejected").length, 6);
 

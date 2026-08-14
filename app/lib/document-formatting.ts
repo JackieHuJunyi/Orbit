@@ -1,12 +1,5 @@
 export type DocumentFormattingCommand =
-  | "bold"
-  | "italic"
-  | "strikethrough"
-  | "code"
-  | "link"
-  | "bullet-list"
-  | "numbered-list"
-  | "quote";
+  "bold" | "italic" | "strikethrough" | "code" | "link" | "bullet-list" | "numbered-list" | "quote";
 
 export type DocumentFormattingResult = {
   draft: string;
@@ -37,25 +30,21 @@ function result(
   return { draft, selectionStart, selectionEnd, error };
 }
 
-function toggleDelimited(
-  draft: string,
-  selection: Selection,
-  marker: string,
-): DocumentFormattingResult {
+function toggleDelimited(draft: string, selection: Selection, marker: string): DocumentFormattingResult {
   const { start, end } = selection;
   const selected = draft.slice(start, end);
 
-  if (selected.length >= marker.length * 2
-    && selected.startsWith(marker)
-    && selected.endsWith(marker)) {
+  if (selected.length >= marker.length * 2 && selected.startsWith(marker) && selected.endsWith(marker)) {
     const content = selected.slice(marker.length, -marker.length);
     const nextDraft = `${draft.slice(0, start)}${content}${draft.slice(end)}`;
     return result(nextDraft, start, start + content.length);
   }
 
-  if (start >= marker.length
-    && draft.slice(start - marker.length, start) === marker
-    && draft.slice(end, end + marker.length) === marker) {
+  if (
+    start >= marker.length &&
+    draft.slice(start - marker.length, start) === marker &&
+    draft.slice(end, end + marker.length) === marker
+  ) {
     const nextStart = start - marker.length;
     const nextDraft = `${draft.slice(0, nextStart)}${selected}${draft.slice(end + marker.length)}`;
     return result(nextDraft, nextStart, nextStart + selected.length);
@@ -67,9 +56,7 @@ function toggleDelimited(
 }
 
 function longestBacktickRun(value: string) {
-  return Array.from(value.matchAll(/`+/gu)).reduce((longest, match) => (
-    Math.max(longest, match[0].length)
-  ), 0);
+  return Array.from(value.matchAll(/`+/gu)).reduce((longest, match) => Math.max(longest, match[0].length), 0);
 }
 
 function toggleCode(draft: string, selection: Selection): DocumentFormattingResult {
@@ -78,10 +65,12 @@ function toggleCode(draft: string, selection: Selection): DocumentFormattingResu
   const selectedOpening = selected.match(/^(`+)/u)?.[1] ?? "";
   const selectedClosing = selected.match(/(`+)$/u)?.[1] ?? "";
 
-  if (selectedOpening
-    && selectedOpening === selectedClosing
-    && selected.length >= selectedOpening.length * 2
-    && longestBacktickRun(selected.slice(selectedOpening.length, -selectedClosing.length)) < selectedOpening.length) {
+  if (
+    selectedOpening &&
+    selectedOpening === selectedClosing &&
+    selected.length >= selectedOpening.length * 2 &&
+    longestBacktickRun(selected.slice(selectedOpening.length, -selectedClosing.length)) < selectedOpening.length
+  ) {
     const content = selected.slice(selectedOpening.length, -selectedClosing.length);
     const nextDraft = `${draft.slice(0, start)}${content}${draft.slice(end)}`;
     return result(nextDraft, start, start + content.length);
@@ -89,9 +78,7 @@ function toggleCode(draft: string, selection: Selection): DocumentFormattingResu
 
   const preceding = draft.slice(0, start).match(/(`+)$/u)?.[1] ?? "";
   const following = draft.slice(end).match(/^(`+)/u)?.[1] ?? "";
-  if (preceding
-    && preceding === following
-    && longestBacktickRun(selected) < preceding.length) {
+  if (preceding && preceding === following && longestBacktickRun(selected) < preceding.length) {
     const nextStart = start - preceding.length;
     const nextDraft = `${draft.slice(0, nextStart)}${selected}${draft.slice(end + following.length)}`;
     return result(nextDraft, nextStart, nextStart + selected.length);
@@ -157,18 +144,11 @@ function leadingMarkdownIndent(line: string) {
   return line.match(/^[\t ]{0,3}/u)?.[0] ?? "";
 }
 
-function transformListLines(
-  lines: string[],
-  command: "bullet-list" | "numbered-list",
-  includeEmpty: boolean,
-) {
-  const actionableIndexes = lines.flatMap((line, index) => (
-    line.trim() || includeEmpty ? [index] : []
-  ));
+function transformListLines(lines: string[], command: "bullet-list" | "numbered-list", includeEmpty: boolean) {
+  const actionableIndexes = lines.flatMap((line, index) => (line.trim() || includeEmpty ? [index] : []));
   const actionable = new Set(actionableIndexes);
-  const remove = actionableIndexes.length > 0 && actionableIndexes.every((index) => (
-    listPrefix(lines[index])?.kind === command
-  ));
+  const remove =
+    actionableIndexes.length > 0 && actionableIndexes.every((index) => listPrefix(lines[index])?.kind === command);
   let ordinal = 1;
 
   return lines.map((line, index) => {
@@ -186,13 +166,9 @@ function transformListLines(
 }
 
 function transformQuoteLines(lines: string[], includeEmpty: boolean) {
-  const actionableIndexes = lines.flatMap((line, index) => (
-    line.trim() || includeEmpty ? [index] : []
-  ));
+  const actionableIndexes = lines.flatMap((line, index) => (line.trim() || includeEmpty ? [index] : []));
   const actionable = new Set(actionableIndexes);
-  const remove = actionableIndexes.length > 0 && actionableIndexes.every((index) => (
-    Boolean(quotePrefix(lines[index]))
-  ));
+  const remove = actionableIndexes.length > 0 && actionableIndexes.every((index) => Boolean(quotePrefix(lines[index])));
 
   return lines.map((line, index) => {
     if (!actionable.has(index)) return line;
@@ -207,14 +183,19 @@ function transformQuoteLines(lines: string[], includeEmpty: boolean) {
 function mapLineOffset(source: string, transformed: string, offset: number) {
   if (source === transformed) return Math.min(offset, transformed.length);
   let commonPrefix = 0;
-  while (commonPrefix < source.length
-    && commonPrefix < transformed.length
-    && source[commonPrefix] === transformed[commonPrefix]) commonPrefix += 1;
+  while (
+    commonPrefix < source.length &&
+    commonPrefix < transformed.length &&
+    source[commonPrefix] === transformed[commonPrefix]
+  )
+    commonPrefix += 1;
 
   let commonSuffix = 0;
-  while (commonSuffix < source.length - commonPrefix
-    && commonSuffix < transformed.length - commonPrefix
-    && source[source.length - commonSuffix - 1] === transformed[transformed.length - commonSuffix - 1]) {
+  while (
+    commonSuffix < source.length - commonPrefix &&
+    commonSuffix < transformed.length - commonPrefix &&
+    source[source.length - commonSuffix - 1] === transformed[transformed.length - commonSuffix - 1]
+  ) {
     commonSuffix += 1;
   }
 
@@ -233,10 +214,9 @@ function mapBlockOffset(sourceLines: string[], transformedLines: string[], offse
     const transformedLine = transformedLines[index];
     const sourceLineEnd = sourceCursor + sourceLine.length;
     if (offset <= sourceLineEnd || index === sourceLines.length - 1) {
-      return transformedCursor + mapLineOffset(
-        sourceLine,
-        transformedLine,
-        Math.max(0, Math.min(sourceLine.length, offset - sourceCursor)),
+      return (
+        transformedCursor +
+        mapLineOffset(sourceLine, transformedLine, Math.max(0, Math.min(sourceLine.length, offset - sourceCursor)))
       );
     }
     sourceCursor = sourceLineEnd + 1;
@@ -258,9 +238,10 @@ function toggleBlock(
   const sourceBlock = draft.slice(blockStart, blockEnd);
   const sourceLines = sourceBlock.split("\n");
   const includeEmpty = start === end && sourceLines.length === 1;
-  const transformedLines = command === "quote"
-    ? transformQuoteLines(sourceLines, includeEmpty)
-    : transformListLines(sourceLines, command, includeEmpty);
+  const transformedLines =
+    command === "quote"
+      ? transformQuoteLines(sourceLines, includeEmpty)
+      : transformListLines(sourceLines, command, includeEmpty);
   const transformedBlock = transformedLines.join("\n");
   const nextDraft = `${draft.slice(0, blockStart)}${transformedBlock}${draft.slice(blockEnd)}`;
   const lengthDelta = transformedBlock.length - sourceBlock.length;

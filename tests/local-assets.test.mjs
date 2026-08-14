@@ -46,10 +46,16 @@ test("creates deterministic content identity without mutating caller bytes", asy
 });
 
 test("rejects disguised, empty, and oversized image input before persistence", async () => {
-  await assert.rejects(() => prepareRuneImageAsset("fake.png", "image/png", Uint8Array.from([1, 2, 3]).buffer), /real PNG/);
+  await assert.rejects(
+    () => prepareRuneImageAsset("fake.png", "image/png", Uint8Array.from([1, 2, 3]).buffer),
+    /real PNG/,
+  );
   await assert.rejects(() => prepareRuneImageAsset("photo.jpg", "image/jpeg", png.buffer), /do not match/);
   await assert.rejects(() => prepareRuneImageAsset("empty.gif", "image/gif", new ArrayBuffer(0)), /empty/);
-  await assert.rejects(() => prepareRuneImageAsset("large.png", "image/png", new Uint8Array(MAX_RUNE_IMAGE_BYTES + 1).buffer), /8 MB/);
+  await assert.rejects(
+    () => prepareRuneImageAsset("large.png", "image/png", new Uint8Array(MAX_RUNE_IMAGE_BYTES + 1).buffer),
+    /8 MB/,
+  );
 });
 
 test("inserts one readable Markdown reference at an exact UTF-16 boundary", () => {
@@ -72,8 +78,16 @@ test("parses strict references, deduplicates source identities, and keeps alt te
   assert.equal(parseRuneAssetReference(`rune-asset:sha256:${first}`), first);
   assert.equal(parseRuneAssetReference(`rune-asset:${first}`), null);
   assert.equal(parseRuneAssetReference(`rune-asset:sha256:${letters.toUpperCase()}`), null);
-  assert.deepEqual(extractRuneAssetIds(`${first}\nrune-asset:sha256:${first}\nrune-asset:sha256:${second}\nrune-asset:sha256:${first}`), [first, second]);
-  assert.deepEqual(parseRuneMarkdownImage(`  ![Q2 \\[view\\]](rune-asset:sha256:${first})  `), { id: first, alt: "Q2 [view]" });
+  assert.deepEqual(
+    extractRuneAssetIds(
+      `${first}\nrune-asset:sha256:${first}\nrune-asset:sha256:${second}\nrune-asset:sha256:${first}`,
+    ),
+    [first, second],
+  );
+  assert.deepEqual(parseRuneMarkdownImage(`  ![Q2 \\[view\\]](rune-asset:sha256:${first})  `), {
+    id: first,
+    alt: "Q2 [view]",
+  });
   assert.equal(parseRuneMarkdownImage(`Before ![Q2](rune-asset:sha256:${first})`), null);
   assert.equal(runeImageAltFromName("  Product   hero.JPEG  "), "Product hero");
 });

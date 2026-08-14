@@ -84,10 +84,16 @@ async function startRuneServer() {
       const url = new URL(request.url ?? "/", origin);
       if (await serveStaticAsset(request, response, url)) return;
       const body = request.method === "GET" || request.method === "HEAD" ? undefined : request;
-      const webRequest = new Request(url, { method: request.method, headers: request.headers, body, duplex: body ? "half" : undefined });
+      const webRequest = new Request(url, {
+        method: request.method,
+        headers: request.headers,
+        body,
+        duplex: body ? "half" : undefined,
+      });
       const webResponse = await worker.fetch(webRequest, {}, { waitUntil() {}, passThroughOnException() {} });
       const responseHeaders = Object.fromEntries(webResponse.headers);
-      responseHeaders["content-security-policy"] = "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self' data:; frame-ancestors 'none'; img-src 'self' data: blob: https:; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:";
+      responseHeaders["content-security-policy"] =
+        "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self' data:; frame-ancestors 'none'; img-src 'self' data: blob: https:; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:";
       responseHeaders["x-content-type-options"] = "nosniff";
       response.writeHead(webResponse.status, responseHeaders);
       if (webResponse.body) for await (const chunk of webResponse.body) response.write(chunk);
@@ -102,7 +108,8 @@ async function startRuneServer() {
     server.listen(0, "127.0.0.1", resolve);
   });
   const address = server.address();
-  if (!address || typeof address === "string") throw new Error("Rune Desktop could not start its local workspace server.");
+  if (!address || typeof address === "string")
+    throw new Error("Rune Desktop could not start its local workspace server.");
   return { server, url: `http://127.0.0.1:${address.port}` };
 }
 

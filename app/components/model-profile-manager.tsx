@@ -57,13 +57,16 @@ export const MODEL_MANAGER_BASE_COPY = {
     save: "保存并启用",
     saving: "正在加密保存…",
     cancel: "取消",
-    modelHint: "读取模型只验证认证与模型目录；首次 Agent 计划仍会验证所选协议的结构化输出。Rune 不会自动把内容转发给另一家供应商。",
-    safety: "密钥经同源 HTTPS 发送后加密进入 HttpOnly 凭据，绝不写入 localStorage、工作区、Artifact 或 Git。自定义端点会收到你交给 Agent 的内容，请只使用可信服务。",
+    modelHint:
+      "读取模型只验证认证与模型目录；首次 Agent 计划仍会验证所选协议的结构化输出。Rune 不会自动把内容转发给另一家供应商。",
+    safety:
+      "密钥经同源 HTTPS 发送后加密进入 HttpOnly 凭据，绝不写入 localStorage、工作区、Artifact 或 Git。自定义端点会收到你交给 Agent 的内容，请只使用可信服务。",
     chooseModel: "选择读取到的模型",
   },
   en: {
     loading: "Reading model profiles…",
-    unavailable: "This server has not enabled the encrypted credential vault. The deployment model and local mode remain available.",
+    unavailable:
+      "This server has not enabled the encrypted credential vault. The deployment model and local mode remain available.",
     empty: "No personal model profiles yet. Add one to switch providers here.",
     add: "Add provider",
     active: "Active",
@@ -90,8 +93,10 @@ export const MODEL_MANAGER_BASE_COPY = {
     save: "Save & enable",
     saving: "Encrypting…",
     cancel: "Cancel",
-    modelHint: "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Rune never forwards content to another provider automatically.",
-    safety: "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.",
+    modelHint:
+      "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Rune never forwards content to another provider automatically.",
+    safety:
+      "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.",
     chooseModel: "Choose a fetched model",
   },
 } as const;
@@ -112,7 +117,14 @@ type EditableProfile = {
 
 function blankProfile(provider: ModelProviderKind = "openai"): EditableProfile {
   const preset = MODEL_PROVIDER_PRESETS.find((item) => item.id === provider)!;
-  return { provider, protocol: preset.protocol, name: preset.label, baseURL: preset.baseURL, model: preset.defaultModel, apiKey: "" };
+  return {
+    provider,
+    protocol: preset.protocol,
+    name: preset.label,
+    baseURL: preset.baseURL,
+    model: preset.defaultModel,
+    apiKey: "",
+  };
 }
 
 function editableProfile(profile: PublicModelProfile): EditableProfile {
@@ -135,13 +147,14 @@ function modelProtocolLabel(protocol: ModelProtocol) {
 }
 
 function statusFromState(state: ModelProfilesState): ModelProviderStatus {
-  if (state.activeProfile) return {
-    configured: true,
-    provider: state.activeProfile.provider,
-    model: state.activeProfile.model,
-    source: "personal",
-    profileName: state.activeProfile.name,
-  };
+  if (state.activeProfile)
+    return {
+      configured: true,
+      provider: state.activeProfile.provider,
+      model: state.activeProfile.model,
+      source: "personal",
+      profileName: state.activeProfile.name,
+    };
   return {
     ...state.deployment,
     source: state.deployment.configured ? "deployment" : null,
@@ -173,7 +186,7 @@ export function ModelProfileManager({
     const controller = new AbortController();
     void fetch("/api/model-profiles", { cache: "no-store", credentials: "same-origin", signal: controller.signal })
       .then(async (response) => {
-        const payload = await response.json() as ModelProfilesState & { error?: string };
+        const payload = (await response.json()) as ModelProfilesState & { error?: string };
         if (!response.ok) throw new Error(payload.error || "Rune could not read model profiles.");
         setState(payload);
         onStatusChange(statusFromState(payload));
@@ -201,7 +214,7 @@ export function ModelProfileManager({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const payload = await response.json() as ModelProfilesState & { error?: string };
+      const payload = (await response.json()) as ModelProfilesState & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Rune could not update that model profile.");
       setState(payload);
       onStatusChange(statusFromState(payload));
@@ -230,8 +243,9 @@ export function ModelProfileManager({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "models", profile: editor }),
       });
-      const payload = await response.json() as { models?: string[]; error?: string };
-      if (!response.ok || !Array.isArray(payload.models)) throw new Error(payload.error || "Rune could not read that provider's models.");
+      const payload = (await response.json()) as { models?: string[]; error?: string };
+      if (!response.ok || !Array.isArray(payload.models))
+        throw new Error(payload.error || "Rune could not read that provider's models.");
       setModels(payload.models);
       if (!editor.model && payload.models[0]) setEditor({ ...editor, model: payload.models[0] });
     } catch (cause) {
@@ -245,31 +259,91 @@ export function ModelProfileManager({
   function chooseProvider(provider: ModelProviderKind) {
     if (!editor) return;
     const next = blankProfile(provider);
-    setEditor({ ...editor, provider, protocol: next.protocol, name: next.name, baseURL: next.baseURL, model: next.model });
+    setEditor({
+      ...editor,
+      provider,
+      protocol: next.protocol,
+      name: next.name,
+      baseURL: next.baseURL,
+      model: next.model,
+    });
     setModels([]);
     setError("");
   }
 
-  if (loading) return <div className="model-manager-loading"><LoaderCircle className="agent-spinner" />{text.loading}</div>;
+  if (loading)
+    return (
+      <div className="model-manager-loading">
+        <LoaderCircle className="agent-spinner" />
+        {text.loading}
+      </div>
+    );
 
   return (
     <section className="model-profile-manager" aria-label={runeText(locale, "Personal model profiles", "个人模型配置")}>
       {state?.deployment.configured && (
         <div className={`model-profile-card deployment ${state.activeSource === "deployment" ? "active" : ""}`}>
-          <span><Server /></span>
-          <div><strong>{text.deployment}</strong><small>OpenAI · {state.deployment.model}</small><p>OpenAI Responses · {text.deploymentBody}</p></div>
-          {state.activeSource === "deployment"
-            ? <em><Check />{text.active}</em>
-            : <div className="model-profile-actions"><button type="button" disabled={submitting} onClick={() => void mutate("deployment")}><Check />{text.enable}</button></div>}
+          <span>
+            <Server />
+          </span>
+          <div>
+            <strong>{text.deployment}</strong>
+            <small>OpenAI · {state.deployment.model}</small>
+            <p>OpenAI Responses · {text.deploymentBody}</p>
+          </div>
+          {state.activeSource === "deployment" ? (
+            <em>
+              <Check />
+              {text.active}
+            </em>
+          ) : (
+            <div className="model-profile-actions">
+              <button type="button" disabled={submitting} onClick={() => void mutate("deployment")}>
+                <Check />
+                {text.enable}
+              </button>
+            </div>
+          )}
         </div>
       )}
       {state?.profiles.map((profile) => (
         <div className={`model-profile-card ${state.activeProfileId === profile.id ? "active" : ""}`} key={profile.id}>
-          <span><KeyRound /></span>
-          <div><strong>{profile.name}</strong><small>{MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}</small><p>{modelProtocolLabel(profile.protocol)} · {profile.baseURL}</p></div>
+          <span>
+            <KeyRound />
+          </span>
+          <div>
+            <strong>{profile.name}</strong>
+            <small>
+              {MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}
+            </small>
+            <p>
+              {modelProtocolLabel(profile.protocol)} · {profile.baseURL}
+            </p>
+          </div>
           <div className="model-profile-actions">
-            {state.activeProfileId === profile.id ? <em><Check />{text.active}</em> : <button type="button" disabled={submitting} onClick={() => void mutate("activate", profile.id)}><Check />{text.enable}</button>}
-            <button type="button" disabled={submitting} onClick={() => { setEditor(editableProfile(profile)); setModels([]); setError(""); }}><Pencil />{text.edit}</button>
+            {state.activeProfileId === profile.id ? (
+              <em>
+                <Check />
+                {text.active}
+              </em>
+            ) : (
+              <button type="button" disabled={submitting} onClick={() => void mutate("activate", profile.id)}>
+                <Check />
+                {text.enable}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => {
+                setEditor(editableProfile(profile));
+                setModels([]);
+                setError("");
+              }}
+            >
+              <Pencil />
+              {text.edit}
+            </button>
             <button
               type="button"
               className={pendingDeleteId === profile.id ? "danger" : ""}
@@ -278,38 +352,190 @@ export function ModelProfileManager({
                 if (pendingDeleteId === profile.id) void mutate("delete", profile.id);
                 else setPendingDeleteId(profile.id);
               }}
-            ><Trash2 />{pendingDeleteId === profile.id ? text.confirmRemove : text.remove}</button>
+            >
+              <Trash2 />
+              {pendingDeleteId === profile.id ? text.confirmRemove : text.remove}
+            </button>
           </div>
         </div>
       ))}
       {!state?.profiles.length && !state?.deployment.configured && <p className="model-manager-empty">{text.empty}</p>}
-      {!state?.vaultAvailable && <p className="model-manager-warning"><ShieldCheck />{text.unavailable}</p>}
+      {!state?.vaultAvailable && (
+        <p className="model-manager-warning">
+          <ShieldCheck />
+          {text.unavailable}
+        </p>
+      )}
 
       {!editor && canAdd && (
-        <button className="model-add-provider" type="button" onClick={() => setEditor(blankProfile())}><Plus />{text.add}<span>{state?.profiles.length ?? 0}/{MAX_MODEL_PROFILES}</span></button>
+        <button className="model-add-provider" type="button" onClick={() => setEditor(blankProfile())}>
+          <Plus />
+          {text.add}
+          <span>
+            {state?.profiles.length ?? 0}/{MAX_MODEL_PROFILES}
+          </span>
+        </button>
       )}
 
       {editor && (
-        <form className="model-profile-editor" onSubmit={(event) => { event.preventDefault(); void mutate("upsert"); }}>
-          <header><div><span>{editor.id ? text.formEdit : text.formAdd}</span><strong>{editor.name || preset?.label}</strong></div><button type="button" onClick={() => { setEditor(null); setModels([]); setError(""); }} aria-label={text.cancel}><X /></button></header>
+        <form
+          className="model-profile-editor"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void mutate("upsert");
+          }}
+        >
+          <header>
+            <div>
+              <span>{editor.id ? text.formEdit : text.formAdd}</span>
+              <strong>{editor.name || preset?.label}</strong>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditor(null);
+                setModels([]);
+                setError("");
+              }}
+              aria-label={text.cancel}
+            >
+              <X />
+            </button>
+          </header>
           <div className="model-provider-tabs" role="radiogroup" aria-label={text.preset}>
-            {MODEL_PROVIDER_PRESETS.map((item) => <button type="button" role="radio" aria-checked={editor.provider === item.id} className={editor.provider === item.id ? "selected" : ""} onClick={() => chooseProvider(item.id)} key={item.id}>{item.label}</button>)}
+            {MODEL_PROVIDER_PRESETS.map((item) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={editor.provider === item.id}
+                className={editor.provider === item.id ? "selected" : ""}
+                onClick={() => chooseProvider(item.id)}
+                key={item.id}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
           <div className="model-editor-grid">
-            <label><span>{text.name}</span><input value={editor.name} maxLength={60} onChange={(event) => setEditor({ ...editor, name: event.target.value })} required /></label>
-            <label><span>{text.model}</span><input className="canonical-ltr" value={editor.model} maxLength={120} onChange={(event) => setEditor({ ...editor, model: event.target.value })} required /></label>
-            <label className="wide"><span>{text.endpoint}</span><input className="canonical-ltr" dir="ltr" value={editor.baseURL} maxLength={300} disabled={!preset?.editableEndpoint} onChange={(event) => setEditor({ ...editor, baseURL: event.target.value })} required /></label>
-            {preset?.editableProtocol && <label className="wide"><span>{text.protocol}</span><span className="model-protocol-select"><select value={editor.protocol} onChange={(event) => setEditor({ ...editor, protocol: event.target.value as ModelProtocol })}><option value="responses">OpenAI Responses</option><option value="chat-completions">OpenAI-compatible Chat Completions</option><option value="anthropic-messages">Anthropic Messages</option><option value="gemini-generate-content">Gemini generateContent</option></select><ChevronDown /></span></label>}
-            <label className="wide"><span>{text.apiKey}</span><span className="model-key-input"><input className="canonical-ltr" dir="ltr" type={showKey ? "text" : "password"} value={editor.apiKey} maxLength={512} placeholder={editor.id ? text.keepKey : text.keyPlaceholder} onChange={(event) => setEditor({ ...editor, apiKey: event.target.value })} required={!editor.id} autoComplete="off" spellCheck={false} /><button type="button" onClick={() => setShowKey((shown) => !shown)} aria-label={showKey ? text.hideKey : text.showKey}>{showKey ? <EyeOff /> : <Eye />}</button></span></label>
+            <label>
+              <span>{text.name}</span>
+              <input
+                value={editor.name}
+                maxLength={60}
+                onChange={(event) => setEditor({ ...editor, name: event.target.value })}
+                required
+              />
+            </label>
+            <label>
+              <span>{text.model}</span>
+              <input
+                className="canonical-ltr"
+                value={editor.model}
+                maxLength={120}
+                onChange={(event) => setEditor({ ...editor, model: event.target.value })}
+                required
+              />
+            </label>
+            <label className="wide">
+              <span>{text.endpoint}</span>
+              <input
+                className="canonical-ltr"
+                dir="ltr"
+                value={editor.baseURL}
+                maxLength={300}
+                disabled={!preset?.editableEndpoint}
+                onChange={(event) => setEditor({ ...editor, baseURL: event.target.value })}
+                required
+              />
+            </label>
+            {preset?.editableProtocol && (
+              <label className="wide">
+                <span>{text.protocol}</span>
+                <span className="model-protocol-select">
+                  <select
+                    value={editor.protocol}
+                    onChange={(event) => setEditor({ ...editor, protocol: event.target.value as ModelProtocol })}
+                  >
+                    <option value="responses">OpenAI Responses</option>
+                    <option value="chat-completions">OpenAI-compatible Chat Completions</option>
+                    <option value="anthropic-messages">Anthropic Messages</option>
+                    <option value="gemini-generate-content">Gemini generateContent</option>
+                  </select>
+                  <ChevronDown />
+                </span>
+              </label>
+            )}
+            <label className="wide">
+              <span>{text.apiKey}</span>
+              <span className="model-key-input">
+                <input
+                  className="canonical-ltr"
+                  dir="ltr"
+                  type={showKey ? "text" : "password"}
+                  value={editor.apiKey}
+                  maxLength={512}
+                  placeholder={editor.id ? text.keepKey : text.keyPlaceholder}
+                  onChange={(event) => setEditor({ ...editor, apiKey: event.target.value })}
+                  required={!editor.id}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey((shown) => !shown)}
+                  aria-label={showKey ? text.hideKey : text.showKey}
+                >
+                  {showKey ? <EyeOff /> : <Eye />}
+                </button>
+              </span>
+            </label>
           </div>
-          {!!models.length && <label className="model-list-select"><span>{text.chooseModel}</span><span><select value={editor.model} onChange={(event) => setEditor({ ...editor, model: event.target.value })}>{!models.includes(editor.model) && <option value={editor.model}>{editor.model}</option>}{models.map((model) => <option value={model} key={model}>{model}</option>)}</select><ChevronDown /></span></label>}
+          {!!models.length && (
+            <label className="model-list-select">
+              <span>{text.chooseModel}</span>
+              <span>
+                <select value={editor.model} onChange={(event) => setEditor({ ...editor, model: event.target.value })}>
+                  {!models.includes(editor.model) && <option value={editor.model}>{editor.model}</option>}
+                  {models.map((model) => (
+                    <option value={model} key={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown />
+              </span>
+            </label>
+          )}
           <p className="model-editor-hint">{text.modelHint}</p>
-          {error && <p className="model-manager-error" role="alert">{error}</p>}
-          <footer><button type="button" onClick={() => setEditor(null)} disabled={submitting}>{text.cancel}</button><button type="button" onClick={() => void fetchModels()} disabled={submitting}>{submittingAction === "models" ? <LoaderCircle className="agent-spinner" /> : <RefreshCw />}{submittingAction === "models" ? text.testing : text.test}</button><button type="submit" className="primary" disabled={submitting}>{submittingAction === "save" ? <LoaderCircle className="agent-spinner" /> : <ShieldCheck />}{submittingAction === "save" ? text.saving : text.save}</button></footer>
+          {error && (
+            <p className="model-manager-error" role="alert">
+              {error}
+            </p>
+          )}
+          <footer>
+            <button type="button" onClick={() => setEditor(null)} disabled={submitting}>
+              {text.cancel}
+            </button>
+            <button type="button" onClick={() => void fetchModels()} disabled={submitting}>
+              {submittingAction === "models" ? <LoaderCircle className="agent-spinner" /> : <RefreshCw />}
+              {submittingAction === "models" ? text.testing : text.test}
+            </button>
+            <button type="submit" className="primary" disabled={submitting}>
+              {submittingAction === "save" ? <LoaderCircle className="agent-spinner" /> : <ShieldCheck />}
+              {submittingAction === "save" ? text.saving : text.save}
+            </button>
+          </footer>
         </form>
       )}
-      {error && !editor && <p className="model-manager-error" role="alert">{error}</p>}
-      <p className="model-manager-safety"><ShieldCheck />{text.safety}</p>
+      {error && !editor && (
+        <p className="model-manager-error" role="alert">
+          {error}
+        </p>
+      )}
+      <p className="model-manager-safety">
+        <ShieldCheck />
+        {text.safety}
+      </p>
     </section>
   );
 }

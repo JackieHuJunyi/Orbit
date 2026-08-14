@@ -47,10 +47,12 @@ export function workspaceQuerySnapshotIsCurrent(
   queryArtifact: { id: string; kind: string; source: string },
   dataArtifact: { id: string; kind: string; source: string },
 ) {
-  return queryArtifact.kind === "query"
-    && dataArtifact.kind === "data"
-    && snapshot.queryArtifactId === queryArtifact.id
-    && snapshot.querySource === queryArtifact.source
-    && snapshot.dataArtifactId === dataArtifact.id
-    && snapshot.dataSource === dataArtifact.source;
+  return (
+    queryArtifact.kind === "query" &&
+    dataArtifact.kind === "data" &&
+    snapshot.queryArtifactId === queryArtifact.id &&
+    snapshot.querySource === queryArtifact.source &&
+    snapshot.dataArtifactId === dataArtifact.id &&
+    snapshot.dataSource === dataArtifact.source
+  );
 }

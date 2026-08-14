@@ -18,7 +18,7 @@ function adapter(kind, order, extension = `.${kind}`) {
     order,
     creation: { label: kind, format: kind, extension, description: kind },
     quickCommands: [`create ${kind}`],
-    detectLanguage: (name) => name.endsWith(extension) ? kind : null,
+    detectLanguage: (name) => (name.endsWith(extension) ? kind : null),
     starterSource: ({ title }) => `${kind}:${title}`,
     validate: () => [],
     stats: () => `${kind} stats`,
@@ -30,7 +30,10 @@ test("requires one immutable adapter for every declared artifact kind", () => {
     ["document", "data"],
     [adapter("data", 20), adapter("document", 10)],
   );
-  assert.deepEqual(registry.all().map((entry) => entry.kind), ["document", "data"]);
+  assert.deepEqual(
+    registry.all().map((entry) => entry.kind),
+    ["document", "data"],
+  );
   assert.equal(Object.isFrozen(registry.all()), true);
   assert.equal(Object.isFrozen(registry.forKind("document")), true);
   assert.equal(Object.isFrozen(registry.forKind("document").creation), true);
@@ -47,16 +50,10 @@ test("fails loud on missing, duplicate, unknown, malformed, and non-finite adapt
     /adapter "data" is missing/,
   );
   assert.throws(
-    () => createRuneArtifactAdapterRegistry(
-      ["document"],
-      [adapter("document", 10), adapter("document", 20)],
-    ),
+    () => createRuneArtifactAdapterRegistry(["document"], [adapter("document", 10), adapter("document", 20)]),
     /registered more than once/,
   );
-  assert.throws(
-    () => createRuneArtifactAdapterRegistry(["document"], [adapter("data", 10)]),
-    /not a declared kind/,
-  );
+  assert.throws(() => createRuneArtifactAdapterRegistry(["document"], [adapter("data", 10)]), /not a declared kind/);
   assert.throws(
     () => createRuneArtifactAdapterRegistry(["document"], [adapter("document", Number.NaN)]),
     /invalid order/,
@@ -72,14 +69,20 @@ test("production adapters own the complete kind order and preserve specialized d
     artifactAdapterRegistry.all().map((entry) => entry.kind),
     ["document", "data", "query", "chart", "slides"],
   );
-  assert.deepEqual(detectArtifact("briefing.deck.md", "") && {
-    kind: detectArtifact("briefing.deck.md", "").kind,
-    language: detectArtifact("briefing.deck.md", "").language,
-  }, { kind: "slides", language: "Deck Markdown" });
-  assert.deepEqual(detectArtifact("growth.chart.json", "{}") && {
-    kind: detectArtifact("growth.chart.json", "{}").kind,
-    language: detectArtifact("growth.chart.json", "{}").language,
-  }, { kind: "chart", language: "Chart JSON" });
+  assert.deepEqual(
+    detectArtifact("briefing.deck.md", "") && {
+      kind: detectArtifact("briefing.deck.md", "").kind,
+      language: detectArtifact("briefing.deck.md", "").language,
+    },
+    { kind: "slides", language: "Deck Markdown" },
+  );
+  assert.deepEqual(
+    detectArtifact("growth.chart.json", "{}") && {
+      kind: detectArtifact("growth.chart.json", "{}").kind,
+      language: detectArtifact("growth.chart.json", "{}").language,
+    },
+    { kind: "chart", language: "Chart JSON" },
+  );
   assert.equal(detectArtifact("notes.md", "# Notes").kind, "document");
   assert.equal(detectArtifact("rows.json", "[]").kind, "data");
   assert.equal(detectArtifact("page.txt", "text"), null);
@@ -99,7 +102,10 @@ test("production validation, stats, and quick actions route through every adapte
 
 test("keeps the generic registry outside React, browser, persistence, and network boundaries", async () => {
   const source = await readFile(new URL("../app/lib/artifact-adapter-registry.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /from ["']react|window\.|document\.|localStorage|indexedDB|fetch\(|setArtifacts|persist/i);
+  assert.doesNotMatch(
+    source,
+    /from ["']react|window\.|document\.|localStorage|indexedDB|fetch\(|setArtifacts|persist/i,
+  );
 });
 
 test("keeps preview dispatch exhaustive without putting React into the domain registry", async () => {

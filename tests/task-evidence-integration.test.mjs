@@ -13,8 +13,14 @@ test("wires both focused tasks through one bounded device task evidence ledger",
 
   assert.match(workbench, /taskEvidence: RuneTaskEvidence/);
   assert.match(workbench, /setTaskEvidence\(normalizeRuneTaskEvidence\(parsed\.taskEvidence\)\)/);
-  assert.match(workbench, /taskRun:\s*\{\s*taskId: "document-briefing",\s*sourceArtifactId: input\.sourceArtifactId,\s*outputArtifactIds: \[outputArtifactId\]/s);
-  assert.match(workbench, /taskRun:\s*\{\s*taskId: "operating-review",\s*sourceArtifactId: input\.dataArtifactId,\s*outputArtifactIds: Object\.values\(savedOperatingReviewAfterApply\.artifactIds\)/s);
+  assert.match(
+    workbench,
+    /taskRun:\s*\{\s*taskId: "document-briefing",\s*sourceArtifactId: input\.sourceArtifactId,\s*outputArtifactIds: \[outputArtifactId\]/s,
+  );
+  assert.match(
+    workbench,
+    /taskRun:\s*\{\s*taskId: "operating-review",\s*sourceArtifactId: input\.dataArtifactId,\s*outputArtifactIds: Object\.values\(savedOperatingReviewAfterApply\.artifactIds\)/s,
+  );
   assert.match(workbench, /runeTaskRunFromPendingChange\(pendingChange, "applied", null\)/);
   assert.match(workbench, /recordStoppedRuneTask\(pendingChange, "(?:stale|validation|persistence|cancelled)"\)/);
   assert.match(workbench, /recordRuneTaskDelivery\(\{/);
@@ -50,7 +56,10 @@ test("ships the new task evidence labels in every non-Chinese registered interfa
   assert.match(localization, /recentTaskRuns: zh \? "最近任务记录" : "Recent task runs"/);
   assert.match(localization, /operatingReviewTask: zh \? "经营汇报" : "Operating review"/);
   assert.match(localization, /documentBriefingTask: zh \? "文档转演示" : "Document to presentation"/);
-  assert.match(localization, /earlierDeviceRecords: zh \? "早期本机记录（只读）" : "Earlier device records \(read only\)"/);
+  assert.match(
+    localization,
+    /earlierDeviceRecords: zh \? "早期本机记录（只读）" : "Earlier device records \(read only\)"/,
+  );
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     const block = translations.slice(translations.indexOf(`Object.assign(MANUAL_INTERFACE_TRANSLATIONS.${locale}, {`));
     assert.match(block, /"Recent task runs":/);

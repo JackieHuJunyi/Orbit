@@ -12,12 +12,16 @@ import {
 export const MAX_WORKSPACE_ARTIFACTS = 50;
 export const MAX_ARTIFACT_TITLE_CHARS = 80;
 
-export const creatableArtifactTypes = Object.freeze(artifactAdapterRegistry.all().map((adapter) => Object.freeze({
-  kind: adapter.kind,
-  ...adapter.creation,
-})));
+export const creatableArtifactTypes = Object.freeze(
+  artifactAdapterRegistry.all().map((adapter) =>
+    Object.freeze({
+      kind: adapter.kind,
+      ...adapter.creation,
+    }),
+  ),
+);
 
-export type CreatableArtifactKind = typeof creatableArtifactTypes[number]["kind"];
+export type CreatableArtifactKind = (typeof creatableArtifactTypes)[number]["kind"];
 
 export type ChartCreationMark = "bar" | "line";
 export type ChartCreationFormat = "number" | "currency" | "percent";
@@ -55,14 +59,19 @@ export type ArtifactCreationCommit = {
 };
 
 function normalizeArtifactTitle(value: string) {
-  return value.normalize("NFKC").replace(/[\t ]+/g, " ").trim();
+  return value
+    .normalize("NFKC")
+    .replace(/[\t ]+/g, " ")
+    .trim();
 }
 
 function validateArtifactTitle(value: string) {
   if (!value.trim()) return "Give the new artifact a title.";
-  if (/[\u0000-\u001f\u007f<>]/.test(value)) return "Titles cannot contain line breaks, control characters, or angle brackets.";
+  if (/[\u0000-\u001f\u007f<>]/.test(value))
+    return "Titles cannot contain line breaks, control characters, or angle brackets.";
   const normalized = normalizeArtifactTitle(value);
-  if (normalized.length > MAX_ARTIFACT_TITLE_CHARS) return `Titles are limited to ${MAX_ARTIFACT_TITLE_CHARS} characters.`;
+  if (normalized.length > MAX_ARTIFACT_TITLE_CHARS)
+    return `Titles are limited to ${MAX_ARTIFACT_TITLE_CHARS} characters.`;
   return "";
 }
 
@@ -91,9 +100,9 @@ function dataSourceOption(artifact: WorkspaceArtifact): ArtifactCreationSourceOp
     name: artifact.name,
     kind: "data",
     columns: parsed.columns,
-    numericColumns: parsed.columns.filter((column) => (
-      parsed.rows.length > 0 && parsed.rows.every((row) => finiteChartNumber(row[column]))
-    )),
+    numericColumns: parsed.columns.filter(
+      (column) => parsed.rows.length > 0 && parsed.rows.every((row) => finiteChartNumber(row[column])),
+    ),
   };
 }
 
@@ -140,20 +149,21 @@ function artifactFor(input: ArtifactCreationInput): WorkspaceArtifact {
   const title = normalizeArtifactTitle(input.title);
   const slug = artifactSlug(title);
   const adapter = artifactAdapterRegistry.forKind(input.kind);
-  const starterRequest: ArtifactStarterRequest = input.kind === "chart"
-    ? {
-        title,
-        sourceArtifactId: input.sourceArtifactId,
-        chart: {
-          category: input.category,
-          value: input.value,
-          mark: input.mark,
-          format: input.format,
-        },
-      }
-    : input.kind === "query"
-      ? { title, sourceArtifactId: input.sourceArtifactId }
-      : { title };
+  const starterRequest: ArtifactStarterRequest =
+    input.kind === "chart"
+      ? {
+          title,
+          sourceArtifactId: input.sourceArtifactId,
+          chart: {
+            category: input.category,
+            value: input.value,
+            mark: input.mark,
+            format: input.format,
+          },
+        }
+      : input.kind === "query"
+        ? { title, sourceArtifactId: input.sourceArtifactId }
+        : { title };
   return {
     id: slug,
     name: `${slug}${adapter.creation.extension}`,
@@ -171,8 +181,9 @@ function validateCreationBinding(existing: WorkspaceArtifact[], input: ArtifactC
     return "";
   }
   if (input.kind !== "chart") return "";
-  const source = artifactCreationSourceOptions(existing, "chart")
-    .find((option) => option.artifactId === input.sourceArtifactId);
+  const source = artifactCreationSourceOptions(existing, "chart").find(
+    (option) => option.artifactId === input.sourceArtifactId,
+  );
   if (!source) return "Choose a valid Data or Query source for the new Chart.";
   const categoryMatches = source.columns.filter((column) => column === input.category).length;
   const valueMatches = source.columns.filter((column) => column === input.value).length;
@@ -188,7 +199,10 @@ export function prepareArtifactCreation(
   input: ArtifactCreationInput,
 ): PreparedArtifactCreation {
   if (existing.length >= MAX_WORKSPACE_ARTIFACTS) {
-    return { nextArtifacts: existing, errors: [`Rune workspaces are limited to ${MAX_WORKSPACE_ARTIFACTS} artifacts.`] };
+    return {
+      nextArtifacts: existing,
+      errors: [`Rune workspaces are limited to ${MAX_WORKSPACE_ARTIFACTS} artifacts.`],
+    };
   }
   if (!creatableArtifactTypes.some((type) => type.kind === input.kind)) {
     return { nextArtifacts: existing, errors: ["Choose a supported artifact type."] };
@@ -201,9 +215,7 @@ export function prepareArtifactCreation(
   const artifact = resolveArtifactConflicts(existing, [artifactFor(input)])[0];
   const nextArtifacts = [...existing, artifact];
   const errors = validateWorkspaceArtifacts(nextArtifacts);
-  return errors.length
-    ? { nextArtifacts: existing, errors }
-    : { artifact, nextArtifacts, errors: [] };
+  return errors.length ? { nextArtifacts: existing, errors } : { artifact, nextArtifacts, errors: [] };
 }
 
 export function commitPreparedArtifactCreation(

@@ -6,11 +6,21 @@ import { parseChartSource } from "./charts.ts";
 import type { SourceSelection } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
-export type PreviewSourceTargetKind = "document-section" | "document-block" | "document-fragment" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
+export type PreviewSourceTargetKind =
+  "document-section" | "document-block" | "document-fragment" | "data-row" | "data-cell" | "deck-slide" | "chart-spec";
 
 export type DocumentBlockType = "heading" | "paragraph" | "list" | "quote" | "code" | "table" | "rule";
 
-export type DocumentFragmentType = "list-item" | "table-header-cell" | "table-cell" | "bold" | "italic" | "strikethrough" | "inline-code" | "link" | "image";
+export type DocumentFragmentType =
+  | "list-item"
+  | "table-header-cell"
+  | "table-cell"
+  | "bold"
+  | "italic"
+  | "strikethrough"
+  | "inline-code"
+  | "link"
+  | "image";
 
 export type PreviewSourceTarget = SourceSelection & {
   id: string;
@@ -133,20 +143,42 @@ function documentTargets(source: string): PreviewSourceTarget[] {
 
   if (!headings.length) {
     const range = trimDocumentRange(source, 0, source.length);
-    return range ? [{ ...range, id: `document-section:0:${range.start}`, index: 0, kind: "document-section", label: "Document body" }] : [];
+    return range
+      ? [
+          {
+            ...range,
+            id: `document-section:0:${range.start}`,
+            index: 0,
+            kind: "document-section",
+            label: "Document body",
+          },
+        ]
+      : [];
   }
 
   const targets: PreviewSourceTarget[] = [];
   const preamble = trimDocumentRange(source, 0, headings[0].start);
   if (preamble) {
-    targets.push({ ...preamble, id: `document-section:0:${preamble.start}`, index: 0, kind: "document-section", label: "Document preamble" });
+    targets.push({
+      ...preamble,
+      id: `document-section:0:${preamble.start}`,
+      index: 0,
+      kind: "document-section",
+      label: "Document preamble",
+    });
   }
   headings.forEach((heading, headingIndex) => {
     const end = headings[headingIndex + 1]?.start ?? source.length;
     const range = trimDocumentRange(source, heading.start, end);
     if (!range) return;
     const index = targets.length;
-    targets.push({ ...range, id: `document-section:${index}:${range.start}`, index, kind: "document-section", label: heading.label });
+    targets.push({
+      ...range,
+      id: `document-section:${index}:${range.start}`,
+      index,
+      kind: "document-section",
+      label: heading.label,
+    });
   });
   return targets;
 }
@@ -208,18 +240,18 @@ function documentBlockTargets(source: string, root: MarkdownNode): DocumentBlock
     const end = node.position?.end?.offset;
     if (!blockType || start == null || end == null || start >= end) return [];
     if (blockType === "paragraph" && DOCUMENT_CHART_BINDING.test(source.slice(start, end))) return [];
-    return [{
-      start,
-      end,
-      id: `document-block:${index}:${start}`,
-      index,
-      kind: "document-block" as const,
-      blockType,
-      ...(blockType === "heading" && Number.isInteger(node.depth)
-        ? { headingLevel: node.depth }
-        : {}),
-      label: boundedLabel(documentNodeText(node), DOCUMENT_BLOCK_FALLBACKS[blockType]),
-    }];
+    return [
+      {
+        start,
+        end,
+        id: `document-block:${index}:${start}`,
+        index,
+        kind: "document-block" as const,
+        blockType,
+        ...(blockType === "heading" && Number.isInteger(node.depth) ? { headingLevel: node.depth } : {}),
+        label: boundedLabel(documentNodeText(node), DOCUMENT_BLOCK_FALLBACKS[blockType]),
+      },
+    ];
   });
 }
 
@@ -275,9 +307,9 @@ function documentFragmentTargets(source: string, root: MarkdownNode): DocumentFr
   const visit = (node: MarkdownNode) => {
     if (node.type === "table") {
       const rows = node.children ?? [];
-      const headerLabels = (rows[0]?.children ?? []).map((cell, columnIndex) => (
-        boundedLabel(documentNodeText(cell), `Column ${columnIndex + 1}`)
-      ));
+      const headerLabels = (rows[0]?.children ?? []).map((cell, columnIndex) =>
+        boundedLabel(documentNodeText(cell), `Column ${columnIndex + 1}`),
+      );
       rows.forEach((row, rowIndex) => {
         (row.children ?? []).forEach((cell, columnIndex) => {
           const fragmentType = rowIndex === 0 ? "table-header-cell" : "table-cell";
@@ -526,8 +558,7 @@ function dataTargets(source: string): DataPreviewSourceTargets {
       const first = source[skipJsonWhitespace(source, rowRange.start, rowRange.end)];
       const valueRanges = first === "{" ? jsonObjectValueRanges(source, rowRange) : null;
       parsed.columns.forEach((column, columnIndex) => {
-        const range = valueRanges?.get(column)
-          ?? (first !== "{" && column === "value" ? rowRange : null);
+        const range = valueRanges?.get(column) ?? (first !== "{" && column === "value" ? rowRange : null);
         if (!range) return;
         cells.push({
           ...range,
@@ -578,14 +609,16 @@ function deckTargets(source: string): PreviewSourceTarget[] {
 function chartTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
   const parsed = parseChartSource(artifact.source);
   if (!parsed.spec || !artifact.source.length) return [];
-  return [{
-    start: 0,
-    end: artifact.source.length,
-    id: "chart-spec:0:0",
-    index: 0,
-    kind: "chart-spec",
-    label: boundedLabel(parsed.spec.title, "Chart properties"),
-  }];
+  return [
+    {
+      start: 0,
+      end: artifact.source.length,
+      id: "chart-spec:0:0",
+      index: 0,
+      kind: "chart-spec",
+      label: boundedLabel(parsed.spec.title, "Chart properties"),
+    },
+  ];
 }
 
 export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
@@ -621,9 +654,7 @@ export function deriveDataPreviewSourceTargets(artifact: WorkspaceArtifact): Dat
  * current artifact preview. The ranges may intentionally overlap: a
  * Document block belongs to a section and a Data cell belongs to a row.
  */
-export function deriveSourceLinkedPreviewTargets(
-  artifact: WorkspaceArtifact,
-): PreviewSourceTarget[] {
+export function deriveSourceLinkedPreviewTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
   if (!artifact.source.trim()) return [];
   if (artifact.kind === "document") {
     return [
@@ -640,17 +671,21 @@ export function deriveSourceLinkedPreviewTargets(
 }
 
 function sourceRangeCanLink(source: string, selection: SourceSelection) {
-  if (!Number.isInteger(selection.start)
-    || !Number.isInteger(selection.end)
-    || selection.start < 0
-    || selection.end < selection.start
-    || selection.end > source.length) return false;
-  const splitsSurrogatePair = (offset: number) => offset > 0
-    && offset < source.length
-    && source.charCodeAt(offset - 1) >= 0xD800
-    && source.charCodeAt(offset - 1) <= 0xDBFF
-    && source.charCodeAt(offset) >= 0xDC00
-    && source.charCodeAt(offset) <= 0xDFFF;
+  if (
+    !Number.isInteger(selection.start) ||
+    !Number.isInteger(selection.end) ||
+    selection.start < 0 ||
+    selection.end < selection.start ||
+    selection.end > source.length
+  )
+    return false;
+  const splitsSurrogatePair = (offset: number) =>
+    offset > 0 &&
+    offset < source.length &&
+    source.charCodeAt(offset - 1) >= 0xd800 &&
+    source.charCodeAt(offset - 1) <= 0xdbff &&
+    source.charCodeAt(offset) >= 0xdc00 &&
+    source.charCodeAt(offset) <= 0xdfff;
   return !splitsSurrogatePair(selection.start) && !splitsSurrogatePair(selection.end);
 }
 
@@ -667,18 +702,18 @@ export function resolveSourceLinkedPreviewTarget(
 ): PreviewSourceTarget | null {
   if (!sourceRangeCanLink(artifact.source, selection)) return null;
   const collapsed = selection.start === selection.end;
-  const candidates = targets.filter((target) => (
+  const candidates = targets.filter((target) =>
     collapsed
       ? target.start <= selection.start && selection.start <= target.end
-      : target.start <= selection.start && selection.end <= target.end
-  ));
+      : target.start <= selection.start && selection.end <= target.end,
+  );
   candidates.sort((left, right) => {
     if (collapsed) {
       const leftStartsHere = selection.start === left.start;
       const rightStartsHere = selection.start === right.start;
       if (leftStartsHere !== rightStartsHere) return leftStartsHere ? -1 : 1;
     }
-    const span = (left.end - left.start) - (right.end - right.start);
+    const span = left.end - left.start - (right.end - right.start);
     if (span) return span;
     const priority = SOURCE_LINK_TARGET_PRIORITY[left.kind] - SOURCE_LINK_TARGET_PRIORITY[right.kind];
     if (priority) return priority;
@@ -722,9 +757,9 @@ export function resolveDataCellPreviewTarget(
   if (!Number.isInteger(sourceRowIndex) || sourceRowIndex < 0 || !column) return null;
   const resolved = resolveDataPreviewSourceTargets(artifactId, artifacts);
   if (!resolved) return null;
-  const target = resolved.cells.find((candidate) => (
-    candidate.rowIndex === sourceRowIndex && candidate.column === column
-  ));
+  const target = resolved.cells.find(
+    (candidate) => candidate.rowIndex === sourceRowIndex && candidate.column === column,
+  );
   return target ? { artifact: resolved.artifact, target } : null;
 }
 

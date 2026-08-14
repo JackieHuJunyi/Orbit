@@ -19,11 +19,7 @@ import {
   dependencyEdgesForContext,
   selectWorkspaceAgentContext,
 } from "../../lib/dependency-graph.ts";
-import {
-  findQueryMetricReferences,
-  parseMetricBindings,
-  queryMetricReferenceKey,
-} from "../../lib/bindings.ts";
+import { findQueryMetricReferences, parseMetricBindings, queryMetricReferenceKey } from "../../lib/bindings.ts";
 import { validateAgentQueryEvidenceContext } from "../../lib/agent-evidence.ts";
 import { DEFAULT_OPENAI_MODEL } from "../../lib/model-preference.ts";
 import { resolveActiveModelConnection } from "../../lib/model-credential-vault.ts";
@@ -44,7 +40,12 @@ export async function POST(request: Request) {
 
   if (parsed.data.scope === "workspace") {
     const workspace = parsed.data.workspaceArtifacts ?? [];
-    const dependencySignature = ({ fromArtifactId, toArtifactId, kind, references }: {
+    const dependencySignature = ({
+      fromArtifactId,
+      toArtifactId,
+      kind,
+      references,
+    }: {
       fromArtifactId: string;
       toArtifactId: string;
       kind: string;
@@ -57,13 +58,16 @@ export async function POST(request: Request) {
     const expectedContext = selectWorkspaceAgentContext(workspace, graph, parsed.data.artifact.id, {
       pinnedArtifactIds: parsed.data.workspacePinnedArtifactIds ?? [],
     });
-    if (expectedContext.length !== workspace.length
-      || expectedContext.some((artifact, index) => artifact.id !== workspace[index]?.id)) {
-      return Response.json({ error: "The workspace context contains an unpinned disconnected artifact." }, { status: 400 });
+    if (
+      expectedContext.length !== workspace.length ||
+      expectedContext.some((artifact, index) => artifact.id !== workspace[index]?.id)
+    ) {
+      return Response.json(
+        { error: "The workspace context contains an unpinned disconnected artifact." },
+        { status: 400 },
+      );
     }
-    const expected = dependencyEdgesForContext(graph, workspace)
-      .map(dependencySignature)
-      .sort();
+    const expected = dependencyEdgesForContext(graph, workspace).map(dependencySignature).sort();
     const supplied = (parsed.data.workspaceDependencies ?? []).map(dependencySignature).sort();
     if (expected.length !== supplied.length || expected.some((edge, index) => edge !== supplied[index])) {
       return Response.json({ error: "The workspace dependency context is stale or invalid." }, { status: 400 });
@@ -72,32 +76,33 @@ export async function POST(request: Request) {
 
   const connection = await resolveActiveModelConnection(request);
   if (!connection) {
-    return Response.json(
-      { error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" },
-      { status: 503 },
-    );
+    return Response.json({ error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" }, { status: 503 });
   }
 
   if (parsed.data.scope === "workspace") {
     const workspace = parsed.data.workspaceArtifacts ?? [];
-    const queryArtifactIds = workspace
-      .filter((artifact) => artifact.kind === "query")
-      .map((artifact) => artifact.id);
+    const queryArtifactIds = workspace.filter((artifact) => artifact.kind === "query").map((artifact) => artifact.id);
     if (queryArtifactIds.length && parsed.data.queryEvidence === undefined) {
-      return Response.json({
-        error: "Current Query results are required before the model can plan this workspace change.",
-        code: "QUERY_EVIDENCE_REQUIRED",
-        queryArtifactIds,
-      }, { status: 428 });
+      return Response.json(
+        {
+          error: "Current Query results are required before the model can plan this workspace change.",
+          code: "QUERY_EVIDENCE_REQUIRED",
+          queryArtifactIds,
+        },
+        { status: 428 },
+      );
     }
     if (parsed.data.queryEvidence !== undefined) {
       const evidenceErrors = validateAgentQueryEvidenceContext(workspace, parsed.data.queryEvidence);
       if (evidenceErrors.length) {
-        return Response.json({
-          error: "The Query evidence context is stale or invalid.",
-          code: "QUERY_EVIDENCE_INVALID",
-          details: evidenceErrors.slice(0, 3),
-        }, { status: 400 });
+        return Response.json(
+          {
+            error: "The Query evidence context is stale or invalid.",
+            code: "QUERY_EVIDENCE_INVALID",
+            details: evidenceErrors.slice(0, 3),
+          },
+          { status: 400 },
+        );
       }
     }
   }
@@ -132,18 +137,21 @@ export async function POST(request: Request) {
         return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
       const allowedIds = new Set(parsed.data.workspaceArtifacts?.map((artifact) => artifact.id));
-      const patchIds = operationPlan.data.actions.flatMap((action) => (
-        action.type === "patch_artifact" ? [action.artifactId] : []
-      ));
+      const patchIds = operationPlan.data.actions.flatMap((action) =>
+        action.type === "patch_artifact" ? [action.artifactId] : [],
+      );
       if (new Set(patchIds).size !== patchIds.length || patchIds.some((id) => !allowedIds.has(id))) {
         return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
       const compiled = compileAgentWorkspaceOperations(parsed.data.workspaceArtifacts ?? [], operationPlan.data);
       if (!compiled.plan || compiled.errors.length) {
-        return Response.json({
-          error: "The model returned source operations that do not match the current workspace revision.",
-          details: compiled.errors.slice(0, 3),
-        }, { status: 502 });
+        return Response.json(
+          {
+            error: "The model returned source operations that do not match the current workspace revision.",
+            details: compiled.errors.slice(0, 3),
+          },
+          { status: 502 },
+        );
       }
       const workspacePlan = AgentCompiledWorkspacePatchSchema.safeParse(compiled.plan);
       if (!workspacePlan.success) {
@@ -155,10 +163,13 @@ export async function POST(request: Request) {
         workspacePlan.data.creations,
       );
       if (prepared.errors.length) {
-        return Response.json({
-          error: "The compiled model operations did not pass Rune's workspace safety gate.",
-          details: prepared.errors.slice(0, 3),
-        }, { status: 502 });
+        return Response.json(
+          {
+            error: "The compiled model operations did not pass Rune's workspace safety gate.",
+            details: prepared.errors.slice(0, 3),
+          },
+          { status: 502 },
+        );
       }
       return Response.json({
         provider: connection.provider,
@@ -176,10 +187,13 @@ export async function POST(request: Request) {
     }
     const compiled = compileAgentOperationPatch(parsed.data.artifact, operationPlan.data);
     if (!compiled.plan || compiled.errors.length) {
-      return Response.json({
-        error: "The model returned source operations that do not match the current artifact revision.",
-        details: compiled.errors.slice(0, 3),
-      }, { status: 502 });
+      return Response.json(
+        {
+          error: "The model returned source operations that do not match the current artifact revision.",
+          details: compiled.errors.slice(0, 3),
+        },
+        { status: 502 },
+      );
     }
     const artifactPlan = AgentCompiledPatchSchema.safeParse(compiled.plan);
     if (!artifactPlan.success) {
@@ -187,10 +201,13 @@ export async function POST(request: Request) {
     }
     const metricBindingErrors = parseMetricBindings(artifactPlan.data.nextSource).errors;
     if (metricBindingErrors.length) {
-      return Response.json({
-        error: "The compiled model operations produced an invalid metric binding.",
-        details: metricBindingErrors.slice(0, 3),
-      }, { status: 502 });
+      return Response.json(
+        {
+          error: "The compiled model operations produced an invalid metric binding.",
+          details: metricBindingErrors.slice(0, 3),
+        },
+        { status: 502 },
+      );
     }
     const originalQueryMetrics = findQueryMetricReferences(parsed.data.artifact.source)
       .map(queryMetricReferenceKey)
@@ -198,11 +215,16 @@ export async function POST(request: Request) {
     const nextQueryMetrics = findQueryMetricReferences(artifactPlan.data.nextSource)
       .map(queryMetricReferenceKey)
       .sort();
-    if (originalQueryMetrics.length !== nextQueryMetrics.length
-      || originalQueryMetrics.some((reference, index) => reference !== nextQueryMetrics[index])) {
-      return Response.json({
-        error: "Cross-file Query metric bindings can be introduced or retargeted only in Workspace scope.",
-      }, { status: 502 });
+    if (
+      originalQueryMetrics.length !== nextQueryMetrics.length ||
+      originalQueryMetrics.some((reference, index) => reference !== nextQueryMetrics[index])
+    ) {
+      return Response.json(
+        {
+          error: "Cross-file Query metric bindings can be introduced or retargeted only in Workspace scope.",
+        },
+        { status: 502 },
+      );
     }
     if (parsed.data.scope === "selection" && parsed.data.selection) {
       const selectionErrors = validateCompiledSelectionPatch(
@@ -211,10 +233,13 @@ export async function POST(request: Request) {
         artifactPlan.data.nextSource,
       );
       if (selectionErrors.length) {
-        return Response.json({
-          error: "The compiled model operations crossed the selected source range.",
-          details: selectionErrors,
-        }, { status: 502 });
+        return Response.json(
+          {
+            error: "The compiled model operations crossed the selected source range.",
+            details: selectionErrors,
+          },
+          { status: 502 },
+        );
       }
     }
     const validationErrors = validateArtifact({
@@ -222,10 +247,13 @@ export async function POST(request: Request) {
       source: artifactPlan.data.nextSource,
     });
     if (validationErrors.length) {
-      return Response.json({
-        error: "The compiled model operations did not pass Rune's artifact safety gate.",
-        details: validationErrors.slice(0, 3),
-      }, { status: 502 });
+      return Response.json(
+        {
+          error: "The compiled model operations did not pass Rune's artifact safety gate.",
+          details: validationErrors.slice(0, 3),
+        },
+        { status: 502 },
+      );
     }
     return Response.json({
       provider: connection.provider,

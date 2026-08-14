@@ -1,0 +1,30 @@
+node_modules/
+dist/
+.next/
+.vinext/
+.wrangler/
+public/ocr/
+coverage/
+package-lock.json
+*.tsbuildinfo
+
+# Generated — never format by hand.
+app/lib/traditional-chinese.generated.ts
+app/lib/interface-locales.generated.ts
+
+# Large hand-written product documents; leave their prose untouched for now.
+idea.md
+AI产品行动指南.md
+Rune产品设计与行动规划.md
+README.md
+PROGRESS.md
+
+# House CSS style is not Prettier-normalized yet.
+**/*.css
+
+# Deterministic regression baseline, never reformat.
+evals/BASELINE.md
+
+# Playwright artifacts
+/test-results/
+/playwright-report/

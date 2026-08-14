@@ -8,10 +8,7 @@ import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { buildBoundedQuery } from "../app/lib/sql.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
 import { prepareRuneTaskProvider } from "../app/lib/task-providers.ts";
-import {
-  operatingReviewMetricField,
-  prepareOperatingReviewEvidence,
-} from "../app/lib/operating-review.ts";
+import { operatingReviewMetricField, prepareOperatingReviewEvidence } from "../app/lib/operating-review.ts";
 import { parseDataSource } from "../app/lib/workspace.ts";
 import { RUNE_GOLDEN_TASK_SET_VERSION, RUNE_GOLDEN_TASKS } from "./golden-task-set.ts";
 
@@ -53,10 +50,14 @@ function jsonValue(value) {
 
 async function createRuntime() {
   const dist = path.resolve("node_modules/@duckdb/duckdb-wasm/dist");
-  const database = await duckdb.createDuckDB({
-    mvp: { mainModule: path.join(dist, "duckdb-mvp.wasm"), mainWorker: "" },
-    eh: { mainModule: path.join(dist, "duckdb-eh.wasm"), mainWorker: "" },
-  }, new duckdb.VoidLogger(), duckdb.NODE_RUNTIME);
+  const database = await duckdb.createDuckDB(
+    {
+      mvp: { mainModule: path.join(dist, "duckdb-mvp.wasm"), mainWorker: "" },
+      eh: { mainModule: path.join(dist, "duckdb-eh.wasm"), mainWorker: "" },
+    },
+    new duckdb.VoidLogger(),
+    duckdb.NODE_RUNTIME,
+  );
   await database.instantiate(() => {});
   database.open({});
   return { database, connection: database.connect() };
@@ -78,7 +79,10 @@ function assertDocumentBriefing(task, artifacts) {
   assert.equal(parsed.deck.frontmatter.audience, input.audience);
   assert.equal(parsed.deck.frontmatter.purpose, input.focus);
   const sourceUnits = [...output.source.matchAll(/<!-- source-unit: (source-\d+) -->/gu)].map((match) => match[1]);
-  assert.deepEqual(sourceUnits, Array.from({ length: input.slideCount - 2 }, (_, index) => `source-${index + 1}`));
+  assert.deepEqual(
+    sourceUnits,
+    Array.from({ length: input.slideCount - 2 }, (_, index) => `source-${index + 1}`),
+  );
   if (task.expected.refreshTargetId) {
     assert.equal(output.id, task.expected.refreshTargetId);
     assert.equal(output.name, task.expected.refreshTargetName);
@@ -97,14 +101,19 @@ function assertOperatingReviewContract(task, output, runtimeRows) {
   const chart = output.find((artifact) => artifact.kind === "chart");
   assert.ok(query && chart);
   const metricField = operatingReviewMetricField(input);
-  assert.deepEqual(runtimeRows.map((row) => ({
-    category: String(row[input.category]),
-    value: Number(jsonValue(row[metricField])),
-    ...(input.comparisonScope ? {
-      primaryValue: Number(jsonValue(row[input.value])),
-      comparisonValue: Number(jsonValue(row[`${input.value} comparison`])),
-    } : {}),
-  })), task.expected.evidenceRows);
+  assert.deepEqual(
+    runtimeRows.map((row) => ({
+      category: String(row[input.category]),
+      value: Number(jsonValue(row[metricField])),
+      ...(input.comparisonScope
+        ? {
+            primaryValue: Number(jsonValue(row[input.value])),
+            comparisonValue: Number(jsonValue(row[`${input.value} comparison`])),
+          }
+        : {}),
+    })),
+    task.expected.evidenceRows,
+  );
 
   const chartSpec = parseChartSource(chart.source);
   assert.deepEqual(chartSpec.errors, []);
@@ -127,10 +136,15 @@ async function runOperatingReviewQuery(runtime, task, output, runtimeIndex) {
   const parsed = parseDataSource(data.source);
   assert.deepEqual(parsed.errors, []);
   const fileName = `rune-golden-${runtimeIndex}.json`;
-  runtime.database.registerFileText(fileName, JSON.stringify(parsed.rows.map((row, index) => ({
-    ...row,
-    __rune_import_order__: index,
-  }))));
+  runtime.database.registerFileText(
+    fileName,
+    JSON.stringify(
+      parsed.rows.map((row, index) => ({
+        ...row,
+        __rune_import_order__: index,
+      })),
+    ),
+  );
   runtime.connection.query(`CREATE OR REPLACE TABLE workspace_data AS
     SELECT * EXCLUDE (__rune_import_order__)
     FROM read_json_auto('${fileName}', format = 'array')
@@ -172,7 +186,10 @@ export async function runRuneGoldenTaskSet() {
           const transaction = prepareWorkspaceMutation(artifacts, prepared.plan.patches, prepared.plan.creations);
           assert.deepEqual(transaction.errors, []);
           const output = outputArtifacts(prepared.plan, transaction.nextArtifacts);
-          assert.deepEqual(output.map((artifact) => artifact.kind), task.expected.outputKinds);
+          assert.deepEqual(
+            output.map((artifact) => artifact.kind),
+            task.expected.outputKinds,
+          );
           if (task.request.taskId === "operating-review") {
             const runtimeRows = await runOperatingReviewQuery(runtime, task, output, runtimeVerified);
             runtimeVerified += 1;

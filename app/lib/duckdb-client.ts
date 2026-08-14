@@ -101,7 +101,9 @@ async function executeQuery(
   try {
     if (parsedData.rows.length) {
       const projection = parsedData.columns.map(quoteSqlIdentifier).join(", ");
-      await connection.query(`CREATE OR REPLACE TABLE workspace_data AS SELECT ${projection} FROM read_json_auto('${fileName}', format = 'array') ORDER BY ${quoteSqlIdentifier(importOrderColumn)}`);
+      await connection.query(
+        `CREATE OR REPLACE TABLE workspace_data AS SELECT ${projection} FROM read_json_auto('${fileName}', format = 'array') ORDER BY ${quoteSqlIdentifier(importOrderColumn)}`,
+      );
     } else {
       const columns = parsedData.columns.map((column) => `${quoteSqlIdentifier(column)} VARCHAR`).join(", ");
       await connection.query(`CREATE OR REPLACE TABLE workspace_data (${columns})`);
@@ -112,33 +114,27 @@ async function executeQuery(
     const elapsedMs = performance.now() - startedAt;
     const tableColumns = table.schema.fields.map((field) => field.name);
     const lineageColumnIndex = tableColumns.indexOf(QUERY_PROVENANCE_COLUMN);
-    const visibleColumnIndices = tableColumns
-      .map((_, index) => index)
-      .filter((index) => index !== lineageColumnIndex);
+    const visibleColumnIndices = tableColumns.map((_, index) => index).filter((index) => index !== lineageColumnIndex);
     const columns = visibleColumnIndices.map((index) => tableColumns[index]);
     const projectedSourceColumns = lineagePlan
       ? queryLineageColumnsForOutput(lineagePlan.projections, parsedData.columns, columns.length)
       : null;
-    const hasDirectLineage = Boolean(
-      lineagePlan
-      && lineageColumnIndex >= 0
-      && projectedSourceColumns,
-    );
+    const hasDirectLineage = Boolean(lineagePlan && lineageColumnIndex >= 0 && projectedSourceColumns);
     const visibleRows = Math.min(table.numRows, MAX_QUERY_ROWS);
-    const rows = Array.from({ length: visibleRows }, (_, rowIndex) => (
-      visibleColumnIndices.map((columnIndex) => normalizeCell(table.getChildAt(columnIndex)?.get(rowIndex)))
-    ));
-    const sourceRowIndices = Array.from({ length: visibleRows }, (_, rowIndex) => (
+    const rows = Array.from({ length: visibleRows }, (_, rowIndex) =>
+      visibleColumnIndices.map((columnIndex) => normalizeCell(table.getChildAt(columnIndex)?.get(rowIndex))),
+    );
+    const sourceRowIndices = Array.from({ length: visibleRows }, (_, rowIndex) =>
       hasDirectLineage
         ? normalizeQuerySourceRowIndex(table.getChildAt(lineageColumnIndex)?.get(rowIndex), parsedData.rows.length)
-        : null
-    ));
-    const cellLineage = sourceRowIndices.map((rowIndex) => (
+        : null,
+    );
+    const cellLineage = sourceRowIndices.map((rowIndex) =>
       columns.map((_, columnIndex) => {
         const sourceColumn = hasDirectLineage ? projectedSourceColumns?.[columnIndex] : null;
         return rowIndex != null && sourceColumn ? { sourceRowIndex: rowIndex, sourceColumn } : null;
-      })
-    ));
+      }),
+    );
     return {
       columns,
       rows,
@@ -160,7 +156,10 @@ export function runWorkspaceQuery(
   dataFormat: "CSV" | "JSON",
 ): Promise<WorkspaceQueryResult> {
   const job = queryQueue.then(() => executeQuery(sql, dataSource, dataFormat));
-  queryQueue = job.then(() => undefined, () => undefined);
+  queryQueue = job.then(
+    () => undefined,
+    () => undefined,
+  );
   return job;
 }
 
@@ -173,11 +172,12 @@ export async function runWorkspaceQuerySnapshot(
   const binding = parseQueryDataSourceDirective(queryArtifact.source);
   if (binding.errors.length) throw new Error(binding.errors[0]);
   if (binding.artifactId && binding.artifactId !== dataArtifact.id) {
-    throw new Error(`Query ${queryArtifact.name} is bound to Data artifact ${binding.artifactId}, not ${dataArtifact.id}.`);
+    throw new Error(
+      `Query ${queryArtifact.name} is bound to Data artifact ${binding.artifactId}, not ${dataArtifact.id}.`,
+    );
   }
-  const dataFormat = dataArtifact.source.trim().startsWith("[") || dataArtifact.source.trim().startsWith("{")
-    ? "JSON"
-    : "CSV";
+  const dataFormat =
+    dataArtifact.source.trim().startsWith("[") || dataArtifact.source.trim().startsWith("{") ? "JSON" : "CSV";
   const result = await runWorkspaceQuery(queryArtifact.source, dataArtifact.source, dataFormat);
   return createWorkspaceQuerySnapshot(queryArtifact, dataArtifact, result);
 }

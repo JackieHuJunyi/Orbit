@@ -88,7 +88,9 @@ export function WorkbenchCommandMenu({
       >
         <header className="command-menu-search">
           <Search aria-hidden="true" />
-          <label id="command-menu-title" className="visually-hidden" htmlFor="command-menu-input">{copy.title}</label>
+          <label id="command-menu-title" className="visually-hidden" htmlFor="command-menu-input">
+            {copy.title}
+          </label>
           <input
             ref={inputRef}
             id="command-menu-input"
@@ -104,53 +106,71 @@ export function WorkbenchCommandMenu({
             onChange={(event) => {
               const nextQuery = event.currentTarget.value;
               setQuery(nextQuery);
-              setActiveIndex(filterRuneWorkbenchCommands(commands, nextQuery).findIndex((command) => !command.disabled));
+              setActiveIndex(
+                filterRuneWorkbenchCommands(commands, nextQuery).findIndex((command) => !command.disabled),
+              );
             }}
             onKeyDown={onInputKeyDown}
           />
           <kbd>⌘ ⇧ P</kbd>
-          <button type="button" className="icon-button small" onClick={onClose} aria-label={copy.close} title={copy.close}>
+          <button
+            type="button"
+            className="icon-button small"
+            onClick={onClose}
+            aria-label={copy.close}
+            title={copy.close}
+          >
             <X aria-hidden="true" />
           </button>
         </header>
 
         <div id="command-menu-results" className="command-menu-results" role="listbox" aria-label={copy.title}>
           {results.length === 0 ? (
-            <div className="command-menu-empty" role="status">{copy.noResults}</div>
-          ) : GROUP_ORDER.map((group) => {
-            const groupCommands = results
-              .map((command, index) => ({ command, index }))
-              .filter((entry) => entry.command.group === group);
-            if (groupCommands.length === 0) return null;
-            return (
-              <section className="command-menu-group" aria-labelledby={`command-menu-group-${group}`} key={group}>
-                <h3 id={`command-menu-group-${group}`}>{copy.groups[group]}</h3>
-                {groupCommands.map(({ command, index }) => (
-                  <button
-                    id={`command-menu-option-${index}`}
-                    type="button"
-                    role="option"
-                    aria-selected={index === activeIndex}
-                    aria-disabled={command.disabled || undefined}
-                    className={index === activeIndex ? "active" : ""}
-                    disabled={command.disabled}
-                    onPointerMove={() => { if (!command.disabled) setActiveIndex(index); }}
-                    onFocus={() => { if (!command.disabled) setActiveIndex(index); }}
-                    onClick={() => run(command)}
-                    key={command.id}
-                  >
-                    <span className={`command-menu-glyph ${command.group}`} aria-hidden="true" />
-                    <span className="command-menu-copy">
-                      <strong>{command.label}</strong>
-                      <small>{command.disabled ? copy.unavailable : command.detail}</small>
-                    </span>
-                    {command.shortcut && <kbd>{command.shortcut}</kbd>}
-                    {index === activeIndex && !command.disabled && <CornerDownLeft className="command-menu-enter" aria-hidden="true" />}
-                  </button>
-                ))}
-              </section>
-            );
-          })}
+            <div className="command-menu-empty" role="status">
+              {copy.noResults}
+            </div>
+          ) : (
+            GROUP_ORDER.map((group) => {
+              const groupCommands = results
+                .map((command, index) => ({ command, index }))
+                .filter((entry) => entry.command.group === group);
+              if (groupCommands.length === 0) return null;
+              return (
+                <section className="command-menu-group" aria-labelledby={`command-menu-group-${group}`} key={group}>
+                  <h3 id={`command-menu-group-${group}`}>{copy.groups[group]}</h3>
+                  {groupCommands.map(({ command, index }) => (
+                    <button
+                      id={`command-menu-option-${index}`}
+                      type="button"
+                      role="option"
+                      aria-selected={index === activeIndex}
+                      aria-disabled={command.disabled || undefined}
+                      className={index === activeIndex ? "active" : ""}
+                      disabled={command.disabled}
+                      onPointerMove={() => {
+                        if (!command.disabled) setActiveIndex(index);
+                      }}
+                      onFocus={() => {
+                        if (!command.disabled) setActiveIndex(index);
+                      }}
+                      onClick={() => run(command)}
+                      key={command.id}
+                    >
+                      <span className={`command-menu-glyph ${command.group}`} aria-hidden="true" />
+                      <span className="command-menu-copy">
+                        <strong>{command.label}</strong>
+                        <small>{command.disabled ? copy.unavailable : command.detail}</small>
+                      </span>
+                      {command.shortcut && <kbd>{command.shortcut}</kbd>}
+                      {index === activeIndex && !command.disabled && (
+                        <CornerDownLeft className="command-menu-enter" aria-hidden="true" />
+                      )}
+                    </button>
+                  ))}
+                </section>
+              );
+            })
+          )}
         </div>
       </section>
     </div>

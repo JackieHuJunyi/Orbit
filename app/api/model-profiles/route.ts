@@ -49,9 +49,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!sameOrigin(request)) return Response.json({ error: "Cross-origin model configuration is not allowed." }, { status: 403 });
+  if (!sameOrigin(request))
+    return Response.json({ error: "Cross-origin model configuration is not allowed." }, { status: 403 });
   if (!modelVaultAvailable(process.env)) {
-    return Response.json({ error: "The encrypted credential vault is unavailable on this server.", code: "MODEL_VAULT_UNAVAILABLE" }, { status: 503 });
+    return Response.json(
+      { error: "The encrypted credential vault is unavailable on this server.", code: "MODEL_VAULT_UNAVAILABLE" },
+      { status: 503 },
+    );
   }
   let body: unknown;
   try {
@@ -59,32 +63,36 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Request body must be valid JSON." }, { status: 400 });
   }
-  if (!body || typeof body !== "object") return Response.json({ error: "The model configuration request is invalid." }, { status: 400 });
+  if (!body || typeof body !== "object")
+    return Response.json({ error: "The model configuration request is invalid." }, { status: 400 });
   const input = body as { action?: unknown; profileId?: unknown; profile?: unknown };
   const vault = await readModelProfileVault(request);
   let next: ModelProfileVault;
   try {
     if (input.action === "models") {
-      if (!input.profile || typeof input.profile !== "object") throw new Error("Enter the model profile details first.");
-      const requestedId = typeof (input.profile as { id?: unknown }).id === "string"
-        ? (input.profile as { id: string }).id
-        : "";
+      if (!input.profile || typeof input.profile !== "object")
+        throw new Error("Enter the model profile details first.");
+      const requestedId =
+        typeof (input.profile as { id?: unknown }).id === "string" ? (input.profile as { id: string }).id : "";
       const existing = requestedId ? vault.profiles.find((profile) => profile.id === requestedId) : undefined;
       if (requestedId && !existing) throw new Error("That model profile no longer exists. Refresh and try again.");
       const profile = normalizeModelProfileDraft(input.profile, existing);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8_000);
       try {
-        const models = await listProviderModels({
-          source: "personal",
-          profileId: profile.id,
-          profileName: profile.name,
-          provider: profile.provider,
-          protocol: profile.protocol,
-          apiKey: profile.apiKey,
-          baseURL: profile.baseURL,
-          model: profile.model,
-        }, controller.signal);
+        const models = await listProviderModels(
+          {
+            source: "personal",
+            profileId: profile.id,
+            profileName: profile.name,
+            provider: profile.provider,
+            protocol: profile.protocol,
+            apiKey: profile.apiKey,
+            baseURL: profile.baseURL,
+            model: profile.model,
+          },
+          controller.signal,
+        );
         return Response.json({ models }, { headers: { "cache-control": "no-store" } });
       } catch (error) {
         if (controller.signal.aborted) throw new Error("The provider model-list request timed out.");
@@ -94,9 +102,8 @@ export async function POST(request: Request) {
       }
     } else if (input.action === "upsert") {
       if (!input.profile || typeof input.profile !== "object") throw new Error("Enter the model profile details.");
-      const requestedId = typeof (input.profile as { id?: unknown }).id === "string"
-        ? (input.profile as { id: string }).id
-        : "";
+      const requestedId =
+        typeof (input.profile as { id?: unknown }).id === "string" ? (input.profile as { id: string }).id : "";
       const existing = requestedId ? vault.profiles.find((profile) => profile.id === requestedId) : undefined;
       if (requestedId && !existing) throw new Error("That model profile no longer exists. Refresh and try again.");
       if (!existing && vault.profiles.length >= MAX_MODEL_PROFILES) {
@@ -104,7 +111,7 @@ export async function POST(request: Request) {
       }
       const profile = normalizeModelProfileDraft(input.profile, existing);
       const profiles = existing
-        ? vault.profiles.map((item) => item.id === existing.id ? profile : item)
+        ? vault.profiles.map((item) => (item.id === existing.id ? profile : item))
         : [...vault.profiles, profile];
       next = { version: 1, profiles, activeProfileId: profile.id };
     } else if (input.action === "deployment") {
@@ -123,15 +130,16 @@ export async function POST(request: Request) {
       next = {
         version: 1,
         profiles,
-        activeProfileId: vault.activeProfileId === input.profileId
-          ? profiles[0]?.id ?? null
-          : vault.activeProfileId,
+        activeProfileId: vault.activeProfileId === input.profileId ? (profiles[0]?.id ?? null) : vault.activeProfileId,
       };
     } else {
       throw new Error("Choose a supported model profile action.");
     }
     return jsonState(next, await serializeModelProfileVaultCookie(request, next));
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : "Rune could not update that model profile." }, { status: 400 });
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Rune could not update that model profile." },
+      { status: 400 },
+    );
   }
 }

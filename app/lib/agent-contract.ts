@@ -7,14 +7,8 @@ import {
   WORKSPACE_DEPENDENCY_KINDS,
 } from "./dependency-graph.ts";
 import { AgentQueryEvidenceListSchema } from "./agent-evidence.ts";
-import {
-  AgentRuntimeRepairSchema,
-  type AgentRuntimeRepair,
-} from "./agent-repair.ts";
-import {
-  sourceOutsideSelectionIsUnchanged,
-  sourceSelectionError,
-} from "./source-selection.ts";
+import { AgentRuntimeRepairSchema, type AgentRuntimeRepair } from "./agent-repair.ts";
+import { sourceOutsideSelectionIsUnchanged, sourceSelectionError } from "./source-selection.ts";
 
 export { AgentRuntimeRepairSchema };
 export type { AgentRuntimeRepair };
@@ -35,95 +29,129 @@ export const AgentWorkspacePatchSchema = z.object({
   patches: z.array(AgentFilePatchSchema).min(1).max(4),
 });
 
-export const AgentExactTextOperationSchema = z.object({
-  type: z.literal("replace_text"),
-  find: z.string().min(1).max(8_000),
-  replace: z.string().max(16_000),
-}).strict();
+export const AgentExactTextOperationSchema = z
+  .object({
+    type: z.literal("replace_text"),
+    find: z.string().min(1).max(8_000),
+    replace: z.string().max(16_000),
+  })
+  .strict();
 
-export const AgentMarkdownSectionOperationSchema = z.object({
-  type: z.literal("replace_markdown_section"),
-  heading: z.string().min(1).max(200),
-  body: z.string().max(16_000),
-}).strict();
+export const AgentMarkdownSectionOperationSchema = z
+  .object({
+    type: z.literal("replace_markdown_section"),
+    heading: z.string().min(1).max(200),
+    body: z.string().max(16_000),
+  })
+  .strict();
 
-export const AgentMarkdownSectionInsertOperationSchema = z.object({
-  type: z.literal("insert_markdown_section_after"),
-  heading: z.string().min(1).max(200),
-  section: z.string().min(1).max(16_000),
-}).strict();
+export const AgentMarkdownSectionInsertOperationSchema = z
+  .object({
+    type: z.literal("insert_markdown_section_after"),
+    heading: z.string().min(1).max(200),
+    section: z.string().min(1).max(16_000),
+  })
+  .strict();
 
-export const AgentDataCellValueSchema = z.union([
-  z.string().max(4_000),
-  z.number(),
-  z.boolean(),
-  z.null(),
-]);
+export const AgentDataCellValueSchema = z.union([z.string().max(4_000), z.number(), z.boolean(), z.null()]);
 
-export const AgentDataKeyValueSchema = z.union([
-  z.string().min(1).max(1_000),
-  z.number(),
-  z.boolean(),
-]);
+export const AgentDataKeyValueSchema = z.union([z.string().min(1).max(1_000), z.number(), z.boolean()]);
 
-export const AgentDataRowOperationSchema = z.object({
-  type: z.literal("upsert_data_row"),
-  keyColumn: z.string().min(1).max(200),
-  keyValue: AgentDataKeyValueSchema,
-  cells: z.array(z.object({
-    column: z.string().min(1).max(200),
-    value: AgentDataCellValueSchema,
-  }).strict()).min(1).max(32),
-}).strict();
-
-export const AgentDataColumnOperationSchema = z.object({
-  type: z.literal("upsert_data_column"),
-  keyColumn: z.string().min(1).max(200),
-  column: z.string().min(1).max(200),
-  values: z.array(z.object({
+export const AgentDataRowOperationSchema = z
+  .object({
+    type: z.literal("upsert_data_row"),
+    keyColumn: z.string().min(1).max(200),
     keyValue: AgentDataKeyValueSchema,
-    value: AgentDataCellValueSchema,
-  }).strict()).max(200),
-}).strict();
+    cells: z
+      .array(
+        z
+          .object({
+            column: z.string().min(1).max(200),
+            value: AgentDataCellValueSchema,
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(32),
+  })
+  .strict();
 
-export const AgentDataColumnRenameOperationSchema = z.object({
-  type: z.literal("rename_data_column"),
-  column: z.string().min(1).max(200),
-  nextColumn: z.string().min(1).max(200),
-}).strict();
+export const AgentDataColumnOperationSchema = z
+  .object({
+    type: z.literal("upsert_data_column"),
+    keyColumn: z.string().min(1).max(200),
+    column: z.string().min(1).max(200),
+    values: z
+      .array(
+        z
+          .object({
+            keyValue: AgentDataKeyValueSchema,
+            value: AgentDataCellValueSchema,
+          })
+          .strict(),
+      )
+      .max(200),
+  })
+  .strict();
 
-export const AgentDeckSlideOperationSchema = z.object({
-  type: z.literal("replace_deck_slide"),
-  title: z.string().min(1).max(200),
-  slide: z.string().min(1).max(16_000),
-}).strict();
+export const AgentDataColumnRenameOperationSchema = z
+  .object({
+    type: z.literal("rename_data_column"),
+    column: z.string().min(1).max(200),
+    nextColumn: z.string().min(1).max(200),
+  })
+  .strict();
 
-export const AgentDeckSlideInsertOperationSchema = z.object({
-  type: z.literal("insert_deck_slide_after"),
-  title: z.string().min(1).max(200),
-  slide: z.string().min(1).max(16_000),
-}).strict();
+export const AgentDeckSlideOperationSchema = z
+  .object({
+    type: z.literal("replace_deck_slide"),
+    title: z.string().min(1).max(200),
+    slide: z.string().min(1).max(16_000),
+  })
+  .strict();
 
-export const AgentCreationHandleSchema = z.string()
-  .regex(/^[a-z][a-z0-9_-]{0,39}$/, "Creation handles use 1-40 lowercase letters, numbers, underscores, or hyphens and start with a letter.");
+export const AgentDeckSlideInsertOperationSchema = z
+  .object({
+    type: z.literal("insert_deck_slide_after"),
+    title: z.string().min(1).max(200),
+    slide: z.string().min(1).max(16_000),
+  })
+  .strict();
+
+export const AgentCreationHandleSchema = z
+  .string()
+  .regex(
+    /^[a-z][a-z0-9_-]{0,39}$/,
+    "Creation handles use 1-40 lowercase letters, numbers, underscores, or hyphens and start with a letter.",
+  );
 
 export const AgentArtifactReferenceSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("artifact"),
-    artifactId: z.string().min(1).max(120),
-  }).strict(),
-  z.object({
-    kind: z.literal("creation"),
-    handle: AgentCreationHandleSchema,
-  }).strict(),
+  z
+    .object({
+      kind: z.literal("artifact"),
+      artifactId: z.string().min(1).max(120),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("creation"),
+      handle: AgentCreationHandleSchema,
+    })
+    .strict(),
 ]);
 
-export const AgentChartAppendOperationSchema = z.object({
-  type: z.literal("append_chart"),
-  chart: AgentArtifactReferenceSchema,
-  heading: z.string().trim().min(1).max(80)
-    .regex(/^[^\r\n<>]+$/, "Chart headings must be one plain-text line."),
-}).strict();
+export const AgentChartAppendOperationSchema = z
+  .object({
+    type: z.literal("append_chart"),
+    chart: AgentArtifactReferenceSchema,
+    heading: z
+      .string()
+      .trim()
+      .min(1)
+      .max(80)
+      .regex(/^[^\r\n<>]+$/, "Chart headings must be one plain-text line."),
+  })
+  .strict();
 
 export const AgentSourceOperationSchema = z.discriminatedUnion("type", [
   AgentExactTextOperationSchema,
@@ -148,25 +176,31 @@ export const AgentWorkspaceSourceOperationSchema = z.discriminatedUnion("type", 
   AgentChartAppendOperationSchema,
 ]);
 
-export const AgentOperationPatchSchema = z.object({
-  summary: z.string().min(1).max(160),
-  detail: z.string().min(1).max(500),
-  edits: z.array(AgentSourceOperationSchema).min(1).max(8),
-}).strict();
+export const AgentOperationPatchSchema = z
+  .object({
+    summary: z.string().min(1).max(160),
+    detail: z.string().min(1).max(500),
+    edits: z.array(AgentSourceOperationSchema).min(1).max(8),
+  })
+  .strict();
 
-export const AgentFileOperationPatchSchema = z.object({
-  type: z.literal("patch_artifact"),
-  artifactId: z.string().min(1).max(120),
-  summary: z.string().min(1).max(160),
-  detail: z.string().min(1).max(500),
-  edits: z.array(AgentWorkspaceSourceOperationSchema).min(1).max(8),
-}).strict();
+export const AgentFileOperationPatchSchema = z
+  .object({
+    type: z.literal("patch_artifact"),
+    artifactId: z.string().min(1).max(120),
+    summary: z.string().min(1).max(160),
+    detail: z.string().min(1).max(500),
+    edits: z.array(AgentWorkspaceSourceOperationSchema).min(1).max(8),
+  })
+  .strict();
 
-const AgentCreationOperationPatchSchema = z.object({
-  summary: z.string().min(1).max(160),
-  detail: z.string().min(1).max(500),
-  edits: z.array(AgentWorkspaceSourceOperationSchema).max(8),
-}).strict();
+const AgentCreationOperationPatchSchema = z
+  .object({
+    summary: z.string().min(1).max(160),
+    detail: z.string().min(1).max(500),
+    edits: z.array(AgentWorkspaceSourceOperationSchema).max(8),
+  })
+  .strict();
 
 export const AgentCoreArtifactCreationOperationSchema = AgentCreationOperationPatchSchema.extend({
   type: z.literal("create_artifact"),
@@ -208,42 +242,48 @@ export const AgentWorkspaceActionSchema = z.union([
   AgentChartArtifactCreationOperationSchema,
 ]);
 
-export const AgentWorkspaceOperationPlanSchema = z.object({
-  summary: z.string().min(1).max(160),
-  detail: z.string().min(1).max(500),
-  actions: z.array(AgentWorkspaceActionSchema).min(1).max(4),
-}).strict().superRefine((plan, context) => {
-  const handles = new Set<string>();
-  const requirePriorHandle = (handle: string, path: Array<string | number>) => {
-    if (!handles.has(handle)) {
-      context.addIssue({
-        code: "custom",
-        path,
-        message: `Creation handle must reference an earlier action: ${handle}`,
-      });
-    }
-  };
-  plan.actions.forEach((action, actionIndex) => {
-    if (action.type === "create_artifact" && (action.kind === "query" || action.kind === "chart")
-      && action.source.kind === "creation") {
-      requirePriorHandle(action.source.handle, ["actions", actionIndex, "source", "handle"]);
-    }
-    action.edits.forEach((edit, editIndex) => {
-      if (edit.type === "append_chart" && edit.chart.kind === "creation") {
-        requirePriorHandle(edit.chart.handle, ["actions", actionIndex, "edits", editIndex, "chart", "handle"]);
+export const AgentWorkspaceOperationPlanSchema = z
+  .object({
+    summary: z.string().min(1).max(160),
+    detail: z.string().min(1).max(500),
+    actions: z.array(AgentWorkspaceActionSchema).min(1).max(4),
+  })
+  .strict()
+  .superRefine((plan, context) => {
+    const handles = new Set<string>();
+    const requirePriorHandle = (handle: string, path: Array<string | number>) => {
+      if (!handles.has(handle)) {
+        context.addIssue({
+          code: "custom",
+          path,
+          message: `Creation handle must reference an earlier action: ${handle}`,
+        });
       }
-    });
-    if (action.type !== "create_artifact") return;
-    if (handles.has(action.handle)) {
-      context.addIssue({
-        code: "custom",
-        path: ["actions", actionIndex, "handle"],
-        message: `Creation handles must be unique: ${action.handle}`,
+    };
+    plan.actions.forEach((action, actionIndex) => {
+      if (
+        action.type === "create_artifact" &&
+        (action.kind === "query" || action.kind === "chart") &&
+        action.source.kind === "creation"
+      ) {
+        requirePriorHandle(action.source.handle, ["actions", actionIndex, "source", "handle"]);
+      }
+      action.edits.forEach((edit, editIndex) => {
+        if (edit.type === "append_chart" && edit.chart.kind === "creation") {
+          requirePriorHandle(edit.chart.handle, ["actions", actionIndex, "edits", editIndex, "chart", "handle"]);
+        }
       });
-    }
-    handles.add(action.handle);
+      if (action.type !== "create_artifact") return;
+      if (handles.has(action.handle)) {
+        context.addIssue({
+          code: "custom",
+          path: ["actions", actionIndex, "handle"],
+          message: `Creation handles must be unique: ${action.handle}`,
+        });
+      }
+      handles.add(action.handle);
+    });
   });
-});
 
 export const AgentCompiledPatchSchema = AgentPatchSchema.extend({
   operationCount: z.number().int().min(1).max(8),
@@ -253,30 +293,37 @@ export const AgentCompiledFilePatchSchema = AgentCompiledPatchSchema.extend({
   artifactId: z.string().min(1).max(120),
 });
 
-export const AgentCompiledArtifactCreationSchema = z.object({
-  artifact: z.object({
-    id: z.string().min(1).max(120),
-    name: z.string().min(1).max(240),
-    kind: z.enum(["document", "data", "query", "chart", "slides"]),
-    language: z.string().min(1).max(80),
-    source: z.string().min(1).max(120_000),
-  }).strict(),
-  summary: z.string().min(1).max(160),
-  detail: z.string().min(1).max(500),
-  operationCount: z.number().int().min(0).max(8),
-}).strict();
+export const AgentCompiledArtifactCreationSchema = z
+  .object({
+    artifact: z
+      .object({
+        id: z.string().min(1).max(120),
+        name: z.string().min(1).max(240),
+        kind: z.enum(["document", "data", "query", "chart", "slides"]),
+        language: z.string().min(1).max(80),
+        source: z.string().min(1).max(120_000),
+      })
+      .strict(),
+    summary: z.string().min(1).max(160),
+    detail: z.string().min(1).max(500),
+    operationCount: z.number().int().min(0).max(8),
+  })
+  .strict();
 
-export const AgentCompiledWorkspacePatchSchema = z.object({
-  summary: z.string().min(1).max(160),
-  detail: z.string().min(1).max(500),
-  patches: z.array(AgentCompiledFilePatchSchema).max(4),
-  creations: z.array(AgentCompiledArtifactCreationSchema).max(4),
-}).strict().superRefine((plan, context) => {
-  const actionCount = plan.patches.length + plan.creations.length;
-  if (actionCount < 1 || actionCount > 4) {
-    context.addIssue({ code: "custom", message: "A compiled workspace plan needs one to four actions." });
-  }
-});
+export const AgentCompiledWorkspacePatchSchema = z
+  .object({
+    summary: z.string().min(1).max(160),
+    detail: z.string().min(1).max(500),
+    patches: z.array(AgentCompiledFilePatchSchema).max(4),
+    creations: z.array(AgentCompiledArtifactCreationSchema).max(4),
+  })
+  .strict()
+  .superRefine((plan, context) => {
+    const actionCount = plan.patches.length + plan.creations.length;
+    if (actionCount < 1 || actionCount > 4) {
+      context.addIssue({ code: "custom", message: "A compiled workspace plan needs one to four actions." });
+    }
+  });
 
 const AgentArtifactSchema = z.object({
   id: z.string().min(1).max(120),
@@ -286,139 +333,165 @@ const AgentArtifactSchema = z.object({
   source: z.string().min(1).max(MAX_WORKSPACE_AGENT_ARTIFACT_CHARS),
 });
 
-export const AgentWorkspaceDependencySchema = z.object({
-  fromArtifactId: z.string().min(1).max(120),
-  toArtifactId: z.string().min(1).max(120),
-  kind: z.enum(WORKSPACE_DEPENDENCY_KINDS),
-  references: z.array(z.string().min(1).max(200)).max(16),
-}).strict();
+export const AgentWorkspaceDependencySchema = z
+  .object({
+    fromArtifactId: z.string().min(1).max(120),
+    toArtifactId: z.string().min(1).max(120),
+    kind: z.enum(WORKSPACE_DEPENDENCY_KINDS),
+    references: z.array(z.string().min(1).max(200)).max(16),
+  })
+  .strict();
 
-export const AgentSourceSelectionSchema = z.object({
-  start: z.number().int().min(0).max(100_000),
-  end: z.number().int().min(1).max(100_000),
-}).strict();
+export const AgentSourceSelectionSchema = z
+  .object({
+    start: z.number().int().min(0).max(100_000),
+    end: z.number().int().min(1).max(100_000),
+  })
+  .strict();
 
-export const AgentRequestSchema = z.object({
-  scope: z.enum(["selection", "artifact", "workspace"]).default("artifact"),
-  artifact: AgentArtifactSchema,
-  selection: AgentSourceSelectionSchema.optional(),
-  workspaceArtifacts: z.array(AgentArtifactSchema).min(2).max(MAX_WORKSPACE_AGENT_ARTIFACTS).optional(),
-  workspaceDependencies: z.array(AgentWorkspaceDependencySchema).max(32).optional(),
-  workspacePinnedArtifactIds: z.array(z.string().min(1).max(120)).max(MAX_WORKSPACE_AGENT_PINS).optional(),
-  queryEvidence: AgentQueryEvidenceListSchema.optional(),
-  runtimeRepair: AgentRuntimeRepairSchema.optional(),
-  prompt: z.string().trim().min(1).max(2_000),
-  metrics: z.record(z.string(), z.string().max(200)).default({}),
-}).superRefine((request, context) => {
-  if (request.scope !== "workspace"
-    && (request.workspaceDependencies !== undefined
-      || request.workspacePinnedArtifactIds !== undefined
-      || request.queryEvidence !== undefined)) {
-    context.addIssue({ code: "custom", message: "Workspace graph context is only accepted in workspace scope." });
-  }
-  if (request.scope !== "workspace") {
-    const proposed = request.runtimeRepair?.proposedArtifacts ?? [];
-    if (proposed.length !== (request.runtimeRepair ? 1 : 0)
-      || proposed.some((artifact) => artifact.isCreation
-        || artifact.artifactId !== request.artifact.id
-        || artifact.name !== request.artifact.name
-        || artifact.kind !== request.artifact.kind
-        || artifact.language !== request.artifact.language
-        || artifact.proposedSource === request.artifact.source)) {
-      context.addIssue({ code: "custom", message: "Runtime repair must describe one changed version of the selected artifact." });
+export const AgentRequestSchema = z
+  .object({
+    scope: z.enum(["selection", "artifact", "workspace"]).default("artifact"),
+    artifact: AgentArtifactSchema,
+    selection: AgentSourceSelectionSchema.optional(),
+    workspaceArtifacts: z.array(AgentArtifactSchema).min(2).max(MAX_WORKSPACE_AGENT_ARTIFACTS).optional(),
+    workspaceDependencies: z.array(AgentWorkspaceDependencySchema).max(32).optional(),
+    workspacePinnedArtifactIds: z.array(z.string().min(1).max(120)).max(MAX_WORKSPACE_AGENT_PINS).optional(),
+    queryEvidence: AgentQueryEvidenceListSchema.optional(),
+    runtimeRepair: AgentRuntimeRepairSchema.optional(),
+    prompt: z.string().trim().min(1).max(2_000),
+    metrics: z.record(z.string(), z.string().max(200)).default({}),
+  })
+  .superRefine((request, context) => {
+    if (
+      request.scope !== "workspace" &&
+      (request.workspaceDependencies !== undefined ||
+        request.workspacePinnedArtifactIds !== undefined ||
+        request.queryEvidence !== undefined)
+    ) {
+      context.addIssue({ code: "custom", message: "Workspace graph context is only accepted in workspace scope." });
     }
-    const proposedSource = proposed[0]?.proposedSource;
-    if (request.scope === "selection"
-      && request.runtimeRepair
-      && request.selection
-      && proposedSource
-      && !sourceOutsideSelectionIsUnchanged(request.artifact.source, proposedSource, request.selection)) {
-      context.addIssue({ code: "custom", message: "Runtime repair proposal crossed the selected source range." });
-    }
-  }
-  if (request.scope === "selection") {
-    if (!request.selection) {
-      context.addIssue({ code: "custom", message: "Selection scope requires exact source offsets." });
-      return;
-    }
-    const selectionError = sourceSelectionError(request.artifact.source, request.selection);
-    if (selectionError) context.addIssue({ code: "custom", message: selectionError });
-    return;
-  }
-  if (request.selection) {
-    context.addIssue({ code: "custom", message: "Source offsets are only accepted in selection scope." });
-  }
-  if (request.scope !== "workspace") return;
-  if (request.workspaceDependencies === undefined) {
-    context.addIssue({ code: "custom", message: "Workspace scope requires an explicit dependency context." });
-  }
-  if (request.workspacePinnedArtifactIds === undefined) {
-    context.addIssue({ code: "custom", message: "Workspace scope requires an explicit pin context." });
-  }
-  const workspace = request.workspaceArtifacts ?? [];
-  if (!workspace.some((artifact) => artifact.id === request.artifact.id)) {
-    context.addIssue({ code: "custom", message: "The selected artifact must be part of the workspace." });
-  }
-  if (new Set(workspace.map((artifact) => artifact.id)).size !== workspace.length) {
-    context.addIssue({ code: "custom", message: "Workspace artifact ids must be unique." });
-  }
-  if (workspace.reduce((total, artifact) => total + artifact.source.length, 0)
-    > MAX_WORKSPACE_AGENT_CONTEXT_CHARS) {
-    context.addIssue({ code: "custom", message: "The workspace source context is too large." });
-  }
-  const workspaceIds = new Set(workspace.map((artifact) => artifact.id));
-  const pinnedIds = request.workspacePinnedArtifactIds ?? [];
-  if (new Set(pinnedIds).size !== pinnedIds.length) {
-    context.addIssue({ code: "custom", message: "Workspace context pins must be unique." });
-  }
-  if (pinnedIds.some((artifactId) => !workspaceIds.has(artifactId))) {
-    context.addIssue({ code: "custom", message: "Workspace context pins must belong to the supplied context." });
-  }
-  const dependencyKeys = new Set<string>();
-  (request.workspaceDependencies ?? []).forEach((dependency) => {
-    if (!workspaceIds.has(dependency.fromArtifactId) || !workspaceIds.has(dependency.toArtifactId)) {
-      context.addIssue({ code: "custom", message: "Workspace dependency endpoints must belong to the supplied context." });
-    }
-    const key = `${dependency.fromArtifactId}\u0000${dependency.toArtifactId}\u0000${dependency.kind}`;
-    if (dependencyKeys.has(key)) {
-      context.addIssue({ code: "custom", message: "Workspace dependencies must be unique." });
-    }
-    dependencyKeys.add(key);
-  });
-
-  const proposed = request.runtimeRepair?.proposedArtifacts ?? [];
-  const proposedNames = new Set<string>();
-  const workspaceNames = new Set(workspace.map((artifact) => (
-    artifact.name.normalize("NFKC").toLocaleLowerCase("en-US")
-  )));
-  proposed.forEach((artifact) => {
-    const current = workspace.find((item) => item.id === artifact.artifactId);
-    const normalizedName = artifact.name.normalize("NFKC").toLocaleLowerCase("en-US");
-    if (proposedNames.has(normalizedName)) {
-      context.addIssue({ code: "custom", message: "Runtime repair artifact names must be unique." });
-    }
-    proposedNames.add(normalizedName);
-    if (artifact.isCreation) {
-      if (current
-        || workspaceNames.has(normalizedName)
-        || !["document", "data", "query", "chart", "slides"].includes(artifact.kind)) {
-        context.addIssue({ code: "custom", message: "Runtime repair creation identity is invalid." });
+    if (request.scope !== "workspace") {
+      const proposed = request.runtimeRepair?.proposedArtifacts ?? [];
+      if (
+        proposed.length !== (request.runtimeRepair ? 1 : 0) ||
+        proposed.some(
+          (artifact) =>
+            artifact.isCreation ||
+            artifact.artifactId !== request.artifact.id ||
+            artifact.name !== request.artifact.name ||
+            artifact.kind !== request.artifact.kind ||
+            artifact.language !== request.artifact.language ||
+            artifact.proposedSource === request.artifact.source,
+        )
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Runtime repair must describe one changed version of the selected artifact.",
+        });
       }
+      const proposedSource = proposed[0]?.proposedSource;
+      if (
+        request.scope === "selection" &&
+        request.runtimeRepair &&
+        request.selection &&
+        proposedSource &&
+        !sourceOutsideSelectionIsUnchanged(request.artifact.source, proposedSource, request.selection)
+      ) {
+        context.addIssue({ code: "custom", message: "Runtime repair proposal crossed the selected source range." });
+      }
+    }
+    if (request.scope === "selection") {
+      if (!request.selection) {
+        context.addIssue({ code: "custom", message: "Selection scope requires exact source offsets." });
+        return;
+      }
+      const selectionError = sourceSelectionError(request.artifact.source, request.selection);
+      if (selectionError) context.addIssue({ code: "custom", message: selectionError });
       return;
     }
-    if (!current
-      || artifact.name !== current.name
-      || artifact.kind !== current.kind
-      || artifact.language !== current.language
-      || artifact.proposedSource === current.source) {
-      context.addIssue({ code: "custom", message: "Runtime repair source identity is stale or invalid." });
+    if (request.selection) {
+      context.addIssue({ code: "custom", message: "Source offsets are only accepted in selection scope." });
+    }
+    if (request.scope !== "workspace") return;
+    if (request.workspaceDependencies === undefined) {
+      context.addIssue({ code: "custom", message: "Workspace scope requires an explicit dependency context." });
+    }
+    if (request.workspacePinnedArtifactIds === undefined) {
+      context.addIssue({ code: "custom", message: "Workspace scope requires an explicit pin context." });
+    }
+    const workspace = request.workspaceArtifacts ?? [];
+    if (!workspace.some((artifact) => artifact.id === request.artifact.id)) {
+      context.addIssue({ code: "custom", message: "The selected artifact must be part of the workspace." });
+    }
+    if (new Set(workspace.map((artifact) => artifact.id)).size !== workspace.length) {
+      context.addIssue({ code: "custom", message: "Workspace artifact ids must be unique." });
+    }
+    if (workspace.reduce((total, artifact) => total + artifact.source.length, 0) > MAX_WORKSPACE_AGENT_CONTEXT_CHARS) {
+      context.addIssue({ code: "custom", message: "The workspace source context is too large." });
+    }
+    const workspaceIds = new Set(workspace.map((artifact) => artifact.id));
+    const pinnedIds = request.workspacePinnedArtifactIds ?? [];
+    if (new Set(pinnedIds).size !== pinnedIds.length) {
+      context.addIssue({ code: "custom", message: "Workspace context pins must be unique." });
+    }
+    if (pinnedIds.some((artifactId) => !workspaceIds.has(artifactId))) {
+      context.addIssue({ code: "custom", message: "Workspace context pins must belong to the supplied context." });
+    }
+    const dependencyKeys = new Set<string>();
+    (request.workspaceDependencies ?? []).forEach((dependency) => {
+      if (!workspaceIds.has(dependency.fromArtifactId) || !workspaceIds.has(dependency.toArtifactId)) {
+        context.addIssue({
+          code: "custom",
+          message: "Workspace dependency endpoints must belong to the supplied context.",
+        });
+      }
+      const key = `${dependency.fromArtifactId}\u0000${dependency.toArtifactId}\u0000${dependency.kind}`;
+      if (dependencyKeys.has(key)) {
+        context.addIssue({ code: "custom", message: "Workspace dependencies must be unique." });
+      }
+      dependencyKeys.add(key);
+    });
+
+    const proposed = request.runtimeRepair?.proposedArtifacts ?? [];
+    const proposedNames = new Set<string>();
+    const workspaceNames = new Set(
+      workspace.map((artifact) => artifact.name.normalize("NFKC").toLocaleLowerCase("en-US")),
+    );
+    proposed.forEach((artifact) => {
+      const current = workspace.find((item) => item.id === artifact.artifactId);
+      const normalizedName = artifact.name.normalize("NFKC").toLocaleLowerCase("en-US");
+      if (proposedNames.has(normalizedName)) {
+        context.addIssue({ code: "custom", message: "Runtime repair artifact names must be unique." });
+      }
+      proposedNames.add(normalizedName);
+      if (artifact.isCreation) {
+        if (
+          current ||
+          workspaceNames.has(normalizedName) ||
+          !["document", "data", "query", "chart", "slides"].includes(artifact.kind)
+        ) {
+          context.addIssue({ code: "custom", message: "Runtime repair creation identity is invalid." });
+        }
+        return;
+      }
+      if (
+        !current ||
+        artifact.name !== current.name ||
+        artifact.kind !== current.kind ||
+        artifact.language !== current.language ||
+        artifact.proposedSource === current.source
+      ) {
+        context.addIssue({ code: "custom", message: "Runtime repair source identity is stale or invalid." });
+      }
+    });
+    if (
+      proposed.reduce((total, artifact) => total + artifact.proposedSource.length, 0) >
+      MAX_WORKSPACE_AGENT_CONTEXT_CHARS
+    ) {
+      context.addIssue({ code: "custom", message: "The runtime repair source context is too large." });
     }
   });
-  if (proposed.reduce((total, artifact) => total + artifact.proposedSource.length, 0)
-    > MAX_WORKSPACE_AGENT_CONTEXT_CHARS) {
-    context.addIssue({ code: "custom", message: "The runtime repair source context is too large." });
-  }
-});
 
 export type AgentPatch = z.infer<typeof AgentPatchSchema>;
 export type AgentWorkspacePatch = z.infer<typeof AgentWorkspacePatchSchema>;
@@ -433,14 +506,19 @@ export type AgentCompiledWorkspacePatch = z.infer<typeof AgentCompiledWorkspaceP
 export type AgentRequest = z.infer<typeof AgentRequestSchema>;
 
 const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
-  document: "The resulting source must be valid GitHub-Flavored Markdown. Prefer replace_markdown_section or insert_markdown_section_after for section work; use append_chart in Workspace scope to add a live existing or earlier-created Chart; use replace_text only for a precise inline edit. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding. A Query metric names an exact existing Query id, explicit output column, currency/number/percent format, and optionally one quoted result-row index from zero to four hundred ninety-nine; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
+  document:
+    "The resulting source must be valid GitHub-Flavored Markdown. Prefer replace_markdown_section or insert_markdown_section_after for section work; use append_chart in Workspace scope to add a live existing or earlier-created Chart; use replace_text only for a precise inline edit. Preserve useful headings, tables, task lists, and every {{ metric(...) }} token unless the user explicitly asks to change a binding. A Query metric names an exact existing Query id, explicit output column, currency/number/percent format, and optionally one quoted result-row index from zero to four hundred ninety-nine; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
   data: "The resulting source must remain valid CSV or flat object JSON in the input format. Prefer upsert_data_row for one keyed record, upsert_data_column for a keyed column, or rename_data_column for one exact header; use replace_text only for a precise structural edit these operations cannot express. A column upsert needs an existing globally unique non-empty key column, cannot target that key, and cannot insert rows. When adding a new column, provide exactly one typed value for every current row; when updating an existing column, provide only changed keyed values. A rename must name one exact existing column and a new non-colliding single-line name. Preserve types, never invent hidden rows, and derive values deterministically from visible source values.",
-  query: "Use only replace_text. The resulting source must be one read-only DuckDB SELECT or WITH query. Read the bound Data artifact through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid. Preserve an existing first-line -- rune:data \"artifact-id\" directive exactly. In Workspace scope, add or change that directive only to an exact existing Data artifact id from visible context; never invent an id.",
-  chart: "Use only replace_text. The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing Data or Query artifact id and exact source/output column names; give every derived Query field an explicit AS alias. Keep mark as bar or line: use bar for categorical comparison and line only when source or explicit sorting provides a meaningful sequence. Keep color as a six-digit hex value and maxItems between 1 and 20.",
-  slides: "For legacy semantic HTML use only replace_text. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding. A Query metric names an exact existing Query id, explicit output column, currency/number/percent format, and optionally one quoted result-row index from zero to four hundred ninety-nine; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
+  query:
+    'Use only replace_text. The resulting source must be one read-only DuckDB SELECT or WITH query. Read the bound Data artifact through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid. Preserve an existing first-line -- rune:data "artifact-id" directive exactly. In Workspace scope, add or change that directive only to an exact existing Data artifact id from visible context; never invent an id.',
+  chart:
+    "Use only replace_text. The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing Data or Query artifact id and exact source/output column names; give every derived Query field an explicit AS alias. Keep mark as bar or line: use bar for categorical comparison and line only when source or explicit sorting provides a meaningful sequence. Keep color as a six-digit hex value and maxItems between 1 and 20.",
+  slides:
+    "For legacy semantic HTML use only replace_text. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding. A Query metric names an exact existing Query id, explicit output column, currency/number/percent format, and optionally one quoted result-row index from zero to four hundred ninety-nine; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
 };
 
-const deckMarkdownRule = "The resulting source must remain complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter. Prefer replace_deck_slide or insert_deck_slide_after for slide work; use append_chart in Workspace scope to add a compiled split slide for a live existing or earlier-created Chart; use replace_text only for frontmatter or a precise inline edit. A slide operation's slide field contains one complete slide without a --- separator. Keep only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never introduce raw HTML or manual slide numbers.";
+const deckMarkdownRule =
+  "The resulting source must remain complete Deck Markdown with strict version: 1, title, theme, ratio, and lang frontmatter. Prefer replace_deck_slide or insert_deck_slide_after for slide work; use append_chart in Workspace scope to add a compiled split slide for a live existing or earlier-created Chart; use replace_text only for frontmatter or a precise inline edit. A slide operation's slide field contains one complete slide without a --- separator. Keep only supported layout/eyebrow comments, headings, paragraphs, lists, tables, and metric/chart bindings. Never introduce raw HTML or manual slide numbers.";
 
 function ruleForArtifact(artifact: AgentRequest["artifact"]) {
   return artifact.kind === "slides" && artifact.language === "Deck Markdown"
@@ -491,12 +569,13 @@ export function buildAgentInstructions(request: AgentRequest) {
 }
 
 export function buildAgentInput(request: AgentRequest) {
-  const selection = request.scope === "selection" && request.selection
-    ? {
-        ...request.selection,
-        selectedSource: request.artifact.source.slice(request.selection.start, request.selection.end),
-      }
-    : undefined;
+  const selection =
+    request.scope === "selection" && request.selection
+      ? {
+          ...request.selection,
+          selectedSource: request.artifact.source.slice(request.selection.start, request.selection.end),
+        }
+      : undefined;
   return JSON.stringify({
     instruction: request.prompt,
     selectedArtifactId: request.artifact.id,

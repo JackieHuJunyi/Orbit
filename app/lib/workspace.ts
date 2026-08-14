@@ -255,12 +255,15 @@ export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[]
     value.forEach((entry) => {
       if (!entry || typeof entry !== "object") return;
       const candidate = entry as Partial<WorkspaceArtifact>;
-      if (typeof candidate.id !== "string"
-        || typeof candidate.name !== "string"
-        || typeof candidate.language !== "string"
-        || typeof candidate.source !== "string"
-        || !["document", "data", "query", "chart", "slides"].includes(candidate.kind ?? "")
-        || seen.has(candidate.id)) return;
+      if (
+        typeof candidate.id !== "string" ||
+        typeof candidate.name !== "string" ||
+        typeof candidate.language !== "string" ||
+        typeof candidate.source !== "string" ||
+        !["document", "data", "query", "chart", "slides"].includes(candidate.kind ?? "") ||
+        seen.has(candidate.id)
+      )
+        return;
       seen.add(candidate.id);
       restored.push(candidate as WorkspaceArtifact);
     });
@@ -269,8 +272,10 @@ export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[]
   let skippedDefaultQueryChart = false;
   cloneDefaultArtifacts().forEach((artifact) => {
     if (seen.has(artifact.id)) return;
-    if (artifact.id === "regional-margin-chart"
-      && validateChartSourceBinding(artifact, [...restored, artifact], parseDataSource).length) {
+    if (
+      artifact.id === "regional-margin-chart" &&
+      validateChartSourceBinding(artifact, [...restored, artifact], parseDataSource).length
+    ) {
       skippedDefaultQueryChart = true;
       return;
     }
@@ -278,7 +283,7 @@ export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[]
     seen.add(artifact.id);
   });
   if (!skippedDefaultQueryChart) return restored;
-  return restored.map((artifact) => (
+  return restored.map((artifact) =>
     preservedIds.has(artifact.id)
       ? artifact
       : {
@@ -287,8 +292,8 @@ export function normalizeWorkspaceArtifacts(value: unknown): WorkspaceArtifact[]
             '{{ chart("regional-margin-chart") }}',
             "Query-backed margin view becomes available when the preserved SQL exposes Region and margin_pct.",
           ),
-        }
-  ));
+        },
+  );
 }
 
 function normalizeJsonRows(value: unknown): Array<Record<string, DataCell>> {
@@ -405,7 +410,7 @@ export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
       description: "A readable query bound to one exact Data source.",
     },
     quickCommands: ["计算利润率并排序", "汇总季度收入"],
-    detectLanguage: (name) => name.toLowerCase().endsWith(".sql") ? "DuckDB SQL" : null,
+    detectLanguage: (name) => (name.toLowerCase().endsWith(".sql") ? "DuckDB SQL" : null),
     starterSource(request) {
       if (!request.sourceArtifactId) throw new Error("A Query starter needs one exact Data source.");
       return `${formatQueryDataSourceDirective(request.sourceArtifactId)}\nSELECT *\nFROM workspace_data;\n`;
@@ -425,24 +430,28 @@ export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
       description: "A reusable visual bound to Data or Query output.",
     },
     quickCommands: ["保持数据源顺序", "改成紫色强调"],
-    detectLanguage: (name) => name.toLowerCase().endsWith(".chart.json") ? "Chart JSON" : null,
+    detectLanguage: (name) => (name.toLowerCase().endsWith(".chart.json") ? "Chart JSON" : null),
     starterSource(request) {
       if (!request.sourceArtifactId || !request.chart) {
         throw new Error("A Chart starter needs one exact source and field mapping.");
       }
-      return `${JSON.stringify({
-        version: 1,
-        title: request.title,
-        description: "",
-        source: request.sourceArtifactId,
-        mark: request.chart.mark,
-        category: request.chart.category,
-        value: request.chart.value,
-        sort: request.chart.mark === "line" ? "source" : "descending",
-        format: request.chart.format,
-        color: "#ff5c35",
-        maxItems: 8,
-      }, null, 2)}\n`;
+      return `${JSON.stringify(
+        {
+          version: 1,
+          title: request.title,
+          description: "",
+          source: request.sourceArtifactId,
+          mark: request.chart.mark,
+          category: request.chart.category,
+          value: request.chart.value,
+          sort: request.chart.mark === "line" ? "source" : "descending",
+          format: request.chart.format,
+          color: "#ff5c35",
+          maxItems: 8,
+        },
+        null,
+        2,
+      )}\n`;
     },
     validate: (artifact) => parseChartSource(artifact.source).errors,
     stats(artifact) {
@@ -488,15 +497,15 @@ lang: en
     stats(artifact) {
       const slides = isDeckMarkdownArtifact(artifact)
         ? compileDeckSource(artifact.source).slideCount
-        : artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
+        : (artifact.source.match(/<section[\s>]/gi)?.length ?? 0);
       return `${slides} slides · ${formatInteger(artifact.source.length)} chars`;
     },
   },
 ]);
 
-export const quickCommands = Object.freeze(Object.fromEntries(
-  artifactAdapterRegistry.all().map((adapter) => [adapter.kind, adapter.quickCommands]),
-)) as Readonly<Record<ArtifactKind, readonly string[]>>;
+export const quickCommands = Object.freeze(
+  Object.fromEntries(artifactAdapterRegistry.all().map((adapter) => [adapter.kind, adapter.quickCommands])),
+) as Readonly<Record<ArtifactKind, readonly string[]>>;
 
 export function validateArtifact(artifact: WorkspaceArtifact): string[] {
   if (!artifact.source.trim()) return ["The source is empty."];
@@ -639,7 +648,9 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
         `$1${totalLabel}$2`,
       ),
       summary: hasConclusion ? "Refresh the decision-led conclusion slide" : "Add a decision-led conclusion slide",
-      detail: hasConclusion ? "The existing conclusion section is replaced in place." : "A semantic section is inserted before the deck closes.",
+      detail: hasConclusion
+        ? "The existing conclusion section is replaced in place."
+        : "A semantic section is inserted before the deck closes.",
     };
   }
 
@@ -735,10 +746,12 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
     if (plan.nextSource !== slides.source) patches.push({ artifactId: slides.id, ...plan });
   }
 
-  if (patches.length < 2) throw new Error("Rune needs at least a report and presentation to coordinate this workspace action.");
+  if (patches.length < 2)
+    throw new Error("Rune needs at least a report and presentation to coordinate this workspace action.");
   return {
     summary: `Synchronize the quarterly narrative across ${patches.length} artifacts`,
-    detail: "Each canonical source changes independently, then the complete workspace is validated and applied as one transaction.",
+    detail:
+      "Each canonical source changes independently, then the complete workspace is validated and applied as one transaction.",
     patches,
   };
 }

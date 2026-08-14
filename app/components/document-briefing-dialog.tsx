@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Check,
-  FileText,
-  LoaderCircle,
-  Presentation,
-  ShieldCheck,
-} from "lucide-react";
+import { Check, FileText, LoaderCircle, Presentation, ShieldCheck } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import {
   MAX_DOCUMENT_BRIEFING_FOCUS_CHARS,
@@ -36,7 +30,8 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
   "zh-CN": {
     kicker: "文档到演示 · 来源相连",
     title: "创建或刷新一份轻盈的演示",
-    description: "选择已审核的文档、受众和重点。Rune 可以创建新演示，也可以刷新一份已关联的演示，同时保留原文件身份与来源关系。",
+    description:
+      "选择已审核的文档、受众和重点。Rune 可以创建新演示，也可以刷新一份已关联的演示，同时保留原文件身份与来源关系。",
     details: "文档演示任务设置",
     presentationTitle: "演示标题",
     titlePlaceholder: "例如：产品发布简报",
@@ -83,7 +78,8 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
   en: {
     kicker: "Document to presentation · source linked",
     title: "Create or refresh a light presentation",
-    description: "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.",
+    description:
+      "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.",
     details: "Document-presentation task settings",
     presentationTitle: "Presentation title",
     titlePlaceholder: "For example: Product launch briefing",
@@ -124,7 +120,8 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     modelPrepared: "Model-assisted source-linked presentation prepared; nothing writes until review",
     localPrepared: "Deterministic local presentation prepared; nothing writes until review",
     localFallback: "Model unavailable; deterministic local presentation prepared for review",
-    sourceTooLargeFallback: "Document exceeds the model context safety limit; deterministic local presentation prepared for review",
+    sourceTooLargeFallback:
+      "Document exceeds the model context safety limit; deterministic local presentation prepared for review",
     localErrors: "Check these settings first:",
   },
 } as const;
@@ -133,10 +130,7 @@ export function documentBriefingCopy(locale: RuneLocale) {
   return localizeRuneCopy(locale, DOCUMENT_BRIEFING_BASE_COPY.en, DOCUMENT_BRIEFING_BASE_COPY["zh-CN"]);
 }
 
-function freshnessLabel(
-  copy: ReturnType<typeof documentBriefingCopy>,
-  freshness: "current" | "changed" | "unknown",
-) {
+function freshnessLabel(copy: ReturnType<typeof documentBriefingCopy>, freshness: "current" | "changed" | "unknown") {
   return freshness === "changed" ? copy.changed : freshness === "current" ? copy.current : copy.unknown;
 }
 
@@ -153,35 +147,36 @@ export function DocumentBriefingDialog({
   const copy = documentBriefingCopy(locale);
   const sourceOptions = useMemo(() => artifacts.filter((artifact) => artifact.kind === "document"), [artifacts]);
   const initialSourceArtifactId = preferredDocumentArtifactId ?? sourceOptions[0]?.id ?? "";
-  const initialTarget = documentBriefingTargets(artifacts, initialSourceArtifactId)
-    .find((target) => target.artifactId === preferredPresentationArtifactId);
+  const initialTarget = documentBriefingTargets(artifacts, initialSourceArtifactId).find(
+    (target) => target.artifactId === preferredPresentationArtifactId,
+  );
   const [sourceArtifactId, setSourceArtifactId] = useState(initialSourceArtifactId);
   const [targetArtifactId, setTargetArtifactId] = useState(initialTarget?.artifactId ?? "");
   const [title, setTitle] = useState(initialTarget?.title ?? "");
   const [audience, setAudience] = useState<DocumentBriefingInput["audience"]>(initialTarget?.audience ?? "leadership");
   const [slideCount, setSlideCount] = useState<DocumentBriefingSlideCount>(
     initialTarget && [4, 6, 8].includes(initialTarget.slideCount)
-      ? initialTarget.slideCount as DocumentBriefingSlideCount
+      ? (initialTarget.slideCount as DocumentBriefingSlideCount)
       : 6,
   );
   const [focus, setFocus] = useState(initialTarget?.purpose ?? "");
   const [attempted, setAttempted] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const source = sourceOptions.find((artifact) => artifact.id === sourceArtifactId) ?? sourceOptions[0];
-  const targetOptions = useMemo(
-    () => documentBriefingTargets(artifacts, source?.id ?? ""),
-    [artifacts, source?.id],
-  );
+  const targetOptions = useMemo(() => documentBriefingTargets(artifacts, source?.id ?? ""), [artifacts, source?.id]);
   const target = targetOptions.find((option) => option.artifactId === targetArtifactId);
-  const input = useMemo<DocumentBriefingInput>(() => ({
-    sourceArtifactId: source?.id ?? "",
-    ...(target ? { targetArtifactId: target.artifactId } : {}),
-    title,
-    audience,
-    focus,
-    slideCount,
-    locale: target?.locale ?? locale,
-  }), [audience, focus, locale, slideCount, source?.id, target, title]);
+  const input = useMemo<DocumentBriefingInput>(
+    () => ({
+      sourceArtifactId: source?.id ?? "",
+      ...(target ? { targetArtifactId: target.artifactId } : {}),
+      title,
+      audience,
+      focus,
+      slideCount,
+      locale: target?.locale ?? locale,
+    }),
+    [audience, focus, locale, slideCount, source?.id, target, title],
+  );
   const prepared = useMemo(() => prepareDocumentBriefingWorkflow(artifacts, input), [artifacts, input]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -196,31 +191,51 @@ export function DocumentBriefingDialog({
     }
   }
 
-  const cancel = () => { if (!preparing) onCancel(); };
+  const cancel = () => {
+    if (!preparing) onCancel();
+  };
 
   return (
     <ReviewDialog
       dialogId="document-briefing"
-      kicker={<><Presentation aria-hidden="true" /> {copy.kicker}</>}
+      kicker={
+        <>
+          <Presentation aria-hidden="true" /> {copy.kicker}
+        </>
+      }
       title={copy.title}
       description={copy.description}
       detailsLabel={copy.details}
       locale={locale}
       onCancel={cancel}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}
+          </div>
           <span>
-            <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>{copy.cancel}</button>
-            <button className="button primary-button" type="submit" form="document-briefing-form" disabled={preparing || !sourceOptions.length}>
+            <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>
+              {copy.cancel}
+            </button>
+            <button
+              className="button primary-button"
+              type="submit"
+              form="document-briefing-form"
+              disabled={preparing || !sourceOptions.length}
+            >
               {preparing ? <LoaderCircle className="agent-spinner" aria-hidden="true" /> : <Check aria-hidden="true" />}
               {preparing ? copy.preparing : copy.prepare}
             </button>
           </span>
         </>
-      )}
+      }
     >
-      <form id="document-briefing-form" className="operating-review-form" noValidate onSubmit={(event) => void submit(event)}>
+      <form
+        id="document-briefing-form"
+        className="operating-review-form"
+        noValidate
+        onSubmit={(event) => void submit(event)}
+      >
         <div className="operating-review-grid">
           <label className="operating-review-field wide" htmlFor="document-briefing-title">
             <span>{copy.presentationTitle}</span>
@@ -238,48 +253,70 @@ export function DocumentBriefingDialog({
 
           <label className="operating-review-field wide" htmlFor="document-briefing-source">
             <span>{copy.source}</span>
-            <select id="document-briefing-source" value={source?.id ?? ""} onChange={(event) => {
-              setSourceArtifactId(event.target.value);
-              setTargetArtifactId("");
-              if (target) {
-                setTitle("");
-                setAudience("leadership");
-                setSlideCount(6);
-                setFocus("");
-              }
-            }} disabled={!sourceOptions.length} required>
+            <select
+              id="document-briefing-source"
+              value={source?.id ?? ""}
+              onChange={(event) => {
+                setSourceArtifactId(event.target.value);
+                setTargetArtifactId("");
+                if (target) {
+                  setTitle("");
+                  setAudience("leadership");
+                  setSlideCount(6);
+                  setFocus("");
+                }
+              }}
+              disabled={!sourceOptions.length}
+              required
+            >
               {!sourceOptions.length && <option value="">{copy.noSource}</option>}
-              {sourceOptions.map((artifact) => <option key={artifact.id} value={artifact.id}>{artifact.name} · Document</option>)}
+              {sourceOptions.map((artifact) => (
+                <option key={artifact.id} value={artifact.id}>
+                  {artifact.name} · Document
+                </option>
+              ))}
             </select>
           </label>
 
           <label className="operating-review-field wide" htmlFor="document-briefing-target">
             <span>{copy.destination}</span>
-            <select id="document-briefing-target" value={target?.artifactId ?? ""} onChange={(event) => {
-              const nextTarget = targetOptions.find((option) => option.artifactId === event.target.value);
-              setTargetArtifactId(nextTarget?.artifactId ?? "");
-              if (nextTarget) {
-                setTitle(nextTarget.title);
-                setAudience(nextTarget.audience ?? "leadership");
-                setFocus(nextTarget.purpose ?? "");
-                if ([4, 6, 8].includes(nextTarget.slideCount)) {
-                  setSlideCount(nextTarget.slideCount as DocumentBriefingSlideCount);
+            <select
+              id="document-briefing-target"
+              value={target?.artifactId ?? ""}
+              onChange={(event) => {
+                const nextTarget = targetOptions.find((option) => option.artifactId === event.target.value);
+                setTargetArtifactId(nextTarget?.artifactId ?? "");
+                if (nextTarget) {
+                  setTitle(nextTarget.title);
+                  setAudience(nextTarget.audience ?? "leadership");
+                  setFocus(nextTarget.purpose ?? "");
+                  if ([4, 6, 8].includes(nextTarget.slideCount)) {
+                    setSlideCount(nextTarget.slideCount as DocumentBriefingSlideCount);
+                  }
+                } else {
+                  setTitle("");
+                  setAudience("leadership");
+                  setSlideCount(6);
+                  setFocus("");
                 }
-              } else {
-                setTitle("");
-                setAudience("leadership");
-                setSlideCount(6);
-                setFocus("");
-              }
-            }}>
+              }}
+            >
               <option value="">{copy.newPresentation}</option>
-              {targetOptions.map((option) => <option key={option.artifactId} value={option.artifactId}>{copy.refreshPresentation} · {option.name} · {freshnessLabel(copy, option.freshness)}</option>)}
+              {targetOptions.map((option) => (
+                <option key={option.artifactId} value={option.artifactId}>
+                  {copy.refreshPresentation} · {option.name} · {freshnessLabel(copy, option.freshness)}
+                </option>
+              ))}
             </select>
           </label>
 
           <label className="operating-review-field" htmlFor="document-briefing-audience">
             <span>{copy.audience}</span>
-            <select id="document-briefing-audience" value={audience} onChange={(event) => setAudience(event.target.value as DocumentBriefingInput["audience"])}>
+            <select
+              id="document-briefing-audience"
+              value={audience}
+              onChange={(event) => setAudience(event.target.value as DocumentBriefingInput["audience"])}
+            >
               <option value="leadership">{copy.leadership}</option>
               <option value="team">{copy.team}</option>
               <option value="customer">{copy.customer}</option>
@@ -291,8 +328,16 @@ export function DocumentBriefingDialog({
             <div className="operating-review-options">
               {([4, 6, 8] as const).map((count) => (
                 <label key={count}>
-                  <input type="radio" name="document-briefing-slide-count" value={count} checked={slideCount === count} onChange={() => setSlideCount(count)} />
-                  <span>{count} {copy.slides}</span>
+                  <input
+                    type="radio"
+                    name="document-briefing-slide-count"
+                    value={count}
+                    checked={slideCount === count}
+                    onChange={() => setSlideCount(count)}
+                  />
+                  <span>
+                    {count} {copy.slides}
+                  </span>
                 </label>
               ))}
             </div>
@@ -313,27 +358,68 @@ export function DocumentBriefingDialog({
           </label>
         </div>
 
-        <section className="operating-review-summary" aria-labelledby="document-briefing-summary-title" aria-live="polite">
+        <section
+          className="operating-review-summary"
+          aria-labelledby="document-briefing-summary-title"
+          aria-live="polite"
+        >
           <header>
             <FileText aria-hidden="true" />
-            <div><span>{copy.summary}</span><strong id="document-briefing-summary-title">{title.trim() || copy.titlePlaceholder}</strong></div>
+            <div>
+              <span>{copy.summary}</span>
+              <strong id="document-briefing-summary-title">{title.trim() || copy.titlePlaceholder}</strong>
+            </div>
           </header>
-          <p>{source ? `${source.name} → ${slideCount} ${copy.slides} → ${target?.name ?? copy.newOutputValue}` : copy.noSource}</p>
+          <p>
+            {source
+              ? `${source.name} → ${slideCount} ${copy.slides} → ${target?.name ?? copy.newOutputValue}`
+              : copy.noSource}
+          </p>
           <dl>
-            <div><dt>{copy.sourceIdentity}</dt><dd>{source?.id ?? "—"}</dd></div>
-            <div><dt>{copy.audience}</dt><dd>{audience === "customer" ? copy.customer : audience === "team" ? copy.team : copy.leadership}</dd></div>
-            <div><dt>{copy.freshness}</dt><dd><span className={`briefing-freshness ${target?.freshness ?? "new"}`}>{target ? freshnessLabel(copy, target.freshness) : copy.newBaseline}</span></dd></div>
-            <div><dt>{copy.output}</dt><dd>{target ? copy.refreshOutputValue : copy.newOutputValue}</dd></div>
-            <div><dt>{copy.planner}</dt><dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd></div>
-            <div><dt>{copy.export}</dt><dd>{copy.exportValue}</dd></div>
+            <div>
+              <dt>{copy.sourceIdentity}</dt>
+              <dd>{source?.id ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>{copy.audience}</dt>
+              <dd>{audience === "customer" ? copy.customer : audience === "team" ? copy.team : copy.leadership}</dd>
+            </div>
+            <div>
+              <dt>{copy.freshness}</dt>
+              <dd>
+                <span className={`briefing-freshness ${target?.freshness ?? "new"}`}>
+                  {target ? freshnessLabel(copy, target.freshness) : copy.newBaseline}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>{copy.output}</dt>
+              <dd>{target ? copy.refreshOutputValue : copy.newOutputValue}</dd>
+            </div>
+            <div>
+              <dt>{copy.planner}</dt>
+              <dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd>
+            </div>
+            <div>
+              <dt>{copy.export}</dt>
+              <dd>{copy.exportValue}</dd>
+            </div>
           </dl>
         </section>
 
-        {error && <div className="import-review-error" role="alert">{error}</div>}
+        {error && (
+          <div className="import-review-error" role="alert">
+            {error}
+          </div>
+        )}
         {attempted && prepared.errors.length > 0 && (
           <div className="import-review-error" role="alert">
             <strong>{copy.localErrors}</strong>
-            <ul>{prepared.errors.map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul>
+              {prepared.errors.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
         )}
       </form>

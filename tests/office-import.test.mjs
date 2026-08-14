@@ -17,7 +17,9 @@ function officePackage(parts) {
 
 function docxFixture({ unsafe = false } = {}) {
   return officePackage({
-    "word/document.xml": unsafe ? `<!DOCTYPE x><w:document xmlns:w="w"><w:body /></w:document>` : `
+    "word/document.xml": unsafe
+      ? `<!DOCTYPE x><w:document xmlns:w="w"><w:body /></w:document>`
+      : `
       <w:document xmlns:w="word" xmlns:r="relationships">
         <w:body>
           <w:p><w:pPr><w:pStyle w:val="Heading1" /></w:pPr><w:r><w:t>Imported report</w:t></w:r></w:p>
@@ -102,10 +104,14 @@ function slideXml(title, body, { image = false, table = false } = {}) {
           <p:nvSpPr><p:nvPr><p:ph type="body" /></p:nvPr></p:nvSpPr>
           <p:txBody>${body.map((line) => `<a:p><a:pPr><a:buChar char="•" /></a:pPr><a:r><a:t>${line}</a:t></a:r></a:p>`).join("")}</p:txBody>
         </p:sp>
-        ${table ? `<p:graphicFrame><a:graphic><a:graphicData><a:tbl>
+        ${
+          table
+            ? `<p:graphicFrame><a:graphic><a:graphicData><a:tbl>
           <a:tr><a:tc><a:txBody><a:p><a:r><a:t>Owner</a:t></a:r></a:p></a:txBody></a:tc><a:tc><a:txBody><a:p><a:r><a:t>Decision</a:t></a:r></a:p></a:txBody></a:tc></a:tr>
           <a:tr><a:tc><a:txBody><a:p><a:r><a:t>Growth</a:t></a:r></a:p></a:txBody></a:tc><a:tc><a:txBody><a:p><a:r><a:t>Scale</a:t></a:r></a:p></a:txBody></a:tc></a:tr>
-        </a:tbl></a:graphicData></a:graphic></p:graphicFrame>` : ""}
+        </a:tbl></a:graphicData></a:graphic></p:graphicFrame>`
+            : ""
+        }
         ${image ? `<p:pic />` : ""}
       </p:spTree></p:cSld>
     </p:sld>`;
@@ -124,7 +130,10 @@ function pptxFixture() {
         <Relationship Id="rId2" Type="slide" Target="slides/slide2.xml" />
       </Relationships>`,
     "ppt/slides/slide1.xml": slideXml("Launch plan", ["A readable source for every team"]),
-    "ppt/slides/slide2.xml": slideXml("Decision", ["Scale APAC", "Treat &lt;tag&gt; as text"], { image: true, table: true }),
+    "ppt/slides/slide2.xml": slideXml("Decision", ["Scale APAC", "Treat &lt;tag&gt; as text"], {
+      image: true,
+      table: true,
+    }),
   });
 }
 
@@ -153,10 +162,10 @@ test("converts DOCX paragraphs, formatting, lists, links, and tables to Markdown
 test("converts every visible XLSX worksheet to bounded CSV", () => {
   const result = convertOfficeFile("operating-model.xlsx", xlsxFixture());
   assert.equal(result.sourceType, "xlsx");
-  assert.deepEqual(result.artifacts.map((artifact) => artifact.name), [
-    "operating-model--Revenue.csv",
-    "operating-model--Forecast.csv",
-  ]);
+  assert.deepEqual(
+    result.artifacts.map((artifact) => artifact.name),
+    ["operating-model--Revenue.csv", "operating-model--Forecast.csv"],
+  );
   assert.match(result.artifacts[0].source, /Region,Revenue,Note\nAPAC,1840000,'=WEBSERVICE/);
   assert.match(result.artifacts[1].source, /Date,Forecast\n2024-01-01,3/);
   assert.equal(new Set(result.artifacts.map((artifact) => artifact.id)).size, 2);
@@ -185,10 +194,7 @@ test("converts PPTX text and tables to valid, safely compiled Deck Markdown", ()
 });
 
 test("rejects oversized, malformed, or declaration-bearing Office packages", () => {
-  assert.throws(
-    () => convertOfficeFile("large.docx", new Uint8Array(MAX_OFFICE_IMPORT_BYTES + 1)),
-    /12 MB/,
-  );
+  assert.throws(() => convertOfficeFile("large.docx", new Uint8Array(MAX_OFFICE_IMPORT_BYTES + 1)), /12 MB/);
   assert.throws(() => convertOfficeFile("broken.xlsx", new Uint8Array([0x50, 0x4b, 0, 0])), /Office import failed/);
   assert.throws(() => convertOfficeFile("unsafe.docx", docxFixture({ unsafe: true })), /blocked XML declaration/);
 });

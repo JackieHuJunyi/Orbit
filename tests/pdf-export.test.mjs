@@ -12,9 +12,20 @@ import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 const fontBytes = new Uint8Array(await readFile(new URL(`../public${RUNE_PDF_FONT_PATH}`, import.meta.url)));
-const onePixelPng = new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==", "base64"));
+const onePixelPng = new Uint8Array(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
 const runeImageId = "c".repeat(64);
-const runeImageAsset = { id: runeImageId, name: "proof.png", mimeType: "image/png", size: onePixelPng.length, bytes: onePixelPng };
+const runeImageAsset = {
+  id: runeImageId,
+  name: "proof.png",
+  mimeType: "image/png",
+  size: onePixelPng.length,
+  bytes: onePixelPng,
+};
 
 function runtimeSnapshots() {
   return [defaultQuerySnapshot(), defaultSummaryQuerySnapshot()];
@@ -44,7 +55,13 @@ test("exports a deterministic A4 PDF from the default Markdown Document", async 
 });
 
 test("embeds verified Rune local images into fixed Document PDF", async () => {
-  const artifact = { id: "image", name: "image.md", kind: "document", language: "Markdown", source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n` };
+  const artifact = {
+    id: "image",
+    name: "image.md",
+    kind: "document",
+    language: "Markdown",
+    source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n`,
+  };
   const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
   const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
   assert.deepEqual(first.bytes, second.bytes);
@@ -54,8 +71,17 @@ test("embeds verified Rune local images into fixed Document PDF", async () => {
 });
 
 test("fails PDF export closed when a referenced Rune image is missing", async () => {
-  const artifact = { id: "missing", name: "missing.md", kind: "document", language: "Markdown", source: `![Missing](rune-asset:sha256:${runeImageId})` };
-  await assert.rejects(() => exportPdfArtifact(artifact, [artifact], [], fontBytes), /Referenced local image is missing or corrupt/iu);
+  const artifact = {
+    id: "missing",
+    name: "missing.md",
+    kind: "document",
+    language: "Markdown",
+    source: `![Missing](rune-asset:sha256:${runeImageId})`,
+  };
+  await assert.rejects(
+    () => exportPdfArtifact(artifact, [artifact], [], fontBytes),
+    /Referenced local image is missing or corrupt/iu,
+  );
 });
 
 test("exports one deterministic 16:9 PDF page per Deck Markdown slide", async () => {
@@ -106,7 +132,10 @@ The source remains readable.
   assert.equal(document.getPageCount(), 1);
   assert.deepEqual(document.getPage(0).getSize(), { width: 960, height: 540 });
   assert.match(first.warnings.join(" "), /portable, static PDF media/iu);
-  await assert.rejects(() => exportPdfArtifact(artifact, [artifact], [], fontBytes), /Referenced local image is missing or corrupt/iu);
+  await assert.rejects(
+    () => exportPdfArtifact(artifact, [artifact], [], fontBytes),
+    /Referenced local image is missing or corrupt/iu,
+  );
 });
 
 test("embeds Unicode text without a network font dependency", async () => {
@@ -155,15 +184,39 @@ test("fails closed for unsupported artifacts, pending Query bindings, and invali
 });
 
 test("freezes line charts into deterministic vector Document and Deck PDFs", async () => {
-  const data = { id: "trend-data", name: "trend.csv", kind: "data", language: "CSV / JSON", source: "Month,Value\nJan,10\nFeb,30\nMar,20\n" };
+  const data = {
+    id: "trend-data",
+    name: "trend.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Value\nJan,10\nFeb,30\nMar,20\n",
+  };
   const chart = {
     id: "trend-chart",
     name: "trend.chart.json",
     kind: "chart",
     language: "Chart JSON",
-    source: JSON.stringify({ version: 1, title: "Monthly trend", description: "Ordered source values", source: data.id, mark: "line", category: "Month", value: "Value", sort: "source", format: "number", color: "#3676d1", maxItems: 8 }),
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly trend",
+      description: "Ordered source values",
+      source: data.id,
+      mark: "line",
+      category: "Month",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
   };
-  const document = { id: "trend-report", name: "trend.md", kind: "document", language: "Markdown", source: '# Trend\n\n{{ chart("trend-chart") }}\n' };
+  const document = {
+    id: "trend-report",
+    name: "trend.md",
+    kind: "document",
+    language: "Markdown",
+    source: '# Trend\n\n{{ chart("trend-chart") }}\n',
+  };
   const deck = {
     id: "trend-deck",
     name: "trend.deck.md",

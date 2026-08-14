@@ -11,15 +11,12 @@ test("adds and removes reversible inline Markdown formatting", () => {
     selectionEnd: 15,
     error: null,
   });
-  assert.deepEqual(
-    applyDocumentFormatting(bold.draft, "bold", bold.selectionStart, bold.selectionEnd),
-    {
-      draft: "Ship the plan.",
-      selectionStart: 9,
-      selectionEnd: 13,
-      error: null,
-    },
-  );
+  assert.deepEqual(applyDocumentFormatting(bold.draft, "bold", bold.selectionStart, bold.selectionEnd), {
+    draft: "Ship the plan.",
+    selectionStart: 9,
+    selectionEnd: 13,
+    error: null,
+  });
 
   const emptyItalic = applyDocumentFormatting("Note", "italic", 4, 4);
   assert.equal(emptyItalic.draft, "Note__");
@@ -32,12 +29,7 @@ test("uses a collision-safe backtick delimiter and toggles code spans", () => {
   const formatted = applyDocumentFormatting("Use a`b now", "code", 4, 7);
   assert.equal(formatted.draft, "Use ``a`b`` now");
   assert.deepEqual([formatted.selectionStart, formatted.selectionEnd], [6, 9]);
-  const restored = applyDocumentFormatting(
-    formatted.draft,
-    "code",
-    formatted.selectionStart,
-    formatted.selectionEnd,
-  );
+  const restored = applyDocumentFormatting(formatted.draft, "code", formatted.selectionStart, formatted.selectionEnd);
   assert.equal(restored.draft, "Use a`b now");
   assert.deepEqual([restored.selectionStart, restored.selectionEnd], [4, 7]);
 

@@ -35,9 +35,14 @@ try {
   throw new Error("Pilot manifest must be readable JSON no larger than 64 KB.");
 }
 
-if (!isRecord(manifest) || !exactKeys(manifest, ["version", "participants"])
-  || manifest.version !== 1 || !Array.isArray(manifest.participants)
-  || manifest.participants.length < 1 || manifest.participants.length > MAX_RUNE_PILOT_COHORT_PARTICIPANTS) {
+if (
+  !isRecord(manifest) ||
+  !exactKeys(manifest, ["version", "participants"]) ||
+  manifest.version !== 1 ||
+  !Array.isArray(manifest.participants) ||
+  manifest.participants.length < 1 ||
+  manifest.participants.length > MAX_RUNE_PILOT_COHORT_PARTICIPANTS
+) {
   throw new Error(`Pilot manifest requires version 1 and 1–${MAX_RUNE_PILOT_COHORT_PARTICIPANTS} participants.`);
 }
 
@@ -45,24 +50,35 @@ const manifestDirectory = path.dirname(manifestPath);
 const resolvedEvidencePaths = new Set();
 const participants = [];
 for (const entry of manifest.participants) {
-  if (!isRecord(entry) || !exactKeys(entry, ["participantId", "evidenceFile"])
-    || typeof entry.participantId !== "string"
-    || typeof entry.evidenceFile !== "string" || !entry.evidenceFile.endsWith(".json")
-    || entry.evidenceFile.length < 1 || entry.evidenceFile.length > 240
-    || path.isAbsolute(entry.evidenceFile) || /[\u0000-\u001f\u007f]/u.test(entry.evidenceFile)) {
+  if (
+    !isRecord(entry) ||
+    !exactKeys(entry, ["participantId", "evidenceFile"]) ||
+    typeof entry.participantId !== "string" ||
+    typeof entry.evidenceFile !== "string" ||
+    !entry.evidenceFile.endsWith(".json") ||
+    entry.evidenceFile.length < 1 ||
+    entry.evidenceFile.length > 240 ||
+    path.isAbsolute(entry.evidenceFile) ||
+    /[\u0000-\u001f\u007f]/u.test(entry.evidenceFile)
+  ) {
     throw new Error("Each pilot manifest entry needs a participant-NNN alias and one relative JSON evidenceFile.");
   }
   const evidencePath = path.resolve(manifestDirectory, entry.evidenceFile);
   const relativePath = path.relative(manifestDirectory, evidencePath);
-  if (!relativePath || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)
-    || resolvedEvidencePaths.has(evidencePath)) {
+  if (
+    !relativePath ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath) ||
+    resolvedEvidencePaths.has(evidencePath)
+  ) {
     throw new Error("Pilot evidence files must be unique files inside the manifest directory.");
   }
   resolvedEvidencePaths.add(evidencePath);
   let evidence;
   try {
     const stats = await lstat(evidencePath);
-    if (!stats.isFile() || stats.isSymbolicLink() || stats.size > MAX_RUNE_PILOT_EVIDENCE_BYTES) throw new Error("invalid file");
+    if (!stats.isFile() || stats.isSymbolicLink() || stats.size > MAX_RUNE_PILOT_EVIDENCE_BYTES)
+      throw new Error("invalid file");
     evidence = JSON.parse(await readFile(evidencePath, "utf8"));
   } catch {
     throw new Error(`Evidence for ${entry.participantId} must be a regular JSON file no larger than 128 KB.`);
@@ -78,7 +94,8 @@ if (!args[1]) {
   const outputDirectory = path.resolve(args[1]);
   await mkdir(outputDirectory, { recursive: true, mode: 0o700 });
   const outputStats = await lstat(outputDirectory);
-  if (!outputStats.isDirectory() || outputStats.isSymbolicLink()) throw new Error("Pilot output must be a regular local directory.");
+  if (!outputStats.isDirectory() || outputStats.isSymbolicLink())
+    throw new Error("Pilot output must be a regular local directory.");
   const baseName = `rune-pilot-cohort-${report.compiledOn}`;
   const jsonPath = path.join(outputDirectory, `${baseName}.json`);
   const markdownPath = path.join(outputDirectory, `${baseName}.md`);

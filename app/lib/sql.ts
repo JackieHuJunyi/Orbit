@@ -6,10 +6,7 @@ export type QueryCellLineage = {
   sourceColumn: string;
 };
 
-export type QueryLineageProjection =
-  | { kind: "star" }
-  | { kind: "column"; sourceColumn: string }
-  | { kind: "derived" };
+export type QueryLineageProjection = { kind: "star" } | { kind: "column"; sourceColumn: string } | { kind: "derived" };
 
 export type QueryLineagePlan = {
   sql: string;
@@ -27,23 +24,27 @@ export function queryLineageSourceIsSupported(columns: string[]) {
   const seen = new Set<string>();
   return columns.every((column) => {
     const normalized = column.toLowerCase();
-    if (!normalized
-      || normalized === "rowid"
-      || normalized === QUERY_PROVENANCE_COLUMN.toLowerCase()
-      || seen.has(normalized)) return false;
+    if (
+      !normalized ||
+      normalized === "rowid" ||
+      normalized === QUERY_PROVENANCE_COLUMN.toLowerCase() ||
+      seen.has(normalized)
+    )
+      return false;
     seen.add(normalized);
     return true;
   });
 }
 
 export function normalizeQuerySourceRowIndex(value: unknown, rowCount: number) {
-  const numeric = typeof value === "bigint"
-    ? Number(value)
-    : typeof value === "number"
-      ? value
-      : typeof value === "string" && /^\d+$/u.test(value)
-        ? Number(value)
-        : Number.NaN;
+  const numeric =
+    typeof value === "bigint"
+      ? Number(value)
+      : typeof value === "number"
+        ? value
+        : typeof value === "string" && /^\d+$/u.test(value)
+          ? Number(value)
+          : Number.NaN;
   return Number.isSafeInteger(numeric) && numeric >= 0 && numeric < rowCount ? numeric : null;
 }
 
@@ -53,9 +54,11 @@ export function queryLineageRevisionMatches(
   dataArtifactId: string,
   dataSource: string,
 ) {
-  return revision.querySource === querySource
-    && revision.dataArtifactId === dataArtifactId
-    && revision.dataSource === dataSource;
+  return (
+    revision.querySource === querySource &&
+    revision.dataArtifactId === dataArtifactId &&
+    revision.dataSource === dataSource
+  );
 }
 
 type SqlWord = {
@@ -144,16 +147,59 @@ function splitTopLevelList(source: string): string[] | null {
 }
 
 const safeScalarFunctions = new Set([
-  "abs", "cast", "ceil", "ceiling", "character_length", "coalesce", "concat", "concat_ws",
-  "date_part", "date_trunc", "extract", "floor", "greatest", "ifnull", "least", "length",
-  "lower", "ltrim", "nullif", "regexp_extract", "regexp_replace", "replace", "round", "rtrim",
-  "strftime", "strptime", "substr", "substring", "trim", "trunc", "try_cast", "try_strptime", "typeof", "upper",
+  "abs",
+  "cast",
+  "ceil",
+  "ceiling",
+  "character_length",
+  "coalesce",
+  "concat",
+  "concat_ws",
+  "date_part",
+  "date_trunc",
+  "extract",
+  "floor",
+  "greatest",
+  "ifnull",
+  "least",
+  "length",
+  "lower",
+  "ltrim",
+  "nullif",
+  "regexp_extract",
+  "regexp_replace",
+  "replace",
+  "round",
+  "rtrim",
+  "strftime",
+  "strptime",
+  "substr",
+  "substring",
+  "trim",
+  "trunc",
+  "try_cast",
+  "try_strptime",
+  "typeof",
+  "upper",
 ]);
 
 const bareNonColumnExpressions = new Set([
-  "current_catalog", "current_date", "current_role", "current_schema", "current_time",
-  "current_timestamp", "current_user", "default", "false", "localtime", "localtimestamp",
-  "null", "session_user", "system_user", "true", "user",
+  "current_catalog",
+  "current_date",
+  "current_role",
+  "current_schema",
+  "current_time",
+  "current_timestamp",
+  "current_user",
+  "default",
+  "false",
+  "localtime",
+  "localtimestamp",
+  "null",
+  "session_user",
+  "system_user",
+  "true",
+  "user",
 ]);
 
 function projectionIsRowPreserving(source: string) {
@@ -208,10 +254,7 @@ function projectionOutputName(source: string) {
   return direct ? decodeIdentifier(direct[1]) : null;
 }
 
-export function inferQueryOutputColumns(
-  source: string,
-  workspaceDataColumns: string[] = [],
-): QueryOutputContract {
+export function inferQueryOutputColumns(source: string, workspaceDataColumns: string[] = []): QueryOutputContract {
   const queryErrors = validateReadQuery(source);
   if (queryErrors.length) return { columns: [], errors: queryErrors };
   const query = normalizeReadQuery(source);
@@ -224,12 +267,17 @@ export function inferQueryOutputColumns(
   const followingWords = words.filter((word) => word.start >= selectWord.end);
   const setOperator = followingWords.find((word) => ["except", "intersect", "union"].includes(word.value));
   if (setOperator) {
-    return { columns: [], errors: ["Wrap set-query output in one outer SELECT with explicit column names before using it in a Chart."] };
+    return {
+      columns: [],
+      errors: ["Wrap set-query output in one outer SELECT with explicit column names before using it in a Chart."],
+    };
   }
   const fromWord = followingWords.find((word) => word.value === "from");
-  const selectEnd = fromWord?.start
-    ?? followingWords.find((word) => ["fetch", "limit", "offset", "order", "qualify", "where"].includes(word.value))?.start
-    ?? query.length;
+  const selectEnd =
+    fromWord?.start ??
+    followingWords.find((word) => ["fetch", "limit", "offset", "order", "qualify", "where"].includes(word.value))
+      ?.start ??
+    query.length;
   let selectList = query.slice(selectWord.end, selectEnd).trim();
   selectList = selectList.replace(/^(?:all|distinct)\b\s*/iu, "");
   const items = splitTopLevelList(selectList);
@@ -239,7 +287,17 @@ export function inferQueryOutputColumns(
   let workspaceStarQualifier = "workspace_data";
   if (fromWord) {
     const fromIndex = words.indexOf(fromWord);
-    const clauseStarts = new Set(["fetch", "group", "having", "limit", "offset", "order", "qualify", "where", "window"]);
+    const clauseStarts = new Set([
+      "fetch",
+      "group",
+      "having",
+      "limit",
+      "offset",
+      "order",
+      "qualify",
+      "where",
+      "window",
+    ]);
     const nextClause = words.slice(fromIndex + 1).find((word) => clauseStarts.has(word.value));
     const fromSource = query.slice(fromWord.end, nextClause?.start ?? query.length).trim();
     const fromMatch = fromSource.match(new RegExp(`^(${sqlIdentifier})(?:\\s+(?:as\\s+)?(${sqlIdentifier}))?$`, "iu"));
@@ -254,9 +312,10 @@ export function inferQueryOutputColumns(
     const trimmed = item.trim();
     const qualifiedStar = trimmed.match(new RegExp(`^(${sqlIdentifier})\\s*\\.\\s*\\*$`, "u"));
     if (trimmed === "*" || qualifiedStar) {
-      const qualifierMatches = !qualifiedStar
-        || sameIdentifier(qualifiedStar[1], workspaceStarQualifier)
-        || sameIdentifier(qualifiedStar[1], "workspace_data");
+      const qualifierMatches =
+        !qualifiedStar ||
+        sameIdentifier(qualifiedStar[1], workspaceStarQualifier) ||
+        sameIdentifier(qualifiedStar[1], "workspace_data");
       if (!workspaceStarSource || !qualifierMatches || !workspaceDataColumns.length) {
         return {
           columns: [],
@@ -277,7 +336,8 @@ export function inferQueryOutputColumns(
   }
 
   if (!columns.length) return { columns: [], errors: ["A downstream Query source needs at least one output column."] };
-  if (columns.length > 256) return { columns: [], errors: ["A downstream Query source is limited to 256 output columns."] };
+  if (columns.length > 256)
+    return { columns: [], errors: ["A downstream Query source is limited to 256 output columns."] };
   const seen = new Set<string>();
   for (const column of columns) {
     const normalized = column.toLocaleLowerCase("en-US");
@@ -306,9 +366,12 @@ function classifyProjection(
   const direct = base.match(new RegExp(`^(${sqlIdentifier})(?:\\s*\\.\\s*(${sqlIdentifier}))?$`, "u"));
   if (!direct) return { kind: "derived" };
   if (!direct[2]) {
-    if ((!direct[1].startsWith('"') && bareNonColumnExpressions.has(direct[1].toLowerCase()))
-      || sameIdentifier(direct[1], aliasIdentifier)
-      || sameIdentifier(direct[1], tableIdentifier)) return { kind: "derived" };
+    if (
+      (!direct[1].startsWith('"') && bareNonColumnExpressions.has(direct[1].toLowerCase())) ||
+      sameIdentifier(direct[1], aliasIdentifier) ||
+      sameIdentifier(direct[1], tableIdentifier)
+    )
+      return { kind: "derived" };
     return { kind: "column", sourceColumn: decodeIdentifier(direct[1]) };
   }
   if (!sameIdentifier(direct[1], aliasIdentifier) && !sameIdentifier(direct[1], tableIdentifier)) return null;
@@ -324,7 +387,20 @@ export function buildQueryLineagePlan(source: string): QueryLineagePlan | null {
   const fromWordIndex = words.findIndex((word, index) => index > 0 && word.value === "from");
   if (!selectWord || selectWord.value !== "select" || fromWordIndex < 0) return null;
   const fromWord = words[fromWordIndex];
-  const forbidden = new Set(["distinct", "except", "group", "having", "intersect", "join", "pivot", "qualify", "sample", "union", "unpivot", "window"]);
+  const forbidden = new Set([
+    "distinct",
+    "except",
+    "group",
+    "having",
+    "intersect",
+    "join",
+    "pivot",
+    "qualify",
+    "sample",
+    "union",
+    "unpivot",
+    "window",
+  ]);
   if (words.some((word) => forbidden.has(word.value))) return null;
   const selectList = query.slice(selectWord.end, fromWord.start).trim();
   if (/^(?:all|distinct)\b/iu.test(selectList)) return null;
@@ -448,7 +524,9 @@ function hasStatementSeparator(source: string): boolean {
 }
 
 export function normalizeReadQuery(source: string): string {
-  return stripSqlComments(source).trim().replace(/;+\s*$/, "");
+  return stripSqlComments(source)
+    .trim()
+    .replace(/;+\s*$/, "");
 }
 
 export function validateReadQuery(source: string): string[] {

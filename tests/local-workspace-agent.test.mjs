@@ -17,7 +17,10 @@ test("prepares a new context-aware presentation without mutating the current wor
   assert.match(plan.creations[0].artifact.source, /Canonical source map/);
   assert.match(plan.creations[0].artifact.source, /q2-review\.md/);
   assert.deepEqual(parseDeckSource(plan.creations[0].artifact.source).errors, []);
-  assert.deepEqual(defaultArtifacts.map((artifact) => artifact.source), sources);
+  assert.deepEqual(
+    defaultArtifacts.map((artifact) => artifact.source),
+    sources,
+  );
 
   const prepared = prepareWorkspaceMutation(defaultArtifacts, plan.patches, plan.creations);
   assert.deepEqual(prepared.errors, []);
@@ -54,33 +57,27 @@ test("creates source-bound Query and Chart starters in the offline Workspace Age
 
 test("prepares a complete local Data-to-Query-to-Chart-to-deliverable transaction", () => {
   const originalSources = defaultArtifacts.map((artifact) => artifact.source);
-  const reportPlan = planLocalWorkspaceAgentChange(
-    defaultArtifacts,
-    "根据收入数据创建 SQL 分析、图表和报告",
-  );
+  const reportPlan = planLocalWorkspaceAgentChange(defaultArtifacts, "根据收入数据创建 SQL 分析、图表和报告");
   assert.deepEqual(reportPlan.patches, []);
-  assert.deepEqual(reportPlan.creations.map((creation) => creation.artifact.kind), [
-    "query",
-    "chart",
-    "document",
-  ]);
+  assert.deepEqual(
+    reportPlan.creations.map((creation) => creation.artifact.kind),
+    ["query", "chart", "document"],
+  );
   const [query, chart, report] = reportPlan.creations.map((creation) => creation.artifact);
   assert.equal(parseQueryDataSourceDirective(query.source).artifactId, "regional-revenue");
   assert.equal(parseChartSource(chart.source).spec.source, query.id);
   assert.deepEqual(findChartReferences(report.source), [chart.id]);
   assert.deepEqual(prepareWorkspaceMutation(defaultArtifacts, [], reportPlan.creations).errors, []);
-  assert.deepEqual(defaultArtifacts.map((artifact) => artifact.source), originalSources);
-
-  const completePlan = planLocalWorkspaceAgentChange(
-    defaultArtifacts,
-    "根据收入数据创建分析图表、报告和演示",
+  assert.deepEqual(
+    defaultArtifacts.map((artifact) => artifact.source),
+    originalSources,
   );
-  assert.deepEqual(completePlan.creations.map((creation) => creation.artifact.kind), [
-    "query",
-    "chart",
-    "document",
-    "slides",
-  ]);
+
+  const completePlan = planLocalWorkspaceAgentChange(defaultArtifacts, "根据收入数据创建分析图表、报告和演示");
+  assert.deepEqual(
+    completePlan.creations.map((creation) => creation.artifact.kind),
+    ["query", "chart", "document", "slides"],
+  );
   const completeChart = completePlan.creations[1].artifact;
   completePlan.creations.slice(2).forEach((creation) => {
     assert.deepEqual(findChartReferences(creation.artifact.source), [completeChart.id]);
@@ -90,24 +87,22 @@ test("prepares a complete local Data-to-Query-to-Chart-to-deliverable transactio
 
 test("keeps existing deterministic workspace coordination available", () => {
   const plan = planLocalWorkspaceAgentChange(defaultArtifacts, "让分析、报告和演示保持一致");
-  assert.deepEqual(plan.patches.map((patch) => patch.artifactId), ["q2-review", "board-briefing"]);
+  assert.deepEqual(
+    plan.patches.map((patch) => patch.artifactId),
+    ["q2-review", "board-briefing"],
+  );
   assert.deepEqual(plan.creations, []);
 });
 
 test("uses the explicit context pack while retaining full-workspace creation identity", () => {
   const context = defaultArtifacts.filter((artifact) => ["q2-review", "board-briefing"].includes(artifact.id));
-  const coordinated = planLocalWorkspaceAgentChange(
-    defaultArtifacts,
-    "让报告和演示保持一致",
-    context,
+  const coordinated = planLocalWorkspaceAgentChange(defaultArtifacts, "让报告和演示保持一致", context);
+  assert.deepEqual(
+    coordinated.patches.map((patch) => patch.artifactId),
+    ["q2-review", "board-briefing"],
   );
-  assert.deepEqual(coordinated.patches.map((patch) => patch.artifactId), ["q2-review", "board-briefing"]);
 
-  const created = planLocalWorkspaceAgentChange(
-    defaultArtifacts,
-    "根据 pin 的上下文创建一份新文档",
-    context,
-  );
+  const created = planLocalWorkspaceAgentChange(defaultArtifacts, "根据 pin 的上下文创建一份新文档", context);
   assert.equal(created.creations.length, 1);
   assert.match(created.creations[0].artifact.source, /q2-review\.md/);
   assert.match(created.creations[0].artifact.source, /board-briefing\.deck\.md/);

@@ -143,62 +143,83 @@ export function WorkspaceSplitter({
     onCommit(latestPercentRef.current);
   }, [flushPointer, onCommit]);
 
-  useEffect(() => () => {
-    if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
-    draggingRef.current = false;
-    document.body.classList.remove("workspace-resizing");
-  }, []);
+  useEffect(
+    () => () => {
+      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+      draggingRef.current = false;
+      document.body.classList.remove("workspace-resizing");
+    },
+    [],
+  );
 
-  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (draggingRef.current || event.button !== 0 || !event.isPrimary || window.matchMedia("(max-width: 960px)").matches) return;
-    const workspace = workspaceRef.current;
-    if (!workspace) return;
-    const geometry = workspaceSplitGeometry(workspace, event.clientX);
-    if (!geometry) return;
-    event.preventDefault();
-    geometryRef.current = geometry;
-    latestClientXRef.current = event.clientX;
-    latestPercentRef.current = value;
-    movedRef.current = false;
-    draggingRef.current = true;
-    setDragging(true);
-    document.body.classList.add("workspace-resizing");
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }, [value, workspaceRef]);
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (
+        draggingRef.current ||
+        event.button !== 0 ||
+        !event.isPrimary ||
+        window.matchMedia("(max-width: 960px)").matches
+      )
+        return;
+      const workspace = workspaceRef.current;
+      if (!workspace) return;
+      const geometry = workspaceSplitGeometry(workspace, event.clientX);
+      if (!geometry) return;
+      event.preventDefault();
+      geometryRef.current = geometry;
+      latestClientXRef.current = event.clientX;
+      latestPercentRef.current = value;
+      movedRef.current = false;
+      draggingRef.current = true;
+      setDragging(true);
+      document.body.classList.add("workspace-resizing");
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [value, workspaceRef],
+  );
 
-  const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
-    latestClientXRef.current = event.clientX;
-    movedRef.current = true;
-    frameRef.current ??= window.requestAnimationFrame(flushPointer);
-  }, [flushPointer]);
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+      latestClientXRef.current = event.clientX;
+      movedRef.current = true;
+      frameRef.current ??= window.requestAnimationFrame(flushPointer);
+    },
+    [flushPointer],
+  );
 
-  const handlePointerEnd = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
-    latestClientXRef.current = event.clientX;
-    if (movedRef.current && frameRef.current !== null) {
-      window.cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
-    if (movedRef.current) flushPointer();
-    finishDrag();
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }, [finishDrag, flushPointer]);
+  const handlePointerEnd = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) return;
+      latestClientXRef.current = event.clientX;
+      if (movedRef.current && frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+      if (movedRef.current) flushPointer();
+      finishDrag();
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    },
+    [finishDrag, flushPointer],
+  );
 
-  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    const direction = document.documentElement.dir === "rtl" ? -1 : 1;
-    const step = event.shiftKey ? 5 : 2;
-    let next: number | null = null;
-    if (event.key === "Home") next = DEFAULT_WORKSPACE_SOURCE_PERCENT;
-    else if (event.key === "ArrowLeft") next = clampWorkspaceSourcePercent(value - step * direction);
-    else if (event.key === "ArrowRight") next = clampWorkspaceSourcePercent(value + step * direction);
-    if (next === null) return;
-    event.preventDefault();
-    onChange(next);
-    onCommit(next);
-  }, [onChange, onCommit, value]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      const direction = document.documentElement.dir === "rtl" ? -1 : 1;
+      const step = event.shiftKey ? 5 : 2;
+      let next: number | null = null;
+      if (event.key === "Home") next = DEFAULT_WORKSPACE_SOURCE_PERCENT;
+      else if (event.key === "ArrowLeft") next = clampWorkspaceSourcePercent(value - step * direction);
+      else if (event.key === "ArrowRight") next = clampWorkspaceSourcePercent(value + step * direction);
+      if (next === null) return;
+      event.preventDefault();
+      onChange(next);
+      onCommit(next);
+    },
+    [onChange, onCommit, value],
+  );
 
   return (
     <div
@@ -223,6 +244,8 @@ export function WorkspaceSplitter({
         onChange(DEFAULT_WORKSPACE_SOURCE_PERCENT);
         onCommit(DEFAULT_WORKSPACE_SOURCE_PERCENT);
       }}
-    ><span aria-hidden="true" /></div>
+    >
+      <span aria-hidden="true" />
+    </div>
   );
 }

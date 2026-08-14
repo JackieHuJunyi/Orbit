@@ -17,7 +17,25 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 });
 
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
-  const [workbench, frameControls, empty, reviewDialog, operatingDialog, operatingCompiler, operatingContract, operatingScope, operatingRoute, briefingDialog, briefingCompiler, briefingContract, briefingRoute, providers, modelPlanning, styles, shellStyles] = await Promise.all([
+  const [
+    workbench,
+    frameControls,
+    empty,
+    reviewDialog,
+    operatingDialog,
+    operatingCompiler,
+    operatingContract,
+    operatingScope,
+    operatingRoute,
+    briefingDialog,
+    briefingCompiler,
+    briefingContract,
+    briefingRoute,
+    providers,
+    modelPlanning,
+    styles,
+    shellStyles,
+  ] = await Promise.all([
     source("../app/components/rune-workbench.tsx"),
     source("../app/components/workspace-frame-controls.tsx"),
     source("../app/components/empty-workspace.tsx"),
@@ -37,11 +55,14 @@ test("composes multiple tasks through declared capabilities, exact import identi
     source("../app/styles/shell.css"),
   ]);
 
-  assert.match(workbench, /accept=\{RUNE_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/);
+  assert.match(
+    workbench,
+    /accept=\{RUNE_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/,
+  );
   assert.match(workbench, /startRuneTaskFromSource\("document-briefing"\)/);
   assert.match(workbench, /bindRuneTaskImportReview\(activeTaskSession, baseArtifacts, prepared\.review\)/);
   assert.match(workbench, /prepareRuneTaskAfterImport\(taskSession, artifacts, pendingImport\)/);
-  assert.match(workbench, /preferredDataArtifactId=\{taskSession\?\.phase === "configuring"/);
+  assert.match(workbench, /preferredDataArtifactId=\{\s*taskSession\?\.phase === "configuring"/);
   assert.match(empty, /onStartReview/);
   assert.match(empty, /onStartBriefing/);
   assert.match(empty, /className="empty-task-primary"/);
@@ -68,8 +89,14 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(operatingCompiler, /groupCount: aggregated\.length/);
   assert.match(operatingCompiler, /primaryValue - comparisonValue/);
   assert.match(operatingCompiler, /HAVING COUNT\(CASE WHEN/);
-  assert.ok(operatingDialog.indexOf('id="operating-review-scope-field"') < operatingDialog.indexOf('id="operating-review-category"'));
-  assert.ok(operatingDialog.indexOf('id="operating-review-scope-value"') < operatingDialog.indexOf('id="operating-review-value"'));
+  assert.ok(
+    operatingDialog.indexOf('id="operating-review-scope-field"') <
+      operatingDialog.indexOf('id="operating-review-category"'),
+  );
+  assert.ok(
+    operatingDialog.indexOf('id="operating-review-scope-value"') <
+      operatingDialog.indexOf('id="operating-review-value"'),
+  );
   assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);
   assert.match(operatingRoute, /resolveActiveModelConnection/);
   assert.match(operatingRoute, /validateOperatingReviewNarrative/);
@@ -94,7 +121,10 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(providers, /case "document-briefing"/);
   assert.match(providers, /satisfies Record<RuneTaskId, true>/);
   assert.doesNotMatch(providers, /react|localStorage|indexedDB|window\.|fetch\(|persist/i);
-  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "operating-review",\s*input,\s*\.\.\.\(narrative/);
+  assert.match(
+    workbench,
+    /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "operating-review",\s*input,\s*\.\.\.\(narrative/,
+  );
   assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "document-briefing",\s*input,/);
   assert.match(workbench, /prepareRuneTaskModelAssistance/);
   assert.doesNotMatch(workbench, /fetch\("\/api\/tasks\/(?:document-briefing|operating-review)"/);

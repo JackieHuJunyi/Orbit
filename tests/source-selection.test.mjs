@@ -14,7 +14,8 @@ function artifact(source) {
 }
 
 test("uses textarea-compatible UTF-16 offsets and preserves source outside the selection", () => {
-  const source = "Prefix 😀\nActually this is really a long conclusion. A second sentence stays outside the summary.\nSuffix";
+  const source =
+    "Prefix 😀\nActually this is really a long conclusion. A second sentence stays outside the summary.\nSuffix";
   const selected = "Actually this is really a long conclusion. A second sentence stays outside the summary.";
   const start = source.indexOf(selected);
   const selection = { start, end: start + selected.length };
@@ -40,13 +41,17 @@ test("offers format-preserving exact-text fallbacks for selected data and code",
   const source = "Region,Status\nAPAC,active\nEMEA,review\n";
   const start = source.indexOf("active");
   const selection = { start, end: start + "active".length };
-  const plan = planLocalSelectionChange({
-    id: "data",
-    name: "data.csv",
-    kind: "data",
-    language: "CSV / JSON",
-    source,
-  }, selection, "把选中内容转成大写");
+  const plan = planLocalSelectionChange(
+    {
+      id: "data",
+      name: "data.csv",
+      kind: "data",
+      language: "CSV / JSON",
+      source,
+    },
+    selection,
+    "把选中内容转成大写",
+  );
   assert.equal(plan.nextSource, "Region,Status\nAPAC,ACTIVE\nEMEA,review\n");
   assert.equal(sourceOutsideSelectionIsUnchanged(source, plan.nextSource, selection), true);
 });
@@ -55,24 +60,33 @@ test("scales one exact unquoted CSV or JSON numeric cell without widening select
   const csv = "Region,Revenue\nAPAC,1840000\nEMEA,970000\n";
   const start = csv.indexOf("1840000");
   const selection = { start, end: start + "1840000".length };
-  const plan = planLocalSelectionChange({
-    id: "data",
-    name: "data.csv",
-    kind: "data",
-    language: "CSV / JSON",
-    source: csv,
-  }, selection, "把选中数值乘以 1.1");
+  const plan = planLocalSelectionChange(
+    {
+      id: "data",
+      name: "data.csv",
+      kind: "data",
+      language: "CSV / JSON",
+      source: csv,
+    },
+    selection,
+    "把选中数值乘以 1.1",
+  );
   assert.equal(plan.nextSource, "Region,Revenue\nAPAC,2024000\nEMEA,970000\n");
   assert.equal(sourceOutsideSelectionIsUnchanged(csv, plan.nextSource, selection), true);
 
   assert.throws(
-    () => planLocalSelectionChange({
-      id: "data",
-      name: "data.json",
-      kind: "data",
-      language: "CSV / JSON",
-      source: `[{"Revenue":"1,840,000"}]`,
-    }, { start: 12, end: 23 }, "把选中数值乘以 1.1"),
+    () =>
+      planLocalSelectionChange(
+        {
+          id: "data",
+          name: "data.json",
+          kind: "data",
+          language: "CSV / JSON",
+          source: `[{"Revenue":"1,840,000"}]`,
+        },
+        { start: 12, end: 23 },
+        "把选中数值乘以 1.1",
+      ),
     /one unquoted CSV or JSON number/i,
   );
 });
@@ -82,10 +96,13 @@ test("rejects collapsed, stale, oversized, unsupported, and no-op selection plan
   assert.match(sourceSelectionError(source, { start: 2, end: 2 }), /does not match/);
   assert.match(sourceSelectionError(source, { start: 0, end: source.length + 1 }), /does not match/);
   assert.match(sourceSelectionError("😀", { start: 0, end: 1 }), /splits a Unicode character/);
-  assert.match(sourceSelectionError("x".repeat(MAX_AGENT_SELECTION_CHARS + 1), {
-    start: 0,
-    end: MAX_AGENT_SELECTION_CHARS + 1,
-  }), /limited to 16000 characters/);
+  assert.match(
+    sourceSelectionError("x".repeat(MAX_AGENT_SELECTION_CHARS + 1), {
+      start: 0,
+      end: MAX_AGENT_SELECTION_CHARS + 1,
+    }),
+    /limited to 16000 characters/,
+  );
   assert.throws(
     () => planLocalSelectionChange(artifact(source), { start: 0, end: source.length }, "translate it"),
     /condensing|three points/i,

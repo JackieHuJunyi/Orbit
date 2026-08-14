@@ -37,9 +37,9 @@ test("parses and formats one explicit quoted Query Data binding", () => {
 test("rejects malformed, displaced, duplicate, or unsafe Query Data bindings", () => {
   const cases = [
     "-- rune:data primary-data\nSELECT 1",
-    "-- context\n-- rune:data \"primary-data\"\nSELECT 1",
-    "-- rune:data \"primary-data\"\n-- rune:data \"数据-二\"\nSELECT 1",
-    "-- rune:data \"line\\nbreak\"\nSELECT 1",
+    '-- context\n-- rune:data "primary-data"\nSELECT 1',
+    '-- rune:data "primary-data"\n-- rune:data "数据-二"\nSELECT 1',
+    '-- rune:data "line\\nbreak"\nSELECT 1',
   ];
   cases.forEach((source) => assert.ok(parseQueryDataSourceDirective(source).errors.length));
   assert.throws(() => formatQueryDataSourceDirective("line\nbreak"), /visible characters/i);
@@ -67,5 +67,8 @@ test("fails closed when an explicit Query source is missing or is not Data", () 
     source: '-- rune:data "target"\nSELECT * FROM workspace_data;',
   };
   assert.match(resolveQueryDataArtifact(query, [primary]).errors[0], /not found/i);
-  assert.match(resolveQueryDataArtifact(query, [{ ...primary, id: "target", kind: "document" }]).errors[0], /Data artifact/i);
+  assert.match(
+    resolveQueryDataArtifact(query, [{ ...primary, id: "target", kind: "document" }]).errors[0],
+    /Data artifact/i,
+  );
 });

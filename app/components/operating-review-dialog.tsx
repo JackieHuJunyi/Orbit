@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  BarChart3,
-  Check,
-  FileText,
-  LoaderCircle,
-  Presentation,
-  ShieldCheck,
-} from "lucide-react";
+import { BarChart3, Check, FileText, LoaderCircle, Presentation, ShieldCheck } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
 import { formatChartValue } from "../lib/charts";
@@ -132,7 +125,8 @@ export const OPERATING_REVIEW_BASE_COPY = {
   en: {
     kicker: "Operating review · task first",
     title: "Prepare a verifiable operating-review chain",
-    description: "Define the evidence, metric, and audience first. Rune compiles the analysis, chart, report, and slides into one review transaction.",
+    description:
+      "Define the evidence, metric, and audience first. Rune compiles the analysis, chart, report, and slides into one review transaction.",
     details: "Operating-review task settings",
     reviewTitle: "Review title",
     reviewTitlePlaceholder: "For example: July operating review",
@@ -183,7 +177,8 @@ export const OPERATING_REVIEW_BASE_COPY = {
     preparing: "Shaping and verifying…",
     prepare: "Prepare review",
     update: "Prepare update review",
-    savedDescription: "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.",
+    savedDescription:
+      "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.",
     savedKicker: "Saved task · repeatable",
     savedTitle: "Update this operating-review task",
     planner: "Review-question planner",
@@ -195,7 +190,8 @@ export const OPERATING_REVIEW_BASE_COPY = {
     modelPrepared: "Model-assisted operating review prepared with live-bound numbers; nothing writes until review",
     localPrepared: "Deterministic local operating review prepared; nothing writes until review",
     localFallback: "Model unavailable; deterministic local operating review prepared for review",
-    sourceTooLargeFallback: "Data exceeds the model context safety limit; deterministic local operating review prepared for review",
+    sourceTooLargeFallback:
+      "Data exceeds the model context safety limit; deterministic local operating review prepared for review",
     localErrors: "Check these settings first:",
     chain: "Delivery chain",
     fields: "Fields and measure",
@@ -219,22 +215,25 @@ export function operatingReviewCopy(locale: RuneLocale) {
 }
 
 function selectedDeliverables(report: boolean, slides: boolean): OperatingReviewDeliverable[] {
-  return [report ? "document" : null, slides ? "slides" : null]
-    .filter((item): item is OperatingReviewDeliverable => item !== null);
+  return [report ? "document" : null, slides ? "slides" : null].filter(
+    (item): item is OperatingReviewDeliverable => item !== null,
+  );
 }
 
 function comparisonConnector(locale: RuneLocale) {
-  return ({
-    "zh-CN": "对比",
-    "zh-TW": "對比",
-    en: "vs",
-    fr: "contre",
-    es: "frente a",
-    ru: "против",
-    ar: "مقابل",
-    ja: "対",
-    ko: "대비",
-  } satisfies Record<RuneLocale, string>)[locale];
+  return (
+    {
+      "zh-CN": "对比",
+      "zh-TW": "對比",
+      en: "vs",
+      fr: "contre",
+      es: "frente a",
+      ru: "против",
+      ar: "مقابل",
+      ja: "対",
+      ko: "대비",
+    } satisfies Record<RuneLocale, string>
+  )[locale];
 }
 
 export function OperatingReviewDialog({
@@ -254,12 +253,16 @@ export function OperatingReviewDialog({
   );
   const [category, setCategory] = useState(initialInput?.category ?? "");
   const [value, setValue] = useState(initialInput?.value ?? "");
-  const [aggregation, setAggregation] = useState<OperatingReviewInput["aggregation"]>(initialInput?.aggregation ?? "sum");
+  const [aggregation, setAggregation] = useState<OperatingReviewInput["aggregation"]>(
+    initialInput?.aggregation ?? "sum",
+  );
   const [mark, setMark] = useState<OperatingReviewInput["mark"]>(initialInput?.mark ?? "bar");
   const [format, setFormat] = useState<OperatingReviewInput["format"]>(initialInput?.format ?? "currency");
   const [scopeField, setScopeField] = useState(initialInput?.scope?.field ?? "");
   const [scopeValue, setScopeValue] = useState<OperatingReviewScopeValue | null>(initialInput?.scope?.value ?? null);
-  const [comparisonValue, setComparisonValue] = useState<OperatingReviewScopeValue | null>(initialInput?.comparisonScope?.value ?? null);
+  const [comparisonValue, setComparisonValue] = useState<OperatingReviewScopeValue | null>(
+    initialInput?.comparisonScope?.value ?? null,
+  );
   const [period, setPeriod] = useState(initialInput?.period ?? "");
   const [audience, setAudience] = useState<OperatingReviewInput["audience"]>(initialInput?.audience ?? "leadership");
   const [focus, setFocus] = useState(initialInput?.focus ?? "");
@@ -268,15 +271,12 @@ export function OperatingReviewDialog({
   const [attempted, setAttempted] = useState(false);
   const [preparing, setPreparing] = useState(false);
 
-  const sourceOptions = useMemo(
-    () => artifactCreationSourceOptions(artifacts, "query"),
-    [artifacts],
-  );
-  const sourceOption = sourceOptions.find((option) => option.artifactId === sourceArtifactId)
-    ?? sourceOptions[0];
-  const preferredCategory = sourceOption?.columns.find((column) => !sourceOption.numericColumns.includes(column))
-    ?? sourceOption?.columns[0]
-    ?? "";
+  const sourceOptions = useMemo(() => artifactCreationSourceOptions(artifacts, "query"), [artifacts]);
+  const sourceOption = sourceOptions.find((option) => option.artifactId === sourceArtifactId) ?? sourceOptions[0];
+  const preferredCategory =
+    sourceOption?.columns.find((column) => !sourceOption.numericColumns.includes(column)) ??
+    sourceOption?.columns[0] ??
+    "";
   const effectiveCategory = sourceOption?.columns.includes(category)
     ? category
     : initialInput
@@ -294,28 +294,30 @@ export function OperatingReviewDialog({
       ? scopeField
       : "";
   const scopeOptions = useMemo(
-    () => parsedData && effectiveScopeField && parsedData.columns.includes(effectiveScopeField)
-      ? collectOperatingReviewScopeValues(parsedData.rows, effectiveScopeField)
-      : { values: [], truncated: false },
+    () =>
+      parsedData && effectiveScopeField && parsedData.columns.includes(effectiveScopeField)
+        ? collectOperatingReviewScopeValues(parsedData.rows, effectiveScopeField)
+        : { values: [], truncated: false },
     [effectiveScopeField, parsedData],
   );
-  const scopeValueAvailable = scopeValue != null && scopeOptions.values.some((candidate) => (
-    operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(scopeValue)
-  ));
+  const scopeValueAvailable =
+    scopeValue != null &&
+    scopeOptions.values.some(
+      (candidate) => operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(scopeValue),
+    );
   const scopeReady = !effectiveScopeField || scopeValue != null;
   const effectiveScope = useMemo(
-    () => effectiveScopeField && scopeValue != null
-      ? { field: effectiveScopeField, value: scopeValue }
-      : null,
+    () => (effectiveScopeField && scopeValue != null ? { field: effectiveScopeField, value: scopeValue } : null),
     [effectiveScopeField, scopeValue],
   );
-  const comparisonValueAvailable = comparisonValue != null && scopeOptions.values.some((candidate) => (
-    operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(comparisonValue)
-  ));
+  const comparisonValueAvailable =
+    comparisonValue != null &&
+    scopeOptions.values.some(
+      (candidate) => operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(comparisonValue),
+    );
   const effectiveComparisonScope = useMemo(
-    () => effectiveScopeField && comparisonValue != null
-      ? { field: effectiveScopeField, value: comparisonValue }
-      : null,
+    () =>
+      effectiveScopeField && comparisonValue != null ? { field: effectiveScopeField, value: comparisonValue } : null,
     [comparisonValue, effectiveScopeField],
   );
   const strictNumericColumns = useMemo(() => {
@@ -327,62 +329,58 @@ export function OperatingReviewDialog({
       effectiveComparisonScope,
     ).columns;
   }, [effectiveComparisonScope, effectiveScope, parsedData]);
-  const effectiveValue = strictNumericColumns.includes(value) && value !== effectiveCategory
-    ? value
-    : initialInput
+  const effectiveValue =
+    strictNumericColumns.includes(value) && value !== effectiveCategory
       ? value
-      : strictNumericColumns.find((column) => column !== effectiveCategory) ?? "";
+      : initialInput
+        ? value
+        : (strictNumericColumns.find((column) => column !== effectiveCategory) ?? "");
   const deliverables = useMemo(
     () => selectedDeliverables(includeReport, includeSlides),
     [includeReport, includeSlides],
   );
-  const input = useMemo<OperatingReviewInput>(() => ({
-    title,
-    dataArtifactId: sourceOption?.artifactId ?? "",
-    category: effectiveCategory,
-    value: effectiveValue,
-    aggregation,
-    mark,
-    format,
-    scope: effectiveScope,
-    comparisonScope: effectiveComparisonScope,
-    period,
-    audience,
-    focus,
-    deliverables,
-    locale,
-  }), [
-    aggregation,
-    audience,
-    deliverables,
-    effectiveCategory,
-    effectiveValue,
-    focus,
-    format,
-    effectiveScope,
-    effectiveComparisonScope,
-    locale,
-    mark,
-    period,
-    sourceOption?.artifactId,
-    title,
-  ]);
-  const prepared = useMemo(
-    () => prepareOperatingReviewWorkflow(artifacts, input),
-    [artifacts, input],
+  const input = useMemo<OperatingReviewInput>(
+    () => ({
+      title,
+      dataArtifactId: sourceOption?.artifactId ?? "",
+      category: effectiveCategory,
+      value: effectiveValue,
+      aggregation,
+      mark,
+      format,
+      scope: effectiveScope,
+      comparisonScope: effectiveComparisonScope,
+      period,
+      audience,
+      focus,
+      deliverables,
+      locale,
+    }),
+    [
+      aggregation,
+      audience,
+      deliverables,
+      effectiveCategory,
+      effectiveValue,
+      focus,
+      format,
+      effectiveScope,
+      effectiveComparisonScope,
+      locale,
+      mark,
+      period,
+      sourceOption?.artifactId,
+      title,
+    ],
   );
-  const evidence = useMemo(
-    () => prepareOperatingReviewEvidence(artifacts, input),
-    [artifacts, input],
-  );
+  const prepared = useMemo(() => prepareOperatingReviewWorkflow(artifacts, input), [artifacts, input]);
+  const evidence = useMemo(() => prepareOperatingReviewEvidence(artifacts, input), [artifacts, input]);
   const evidenceRows = evidence.evidenceRows?.slice(0, MAX_OPERATING_REVIEW_PREVIEW_ROWS) ?? [];
   const eligibleRowCount = evidence.matchedRowCount ?? 0;
   const comparisonRowCount = evidence.comparisonMatchedRowCount ?? 0;
   const excludedRowCount = Math.max(0, (parsedData?.rows.length ?? 0) - eligibleRowCount - comparisonRowCount);
 
-  const deliverableNames = deliverables.map((deliverable) => (
-    deliverable === "document" ? copy.report : copy.slides
-  ));
+  const deliverableNames = deliverables.map((deliverable) => (deliverable === "document" ? copy.report : copy.slides));
   const aggregationLabel = aggregation === "average" ? copy.average : copy.sum;
   const markLabel = mark === "line" ? copy.line : copy.bar;
   const audienceLabel = audience === "board" ? copy.board : audience === "team" ? copy.team : copy.leadership;
@@ -390,9 +388,10 @@ export function OperatingReviewDialog({
   const scopeLabel = effectiveComparisonScope
     ? `${primaryScopeLabel} ${comparisonConnector(locale)} ${String(effectiveComparisonScope.value)}`
     : primaryScopeLabel;
-  const liveSummary = sourceOption && effectiveCategory && effectiveValue && deliverableNames.length
-    ? `${sourceOption.name} · ${effectiveCategory} → ${aggregationLabel}(${effectiveValue}) · ${scopeLabel} · ${markLabel} → ${deliverableNames.join(" + ")}`
-    : copy.incomplete;
+  const liveSummary =
+    sourceOption && effectiveCategory && effectiveValue && deliverableNames.length
+      ? `${sourceOption.name} · ${effectiveCategory} → ${aggregationLabel}(${effectiveValue}) · ${scopeLabel} · ${markLabel} → ${deliverableNames.join(" + ")}`
+      : copy.incomplete;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -413,17 +412,25 @@ export function OperatingReviewDialog({
   return (
     <ReviewDialog
       dialogId="operating-review"
-      kicker={<><BarChart3 aria-hidden="true" /> {initialInput ? copy.savedKicker : copy.kicker}</>}
+      kicker={
+        <>
+          <BarChart3 aria-hidden="true" /> {initialInput ? copy.savedKicker : copy.kicker}
+        </>
+      }
       title={initialInput ? copy.savedTitle : copy.title}
       description={initialInput ? copy.savedDescription : copy.description}
       detailsLabel={copy.details}
       locale={locale}
       onCancel={cancel}
-      footer={(
+      footer={
         <>
-          <div><ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}</div>
+          <div>
+            <ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}
+          </div>
           <span>
-            <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>{copy.cancel}</button>
+            <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>
+              {copy.cancel}
+            </button>
             <button
               className="button primary-button"
               type="submit"
@@ -435,9 +442,14 @@ export function OperatingReviewDialog({
             </button>
           </span>
         </>
-      )}
+      }
     >
-      <form id="operating-review-form" className="operating-review-form" noValidate onSubmit={(event) => void submit(event)}>
+      <form
+        id="operating-review-form"
+        className="operating-review-form"
+        noValidate
+        onSubmit={(event) => void submit(event)}
+      >
         <div className="operating-review-grid">
           <label className="operating-review-field wide" htmlFor="operating-review-title">
             <span>{copy.reviewTitle}</span>
@@ -472,7 +484,9 @@ export function OperatingReviewDialog({
             >
               {!sourceOptions.length && <option value="">{copy.noSource}</option>}
               {sourceOptions.map((option) => (
-                <option key={option.artifactId} value={option.artifactId}>{option.name} · Data</option>
+                <option key={option.artifactId} value={option.artifactId}>
+                  {option.name} · Data
+                </option>
               ))}
             </select>
           </label>
@@ -491,9 +505,15 @@ export function OperatingReviewDialog({
             >
               <option value="">{copy.allRows}</option>
               {initialInput?.scope && effectiveScopeField && !sourceOption?.columns.includes(effectiveScopeField) && (
-                <option value={effectiveScopeField}>{effectiveScopeField} · {copy.noField}</option>
+                <option value={effectiveScopeField}>
+                  {effectiveScopeField} · {copy.noField}
+                </option>
               )}
-              {sourceOption?.columns.map((column) => <option key={column} value={column}>{column}</option>)}
+              {sourceOption?.columns.map((column) => (
+                <option key={column} value={column}>
+                  {column}
+                </option>
+              ))}
             </select>
             <small id="operating-review-scope-help">{copy.scopeHint}</small>
           </label>
@@ -504,12 +524,15 @@ export function OperatingReviewDialog({
               id="operating-review-scope-value"
               value={scopeValue == null ? "" : operatingReviewScopeValueKey(scopeValue)}
               onChange={(event) => {
-                const selected = scopeOptions.values.find((candidate) => (
-                  operatingReviewScopeValueKey(candidate) === event.target.value
-                ));
+                const selected = scopeOptions.values.find(
+                  (candidate) => operatingReviewScopeValueKey(candidate) === event.target.value,
+                );
                 setScopeValue(selected ?? null);
-                if (selected != null && comparisonValue != null
-                  && operatingReviewScopeValueKey(selected) === operatingReviewScopeValueKey(comparisonValue)) {
+                if (
+                  selected != null &&
+                  comparisonValue != null &&
+                  operatingReviewScopeValueKey(selected) === operatingReviewScopeValueKey(comparisonValue)
+                ) {
                   setComparisonValue(null);
                 }
               }}
@@ -517,16 +540,24 @@ export function OperatingReviewDialog({
               required={Boolean(effectiveScopeField)}
               aria-invalid={attempted && !scopeReady}
             >
-              <option value="">{effectiveScopeField && !scopeOptions.values.length ? copy.noScopeValue : copy.chooseScopeValue}</option>
+              <option value="">
+                {effectiveScopeField && !scopeOptions.values.length ? copy.noScopeValue : copy.chooseScopeValue}
+              </option>
               {scopeValue != null && !scopeValueAvailable && (
-                <option value={operatingReviewScopeValueKey(scopeValue)}>{String(scopeValue)} · {copy.noScopeValue}</option>
+                <option value={operatingReviewScopeValueKey(scopeValue)}>
+                  {String(scopeValue)} · {copy.noScopeValue}
+                </option>
               )}
               {scopeOptions.values.map((candidate) => (
-                <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>{String(candidate)}</option>
+                <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>
+                  {String(candidate)}
+                </option>
               ))}
             </select>
             {scopeOptions.truncated && <small>{copy.scopeTooMany}</small>}
-            {attempted && !scopeReady && <small className="operating-review-field-error">{copy.scopeValueRequired}</small>}
+            {attempted && !scopeReady && (
+              <small className="operating-review-field-error">{copy.scopeValueRequired}</small>
+            )}
           </label>
 
           <label className="operating-review-field" htmlFor="operating-review-comparison-value">
@@ -535,9 +566,9 @@ export function OperatingReviewDialog({
               id="operating-review-comparison-value"
               value={comparisonValue == null ? "" : operatingReviewScopeValueKey(comparisonValue)}
               onChange={(event) => {
-                const selected = scopeOptions.values.find((candidate) => (
-                  operatingReviewScopeValueKey(candidate) === event.target.value
-                ));
+                const selected = scopeOptions.values.find(
+                  (candidate) => operatingReviewScopeValueKey(candidate) === event.target.value,
+                );
                 setComparisonValue(selected ?? null);
               }}
               disabled={!effectiveScopeField || scopeValue == null || scopeOptions.values.length < 2}
@@ -545,13 +576,20 @@ export function OperatingReviewDialog({
             >
               <option value="">{copy.noComparison}</option>
               {comparisonValue != null && !comparisonValueAvailable && (
-                <option value={operatingReviewScopeValueKey(comparisonValue)}>{String(comparisonValue)} · {copy.noScopeValue}</option>
+                <option value={operatingReviewScopeValueKey(comparisonValue)}>
+                  {String(comparisonValue)} · {copy.noScopeValue}
+                </option>
               )}
               {scopeOptions.values
-                .filter((candidate) => scopeValue == null
-                  || operatingReviewScopeValueKey(candidate) !== operatingReviewScopeValueKey(scopeValue))
+                .filter(
+                  (candidate) =>
+                    scopeValue == null ||
+                    operatingReviewScopeValueKey(candidate) !== operatingReviewScopeValueKey(scopeValue),
+                )
                 .map((candidate) => (
-                  <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>{String(candidate)}</option>
+                  <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>
+                    {String(candidate)}
+                  </option>
                 ))}
             </select>
             <small id="operating-review-comparison-help">{copy.comparisonHint}</small>
@@ -572,9 +610,15 @@ export function OperatingReviewDialog({
             >
               {!sourceOption?.columns.length && <option value="">{copy.noField}</option>}
               {initialInput && effectiveCategory && !sourceOption?.columns.includes(effectiveCategory) && (
-                <option value={effectiveCategory}>{effectiveCategory} · {copy.noField}</option>
+                <option value={effectiveCategory}>
+                  {effectiveCategory} · {copy.noField}
+                </option>
               )}
-              {sourceOption?.columns.map((column) => <option key={column} value={column}>{column}</option>)}
+              {sourceOption?.columns.map((column) => (
+                <option key={column} value={column}>
+                  {column}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -593,11 +637,17 @@ export function OperatingReviewDialog({
                 <option value="">{copy.noNumericField}</option>
               )}
               {initialInput && effectiveValue && !strictNumericColumns.includes(effectiveValue) && (
-                <option value={effectiveValue}>{effectiveValue} · {copy.noNumericField}</option>
+                <option value={effectiveValue}>
+                  {effectiveValue} · {copy.noNumericField}
+                </option>
               )}
               {strictNumericColumns
                 .filter((column) => column !== effectiveCategory)
-                .map((column) => <option key={column} value={column}>{column}</option>)}
+                .map((column) => (
+                  <option key={column} value={column}>
+                    {column}
+                  </option>
+                ))}
             </select>
             <small id="operating-review-value-help">{copy.numericHint}</small>
           </label>
@@ -605,22 +655,62 @@ export function OperatingReviewDialog({
           <fieldset className="operating-review-field">
             <legend>{copy.aggregation}</legend>
             <div className="operating-review-options">
-              <label><input type="radio" name="operating-review-aggregation" value="sum" checked={aggregation === "sum"} onChange={() => setAggregation("sum")} /> <span>{copy.sum}</span></label>
-              <label><input type="radio" name="operating-review-aggregation" value="average" checked={aggregation === "average"} onChange={() => setAggregation("average")} /> <span>{copy.average}</span></label>
+              <label>
+                <input
+                  type="radio"
+                  name="operating-review-aggregation"
+                  value="sum"
+                  checked={aggregation === "sum"}
+                  onChange={() => setAggregation("sum")}
+                />{" "}
+                <span>{copy.sum}</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="operating-review-aggregation"
+                  value="average"
+                  checked={aggregation === "average"}
+                  onChange={() => setAggregation("average")}
+                />{" "}
+                <span>{copy.average}</span>
+              </label>
             </div>
           </fieldset>
 
           <fieldset className="operating-review-field">
             <legend>{copy.chart}</legend>
             <div className="operating-review-options">
-              <label><input type="radio" name="operating-review-chart" value="bar" checked={mark === "bar"} onChange={() => setMark("bar")} /> <span>{copy.bar}</span></label>
-              <label><input type="radio" name="operating-review-chart" value="line" checked={mark === "line"} onChange={() => setMark("line")} /> <span>{copy.line}</span></label>
+              <label>
+                <input
+                  type="radio"
+                  name="operating-review-chart"
+                  value="bar"
+                  checked={mark === "bar"}
+                  onChange={() => setMark("bar")}
+                />{" "}
+                <span>{copy.bar}</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="operating-review-chart"
+                  value="line"
+                  checked={mark === "line"}
+                  onChange={() => setMark("line")}
+                />{" "}
+                <span>{copy.line}</span>
+              </label>
             </div>
           </fieldset>
 
           <label className="operating-review-field" htmlFor="operating-review-format">
             <span>{copy.format}</span>
-            <select id="operating-review-format" value={format} onChange={(event) => setFormat(event.target.value as OperatingReviewInput["format"])}>
+            <select
+              id="operating-review-format"
+              value={format}
+              onChange={(event) => setFormat(event.target.value as OperatingReviewInput["format"])}
+            >
               <option value="number">{copy.number}</option>
               <option value="currency">{copy.currency}</option>
               <option value="percent">{copy.percent}</option>
@@ -642,7 +732,11 @@ export function OperatingReviewDialog({
 
           <label className="operating-review-field" htmlFor="operating-review-audience">
             <span>{copy.audience}</span>
-            <select id="operating-review-audience" value={audience} onChange={(event) => setAudience(event.target.value as OperatingReviewInput["audience"])}>
+            <select
+              id="operating-review-audience"
+              value={audience}
+              onChange={(event) => setAudience(event.target.value as OperatingReviewInput["audience"])}
+            >
               <option value="leadership">{copy.leadership}</option>
               <option value="board">{copy.board}</option>
               <option value="team">{copy.team}</option>
@@ -667,21 +761,44 @@ export function OperatingReviewDialog({
         <fieldset className="operating-review-deliverables">
           <legend>{copy.deliverables}</legend>
           <label>
-            <input type="checkbox" checked={includeReport} disabled={Boolean(initialInput)} onChange={(event) => setIncludeReport(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={includeReport}
+              disabled={Boolean(initialInput)}
+              onChange={(event) => setIncludeReport(event.target.checked)}
+            />
             <FileText aria-hidden="true" />
-            <span><strong>{copy.report}</strong><small>{copy.reportDetail}</small></span>
+            <span>
+              <strong>{copy.report}</strong>
+              <small>{copy.reportDetail}</small>
+            </span>
           </label>
           <label>
-            <input type="checkbox" checked={includeSlides} disabled={Boolean(initialInput)} onChange={(event) => setIncludeSlides(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={includeSlides}
+              disabled={Boolean(initialInput)}
+              onChange={(event) => setIncludeSlides(event.target.checked)}
+            />
             <Presentation aria-hidden="true" />
-            <span><strong>{copy.slides}</strong><small>{copy.slidesDetail}</small></span>
+            <span>
+              <strong>{copy.slides}</strong>
+              <small>{copy.slidesDetail}</small>
+            </span>
           </label>
         </fieldset>
 
-        <section className="operating-review-summary" aria-labelledby="operating-review-summary-title" aria-live="polite">
+        <section
+          className="operating-review-summary"
+          aria-labelledby="operating-review-summary-title"
+          aria-live="polite"
+        >
           <header>
             <BarChart3 aria-hidden="true" />
-            <div><span>{copy.summary}</span><strong id="operating-review-summary-title">{title.trim() || copy.reviewTitlePlaceholder}</strong></div>
+            <div>
+              <span>{copy.summary}</span>
+              <strong id="operating-review-summary-title">{title.trim() || copy.reviewTitlePlaceholder}</strong>
+            </div>
           </header>
           <p>{liveSummary}</p>
           {!!evidenceRows.length && (
@@ -692,24 +809,43 @@ export function OperatingReviewDialog({
                   <span>{copy.evidenceDescription}</span>
                 </div>
                 <dl aria-label={copy.evidencePreview}>
-                  <div><dt>{copy.eligibleRows}</dt><dd>{eligibleRowCount}</dd></div>
-                  {effectiveComparisonScope && <div><dt>{copy.comparisonRows}</dt><dd>{comparisonRowCount}</dd></div>}
-                  <div><dt>{copy.excludedRows}</dt><dd>{excludedRowCount}</dd></div>
+                  <div>
+                    <dt>{copy.eligibleRows}</dt>
+                    <dd>{eligibleRowCount}</dd>
+                  </div>
+                  {effectiveComparisonScope && (
+                    <div>
+                      <dt>{copy.comparisonRows}</dt>
+                      <dd>{comparisonRowCount}</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>{copy.excludedRows}</dt>
+                    <dd>{excludedRowCount}</dd>
+                  </div>
                 </dl>
               </header>
               <div className="operating-review-evidence-table">
                 <table>
-                  <thead><tr>
-                    <th scope="col">{effectiveCategory}</th>
-                    {effectiveComparisonScope ? (
-                      <>
-                        <th scope="col">{effectiveValue} · {String(effectiveScope?.value ?? "")}</th>
-                        <th scope="col">{effectiveValue} · {String(effectiveComparisonScope.value)}</th>
-                        <th scope="col">{copy.change}</th>
-                      </>
-                    ) : <th scope="col">{effectiveValue}</th>}
-                    <th scope="col">{copy.sourceRows}</th>
-                  </tr></thead>
+                  <thead>
+                    <tr>
+                      <th scope="col">{effectiveCategory}</th>
+                      {effectiveComparisonScope ? (
+                        <>
+                          <th scope="col">
+                            {effectiveValue} · {String(effectiveScope?.value ?? "")}
+                          </th>
+                          <th scope="col">
+                            {effectiveValue} · {String(effectiveComparisonScope.value)}
+                          </th>
+                          <th scope="col">{copy.change}</th>
+                        </>
+                      ) : (
+                        <th scope="col">{effectiveValue}</th>
+                      )}
+                      <th scope="col">{copy.sourceRows}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {evidenceRows.map((row) => (
                       <tr key={row.id}>
@@ -720,30 +856,66 @@ export function OperatingReviewDialog({
                             <td>{formatChartValue(row.comparisonValue ?? 0, format)}</td>
                             <td>{formatChartValue(row.value, format)}</td>
                           </>
-                        ) : <td>{formatChartValue(row.value, format)}</td>}
+                        ) : (
+                          <td>{formatChartValue(row.value, format)}</td>
+                        )}
                         <td>{row.sourceRowCount}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <footer>{copy.showing} {evidenceRows.length} {copy.of} {evidence.groupCount ?? evidenceRows.length} {copy.groups}</footer>
+              <footer>
+                {copy.showing} {evidenceRows.length} {copy.of} {evidence.groupCount ?? evidenceRows.length}{" "}
+                {copy.groups}
+              </footer>
             </section>
           )}
           <dl>
-            <div><dt>{copy.fields}</dt><dd>{effectiveCategory && effectiveValue ? `${effectiveCategory} → ${aggregationLabel}(${effectiveValue})` : "—"}</dd></div>
-            <div><dt>{copy.scope}</dt><dd>{period.trim() ? `${period.trim()} · ${audienceLabel} · ${scopeLabel}` : `${audienceLabel} · ${scopeLabel}`}</dd></div>
-            <div><dt>{copy.focusSummary}</dt><dd>{focus.trim() || "—"}</dd></div>
-            <div><dt>{copy.planner}</dt><dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd></div>
-            <div><dt>{copy.chain}</dt><dd>{deliverableNames.length ? `Data → Query → Chart → ${deliverableNames.join(" + ")}` : "—"}</dd></div>
+            <div>
+              <dt>{copy.fields}</dt>
+              <dd>
+                {effectiveCategory && effectiveValue
+                  ? `${effectiveCategory} → ${aggregationLabel}(${effectiveValue})`
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>{copy.scope}</dt>
+              <dd>
+                {period.trim()
+                  ? `${period.trim()} · ${audienceLabel} · ${scopeLabel}`
+                  : `${audienceLabel} · ${scopeLabel}`}
+              </dd>
+            </div>
+            <div>
+              <dt>{copy.focusSummary}</dt>
+              <dd>{focus.trim() || "—"}</dd>
+            </div>
+            <div>
+              <dt>{copy.planner}</dt>
+              <dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd>
+            </div>
+            <div>
+              <dt>{copy.chain}</dt>
+              <dd>{deliverableNames.length ? `Data → Query → Chart → ${deliverableNames.join(" + ")}` : "—"}</dd>
+            </div>
           </dl>
         </section>
 
-        {error && <div className="import-review-error" role="alert">{error}</div>}
+        {error && (
+          <div className="import-review-error" role="alert">
+            {error}
+          </div>
+        )}
         {attempted && prepared.errors.length > 0 && (
           <div className="import-review-error" role="alert">
             <strong>{copy.localErrors}</strong>
-            <ul>{prepared.errors.map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul>
+              {prepared.errors.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
         )}
       </form>
