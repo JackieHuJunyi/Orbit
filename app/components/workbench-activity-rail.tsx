@@ -22,6 +22,7 @@ export type WorkbenchActivityRailProps = Readonly<{
   dataGraphLabel: string;
   resetSampleLabel: string;
   settingsLabel: string;
+  settingsExpanded: boolean;
   newArtifactDisabled: boolean;
   operatingReviewDisabled: boolean;
   documentBriefingDisabled: boolean;
@@ -32,7 +33,7 @@ export type WorkbenchActivityRailProps = Readonly<{
   onDocumentBriefing: () => void;
   onFocusAgent: () => void;
   onReset: () => void;
-  onOpenSettings: () => void;
+  onToggleSettings: () => void;
 }>;
 
 /** Props-only activity rail; the Workbench owns every action it dispatches. */
@@ -47,6 +48,7 @@ export function WorkbenchActivityRail({
   dataGraphLabel,
   resetSampleLabel,
   settingsLabel,
+  settingsExpanded,
   newArtifactDisabled,
   operatingReviewDisabled,
   documentBriefingDisabled,
@@ -57,7 +59,7 @@ export function WorkbenchActivityRail({
   onDocumentBriefing,
   onFocusAgent,
   onReset,
-  onOpenSettings,
+  onToggleSettings,
 }: WorkbenchActivityRailProps) {
   return (
     <aside className="activity-rail" aria-label={sectionLabel}>
@@ -115,7 +117,15 @@ export function WorkbenchActivityRail({
         <button className="activity-button" onClick={onReset} aria-label={resetSampleLabel} title={resetSampleLabel}>
           <RotateCcw />
         </button>
-        <button className="activity-button" onClick={onOpenSettings} aria-label={settingsLabel} title={settingsLabel}>
+        <button
+          className="activity-button"
+          data-settings-trigger
+          onClick={onToggleSettings}
+          aria-label={settingsLabel}
+          aria-expanded={settingsExpanded}
+          aria-haspopup="menu"
+          title={settingsLabel}
+        >
           <Settings />
         </button>
       </div>

@@ -137,6 +137,22 @@ html[dir="rtl"] .command-menu-group > button { text-align: right; }
   border-radius: 22px;
   transform-origin: top right;
 }
+
+/* The settings panel replaces the top-right More Tools menu: it anchors to the
+   bottom-left, opening upward beside the activity rail. */
+.settings-popover {
+  top: auto;
+  right: auto;
+  bottom: 14px;
+  left: calc(var(--rune-activity-width) + 10px);
+  transform-origin: bottom left;
+}
+
+html[dir="rtl"] .settings-popover {
+  right: calc(var(--rune-activity-width) + 10px);
+  left: auto;
+  transform-origin: bottom right;
+}
 .tools-popover > header { padding: 2px 7px 4px; }
 .tools-popover .overline { font-size: 10px; }
 .tools-menu-actions { gap: 1px; padding-bottom: 7px; }

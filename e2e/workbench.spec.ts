@@ -36,3 +36,13 @@ test("opens and closes the New artifact dialog from the top bar", async ({ page 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
 });
+
+test("opens the settings panel from the bottom-left gear", async ({ page }) => {
+  await openWorkbench(page);
+  const panel = page.getByRole("menu", { name: "Workspace tools" });
+  await page.getByRole("button", { name: "More tools" }).click();
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("menuitem", { name: /Model settings/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+});

@@ -426,13 +426,14 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(html, />Import</);
   assert.match(html, />Export</);
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-popover" role="menu"/);
+  assert.match(source, /className="tools-popover settings-popover" role="menu"/);
   assert.match(source, /ui\.openFolder/);
   assert.match(source, /setToolsMenuOpen\(false\);\s*openWelcomeGuide\(\);/s);
   assert.match(source, /role="menuitemradio"/);
   assert.match(source, /className="tools-theme-name"/);
   assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(9, minmax\(0, 1fr\)\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
+  assert.match(styles, /\.settings-popover\s*\{[^}]*bottom:\s*14px;/s);
 });
 
 test("records user-confirmed deliverable outcomes through the shared exact-revision ledger", async () => {
@@ -567,7 +568,8 @@ test("keeps the top bar global and moves duplicate task creation into the activi
   assert.match(html, /class="save-indicator saved" role="status" aria-label="Saved on device · Last saved/);
   assert.match(html, /class="visually-hidden">Saved on device<\/span>/);
   assert.match(activityRailSource, /className="activity-button"[\s\S]{0,420}onClick=\{onOperatingReview\}/);
-  assert.match(html, />New<\/button>[\s\S]*>Import<\/button>[\s\S]*class="export-menu"[\s\S]*class="tools-menu"/);
+  assert.match(html, />New<\/button>[\s\S]*>Import<\/button>[\s\S]*class="export-menu"/);
+  assert.match(html, /class="activity-rail"[\s\S]*aria-label="More tools"/);
   assert.doesNotMatch(styles, /\.review-task-button\s*\{/);
 });
 
