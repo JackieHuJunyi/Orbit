@@ -2544,18 +2544,29 @@ export function ArtifactPreview({
       artifacts,
       readyQuerySnapshots(queryRuntime),
     );
-    if (artifact.kind === "data") {
-    const targets = deriveDataPreviewSourceTargets(artifact);
-      content = <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
-    } else {
-      const targets = derivePreviewSourceTargets(artifact);
-      if (artifact.kind === "document") content = <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} onVisualSourceDraftChange={onVisualSourceDraftChange} resolveLocalAssetUrl={resolveLocalAssetUrl} />;
-      else if (artifact.kind === "query") {
+    const previewRenderers: Record<WorkspaceArtifact["kind"], () => ReactNode> = {
+      document: () => {
+        const targets = derivePreviewSourceTargets(artifact);
+        return <DocumentPreview key={artifact.id} artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDocumentSection={onEditDocumentSection} onEditDocumentBlock={onEditDocumentBlock} onReviewDocumentBlockStructure={onReviewDocumentBlockStructure} onVisualSourceDraftChange={onVisualSourceDraftChange} resolveLocalAssetUrl={resolveLocalAssetUrl} />;
+      },
+      data: () => {
+        const targets = deriveDataPreviewSourceTargets(artifact);
+        return <DataPreview artifact={artifact} rowTargets={targets.rows} cellTargets={targets.cells} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDataCell={onEditDataCell} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
+      },
+      query: () => {
         const dataArtifact = resolveQueryDataArtifact(artifact, artifacts).artifact;
-        content = <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
-      } else if (artifact.kind === "chart") content = <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
-      else content = <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} onVisualSourceDraftChange={onVisualSourceDraftChange} resolveLocalAssetUrl={resolveLocalAssetUrl} />;
-    }
+        return <QueryPreview artifact={artifact} dataArtifact={dataArtifact} runtimeEntry={queryRuntime[artifact.id]} onTargetSource={onTargetSource} />;
+      },
+      chart: () => {
+        const targets = derivePreviewSourceTargets(artifact);
+        return <ChartPreview artifact={artifact} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditChartSpec={onEditChartSpec} onVisualSourceDraftChange={onVisualSourceDraftChange} />;
+      },
+      slides: () => {
+        const targets = derivePreviewSourceTargets(artifact);
+        return <SlidesPreview artifact={artifact} source={compiled.source} artifacts={artifacts} queryRuntime={queryRuntime} targets={targets} activeSelection={activeSelection} onTargetSource={onTargetSource} onEditDeckSlide={onEditDeckSlide} onVisualSourceDraftChange={onVisualSourceDraftChange} resolveLocalAssetUrl={resolveLocalAssetUrl} />;
+      },
+    };
+    content = previewRenderers[artifact.kind]();
   }
   return <PreviewCopyContext.Provider value={copy}>{content}</PreviewCopyContext.Provider>;
 }

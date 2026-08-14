@@ -1,52 +1,21 @@
 import { resolveArtifactConflicts } from "./artifact-identity.ts";
 import { validateWorkspaceArtifacts } from "./patches.ts";
-import {
-  formatQueryDataSourceDirective,
-  resolveQueryDataArtifact,
-} from "./query-source.ts";
+import { resolveQueryDataArtifact } from "./query-source.ts";
 import { inferQueryOutputColumns } from "./sql.ts";
-import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
+import {
+  artifactAdapterRegistry,
+  parseDataSource,
+  type ArtifactStarterRequest,
+  type WorkspaceArtifact,
+} from "./workspace.ts";
 
 export const MAX_WORKSPACE_ARTIFACTS = 50;
 export const MAX_ARTIFACT_TITLE_CHARS = 80;
 
-export const creatableArtifactTypes = [
-  {
-    kind: "document",
-    label: "Document",
-    format: "Markdown",
-    extension: ".md",
-    description: "A readable report, memo, or brief.",
-  },
-  {
-    kind: "data",
-    label: "Data table",
-    format: "CSV",
-    extension: ".csv",
-    description: "A typed table ready for grids and analysis.",
-  },
-  {
-    kind: "query",
-    label: "SQL analysis",
-    format: "DuckDB SQL",
-    extension: ".sql",
-    description: "A readable query bound to one exact Data source.",
-  },
-  {
-    kind: "chart",
-    label: "Live chart",
-    format: "Chart JSON",
-    extension: ".chart.json",
-    description: "A reusable visual bound to Data or Query output.",
-  },
-  {
-    kind: "slides",
-    label: "Presentation",
-    format: "Deck Markdown",
-    extension: ".deck.md",
-    description: "A structured deck compiled to live HTML.",
-  },
-] as const;
+export const creatableArtifactTypes = Object.freeze(artifactAdapterRegistry.all().map((adapter) => Object.freeze({
+  kind: adapter.kind,
+  ...adapter.creation,
+})));
 
 export type CreatableArtifactKind = typeof creatableArtifactTypes[number]["kind"];
 
@@ -167,57 +136,31 @@ export function artifactCreationSourceOptions(
   return [...data, ...queries];
 }
 
-function sourceFor(input: ArtifactCreationInput, title: string) {
-  if (input.kind === "document") return `# ${title}\n\n`;
-  if (input.kind === "data") return "Item,Value\n";
-  if (input.kind === "query") {
-    return `${formatQueryDataSourceDirective(input.sourceArtifactId)}\nSELECT *\nFROM workspace_data;\n`;
-  }
-  if (input.kind === "chart") {
-    return `${JSON.stringify({
-      version: 1,
-      title,
-      description: "",
-      source: input.sourceArtifactId,
-      mark: input.mark,
-      category: input.category,
-      value: input.value,
-      sort: input.mark === "line" ? "source" : "descending",
-      format: input.format,
-      color: "#ff5c35",
-      maxItems: 8,
-    }, null, 2)}\n`;
-  }
-  return `---
-version: 1
-title: ${title}
-theme: rune
-ratio: 16:9
-lang: en
----
-
-<!-- layout: cover -->
-
-# ${title}
-`;
-}
-
 function artifactFor(input: ArtifactCreationInput): WorkspaceArtifact {
   const title = normalizeArtifactTitle(input.title);
   const slug = artifactSlug(title);
-  if (input.kind === "document") {
-    return { id: slug, name: `${slug}.md`, kind: "document", language: "Markdown", source: sourceFor(input, title) };
-  }
-  if (input.kind === "data") {
-    return { id: slug, name: `${slug}.csv`, kind: "data", language: "CSV / JSON", source: sourceFor(input, title) };
-  }
-  if (input.kind === "query") {
-    return { id: slug, name: `${slug}.sql`, kind: "query", language: "DuckDB SQL", source: sourceFor(input, title) };
-  }
-  if (input.kind === "chart") {
-    return { id: slug, name: `${slug}.chart.json`, kind: "chart", language: "Chart JSON", source: sourceFor(input, title) };
-  }
-  return { id: slug, name: `${slug}.deck.md`, kind: "slides", language: "Deck Markdown", source: sourceFor(input, title) };
+  const adapter = artifactAdapterRegistry.forKind(input.kind);
+  const starterRequest: ArtifactStarterRequest = input.kind === "chart"
+    ? {
+        title,
+        sourceArtifactId: input.sourceArtifactId,
+        chart: {
+          category: input.category,
+          value: input.value,
+          mark: input.mark,
+          format: input.format,
+        },
+      }
+    : input.kind === "query"
+      ? { title, sourceArtifactId: input.sourceArtifactId }
+      : { title };
+  return {
+    id: slug,
+    name: `${slug}${adapter.creation.extension}`,
+    kind: input.kind,
+    language: input.kind === "data" ? "CSV / JSON" : adapter.creation.format,
+    source: adapter.starterSource(starterRequest),
+  };
 }
 
 function validateCreationBinding(existing: WorkspaceArtifact[], input: ArtifactCreationInput) {

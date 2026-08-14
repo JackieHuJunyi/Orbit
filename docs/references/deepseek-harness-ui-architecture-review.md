@@ -55,6 +55,8 @@ Harness 将人类命令的目录、筛选和选择界面与具体能力分开：
 
 v1.04 又把目录下方的最小组合原语抽成 React-free `surface-registry`：surface owner 只声明 `single/list` cardinality，feature 提交 stable id、order 与纯 value，重复、未知 surface、非法 id 和 single 冲突立即失败，注册返回幂等 disposer。Workspace views 与 Quick Actions 共同使用它；registry 仍不能渲染、执行命令、读取浏览器状态或写 workspace。
 
+v1.05 再把同一条 owner/provider 原则落实到 Rune 自己的文件域：五种 Artifact 必须各有一个静态 adapter，统一拥有新建元数据、starter source、格式识别、验证、状态统计和本地建议。它不使用 Harness 的 service container 或动态 plugin；React preview 通过另一份 exhaustive typed renderer map 消费 kind，防止 domain registry 获得 UI 或写入能力。
+
 这不是动态插件系统，也不是把每个按钮再封装一层。它先消除散落命令目录、视图定义和快捷入口的重复，并证明可撤销 contribution 合同；只有出现第三方运行时装卸、隔离、配置 patch 和跨包生命周期需求时，才重新评估 Harness 的完整 slot/plugin host。
 
 ### 1.6 扩展点必须先属于业务域
@@ -91,6 +93,14 @@ Rune 继续采用更轻的对应实现：`app/styles/tokens.css` 与 appearance 
 - 拖动时暂停 grid-track easing，指针和面板边界保持贴合；静止时 separator chrome 隐藏，hover、focus 与 dragging 才显示轻量浮动胶囊。
 - Source 与 Preview 继续 mounted，因而 selection、scroll、DuckDB/Chart preview 和撤销上下文不因视图切换重建。
 - 没有复制上游组件、品牌色或聊天信息架构；Rune 只采用可组合边界、稳定 DOM identity 与细粒度交互反馈。
+
+## 2.2 v1.05 新增落点
+
+- `document / data / query / chart / slides` 是显式完整集合；缺失、重复、未知或错误 definition 在加载时失败。
+- New、导入识别、source validation、status stats 与 Quick Actions 不再维护互相漂移的 kind 分支。
+- `.deck.md` 与 `.chart.json` 的专用识别由 adapter 明确排除通用 Markdown/JSON shadowing。
+- Preview 使用 compile-time exhaustive renderer record；React 不进入 adapter registry，registry 也不获得 workspace writer。
+- 继续不引入 runtime unload、第三方代码、profile tree 或 service locator。
 
 ## 3. 后续架构门槛
 

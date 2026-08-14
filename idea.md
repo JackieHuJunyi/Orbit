@@ -2351,3 +2351,11 @@ DeepSeek Harness 的 UI 真正轻盈之处，不只是配色，而是布局 owne
 v1.04 增加最小 React-free `surface-registry`。Owner 声明 `single/list`，feature 注册 stable id、有限 order 与纯 value；unknown、duplicate、非法 id/order 和 single 冲突都 fail loud，disposer 幂等撤销，consumer 只拿有序 immutable snapshot。Workspace views 与 Quick Actions 是首批使用者。它没有 React、fetch、credential、persistence 或 Artifact mutation，因此建立低成本扩展 seam，却没有提前引入 Cordis profile、dynamic loader、session scope 或第三方代码安全面。
 
 Source/Preview 两个 pane header 现在消费同一个 view-switch 组件。中间 separator 使用 element pointer capture，不再把 gesture 生命周期散到 window；pointer move 通过 `requestAnimationFrame` 合并，拖动期间关闭 grid easing，落定后只持久化一次。逻辑百分比继续支持 RTL，Arrow、Shift 与 Home 继续键盘可达，窄屏与 reduced-motion 合同不变。视觉上保留足够命中宽度，但静止时隐藏 chrome，只在 hover、focus 或 drag 时出现 30px 浮动胶囊。轻盈来自状态边界清楚，而不是再叠一层光效。
+
+## 111. v1.05 Artifact 扩展必须有一个完整静态权威，不能散落在五组条件分支里
+
+架构文档虽然早已写下 Artifact Adapter，但 production facts 仍分别存在于 workspace validation/stats/detection、artifact creation 和 Preview 分发。第六种 Artifact 若只改其中四处，项目可能仍然编译，却会在导入、新建、状态栏或预览里落到错误行为。真正的低成本扩展首先需要完整性检查，而不是更大的插件框架。
+
+v1.05 建立 React-free `artifact-adapter-registry`，要求 `document / data / query / chart / slides` 每种恰好一个 adapter。adapter 统一拥有 creation metadata、extension、starter source、language/detection、validation、stats 与 deterministic local suggestions；missing、duplicate、unknown、非法 order/extension 全部 fail loud，snapshot、metadata 和 commands 都 immutable。`.deck.md` 与 `.chart.json` 由专用 detector 明确避免被普通 Markdown/JSON 抢先识别。
+
+React preview 不注册进这份 domain authority，而是使用 compile-time exhaustive renderer record。这样新增 kind 必须同时补 adapter 与 renderer，但 adapter 不能渲染、fetch、持久化、拿 credential 或修改 workspace；唯一 writer 仍是现有 review/checkpoint/transaction。这里学习的是 Harness/Cordis 的 capability owner 与完整 composition，不是 dynamic package、service locator 或第三方运行时。

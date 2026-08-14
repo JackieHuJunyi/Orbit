@@ -2086,3 +2086,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 分栏 gesture 归 frame control 所有：element pointer capture、每 animation frame 最多一次 React update、拖动时关闭 grid easing、结束后一次 preference commit，并对 pointer cancel/lost capture/unmount 完整清理。
 - Separator 静止时只保留 12px 命中区，hover/focus/drag 才显示小胶囊；键盘 Arrow、Shift step、Home reset、RTL logical math、960px 单面板和 reduced-motion 都必须保持。
 - 当前不引入 Cordis profiles、dynamic package loader、session-scoped injection 或第三方 executable UI。只有独立 runtime owners、隔离与配置 patch 成为真实需求时才重新评估。
+
+### 17.37 v1.05 Artifact 类型扩展必须由一个穷尽静态 Adapter 权威约束
+
+- `document / data / query / chart / slides` 使用一个 React-free registry 组成；每种 kind 必须恰有一个 adapter，missing、duplicate、unknown、非法 order 或缺少 dotted extension 必须加载时失败。
+- adapter 统一拥有 creation label/format/extension/description、starter source、source language detection、validation、status stats 与 deterministic local Quick Actions；New、导入识别、验证和状态栏不得再复制 kind 分支。
+- `.deck.md` 必须先于通用 Markdown 语义成立，`.chart.json` 必须先于通用 JSON 语义成立；该优先关系由各 adapter 的检测合同与自动化测试锁定。
+- adapter snapshot、creation metadata 与 suggestions 只读；registry 不得导入 React、browser、provider、credential、persistence 或 workspace mutation。
+- React Preview 使用独立的 `Record<ArtifactKind, renderer>` 穷尽分发；新增 kind 未实现 renderer 时必须 typecheck 失败，且未知类型不能静默落入 Slides。
+- Workbench 继续独占 selection、history、import/export、review、checkpoint、persistence 与 Agent dispatch。当前不允许 runtime replacement、第三方 executable adapter 或 global service locator。

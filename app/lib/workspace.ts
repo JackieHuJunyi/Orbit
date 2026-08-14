@@ -4,6 +4,7 @@ import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./de
 import { formatQueryDataSourceDirective, parseQueryDataSourceDirective } from "./query-source.ts";
 import { validateReadQuery } from "./sql.ts";
 import { formatInteger } from "./number-format.ts";
+import { createRuneArtifactAdapterRegistry } from "./artifact-adapter-registry.ts";
 
 export type ArtifactKind = "document" | "data" | "query" | "chart" | "slides";
 
@@ -34,6 +35,17 @@ export type LocalWorkspacePlan = {
   summary: string;
   detail: string;
   patches: Array<LocalPlan & { artifactId: string }>;
+};
+
+export type ArtifactStarterRequest = {
+  title: string;
+  sourceArtifactId?: string;
+  chart?: {
+    category: string;
+    value: string;
+    mark: "bar" | "line";
+    format: "number" | "currency" | "percent";
+  };
 };
 
 const documentSource = `# Q2 Business Review
@@ -225,14 +237,6 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
   },
 ];
 
-export const quickCommands: Record<ArtifactKind, string[]> = {
-  document: ["把摘要压缩成三条要点", "补充下一步行动"],
-  data: ["按收入从高到低排序", "增加利润率列"],
-  query: ["计算利润率并排序", "汇总季度收入"],
-  chart: ["保持数据源顺序", "改成紫色强调"],
-  slides: ["把主题改成深色", "新增一页结论"],
-};
-
 export const workspaceQuickCommands = [
   "根据收入数据创建分析、图表和报告",
   "根据当前报告新建一份演示",
@@ -339,44 +343,168 @@ export function parseDataSource(source: string): ParsedData {
   };
 }
 
+const ARTIFACT_KINDS = ["document", "data", "query", "chart", "slides"] as const satisfies readonly ArtifactKind[];
+
+export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
+  ArtifactKind,
+  WorkspaceArtifact,
+  ArtifactStarterRequest
+>(ARTIFACT_KINDS, [
+  {
+    kind: "document",
+    order: 10,
+    creation: {
+      label: "Document",
+      format: "Markdown",
+      extension: ".md",
+      description: "A readable report, memo, or brief.",
+    },
+    quickCommands: ["把摘要压缩成三条要点", "补充下一步行动"],
+    detectLanguage(name) {
+      const normalized = name.toLowerCase();
+      if (normalized.endsWith(".deck.md")) return null;
+      return normalized.endsWith(".md") || normalized.endsWith(".markdown") ? "Markdown" : null;
+    },
+    starterSource: ({ title }) => `# ${title}\n\n`,
+    validate: () => [],
+    stats(artifact) {
+      const words = artifact.source.trim() ? artifact.source.trim().split(/\s+/).length : 0;
+      return `${words} words · ${artifact.source.split("\n").length} lines`;
+    },
+  },
+  {
+    kind: "data",
+    order: 20,
+    creation: {
+      label: "Data table",
+      format: "CSV",
+      extension: ".csv",
+      description: "A typed table ready for grids and analysis.",
+    },
+    quickCommands: ["按收入从高到低排序", "增加利润率列"],
+    detectLanguage(name) {
+      const normalized = name.toLowerCase();
+      if (normalized.endsWith(".chart.json")) return null;
+      if (normalized.endsWith(".json")) return "JSON";
+      return normalized.endsWith(".csv") ? "CSV" : null;
+    },
+    starterSource: () => "Item,Value\n",
+    validate: (artifact) => parseDataSource(artifact.source).errors,
+    stats(artifact) {
+      const parsed = parseDataSource(artifact.source);
+      return `${parsed.rows.length} rows · ${parsed.columns.length} columns`;
+    },
+  },
+  {
+    kind: "query",
+    order: 30,
+    creation: {
+      label: "SQL analysis",
+      format: "DuckDB SQL",
+      extension: ".sql",
+      description: "A readable query bound to one exact Data source.",
+    },
+    quickCommands: ["计算利润率并排序", "汇总季度收入"],
+    detectLanguage: (name) => name.toLowerCase().endsWith(".sql") ? "DuckDB SQL" : null,
+    starterSource(request) {
+      if (!request.sourceArtifactId) throw new Error("A Query starter needs one exact Data source.");
+      return `${formatQueryDataSourceDirective(request.sourceArtifactId)}\nSELECT *\nFROM workspace_data;\n`;
+    },
+    validate(artifact) {
+      return [...parseQueryDataSourceDirective(artifact.source).errors, ...validateReadQuery(artifact.source)];
+    },
+    stats: (artifact) => `SQL · ${artifact.source.split("\n").length} lines`,
+  },
+  {
+    kind: "chart",
+    order: 40,
+    creation: {
+      label: "Live chart",
+      format: "Chart JSON",
+      extension: ".chart.json",
+      description: "A reusable visual bound to Data or Query output.",
+    },
+    quickCommands: ["保持数据源顺序", "改成紫色强调"],
+    detectLanguage: (name) => name.toLowerCase().endsWith(".chart.json") ? "Chart JSON" : null,
+    starterSource(request) {
+      if (!request.sourceArtifactId || !request.chart) {
+        throw new Error("A Chart starter needs one exact source and field mapping.");
+      }
+      return `${JSON.stringify({
+        version: 1,
+        title: request.title,
+        description: "",
+        source: request.sourceArtifactId,
+        mark: request.chart.mark,
+        category: request.chart.category,
+        value: request.chart.value,
+        sort: request.chart.mark === "line" ? "source" : "descending",
+        format: request.chart.format,
+        color: "#ff5c35",
+        maxItems: 8,
+      }, null, 2)}\n`;
+    },
+    validate: (artifact) => parseChartSource(artifact.source).errors,
+    stats(artifact) {
+      const parsed = parseChartSource(artifact.source);
+      return parsed.spec ? `${parsed.spec.mark} chart · ${parsed.spec.maxItems} marks max` : "Invalid chart JSON";
+    },
+  },
+  {
+    kind: "slides",
+    order: 50,
+    creation: {
+      label: "Presentation",
+      format: "Deck Markdown",
+      extension: ".deck.md",
+      description: "A structured deck compiled to live HTML.",
+    },
+    quickCommands: ["把主题改成深色", "新增一页结论"],
+    detectLanguage(name) {
+      const normalized = name.toLowerCase();
+      if (normalized.endsWith(".deck.md")) return "Deck Markdown";
+      return normalized.endsWith(".html") || normalized.endsWith(".htm") ? "Semantic HTML" : null;
+    },
+    starterSource: ({ title }) => `---
+version: 1
+title: ${title}
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+<!-- layout: cover -->
+
+# ${title}
+`,
+    validate(artifact) {
+      if (isDeckMarkdownArtifact(artifact)) return parseDeckSource(artifact.source).errors;
+      const errors: string[] = [];
+      if (!/<main[\s>]/i.test(artifact.source)) errors.push("Slides need a <main> element.");
+      if (!/<section[\s>]/i.test(artifact.source)) errors.push("Add at least one <section> slide.");
+      if (/<script[\s>]/i.test(artifact.source)) errors.push("Scripts are blocked in the slide preview.");
+      return errors;
+    },
+    stats(artifact) {
+      const slides = isDeckMarkdownArtifact(artifact)
+        ? compileDeckSource(artifact.source).slideCount
+        : artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
+      return `${slides} slides · ${formatInteger(artifact.source.length)} chars`;
+    },
+  },
+]);
+
+export const quickCommands = Object.freeze(Object.fromEntries(
+  artifactAdapterRegistry.all().map((adapter) => [adapter.kind, adapter.quickCommands]),
+)) as Readonly<Record<ArtifactKind, readonly string[]>>;
+
 export function validateArtifact(artifact: WorkspaceArtifact): string[] {
   if (!artifact.source.trim()) return ["The source is empty."];
-  if (artifact.kind === "data") return parseDataSource(artifact.source).errors;
-  if (artifact.kind === "query") {
-    return [...parseQueryDataSourceDirective(artifact.source).errors, ...validateReadQuery(artifact.source)];
-  }
-  if (artifact.kind === "chart") return parseChartSource(artifact.source).errors;
-  if (artifact.kind === "slides") {
-    if (isDeckMarkdownArtifact(artifact)) return parseDeckSource(artifact.source).errors;
-    const errors: string[] = [];
-    if (!/<main[\s>]/i.test(artifact.source)) errors.push("Slides need a <main> element.");
-    if (!/<section[\s>]/i.test(artifact.source)) errors.push("Add at least one <section> slide.");
-    if (/<script[\s>]/i.test(artifact.source)) errors.push("Scripts are blocked in the slide preview.");
-    return errors;
-  }
-  return [];
+  return artifactAdapterRegistry.forKind(artifact.kind).validate(artifact);
 }
 
 export function artifactStats(artifact: WorkspaceArtifact): string {
-  if (artifact.kind === "data") {
-    const parsed = parseDataSource(artifact.source);
-    return `${parsed.rows.length} rows · ${parsed.columns.length} columns`;
-  }
-  if (artifact.kind === "slides") {
-    const slides = isDeckMarkdownArtifact(artifact)
-      ? compileDeckSource(artifact.source).slideCount
-      : artifact.source.match(/<section[\s>]/gi)?.length ?? 0;
-    return `${slides} slides · ${formatInteger(artifact.source.length)} chars`;
-  }
-  if (artifact.kind === "query") {
-    return `SQL · ${artifact.source.split("\n").length} lines`;
-  }
-  if (artifact.kind === "chart") {
-    const parsed = parseChartSource(artifact.source);
-    return parsed.spec ? `${parsed.spec.mark} chart · ${parsed.spec.maxItems} marks max` : "Invalid chart JSON";
-  }
-  const words = artifact.source.trim() ? artifact.source.trim().split(/\s+/).length : 0;
-  return `${words} words · ${artifact.source.split("\n").length} lines`;
+  return artifactAdapterRegistry.forKind(artifact.kind).stats(artifact);
 }
 
 function insertAfterTitle(source: string, block: string): string {
@@ -616,25 +744,7 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
 }
 
 export function detectArtifact(name: string, source: string): WorkspaceArtifact | null {
-  const extension = name.split(".").pop()?.toLowerCase();
   const common = { id: `import-${Date.now()}`, name, source };
-  if (name.toLowerCase().endsWith(".chart.json")) {
-    return { ...common, kind: "chart", language: "Chart JSON" };
-  }
-  if (name.toLowerCase().endsWith(".deck.md")) {
-    return { ...common, kind: "slides", language: "Deck Markdown" };
-  }
-  if (extension === "md" || extension === "markdown") {
-    return { ...common, kind: "document", language: "Markdown" };
-  }
-  if (extension === "csv" || extension === "json") {
-    return { ...common, kind: "data", language: extension === "json" ? "JSON" : "CSV" };
-  }
-  if (extension === "sql") {
-    return { ...common, kind: "query", language: "DuckDB SQL" };
-  }
-  if (extension === "html" || extension === "htm") {
-    return { ...common, kind: "slides", language: "Semantic HTML" };
-  }
-  return null;
+  const detected = artifactAdapterRegistry.detect(name, source);
+  return detected ? { ...common, ...detected } : null;
 }
