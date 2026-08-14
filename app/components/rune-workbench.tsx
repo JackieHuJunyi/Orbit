@@ -35,7 +35,6 @@ import {
   Search,
   RefreshCw,
   Save,
-  Settings,
   TableProperties,
   Undo2,
   Upload,
@@ -1640,6 +1639,12 @@ export function RuneWorkbench() {
 
   function openWelcomeGuide() {
     setWelcomeStartAt("welcome");
+    setWelcomeDismissible(true);
+    setWelcomeOpen(true);
+  }
+
+  function openModelSettings() {
+    setWelcomeStartAt("model");
     setWelcomeDismissible(true);
     setWelcomeOpen(true);
   }
@@ -4649,23 +4654,6 @@ export function RuneWorkbench() {
                   <button
                     type="button"
                     role="menuitem"
-                    disabled={Boolean(activeVisualSourceDraft)}
-                    onClick={() => {
-                      setToolsMenuOpen(false);
-                      setWelcomeStartAt("model");
-                      setWelcomeDismissible(true);
-                      setWelcomeOpen(true);
-                    }}
-                  >
-                    <Settings aria-hidden="true" />
-                    <span>
-                      <strong>{ui.models}</strong>
-                      <small>{ui.localFirst}</small>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
                     disabled={!taskEvidence.runs.length || Boolean(activeVisualSourceDraft)}
                     onClick={reviewPilotEvidenceExport}
                   >
@@ -4869,6 +4857,7 @@ export function RuneWorkbench() {
           focusAgentLabel={ui.focusAgent}
           dataGraphLabel={ui.dataGraph}
           resetSampleLabel={ui.resetSample}
+          settingsLabel={ui.models}
           newArtifactDisabled={artifactCreationDisabled}
           operatingReviewDisabled={artifactCreationDisabled}
           documentBriefingDisabled={
@@ -4890,6 +4879,7 @@ export function RuneWorkbench() {
             setNotice(ui.focusAgent);
           }}
           onReset={resetWorkspace}
+          onOpenSettings={openModelSettings}
         />
 
         {fileRailOpen &&

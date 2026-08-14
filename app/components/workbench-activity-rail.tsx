@@ -1,6 +1,15 @@
 "use client";
 
-import { ClipboardList, Database, FilePlus2, FolderOpen, Presentation, RotateCcw, Sparkles } from "lucide-react";
+import {
+  ClipboardList,
+  Database,
+  FilePlus2,
+  FolderOpen,
+  Presentation,
+  RotateCcw,
+  Settings,
+  Sparkles,
+} from "lucide-react";
 
 export type WorkbenchActivityRailProps = Readonly<{
   railView: "workspace" | "graph";
@@ -12,6 +21,7 @@ export type WorkbenchActivityRailProps = Readonly<{
   focusAgentLabel: string;
   dataGraphLabel: string;
   resetSampleLabel: string;
+  settingsLabel: string;
   newArtifactDisabled: boolean;
   operatingReviewDisabled: boolean;
   documentBriefingDisabled: boolean;
@@ -22,6 +32,7 @@ export type WorkbenchActivityRailProps = Readonly<{
   onDocumentBriefing: () => void;
   onFocusAgent: () => void;
   onReset: () => void;
+  onOpenSettings: () => void;
 }>;
 
 /** Props-only activity rail; the Workbench owns every action it dispatches. */
@@ -35,6 +46,7 @@ export function WorkbenchActivityRail({
   focusAgentLabel,
   dataGraphLabel,
   resetSampleLabel,
+  settingsLabel,
   newArtifactDisabled,
   operatingReviewDisabled,
   documentBriefingDisabled,
@@ -45,6 +57,7 @@ export function WorkbenchActivityRail({
   onDocumentBriefing,
   onFocusAgent,
   onReset,
+  onOpenSettings,
 }: WorkbenchActivityRailProps) {
   return (
     <aside className="activity-rail" aria-label={sectionLabel}>
@@ -101,6 +114,9 @@ export function WorkbenchActivityRail({
       <div className="activity-group">
         <button className="activity-button" onClick={onReset} aria-label={resetSampleLabel} title={resetSampleLabel}>
           <RotateCcw />
+        </button>
+        <button className="activity-button" onClick={onOpenSettings} aria-label={settingsLabel} title={settingsLabel}>
+          <Settings />
         </button>
       </div>
     </aside>
