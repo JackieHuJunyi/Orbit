@@ -101,7 +101,8 @@ test("composes multiple tasks through declared capabilities, exact import identi
       operatingDialog.indexOf('id="operating-review-value"'),
   );
   assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);
-  assert.match(operatingRoute, /resolveActiveModelConnection/);
+  assert.match(operatingRoute, /resolveModelRouting/);
+  assert.match(operatingRoute, /executeModelRoute/);
   assert.match(operatingRoute, /validateOperatingReviewNarrative/);
   assert.doesNotMatch(operatingRoute, /prepareWorkspaceMutation|setArtifacts|persistDeviceWorkspace/);
   assert.match(briefingDialog, /preferredDocumentArtifactId/);
@@ -117,7 +118,8 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.doesNotMatch(briefingCompiler, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
   assert.match(briefingContract, /Every bounded source unit must support exactly one content slide/);
   assert.match(briefingContract, /Rune owns the cover, conclusion, file identity, source metadata, and every write/);
-  assert.match(briefingRoute, /resolveActiveModelConnection/);
+  assert.match(briefingRoute, /resolveModelRouting/);
+  assert.match(briefingRoute, /executeModelRoute/);
   assert.match(briefingRoute, /validateDocumentBriefingModelOutline/);
   assert.doesNotMatch(briefingRoute, /prepareWorkspaceMutation|setArtifacts|persistDeviceWorkspace/);
   assert.match(providers, /case "operating-review"/);

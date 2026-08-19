@@ -2,10 +2,14 @@ import {
   EMPTY_MODEL_PROFILE_VAULT,
   MODEL_PROFILE_COOKIE,
   MODEL_PROFILE_COOKIE_MAX_AGE,
+  modelCapabilityManifest,
+  normalizeModelTokenBudget,
   normalizeModelProfileVault,
+  type ModelCapabilityManifest,
   type ModelProfileVault,
   type ModelProtocol,
   type ModelProviderKind,
+  type ModelTokenBudget,
   type StoredModelProfile,
 } from "./model-profiles.ts";
 import { DEFAULT_OPENAI_MODEL } from "./model-preference.ts";
@@ -105,26 +109,28 @@ export type ActiveModelConnection = {
   apiKey: string;
   baseURL: string;
   model: string;
+  budget: ModelTokenBudget;
+  capabilities: ModelCapabilityManifest;
 };
 
-export async function resolveActiveModelConnection(
-  request: Request,
-  environment: Record<string, string | undefined> = process.env,
-): Promise<ActiveModelConnection | null> {
-  const vault = await readModelProfileVault(request, environment);
-  const active = vault.profiles.find((profile) => profile.id === vault.activeProfileId);
-  if (active) {
-    return {
-      source: "personal",
-      profileId: active.id,
-      profileName: active.name,
-      provider: active.provider,
-      protocol: active.protocol,
-      apiKey: active.apiKey,
-      baseURL: active.baseURL,
-      model: active.model,
-    };
-  }
+function storedProfileConnection(profile: StoredModelProfile): ActiveModelConnection {
+  return {
+    source: "personal",
+    profileId: profile.id,
+    profileName: profile.name,
+    provider: profile.provider,
+    protocol: profile.protocol,
+    apiKey: profile.apiKey,
+    baseURL: profile.baseURL,
+    model: profile.model,
+    budget: { ...profile.budget },
+    capabilities: modelCapabilityManifest(profile.protocol),
+  };
+}
+
+export function deploymentModelConnection(
+  environment: Record<string, string | undefined>,
+): ActiveModelConnection | null {
   const apiKey = environment.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
   const model = environment.OPENAI_MODEL?.trim();
@@ -137,7 +143,37 @@ export async function resolveActiveModelConnection(
     apiKey,
     baseURL: "https://api.openai.com/v1",
     model: model && /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model) ? model : DEFAULT_OPENAI_MODEL,
+    budget: normalizeModelTokenBudget({
+      maxInputTokens: Number(environment.RUNE_MODEL_MAX_INPUT_TOKENS),
+      maxOutputTokens: Number(environment.RUNE_MODEL_MAX_OUTPUT_TOKENS),
+    }),
+    capabilities: modelCapabilityManifest("responses"),
   };
+}
+
+export async function resolveModelRouting(
+  request: Request,
+  environment: Record<string, string | undefined> = process.env,
+) {
+  const vault = await readModelProfileVault(request, environment);
+  const personal = vault.profiles.map(storedProfileConnection);
+  const deployment = deploymentModelConnection(environment);
+  const activeIndex = personal.findIndex((connection) => connection.profileId === vault.activeProfileId);
+  const primary = activeIndex >= 0 ? personal[activeIndex] : deployment;
+  if (!primary) return { failoverEnabled: false, connections: [] as ActiveModelConnection[] };
+  if (!vault.failoverEnabled) return { failoverEnabled: false, connections: [primary] };
+  const fallbacks =
+    activeIndex >= 0
+      ? [...personal.filter((_, index) => index !== activeIndex), ...(deployment ? [deployment] : [])]
+      : personal;
+  return { failoverEnabled: true, connections: [primary, ...fallbacks] };
+}
+
+export async function resolveActiveModelConnection(
+  request: Request,
+  environment: Record<string, string | undefined> = process.env,
+): Promise<ActiveModelConnection | null> {
+  return (await resolveModelRouting(request, environment)).connections[0] ?? null;
 }
 
 export function activeStoredProfile(vault: ModelProfileVault): StoredModelProfile | undefined {

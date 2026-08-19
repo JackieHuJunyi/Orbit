@@ -18,10 +18,16 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import {
   MAX_MODEL_PROFILES,
+  DEFAULT_MODEL_TOKEN_BUDGET,
+  MAX_MODEL_INPUT_TOKEN_BUDGET,
+  MAX_MODEL_OUTPUT_TOKEN_BUDGET,
+  MIN_MODEL_INPUT_TOKEN_BUDGET,
+  MIN_MODEL_OUTPUT_TOKEN_BUDGET,
   MODEL_PROVIDER_PRESETS,
   type ModelProfilesState,
   type ModelProtocol,
   type ModelProviderKind,
+  type ModelTokenBudget,
   type PublicModelProfile,
 } from "../lib/model-profiles";
 import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
@@ -58,10 +64,21 @@ export const MODEL_MANAGER_BASE_COPY = {
     saving: "正在加密保存…",
     cancel: "取消",
     modelHint:
-      "读取模型只验证认证与模型目录；首次 Agent 计划仍会验证所选协议的结构化输出。Rune 不会自动把内容转发给另一家供应商。",
+      "读取模型只验证认证与模型目录；首次 Agent 计划仍会验证所选协议的结构化输出。跨供应商重试必须在模型设置中另行明确授权。",
     safety:
       "密钥经同源 HTTPS 发送后加密进入 HttpOnly 凭据，绝不写入 localStorage、工作区、Artifact 或 Git。自定义端点会收到你交给 Agent 的内容，请只使用可信服务。",
     chooseModel: "选择读取到的模型",
+    capability: "能力",
+    structuredOutput: "结构化输出",
+    usageReported: "真实 token usage",
+    inputBudget: "单任务输入预算",
+    outputBudget: "单任务输出预算",
+    tokenUnit: "tokens",
+    failover: "允许供应商故障转移",
+    failoverHint: "主模型失败时，Rune 才可按配置顺序把同一有界内容发送给另一供应商。默认关闭。",
+    healthUnknown: "尚未检查",
+    healthHealthy: "最近调用正常",
+    healthUnhealthy: "暂时避开",
   },
   en: {
     loading: "Reading model profiles…",
@@ -94,10 +111,22 @@ export const MODEL_MANAGER_BASE_COPY = {
     saving: "Encrypting…",
     cancel: "Cancel",
     modelHint:
-      "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Rune never forwards content to another provider automatically.",
+      "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.",
     safety:
       "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.",
     chooseModel: "Choose a fetched model",
+    capability: "Capabilities",
+    structuredOutput: "Structured output",
+    usageReported: "Provider-reported token usage",
+    inputBudget: "Input budget per task",
+    outputBudget: "Output budget per task",
+    tokenUnit: "tokens",
+    failover: "Allow provider failover",
+    failoverHint:
+      "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.",
+    healthUnknown: "Not checked yet",
+    healthHealthy: "Recent call succeeded",
+    healthUnhealthy: "Temporarily avoided",
   },
 } as const;
 
@@ -112,6 +141,7 @@ type EditableProfile = {
   name: string;
   baseURL: string;
   model: string;
+  budget: ModelTokenBudget;
   apiKey: string;
 };
 
@@ -123,6 +153,7 @@ function blankProfile(provider: ModelProviderKind = "openai"): EditableProfile {
     name: preset.label,
     baseURL: preset.baseURL,
     model: preset.defaultModel,
+    budget: { ...DEFAULT_MODEL_TOKEN_BUDGET },
     apiKey: "",
   };
 }
@@ -135,6 +166,7 @@ function editableProfile(profile: PublicModelProfile): EditableProfile {
     name: profile.name,
     baseURL: profile.baseURL,
     model: profile.model,
+    budget: { ...profile.budget },
     apiKey: "",
   };
 }
@@ -154,12 +186,21 @@ function statusFromState(state: ModelProfilesState): ModelProviderStatus {
       model: state.activeProfile.model,
       source: "personal",
       profileName: state.activeProfile.name,
+      budget: state.activeProfile.budget,
+      capabilities: state.activeProfile.capabilities,
+      health: state.activeProfile.health,
     };
   return {
     ...state.deployment,
     source: state.deployment.configured ? "deployment" : null,
     profileName: state.deployment.configured ? "Deployment OpenAI" : null,
   };
+}
+
+function healthLabel(health: ModelProfilesState["deployment"]["health"], text: ReturnType<typeof modelManagerCopy>) {
+  if (health.status === "healthy") return text.healthHealthy;
+  if (health.status === "unhealthy") return text.healthUnhealthy;
+  return text.healthUnknown;
 }
 
 export function ModelProfileManager({
@@ -202,12 +243,21 @@ export function ModelProfileManager({
     return () => controller.abort();
   }, [onStatusChange]);
 
-  async function mutate(action: "upsert" | "activate" | "delete" | "deployment", profileId?: string) {
+  async function mutate(
+    action: "upsert" | "activate" | "delete" | "deployment" | "failover",
+    profileId?: string,
+    enabled?: boolean,
+  ) {
     setSubmitting(true);
     setSubmittingAction(action === "upsert" ? "save" : action === "delete" ? "delete" : "switch");
     setError("");
     try {
-      const body = action === "upsert" ? { action, profile: editor } : { action, profileId };
+      const body =
+        action === "upsert"
+          ? { action, profile: editor }
+          : action === "failover"
+            ? { action, enabled }
+            : { action, profileId };
       const response = await fetch("/api/model-profiles", {
         method: "POST",
         credentials: "same-origin",
@@ -290,6 +340,15 @@ export function ModelProfileManager({
             <strong>{text.deployment}</strong>
             <small>OpenAI · {state.deployment.model}</small>
             <p>OpenAI Responses · {text.deploymentBody}</p>
+            {state.deployment.budget && (
+              <p>
+                {text.capability} · {text.structuredOutput} · {state.deployment.budget.maxInputTokens}/
+                {state.deployment.budget.maxOutputTokens} {text.tokenUnit}
+              </p>
+            )}
+            <small className={`model-profile-health ${state.deployment.health.status}`}>
+              {healthLabel(state.deployment.health, text)}
+            </small>
           </div>
           {state.activeSource === "deployment" ? (
             <em>
@@ -318,6 +377,13 @@ export function ModelProfileManager({
             </small>
             <p>
               {modelProtocolLabel(profile.protocol)} · {profile.baseURL}
+            </p>
+            <small className={`model-profile-health ${profile.health.status}`}>
+              {healthLabel(profile.health, text)}
+            </small>
+            <p>
+              {text.capability} · {profile.capabilities.structuredOutput} · {text.usageReported} ·{" "}
+              {profile.budget.maxInputTokens}/{profile.budget.maxOutputTokens} {text.tokenUnit}
             </p>
           </div>
           <div className="model-profile-actions">
@@ -359,6 +425,20 @@ export function ModelProfileManager({
           </div>
         </div>
       ))}
+      {state && (state.profiles.length > 1 || (state.profiles.length && state.deployment.configured)) && (
+        <label className="model-failover-policy">
+          <input
+            type="checkbox"
+            checked={state.failoverEnabled}
+            disabled={submitting}
+            onChange={(event) => void mutate("failover", undefined, event.target.checked)}
+          />
+          <span>
+            <strong>{text.failover}</strong>
+            <small>{text.failoverHint}</small>
+          </span>
+        </label>
+      )}
       {!state?.profiles.length && !state?.deployment.configured && <p className="model-manager-empty">{text.empty}</p>}
       {!state?.vaultAvailable && (
         <p className="model-manager-warning">
@@ -433,6 +513,40 @@ export function ModelProfileManager({
                 value={editor.model}
                 maxLength={120}
                 onChange={(event) => setEditor({ ...editor, model: event.target.value })}
+                required
+              />
+            </label>
+            <label>
+              <span>{text.inputBudget}</span>
+              <input
+                type="number"
+                min={MIN_MODEL_INPUT_TOKEN_BUDGET}
+                max={MAX_MODEL_INPUT_TOKEN_BUDGET}
+                step={256}
+                value={editor.budget.maxInputTokens}
+                onChange={(event) =>
+                  setEditor({
+                    ...editor,
+                    budget: { ...editor.budget, maxInputTokens: event.target.valueAsNumber },
+                  })
+                }
+                required
+              />
+            </label>
+            <label>
+              <span>{text.outputBudget}</span>
+              <input
+                type="number"
+                min={MIN_MODEL_OUTPUT_TOKEN_BUDGET}
+                max={MAX_MODEL_OUTPUT_TOKEN_BUDGET}
+                step={256}
+                value={editor.budget.maxOutputTokens}
+                onChange={(event) =>
+                  setEditor({
+                    ...editor,
+                    budget: { ...editor.budget, maxOutputTokens: event.target.valueAsNumber },
+                  })
+                }
                 required
               />
             </label>

@@ -22,8 +22,9 @@ import {
 import { findQueryMetricReferences, parseMetricBindings, queryMetricReferenceKey } from "../../lib/bindings.ts";
 import { validateAgentQueryEvidenceContext } from "../../lib/agent-evidence.ts";
 import { DEFAULT_OPENAI_MODEL } from "../../lib/model-preference.ts";
-import { resolveActiveModelConnection } from "../../lib/model-credential-vault.ts";
+import { resolveModelRouting } from "../../lib/model-credential-vault.ts";
 import { requestProviderPlan } from "../../lib/model-provider-adapters.ts";
+import { executeModelRoute } from "../../lib/model-routing.ts";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -74,8 +75,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const connection = await resolveActiveModelConnection(request);
-  if (!connection) {
+  const routing = await resolveModelRouting(request);
+  if (!routing.connections.length) {
     return Response.json({ error: "No model provider is configured.", code: "MODEL_UNCONFIGURED" }, { status: 503 });
   }
 
@@ -107,25 +108,37 @@ export async function POST(request: Request) {
     }
   }
 
-  const model = connection.model || DEFAULT_OPENAI_MODEL;
   try {
     const workspaceScope = parsed.data.scope === "workspace";
     const providerController = new AbortController();
     const providerTimeout = setTimeout(() => providerController.abort(), 60_000);
-    let response;
+    let routed;
     try {
-      response = await requestProviderPlan({
-        connection,
-        instructions: buildAgentInstructions(parsed.data),
-        input: buildAgentInput(parsed.data),
-        schema: workspaceScope ? AgentWorkspaceOperationPlanSchema : AgentOperationPatchSchema,
-        schemaName: workspaceScope ? "workspace_operations" : "artifact_operations",
-        responseDescription: "Return Rune's proposed typed source-operation plan for local validation.",
+      const schema = workspaceScope ? AgentWorkspaceOperationPlanSchema : AgentOperationPatchSchema;
+      routed = await executeModelRoute({
+        ...routing,
         signal: providerController.signal,
+        run: async (connection) => {
+          const response = await requestProviderPlan({
+            connection,
+            instructions: buildAgentInstructions(parsed.data),
+            input: buildAgentInput(parsed.data),
+            schema,
+            schemaName: workspaceScope ? "workspace_operations" : "artifact_operations",
+            responseDescription: "Return Rune's proposed typed source-operation plan for local validation.",
+            signal: providerController.signal,
+          });
+          if (!schema.safeParse(response.output).success)
+            throw new Error("The model returned an invalid operation plan.");
+          return response;
+        },
       });
     } finally {
       clearTimeout(providerTimeout);
     }
+    const response = routed.result;
+    const connection = routed.connection;
+    const model = connection.model || DEFAULT_OPENAI_MODEL;
 
     if (!response.output) {
       return Response.json({ error: "The model did not return a usable patch." }, { status: 502 });
@@ -177,6 +190,7 @@ export async function POST(request: Request) {
         model,
         repairAttempt: parsed.data.runtimeRepair?.attempt,
         usage: response.usage,
+        routing: { attempts: routed.attempts, failoverUsed: routed.failoverUsed },
         plan: workspacePlan.data,
       });
     }
@@ -261,6 +275,7 @@ export async function POST(request: Request) {
       model,
       repairAttempt: parsed.data.runtimeRepair?.attempt,
       usage: response.usage,
+      routing: { attempts: routed.attempts, failoverUsed: routed.failoverUsed },
       plan: artifactPlan.data,
     });
   } catch {

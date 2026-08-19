@@ -7,12 +7,29 @@ import {
 } from "../../lib/model-profiles.ts";
 import {
   activeStoredProfile,
+  deploymentModelConnection,
   modelVaultAvailable,
   readModelProfileVault,
   serializeModelProfileVaultCookie,
 } from "../../lib/model-credential-vault.ts";
 import { modelProviderStatus } from "../../lib/model-preference.ts";
 import { listProviderModels } from "../../lib/model-provider-adapters.ts";
+import { modelConnectionHealth } from "../../lib/model-routing.ts";
+
+function personalConnection(profile: ModelProfileVault["profiles"][number]) {
+  return {
+    source: "personal" as const,
+    profileId: profile.id,
+    profileName: profile.name,
+    provider: profile.provider,
+    protocol: profile.protocol,
+    apiKey: profile.apiKey,
+    baseURL: profile.baseURL,
+    model: profile.model,
+    budget: profile.budget,
+    capabilities: publicModelProfile(profile).capabilities,
+  };
+}
 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
@@ -25,15 +42,24 @@ function sameOrigin(request: Request) {
 }
 
 function state(vault: ModelProfileVault): ModelProfilesState {
-  const deployment = modelProviderStatus(process.env);
+  const deploymentConnection = deploymentModelConnection(process.env);
+  const baseDeployment = modelProviderStatus(process.env);
+  const deployment = {
+    ...baseDeployment,
+    health: deploymentConnection ? modelConnectionHealth(deploymentConnection) : baseDeployment.health,
+  };
   const active = activeStoredProfile(vault);
+  const profiles = vault.profiles.map((profile) =>
+    publicModelProfile(profile, modelConnectionHealth(personalConnection(profile))),
+  );
   return {
     vaultAvailable: modelVaultAvailable(process.env),
     configured: Boolean(active) || deployment.configured,
     activeProfileId: active?.id ?? null,
     activeSource: active ? "personal" : deployment.configured ? "deployment" : null,
-    activeProfile: active ? publicModelProfile(active) : null,
-    profiles: vault.profiles.map(publicModelProfile),
+    activeProfile: active ? (profiles.find((profile) => profile.id === active.id) ?? null) : null,
+    profiles,
+    failoverEnabled: vault.failoverEnabled,
     deployment,
   };
 }
@@ -65,7 +91,7 @@ export async function POST(request: Request) {
   }
   if (!body || typeof body !== "object")
     return Response.json({ error: "The model configuration request is invalid." }, { status: 400 });
-  const input = body as { action?: unknown; profileId?: unknown; profile?: unknown };
+  const input = body as { action?: unknown; profileId?: unknown; profile?: unknown; enabled?: unknown };
   const vault = await readModelProfileVault(request);
   let next: ModelProfileVault;
   try {
@@ -90,6 +116,8 @@ export async function POST(request: Request) {
             apiKey: profile.apiKey,
             baseURL: profile.baseURL,
             model: profile.model,
+            budget: profile.budget,
+            capabilities: publicModelProfile(profile).capabilities,
           },
           controller.signal,
         );
@@ -113,7 +141,7 @@ export async function POST(request: Request) {
       const profiles = existing
         ? vault.profiles.map((item) => (item.id === existing.id ? profile : item))
         : [...vault.profiles, profile];
-      next = { version: 1, profiles, activeProfileId: profile.id };
+      next = { ...vault, profiles, activeProfileId: profile.id };
     } else if (input.action === "deployment") {
       if (!modelProviderStatus(process.env).configured) throw new Error("No deployment model is configured.");
       next = { ...vault, activeProfileId: null };
@@ -122,15 +150,23 @@ export async function POST(request: Request) {
         throw new Error("That model profile no longer exists.");
       }
       next = { ...vault, activeProfileId: input.profileId };
+    } else if (input.action === "failover") {
+      if (typeof input.enabled !== "boolean") throw new Error("Choose whether provider failover is allowed.");
+      if (input.enabled && vault.profiles.length + Number(modelProviderStatus(process.env).configured) < 2) {
+        throw new Error("Configure at least two model connections before allowing provider failover.");
+      }
+      next = { ...vault, failoverEnabled: input.enabled };
     } else if (input.action === "delete") {
       if (typeof input.profileId !== "string" || !vault.profiles.some((profile) => profile.id === input.profileId)) {
         throw new Error("That model profile no longer exists.");
       }
       const profiles = vault.profiles.filter((profile) => profile.id !== input.profileId);
       next = {
-        version: 1,
+        ...vault,
         profiles,
         activeProfileId: vault.activeProfileId === input.profileId ? (profiles[0]?.id ?? null) : vault.activeProfileId,
+        failoverEnabled:
+          profiles.length + Number(modelProviderStatus(process.env).configured) >= 2 && vault.failoverEnabled,
       };
     } else {
       throw new Error("Choose a supported model profile action.");

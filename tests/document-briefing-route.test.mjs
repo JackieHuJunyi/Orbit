@@ -104,6 +104,7 @@ test("shapes a bounded source-evidenced outline through the active personal mode
   assert.equal(payload.profileName, "Private narrative model");
   assert.equal(payload.model, "narrative-1");
   assert.deepEqual(payload.usage, { inputTokens: 31, outputTokens: 17 });
+  assert.deepEqual(payload.routing, { attempts: 1, failoverUsed: false });
   assert.equal(payload.outline.slides.length, 2);
   assert.equal(providerRequest.url, "https://models.example.com/v1/responses");
   assert.equal(providerRequest.headers.get("authorization"), "Bearer document-briefing-secret");

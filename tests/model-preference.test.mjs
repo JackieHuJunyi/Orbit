@@ -4,7 +4,10 @@ import test from "node:test";
 import { DEFAULT_OPENAI_MODEL, modelProviderStatus, normalizeRuneModelMode } from "../app/lib/model-preference.ts";
 import { GET as getModelStatus } from "../app/api/model-status/route.ts";
 import {
+  DEFAULT_MODEL_TOKEN_BUDGET,
   MAX_MODEL_PROFILES,
+  UNKNOWN_MODEL_CONNECTION_HEALTH,
+  modelCapabilityManifest,
   normalizeCustomModelBaseURL,
   normalizeModelProfileDraft,
   normalizeModelProfileVault,
@@ -13,6 +16,7 @@ import {
 import {
   readModelProfileVault,
   resolveActiveModelConnection,
+  resolveModelRouting,
   serializeModelProfileVaultCookie,
 } from "../app/lib/model-credential-vault.ts";
 import { GET as getModelProfiles, POST as postModelProfiles } from "../app/api/model-profiles/route.ts";
@@ -29,21 +33,33 @@ test("exposes model readiness without exposing the server credential", () => {
     configured: false,
     provider: null,
     model: null,
+    budget: null,
+    capabilities: null,
+    health: UNKNOWN_MODEL_CONNECTION_HEALTH,
   });
   assert.deepEqual(modelProviderStatus({ OPENAI_API_KEY: "secret" }), {
     configured: true,
     provider: "openai",
     model: DEFAULT_OPENAI_MODEL,
+    budget: DEFAULT_MODEL_TOKEN_BUDGET,
+    capabilities: modelCapabilityManifest("responses"),
+    health: UNKNOWN_MODEL_CONNECTION_HEALTH,
   });
   assert.deepEqual(modelProviderStatus({ OPENAI_API_KEY: "secret", OPENAI_MODEL: "gpt-5.6-terra" }), {
     configured: true,
     provider: "openai",
     model: "gpt-5.6-terra",
+    budget: DEFAULT_MODEL_TOKEN_BUDGET,
+    capabilities: modelCapabilityManifest("responses"),
+    health: UNKNOWN_MODEL_CONNECTION_HEALTH,
   });
   assert.deepEqual(modelProviderStatus({ OPENAI_API_KEY: "secret", OPENAI_MODEL: "secret value\nwith spaces" }), {
     configured: true,
     provider: "openai",
     model: DEFAULT_OPENAI_MODEL,
+    budget: DEFAULT_MODEL_TOKEN_BUDGET,
+    capabilities: modelCapabilityManifest("responses"),
+    health: UNKNOWN_MODEL_CONNECTION_HEALTH,
   });
 });
 
@@ -62,6 +78,9 @@ test("returns only bounded non-secret model status from the API route", async ()
       model: "gpt-5.6-sol",
       source: "deployment",
       profileName: "Deployment OpenAI",
+      budget: DEFAULT_MODEL_TOKEN_BUDGET,
+      capabilities: modelCapabilityManifest("responses"),
+      health: UNKNOWN_MODEL_CONNECTION_HEALTH,
     });
     assert.doesNotMatch(JSON.stringify(body), /route-only-secret/);
   } finally {
@@ -99,6 +118,8 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
   assert.equal(openAI.baseURL, "https://api.openai.com/v1");
   assert.equal(openAI.protocol, "responses");
   assert.equal(openAI.id, "profile-1");
+  assert.deepEqual(openAI.budget, DEFAULT_MODEL_TOKEN_BUDGET);
+  assert.equal(publicModelProfile(openAI).capabilities.structuredOutput, "json-schema");
   assert.doesNotMatch(JSON.stringify(publicModelProfile(openAI)), /secret-key/);
   assert.throws(
     () =>
@@ -145,8 +166,10 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
     baseURL: "https://models.example.com/v1",
     model: "chat-model",
     apiKey: "chat-secret",
+    budget: { maxInputTokens: 2_048, maxOutputTokens: 512 },
   });
   assert.equal(chat.protocol, "chat-completions");
+  assert.deepEqual(chat.budget, { maxInputTokens: 2_048, maxOutputTokens: 512 });
   assert.throws(
     () =>
       normalizeModelProfileDraft(
@@ -176,7 +199,7 @@ test("encrypts personal credentials in an HttpOnly cookie and rejects tampering"
     "2026-08-13T00:00:00.000Z",
     () => "profile-1",
   );
-  const vault = { version: 1, activeProfileId: profile.id, profiles: [profile] };
+  const vault = { version: 1, activeProfileId: profile.id, failoverEnabled: false, profiles: [profile] };
   const cookie = await serializeModelProfileVaultCookie(request, vault, environment);
   assert.match(cookie, /^rune_model_profiles_v1=/);
   assert.match(cookie, /HttpOnly/);
@@ -251,6 +274,29 @@ test("model profile route saves, redacts, activates, and deletes personal profil
     assert.equal(saved.profiles[0].baseURL, "https://openrouter.ai/api/v1");
     assert.doesNotMatch(JSON.stringify(saved), /route-secret/);
     const cookie = save.headers.get("set-cookie").split(";", 1)[0];
+
+    const refusedFailover = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        body: JSON.stringify({ action: "failover", enabled: true }),
+      }),
+    );
+    assert.equal(refusedFailover.status, 400);
+    assert.match((await refusedFailover.json()).error, /at least two model connections/i);
+
+    process.env.OPENAI_API_KEY = "deployment-route-secret";
+    const allowFailover = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        body: JSON.stringify({ action: "failover", enabled: true }),
+      }),
+    );
+    assert.equal(allowFailover.status, 200);
+    assert.equal((await allowFailover.json()).failoverEnabled, true);
+    assert.match(allowFailover.headers.get("set-cookie"), /HttpOnly/u);
+    delete process.env.OPENAI_API_KEY;
 
     const get = await getModelProfiles(new Request("https://rune.example/api/model-profiles", { headers: { cookie } }));
     const listed = await get.json();
@@ -362,6 +408,49 @@ test("personal profile takes precedence over the deployment connection", async (
   assert.equal(connection?.source, "personal");
   assert.equal(connection?.apiKey, "personal-key");
   assert.equal(connection?.model, "openai/gpt-5.6");
+});
+
+test("routing preserves the selected profile first and exposes fallbacks only after explicit authorization", async () => {
+  const environment = {
+    RUNE_CREDENTIAL_ENCRYPTION_KEY: "routing-vault-key-0123456789abcdef",
+    OPENAI_API_KEY: "deployment-key",
+  };
+  const primary = normalizeModelProfileDraft(
+    { provider: "openai", name: "Primary", model: "primary-model", apiKey: "primary-key" },
+    undefined,
+    "2026-08-19T00:00:00.000Z",
+    () => "primary",
+  );
+  const fallback = normalizeModelProfileDraft(
+    { provider: "anthropic", name: "Fallback", model: "fallback-model", apiKey: "fallback-key" },
+    undefined,
+    "2026-08-19T00:00:00.000Z",
+    () => "fallback",
+  );
+  const baseRequest = new Request("https://rune.example/api/model-profiles");
+  async function routing(failoverEnabled) {
+    const cookie = await serializeModelProfileVaultCookie(
+      baseRequest,
+      { version: 1, activeProfileId: primary.id, failoverEnabled, profiles: [primary, fallback] },
+      environment,
+    );
+    return resolveModelRouting(
+      new Request("https://rune.example/api/agent", { headers: { cookie: cookie.split(";", 1)[0] } }),
+      environment,
+    );
+  }
+  const single = await routing(false);
+  assert.equal(single.failoverEnabled, false);
+  assert.deepEqual(
+    single.connections.map((connection) => connection.profileName),
+    ["Primary"],
+  );
+  const authorized = await routing(true);
+  assert.equal(authorized.failoverEnabled, true);
+  assert.deepEqual(
+    authorized.connections.map((connection) => connection.profileName),
+    ["Primary", "Fallback", "Deployment OpenAI"],
+  );
 });
 
 test("can switch from a personal profile back to the deployment model without deleting it", async () => {

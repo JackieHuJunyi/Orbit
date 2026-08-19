@@ -7052,6 +7052,18 @@ button.chart-line-point {
 .model-profile-card > div:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
 .model-profile-card strong { color: var(--ink); font-size: 12px; }
 .model-profile-card small { color: #68686e; font-size: 10px; }
+.model-profile-card .model-profile-health {
+  width: fit-content;
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f0f0f2;
+  color: #77777e;
+  font-size: 8px;
+  font-weight: 700;
+}
+.model-profile-card .model-profile-health.healthy { background: #e8f3ea; color: #347147; }
+.model-profile-card .model-profile-health.unhealthy { background: #fbe9e5; color: #a5392d; }
 .model-profile-card p { margin: 0; overflow: hidden; color: #98989e; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .model-profile-card em,
 .model-profile-actions button {
@@ -7096,6 +7108,21 @@ button.chart-line-point {
 .model-add-provider:hover { border-color: var(--accent); color: var(--accent); }
 .model-add-provider svg { width: 13px; height: 13px; }
 .model-add-provider span { color: #a0a0a6; font-weight: 550; }
+
+.model-failover-policy {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 10px 11px;
+  border: 1px solid var(--rune-hairline);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .68);
+  color: var(--ink);
+}
+.model-failover-policy input { margin-top: 2px; accent-color: var(--accent); }
+.model-failover-policy span { display: grid; gap: 3px; }
+.model-failover-policy strong { font-size: 11px; }
+.model-failover-policy small { color: var(--muted); font-size: 9px; line-height: 1.4; }
 
 .model-profile-editor {
   display: grid;

@@ -4,7 +4,6 @@ import type { ActiveModelConnection } from "./model-credential-vault.ts";
 
 const PROVIDER_RESPONSE_LIMIT = 2_000_000;
 const MODEL_LIST_LIMIT = 1_000_000;
-const MAX_OUTPUT_TOKENS = 8_000;
 const ANTHROPIC_VERSION = "2023-06-01";
 
 export type ProviderUsage = {
@@ -16,6 +15,26 @@ export type ProviderPlan = {
   output: unknown;
   usage: ProviderUsage;
 };
+
+export function estimateModelInputTokens(...parts: string[]) {
+  return Math.ceil(parts.reduce((total, part) => total + new TextEncoder().encode(part).byteLength, 0) / 2);
+}
+
+function modelBudgetError(message: string) {
+  const error = new Error(message);
+  error.name = "ModelBudgetError";
+  return error;
+}
+
+function enforceReportedBudget(plan: ProviderPlan, connection: ActiveModelConnection) {
+  if (plan.usage.inputTokens != null && plan.usage.inputTokens > connection.budget.maxInputTokens) {
+    throw modelBudgetError("The provider reported input usage above this profile's task budget.");
+  }
+  if (plan.usage.outputTokens != null && plan.usage.outputTokens > connection.budget.maxOutputTokens) {
+    throw modelBudgetError("The provider reported output usage above this profile's task budget.");
+  }
+  return plan;
+}
 
 function nonNegativeInteger(value: unknown) {
   return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : null;
@@ -129,6 +148,19 @@ export async function requestProviderPlan<T extends z.ZodType>({
   signal: AbortSignal;
 }): Promise<ProviderPlan> {
   const format = schemaFormat(schema, schemaName);
+  const estimatedInputTokens = estimateModelInputTokens(
+    instructions,
+    input,
+    schemaName,
+    responseDescription,
+    JSON.stringify(format.schema),
+  );
+  if (estimatedInputTokens > connection.budget.maxInputTokens) {
+    throw modelBudgetError(
+      `The bounded model request is estimated at ${estimatedInputTokens} tokens, above this profile's ${connection.budget.maxInputTokens}-token input budget.`,
+    );
+  }
+  const maximumOutputTokens = connection.budget.maxOutputTokens;
   if (connection.protocol === "responses") {
     const payload = (await providerJson(
       `${connection.baseURL}/responses`,
@@ -143,18 +175,21 @@ export async function requestProviderPlan<T extends z.ZodType>({
             { role: "user", content: input },
           ],
           text: { format: { type: "json_schema", ...format } },
-          max_output_tokens: MAX_OUTPUT_TOKENS,
+          max_output_tokens: maximumOutputTokens,
         }),
       },
       signal,
     )) as { output?: unknown; usage?: { input_tokens?: unknown; output_tokens?: unknown } };
-    return {
-      output: parseJsonText(firstResponsesText(payload)),
-      usage: {
-        inputTokens: nonNegativeInteger(payload.usage?.input_tokens),
-        outputTokens: nonNegativeInteger(payload.usage?.output_tokens),
+    return enforceReportedBudget(
+      {
+        output: parseJsonText(firstResponsesText(payload)),
+        usage: {
+          inputTokens: nonNegativeInteger(payload.usage?.input_tokens),
+          outputTokens: nonNegativeInteger(payload.usage?.output_tokens),
+        },
       },
-    };
+      connection,
+    );
   }
 
   if (connection.protocol === "chat-completions") {
@@ -170,7 +205,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
             { role: "user", content: input },
           ],
           response_format: { type: "json_schema", json_schema: format },
-          max_tokens: MAX_OUTPUT_TOKENS,
+          max_tokens: maximumOutputTokens,
           store: false,
         }),
       },
@@ -179,13 +214,16 @@ export async function requestProviderPlan<T extends z.ZodType>({
       choices?: Array<{ message?: { content?: unknown } }>;
       usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
     };
-    return {
-      output: parseJsonText(payload.choices?.[0]?.message?.content),
-      usage: {
-        inputTokens: nonNegativeInteger(payload.usage?.prompt_tokens),
-        outputTokens: nonNegativeInteger(payload.usage?.completion_tokens),
+    return enforceReportedBudget(
+      {
+        output: parseJsonText(payload.choices?.[0]?.message?.content),
+        usage: {
+          inputTokens: nonNegativeInteger(payload.usage?.prompt_tokens),
+          outputTokens: nonNegativeInteger(payload.usage?.completion_tokens),
+        },
       },
-    };
+      connection,
+    );
   }
 
   if (connection.protocol === "anthropic-messages") {
@@ -201,7 +239,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
         },
         body: JSON.stringify({
           model: connection.model,
-          max_tokens: MAX_OUTPUT_TOKENS,
+          max_tokens: maximumOutputTokens,
           system: instructions,
           messages: [{ role: "user", content: input }],
           tools: [{ name: toolName, description: responseDescription, input_schema: format.schema }],
@@ -215,13 +253,16 @@ export async function requestProviderPlan<T extends z.ZodType>({
     };
     const tool = payload.content?.find((part) => part.type === "tool_use" && part.name === toolName);
     if (!tool) throw new Error("Anthropic did not return the required Rune plan tool input.");
-    return {
-      output: tool.input,
-      usage: {
-        inputTokens: nonNegativeInteger(payload.usage?.input_tokens),
-        outputTokens: nonNegativeInteger(payload.usage?.output_tokens),
+    return enforceReportedBudget(
+      {
+        output: tool.input,
+        usage: {
+          inputTokens: nonNegativeInteger(payload.usage?.input_tokens),
+          outputTokens: nonNegativeInteger(payload.usage?.output_tokens),
+        },
       },
-    };
+      connection,
+    );
   }
 
   const modelName = encodeURIComponent(connection.model.replace(/^models\//u, ""));
@@ -236,7 +277,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
         generationConfig: {
           responseMimeType: "application/json",
           responseJsonSchema: geminiSchema(format.schema),
-          maxOutputTokens: MAX_OUTPUT_TOKENS,
+          maxOutputTokens: maximumOutputTokens,
         },
       }),
     },
@@ -246,13 +287,16 @@ export async function requestProviderPlan<T extends z.ZodType>({
     usageMetadata?: { promptTokenCount?: unknown; candidatesTokenCount?: unknown };
   };
   const text = payload.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === "string")?.text;
-  return {
-    output: parseJsonText(text),
-    usage: {
-      inputTokens: nonNegativeInteger(payload.usageMetadata?.promptTokenCount),
-      outputTokens: nonNegativeInteger(payload.usageMetadata?.candidatesTokenCount),
+  return enforceReportedBudget(
+    {
+      output: parseJsonText(text),
+      usage: {
+        inputTokens: nonNegativeInteger(payload.usageMetadata?.promptTokenCount),
+        outputTokens: nonNegativeInteger(payload.usageMetadata?.candidatesTokenCount),
+      },
     },
-  };
+    connection,
+  );
 }
 
 function modelId(item: unknown, protocol: ActiveModelConnection["protocol"]) {

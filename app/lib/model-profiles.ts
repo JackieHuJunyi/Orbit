@@ -1,9 +1,53 @@
 export const MAX_MODEL_PROFILES = 3;
 export const MODEL_PROFILE_COOKIE = "rune_model_profiles_v1";
 export const MODEL_PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+export const MIN_MODEL_INPUT_TOKEN_BUDGET = 1_024;
+export const MAX_MODEL_INPUT_TOKEN_BUDGET = 200_000;
+export const MIN_MODEL_OUTPUT_TOKEN_BUDGET = 256;
+export const MAX_MODEL_OUTPUT_TOKEN_BUDGET = 8_000;
+
+export type ModelTokenBudget = {
+  maxInputTokens: number;
+  maxOutputTokens: number;
+};
+
+export const DEFAULT_MODEL_TOKEN_BUDGET: Readonly<ModelTokenBudget> = Object.freeze({
+  maxInputTokens: 50_000,
+  maxOutputTokens: 4_000,
+});
 
 export type ModelProviderKind = "openai" | "openrouter" | "anthropic" | "gemini" | "custom";
 export type ModelProtocol = "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
+
+export type ModelCapabilityManifest = {
+  protocol: ModelProtocol;
+  structuredOutput: "json-schema" | "forced-tool";
+  modelCatalog: true;
+  tokenUsage: "provider-reported";
+  maximumOutputTokens: number;
+};
+
+export type ModelConnectionHealth = {
+  status: "unknown" | "healthy" | "unhealthy";
+  checkedAt: string | null;
+  retryAt: string | null;
+};
+
+export const UNKNOWN_MODEL_CONNECTION_HEALTH: Readonly<ModelConnectionHealth> = Object.freeze({
+  status: "unknown",
+  checkedAt: null,
+  retryAt: null,
+});
+
+export function modelCapabilityManifest(protocol: ModelProtocol): ModelCapabilityManifest {
+  return {
+    protocol,
+    structuredOutput: protocol === "anthropic-messages" ? "forced-tool" : "json-schema",
+    modelCatalog: true,
+    tokenUsage: "provider-reported",
+    maximumOutputTokens: MAX_MODEL_OUTPUT_TOKEN_BUDGET,
+  };
+}
 
 export type ModelProviderPreset = {
   id: ModelProviderKind;
@@ -70,6 +114,7 @@ export type StoredModelProfile = {
   protocol: ModelProtocol;
   baseURL: string;
   model: string;
+  budget: ModelTokenBudget;
   apiKey: string;
   createdAt: string;
   updatedAt: string;
@@ -77,11 +122,14 @@ export type StoredModelProfile = {
 
 export type PublicModelProfile = Omit<StoredModelProfile, "apiKey"> & {
   credentialConfigured: true;
+  capabilities: ModelCapabilityManifest;
+  health: ModelConnectionHealth;
 };
 
 export type ModelProfileVault = {
   version: 1;
   activeProfileId: string | null;
+  failoverEnabled: boolean;
   profiles: StoredModelProfile[];
 };
 
@@ -92,10 +140,14 @@ export type ModelProfilesState = {
   activeSource: "personal" | "deployment" | null;
   activeProfile: PublicModelProfile | null;
   profiles: PublicModelProfile[];
+  failoverEnabled: boolean;
   deployment: {
     configured: boolean;
     provider: ModelProviderKind | null;
     model: string | null;
+    budget: ModelTokenBudget | null;
+    capabilities: ModelCapabilityManifest | null;
+    health: ModelConnectionHealth;
   };
 };
 
@@ -106,14 +158,35 @@ export type ModelProfileDraft = {
   protocol?: unknown;
   baseURL?: unknown;
   model?: unknown;
+  budget?: unknown;
   apiKey?: unknown;
 };
 
 export const EMPTY_MODEL_PROFILE_VAULT: ModelProfileVault = {
   version: 1,
   activeProfileId: null,
+  failoverEnabled: false,
   profiles: [],
 };
+
+function boundedInteger(value: unknown, minimum: number, maximum: number) {
+  return typeof value === "number" && Number.isInteger(value) && value >= minimum && value <= maximum
+    ? value
+    : undefined;
+}
+
+export function normalizeModelTokenBudget(value: unknown, fallback = DEFAULT_MODEL_TOKEN_BUDGET): ModelTokenBudget {
+  if (!value || typeof value !== "object") return { ...fallback };
+  const candidate = value as Partial<ModelTokenBudget>;
+  return {
+    maxInputTokens:
+      boundedInteger(candidate.maxInputTokens, MIN_MODEL_INPUT_TOKEN_BUDGET, MAX_MODEL_INPUT_TOKEN_BUDGET) ??
+      fallback.maxInputTokens,
+    maxOutputTokens:
+      boundedInteger(candidate.maxOutputTokens, MIN_MODEL_OUTPUT_TOKEN_BUDGET, MAX_MODEL_OUTPUT_TOKEN_BUDGET) ??
+      fallback.maxOutputTokens,
+  };
+}
 
 function cleanText(value: unknown, maximum: number) {
   if (typeof value !== "string") return "";
@@ -194,6 +267,7 @@ export function normalizeModelProfileDraft(
     throw new Error("Enter a valid model ID without spaces.");
   }
   const baseURL = preset.editableEndpoint ? normalizeCustomModelBaseURL(draft.baseURL) : preset.baseURL;
+  const budget = normalizeModelTokenBudget(draft.budget, existing?.budget ?? DEFAULT_MODEL_TOKEN_BUDGET);
   const suppliedKey = cleanText(draft.apiKey, 512);
   if (
     !suppliedKey &&
@@ -213,13 +287,17 @@ export function normalizeModelProfileDraft(
     protocol,
     baseURL,
     model,
+    budget,
     apiKey,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
 }
 
-export function publicModelProfile(profile: StoredModelProfile): PublicModelProfile {
+export function publicModelProfile(
+  profile: StoredModelProfile,
+  health: ModelConnectionHealth = UNKNOWN_MODEL_CONNECTION_HEALTH,
+): PublicModelProfile {
   return {
     id: profile.id,
     name: profile.name,
@@ -227,9 +305,12 @@ export function publicModelProfile(profile: StoredModelProfile): PublicModelProf
     protocol: profile.protocol,
     baseURL: profile.baseURL,
     model: profile.model,
+    budget: { ...profile.budget },
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
     credentialConfigured: true,
+    capabilities: modelCapabilityManifest(profile.protocol),
+    health: { ...health },
   };
 }
 
@@ -268,5 +349,5 @@ export function normalizeModelProfileVault(value: unknown): ModelProfileVault {
           unique.some((profile) => profile.id === candidate.activeProfileId)
         ? candidate.activeProfileId
         : (unique[0]?.id ?? null);
-  return { version: 1, profiles: unique, activeProfileId };
+  return { version: 1, profiles: unique, activeProfileId, failoverEnabled: candidate.failoverEnabled === true };
 }

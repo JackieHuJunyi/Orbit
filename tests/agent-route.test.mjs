@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { POST } from "../app/api/agent/route.ts";
-import { normalizeModelProfileDraft } from "../app/lib/model-profiles.ts";
+import { DEFAULT_MODEL_TOKEN_BUDGET, normalizeModelProfileDraft } from "../app/lib/model-profiles.ts";
 import { serializeModelProfileVaultCookie } from "../app/lib/model-credential-vault.ts";
 
 const originalFetch = globalThis.fetch;
@@ -343,7 +343,7 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   assert.equal(payload.repairAttempt, undefined);
   assert.deepEqual(payload.usage, { inputTokens: 1, outputTokens: 1 });
   assert.equal("edits" in payload.plan, false);
-  assert.equal(providerRequest.max_output_tokens, 8_000);
+  assert.equal(providerRequest.max_output_tokens, DEFAULT_MODEL_TOKEN_BUDGET.maxOutputTokens);
   assert.equal(providerRequest.text.format.name, "artifact_operations");
   assert.deepEqual(Object.keys(providerRequest.text.format.schema.properties).sort(), ["detail", "edits", "summary"]);
   const operationTypes = providerRequest.text.format.schema.properties.edits.items.anyOf.map(

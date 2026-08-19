@@ -503,6 +503,116 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
     "| 분할 / 소스 / 미리보기 전환 | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Allow provider failover": "Autoriser le basculement de fournisseur",
+  Capabilities: "Capacités",
+  "Input budget per task": "Budget d’entrée par tâche",
+  "Not checked yet": "Pas encore vérifié",
+  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
+    "Ce n’est qu’après l’échec du modèle principal que Rune peut envoyer le même contenu limité à un autre fournisseur configuré. Désactivé par défaut.",
+  "Output budget per task": "Budget de sortie par tâche",
+  "Provider-reported token usage": "Utilisation des jetons déclarée par le fournisseur",
+  "Recent call succeeded": "Dernier appel réussi",
+  "Structured output": "Sortie structurée",
+  "Temporarily avoided": "Temporairement évité",
+  tokens: "jetons",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Allow provider failover": "Permitir la conmutación por error del proveedor",
+  Capabilities: "Capacidades",
+  "Input budget per task": "Presupuesto de entrada por tarea",
+  "Not checked yet": "Aún no comprobado",
+  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
+    "Solo si falla el modelo principal, Rune puede enviar el mismo contenido acotado a otro proveedor configurado. Desactivado de forma predeterminada.",
+  "Output budget per task": "Presupuesto de salida por tarea",
+  "Provider-reported token usage": "Uso de tokens informado por el proveedor",
+  "Recent call succeeded": "La llamada reciente se completó correctamente",
+  "Structured output": "Salida estructurada",
+  "Temporarily avoided": "Evitado temporalmente",
+  tokens: "tokens",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Allow provider failover": "Разрешить переключение поставщика при сбое",
+  Capabilities: "Возможности",
+  "Input budget per task": "Бюджет входных токенов на задачу",
+  "Not checked yet": "Ещё не проверено",
+  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
+    "Только после сбоя основной модели Rune может отправить тот же ограниченный контент другому настроенному поставщику. По умолчанию выключено.",
+  "Output budget per task": "Бюджет выходных токенов на задачу",
+  "Provider-reported token usage": "Расход токенов по данным поставщика",
+  "Recent call succeeded": "Последний вызов выполнен успешно",
+  "Structured output": "Структурированный вывод",
+  "Temporarily avoided": "Временно исключён",
+  tokens: "токенов",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Allow provider failover": "السماح بالتبديل إلى مزود آخر عند الفشل",
+  Capabilities: "الإمكانات",
+  "Input budget per task": "ميزانية الإدخال لكل مهمة",
+  "Not checked yet": "لم يُفحص بعد",
+  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
+    "لا يجوز لـ Rune إرسال المحتوى المحدود نفسه إلى مزود آخر مُعدّ إلا بعد فشل النموذج الأساسي. هذا الخيار متوقف افتراضياً.",
+  "Output budget per task": "ميزانية الإخراج لكل مهمة",
+  "Provider-reported token usage": "استخدام الرموز المبلغ عنه من المزود",
+  "Recent call succeeded": "نجح آخر استدعاء",
+  "Structured output": "إخراج منظم",
+  "Temporarily avoided": "مستبعد مؤقتاً",
+  tokens: "رمزاً",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Allow provider failover": "プロバイダーのフェイルオーバーを許可",
+  Capabilities: "機能",
+  "Input budget per task": "タスクごとの入力上限",
+  "Not checked yet": "未確認",
+  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
+    "プライマリモデルが失敗した場合に限り、Rune は同じ制限済みコンテンツを別の設定済みプロバイダーへ送信できます。初期設定ではオフです。",
+  "Output budget per task": "タスクごとの出力上限",
+  "Provider-reported token usage": "プロバイダー報告のトークン使用量",
+  "Recent call succeeded": "直近の呼び出しは成功しました",
+  "Structured output": "構造化出力",
+  "Temporarily avoided": "一時的に回避中",
+  tokens: "トークン",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Allow provider failover": "공급자 장애 조치 허용",
+  Capabilities: "기능",
+  "Input budget per task": "작업당 입력 예산",
+  "Not checked yet": "아직 확인하지 않음",
+  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
+    "기본 모델이 실패한 경우에만 Rune이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
+  "Output budget per task": "작업당 출력 예산",
+  "Provider-reported token usage": "공급자가 보고한 토큰 사용량",
+  "Recent call succeeded": "최근 호출 성공",
+  "Structured output": "구조화된 출력",
+  "Temporarily avoided": "일시적으로 제외됨",
+  tokens: "토큰",
+});
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
+    "La récupération des modèles vérifie uniquement l’authentification et le catalogue. Le premier plan Agent vérifie encore la sortie structurée du protocole choisi. Une nouvelle tentative auprès d’un autre fournisseur nécessite une autorisation distincte dans les réglages des modèles.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
+    "Obtener los modelos solo comprueba la autenticación y el catálogo. El primer plan de Agent también verifica la salida estructurada del protocolo elegido. Reintentar con otro proveedor requiere un permiso independiente en los ajustes de modelos.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
+    "Получение списка моделей проверяет только аутентификацию и каталог. Первый план Agent также проверяет структурированный вывод выбранного протокола. Для повторной попытки у другого поставщика требуется отдельное разрешение в настройках моделей.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
+    "يقتصر جلب النماذج على التحقق من المصادقة ودليل النماذج. وتظل خطة Agent الأولى تتحقق من الإخراج المنظم للبروتوكول المحدد. وتتطلب إعادة المحاولة عبر مزود آخر إذناً منفصلاً في إعدادات النماذج.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
+    "モデルの取得で確認するのは認証とモデル一覧だけです。最初の Agent プランでは、選択したプロトコルの構造化出力も検証します。別のプロバイダーで再試行するには、モデル設定で個別の許可が必要です。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
+    "모델 가져오기는 인증과 모델 목록만 확인합니다. 첫 Agent 계획은 선택한 프로토콜의 구조화된 출력도 검증합니다. 다른 공급자로 재시도하려면 모델 설정에서 별도의 권한을 허용해야 합니다.",
+});
+
 // Human-reviewed copy for the privacy boundary around device-local pilot evidence exports.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Always excluded": "Toujours exclus",

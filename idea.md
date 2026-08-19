@@ -1879,7 +1879,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 富媒体 | 图片、附件、来源摘录：下一阶段 | asset store、hash identity、引用许可 | 不把 base64 混入 source；导入/导出/删除/同步可追踪 |
 | 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
 | 云与桌面 | 先桌面 Keychain/系统文件能力，再可选端到端加密云同步 | storage port、secret port、账号恢复 | Web cookie profile 不假装跨设备；桌面 key 不进 renderer；云端无法读取明文 workspace |
-| 供应商路由 | OpenAI Responses、OpenRouter/兼容 Chat、Anthropic Messages、Gemini generateContent 显式 adapter 与真实 token usage：已交付；fallback、预算/延迟/健康度待后续 | protocol adapters、capability manifest、usage ledger | 每个 model 声明 Structured Outputs/tool/context 能力；失败不自动泄露到新供应商 |
+| 供应商路由 | 四种显式协议 adapter、真实 token usage、capability manifest、单任务预算、需用户授权的 failover 与一分钟进程内健康冷却：v1.11 已交付；持久 usage/latency ledger 待身份与商业系统 | protocol adapters、capability manifest、budget policy、health registry | 每个 model 声明结构化输出与预算；默认不跨供应商；abort 不重试；状态不暴露 key/content |
 | 商业与治理 | 预算、额度、用量、数据地域、审计：下一阶段 | identity、provider usage、policy engine | 单任务预算可见；模型/供应商切换需符合数据政策；key 从不入日志 |
 
 实现顺序被冻结为四条串行主线。第一，先用真实经营汇报任务验证“来源到成品”的时间节省，而不是继续横向加格式；第二，补桌面安全存储、旧 Office 转换和 OCR，使目标用户的现实输入可进入同一 canonical model；第三，在重复使用成立后做资产、模板、连接器与自动刷新；第四，只有多人重复协作和付费证据同时出现，才引入账号、云同步、CRDT 与组织治理。停止条件同样明确：不能建立 source provenance 的入口不做可视化回写，不能安全持有 credential 的平台不开放 BYOK，不能在 compiler fixture 中 round-trip 的格式不标“支持”，没有实际用户复用证据不建设 marketplace 或企业后台。

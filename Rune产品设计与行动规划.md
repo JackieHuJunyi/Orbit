@@ -1153,7 +1153,7 @@ Rune 借鉴 CC Switch 的产品结构：供应商预设、自定义基础地址�
 
 个人 key 在 React 里只存在到 Save。它经同源 HTTPS 进入服务端，用独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY` 做 AES-GCM 加密和完整性认证，写入 30 天、`HttpOnly; SameSite=Strict; Path=/api` cookie；浏览器脚本只能读取脱敏 metadata。生产环境缺少主密钥时不开放个人配置，密文篡改、密钥轮换和 schema 损坏都失败关闭。自定义 endpoint 拒绝 HTTP、IP、localhost、私网后缀、非 443 端口、userinfo/query/fragment 和最终 API path；配置写入同时要求 same-origin。读取模型具有八秒超时、1 MB response ceiling 与 80 个 model 上限，不携带 workspace source。
 
-v0.46 当时不实现协议转换；v0.58 已把各协议隔离成独立 adapter，并继续拒绝把“OpenAI-compatible”当成无条件兼容。模型 profile 只改变 transport，不扩大 context、operation 或写权限，既有 graph-bounded context、Query evidence、runtime impact、review、revision、checkpoint 与 atomic Apply 合同全部保留。跨供应商自动 fallback 仍不做，因为它会扩大用户内容的数据去向。
+v0.46 当时不实现协议转换；v0.58 已把各协议隔离成独立 adapter，并继续拒绝把“OpenAI-compatible”当成无条件兼容。模型 profile 只改变 transport，不扩大 context、operation 或写权限，既有 graph-bounded context、Query evidence、runtime impact、review、revision、checkpoint 与 atomic Apply 合同全部保留。v1.11 仍不允许隐式跨供应商 fallback；只有用户在存在多个候选连接时明确开启，Rune 才能按可见配置顺序发送同一份有界内容，并可随时关闭授权。
 
 ### 6.26 全功能设计冻结与落地顺序
 
@@ -1163,7 +1163,7 @@ v0.46 当时不实现协议转换；v0.58 已把各协议隔离成独立 adapter
 2. **Source Workspace**：Document、Data、Query、Chart、Deck 的 canonical source、双侧定位、受控右侧写入、checkpoint 与目录同步；现有核心可运行。
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
 4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；v0.53 已让旧 `.doc/.ppt` 在 macOS 桌面壳通过本机 Office 的受限转换进入同一导入审核，v0.57 又从已验证 DOCX/PPTX 包建立经审核的本机 DOC/PPT 导出，Web 仍明确拒绝导入且不显示旧格式导出。
-5. **Model Platform**：v0.46 先完成 Responses profile；v0.58 已把 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages 与 Gemini generateContent 变成显式协议端口，并归一化真实 token usage。capability manifest、用户明确授权的故障转移、预算和健康度路由仍是后续能力。
+5. **Model Platform**：v0.46 先完成 Responses profile；v0.58 已把 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages 与 Gemini generateContent 变成显式协议端口，并归一化真实 token usage。v1.11 已补齐非敏感 capability manifest、每 profile 单任务输入/输出预算、默认关闭且需用户明确授权的跨供应商故障转移，以及带一分钟冷却期的进程内健康度路由；账号级额度、持久用量账本和跨设备政策仍属于身份/商业系统。
 6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
 
 统一验收规则：任何入口都要列出输入上限、数据去向、canonical 结果、可逆路径和失败状态；任何 AI 写入都要有 exact revision、bounded capability、concrete diff、compiler/runtime proof 和人的确认；任何“支持格式”都要有真实 fixture、fidelity notes 与外部 handler/render QA；任何秘密都不能进入浏览器可读存储、workspace、日志或 Git。详细状态矩阵记录在 `idea.md` 第 52 节，路线图阶段 P0–P6 继续作为商业验证门，而不是被工程版本号替代。
@@ -2123,3 +2123,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 主范围与对比范围必须各自完整且不相同；旧 exact pair 继续要求同字段，不借升级放宽既有工作流语义。
 - duplicate field、invalid/reversed range、oversized value set、missing/stale field/value、identical comparison 必须在 provider contact 和 workspace mutation 前失败关闭。
 - 九语言 UI 暴露多值、数值区间、日期区间、添加/移除条件和对比范围；窄屏、键盘、多选控件与 Space Black 使用同一组件和 focus contract。
+
+### 17.41 v1.11 模型路由必须显式授权、预算化并可观察
+
+- 每个 personal/deployment connection 对外只暴露协议、结构化输出方式、模型目录支持、真实 usage 类型、模型 ID、单任务预算和最近健康状态；API key、请求内容与错误正文不得进入状态接口。
+- personal profile 默认预算为 50,000 input / 4,000 output tokens，可在 1,024–200,000 / 256–8,000 的边界内配置；部署模型使用相同默认值，并允许服务端通过环境变量收紧。
+- 请求前以 UTF-8 字节保守估算 instruction、bounded input、schema name/description 与完整 JSON Schema；超出 input budget 时 provider 零接触。四协议必须传入 exact output ceiling，并在 provider 返回真实 usage 后再次拒绝超额结果。
+- 跨供应商 failover 默认关闭。只有用户明确开启时，Agent、Operating Review 与 Document-to-Presentation 才按“当前 profile → 其余 personal profiles → deployment”顺序重试；切回 deployment 时顺序反向为 deployment → personal profiles。
+- provider transport failure 与无效 structured output 都记录为 unhealthy；成功记录 healthy。最近失败的连接在 60 秒进程内冷却期中仅在存在已授权候选时被避开，冷却后回到 unknown；状态是路由提示，不伪装成持久监控或 SLA。
+- abort 不得触发下一供应商；所有候选失败后仍沿用现有本地 fallback、review、runtime proof 与零写入边界。故障转移只改变 transport 选择，不扩大 context、operation 或 mutation 权限。

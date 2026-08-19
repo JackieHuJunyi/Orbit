@@ -118,6 +118,7 @@ test("sends only bounded aggregate evidence to the active personal model and ret
   assert.equal(payload.model, "review-1");
   assert.deepEqual(payload.usage, { inputTokens: 29, outputTokens: 13 });
   assert.deepEqual(payload.narrative, validNarrative);
+  assert.deepEqual(payload.routing, { attempts: 1, failoverUsed: false });
   assert.equal(providerRequest.url, "https://models.example.com/v1/responses");
   assert.equal(providerRequest.headers.get("authorization"), "Bearer operating-review-secret");
   assert.equal(providerRequest.body.text.format.name, "operating_review_questions");

@@ -3,6 +3,7 @@ import test from "node:test";
 import { z } from "zod";
 
 import { listProviderModels, requestProviderPlan } from "../app/lib/model-provider-adapters.ts";
+import { DEFAULT_MODEL_TOKEN_BUDGET, modelCapabilityManifest } from "../app/lib/model-profiles.ts";
 
 const schema = z
   .object({
@@ -30,6 +31,8 @@ function connection(protocol) {
           ? "https://generativelanguage.googleapis.com/v1beta"
           : "https://models.example.com/v1",
     model: protocol === "gemini-generate-content" ? "gemini-2.5-pro" : "model-1",
+    budget: { ...DEFAULT_MODEL_TOKEN_BUDGET },
+    capabilities: modelCapabilityManifest(protocol),
   };
 }
 
@@ -67,6 +70,7 @@ test("adapts OpenAI Responses without storing content or exposing its credential
   assert.equal(request.url, "https://models.example.com/v1/responses");
   assert.equal(new Headers(request.init.headers).get("authorization"), "Bearer secret-responses");
   assert.equal(request.body.store, false);
+  assert.equal(request.body.max_output_tokens, DEFAULT_MODEL_TOKEN_BUDGET.maxOutputTokens);
   assert.equal(request.body.text.format.type, "json_schema");
   assert.equal(request.body.text.format.strict, true);
   assert.deepEqual(result, { output, usage: { inputTokens: 12, outputTokens: 5 } });
@@ -223,6 +227,54 @@ test("does not echo a provider error body that may contain sensitive evidence", 
         return true;
       },
     );
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("enforces each profile's input and output token budget before accepting a plan", async () => {
+  const previousFetch = globalThis.fetch;
+  let calls = 0;
+  try {
+    globalThis.fetch = async (_input, init) => {
+      calls += 1;
+      const request = JSON.parse(String(init.body));
+      assert.equal(request.max_output_tokens, 512);
+      return jsonResponse({
+        output: [{ content: [{ type: "output_text", text: JSON.stringify(output) }] }],
+        usage: { input_tokens: 20, output_tokens: 513 },
+      });
+    };
+    const budgeted = {
+      ...connection("responses"),
+      budget: { maxInputTokens: 1_024, maxOutputTokens: 512 },
+    };
+    await assert.rejects(
+      () =>
+        requestProviderPlan({
+          connection: budgeted,
+          instructions: "x".repeat(2_100),
+          input: "y",
+          schema,
+          schemaName: "rune_test",
+          signal: new AbortController().signal,
+        }),
+      /estimated.*above.*input budget/i,
+    );
+    assert.equal(calls, 0);
+    await assert.rejects(
+      () =>
+        requestProviderPlan({
+          connection: budgeted,
+          instructions: "short",
+          input: "bounded",
+          schema,
+          schemaName: "rune_test",
+          signal: new AbortController().signal,
+        }),
+      /reported output usage above/i,
+    );
+    assert.equal(calls, 1);
   } finally {
     globalThis.fetch = previousFetch;
   }
