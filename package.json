@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "eval:golden": "node --experimental-strip-types scripts/run-golden-task-eval.mjs",
     "pilot:aggregate": "node --experimental-strip-types scripts/aggregate-pilot-evidence.mjs",
+    "pilot:outcomes": "node --experimental-strip-types scripts/evaluate-pilot-outcomes.mjs",
     "qa:pdf": "node --experimental-strip-types scripts/generate-pdf-qa.mjs",
     "qa:pdf-import": "node --experimental-strip-types scripts/generate-pdf-import-qa.mjs",
     "qa:odf": "node --experimental-strip-types scripts/generate-odf-qa.mjs",

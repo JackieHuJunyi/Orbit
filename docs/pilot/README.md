@@ -18,6 +18,8 @@ Do not recruit one-off presentation generators, macro-heavy financial model owne
 
 Use the [P1 interview guide](INTERVIEW-GUIDE.md) for the screener, 45-minute recent-task interview, timeline fields, and gate calculation. Store completed interview records in the approved research system, not this repository or `pilot-private/`.
 
+Use the [P2 paired-task comparison guide](TASK-COMPARISON-GUIDE.md) for exact A/B boundaries and the deterministic outcome-gate command. Use the [P4 paid-pilot guide](PAID-PILOT-GUIDE.md) only after a qualified task and buyer exist; commercial source records remain outside Rune.
+
 ## Consent and data boundary
 
 Before using a file, record consent outside the Rune repository and confirm one of these is true:
@@ -102,5 +104,6 @@ It does not prove demand, causal time savings, four-week retention outside the c
 - **P2 outcome validation:** median time at least 50% lower, at least 70% usable/minor-edit deliveries, 100% generated key numbers traceable, at least 60% Apply, and zero safety redlines.
 - **Pilot entry:** at least 20 fully authorized/redacted reviewed tasks, every eligible task's evaluated deliverables at number correctness ≥4.
 - **P3 reuse signal:** at least 40% of evaluated participants complete a second fully reviewed task on another date within 28 days.
+- **P4 payment validation:** at least 10 explicit quotes, 5 paying teams, 30% qualified-pilot conversion, one paid continuation signal, viable observed contribution, and one repeatable acquisition path.
 
 If a gate fails twice, fix the highest-blocking step or revisit the user/task hypothesis. Do not rescue weak demand by adding more formats, templates, automation, or telemetry.

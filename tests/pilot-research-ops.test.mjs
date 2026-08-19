@@ -4,6 +4,8 @@ import test from "node:test";
 
 const guideUrl = new URL("../docs/pilot/INTERVIEW-GUIDE.md", import.meta.url);
 const runbookUrl = new URL("../docs/pilot/README.md", import.meta.url);
+const comparisonGuideUrl = new URL("../docs/pilot/TASK-COMPARISON-GUIDE.md", import.meta.url);
+const paidPilotGuideUrl = new URL("../docs/pilot/PAID-PILOT-GUIDE.md", import.meta.url);
 
 test("keeps P1 interview operations linked to exact recent-task evidence gates", async () => {
   const [guide, runbook] = await Promise.all([readFile(guideUrl, "utf8"), readFile(runbookUrl, "utf8")]);
@@ -23,4 +25,34 @@ test("keeps completed research records and commercial proof outside the reposito
   assert.match(guide, /Count payment as E4 only after an authorized payment or signed commercial commitment/i);
   assert.match(guide, /Do not average unknown answers into success/i);
   assert.match(guide, /replace missing interviews with synthetic personas/i);
+});
+
+test("binds P2 comparisons to exact paired scopes and the executable outcome gate", async () => {
+  const [guide, runbook, packageJson] = await Promise.all([
+    readFile(comparisonGuideUrl, "utf8"),
+    readFile(runbookUrl, "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(runbook, /\[P2 paired-task comparison guide\]\(TASK-COMPARISON-GUIDE\.md\)/);
+  assert.match(guide, /same source scope/i);
+  assert.match(guide, /same decision goal/i);
+  assert.match(guide, /median of the per-task active-time reductions is at least 50%/i);
+  assert.match(guide, /100% of generated key numbers/i);
+  assert.match(guide, /zero safety redlines/i);
+  assert.match(packageJson, /"pilot:outcomes"/);
+  assert.match(guide, /example is schema documentation, not participant evidence/i);
+});
+
+test("keeps P4 tied to authorized commercial evidence and the fixed denominator", async () => {
+  const [guide, runbook] = await Promise.all([readFile(paidPilotGuideUrl, "utf8"), readFile(runbookUrl, "utf8")]);
+
+  assert.match(runbook, /\[P4 paid-pilot guide\]\(PAID-PILOT-GUIDE\.md\)/);
+  assert.match(guide, /¥499\/team\/month/);
+  assert.match(guide, /¥999\/team\/month/);
+  assert.match(guide, /¥1,999\/team\/month/);
+  assert.match(guide, /paying teams \/ qualified pilots offered/i);
+  assert.match(guide, /checkout click.*is not E4/i);
+  assert.match(guide, /Do not implement or simulate payments inside Rune/i);
+  assert.match(guide, /at least 5 paying teams/i);
 });
