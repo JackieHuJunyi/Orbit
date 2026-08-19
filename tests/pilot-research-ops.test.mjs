@@ -52,7 +52,11 @@ test("binds P2 comparisons to exact paired scopes and the executable outcome gat
 });
 
 test("keeps P4 tied to authorized commercial evidence and the fixed denominator", async () => {
-  const [guide, runbook] = await Promise.all([readFile(paidPilotGuideUrl, "utf8"), readFile(runbookUrl, "utf8")]);
+  const [guide, runbook, packageJson] = await Promise.all([
+    readFile(paidPilotGuideUrl, "utf8"),
+    readFile(runbookUrl, "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
 
   assert.match(runbook, /\[P4 paid-pilot guide\]\(PAID-PILOT-GUIDE\.md\)/);
   assert.match(guide, /¥499\/team\/month/);
@@ -62,4 +66,8 @@ test("keeps P4 tied to authorized commercial evidence and the fixed denominator"
   assert.match(guide, /checkout click.*is not E4/i);
   assert.match(guide, /Do not implement or simulate payments inside Rune/i);
   assert.match(guide, /at least 5 paying teams/i);
+  assert.match(guide, /Omitting refusals changes the denominator/i);
+  assert.match(guide, /refunded.*never counts as a paying team/i);
+  assert.match(guide, /example is schema documentation, not payment evidence/i);
+  assert.match(packageJson, /"pilot:commercial"/);
 });

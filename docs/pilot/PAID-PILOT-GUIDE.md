@@ -62,6 +62,50 @@ Reviewer and source-system reconciliation reference:
 
 Calculate qualified conversion as `paying teams / qualified pilots offered`; do not use only respondents or selected-plan users as the denominator. Calculate contribution as recognized non-refunded revenue minus all allocated variable costs. Report team counts, not individual payments split into several transactions.
 
+## Private deterministic gate
+
+At the locked decision date, export every qualified pilot that received a concrete quote on or before that date into `pilot-private/p4-commercial.json`. Omitting refusals changes the denominator and invalidates the result. Keep the row-level source of truth in the approved commercial system; the private file contains aliases, bounded money in integer CNY fen, and source references only.
+
+```json
+{
+  "version": 1,
+  "decisionOn": "2026-08-19",
+  "pilots": [
+    {
+      "teamId": "team-001",
+      "quotedOn": "2026-08-01",
+      "evidenceReference": "commercial-system/reference-not-a-name",
+      "qualified": true,
+      "offersPresented": [499, 999, 1999],
+      "selectedOffer": 999,
+      "commercialStatus": "cleared",
+      "contractedRevenueCnyFen": 99900,
+      "recognizedRevenueCnyFen": 99900,
+      "refundedRevenueCnyFen": 0,
+      "providerCostCnyFen": 8000,
+      "infrastructureCostCnyFen": 1000,
+      "supportCostCnyFen": 12000,
+      "paymentCostCnyFen": 3000,
+      "otherVariableCostCnyFen": 0,
+      "costsComplete": true,
+      "continuationStatus": "requested_paid",
+      "acquisitionChannel": "partner",
+      "acquisitionEvidenceReference": "commercial-system/channel-reference"
+    }
+  ]
+}
+```
+
+The example is schema documentation, not payment evidence or a complete passing cohort. `signed_commitment` requires a selected offer and positive contracted amount; `cleared` requires positive recognized revenue remaining after refunds; `refunded` never counts as a paying team; `not_paid` requires zero contracted, recognized, and refunded revenue. A paid continuation belongs only to a cleared or signed record.
+
+Run:
+
+```bash
+npm run pilot:commercial -- pilot-private/p4-commercial.json
+```
+
+The command rejects extra fields, duplicate teams, post-decision quotes, altered offer sets, inconsistent payment/refund states, incomplete cost allocation, and unsupported continuation claims. A repeatable acquisition channel requires at least two qualified rows in the same bounded channel category, each with an approved-system acquisition reference. Output contains aggregate counts and money only—never team, evidence, or channel identifiers.
+
 ## Fixed P4 decision
 
 P4 passes only when all conditions hold together:
