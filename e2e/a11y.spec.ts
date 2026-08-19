@@ -40,3 +40,22 @@ test("operating-review setup has no serious accessibility violations", async ({ 
 
   expect(blocking, blocking.map((violation) => `${violation.id}: ${violation.help}`).join("\n")).toEqual([]);
 });
+
+test("space-black operating-review setup has no serious accessibility violations", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("rune-onboarding-v1", "complete");
+    localStorage.setItem("rune-appearance-theme-v1", "space-black");
+  });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "space-black");
+  await page.getByRole("button", { name: "Create operating review", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Prepare a verifiable operating-review chain" });
+  await expect(dialog).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze();
+  const blocking = results.violations.filter(
+    (violation) => violation.impact === "critical" || violation.impact === "serious",
+  );
+
+  expect(blocking, blocking.map((violation) => `${violation.id}: ${violation.help}`).join("\n")).toEqual([]);
+});

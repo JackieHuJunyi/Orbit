@@ -36,7 +36,7 @@
 .preview-scroll > * { animation: rune-preview-settle var(--rune-duration-surface) var(--rune-ease-out) backwards; }
 .tools-popover,
 .export-popover { animation: rune-popover-material 280ms var(--rune-ease-out) backwards; }
-.import-review-backdrop { animation: rune-backdrop-in 260ms ease backwards; }
+.import-review-backdrop { animation: rune-review-backdrop-in 260ms ease backwards; }
 .command-menu-backdrop { animation: rune-backdrop-in 180ms ease backwards; }
 .command-menu { animation: rune-command-menu-in 280ms var(--rune-ease-out) backwards; }
 .import-review-dialog { animation: rune-dialog-in var(--rune-duration-surface) var(--rune-ease-out) backwards; }
@@ -85,7 +85,8 @@
 @keyframes rune-surface-enter { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-popover-material { from { opacity: 0; filter: blur(5px); transform: translate3d(0, -5px, 0) scale(.965); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-backdrop-in { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; } }
-@keyframes rune-dialog-in { from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.975); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes rune-review-backdrop-in { from { background-color: transparent; backdrop-filter: blur(0) saturate(100%); } }
+@keyframes rune-dialog-in { from { transform: translate3d(0, 18px, 0) scale(.975); } to { transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-command-menu-in { from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-scene-enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
 @keyframes rune-window-enter { from { opacity: 0; transform: translate3d(0, 26px, 0) scale(.975); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }

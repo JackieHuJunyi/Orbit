@@ -2761,7 +2761,7 @@ button.transaction-node:hover,
 
 .operating-review-templates > p {
   margin: 0;
-  color: var(--subtle);
+  color: var(--muted);
   font-size: 9px;
   line-height: 1.4;
 }
@@ -2878,7 +2878,7 @@ button.transaction-node:hover,
 }
 
 .operating-review-field > small {
-  color: var(--subtle);
+  color: var(--muted);
   font-size: 9px;
   line-height: 1.35;
 }
@@ -9458,6 +9458,40 @@ html[data-theme="space-black"] .command-menu { background: rgba(30, 30, 32, .94)
 html[data-theme="space-black"] .command-menu-backdrop { background: rgba(0, 0, 0, .55); }
 html[data-theme="space-black"] .import-review-dialog { background: #1c1c1e; }
 html[data-theme="space-black"] .import-review-backdrop { background: rgba(0, 0, 0, .6); }
+html[data-theme="space-black"] .import-review-header,
+html[data-theme="space-black"] .import-review-actions {
+  border-color: var(--rune-hairline);
+  background: rgba(36, 36, 39, .96);
+}
+html[data-theme="space-black"] .import-review-kicker { color: #c4c7cc; }
+html[data-theme="space-black"] .operating-review-templates legend,
+html[data-theme="space-black"] .operating-review-field > span,
+html[data-theme="space-black"] .operating-review-field legend,
+html[data-theme="space-black"] .operating-review-deliverables legend { color: #d1d1d6; }
+html[data-theme="space-black"] .operating-review-templates button,
+html[data-theme="space-black"] .operating-review-field input,
+html[data-theme="space-black"] .operating-review-field select,
+html[data-theme="space-black"] .operating-review-field textarea,
+html[data-theme="space-black"] .operating-review-deliverables > label,
+html[data-theme="space-black"] .operating-review-summary {
+  border-color: var(--rune-hairline-strong);
+  background: #2c2c2e;
+  color: var(--ink);
+}
+html[data-theme="space-black"] .operating-review-options { background: #3a3a3c; }
+html[data-theme="space-black"] .operating-review-options span { color: #d1d1d6; }
+html[data-theme="space-black"] .operating-review-options input:checked + span {
+  background: #525257;
+  color: #fff;
+}
+html[data-theme="space-black"] .import-review-actions .ghost-button {
+  border-color: var(--rune-hairline-strong);
+  background: #2c2c2e;
+  color: var(--ink);
+}
+html[data-theme="space-black"] .import-review-actions .ghost-button:hover { background: #3a3a3c; }
+html[data-theme="space-black"] .import-review-actions .primary-button { background: #4b4b50; }
+html[data-theme="space-black"] .import-review-actions .primary-button:hover { background: #5a5a60; }
 
 html[data-theme="space-black"] .tools-popover,
 html[data-theme="space-black"] .export-popover { background: rgba(30, 30, 32, .9); border-color: rgba(255, 255, 255, .1); }
