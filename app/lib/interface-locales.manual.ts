@@ -2782,3 +2782,28 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Explain the largest movements this month and the decisions leadership should make next.":
     "이번 달의 가장 큰 변화와 리더십이 다음에 내려야 할 결정을 설명합니다.",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  Area: "Aire",
+  "Area · volume sequence": "Aire · séquence de volumes",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  Area: "Área",
+  "Area · volume sequence": "Área · secuencia de volúmenes",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  Area: "Область",
+  "Area · volume sequence": "Область · последовательность объёмов",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  Area: "مساحي",
+  "Area · volume sequence": "مساحي · تسلسل الحجم",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  Area: "面",
+  "Area · volume sequence": "面 · ボリューム推移",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  Area: "영역",
+  "Area · volume sequence": "영역 · 규모 추이",
+});

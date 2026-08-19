@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-19 — Shipped Rune v1.14 with source-ordered area Charts across strict creation/Agent/configuration contracts, exact point provenance, React and scriptless HTML fills, PPTX/PDF vector fills, semantic DOCX/ODT trends, and nine-locale controls.
+
 - 2026-08-19 — Shipped Rune v1.13 with explicit-consent, paper-aligned per-page OCR region selection, keyboard percentage controls, conversion-side crop validation, crop-aware provenance/review warnings, and unchanged browser-local zero-write cancellation.
 
 - 2026-08-14 — Fixed the v1.09 clean-runner OCR gate by making the direct unit suite regenerate its Git-ignored same-origin worker, wasm cores, and language packs before asserting that the runtime assets ship.

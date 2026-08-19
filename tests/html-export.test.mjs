@@ -228,3 +228,55 @@ lang: en
   assert.match(html, /Jan: 10/);
   assert.doesNotMatch(html, /<script\b/i);
 });
+
+test("exports a scriptless area chart with deterministic filled SVG geometry", () => {
+  const data = {
+    id: "volume-data",
+    name: "volume.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Value\nJan,10\nFeb,30\nMar,20\n",
+  };
+  const chart = {
+    id: "volume-chart",
+    name: "volume.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly volume",
+      description: "",
+      source: data.id,
+      mark: "area",
+      category: "Month",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
+  };
+  const deck = {
+    id: "volume-deck",
+    name: "volume.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Volume export
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Volume
+
+{{ chart("volume-chart") }}
+`,
+  };
+  const html = new TextDecoder().decode(exportDeckHtml(deck, [deck, data, chart]).bytes);
+  assert.match(html, /rune-area-chart/);
+  assert.match(html, /<polygon class="rune-area-series"/);
+  assert.match(html, /Monthly volume area chart/);
+  assert.doesNotMatch(html, /<script\b/i);
+});

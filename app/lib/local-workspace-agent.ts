@@ -150,7 +150,7 @@ function planLocalAnalysisWorkflow(
   const fields = chartCreationFields({ ...queryOption, numericColumns: dataSource.numericColumns }, prompt);
   const chartPrepared = prepareArtifactCreation(workingArtifacts, {
     kind: "chart",
-    title: fields.mark === "line" ? "Workspace Trend" : "Workspace Chart",
+    title: fields.mark === "bar" ? "Workspace Chart" : "Workspace Trend",
     sourceArtifactId: query.id,
     ...fields,
   });

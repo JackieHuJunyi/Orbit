@@ -160,6 +160,7 @@ export function NewArtifactDialog({
             {creatableArtifactTypes.map((type) => (
               <button
                 key={type.kind}
+                type="button"
                 className={`new-artifact-type ${kind === type.kind ? "selected" : ""}`}
                 onClick={() => setKind(type.kind)}
                 role="radio"
@@ -178,10 +179,10 @@ export function NewArtifactDialog({
           </div>
         </fieldset>
 
-        <label className="new-artifact-title" htmlFor="new-artifact-title">
-          <span>{copy.newArtifact.titleLabel}</span>
+        <div className="new-artifact-title">
+          <label htmlFor="new-artifact-name">{copy.newArtifact.titleLabel}</label>
           <input
-            id="new-artifact-title"
+            id="new-artifact-name"
             data-dialog-initial-focus
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -192,7 +193,7 @@ export function NewArtifactDialog({
             aria-invalid={Boolean(title && prepared.errors.length)}
           />
           <small id="new-artifact-title-help">{copy.newArtifact.titleHelp}</small>
-        </label>
+        </div>
 
         {(kind === "query" || kind === "chart") && (
           <fieldset className="new-artifact-binding">
@@ -262,6 +263,7 @@ export function NewArtifactDialog({
                     >
                       <option value="bar">{copy.newArtifact.barCompare}</option>
                       <option value="line">{copy.newArtifact.lineSequence}</option>
+                      <option value="area">{copy.newArtifact.areaVolume}</option>
                     </select>
                   </label>
                   <label htmlFor="new-artifact-format">

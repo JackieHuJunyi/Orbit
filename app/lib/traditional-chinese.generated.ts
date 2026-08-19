@@ -3758,6 +3758,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "會把分析"
   ],
   [
+    "体量序列",
+    "體量序列"
+  ],
+  [
     "使用文档",
     "使用文件"
   ],
@@ -5564,6 +5568,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "雾蓝",
     "霧藍"
+  ],
+  [
+    "面积",
+    "面積"
   ],
   [
     "章节",

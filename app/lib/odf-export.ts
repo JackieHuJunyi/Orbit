@@ -268,23 +268,23 @@ function resolveOdfChart(
 }
 
 function chartRows(model: ChartModel) {
-  const secondHeader = model.spec.mark === "line" ? "Trend" : "Relative bar";
+  const sequenceMark = model.spec.mark !== "bar";
+  const secondHeader = sequenceMark ? "Trend" : "Relative bar";
   return [
     [model.spec.category, secondHeader, model.spec.value],
     ...model.data.map((datum, index) => {
       const previous = model.data[index - 1];
-      const visual =
-        model.spec.mark === "line"
-          ? !previous
-            ? "Start"
-            : datum.value > previous.value
-              ? "Increase"
-              : datum.value < previous.value
-                ? "Decrease"
-                : "No change"
-          : datum.value === 0
-            ? ""
-            : "█".repeat(Math.max(1, Math.round(datum.ratio * 12)));
+      const visual = sequenceMark
+        ? !previous
+          ? "Start"
+          : datum.value > previous.value
+            ? "Increase"
+            : datum.value < previous.value
+              ? "Decrease"
+              : "No change"
+        : datum.value === 0
+          ? ""
+          : "█".repeat(Math.max(1, Math.round(datum.ratio * 12)));
       return [datum.label, visual, datum.formatted];
     }),
   ];

@@ -414,6 +414,9 @@ function ChartFigure({
   const hasTargetableCells = Boolean(onTargetSource && rows.some((row) => row.categorySource || row.valueSource));
   const lineRows = chartLinePoints(model).map((point, index) => ({ ...rows[index], point }));
   const linePolyline = lineRows.map(({ point }) => `${50 + point.x * 900},${24 + point.y * 172}`).join(" ");
+  const areaPolygon = lineRows.length
+    ? `${50 + lineRows[0].point.x * 900},196 ${linePolyline} ${50 + lineRows.at(-1)!.point.x * 900},196`
+    : "";
   return (
     <figure
       className={`chart-card ${embedded ? "embedded" : ""}`}
@@ -430,7 +433,7 @@ function ChartFigure({
         </div>
         <p>{model.spec.description || `${model.spec.value} by ${model.spec.category}`}</p>
       </figcaption>
-      {model.spec.mark === "line" ? (
+      {model.spec.mark !== "bar" ? (
         <div className="chart-line-shell">
           <div className="chart-line-plot">
             <svg viewBox="0 0 1000 220" aria-hidden="true" focusable="false">
@@ -439,6 +442,7 @@ function ChartFigure({
                 <line x1="50" y1="110" x2="950" y2="110" />
                 <line x1="50" y1="196" x2="950" y2="196" />
               </g>
+              {model.spec.mark === "area" && <polygon className="chart-area-series" points={areaPolygon} />}
               <polyline className="chart-line-series" points={linePolyline} />
             </svg>
             {lineRows.map(({ datum, point, valueSource }) => {
@@ -2499,6 +2503,7 @@ function ChartPreview({
                 >
                   <option value="bar">{copy.bar}</option>
                   <option value="line">{copy.line}</option>
+                  <option value="area">{copy.area}</option>
                 </select>
               </label>
               <label>

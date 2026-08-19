@@ -533,3 +533,67 @@ lang: en
   assert.match(slideXml, /Monthly trend point 3/);
   assert.doesNotMatch(slideXml, /Monthly trend bar 1/);
 });
+
+test("freezes area charts as semantic DOCX trends and filled PPTX vectors", () => {
+  const data = {
+    id: "volume-data",
+    name: "volume.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Value\nJan,10\nFeb,30\nMar,20\n",
+  };
+  const chart = {
+    id: "volume-chart",
+    name: "volume.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly volume",
+      description: "Ordered source values",
+      source: data.id,
+      mark: "area",
+      category: "Month",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
+  };
+  const document = {
+    id: "volume-report",
+    name: "volume.md",
+    kind: "document",
+    language: "Markdown",
+    source: '# Volume\n\n{{ chart("volume-chart") }}\n',
+  };
+  const deck = {
+    id: "volume-deck",
+    name: "volume.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Volume review
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Monthly volume
+
+{{ chart("volume-chart") }}
+`,
+  };
+  const workspace = [document, data, chart, deck];
+  const docx = exportOfficeArtifact(document, workspace);
+  assert.match(docx.warnings.join(" "), /DOCX area-chart snapshots use a readable semantic trend table/i);
+  const parts = packageParts(exportOfficeArtifact(deck, workspace).bytes);
+  assertPptSlideBounds(parts);
+  const slideXml = strFromU8(parts["ppt/slides/slide1.xml"]);
+  assert.match(slideXml, /Monthly volume area fill/);
+  assert.match(slideXml, /<a:custGeom>/);
+  assert.match(slideXml, /<a:alpha val="18000"\/>/);
+  assert.match(slideXml, /Monthly volume line segment 2/);
+});

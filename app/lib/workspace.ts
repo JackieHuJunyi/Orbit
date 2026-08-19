@@ -43,7 +43,7 @@ export type ArtifactStarterRequest = {
   chart?: {
     category: string;
     value: string;
-    mark: "bar" | "line";
+    mark: "bar" | "line" | "area";
     format: "number" | "currency" | "percent";
   };
 };
@@ -444,7 +444,7 @@ export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
           mark: request.chart.mark,
           category: request.chart.category,
           value: request.chart.value,
-          sort: request.chart.mark === "line" ? "source" : "descending",
+          sort: request.chart.mark === "bar" ? "descending" : "source",
           format: request.chart.format,
           color: "#ff5c35",
           maxItems: 8,

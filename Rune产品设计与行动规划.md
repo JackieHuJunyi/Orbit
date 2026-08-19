@@ -910,7 +910,7 @@ Markdown、CSV、JSON、SQL、Chart JSON、Deck Markdown 是可展开的专业�
 - 团队协作和审批；
 - 云同步；
 - 行业模板市场；
-- 更丰富的图表和版式；
+- 更丰富的图表和版式（v1.14 已交付单序列面积图；多序列、堆叠与新布局仍需真实阻塞证据）；
 - 已授权目录的自动变化提示（v1.12 已交付；仍需用户审核 Pull）；
 - 企业权限和审计。
 
@@ -2148,3 +2148,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 区域必须为 finite number、完全位于页面内，宽高均不少于页面的 2%；转换端重新打开 PDF，并在识别前拒绝未选页、已有 selectable text 的页、越界、零尺寸或非有限坐标。
 - PDF 页面仍按既有 2,400 长边 / 800 万像素上限渲染，区域只裁剪这一有界 canvas，再交给同源 Tesseract；页面图像、crop 与识别文本不上传、不持久化。
 - Markdown page marker、可见核对提示和 import review warning 必须同时说明“selected region”、normalized crop 与 confidence；停止或取消释放 PDF page/loading task、preview/recognition canvas 与 worker，workspace 零写入。
+
+### 17.44 v1.14 面积图复用有序序列与来源合同
+
+- `area` 是 Chart v1 的第三个严格 mark，不是自由绘图入口；它与 line 共享 source/ascending/descending 顺序、finite value 归一化、1–20 marks 上限和 category/value 单元格 provenance。
+- New、Workspace Agent 和 Chart Configure 可以显式选择 area；Agent 只应在有意义的体量或累计序列中使用它。经营汇报向导继续保留更窄的 bar/line 决策，避免把面积语义自动套到分类对比。
+- React 与 scriptless HTML 在同一折线点集和底线之间绘制有界 fill，点与标签仍可键盘打开精确源单元格；fill 本身不成为新的选择或写入 authority。
+- PPTX 与 PDF 冻结真实 vector fill 和原有点/线/标签；DOCX 与 ODT 使用可选择、可回导的 semantic trend table。所有 handoff 仍丢失 live binding，并通过既有 fidelity review 披露。
+- scatter、多序列、stacked、双轴和任意 layout 继续被 schema 拒绝；它们会改变字段、系列和可访问性合同，必须由真实任务证据定义后再扩展。

@@ -413,7 +413,8 @@ function docxChartCell(
 
 function docxChart(model: ChartModel, context: DocxContext) {
   const color = model.spec.color.slice(1).toUpperCase();
-  const header = `<w:tr>${docxChartCell(model.spec.category, context, 2500)}${docxChartCell(model.spec.mark === "line" ? "Trend" : "Relative bar", context, 3600)}${docxChartCell(model.spec.value, context, 1900)}</w:tr>`;
+  const sequenceMark = model.spec.mark !== "bar";
+  const header = `<w:tr>${docxChartCell(model.spec.category, context, 2500)}${docxChartCell(sequenceMark ? "Trend" : "Relative bar", context, 3600)}${docxChartCell(model.spec.value, context, 1900)}</w:tr>`;
   const rows = model.data
     .map((datum, index) => {
       const previous = model.data[index - 1];
@@ -424,15 +425,12 @@ function docxChart(model: ChartModel, context: DocxContext) {
           : datum.value < previous.value
             ? "↓ Decrease"
             : "→ No change";
-      const visual =
-        model.spec.mark === "line"
-          ? docxChartCell(trend, context, 3600, { barColor: color })
-          : docxChartCell(
-              datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12))),
-              context,
-              3600,
-              { barColor: color, track: true },
-            );
+      const visual = sequenceMark
+        ? docxChartCell(trend, context, 3600, { barColor: color })
+        : docxChartCell(datum.value === 0 ? "" : "█".repeat(Math.max(1, Math.round(datum.ratio * 12))), context, 3600, {
+            barColor: color,
+            track: true,
+          });
       return `<w:tr>${docxChartCell(datum.label, context, 2500)}${visual}${docxChartCell(datum.formatted, context, 1900)}</w:tr>`;
     })
     .join("");
@@ -440,8 +438,8 @@ function docxChart(model: ChartModel, context: DocxContext) {
     `Live Rune charts are exported as static current-data snapshots from ${model.sourceArtifactName}; Office files do not retain the live data binding.`,
   );
   context.warnings.add(
-    model.spec.mark === "line"
-      ? "DOCX line-chart snapshots use a readable semantic trend table so labels, direction, and values remain selectable and importable."
+    sequenceMark
+      ? `DOCX ${model.spec.mark}-chart snapshots use a readable semantic trend table so labels, direction, and values remain selectable and importable.`
       : "DOCX bar-chart snapshots use a readable semantic bar table so labels and values remain selectable and importable.",
   );
   const description = model.spec.description ? docxParagraph(model.spec.description, context, { style: "Quote" }) : "";
@@ -779,6 +777,27 @@ function pptPointShape(id: number, name: string, center: { x: number; y: number 
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${Math.round(center.x - diameter / 2)}" y="${Math.round(center.y - diameter / 2)}"/><a:ext cx="${diameter}" cy="${diameter}"/></a:xfrm><a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="24000"><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"/></a:solidFill></a:ln></p:spPr></p:sp>`;
 }
 
+function pptAreaShape(
+  id: number,
+  name: string,
+  geometry: { x: number; y: number; cx: number; cy: number },
+  points: Array<{ x: number; y: number }>,
+  color: string,
+) {
+  if (!points.length) return "";
+  const relative = points.map((point) => ({
+    x: Math.max(0, Math.min(geometry.cx, point.x - geometry.x)),
+    y: Math.max(0, Math.min(geometry.cy, point.y - geometry.y)),
+  }));
+  const path = [
+    `<a:moveTo><a:pt x="${relative[0].x}" y="${geometry.cy}"/></a:moveTo>`,
+    ...relative.map((point) => `<a:lnTo><a:pt x="${point.x}" y="${point.y}"/></a:lnTo>`),
+    `<a:lnTo><a:pt x="${relative.at(-1)!.x}" y="${geometry.cy}"/></a:lnTo>`,
+    "<a:close/>",
+  ].join("");
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xmlAttribute(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="l" t="t" r="r" b="b"/><a:pathLst><a:path w="${geometry.cx}" h="${geometry.cy}">${path}</a:path></a:pathLst></a:custGeom><a:solidFill><a:srgbClr val="${xmlAttribute(color)}"><a:alpha val="18000"/></a:srgbClr></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr></p:sp>`;
+}
+
 function pptChartShapes(
   startId: number,
   model: ChartModel,
@@ -811,7 +830,7 @@ function pptChartShapes(
   }
   const rowsY = geometry.y + titleHeight + descriptionHeight + 100_000;
   const rowsHeight = Math.max(1, geometry.cy - titleHeight - descriptionHeight - 100_000);
-  if (model.spec.mark === "line") {
+  if (model.spec.mark !== "bar") {
     const plotX = geometry.x + 160_000;
     const plotY = rowsY + 120_000;
     const plotWidth = Math.max(500_000, geometry.cx - 320_000);
@@ -834,6 +853,17 @@ function pptChartShapes(
       x: Math.round(plotX + point.x * plotWidth),
       y: Math.round(plotY + point.y * plotHeight),
     }));
+    if (model.spec.mark === "area") {
+      shapes.push(
+        pptAreaShape(
+          nextId++,
+          `${model.spec.title} area fill`,
+          { x: plotX, y: plotY, cx: plotWidth, cy: plotHeight },
+          points,
+          color,
+        ),
+      );
+    }
     points.slice(1).forEach((current, index) => {
       const previous = points[index];
       shapes.push(pptLineShape(nextId++, `${model.spec.title} line segment ${index + 1}`, previous, current, color));

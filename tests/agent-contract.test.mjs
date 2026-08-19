@@ -534,8 +534,9 @@ test("constrains chart patches to the strict Data-or-Query JSON contract", () =>
   assert.match(buildAgentInstructions(chartRequest), /strict Chart JSON/);
   assert.match(buildAgentInstructions(chartRequest), /Data or Query artifact/);
   assert.match(buildAgentInstructions(chartRequest), /explicit AS alias/);
-  assert.match(buildAgentInstructions(chartRequest), /bar or line/);
+  assert.match(buildAgentInstructions(chartRequest), /bar, line, or area/);
   assert.match(buildAgentInstructions(chartRequest), /meaningful sequence/);
+  assert.match(buildAgentInstructions(chartRequest), /cumulative magnitude or volume/);
   assert.match(buildAgentInstructions(chartRequest), /six-digit hex/);
 });
 

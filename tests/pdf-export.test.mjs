@@ -246,4 +246,15 @@ lang: en
   const secondDeck = await exportPdfArtifact(deck, workspace, [], fontBytes);
   assert.deepEqual(firstDeck.bytes, secondDeck.bytes);
   assert.equal((await PDFDocument.load(firstDeck.bytes)).getPageCount(), 1);
+
+  const areaChart = { ...chart, id: "area-chart", source: chart.source.replace('"line"', '"area"') };
+  const areaDeck = {
+    ...deck,
+    id: "area-deck",
+    source: deck.source.replace('chart("trend-chart")', 'chart("area-chart")'),
+  };
+  const firstArea = await exportPdfArtifact(areaDeck, [areaDeck, data, areaChart], [], fontBytes);
+  const secondArea = await exportPdfArtifact(areaDeck, [areaDeck, data, areaChart], [], fontBytes);
+  assert.deepEqual(firstArea.bytes, secondArea.bytes);
+  assert.equal((await PDFDocument.load(firstArea.bytes)).getPageCount(), 1);
 });

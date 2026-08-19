@@ -30,7 +30,11 @@ test("parses the bounded Chart JSON contract", () => {
   assert.equal(parseChartSource('{"version":1,"title":"x"}').spec, undefined);
   assert.match(parseChartSource('{"version":1,"title":"x"}').errors.join(" "), /source|mark|category|value/i);
   assert.equal(parseChartSource(chartArtifact().source.replace('"bar"', '"line"')).spec?.mark, "line");
-  assert.match(parseChartSource(chartArtifact().source.replace('"bar"', '"scatter"')).errors.join(" "), /bar|line/i);
+  assert.equal(parseChartSource(chartArtifact().source.replace('"bar"', '"area"')).spec?.mark, "area");
+  assert.match(
+    parseChartSource(chartArtifact().source.replace('"bar"', '"scatter"')).errors.join(" "),
+    /bar|line|area/i,
+  );
 });
 
 test("formats evidence previews and rendered charts through one deterministic contract", () => {
@@ -125,6 +129,51 @@ test("centers a one-point or flat line series without fabricating a range", () =
     chartLinePoints(model).map(({ y }) => y),
     [0.5, 0.5],
   );
+});
+
+test("renders area charts with the same ordered points plus a bounded fill", () => {
+  const data = {
+    id: "volume-data",
+    name: "volume.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Volume\nJan,10\nFeb,30\nMar,20",
+  };
+  const chart = {
+    id: "volume-chart",
+    name: "volume.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly volume",
+      description: "Ordered volume",
+      source: data.id,
+      mark: "area",
+      category: "Month",
+      value: "Volume",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
+  };
+  const model = resolveChartModel(chart, [data, chart], parseDataSource).model;
+  assert.ok(model);
+  assert.deepEqual(
+    chartLinePoints(model).map(({ x, y }) => [x, y]),
+    [
+      [0, 1],
+      [0.5, 0],
+      [1, 0.5],
+    ],
+  );
+  const html = renderChartModelHtml(model);
+  assert.match(html, /rune-area-chart/);
+  assert.match(html, /<polygon class="rune-area-series" points="50\.00,196/);
+  assert.match(html, /950\.00,196"/);
+  assert.match(html, /aria-label="Monthly volume area chart"/);
+  assert.doesNotMatch(html, /<script/i);
 });
 
 test("projects canonical CSV rows into a sorted local chart model", () => {

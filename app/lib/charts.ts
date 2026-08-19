@@ -10,7 +10,7 @@ export const ChartSpecSchema = z
     title: z.string().trim().min(1).max(120),
     description: z.string().trim().max(240).default(""),
     source: z.string().trim().min(1).max(120),
-    mark: z.enum(["bar", "line"]),
+    mark: z.enum(["bar", "line", "area"]),
     category: z.string().trim().min(1).max(120),
     value: z.string().trim().min(1).max(120),
     sort: z.enum(["source", "ascending", "descending"]).default("descending"),
@@ -323,7 +323,7 @@ function escapeHtml(value: string) {
 }
 
 export function renderChartModelHtml(model: ChartModel): string {
-  if (model.spec.mark === "line") {
+  if (model.spec.mark !== "bar") {
     const points = chartLinePoints(model);
     const plotPoints = points
       .map((point) => `${(50 + point.x * 900).toFixed(2)},${(24 + point.y * 172).toFixed(2)}`)
@@ -335,17 +335,20 @@ export function renderChartModelHtml(model: ChartModel): string {
         return `<circle cx="${x}" cy="${y}" r="7"><title>${escapeHtml(`${point.datum.label}: ${point.datum.formatted}`)}</title></circle>`;
       })
       .join("");
+    const areaPoints = points.length
+      ? `${(50 + points[0].x * 900).toFixed(2)},196 ${plotPoints} ${(50 + points.at(-1)!.x * 900).toFixed(2)},196`
+      : "";
     const labels = model.data
       .map(
         (datum) => `<div><span>${escapeHtml(datum.label)}</span><strong>${escapeHtml(datum.formatted)}</strong></div>`,
       )
       .join("");
-    return `<figure class="rune-embedded-chart rune-line-chart" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
+    return `<figure class="rune-embedded-chart rune-line-chart${model.spec.mark === "area" ? " rune-area-chart" : ""}" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
   <style>
-    .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-line-plot{display:block;width:100%;height:auto;overflow:visible}.rune-line-grid line{stroke:rgba(98,112,104,.16);stroke-width:1}.rune-line-series{fill:none;stroke:var(--rune-chart-accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.rune-line-points circle{fill:#fff;stroke:var(--rune-chart-accent);stroke-width:5;vector-effect:non-scaling-stroke}.rune-line-labels{display:grid;grid-template-columns:repeat(var(--rune-line-count),minmax(0,1fr));gap:6px;margin-top:4px}.rune-line-labels div{display:grid;gap:2px;min-width:0;text-align:center}.rune-line-labels span{overflow:hidden;color:#627068;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.rune-line-labels strong{color:#18211c;font-size:10px;font-variant-numeric:tabular-nums}
+    .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-line-plot{display:block;width:100%;height:auto;overflow:visible}.rune-line-grid line{stroke:rgba(98,112,104,.16);stroke-width:1}.rune-area-series{fill:var(--rune-chart-accent);fill-opacity:.16;stroke:none}.rune-line-series{fill:none;stroke:var(--rune-chart-accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.rune-line-points circle{fill:#fff;stroke:var(--rune-chart-accent);stroke-width:5;vector-effect:non-scaling-stroke}.rune-line-labels{display:grid;grid-template-columns:repeat(var(--rune-line-count),minmax(0,1fr));gap:6px;margin-top:4px}.rune-line-labels div{display:grid;gap:2px;min-width:0;text-align:center}.rune-line-labels span{overflow:hidden;color:#627068;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.rune-line-labels strong{color:#18211c;font-size:10px;font-variant-numeric:tabular-nums}
   </style>
   <figcaption><strong>${escapeHtml(model.spec.title)}</strong><span>${escapeHtml(model.spec.description || `${model.spec.value} by ${model.spec.category}`)}</span></figcaption>
-  <svg class="rune-line-plot" viewBox="0 0 1000 220" role="img" aria-label="${escapeHtml(`${model.spec.title} line chart`)}"><title>${escapeHtml(model.spec.title)}</title><g class="rune-line-grid"><line x1="50" y1="24" x2="950" y2="24"/><line x1="50" y1="110" x2="950" y2="110"/><line x1="50" y1="196" x2="950" y2="196"/></g><polyline class="rune-line-series" points="${plotPoints}"/><g class="rune-line-points">${circles}</g></svg>
+  <svg class="rune-line-plot" viewBox="0 0 1000 220" role="img" aria-label="${escapeHtml(`${model.spec.title} ${model.spec.mark} chart`)}"><title>${escapeHtml(model.spec.title)}</title><g class="rune-line-grid"><line x1="50" y1="24" x2="950" y2="24"/><line x1="50" y1="110" x2="950" y2="110"/><line x1="50" y1="196" x2="950" y2="196"/></g>${model.spec.mark === "area" ? `<polygon class="rune-area-series" points="${areaPoints}"/>` : ""}<polyline class="rune-line-series" points="${plotPoints}"/><g class="rune-line-points">${circles}</g></svg>
   <div class="rune-line-labels" style="--rune-line-count:${model.data.length}">${labels}</div>
 </figure>`;
   }

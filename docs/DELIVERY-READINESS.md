@@ -27,6 +27,7 @@
 | Budgeted multi-provider routing                              | Shipped                      | Capability manifests, per-task input/output ceilings, explicit failover authorization, health cooldown, and route tests      | Calibrate provider-specific budgets from authorized real-task usage              |
 | Connected-folder change detection                            | Shipped                      | Native observer plus bounded metadata polling fallback; external changes still require validated, confirmed Pull             | Observe whether real recurring workflows benefit from the notification           |
 | Scanned-PDF OCR region selection                             | Shipped                      | Explicit local preview, paper-aligned pointer/keyboard crop, conversion-side validation, crop provenance, and zero-write E2E | Determine which additional OCR languages or multi-region layouts real files need |
+| Source-ordered area Charts                                   | Shipped                      | Strict mark schema, exact point provenance, visual editing, scriptless HTML, semantic Office/ODF, and vector PPTX/PDF tests  | Determine whether real reviews need multi-series, stacked, or other chart forms  |
 
 ## Evidence gates that remain open
 

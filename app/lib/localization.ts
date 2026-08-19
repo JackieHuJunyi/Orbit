@@ -781,6 +781,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       mark: zh ? "图形" : "Mark",
       barCompare: zh ? "柱形 · 对比" : "Bar · compare",
       lineSequence: zh ? "折线 · 序列" : "Line · sequence",
+      areaVolume: zh ? "面积 · 体量序列" : "Area · volume sequence",
       format: zh ? "数字格式" : "Number format",
       number: zh ? "数字" : "Number",
       currency: zh ? "货币 · USD" : "Currency · USD",
@@ -860,10 +861,10 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       liveChart: zh ? "实时图表" : "Live chart",
       queryOutput: zh ? "Query 结果" : "Query output",
       marks: (value: number) => (zh ? `${value} 个图形` : `${value} marks`),
-      clickExactDatum: (mark: "line" | "bar") =>
+      clickExactDatum: (mark: "line" | "bar" | "area") =>
         zh
-          ? `点击标签或${mark === "line" ? "点" : "柱"}可打开精确源单元格`
-          : `Click a label or ${mark === "line" ? "point" : "bar"} to open its exact source cell`,
+          ? `点击标签或${mark === "bar" ? "柱" : "点"}可打开精确源单元格`
+          : `Click a label or ${mark === "bar" ? "bar" : "point"} to open its exact source cell`,
       categoryDatum: (title: string, label: string) =>
         zh ? `${title} · 分类 ${label}` : `${title} · category ${label}`,
       valueDatum: (title: string, value: string) => (zh ? `${title} · 数值 ${value}` : `${title} · value ${value}`),
@@ -1007,6 +1008,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       mark: zh ? "图形" : "Mark",
       bar: zh ? "柱形" : "Bar",
       line: zh ? "折线" : "Line",
+      area: zh ? "面积" : "Area",
       sort: zh ? "排序" : "Sort",
       sourceOrder: zh ? "源顺序" : "Source order",
       ascending: zh ? "升序" : "Ascending",

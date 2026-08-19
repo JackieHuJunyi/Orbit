@@ -59,6 +59,25 @@ test("opens and closes the New artifact dialog from the top bar", async ({ page 
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
+test("creates and renders a source-ordered area Chart", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+  await page.getByRole("button", { name: "New", exact: true }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Create a new artifact" });
+  await dialog.getByRole("radio", { name: /Chart bound to Data or Query/ }).click();
+  await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Revenue volume");
+  await dialog.getByRole("combobox", { name: "Mark" }).selectOption("area");
+  await expect(dialog.getByRole("region", { name: "New source preview" })).toContainText('"mark": "area"');
+  await dialog.getByRole("button", { name: "Create source" }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("aside.file-rail").getByText("revenue-volume.chart.json")).toBeVisible();
+  await expect(page.locator(".chart-area-series")).toBeVisible();
+  await expect(page.locator(".chart-line-point")).toHaveCount(4);
+  expect(pageErrors).toEqual([]);
+});
+
 test("selects an on-device OCR region without writing the workspace", async ({ page }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));

@@ -163,6 +163,19 @@ test("discovers exact source fields and creates Data- or Query-backed Chart JSON
   });
   assert.deepEqual(queryBacked.errors, []);
   assert.equal(parseChartSource(queryBacked.artifact.source).spec.sort, "source");
+
+  const area = prepareArtifactCreation(workspace, {
+    kind: "chart",
+    title: "Revenue volume",
+    sourceArtifactId: data.id,
+    category: "Region",
+    value: "Revenue",
+    mark: "area",
+    format: "currency",
+  });
+  assert.deepEqual(area.errors, []);
+  assert.equal(parseChartSource(area.artifact.source).spec.mark, "area");
+  assert.equal(parseChartSource(area.artifact.source).spec.sort, "source");
 });
 
 test("rejects invented creation sources and fields without partial artifacts", () => {

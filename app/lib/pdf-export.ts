@@ -469,7 +469,7 @@ function drawPdfChart(
   const descriptionFont = fontForText(description, context);
   const descriptionLines = wrapText(description, descriptionFont, { size: 6.5, maxWidth: box.width - 24, maxLines: 2 });
   drawLines(page, descriptionLines.lines, descriptionFont, box.x + 12, box.y + box.height - 36, 6.5, 8, theme.muted);
-  if (model.spec.mark === "line") {
+  if (model.spec.mark !== "bar") {
     const plotX = box.x + 20;
     const plotWidth = Math.max(40, box.width - 40);
     const plotBottom = box.y + 35;
@@ -484,6 +484,20 @@ function drawPdfChart(
       x: plotX + point.x * plotWidth,
       y: plotTop - point.y * plotHeight,
     }));
+    if (model.spec.mark === "area" && points.length) {
+      const path = [
+        `M 0,${plotHeight}`,
+        ...points.map(({ x, y }) => `L ${x - plotX},${plotTop - y}`),
+        `L ${points.at(-1)!.x - plotX},${plotHeight}`,
+        "Z",
+      ].join(" ");
+      page.drawSvgPath(path, {
+        x: plotX,
+        y: plotTop,
+        color: hexColor(model.spec.color),
+        opacity: 0.16,
+      });
+    }
     points.slice(1).forEach((current, index) => {
       page.drawLine({
         start: { x: points[index].x, y: points[index].y },

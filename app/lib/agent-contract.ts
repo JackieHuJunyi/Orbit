@@ -225,7 +225,7 @@ export const AgentChartArtifactCreationOperationSchema = AgentCreationOperationP
   source: AgentArtifactReferenceSchema,
   category: z.string().min(1).max(120),
   value: z.string().min(1).max(120),
-  mark: z.enum(["bar", "line"]),
+  mark: z.enum(["bar", "line", "area"]),
   format: z.enum(["number", "currency", "percent"]),
 }).strict();
 
@@ -512,7 +512,7 @@ const kindRules: Record<AgentRequest["artifact"]["kind"], string> = {
   query:
     'Use only replace_text. The resulting source must be one read-only DuckDB SELECT or WITH query. Read the bound Data artifact through workspace_data, avoid remote URLs and side effects, and keep the result useful as a live grid. Preserve an existing first-line -- rune:data "artifact-id" directive exactly. In Workspace scope, add or change that directive only to an exact existing Data artifact id from visible context; never invent an id.',
   chart:
-    "Use only replace_text. The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing Data or Query artifact id and exact source/output column names; give every derived Query field an explicit AS alias. Keep mark as bar or line: use bar for categorical comparison and line only when source or explicit sorting provides a meaningful sequence. Keep color as a six-digit hex value and maxItems between 1 and 20.",
+    "Use only replace_text. The resulting source must be one strict Chart JSON object with version, title, description, source, mark, category, value, sort, format, color, and maxItems. Use an existing Data or Query artifact id and exact source/output column names; give every derived Query field an explicit AS alias. Keep mark as bar, line, or area: use bar for categorical comparison, line for a meaningful sequence, and area only when that sequence represents a cumulative magnitude or volume. Keep color as a six-digit hex value and maxItems between 1 and 20.",
   slides:
     "For legacy semantic HTML use only replace_text. Keep scripts out, use accessible section-based slides, preserve shared design tokens, and preserve every {{ metric(...) }} token unless the user explicitly asks to change a binding. A Query metric names an exact existing Query id, explicit output column, currency/number/percent format, and optionally one quoted result-row index from zero to four hundred ninety-nine; only Workspace scope may introduce or retarget that cross-file binding from visible context.",
 };

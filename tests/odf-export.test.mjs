@@ -226,6 +226,60 @@ test("exports deterministic ODP slides with current chart values and imports the
   assert.deepEqual(validateArtifact(roundTrip), []);
 });
 
+test("exports area Charts as semantic OpenDocument trend tables", () => {
+  const data = {
+    id: "volume-data",
+    name: "volume.csv",
+    kind: "data",
+    language: "CSV / JSON",
+    source: "Month,Value\nJan,10\nFeb,30\nMar,20\n",
+  };
+  const chart = {
+    id: "volume-chart",
+    name: "volume.chart.json",
+    kind: "chart",
+    language: "Chart JSON",
+    source: JSON.stringify({
+      version: 1,
+      title: "Monthly volume",
+      description: "Ordered source values",
+      source: data.id,
+      mark: "area",
+      category: "Month",
+      value: "Value",
+      sort: "source",
+      format: "number",
+      color: "#3676d1",
+      maxItems: 8,
+    }),
+  };
+  const deck = {
+    id: "volume-deck",
+    name: "volume.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Volume review
+theme: rune
+ratio: 16:9
+lang: en
+---
+
+# Monthly volume
+
+{{ chart("volume-chart") }}
+`,
+  };
+  const exported = exportOdfArtifact(deck, [deck, data, chart], []);
+  const content = strFromU8(packageParts(exported.bytes)["content.xml"]);
+  assert.match(content, /Monthly volume/u);
+  assert.match(content, /Trend/u);
+  assert.match(content, /Increase/u);
+  assert.match(content, /Decrease/u);
+  assert.doesNotMatch(content, /Relative bar/u);
+});
+
 test("limits OpenDocument export to bounded canonical artifacts", () => {
   const document = defaultArtifacts.find((artifact) => artifact.kind === "document");
   const data = defaultArtifacts.find((artifact) => artifact.kind === "data");

@@ -23,7 +23,7 @@ export const creatableArtifactTypes = Object.freeze(
 
 export type CreatableArtifactKind = (typeof creatableArtifactTypes)[number]["kind"];
 
-export type ChartCreationMark = "bar" | "line";
+export type ChartCreationMark = "bar" | "line" | "area";
 export type ChartCreationFormat = "number" | "currency" | "percent";
 
 export type ArtifactCreationInput =
@@ -189,7 +189,7 @@ function validateCreationBinding(existing: WorkspaceArtifact[], input: ArtifactC
   const valueMatches = source.columns.filter((column) => column === input.value).length;
   if (categoryMatches !== 1) return `Choose one exact category field from ${source.name}.`;
   if (valueMatches !== 1) return `Choose one exact value field from ${source.name}.`;
-  if (!["bar", "line"].includes(input.mark)) return "Choose a supported Chart mark.";
+  if (!["bar", "line", "area"].includes(input.mark)) return "Choose a supported Chart mark.";
   if (!["number", "currency", "percent"].includes(input.format)) return "Choose a supported Chart number format.";
   return "";
 }
