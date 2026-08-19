@@ -67,3 +67,41 @@ test("opens the settings panel from the bottom-left gear", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
 });
+
+test("applies weekly and monthly operating-review presets without guessing the exact period", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+  await page.getByRole("button", { name: "Create operating review", exact: true }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Prepare a verifiable operating-review chain" });
+  await expect(dialog).toBeVisible();
+  const title = dialog.getByRole("textbox", { name: "Review title" });
+  const period = dialog.getByRole("textbox", { name: "Reporting period" });
+  const focus = dialog.getByRole("textbox", { name: "Review focus" });
+  const audience = dialog.getByRole("combobox", { name: "Audience" });
+  const report = dialog.getByRole("checkbox", { name: /Report/ });
+  const slides = dialog.getByRole("checkbox", { name: /Slides/ });
+
+  await dialog.getByRole("button", { name: /Weekly review/ }).click();
+  expect(pageErrors).toEqual([]);
+  await expect(dialog).toHaveAccessibleName("Prepare a verifiable operating-review chain");
+  await expect(title).toHaveValue("Weekly operating review");
+  await expect(period).toHaveValue("");
+  await expect(focus).toHaveValue(
+    "Identify the most material change since last week and assign the next decision or owner.",
+  );
+  await expect(audience).toHaveValue("team");
+  await expect(report).toBeChecked();
+  await expect(slides).not.toBeChecked();
+
+  await dialog.getByRole("button", { name: /Monthly review/ }).click();
+  await expect(title).toHaveValue("Monthly operating review");
+  await expect(period).toHaveValue("");
+  await expect(focus).toHaveValue(
+    "Explain the largest movements this month and the decisions leadership should make next.",
+  );
+  await expect(audience).toHaveValue("leadership");
+  await expect(report).toBeChecked();
+  await expect(slides).toBeChecked();
+});

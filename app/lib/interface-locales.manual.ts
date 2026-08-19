@@ -2421,3 +2421,100 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Write in Source and the live output will recompile immediately.":
     "Source에 입력하면 라이브 출력이 즉시 다시 컴파일됩니다.",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Start from a cadence": "Commencer par une cadence",
+  "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
+    "Les préréglages renseignent uniquement le cadrage de la tâche, le public et les livrables. Vous devez toujours confirmer un périmètre Data exact et une période de rapport.",
+  "Weekly review": "Revue hebdomadaire",
+  "A team report focused on the largest change and next owner":
+    "Un rapport d’équipe axé sur le changement le plus important et le prochain responsable",
+  "Monthly review": "Revue mensuelle",
+  "A leadership report and slides focused on decisions":
+    "Un rapport et une présentation pour la direction, axés sur les décisions",
+  "Weekly operating review": "Revue opérationnelle hebdomadaire",
+  "Identify the most material change since last week and assign the next decision or owner.":
+    "Identifiez le changement le plus important depuis la semaine dernière et attribuez la prochaine décision ou le prochain responsable.",
+  "Monthly operating review": "Revue opérationnelle mensuelle",
+  "Explain the largest movements this month and the decisions leadership should make next.":
+    "Expliquez les évolutions les plus importantes du mois et les prochaines décisions que la direction doit prendre.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Start from a cadence": "Empezar por una frecuencia",
+  "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
+    "Los ajustes predefinidos solo completan el enfoque de la tarea, la audiencia y los entregables. Aún debes confirmar un ámbito de Data exacto y el período del informe.",
+  "Weekly review": "Revisión semanal",
+  "A team report focused on the largest change and next owner":
+    "Un informe para el equipo centrado en el mayor cambio y el siguiente responsable",
+  "Monthly review": "Revisión mensual",
+  "A leadership report and slides focused on decisions":
+    "Un informe y una presentación para la dirección centrados en las decisiones",
+  "Weekly operating review": "Revisión operativa semanal",
+  "Identify the most material change since last week and assign the next decision or owner.":
+    "Identifica el cambio más importante desde la semana pasada y asigna la siguiente decisión o responsable.",
+  "Monthly operating review": "Revisión operativa mensual",
+  "Explain the largest movements this month and the decisions leadership should make next.":
+    "Explica los cambios más importantes de este mes y las próximas decisiones que debe tomar la dirección.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Start from a cadence": "Начать с периодичности",
+  "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
+    "Шаблоны заполняют только цель задачи, аудиторию и результаты. Точную область Data и отчётный период по-прежнему нужно подтвердить.",
+  "Weekly review": "Еженедельный обзор",
+  "A team report focused on the largest change and next owner":
+    "Отчёт для команды о самом значимом изменении и следующем ответственном",
+  "Monthly review": "Ежемесячный обзор",
+  "A leadership report and slides focused on decisions": "Отчёт и презентация для руководства с акцентом на решениях",
+  "Weekly operating review": "Еженедельный операционный обзор",
+  "Identify the most material change since last week and assign the next decision or owner.":
+    "Определите самое значимое изменение с прошлой недели и назначьте следующее решение или ответственного.",
+  "Monthly operating review": "Ежемесячный операционный обзор",
+  "Explain the largest movements this month and the decisions leadership should make next.":
+    "Объясните самые значимые изменения за месяц и следующие решения, которые должно принять руководство.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Start from a cadence": "ابدأ من وتيرة التقارير",
+  "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
+    "تملأ الإعدادات المسبقة إطار المهمة والجمهور والمخرجات فقط. وما زال عليك تأكيد نطاق Data دقيق وفترة التقرير.",
+  "Weekly review": "مراجعة أسبوعية",
+  "A team report focused on the largest change and next owner": "تقرير للفريق يركز على أكبر تغيير والمسؤول التالي",
+  "Monthly review": "مراجعة شهرية",
+  "A leadership report and slides focused on decisions": "تقرير وعرض للقيادة يركزان على القرارات",
+  "Weekly operating review": "مراجعة تشغيلية أسبوعية",
+  "Identify the most material change since last week and assign the next decision or owner.":
+    "حدّد أهم تغيير منذ الأسبوع الماضي وعيّن القرار التالي أو المسؤول عنه.",
+  "Monthly operating review": "مراجعة تشغيلية شهرية",
+  "Explain the largest movements this month and the decisions leadership should make next.":
+    "اشرح أكبر التغييرات هذا الشهر والقرارات التالية التي ينبغي على القيادة اتخاذها.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Start from a cadence": "レポート周期から始める",
+  "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
+    "プリセットが入力するのはタスクの目的、対象者、成果物だけです。正確な Data 範囲と報告期間は引き続き確認が必要です。",
+  "Weekly review": "週次レビュー",
+  "A team report focused on the largest change and next owner":
+    "最大の変化と次の担当者に焦点を当てたチーム向けレポート",
+  "Monthly review": "月次レビュー",
+  "A leadership report and slides focused on decisions": "意思決定に焦点を当てた経営層向けレポートとスライド",
+  "Weekly operating review": "週次経営レビュー",
+  "Identify the most material change since last week and assign the next decision or owner.":
+    "先週からの最も重要な変化を特定し、次の意思決定または担当者を明確にします。",
+  "Monthly operating review": "月次経営レビュー",
+  "Explain the largest movements this month and the decisions leadership should make next.":
+    "今月の最も大きな変化と、経営層が次に行うべき意思決定を説明します。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Start from a cadence": "보고 주기로 시작",
+  "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
+    "프리셋은 작업 목적, 대상, 결과물만 채웁니다. 정확한 Data 범위와 보고 기간은 직접 확인해야 합니다.",
+  "Weekly review": "주간 리뷰",
+  "A team report focused on the largest change and next owner": "가장 큰 변화와 다음 담당자에 초점을 둔 팀 보고서",
+  "Monthly review": "월간 리뷰",
+  "A leadership report and slides focused on decisions": "의사결정에 초점을 둔 리더십 보고서와 슬라이드",
+  "Weekly operating review": "주간 운영 리뷰",
+  "Identify the most material change since last week and assign the next decision or owner.":
+    "지난주 이후 가장 중요한 변화를 파악하고 다음 의사결정 또는 담당자를 지정합니다.",
+  "Monthly operating review": "월간 운영 리뷰",
+  "Explain the largest movements this month and the decisions leadership should make next.":
+    "이번 달의 가장 큰 변화와 리더십이 다음에 내려야 할 결정을 설명합니다.",
+});

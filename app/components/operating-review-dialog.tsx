@@ -121,6 +121,16 @@ export const OPERATING_REVIEW_BASE_COPY = {
     showing: "显示",
     of: "共",
     groups: "项",
+    templates: "从汇报节奏开始",
+    templateHint: "预设只填写任务目标、受众和交付物。数据范围与报告周期仍需精确确认。",
+    weeklyTemplate: "周度复盘",
+    weeklyTemplateDetail: "面向执行团队的报告，聚焦最大变化与下一责任人",
+    monthlyTemplate: "月度经营回顾",
+    monthlyTemplateDetail: "面向管理层的报告与演示，聚焦关键决策",
+    weeklyTitle: "周度经营复盘",
+    weeklyFocus: "识别较上周最重要的变化，并明确下一项决策或责任人。",
+    monthlyTitle: "月度经营回顾",
+    monthlyFocus: "解释本月最重要的变化，以及管理层接下来需要做出的决策。",
   },
   en: {
     kicker: "Operating review · task first",
@@ -207,6 +217,17 @@ export const OPERATING_REVIEW_BASE_COPY = {
     showing: "Showing",
     of: "of",
     groups: "groups",
+    templates: "Start from a cadence",
+    templateHint:
+      "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.",
+    weeklyTemplate: "Weekly review",
+    weeklyTemplateDetail: "A team report focused on the largest change and next owner",
+    monthlyTemplate: "Monthly review",
+    monthlyTemplateDetail: "A leadership report and slides focused on decisions",
+    weeklyTitle: "Weekly operating review",
+    weeklyFocus: "Identify the most material change since last week and assign the next decision or owner.",
+    monthlyTitle: "Monthly operating review",
+    monthlyFocus: "Explain the largest movements this month and the decisions leadership should make next.",
   },
 } as const;
 
@@ -409,6 +430,22 @@ export function OperatingReviewDialog({
     if (!preparing) onCancel();
   };
 
+  const applyCadenceTemplate = (template: "weekly" | "monthly") => {
+    if (template === "weekly") {
+      setTitle(copy.weeklyTitle);
+      setAudience("team");
+      setFocus(copy.weeklyFocus);
+      setIncludeReport(true);
+      setIncludeSlides(false);
+      return;
+    }
+    setTitle(copy.monthlyTitle);
+    setAudience("leadership");
+    setFocus(copy.monthlyFocus);
+    setIncludeReport(true);
+    setIncludeSlides(true);
+  };
+
   return (
     <ReviewDialog
       dialogId="operating-review"
@@ -450,11 +487,27 @@ export function OperatingReviewDialog({
         noValidate
         onSubmit={(event) => void submit(event)}
       >
+        {!initialInput && (
+          <fieldset className="operating-review-templates" aria-describedby="operating-review-template-hint">
+            <legend>{copy.templates}</legend>
+            <p id="operating-review-template-hint">{copy.templateHint}</p>
+            <div>
+              <button type="button" onClick={() => applyCadenceTemplate("weekly")}>
+                <strong>{copy.weeklyTemplate}</strong>
+                <small>{copy.weeklyTemplateDetail}</small>
+              </button>
+              <button type="button" onClick={() => applyCadenceTemplate("monthly")}>
+                <strong>{copy.monthlyTemplate}</strong>
+                <small>{copy.monthlyTemplateDetail}</small>
+              </button>
+            </div>
+          </fieldset>
+        )}
         <div className="operating-review-grid">
-          <label className="operating-review-field wide" htmlFor="operating-review-title">
+          <label className="operating-review-field wide" htmlFor="operating-review-review-title">
             <span>{copy.reviewTitle}</span>
             <input
-              id="operating-review-title"
+              id="operating-review-review-title"
               data-dialog-initial-focus
               value={title}
               onChange={(event) => setTitle(event.target.value)}
