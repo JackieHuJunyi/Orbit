@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { PDFDocument } from "pdf-lib";
 
 async function openWorkbench(page: Page) {
   // A fresh browser profile otherwise opens the full-screen onboarding modal,
@@ -56,6 +57,49 @@ test("opens and closes the New artifact dialog from the top bar", async ({ page 
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
+});
+
+test("selects an on-device OCR region without writing the workspace", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+  const document = await PDFDocument.create();
+  document.addPage([612, 792]);
+  const bytes = await document.save({ useObjectStreams: false });
+  await page
+    .getByLabel("Import")
+    .first()
+    .setInputFiles({
+      name: "regional-scan.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from(bytes),
+    });
+
+  const dialog = page.getByRole("dialog", { name: "Choose pages for OCR" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Whole page", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pdf-ocr-region-surface")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Preview and choose region" }).click();
+  const surface = dialog.locator(".pdf-ocr-region-surface");
+  await expect(surface).toBeVisible();
+  const bounds = await surface.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.move(bounds!.x + bounds!.width * 0.15, bounds!.y + bounds!.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(bounds!.x + bounds!.width * 0.8, bounds!.y + bounds!.height * 0.7);
+  await page.mouse.up();
+
+  await expect(dialog.getByRole("spinbutton", { name: "Left" })).toHaveValue("15");
+  await expect(dialog.getByRole("spinbutton", { name: "Top" })).toHaveValue("20");
+  await expect(dialog.getByRole("spinbutton", { name: "Width" })).toHaveValue("65");
+  await expect(dialog.getByRole("spinbutton", { name: "Height" })).toHaveValue("50");
+  await dialog.getByRole("spinbutton", { name: "Left" }).fill("10");
+  await expect(dialog.getByRole("spinbutton", { name: "Left" })).toHaveValue("10");
+  await dialog.getByRole("button", { name: "Reset to whole page" }).click();
+  await expect(dialog.getByText("Whole page", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  expect(pageErrors).toEqual([]);
 });
 
 test("opens the settings panel from the bottom-left gear", async ({ page }) => {

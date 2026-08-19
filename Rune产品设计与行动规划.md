@@ -1174,7 +1174,7 @@ v0.46 当时不实现协议转换；v0.58 已把各协议隔离成独立 adapter
 
 工作区新增“创建汇报”一级任务入口，不要求用户先理解 Query 或 Chart 文件。表单只接受工作区内一份 exact Data、一个分类字段、一个严格数值字段、sum/average、bar/line、格式、周期、汇报对象、任务重点与至少一份成品。系统确定性生成 `Data → Query → Chart → Document/Slides` 链，并把全部新 source、bindings、依赖图和 runtime impact 放入现有一次事务审核；用户 Apply 前不写 workspace，Apply 后默认打开最终报告。错误字段、非数值文本、重复交付物、运行失败、workspace stale 或存储失败均为零写入。
 
-这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移；v0.53 的旧 `.doc/.ppt` 只在 macOS Rune Desktop 且本机已安装对应 Word/PowerPoint 时支持受限本地导入转换，v0.57 在相同边界内增加从 Rune 现代包到 DOC/PPT 的兼容导出，Web 仍不解析、不上传、不猜测，也不显示旧格式导出。selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，但 OCR 不是确定事实、不是原排版恢复，也没有任意语言或区域级框选。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–62 节。
+这一版本的真实状态不得被 UI 文案扩大：现代 DOCX/PPTX 与 ODT/ODP 已做语义迁移；v0.53 的旧 `.doc/.ppt` 只在 macOS Rune Desktop 且本机已安装对应 Word/PowerPoint 时支持受限本地导入转换，v0.57 在相同边界内增加从 Rune 现代包到 DOC/PPT 的兼容导出，Web 仍不解析、不上传、不猜测，也不显示旧格式导出。selectable PDF 与用户明确选择的英文/简中扫描页可以转 Markdown，v1.13 进一步支持显式预览后的逐页单矩形区域框选；但 OCR 仍不是确定事实或原排版恢复，也不宣称任意语言、多区域或自动版面理解。左右同步已覆盖 source→preview 与 preview→source 的精确身份高亮、选择和居中移动，以及 Data cell、Document section/block/structure、Deck slide 和 Chart spec 的受控右侧写入；v0.48 随后补上可证明的 inline/list/table fragment source map，v0.49 再把主要工作面纳入统一中英文合同，但连续像素 scroll lock 仍不做。完整状态与参考项目取舍写入 `idea.md` 第 53–62 节。
 
 ### 6.28 v0.48 Markdown 细粒度双向定位
 
@@ -2140,3 +2140,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 任一变化只把连接状态标为 `changed`、显示“检测到变化”，并引导用户使用已有 Pull；Pull 仍重新读取全部有界文件、验证 manifest/assets/dependency、请求确认、保留 checkpoint，再一次替换设备草稿。
 - observer callback、poller 或 unknown/error record 都不得自动调用 Pull/Push、修改 canonical source、写 checkpoint、改变 task evidence 或联系 provider；权限失效必须显示错误并要求重新连接。
 - Rune 自己经用户确认的 Push 使用 5 秒通知抑制窗；poller 仍更新 metadata baseline，避免把自身写入误报为外部冲突。切换 handle 或组件卸载必须 disconnect/clear interval。
+
+### 17.43 v1.13 OCR 区域必须显式预览、逐页验证并披露来源
+
+- 整页仍是每个扫描页的默认值；打开 OCR 设置不读取页面像素，用户只有点击“预览并框选区域”或最终开始识别后，PDF.js 才能在设备内渲染对应页。
+- 每个已选扫描页可独立保存一个 normalized `left/top/width/height` 矩形；鼠标/触控拖拽与键盘百分比输入共享同一状态，恢复整页会删除该页区域而不是写入伪造的 0/0/100/100 配置。
+- 区域必须为 finite number、完全位于页面内，宽高均不少于页面的 2%；转换端重新打开 PDF，并在识别前拒绝未选页、已有 selectable text 的页、越界、零尺寸或非有限坐标。
+- PDF 页面仍按既有 2,400 长边 / 800 万像素上限渲染，区域只裁剪这一有界 canvas，再交给同源 Tesseract；页面图像、crop 与识别文本不上传、不持久化。
+- Markdown page marker、可见核对提示和 import review warning 必须同时说明“selected region”、normalized crop 与 confidence；停止或取消释放 PDF page/loading task、preview/recognition canvas 与 worker，workspace 零写入。

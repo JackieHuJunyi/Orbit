@@ -2703,6 +2703,178 @@ button.transaction-node:hover,
   line-height: 1.45;
 }
 
+.pdf-ocr-region-editor {
+  display: grid;
+  gap: 11px;
+  padding: 0 13px 13px;
+}
+
+.pdf-ocr-region-editor > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eceae4;
+}
+
+.pdf-ocr-region-editor > header > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.pdf-ocr-region-editor > header strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf-ocr-region-editor > header strong svg {
+  width: 14px;
+  height: 14px;
+  color: #277553;
+}
+
+.pdf-ocr-region-editor > header small {
+  color: var(--subtle);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.pdf-ocr-region-editor > header label {
+  display: grid;
+  flex: 0 0 96px;
+  gap: 5px;
+  color: #526158;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.pdf-ocr-region-editor select,
+.pdf-ocr-region-controls input {
+  border: 1px solid #d3d5ce;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.pdf-ocr-region-editor select {
+  height: 32px;
+  padding: 0 9px;
+}
+
+.pdf-ocr-region-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(150px, .75fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.pdf-ocr-page-preview {
+  position: relative;
+  display: grid;
+  min-height: 170px;
+  max-height: 330px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid #d8d7cf;
+  border-radius: 10px;
+  background: #e9eae6;
+}
+
+.pdf-ocr-preview-sheet {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 14px rgba(24, 29, 25, .12);
+}
+
+.pdf-ocr-preview-sheet canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pdf-ocr-region-surface {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.pdf-ocr-region-surface > span {
+  position: absolute;
+  border: 2px solid #277553;
+  background: rgba(39, 117, 83, .13);
+  box-shadow: 0 0 0 999px rgba(24, 29, 25, .28);
+  pointer-events: none;
+}
+
+.pdf-ocr-preview-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+}
+
+.pdf-ocr-region-controls {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #e2e1db;
+  border-radius: 10px;
+  background: #fafaf7;
+}
+
+.pdf-ocr-region-controls > strong {
+  font-size: 9px;
+}
+
+.pdf-ocr-region-controls > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pdf-ocr-region-controls label {
+  display: grid;
+  gap: 4px;
+  color: var(--subtle);
+  font-size: 8px;
+}
+
+.pdf-ocr-region-controls label > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pdf-ocr-region-controls input {
+  width: 100%;
+  height: 30px;
+  min-width: 0;
+  padding: 0 7px;
+}
+
+.pdf-ocr-region-controls .button {
+  min-height: 32px;
+  padding: 0 9px;
+  font-size: 8px;
+}
+
+.pdf-ocr-region-controls .button svg {
+  width: 13px;
+  height: 13px;
+}
+
 .pdf-ocr-progress {
   display: grid;
   gap: 8px;
@@ -9317,6 +9489,19 @@ html[dir="rtl"] [data-preview-source-id] {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .pdf-ocr-region-editor > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pdf-ocr-region-editor > header label {
+    flex-basis: auto;
+  }
+
+  .pdf-ocr-region-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .new-artifact-types {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -9660,6 +9845,26 @@ html[data-theme="space-black"] .import-review-actions {
   background: rgba(36, 36, 39, .96);
 }
 html[data-theme="space-black"] .import-review-kicker { color: #c4c7cc; }
+html[data-theme="space-black"] .pdf-ocr-file,
+html[data-theme="space-black"] .pdf-ocr-privacy,
+html[data-theme="space-black"] .pdf-ocr-progress,
+html[data-theme="space-black"] .pdf-ocr-region-controls {
+  border-color: var(--rune-hairline-strong);
+  background: #2c2c2e;
+}
+html[data-theme="space-black"] .pdf-ocr-file > header,
+html[data-theme="space-black"] .pdf-ocr-region-editor > header { border-color: var(--rune-hairline); }
+html[data-theme="space-black"] .pdf-ocr-fields input,
+html[data-theme="space-black"] .pdf-ocr-fields select,
+html[data-theme="space-black"] .pdf-ocr-region-editor select,
+html[data-theme="space-black"] .pdf-ocr-region-controls input {
+  border-color: var(--rune-hairline-strong);
+  background: #1c1c1e;
+  color: var(--ink);
+}
+html[data-theme="space-black"] .pdf-ocr-page-preview { border-color: var(--rune-hairline-strong); background: #111113; }
+html[data-theme="space-black"] .pdf-ocr-region-editor > header label,
+html[data-theme="space-black"] .pdf-ocr-fields label > span { color: #d1d1d6; }
 html[data-theme="space-black"] .operating-review-templates legend,
 html[data-theme="space-black"] .operating-review-field > span,
 html[data-theme="space-black"] .operating-review-field legend,

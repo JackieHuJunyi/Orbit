@@ -62,6 +62,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "即時成品正基於完整建議工作區重新編譯"
   ],
   [
+    "打开预览或开始识别前不会读取图像内容",
+    "開啟預覽或開始識別前不會讀取影像內容"
+  ],
+  [
     "模型正在根据有界聚合证据准备审核问题",
     "模型正在根據有界聚合證據準備稽核問題"
   ],
@@ -814,6 +818,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在載入並快取語言模型"
   ],
   [
+    "正在设备内生成私密预览",
+    "正在裝置內生成私密預覽"
+  ],
+  [
     "每次改动先显示具体差异",
     "每次改動先顯示具體差異"
   ],
@@ -824,10 +832,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "的贡献最高或变化最明显",
     "的貢獻最高或變化最明顯"
-  ],
-  [
-    "确认前不会读取图像内容",
-    "確認前不會讀取影像內容"
   ],
   [
     "类型和实时绑定保持固定",
@@ -1028,6 +1032,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "文件夹工作区需要支持",
     "資料夾工作區需要支援"
+  ],
+  [
+    "无法生成此页面的预览",
+    "無法生成此頁面的預覽"
   ],
   [
     "无法记录这次交付结果",
@@ -1562,6 +1570,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "在後方新建內容塊"
   ],
   [
+    "在预览中拖拽框选",
+    "在預覽中拖拽框選"
+  ],
+  [
     "始终留在此浏览器",
     "始終留在此瀏覽器"
   ],
@@ -1764,6 +1776,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "正在读取模型配置",
     "正在讀取模型配置"
+  ],
+  [
+    "每一页可单独设置",
+    "每一頁可單獨設定"
   ],
   [
     "没有严格数值字段",
@@ -2430,6 +2446,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "頁面影像不上傳"
   ],
   [
+    "预览并框选区域",
+    "預覽並框選區域"
+  ],
+  [
+    "默认仍识别整页",
+    "預設仍識別整頁"
+  ],
+  [
     "一个严格规范",
     "一個嚴格規範"
   ],
@@ -2604,6 +2628,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "只显示源内容",
     "只顯示源內容"
+  ],
+  [
+    "可选页面区域",
+    "可選頁面區域"
   ],
   [
     "周度经营复盘",
@@ -3590,6 +3618,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "選擇或編輯"
   ],
   [
+    "选择页码后",
+    "選擇頁碼後"
+  ],
+  [
     "部件及关系",
     "部件及關係"
   ],
@@ -4010,6 +4042,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "恢復保護"
   ],
   [
+    "恢复整页",
+    "恢復整頁"
+  ],
+  [
     "成品视图",
     "成品檢視"
   ],
@@ -4040,6 +4076,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "报告周期",
     "報告週期"
+  ],
+  [
+    "拖拽框选",
+    "拖拽框選"
   ],
   [
     "指标绑定",
@@ -4866,6 +4906,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "項修改"
   ],
   [
+    "预览页",
+    "預覽頁"
+  ],
+  [
     "一个",
     "一個"
   ],
@@ -5178,6 +5222,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "指標"
   ],
   [
+    "描画",
+    "描畫"
+  ],
+  [
     "支持",
     "支援"
   ],
@@ -5196,6 +5244,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "数据",
     "資料"
+  ],
+  [
+    "整页",
+    "整頁"
   ],
   [
     "文件",
@@ -5556,6 +5608,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "学",
     "學"
+  ],
+  [
+    "宽",
+    "寬"
   ],
   [
     "对",

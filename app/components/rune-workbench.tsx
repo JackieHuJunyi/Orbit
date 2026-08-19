@@ -3721,7 +3721,7 @@ export function RuneWorkbench() {
         const { analyzePdfFile } = await import("../lib/pdf-import-client");
         const analysis = await analyzePdfFile(file.name, await file.arrayBuffer());
         if (analysis.ocrCandidatePageNumbers.length) {
-          ocrCandidates.push({ fileIndex, fileName: file.name, analysis });
+          ocrCandidates.push({ fileIndex, fileName: file.name, file, analysis });
         }
       }
       if (ocrCandidates.length) {

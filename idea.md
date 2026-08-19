@@ -1775,7 +1775,7 @@ PDF 的内部目标是固定呈现，不是可逆的段落模型。即使页面�
 
 语义转换只使用可以审查的有界 heuristic。坐标接近的 fragment 合成一行，dominant RTL 决定行内排序，CJK 相邻字符不强行插入空格；跨行根据垂直间距、缩进和断词规则组成段落。字体高度相对正文中位数只推断二到四级标题，常见 bullet/number 变成 Markdown list。至少半数页面顶部或底部重复的标准化文本视为页眉页脚；每个页面仍写入 `<!-- PDF page N -->`，让用户和未来 OCR 能回到来源。所有原文花括号先编码，因此 PDF 中看似 `{{ metric(...) }}` 的文字不能获得 Rune binding 权限。
 
-这些规则的价值不在“猜得像人”，而在错误模式清楚：大水平间距提示可能存在列或表格；空页在没有授权时保留 OCR 未执行标记；annotation、bookmark、JavaScript、重复页眉页脚都有独立 warning。v0.50 以后，完全没有可选择文本会进入单独的 OCR 授权面，而不是自动读取像素或生成一篇空文档。图片、字体、精确版式、链接、评论、表单、列和表格结构仍不保留；OCR 只输出用户明确选择页的转录，并携带页码、平均置信度与原 PDF 对照提示，再进入同一 import review transaction。区域级来源仍是后续增强，不在当前合同中伪装完成。
+这些规则的价值不在“猜得像人”，而在错误模式清楚：大水平间距提示可能存在列或表格；空页在没有授权时保留 OCR 未执行标记；annotation、bookmark、JavaScript、重复页眉页脚都有独立 warning。v0.50 以后，完全没有可选择文本会进入单独的 OCR 授权面，而不是自动读取像素或生成一篇空文档。图片、字体、精确版式、链接、评论、表单、列和表格结构仍不保留；OCR 只输出用户明确选择页的转录，并携带页码、平均置信度与原 PDF 对照提示，再进入同一 import review transaction。v1.13 随后补上显式本地预览后的逐页单矩形区域来源，并把 crop 写入 provenance 与审核 warning；多区域、自动版面理解和原样重建仍不伪装完成。
 
 验证同时包含合成 snapshot、由独立 PDF writer 生成后再经真实 PDF.js 读取的双页文件、密码/伪 header/超大/超页数/纯扫描失败路径，以及 Poppler 逐页渲染和系统文本提取对照。只有 converter 输出通过 canonical artifact 验证、完整 workspace 验证和 stale-context 检查，用户确认才产生一次设备写入。这样 PDF 是一个诚实的兼容 port，不会变成新的 source of truth，也不削弱 Rune“先看见，再接受”的信任边界。
 
@@ -1875,7 +1875,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Data/Deck PDF，以及 Rune Desktop 的 DOC/PPT 兼容交付：已交付 | deterministic compiler、当前 Query snapshot、窄 desktop bridge | review 后一次下载；byte/结构 fixture；旧格式真实 Office 往返；canonical source 不变 |
 | 通用经营汇报向导 | Data→Query→Chart→报告/演示的任务式入口：v0.47 已交付 | 明确字段映射、周期/对象/重点、workflow review | 用户确认源、严格数值字段与产物；整链 runtime preflight；一次 transaction Apply；错误字段和中途版本变化零写入 |
 | 原生 `.doc/.ppt` | Rune Desktop 已支持受限本地导入与经审核导出；Web 明确不支持 | 本机 Word/PowerPoint、宏禁用、私有临时目录、12 MB/30 秒边界 | 真实 Office 双向往返 QA；导入/导出均有 fidelity review；`.xls` 不支持 |
-| 扫描 PDF OCR | v0.50 已交付英文/简中本地端口；区域框选与更多语言待真实需求 | 同源 Tesseract worker/WASM/语言数据、明确页码授权与数据披露 | 页面图像不上传；页级 provenance；置信度与遗漏可见；停止零写入 |
+| 扫描 PDF OCR | v0.50 已交付英文/简中本地端口；v1.13 已交付显式预览后的逐页单矩形框选；更多语言/多区域待真实需求 | 同源 Tesseract worker/WASM/语言数据、明确页码/预览授权与数据披露 | 页面图像不上传；页级 provenance 含 crop；置信度与遗漏可见；停止零写入 |
 | 富媒体 | Document/Deck 图片、文件夹与 Office/ODF/PDF 嵌入闭环：已交付；通用附件与来源摘录等待明确引用/许可合同 | asset store、hash identity、引用许可 | 图片不把 base64 混入 source；导入/导出/删除/同步可追踪 |
 | 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
 | 云与桌面 | macOS Desktop `safeStorage` 与受限本机 Office 能力：已交付；可选端到端加密云同步等待账号/恢复合同 | storage port、secret port、账号恢复 | Web cookie profile 不假装跨设备；桌面 key 不进 renderer；云端能力尚未宣称 |
@@ -1892,7 +1892,7 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Rune 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
 
-v0.47 当时也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；这项等待桌面壳或隔离转换服务的工作后来由 v0.53 的受限本地导入与 v0.57 的经审核本地导出完成，Web 仍不伪装支持。v0.50 已交付带明确页面范围、英文/简中语言选择、置信度和 provenance 的浏览器本地扫描 PDF OCR，但不宣称区域级框选、任意语言、版式重建或确定事实。v0.49 已把主工作区、专业 review 与可视化编辑器纳入统一中英文合同；parser、模型、SQL 和格式转换器的原始技术证据仍等待稳定错误码后再完整本地化。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
+v0.47 当时也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；这项等待桌面壳或隔离转换服务的工作后来由 v0.53 的受限本地导入与 v0.57 的经审核本地导出完成，Web 仍不伪装支持。v0.50 已交付带明确页面范围、英文/简中语言选择、置信度和 provenance 的浏览器本地扫描 PDF OCR，v1.13 再补上不自动读像素的显式页面预览与逐页单矩形框选；任意语言、多区域、版式重建或确定事实仍不宣称。v0.49 已把主工作区、专业 review 与可视化编辑器纳入统一中英文合同；parser、模型、SQL 和格式转换器的原始技术证据仍等待稳定错误码后再完整本地化。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
 
 ## 54. v0.48 细粒度同步仍然来自 Markdown AST，而不是点击坐标
 

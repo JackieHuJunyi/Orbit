@@ -64,11 +64,20 @@ export type PdfOcrPageResult = {
   pageNumber: number;
   text: string;
   confidence: number;
+  region?: PdfOcrRegion;
+};
+
+export type PdfOcrRegion = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 };
 
 export type PdfOcrRequest = {
   language: PdfOcrLanguage;
   pageNumbers: number[];
+  regions?: Record<number, PdfOcrRegion>;
 };
 
 export type PdfOcrProgress = {
@@ -84,6 +93,7 @@ export type PdfPageOcrRecognizer = (
   input: {
     pageNumber: number;
     language: PdfOcrLanguage;
+    region?: PdfOcrRegion;
     completedPages: number;
     totalPages: number;
     signal?: AbortSignal;
@@ -92,6 +102,51 @@ export type PdfPageOcrRecognizer = (
 ) => Promise<{ text: string; confidence: number }>;
 
 const PDF_OCR_LANGUAGES = new Set<PdfOcrLanguage>(["eng", "chi_sim", "eng+chi_sim"]);
+const MIN_PDF_OCR_REGION_EDGE = 0.02;
+
+function roundedRegionValue(value: number) {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+export function validatePdfOcrRegion(region: PdfOcrRegion): PdfOcrRegion {
+  if (!region || typeof region !== "object") throw new Error("Choose a valid OCR page region.");
+  const values = [region.left, region.top, region.width, region.height];
+  if (!values.every(Number.isFinite)) throw new Error("OCR region coordinates must be finite numbers.");
+  if (region.left < 0 || region.top < 0 || region.width <= 0 || region.height <= 0) {
+    throw new Error("OCR region coordinates must stay inside the page.");
+  }
+  if (region.width < MIN_PDF_OCR_REGION_EDGE || region.height < MIN_PDF_OCR_REGION_EDGE) {
+    throw new Error("OCR regions must cover at least 2% of the page in both directions.");
+  }
+  if (region.left + region.width > 1.000_001 || region.top + region.height > 1.000_001) {
+    throw new Error("OCR region coordinates must stay inside the page.");
+  }
+  const left = roundedRegionValue(region.left);
+  const top = roundedRegionValue(region.top);
+  return {
+    left,
+    top,
+    width: Math.min(roundedRegionValue(region.width), roundedRegionValue(1 - left)),
+    height: Math.min(roundedRegionValue(region.height), roundedRegionValue(1 - top)),
+  };
+}
+
+export function formatPdfOcrRegion(region: PdfOcrRegion) {
+  const valid = validatePdfOcrRegion(region);
+  return `left ${Math.round(valid.left * 100)}%, top ${Math.round(valid.top * 100)}%, width ${Math.round(valid.width * 100)}%, height ${Math.round(valid.height * 100)}%`;
+}
+
+export function pdfOcrRegionPixelRectangle(region: PdfOcrRegion, canvasWidth: number, canvasHeight: number) {
+  const valid = validatePdfOcrRegion(region);
+  if (!Number.isInteger(canvasWidth) || !Number.isInteger(canvasHeight) || canvasWidth < 1 || canvasHeight < 1) {
+    throw new Error("OCR canvas dimensions must be positive integers.");
+  }
+  const left = Math.max(0, Math.floor(valid.left * canvasWidth));
+  const top = Math.max(0, Math.floor(valid.top * canvasHeight));
+  const right = Math.min(canvasWidth, Math.ceil((valid.left + valid.width) * canvasWidth));
+  const bottom = Math.min(canvasHeight, Math.ceil((valid.top + valid.height) * canvasHeight));
+  return { left, top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+}
 
 export function formatPdfPageSelection(pageNumbers: readonly number[]) {
   const pages = [...new Set(pageNumbers)].filter(Number.isInteger).sort((left, right) => left - right);
@@ -456,14 +511,15 @@ export function convertPdfSemanticSnapshot(
   const pageSections = filteredByPage.map((lines, index) => {
     const pageNumber = snapshot.pages[index]?.pageNumber ?? index + 1;
     const ocr = ocrByPage.get(pageNumber);
+    const regionLabel = ocr?.region ? ` · OCR region ${formatPdfOcrRegion(ocr.region)}` : "";
     const marker = ocr
-      ? `<!-- PDF page ${pageNumber} · OCR confidence ${Math.round(ocr.confidence)}% -->`
+      ? `<!-- PDF page ${pageNumber} · OCR confidence ${Math.round(ocr.confidence)}%${regionLabel} -->`
       : `<!-- PDF page ${pageNumber} -->`;
     const content = markdownForLines(lines, bodyFontSize, title, index === 0);
     if (content) return `${marker}\n\n${content}`;
     if (ocr) {
       const transcription = escapeOcrMarkdown(ocr.text);
-      const disclosure = `> **OCR transcription · ${Math.round(ocr.confidence)}% average confidence. Verify against PDF page ${pageNumber}.**`;
+      const disclosure = `> **OCR transcription${ocr.region ? " from a selected region" : ""} · ${Math.round(ocr.confidence)}% average confidence. Verify against PDF page ${pageNumber}.**`;
       return transcription
         ? `${marker}\n\n${disclosure}\n\n${transcription}`
         : `${marker}\n\n${disclosure}\n\n> No text was recognized on this page.`;
@@ -496,7 +552,7 @@ export function convertPdfSemanticSnapshot(
     );
     for (const page of [...ocrPages].sort((left, right) => left.pageNumber - right.pageNumber)) {
       warnings.push(
-        `PDF page ${page.pageNumber}: OCR average confidence ${Math.round(page.confidence)}%; verify the transcription against the original page.`,
+        `PDF page ${page.pageNumber}: OCR${page.region ? ` selected region (${formatPdfOcrRegion(page.region)})` : ""} average confidence ${Math.round(page.confidence)}%; verify the transcription against the original page.`,
       );
     }
   }
@@ -684,6 +740,14 @@ export async function convertPdfFileWithOcrAndLibrary(
     const analysis = analyzePdfSemanticSnapshot(snapshot);
     const pageNumbers = [...new Set(request.pageNumbers)].sort((left, right) => left - right);
     if (!pageNumbers.length) throw new Error("Choose at least one detected scan page for OCR.");
+    const regions = new Map<number, PdfOcrRegion>();
+    for (const [rawPageNumber, rawRegion] of Object.entries(request.regions ?? {})) {
+      const pageNumber = Number(rawPageNumber);
+      if (String(pageNumber) !== rawPageNumber || !Number.isInteger(pageNumber) || !pageNumbers.includes(pageNumber)) {
+        throw new Error(`OCR region references unselected PDF page ${rawPageNumber}.`);
+      }
+      regions.set(pageNumber, validatePdfOcrRegion(rawRegion));
+    }
     for (const pageNumber of pageNumbers) {
       if (!analysis.ocrCandidatePageNumbers.includes(pageNumber)) {
         throw new Error(`PDF page ${pageNumber} already has selectable text or is outside this PDF.`);
@@ -693,20 +757,25 @@ export async function convertPdfFileWithOcrAndLibrary(
     for (const [index, pageNumber] of pageNumbers.entries()) {
       if (options.signal?.aborted) throw new DOMException("OCR cancelled", "AbortError");
       const page = await document.getPage(pageNumber);
-      const recognized = await recognizePage(page, {
-        pageNumber,
-        language: request.language,
-        completedPages: index,
-        totalPages: pageNumbers.length,
-        signal: options.signal,
-        onProgress: options.onProgress,
-      });
-      results.push({
-        pageNumber,
-        text: recognized.text,
-        confidence: Math.max(0, Math.min(100, recognized.confidence)),
-      });
-      page.cleanup?.();
+      try {
+        const recognized = await recognizePage(page, {
+          pageNumber,
+          language: request.language,
+          ...(regions.has(pageNumber) ? { region: regions.get(pageNumber) } : {}),
+          completedPages: index,
+          totalPages: pageNumbers.length,
+          signal: options.signal,
+          onProgress: options.onProgress,
+        });
+        results.push({
+          pageNumber,
+          text: recognized.text,
+          confidence: Math.max(0, Math.min(100, recognized.confidence)),
+          ...(regions.has(pageNumber) ? { region: regions.get(pageNumber) } : {}),
+        });
+      } finally {
+        page.cleanup?.();
+      }
     }
     return convertPdfSemanticSnapshot(fileName, snapshot, results);
   } catch (error) {

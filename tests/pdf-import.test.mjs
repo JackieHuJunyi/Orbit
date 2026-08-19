@@ -11,8 +11,11 @@ import {
   convertPdfFileWithLibrary,
   convertPdfFileWithOcrAndLibrary,
   convertPdfSemanticSnapshot,
+  formatPdfOcrRegion,
   formatPdfPageSelection,
   parsePdfPageSelection,
+  pdfOcrRegionPixelRectangle,
+  validatePdfOcrRegion,
 } from "../app/lib/pdf-import.ts";
 import { validateArtifact } from "../app/lib/workspace.ts";
 
@@ -178,6 +181,46 @@ test("formats and validates an explicit scan-page selection", () => {
   assert.throws(() => parsePdfPageSelection("one", [1]), /Invalid page range/iu);
 });
 
+test("validates normalized OCR page regions and keeps their review label deterministic", () => {
+  assert.deepEqual(validatePdfOcrRegion({ left: 0.123456, top: 0.2, width: 0.5, height: 0.7 }), {
+    left: 0.1235,
+    top: 0.2,
+    width: 0.5,
+    height: 0.7,
+  });
+  assert.equal(
+    formatPdfOcrRegion({ left: 0.1, top: 0.2, width: 0.6, height: 0.5 }),
+    "left 10%, top 20%, width 60%, height 50%",
+  );
+  assert.throws(() => validatePdfOcrRegion({ left: -0.1, top: 0, width: 0.5, height: 0.5 }), /inside/iu);
+  assert.throws(() => validatePdfOcrRegion({ left: 0.8, top: 0, width: 0.3, height: 0.5 }), /inside/iu);
+  assert.throws(() => validatePdfOcrRegion({ left: 0, top: 0, width: 0.01, height: 0.5 }), /at least 2%/iu);
+  assert.throws(() => validatePdfOcrRegion({ left: 0, top: 0, width: Number.NaN, height: 0.5 }), /finite/iu);
+  assert.deepEqual(validatePdfOcrRegion({ left: 0.12345, top: 0.23456, width: 0.87655, height: 0.76544 }), {
+    left: 0.1235,
+    top: 0.2346,
+    width: 0.8765,
+    height: 0.7654,
+  });
+  assert.throws(() => validatePdfOcrRegion(null), /valid OCR page region/iu);
+  assert.deepEqual(pdfOcrRegionPixelRectangle({ left: 0.1, top: 0.2, width: 0.6, height: 0.5 }, 1000, 800), {
+    left: 100,
+    top: 160,
+    width: 600,
+    height: 400,
+  });
+  assert.deepEqual(pdfOcrRegionPixelRectangle({ left: 0.1234, top: 0.2345, width: 0.3333, height: 0.4444 }, 613, 791), {
+    left: 75,
+    top: 185,
+    width: 205,
+    height: 353,
+  });
+  assert.throws(
+    () => pdfOcrRegionPixelRectangle({ left: 0, top: 0, width: 1, height: 1 }, 0, 800),
+    /positive integers/iu,
+  );
+});
+
 test("analyzes selectable and scanned pages before any OCR work", async () => {
   const document = await PDFDocument.create();
   const regular = await document.embedFont(StandardFonts.Helvetica);
@@ -225,6 +268,28 @@ test("merges explicit page OCR with selectable text, confidence, and source-safe
   assert.deepEqual(validateArtifact(artifact), []);
 });
 
+test("passes a reviewed per-page OCR region and discloses the crop in provenance", async () => {
+  const document = await PDFDocument.create();
+  document.addPage([612, 792]);
+  const bytes = await document.save();
+  const region = { left: 0.1, top: 0.15, width: 0.7, height: 0.5 };
+  let recognizedInput;
+  const result = await convertPdfFileWithOcrAndLibrary(
+    "regional-scan.pdf",
+    bytes,
+    { language: "eng", pageNumbers: [1], regions: { 1: region } },
+    pdfjs,
+    async (_page, input) => {
+      recognizedInput = input;
+      return { text: "Regional decision", confidence: 91 };
+    },
+  );
+  assert.deepEqual(recognizedInput.region, region);
+  assert.match(result.artifacts[0].source, /OCR region left 10%, top 15%, width 70%, height 50%/u);
+  assert.match(result.artifacts[0].source, /OCR transcription from a selected region/u);
+  assert.match(result.warnings.join(" "), /selected region \(left 10%, top 15%, width 70%, height 50%\)/u);
+});
+
 test("OCR rejects selectable, missing, empty, and aborted page requests without recognizing", async () => {
   const document = await PDFDocument.create();
   const regular = await document.embedFont(StandardFonts.Helvetica);
@@ -240,6 +305,39 @@ test("OCR rejects selectable, missing, empty, and aborted page requests without 
   await assert.rejects(
     () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [1] }, pdfjs, recognize),
     /page 1 already has selectable text/iu,
+  );
+  await assert.rejects(
+    () =>
+      convertPdfFileWithOcrAndLibrary(
+        "mixed.pdf",
+        bytes,
+        { language: "eng", pageNumbers: [2], regions: { "02": { left: 0, top: 0, width: 0.5, height: 0.5 } } },
+        pdfjs,
+        recognize,
+      ),
+    /region references unselected PDF page 02/iu,
+  );
+  await assert.rejects(
+    () =>
+      convertPdfFileWithOcrAndLibrary(
+        "mixed.pdf",
+        bytes,
+        { language: "eng", pageNumbers: [2], regions: { 1: { left: 0, top: 0, width: 0.5, height: 0.5 } } },
+        pdfjs,
+        recognize,
+      ),
+    /region references unselected PDF page 1/iu,
+  );
+  await assert.rejects(
+    () =>
+      convertPdfFileWithOcrAndLibrary(
+        "mixed.pdf",
+        bytes,
+        { language: "eng", pageNumbers: [2], regions: { 2: { left: 0.9, top: 0, width: 0.2, height: 0.5 } } },
+        pdfjs,
+        recognize,
+      ),
+    /region coordinates must stay inside/iu,
   );
   await assert.rejects(
     () => convertPdfFileWithOcrAndLibrary("mixed.pdf", bytes, { language: "eng", pageNumbers: [3] }, pdfjs, recognize),
