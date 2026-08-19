@@ -100,8 +100,7 @@
   50% { transform: translate3d(0, -7px, 0) rotate(.4deg); }
 }
 
-.empty-file-stack,
-.welcome-window { animation: rune-float var(--rune-duration-float) var(--rune-ease-smooth) infinite; }
+.empty-file-stack { animation: rune-float var(--rune-duration-float) var(--rune-ease-smooth) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

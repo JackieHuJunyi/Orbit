@@ -16,6 +16,8 @@ Rune v1.05 makes the documented Artifact Adapter boundary real. One React-free, 
 
 Earlier releases (v0.82–v1.04) are recorded in [CHANGELOG.md](CHANGELOG.md).
 
+Current capability completion and the still-open real-user, reuse, and payment gates are tracked separately in [Rune delivery readiness](docs/DELIVERY-READINESS.md). Automated tests are engineering evidence; they do not change the verified-human pilot baseline.
+
 Operating-review chains are now repeatable device-local tasks. After the first reviewed Apply, Rune retains the exact Data, Query, Chart, report, and presentation identities; a rerun recompiles those same files as a runtime-verified, checkpointed review transaction instead of creating duplicates. After an exact report or presentation is downloaded or written to a connected folder, Rune can also ask whether that result was ready, needed only minor edits, or was not usable.
 
 Each saved task retains at most twelve technical run outcomes and twelve user-confirmed delivery outcomes. Run evidence includes applied or stopped status, reporting period, review time, changed-file and verified Query/Chart counts, planner type, and provider-reported input/output tokens when a model actually ran. Delivery evidence is bound to one applied run, one exact deliverable id, the handoff format/method, elapsed task time, and a SHA-256 fingerprint of that source revision. It stores no source content, filename content, prompt, Query rows, credential, or background telemetry. The sidebar therefore distinguishes technical Apply success from user-confirmed usable deliverables; both remain device evidence, not proof of market demand.

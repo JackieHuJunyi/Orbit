@@ -11,6 +11,27 @@ async function openWorkbench(page: Page) {
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
 }
 
+test("starts a fresh user with outcome-first task choices", async ({ page }) => {
+  await page.goto("/");
+
+  const onboarding = page.getByRole("dialog", { name: "Every piece of work, with a clear source." });
+  await expect(onboarding).toBeVisible();
+  await expect(onboarding.getByText("Local first")).toBeVisible();
+  await expect(onboarding.getByText("Review before write")).toBeVisible();
+
+  await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
+  const ready = page.getByRole("dialog", { name: "Your workspace, under your control." });
+  await expect(ready).toBeVisible();
+  await expect(ready.getByRole("button", { name: /Create a review from data/ })).toBeVisible();
+  await expect(ready.getByRole("button", { name: /Create presentation from document/ })).toBeVisible();
+  await expect(ready.getByRole("button", { name: /Explore sample workspace/ })).toBeVisible();
+
+  await ready.getByRole("button", { name: /Explore sample workspace/ }).click();
+  await expect(ready).toBeHidden();
+  await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
+});
+
 test("renders the local-first workbench with its sample workspace", async ({ page }) => {
   await openWorkbench(page);
   await expect(page.getByRole("main")).toContainText("Rune");

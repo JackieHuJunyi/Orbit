@@ -68,11 +68,15 @@ test("keeps ColaMD-informed content geometry and places the primary welcome acti
 });
 
 test("keeps the navigable Deck canvas inside the content layer and semantic motion/layer scales", async () => {
-  const content = await readFile(new URL("../app/styles/content.css", import.meta.url), "utf8");
+  const [content, motion] = await Promise.all([
+    readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/motion.css", import.meta.url), "utf8"),
+  ]);
   assert.match(
     content,
     /\.deck-slide-canvas\s*\{[^}]*var\(--rune-radius-card\)[^}]*var\(--rune-shadow-card\)[^}]*var\(--rune-duration-micro\)/s,
   );
   assert.match(content, /\.deck-slide-source-hit\s*\{[^}]*z-index:\s*calc\(var\(--rune-layer-canvas\) \+ 1\)/s);
   assert.match(content, /\.deck-slide-source-hit:focus-visible/);
+  assert.doesNotMatch(motion, /\.welcome-window\s*\{[^}]*animation:\s*rune-float/s);
 });

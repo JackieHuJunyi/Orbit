@@ -1,6 +1,16 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+test("fresh-user onboarding has no critical accessibility violations", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("dialog", { name: "Every piece of work, with a clear source." })).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).analyze();
+  const critical = results.violations.filter((violation) => violation.impact === "critical");
+
+  expect(critical, critical.map((violation) => `${violation.id}: ${violation.help}`).join("\n")).toEqual([]);
+});
+
 test("workbench has no critical accessibility violations", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
   await page.goto("/");
