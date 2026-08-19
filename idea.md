@@ -1187,7 +1187,7 @@ Slides 已从任意 `.html` 源迁移到 Deck Markdown：严格 frontmatter、`-
 
 ColaMD 最值得复用的不是 Electron 或 Milkdown 本身，而是三个产品原则：文件仍然是用户拥有的 source of truth；外部 Agent 改文件后界面立即更新；AI 的活动和修改需要被用户看见。
 
-Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint、安全 restore 与 File System Access storage port；ColaMD 的自动同目录监听仍更适合未来桌面端。Rune 现在采用 Web-first、本地优先的 adapter 边界，浏览器用显式 Pull/Push，未来 Tauri/Electron shell 再实现 watching，而不把文件系统能力耦合进 renderer。
+Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint、安全 restore 与 File System Access storage port；v1.12 又在同一 session handle 上增加只提示不写入的目录变化监控：runtime 有 `FileSystemObserver` 就递归观察，否则每三秒比较有界 metadata。浏览器与桌面仍使用显式 Pull/Push，变化事件不能自行读取或覆盖 canonical source，因此文件系统能力没有变成 renderer 的第二个 writer。
 
 ## 3. 基础设施决策
 
@@ -1243,7 +1243,7 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 
 浏览器版本刻意采用显式同步。Pull 先读取最多 50 个文件，并执行单文件 2 MB、总计 8 MB、文件名安全、唯一 ID/name、adapter parse、metric/chart dependency 等完整验证；只有用户确认后，才为当前每个 artifact 建 pre-pull checkpoint，并用一次 localStorage 写入替换设备 workspace。Push 同样需要确认，只覆盖同名 artifact 文件，不删除无关文件，最后写 manifest。由于浏览器文件 API 没有跨文件 transaction，中断的 Push 会报告停在哪个文件，而不会伪装成原子成功。
 
-这个选择比首版直接引入云盘、账号或 Git server 更符合低成本原则，也比静默 auto-save 更尊重本地文件。目录 handle 只在当前 session 保留，刷新后需要重新授权；这既符合浏览器权限模型，也让产品先验证“用户是否真的希望外部 Agent 与 Rune 共享目录”。未来桌面 shell 可以复用同一 manifest/validation/storage port，再补 watching、临时文件 + atomic rename 和 Git commit，而 renderer、Agent patch 与 dependency compiler 无需变化。
+这个选择比首版直接引入云盘、账号或 Git server 更符合低成本原则，也比静默 auto-save 更尊重本地文件。目录 handle 只在当前 session 保留，刷新后需要重新授权；这既符合浏览器权限模型，也让产品先验证“用户是否真的希望外部 Agent 与 Rune 共享目录”。v1.12 已复用同一 handle 补上有界 watching 提示，但 Pull 仍需审核；桌面临时文件 + atomic rename 和 Git commit 仍是独立 storage-port 能力，renderer、Agent patch 与 dependency compiler 无需为此改变。
 
 ## 9. Deck Markdown 与安全演示编译器
 
@@ -1715,7 +1715,7 @@ v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装�
 
 模型设置必须把“个人 API”和“把 key 交给浏览器可读持久层”分开。OpenAI 的官方认证说明要求 API Key 作为秘密保存在服务端环境或密钥管理系统中，不能嵌入客户端代码。v0.35 因而最初只向 `GET /api/model-status` 读取 `configured`、`provider`、`model` 三个非秘密字段，展示部署模型或本地规划器；v0.46 在不改变该边界的前提下允许用户在 password draft 中短暂输入 key，立刻通过同源 HTTPS 交给服务端加密为浏览器脚本不可读的 HttpOnly credential。用户偏好仍只在 localStorage 保存 `auto` / `local`，密钥不能进入 workspace、Artifact、localStorage、checkpoint、文件夹 manifest、Git、URL、日志、分析事件或模型输入。
 
-这也解释了 Web、部署和未来桌面版的三种产品路径。本地开发可以在未提交的 `.env.local` 放部署 key，也可以配置独立加密主密钥后使用个人 profile；托管 Web 把每位用户的 credential 保存在同源、可撤销的加密 HttpOnly cookie 中；桌面 BYOK 则必须把同一 secret-storage port 接入 macOS Keychain / Windows Credential Manager，React 仍只拿脱敏状态。当前版本没有假装 Web cookie 已经是跨设备账号 vault。无模型时 deterministic planner 仍能完成核心任务，是隐私选择和可用降级，不是错误页。
+这也解释了 Web、部署和桌面版的三种产品路径。本地开发可以在未提交的 `.env.local` 放部署 key，也可以配置独立加密主密钥后使用个人 profile；托管 Web 把每位用户的 credential 保存在同源、可撤销的加密 HttpOnly cookie 中；v0.53 的桌面 BYOK 已由 main process 通过 Electron `safeStorage` 保护 vault 主密钥，React/preload 仍只拿脱敏状态。当前版本没有假装 Web cookie 已经是跨设备账号 vault，也不对尚未验证的 Windows/Linux 系统存储扩大承诺。无模型时 deterministic planner 仍能完成核心任务，是隐私选择和可用降级，不是错误页。
 
 模型状态与模型权限仍是两件事。连接成功只让 Rune 可以调用 provider；provider 依旧只能返回有界 typed operation，不能接触 localStorage、文件系统 handle 或写入 API。请求仍由 graph-bounded context 决定，Data/Query/Chart 改动仍要通过本地 runtime preflight，所有结果仍需 review、revision check、checkpoint 与原子写入。用户选“仅本地”后，client 不发送 Agent 请求到远端 route，而是明确运行内置规划器；刷新后只恢复这个非秘密选择。
 
@@ -1876,9 +1876,9 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 | 通用经营汇报向导 | Data→Query→Chart→报告/演示的任务式入口：v0.47 已交付 | 明确字段映射、周期/对象/重点、workflow review | 用户确认源、严格数值字段与产物；整链 runtime preflight；一次 transaction Apply；错误字段和中途版本变化零写入 |
 | 原生 `.doc/.ppt` | Rune Desktop 已支持受限本地导入与经审核导出；Web 明确不支持 | 本机 Word/PowerPoint、宏禁用、私有临时目录、12 MB/30 秒边界 | 真实 Office 双向往返 QA；导入/导出均有 fidelity review；`.xls` 不支持 |
 | 扫描 PDF OCR | v0.50 已交付英文/简中本地端口；区域框选与更多语言待真实需求 | 同源 Tesseract worker/WASM/语言数据、明确页码授权与数据披露 | 页面图像不上传；页级 provenance；置信度与遗漏可见；停止零写入 |
-| 富媒体 | 图片、附件、来源摘录：下一阶段 | asset store、hash identity、引用许可 | 不把 base64 混入 source；导入/导出/删除/同步可追踪 |
+| 富媒体 | Document/Deck 图片、文件夹与 Office/ODF/PDF 嵌入闭环：已交付；通用附件与来源摘录等待明确引用/许可合同 | asset store、hash identity、引用许可 | 图片不把 base64 混入 source；导入/导出/删除/同步可追踪 |
 | 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
-| 云与桌面 | 先桌面 Keychain/系统文件能力，再可选端到端加密云同步 | storage port、secret port、账号恢复 | Web cookie profile 不假装跨设备；桌面 key 不进 renderer；云端无法读取明文 workspace |
+| 云与桌面 | macOS Desktop `safeStorage` 与受限本机 Office 能力：已交付；可选端到端加密云同步等待账号/恢复合同 | storage port、secret port、账号恢复 | Web cookie profile 不假装跨设备；桌面 key 不进 renderer；云端能力尚未宣称 |
 | 供应商路由 | 四种显式协议 adapter、真实 token usage、capability manifest、单任务预算、需用户授权的 failover 与一分钟进程内健康冷却：v1.11 已交付；持久 usage/latency ledger 待身份与商业系统 | protocol adapters、capability manifest、budget policy、health registry | 每个 model 声明结构化输出与预算；默认不跨供应商；abort 不重试；状态不暴露 key/content |
 | 商业与治理 | 预算、额度、用量、数据地域、审计：下一阶段 | identity、provider usage、policy engine | 单任务预算可见；模型/供应商切换需符合数据政策；key 从不入日志 |
 
@@ -1942,7 +1942,7 @@ Apple 的学习方向也在这一版进一步成为工程规则：尊重系统�
 
 侧栏的“已保存任务”不是后台自动化。重新运行会打开同一任务表单，允许调整本期周期、重点、受众、口径和图表，但锁定既有 Document/Slides 集合；编译器在完整当前工作区中生成一条 collision-safe 候选链，再把新 Query/Chart/成品 source 映射回原 ID。Chart 的 source 与成品的 chart binding 会显式重写到原稳定身份，绝不引用临时生成 ID。最终计划只有既有文件 patch，没有重复 creation；仍需 runtime preflight、逐文件 diff、dependency transaction map、显式 Apply、每个旧文件 checkpoint 与一次设备持久化。
 
-复用不以静默容错换顺滑。Data 字段大小写或类型漂移、来源缺失、任一成品被删除、任务记录被篡改、工作区验证失败、运行失败、审核期间 revision 改变或存储失败都保持 canonical source 不变。当前保存的是设备级任务，不是跨设备账号、定时器、目录监听或自动发布；这些能力只有在真实用户连续复用并要求自动刷新后才进入下一阶段。这样 v0.54 完成的是“同一任务下一周期再做一次”的核心循环，而不是新增一个看似自动化的按钮。
+复用不以静默容错换顺滑。Data 字段大小写或类型漂移、来源缺失、任一成品被删除、任务记录被篡改、工作区验证失败、运行失败、审核期间 revision 改变或存储失败都保持 canonical source 不变。当前保存的是设备级任务，不是跨设备账号、定时器或自动发布；v1.12 后目录变化可以被自动发现，但只会提示用户进入原有审核 Pull，不会自动刷新或写入。这样重复循环保持可见、可撤销，而不是新增一个后台自动化 writer。
 
 ## 60. v0.55 指标必须对应一次可验证结果，而不是一次点击
 
@@ -1972,7 +1972,7 @@ Rune 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改
 
 四个 adapter 的输出都必须成为同一个 Rune-owned operation schema，而不是各自获得写权限。Responses/Chat/Gemini 的文本先作为 JSON 解析，再由既有 Zod schema验证；Anthropic 只接受名字精确匹配的强制 tool input。之后仍由相同 operation compiler 生成 concrete source、证明 selection/workspace 边界、执行完整 artifact/dependency/runtime gate，并停在 Review。真实 provider token usage 映射为统一 input/output 字段；无法提供时写 null，不估算。
 
-安全边界也跟协议显式化一起收紧：模型目录和生成请求都拒绝 redirect，目录响应限 1 MB、Agent 响应限 2 MB、调用限 60 秒，供应商错误只向前端返回状态而不回显可能含敏感信息的正文。认证头按协议隔离，密钥仍只存在加密 HttpOnly vault 或桌面 Keychain。Rune 不自动把失败任务转发到另一家供应商，因为 fallback 本质上是一次新的数据授权；未来若做故障转移，必须由用户为明确的供应商链和数据范围单独确认。隔离测试与完整 Agent route 测试证明四条 transport 都落回相同 Markdown typed operation 和安全编译器。
+安全边界也跟协议显式化一起收紧：模型目录和生成请求都拒绝 redirect，目录响应限 1 MB、Agent 响应限 2 MB、调用限 60 秒，供应商错误只向前端返回状态而不回显可能含敏感信息的正文。认证头按协议隔离，密钥仍只存在加密 HttpOnly vault 或桌面 Keychain。v1.11 的跨供应商故障转移默认关闭，只有用户在至少两个明确连接存在时另行授权，才会按可见顺序把同一份有界内容交给下一供应商；abort 永不重试，授权可随时关闭。隔离测试与完整 Agent route 测试证明四条 transport 都落回相同 Markdown typed operation 和安全编译器。
 
 ## 64. v0.59 视觉转向不是复制 Apple，而是建立 Rune 自己的材料、节奏与颜色层级
 

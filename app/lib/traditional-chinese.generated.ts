@@ -1662,6 +1662,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "描述當前內容修改"
   ],
   [
+    "文件夹监控已停止",
+    "資料夾監控已停止"
+  ],
+  [
     "文件身份保持不变",
     "檔案身份保持不變"
   ],
@@ -1732,6 +1736,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "检查差异和影响后",
     "檢查差異和影響後"
+  ],
+  [
+    "检测到文件夹变化",
+    "檢測到資料夾變化"
   ],
   [
     "模型辅助来源提纲",
@@ -3414,6 +3422,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "標準檔案包"
   ],
   [
+    "检测到变化",
+    "檢測到變化"
+  ],
+  [
     "模型响应与",
     "模型響應與"
   ],
@@ -3558,6 +3570,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "請重新匯入"
   ],
   [
+    "请重新连接",
+    "請重新連線"
+  ],
+  [
     "输出令牌数",
     "輸出令牌數"
   ],
@@ -3608,6 +3624,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "预览已截断",
     "預覽已截斷"
+  ],
+  [
+    "一切保存",
+    "一切儲存"
   ],
   [
     "七个维度",
@@ -5424,6 +5444,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "语言",
     "語言"
+  ],
+  [
+    "请用",
+    "請用"
   ],
   [
     "读取",

@@ -143,6 +143,7 @@ import {
   type DirectoryReadResult,
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
+import { observeWorkspaceDirectory } from "../lib/directory-observer";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import { prepareRunePilotEvidenceExport, type RunePilotEvidenceExport } from "../lib/pilot-evidence";
 import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
@@ -813,9 +814,10 @@ export function RuneWorkbench() {
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [directoryHandle, setDirectoryHandle] = useState<DirectoryWorkspaceHandle | null>(null);
-  const [directoryState, setDirectoryState] = useState<"disconnected" | "syncing" | "connected" | "error">(
+  const [directoryState, setDirectoryState] = useState<"disconnected" | "syncing" | "connected" | "changed" | "error">(
     "disconnected",
   );
+  const directoryWriteMuteUntilRef = useRef(0);
   const [notice, setNotice] = useState("Local workspace ready");
   const [locale, setLocale] = useState<RuneLocale>("en");
   const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
@@ -1007,6 +1009,22 @@ export function RuneWorkbench() {
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [exportMenuOpen, toolsMenuOpen]);
+
+  useEffect(() => {
+    if (!directoryHandle) return;
+    return observeWorkspaceDirectory(
+      directoryHandle,
+      () => {
+        if (Date.now() < directoryWriteMuteUntilRef.current) return;
+        setDirectoryState((current) => (current === "syncing" ? current : "changed"));
+        setNotice(runeText(locale, "Folder changes detected · review with Pull", "检测到文件夹变化 · 请用“读取”审核"));
+      },
+      () => {
+        setDirectoryState((current) => (current === "syncing" ? current : "error"));
+        setNotice(runeText(locale, "Folder monitoring stopped · reconnect to resume", "文件夹监控已停止 · 请重新连接"));
+      },
+    );
+  }, [directoryHandle, locale]);
   const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
     setModelMode(nextMode);
     try {
@@ -2558,6 +2576,7 @@ export function RuneWorkbench() {
           return;
         }
         const localAssets = await collectWorkspaceLocalAssets(artifacts);
+        directoryWriteMuteUntilRef.current = Date.now() + 5_000;
         await writeWorkspaceDirectory(handle, artifacts, localAssets);
         setDirectoryHandle(handle);
         setDirectoryState("connected");
@@ -2604,6 +2623,7 @@ export function RuneWorkbench() {
     const handoffArtifact = selectedArtifact;
     try {
       const localAssets = await collectWorkspaceLocalAssets(artifacts);
+      directoryWriteMuteUntilRef.current = Date.now() + 5_000;
       await writeWorkspaceDirectory(directoryHandle, artifacts, localAssets);
       setDirectoryState("connected");
       setNotice(
@@ -4831,7 +4851,11 @@ export function RuneWorkbench() {
                   <RefreshCw aria-hidden="true" />
                   <span>
                     <strong>{ui.pull}</strong>
-                    <small>{directoryHandle.name}</small>
+                    <small>
+                      {directoryState === "changed"
+                        ? runeText(locale, "Changes detected", "检测到变化")
+                        : directoryHandle.name}
+                    </small>
                   </span>
                 </button>
               )}

@@ -18,6 +18,7 @@ export const MAX_DIRECTORY_TOTAL_BYTES = 8 * 1024 * 1024;
 
 export type DirectoryFile = {
   size: number;
+  lastModified?: number;
   text(): Promise<string>;
   arrayBuffer(): Promise<ArrayBuffer>;
 };
@@ -34,13 +35,14 @@ export type DirectoryFileHandle = {
   createWritable(): Promise<DirectoryWritable>;
 };
 
-export type DirectoryEntryHandle = DirectoryFileHandle | { kind: "directory"; name: string };
-
 export type DirectoryAssetHandle = {
   kind: "directory";
   name: string;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<DirectoryFileHandle>;
+  entries?(): AsyncIterableIterator<[string, DirectoryEntryHandle]>;
 };
+
+export type DirectoryEntryHandle = DirectoryFileHandle | DirectoryAssetHandle;
 
 export type DirectoryWorkspaceHandle = {
   kind: "directory";

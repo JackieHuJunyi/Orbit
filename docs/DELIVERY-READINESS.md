@@ -25,6 +25,7 @@
 | Weekly/monthly use                                           | Ready for pilot              | Cadence presets plus exact typed period/scope and comparison contracts support recurring reviews without guessing the period | Determine whether weekly or monthly is the stronger job                       |
 | Real-task evaluation                                         | Ready for pilot              | Reviewed seven-dimension outcome capture, anonymous export, strict cohort aggregation                                        | Current verified-human baseline remains 0/20                                  |
 | Budgeted multi-provider routing                              | Shipped                      | Capability manifests, per-task input/output ceilings, explicit failover authorization, health cooldown, and route tests      | Calibrate provider-specific budgets from authorized real-task usage           |
+| Connected-folder change detection                            | Shipped                      | Native observer plus bounded metadata polling fallback; external changes still require validated, confirmed Pull             | Observe whether real recurring workflows benefit from the notification        |
 
 ## Evidence gates that remain open
 

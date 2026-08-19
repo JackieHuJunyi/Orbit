@@ -911,7 +911,7 @@ Markdown、CSV、JSON、SQL、Chart JSON、Deck Markdown 是可展开的专业�
 - 云同步；
 - 行业模板市场；
 - 更丰富的图表和版式；
-- 桌面端自动目录监听；
+- 已授权目录的自动变化提示（v1.12 已交付；仍需用户审核 Pull）；
 - 企业权限和审计。
 
 #### Never-for-now
@@ -976,7 +976,7 @@ Rune 必须形成自己的视觉身份：
 
 语言检测只能作为默认建议，不能替用户锁定。第一阶段先让欢迎、教程、空状态和指南双语；随后按任务频率逐步覆盖工作台，不用一次大规模翻译制造长期不一致。
 
-Web 版的个人模型配置不能为了“步骤顺滑”把密钥交给 React 可读持久层。v0.46 允许 key 在 password draft 中短暂存在，随后只通过同源 HTTPS 交给服务端加密成 HttpOnly credential；状态接口只返回是否配置、profile/provider、endpoint 与 model 等脱敏字段。浏览器 localStorage 只保存 `auto` / `local` 这类非秘密偏好。未来桌面版必须把相同的 secret-storage port 接到 macOS Keychain、Windows Credential Manager 等系统安全存储，通过原生桥向界面返回不透明状态，不能复用 cookie 或 localStorage。
+Web 版的个人模型配置不能为了“步骤顺滑”把密钥交给 React 可读持久层。v0.46 允许 key 在 password draft 中短暂存在，随后只通过同源 HTTPS 交给服务端加密成 HttpOnly credential；状态接口只返回是否配置、profile/provider、endpoint 与 model 等脱敏字段。浏览器 localStorage 只保存 `auto` / `local` 这类非秘密偏好。v0.53 的 Rune Desktop 已在 main process 生成独立 vault 主密钥并通过 Electron `safeStorage` 交给 macOS Keychain 保护；renderer/preload 只获得脱敏状态且无法读取主密钥。当前桌面壳复用 loopback 同源 HttpOnly vault 协议而不把 secret bridge 暴露给 React；Windows/Linux 的系统存储行为仍由 Electron `safeStorage` 的平台能力决定，不能在未验证平台上扩大承诺。
 
 ### 6.10 空文件状态
 
@@ -1164,7 +1164,7 @@ v0.46 当时不实现协议转换；v0.58 已把各协议隔离成独立 adapter
 3. **Agent & Review**：Selection/File/Workspace capability、依赖上下文、运行证据、一次修复、transaction map 与原子 Apply；现有核心可运行。
 4. **Compatibility**：现代 Office、OpenDocument、selectable PDF、显式页面扫描 OCR、HTML 与固定 PDF 已按语义端口落地；v0.53 已让旧 `.doc/.ppt` 在 macOS 桌面壳通过本机 Office 的受限转换进入同一导入审核，v0.57 又从已验证 DOCX/PPTX 包建立经审核的本机 DOC/PPT 导出，Web 仍明确拒绝导入且不显示旧格式导出。
 5. **Model Platform**：v0.46 先完成 Responses profile；v0.58 已把 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages 与 Gemini generateContent 变成显式协议端口，并归一化真实 token usage。v1.11 已补齐非敏感 capability manifest、每 profile 单任务输入/输出预算、默认关闭且需用户明确授权的跨供应商故障转移，以及带一分钟冷却期的进程内健康度路由；账号级额度、持久用量账本和跨设备政策仍属于身份/商业系统。
-6. **Productization**：先用经营汇报 golden task 验证重复价值，再做桌面 Keychain、asset store、模板/连接器、账号、E2EE 云同步、CRDT 和组织治理。
+6. **Productization**：经营汇报 golden task、桌面 `safeStorage`、内容哈希 asset store、文件夹/Office 图片闭环与周报/月报 cadence preset 已交付；目标系统明确后再做连接器，真实重复价值和组织授权成立后再做账号、E2EE 云同步、CRDT 和组织治理。
 
 统一验收规则：任何入口都要列出输入上限、数据去向、canonical 结果、可逆路径和失败状态；任何 AI 写入都要有 exact revision、bounded capability、concrete diff、compiler/runtime proof 和人的确认；任何“支持格式”都要有真实 fixture、fidelity notes 与外部 handler/render QA；任何秘密都不能进入浏览器可读存储、workspace、日志或 Git。详细状态矩阵记录在 `idea.md` 第 52 节，路线图阶段 P0–P6 继续作为商业验证门，而不是被工程版本号替代。
 
@@ -2132,3 +2132,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 跨供应商 failover 默认关闭。只有用户明确开启时，Agent、Operating Review 与 Document-to-Presentation 才按“当前 profile → 其余 personal profiles → deployment”顺序重试；切回 deployment 时顺序反向为 deployment → personal profiles。
 - provider transport failure 与无效 structured output 都记录为 unhealthy；成功记录 healthy。最近失败的连接在 60 秒进程内冷却期中仅在存在已授权候选时被避开，冷却后回到 unknown；状态是路由提示，不伪装成持久监控或 SLA。
 - abort 不得触发下一供应商；所有候选失败后仍沿用现有本地 fallback、review、runtime proof 与零写入边界。故障转移只改变 transport 选择，不扩大 context、operation 或 mutation 权限。
+
+### 17.42 v1.12 目录监听只能提示变化，不能绕过审核读取
+
+- 用户仍先通过 File System Access 明确授权一个 session-scoped read/write directory handle；刷新或重新连接前不持久化路径或权限，也不把绝对路径写入 workspace、manifest、日志或 Git。
+- runtime 暴露 `FileSystemObserver` 时递归观察已授权 handle；未暴露时每 3 秒只读取最多 128 个 Rune source / `.rune-assets` 条目的 name、size 与 lastModified metadata，不轮询正文或 binary 内容。
+- 任一变化只把连接状态标为 `changed`、显示“检测到变化”，并引导用户使用已有 Pull；Pull 仍重新读取全部有界文件、验证 manifest/assets/dependency、请求确认、保留 checkpoint，再一次替换设备草稿。
+- observer callback、poller 或 unknown/error record 都不得自动调用 Pull/Push、修改 canonical source、写 checkpoint、改变 task evidence 或联系 provider；权限失效必须显示错误并要求重新连接。
+- Rune 自己经用户确认的 Push 使用 5 秒通知抑制窗；poller 仍更新 metadata baseline，避免把自身写入误报为外部冲突。切换 handle 或组件卸载必须 disconnect/clear interval。

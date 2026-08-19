@@ -503,6 +503,55 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
     "| 분할 / 소스 / 미리보기 전환 | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
 });
 
+const MODEL_GUIDE_WITH_EXPLICIT_FAILOVER =
+  "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.";
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
+    "Rune prend en charge les profils personnels OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent et les protocoles personnalisés. Après l’enregistrement, le serveur chiffre la clé dans un identifiant HttpOnly illisible par les scripts du navigateur ; elle n’entre jamais dans l’espace de travail ni dans localStorage. Les serveurs Web locaux ou déployés nécessitent un `RUNE_CREDENTIAL_ENCRYPTION_KEY` distinct ; Rune Desktop protège cette clé principale avec le trousseau macOS. Le basculement entre fournisseurs est désactivé par défaut et ne fonctionne qu’après votre autorisation explicite dans les réglages des modèles ; les planificateurs locaux déterministes restent disponibles sans modèle.",
+  "Folder changes detected · review with Pull": "Modifications du dossier détectées · vérifiez-les avec Pull",
+  "Folder monitoring stopped · reconnect to resume":
+    "La surveillance du dossier s’est arrêtée · reconnectez-le pour reprendre",
+  "Changes detected": "Modifications détectées",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
+    "Rune admite perfiles personales de OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent y protocolos personalizados. Después de guardar, el servidor cifra la clave en una credencial HttpOnly que los scripts del navegador no pueden leer; nunca entra en el espacio de trabajo ni en localStorage. Los servidores web locales o desplegados necesitan un `RUNE_CREDENTIAL_ENCRYPTION_KEY` independiente; Rune Desktop protege esa clave maestra con el llavero de macOS. La conmutación entre proveedores está desactivada de forma predeterminada y solo funciona después de autorizarla expresamente en los ajustes de modelos; los planificadores locales deterministas siguen disponibles sin un modelo.",
+  "Folder changes detected · review with Pull": "Se detectaron cambios en la carpeta · revísalos con Pull",
+  "Folder monitoring stopped · reconnect to resume":
+    "La supervisión de la carpeta se detuvo · vuelve a conectarla para continuar",
+  "Changes detected": "Cambios detectados",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
+    "Rune поддерживает личные профили OpenAI Responses, OpenRouter/совместимых Chat Completions, Anthropic Messages, Gemini generateContent и пользовательских протоколов. После сохранения сервер шифрует ключ в учётных данных HttpOnly, недоступных сценариям браузера; ключ никогда не попадает в рабочую область или localStorage. Локальным и развёрнутым веб-серверам нужен отдельный `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop защищает этот главный ключ с помощью Связки ключей macOS. Переключение между поставщиками по умолчанию выключено и работает только после явного разрешения в настройках моделей; детерминированные локальные планировщики доступны и без модели.",
+  "Folder changes detected · review with Pull": "Обнаружены изменения в папке · проверьте их с помощью Pull",
+  "Folder monitoring stopped · reconnect to resume":
+    "Наблюдение за папкой остановлено · подключите её снова для продолжения",
+  "Changes detected": "Обнаружены изменения",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
+    "يدعم Rune ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Rune Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
+  "Folder changes detected · review with Pull": "تم اكتشاف تغييرات في المجلد · راجعها باستخدام Pull",
+  "Folder monitoring stopped · reconnect to resume": "توقفت مراقبة المجلد · أعد الاتصال لاستئنافها",
+  "Changes detected": "تم اكتشاف تغييرات",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
+    "Rune は、個人用の OpenAI Responses、OpenRouter/互換 Chat Completions、Anthropic Messages、Gemini generateContent、カスタムプロトコルの各プロファイルに対応しています。保存後、サーバーはキーをブラウザスクリプトから読み取れない HttpOnly 認証情報として暗号化し、ワークスペースや localStorage には一切保存しません。ローカルまたはデプロイ済みの Web サーバーには別の `RUNE_CREDENTIAL_ENCRYPTION_KEY` が必要で、Rune Desktop はそのマスターキーを macOS キーチェーンで保護します。プロバイダー間のフェイルオーバーは初期設定ではオフで、モデル設定で明示的に許可した場合にのみ実行されます。モデルがなくても決定論的なローカルプランナーを利用できます。",
+  "Folder changes detected · review with Pull": "フォルダーの変更を検出しました · Pull で確認してください",
+  "Folder monitoring stopped · reconnect to resume": "フォルダーの監視が停止しました · 再接続すると再開します",
+  "Changes detected": "変更を検出",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
+    "Rune은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `RUNE_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Rune Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
+  "Folder changes detected · review with Pull": "폴더 변경 감지 · Pull로 검토하세요",
+  "Folder monitoring stopped · reconnect to resume": "폴더 모니터링 중지 · 다시 연결하면 재개됩니다",
+  "Changes detected": "변경 감지됨",
+});
+
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Allow provider failover": "Autoriser le basculement de fournisseur",
   Capabilities: "Capacités",
