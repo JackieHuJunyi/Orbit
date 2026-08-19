@@ -18,6 +18,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "圖表中的每個可證明資料點仍可回到原始來源"
   ],
   [
+    "主范围和对比范围都需要至少一个完整条件",
+    "主範圍和對比範圍都需要至少一個完整條件"
+  ],
+  [
     "只显示在当前数据范围内全部为数值的字段",
     "只顯示在當前資料範圍內全部為數值的欄位"
   ],
@@ -70,10 +74,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "只有兩個範圍都存在的分類才進入結果"
   ],
   [
-    "图表与模型上下文只使用完全匹配的行",
-    "圖表與模型上下文只使用完全匹配的行"
-  ],
-  [
     "导入和导出会明确说明无法保留的内容",
     "匯入和匯出會明確說明無法保留的內容"
   ],
@@ -124,10 +124,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "没有在没有证据时自动补写经营结论",
     "沒有在沒有證據時自動補寫經營結論"
-  ],
-  [
-    "用同一字段的另一个精确值作为对比",
-    "用同一欄位的另一個精確值作為對比"
   ],
   [
     "的服务端适配器生成先审后写的修改",
@@ -260,6 +256,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "同时保留原文件身份与来源关系",
     "同時保留原檔案身份與來源關係"
+  ],
+  [
+    "图表与模型上下文使用同一范围",
+    "圖表與模型上下文使用同一範圍"
   ],
   [
     "在來源內容游標處插入本機圖片",
@@ -1190,6 +1190,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "字型和當前資料快照"
   ],
   [
+    "定义另一组明确条件",
+    "定義另一組明確條件"
+  ],
+  [
     "实时源内容核验失败",
     "即時源內容核驗失敗"
   ],
@@ -1382,10 +1386,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "這次演示要推動什麼"
   ],
   [
-    "选择一个精确范围值",
-    "選擇一個精確範圍值"
-  ],
-  [
     "选择或编辑文档章节",
     "選擇或編輯文件章節"
   ],
@@ -1436,6 +1436,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "主题色十六进制值",
     "主題色十六進位制值"
+  ],
+  [
+    "以下条件全部满足",
+    "以下條件全部滿足"
   ],
   [
     "以及任何网络上传",
@@ -1636,10 +1640,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "或打开示例工作区",
     "或開啟示例工作區"
-  ],
-  [
-    "或改回全部数据行",
-    "或改回全部資料行"
   ],
   [
     "或者打开其他内容",
@@ -1936,6 +1936,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "会先在本地读取",
     "會先在本地讀取"
+  ],
+  [
+    "使用全部数据行",
+    "使用全部資料行"
   ],
   [
     "使用已连接模型",
@@ -2340,6 +2344,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "补齐必填信息后",
     "補齊必填資訊後"
+  ],
+  [
+    "製品発売説明会",
+    "製品発売説明會"
   ],
   [
     "规范源内容差异",
@@ -2846,6 +2854,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "沒有可用欄位"
   ],
   [
+    "添加对比范围",
+    "新增對比範圍"
+  ],
+  [
     "源内容与版本",
     "源內容與版本"
   ],
@@ -3004,6 +3016,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "个关联图表",
     "個關聯圖表"
+  ],
+  [
+    "个字段条件",
+    "個欄位條件"
   ],
   [
     "个既有文件",
@@ -3238,6 +3254,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "將重新編譯"
   ],
   [
+    "属于多个值",
+    "屬於多個值"
+  ],
+  [
     "工作区修改",
     "工作區修改"
   ],
@@ -3452,10 +3472,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "移动或删除",
     "移動或刪除"
-  ],
-  [
-    "精确范围值",
-    "精確範圍值"
   ],
   [
     "绑定与验证",
@@ -3722,6 +3738,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "內容編排"
   ],
   [
+    "最多添加",
+    "最多新增"
+  ],
+  [
     "最近运行",
     "最近執行"
   ],
@@ -3808,6 +3828,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "基础地址",
     "基礎地址"
+  ],
+  [
+    "変更内容",
+    "変更內容"
   ],
   [
     "始终排除",
@@ -3986,6 +4010,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "數値形式"
   ],
   [
+    "数値範囲",
+    "數値範囲"
+  ],
+  [
+    "数值区间",
+    "數值區間"
+  ],
+  [
     "数值字段",
     "數值欄位"
   ],
@@ -4032,6 +4064,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "无序列表",
     "無序列表"
+  ],
+  [
+    "日期区间",
+    "日期區間"
   ],
   [
     "旧版沙盒",
@@ -4170,6 +4206,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "新增指標"
   ],
   [
+    "添加条件",
+    "新增條件"
+  ],
+  [
     "源单元格",
     "源單元格"
   ],
@@ -4226,12 +4266,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "移除臨時"
   ],
   [
+    "移除条件",
+    "移除條件"
+  ],
+  [
     "稍后再说",
     "稍後再說"
   ],
   [
     "稍后学习",
     "稍後學習"
+  ],
+  [
+    "筛选条件",
+    "篩選條件"
   ],
   [
     "简体中文",
@@ -4458,6 +4506,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "儲存後"
   ],
   [
+    "全体的",
+    "全體的"
+  ],
+  [
     "具体的",
     "具體的"
   ],
@@ -4564,6 +4616,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "建议的",
     "建議的"
+  ],
+  [
+    "影響数",
+    "影響數"
   ],
   [
     "待审核",
@@ -4674,6 +4730,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "確定性"
   ],
   [
+    "筛选值",
+    "篩選值"
+  ],
+  [
     "箇条書",
     "箇條書"
   ],
@@ -4728,10 +4788,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "输入框",
     "輸入框"
-  ],
-  [
-    "选择后",
-    "選擇後"
   ],
   [
     "零上传",
@@ -5106,6 +5162,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "顯示"
   ],
   [
+    "条件",
+    "條件"
+  ],
+  [
     "来源",
     "來源"
   ],
@@ -5166,10 +5226,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "獨立"
   ],
   [
-    "独自",
-    "獨自"
-  ],
-  [
     "画像",
     "畫像"
   ],
@@ -5192,6 +5248,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "视图",
     "檢視"
+  ],
+  [
+    "等于",
+    "等於"
   ],
   [
     "简中",
@@ -5246,6 +5306,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "編輯"
   ],
   [
+    "聴衆",
+    "聴眾"
+  ],
+  [
+    "脱落",
+    "脫落"
+  ],
+  [
     "自体",
     "自體"
   ],
@@ -5264,6 +5332,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "行数",
     "行數"
+  ],
+  [
+    "裏付",
+    "裡付"
   ],
   [
     "要点",
@@ -5396,6 +5468,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "为",
     "為"
+  ],
+  [
+    "从",
+    "從"
   ],
   [
     "体",

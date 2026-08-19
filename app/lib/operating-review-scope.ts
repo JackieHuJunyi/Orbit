@@ -62,7 +62,7 @@ function sameScopeValue(left: DataCell, right: OperatingReviewScopeValue) {
   return typeof left === typeof right && Object.is(left, right);
 }
 
-function semanticDateKey(value: unknown) {
+export function operatingReviewSemanticDateKey(value: unknown) {
   if (typeof value !== "string") return undefined;
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/u.exec(value);
   if (!match) return undefined;
@@ -108,8 +108,8 @@ function normalizeScopeCondition(candidate: unknown): OperatingReviewScopeCondit
     value.operator === "dateRange" &&
     typeof value.start === "string" &&
     typeof value.end === "string" &&
-    semanticDateKey(value.start) === value.start &&
-    semanticDateKey(value.end) === value.end &&
+    operatingReviewSemanticDateKey(value.start) === value.start &&
+    operatingReviewSemanticDateKey(value.end) === value.end &&
     value.start <= value.end
   ) {
     return { field: value.field, operator: "dateRange", start: value.start, end: value.end };
@@ -201,7 +201,7 @@ export function prepareOperatingReviewScope(
       if (condition.operator === "numberRange") {
         return typeof rowValue === "number" && rowValue >= condition.minimum && rowValue <= condition.maximum;
       }
-      const key = semanticDateKey(rowValue);
+      const key = operatingReviewSemanticDateKey(rowValue);
       return key != null && key >= condition.start && key <= condition.end;
     }),
   );

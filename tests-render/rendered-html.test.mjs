@@ -332,7 +332,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Update this operating-review task/);
   assert.match(clientSource, /Recorded after first Apply/);
   assert.match(clientSource, /No model call/);
-  assert.match(clientSource, /One atomic transaction · no local file upload/);
+  assert.match(clientSource, /One atomic transaction · compiled locally/);
   assert.match(clientSource, /Data → Query → Chart/);
   assert.match(clientSource, /Hello/);
   assert.match(clientSource, /你好/);

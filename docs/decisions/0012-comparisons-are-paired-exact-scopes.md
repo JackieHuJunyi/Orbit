@@ -27,7 +27,7 @@ The generated Query uses conditional aggregates for both exact values, exposes t
 - A category present on only one side is excluded rather than silently compared with zero.
 - Existing single-scope and all-row workflows remain unchanged.
 - Saved reruns may change either exact value while preserving Query, Chart, report, and presentation identities.
-- Range, multi-value, compound-filter, and semantic-date comparisons still require a future typed filter expression.
+- ADR 0027 later added bounded range, multi-value, compound, and explicit ISO-date comparison expressions while retaining this exact-pair contract for existing workflows.
 
 ## UI consequence
 

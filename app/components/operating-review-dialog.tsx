@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Check, FileText, LoaderCircle, Presentation, ShieldCheck } from "lucide-react";
+import { BarChart3, Check, FileText, LoaderCircle, Plus, Presentation, ShieldCheck, X } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
 import { formatChartValue } from "../lib/charts";
@@ -18,12 +18,16 @@ import {
 import {
   collectOperatingReviewScopeValues,
   formatOperatingReviewScopeLabel,
-  isOperatingReviewExactScope,
+  MAX_OPERATING_REVIEW_SCOPE_CONDITIONS,
+  MAX_OPERATING_REVIEW_SCOPE_VALUES,
+  operatingReviewScopeConditions,
+  operatingReviewSemanticDateKey,
   operatingReviewScopeValueKey,
   prepareOperatingReviewNumericColumns,
-  type OperatingReviewScopeValue,
+  type OperatingReviewScope,
+  type OperatingReviewScopeCondition,
 } from "../lib/operating-review-scope";
-import { parseDataSource, type WorkspaceArtifact } from "../lib/workspace";
+import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
 
 type OperatingReviewDialogProps = {
@@ -56,15 +60,27 @@ export const OPERATING_REVIEW_BASE_COPY = {
     numericHint: "只显示在当前数据范围内全部为数值的字段。",
     dataScope: "数据范围",
     allRows: "全部数据行",
-    scopeValue: "精确范围值",
+    scopeValue: "筛选值",
     chooseScopeValue: "选择一个值",
     noScopeValue: "这个字段没有可用值",
-    scopeHint: "可选。选择后，本地证据、SQL、图表与模型上下文只使用完全匹配的行。",
+    scopeHint: "可选。最多添加 5 个字段条件；本地证据、SQL、图表与模型上下文使用同一范围。",
     compareWith: "对比范围",
     noComparison: "不对比",
-    comparisonHint: "可选。用同一字段的另一个精确值作为对比，变化值按主范围减去对比范围计算。",
+    comparisonHint: "可选。定义另一组明确条件；变化值按主范围减去对比范围计算。",
     scopeTooMany: "只显示前 100 个不同值；可改选更适合分期的字段。",
-    scopeValueRequired: "选择一个精确范围值，或改回全部数据行。",
+    scopeValueRequired: "主范围和对比范围都需要至少一个完整条件。",
+    filters: "筛选条件",
+    allConditions: "以下条件全部满足",
+    equals: "等于",
+    oneOf: "属于多个值",
+    numberRange: "数值区间",
+    dateRange: "日期区间",
+    addFilter: "添加条件",
+    removeFilter: "移除条件",
+    clearFilters: "使用全部数据行",
+    from: "从",
+    to: "到",
+    enableComparison: "添加对比范围",
     aggregation: "汇总方式",
     sum: "求和",
     average: "平均值",
@@ -150,15 +166,28 @@ export const OPERATING_REVIEW_BASE_COPY = {
     numericHint: "Only fields that are numeric throughout the current Data scope are shown.",
     dataScope: "Data scope",
     allRows: "All Data rows",
-    scopeValue: "Exact scope value",
+    scopeValue: "Filter value",
     chooseScopeValue: "Choose one value",
     noScopeValue: "No usable value in this field",
-    scopeHint: "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.",
+    scopeHint:
+      "Optional. Add up to five field conditions; local evidence, SQL, charts, and model context use the same scope.",
     compareWith: "Compare with",
     noComparison: "No comparison",
-    comparisonHint: "Optional. Compare another exact value from the same field; change is primary minus comparison.",
+    comparisonHint: "Optional. Define another explicit scope; change is primary minus comparison.",
     scopeTooMany: "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.",
-    scopeValueRequired: "Choose one exact scope value, or return to all Data rows.",
+    scopeValueRequired: "Primary and comparison scopes each need at least one complete condition.",
+    filters: "Scope filters",
+    allConditions: "Match all conditions",
+    equals: "Equals",
+    oneOf: "Is one of",
+    numberRange: "Number range",
+    dateRange: "Date range",
+    addFilter: "Add condition",
+    removeFilter: "Remove condition",
+    clearFilters: "Use all Data rows",
+    from: "From",
+    to: "To",
+    enableComparison: "Add comparison scope",
     aggregation: "Aggregation",
     sum: "Sum",
     average: "Average",
@@ -258,6 +287,280 @@ function comparisonConnector(locale: RuneLocale) {
   )[locale];
 }
 
+function copyScopeConditions(scope: OperatingReviewScope | null | undefined) {
+  if (!scope) return [];
+  return operatingReviewScopeConditions(scope).map((condition) =>
+    condition.operator === "oneOf" ? { ...condition, values: [...condition.values] } : { ...condition },
+  );
+}
+
+function scopeFromConditions(conditions: OperatingReviewScopeCondition[]): OperatingReviewScope | null {
+  return conditions.length ? { match: "all", conditions } : null;
+}
+
+function defaultScopeCondition(
+  rows: Array<Record<string, DataCell>>,
+  field: string,
+): OperatingReviewScopeCondition | undefined {
+  const { values } = collectOperatingReviewScopeValues(rows, field);
+  if (!values.length) return undefined;
+  return { field, operator: "equals", value: values[0] };
+}
+
+function alternateScopeConditions(rows: Array<Record<string, DataCell>>, conditions: OperatingReviewScopeCondition[]) {
+  const next = copyScopeConditions({ match: "all", conditions });
+  for (const [index, condition] of next.entries()) {
+    const values = collectOperatingReviewScopeValues(rows, condition.field).values;
+    if (condition.operator === "equals") {
+      const alternative = values.find(
+        (value) => operatingReviewScopeValueKey(value) !== operatingReviewScopeValueKey(condition.value),
+      );
+      if (alternative != null) {
+        next[index] = { ...condition, value: alternative };
+        break;
+      }
+    }
+    if (condition.operator === "oneOf") {
+      const selected = new Set(condition.values.map(operatingReviewScopeValueKey));
+      const alternative = values.find((value) => !selected.has(operatingReviewScopeValueKey(value)));
+      if (alternative != null) {
+        next[index] = { ...condition, values: [alternative] };
+        break;
+      }
+    }
+  }
+  return next;
+}
+
+type ScopeBuilderProps = {
+  idPrefix: string;
+  title: string;
+  hint: string;
+  copy: ReturnType<typeof operatingReviewCopy>;
+  columns: string[];
+  rows: Array<Record<string, DataCell>>;
+  conditions: OperatingReviewScopeCondition[];
+  onChange: (conditions: OperatingReviewScopeCondition[]) => void;
+};
+
+function OperatingReviewScopeBuilder({
+  idPrefix,
+  title,
+  hint,
+  copy,
+  columns,
+  rows,
+  conditions,
+  onChange,
+}: ScopeBuilderProps) {
+  const usedFields = new Set(conditions.map((condition) => condition.field));
+  const availableFields = columns.filter((column) => !usedFields.has(column));
+  const updateCondition = (index: number, condition: OperatingReviewScopeCondition) => {
+    onChange(conditions.map((current, currentIndex) => (currentIndex === index ? condition : current)));
+  };
+  const addCondition = () => {
+    const field = availableFields[0];
+    if (!field) return;
+    const condition = defaultScopeCondition(rows, field);
+    if (condition) onChange([...conditions, condition]);
+  };
+
+  return (
+    <fieldset className="operating-review-scope-builder wide">
+      <legend>{title}</legend>
+      <div className="operating-review-scope-heading">
+        <small>{conditions.length ? copy.allConditions : hint}</small>
+        {!!conditions.length && (
+          <button type="button" onClick={() => onChange([])}>
+            {copy.clearFilters}
+          </button>
+        )}
+      </div>
+      {conditions.map((condition, index) => {
+        const options = collectOperatingReviewScopeValues(rows, condition.field);
+        const numericValues = options.values.filter((value): value is number => typeof value === "number");
+        const dateValues = [
+          ...new Set(options.values.map(operatingReviewSemanticDateKey).filter((value): value is string => !!value)),
+        ];
+        const operatorOptions: Array<{ value: OperatingReviewScopeCondition["operator"]; label: string }> = [
+          { value: "equals", label: copy.equals },
+          ...(options.values.length > 1 ? [{ value: "oneOf" as const, label: copy.oneOf }] : []),
+          ...(numericValues.length ? [{ value: "numberRange" as const, label: copy.numberRange }] : []),
+          ...(dateValues.length ? [{ value: "dateRange" as const, label: copy.dateRange }] : []),
+        ];
+        const setOperator = (operator: OperatingReviewScopeCondition["operator"]) => {
+          if (operator === "equals") {
+            updateCondition(index, { field: condition.field, operator, value: options.values[0] });
+          } else if (operator === "oneOf") {
+            updateCondition(index, { field: condition.field, operator, values: options.values.slice(0, 2) });
+          } else if (operator === "numberRange") {
+            updateCondition(index, {
+              field: condition.field,
+              operator,
+              minimum: Math.min(...numericValues),
+              maximum: Math.max(...numericValues),
+            });
+          } else {
+            updateCondition(index, {
+              field: condition.field,
+              operator,
+              start: dateValues[0],
+              end: dateValues.at(-1) ?? dateValues[0],
+            });
+          }
+        };
+        return (
+          <div className="operating-review-scope-condition" key={`${condition.field}-${index}`}>
+            <label htmlFor={`${idPrefix}-field-${index}`}>
+              <span>{copy.dataScope}</span>
+              <select
+                id={`${idPrefix}-field-${index}`}
+                value={condition.field}
+                onChange={(event) => {
+                  const replacement = defaultScopeCondition(rows, event.target.value);
+                  if (replacement) updateCondition(index, replacement);
+                }}
+              >
+                <option value={condition.field}>{condition.field}</option>
+                {availableFields.map((field) => (
+                  <option key={field} value={field}>
+                    {field}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor={`${idPrefix}-operator-${index}`}>
+              <span>{copy.filters}</span>
+              <select
+                id={`${idPrefix}-operator-${index}`}
+                value={condition.operator}
+                onChange={(event) => setOperator(event.target.value as OperatingReviewScopeCondition["operator"])}
+              >
+                {operatorOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {condition.operator === "equals" && (
+              <label htmlFor={`${idPrefix}-value-${index}`}>
+                <span>{copy.scopeValue}</span>
+                <select
+                  id={`${idPrefix}-value-${index}`}
+                  value={operatingReviewScopeValueKey(condition.value)}
+                  onChange={(event) => {
+                    const value = options.values.find(
+                      (candidate) => operatingReviewScopeValueKey(candidate) === event.target.value,
+                    );
+                    if (value != null) updateCondition(index, { ...condition, value });
+                  }}
+                >
+                  {options.values.map((value) => (
+                    <option key={operatingReviewScopeValueKey(value)} value={operatingReviewScopeValueKey(value)}>
+                      {String(value)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {condition.operator === "oneOf" && (
+              <label htmlFor={`${idPrefix}-values-${index}`}>
+                <span>{copy.scopeValue}</span>
+                <select
+                  id={`${idPrefix}-values-${index}`}
+                  multiple
+                  size={Math.min(4, options.values.length)}
+                  value={condition.values.map(operatingReviewScopeValueKey)}
+                  onChange={(event) => {
+                    const keys = new Set([...event.target.selectedOptions].map((option) => option.value));
+                    const values = options.values
+                      .filter((value) => keys.has(operatingReviewScopeValueKey(value)))
+                      .slice(0, MAX_OPERATING_REVIEW_SCOPE_VALUES);
+                    if (values.length) updateCondition(index, { ...condition, values });
+                  }}
+                >
+                  {options.values.map((value) => (
+                    <option key={operatingReviewScopeValueKey(value)} value={operatingReviewScopeValueKey(value)}>
+                      {String(value)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {condition.operator === "numberRange" && (
+              <div className="operating-review-scope-range">
+                <label htmlFor={`${idPrefix}-minimum-${index}`}>
+                  <span>{copy.from}</span>
+                  <input
+                    id={`${idPrefix}-minimum-${index}`}
+                    type="number"
+                    value={condition.minimum}
+                    onChange={(event) => {
+                      if (Number.isFinite(event.target.valueAsNumber)) {
+                        updateCondition(index, { ...condition, minimum: event.target.valueAsNumber });
+                      }
+                    }}
+                  />
+                </label>
+                <label htmlFor={`${idPrefix}-maximum-${index}`}>
+                  <span>{copy.to}</span>
+                  <input
+                    id={`${idPrefix}-maximum-${index}`}
+                    type="number"
+                    value={condition.maximum}
+                    onChange={(event) => {
+                      if (Number.isFinite(event.target.valueAsNumber)) {
+                        updateCondition(index, { ...condition, maximum: event.target.valueAsNumber });
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+            {condition.operator === "dateRange" && (
+              <div className="operating-review-scope-range">
+                <label htmlFor={`${idPrefix}-start-${index}`}>
+                  <span>{copy.from}</span>
+                  <input
+                    id={`${idPrefix}-start-${index}`}
+                    type="date"
+                    value={condition.start}
+                    onChange={(event) => updateCondition(index, { ...condition, start: event.target.value })}
+                  />
+                </label>
+                <label htmlFor={`${idPrefix}-end-${index}`}>
+                  <span>{copy.to}</span>
+                  <input
+                    id={`${idPrefix}-end-${index}`}
+                    type="date"
+                    value={condition.end}
+                    onChange={(event) => updateCondition(index, { ...condition, end: event.target.value })}
+                  />
+                </label>
+              </div>
+            )}
+            <button
+              className="operating-review-remove-filter"
+              type="button"
+              aria-label={`${copy.removeFilter}: ${condition.field}`}
+              onClick={() => onChange(conditions.filter((_, currentIndex) => currentIndex !== index))}
+            >
+              <X aria-hidden="true" />
+            </button>
+            {options.truncated && <small>{copy.scopeTooMany}</small>}
+          </div>
+        );
+      })}
+      {conditions.length < MAX_OPERATING_REVIEW_SCOPE_CONDITIONS && availableFields.length > 0 && (
+        <button className="operating-review-add-filter" type="button" onClick={addCondition}>
+          <Plus aria-hidden="true" /> {copy.addFilter}
+        </button>
+      )}
+    </fieldset>
+  );
+}
+
 export function OperatingReviewDialog({
   artifacts,
   locale,
@@ -280,16 +583,12 @@ export function OperatingReviewDialog({
   );
   const [mark, setMark] = useState<OperatingReviewInput["mark"]>(initialInput?.mark ?? "bar");
   const [format, setFormat] = useState<OperatingReviewInput["format"]>(initialInput?.format ?? "currency");
-  const initialExactScope =
-    initialInput?.scope && isOperatingReviewExactScope(initialInput.scope) ? initialInput.scope : null;
-  const initialExactComparison =
-    initialInput?.comparisonScope && isOperatingReviewExactScope(initialInput.comparisonScope)
-      ? initialInput.comparisonScope
-      : null;
-  const [scopeField, setScopeField] = useState(initialExactScope?.field ?? "");
-  const [scopeValue, setScopeValue] = useState<OperatingReviewScopeValue | null>(initialExactScope?.value ?? null);
-  const [comparisonValue, setComparisonValue] = useState<OperatingReviewScopeValue | null>(
-    initialExactComparison?.value ?? null,
+  const [scopeConditions, setScopeConditions] = useState<OperatingReviewScopeCondition[]>(
+    copyScopeConditions(initialInput?.scope),
+  );
+  const [comparisonEnabled, setComparisonEnabled] = useState(Boolean(initialInput?.comparisonScope));
+  const [comparisonConditions, setComparisonConditions] = useState<OperatingReviewScopeCondition[]>(
+    copyScopeConditions(initialInput?.comparisonScope),
   );
   const [period, setPeriod] = useState(initialInput?.period ?? "");
   const [audience, setAudience] = useState<OperatingReviewInput["audience"]>(initialInput?.audience ?? "leadership");
@@ -316,38 +615,12 @@ export function OperatingReviewDialog({
     const parsed = parseDataSource(source.source);
     return parsed.errors.length || !parsed.rows.length ? null : parsed;
   }, [artifacts, sourceOption?.artifactId]);
-  const effectiveScopeField = sourceOption?.columns.includes(scopeField)
-    ? scopeField
-    : initialExactScope
-      ? scopeField
-      : "";
-  const scopeOptions = useMemo(
-    () =>
-      parsedData && effectiveScopeField && parsedData.columns.includes(effectiveScopeField)
-        ? collectOperatingReviewScopeValues(parsedData.rows, effectiveScopeField)
-        : { values: [], truncated: false },
-    [effectiveScopeField, parsedData],
-  );
-  const scopeValueAvailable =
-    scopeValue != null &&
-    scopeOptions.values.some(
-      (candidate) => operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(scopeValue),
-    );
-  const scopeReady = !effectiveScopeField || scopeValue != null;
-  const effectiveScope = useMemo(
-    () => (effectiveScopeField && scopeValue != null ? { field: effectiveScopeField, value: scopeValue } : null),
-    [effectiveScopeField, scopeValue],
-  );
-  const comparisonValueAvailable =
-    comparisonValue != null &&
-    scopeOptions.values.some(
-      (candidate) => operatingReviewScopeValueKey(candidate) === operatingReviewScopeValueKey(comparisonValue),
-    );
+  const effectiveScope = useMemo(() => scopeFromConditions(scopeConditions), [scopeConditions]);
   const effectiveComparisonScope = useMemo(
-    () =>
-      effectiveScopeField && comparisonValue != null ? { field: effectiveScopeField, value: comparisonValue } : null,
-    [comparisonValue, effectiveScopeField],
+    () => (comparisonEnabled ? scopeFromConditions(comparisonConditions) : null),
+    [comparisonConditions, comparisonEnabled],
   );
+  const scopeReady = !comparisonEnabled || Boolean(effectiveScope && effectiveComparisonScope);
   const strictNumericColumns = useMemo(() => {
     if (!parsedData) return [];
     return prepareOperatingReviewNumericColumns(
@@ -414,7 +687,7 @@ export function OperatingReviewDialog({
   const audienceLabel = audience === "board" ? copy.board : audience === "team" ? copy.team : copy.leadership;
   const primaryScopeLabel = effectiveScope ? formatOperatingReviewScopeLabel(effectiveScope) : copy.allRows;
   const scopeLabel = effectiveComparisonScope
-    ? `${primaryScopeLabel} ${comparisonConnector(locale)} ${String(effectiveComparisonScope.value)}`
+    ? `${primaryScopeLabel} ${comparisonConnector(locale)} ${formatOperatingReviewScopeLabel(effectiveComparisonScope)}`
     : primaryScopeLabel;
   const liveSummary =
     sourceOption && effectiveCategory && effectiveValue && deliverableNames.length
@@ -534,9 +807,9 @@ export function OperatingReviewDialog({
                 setSourceArtifactId(event.target.value);
                 setCategory("");
                 setValue("");
-                setScopeField("");
-                setScopeValue(null);
-                setComparisonValue(null);
+                setScopeConditions([]);
+                setComparisonEnabled(false);
+                setComparisonConditions([]);
               }}
               disabled={!sourceOptions.length}
               required
@@ -551,109 +824,56 @@ export function OperatingReviewDialog({
             </select>
           </label>
 
-          <label className="operating-review-field" htmlFor="operating-review-scope-field">
-            <span>{copy.dataScope}</span>
-            <select
-              id="operating-review-scope-field"
-              value={effectiveScopeField}
+          <OperatingReviewScopeBuilder
+            idPrefix="operating-review-primary-scope"
+            title={copy.dataScope}
+            hint={copy.scopeHint}
+            copy={copy}
+            columns={sourceOption?.columns ?? []}
+            rows={parsedData?.rows ?? []}
+            conditions={scopeConditions}
+            onChange={(conditions) => {
+              setScopeConditions(conditions);
+              if (!conditions.length) {
+                setComparisonEnabled(false);
+                setComparisonConditions([]);
+              }
+            }}
+          />
+
+          <label className="operating-review-comparison-toggle wide">
+            <input
+              type="checkbox"
+              checked={comparisonEnabled}
+              disabled={!scopeConditions.length}
               onChange={(event) => {
-                setScopeField(event.target.value);
-                setScopeValue(null);
-                setComparisonValue(null);
+                setComparisonEnabled(event.target.checked);
+                setComparisonConditions(
+                  event.target.checked && parsedData ? alternateScopeConditions(parsedData.rows, scopeConditions) : [],
+                );
               }}
-              aria-describedby="operating-review-scope-help"
-            >
-              <option value="">{copy.allRows}</option>
-              {initialExactScope && effectiveScopeField && !sourceOption?.columns.includes(effectiveScopeField) && (
-                <option value={effectiveScopeField}>
-                  {effectiveScopeField} · {copy.noField}
-                </option>
-              )}
-              {sourceOption?.columns.map((column) => (
-                <option key={column} value={column}>
-                  {column}
-                </option>
-              ))}
-            </select>
-            <small id="operating-review-scope-help">{copy.scopeHint}</small>
+            />
+            <span>
+              <strong>{copy.enableComparison}</strong>
+              <small>{copy.comparisonHint}</small>
+            </span>
           </label>
 
-          <label className="operating-review-field" htmlFor="operating-review-scope-value">
-            <span>{copy.scopeValue}</span>
-            <select
-              id="operating-review-scope-value"
-              value={scopeValue == null ? "" : operatingReviewScopeValueKey(scopeValue)}
-              onChange={(event) => {
-                const selected = scopeOptions.values.find(
-                  (candidate) => operatingReviewScopeValueKey(candidate) === event.target.value,
-                );
-                setScopeValue(selected ?? null);
-                if (
-                  selected != null &&
-                  comparisonValue != null &&
-                  operatingReviewScopeValueKey(selected) === operatingReviewScopeValueKey(comparisonValue)
-                ) {
-                  setComparisonValue(null);
-                }
-              }}
-              disabled={!effectiveScopeField || !scopeOptions.values.length}
-              required={Boolean(effectiveScopeField)}
-              aria-invalid={attempted && !scopeReady}
-            >
-              <option value="">
-                {effectiveScopeField && !scopeOptions.values.length ? copy.noScopeValue : copy.chooseScopeValue}
-              </option>
-              {scopeValue != null && !scopeValueAvailable && (
-                <option value={operatingReviewScopeValueKey(scopeValue)}>
-                  {String(scopeValue)} · {copy.noScopeValue}
-                </option>
-              )}
-              {scopeOptions.values.map((candidate) => (
-                <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>
-                  {String(candidate)}
-                </option>
-              ))}
-            </select>
-            {scopeOptions.truncated && <small>{copy.scopeTooMany}</small>}
-            {attempted && !scopeReady && (
-              <small className="operating-review-field-error">{copy.scopeValueRequired}</small>
-            )}
-          </label>
-
-          <label className="operating-review-field" htmlFor="operating-review-comparison-value">
-            <span>{copy.compareWith}</span>
-            <select
-              id="operating-review-comparison-value"
-              value={comparisonValue == null ? "" : operatingReviewScopeValueKey(comparisonValue)}
-              onChange={(event) => {
-                const selected = scopeOptions.values.find(
-                  (candidate) => operatingReviewScopeValueKey(candidate) === event.target.value,
-                );
-                setComparisonValue(selected ?? null);
-              }}
-              disabled={!effectiveScopeField || scopeValue == null || scopeOptions.values.length < 2}
-              aria-describedby="operating-review-comparison-help"
-            >
-              <option value="">{copy.noComparison}</option>
-              {comparisonValue != null && !comparisonValueAvailable && (
-                <option value={operatingReviewScopeValueKey(comparisonValue)}>
-                  {String(comparisonValue)} · {copy.noScopeValue}
-                </option>
-              )}
-              {scopeOptions.values
-                .filter(
-                  (candidate) =>
-                    scopeValue == null ||
-                    operatingReviewScopeValueKey(candidate) !== operatingReviewScopeValueKey(scopeValue),
-                )
-                .map((candidate) => (
-                  <option key={operatingReviewScopeValueKey(candidate)} value={operatingReviewScopeValueKey(candidate)}>
-                    {String(candidate)}
-                  </option>
-                ))}
-            </select>
-            <small id="operating-review-comparison-help">{copy.comparisonHint}</small>
-          </label>
+          {comparisonEnabled && (
+            <OperatingReviewScopeBuilder
+              idPrefix="operating-review-comparison-scope"
+              title={copy.compareWith}
+              hint={copy.comparisonHint}
+              copy={copy}
+              columns={sourceOption?.columns ?? []}
+              rows={parsedData?.rows ?? []}
+              conditions={comparisonConditions}
+              onChange={setComparisonConditions}
+            />
+          )}
+          {attempted && !scopeReady && (
+            <small className="operating-review-field-error wide">{copy.scopeValueRequired}</small>
+          )}
 
           <label className="operating-review-field" htmlFor="operating-review-category">
             <span>{copy.category}</span>
@@ -893,10 +1113,10 @@ export function OperatingReviewDialog({
                       {effectiveComparisonScope ? (
                         <>
                           <th scope="col">
-                            {effectiveValue} · {String(effectiveScope?.value ?? "")}
+                            {effectiveValue} · {effectiveScope ? formatOperatingReviewScopeLabel(effectiveScope) : ""}
                           </th>
                           <th scope="col">
-                            {effectiveValue} · {String(effectiveComparisonScope.value)}
+                            {effectiveValue} · {formatOperatingReviewScopeLabel(effectiveComparisonScope)}
                           </th>
                           <th scope="col">{copy.change}</th>
                         </>

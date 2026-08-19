@@ -5,6 +5,7 @@ import {
   MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS,
   MAX_OPERATING_REVIEW_SCOPE_VALUES,
   isOperatingReviewExactScope,
+  operatingReviewSemanticDateKey,
   operatingReviewScopeKey,
   type OperatingReviewScope,
 } from "./operating-review-scope.ts";
@@ -80,8 +81,8 @@ const OperatingReviewScopeConditionSchema = z.discriminatedUnion("operator", [
     .object({
       field: OperatingReviewScopeFieldSchema,
       operator: z.literal("dateRange"),
-      start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
-      end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
+      start: z.string().refine((value) => operatingReviewSemanticDateKey(value) === value),
+      end: z.string().refine((value) => operatingReviewSemanticDateKey(value) === value),
     })
     .strict()
     .refine((condition) => condition.start <= condition.end, "The date scope range is reversed."),

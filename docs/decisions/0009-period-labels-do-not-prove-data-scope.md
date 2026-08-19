@@ -33,5 +33,5 @@ An operating review may carry one optional exact Data scope:
 
 - A user can prove which source rows are eligible for a recurring review instead of trusting a title.
 - Local evidence, real DuckDB execution, model context, and deliverables share one scope contract.
-- The initial capability deliberately supports one equality predicate. Date ranges, multiple values, compound filters, and inferred date semantics require a future typed filter expression and review UI; they are not encoded as strings today.
+- The initial capability deliberately supported one equality predicate. ADR 0027 later added bounded multi-value, numeric-range, ISO-date-range, and AND conditions without encoding filters as strings or breaking this exact shape.
 - Existing saved workflows normalize missing scope to `null` and continue to mean all Data rows.

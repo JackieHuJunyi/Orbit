@@ -81,7 +81,10 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(operatingDialog, /collectOperatingReviewScopeValues/);
   assert.match(operatingDialog, /prepareOperatingReviewNumericColumns/);
   assert.match(operatingDialog, /prepareOperatingReviewEvidence/);
-  assert.match(operatingDialog, /id="operating-review-comparison-value"/);
+  assert.match(operatingDialog, /idPrefix="operating-review-comparison-scope"/);
+  assert.match(operatingDialog, /MAX_OPERATING_REVIEW_SCOPE_CONDITIONS/);
+  assert.match(operatingDialog, /operator === "dateRange"/);
+  assert.match(operatingDialog, /operator === "oneOf"/);
   assert.match(operatingDialog, /comparisonScope: effectiveComparisonScope/);
   assert.match(operatingDialog, /MAX_OPERATING_REVIEW_PREVIEW_ROWS = 5/);
   assert.match(operatingDialog, /formatChartValue\(row\.value, format\)/);
@@ -90,11 +93,11 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(operatingCompiler, /primaryValue - comparisonValue/);
   assert.match(operatingCompiler, /HAVING COUNT\(CASE WHEN/);
   assert.ok(
-    operatingDialog.indexOf('id="operating-review-scope-field"') <
+    operatingDialog.indexOf('idPrefix="operating-review-primary-scope"') <
       operatingDialog.indexOf('id="operating-review-category"'),
   );
   assert.ok(
-    operatingDialog.indexOf('id="operating-review-scope-value"') <
+    operatingDialog.indexOf('idPrefix="operating-review-primary-scope"') <
       operatingDialog.indexOf('id="operating-review-value"'),
   );
   assert.match(operatingContract, /generic qualitative text without copied labels or numbers/);

@@ -2114,3 +2114,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Preview、diagnostic 与未来 provenance navigation 共享 React-free immutable navigation plan；DOM collection、view change、focus、scroll、Agent scope、history 和 persistence effects 只能由 Workbench 执行。
 - legacy semantic HTML 没有可证明的逐页 Source identity，继续保留单个 sandbox compatibility iframe，不解析 DOM 猜页面，也不伪造双向定位。
 - HTML、PPTX、ODP 与 PDF 导出继续消费完整 Deck compiler 输出；连续工作台布局只能改变 Preview presentation，不能改变 canonical source 或交付分页。
+
+### 17.40 v1.10 经营汇报范围升级为有界 typed filter expression
+
+- 原有 `{ field, value }` 精确范围继续合法并可无损重跑；新表达式最多包含 5 个不同字段条件，字段之间只做明确 AND，不接受自由 SQL 或模型生成谓词。
+- 单条件支持 typed equals、最多 20 个去重值的 one-of、finite number 闭区间，以及来源字符串中显式有效 `YYYY-MM-DD` 前缀的日期闭区间；不从本地化文本猜日期语义。
+- 纯 scope compiler 统一拥有规范化、行匹配、稳定 identity、DuckDB escaping 与人类可读 label；表单、Evidence Preview、数值字段资格、Query、Chart、模型有界输入、Document/Deck 和 saved rerun 不得各自解释条件。
+- 主范围与对比范围必须各自完整且不相同；旧 exact pair 继续要求同字段，不借升级放宽既有工作流语义。
+- duplicate field、invalid/reversed range、oversized value set、missing/stale field/value、identical comparison 必须在 provider contact 和 workspace mutation 前失败关闭。
+- 九语言 UI 暴露多值、数值区间、日期区间、添加/移除条件和对比范围；窄屏、键盘、多选控件与 Space Black 使用同一组件和 focus contract。

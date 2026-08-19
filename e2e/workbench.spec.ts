@@ -105,3 +105,33 @@ test("applies weekly and monthly operating-review presets without guessing the e
   await expect(report).toBeChecked();
   await expect(slides).toBeChecked();
 });
+
+test("builds multi-value, range, compound, and comparison scopes in the operating-review UI", async ({ page }) => {
+  await openWorkbench(page);
+  await page.getByRole("button", { name: "Create operating review", exact: true }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Prepare a verifiable operating-review chain" });
+  await dialog.getByRole("button", { name: "Add condition" }).click();
+
+  const primary = dialog.getByRole("group", { name: "Data scope" });
+  await expect(primary.getByRole("combobox", { name: "Data scope" }).first()).toHaveValue("Region");
+  await primary.getByRole("combobox", { name: "Scope filters" }).first().selectOption("oneOf");
+  await primary.getByRole("listbox", { name: "Filter value" }).selectOption([{ label: "APAC" }, { label: "Europe" }]);
+
+  await primary.getByRole("button", { name: "Add condition" }).click();
+  await expect(primary.getByRole("combobox", { name: "Data scope" }).nth(1)).toHaveValue("Q2 Revenue");
+  await primary.getByRole("combobox", { name: "Scope filters" }).nth(1).selectOption("numberRange");
+  await primary.getByRole("spinbutton", { name: "From" }).fill("900000");
+  await primary.getByRole("spinbutton", { name: "To" }).fill("1900000");
+
+  await expect(dialog).toContainText("Region ∈ APAC, Europe");
+  await expect(dialog).toContainText("Q2 Revenue = 900000…1900000");
+  await dialog.getByRole("checkbox", { name: /Add comparison scope/ }).check();
+
+  const comparison = dialog.getByRole("group", { name: "Compare with" });
+  await expect(comparison).toBeVisible();
+  await expect(comparison.getByRole("listbox", { name: "Filter value" }).locator("option:checked")).toHaveText(
+    "North America",
+  );
+  await expect(comparison.getByRole("button", { name: "Add condition" })).toBeVisible();
+});
