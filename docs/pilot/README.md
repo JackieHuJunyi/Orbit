@@ -16,6 +16,8 @@ Recruit operations, finance, strategy/business analysis, or founder-office owner
 
 Do not recruit one-off presentation generators, macro-heavy financial model owners, pixel-perfect Office migration projects, or anyone who needs unattended external publishing. Those are outside the current product contract.
 
+Use the [P1 interview guide](INTERVIEW-GUIDE.md) for the screener, 45-minute recent-task interview, timeline fields, and gate calculation. Store completed interview records in the approved research system, not this repository or `pilot-private/`.
+
 ## Consent and data boundary
 
 Before using a file, record consent outside the Rune repository and confirm one of these is true:
