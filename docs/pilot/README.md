@@ -16,7 +16,7 @@ Recruit operations, finance, strategy/business analysis, or founder-office owner
 
 Do not recruit one-off presentation generators, macro-heavy financial model owners, pixel-perfect Office migration projects, or anyone who needs unattended external publishing. Those are outside the current product contract.
 
-Use the [P1 interview guide](INTERVIEW-GUIDE.md) for the screener, 45-minute recent-task interview, timeline fields, and gate calculation. Store completed interview records in the approved research system, not this repository or `pilot-private/`.
+Use the [P1 interview guide](INTERVIEW-GUIDE.md) for the screener, 45-minute recent-task interview, timeline fields, and deterministic gate calculation. Store completed interview records in the approved research system, not this repository or `pilot-private/`.
 
 Use the [P2 paired-task comparison guide](TASK-COMPARISON-GUIDE.md) for exact A/B boundaries and the deterministic outcome-gate command. Use the [P4 paid-pilot guide](PAID-PILOT-GUIDE.md) only after a qualified task and buyer exist; commercial source records remain outside Rune.
 

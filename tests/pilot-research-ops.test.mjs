@@ -8,7 +8,11 @@ const comparisonGuideUrl = new URL("../docs/pilot/TASK-COMPARISON-GUIDE.md", imp
 const paidPilotGuideUrl = new URL("../docs/pilot/PAID-PILOT-GUIDE.md", import.meta.url);
 
 test("keeps P1 interview operations linked to exact recent-task evidence gates", async () => {
-  const [guide, runbook] = await Promise.all([readFile(guideUrl, "utf8"), readFile(runbookUrl, "utf8")]);
+  const [guide, runbook, packageJson] = await Promise.all([
+    readFile(guideUrl, "utf8"),
+    readFile(runbookUrl, "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
 
   assert.match(runbook, /\[P1 interview guide\]\(INTERVIEW-GUIDE\.md\)/);
   assert.match(guide, /most recent completed task/i);
@@ -16,6 +20,9 @@ test("keeps P1 interview operations linked to exact recent-task evidence gates",
   assert.match(guide, /at least 5 spent more than two active hours per cycle or described material error cost/i);
   assert.match(guide, /at least 7 agreed to a supervised real task/i);
   assert.match(guide, /at least 5 authorized or redacted source sets/i);
+  assert.match(guide, /exactly the first 15 unique eligible participants/i);
+  assert.match(guide, /Price-choice counts remain explicitly labeled E1/i);
+  assert.match(packageJson, /"pilot:interviews"/);
 });
 
 test("keeps completed research records and commercial proof outside the repository", async () => {

@@ -106,3 +106,39 @@ Evaluate the gate only after 15 completed, eligible interviews:
 - at least 5 authorized or redacted source sets are available for the next phase.
 
 Report exact counts and missing evidence. Do not average unknown answers into success, replace missing interviews with synthetic personas, or change the threshold after seeing the results. If the gate fails twice, revisit the user or task hypothesis before adding product scope.
+
+## Private deterministic gate
+
+After the first 15 eligible records are locked in the approved research system, create `pilot-private/p1-interviews.json`. Use anonymous aliases and bounded decision fields only; do not copy notes, names, companies, contact details, task content, or source files.
+
+```json
+{
+  "version": 1,
+  "interviews": [
+    {
+      "participantId": "participant-001",
+      "interviewedOn": "2026-08-19",
+      "evidenceReference": "approved-system/reference-not-a-name",
+      "roleSegment": "operations",
+      "eligibleRecentTask": true,
+      "repeatsAtLeastMonthly": true,
+      "activeMinutes": 135,
+      "activeMinutesBasis": "estimated",
+      "materialErrorCost": "not_observed",
+      "trialMaterialStatus": "redacted",
+      "agreesToSupervisedTask": "yes",
+      "priceChoice": 999
+    }
+  ]
+}
+```
+
+The example documents one row, not a complete input or a real interview. The actual array must contain exactly the first 15 unique eligible participants. Use `null` active minutes only together with `"activeMinutesBasis": "unknown"`; unknown values remain visible and never count as success.
+
+Run:
+
+```bash
+npm run pilot:interviews -- pilot-private/p1-interviews.json
+```
+
+The command refuses a movable cohort size, duplicate aliases, extra fields, ineligible tasks, invalid dates, ambiguous time records, or missing evidence references. Its aggregate output contains no participant or evidence identifier. Price-choice counts remain explicitly labeled E1 and cannot satisfy P4.
