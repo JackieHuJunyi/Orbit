@@ -212,7 +212,7 @@ export function WorkbenchCommandMenu({
                         onClick={() => run(command)}
                         key={command.id}
                       >
-                        <span className={`command-menu-glyph ${command.group}`} aria-hidden="true">
+                        <span className={`command-menu-glyph group-${command.group}`} aria-hidden="true">
                           <CommandIcon />
                         </span>
                         <span className="command-menu-copy">

@@ -103,6 +103,8 @@ test("keeps keyboard navigation, accessible ownership, and writes outside the co
   assert.match(component, /ArrowDown/);
   assert.match(component, /ArrowUp/);
   assert.match(component, /COMMAND_ICONS/);
+  assert.match(component, /command-menu-glyph group-\$\{command\.group\}/);
+  assert.doesNotMatch(component, /command-menu-glyph \$\{command\.group\}/);
   assert.match(component, /scrollIntoView\(\{ block: "nearest" \}\)/);
   assert.match(component, /previousFocusRef/);
   assert.doesNotMatch(component, /setArtifacts|persistDeviceWorkspace|localStorage|fetch\(/);

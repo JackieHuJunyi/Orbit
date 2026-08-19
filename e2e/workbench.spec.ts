@@ -67,6 +67,32 @@ test("keeps quick actions scrollable and renders an icon for every command", asy
   const results = dialog.locator(".command-menu-results");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator(".command-menu-glyph > svg")).toHaveCount(14);
+  const iconAlignment = await dialog.locator(".command-menu-glyph").evaluateAll((glyphs) =>
+    glyphs.map((glyph) => {
+      const icon = glyph.querySelector("svg");
+      const glyphBounds = glyph.getBoundingClientRect();
+      const iconBounds = icon?.getBoundingClientRect();
+      return {
+        width: glyphBounds.width,
+        height: glyphBounds.height,
+        centerDeltaX: iconBounds
+          ? Math.abs(iconBounds.left + iconBounds.width / 2 - (glyphBounds.left + glyphBounds.width / 2))
+          : Number.POSITIVE_INFINITY,
+        centerDeltaY: iconBounds
+          ? Math.abs(iconBounds.top + iconBounds.height / 2 - (glyphBounds.top + glyphBounds.height / 2))
+          : Number.POSITIVE_INFINITY,
+      };
+    }),
+  );
+  expect(iconAlignment).toHaveLength(14);
+  expect(
+    iconAlignment.every(({ width, height }) => Math.abs(width - 28) < 0.5 && Math.abs(height - 28) < 0.5),
+    JSON.stringify(iconAlignment),
+  ).toBe(true);
+  expect(
+    iconAlignment.every(({ centerDeltaX, centerDeltaY }) => centerDeltaX < 0.5 && centerDeltaY < 0.5),
+    JSON.stringify(iconAlignment),
+  ).toBe(true);
 
   const dimensions = await results.evaluate((element) => ({
     clientHeight: element.clientHeight,
