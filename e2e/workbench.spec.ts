@@ -59,6 +59,31 @@ test("opens and closes the New artifact dialog from the top bar", async ({ page 
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
+test("keeps quick actions scrollable and renders an icon for every command", async ({ page }) => {
+  await openWorkbench(page);
+  await page.locator(".command-menu-trigger").click();
+
+  const dialog = page.getByRole("dialog", { name: "Quick actions" });
+  const results = dialog.locator(".command-menu-results");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".command-menu-glyph > svg")).toHaveCount(14);
+
+  const dimensions = await results.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+
+  await results.hover();
+  await page.mouse.wheel(0, dimensions.scrollHeight);
+  await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  const bottomScroll = await results.evaluate((element) => element.scrollTop);
+
+  await dialog.getByRole("combobox").press("Home");
+  await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBeLessThan(bottomScroll);
+  await expect(dialog.getByRole("option").first()).toBeInViewport();
+});
+
 test("creates and renders a source-ordered area Chart", async ({ page }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));

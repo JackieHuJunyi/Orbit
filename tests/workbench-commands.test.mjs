@@ -102,9 +102,13 @@ test("keeps keyboard navigation, accessible ownership, and writes outside the co
   assert.match(component, /role="option"/);
   assert.match(component, /ArrowDown/);
   assert.match(component, /ArrowUp/);
+  assert.match(component, /COMMAND_ICONS/);
+  assert.match(component, /scrollIntoView\(\{ block: "nearest" \}\)/);
   assert.match(component, /previousFocusRef/);
   assert.doesNotMatch(component, /setArtifacts|persistDeviceWorkspace|localStorage|fetch\(/);
   assert.match(workbench, /event\.shiftKey && event\.key\.toLowerCase\(\) === "p"/);
   assert.match(workbench, /function runWorkbenchCommand\(commandId: RuneWorkbenchCommandId\)/);
   assert.match(styles, /\.command-menu-backdrop\s*\{[^}]*z-index:\s*var\(--rune-layer-modal\)/s);
+  assert.match(styles, /\.command-menu\s*\{[^}]*grid-template-rows:\s*auto minmax\(0, 1fr\)/s);
+  assert.match(styles, /\.command-menu-results\s*\{[^}]*overflow-y:\s*auto/s);
 });
