@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   MAX_OPERATING_REVIEW_SCOPE_OPTIONS,
   collectOperatingReviewScopeValues,
+  formatOperatingReviewScopeCondition,
+  formatOperatingReviewScopeLabel,
   formatOperatingReviewScopePredicate,
   normalizeOperatingReviewScope,
   operatingReviewScopeValueKey,
@@ -132,4 +134,75 @@ test("prepares one distinct same-field comparison and validates numeric fields a
     ).errors.join(" "),
     /no longer matches any current Data row/i,
   );
+});
+
+test("normalizes and applies bounded multi-value, numeric, date, and compound scope conditions", () => {
+  const rows = [
+    { Date: "2026-07-01", Region: "APAC", Revenue: 100 },
+    { Date: "2026-07-15T09:30:00Z", Region: "Europe", Revenue: 80 },
+    { Date: "2026-07-20", Region: "LATAM", Revenue: 60 },
+    { Date: "2026-08-01", Region: "APAC", Revenue: 200 },
+  ];
+  const scope = {
+    match: "all",
+    conditions: [
+      { field: "Date", operator: "dateRange", start: "2026-07-01", end: "2026-07-31" },
+      { field: "Region", operator: "oneOf", values: ["APAC", "Europe"] },
+      { field: "Revenue", operator: "numberRange", minimum: 70, maximum: 120 },
+    ],
+  };
+  assert.deepEqual(normalizeOperatingReviewScope(scope), scope);
+  const prepared = prepareOperatingReviewScope(rows, ["Date", "Region", "Revenue"], scope);
+  assert.deepEqual(prepared.errors, []);
+  assert.deepEqual(prepared.rows, rows.slice(0, 2));
+  assert.equal(
+    formatOperatingReviewScopeCondition(scope),
+    `(TRY_CAST(SUBSTR(CAST("Date" AS VARCHAR), 1, 10) AS DATE) BETWEEN DATE '2026-07-01' AND DATE '2026-07-31') AND (("Region" = 'APAC' OR "Region" = 'Europe')) AND ("Revenue" BETWEEN 70 AND 120)`,
+  );
+  assert.equal(
+    formatOperatingReviewScopeLabel(scope),
+    "Date = 2026-07-01…2026-07-31 · Region ∈ APAC, Europe · Revenue = 70…120",
+  );
+});
+
+test("rejects malformed typed filter expressions and permits paired compound scopes", () => {
+  assert.equal(
+    normalizeOperatingReviewScope({
+      match: "all",
+      conditions: [{ field: "Date", operator: "dateRange", start: "2026-02-30", end: "2026-03-01" }],
+    }),
+    undefined,
+  );
+  assert.equal(
+    normalizeOperatingReviewScope({
+      match: "all",
+      conditions: [
+        { field: "Region", operator: "equals", value: "APAC" },
+        { field: "Region", operator: "equals", value: "Europe" },
+      ],
+    }),
+    undefined,
+  );
+  const rows = [
+    { Date: "2026-07-01", Region: "APAC", Revenue: 100 },
+    { Date: "2026-06-01", Region: "APAC", Revenue: 90 },
+  ];
+  const primary = {
+    match: "all",
+    conditions: [
+      { field: "Date", operator: "dateRange", start: "2026-07-01", end: "2026-07-31" },
+      { field: "Region", operator: "equals", value: "APAC" },
+    ],
+  };
+  const comparison = {
+    match: "all",
+    conditions: [
+      { field: "Date", operator: "dateRange", start: "2026-06-01", end: "2026-06-30" },
+      { field: "Region", operator: "equals", value: "APAC" },
+    ],
+  };
+  const prepared = prepareOperatingReviewScopes(rows, ["Date", "Region", "Revenue"], primary, comparison);
+  assert.deepEqual(prepared.errors, []);
+  assert.deepEqual(prepared.rows, [rows[0]]);
+  assert.deepEqual(prepared.comparisonRows, [rows[1]]);
 });

@@ -20,8 +20,9 @@ import {
   formatOperatingReviewScopeCondition,
   formatOperatingReviewScopeLabel,
   formatOperatingReviewScopePredicate,
+  isOperatingReviewExactScope,
   normalizeOperatingReviewScope,
-  operatingReviewScopeValueKey,
+  operatingReviewScopeKey,
   prepareOperatingReviewScopes,
   type OperatingReviewScope,
 } from "./operating-review-scope.ts";
@@ -361,7 +362,12 @@ function operatingReviewScopeText(
   if (!scope) return isChineseRuneLocale(locale) ? "全部数据行" : "all Data rows";
   const primary = formatOperatingReviewScopeLabel(scope);
   if (!comparisonScope) return primary;
-  const comparison = String(comparisonScope.value);
+  const comparison =
+    isOperatingReviewExactScope(scope) &&
+    isOperatingReviewExactScope(comparisonScope) &&
+    scope.field === comparisonScope.field
+      ? String(comparisonScope.value)
+      : formatOperatingReviewScopeLabel(comparisonScope);
   return isChineseRuneLocale(locale) ? `${primary} 对比 ${comparison}` : `${primary} vs ${comparison}`;
 }
 
@@ -1002,9 +1008,10 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
       Boolean(
         normalizedScope &&
         normalizedComparisonScope &&
-        normalizedComparisonScope.field === normalizedScope.field &&
-        operatingReviewScopeValueKey(normalizedComparisonScope.value) !==
-          operatingReviewScopeValueKey(normalizedScope.value),
+        (!isOperatingReviewExactScope(normalizedScope) ||
+          !isOperatingReviewExactScope(normalizedComparisonScope) ||
+          normalizedComparisonScope.field === normalizedScope.field) &&
+        operatingReviewScopeKey(normalizedComparisonScope) !== operatingReviewScopeKey(normalizedScope),
       );
     if (
       candidate.version !== 1 ||

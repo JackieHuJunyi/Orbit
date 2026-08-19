@@ -18,6 +18,7 @@ import {
 import {
   collectOperatingReviewScopeValues,
   formatOperatingReviewScopeLabel,
+  isOperatingReviewExactScope,
   operatingReviewScopeValueKey,
   prepareOperatingReviewNumericColumns,
   type OperatingReviewScopeValue,
@@ -279,10 +280,16 @@ export function OperatingReviewDialog({
   );
   const [mark, setMark] = useState<OperatingReviewInput["mark"]>(initialInput?.mark ?? "bar");
   const [format, setFormat] = useState<OperatingReviewInput["format"]>(initialInput?.format ?? "currency");
-  const [scopeField, setScopeField] = useState(initialInput?.scope?.field ?? "");
-  const [scopeValue, setScopeValue] = useState<OperatingReviewScopeValue | null>(initialInput?.scope?.value ?? null);
+  const initialExactScope =
+    initialInput?.scope && isOperatingReviewExactScope(initialInput.scope) ? initialInput.scope : null;
+  const initialExactComparison =
+    initialInput?.comparisonScope && isOperatingReviewExactScope(initialInput.comparisonScope)
+      ? initialInput.comparisonScope
+      : null;
+  const [scopeField, setScopeField] = useState(initialExactScope?.field ?? "");
+  const [scopeValue, setScopeValue] = useState<OperatingReviewScopeValue | null>(initialExactScope?.value ?? null);
   const [comparisonValue, setComparisonValue] = useState<OperatingReviewScopeValue | null>(
-    initialInput?.comparisonScope?.value ?? null,
+    initialExactComparison?.value ?? null,
   );
   const [period, setPeriod] = useState(initialInput?.period ?? "");
   const [audience, setAudience] = useState<OperatingReviewInput["audience"]>(initialInput?.audience ?? "leadership");
@@ -311,7 +318,7 @@ export function OperatingReviewDialog({
   }, [artifacts, sourceOption?.artifactId]);
   const effectiveScopeField = sourceOption?.columns.includes(scopeField)
     ? scopeField
-    : initialInput?.scope
+    : initialExactScope
       ? scopeField
       : "";
   const scopeOptions = useMemo(
@@ -557,7 +564,7 @@ export function OperatingReviewDialog({
               aria-describedby="operating-review-scope-help"
             >
               <option value="">{copy.allRows}</option>
-              {initialInput?.scope && effectiveScopeField && !sourceOption?.columns.includes(effectiveScopeField) && (
+              {initialExactScope && effectiveScopeField && !sourceOption?.columns.includes(effectiveScopeField) && (
                 <option value={effectiveScopeField}>
                   {effectiveScopeField} · {copy.noField}
                 </option>

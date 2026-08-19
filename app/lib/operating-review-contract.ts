@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { RUNE_LOCALE_REGISTRY } from "./localization.ts";
-import { MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS, operatingReviewScopeValueKey } from "./operating-review-scope.ts";
+import {
+  MAX_OPERATING_REVIEW_SCOPE_CONDITIONS,
+  MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS,
+  MAX_OPERATING_REVIEW_SCOPE_VALUES,
+  isOperatingReviewExactScope,
+  operatingReviewScopeKey,
+  type OperatingReviewScope,
+} from "./operating-review-scope.ts";
 
 export const MAX_OPERATING_REVIEW_MODEL_SOURCE_CHARS = 100_000;
 export const MAX_OPERATING_REVIEW_EVIDENCE_ROWS = 20;
@@ -16,23 +23,83 @@ const OperatingReviewArtifactSchema = z
   })
   .strict();
 
-const OperatingReviewScopeSchema = z
+const OperatingReviewScopeValueSchema = z.union([
+  z
+    .string()
+    .max(MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS)
+    .refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
+  z.number().finite(),
+  z.boolean(),
+]);
+
+const OperatingReviewScopeFieldSchema = z
+  .string()
+  .min(1)
+  .max(120)
+  .refine((value) => !/[\u0000-\u001f\u007f]/u.test(value));
+
+const OperatingReviewExactScopeSchema = z
   .object({
-    field: z
-      .string()
-      .min(1)
-      .max(120)
-      .refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
-    value: z.union([
-      z
-        .string()
-        .max(MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS)
-        .refine((value) => !/[\u0000-\u001f\u007f]/u.test(value)),
-      z.number().finite(),
-      z.boolean(),
-    ]),
+    field: OperatingReviewScopeFieldSchema,
+    value: OperatingReviewScopeValueSchema,
   })
   .strict();
+
+const OperatingReviewScopeConditionSchema = z.discriminatedUnion("operator", [
+  z
+    .object({
+      field: OperatingReviewScopeFieldSchema,
+      operator: z.literal("equals"),
+      value: OperatingReviewScopeValueSchema,
+    })
+    .strict(),
+  z
+    .object({
+      field: OperatingReviewScopeFieldSchema,
+      operator: z.literal("oneOf"),
+      values: z.array(OperatingReviewScopeValueSchema).min(1).max(MAX_OPERATING_REVIEW_SCOPE_VALUES),
+    })
+    .strict()
+    .superRefine((condition, context) => {
+      if (
+        new Set(condition.values.map((value) => JSON.stringify([typeof value, value]))).size !== condition.values.length
+      ) {
+        context.addIssue({ code: "custom", message: "Scope values must be unique." });
+      }
+    }),
+  z
+    .object({
+      field: OperatingReviewScopeFieldSchema,
+      operator: z.literal("numberRange"),
+      minimum: z.number().finite(),
+      maximum: z.number().finite(),
+    })
+    .strict()
+    .refine((condition) => condition.minimum <= condition.maximum, "The numeric scope range is reversed."),
+  z
+    .object({
+      field: OperatingReviewScopeFieldSchema,
+      operator: z.literal("dateRange"),
+      start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
+      end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
+    })
+    .strict()
+    .refine((condition) => condition.start <= condition.end, "The date scope range is reversed."),
+]);
+
+const OperatingReviewFilterScopeSchema = z
+  .object({
+    match: z.literal("all"),
+    conditions: z.array(OperatingReviewScopeConditionSchema).min(1).max(MAX_OPERATING_REVIEW_SCOPE_CONDITIONS),
+  })
+  .strict()
+  .superRefine((scope, context) => {
+    if (new Set(scope.conditions.map((condition) => condition.field)).size !== scope.conditions.length) {
+      context.addIssue({ code: "custom", message: "Each scope field may be filtered once." });
+    }
+  });
+
+const OperatingReviewScopeSchema = z.union([OperatingReviewExactScopeSchema, OperatingReviewFilterScopeSchema]);
 
 const OperatingReviewInputSchema = z
   .object({
@@ -59,16 +126,23 @@ const OperatingReviewInputSchema = z
     if (new Set(input.deliverables).size !== input.deliverables.length) {
       context.addIssue({ code: "custom", message: "Deliverable choices must be unique." });
     }
-    if (
-      input.comparisonScope &&
-      (!input.scope ||
-        input.comparisonScope.field !== input.scope.field ||
-        operatingReviewScopeValueKey(input.comparisonScope.value) === operatingReviewScopeValueKey(input.scope.value))
-    ) {
+    if (input.comparisonScope && !input.scope) {
       context.addIssue({
         code: "custom",
-        message: "Comparison needs the same scope field and a different exact value.",
+        message: "Comparison needs a primary scope.",
       });
+      return;
+    }
+    if (input.scope && input.comparisonScope) {
+      if (
+        isOperatingReviewExactScope(input.scope) &&
+        isOperatingReviewExactScope(input.comparisonScope) &&
+        input.comparisonScope.field !== input.scope.field
+      ) {
+        context.addIssue({ code: "custom", message: "Exact comparison scopes must use the same field." });
+      } else if (operatingReviewScopeKey(input.comparisonScope) === operatingReviewScopeKey(input.scope)) {
+        context.addIssue({ code: "custom", message: "Comparison needs different scope conditions." });
+      }
     }
   });
 
@@ -190,8 +264,8 @@ export function buildOperatingReviewModelInput({
   category: string;
   value: string;
   aggregation: string;
-  scope?: { field: string; value: string | number | boolean } | null;
-  comparisonScope?: { field: string; value: string | number | boolean } | null;
+  scope?: OperatingReviewScope | null;
+  comparisonScope?: OperatingReviewScope | null;
   evidenceRows: readonly OperatingReviewEvidenceRow[];
 }) {
   return JSON.stringify(

@@ -187,6 +187,40 @@ test("applies one exact Data scope consistently to evidence, SQL, charts, and de
   assert.deepEqual(validateWorkspaceArtifacts([data, ...result.plan.creations.map(({ artifact }) => artifact)]), []);
 });
 
+test("applies compound typed filters consistently to evidence, SQL, and saved workflow state", () => {
+  const data = dataArtifact({
+    source:
+      "Date,Region,Segment,Net Revenue\n2026-07-01,APAC,Enterprise,100\n2026-07-15,Europe,Enterprise,80\n2026-07-20,LATAM,Enterprise,60\n2026-08-01,APAC,Enterprise,900\n2026-07-10,APAC,Consumer,700\n",
+  });
+  const scope = {
+    match: "all",
+    conditions: [
+      { field: "Date", operator: "dateRange", start: "2026-07-01", end: "2026-07-31" },
+      { field: "Region", operator: "oneOf", values: ["APAC", "Europe"] },
+      { field: "Segment", operator: "equals", value: "Enterprise" },
+    ],
+  };
+  const input = reviewInput({ period: "July 2026", scope });
+  const evidence = prepareOperatingReviewEvidence([data], input);
+  assert.deepEqual(evidence.errors, []);
+  assert.equal(evidence.matchedRowCount, 2);
+  assert.deepEqual(evidence.evidenceRows, [
+    { id: "result-1", category: "APAC", value: 100, sourceRowCount: 1 },
+    { id: "result-2", category: "Europe", value: 80, sourceRowCount: 1 },
+  ]);
+
+  const result = prepareOperatingReviewWorkflow([data], input);
+  assert.deepEqual(result.errors, []);
+  const created = creationsByKind(result);
+  assert.match(created.query.source, /TRY_CAST\(SUBSTR\(CAST\("Date" AS VARCHAR\), 1, 10\) AS DATE\)/u);
+  assert.match(created.query.source, /\("Region" = 'APAC' OR "Region" = 'Europe'\)/u);
+  assert.match(created.query.source, /"Segment" = 'Enterprise'/u);
+  assert.match(parseChartSource(created.chart.source).spec.description, /Date = 2026-07-01…2026-07-31/u);
+  const workflow = createSavedOperatingReview(input, result.plan);
+  assert.deepEqual(workflow.input.scope, scope);
+  assert.deepEqual(normalizeSavedOperatingReviews([workflow])[0].input.scope, scope);
+});
+
 test("compares two exact same-field scopes through evidence, SQL, Chart, and live-bound deliverables", () => {
   const data = dataArtifact({
     source:
