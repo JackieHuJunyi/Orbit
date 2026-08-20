@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.22 with a centered startup greeting, one direction-aware SVG ink-reveal mask, synchronized nib/pressure/settle/flourish timing, nine-stop spectrum ink, and static reduced-motion/forced-color fallbacks.
+
 - 2026-08-21 — Shipped Rune v1.21 with reviewed semantic HTML → PPTX/ODP/PPT/PDF handoff, immutable bounded structure conversion, explicit fidelity loss, deterministic package/PDF gates, and unchanged canonical HTML.
 
 - 2026-08-21 — Shipped Rune v1.20 with a bounded semantic-HTML slide compiler, independent scriptless page sandboxes, continuous vertical preview, exact section-level Source ↔ Preview navigation, and a real reviewed-import browser gate.

@@ -210,7 +210,7 @@ export function WelcomeExperience({
     localeDirection(greetingLocale) === "rtl"
       ? [greeting]
       : (greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting));
-  const greetingCycleDuration = Math.max(4_200, Math.min(6_200, 2_900 + greetingCharacters.length * 150));
+  const greetingCycleDuration = Math.max(5_000, Math.min(7_000, 3_600 + greetingCharacters.length * 200));
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
 
   useEffect(() => {
@@ -358,16 +358,15 @@ export function WelcomeExperience({
           {step === "welcome" && (
             <>
               <div className="welcome-intro-grid">
+                <div className="welcome-greeting-stage" aria-hidden="true">
+                  <HandwrittenGreeting
+                    cycleDuration={greetingCycleDuration}
+                    locale={greetingLocale}
+                    value={greeting}
+                    key={`${locale}-${greetingIndex}`}
+                  />
+                </div>
                 <div className="welcome-intro-copy">
-                  <div className="welcome-greeting-stage" aria-hidden="true">
-                    <HandwrittenGreeting
-                      cycleDuration={greetingCycleDuration}
-                      locale={greetingLocale}
-                      value={greeting}
-                      key={`${locale}-${greetingIndex}`}
-                    />
-                    <i>Rune</i>
-                  </div>
                   <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
                   <h1 id="welcome-title">{text.welcomeTitle}</h1>
                   <p>{text.welcomeBody}</p>

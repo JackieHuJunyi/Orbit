@@ -2449,3 +2449,13 @@ v1.20 解决了 HTML 演示的连续阅读和源码联动，却暴露出一个�
 这不是伪装成“完美 HTML 转 PowerPoint”。CSS、精确定位、动画、表单、链接、未知元素和外链图片/视频都会进入导出审核 warning；不规则表格降级为可读行项目，超出 20×8 的内容明确截断，script/malformed/oversized source 直接拒绝。转换产物冻结、确定性生成且从不写回 canonical HTML。
 
 三套实际交付门槛分别打开并解析生成的 PPTX/ODP 包、检查 XML 文本与几何、加载固定 PDF 并确认一 section 对应一张 960×540 页面；真实 HTML 导入 E2E 还会检查 Export 菜单确实出现 PPTX、ODP 与 PDF。这样“可预览”第一次变成了完整的兼容交付闭环。
+
+## 122. v1.22 开机式手写不是轮廓动画，而是连续落墨
+
+v1.17–v1.19 已让欢迎词拥有书写字体、彩色描边、移动笔尖和 RTL 时间计划，但主体仍由字体外轮廓的 dash offset 与逐字符 fill 组成：放大后会先看到空心字，完整字符随后同时落下。这能证明“动画存在”，却不能产生 Apple 设备开机问候那种笔尖经过后墨迹自然留在纸面的感觉。
+
+v1.22 保留 `WelcomeExperience → greeting-motion → HandwrittenGreeting` 三层边界，只替换 presentation mechanism。纯 planner 现在为一个连续动作给出 direction-aware path、write、settle 与 finish 时间；SVG 用宽圆头路径作为 luminance mask，让九色完整字形沿相同路径逐段显现。可见 nib 复用同一路径和写入时长，压力动画只改变笔尖形变；接近写完时叠入 crisp fill，最后才运行低透明度 flourish。这样墨迹、笔尖与收笔不会各自漂移。
+
+欢迎构图也把 greeting 提升为跨两列、居中的独立区域，价值说明和语言决策落在下一行；窄屏按 greeting → copy → language 顺序折叠。字体仍来自设备系统，中文、日文、韩文、俄文、拉丁文各用合适的书写面，阿拉伯文仍是一个不拆分的 RTL shaping run。没有复制 Apple 字形路径、动画资产或远程字体。
+
+reduced motion 直接把 mask 置为完成并显示静态 final fill；forced colors 移除 glow、nib 与 flourish，使用 `CanvasText`。纯单测守住 LTR/RTL 端点、时间上限和冻结输入，源码与运行时门槛守住 reveal/writehead/pressure/settle/flourish 五个阶段，九语言桌面与 390px 几何继续验证语言卡、主按钮和页面零溢出。

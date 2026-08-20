@@ -4,7 +4,6 @@ export type GreetingMotionPlan = Readonly<{
   finishDelayMs: number;
   motionCount: number;
   settleDelayMs: number;
-  unitDurationMs: number;
   writeDurationMs: number;
   writePath: string;
 }>;
@@ -30,10 +29,9 @@ export function planGreetingMotion({
   const width = Number.isFinite(canvasWidth) ? Math.max(430, Math.min(1040, Math.round(canvasWidth))) : 430;
   const boundedUnitCount = Number.isFinite(unitCount) ? Math.max(1, Math.min(14, Math.round(unitCount))) : 1;
   const motionCount = direction === "rtl" ? boundedCount(value) : boundedUnitCount;
-  const unitDurationMs = direction === "rtl" ? Math.min(2_650, 1_260 + motionCount * 145) : 1_180;
-  const writeDurationMs = direction === "rtl" ? unitDurationMs : unitDurationMs + Math.max(0, motionCount - 1) * 124;
-  const settleDelayMs = direction === "rtl" ? Math.round(writeDurationMs * 0.54) : 610;
-  const finishDelayMs = Math.max(960, writeDurationMs - 100);
+  const writeDurationMs = Math.min(3_000, 1_050 + motionCount * 190);
+  const settleDelayMs = writeDurationMs + 70;
+  const finishDelayMs = writeDurationMs + 180;
   const start = direction === "rtl" ? width - 40 : 40;
   const end = direction === "rtl" ? 40 : width - 40;
   const firstControl = direction === "rtl" ? width * 0.82 : width * 0.18;
@@ -45,7 +43,6 @@ export function planGreetingMotion({
     finishDelayMs,
     motionCount,
     settleDelayMs,
-    unitDurationMs,
     writeDurationMs,
     writePath,
   });

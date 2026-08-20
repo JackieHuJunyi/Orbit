@@ -2219,3 +2219,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 原 HTML 始终是 canonical source，转换结果只存在于待审核导出事务；不能修改 artifact、checkpoint、folder 或 device state，也不能获得 provider、credential、network、download 权限。
 - CSS、绝对定位、动画、表单、链接、外部媒体、不规则表格与未知元素必须在 fidelity review 中逐项诚实披露；非 Rune 本地资产的图片/视频明确省略，不能伪称像素级或可编辑保真。
 - scripted、malformed、oversized 输入继续 fail closed；转换必须 deterministic/immutable，并用真实 PPTX/ODP XML、固定页数/几何 PDF 与可达 Export 菜单测试证明，而不是只测试 helper 返回值。
+
+### 17.53 v1.22 开机问候必须由一条连续墨迹写成
+
+- 欢迎页第一视觉层级是居中的问候，不再把动画塞进文案列；语言、价值说明与继续设置仍在同一屏完成，但不能和主动画争夺中心。
+- 字体轮廓描边会产生空心字和逐字符弹出感，因此主体必须由一个宽笔触 SVG mask 沿 planner 的 LTR/RTL 路径连续揭开完整彩色字形；可见笔尖、压力、落墨与收笔共享同一不可变时间计划。
+- 拉丁、西里尔、中、日、韩继续使用各自系统书写字体；阿拉伯文保持一个连写 shaping run，并由可见字母数决定从右向左的完整时长。九色 spectrum 只改变墨色，不改变文字几何。
+- `WelcomeExperience` 继续唯一拥有 timeout、语言顺序和 onboarding 状态；`HandwrittenGreeting` 不得接触 storage、network、model、credential、Artifact 或 mutation。动效仍位于 deferred welcome chunk。
+- reduced motion 直接打开 mask 并显示完整文字，forced colors 使用 `CanvasText`；结构测试、LTR/RTL planner 单测、运行时 animation 检查与九语言桌面/390px 无溢出门槛必须继续通过。
+- 视觉目标学习 Apple 设备开机的克制、留白与书写仪式感，但不得复制 Apple 字形路径、插画、动画文件、商标资产或远程字体。

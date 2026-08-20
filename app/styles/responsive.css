@@ -1,6 +1,6 @@
 @media (max-width: 1180px) {
   .workspace { padding: 11px 12px 13px; }
-  .welcome-intro-grid { grid-template-columns: minmax(0, 1fr) minmax(340px, .9fr); gap: var(--rune-space-12); }
+  .welcome-intro-grid { grid-template-columns: minmax(0, 1fr) minmax(340px, .9fr); column-gap: var(--rune-space-12); }
   .empty-drop-zone { width: min(var(--rune-frame-width), 860px); grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr); gap: var(--rune-space-8); }
 }
 
@@ -18,7 +18,12 @@
   html[dir="rtl"] .activity-rail,
   html[dir="rtl"] .preview-pane { border-radius: 20px; }
   .welcome-page { justify-content: flex-start; padding-inline: 6.25%; }
-  .welcome-intro-grid { width: min(640px, 100%); grid-template-columns: minmax(0, 1fr); gap: var(--rune-space-8); }
+  .welcome-intro-grid {
+    width: min(640px, 100%);
+    grid-template-areas: "greeting" "copy" "language";
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--rune-space-8);
+  }
   .welcome-intro-copy { text-align: center; }
   .welcome-greeting-stage { justify-content: center; }
   .welcome-intro-copy h1,
@@ -49,7 +54,7 @@
 
 @media (max-height: 780px) and (min-width: 681px) {
   .welcome-page { justify-content: flex-start; padding-block: var(--rune-space-8) var(--rune-space-10); }
-  .welcome-greeting-stage { height: 96px; margin-bottom: var(--rune-space-3); }
+  .welcome-greeting-stage { width: min(620px, 88vw); height: 112px; }
   .welcome-language-card { padding: 20px; }
   .language-options { max-height: min(32vh, 260px); }
 }
@@ -64,7 +69,7 @@
   .welcome-chrome { padding-inline: var(--rune-space-4); }
   .welcome-chrome-brand strong { display: none; }
   .welcome-page { padding: var(--rune-space-8) var(--rune-space-5) var(--rune-space-10); }
-  .welcome-greeting-stage { height: 84px; margin-bottom: var(--rune-space-3); overflow: hidden; }
+  .welcome-greeting-stage { width: 100%; height: 94px; overflow: hidden; }
   .welcome-intro-grid { gap: var(--rune-space-6); }
   .welcome-intro-copy > p,
   .welcome-page > p { font-size: 15px; }

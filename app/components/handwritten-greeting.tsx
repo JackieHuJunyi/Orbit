@@ -14,14 +14,14 @@ function GreetingText({
   canvasWidth,
   direction,
   gradientId,
-  units,
+  value,
   ...props
 }: {
   className: string;
   canvasWidth: number;
   direction: "ltr" | "rtl";
   gradientId: string;
-  units: string[];
+  value: string;
 } & SVGProps<SVGTextElement>) {
   return (
     <text
@@ -34,15 +34,7 @@ function GreetingText({
       x={direction === "rtl" ? canvasWidth - 36 : 36}
       y="166"
     >
-      {units.map((unit, index) => (
-        <tspan
-          className="welcome-greeting-ink-unit"
-          style={{ "--greeting-order": index } as CSSProperties}
-          key={`${unit}-${index}`}
-        >
-          {unit}
-        </tspan>
-      ))}
+      {value}
     </text>
   );
 }
@@ -61,6 +53,7 @@ export function HandwrittenGreeting({
   const identifier = useId().replaceAll(":", "");
   const gradientId = `rune-greeting-spectrum-${identifier}`;
   const glowId = `rune-greeting-glow-${identifier}`;
+  const revealMaskId = `rune-greeting-reveal-${identifier}`;
   const compactScript = locale === "zh-CN" || locale === "zh-TW" || locale === "ja" || locale === "ko";
   const canvasWidth =
     locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
@@ -81,15 +74,13 @@ export function HandwrittenGreeting({
       data-direction={direction}
       data-greeting-locale={locale}
       data-motion-count={motion.motionCount}
-      preserveAspectRatio="xMinYMid meet"
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       style={
         {
-          "--greeting-count": units.length,
           "--greeting-cycle-duration": `${cycleDuration}ms`,
           "--greeting-finish-delay": `${motion.finishDelayMs}ms`,
           "--greeting-settle-delay": `${motion.settleDelayMs}ms`,
-          "--greeting-unit-duration": `${motion.unitDurationMs}ms`,
           "--greeting-write-duration": `${motion.writeDurationMs}ms`,
         } as CSSProperties
       }
@@ -98,39 +89,55 @@ export function HandwrittenGreeting({
       <defs>
         <linearGradient gradientUnits="userSpaceOnUse" id={gradientId} x1="22" x2={canvasWidth - 22} y1="34" y2="190">
           <stop offset="0" stopColor="#ff375f" />
-          <stop offset="0.18" stopColor="#ff9f0a" />
-          <stop offset="0.32" stopColor="#ffd60a" />
-          <stop offset="0.49" stopColor="#30d158" />
-          <stop offset="0.65" stopColor="#64d2ff" />
-          <stop offset="0.8" stopColor="#0a84ff" />
-          <stop offset="1" stopColor="#bf5af2" />
+          <stop offset="0.14" stopColor="#ff9f0a" />
+          <stop offset="0.27" stopColor="#ffd60a" />
+          <stop offset="0.4" stopColor="#30d158" />
+          <stop offset="0.54" stopColor="#64d2ff" />
+          <stop offset="0.67" stopColor="#0a84ff" />
+          <stop offset="0.8" stopColor="#5e5ce6" />
+          <stop offset="0.91" stopColor="#bf5af2" />
+          <stop offset="1" stopColor="#ff375f" />
         </linearGradient>
         <filter height="180%" id={glowId} width="130%" x="-15%" y="-40%">
           <feGaussianBlur stdDeviation="5.5" />
         </filter>
+        <mask height="220" id={revealMaskId} maskUnits="userSpaceOnUse" width={canvasWidth} x="0" y="0">
+          <path
+            className="welcome-greeting-reveal"
+            d={motion.writePath}
+            fill="none"
+            pathLength="1"
+            stroke="white"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="176"
+          />
+        </mask>
       </defs>
 
       <GreetingText
-        className="welcome-greeting-trace welcome-greeting-trace-glow"
+        className="welcome-greeting-fill welcome-greeting-fill-glow"
         canvasWidth={canvasWidth}
         direction={direction}
         filter={`url(#${glowId})`}
         gradientId={gradientId}
-        units={units}
+        mask={`url(#${revealMaskId})`}
+        value={value}
       />
       <GreetingText
-        className="welcome-greeting-trace welcome-greeting-trace-edge"
+        className="welcome-greeting-fill welcome-greeting-fill-reveal"
         canvasWidth={canvasWidth}
         direction={direction}
         gradientId={gradientId}
-        units={units}
+        mask={`url(#${revealMaskId})`}
+        value={value}
       />
       <GreetingText
-        className="welcome-greeting-fill"
+        className="welcome-greeting-fill welcome-greeting-fill-settled"
         canvasWidth={canvasWidth}
         direction={direction}
         gradientId={gradientId}
-        units={units}
+        value={value}
       />
       <g
         className="welcome-greeting-writehead"

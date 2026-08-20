@@ -755,8 +755,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-pen/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
-  assert.match(styles, /stroke-dasharray:\s*14em/);
+  assert.match(styles, /\.welcome-greeting-reveal\s*\{[^}]*stroke-dasharray:\s*1/s);
   assert.match(styles, /stroke-dasharray:\s*1/);
+  assert.match(styles, /grid-template-areas:\s*"greeting greeting"\s*"copy language"/s);
   assert.match(handwrittenGreeting, /#ff375f[^]*#30d158[^]*#0a84ff[^]*#bf5af2/);
   assert.match(styles, /circle at var\(--rune-pointer-x\) var\(--rune-pointer-y\)/);
   assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)/);
@@ -769,11 +770,15 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
   assert.match(handwrittenGreeting, /<linearGradient/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-ink-unit"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-reveal"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-fill welcome-greeting-fill-reveal"/);
+  assert.doesNotMatch(handwrittenGreeting, /<tspan/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-writehead"/);
   assert.match(handwrittenGreeting, /planGreetingMotion/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-flourish"/);
   assert.match(handwrittenGreeting, /offsetPath:\s*`path/);
+  assert.equal(handwrittenGreeting.match(/motion\.writePath/g)?.length, 2);
+  assert.doesNotMatch(handwrittenGreeting, /fetch\(|localStorage|indexedDB|WorkspaceArtifact|ModelProvider/);
   assert.match(handwrittenGreeting, /localeDirection\(locale\)/);
   assert.match(handwrittenGreeting, /--greeting-cycle-duration/);
   assert.match(fluidSurface, /trackFluidSurface/);

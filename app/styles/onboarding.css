@@ -127,20 +127,27 @@
 .welcome-intro-grid {
   display: grid;
   width: min(var(--rune-content-wide), 100%);
+  grid-template-areas:
+    "greeting greeting"
+    "copy language";
   grid-template-columns: minmax(0, 1.06fr) minmax(350px, .82fr);
   align-items: center;
-  gap: clamp(var(--rune-space-10), 6vw, 84px);
+  align-content: center;
+  column-gap: clamp(var(--rune-space-10), 6vw, 84px);
+  row-gap: clamp(var(--rune-space-6), 3.2vh, var(--rune-space-10));
   margin-inline: auto;
   text-align: start;
 }
 
-.welcome-intro-copy { min-width: 0; }
+.welcome-intro-copy { min-width: 0; grid-area: copy; }
 .welcome-greeting-stage {
   position: relative;
   display: flex;
-  height: clamp(104px, 10vw, 138px);
-  align-items: flex-end;
-  margin-bottom: var(--rune-space-5);
+  width: min(840px, 82vw);
+  height: clamp(124px, 11.5vw, 166px);
+  grid-area: greeting;
+  align-items: center;
+  justify-self: center;
   overflow: visible;
 }
 
@@ -172,7 +179,6 @@
   font-optical-sizing: auto;
   font-weight: 480;
   letter-spacing: -.058em;
-  --greeting-count: 5;
   --greeting-cycle-duration: 4400ms;
 }
 
@@ -182,19 +188,11 @@
 .welcome-greeting[data-greeting-locale="ko"] { font-family: AppleMyungjo, "Nanum Myeongjo", serif; font-weight: 560; letter-spacing: -.06em; }
 .welcome-greeting[data-greeting-locale="ru"] { font-family: "PT Serif", Georgia, serif; font-style: italic; font-weight: 500; letter-spacing: -.05em; }
 .welcome-greeting[data-greeting-locale="ar"] { font-family: "Geeza Pro", "Noto Naskh Arabic", serif; font-weight: 500; letter-spacing: 0; }
-.welcome-greeting-trace {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.welcome-greeting-trace-glow { stroke-width: 9px; opacity: .28; }
-.welcome-greeting-trace-edge { stroke-width: 2.6px; }
 .welcome-greeting-fill { stroke: none; }
-.welcome-greeting-trace .welcome-greeting-ink-unit {
-  stroke-dasharray: 14em;
-  stroke-dashoffset: 14em;
-}
-.welcome-greeting-fill .welcome-greeting-ink-unit { fill-opacity: 0; }
+.welcome-greeting-fill-glow { opacity: .3; }
+.welcome-greeting-fill-reveal { opacity: .98; }
+.welcome-greeting-fill-settled { opacity: 0; }
+.welcome-greeting-reveal { stroke-dasharray: 1; stroke-dashoffset: 1; }
 .welcome-greeting-writehead { opacity: 0; }
 .welcome-greeting-writehead-halo { fill: rgba(100, 210, 255, .3); filter: blur(5px); }
 .welcome-greeting-writehead-nib {
@@ -214,22 +212,6 @@
 .welcome-greeting-pen { opacity: 0; }
 .welcome-greeting-pen-halo { fill: rgba(100, 210, 255, .32); filter: blur(5px); }
 .welcome-greeting-pen-point { fill: #fff; stroke: rgba(255, 255, 255, .42); stroke-width: 1.5px; }
-
-.welcome-greeting-stage i {
-  position: absolute;
-  right: 0;
-  bottom: 5px;
-  padding: 4px 6px;
-  border: 1px solid color-mix(in srgb, var(--theme-accent) 18%, var(--rune-material-edge));
-  border-radius: var(--rune-radius-small);
-  background: var(--rune-material-control);
-  color: var(--theme-accent);
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 720;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
 
 .welcome-intro-copy h1,
 .welcome-page h1 {
@@ -272,6 +254,7 @@
 .welcome-language-card {
   position: relative;
   isolation: isolate;
+  grid-area: language;
   overflow: hidden;
   padding: var(--rune-space-6);
   border: 1px solid var(--rune-material-edge);
@@ -320,7 +303,7 @@
 .language-options {
   position: relative;
   display: grid;
-  max-height: min(39vh, 372px);
+  max-height: min(35dvh, 330px);
   gap: 6px;
   margin-top: var(--rune-space-4);
   overflow-y: auto;
@@ -571,7 +554,6 @@ html[dir="rtl"] .welcome-language-heading,
 html[dir="rtl"] .language-options button,
 html[dir="rtl"] .empty-hero,
 html[dir="rtl"] .empty-task-primary { text-align: end; }
-html[dir="rtl"] .welcome-greeting-stage i { right: auto; left: 0; }
 html[dir="rtl"] .empty-task-primary > svg:last-child,
 html[dir="rtl"] .welcome-primary > svg { transform: scaleX(-1); }
 html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translateX(-3px) scaleX(-1); }
@@ -615,10 +597,11 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .welcome-language-card::before,
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before,
-  .welcome-greeting-trace,
   .welcome-greeting-writehead,
   .welcome-greeting-flourish,
   .welcome-greeting-pen { display: none; }
   .welcome-greeting-fill { fill: CanvasText; }
-  .welcome-greeting-fill .welcome-greeting-ink-unit { fill-opacity: 1; }
+  .welcome-greeting-reveal { animation: none; stroke-dashoffset: 0; }
+  .welcome-greeting-fill-glow { display: none; }
+  .welcome-greeting-fill-settled { animation: none; opacity: 1; filter: none; }
 }

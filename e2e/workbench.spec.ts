@@ -35,18 +35,19 @@ test("starts a fresh user with outcome-first task choices", async ({ page }) => 
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
 });
 
-test("draws the opening greeting as layered spectrum ink", async ({ page }) => {
+test("writes the opening greeting through one continuous spectrum-ink mask", async ({ page }) => {
   await page.goto("/");
 
   const greeting = page.locator(".welcome-greeting");
   await expect(greeting).toBeVisible();
-  await expect(greeting.locator("linearGradient stop")).toHaveCount(7);
-  await expect(greeting.locator(".welcome-greeting-trace-edge .welcome-greeting-ink-unit").first()).toBeVisible();
+  await expect(greeting.locator("linearGradient stop")).toHaveCount(9);
+  await expect(greeting.locator(".welcome-greeting-reveal")).toHaveCount(1);
+  await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
 
   const animationNames = await greeting.evaluate((element) =>
     Array.from(
       element.querySelectorAll(
-        ".welcome-greeting-ink-unit, .welcome-greeting-writehead, .welcome-greeting-writehead-nib, .welcome-greeting-flourish",
+        ".welcome-greeting-reveal, .welcome-greeting-fill-settled, .welcome-greeting-writehead, .welcome-greeting-writehead-nib, .welcome-greeting-flourish",
       ),
     )
       .flatMap((unit) => unit.getAnimations())
@@ -68,7 +69,7 @@ test("moves the Arabic writing head right to left without splitting its shaping 
   await expect(greeting).toBeVisible();
   await expect(greeting).toHaveAttribute("data-direction", "rtl");
   await expect(greeting).toHaveAttribute("data-motion-count", "5");
-  await expect(greeting.locator(".welcome-greeting-trace-edge .welcome-greeting-ink-unit")).toHaveCount(1);
+  await expect(greeting.locator(".welcome-greeting-fill-reveal")).toHaveText("مرحبًا");
   await expect(greeting.locator(".welcome-greeting-writehead")).toHaveCSS("offset-path", /M 640 145[^]*40 148/);
 });
 
