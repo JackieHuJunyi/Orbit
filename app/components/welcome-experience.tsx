@@ -190,6 +190,7 @@ export function WelcomeExperience({
   const [modelStatusError, setModelStatusError] = useState("");
   const [checkingModel, setCheckingModel] = useState(true);
   const [greetingIndex, setGreetingIndex] = useState(0);
+  const [greetingIntroComplete, setGreetingIntroComplete] = useState(false);
   const languageOptionsRef = useRef<HTMLDivElement>(null);
   const selectedLanguageOptionRef = useRef<HTMLButtonElement>(null);
   const [modifier] = useState(() =>
@@ -220,6 +221,16 @@ export function WelcomeExperience({
     }, greetingCycleDuration);
     return () => window.clearTimeout(timer);
   }, [greetingCycleDuration, greetingIndex, greetings.length, step]);
+
+  useEffect(() => {
+    if (step !== "welcome" || greetingIntroComplete) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setGreetingIntroComplete(true);
+      return;
+    }
+    const fallback = window.setTimeout(() => setGreetingIntroComplete(true), 3_400);
+    return () => window.clearTimeout(fallback);
+  }, [greetingIntroComplete, step]);
 
   useEffect(() => {
     if (step !== "welcome") return;
@@ -357,11 +368,12 @@ export function WelcomeExperience({
         <div className={"welcome-page welcome-" + step}>
           {step === "welcome" && (
             <>
-              <div className="welcome-intro-grid">
+              <div className="welcome-intro-grid" data-intro-phase={greetingIntroComplete ? "ready" : "writing"}>
                 <div className="welcome-greeting-stage" aria-hidden="true">
                   <HandwrittenGreeting
                     cycleDuration={greetingCycleDuration}
                     locale={greetingLocale}
+                    onWritingComplete={() => setGreetingIntroComplete(true)}
                     value={greeting}
                     key={`${locale}-${greetingIndex}`}
                   />

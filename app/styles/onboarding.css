@@ -143,8 +143,8 @@
 .welcome-greeting-stage {
   position: relative;
   display: flex;
-  width: min(840px, 82vw);
-  height: clamp(124px, 11.5vw, 166px);
+  width: min(940px, 86vw);
+  height: clamp(142px, 13vw, 190px);
   grid-area: greeting;
   align-items: center;
   justify-self: center;
@@ -154,7 +154,7 @@
 .welcome-greeting-stage::before {
   position: absolute;
   z-index: var(--rune-layer-underlay);
-  inset: 32% 5% -12% -4%;
+  inset: 34% 4% -14% -4%;
   border-radius: 50%;
   background:
     radial-gradient(circle at 16% 58%, rgba(255, 55, 95, .3), transparent 24%),
@@ -162,8 +162,8 @@
     radial-gradient(circle at 71% 49%, rgba(10, 132, 255, .28), transparent 28%),
     radial-gradient(circle at 91% 55%, rgba(191, 90, 242, .24), transparent 22%);
   content: "";
-  filter: blur(30px) saturate(1.16);
-  opacity: .18;
+  filter: blur(34px) saturate(1.22);
+  opacity: .16;
   pointer-events: none;
 }
 
@@ -175,14 +175,16 @@
   height: 100%;
   overflow: visible;
   font-family: "Snell Roundhand", "Segoe Script", "Apple Chancery", cursive;
-  font-size: 158px;
+  font-size: 174px;
+  font-kerning: normal;
   font-optical-sizing: auto;
   font-weight: 480;
   letter-spacing: -.058em;
+  text-rendering: geometricPrecision;
   --greeting-cycle-duration: 4400ms;
 }
 
-.welcome-greeting.long { font-size: 112px; letter-spacing: -.035em; }
+.welcome-greeting.long { font-size: 120px; letter-spacing: -.035em; }
 .welcome-greeting[data-greeting-locale^="zh"] { font-family: "Kaiti SC", STKaiti, "Songti SC", serif; font-weight: 560; letter-spacing: -.075em; }
 .welcome-greeting[data-greeting-locale="ja"] { font-family: YuKyokasho, "Hiragino Mincho ProN", serif; font-weight: 560; letter-spacing: -.07em; }
 .welcome-greeting[data-greeting-locale="ko"] { font-family: AppleMyungjo, "Nanum Myeongjo", serif; font-weight: 560; letter-spacing: -.06em; }
@@ -190,7 +192,10 @@
 .welcome-greeting[data-greeting-locale="ar"] { font-family: "Geeza Pro", "Noto Naskh Arabic", serif; font-weight: 500; letter-spacing: 0; }
 .welcome-greeting-fill { stroke: none; }
 .welcome-greeting-fill-glow { opacity: .22; }
-.welcome-greeting-fill-reveal { opacity: .98; }
+.welcome-greeting-fill-reveal {
+  opacity: .98;
+  filter: drop-shadow(0 1px 1px rgba(94, 92, 230, .08));
+}
 .welcome-greeting-fill-settled { opacity: 0; }
 .welcome-greeting-reveal-stroke {
   stroke-dasharray: 1;

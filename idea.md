@@ -2503,3 +2503,5 @@ v1.26 已有正确的笔画顺序、移动笔锋和收墨高光，但宽 mask �
 v1.27 让每条已有的 immutable motion stroke 同时绘制两层被最终 glyph clip 的真实轨迹：外层是低透明度、轻微模糊的 spectrum ink bloom，内层是窄而清晰的彩色核心。两层与 reveal mask、pressure nib 复用完全相同的 path、delay 和 duration，因此笔尖经过哪里，墨迹就从哪里留下；写完后准确的本地系统字体再落定并运行原有一次性 sheen。没有第二个 planner、timer 或 Canvas loop，也没有复制 Apple 字形、字体或动画素材。
 
 欢迎页的信息节奏也随之调整：问候语先落笔，价值说明和语言卡分别在 420ms 与 560ms 后轻柔进入，让第一眼更像设备启动仪式，同时按钮一旦挂载即可操作。Latin/Cyrillic、中文、日文、韩文和不拆 shaping 的 RTL 阿拉伯文继续使用各自路径策略；reduced motion 与 forced colors 完全移除 trace、bloom、nib、轮播和 sheen，立即显示完整静态文字。
+
+后续视觉复核进一步确认，420ms/560ms 仍会让信息界面在问候尚未完成时出现，第一眼依旧像普通网页而不是设备启动。v1.27 follow-up 因此把首屏明确分成两幕：`writing` 阶段只保留跨栏居中的问候语，final ink settle 后才进入 `ready`，价值说明与语言卡再以 140ms 的层级差出现。浏览器不能触发 animation-end 时有 3.4 秒有界 fallback，reduced motion 则立即进入 ready；它改变的是 presentation choreography，不增加新的产品状态、持久化或写入权限。拉丁手写 mask 同时收窄，减少笔尖尚未经过时相邻字形被整块提前揭开的现象。

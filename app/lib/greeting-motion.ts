@@ -84,19 +84,19 @@ function cursiveStrokes(width: number, count: number, direction: GreetingWriting
       )} 133 C${point(margin + openingWidth * 0.3)} 143 ${point(margin + openingWidth * 0.48)} 151 ${point(
         openingEnd,
       )} 146`,
-      strokeWidth: 62,
+      strokeWidth: 52,
       weight: 0.26,
     },
     {
       path: `M${point(margin + 4)} 121 C${point(margin + openingWidth * 0.28)} 116 ${point(
         margin + openingWidth * 0.62,
       )} 116 ${point(openingEnd - 3)} 121`,
-      strokeWidth: 30,
+      strokeWidth: 24,
       weight: 0.09,
     },
     {
       path: cursiveBodyPath(width, count),
-      strokeWidth: 68,
+      strokeWidth: 58,
       weight: 0.65,
     },
   ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, type CSSProperties, type SVGProps } from "react";
+import { useId, useMemo, type AnimationEvent, type CSSProperties, type SVGProps } from "react";
 import { planGreetingMotion, type GreetingWritingScript } from "../lib/greeting-motion";
 import { localeDirection, type RuneLocale } from "../lib/localization";
 
@@ -50,10 +50,12 @@ function GreetingText({
 export function HandwrittenGreeting({
   cycleDuration,
   locale,
+  onWritingComplete,
   value,
 }: {
   cycleDuration: number;
   locale: RuneLocale;
+  onWritingComplete?: () => void;
   value: string;
 }) {
   const direction = localeDirection(locale);
@@ -86,6 +88,7 @@ export function HandwrittenGreeting({
       data-motion-script={script}
       data-ink-effect="spectrum-sheen"
       data-ink-trace="progressive"
+      data-writing-style="pressure-calligraphy"
       data-stroke-count={motion.strokes.length}
       preserveAspectRatio="xMidYMid meet"
       role="img"
@@ -235,6 +238,9 @@ export function HandwrittenGreeting({
         canvasWidth={canvasWidth}
         direction={direction}
         gradientId={gradientId}
+        onAnimationEnd={(event: AnimationEvent<SVGTextElement>) => {
+          if (event.animationName === "rune-greeting-ink-settle") onWritingComplete?.();
+        }}
         value={value}
       />
       <g aria-hidden="true" clipPath={`url(#${textClipId})`} mask={`url(#${revealMaskId})`}>

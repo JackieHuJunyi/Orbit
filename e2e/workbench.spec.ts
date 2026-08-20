@@ -44,6 +44,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
   await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-sheen");
   await expect(greeting).toHaveAttribute("data-ink-trace", "progressive");
+  await expect(greeting).toHaveAttribute("data-writing-style", "pressure-calligraphy");
   await expect(greeting).toHaveAttribute("data-stroke-count", "3");
   await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
   await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
@@ -69,6 +70,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
     await expect(head).toHaveCSS("offset-path", /path\(/);
   }
+  await expect(page.locator('.welcome-intro-grid[data-intro-phase="ready"]')).toBeVisible();
 });
 
 test("moves the Arabic writing head right to left without splitting its shaping run", async ({ page }) => {

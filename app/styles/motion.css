@@ -45,8 +45,20 @@
 .welcome-page > :not(.welcome-intro-grid),
 .welcome-intro-grid > * { animation: rune-content-reveal var(--rune-duration-scene) var(--rune-ease-out) backwards; }
 .welcome-intro-grid > :nth-child(2) { animation-delay: 90ms; }
-.welcome-welcome .welcome-intro-copy { animation-delay: 420ms; }
-.welcome-welcome .welcome-language-card { animation-delay: 560ms; }
+.welcome-welcome .welcome-intro-grid[data-intro-phase="writing"] .welcome-intro-copy,
+.welcome-welcome .welcome-intro-grid[data-intro-phase="writing"] .welcome-language-card {
+  animation: none;
+  opacity: 0;
+  filter: blur(10px);
+  pointer-events: none;
+  transform: translate3d(0, 16px, 0);
+}
+.welcome-welcome .welcome-intro-grid[data-intro-phase="ready"] .welcome-intro-copy {
+  animation: rune-content-reveal 820ms var(--rune-ease-out) both;
+}
+.welcome-welcome .welcome-intro-grid[data-intro-phase="ready"] .welcome-language-card {
+  animation: rune-content-reveal 860ms var(--rune-ease-out) 140ms both;
+}
 .welcome-page > :nth-child(2) { animation-delay: 70ms; }
 .welcome-page > :nth-child(3) { animation-delay: 120ms; }
 .welcome-page > :nth-child(4) { animation-delay: 170ms; }

@@ -816,6 +816,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
   assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
   assert.match(handwrittenGreeting, /data-ink-trace="progressive"/);
+  assert.match(handwrittenGreeting, /data-writing-style="pressure-calligraphy"/);
   assert.match(handwrittenGreeting, /data-motion-script=\{script\}/);
   assert.match(handwrittenGreeting, /motion\.strokes\.map/);
   assert.match(handwrittenGreeting, /planGreetingMotion/);
@@ -824,6 +825,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.doesNotMatch(handwrittenGreeting, /fetch\(|localStorage|indexedDB|WorkspaceArtifact|ModelProvider/);
   assert.match(handwrittenGreeting, /localeDirection\(locale\)/);
   assert.match(handwrittenGreeting, /--greeting-cycle-duration/);
+  assert.match(welcome, /data-intro-phase=\{greetingIntroComplete \? "ready" : "writing"\}/);
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);
   assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);

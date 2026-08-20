@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Refined the v1.27 welcome into a true two-act startup: the multilingual pressure-calligraphy greeting now writes alone at optical center, then reveals the product copy and language decision only after the final ink settles; Latin masks are narrower while CJK, Kana, Hangul, and intact RTL Arabic retain their own stroke order.
+
 - 2026-08-21 — Shipped Rune v1.27 with a visible dual-width spectrum ink trace on every writing-system-aware stroke, exact shared timing with the pressure nib and reveal mask, a quieter staged entrance for setup controls, and unchanged static accessibility fallbacks.
 
 - 2026-08-21 — Shipped Rune v1.26 with a Rune-original calligraphic spectrum treatment: ordered source-shaped reveal, pressure-responsive ink heads, a single clipped completion sheen, and static reduced-motion/forced-color fallbacks.
