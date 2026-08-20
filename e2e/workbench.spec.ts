@@ -215,6 +215,14 @@ ${firstBody}
   expect(await frames.nth(1).getAttribute("srcdoc")).toContain("Commit now");
   expect(await frames.nth(1).getAttribute("srcdoc")).not.toContain("Opening evidence");
 
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  const exportMenu = page.getByRole("menu", { name: "Choose a handoff format" });
+  await expect(exportMenu.getByRole("menuitem").filter({ hasText: "PPTX" })).toBeVisible();
+  await expect(exportMenu.getByRole("menuitem").filter({ hasText: "ODP" })).toBeVisible();
+  await expect(exportMenu.getByRole("menuitem").filter({ hasText: "PDF" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(exportMenu).toBeHidden();
+
   const secondSectionStart = source.indexOf('<section class="decision">');
   const secondSectionEnd = source.indexOf("</section>", secondSectionStart) + "</section>".length;
   await flow.getByRole("button", { name: "Select Commit now in canonical source for Agent context" }).click();

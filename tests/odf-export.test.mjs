@@ -226,6 +226,30 @@ test("exports deterministic ODP slides with current chart values and imports the
   assert.deepEqual(validateArtifact(roundTrip), []);
 });
 
+test("exports semantic HTML slides through an explicit deterministic ODP fidelity boundary", () => {
+  const artifact = {
+    id: "semantic-html",
+    name: "semantic-brief.htm",
+    kind: "slides",
+    language: "Semantic HTML",
+    source: `<main><section><h1>Opening</h1><p>Start here.</p></section><section><h2>Decision</h2><ul><li>Ship now</li></ul></section></main>`,
+  };
+  const first = exportOdfArtifact(artifact, [artifact]);
+  const second = exportOdfArtifact(artifact, [artifact]);
+
+  assert.equal(isOdfExportArtifact(artifact), true);
+  assert.equal(first.fileName, "semantic-brief.odp");
+  assert.equal(first.targetType, "odp");
+  assert.deepEqual(first.bytes, second.bytes);
+  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Rune's controlled slide model/iu);
+  const content = strFromU8(packageParts(first.bytes)["content.xml"]);
+  assert.match(content, /Opening/u);
+  assert.match(content, /Start here/u);
+  assert.match(content, /Decision/u);
+  assert.match(content, /Ship now/u);
+  assert.doesNotMatch(content, /&lt;main|&lt;section/iu);
+});
+
 test("exports area Charts as semantic OpenDocument trend tables", () => {
   const data = {
     id: "volume-data",

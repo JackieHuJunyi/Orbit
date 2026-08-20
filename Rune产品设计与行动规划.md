@@ -2211,3 +2211,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Preview 把所有已证明页面放入现有纵向 `deck-slide-flow`；点页面复用 revision-checked Source navigation，左侧 caret/selection 复用 parser-derived target 自动滚到右侧对应页，不读取 iframe DOM，也不做渲染文本匹配。
 - 无 `<main>`、无页面、结构未闭合、多个 main、script、超过 120,000 字符或 40 页时 fail closed，不产生 Preview target；legacy HTML 仍不能进入只属于 Deck Markdown 的受控可视编辑。
 - 单测必须覆盖注释、raw-text、属性引号、嵌套 section、边界与冻结输入；真实浏览器必须从审核导入开始，证明页面隔离、连续预览、Preview→Source 精确选择/居中和 Source→Preview 自动定位。
+
+### 17.52 v1.21 HTML 演示的兼容交付必须显式经过受控语义模型
+
+- 已通过 v1.20 结构证明的 `.html/.htm` 演示必须能在同一个 Export 菜单交付为 PPTX、ODP、桌面 PPT 与固定 16:9 PDF；不能出现“可导入、可预览、但不能交付”的断链。
+- 导出前必须重新运行同一个 semantic HTML compiler，再由独立 React-free converter 把标题、段落、有序/无序列表、最多 20×8 的规则表格、受支持 layout hint 与语言转成严格 Deck Markdown；现有 OOXML/ODF/PDF writer 不直接解释任意 DOM。
+- 原 HTML 始终是 canonical source，转换结果只存在于待审核导出事务；不能修改 artifact、checkpoint、folder 或 device state，也不能获得 provider、credential、network、download 权限。
+- CSS、绝对定位、动画、表单、链接、外部媒体、不规则表格与未知元素必须在 fidelity review 中逐项诚实披露；非 Rune 本地资产的图片/视频明确省略，不能伪称像素级或可编辑保真。
+- scripted、malformed、oversized 输入继续 fail closed；转换必须 deterministic/immutable，并用真实 PPTX/ODP XML、固定页数/几何 PDF 与可达 Export 菜单测试证明，而不是只测试 helper 返回值。

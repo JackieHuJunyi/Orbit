@@ -2439,3 +2439,13 @@ v1.20 新增纯 `compileLegacyHtmlSlides`。它用有界、quote-aware 的源码
 每个已证明页面会获得独立 scriptless `srcDoc`，只继承原 `<html>`、`<main>` 开始标签和 main 外的共享 inline style，并由 CSP 与空 sandbox 阻止脚本、外部资源和同源权限。现有 `deck-slide-flow` 负责纵向排布，现有 `PreviewSourceTarget` 与 `source-navigation` 负责双向滚动，因此没有第二套 source/selection state。旧 HTML 仍只读，受控可视编辑继续要求 Deck Markdown。
 
 新的真实导入 E2E 从本地 `.html` 文件、审核确认开始，检查两页 iframe 互不包含对方内容；点击第二页会把左侧选择设为该 section 的精确区间并向下滚动，随后移动左侧 caret 会激活并滚回第一页。这样解决的是实际编辑节奏，而不是只把“2 slides”数字改得更好看。
+
+## 121. v1.21 兼容预览不应成为交付死路
+
+v1.20 解决了 HTML 演示的连续阅读和源码联动，却暴露出一个更直接的产品断点：同一份 `.html` 可以审核导入、实时预览、逐页定位，但 Export 只有 canonical source 下载，没有 PPTX、ODP 或固定 PDF。对于“PPT → HTML”的兼容入口，这等于用户完成编辑后仍无法把结果交给真实团队。
+
+直接让三个 writer 分别解析任意 HTML 会产生三套不一致的 DOM 解释，并让 CSS、外部资源甚至浏览器纠错后的结构进入文档包信任边界。v1.21 因此增加一个 lazy、React-free 的 `convertSemanticHtmlPresentationToDeck`：它先复用 v1.20 的唯一结构证明，再把 heading、paragraph、list、bounded rectangular table、`data-layout/data-eyebrow` 和 `<html lang>` 投影成现有 strict Deck grammar。PPTX、ODP 与 PDF 仍只认识这一份受控模型，桌面 PPT 继续从已验证 PPTX 本机转换。
+
+这不是伪装成“完美 HTML 转 PowerPoint”。CSS、精确定位、动画、表单、链接、未知元素和外链图片/视频都会进入导出审核 warning；不规则表格降级为可读行项目，超出 20×8 的内容明确截断，script/malformed/oversized source 直接拒绝。转换产物冻结、确定性生成且从不写回 canonical HTML。
+
+三套实际交付门槛分别打开并解析生成的 PPTX/ODP 包、检查 XML 文本与几何、加载固定 PDF 并确认一 section 对应一张 960×540 页面；真实 HTML 导入 E2E 还会检查 Export 菜单确实出现 PPTX、ODP 与 PDF。这样“可预览”第一次变成了完整的兼容交付闭环。

@@ -103,6 +103,26 @@ test("exports one deterministic 16:9 PDF page per Deck Markdown slide", async ()
   });
 });
 
+test("exports semantic HTML slides as deterministic fixed 16:9 PDF pages", async () => {
+  const artifact = {
+    id: "semantic-html",
+    name: "semantic-brief.html",
+    kind: "slides",
+    language: "Semantic HTML",
+    source: `<main><section><h1>Opening</h1><p>Start here.</p></section><section><h2>Decision</h2><ul><li>Ship now</li></ul></section></main>`,
+  };
+  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes);
+  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes);
+
+  assert.equal(isPdfExportArtifact(artifact), true);
+  assert.equal(first.fileName, "semantic-brief.pdf");
+  assert.deepEqual(first.bytes, second.bytes);
+  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Rune's controlled slide model/iu);
+  const document = await PDFDocument.load(first.bytes);
+  assert.equal(document.getPageCount(), 2);
+  document.getPages().forEach((page) => assert.deepEqual(page.getSize(), { width: 960, height: 540 }));
+});
+
 test("embeds a reviewed Deck image into deterministic fixed PDF geometry", async () => {
   const artifact = {
     id: "image-deck",

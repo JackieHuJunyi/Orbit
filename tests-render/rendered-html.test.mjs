@@ -216,6 +216,25 @@ test("ships bounded semantic HTML slides as continuous exact-source preview page
   assert.doesNotMatch(compilerSource, /DOMParser|innerHTML|textContent/);
 });
 
+test("keeps semantic HTML presentation handoff explicit and outside the startup graph", async () => {
+  const [workbench, officeExport, odfExport, pdfExport, conversion] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/office-export.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/odf-export.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/pdf-export.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/semantic-html-presentation-export.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(workbench, /if \(artifact\.kind === "slides"\) return "PPTX"/u);
+  assert.match(workbench, /if \(artifact\.kind === "slides"\) return "ODP"/u);
+  assert.match(workbench, /selectedArtifact\?\.kind === "slides"/u);
+  assert.match(officeExport, /convertSemanticHtmlPresentationToDeck/);
+  assert.match(odfExport, /convertSemanticHtmlPresentationToDeck/);
+  assert.match(pdfExport, /convertSemanticHtmlPresentationToDeck/);
+  assert.match(conversion, /CSS, exact positioning, animation, forms, links, and unsupported elements/);
+  assert.doesNotMatch(conversion, /fetch\(|localStorage|indexedDB|persist|download/iu);
+});
+
 test("renders a complete read-only Agent proposal through the live source and output panes before Apply", async () => {
   const [workbench, projection, localization, contentStyles] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),

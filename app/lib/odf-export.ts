@@ -1,7 +1,7 @@
 import { strToU8, zipSync, type Zippable } from "fflate";
 
 import { resolveChartModel, type ChartModel } from "./charts.ts";
-import { parseDeckSource, type DeckSlide } from "./deck.ts";
+import { isDeckMarkdownArtifact, parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import {
   extractRuneAssetIds,
@@ -13,6 +13,7 @@ import {
 } from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
+import { convertSemanticHtmlPresentationToDeck } from "./semantic-html-presentation-export.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_ODF_EXPORT_SOURCE_CHARS = 2_000_000;
@@ -606,11 +607,7 @@ function exportOdp(
 }
 
 export function isOdfExportArtifact(artifact: WorkspaceArtifact) {
-  return (
-    artifact.kind === "document" ||
-    artifact.kind === "data" ||
-    (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md"))
-  );
+  return artifact.kind === "document" || artifact.kind === "data" || artifact.kind === "slides";
 }
 
 export function exportOdfArtifact(
@@ -624,7 +621,12 @@ export function exportOdfArtifact(
     throw new Error("OpenDocument export is limited to 2,000,000 source characters.");
   if (artifact.kind === "document") return exportOdt(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportOds(artifact);
-  if (artifact.kind === "slides" && artifact.name.toLocaleLowerCase("en-US").endsWith(".deck.md"))
-    return exportOdp(artifact, workspace, querySnapshots, imageAssets);
-  throw new Error("OpenDocument export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
+  if (artifact.kind === "slides") {
+    const conversion = isDeckMarkdownArtifact(artifact) ? null : convertSemanticHtmlPresentationToDeck(artifact);
+    const result = exportOdp(conversion?.artifact ?? artifact, workspace, querySnapshots, imageAssets);
+    return conversion ? { ...result, warnings: [...conversion.warnings, ...result.warnings] } : result;
+  }
+  throw new Error(
+    "OpenDocument export supports Markdown documents, CSV/JSON data, Deck Markdown, and semantic HTML presentations.",
+  );
 }

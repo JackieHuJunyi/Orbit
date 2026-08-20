@@ -2,7 +2,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, StandardFonts, type PDFFont, type PDFImage, type PDFPage, rgb } from "pdf-lib";
 import { compileArtifactSource } from "./bindings.ts";
 import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
-import { parseDeckSource, type DeckSlide } from "./deck.ts";
+import { isDeckMarkdownArtifact, parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import {
   extractRuneAssetIds,
@@ -12,6 +12,7 @@ import {
 } from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
+import { convertSemanticHtmlPresentationToDeck } from "./semantic-html-presentation-export.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 
 export const RUNE_PDF_FONT_PATH = "/fonts/rune-unifont.woff2";
@@ -1159,11 +1160,17 @@ async function renderDeckPdf(
     "PDF export preserves the reviewed visual handoff, not editable Deck Markdown structure.",
   ]);
   const source = assertCompiledSource(artifact, workspace, snapshots);
-  const parsed = parseDeckSource(source);
+  const compiledArtifact = { ...artifact, source };
+  const conversion = isDeckMarkdownArtifact(compiledArtifact)
+    ? null
+    : convertSemanticHtmlPresentationToDeck(compiledArtifact);
+  conversion?.warnings.forEach((warning) => warnings.add(warning));
+  const deckArtifact = conversion?.artifact ?? compiledArtifact;
+  const parsed = parseDeckSource(deckArtifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "Deck Markdown could not compile for PDF export.");
   const { document, font, unicodeFont, supported } = await createPdf(parsed.deck.frontmatter.title, fontBytes);
   const verifiedImages = runeImageAssetMap(imageAssets);
-  const referencedImageIds = extractRuneAssetIds(source);
+  const referencedImageIds = extractRuneAssetIds(deckArtifact.source);
   const missingImage = referencedImageIds.find((id) => !verifiedImages.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
@@ -1191,11 +1198,7 @@ async function renderDeckPdf(
 }
 
 export function isPdfExportArtifact(artifact: WorkspaceArtifact) {
-  return (
-    artifact.kind === "document" ||
-    artifact.kind === "data" ||
-    (artifact.kind === "slides" && artifact.language === "Deck Markdown")
-  );
+  return artifact.kind === "document" || artifact.kind === "data" || artifact.kind === "slides";
 }
 
 export async function exportPdfArtifact(
@@ -1206,7 +1209,7 @@ export async function exportPdfArtifact(
   imageAssets: readonly RuneExportImageAsset[] = [],
 ): Promise<PdfExportResult> {
   if (!isPdfExportArtifact(artifact))
-    throw new Error("Direct PDF export supports Markdown Documents, Data, and Deck Markdown artifacts.");
+    throw new Error("Direct PDF export supports Markdown Documents, Data, Deck Markdown, and semantic HTML artifacts.");
   const sourceLimit = artifact.kind === "data" ? 2_000_000 : 200_000;
   if (artifact.source.length > sourceLimit)
     throw new Error(

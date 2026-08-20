@@ -1,6 +1,6 @@
 import { strToU8, zipSync } from "fflate";
 import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts";
-import { parseDeckSource, type DeckSlide } from "./deck.ts";
+import { isDeckMarkdownArtifact, parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import {
   extractRuneAssetIds,
@@ -11,6 +11,7 @@ import {
   type RuneExportImageAsset,
 } from "./local-assets.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
+import { convertSemanticHtmlPresentationToDeck } from "./semantic-html-presentation-export.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_OFFICE_EXPORT_SOURCE_CHARS = 2_000_000;
@@ -1172,11 +1173,7 @@ function exportPptx(
 }
 
 export function isOfficeExportArtifact(artifact: WorkspaceArtifact) {
-  return (
-    artifact.kind === "document" ||
-    artifact.kind === "data" ||
-    (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md"))
-  );
+  return artifact.kind === "document" || artifact.kind === "data" || artifact.kind === "slides";
 }
 
 export function exportOfficeArtifact(
@@ -1190,7 +1187,12 @@ export function exportOfficeArtifact(
     throw new Error("Office export is limited to 2,000,000 source characters.");
   if (artifact.kind === "document") return exportDocx(artifact, workspace, querySnapshots, imageAssets);
   if (artifact.kind === "data") return exportXlsx(artifact);
-  if (artifact.kind === "slides" && artifact.name.toLowerCase().endsWith(".deck.md"))
-    return exportPptx(artifact, workspace, querySnapshots, imageAssets);
-  throw new Error("Office export supports Markdown documents, CSV/JSON data, and Deck Markdown presentations.");
+  if (artifact.kind === "slides") {
+    const conversion = isDeckMarkdownArtifact(artifact) ? null : convertSemanticHtmlPresentationToDeck(artifact);
+    const result = exportPptx(conversion?.artifact ?? artifact, workspace, querySnapshots, imageAssets);
+    return conversion ? { ...result, warnings: [...conversion.warnings, ...result.warnings] } : result;
+  }
+  throw new Error(
+    "Office export supports Markdown documents, CSV/JSON data, Deck Markdown, and semantic HTML presentations.",
+  );
 }

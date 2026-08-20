@@ -263,6 +263,35 @@ test("exports Deck Markdown as deterministic semantic PPTX and imports it back",
   assert.deepEqual(validateArtifact(roundTrip), []);
 });
 
+test("exports semantic HTML slides through an explicit deterministic PPTX fidelity boundary", () => {
+  const artifact = {
+    id: "semantic-html",
+    name: "semantic-brief.html",
+    kind: "slides",
+    language: "Semantic HTML",
+    source: `<main><section><h1>Opening</h1><p>Start here.</p></section><section><h2>Decision</h2><ul><li>Ship now</li></ul></section></main>`,
+  };
+  const first = exportOfficeArtifact(artifact, [artifact]);
+  const second = exportOfficeArtifact(artifact, [artifact]);
+
+  assert.equal(isOfficeExportArtifact(artifact), true);
+  assert.equal(first.fileName, "semantic-brief.pptx");
+  assert.equal(first.targetType, "pptx");
+  assert.deepEqual(first.bytes, second.bytes);
+  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Rune's controlled slide model/iu);
+  const parts = packageParts(first.bytes);
+  assertPptSlideBounds(parts);
+  const slides = Object.entries(parts)
+    .filter(([path]) => /^ppt\/slides\/slide\d+\.xml$/u.test(path))
+    .map(([, bytes]) => strFromU8(bytes))
+    .join("\n");
+  assert.match(slides, /Opening/u);
+  assert.match(slides, /Start here/u);
+  assert.match(slides, /Decision/u);
+  assert.match(slides, /Ship now/u);
+  assert.doesNotMatch(slides, /<main|<section/iu);
+});
+
 test("limits semantic Office export to supported bounded artifacts", () => {
   const document = defaultArtifacts.find((artifact) => artifact.kind === "document");
   const data = defaultArtifacts.find((artifact) => artifact.kind === "data");

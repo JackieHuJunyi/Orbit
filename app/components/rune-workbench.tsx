@@ -752,20 +752,20 @@ function DependencyGraphRail({
 function officeExportType(artifact: WorkspaceArtifact): "DOCX" | "XLSX" | "PPTX" | null {
   if (artifact.kind === "document") return "DOCX";
   if (artifact.kind === "data") return "XLSX";
-  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return "PPTX";
+  if (artifact.kind === "slides") return "PPTX";
   return null;
 }
 
 function legacyOfficeExportType(artifact: WorkspaceArtifact): "DOC" | "PPT" | null {
   if (artifact.kind === "document") return "DOC";
-  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return "PPT";
+  if (artifact.kind === "slides") return "PPT";
   return null;
 }
 
 function odfExportType(artifact: WorkspaceArtifact): "ODT" | "ODS" | "ODP" | null {
   if (artifact.kind === "document") return "ODT";
   if (artifact.kind === "data") return "ODS";
-  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return "ODP";
+  if (artifact.kind === "slides") return "ODP";
   return null;
 }
 
@@ -1141,7 +1141,7 @@ export function RuneWorkbench() {
   const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
   const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
   const selectedPdfExport = Boolean(
-    selectedArtifact?.kind === "document" || selectedArtifact?.kind === "data" || selectedHtmlExport,
+    selectedArtifact?.kind === "document" || selectedArtifact?.kind === "data" || selectedArtifact?.kind === "slides",
   );
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const currentSourceSelection =

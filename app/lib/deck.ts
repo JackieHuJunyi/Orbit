@@ -192,7 +192,7 @@ function escapeHtml(value: string) {
 
 function compileInline(source: string) {
   const tokens: string[] = [];
-  const protectedSource = source.replace(/\\([<>-])/g, "$1").replace(chartTokenPattern, (token) => {
+  const protectedSource = source.replace(/\\([\\<>*_`\[\]#+-])/g, "$1").replace(chartTokenPattern, (token) => {
     const placeholder = `RUNECHARTTOKEN${tokens.length}END`;
     tokens.push(token);
     return placeholder;
