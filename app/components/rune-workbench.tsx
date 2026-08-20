@@ -63,7 +63,6 @@ import {
   type DocumentSectionEditHandler,
   type SemanticHtmlEditableCopyHandler,
   type SemanticHtmlSlideEditHandler,
-  type VisualSourceDraft,
 } from "./artifact-previews";
 import { AgentComposer, type AgentScope } from "./agent-composer";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
@@ -71,6 +70,7 @@ import { WorkbenchStatusBar } from "./workbench-statusbar";
 import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
 import { useSourcePreviewScroll } from "./use-source-preview-scroll";
+import type { VisualSourceDraft } from "./use-visual-source-draft";
 import type { PdfOcrCandidate, PdfOcrSelection } from "./pdf-ocr-setup-dialog";
 import type { WelcomeAction, WelcomeStep } from "./welcome-experience";
 import {

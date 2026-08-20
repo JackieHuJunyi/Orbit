@@ -2545,3 +2545,11 @@ v1.29 保留当前成熟的 package parser 和临时 strict Deck proof：PPTX/OD
 v1.30 把这项 DOM effect 从大型 Workbench 抽到单一 `use-source-preview-scroll` 边界。parser/compiler 仍唯一决定 UTF-16 range 与 target identity；Hook 只在已经渲染的 provenance attributes 中选择节点。第一次进入新 target 使用 center，之后同 target 的 caret 变化使用 nearest：目标仍可见时页面不动，手动滚走后才以最短距离恢复。它不读取 DOM text、iframe 或滚动比例，也不获得任何 Artifact、Agent、storage 或 persistence 权限。
 
 验证不再停留在 helper。真实 Chromium 从审核导入开始，分别用长 Markdown、80 行 CSV 和多页 semantic HTML 证明 Preview → Source 精确选择/左侧滚动、Source → Preview active/右侧定位，以及同一目标在 Preview 被手动滚走后的恢复。这使“Word / Excel / PPT 三类内容共享一套 Overleaf 式双向定位”成为可回归的产品合同，而不是只在某个演示样例里看起来成立。
+
+## 133. 右侧编辑的实时性必须显示完整候选源，而不是维护第二份隐藏文档
+
+“用户改右边，左边实时变化”不等于让 contenteditable DOM 自己变成文档模型。Document section/block、Data cell、Chart spec、Deck slide 和 semantic HTML section 都应继续由各自 typed compiler 生成完整候选 source；左侧只读显示这一份完整候选，右侧显示同一 candidate 的本地渲染。保存前 canonical Artifact 不变，取消必须逐字回到旧 source。
+
+v1.31 把五套重复的发布/清理 effect 收口到 `useVisualSourceDraftMirror`。普通 `null` 明确清除草稿；Deck 父组件在 semantic HTML 子编辑器仍挂载时使用 `undefined` 明确让渡发布权，避免父 effect 把子组件刚发布的完整 HTML 短暂清回 canonical。Hook 只搬运 `{ artifactId, sourceRevision, nextSource, range, errors }`，不编译、不读 iframe、不写 Artifact、不持久化，也不调用模型；保存仍由 Workbench 的 revision/checkpoint/validation/persistence 事务完成。
+
+真实 Chromium 先直接修改左侧 Markdown、CSV 与 semantic HTML，证明 Document、Data grid 和 Presentation Preview 无需刷新即可重编译；再分别完成 Markdown section、CSV cell 和 Chart configuration 的“打开编辑 → 每次输入同步完整左源与右侧草稿 → Cancel 零写入 → 再编辑并 Save → canonical 与成品一致”。现有 semantic HTML E2E 继续证明完整演示 HTML 与隔离单页预览同步。这使双向实时编辑成为 Word / Excel / PPT 三类核心表面的可回归产品合同，同时保持一个 source of truth。

@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.31 with browser-proven live Source → Preview recompilation plus right-edit → complete-Source mirroring for Documents, Data, Charts, and semantic HTML Presentations through one shared draft bridge.
+
 - 2026-08-21 — Shipped Rune v1.30 with one reusable Source→Preview scroll effect, exact browser-proven Markdown/CSV/semantic-HTML bidirectional positioning, and nearest-edge recovery when a user manually scrolls away from the still-active source target.
 
 - 2026-08-21 — Deepened the multilingual startup greeting into bounded wet-spectrum handwriting: a shaped calligraphy nib now carries a close ink wake and tiny terminal drop, the revealed glyph gains a near-edge bleed before drying, and the backdrop color pass runs once instead of looping.

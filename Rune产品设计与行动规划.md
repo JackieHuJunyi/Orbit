@@ -2299,3 +2299,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Preview → Source 继续通过 revision-bound immutable navigation plan，Workbench 仍唯一拥有 view、focus、textarea selection、scroll、gutter 与 Selection Agent effects；Source → Preview Hook 不得写 Artifact 或访问 persistence/provider/credential。
 - 不允许从渲染文本、iframe DOM、像素或滚动百分比猜测身份；无 compiler/parser target 的内容继续不高亮、不导航、不获得编辑能力。
 - 真实 Chromium 必须从审核导入开始，用长 Markdown、长 CSV 精确 cell 和多页 semantic HTML 分别证明 Preview → Source、Source → Preview 与同 target displacement recovery；纯函数与源码断言不能代替浏览器证据。
+
+### 17.62 v1.31 右侧编辑必须实时镜像完整候选源，并共享一个生命周期边界
+
+- Document section/block、Data cell、Chart spec、Deck Markdown slide 与 semantic HTML section 的右侧编辑必须由 typed compiler 投影成完整候选 source；不能只同步局部文本，也不能从渲染 DOM 反向拼接 source。
+- 左侧在视觉草稿期间显示同一份完整候选并保持只读，右侧立即渲染候选；canonical Artifact、checkpoint 和 device storage 在 Save 前全部不变。Cancel 必须恢复逐字相同的原 source。
+- 所有视觉编辑器共享 `useVisualSourceDraftMirror`。`null` 表示明确清除；Deck 父级在已挂载的 semantic HTML 子编辑器拥有草稿时用 `undefined` 让渡发布权，不能依赖 effect 执行顺序避免闪回。
+- Hook 只能发布或释放 `{ artifactId, sourceRevision, nextSource, start, end, errors }`；不得编译、读 iframe DOM、写 Artifact、访问 storage/provider/credential 或创建 checkpoint。Workbench 继续唯一拥有保存事务。
+- 真实 Chromium 必须先证明左侧 Markdown、CSV 与 semantic HTML 的每次 canonical edit 都立即重编译右侧 Document、Data 与 Presentation；再对 Markdown section、CSV cell 与 Chart spec 分别证明 live mirror、右侧 draft、Cancel 零写入和 Save 后一致。semantic HTML 必须继续证明完整 HTML 左侧镜像和隔离单页实时预览。源码断言只能保护边界，不能替代交互证据。

@@ -176,7 +176,7 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/query-preflight.ts"));
 });
 
-test("ships a complete-source live mirror for revision-bound visual Document drafts", async () => {
+test("ships one complete-source live mirror boundary for every revision-bound visual draft", async () => {
   const clientDir = new URL("../dist/client/assets/", import.meta.url);
   const bundle = (
     await Promise.all(
@@ -189,13 +189,22 @@ test("ships a complete-source live mirror for revision-bound visual Document dra
   assert.match(bundle, /Unsaved synchronized source draft/);
   assert.match(bundle, /visual-source-sync-state/);
   assert.match(bundle, /source-draft-mirror/);
-  const previewSource = await readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8");
+  const [previewSource, semanticHtmlEditor, draftMirror] = await Promise.all([
+    readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/semantic-html-slide-editor.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/use-visual-source-draft.ts", import.meta.url), "utf8"),
+  ]);
   assert.match(previewSource, /projectVisualDocumentSectionDraft/);
   assert.match(previewSource, /projectVisualDocumentBlockDraft/);
   assert.match(previewSource, /projectVisualDataCellDraft/);
   assert.match(previewSource, /projectVisualDeckSlideDraft/);
   assert.match(previewSource, /onEditSemanticHtmlSlide/);
   assert.match(previewSource, /projectVisualChartSpecDraft/);
+  assert.equal(previewSource.split("useVisualSourceDraftMirror(").length - 1, 4);
+  assert.match(semanticHtmlEditor, /useVisualSourceDraftMirror\(visualSourceDraft, onVisualSourceDraftChange\)/);
+  assert.match(draftMirror, /draft !== undefined/);
+  assert.match(draftMirror, /onDraftChange\?\.\(null\)/);
+  assert.doesNotMatch(draftMirror, /setArtifacts|persistDeviceWorkspace|fetch\(|localStorage|indexedDB/);
 });
 
 test("ships bounded semantic HTML slides as continuous exact-source preview pages", async () => {

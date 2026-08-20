@@ -133,6 +133,11 @@ import {
   type VisualChartSpecEditInput,
 } from "../lib/visual-chart-edit";
 import { SemanticHtmlSlideEditor } from "./semantic-html-slide-editor";
+import {
+  useVisualSourceDraftMirror,
+  type VisualSourceDraft,
+  type VisualSourceDraftHandler,
+} from "./use-visual-source-draft";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (artifact: WorkspaceArtifact, target: PreviewSourceTarget, viaLabel?: string) => void;
@@ -182,17 +187,6 @@ export type ChartSpecEditHandler = (
   target: PreviewSourceTarget,
   input: VisualChartSpecEditInput,
 ) => Promise<string | null>;
-
-export type VisualSourceDraft = {
-  artifactId: string;
-  sourceRevision: string;
-  nextSource: string;
-  start: number;
-  end: number;
-  errors: string[];
-};
-
-export type VisualSourceDraftHandler = (draft: VisualSourceDraft | null) => void;
 
 type QueryRuntimeEntry =
   { status: "loading" } | { status: "ready"; snapshot: WorkspaceQuerySnapshot } | { status: "error"; error: string };
@@ -1231,33 +1225,31 @@ function DocumentPreview({
       : (preparedInsertDraft?.errors[0] ?? "");
   const insertDraftCanReview = Boolean(preparedInsertDraft && !preparedInsertDraft.errors.length);
 
-  useEffect(() => {
+  const documentVisualSourceDraft = useMemo<VisualSourceDraft | null>(() => {
     const currentSectionTarget = editingSection
       ? derivePreviewSourceTargets(artifact).find((target) => target.id === editingSection.targetId)
       : undefined;
     if (editingSection && currentSectionTarget) {
-      onVisualSourceDraftChange?.({
+      return {
         artifactId: artifact.id,
         sourceRevision: artifact.source,
         ...projectVisualDocumentSectionDraft(artifact, currentSectionTarget, { draft: editingSection.draft }),
-      });
-      return;
+      };
     }
     const currentBlockTarget = editingBlock
       ? deriveDocumentBlockPreviewSourceTargets(artifact).find((target) => target.id === editingBlock.targetId)
       : undefined;
     if (editingBlock && currentBlockTarget) {
-      onVisualSourceDraftChange?.({
+      return {
         artifactId: artifact.id,
         sourceRevision: artifact.source,
         ...projectVisualDocumentBlockDraft(artifact, currentBlockTarget, { draft: editingBlock.draft }),
-      });
-      return;
+      };
     }
-    onVisualSourceDraftChange?.(null);
-  }, [artifact, editingBlock, editingSection, onVisualSourceDraftChange]);
+    return null;
+  }, [artifact, editingBlock, editingSection]);
 
-  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
+  useVisualSourceDraftMirror(documentVisualSourceDraft, onVisualSourceDraftChange);
 
   useEffect(() => {
     if (!editingBlockTarget) return;
@@ -1920,30 +1912,28 @@ function ResultGrid({
     submitting: boolean;
   } | null>(null);
 
-  useEffect(() => {
+  const dataVisualSourceDraft = useMemo<VisualSourceDraft | null>(() => {
     if (!editingCell || !targetArtifact) {
-      onVisualSourceDraftChange?.(null);
-      return;
+      return null;
     }
     const [rowIndex, columnIndex] = editingCell.key.split(":").map(Number);
     const target = cellTargets?.find(
       (candidate) => candidate.rowIndex === rowIndex && candidate.columnIndex === columnIndex,
     );
     if (!target) {
-      onVisualSourceDraftChange?.(null);
-      return;
+      return null;
     }
-    onVisualSourceDraftChange?.({
+    return {
       artifactId: targetArtifact.id,
       sourceRevision: targetArtifact.source,
       ...projectVisualDataCellDraft(targetArtifact, target, {
         draft: editingCell.draft,
         valueType: editingCell.valueType,
       }),
-    });
-  }, [cellTargets, editingCell, onVisualSourceDraftChange, targetArtifact]);
+    };
+  }, [cellTargets, editingCell, targetArtifact]);
 
-  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
+  useVisualSourceDraftMirror(dataVisualSourceDraft, onVisualSourceDraftChange);
 
   function beginCellEdit(target: DataCellPreviewSourceTarget, value: GridCell) {
     if (!targetArtifact || !editableFormat || !onEditDataCell || !canVisualEditDataCell(targetArtifact, target)) return;
@@ -2369,19 +2359,19 @@ function ChartPreview({
   const draftError = draftSource?.errors[0] ?? sourceFields.errors[0] ?? draftResolution?.errors[0] ?? "";
   const resolution = resolvePreviewChart(artifact, artifacts, queryRuntime);
 
-  useEffect(() => {
-    if (!editingChart || !editingTarget) {
-      onVisualSourceDraftChange?.(null);
-      return;
-    }
-    onVisualSourceDraftChange?.({
-      artifactId: artifact.id,
-      sourceRevision: artifact.source,
-      ...projectVisualChartSpecDraft(artifact, editingTarget, editingChart.input),
-    });
-  }, [artifact, editingChart, editingTarget, onVisualSourceDraftChange]);
+  const chartVisualSourceDraft = useMemo<VisualSourceDraft | null>(
+    () =>
+      editingChart && editingTarget
+        ? {
+            artifactId: artifact.id,
+            sourceRevision: artifact.source,
+            ...projectVisualChartSpecDraft(artifact, editingTarget, editingChart.input),
+          }
+        : null,
+    [artifact, editingChart, editingTarget],
+  );
 
-  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
+  useVisualSourceDraftMirror(chartVisualSourceDraft, onVisualSourceDraftChange);
   if (!resolution.model) return <EmptyPreview message={resolution.errors[0] ?? copy.chartCouldNotCompile} />;
 
   function beginChartEdit() {
@@ -2757,19 +2747,21 @@ function SlidesPreview({
     draftBindings?.queryMetricRuntimeErrors[0] ??
     "";
 
-  useEffect(() => {
-    if (!editingSlide || !editingTarget || !draftInput) {
-      if (!editingSemanticHtmlSlide) onVisualSourceDraftChange?.(null);
-      return;
-    }
-    onVisualSourceDraftChange?.({
-      artifactId: artifact.id,
-      sourceRevision: artifact.source,
-      ...projectVisualDeckSlideDraft(artifact, editingTarget, draftInput),
-    });
-  }, [artifact, draftInput, editingSemanticHtmlSlide, editingSlide, editingTarget, onVisualSourceDraftChange]);
+  const deckVisualSourceDraft = useMemo<VisualSourceDraft | null | undefined>(
+    () =>
+      editingSemanticHtmlSlide
+        ? undefined
+        : editingSlide && editingTarget && draftInput
+          ? {
+              artifactId: artifact.id,
+              sourceRevision: artifact.source,
+              ...projectVisualDeckSlideDraft(artifact, editingTarget, draftInput),
+            }
+          : null,
+    [artifact, draftInput, editingSemanticHtmlSlide, editingSlide, editingTarget],
+  );
 
-  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
+  useVisualSourceDraftMirror(deckVisualSourceDraft, onVisualSourceDraftChange);
 
   if (deckCompilation?.errors.length) return <EmptyPreview message={deckCompilation.errors[0]} />;
 

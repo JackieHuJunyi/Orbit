@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Check, LoaderCircle, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { RuneUICopy } from "../lib/localization";
 import type { PreviewSourceTarget } from "../lib/preview-targets";
 import {
@@ -12,15 +12,11 @@ import {
   type VisualSemanticHtmlSlideEditInput,
 } from "../lib/visual-semantic-html-slide-edit";
 import type { WorkspaceArtifact } from "../lib/workspace";
-
-type VisualSourceDraft = {
-  artifactId: string;
-  sourceRevision: string;
-  nextSource: string;
-  start: number;
-  end: number;
-  errors: string[];
-};
+import {
+  useVisualSourceDraftMirror,
+  type VisualSourceDraft,
+  type VisualSourceDraftHandler,
+} from "./use-visual-source-draft";
 
 export function SemanticHtmlSlideEditor({
   artifact,
@@ -39,7 +35,7 @@ export function SemanticHtmlSlideEditor({
     target: PreviewSourceTarget,
     input: VisualSemanticHtmlSlideEditInput,
   ) => Promise<string | null>;
-  onVisualSourceDraftChange?: (draft: VisualSourceDraft | null) => void;
+  onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: (reference: string) => string | null;
   target: PreviewSourceTarget;
 }) {
@@ -58,15 +54,15 @@ export function SemanticHtmlSlideEditor({
   );
   const previewError = preview.errors[0] ?? projection.errors[0] ?? "";
 
-  useEffect(() => {
-    onVisualSourceDraftChange?.({
+  const visualSourceDraft = useMemo<VisualSourceDraft>(
+    () => ({
       artifactId: artifact.id,
       sourceRevision: artifact.source,
       ...projection,
-    });
-  }, [artifact.id, artifact.source, onVisualSourceDraftChange, projection]);
-
-  useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
+    }),
+    [artifact.id, artifact.source, projection],
+  );
+  useVisualSourceDraftMirror(visualSourceDraft, onVisualSourceDraftChange);
 
   async function submit() {
     if (submitting || previewError) return;
