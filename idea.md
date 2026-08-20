@@ -2429,3 +2429,13 @@ v1.19 增加纯 `planGreetingMotion`：它不认识 React 或产品状态，只�
 主文字上方现在有一个沿整词移动的发光 nib，内部经过六段 pressure 变化；彩色 edge 和 glow 也在写出时改变 stroke width，让落笔、加压、提笔能在视觉上互相解释。LTR 保持 grapheme stagger；阿拉伯文仍只有一个连续 text run，却按五个可见字母获得 1,985ms 的 RTL 运动，从 x=640 写到 x=40，1,885ms 后才收笔。
 
 这套运动仍位于 v1.18 的 deferred welcome chunk，initial Workbench 保持 489,283 bytes。reduced motion / forced colors 直接移除 nib、trace 与 flourish；纯单测验证 LTR、RTL、冻结输入和非有限边界，真实 Chromium 验证 `rune-greeting-writehead`、`rune-greeting-pressure` 与阿拉伯路径端点，而不是把源码存在当成动画生效。
+
+## 120. v1.20 HTML 演示的连续预览必须建立在源码证明上
+
+v1.07 已让 Deck Markdown 成为连续纵向预览，但旧 `.html` 仍放在一个完整 iframe 内：用户只能在 iframe 里面滚动，无法快速比较页面，也无法从右侧页面回到左侧精确源码。直接用 `querySelectorAll("section")` 或 iframe 渲染文字反查源码会把注释、嵌套结构、重复文案与浏览器纠错后的 DOM 当成可靠身份，最终制造“看似联动、实际选错”的危险体验。
+
+v1.20 新增纯 `compileLegacyHtmlSlides`。它用有界、quote-aware 的源码扫描确认唯一显式 `<main>`，忽略注释和 `style/title/textarea` 原始文本，只把 main 内完整的最外层 `<section>` 编译成页面。每页保留 textarea-compatible UTF-16 `[start, end)` 和原始 source slice；脚本、未闭合结构、多个 main、120,000 字符以上或 40 页以上全部 fail closed。输出及每一页冻结，解析器没有 React、DOMParser、innerHTML、storage、网络、凭据或写入权限。
+
+每个已证明页面会获得独立 scriptless `srcDoc`，只继承原 `<html>`、`<main>` 开始标签和 main 外的共享 inline style，并由 CSP 与空 sandbox 阻止脚本、外部资源和同源权限。现有 `deck-slide-flow` 负责纵向排布，现有 `PreviewSourceTarget` 与 `source-navigation` 负责双向滚动，因此没有第二套 source/selection state。旧 HTML 仍只读，受控可视编辑继续要求 Deck Markdown。
+
+新的真实导入 E2E 从本地 `.html` 文件、审核确认开始，检查两页 iframe 互不包含对方内容；点击第二页会把左侧选择设为该 section 的精确区间并向下滚动，随后移动左侧 caret 会激活并滚回第一页。这样解决的是实际编辑节奏，而不是只把“2 slides”数字改得更好看。

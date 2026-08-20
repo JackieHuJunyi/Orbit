@@ -2,6 +2,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { parseDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
+import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
 import { parseChartSource } from "./charts.ts";
 import type { SourceSelection } from "./source-selection.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
@@ -621,12 +622,27 @@ function chartTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
   ];
 }
 
+function legacyHtmlSlideTargets(source: string): PreviewSourceTarget[] {
+  const compilation = compileLegacyHtmlSlides(source);
+  if (compilation.errors.length) return [];
+  return compilation.slides.map((slide) => ({
+    start: slide.start,
+    end: slide.end,
+    id: `deck-slide:${slide.index}:${slide.start}`,
+    index: slide.index,
+    kind: "deck-slide" as const,
+    label: slide.label,
+  }));
+}
+
 export function derivePreviewSourceTargets(artifact: WorkspaceArtifact): PreviewSourceTarget[] {
   if (!artifact.source.trim()) return [];
   if (artifact.kind === "document") return documentTargets(artifact.source);
   if (artifact.kind === "data") return dataTargets(artifact.source).rows;
   if (artifact.kind === "chart") return chartTargets(artifact);
-  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) return deckTargets(artifact.source);
+  if (artifact.kind === "slides") {
+    return isDeckMarkdownArtifact(artifact) ? deckTargets(artifact.source) : legacyHtmlSlideTargets(artifact.source);
+  }
   return [];
 }
 

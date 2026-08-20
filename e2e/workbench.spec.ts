@@ -4,7 +4,9 @@ import { PDFDocument } from "pdf-lib";
 async function openWorkbench(page: Page) {
   // A fresh browser profile otherwise opens the full-screen onboarding modal,
   // which covers the workbench. Mark onboarding complete before first paint.
-  await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
+  await page.addInitScript(() => {
+    if (window === window.top) localStorage.setItem("rune-onboarding-v1", "complete");
+  });
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();
   // The top-bar controls render disabled until React hydrates; wait for that
@@ -163,6 +165,79 @@ test("creates and renders a source-ordered area Chart", async ({ page }) => {
   await expect(page.locator("aside.file-rail").getByText("revenue-volume.chart.json")).toBeVisible();
   await expect(page.locator(".chart-area-series")).toBeVisible();
   await expect(page.locator(".chart-line-point")).toHaveCount(4);
+  expect(pageErrors).toEqual([]);
+});
+
+test("imports semantic HTML as continuous source-linked slides", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+  const firstBody = Array.from(
+    { length: 36 },
+    (_, index) => `      <p>Opening evidence line ${String(index + 1).padStart(2, "0")}</p>`,
+  ).join("\n");
+  const source = `<!doctype html>
+<html lang="en">
+<head><style>section { font-family: system-ui; }</style></head>
+<body>
+  <main class="deck">
+    <section class="cover">
+      <h1>Opening</h1>
+${firstBody}
+    </section>
+    <section class="decision">
+      <h2>Commit now</h2>
+      <p>One action.</p>
+    </section>
+  </main>
+</body>
+</html>`;
+
+  await page
+    .getByLabel("Import")
+    .first()
+    .setInputFiles({ name: "semantic-brief.html", mimeType: "text/html", buffer: Buffer.from(source) });
+
+  const review = page.getByRole("dialog", { name: "Review imported sources" });
+  await expect(review).toBeVisible();
+  await expect(review.getByText("semantic-brief.html", { exact: true })).toBeVisible();
+  await review.getByRole("button", { name: "Import 1 source" }).click();
+  await expect(review).toBeHidden();
+
+  const flow = page.locator(".deck-slide-flow");
+  await expect(flow).toHaveAttribute("aria-label", "Rendered presentation preview");
+  await expect(flow.locator(".deck-slide-page")).toHaveCount(2);
+  await expect(page.locator(".slide-target")).toHaveCount(2);
+  const frames = flow.locator("iframe.slides-frame");
+  await expect(frames).toHaveCount(2);
+  expect(await frames.nth(0).getAttribute("srcdoc")).toContain("Opening");
+  expect(await frames.nth(0).getAttribute("srcdoc")).not.toContain("Commit now");
+  expect(await frames.nth(1).getAttribute("srcdoc")).toContain("Commit now");
+  expect(await frames.nth(1).getAttribute("srcdoc")).not.toContain("Opening evidence");
+
+  const secondSectionStart = source.indexOf('<section class="decision">');
+  const secondSectionEnd = source.indexOf("</section>", secondSectionStart) + "</section>".length;
+  await flow.getByRole("button", { name: "Select Commit now in canonical source for Agent context" }).click();
+  const editor = page.locator("textarea.source-editor");
+  await expect
+    .poll(() =>
+      editor.evaluate((element) => {
+        const textarea = element as HTMLTextAreaElement;
+        return [textarea.selectionStart, textarea.selectionEnd];
+      }),
+    )
+    .toEqual([secondSectionStart, secondSectionEnd]);
+  await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  const firstSectionStart = source.indexOf('<section class="cover">');
+  await editor.evaluate((element, caret) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(caret, caret);
+  }, firstSectionStart + 1);
+  await editor.press("ArrowRight");
+  await expect(flow.locator(".deck-slide-canvas").first()).toHaveClass(/active/);
+  await expect(flow.locator(".deck-slide-page").first()).toBeInViewport();
   expect(pageErrors).toEqual([]);
 });
 

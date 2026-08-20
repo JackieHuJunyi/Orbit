@@ -26,7 +26,7 @@ Workbench UI
        ├─ Data adapter     → parsed grid
        ├─ Query adapter    → DuckDB-Wasm result grid
        ├─ Chart adapter    → validated JSON + local semantic bar/line/area view
-       └─ Slides adapter   → Deck Markdown compiler → full handoff HTML + continuous compiler-owned slide sandboxes
+       └─ Slides adapter   → Deck Markdown or proven semantic-HTML sections → continuous compiler-owned slide sandboxes
 ```
 
 ## Stable contracts
@@ -51,7 +51,9 @@ An artifact adapter owns its starter source, source language, filename detection
 
 Preview is the adapter's React consumer, not a value stored in the domain registry. It uses an exhaustive `Record<ArtifactKind, renderer>`, so TypeScript requires a renderer whenever the kind union grows without allowing React, browser state, persistence, or write capabilities into `app/lib`. The workbench continues to own selection, persistence, history, imports/exports, reviews, and agent actions. This boundary lets us extend SQL, charts, Deck Markdown, Office import, or a desktop filesystem without rewriting unrelated shell consumers.
 
-Deck compilation has two presentation consumers but one semantic owner. `compileDeckSource` returns the complete scriptless HTML document used by export plus ordered standalone one-slide documents derived from the same parsed model and block compiler. The workbench lays those documents out as one continuous vertical flow, preserves each 16:9 page boundary, and asks the browser to lazy-load each independent sandbox. Every canvas binds its exact `PreviewSourceTarget` to an accessible outer hit target; React never reaches into the iframe or recreates slide HTML. Canonical source selection scrolls the shared Preview surface to the corresponding page, and activating any page delegates back to the same revision-checked Source navigation capability. Legacy semantic HTML remains a single compatibility iframe because no exact slide source identity can be proven.
+Deck compilation has two presentation consumers but one semantic owner. `compileDeckSource` returns the complete scriptless HTML document used by export plus ordered standalone one-slide documents derived from the same parsed model and block compiler. The workbench lays those documents out as one continuous vertical flow, preserves each 16:9 page boundary, and asks the browser to lazy-load each independent sandbox. Every canvas binds its exact `PreviewSourceTarget` to an accessible outer hit target; React never reaches into the iframe or recreates slide HTML. Canonical source selection scrolls the shared Preview surface to the corresponding page, and activating any page delegates back to the same revision-checked Source navigation capability.
+
+Legacy semantic HTML crosses that same presentation boundary only after `compileLegacyHtmlSlides` proves source identity. The React-free scanner accepts one explicit `<main>`, derives complete outer `<section>` ranges while ignoring comments and raw-text bodies, and fails closed on scripts, malformed structure, more than 120,000 source characters, or more than 40 pages. It returns frozen exact UTF-16 slices and independent scriptless documents that retain only the original `<html>` / `<main>` opening tags plus shared inline styles. Preview consumes these pages through the existing continuous flow and navigation contract; it never queries iframe DOM or matches rendered text back to source. Unproven HTML receives no target, and legacy HTML remains outside the controlled Deck visual editor. References below to unlinked or false-target-free “legacy views” mean only unproven compatibility input; proven semantic sections enter the same continuous-page and reverse-navigation gates as Deck Markdown.
 
 The provider-facing contract is a bounded, source-native operation plan:
 

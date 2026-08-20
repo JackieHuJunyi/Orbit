@@ -501,16 +501,39 @@ One action.
   assert.match(source.slice(targets[1].start, targets[1].end), /One action\.$/);
 });
 
-test("returns no visual targets for invalid data, invalid Deck source, or legacy HTML", () => {
+test("maps valid legacy HTML slides to exact canonical section ranges", () => {
+  const source = `<main class="deck">
+  <section class="cover"><h1>Opening</h1><p>Start here.</p></section>
+  <section class="decision"><h2>Commit now</h2><p>One action.</p></section>
+</main>`;
+  const targets = derivePreviewSourceTargets(artifact("slides", "Semantic HTML", "legacy.html", source));
+
+  assert.deepEqual(
+    targets.map((target) => target.label),
+    ["Opening", "Commit now"],
+  );
+  assert.equal(
+    source.slice(targets[0].start, targets[0].end),
+    '<section class="cover"><h1>Opening</h1><p>Start here.</p></section>',
+  );
+  assert.equal(
+    source.slice(targets[1].start, targets[1].end),
+    '<section class="decision"><h2>Commit now</h2><p>One action.</p></section>',
+  );
+  assert.equal(
+    targets.every((target) => target.kind === "deck-slide"),
+    true,
+  );
+});
+
+test("returns no visual targets for invalid data, invalid Deck source, or malformed legacy HTML", () => {
   assert.deepEqual(derivePreviewSourceTargets(artifact("data", "CSV / JSON", "broken.json", "[{")), []);
   assert.deepEqual(
     derivePreviewSourceTargets(artifact("slides", "Deck Markdown", "broken.deck.md", "# No frontmatter")),
     [],
   );
   assert.deepEqual(
-    derivePreviewSourceTargets(
-      artifact("slides", "Semantic HTML", "legacy.html", "<main><section>Legacy</section></main>"),
-    ),
+    derivePreviewSourceTargets(artifact("slides", "Semantic HTML", "legacy.html", "<main><section>Legacy</main>")),
     [],
   );
 });

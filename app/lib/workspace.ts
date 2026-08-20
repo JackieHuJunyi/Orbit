@@ -1,6 +1,7 @@
 import Papa from "papaparse";
 import { parseChartSource, validateChartSourceBinding } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
+import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
 import { formatQueryDataSourceDirective, parseQueryDataSourceDirective } from "./query-source.ts";
 import { validateReadQuery } from "./sql.ts";
 import { formatInteger } from "./number-format.ts";
@@ -488,16 +489,12 @@ lang: en
 `,
     validate(artifact) {
       if (isDeckMarkdownArtifact(artifact)) return parseDeckSource(artifact.source).errors;
-      const errors: string[] = [];
-      if (!/<main[\s>]/i.test(artifact.source)) errors.push("Slides need a <main> element.");
-      if (!/<section[\s>]/i.test(artifact.source)) errors.push("Add at least one <section> slide.");
-      if (/<script[\s>]/i.test(artifact.source)) errors.push("Scripts are blocked in the slide preview.");
-      return errors;
+      return [...compileLegacyHtmlSlides(artifact.source).errors];
     },
     stats(artifact) {
       const slides = isDeckMarkdownArtifact(artifact)
         ? compileDeckSource(artifact.source).slideCount
-        : (artifact.source.match(/<section[\s>]/gi)?.length ?? 0);
+        : compileLegacyHtmlSlides(artifact.source).slides.length;
       return `${slides} slides · ${formatInteger(artifact.source.length)} chars`;
     },
   },

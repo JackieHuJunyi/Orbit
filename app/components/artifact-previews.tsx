@@ -63,6 +63,7 @@ import {
   type ChartResolution,
 } from "../lib/charts";
 import { compileDeckSource, isDeckMarkdownArtifact } from "../lib/deck";
+import { compileLegacyHtmlSlides } from "../lib/legacy-html-slides";
 import type { QueryCell, WorkspaceQuerySnapshot } from "../lib/query-snapshot";
 import { resolveQueryDataArtifact } from "../lib/query-source";
 import {
@@ -2676,8 +2677,9 @@ function SlidesPreview({
   } | null>(null);
   const slideFlowRef = useRef<HTMLDivElement>(null);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source, { resolveLocalAssetUrl }) : null;
+  const legacyCompilation = deckCompilation ? null : compileLegacyHtmlSlides(source);
   const runtimeSource = deckCompilation?.html ?? source;
-  const slideCount = deckCompilation?.slideCount ?? source.match(/<section[\s>]/gi)?.length ?? 0;
+  const slideCount = deckCompilation?.slideCount ?? legacyCompilation?.slides.length ?? 0;
   const resolveDeckChart = (chartArtifactId: string) => {
     const chartArtifact = artifacts.find((artifact) => artifact.id === chartArtifactId && artifact.kind === "chart");
     return chartArtifact
@@ -2685,9 +2687,8 @@ function SlidesPreview({
       : { errors: [`Chart not found: ${chartArtifactId}`] };
   };
   const renderedSource = deckCompilation ? "" : renderChartReferencesToHtml(runtimeSource, resolveDeckChart);
-  const previewSlides = deckCompilation?.previewSlides ?? [];
   const sourceLinkedSlideIndex = targets.findIndex((target) => previewTargetIsActive(target, activeSelection));
-  const renderedPreviewSlides = previewSlides.map((slide) => ({
+  const renderedPreviewSlides = (deckCompilation?.previewSlides ?? legacyCompilation?.slides ?? []).map((slide) => ({
     ...slide,
     html: renderChartReferencesToHtml(slide.html, resolveDeckChart),
   }));
@@ -2789,7 +2790,7 @@ function SlidesPreview({
         <span>{copy.slides(slideCount)}</span>
         <span>{copy.deckMode(deckCompilation ? (onEditDeckSlide ? "edit" : "sandbox") : "legacy")}</span>
       </div>
-      {deckCompilation && targets.length > 0 && (
+      {targets.length > 0 && (deckCompilation || !legacyCompilation?.errors.length) && (
         <nav className="slide-targets" aria-label={copy.selectDeckSlide}>
           {targets.map((target, targetIndex) => {
             const active = targetIndex === sourceLinkedSlideIndex;
@@ -2956,7 +2957,7 @@ function SlidesPreview({
           </footer>
         </form>
       )}
-      {deckCompilation && renderedPreviewSlides.length ? (
+      {renderedPreviewSlides.length ? (
         <div className="deck-slide-flow" aria-label={copy.renderedPresentation} ref={slideFlowRef}>
           {renderedPreviewSlides.map((slide, slideIndex) => {
             const target = targets[slideIndex];

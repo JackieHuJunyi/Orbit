@@ -197,6 +197,25 @@ test("ships a complete-source live mirror for revision-bound visual Document dra
   assert.match(previewSource, /projectVisualChartSpecDraft/);
 });
 
+test("ships bounded semantic HTML slides as continuous exact-source preview pages", async () => {
+  const [previewSource, targetSource, compilerSource] = await Promise.all([
+    readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/preview-targets.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/legacy-html-slides.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(previewSource, /deckCompilation\?\.previewSlides \?\? legacyCompilation\?\.slides/);
+  assert.match(previewSource, /className="deck-slide-flow"/);
+  assert.match(previewSource, /data-preview-source-primary="true"/);
+  assert.match(targetSource, /legacyHtmlSlideTargets/);
+  assert.match(targetSource, /start: slide\.start/);
+  assert.match(targetSource, /end: slide\.end/);
+  assert.match(compilerSource, /MAX_LEGACY_HTML_CHARS = 120_000/);
+  assert.match(compilerSource, /MAX_LEGACY_HTML_SLIDES = 40/);
+  assert.match(compilerSource, /Content-Security-Policy/);
+  assert.doesNotMatch(compilerSource, /DOMParser|innerHTML|textContent/);
+});
+
 test("renders a complete read-only Agent proposal through the live source and output panes before Apply", async () => {
   const [workbench, projection, localization, contentStyles] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),

@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.20 with a bounded semantic-HTML slide compiler, independent scriptless page sandboxes, continuous vertical preview, exact section-level Source ↔ Preview navigation, and a real reviewed-import browser gate.
+
 - 2026-08-21 — Shipped Rune v1.19 with one pure directional greeting-motion plan, a visible cross-word writing head, six-phase pressure and trace-width changes, longer unsplit Arabic RTL timing, and unchanged 489,283-byte initial Workbench.
 
 - 2026-08-21 — Shipped Rune v1.18 with typed on-demand boundaries for the handwritten welcome and twelve other low-frequency surfaces, localized accessible loading fallbacks, preserved nine-locale copy generation, and a 530 KB gate after reducing the minified initial Workbench from 701,634 to 489,283 bytes.

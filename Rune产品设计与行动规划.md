@@ -2203,3 +2203,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - LTR 可以按 grapheme stagger；阿拉伯文必须保持一个完整 shaping run，但运动时长按忽略 combining mark 后的可见字母计数，路径从右向左，落墨与收笔不得在主体写完前开始。
 - 非有限 canvas 或 unit count 必须归一到有界 presentation 值；planner 不读取 locale catalog、DOM、Canvas、storage、provider、credential 或 Artifact，也不修改输入。
 - reduced motion 和 forced colors 继续隐藏 write head、trace 与 flourish，立即显示完整系统色文字；运行时必须证明 `writehead / pressure` animation 挂载并验证阿拉伯路径端点。首包仍受 530 KB gate 约束。
+
+### 17.51 v1.20 旧 HTML 演示只有在源码身份可证明时才能逐页联动
+
+- `.html/.htm` 兼容入口只能在一个显式 `<main>` 内把完整的最外层 `<section>` 识别为页面；注释、`style/title/textarea` 原始文本、引号中的 `>` 和嵌套 section 不得制造虚假页。
+- React-free compiler 必须返回每页完整、互不重叠的 UTF-16 `[start, end)` 区间，并为每页生成独立、无脚本、无 same-origin 权限的 iframe document；共享 inline style 可以复用，外部资源和脚本不能进入信任边界。
+- Preview 把所有已证明页面放入现有纵向 `deck-slide-flow`；点页面复用 revision-checked Source navigation，左侧 caret/selection 复用 parser-derived target 自动滚到右侧对应页，不读取 iframe DOM，也不做渲染文本匹配。
+- 无 `<main>`、无页面、结构未闭合、多个 main、script、超过 120,000 字符或 40 页时 fail closed，不产生 Preview target；legacy HTML 仍不能进入只属于 Deck Markdown 的受控可视编辑。
+- 单测必须覆盖注释、raw-text、属性引号、嵌套 section、边界与冻结输入；真实浏览器必须从审核导入开始，证明页面隔离、连续预览、Preview→Source 精确选择/居中和 Source→Preview 自动定位。
