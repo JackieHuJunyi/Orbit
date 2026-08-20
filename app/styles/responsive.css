@@ -1,8 +1,6 @@
 @media (max-width: 1180px) {
   .workspace { padding: 11px 12px 13px; }
   .welcome-intro-grid { grid-template-columns: minmax(0, 1fr) minmax(340px, .9fr); gap: var(--rune-space-12); }
-  .welcome-greeting { font-size: clamp(74px, 8.2vw, 106px); }
-  .welcome-greeting.long { font-size: clamp(52px, 5.7vw, 76px); }
   .empty-drop-zone { width: min(var(--rune-frame-width), 860px); grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr); gap: var(--rune-space-8); }
 }
 
@@ -52,7 +50,6 @@
 @media (max-height: 780px) and (min-width: 681px) {
   .welcome-page { justify-content: flex-start; padding-block: var(--rune-space-8) var(--rune-space-10); }
   .welcome-greeting-stage { height: 96px; margin-bottom: var(--rune-space-3); }
-  .welcome-greeting { font-size: clamp(68px, 7.5vw, 96px); }
   .welcome-language-card { padding: 20px; }
   .language-options { max-height: min(32vh, 260px); }
 }
@@ -68,8 +65,6 @@
   .welcome-chrome-brand strong { display: none; }
   .welcome-page { padding: var(--rune-space-8) var(--rune-space-5) var(--rune-space-10); }
   .welcome-greeting-stage { height: 84px; margin-bottom: var(--rune-space-3); overflow: hidden; }
-  .welcome-greeting { font-size: clamp(58px, 18vw, 76px); }
-  .welcome-greeting.long { font-size: clamp(42px, 12vw, 58px); }
   .welcome-intro-grid { gap: var(--rune-space-6); }
   .welcome-intro-copy > p,
   .welcome-page > p { font-size: 15px; }

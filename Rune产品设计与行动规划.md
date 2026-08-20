@@ -2179,3 +2179,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 笔尖高光只跟随正在书写的字，收笔后出现克制的炫彩弧线；墨色可以缓慢流动，但不能改变排版几何或抢占语言选择的交互层。
 - 轮播周期由 grapheme 数量决定，长俄文必须完整写完后再停留，阿拉伯文保持一个连续 shaping run 并从右向左书写；切换前应自然淡出而不是瞬间替换。
 - reduced motion 直接显示完整问候并停止轮播，forced colors 移除光晕和渐变；桌面窗口由 `100dvh` 上限约束，窗口级入场只缩放淡入、不得纵向越过视口，移动端才允许完整贴边，所有九语言继续通过同一几何门槛。
+
+### 17.48 欢迎问候采用真正的笔迹层，而不是字符块遮罩
+
+- `WelcomeExperience` 继续唯一拥有语言顺序、轮播 timeout 与 onboarding phase；独立 `HandwrittenGreeting` 只能消费 `{ value, locale, cycleDuration }`，不能读取存储、模型、凭据、Artifact 或写入能力。
+- 每个 LTR grapheme 先用圆角 SVG stroke-dashoffset 画出细彩色轮廓，再延迟落下完整彩墨，全部文字完成后只出现一次低透明度收笔弧线；不能用整段 opacity 或矩形 clip 伪装书写。
+- 阿拉伯文必须保留一个连续 shaping run，并从右向左锚定；中、日、韩、阿、俄与拉丁文字使用 script-aware viewBox 估算，长短问候在同一舞台获得接近的视觉高度而不挤压语言卡。
+- 渐变、描边、柔光与收笔路径均为 Rune 原生代码，不复制 Apple 字形路径、动画文件或图形资产，也不加载远端字体和 Canvas runtime。
+- reduced motion 立即隐藏 trace/pen/flourish 并显示完整 fill；forced colors 使用系统 `CanvasText`。运行时门槛除九语言桌面/390px 几何外，还必须证明 `write / ink-settle / flourish` 三段 CSS animation 真正挂载。

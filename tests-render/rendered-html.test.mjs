@@ -508,7 +508,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
   assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune \{RUNE_PRODUCT_VERSION\}<\/strong>/);
-  assert.equal(RUNE_PRODUCT_VERSION, "1.16");
+  assert.equal(RUNE_PRODUCT_VERSION, "1.17");
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -647,7 +647,7 @@ test("ships reviewed device-local images as content-hash Markdown references wit
 });
 
 test("ships one Apple-informed optical and motion system across onboarding and the editing workspace", async () => {
-  const [legacyStyles, styleFiles, source, welcome, fluidSurface] = await Promise.all([
+  const [legacyStyles, styleFiles, source, welcome, handwrittenGreeting, fluidSurface] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     Promise.all(
       ["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) =>
@@ -656,6 +656,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     ),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/fluid-surface.ts", import.meta.url), "utf8"),
   ]);
   const styles = [legacyStyles, ...styleFiles].join("\n");
@@ -683,9 +684,10 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
   assert.match(styles, /@keyframes rune-greeting-pen/);
-  assert.match(styles, /@keyframes rune-greeting-ink-flow/);
-  assert.match(styles, /mask-image:\s*linear-gradient\(90deg/);
-  assert.match(styles, /#ff375f[^]*#30d158[^]*#0a84ff[^]*#bf5af2/);
+  assert.match(styles, /@keyframes rune-greeting-ink-settle/);
+  assert.match(styles, /stroke-dasharray:\s*14em/);
+  assert.match(styles, /stroke-dasharray:\s*1/);
+  assert.match(handwrittenGreeting, /#ff375f[^]*#30d158[^]*#0a84ff[^]*#bf5af2/);
   assert.match(styles, /circle at var\(--rune-pointer-x\) var\(--rune-pointer-y\)/);
   assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)/);
   assert.match(styles, /html\[data-locale="ar"\][^]*\.welcome-page h1/);
@@ -693,11 +695,15 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /html\[data-locale="ko"\]/);
   assert.match(source, /moveMaterialLight/);
   assert.match(source, /className="tools-material-preview"/);
-  assert.match(welcome, /className="welcome-greeting-character"/);
-  assert.match(welcome, /data-character=\{character\}/);
-  assert.match(welcome, /--greeting-cycle-duration/);
+  assert.match(welcome, /<HandwrittenGreeting/);
   assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
+  assert.match(handwrittenGreeting, /<linearGradient/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-ink-unit"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-flourish"/);
+  assert.match(handwrittenGreeting, /offsetPath:\s*`path/);
+  assert.match(handwrittenGreeting, /localeDirection\(locale\)/);
+  assert.match(handwrittenGreeting, /--greeting-cycle-duration/);
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);
   assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);

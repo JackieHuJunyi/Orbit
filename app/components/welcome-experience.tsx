@@ -17,7 +17,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { HandwrittenGreeting } from "./handwritten-greeting";
 import { ModelProfileManager } from "./model-profile-manager";
 import {
   localeDirection,
@@ -359,31 +360,12 @@ export function WelcomeExperience({
               <div className="welcome-intro-grid">
                 <div className="welcome-intro-copy">
                   <div className="welcome-greeting-stage" aria-hidden="true">
-                    <span
-                      className={`welcome-greeting ${greetingCharacters.length > 9 ? "long" : ""}`.trim()}
-                      data-greeting-locale={greetingLocale}
-                      dir={localeDirection(greetingLocale)}
-                      aria-label={greeting}
+                    <HandwrittenGreeting
+                      cycleDuration={greetingCycleDuration}
+                      locale={greetingLocale}
+                      value={greeting}
                       key={`${locale}-${greetingIndex}`}
-                      style={
-                        {
-                          "--greeting-count": greetingCharacters.length,
-                          "--greeting-cycle-duration": `${greetingCycleDuration}ms`,
-                        } as CSSProperties
-                      }
-                    >
-                      {greetingCharacters.map((character, index) => (
-                        <span
-                          aria-hidden="true"
-                          className="welcome-greeting-character"
-                          data-character={character}
-                          style={{ "--greeting-order": index } as CSSProperties}
-                          key={`${character}-${index}`}
-                        >
-                          {character}
-                        </span>
-                      ))}
-                    </span>
+                    />
                     <i>Rune</i>
                   </div>
                   <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>

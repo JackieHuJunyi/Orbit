@@ -50,17 +50,25 @@
 .welcome-page > :nth-child(4) { animation-delay: 170ms; }
 .welcome-page > :nth-child(5) { animation-delay: 220ms; }
 .welcome-greeting { animation: rune-greeting-cycle var(--greeting-cycle-duration) var(--rune-ease-out) both; }
-.welcome-greeting::before { animation: rune-greeting-prism 1.8s var(--rune-ease-out) both, rune-greeting-aurora 4.8s ease-in-out 1.2s infinite alternate; }
-.welcome-greeting::after { animation: rune-greeting-flourish 720ms var(--rune-ease-out) forwards; animation-delay: calc(var(--greeting-count) * 112ms + 560ms); }
-.welcome-greeting-character {
-  animation:
-    rune-greeting-write 940ms var(--rune-ease-out) forwards,
-    rune-greeting-ink-flow 4.8s ease-in-out 1.7s infinite alternate;
-  animation-delay: calc(var(--greeting-order) * 112ms + 140ms), calc(var(--greeting-order) * 112ms + 1.7s);
+.welcome-greeting-stage::before {
+  animation: rune-greeting-prism 1.8s var(--rune-ease-out) both, rune-greeting-aurora 4.8s ease-in-out 1.2s infinite alternate;
 }
-.welcome-greeting-character::after { animation: rune-greeting-pen 940ms var(--rune-ease-out) forwards; animation-delay: calc(var(--greeting-order) * 112ms + 140ms); }
-.welcome-greeting[dir="rtl"] .welcome-greeting-character { animation-name: rune-greeting-write-rtl, rune-greeting-ink-flow; }
-.welcome-greeting[dir="rtl"] .welcome-greeting-character::after { animation-name: rune-greeting-pen-rtl; }
+.welcome-greeting-trace .welcome-greeting-ink-unit {
+  animation: rune-greeting-write 1.18s var(--rune-ease-smooth) forwards;
+  animation-delay: calc(var(--greeting-order) * 124ms + 120ms);
+}
+.welcome-greeting-fill .welcome-greeting-ink-unit {
+  animation: rune-greeting-ink-settle 660ms var(--rune-ease-out) forwards;
+  animation-delay: calc(var(--greeting-order) * 124ms + 610ms);
+}
+.welcome-greeting-flourish {
+  animation: rune-greeting-flourish 820ms var(--rune-ease-out) forwards;
+  animation-delay: calc(var(--greeting-count) * 124ms + 540ms);
+}
+.welcome-greeting-pen {
+  animation: rune-greeting-pen 820ms var(--rune-ease-out) forwards;
+  animation-delay: calc(var(--greeting-count) * 124ms + 540ms);
+}
 .empty-drop-zone { animation: rune-surface-enter 520ms var(--rune-ease-out) backwards; }
 
 @media (hover: hover) {
@@ -105,22 +113,25 @@
 @keyframes rune-greeting-cycle { 0% { opacity: 0; } 4%, 91% { opacity: 1; } 100% { opacity: 0; filter: blur(2px); transform: translate3d(0, -3px, 0) scale(.995); } }
 @keyframes rune-greeting-prism { 0% { opacity: 0; transform: translate3d(-7%, 10%, 0) scale(.7); } 56% { opacity: .23; } 100% { opacity: .18; transform: translate3d(1%, 0, 0) scale(1); } }
 @keyframes rune-greeting-aurora { from { filter: blur(28px) saturate(1.08); transform: translate3d(-1%, 0, 0) scale(.98); } to { filter: blur(32px) saturate(1.32); transform: translate3d(2%, -2%, 0) scale(1.04); } }
-@keyframes rune-greeting-write { 0% { opacity: 0; filter: blur(3px) saturate(1.35); mask-position: 100% 50%; background-position: 100% 50%; transform: translate3d(0, .055em, 0) rotate(-.8deg); -webkit-mask-position: 100% 50%; } 38% { opacity: 1; filter: blur(.6px) saturate(1.3); } 76% { transform: translate3d(0, -.008em, 0) rotate(.15deg); } 100% { opacity: 1; filter: blur(0) saturate(1.1); mask-position: 0 50%; background-position: 34% 50%; transform: translate3d(0, 0, 0) rotate(0); -webkit-mask-position: 0 50%; } }
-@keyframes rune-greeting-write-rtl { 0% { opacity: 0; filter: blur(3px) saturate(1.35); mask-position: 0 50%; background-position: 0 50%; transform: translate3d(0, .055em, 0) rotate(.8deg); -webkit-mask-position: 0 50%; } 38% { opacity: 1; filter: blur(.6px) saturate(1.3); } 76% { transform: translate3d(0, -.008em, 0) rotate(-.15deg); } 100% { opacity: 1; filter: blur(0) saturate(1.1); mask-position: 100% 50%; background-position: 66% 50%; transform: translate3d(0, 0, 0) rotate(0); -webkit-mask-position: 100% 50%; } }
-@keyframes rune-greeting-ink-flow { from { background-position: 34% 50%; } to { background-position: 66% 50%; } }
-@keyframes rune-greeting-flourish { 0% { opacity: 0; transform: scaleX(0) rotate(-1.2deg); } 18% { opacity: .82; } 86% { opacity: .64; } 100% { opacity: .38; transform: scaleX(1) rotate(-1.2deg); } }
-@keyframes rune-greeting-pen { 0%, 7% { left: 0; opacity: 0; transform: scale(.5); } 18%, 76% { opacity: .96; } 94% { left: calc(100% - .072em); opacity: .62; transform: scale(1); } 100% { left: calc(100% - .072em); opacity: 0; transform: scale(.35); } }
-@keyframes rune-greeting-pen-rtl { 0%, 7% { right: 0; opacity: 0; transform: scale(.5); } 18%, 76% { opacity: .96; } 94% { right: calc(100% - .072em); opacity: .62; transform: scale(1); } 100% { right: calc(100% - .072em); opacity: 0; transform: scale(.35); } }
+@keyframes rune-greeting-write { 0% { opacity: 0; stroke-dashoffset: 14em; } 8% { opacity: .82; } 72% { opacity: 1; } 100% { opacity: 1; stroke-dashoffset: 0; } }
+@keyframes rune-greeting-ink-settle { 0% { fill-opacity: 0; filter: blur(2.5px); } 42% { fill-opacity: .68; } 100% { fill-opacity: 1; filter: blur(0); } }
+@keyframes rune-greeting-flourish { 0% { opacity: 0; stroke-dashoffset: 1; } 16% { opacity: .76; } 82% { opacity: .52; } 100% { opacity: .32; stroke-dashoffset: 0; } }
+@keyframes rune-greeting-pen { 0% { opacity: 0; offset-distance: 0%; transform: scale(.45); } 14%, 76% { opacity: .92; } 92% { opacity: .52; transform: scale(1); } 100% { opacity: 0; offset-distance: 100%; transform: scale(.3); } }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
-  .welcome-greeting::before,
-  .welcome-greeting::after,
-  .welcome-greeting-character::after { animation: none !important; }
+  .welcome-greeting-stage::before,
+  .welcome-greeting-trace .welcome-greeting-ink-unit,
+  .welcome-greeting-fill .welcome-greeting-ink-unit,
+  .welcome-greeting-flourish,
+  .welcome-greeting-pen { animation: none !important; }
   .welcome-greeting { animation: none !important; }
-  .welcome-greeting-character { opacity: 1; filter: none; mask: none; background-position: 0 50%; transform: none; -webkit-mask: none; }
+  .welcome-greeting-trace,
+  .welcome-greeting-flourish,
+  .welcome-greeting-pen { display: none; }
+  .welcome-greeting-fill .welcome-greeting-ink-unit { fill-opacity: 1; filter: none; }
   .rune-shell::before { display: none; }
   .workspace > .activity-rail,
   .workspace > .file-rail,

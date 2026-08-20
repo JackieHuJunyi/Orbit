@@ -2399,3 +2399,13 @@ v1.16 保留同步渲染和纯 compiler，但把异步边界前移到“确认 l
 v1.16 改用带柔边前缘的方向性 ink mask，让渐变色沿当前 grapheme 逐步显现；小型白色笔尖只在行笔阶段移动，最后一字完成后才画出低透明度收笔弧线，完成后的墨色只做很慢的有界流动。英文、法文等使用系统 script face，中文与日文使用设备书写字体；阿拉伯文不拆字以免破坏 shaping，并让遮罩和笔尖都从右向左推进。轮播改为每条问候自己的 timeout，长字符串拥有更长的完成与停留时间，切换前再淡出。
 
 动画仍不拥有产品状态或布局尺寸。`prefers-reduced-motion` 下完整文字立即出现且不轮播，forced colors 下恢复系统实色；欢迎窗口增加独立 `100dvh` max-height，窗口级入场只允许从中心缩放淡入，纵向层次由内部内容承担，因此第一帧也不会把任何语言推到桌面视口外。这样视觉表达更像真正的书写，同时不复制 Apple 的图形资产，也不牺牲九语言、RTL、可访问性和几何合同。
+
+## 117. v1.17 笔迹动画需要独立的 SVG 书写层，而不是继续叠字符遮罩
+
+v1.16 的柔边 mask 已经消除了硬矩形裁切，但字形本质上仍是一块块被揭开；用户能看见彩色，却看不见笔锋沿轮廓生成。继续增加 blur、光点或渐变只会强化“特效文字”，不会得到设备开机问候那种落笔、行笔、收笔的安静节奏。
+
+v1.17 把这项视觉表达收进 props-only `HandwrittenGreeting`。每个 LTR grapheme 在同一个 inline SVG 中先以 round cap / round join 的 spectrum stroke 和 dash offset 写出轮廓，再延迟让完整彩墨落定；最后一字完成后，一条有界低透明度曲线完成收笔。欢迎状态机仍唯一拥有当前语言、轮播顺序和时长，SVG 子组件没有 timer、storage、provider、credential、Artifact 或 mutation 权限。
+
+多文字系统不能靠一个英文 viewBox 伸缩。组件按 CJK、阿拉伯文、长西里尔文和拉丁字符估算独立画布宽度，让短中文和长俄文都以接近的光学高度进入同一个固定舞台；阿拉伯文保持完整 shaping run、right anchor 和 RTL 方向，不按字符拆断。渐变与路径全部由 Rune 原生代码生成，不复制 Apple 字形或动画资产，也不引入远端字体、Canvas 状态和额外下载。
+
+可访问性仍是动画合同的一部分：reduced motion 直接移除 trace、pen 与 flourish，只显示最终完整文字；forced colors 使用 `CanvasText`。E2E 除原有九语言 × 桌面/390px 零溢出外，额外读取运行时 CSSAnimation，证明 `rune-greeting-write`、`rune-greeting-ink-settle` 和 `rune-greeting-flourish` 确实存在，而不是只检查源码字符串。

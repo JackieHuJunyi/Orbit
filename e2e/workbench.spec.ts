@@ -33,6 +33,24 @@ test("starts a fresh user with outcome-first task choices", async ({ page }) => 
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
 });
 
+test("draws the opening greeting as layered spectrum ink", async ({ page }) => {
+  await page.goto("/");
+
+  const greeting = page.locator(".welcome-greeting");
+  await expect(greeting).toBeVisible();
+  await expect(greeting.locator("linearGradient stop")).toHaveCount(7);
+  await expect(greeting.locator(".welcome-greeting-trace-edge .welcome-greeting-ink-unit").first()).toBeVisible();
+
+  const animationNames = await greeting.evaluate((element) =>
+    Array.from(element.querySelectorAll(".welcome-greeting-ink-unit, .welcome-greeting-flourish"))
+      .flatMap((unit) => unit.getAnimations())
+      .map((animation) => ("animationName" in animation ? String(animation.animationName) : "")),
+  );
+  expect(animationNames).toContain("rune-greeting-write");
+  expect(animationNames).toContain("rune-greeting-ink-settle");
+  expect(animationNames).toContain("rune-greeting-flourish");
+});
+
 test("renders the local-first workbench with its sample workspace", async ({ page }) => {
   await openWorkbench(page);
   await expect(page.getByRole("main")).toContainText("Rune");
