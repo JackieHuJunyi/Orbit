@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { runeUICopy, type RuneLocale } from "../lib/localization";
 
 export function ReviewDialog({
@@ -35,7 +35,7 @@ export function ReviewDialog({
     cancelRef.current = onCancel;
   }, [onCancel]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;

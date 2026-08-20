@@ -113,10 +113,14 @@ test("toggles the workspace file rail without losing the workbench", async ({ pa
 
 test("opens and closes the New artifact dialog from the top bar", async ({ page }) => {
   await openWorkbench(page);
-  await page.getByRole("button", { name: "New", exact: true }).first().click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toBeHidden();
+  const trigger = page.getByRole("button", { name: "New", exact: true }).first();
+  const dialog = page.getByRole("dialog", { name: "Create a new artifact" });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+  }
 });
 
 test("keeps quick actions scrollable and renders an icon for every command", async ({ page }) => {

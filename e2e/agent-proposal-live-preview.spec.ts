@@ -95,7 +95,7 @@ test("switches one multi-artifact Agent proposal between a coherent report and p
     "became the leading growth engine after the partner launch",
   );
 
-  await patch.getByRole("button", { name: "Review board-briefing.html" }).click();
+  await patch.getByRole("button", { name: "Review board-briefing.html", exact: true }).click();
   await expect(editor).toHaveAttribute("aria-label", "Proposed source · board-briefing.html");
   await expect(editor).toHaveValue(/Scale the repeatable channel, protect the margin\./u);
   await expect(page.locator(".deck-slide-page")).toHaveCount(5);

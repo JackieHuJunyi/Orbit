@@ -2331,3 +2331,10 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 左侧 canonical JSON 的每次有效输入必须即时重编译 Data grid；右侧 flat scalar 编辑必须显式保留 `string | number | boolean | null` 类型，输入期间左侧显示完整只读 candidate JSON。
 - Cancel 必须恢复逐字相同的 canonical source；Save 必须沿既有 static validation、runtime impact、checkpoint 和原子 persistence 路径，刷新后仍得到完全相同的 typed JSON，而不是把 number/boolean 串化。
 - Markdown、CSV、JSON 与 semantic HTML 的浏览器流程应共享最小 typed workbench driver；它只负责 hydration readiness、reviewed text import、文件选择和 textarea caret，不拥有产品状态或绕过公开 UI。
+
+### 17.66 v1.35 所有审核对话框必须在首帧前取得键盘所有权
+
+- 共享 ReviewDialog 的 initial focus、background scroll lock、Tab focus trap 与 Escape listener 必须在 modal DOM commit 后、浏览器首次绘制前一起建立；不得让可见 modal 等待普通 effect 才接管键盘。
+- Escape 必须在用户刚打开对话框时立即取消，不能仍由背景 New/Import/Export/Review trigger 持有焦点；测试不得用额外等待掩盖竞态。
+- 生命周期必须集中在共享边界，不能让每个业务对话框复制 keydown listener；cleanup 必须移除精确 listener、恢复先前 body overflow，并把焦点还给原元素。
+- Chromium 必须连续至少三次执行 New → visible → immediate Escape → hidden；发布前压力验证应重复该流程并拒绝 flaky retry 作为成功证据。
