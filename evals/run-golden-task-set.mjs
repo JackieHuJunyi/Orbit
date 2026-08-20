@@ -4,8 +4,10 @@ import path from "node:path";
 import * as duckdb from "@duckdb/duckdb-wasm/blocking";
 import { findChartReferences, parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
+import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 import { buildBoundedQuery } from "../app/lib/sql.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
 import { prepareRuneTaskProvider } from "../app/lib/task-providers.ts";
@@ -68,18 +70,37 @@ function assertDocumentBriefing(task, artifacts) {
   const input = task.request.input;
   const output = artifacts.find((artifact) => artifact.kind === "slides");
   assert.ok(output, "presentation output is missing");
-  const parsed = parseDeckSource(output.source);
-  assert.deepEqual(parsed.errors, []);
-  assert.ok(parsed.deck);
-  assert.equal(parsed.deck.slides.length, task.expected.slideCount);
-  assert.equal(parsed.deck.frontmatter.origin, input.sourceArtifactId);
   const source = task.artifacts.find((artifact) => artifact.id === input.sourceArtifactId);
   assert.ok(source);
-  assert.equal(parsed.deck.frontmatter.origin_revision, portableSourceRevision(source.source));
-  assert.equal(parsed.deck.frontmatter.lang, input.locale);
-  assert.equal(parsed.deck.frontmatter.audience, input.audience);
-  assert.equal(parsed.deck.frontmatter.purpose, input.focus);
-  const sourceUnits = [...output.source.matchAll(/<!-- source-unit: (source-\d+) -->/gu)].map((match) => match[1]);
+  const expectedRevision = portableSourceRevision(source.source);
+  let sourceUnits;
+  let theme;
+  if (output.language === "Semantic HTML") {
+    const parsed = compileLegacyHtmlSlides(output.source);
+    const metadata = semanticHtmlPresentationMetadata(output.source);
+    assert.deepEqual(parsed.errors, []);
+    assert.equal(parsed.slides.length, task.expected.slideCount);
+    assert.ok(metadata);
+    assert.equal(metadata.origin, input.sourceArtifactId);
+    assert.equal(metadata.originRevision, expectedRevision);
+    assert.equal(metadata.lang, input.locale);
+    assert.equal(metadata.audience, input.audience);
+    assert.equal(metadata.purpose, input.focus);
+    theme = metadata.theme;
+    sourceUnits = [...output.source.matchAll(/data-rune-source-unit="(source-\d+)"/gu)].map((match) => match[1]);
+  } else {
+    const parsed = parseDeckSource(output.source);
+    assert.deepEqual(parsed.errors, []);
+    assert.ok(parsed.deck);
+    assert.equal(parsed.deck.slides.length, task.expected.slideCount);
+    assert.equal(parsed.deck.frontmatter.origin, input.sourceArtifactId);
+    assert.equal(parsed.deck.frontmatter.origin_revision, expectedRevision);
+    assert.equal(parsed.deck.frontmatter.lang, input.locale);
+    assert.equal(parsed.deck.frontmatter.audience, input.audience);
+    assert.equal(parsed.deck.frontmatter.purpose, input.focus);
+    theme = parsed.deck.frontmatter.theme;
+    sourceUnits = [...output.source.matchAll(/<!-- source-unit: (source-\d+) -->/gu)].map((match) => match[1]);
+  }
   assert.deepEqual(
     sourceUnits,
     Array.from({ length: input.slideCount - 2 }, (_, index) => `source-${index + 1}`),
@@ -87,7 +108,7 @@ function assertDocumentBriefing(task, artifacts) {
   if (task.expected.refreshTargetId) {
     assert.equal(output.id, task.expected.refreshTargetId);
     assert.equal(output.name, task.expected.refreshTargetName);
-    assert.equal(parsed.deck.frontmatter.theme, task.expected.refreshTheme);
+    assert.equal(theme, task.expected.refreshTheme);
   }
 }
 
