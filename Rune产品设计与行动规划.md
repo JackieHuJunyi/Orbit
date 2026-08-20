@@ -2323,3 +2323,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 简中、繁中、日文和韩文保留 script-specific brush order；阿拉伯语必须保持完整 shaped text，并使用只有一个 `M` 起点的连续 RTL motion body，不能为了复用拉丁分段逻辑破坏连接。
 - 最终完整字形仍通过同一 reveal mask 的湿边、纹理和一次 settle 补全；setup chrome、说明和语言选择只能在第一词 settle 后出现。不得复制 Apple 字体、字形、动画文件或品牌资产。
 - `prefers-reduced-motion` 与 forced colors 必须去除 ribbon、笔尖和瞬态材质并立即显示静态问候；九种语言必须在桌面与 390px 窄屏下证明方向、script、笔势数量、容器边界和零页面溢出。
+
+### 17.65 v1.34 JSON 必须与 CSV 共享完整的真实浏览器合同
+
+- JSON E2E 必须从用户可见 Import → unchanged review → confirm 开始，不能直接构造内部 Artifact 或只调用 parser；长数组必须证明第 80 行仍可精确定位和滚动。
+- Preview → Source 必须选择包含 JSON 字符串引号的完整 lexical token；Source → Preview 必须选择最小 cell target，并在同 target 被手动滚出视口后以 nearest-edge 恢复。不得按显示值或表格坐标猜测 source。
+- 左侧 canonical JSON 的每次有效输入必须即时重编译 Data grid；右侧 flat scalar 编辑必须显式保留 `string | number | boolean | null` 类型，输入期间左侧显示完整只读 candidate JSON。
+- Cancel 必须恢复逐字相同的 canonical source；Save 必须沿既有 static validation、runtime impact、checkpoint 和原子 persistence 路径，刷新后仍得到完全相同的 typed JSON，而不是把 number/boolean 串化。
+- Markdown、CSV、JSON 与 semantic HTML 的浏览器流程应共享最小 typed workbench driver；它只负责 hydration readiness、reviewed text import、文件选择和 textarea caret，不拥有产品状态或绕过公开 UI。

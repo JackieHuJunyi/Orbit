@@ -1,17 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-async function openWorkbench(page: Page) {
-  await page.addInitScript(() => {
-    if (window === window.top) localStorage.setItem("rune-onboarding-v1", "complete");
-  });
-  await page.goto("/");
-  await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
-}
-
-async function selectWorkspaceFile(page: Page, name: string) {
-  await page.locator("aside.file-rail").getByText(name, { exact: true }).click();
-}
+import { expect, test } from "@playwright/test";
+import { importTextSource, openWorkbench, selectWorkspaceFile } from "./helpers/workbench";
 
 test("recompiles Document, Data, and semantic HTML Preview from each canonical Source edit", async ({ page }) => {
   const pageErrors: string[] = [];
@@ -108,6 +96,67 @@ test("mirrors an exact Data-cell draft into complete Source, then cancels or sav
   await expect(editor).toHaveValue(/Europe,990000,920000,690000,84/u);
   await expect(editor).toBeEditable();
   await expect(page.locator("td.preview-data-cell").filter({ hasText: "990000" })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test("keeps typed JSON canonical while Source and Data Preview edit the same scalar", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+  const importedSource = JSON.stringify(
+    [
+      { Region: "North", Revenue: 120, Active: true, Note: null },
+      { Region: "South", Revenue: 240, Active: false, Note: "review" },
+    ],
+    null,
+    2,
+  );
+  await importTextSource(page, {
+    name: "typed-regions.json",
+    mimeType: "application/json",
+    source: importedSource,
+  });
+
+  const editor = page.locator("textarea.source-editor");
+  const sourceEdited = importedSource.replace('"Revenue": 240', '"Revenue": 260');
+  await editor.fill(sourceEdited);
+  await expect(page.locator("td.preview-data-cell").filter({ hasText: "260" })).toBeVisible();
+
+  const editRevenue = page.getByRole("button", { name: "Edit Row 2 · Revenue", exact: true });
+  await editRevenue.click();
+  const cellEditor = page.locator("form.visual-cell-editor");
+  await expect(cellEditor.getByRole("combobox", { name: "Value type for Row 2 · Revenue" })).toHaveValue("number");
+  await cellEditor.getByRole("textbox", { name: "Edit Row 2 · Revenue" }).fill("275");
+
+  const revenueDraftSource = sourceEdited.replace('"Revenue": 260', '"Revenue": 275');
+  await expect(editor).toHaveValue(revenueDraftSource);
+  await expect(editor).not.toBeEditable();
+  await expect(page.getByText("Visual edit · complete source draft synced live")).toBeVisible();
+
+  await cellEditor.getByRole("button", { name: "Cancel cell edit" }).click();
+  await expect(cellEditor).toBeHidden();
+  await expect(editor).toHaveValue(sourceEdited);
+  await expect(editor).toBeEditable();
+
+  await editRevenue.click();
+  await cellEditor.getByRole("textbox", { name: "Edit Row 2 · Revenue" }).fill("275");
+  await cellEditor.getByRole("button", { name: "Save Row 2 · Revenue" }).click();
+  await expect(cellEditor).toBeHidden();
+  await expect(editor).toHaveValue(revenueDraftSource);
+  await expect(page.locator("td.preview-data-cell").filter({ hasText: "275" })).toBeVisible();
+
+  const editActive = page.getByRole("button", { name: "Edit Row 2 · Active", exact: true });
+  await editActive.click();
+  await expect(cellEditor.getByRole("combobox", { name: "Value type for Row 2 · Active" })).toHaveValue("boolean");
+  await cellEditor.getByRole("combobox", { name: "Edit Row 2 · Active" }).selectOption("true");
+  const finalSource = revenueDraftSource.replace('"Active": false', '"Active": true');
+  await expect(editor).toHaveValue(finalSource);
+  await cellEditor.getByRole("button", { name: "Save Row 2 · Active" }).click();
+
+  await page.reload();
+  await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.locator("textarea.source-editor")).toHaveValue(finalSource);
+  await expect(page.locator("td.preview-data-cell").filter({ hasText: "275" })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

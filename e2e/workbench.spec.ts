@@ -1,18 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
-
-async function openWorkbench(page: Page) {
-  // A fresh browser profile otherwise opens the full-screen onboarding modal,
-  // which covers the workbench. Mark onboarding complete before first paint.
-  await page.addInitScript(() => {
-    if (window === window.top) localStorage.setItem("rune-onboarding-v1", "complete");
-  });
-  await page.goto("/");
-  await expect(page.getByRole("main")).toBeVisible();
-  // The top-bar controls render disabled until React hydrates; wait for that
-  // so every interaction below runs against the live event handlers.
-  await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
-}
+import { openWorkbench } from "./helpers/workbench";
 
 test("starts a fresh user with outcome-first task choices", async ({ page }) => {
   await page.goto("/");

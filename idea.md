@@ -2565,3 +2565,9 @@ Agent 已经能生成原子 proposal，但如果 Workbench 分别计算“左侧
 欢迎页已经有炫彩、湿边和书写头，但拉丁/西里尔词仍由一条通用大曲线扫过后再补全字形，视觉上容易被读成“渐变文字揭示”。v1.33 把首字母起笔、横笔和后续字形拆成有界的逐段 gesture；每段共享同一 reveal path、pressure nib 和 clock。新增的窄 spectrum ribbon 只沿当前笔尖短暂移动，写过的墨迹立即安静下来，最终仍由一次 dry settle 完整收口，不出现循环霓虹或背景粒子。
 
 不同文字系统不能为了统一代码而统一书写法。简中/繁中、日文和韩文继续使用各自的有序 brush plan；阿拉伯语保持一个不拆 shaping run、只有一个运动起点的连续 RTL 主体，再补充附标。英文、法文、西文和长俄文最多 12 组笔势，避免超长动画。真实 Chromium 对九种语言分别在 1440×900 与 390×844 检查脚本类型、笔画数量、方向、容器边界和整页零溢出；reduced motion 与 forced colors 仍直接显示完整静态问候。
+
+## 136. CSV / JSON 都必须有独立的真实浏览器闭环
+
+Data 模型从第一天就支持 CSV 与 JSON，但如果浏览器证据只运行 CSV，`Excel → CSV / JSON` 的后一半仍可能在 UI 层悄悄退化。v1.34 从普通 Import 按钮审核导入 80 行 JSON：点击第 80 行 Label 必须选中源中包含引号的完整 `"Record-80"` token，Source 光标回到第一行必须高亮对应 cell，并在用户把 Preview 滚到底部后用同 target nearest-edge 找回。这里不允许从表格显示文本猜位置，身份仍由 JSON scanner 的 UTF-16 range 决定。
+
+第二条 Chromium 流程使用同时含 string、number、boolean 与 null 的 JSON。左侧直接把 `260` 写进 canonical source 时右侧网格即时重编译；右侧编辑必须显示显式 `number` 或 `boolean` 类型，把每次输入镜像为完整只读候选 JSON。Cancel 逐字恢复，Save 经过既有 workspace validation、runtime impact、checkpoint 与 persistence 后，刷新仍得到完全相同的 `275` 与 `true`，而不是字符串 `"275"` / `"true"`。Markdown、CSV、JSON 与 semantic HTML 的 E2E 现在共享一个只负责真实审核导入、hydration readiness、文件选择和 caret 的 typed driver，后续新增格式不再复制另一套伪入口。

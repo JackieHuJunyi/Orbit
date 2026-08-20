@@ -1,36 +1,5 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
-
-async function openWorkbench(page: Page) {
-  await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
-  await page.goto("/");
-  await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
-}
-
-async function importTextSource(page: Page, file: { name: string; mimeType: string; source: string }) {
-  await page
-    .getByLabel("Import")
-    .first()
-    .setInputFiles({
-      name: file.name,
-      mimeType: file.mimeType,
-      buffer: Buffer.from(file.source),
-    });
-  const review = page.getByRole("dialog", { name: "Review imported sources" });
-  await expect(review).toBeVisible();
-  await expect(review.getByText(file.name, { exact: true })).toBeVisible();
-  await review.getByRole("button", { name: "Import 1 source" }).click();
-  await expect(review).toBeHidden();
-}
-
-async function moveSourceCaret(editor: Locator, offset: number) {
-  await editor.evaluate((element, nextOffset) => {
-    const textarea = element as HTMLTextAreaElement;
-    textarea.focus();
-    textarea.setSelectionRange(nextOffset, nextOffset);
-  }, offset);
-  await editor.press("ArrowRight");
-}
+import { expect, test } from "@playwright/test";
+import { importTextSource, moveSourceCaret, openWorkbench } from "./helpers/workbench";
 
 test("keeps long Markdown Source and Preview mutually positioned, including repeated moves inside one block", async ({
   page,
@@ -114,5 +83,49 @@ test("keeps long CSV Source and Preview mutually positioned down to an exact cel
   await previewScroll.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "auto" }));
   await expect(firstCell).not.toBeInViewport();
   await moveSourceCaret(editor, firstValueStart + 2);
+  await expect(firstCell).toBeInViewport();
+});
+
+test("keeps long JSON Source and Preview mutually positioned down to a typed scalar", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openWorkbench(page);
+  const source = JSON.stringify(
+    Array.from({ length: 80 }, (_, index) => ({
+      Row: index + 1,
+      Label: `Record-${String(index + 1).padStart(2, "0")}`,
+      Value: (index + 1) * 10,
+      Active: index % 2 === 0,
+    })),
+    null,
+    2,
+  );
+  await importTextSource(page, { name: "long-table.json", mimeType: "application/json", source });
+
+  const editor = page.locator("textarea.source-editor");
+  const previewScroll = page.locator(".preview-scroll");
+  const finalCellButton = page.getByRole("button", {
+    name: "Select Row 80 · Label in canonical source for Agent context",
+  });
+  await finalCellButton.click();
+  const finalValueStart = source.indexOf('"Record-80"');
+  await expect
+    .poll(() =>
+      editor.evaluate((element) => {
+        const textarea = element as HTMLTextAreaElement;
+        return [textarea.selectionStart, textarea.selectionEnd];
+      }),
+    )
+    .toEqual([finalValueStart, finalValueStart + '"Record-80"'.length]);
+  await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  const firstCell = page.locator("td.preview-data-cell").filter({ hasText: "Record-01" }).first();
+  const firstValueStart = source.indexOf('"Record-01"');
+  await moveSourceCaret(editor, firstValueStart + 2);
+  await expect(firstCell).toHaveClass(/active/);
+  await expect(firstCell).toBeInViewport();
+
+  await previewScroll.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "auto" }));
+  await expect(firstCell).not.toBeInViewport();
+  await moveSourceCaret(editor, firstValueStart + 3);
   await expect(firstCell).toBeInViewport();
 });
