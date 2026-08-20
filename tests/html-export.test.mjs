@@ -63,7 +63,7 @@ test("rejects unsupported or unresolved HTML export inputs", () => {
   const deck = defaultDeck();
   const document = defaultArtifacts.find((artifact) => artifact.kind === "document");
   assert.ok(document);
-  assert.throws(() => exportDeckHtml(document, defaultArtifacts), /supports Deck Markdown presentations/i);
+  assert.throws(() => exportDeckHtml(document, defaultArtifacts), /requires a presentation artifact/i);
   assert.throws(
     () =>
       exportDeckHtml(
@@ -80,6 +80,34 @@ test("rejects unsupported or unresolved HTML export inputs", () => {
         defaultRuntimeSnapshots(),
       ),
     /missing chart reference/i,
+  );
+});
+
+test("exports semantic HTML with reviewed local images as one scriptless portable file", () => {
+  const artifact = {
+    id: "semantic-image",
+    name: "semantic-image.html",
+    kind: "slides",
+    language: "Semantic HTML",
+    source: `<!doctype html><html lang="en"><head><style>.deck-image img{width:100%}</style></head><body><main data-rune-format="presentation-v1" data-rune-title="Semantic image" data-rune-theme="rune" data-rune-lang="en"><section class="slide split"><h1>Visual proof</h1><figure class="deck-image"><img src="rune-asset:sha256:${runeImageId}" alt="Portable proof" /></figure></section></main></body></html>`,
+  };
+  const result = exportDeckHtml(artifact, [artifact], [], [runeImageAsset]);
+  const html = new TextDecoder().decode(result.bytes);
+  assert.equal(result.fileName, "semantic-image.html");
+  assert.match(html, /src="data:image\/png;base64,/u);
+  assert.doesNotMatch(html, /rune-asset:sha256:/u);
+  assert.match(html, /Content-Security-Policy/u);
+  assert.match(result.warnings.join(" "), /semantic presentation source/iu);
+  assert.throws(() => exportDeckHtml(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
+  assert.throws(
+    () =>
+      exportDeckHtml(
+        { ...artifact, source: artifact.source.replace("</style>", "@import url(https://example.com/x.css)</style>") },
+        [artifact],
+        [],
+        [runeImageAsset],
+      ),
+    /executable or external resource boundary/iu,
   );
 });
 

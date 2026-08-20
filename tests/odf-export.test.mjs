@@ -5,7 +5,7 @@ import { DOMParser } from "@xmldom/xmldom";
 import { strFromU8, unzipSync } from "fflate";
 
 import { compileArtifactSource } from "../app/lib/bindings.ts";
-import { compileDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { MAX_ODF_EXPORT_SOURCE_CHARS, exportOdfArtifact, isOdfExportArtifact } from "../app/lib/odf-export.ts";
 import { convertOdfFile, convertOdfFileWithAssets } from "../app/lib/odf-import.ts";
 import { defaultArtifacts, parseDataSource, validateArtifact } from "../app/lib/workspace.ts";
@@ -122,7 +122,10 @@ The source remains readable.
   const imported = await convertOdfFileWithAssets(first.fileName, first.bytes);
   assert.equal(imported.assets.length, 1);
   assert.deepEqual(imported.assets[0].bytes, onePixelPng);
+  assert.equal(imported.artifacts[0].language, "Semantic HTML");
+  assert.equal(imported.artifacts[0].name, "image-deck.html");
   assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.artifacts[0].source, /<figure class="deck-image"><img src="rune-asset:sha256:/u);
   assert.deepEqual(validateArtifact(imported.artifacts[0]), []);
   assert.throws(() => exportOdfArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
 });
@@ -219,7 +222,8 @@ test("exports the default semantic HTML presentation to ODP with current chart v
 
   const imported = convertOdfFile(first.fileName, first.bytes);
   const roundTrip = imported.artifacts[0];
-  assert.equal(compileDeckSource(roundTrip.source).slideCount, 4);
+  assert.equal(roundTrip.language, "Semantic HTML");
+  assert.equal(compileLegacyHtmlSlides(roundTrip.source).slides.length, 4);
   assert.match(roundTrip.source, /Growth became more durable/u);
   assert.match(roundTrip.source, /Canonical regional revenue, sorted high to low/u);
   assert.match(roundTrip.source, /APAC.*\$1\.84M/u);

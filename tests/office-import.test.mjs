@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { strToU8, zipSync } from "fflate";
-import { compileDeckSource, parseDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import {
   MAX_OFFICE_IMPORT_BYTES,
   convertOfficeFile,
@@ -175,21 +175,21 @@ test("converts every visible XLSX worksheet to bounded CSV", () => {
   assert.match(result.warnings.join(" "), /formula-leading text cell.*apostrophe/i);
 });
 
-test("converts PPTX text and tables to valid, safely compiled Deck Markdown", () => {
+test("converts PPTX text and tables to valid, safely compiled semantic HTML", () => {
   const result = convertOfficeFile("board.pptx", pptxFixture());
   assert.equal(result.sourceType, "pptx");
   const artifact = result.artifacts[0];
-  assert.equal(artifact.name, "board.deck.md");
-  assert.match(artifact.source, /^version: 1$/m);
-  assert.match(artifact.source, /layout: cover/);
-  assert.match(artifact.source, /# Launch plan/);
-  assert.match(artifact.source, /\\<tag\\>/);
-  assert.match(artifact.source, /\| Owner \| Decision \|/);
-  assert.deepEqual(parseDeckSource(artifact.source).errors, []);
-  const compiled = compileDeckSource(artifact.source);
-  assert.equal(compiled.slideCount, 2);
-  assert.match(compiled.html ?? "", /&lt;tag&gt;/);
-  assert.doesNotMatch(compiled.html ?? "", /<tag>/);
+  assert.equal(artifact.name, "board.html");
+  assert.equal(artifact.language, "Semantic HTML");
+  assert.match(artifact.source, /data-rune-format="presentation-v1"/u);
+  assert.match(artifact.source, /data-layout="cover"/u);
+  assert.match(artifact.source, /<h1>Launch plan<\/h1>/u);
+  assert.match(artifact.source, /&lt;tag&gt;/u);
+  assert.match(artifact.source, /<th>Owner<\/th><th>Decision<\/th>/u);
+  const compiled = compileLegacyHtmlSlides(artifact.source);
+  assert.deepEqual(compiled.errors, []);
+  assert.equal(compiled.slides.length, 2);
+  assert.doesNotMatch(artifact.source, /<tag>/u);
   assert.match(result.warnings.join(" "), /slide image.*omitted/i);
 });
 
@@ -208,5 +208,6 @@ test("asset-aware Office import removes unresolved visuals without leaking conve
   const pptx = await convertOfficeFileWithAssets("board.pptx", pptxFixture());
   assert.deepEqual(pptx.assets, []);
   assert.match(pptx.warnings.join(" "), /no readable package relationship/iu);
-  assert.deepEqual(parseDeckSource(pptx.artifacts[0].source).errors, []);
+  assert.equal(pptx.artifacts[0].language, "Semantic HTML");
+  assert.deepEqual(compileLegacyHtmlSlides(pptx.artifacts[0].source).errors, []);
 });

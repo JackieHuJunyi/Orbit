@@ -2529,3 +2529,11 @@ v1.28 因此让 sample、New、Operating Review、Document-to-Presentation、loc
 欢迎状态机现在派生一个不持久化的 `writing | ready` presentation phase。`writing` 阶段把 setup chrome 设为不可见、不可点击且不可键盘聚焦，让问候在现有稳定网格上通过可逆 transform 到达光学中心；背景保持接近纸白，彩色只集中在逐笔形成的 spectrum ink、轻微湿边、干笔纤维和 pressure nib。final fill 的 settle event 触发 `ready` 后，问候平滑回到正式位置，chrome、价值说明和语言选择再按层级展开，不建立第二个业务状态或 layout owner。
 
 这仍是 Rune 原创的 Apple-informed choreography，不复制 Apple 字体、字形路径、动画文件、插画或商标。正常模式只有一个由现有 planner 控制的有界写入周期；4.15 秒 timeout 只是 animation event 的失效保护。`prefers-reduced-motion` 立即进入完整静态文字与可操作设置，forced colors 使用系统色；阿拉伯 RTL shaping、中日韩与长俄文继续使用各自的本地字体、画布和笔画计划。
+
+## 131. PPT → HTML 必须覆盖真实包导入，不能只覆盖 Rune 自己创建的新文件
+
+v1.28 让 Rune-authored Presentation 回到 HTML，但 PPTX/ODP 仍因为图片合同暂留 Deck，原始产品承诺因此只完成了一半。真正的缺口不是再写一个 PPT parser，而是让语义 HTML 能引用既有本机内容哈希图片，并让 Preview、目录、独立 HTML 与 Office/ODF/PDF 消费同一份事实。
+
+v1.29 保留当前成熟的 package parser 和临时 strict Deck proof：PPTX/ODP 的 title、paragraph、bullet、table、picture、页序、数量上限与 hostile-package 检查仍只实现一次；图片候选经共享 finalizer 验证字节、尺寸、哈希、去重和唯一位置后，完整临时 Deck 再编译成最终 `.html`。临时 Deck 不进入 workspace。HTML 中只保存普通 `<img src="rune-asset:sha256:…" alt="…">`，不保存 base64；浏览器 Preview 只解析成临时 `blob:`，连接目录继续使用 `.rune-assets`，经审核的 standalone HTML 才把同一 bytes 内嵌成 `data:`。
+
+反向交付仍不让 OOXML、ODF 和 PDF writer 获得任意 DOM 权限。语义 HTML → temporary Deck projection 只接受每页至多一张经过验证的本机图片，把它恢复成相同 hash 的可读图片引用，再调用既有确定性 writer。手动插图也只允许在 compiler-proven section 中、紧邻 closing tag 插入一项 primary visual，并复用 review、checkpoint、asset-first save 与失败补偿。真实 PPTX/ODP 图片 round trip 证明最终 Artifact 是 Semantic HTML、图片 bytes 完全一致、source 中没有 converter placeholder，且仍可继续导出；crop、overlap、母版、动画、备注、对象和 live Office chart 继续作为明确 fidelity loss。

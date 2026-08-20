@@ -87,6 +87,19 @@ function escapeMarkdownAlt(value: string) {
     .replace(/\]/gu, "\\]");
 }
 
+function escapeHtmlAttribute(value: string) {
+  return value
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 160)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function validUtf16Boundary(value: string, offset: number) {
   if (!Number.isInteger(offset) || offset < 0 || offset > value.length) return false;
   if (offset === 0 || offset === value.length) return true;
@@ -111,6 +124,57 @@ export function parseRuneMarkdownImage(source: string) {
   if (!match) return null;
   const id = parseRuneAssetReference(match[2]);
   return id ? { id, alt: match[1].replace(/\\([\\`*_[\]{}#>+!~<>-])/gu, "$1").trim() } : null;
+}
+
+export function createRuneHtmlImageMarkup(alt: string, assetId: string) {
+  const safeAlt = escapeHtmlAttribute(alt);
+  if (!safeAlt) throw new Error("Describe the image before inserting it.");
+  return `<figure class="deck-image"><img src="${createRuneAssetReference(assetId)}" alt="${safeAlt}" decoding="async" /></figure>`;
+}
+
+export function buildRuneHtmlImageInsertion(
+  source: string,
+  offset: number,
+  alt: string,
+  assetId: string,
+): RuneImageInsertion {
+  if (!validUtf16Boundary(source, offset)) throw new Error("The image insertion point is no longer valid.");
+  const markdown = createRuneHtmlImageMarkup(alt, assetId);
+  const before = source.slice(0, offset);
+  const after = source.slice(offset);
+  const leading = before.length && !before.endsWith("\n") ? "\n" : "";
+  const trailing = after.length && !after.startsWith("\n") ? "\n" : "";
+  const start = before.length + leading.length;
+  return {
+    nextSource: `${before}${leading}${markdown}${trailing}${after}`,
+    markdown,
+    start,
+    end: start + markdown.length,
+  };
+}
+
+function safeRuneImageRenderUrl(value: string | null) {
+  if (!value) return null;
+  return value.startsWith("blob:") || /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/iu.test(value)
+    ? value
+    : null;
+}
+
+export function renderRuneHtmlAssetReferences(
+  source: string,
+  resolveLocalAssetUrl?: (reference: string) => string | null,
+) {
+  if (!resolveLocalAssetUrl) return source;
+  return source.replace(/<img\b[^>]*>/giu, (tag) => {
+    const sourceAttribute = tag.match(/\bsrc\s*=\s*(["'])(rune-asset:sha256:[0-9a-f]{64})\1/iu);
+    if (!sourceAttribute) return tag;
+    const reference = sourceAttribute[2];
+    if (!parseRuneAssetReference(reference)) return tag;
+    const resolved = safeRuneImageRenderUrl(resolveLocalAssetUrl(reference));
+    if (!resolved) return tag;
+    const escaped = resolved.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+    return tag.replace(sourceAttribute[0], `src="${escaped}"`);
+  });
 }
 
 export function extractRuneAssetIds(source: string) {

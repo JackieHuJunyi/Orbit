@@ -144,10 +144,11 @@ export function visualSemanticHtmlSlidePreview(
   artifact: WorkspaceArtifact,
   requestedTarget: PreviewSourceTarget,
   input: VisualSemanticHtmlSlideEditInput,
+  resolveLocalAssetUrl?: (reference: string) => string | null,
 ): VisualSemanticHtmlSlidePreview {
   const projection = projectVisualSemanticHtmlSlideDraft(artifact, requestedTarget, input);
   if (projection.errors.length) return { html: "", errors: projection.errors };
-  const compilation = compileLegacyHtmlSlides(projection.nextSource);
+  const compilation = compileLegacyHtmlSlides(projection.nextSource, { resolveLocalAssetUrl });
   const slide = compilation.slides[requestedTarget.index];
   return slide
     ? { html: slide.html, errors: [] }

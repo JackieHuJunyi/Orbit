@@ -77,7 +77,7 @@ export function semanticHtmlPresentationMetadata(source: string): SemanticHtmlPr
 }
 
 export function semanticHtmlPresentationFromDeckSource(deckSource: string): SemanticHtmlSourceResult {
-  const compilation = compileDeckSource(deckSource);
+  const compilation = compileDeckSource(deckSource, { preserveLocalAssetReferences: true });
   if (!compilation.html || compilation.errors.length) {
     return Object.freeze({
       errors: Object.freeze(

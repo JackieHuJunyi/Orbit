@@ -2699,7 +2699,7 @@ function SlidesPreview({
   } | null>(null);
   const slideFlowRef = useRef<HTMLDivElement>(null);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source, { resolveLocalAssetUrl }) : null;
-  const legacyCompilation = deckCompilation ? null : compileLegacyHtmlSlides(source);
+  const legacyCompilation = deckCompilation ? null : compileLegacyHtmlSlides(source, { resolveLocalAssetUrl });
   const runtimeSource = deckCompilation?.html ?? source;
   const slideCount = deckCompilation?.slideCount ?? legacyCompilation?.slides.length ?? 0;
   const resolveDeckChart = (chartArtifactId: string) => {
@@ -3023,6 +3023,7 @@ function SlidesPreview({
           onClose={() => setEditingSemanticHtmlSlide(null)}
           onSave={onEditSemanticHtmlSlide}
           onVisualSourceDraftChange={onVisualSourceDraftChange}
+          resolveLocalAssetUrl={resolveLocalAssetUrl}
         />
       )}
       {renderedPreviewSlides.length ? (

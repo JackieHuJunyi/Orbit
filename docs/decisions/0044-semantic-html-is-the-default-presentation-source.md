@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Rune v1.28.
+Accepted for Rune v1.28. The temporary PPTX/ODP import exception below is completed by [ADR 0045](0045-presentation-package-imports-land-on-semantic-html.md) in v1.29.
 
 ## Context
 
@@ -24,7 +24,7 @@ Semantic HTML becomes the default source for every Rune-authored Presentation:
 - Document-to-Presentation refresh preserves the linked target's current source format instead of silently converting it;
 - Chart embedding supports both formats through their own readable syntax.
 
-Existing `.deck.md` remains a first-class compatibility and typed-layout source. PPTX/ODP imports continue to generate Deck Markdown while their local-picture contract depends on Markdown asset references. This is an explicit temporary boundary, not a claim that all presentations have already migrated.
+Existing `.deck.md` remains a first-class compatibility and typed-layout source. At this decision's v1.28 boundary, PPTX/ODP imports continued to generate Deck Markdown while their local-picture contract depended on Markdown asset references. ADR 0045 later adds the equivalent semantic HTML content-hash reference and moves those imports to HTML without force-migrating existing Decks.
 
 Office, OpenDocument, desktop PPT, and fixed PDF writers do not gain arbitrary-DOM authority. A valid semantic HTML artifact is revalidated and projected into a temporary strict Deck model inside the existing fidelity-review transaction. For Rune-owned HTML, the projection preserves source metadata, compiler metric grids, and literal live bindings while removing generated eyebrow/page-number chrome; generic imported HTML continues to receive explicit fidelity warnings. The temporary Deck never replaces canonical HTML.
 
@@ -35,4 +35,4 @@ Office, OpenDocument, desktop PPT, and fixed PDF writers do not gain arbitrary-D
 - Deck Markdown remains available without a forced migration, so old workspaces, local-image presentations, and compatibility imports do not regress.
 - Presentation exporters still have one strict internal model and one review boundary rather than separate HTML interpreters in every writer.
 - The sample/default filename, locale copy, SSR/render assertions, unit fixtures, and real-browser New flow must identify `.html` and `Semantic HTML`; explicit Deck tests use a stable compatibility fixture.
-- A later migration of PPTX/ODP imports requires a separate reviewed semantic HTML local-asset contract and must not be inferred from this decision.
+- PPTX/ODP migration is intentionally outside this decision and is specified and tested separately by ADR 0045.

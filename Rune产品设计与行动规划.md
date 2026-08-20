@@ -2281,3 +2281,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 背景保持接近设备开机的安静纸白，炫彩集中在正在形成的墨迹；不得复制 Apple 字体、字形路径、动画文件、插画、商标或品牌资产。
 - `prefers-reduced-motion` 立即显示完整静态问候和全部设置，forced colors 使用系统色；RTL、中文/繁中、英文、法/西/俄/阿、日文、韩文在桌面与窄屏都必须零溢出。
 - 正常完成由 final fill 的 animation event 驱动，4.15 秒只作为有界失效保护；视觉阶段不进入 Artifact、workspace persistence、model credentials、checkpoint 或 export state。
+
+### 17.60 v1.29 PPTX/ODP 导入必须以语义 HTML 作为最终源
+
+- PPTX/ODP adapter 继续先产生有界 temporary Deck proof，以复用页序、标题、段落、列表、表格、图片位置、40 页上限和 hostile-package 检查；该中间模型不得成为 workspace Artifact。
+- 支持的嵌入图片必须先经既有 content-hash finalizer 验证、去重并唯一放置，再把完整 presentation 编译为 `.html` / `Semantic HTML`；source/asset 必须继续作为一笔可审核、可补偿事务。
+- canonical HTML 图片只允许 `rune-asset:sha256:<digest>`，不得包含 base64、blob URL、package path 或远程 URL；Preview 只解析为本机 `blob:`，目录继续复用 `.rune-assets`。
+- standalone HTML 导出必须把已审核 bytes 内嵌为 `data:`、加入严格 CSP，并拒绝 script、interactive element、event attribute、CSS resource、link 与未批准的 `src/href`。
+- HTML → PPTX/ODP/PPT/PDF projection 每页只允许一张验证图片并恢复为相同 hash 的临时 Deck 引用；writer 不获得任意 DOM 权限，canonical HTML 不改变。
+- 手动图片插入必须绑定一个当前 compiler-proven section、放在 closing tag 前、限制一项 primary visual，并复用 checkpoint、asset-first persistence 与失败补偿。
+- 发布证据必须包括带真实图片的 PPTX/ODP → HTML round trip、图片 bytes 一致、source hash 引用、无 placeholder、完整 Artifact validation、独立 HTML data URL 与 active/external boundary 拒绝。

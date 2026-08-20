@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { strToU8, zipSync } from "fflate";
 
-import { compileDeckSource, parseDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import {
   MAX_ODF_IMPORT_BYTES,
   convertOdfFile,
@@ -197,19 +197,23 @@ test("keeps sanitized ODS sheet names and ids unique inside one import batch", (
   );
 });
 
-test("converts independent ODP slides and tables into safe Deck Markdown", () => {
+test("converts independent ODP slides and tables into safe semantic HTML", () => {
   const result = convertOdfFile("board.odp", odpFixture({ title: "Board {{ metric(&quot;fabricated&quot;) }}" }));
   assert.equal(result.sourceType, "odp");
   const artifact = result.artifacts[0];
-  assert.equal(artifact.name, "board.deck.md");
-  assert.match(artifact.source, /^# Launch plan$/mu);
-  assert.match(artifact.source, /^title: Board &#123;&#123; metric\("fabricated"\) &#125;&#125;$/mu);
-  assert.match(artifact.source, /^- A readable source for every team$/mu);
-  assert.match(artifact.source, /Scale \\<APAC\\>/u);
-  assert.match(artifact.source, /\| Owner \| Decision \|/u);
+  assert.equal(artifact.name, "board.html");
+  assert.equal(artifact.language, "Semantic HTML");
+  assert.match(artifact.source, /<h1>Launch plan<\/h1>/u);
+  assert.match(
+    artifact.source,
+    /data-rune-title="Board &amp;#123;&amp;#123; metric\(&quot;fabricated&quot;\) &amp;#125;&amp;#125;"/u,
+  );
+  assert.match(artifact.source, /<li>A readable source for every team<\/li>/u);
+  assert.match(artifact.source, /Scale &lt;APAC&gt;/u);
+  assert.match(artifact.source, /<th>Owner<\/th><th>Decision<\/th>/u);
   assert.doesNotMatch(artifact.source, /Speaker secret/u);
-  assert.deepEqual(parseDeckSource(artifact.source).errors, []);
-  assert.equal(compileDeckSource(artifact.source).slideCount, 2);
+  assert.deepEqual(compileLegacyHtmlSlides(artifact.source).errors, []);
+  assert.equal(compileLegacyHtmlSlides(artifact.source).slides.length, 2);
   assert.match(result.warnings.join(" "), /ODP image.*omitted/iu);
   assert.match(result.warnings.join(" "), /speaker notes/iu);
   assert.deepEqual(validateArtifact(artifact), []);
@@ -253,5 +257,6 @@ test("asset-aware OpenDocument import rejects corrupt pictures without leaking p
   assert.deepEqual(result.assets, []);
   assert.match(result.warnings.join(" "), /embedded image.*omitted/iu);
   assert.doesNotMatch(result.artifacts[0].source, /RUNEIMPORTIMAGEPLACEHOLDER/u);
-  assert.deepEqual(parseDeckSource(result.artifacts[0].source).errors, []);
+  assert.equal(result.artifacts[0].language, "Semantic HTML");
+  assert.deepEqual(compileLegacyHtmlSlides(result.artifacts[0].source).errors, []);
 });

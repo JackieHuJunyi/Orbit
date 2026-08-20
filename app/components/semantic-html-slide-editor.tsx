@@ -28,6 +28,7 @@ export function SemanticHtmlSlideEditor({
   onClose,
   onSave,
   onVisualSourceDraftChange,
+  resolveLocalAssetUrl,
   target,
 }: {
   artifact: WorkspaceArtifact;
@@ -39,6 +40,7 @@ export function SemanticHtmlSlideEditor({
     input: VisualSemanticHtmlSlideEditInput,
   ) => Promise<string | null>;
   onVisualSourceDraftChange?: (draft: VisualSourceDraft | null) => void;
+  resolveLocalAssetUrl?: (reference: string) => string | null;
   target: PreviewSourceTarget;
 }) {
   const initial = useMemo(() => visualSemanticHtmlSlideDraft(artifact, target), [artifact, target]);
@@ -50,7 +52,10 @@ export function SemanticHtmlSlideEditor({
     () => projectVisualSemanticHtmlSlideDraft(artifact, target, input),
     [artifact, input, target],
   );
-  const preview = useMemo(() => visualSemanticHtmlSlidePreview(artifact, target, input), [artifact, input, target]);
+  const preview = useMemo(
+    () => visualSemanticHtmlSlidePreview(artifact, target, input, resolveLocalAssetUrl),
+    [artifact, input, resolveLocalAssetUrl, target],
+  );
   const previewError = preview.errors[0] ?? projection.errors[0] ?? "";
 
   useEffect(() => {

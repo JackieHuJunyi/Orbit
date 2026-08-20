@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 
 import {
+  buildRuneHtmlImageInsertion,
   buildRuneImageInsertion,
   createRuneAssetReference,
   detectRuneImageMimeType,
@@ -13,6 +14,7 @@ import {
   parseRuneAssetReference,
   parseRuneMarkdownImage,
   prepareRuneImageAsset,
+  renderRuneHtmlAssetReferences,
   runeImageAltFromName,
   runeImageDimensions,
 } from "../app/lib/local-assets.ts";
@@ -68,6 +70,27 @@ test("inserts one readable Markdown reference at an exact UTF-16 boundary", () =
   assert.equal(result.nextSource.slice(result.start, result.end), result.markdown);
   assert.throws(() => buildRuneImageInsertion(source, source.indexOf("🙂") + 1, "split", id), /insertion point/);
   assert.equal(source, "# Note\n\nBefore🙂After");
+});
+
+test("keeps semantic HTML image source readable and resolves only approved local preview URLs", () => {
+  const id = "b".repeat(64);
+  const source = "<section><h1>Proof</h1>\n</section>";
+  const offset = source.indexOf("</section>");
+  const result = buildRuneHtmlImageInsertion(source, offset, 'Q2 <proof> "view"', id);
+  assert.equal(
+    result.markdown,
+    `<figure class="deck-image"><img src="rune-asset:sha256:${id}" alt="Q2 &lt;proof&gt; &quot;view&quot;" decoding="async" /></figure>`,
+  );
+  assert.equal(result.nextSource.slice(result.start, result.end), result.markdown);
+  assert.match(
+    renderRuneHtmlAssetReferences(result.nextSource, () => "blob:https://rune.local/proof"),
+    /src="blob:https:\/\/rune\.local\/proof"/u,
+  );
+  assert.equal(
+    renderRuneHtmlAssetReferences(result.nextSource, () => "https://tracker.example/image.png"),
+    result.nextSource,
+  );
+  assert.equal(source, "<section><h1>Proof</h1>\n</section>");
 });
 
 test("parses strict references, deduplicates source identities, and keeps alt text readable", () => {

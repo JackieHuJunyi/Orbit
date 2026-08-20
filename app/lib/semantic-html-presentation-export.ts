@@ -1,6 +1,8 @@
 import { DOMParser, type Element as XmlElement, type Node as XmlNode } from "@xmldom/xmldom";
+import { parseDeckSource } from "./deck.ts";
 import { safeExportBaseName } from "./export-contract.ts";
 import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
+import { parseRuneAssetReference } from "./local-assets.ts";
 import { semanticHtmlPresentationMetadata } from "./semantic-html-presentation.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -143,6 +145,34 @@ function listMarkdown(list: XmlElement) {
     .filter(Boolean);
 }
 
+function markdownImageAlt(value: string) {
+  return value
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 160)
+    .replace(/\\/gu, "\\\\")
+    .replace(/\[/gu, "\\[")
+    .replace(/\]/gu, "\\]");
+}
+
+function localImageMarkdown(root: XmlElement, warnings: Set<string>) {
+  const localImages: string[] = [];
+  Array.from(root.getElementsByTagName("img")).forEach((image) => {
+    const source = image.getAttribute("src") ?? "";
+    const id = parseRuneAssetReference(source);
+    if (!id) {
+      warnings.add("Images not backed by verified Rune local assets are omitted from presentation handoff.");
+      return;
+    }
+    const alt = markdownImageAlt(image.getAttribute("alt") || "Rune image");
+    localImages.push(`![${alt || "Rune image"}](${source})`);
+  });
+  if (localImages.length > 1) {
+    throw new Error("Semantic HTML handoff supports one verified local image per slide.");
+  }
+  return localImages[0] ?? "";
+}
+
 function collectBlocks(root: XmlElement, primaryHeading: XmlElement | null, warnings: Set<string>) {
   const blocks: string[] = [];
   const visit = (node: XmlNode) => {
@@ -232,6 +262,8 @@ function parseSection(source: string, index: number, fallbackLabel: string, warn
   }
   const eyebrow = escapeDeckText(section.getAttribute("data-eyebrow") ?? "").slice(0, 100);
   const blocks = collectBlocks(section, heading, warnings);
+  const image = localImageMarkdown(section, warnings);
+  if (image) blocks.push(image);
   return `${`<!-- layout: ${layout} -->`}${eyebrow ? `\n<!-- eyebrow: ${eyebrow} -->` : ""}\n${index === 0 ? "#" : "##"} ${title}${blocks.length ? `\n\n${blocks.join("\n\n")}` : ""}`;
 }
 
@@ -244,11 +276,8 @@ export function convertSemanticHtmlPresentationToDeck(artifact: WorkspaceArtifac
   const warnings = new Set<string>([
     "Semantic HTML is converted to Rune's controlled slide model for this export; CSS, exact positioning, animation, forms, links, and unsupported elements are not retained.",
   ]);
-  if (/<(?:img|picture|video)\b/iu.test(artifact.source)) {
-    warnings.add(
-      "Images and video referenced by semantic HTML are omitted because they are not verified Rune local assets.",
-    );
-  }
+  if (/<(?:picture|video)\b/iu.test(artifact.source))
+    warnings.add("Picture and video elements are omitted from semantic presentation handoff.");
   const slides = compilation.slides.map((slide) => parseSection(slide.source, slide.index, slide.label, warnings));
   const metadata = semanticHtmlPresentationMetadata(artifact.source);
   const title = escapeDeckText(metadata?.title ?? safeExportBaseName(artifact.name));
@@ -270,6 +299,10 @@ lang: ${lang}${lineage.length ? `\n${lineage.join("\n")}` : ""}
 ---
 
 ${slides.join("\n\n---\n\n")}`;
+  const parsed = parseDeckSource(source);
+  if (!parsed.deck) {
+    throw new Error(parsed.errors[0] ?? "The semantic HTML presentation could not enter Rune's controlled handoff.");
+  }
   return Object.freeze({
     artifact: Object.freeze({
       ...artifact,

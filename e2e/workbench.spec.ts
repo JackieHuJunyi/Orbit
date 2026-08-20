@@ -47,6 +47,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
   await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
   await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-sheen");
+  await expect(greeting).toHaveAttribute("data-ink-material", "wet-spectrum");
   await expect(greeting).toHaveAttribute("data-ink-trace", "progressive");
   await expect(greeting).toHaveAttribute("data-motion-sequence", "write-settle-reveal");
   await expect(greeting).toHaveAttribute("data-writing-style", "pressure-calligraphy");
@@ -55,7 +56,10 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-ink-trail")).toHaveCount(9);
   await expect(greeting.locator(".welcome-greeting-ink-bristle")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-ink-bleed")).toHaveCount(1);
   await expect(greeting.locator(".welcome-greeting-stroke-head-bristle")).toHaveCount(6);
+  await expect(greeting.locator(".welcome-greeting-stroke-head-wake")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-stroke-head-drop")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
 
@@ -73,6 +77,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   expect(animationNames).toContain("rune-greeting-ink-settle");
   expect(animationNames).toContain("rune-greeting-stroke-head");
   expect(animationNames).toContain("rune-greeting-pressure");
+  await expect(greeting.locator(".welcome-greeting-ink-bleed")).toHaveCSS("animation-name", "rune-greeting-wet-ink");
   await expect(greeting.locator(".welcome-greeting-ink-sheen")).toHaveCSS("animation-name", "rune-greeting-sheen");
   for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
     await expect(head).toHaveCSS("offset-path", /path\(/);

@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { DOMParser } from "@xmldom/xmldom";
 import { strFromU8, unzipSync } from "fflate";
-import { compileDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import {
   MAX_OFFICE_EXPORT_SOURCE_CHARS,
@@ -141,7 +141,10 @@ The source remains readable.
   const imported = await convertOfficeFileWithAssets(first.fileName, first.bytes);
   assert.equal(imported.assets.length, 1);
   assert.deepEqual(imported.assets[0].bytes, onePixelPng);
+  assert.equal(imported.artifacts[0].language, "Semantic HTML");
+  assert.equal(imported.artifacts[0].name, "image-deck.html");
   assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.artifacts[0].source, /<figure class="deck-image"><img src="rune-asset:sha256:/u);
   assert.deepEqual(validateArtifact(imported.artifacts[0]), []);
   assert.throws(() => exportOfficeArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
 });
@@ -258,8 +261,9 @@ test("exports the default semantic HTML presentation as deterministic PPTX and i
   const roundTrip = imported.artifacts[0];
   assert.match(roundTrip.source, /Growth became more durable/);
   assert.match(roundTrip.source, /Momentum with healthier economics/);
-  assert.match(roundTrip.source, /\| Q2 revenue \| Quarter over quarter \| Gross margin \|/);
-  assert.equal(compileDeckSource(roundTrip.source).slideCount, 4);
+  assert.match(roundTrip.source, /<th>Q2 revenue<\/th><th>Quarter over quarter<\/th><th>Gross margin<\/th>/u);
+  assert.equal(roundTrip.language, "Semantic HTML");
+  assert.equal(compileLegacyHtmlSlides(roundTrip.source).slides.length, 4);
   assert.deepEqual(validateArtifact(roundTrip), []);
 });
 

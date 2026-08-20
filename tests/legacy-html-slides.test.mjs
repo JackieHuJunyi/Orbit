@@ -70,6 +70,21 @@ test("uses bounded fallback labels without changing exact source ranges", () => 
   assert.equal(source.slice(compilation.slides[1].start, compilation.slides[1].end), compilation.slides[1].source);
 });
 
+test("resolves only verified local image references in isolated slide HTML", () => {
+  const id = "a".repeat(64);
+  const source = `<main><section><h1>Proof</h1><img src="rune-asset:sha256:${id}" alt="Proof" /></section></main>`;
+  const resolved = compileLegacyHtmlSlides(source, {
+    resolveLocalAssetUrl: () => "blob:https://rune.local/proof",
+  });
+  assert.deepEqual(resolved.errors, []);
+  assert.match(resolved.slides[0].html, /src="blob:https:\/\/rune\.local\/proof"/u);
+  assert.match(resolved.slides[0].source, new RegExp(`rune-asset:sha256:${id}`, "u"));
+  assert.equal(
+    source,
+    `<main><section><h1>Proof</h1><img src="rune-asset:sha256:${id}" alt="Proof" /></section></main>`,
+  );
+});
+
 test("rejects active scripts and malformed semantic presentation roots", () => {
   const invalidSources = [
     ["<main><section>One<script>alert(1)</script></section></main>", /Scripts are blocked/],

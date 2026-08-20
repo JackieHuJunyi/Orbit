@@ -1,5 +1,9 @@
 # Progress
 
+- 2026-08-21 — Deepened the multilingual startup greeting into bounded wet-spectrum handwriting: a shaped calligraphy nib now carries a close ink wake and tiny terminal drop, the revealed glyph gains a near-edge bleed before drying, and the backdrop color pass runs once instead of looping.
+
+- 2026-08-21 — Shipped Rune v1.29 with PPTX/ODP → semantic HTML import, one shared content-hash image contract across HTML preview/edit/folder/export, reviewed standalone HTML delivery, and deterministic real-media package round trips.
+
 - 2026-08-21 — Refined the v1.27 welcome into a true two-act startup: the multilingual pressure-calligraphy greeting now writes alone at optical center, then reveals the product copy and language decision only after the final ink settles; Latin masks are narrower while CJK, Kana, Hangul, and intact RTL Arabic retain their own stroke order.
 
 - 2026-08-21 — Shipped Rune v1.27 with a visible dual-width spectrum ink trace on every writing-system-aware stroke, exact shared timing with the pressure nib and reveal mask, a quieter staged entrance for setup controls, and unchanged static accessibility fallbacks.

@@ -12,6 +12,7 @@ import {
   MAX_RUNE_LOCAL_IMAGES,
   type PreparedRuneImageAsset,
 } from "./local-assets.ts";
+import { semanticHtmlPresentationFromDeckSource } from "./semantic-html-presentation.ts";
 import type { DataCell, WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
@@ -865,7 +866,7 @@ function pptImageTokens(context: PackageContext, artifactId: string, sourcePart:
     .filter(Boolean);
 }
 
-function convertPptx(fileName: string, context: PackageContext): OfficeImportResult {
+function convertPptxToDeck(fileName: string, context: PackageContext): OfficeImportResult {
   const presentation = xmlPart(context, "ppt/presentation.xml");
   const rels = relationships(context, "ppt/_rels/presentation.xml.rels");
   const slideIds = descendantElements(presentation, "sldId");
@@ -946,7 +947,7 @@ function convertPptx(fileName: string, context: PackageContext): OfficeImportRes
     );
   if (context.importImages && context.imageCandidates.length) {
     context.warnings.push(
-      "PPTX images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.",
+      "PPTX images were mapped to primary presentation visuals; exact crop, overlap, and slide coordinates were not preserved.",
     );
   }
   if (omittedCharts)
@@ -984,12 +985,35 @@ function convertPptx(fileName: string, context: PackageContext): OfficeImportRes
   };
 }
 
+function presentationImportAsSemanticHtml<T extends OfficeImportResult>(result: T): T {
+  const artifacts = result.artifacts.map((artifact) => {
+    const converted = semanticHtmlPresentationFromDeckSource(artifact.source);
+    if (!converted.source) {
+      throw new Error(converted.errors[0] ?? "The presentation could not be converted into semantic HTML.");
+    }
+    return {
+      ...artifact,
+      name: artifact.name.replace(/\.deck\.md$/iu, ".html"),
+      language: "Semantic HTML",
+      source: converted.source,
+    };
+  });
+  return {
+    ...result,
+    artifacts,
+    warnings: [
+      ...result.warnings.map((warning) => warning.replaceAll("semantic Deck", "semantic HTML")),
+      "PPTX slide structure was converted to readable semantic HTML; exact positioning, theme, master styling, transitions, animation, and speaker notes are not preserved.",
+    ],
+  } as T;
+}
+
 export function convertOfficeFile(fileName: string, input: ArrayBuffer | Uint8Array): OfficeImportResult {
   const kind = officeKind(fileName);
   const context = openPackage(input);
   if (kind === "docx") return convertDocx(fileName, context);
   if (kind === "xlsx") return convertXlsx(fileName, context);
-  return convertPptx(fileName, context);
+  return presentationImportAsSemanticHtml(convertPptxToDeck(fileName, context));
 }
 
 export async function convertOfficeFileWithAssets(
@@ -1003,7 +1027,8 @@ export async function convertOfficeFileWithAssets(
       ? convertDocx(fileName, context)
       : kind === "xlsx"
         ? convertXlsx(fileName, context)
-        : convertPptx(fileName, context);
+        : convertPptxToDeck(fileName, context);
   const finalized = await finalizeImportedImages(result.artifacts, context.imageCandidates, result.warnings);
-  return { sourceType: result.sourceType, ...finalized };
+  const withAssets = { sourceType: result.sourceType, ...finalized };
+  return kind === "pptx" ? presentationImportAsSemanticHtml(withAssets) : withAssets;
 }

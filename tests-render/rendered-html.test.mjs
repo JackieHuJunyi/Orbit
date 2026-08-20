@@ -788,6 +788,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
   assert.match(styles, /@keyframes rune-greeting-ink-trace/);
+  assert.match(styles, /@keyframes rune-greeting-wet-ink/);
   assert.match(styles, /@keyframes rune-greeting-stroke-head/);
   assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
@@ -815,6 +816,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /className="welcome-greeting-ink-sheen"/);
   assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
   assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
+  assert.match(handwrittenGreeting, /data-ink-material="wet-spectrum"/);
   assert.match(handwrittenGreeting, /data-ink-trace="progressive"/);
   assert.match(handwrittenGreeting, /data-motion-sequence="write-settle-reveal"/);
   assert.match(welcome, /data-onboarding-sequence="boot-write-settle-unfold"/);

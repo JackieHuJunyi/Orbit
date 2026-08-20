@@ -202,6 +202,7 @@ import {
   pilotEvidenceNoticeCopy,
 } from "../lib/workbench-surface-copy";
 import {
+  buildRuneHtmlImageInsertion,
   buildRuneImageInsertion,
   deleteRuneImageAsset,
   extractRuneAssetIds,
@@ -826,6 +827,36 @@ function downloadArtifact(artifact: WorkspaceArtifact) {
   URL.revokeObjectURL(url);
 }
 
+function isSemanticHtmlPresentation(artifact: WorkspaceArtifact) {
+  return artifact.kind === "slides" && artifact.language === "Semantic HTML" && /\.html?$/iu.test(artifact.name);
+}
+
+function buildLocalImageSourceInsertion(
+  artifact: WorkspaceArtifact,
+  cursorOffset: number,
+  alt: string,
+  assetId: string,
+) {
+  if (!isSemanticHtmlPresentation(artifact)) {
+    return { insertion: buildRuneImageInsertion(artifact.source, cursorOffset, alt, assetId), offset: cursorOffset };
+  }
+  const target = derivePreviewSourceTargets(artifact).find(
+    (candidate) => candidate.kind === "deck-slide" && cursorOffset >= candidate.start && cursorOffset <= candidate.end,
+  );
+  if (!target) throw new Error("Place the source cursor inside one semantic HTML slide before inserting an image.");
+  if (extractRuneAssetIds(artifact.source.slice(target.start, target.end)).length) {
+    throw new Error("A semantic HTML slide supports one primary local image. Choose another slide or remove it first.");
+  }
+  const closing = artifact.source.slice(target.start, target.end).match(/<\/section\s*>\s*$/iu);
+  if (!closing || closing.index == null) throw new Error("Rune could not prove this slide's closing section boundary.");
+  const offset = target.start + closing.index;
+  const insertion = buildRuneHtmlImageInsertion(artifact.source, offset, alt, assetId);
+  const candidate = { ...artifact, source: insertion.nextSource };
+  const errors = validateArtifact(candidate);
+  if (errors.length) throw new Error(errors[0]);
+  return { insertion, offset };
+}
+
 export function RuneWorkbench() {
   const [artifacts, setArtifacts] = useState<WorkspaceArtifact[]>(() => cloneDefaultArtifacts());
   const [selectedId, setSelectedId] = useState("q2-review");
@@ -1142,7 +1173,7 @@ export function RuneWorkbench() {
   const legacyOfficeExportAvailable =
     hydrated && selectedLegacyOfficeExportType ? supportsLegacyOfficeDesktopExport() : false;
   const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
-  const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact));
+  const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides");
   const selectedPdfExport = Boolean(
     selectedArtifact?.kind === "document" || selectedArtifact?.kind === "data" || selectedArtifact?.kind === "slides",
   );
@@ -1829,8 +1860,9 @@ export function RuneWorkbench() {
     if (!file) return;
     const targetArtifact = artifactsRef.current.find((artifact) => artifact.id === selectedId);
     const deckArtifact = Boolean(targetArtifact?.kind === "slides" && isDeckMarkdownArtifact(targetArtifact));
-    if (!targetArtifact || (targetArtifact.kind !== "document" && !deckArtifact)) {
-      setNotice("Local images can be inserted into Markdown Documents and Deck Markdown slides");
+    const semanticHtmlArtifact = Boolean(targetArtifact && isSemanticHtmlPresentation(targetArtifact));
+    if (!targetArtifact || (targetArtifact.kind !== "document" && !deckArtifact && !semanticHtmlArtifact)) {
+      setNotice("Local images can be inserted into Markdown Documents and semantic HTML or Deck presentations");
       return;
     }
     if (
@@ -1861,12 +1893,21 @@ export function RuneWorkbench() {
     try {
       const asset = await prepareRuneImageAsset(file.name, file.type, await file.arrayBuffer());
       const alt = runeImageAltFromName(asset.name);
-      const insertion = buildRuneImageInsertion(targetArtifact.source, offset, alt, asset.id);
+      const preparedInsertion = buildLocalImageSourceInsertion(targetArtifact, offset, alt, asset.id);
+      const { insertion } = preparedInsertion;
       if (deckArtifact) {
         const parsed = parseDeckSource(insertion.nextSource);
         if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The image does not fit this Deck slide.");
       }
-      setPendingLocalImage({ artifact: targetArtifact, asset, insertion, offset, alt, error: "", submitting: false });
+      setPendingLocalImage({
+        artifact: targetArtifact,
+        asset,
+        insertion,
+        offset: preparedInsertion.offset,
+        alt,
+        error: "",
+        submitting: false,
+      });
       setSaveState("saved");
       setNotice("Local image ready for source review");
     } catch (error) {
@@ -1882,14 +1923,14 @@ export function RuneWorkbench() {
         return {
           ...current,
           alt,
-          insertion: buildRuneImageInsertion(current.artifact.source, current.offset, alt, current.asset.id),
+          insertion: buildLocalImageSourceInsertion(current.artifact, current.offset, alt, current.asset.id).insertion,
           error: "",
         };
       } catch (error) {
         return {
           ...current,
           alt,
-          error: error instanceof Error ? error.message : "The Markdown image reference is invalid.",
+          error: error instanceof Error ? error.message : "The canonical image reference is invalid.",
         };
       }
     });
@@ -1909,17 +1950,22 @@ export function RuneWorkbench() {
     if (!currentArtifact || currentArtifact.source !== pending.artifact.source) {
       setPendingLocalImage({
         ...pending,
-        error: "The Document changed after this review opened. Choose the image again from the current source.",
+        error: "The source changed after this review opened. Choose the image again from the current source.",
       });
       return;
     }
     if (!canCheckpointSource(currentArtifact.source)) {
-      setPendingLocalImage({ ...pending, error: "This Document is too large for a safe pre-insertion checkpoint." });
+      setPendingLocalImage({ ...pending, error: "This source is too large for a safe pre-insertion checkpoint." });
       return;
     }
     let insertion: RuneImageInsertion;
     try {
-      insertion = buildRuneImageInsertion(currentArtifact.source, pending.offset, pending.alt, pending.asset.id);
+      insertion = buildLocalImageSourceInsertion(
+        currentArtifact,
+        pending.offset,
+        pending.alt,
+        pending.asset.id,
+      ).insertion;
       if (currentArtifact.kind === "slides" && isDeckMarkdownArtifact(currentArtifact)) {
         const parsed = parseDeckSource(insertion.nextSource);
         if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The image does not fit this Deck slide.");
@@ -1927,14 +1973,14 @@ export function RuneWorkbench() {
     } catch (error) {
       setPendingLocalImage({
         ...pending,
-        error: error instanceof Error ? error.message : "The Markdown image reference is invalid.",
+        error: error instanceof Error ? error.message : "The canonical image reference is invalid.",
       });
       return;
     }
     const patch: ArtifactSourcePatch = {
       artifactId: currentArtifact.id,
       summary: `Insert ${pending.asset.name}`,
-      detail: "Store one device-local image by content hash and insert its readable Markdown reference.",
+      detail: "Store one device-local image by content hash and insert its readable canonical-source reference.",
       nextSource: insertion.nextSource,
       operationCount: 1,
     };
@@ -1948,7 +1994,7 @@ export function RuneWorkbench() {
     localImageInFlightRef.current = true;
     setPendingLocalImage({ ...pending, insertion, error: "", submitting: true });
     setSaveState("saving");
-    setNotice("Saving the image and Markdown reference atomically");
+    setNotice("Saving the image and canonical source reference atomically");
     let created = false;
     try {
       created = await putRuneImageAsset(pending.asset);
@@ -1965,7 +2011,7 @@ export function RuneWorkbench() {
         setSaveState("error");
         setPendingLocalImage((value) =>
           value
-            ? { ...value, error: "Device storage is full, so Rune kept the Document unchanged.", submitting: false }
+            ? { ...value, error: "Device storage is full, so Rune kept the source unchanged.", submitting: false }
             : value,
         );
         return;
@@ -4306,8 +4352,7 @@ export function RuneWorkbench() {
           throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its consumers.`);
       }
       const imageAssets =
-        (targetArtifact.kind === "document" ||
-          (targetArtifact.kind === "slides" && isDeckMarkdownArtifact(targetArtifact))) &&
+        (targetArtifact.kind === "document" || targetArtifact.kind === "slides") &&
         extractRuneAssetIds(targetArtifact.source).length
           ? await collectWorkspaceLocalAssets([targetArtifact])
           : [];

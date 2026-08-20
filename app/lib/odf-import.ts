@@ -13,6 +13,7 @@ import {
   MAX_RUNE_LOCAL_IMAGES,
   type PreparedRuneImageAsset,
 } from "./local-assets.ts";
+import { semanticHtmlPresentationFromDeckSource } from "./semantic-html-presentation.ts";
 import type { DataCell, WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_ODF_IMPORT_BYTES = 12 * 1024 * 1024;
@@ -899,7 +900,7 @@ function odpImageTokens(context: PackageContext, artifactId: string, page: XmlEl
     .filter(Boolean);
 }
 
-function convertOdp(fileName: string, context: PackageContext, content: XmlDocument): OdfImportResult {
+function convertOdpToDeck(fileName: string, context: PackageContext, content: XmlDocument): OdfImportResult {
   const presentation = firstDescendant(content, "presentation");
   if (!presentation) throw new Error("The ODP content does not contain an office:presentation body.");
   const styles = styleMap(context, content);
@@ -978,20 +979,20 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
   if (!slides.length) throw new Error("The ODP did not contain any slides.");
   if (images)
     context.warnings.push(
-      `${images} ODP ${images === 1 ? "image was" : "images were"} omitted because the semantic Deck reached its visual or 40-slide limit.`,
+      `${images} ODP ${images === 1 ? "image was" : "images were"} omitted because the semantic HTML presentation reached its visual or 40-slide limit.`,
     );
   if (context.importImages && context.imageCandidates.length) {
     context.warnings.push(
-      "ODP images were mapped to primary Deck visuals; exact crop, overlap, and slide coordinates were not preserved.",
+      "ODP images were mapped to primary presentation visuals; exact crop, overlap, and slide coordinates were not preserved.",
     );
   }
   if (objects)
     context.warnings.push(
       `${objects} embedded ODP ${objects === 1 ? "object was" : "objects were"} omitted; import its source data to rebuild a live Rune artifact.`,
     );
-  if (notes) context.warnings.push("ODP speaker notes were not imported into Deck Markdown.");
+  if (notes) context.warnings.push("ODP speaker notes were not imported into semantic HTML.");
   context.warnings.push(
-    "ODP positioning, theme, master styling, transitions, animation, and inline text styling were not preserved in Deck Markdown.",
+    "ODP positioning, theme, master styling, transitions, animation, and inline text styling were not preserved in semantic HTML.",
   );
   const title = documentTitle(context, fileName);
   const safeTitle = oneLine(title).replaceAll("{", "&#123;").replaceAll("}", "&#125;");
@@ -1025,6 +1026,22 @@ function convertOdp(fileName: string, context: PackageContext, content: XmlDocum
   };
 }
 
+function presentationImportAsSemanticHtml<T extends OdfImportResult>(result: T): T {
+  const artifacts = result.artifacts.map((artifact) => {
+    const converted = semanticHtmlPresentationFromDeckSource(artifact.source);
+    if (!converted.source) {
+      throw new Error(converted.errors[0] ?? "The presentation could not be converted into semantic HTML.");
+    }
+    return {
+      ...artifact,
+      name: artifact.name.replace(/\.deck\.md$/iu, ".html"),
+      language: "Semantic HTML",
+      source: converted.source,
+    };
+  });
+  return { ...result, artifacts } as T;
+}
+
 export function convertOdfFile(fileName: string, input: ArrayBuffer | Uint8Array): OdfImportResult {
   const kind = odfKind(fileName);
   const context = openPackage(kind, input);
@@ -1033,7 +1050,7 @@ export function convertOdfFile(fileName: string, input: ArrayBuffer | Uint8Array
   packageWarnings(context, content);
   if (kind === "odt") return convertOdt(fileName, context, content);
   if (kind === "ods") return convertOds(fileName, context, content);
-  return convertOdp(fileName, context, content);
+  return presentationImportAsSemanticHtml(convertOdpToDeck(fileName, context, content));
 }
 
 export async function convertOdfFileWithAssets(
@@ -1050,7 +1067,8 @@ export async function convertOdfFileWithAssets(
       ? convertOdt(fileName, context, content)
       : kind === "ods"
         ? convertOds(fileName, context, content)
-        : convertOdp(fileName, context, content);
+        : convertOdpToDeck(fileName, context, content);
   const finalized = await finalizeImportedImages(result.artifacts, context.imageCandidates, result.warnings);
-  return { sourceType: result.sourceType, ...finalized };
+  const withAssets = { sourceType: result.sourceType, ...finalized };
+  return kind === "odp" ? presentationImportAsSemanticHtml(withAssets) : withAssets;
 }

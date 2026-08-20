@@ -52,7 +52,7 @@ test("converts bounded semantic HTML into immutable valid Deck handoff source", 
   assert.match(first.artifact.source, /\| 区域 \| 收入 \|\n\| --- \| --- \|\n\| APAC \| 42 \|/u);
   assert.doesNotMatch(first.artifact.source, /style|example\.com|<img/iu);
   assert.match(first.warnings.join(" "), /CSS, exact positioning, animation/iu);
-  assert.match(first.warnings.join(" "), /Images and video/iu);
+  assert.match(first.warnings.join(" "), /not backed by verified Rune local assets/iu);
 
   const parsed = parseDeckSource(first.artifact.source);
   assert.deepEqual(parsed.errors, []);
@@ -61,6 +61,26 @@ test("converts bounded semantic HTML into immutable valid Deck handoff source", 
   assert.deepEqual(compiled.errors, []);
   assert.match(compiled.html ?? "", /收入 &amp; 计划 \[now\] #1/u);
   assert.doesNotMatch(compiled.html ?? "", /\\\[now|\\#1/u);
+});
+
+test("preserves one verified semantic HTML image in the controlled Deck handoff", () => {
+  const imageId = "c".repeat(64);
+  const artifact = semanticHtmlArtifact(
+    `<main><section data-layout="split"><h1>Proof</h1><p>Readable evidence.</p><figure class="deck-image"><img src="rune-asset:sha256:${imageId}" alt="Q2 proof" /></figure></section></main>`,
+  );
+  const result = convertSemanticHtmlPresentationToDeck(artifact);
+  assert.match(result.artifact.source, new RegExp(`!\\[Q2 proof\\]\\(rune-asset:sha256:${imageId}\\)`, "u"));
+  assert.deepEqual(parseDeckSource(result.artifact.source).errors, []);
+  assert.doesNotMatch(result.warnings.join(" "), /omitted.*image/iu);
+
+  const twoImages = artifact.source.replace(
+    "</figure>",
+    `</figure><img src="rune-asset:sha256:${"d".repeat(64)}" alt="Second" />`,
+  );
+  assert.throws(
+    () => convertSemanticHtmlPresentationToDeck({ ...artifact, source: twoImages }),
+    /one verified local image per slide/iu,
+  );
 });
 
 test("falls back visibly for unsupported layouts and irregular tables", () => {

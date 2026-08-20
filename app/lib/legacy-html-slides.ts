@@ -1,3 +1,5 @@
+import { renderRuneHtmlAssetReferences } from "./local-assets.ts";
+
 export type LegacyHtmlSlide = Readonly<{
   end: number;
   html: string;
@@ -30,6 +32,10 @@ type HtmlTagToken = {
 
 const MAX_LEGACY_HTML_CHARS = 120_000;
 const MAX_LEGACY_HTML_SLIDES = 40;
+
+export type LegacyHtmlSlideCompileOptions = Readonly<{
+  resolveLocalAssetUrl?: (reference: string) => string | null;
+}>;
 
 function tagEnd(source: string, start: number) {
   let quote = "";
@@ -87,13 +93,23 @@ function closingRawTextTag(source: string, name: string, start: number): HtmlTag
   return match ? readTag(source, match.index) : null;
 }
 
-function slideDocument(htmlOpen: string, mainOpen: string, sharedStyles: string[], section: string) {
+function slideDocument(
+  htmlOpen: string,
+  mainOpen: string,
+  sharedStyles: string[],
+  section: string,
+  options: LegacyHtmlSlideCompileOptions,
+) {
   const safeHtmlOpen = htmlOpen || '<html lang="en">';
   const safeMainOpen = mainOpen || "<main>";
-  return `<!doctype html>${safeHtmlOpen}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; font-src data:">${sharedStyles.join("")}</head><body>${safeMainOpen}${section}</main></body></html>`;
+  const renderedSection = renderRuneHtmlAssetReferences(section, options.resolveLocalAssetUrl);
+  return `<!doctype html>${safeHtmlOpen}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; font-src data:">${sharedStyles.join("")}</head><body>${safeMainOpen}${renderedSection}</main></body></html>`;
 }
 
-export function compileLegacyHtmlSlides(source: string): LegacyHtmlSlideCompilation {
+export function compileLegacyHtmlSlides(
+  source: string,
+  options: LegacyHtmlSlideCompileOptions = {},
+): LegacyHtmlSlideCompilation {
   if (!source.trim()) return Object.freeze({ slides: [], errors: ["Add semantic HTML to create a presentation."] });
   if (source.length > MAX_LEGACY_HTML_CHARS) {
     return Object.freeze({ slides: [], errors: ["Semantic HTML exceeds the 120,000-character limit."] });
@@ -210,7 +226,7 @@ export function compileLegacyHtmlSlides(source: string): LegacyHtmlSlideCompilat
     const section = source.slice(range.start, range.end);
     return Object.freeze({
       ...range,
-      html: slideDocument(htmlOpen, mainOpen, sharedStyles, section),
+      html: slideDocument(htmlOpen, mainOpen, sharedStyles, section, options),
       index: slideIndex,
       label: boundedLabel(section, `Slide ${slideIndex + 1}`),
       source: section,

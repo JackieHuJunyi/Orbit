@@ -60,6 +60,7 @@ export type DeckCompiledPreviewSlide = {
 };
 
 export type DeckCompileOptions = {
+  preserveLocalAssetReferences?: boolean;
   resolveLocalAssetUrl?: (reference: string) => string | null;
 };
 
@@ -266,7 +267,9 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
     const image = parseRuneMarkdownImage(line);
     if (image) {
       const reference = `rune-asset:sha256:${image.id}`;
-      const url = safeDeckImageUrl(options.resolveLocalAssetUrl?.(reference) ?? null);
+      const url =
+        safeDeckImageUrl(options.resolveLocalAssetUrl?.(reference) ?? null) ??
+        (options.preserveLocalAssetReferences ? reference : null);
       const alt = escapeHtml(image.alt || "Rune image");
       blocks.push(
         url

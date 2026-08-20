@@ -76,6 +76,7 @@ export function HandwrittenGreeting({
   const identifier = useId().replaceAll(":", "");
   const gradientId = `rune-greeting-spectrum-${identifier}`;
   const glowId = `rune-greeting-glow-${identifier}`;
+  const inkBleedId = `rune-greeting-ink-bleed-${identifier}`;
   const trailGlowId = `rune-greeting-trail-glow-${identifier}`;
   const inkTextureId = `rune-greeting-ink-texture-${identifier}`;
   const revealMaskId = `rune-greeting-reveal-${identifier}`;
@@ -100,6 +101,7 @@ export function HandwrittenGreeting({
       data-motion-renderer="calligraphic-mask"
       data-motion-script={script}
       data-ink-effect="spectrum-sheen"
+      data-ink-material="wet-spectrum"
       data-ink-trace="progressive"
       data-motion-sequence="write-settle-reveal"
       data-writing-style="pressure-calligraphy"
@@ -152,6 +154,9 @@ export function HandwrittenGreeting({
         <filter colorInterpolationFilters="sRGB" height="180%" id={glowId} width="130%" x="-15%" y="-40%">
           <feGaussianBlur stdDeviation="5.2" />
         </filter>
+        <filter colorInterpolationFilters="sRGB" height="150%" id={inkBleedId} width="112%" x="-6%" y="-25%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.15" />
+        </filter>
         <filter colorInterpolationFilters="sRGB" height="180%" id={trailGlowId} width="140%" x="-20%" y="-40%">
           <feGaussianBlur stdDeviation="2.55" />
         </filter>
@@ -192,6 +197,16 @@ export function HandwrittenGreeting({
         </clipPath>
       </defs>
 
+      <g aria-hidden="true" className="welcome-greeting-ink-bleed" filter={`url(#${inkBleedId})`}>
+        <GreetingText
+          className="welcome-greeting-fill welcome-greeting-fill-bleed"
+          canvasWidth={canvasWidth}
+          direction={direction}
+          gradientId={gradientId}
+          mask={`url(#${revealMaskId})`}
+          value={value}
+        />
+      </g>
       <GreetingText
         className="welcome-greeting-fill welcome-greeting-fill-glow"
         canvasWidth={canvasWidth}
@@ -321,15 +336,21 @@ export function HandwrittenGreeting({
             } as CSSProperties
           }
         >
-          <circle className="welcome-greeting-stroke-head-bloom" cx="0" cy="0" r="10" />
+          <circle className="welcome-greeting-stroke-head-bloom" cx="0" cy="0" r="9.5" />
           <ellipse
-            className="welcome-greeting-stroke-head-ink"
-            cx="0"
+            className="welcome-greeting-stroke-head-wake"
+            cx="-5.2"
             cy="0"
             fill={`url(#${gradientId})`}
-            rx="4.6"
-            ry="2.3"
+            rx="7.4"
+            ry="2.8"
           />
+          <path
+            className="welcome-greeting-stroke-head-ink"
+            d="M -6.8 1.5 C -4.1 -2.8 1.7 -3.6 6.2 -1.2 C 3.4 2.6 -2.4 4 -6.8 1.5 Z"
+            fill={`url(#${gradientId})`}
+          />
+          <circle className="welcome-greeting-stroke-head-drop" cx="-6.8" cy="3.2" r="1.05" />
           <ellipse className="welcome-greeting-stroke-head-bristle" cx="-1.2" cy="1.3" rx="3.1" ry=".42" />
           <ellipse className="welcome-greeting-stroke-head-bristle" cx="-.4" cy="-1.25" rx="2.6" ry=".34" />
           <ellipse className="welcome-greeting-stroke-head-light" cx="-0.8" cy="-0.6" rx="1.7" ry="0.55" />

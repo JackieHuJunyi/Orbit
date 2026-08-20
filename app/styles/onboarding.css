@@ -242,9 +242,11 @@
 .welcome-greeting[data-greeting-locale="ru"] { font-family: "PT Serif", Georgia, serif; font-style: italic; font-weight: 500; letter-spacing: -.05em; }
 .welcome-greeting[data-greeting-locale="ar"] { font-family: "Geeza Pro", "Noto Naskh Arabic", serif; font-weight: 500; letter-spacing: 0; }
 .welcome-greeting-fill { stroke: none; }
-.welcome-greeting-fill-glow { opacity: .28; }
+.welcome-greeting-fill-glow { opacity: .22; }
+.welcome-greeting-ink-bleed { opacity: 0; pointer-events: none; }
+.welcome-greeting-fill-bleed { opacity: .44; }
 .welcome-greeting-fill-reveal {
-  opacity: .98;
+  opacity: .92;
 }
 .welcome-greeting-fill-settled { opacity: 0; }
 .welcome-greeting-reveal-stroke {
@@ -277,13 +279,21 @@
 .welcome-greeting-ink-bristles { mix-blend-mode: screen; opacity: .58; }
 .welcome-greeting-ink-bristle { stroke-dashoffset: 1; }
 .welcome-greeting-stroke-head { opacity: 0; }
-.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .22); filter: blur(4.5px); }
+.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .2); filter: blur(4.5px); }
+.welcome-greeting-stroke-head-wake {
+  opacity: .34;
+  filter: blur(1.9px);
+  transform: rotate(-12deg);
+  transform-box: fill-box;
+  transform-origin: center;
+}
 .welcome-greeting-stroke-head-ink {
   stroke: rgba(255, 255, 255, .32);
   stroke-width: .8px;
   transform-box: fill-box;
   transform-origin: center;
 }
+.welcome-greeting-stroke-head-drop { fill: rgba(255, 255, 255, .64); filter: blur(.18px); }
 .welcome-greeting-stroke-head-light {
   fill: rgba(255, 255, 255, .78);
   filter: blur(.22px);
@@ -683,6 +693,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before,
   .welcome-greeting-stroke-head,
+  .welcome-greeting-ink-bleed,
   .welcome-greeting-ink-trails,
   .welcome-greeting-ink-sheen { display: none; }
   .welcome-greeting-ink-texture { filter: none; }
