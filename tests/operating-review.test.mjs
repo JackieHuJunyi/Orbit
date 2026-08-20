@@ -4,6 +4,7 @@ import test from "node:test";
 import { parseChartSource } from "../app/lib/charts.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
+import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
 import {
   appendOperatingReviewRun,
   createSavedOperatingReview,
@@ -16,6 +17,8 @@ import {
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
+
+await loadRuneLocaleCatalog("zh-TW");
 
 function dataArtifact(overrides = {}) {
   return {

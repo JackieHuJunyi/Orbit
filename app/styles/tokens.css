@@ -54,7 +54,9 @@
   --rune-duration-surface: 420ms;
   --rune-duration-scene: 760ms;
 
+  --rune-layer-underlay: -1;
   --rune-layer-canvas: 0;
+  --rune-layer-local-float: 1;
   --rune-layer-workspace: 10;
   --rune-layer-status: 30;
   --rune-layer-pane-float: 80;

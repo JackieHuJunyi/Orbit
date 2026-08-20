@@ -7,6 +7,7 @@ import {
   localeDisplayName,
   localeDirection,
   localeMonogram,
+  loadRuneLocaleCatalog,
   localizeRuneStatus,
   normalizeRuneLocale,
   runeGreetingSequence,
@@ -18,6 +19,8 @@ import {
   RUNE_LOCALE_REGISTRY,
 } from "../app/lib/localization.ts";
 import { validateArtifact } from "../app/lib/workspace.ts";
+
+await Promise.all(["zh-TW", "fr", "es", "ru", "ar", "ja", "ko"].map(loadRuneLocaleCatalog));
 
 test("uses the first supported language in the device's ordered preferences", () => {
   assert.equal(detectPreferredLocale(["en-US", "zh-Hans-CN"]), "en");

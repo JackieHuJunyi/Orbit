@@ -10,8 +10,11 @@ import {
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
 import { buildWorkspaceDependencyGraph } from "../app/lib/dependency-graph.ts";
+import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { buildWorkspaceTransactionReview } from "../app/lib/transaction-review.ts";
+
+await Promise.all(["zh-TW", "fr", "es", "ru", "ar", "ja", "ko"].map((locale) => loadRuneLocaleCatalog(locale)));
 
 const sourceDocument = {
   id: "launch-source",

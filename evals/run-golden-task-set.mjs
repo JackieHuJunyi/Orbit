@@ -4,6 +4,7 @@ import path from "node:path";
 import * as duckdb from "@duckdb/duckdb-wasm/blocking";
 import { findChartReferences, parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
+import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { buildBoundedQuery } from "../app/lib/sql.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
@@ -166,6 +167,11 @@ function failedCase(task, error) {
 
 export async function runRuneGoldenTaskSet() {
   const cases = [];
+  await Promise.all(
+    [...new Set(RUNE_GOLDEN_TASKS.map((task) => task.request.input.locale))].map((locale) =>
+      loadRuneLocaleCatalog(locale),
+    ),
+  );
   const runtime = await createRuntime();
   let runtimeVerified = 0;
   try {

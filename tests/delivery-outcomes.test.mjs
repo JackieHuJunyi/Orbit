@@ -15,6 +15,9 @@ import {
   normalizeOperatingReviewDeliveryOutcomes,
   operatingReviewDeliveryId,
 } from "../app/lib/delivery-outcomes.ts";
+import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
+
+await loadRuneLocaleCatalog("fr");
 
 function dataArtifact() {
   return {

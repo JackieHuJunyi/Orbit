@@ -2383,3 +2383,19 @@ Apple 式轻盈不是加更多模糊、渐变和无限漂浮，而是层级、�
 “九种语言都存在”不等于九种语言下都可用。日文默认选择曾在窄屏语言列表的可视区之外，法语、西班牙语和俄语的长状态文案还会扩大隐式 grid track，使顶部栏与空白页出现 22–83px 横向溢出。v1.15 让所选语言在布局完成后进入自己的 scroll container，并把 statusbar 明确限制在 shell track 内；外观增加超凡蓝、星光白和玫瑰珍珠后，十二个主题名称必须在法、西、俄、阿、日、韩语中逐项验证，不能静默回退英文。
 
 这些不是只靠截图判断的 CSS 调整。新的几何门槛对九种 locale 分别运行 1440×900 与 390×844：验证根节点 locale/direction、九个语言选项、所选项可见、欢迎窗口在 viewport 内、文案与语言卡不遮挡、主动作至少 44px、空白拖放区在其 canvas 内、全页零横向溢出和零脚本错误。Preview→Source 继续使用唯一的 revision-bound navigation plan；布局切回 Split 后再用下一帧对 canonical textarea 做一次滚动校正，不增加第二套 target、source 或 writer。
+
+## 115. v1.16 支持更多语言不应让每个人下载所有语言
+
+九语言合同过去通过一个 522 KB 机器目录、225 KB 人工覆盖和 90 KB 繁中转换表一次性进入 Workbench。它确保同步调用简单，却意味着英文用户也要下载和解析永远不会使用的俄文、阿文、日文与韩文；新增第十种语言还会把全部英文 lookup key 再复制一遍。这与“低成本扩展”相反，也让 1.4 MB 的主 chunk 把 UI 细节优化带来的轻盈抵消掉。
+
+v1.16 保留同步渲染和纯 compiler，但把异步边界前移到“确认 locale”。英文与简中无需加载；繁中转换、法、西、俄、阿、日、韩分别是本地静态模块。设备偏好恢复、欢迎页选项和任务 API 都先 `loadRuneLocaleCatalog`，完成后才进入既有 `runeText`、`runeUICopy`、guide、status 与 task compiler；未加载直接报错，不能混入英文。并发请求共用一个 in-flight promise，失败删除 promise 以允许重试，整个路径没有翻译网络、内容上传、credential、persistence 或 Artifact writer。
+
+生成时仍保留适合人工审核的 source catalog 与 override，再确定性合并成每语言 runtime module；CI 同时检查两层没有漂移。Vite manifest 证明七个 deferred locale 都是 dynamic entry，九语言浏览器矩阵证明每个入口可真实到达。初始 minified Workbench 从约 1.4 MB 降到 699,297 bytes，gzip 从 438,653 bytes 降到约 211 KB；750 KB 门槛把这次收益变成架构合同，而不是一次截图优化。
+
+## 116. 手写欢迎的高级感来自书写时序，不是更多装饰层
+
+上一版逐字 `clip-path` 虽然能显示炫彩文字，却仍像一个矩形从左到右把字擦出来；固定 3.2 秒轮播还可能在长俄文完成前切换。真正接近设备开机问候的关键是“落笔—行笔—收笔—停留”四段节奏，而且这个节奏必须由文字长度和书写方向决定。
+
+v1.16 改用带柔边前缘的方向性 ink mask，让渐变色沿当前 grapheme 逐步显现；小型白色笔尖只在行笔阶段移动，最后一字完成后才画出低透明度收笔弧线，完成后的墨色只做很慢的有界流动。英文、法文等使用系统 script face，中文与日文使用设备书写字体；阿拉伯文不拆字以免破坏 shaping，并让遮罩和笔尖都从右向左推进。轮播改为每条问候自己的 timeout，长字符串拥有更长的完成与停留时间，切换前再淡出。
+
+动画仍不拥有产品状态或布局尺寸。`prefers-reduced-motion` 下完整文字立即出现且不轮播，forced colors 下恢复系统实色；欢迎窗口增加独立 `100dvh` max-height，避免字体或入场动画让任何语言溢出桌面视口。这样视觉表达更像真正的书写，同时不复制 Apple 的图形资产，也不牺牲九语言、RTL、可访问性和几何合同。

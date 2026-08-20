@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 import { RUNE_PRODUCT_VERSION } from "../app/lib/product-meta.ts";
@@ -115,24 +115,35 @@ test("renders all five canonical artifact modes", async () => {
 test("keeps compatibility parsers and heavy runtimes out of the initial client bundle", async () => {
   const manifestUrl = new URL("../dist/client/.vite/manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
+  const workbenchEntry = manifest["app/components/rune-workbench.tsx"];
+  assert.ok(workbenchEntry);
+  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
+    const localeEntry = `app/lib/interface-locales.runtime/${locale}.generated.ts`;
+    assert.equal(manifest[localeEntry]?.isDynamicEntry, true);
+    assert.ok(workbenchEntry.dynamicImports?.includes(localeEntry));
+  }
+  assert.equal(manifest["app/lib/traditional-chinese.generated.ts"]?.isDynamicEntry, true);
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/traditional-chinese.generated.ts"));
+  const workbenchBytes = (await stat(new URL(`../dist/client/${workbenchEntry.file}`, import.meta.url))).size;
+  assert.ok(workbenchBytes <= 750_000, `Initial Workbench chunk is ${workbenchBytes} bytes; budget is 750000.`);
   assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-import.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/office-import.ts"));
   assert.equal(manifest["app/lib/pdf-import-client.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/pdf-import-client.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/pdf-import-client.ts"));
   assert.equal(manifest["app/lib/odf-import.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/odf-import.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/odf-import.ts"));
   assert.equal(manifest["app/lib/office-export.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/office-export.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/office-export.ts"));
   assert.equal(manifest["app/lib/odf-export.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/odf-export.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/odf-export.ts"));
   assert.equal(manifest["app/lib/html-export.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/html-export.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/html-export.ts"));
   assert.equal(manifest["app/lib/pdf-export.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/pdf-export.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/pdf-export.ts"));
   assert.equal(manifest["app/lib/agent-evidence.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/agent-evidence.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/agent-evidence.ts"));
   assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
-  assert.ok(manifest["app/components/rune-workbench.tsx"]?.dynamicImports?.includes("app/lib/query-preflight.ts"));
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/query-preflight.ts"));
 });
 
 test("ships a complete-source live mirror for revision-bound visual Document drafts", async () => {
@@ -497,7 +508,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
   assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune \{RUNE_PRODUCT_VERSION\}<\/strong>/);
-  assert.equal(RUNE_PRODUCT_VERSION, "1.15");
+  assert.equal(RUNE_PRODUCT_VERSION, "1.16");
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -659,6 +670,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     styles,
     /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(var\(--rune-frame-width\),\s*var\(--rune-content-wide\)\);/s,
   );
+  assert.match(styles, /\.welcome-window\s*\{[^}]*max-height:\s*calc\(100dvh - var\(--rune-space-4\)\);/s);
   assert.match(
     styles,
     /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s,
@@ -670,6 +682,8 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
   assert.match(styles, /@keyframes rune-greeting-pen/);
+  assert.match(styles, /@keyframes rune-greeting-ink-flow/);
+  assert.match(styles, /mask-image:\s*linear-gradient\(90deg/);
   assert.match(styles, /#ff375f[^]*#30d158[^]*#0a84ff[^]*#bf5af2/);
   assert.match(styles, /circle at var\(--rune-pointer-x\) var\(--rune-pointer-y\)/);
   assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)/);
@@ -680,6 +694,8 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(source, /className="tools-material-preview"/);
   assert.match(welcome, /className="welcome-greeting-character"/);
   assert.match(welcome, /data-character=\{character\}/);
+  assert.match(welcome, /--greeting-cycle-duration/);
+  assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);

@@ -180,6 +180,7 @@ import {
   createRuneGuideArtifact,
   detectPreferredLocale,
   localeDirection,
+  loadRuneLocaleCatalog,
   localizeRuneStatus,
   normalizeRuneLocale,
   runeQuickCommands,
@@ -822,6 +823,7 @@ export function RuneWorkbench() {
   const [notice, setNotice] = useState("Local workspace ready");
   const [locale, setLocale] = useState<RuneLocale>("en");
   const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
+  const localeRequestRef = useRef(0);
   const [modelMode, setModelMode] = useState<RuneModelMode>("auto");
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
@@ -1309,60 +1311,77 @@ export function RuneWorkbench() {
   }, [proposalArtifact]);
 
   useEffect(() => {
+    let cancelled = false;
     const timer = window.setTimeout(() => {
-      try {
+      void (async () => {
         const detected = detectPreferredLocale(
           navigator.languages?.length ? navigator.languages : [navigator.language],
         );
-        const storedLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY));
-        const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
-        const storedAppearance = normalizeRuneAppearanceTheme(localStorage.getItem(RUNE_APPEARANCE_STORAGE_KEY));
-        const storedWorkspaceSplit = normalizeWorkspaceSourcePercent(
-          localStorage.getItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY),
-        );
-        const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
-        setDetectedLocale(detected);
-        setLocale(storedLocale ?? detected);
-        setModelMode(storedModelMode ?? "auto");
-        setAppearanceTheme(storedAppearance ?? "mist-blue");
-        setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
-        setWorkspaceView(storedWorkspaceView ?? "split");
-        setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored) as {
-            artifacts?: unknown;
-            selectedId?: unknown;
-            checkpoints?: unknown;
-            savedOperatingReviews?: unknown;
-            taskEvidence?: unknown;
-          };
-          const restoredArtifacts = normalizeWorkspaceArtifacts(parsed.artifacts);
-          const restoredId =
-            typeof parsed.selectedId === "string" &&
-            restoredArtifacts.some((artifact) => artifact.id === parsed.selectedId)
-              ? parsed.selectedId
-              : restoredArtifacts[0].id;
-          setArtifacts(restoredArtifacts);
-          setSelectedId(restoredId);
-          setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
-          setSavedOperatingReviews(normalizeSavedOperatingReviews(parsed.savedOperatingReviews));
-          setTaskEvidence(normalizeRuneTaskEvidence(parsed.taskEvidence));
-          setNotice("Restored the latest device draft");
+        let nextLocale: RuneLocale = detected;
+        try {
+          nextLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY)) ?? detected;
+        } catch {
+          // Device preference storage can be unavailable while the in-memory workspace remains usable.
         }
-      } catch {
-        const detected = detectPreferredLocale(
-          navigator.languages?.length ? navigator.languages : [navigator.language],
-        );
-        setDetectedLocale(detected);
-        setLocale(detected);
-        setWelcomeOpen(true);
-        setNotice("Started a fresh local workspace");
-      } finally {
-        setHydrated(true);
-      }
+        try {
+          await loadRuneLocaleCatalog(nextLocale);
+        } catch {
+          nextLocale = await loadRuneLocaleCatalog(detected)
+            .then(() => detected)
+            .catch(() => "en" as const);
+        }
+        if (cancelled) return;
+        try {
+          const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
+          const storedAppearance = normalizeRuneAppearanceTheme(localStorage.getItem(RUNE_APPEARANCE_STORAGE_KEY));
+          const storedWorkspaceSplit = normalizeWorkspaceSourcePercent(
+            localStorage.getItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY),
+          );
+          const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
+          setDetectedLocale(detected);
+          setLocale(nextLocale);
+          setModelMode(storedModelMode ?? "auto");
+          setAppearanceTheme(storedAppearance ?? "mist-blue");
+          setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
+          setWorkspaceView(storedWorkspaceView ?? "split");
+          setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored) as {
+              artifacts?: unknown;
+              selectedId?: unknown;
+              checkpoints?: unknown;
+              savedOperatingReviews?: unknown;
+              taskEvidence?: unknown;
+            };
+            const restoredArtifacts = normalizeWorkspaceArtifacts(parsed.artifacts);
+            const restoredId =
+              typeof parsed.selectedId === "string" &&
+              restoredArtifacts.some((artifact) => artifact.id === parsed.selectedId)
+                ? parsed.selectedId
+                : restoredArtifacts[0].id;
+            setArtifacts(restoredArtifacts);
+            setSelectedId(restoredId);
+            setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
+            setSavedOperatingReviews(normalizeSavedOperatingReviews(parsed.savedOperatingReviews));
+            setTaskEvidence(normalizeRuneTaskEvidence(parsed.taskEvidence));
+            setNotice("Restored the latest device draft");
+          }
+        } catch {
+          if (cancelled) return;
+          setDetectedLocale(detected);
+          setLocale(nextLocale);
+          setWelcomeOpen(true);
+          setNotice("Started a fresh local workspace");
+        } finally {
+          if (!cancelled) setHydrated(true);
+        }
+      })();
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const setPreferredWorkspaceSplit = useCallback((value: number) => {
@@ -1580,7 +1599,15 @@ export function RuneWorkbench() {
     setNotice("Closed the current file — every source remains safely in the workspace");
   }
 
-  function setInterfaceLocale(nextLocale: RuneLocale) {
+  async function setInterfaceLocale(nextLocale: RuneLocale) {
+    const request = ++localeRequestRef.current;
+    try {
+      await loadRuneLocaleCatalog(nextLocale);
+    } catch {
+      if (request === localeRequestRef.current) setNotice("Rune could not load that local interface language");
+      return;
+    }
+    if (request !== localeRequestRef.current) return;
     const currentDefaultGuide = createRuneGuideArtifact(locale);
     const nextGuide = createRuneGuideArtifact(nextLocale);
     setLocale(nextLocale);

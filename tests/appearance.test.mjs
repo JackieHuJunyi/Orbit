@@ -7,7 +7,9 @@ import {
   RUNE_APPEARANCE_STORAGE_KEY,
   RUNE_APPEARANCE_THEMES,
 } from "../app/lib/appearance.ts";
-import { runeText } from "../app/lib/localization.ts";
+import { loadRuneLocaleCatalog, runeText } from "../app/lib/localization.ts";
+
+await Promise.all(["fr", "es", "ru", "ar", "ja", "ko"].map(loadRuneLocaleCatalog));
 
 test("ships a restrained current-iPhone-inspired material palette with one stable default", () => {
   assert.equal(RUNE_APPEARANCE_STORAGE_KEY, "rune-appearance-theme-v1");

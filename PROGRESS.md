@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.16 with load-before-use same-origin locale modules, fail-loud synchronous copy, server/client parity, stale-catalog checks, a 750 KB Workbench budget after cutting the minified entry from about 1.4 MB to 699,297 bytes, and a feathered spectrum-ink welcome that writes each script at its own bounded pace.
+
 - 2026-08-21 — Upgraded the release workflow to the official Node 24-based checkout, setup-node, and failure-artifact actions, removing GitHub's deprecated Node 20 action runtime warning without changing Rune's pinned Node runtime.
 
 - 2026-08-20 — Shipped Rune v1.15 with a spectrum-ink handwritten welcome, twelve fully localized material themes, lighter welcome/empty/workspace geometry, corrected Preview-to-Source centering, and a nine-locale desktop/compact browser geometry gate.

@@ -2164,3 +2164,18 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 欢迎页所选语言必须自动进入列表可视区，intro 与语言卡不得遮挡；长语言状态文案不得撑宽应用网格。
 - 浏览器门槛覆盖九种语言 × 桌面/窄屏 18 种几何组合，验证 RTL、viewport 边界、组件分离、44px 主动作与零横向溢出。
 - Preview 点击继续沿唯一 source-navigation 合同定位左侧，并在布局完成后的下一帧校正 textarea 滚动，避免视觉层变化后偏离精确 canonical range。
+
+### 17.46 v1.16 界面语言按需加载且不得静默回退
+
+- 英文与简中保留在 typed UI contract；繁中转换表、法/西/俄/阿/日/韩目录分别编译成同源静态模块，不再进入所有用户的 Workbench 首包。
+- 恢复设备偏好、设备语言推荐和用户切换都必须先完成目录加载，再原子更新 locale、`lang` 与 `dir`；未加载时同步本地化必须 fail loud，不能先显示英文再悄悄替换。
+- 任务 API 在调用同一同步 compiler 前加载已通过 schema 的请求 locale，浏览器与服务端不得维护第二套翻译结果。
+- 同一 locale 的并发加载复用一个 promise，失败可重试；模块不含 workspace source、credential、persistence、远程翻译或写权限。
+- 初始 minified Workbench 从约 1.4 MB 降到 699,297 bytes，并由 750 KB manifest gate 与九语言 E2E 共同守住。
+
+### 17.47 欢迎问候必须像墨迹写成，而不是文字被矩形擦出
+
+- 每个字使用有柔边的方向性 ink mask，显现过程由当前文字的真实排版承载；不引入复制 Apple 资产、远程字体、Canvas 状态或 SVG 插画。
+- 笔尖高光只跟随正在书写的字，收笔后出现克制的炫彩弧线；墨色可以缓慢流动，但不能改变排版几何或抢占语言选择的交互层。
+- 轮播周期由 grapheme 数量决定，长俄文必须完整写完后再停留，阿拉伯文保持一个连续 shaping run 并从右向左书写；切换前应自然淡出而不是瞬间替换。
+- reduced motion 直接显示完整问候并停止轮播，forced colors 移除光晕和渐变；桌面窗口由 `100dvh` 上限约束，移动端才允许完整贴边，所有九语言继续通过同一几何门槛。

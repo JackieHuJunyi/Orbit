@@ -28,8 +28,9 @@
     "typecheck": "tsc --noEmit",
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "locales:generate": "node scripts/generate-traditional-chinese.mjs",
-    "locales:check": "node scripts/generate-traditional-chinese.mjs --check && node --experimental-strip-types scripts/generate-interface-locales.mjs --check",
-    "locales:interface:generate": "node --experimental-strip-types scripts/generate-interface-locales.mjs",
+    "locales:check": "node scripts/generate-traditional-chinese.mjs --check && node --experimental-strip-types scripts/generate-interface-locales.mjs --check && node --experimental-strip-types scripts/compile-interface-locales.mjs --check",
+    "locales:interface:generate": "node --experimental-strip-types scripts/generate-interface-locales.mjs && npm run locales:runtime:generate",
+    "locales:runtime:generate": "node --experimental-strip-types scripts/compile-interface-locales.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "desktop:dev": "npm run build && electron desktop/main.mjs"

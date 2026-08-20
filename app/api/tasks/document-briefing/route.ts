@@ -2,6 +2,7 @@ import { DEFAULT_OPENAI_MODEL } from "../../../lib/model-preference.ts";
 import { resolveModelRouting } from "../../../lib/model-credential-vault.ts";
 import { requestProviderPlan } from "../../../lib/model-provider-adapters.ts";
 import { executeModelRoute } from "../../../lib/model-routing.ts";
+import { loadRuneLocaleCatalog } from "../../../lib/localization.ts";
 import {
   DocumentBriefingModelOutlineSchema,
   DocumentBriefingModelRequestSchema,
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   }
 
   const { artifact, input } = parsed.data;
+  await loadRuneLocaleCatalog(input.locale);
   const evidence = prepareDocumentBriefingEvidence([artifact], input as DocumentBriefingInput);
   if (!evidence.source || !evidence.evidenceUnits || evidence.errors.length) {
     return Response.json({ error: evidence.errors[0] ?? "The Document evidence is invalid." }, { status: 400 });

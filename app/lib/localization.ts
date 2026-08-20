@@ -1,16 +1,29 @@
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
-import { GENERATED_INTERFACE_TRANSLATIONS } from "./interface-locales.generated.ts";
-import { MANUAL_INTERFACE_TRANSLATIONS } from "./interface-locales.manual.ts";
-import { TRADITIONAL_CHINESE_SEGMENTS } from "./traditional-chinese.generated.ts";
+import {
+  isRuneLocaleCatalogLoaded,
+  loadedInterfaceTranslation,
+  loadedTraditionalChineseSegments,
+  loadRuneLocaleCatalog,
+} from "./interface-locale-runtime.ts";
 
-const traditionalChinesePattern = new RegExp(
-  TRADITIONAL_CHINESE_SEGMENTS.map(([source]) => source.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|"),
-  "gu",
-);
-const traditionalChineseBySource = new Map<string, string>(TRADITIONAL_CHINESE_SEGMENTS);
+let traditionalChinesePattern: RegExp | null = null;
+let traditionalChineseBySource: ReadonlyMap<string, string> | null = null;
+
+function requireRuneLocaleCatalog(locale: RuneLocale) {
+  if (!isRuneLocaleCatalogLoaded(locale)) {
+    throw new Error(`Rune interface locale “${locale}” must be loaded before synchronous localization.`);
+  }
+}
 
 function toTaiwanTraditional(value: string) {
-  return value.replace(traditionalChinesePattern, (source) => traditionalChineseBySource.get(source) ?? source);
+  requireRuneLocaleCatalog("zh-TW");
+  const segments = loadedTraditionalChineseSegments()!;
+  traditionalChinesePattern ??= new RegExp(
+    segments.map(([source]) => source.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|"),
+    "gu",
+  );
+  traditionalChineseBySource ??= new Map<string, string>(segments);
+  return value.replace(traditionalChinesePattern, (source) => traditionalChineseBySource!.get(source) ?? source);
 }
 
 export const RUNE_LOCALE_REGISTRY = [
@@ -90,6 +103,8 @@ export const RUNE_LOCALE_REGISTRY = [
 
 export type RuneLocale = (typeof RUNE_LOCALE_REGISTRY)[number]["locale"];
 
+export { isRuneLocaleCatalogLoaded, loadRuneLocaleCatalog };
+
 export function isChineseRuneLocale(locale: RuneLocale) {
   return locale === "zh-CN" || locale === "zh-TW";
 }
@@ -134,9 +149,8 @@ export function runeText(
   if (locale === "en") return english;
   if (locale === "zh-CN") return simplifiedChinese;
   if (locale === "zh-TW") return convertPreservingValues(simplifiedChinese, preservedValues);
-  const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
-  const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
-  return manual?.[english] ?? generated?.[english] ?? english;
+  requireRuneLocaleCatalog(locale);
+  return loadedInterfaceTranslation(locale, english) ?? english;
 }
 
 function localizeChineseCatalog<T>(value: T): T {
@@ -193,11 +207,10 @@ function localizeRuneMultiline(locale: RuneLocale, english: string, simplifiedCh
           ? toTaiwanTraditional(simplifiedChinese)
           : english;
   if (locale === "en" || isChineseRuneLocale(locale)) return source;
-  const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
-  const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
+  requireRuneLocaleCatalog(locale);
   return source
     .split("\n")
-    .map((line) => manual?.[line] ?? generated?.[line] ?? line)
+    .map((line) => loadedInterfaceTranslation(locale, line) ?? line)
     .join("\n");
 }
 
@@ -1079,20 +1092,21 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
 
 export type RuneUICopy = ReturnType<typeof buildRuneUICopy>;
 
-const RUNE_UI_COPY: Record<RuneLocale, RuneUICopy> = {
+const RUNE_UI_COPY: Partial<Record<RuneLocale, RuneUICopy>> = {
   en: buildRuneUICopy("en"),
   "zh-CN": buildRuneUICopy("zh-CN"),
-  "zh-TW": localizeChineseCatalog(buildRuneUICopy("zh-CN")),
-  fr: localizeGeneratedCatalog("fr", buildRuneUICopy("en")),
-  es: localizeGeneratedCatalog("es", buildRuneUICopy("en")),
-  ru: localizeGeneratedCatalog("ru", buildRuneUICopy("en")),
-  ar: localizeGeneratedCatalog("ar", buildRuneUICopy("en")),
-  ja: localizeGeneratedCatalog("ja", buildRuneUICopy("en")),
-  ko: localizeGeneratedCatalog("ko", buildRuneUICopy("en")),
 };
 
 export function runeUICopy(locale: RuneLocale): RuneUICopy {
-  return RUNE_UI_COPY[locale];
+  const cached = RUNE_UI_COPY[locale];
+  if (cached) return cached;
+  requireRuneLocaleCatalog(locale);
+  const localized =
+    locale === "zh-TW"
+      ? localizeChineseCatalog(buildRuneUICopy("zh-CN"))
+      : localizeGeneratedCatalog(locale, buildRuneUICopy("en"));
+  RUNE_UI_COPY[locale] = localized;
+  return localized;
 }
 
 const chineseArtifactCommands: Record<ArtifactKind, string[]> = {
@@ -1231,9 +1245,8 @@ const chineseStatusMessages: Record<string, string> = {
 export function localizeRuneStatus(locale: RuneLocale, message: string) {
   if (locale === "en") return message;
   if (!isChineseRuneLocale(locale)) {
-    const generated = GENERATED_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
-    const manual = MANUAL_INTERFACE_TRANSLATIONS[locale] as Record<string, string> | undefined;
-    return manual?.[message] ?? generated?.[message] ?? message;
+    requireRuneLocaleCatalog(locale);
+    return loadedInterfaceTranslation(locale, message) ?? message;
   }
   const exact = chineseStatusMessages[message];
   if (exact) return locale === "zh-TW" ? toTaiwanTraditional(exact) : exact;

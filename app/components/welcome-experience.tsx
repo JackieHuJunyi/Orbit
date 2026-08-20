@@ -209,15 +209,16 @@ export function WelcomeExperience({
     localeDirection(greetingLocale) === "rtl"
       ? [greeting]
       : (greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting));
+  const greetingCycleDuration = Math.max(4_200, Math.min(6_200, 2_900 + greetingCharacters.length * 150));
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
 
   useEffect(() => {
     if (step !== "welcome" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
       setGreetingIndex((current) => (current + 1) % greetings.length);
-    }, 3_200);
-    return () => window.clearInterval(timer);
-  }, [greetings, step]);
+    }, greetingCycleDuration);
+    return () => window.clearTimeout(timer);
+  }, [greetingCycleDuration, greetingIndex, greetings.length, step]);
 
   useEffect(() => {
     if (step !== "welcome") return;
@@ -364,6 +365,12 @@ export function WelcomeExperience({
                       dir={localeDirection(greetingLocale)}
                       aria-label={greeting}
                       key={`${locale}-${greetingIndex}`}
+                      style={
+                        {
+                          "--greeting-count": greetingCharacters.length,
+                          "--greeting-cycle-duration": `${greetingCycleDuration}ms`,
+                        } as CSSProperties
+                      }
                     >
                       {greetingCharacters.map((character, index) => (
                         <span
