@@ -2347,3 +2347,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 已完成引导的设备必须在 hydration 前直接看到 SSR 工作区，不能闪回欢迎页。重新打开教程仍走显式产品动作，不受首屏临时标记隐藏。
 - 手写与语言选择可以 eager；模型状态、profile manager 和其他低频步骤必须在用户继续后按需加载。首屏构建仍受 530 KB 上限约束，不得用放宽预算换取首帧修复。
 - 浏览器必须在客户端 JS 完全禁用时证明新用户首帧，在外部 JS 被阻断时证明老用户首帧，并继续证明完整书写、RTL、完成态与 model-step handoff；结构测试或等待 hydration 后的截图不能代替这组证据。
+
+### 17.68 v1.37 所有导入格式必须通过同一个轻量适配器边界
+
+- 文件选择扩展名、case-insensitive 格式识别、每格式 byte limit 和 converter 必须由一个有序的 compile-time adapter 列表拥有；不能让 picker、普通导入与 OCR 后续路径分别维护格式事实。
+- readable source 必须是最后一个 fallback，并继续通过 canonical Artifact detector；未知 filename/content 组合必须 fail closed，不能因为通用适配器而猜测格式。
+- 普通导入与 OCR 后续转换必须调用同一 batch converter，保持 file order、filename-prefixed warnings 与 prepared content-hash assets；OCR 只额外注入按原始 file index 绑定的 request、abort 与 progress。
+- adapter 不得获得 collision resolution、task binding、review approval、workspace validation、asset storage、persistence 或 React state 权限；这些仍属于原有 reviewed import transaction。
+- OOXML、OpenDocument、PDF.js 与 OCR 必须保持 dynamic import。架构拆分不能用增加首包换取整洁，WorkBench entry 继续受 530 KB gate 约束。
+- 新格式必须同时提供体积/敌对输入/保真合同、真实 fixture 与 reviewed zero-partial-write 证据；adapter 列表是封闭产品词汇，不是允许任意第三方代码执行的 runtime plugin system。

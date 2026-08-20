@@ -334,7 +334,9 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Choose pages for OCR/);
   assert.match(clientSource, /Page images stay on device/);
   assert.match(clientSource, /On-device recognition/);
-  assert.match(clientSource, /\.doc,\.ppt,\.docx,\.xlsx,\.pptx,\.odt,\.ods,\.odp,\.pdf/);
+  for (const extension of [".doc", ".ppt", ".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp", ".pdf"]) {
+    assert.ok(clientSource.includes(extension), `${extension} must remain in the shipped import picker contract.`);
+  }
   assert.match(clientSource, /OpenDocument import is limited to 12 MB per file/);
   assert.match(clientSource, /Review OpenDocument export/);
   assert.match(clientSource, /Format Document section/);

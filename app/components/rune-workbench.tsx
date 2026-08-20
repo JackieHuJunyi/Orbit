@@ -72,7 +72,7 @@ import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
 import { useSourcePreviewScroll } from "./use-source-preview-scroll";
 import type { VisualSourceDraft } from "./use-visual-source-draft";
-import type { PdfOcrCandidate, PdfOcrSelection } from "./pdf-ocr-setup-dialog";
+import type { PdfOcrSelection } from "./pdf-ocr-setup-dialog";
 import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
 import {
   commitPreparedArtifactCreation,
@@ -82,7 +82,6 @@ import {
 import {
   artifactStats,
   cloneDefaultArtifacts,
-  detectArtifact,
   normalizeWorkspaceArtifacts,
   planLocalChange,
   parseDataSource,
@@ -289,12 +288,15 @@ import {
   type RuneTaskId,
   type RuneTaskSession,
 } from "../lib/task-runtime";
+import { supportsLegacyOfficeDesktopExport } from "../lib/desktop-bridge";
 import {
-  convertLegacyOfficeFile,
-  legacyOfficeFileName,
-  MAX_LEGACY_OFFICE_IMPORT_BYTES,
-  supportsLegacyOfficeDesktopExport,
-} from "../lib/desktop-bridge";
+  analyzeWorkspaceImportPdfs,
+  convertWorkspaceImportFiles,
+  firstWorkspaceImportOversizeNotice,
+  MAX_WORKSPACE_IMPORT_FILES,
+  WORKSPACE_IMPORT_ACCEPT,
+  type WorkspacePdfOcrCandidate,
+} from "../lib/workspace-file-import";
 
 const DocumentStructureReviewDialog = lazy(() =>
   import("./document-structure-review-dialog").then((module) => ({ default: module.DocumentStructureReviewDialog })),
@@ -355,23 +357,6 @@ function DeferredWorkbenchSurfaceFallback({
 }
 
 const STORAGE_KEY = "rune-workspace-v0";
-const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
-const MAX_OFFICE_IMPORT_BYTES = 12 * 1024 * 1024;
-const MAX_PDF_IMPORT_BYTES = 12 * 1024 * 1024;
-const OFFICE_IMPORT_PATTERN = /\.(?:docx|xlsx|pptx)$/i;
-const ODF_IMPORT_PATTERN = /\.(?:odt|ods|odp)$/i;
-const PDF_IMPORT_PATTERN = /\.pdf$/i;
-
-async function importLegacyOfficeThroughDesktop(file: File) {
-  const converted = await convertLegacyOfficeFile(file);
-  const { convertOfficeFileWithAssets } = await import("../lib/office-import");
-  const result = await convertOfficeFileWithAssets(converted.fileName, converted.bytes);
-  return {
-    ...result,
-    warnings: [converted.warning, ...result.warnings],
-  };
-}
-
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
   patches: ArtifactSourcePatch[],
@@ -431,7 +416,7 @@ type PendingPdfOcr = {
   files: File[];
   baseArtifacts: WorkspaceArtifact[];
   sourceName: string;
-  candidates: PdfOcrCandidate[];
+  candidates: WorkspacePdfOcrCandidate[];
   taskSession?: RuneTaskSession;
 };
 
@@ -3867,37 +3852,15 @@ export function RuneWorkbench() {
     if (!activeTaskSession) {
       setTaskSession(null);
     }
-    if (files.length > 20) {
+    if (files.length > MAX_WORKSPACE_IMPORT_FILES) {
       if (activeTaskSession) setTaskSession(null);
-      setNotice("Import up to 20 files in one review transaction");
+      setNotice(`Import up to ${MAX_WORKSPACE_IMPORT_FILES} files in one review transaction`);
       return;
     }
-    const oversized = files.find(
-      (file) =>
-        file.size >
-        (legacyOfficeFileName(file.name)
-          ? MAX_LEGACY_OFFICE_IMPORT_BYTES
-          : OFFICE_IMPORT_PATTERN.test(file.name)
-            ? MAX_OFFICE_IMPORT_BYTES
-            : ODF_IMPORT_PATTERN.test(file.name)
-              ? MAX_OFFICE_IMPORT_BYTES
-              : PDF_IMPORT_PATTERN.test(file.name)
-                ? MAX_PDF_IMPORT_BYTES
-                : MAX_SOURCE_IMPORT_BYTES),
-    );
-    if (oversized) {
+    const oversizeNotice = firstWorkspaceImportOversizeNotice(files);
+    if (oversizeNotice) {
       if (activeTaskSession) setTaskSession(null);
-      setNotice(
-        legacyOfficeFileName(oversized.name)
-          ? oversized.name + " exceeds the 12 MB desktop legacy Office import limit"
-          : OFFICE_IMPORT_PATTERN.test(oversized.name)
-            ? oversized.name + " exceeds the 12 MB Office import limit"
-            : ODF_IMPORT_PATTERN.test(oversized.name)
-              ? oversized.name + " exceeds the 12 MB OpenDocument import limit"
-              : PDF_IMPORT_PATTERN.test(oversized.name)
-                ? oversized.name + " exceeds the 12 MB PDF import limit"
-                : oversized.name + " exceeds the 2 MB source import limit",
-      );
+      setNotice(oversizeNotice);
       return;
     }
     const baseArtifacts = artifacts;
@@ -3911,15 +3874,7 @@ export function RuneWorkbench() {
         : "Reading " + String(files.length) + " files locally…",
     );
     try {
-      const ocrCandidates: PdfOcrCandidate[] = [];
-      for (const [fileIndex, file] of files.entries()) {
-        if (!PDF_IMPORT_PATTERN.test(file.name)) continue;
-        const { analyzePdfFile } = await import("../lib/pdf-import-client");
-        const analysis = await analyzePdfFile(file.name, await file.arrayBuffer());
-        if (analysis.ocrCandidatePageNumbers.length) {
-          ocrCandidates.push({ fileIndex, fileName: file.name, file, analysis });
-        }
-      }
+      const ocrCandidates = await analyzeWorkspaceImportPdfs(files);
       if (ocrCandidates.length) {
         if (activeTaskSession?.taskId === "operating-review") {
           throw new Error(
@@ -3948,50 +3903,14 @@ export function RuneWorkbench() {
         );
         return;
       }
-      const incoming: WorkspaceArtifact[] = [];
-      const warnings: string[] = [];
-      const assets: PreparedRuneImageAsset[] = [];
-      for (const file of files) {
-        if (legacyOfficeFileName(file.name)) {
-          const result = await importLegacyOfficeThroughDesktop(file);
-          incoming.push(...result.artifacts);
-          assets.push(...result.assets);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        if (OFFICE_IMPORT_PATTERN.test(file.name)) {
-          const { convertOfficeFileWithAssets } = await import("../lib/office-import");
-          const result = await convertOfficeFileWithAssets(file.name, await file.arrayBuffer());
-          incoming.push(...result.artifacts);
-          assets.push(...result.assets);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        if (ODF_IMPORT_PATTERN.test(file.name)) {
-          const { convertOdfFileWithAssets } = await import("../lib/odf-import");
-          const result = await convertOdfFileWithAssets(file.name, await file.arrayBuffer());
-          incoming.push(...result.artifacts);
-          assets.push(...result.assets);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        if (PDF_IMPORT_PATTERN.test(file.name)) {
-          const { convertPdfFile } = await import("../lib/pdf-import-client");
-          const result = await convertPdfFile(file.name, await file.arrayBuffer());
-          incoming.push(...result.artifacts);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        const artifact = detectArtifact(file.name, await file.text());
-        if (!artifact) {
-          throw new Error(
-            file.name +
-              ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP. Legacy DOC/PPT requires Rune Desktop.",
-          );
-        }
-        incoming.push(artifact);
-      }
-      const prepared = prepareWorkspaceImportReview(baseArtifacts, incoming, sourceName, warnings, assets);
+      const converted = await convertWorkspaceImportFiles(files);
+      const prepared = prepareWorkspaceImportReview(
+        baseArtifacts,
+        converted.artifacts,
+        sourceName,
+        converted.warnings,
+        converted.assets,
+      );
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
       if (activeTaskSession) {
@@ -4046,63 +3965,18 @@ export function RuneWorkbench() {
     });
     setImportState("reading");
     try {
-      const incoming: WorkspaceArtifact[] = [];
-      const warnings: string[] = [];
-      const assets: PreparedRuneImageAsset[] = [];
-      for (const [fileIndex, file] of pending.files.entries()) {
-        if (abortController.signal.aborted) throw new DOMException("OCR cancelled", "AbortError");
-        setPdfOcrActiveFileName(file.name);
-        if (legacyOfficeFileName(file.name)) {
-          const result = await importLegacyOfficeThroughDesktop(file);
-          incoming.push(...result.artifacts);
-          assets.push(...result.assets);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        if (OFFICE_IMPORT_PATTERN.test(file.name)) {
-          const { convertOfficeFileWithAssets } = await import("../lib/office-import");
-          const result = await convertOfficeFileWithAssets(file.name, await file.arrayBuffer());
-          incoming.push(...result.artifacts);
-          assets.push(...result.assets);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        if (ODF_IMPORT_PATTERN.test(file.name)) {
-          const { convertOdfFileWithAssets } = await import("../lib/odf-import");
-          const result = await convertOdfFileWithAssets(file.name, await file.arrayBuffer());
-          incoming.push(...result.artifacts);
-          assets.push(...result.assets);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        if (PDF_IMPORT_PATTERN.test(file.name)) {
-          const selection = selectionByIndex.get(fileIndex);
-          const { convertPdfFile, convertPdfFileWithOcr } = await import("../lib/pdf-import-client");
-          const result = selection
-            ? await convertPdfFileWithOcr(file.name, await file.arrayBuffer(), selection, {
-                signal: abortController.signal,
-                onProgress: setPdfOcrProgress,
-              })
-            : await convertPdfFile(file.name, await file.arrayBuffer());
-          incoming.push(...result.artifacts);
-          warnings.push(...result.warnings.map((warning) => file.name + ": " + warning));
-          continue;
-        }
-        const artifact = detectArtifact(file.name, await file.text());
-        if (!artifact) {
-          throw new Error(
-            file.name +
-              ": choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP. Legacy DOC/PPT requires Rune Desktop.",
-          );
-        }
-        incoming.push(artifact);
-      }
+      const converted = await convertWorkspaceImportFiles(pending.files, {
+        pdfOcrSelections: selectionByIndex,
+        signal: abortController.signal,
+        onProgress: setPdfOcrProgress,
+        onActiveFileName: setPdfOcrActiveFileName,
+      });
       const prepared = prepareWorkspaceImportReview(
         pending.baseArtifacts,
-        incoming,
+        converted.artifacts,
         pending.sourceName,
-        warnings,
-        assets,
+        converted.warnings,
+        converted.assets,
       );
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Rune could not prepare an import review.");
@@ -4858,7 +4732,7 @@ export function RuneWorkbench() {
             type="file"
             multiple
             aria-label={ui.import}
-            accept=".doc,.ppt,.docx,.xlsx,.pptx,.odt,.ods,.odp,.pdf,.deck.md,.md,.markdown,.csv,.json,.sql,.html,.htm"
+            accept={WORKSPACE_IMPORT_ACCEPT}
             onChange={importFile}
             disabled={
               !hydrated ||

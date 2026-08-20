@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.37 with one ordered file-import adapter boundary shared by picker extensions, size policy, ordinary conversion, and OCR continuation while retaining deferred heavy runtimes.
+
 - 2026-08-21 — Shipped Rune v1.36 with a server-rendered opaque handwriting first frame, pre-paint returning-user reconciliation, and deferred model setup that preserves the 530 KB startup budget.
 
 - 2026-08-21 — Shipped Rune v1.35 with pre-paint focus and Escape ownership for every shared review dialog, plus a repeated immediate New-dialog browser gate that removes the observed CI close race.

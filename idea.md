@@ -2585,3 +2585,11 @@ v1.35 因此把共享 `ReviewDialog` 的 initial focus、body scroll lock、focu
 v1.36 让服务器和初始客户端图直接包含完整问候 SVG。`<head>` 中的固定脚本只读取非敏感的 `rune-onboarding-v1 === complete` 标记，在 body 绘制前把根节点标为 pending 或 complete：新用户从第一像素看到不透明启动画布；老用户在 hydration 前直接看到 SSR 工作区，不闪回教程。layout effect 随后用同一标记同步 React state 并删除临时属性。遮罩不再做透明度淡入，只有字迹和内容层运动。模型状态、profile 管理器及其图标移入点击“继续设置”后才加载的 `WelcomeModelStep`，因此把问候改为 eager 后首包仍为 527,797 bytes，没有突破 530 KB 上限。
 
 验证同时覆盖视觉与架构：禁用全部客户端 JavaScript 时新用户仍能看到书写中的服务器首帧；阻断外部 JS 时已完成用户只看到工作区；真实浏览器继续证明九色笔迹、阿拉伯 RTL、完成态展开和进入按需模型设置时不重启动画。80ms / 350ms / 1.1s / 完成态截图确认工作区轮廓和加载卡片均已消失。
+
+## 139. 新格式必须进入一条导入适配器，而不是复制一轮 Workbench 分支
+
+Rune 已经支持 readable source、桌面端 legacy Office、OOXML、OpenDocument、PDF 和显式 OCR，但格式能力此前仍有一个低成本扩展隐患：文件名 pattern、体积限制、普通导入转换和 OCR 选择后的继续转换都直接写在 Workbench，后两者甚至有两套几乎相同的循环。新增格式若漏改任何一处，就可能出现文件选择器能选却无法转换、普通路径与 OCR 路径告警不同，或本机图片只在一条路径保留下来的漂移。
+
+v1.37 新增轻量 `workspace-file-import` 边界。一个有序、冻结的 adapter 列表为 legacy Office、OOXML、ODF、PDF 和 readable source 分别声明 extensions、case-insensitive matcher、byte limit/label 与 async converter；最后的 source fallback 仍必须经过 canonical Artifact detector，不能为未知字节猜类型。文件选择器的 `accept`、读取前体积拒绝、PDF 扫描页分析、普通批量转换和 OCR 后续批量转换都消费这组事实。OCR 路径只额外提供按原始 file index 绑定的选择、abort signal 和 progress callback。
+
+适配器只返回按输入顺序排列的 Artifact candidates、带文件名前缀的 fidelity warnings 与 prepared content-hash assets；collision、focused-task binding、whole-workspace validation、review、asset compensation 和 persistence 继续属于原有事务。Office/ODF/PDF/OCR converter 仍用 dynamic import，不因抽象而进入首包。Workbench 从 6,381 行降到 6,255 行，minified entry 为 527,519 bytes；5 条新合同、643 条 unit、27 条 render 与 49 条 Chromium 全部通过。未来新增格式需要一项 adapter、明确的输入/保真/敌对文件合同和对应 fixture，而不是再向 UI 协调器复制条件分支。

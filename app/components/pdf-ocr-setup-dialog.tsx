@@ -5,20 +5,13 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import {
   formatPdfPageSelection,
   parsePdfPageSelection,
-  type PdfImportAnalysis,
   type PdfOcrLanguage,
   type PdfOcrProgress,
   type PdfOcrRegion,
 } from "../lib/pdf-import";
+import type { WorkspacePdfOcrCandidate as PdfOcrCandidate } from "../lib/workspace-file-import";
 import { isChineseRuneLocale, localizeRuneCopy, type RuneLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
-
-export type PdfOcrCandidate = {
-  fileIndex: number;
-  fileName: string;
-  file: File;
-  analysis: PdfImportAnalysis;
-};
 
 export type PdfOcrSelection = {
   fileIndex: number;
