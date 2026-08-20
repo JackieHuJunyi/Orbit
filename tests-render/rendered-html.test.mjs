@@ -665,6 +665,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /--rune-radius-workspace:\s*24px;/);
   assert.match(styles, /--rune-type-display:\s*clamp\(46px,\s*5\.1vw,\s*70px\);/);
   assert.match(styles, /--rune-duration-scene:\s*760ms;/);
+  assert.match(styles, /@keyframes rune-window-enter\s*\{\s*from\s*\{\s*opacity:\s*0;\s*transform:\s*scale\(\.975\);/);
   assert.match(styles, /--rune-file-width:\s*220px;/);
   assert.match(
     styles,

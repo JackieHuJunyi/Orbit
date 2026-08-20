@@ -100,7 +100,7 @@
 @keyframes rune-dialog-in { from { transform: translate3d(0, 18px, 0) scale(.975); } to { transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-command-menu-in { from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-scene-enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
-@keyframes rune-window-enter { from { opacity: 0; transform: translate3d(0, 26px, 0) scale(.975); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes rune-window-enter { from { opacity: 0; transform: scale(.975); } to { opacity: 1; transform: scale(1); } }
 @keyframes rune-content-reveal { from { opacity: 0; filter: blur(8px); transform: translate3d(0, 18px, 0); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); } }
 @keyframes rune-greeting-cycle { 0% { opacity: 0; } 4%, 91% { opacity: 1; } 100% { opacity: 0; filter: blur(2px); transform: translate3d(0, -3px, 0) scale(.995); } }
 @keyframes rune-greeting-prism { 0% { opacity: 0; transform: translate3d(-7%, 10%, 0) scale(.7); } 56% { opacity: .23; } 100% { opacity: .18; transform: translate3d(1%, 0, 0) scale(1); } }
