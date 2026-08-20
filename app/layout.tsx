@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import "./globals.css";
 import "./styles/index.css";
 
+const RUNE_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.runeOnboarding=localStorage.getItem("rune-onboarding-v1")==="complete"?"complete":"pending"}catch{root.dataset.runeOnboarding="pending"}})();`;
+
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
@@ -43,7 +45,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" data-theme="mist-blue">
+    <html lang="en" dir="ltr" data-theme="mist-blue" data-rune-onboarding="pending" suppressHydrationWarning>
+      <head>
+        <script id="rune-prehydrate-state" dangerouslySetInnerHTML={{ __html: RUNE_PREHYDRATE_SCRIPT }} />
+      </head>
       <body>{children}</body>
     </html>
   );

@@ -15,11 +15,13 @@ const surfaceModules = [
   "workbench-command-menu",
   "pdf-ocr-setup-dialog",
   "transaction-review-map",
-  "welcome-experience",
 ];
 
 test("loads low-frequency Workbench surfaces through typed lazy boundaries", async () => {
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const [source, welcome] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
+  ]);
 
   for (const moduleName of surfaceModules) {
     assert.match(source, new RegExp(`import\\(\"\\./${moduleName}\"\\)`), `${moduleName} needs a dynamic import.`);
@@ -32,8 +34,11 @@ test("loads low-frequency Workbench surfaces through typed lazy boundaries", asy
 
   assert.match(source, /<Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale}/);
   assert.match(source, /role="status" aria-live="polite" aria-atomic="true"/);
-  assert.match(source, /variant="welcome"/);
   assert.match(source, /variant="inline"/);
+  assert.match(source, /import \{ WelcomeExperience,[^;]+from "\.\/welcome-experience";/s);
+  assert.doesNotMatch(source, /import\("\.\/welcome-experience"\)/);
+  assert.match(welcome, /import\("\.\/welcome-model-step"\)/);
+  assert.doesNotMatch(welcome, /from "\.\/model-profile-manager"/);
 });
 
 test("keeps deferred-surface copy pure, local, and complete for every Rune locale", async () => {

@@ -8,18 +8,13 @@ import {
   FileText,
   Globe2,
   Keyboard,
-  KeyRound,
-  Laptop,
   Presentation,
-  RefreshCw,
-  Server,
   ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HandwrittenGreeting } from "./handwritten-greeting";
-import { ModelProfileManager } from "./model-profile-manager";
 import {
   localeDirection,
   localeDisplayName,
@@ -29,9 +24,13 @@ import {
   RUNE_LOCALE_REGISTRY,
   type RuneLocale,
 } from "../lib/localization";
-import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
+import { type RuneModelMode } from "../lib/model-preference";
 import { resetFluidSurface, trackFluidSurface } from "../lib/fluid-surface";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
+
+const WelcomeModelStep = lazy(() =>
+  import("./welcome-model-step").then((module) => ({ default: module.WelcomeModelStep })),
+);
 
 export type WelcomeAction = "guide" | "review" | "briefing" | "sample";
 export type WelcomeStep = "welcome" | "model" | "shortcuts" | "ready";
@@ -186,9 +185,6 @@ export function WelcomeExperience({
 }) {
   const [step, setStep] = useState<WelcomeStep>(startAt);
   const [completedShortcuts, setCompletedShortcuts] = useState<ShortcutId[]>([]);
-  const [modelStatus, setModelStatus] = useState<ModelProviderStatus | null>(null);
-  const [modelStatusError, setModelStatusError] = useState("");
-  const [checkingModel, setCheckingModel] = useState(true);
   const [greetingIndex, setGreetingIndex] = useState(0);
   const [greetingIntroComplete, setGreetingIntroComplete] = useState(false);
   const languageOptionsRef = useRef<HTMLDivElement>(null);
@@ -243,47 +239,6 @@ export function WelcomeExperience({
     return () => window.cancelAnimationFrame(frame);
   }, [locale, step]);
 
-  async function checkModelStatus() {
-    setCheckingModel(true);
-    setModelStatusError("");
-    try {
-      const response = await fetch("/api/model-status", { cache: "no-store" });
-      if (!response.ok) throw new Error("status unavailable");
-      const status = (await response.json()) as ModelProviderStatus;
-      if (typeof status.configured !== "boolean") throw new Error("invalid status");
-      setModelStatus(status);
-    } catch {
-      setModelStatus(null);
-      setModelStatusError(text.modelUnavailable);
-    } finally {
-      setCheckingModel(false);
-    }
-  }
-
-  useEffect(() => {
-    if (step !== "model") return;
-    const controller = new AbortController();
-    void fetch("/api/model-status", { cache: "no-store", signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("status unavailable");
-        return response.json() as Promise<ModelProviderStatus>;
-      })
-      .then((status) => {
-        if (typeof status.configured !== "boolean") throw new Error("invalid status");
-        setModelStatus(status);
-        setModelStatusError("");
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setModelStatus(null);
-        setModelStatusError(welcomeCopy(locale).modelUnavailable);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setCheckingModel(false);
-      });
-    return () => controller.abort();
-  }, [locale, step]);
-
   useEffect(() => {
     if (step !== "shortcuts") return;
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -314,15 +269,6 @@ export function WelcomeExperience({
       optionKey: optionModifier,
     },
   ];
-  const handleProfileStatus = useCallback(
-    (status: ModelProviderStatus) => {
-      setModelStatus(status);
-      setModelStatusError("");
-      onModelModeChange(status.configured ? "auto" : "local");
-    },
-    [onModelModeChange],
-  );
-
   return (
     <div
       className="welcome-backdrop"
@@ -432,14 +378,7 @@ export function WelcomeExperience({
                       </button>
                     ))}
                   </div>
-                  <button
-                    className="welcome-primary"
-                    type="button"
-                    onClick={() => {
-                      setCheckingModel(true);
-                      setStep("model");
-                    }}
-                  >
+                  <button className="welcome-primary" type="button" onClick={() => setStep("model")}>
                     {text.begin}
                     <ArrowRight />
                   </button>
@@ -449,97 +388,26 @@ export function WelcomeExperience({
           )}
 
           {step === "model" && (
-            <>
-              <div className="welcome-icon-disc">
-                <KeyRound />
-              </div>
-              <span className="welcome-eyebrow">{text.modelEyebrow}</span>
-              <h1 id="welcome-title">{text.modelTitle}</h1>
-              <p>{text.modelBody}</p>
-              <div className="model-setup-panel">
-                <div className={`model-status-card ${modelStatus?.configured ? "connected" : ""}`} role="status">
-                  <span>
-                    {modelStatus?.configured ? (
-                      <Check />
-                    ) : checkingModel ? (
-                      <RefreshCw className="agent-spinner" />
-                    ) : (
-                      <Server />
-                    )}
-                  </span>
-                  <div>
-                    <strong>
-                      {checkingModel
-                        ? text.checkingModel
-                        : modelStatus?.configured
-                          ? text.connectedModel
-                          : text.noModel}
-                    </strong>
-                    <small>
-                      {modelStatusError ||
-                        (modelStatus?.configured
-                          ? `${modelStatus.profileName ?? (modelStatus.provider === "openai" ? "OpenAI" : "Model")} · ${modelStatus.model ?? "Model"} · ${text.connectedModelBody}`
-                          : text.noModelBody)}
-                    </small>
-                  </div>
-                  <button type="button" onClick={() => void checkModelStatus()} disabled={checkingModel}>
-                    <RefreshCw />
-                    {text.recheck}
-                  </button>
-                </div>
-                <div className="model-mode-options" role="radiogroup" aria-label={text.modelTitle}>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={modelMode === "auto" && Boolean(modelStatus?.configured)}
-                    className={modelMode === "auto" && modelStatus?.configured ? "selected" : ""}
-                    disabled={!modelStatus?.configured}
-                    onClick={() => onModelModeChange("auto")}
-                  >
-                    <span>
-                      <Server />
-                    </span>
-                    <span>
-                      <strong>{text.useConnected}</strong>
-                      <small>{text.useConnectedBody}</small>
-                    </span>
-                    {modelMode === "auto" && modelStatus?.configured ? <Check /> : null}
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={modelMode === "local"}
-                    className={modelMode === "local" ? "selected" : ""}
-                    onClick={() => onModelModeChange("local")}
-                  >
-                    <span>
-                      <Laptop />
-                    </span>
-                    <span>
-                      <strong>{text.useLocal}</strong>
-                      <small>{text.useLocalBody}</small>
-                    </span>
-                    {modelMode === "local" ? <Check /> : null}
-                  </button>
-                </div>
-                {!checkingModel && <ModelProfileManager locale={locale} onStatusChange={handleProfileStatus} />}
-                <p className="model-safety-note">
-                  <ShieldCheck />
-                  {text.modelSafety}
-                </p>
-              </div>
-              <button
-                className="welcome-primary"
-                type="button"
-                onClick={() => {
-                  if (!modelStatus?.configured) onModelModeChange("local");
+            <Suspense
+              fallback={
+                <>
+                  <span className="welcome-eyebrow">{text.modelEyebrow}</span>
+                  <h1 id="welcome-title">{text.modelTitle}</h1>
+                  <p role="status">{text.checkingModel}</p>
+                </>
+              }
+            >
+              <WelcomeModelStep
+                copy={text}
+                locale={locale}
+                modelMode={modelMode}
+                onModelModeChange={onModelModeChange}
+                onContinue={(configured) => {
+                  if (!configured) onModelModeChange("local");
                   setStep("shortcuts");
                 }}
-              >
-                {text.continue}
-                <ArrowRight />
-              </button>
-            </>
+              />
+            </Suspense>
           )}
 
           {step === "shortcuts" && (

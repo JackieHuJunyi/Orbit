@@ -31,7 +31,11 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue">/);
+  assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue" data-rune-onboarding="pending">/);
+  assert.match(html, /id="rune-prehydrate-state"/);
+  assert.match(html, /data-onboarding-sequence="boot-write-settle-unfold"/);
+  assert.match(html, /data-motion-renderer="calligraphic-mask"/);
+  assert.doesNotMatch(html, /Preparing Rune/);
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
   assert.match(html, /Local workspace/);
   assert.match(html, /q2-review\.md/);
@@ -150,12 +154,14 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
     "workbench-command-menu",
     "pdf-ocr-setup-dialog",
     "transaction-review-map",
-    "welcome-experience",
   ]) {
     const surfaceEntry = `app/components/${surface}.tsx`;
     assert.equal(manifest[surfaceEntry]?.isDynamicEntry, true, `${surface} must remain an on-demand entry.`);
     assert.ok(workbenchEntry.dynamicImports?.includes(surfaceEntry), `${surface} must load from Workbench on demand.`);
   }
+  assert.equal(manifest["app/components/welcome-model-step.tsx"]?.isDynamicEntry, true);
+  assert.ok(initialGraphDynamicImports.has("app/components/welcome-model-step.tsx"));
+  assert.equal(initialStaticGraph.has("app/components/model-profile-manager.tsx"), false);
   assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/office-import.ts"));
   assert.equal(manifest["app/lib/pdf-import-client.ts"]?.isDynamicEntry, true);

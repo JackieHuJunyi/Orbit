@@ -13,7 +13,13 @@
     radial-gradient(circle at 78% 5%, rgba(var(--theme-rgb), .1), transparent 48%),
     radial-gradient(circle at 12% 100%, rgba(29, 29, 31, .055), transparent 42%),
     var(--rune-material-canvas);
+  animation: none;
   transition: background-color 720ms var(--rune-ease-out);
+}
+
+/* The head bootstrap updates this attribute before the body can paint. */
+html[data-rune-onboarding="complete"] .welcome-backdrop {
+  display: none;
 }
 
 .welcome-backdrop[data-intro-phase="writing"] {

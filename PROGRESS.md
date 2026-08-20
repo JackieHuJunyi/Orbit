@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.36 with a server-rendered opaque handwriting first frame, pre-paint returning-user reconciliation, and deferred model setup that preserves the 530 KB startup budget.
+
 - 2026-08-21 — Shipped Rune v1.35 with pre-paint focus and Escape ownership for every shared review dialog, plus a repeated immediate New-dialog browser gate that removes the observed CI close race.
 
 - 2026-08-21 — Shipped Rune v1.34 with reviewed JSON import browser proof for exact bidirectional scalar positioning, displacement recovery, typed live Preview edits, byte-exact Cancel, canonical Save, and reload persistence through one shared E2E workbench driver.

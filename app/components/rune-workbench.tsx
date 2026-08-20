@@ -48,6 +48,7 @@ import {
   SyntheticEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -72,7 +73,7 @@ import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-contro
 import { useSourcePreviewScroll } from "./use-source-preview-scroll";
 import type { VisualSourceDraft } from "./use-visual-source-draft";
 import type { PdfOcrCandidate, PdfOcrSelection } from "./pdf-ocr-setup-dialog";
-import type { WelcomeAction, WelcomeStep } from "./welcome-experience";
+import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
 import {
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
@@ -331,24 +332,15 @@ const PdfOcrSetupDialog = lazy(() =>
 const TransactionReviewMap = lazy(() =>
   import("./transaction-review-map").then((module) => ({ default: module.TransactionReviewMap })),
 );
-const WelcomeExperience = lazy(() =>
-  import("./welcome-experience").then((module) => ({ default: module.WelcomeExperience })),
-);
-
 function DeferredWorkbenchSurfaceFallback({
   locale,
   variant = "overlay",
 }: {
   locale: RuneLocale;
-  variant?: "inline" | "overlay" | "welcome";
+  variant?: "inline" | "overlay";
 }) {
   const copy = deferredSurfaceCopy(locale);
-  const className =
-    variant === "inline"
-      ? "deferred-surface-inline"
-      : variant === "welcome"
-        ? "welcome-backdrop deferred-surface-backdrop deferred-surface-welcome"
-        : "deferred-surface-backdrop";
+  const className = variant === "inline" ? "deferred-surface-inline" : "deferred-surface-backdrop";
   return (
     <div className={className} role="status" aria-live="polite" aria-atomic="true">
       <div className="deferred-surface-status">
@@ -921,7 +913,7 @@ export function RuneWorkbench() {
   const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
   const localeRequestRef = useRef(0);
   const [modelMode, setModelMode] = useState<RuneModelMode>("auto");
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(true);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
   const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
@@ -977,6 +969,17 @@ export function RuneWorkbench() {
       ),
     [artifacts],
   );
+
+  useLayoutEffect(() => {
+    let onboardingPending = true;
+    try {
+      onboardingPending = localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete";
+    } catch {
+      // A first-run welcome remains the safest initial state when device storage is unavailable.
+    }
+    setWelcomeOpen(onboardingPending);
+    document.documentElement.removeAttribute("data-rune-onboarding");
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -6360,21 +6363,19 @@ export function RuneWorkbench() {
           />
         )}
       </Suspense>
-      <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} variant="welcome" />}>
-        {welcomeOpen && hydrated && (
-          <WelcomeExperience
-            detectedLocale={detectedLocale}
-            locale={locale}
-            modelMode={modelMode}
-            startAt={welcomeStartAt}
-            dismissible={welcomeDismissible}
-            onLocaleChange={setInterfaceLocale}
-            onModelModeChange={setPreferredModelMode}
-            onComplete={finishWelcome}
-            onDismiss={() => setWelcomeOpen(false)}
-          />
-        )}
-      </Suspense>
+      {welcomeOpen && (
+        <WelcomeExperience
+          detectedLocale={detectedLocale}
+          locale={locale}
+          modelMode={modelMode}
+          startAt={welcomeStartAt}
+          dismissible={welcomeDismissible}
+          onLocaleChange={setInterfaceLocale}
+          onModelModeChange={setPreferredModelMode}
+          onComplete={finishWelcome}
+          onDismiss={() => setWelcomeOpen(false)}
+        />
+      )}
     </main>
   );
 }

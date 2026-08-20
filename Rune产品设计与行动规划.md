@@ -2338,3 +2338,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Escape 必须在用户刚打开对话框时立即取消，不能仍由背景 New/Import/Export/Review trigger 持有焦点；测试不得用额外等待掩盖竞态。
 - 生命周期必须集中在共享边界，不能让每个业务对话框复制 keydown listener；cleanup 必须移除精确 listener、恢复先前 body overflow，并把焦点还给原元素。
 - Chromium 必须连续至少三次执行 New → visible → immediate Escape → hidden；发布前压力验证应重复该流程并拒绝 flaky retry 作为成功证据。
+
+### 17.67 v1.36 首次启动的第一帧必须已经是手写问候
+
+- 新设备的服务器 HTML 与初始客户端图必须包含完整 HandwrittenGreeting；不能先展示示例工作区，也不能用 Preparing/Loading 卡片替代真正的开机画面。
+- 欢迎背景从第一像素起必须完全不透明。窗口、笔迹和后续内容可以运动，但全屏遮罩不得从透明淡入并暴露底层工作区。
+- hydration 前只允许读取固定、非敏感的 onboarding-complete 设备标记。它不得读取 Artifact、workspace source、task evidence、model profile、credential 或把任何内容发送到网络；React 接管后必须移除临时 presentation attribute。
+- 已完成引导的设备必须在 hydration 前直接看到 SSR 工作区，不能闪回欢迎页。重新打开教程仍走显式产品动作，不受首屏临时标记隐藏。
+- 手写与语言选择可以 eager；模型状态、profile manager 和其他低频步骤必须在用户继续后按需加载。首屏构建仍受 530 KB 上限约束，不得用放宽预算换取首帧修复。
+- 浏览器必须在客户端 JS 完全禁用时证明新用户首帧，在外部 JS 被阻断时证明老用户首帧，并继续证明完整书写、RTL、完成态与 model-step handoff；结构测试或等待 hydration 后的截图不能代替这组证据。

@@ -1697,7 +1697,7 @@ v0.33 以前的 Rune 一打开就是完整工作台：文件列表、source edit
 
 视觉上借鉴 Apple 的克制、留白、材料层级、系统语言建议和 setup assistant 节奏，但不复制系统控件或品牌。Rune 选择朱砂红作为自己的主色：它既像编辑批注和确认印记，也能与雾白画布、石墨侧栏和 Artifact 语义色形成稳定识别。原来占主导的森林绿退出品牌主色，只保留 Data 的含义；通用 AI 星云渐变不再承担产品身份。顶部材料使用轻模糊和细边框，动效只解释页面进入、快捷键完成和拖放状态，并服从 reduced-motion。
 
-首次启动先从 navigator languages 中保守推荐简体中文或 English，再由人确认，选择只作为设备偏好保存在独立 localStorage key。SSR 始终先输出不带 welcome 的稳定英文壳，hydration 后才读取设备信息并挂载 setup assistant，避免重演 locale 导致的 hydration mismatch。欢迎流程依次解释本地优先、先审后写和实时编译；快捷键页不是静态说明，而是在 capture phase 监听用户实际按下打开、checkpoint 和 Agent plan 组合键并逐项确认。完成后可打开指南、导入自己的文件或探索示例，帮助按钮可以重新进入，不把教程变成一次性不可找回的弹层。
+首次启动先从 navigator languages 中保守推荐简体中文或 English，再由人确认，选择只作为设备偏好保存在独立 localStorage key。v0.34 最初让 SSR 输出不带 welcome 的稳定英文壳，hydration 后才读取设备信息，以避免 locale 文本分叉；v1.36 在不改变 locale 合同的前提下进一步让服务器直接输出确定性的英文起笔问候，并用只读取完成标记的 pre-paint gate 决定是否显示，既没有 hydration 文本差异，也不再闪过工作区。欢迎流程依次解释本地优先、先审后写和实时编译；快捷键页不是静态说明，而是在 capture phase 监听用户实际按下打开、checkpoint 和 Agent plan 组合键并逐项确认。完成后可打开指南、导入自己的文件或探索示例，帮助按钮可以重新进入，不把教程变成一次性不可找回的弹层。
 
 说明文档不是外部 help center。Rune 生成一份普通 rune-guide.md Artifact，跟其他 source 一样可编辑、可预览、可下载、可同步到用户目录，也能演示右侧 heading 到左侧精确 source selection。更改界面语言时，只在指南仍等于 Rune 原始模板时切换内容；用户改过的指南不会被偏好更新覆盖。这让 onboarding 本身遵守 source ownership，而不是引入另一套隐藏内容系统。
 
@@ -2577,3 +2577,11 @@ Data 模型从第一天就支持 CSV 与 JSON，但如果浏览器证据只运�
 远端 v1.34 首次运行捕获到一个真实竞态：New dialog 已经可见，测试立即按 Escape，但普通 effect 还没把焦点从背景按钮移入 modal、也没注册 document keydown；5 秒后对话框仍在，重试却通过。这不是“测试太快”，真实用户同样可以在动画刚出现时立即反悔。把测试加等待只会隐藏产品问题。
 
 v1.35 因此把共享 `ReviewDialog` 的 initial focus、body scroll lock、focus trap 与 Escape listener 放进 layout effect：modal DOM 已提交后立即取得键盘所有权，浏览器在这之前不能把它绘制成可见界面。cleanup 仍恢复旧 overflow 与旧焦点，不引入第二套 modal state。New 的浏览器 gate 连续执行三次“点击 → visible → 立即 Escape → hidden”，并用 10 次 repeat 压出 30 个切换全部通过；所有复用 ReviewDialog 的新建、导入、导出与审阅表面同时获得这条保证。
+
+## 138. 开机问候必须拥有第一像素，而不是 hydration 之后才盖住工作区
+
+逐帧截图揭示了测试未覆盖的违和感：SSR 先输出示例工作区，客户端读完 localStorage 后才挂载 deferred welcome；中间还会出现 Preparing Rune fallback。旧 `.welcome-backdrop` 又从透明开始淡入，于是 80ms 能看见工作区轮廓，350ms 后才像启动页。这不是“动画细节”，而是首屏所有权错误——用户首先看到了一个应用网页，随后才看到模拟开机的覆盖层。
+
+v1.36 让服务器和初始客户端图直接包含完整问候 SVG。`<head>` 中的固定脚本只读取非敏感的 `rune-onboarding-v1 === complete` 标记，在 body 绘制前把根节点标为 pending 或 complete：新用户从第一像素看到不透明启动画布；老用户在 hydration 前直接看到 SSR 工作区，不闪回教程。layout effect 随后用同一标记同步 React state 并删除临时属性。遮罩不再做透明度淡入，只有字迹和内容层运动。模型状态、profile 管理器及其图标移入点击“继续设置”后才加载的 `WelcomeModelStep`，因此把问候改为 eager 后首包仍为 527,797 bytes，没有突破 530 KB 上限。
+
+验证同时覆盖视觉与架构：禁用全部客户端 JavaScript 时新用户仍能看到书写中的服务器首帧；阻断外部 JS 时已完成用户只看到工作区；真实浏览器继续证明九色笔迹、阿拉伯 RTL、完成态展开和进入按需模型设置时不重启动画。80ms / 350ms / 1.1s / 完成态截图确认工作区轮廓和加载卡片均已消失。

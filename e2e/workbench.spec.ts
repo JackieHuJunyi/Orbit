@@ -2,6 +2,38 @@ import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { openWorkbench } from "./helpers/workbench";
 
+test("paints the handwritten first-run ritual before client JavaScript", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const firstFrame = await context.newPage();
+  await firstFrame.goto("/");
+
+  const welcome = firstFrame.locator('.welcome-window[data-onboarding-sequence="boot-write-settle-unfold"]');
+  await expect(firstFrame.locator(".welcome-backdrop")).toHaveCSS("animation-name", "none");
+  await expect(welcome).toBeVisible();
+  await expect(welcome).toHaveAttribute("data-intro-phase", "writing");
+  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="calligraphic-mask"]')).toContainText(
+    "Hello",
+  );
+  await expect(firstFrame.getByText("Preparing Rune…")).toHaveCount(0);
+  expect(
+    await firstFrame.evaluate(() =>
+      Boolean(document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)?.closest(".welcome-backdrop")),
+    ),
+  ).toBe(true);
+
+  await context.close();
+});
+
+test("keeps a returning user on the server-rendered workbench before hydration", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
+  await page.route(/\.js(?:\?|$)/u, (route) => route.abort());
+  await page.goto("/");
+
+  await expect(page.locator(".welcome-backdrop")).toBeHidden();
+  await expect(page.locator("header.topbar")).toBeVisible();
+  await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
+});
+
 test("starts a fresh user with outcome-first task choices", async ({ page }) => {
   await page.goto("/");
 
@@ -21,6 +53,20 @@ test("starts a fresh user with outcome-first task choices", async ({ page }) => 
   await expect(ready).toBeHidden();
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
+});
+
+test("loads model setup after the handwritten opening without restarting it", async ({ page }) => {
+  await page.goto("/");
+
+  const welcomeWindow = page.locator(".welcome-window");
+  await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
+  await page.getByRole("button", { name: "Continue setup", exact: true }).click();
+
+  const modelStep = page.getByRole("dialog", { name: "Choose how Rune uses a model" });
+  await expect(modelStep).toBeVisible();
+  await expect(modelStep.getByText(/No model connected|Model connected/u)).toBeVisible();
+  await expect(modelStep.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
+  await expect(page.locator('.welcome-greeting[data-motion-renderer="calligraphic-mask"]')).toHaveCount(0);
 });
 
 test("writes the opening greeting through ordered spectrum-ink strokes", async ({ page }) => {
