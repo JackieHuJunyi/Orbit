@@ -2459,3 +2459,13 @@ v1.22 保留 `WelcomeExperience → greeting-motion → HandwrittenGreeting` 三
 欢迎构图也把 greeting 提升为跨两列、居中的独立区域，价值说明和语言决策落在下一行；窄屏按 greeting → copy → language 顺序折叠。字体仍来自设备系统，中文、日文、韩文、俄文、拉丁文各用合适的书写面，阿拉伯文仍是一个不拆分的 RTL shaping run。没有复制 Apple 字形路径、动画资产或远程字体。
 
 reduced motion 直接把 mask 置为完成并显示静态 final fill；forced colors 移除 glow、nib 与 flourish，使用 `CanvasText`。纯单测守住 LTR/RTL 端点、时间上限和冻结输入，源码与运行时门槛守住 reveal/writehead/pressure/settle/flourish 五个阶段，九语言桌面与 390px 几何继续验证语言卡、主按钮和页面零溢出。
+
+## 123. v1.23 兼容 HTML 进入可视编辑必须先跨过明确的派生边界
+
+v1.20–v1.21 已让语义 HTML 拥有连续 Preview、精确双向定位和真实交付，但右侧编辑仍只属于 Deck Markdown。这是合理的权限边界，却也是原始产品承诺中的实际断点：用户能打开旧演示、能看到每一页，点击铅笔时却没有安全路径继续工作。直接让 iframe DOM 或任意 section HTML 写回源文件，会把浏览器纠错、CSS、脚本边界和不可逆结构丢失一起带进 canonical mutation。
+
+v1.23 不伪装任意 HTML 可被安全结构化编辑，而是在有效 HTML Preview 上提供一次明确的“创建可编辑 Deck Markdown 演示”。新的 React-free `prepareSemanticHtmlEditableCopy` 只接受当前 workspace 中对象与 source 都完全一致的 Artifact，复用同一个 `convertSemanticHtmlPresentationToDeck`，再把候选交给已有 conflict resolver 和 import-review transaction。该模块没有 storage、network、download、provider、credential、asset 或写入能力。
+
+审核界面展示完整 `.deck.md` 预览和全部 fidelity warnings，第一条明确说明这是独立副本：原 HTML 保持不变，之后两个文件不会实时联动。确认后现有原子导入路径只新增一份 collision-safe Artifact 并选中它，因而原 HTML、其他文件和 checkpoint 都不被重写；取消、stale workspace 或 persistence failure 仍是零部分写入。用户随后获得既有的单页右侧编辑、左侧实时 draft、保存前完整 workspace/runtime 校验和恢复点。
+
+这不是把 HTML 降级后藏起来。真实浏览器门槛从审核导入 `.html` 开始，先证明连续页面和精确导航，再从 Preview 打开 editable-copy review、读取“不联动”的保真说明、确认新文件出现和每页铅笔可用，最后重新选择原 `.html` 并逐字比较源内容。这样兼容入口第一次同时拥有“保留原件”和“继续编辑”两条清晰路径。

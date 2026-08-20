@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.23 with an explicit semantic HTML → editable Deck copy action, exact-revision conversion, collision-safe identity, fidelity review before one additive write, and preserved original HTML.
+
 - 2026-08-21 — Shipped Rune v1.22 with a centered startup greeting, one direction-aware SVG ink-reveal mask, synchronized nib/pressure/settle/flourish timing, nine-stop spectrum ink, and static reduced-motion/forced-color fallbacks.
 
 - 2026-08-21 — Shipped Rune v1.21 with reviewed semantic HTML → PPTX/ODP/PPT/PDF handoff, immutable bounded structure conversion, explicit fidelity loss, deterministic package/PDF gates, and unchanged canonical HTML.

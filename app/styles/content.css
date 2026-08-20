@@ -9,6 +9,31 @@
 .validation-badge,
 .data-summary span,
 .slides-stage-meta { font-size: var(--rune-type-caption); }
+.slides-stage-meta { align-items: center; gap: var(--rune-space-2); }
+.slides-stage-meta > div { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: var(--rune-space-2); }
+.slides-stage-meta > div > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slides-create-editable-copy {
+  display: inline-flex;
+  min-height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 18%, var(--rune-material-divider));
+  border-radius: 999px;
+  background: var(--rune-material-control);
+  color: var(--theme-accent);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 640;
+  transition:
+    border-color var(--rune-duration-micro) ease,
+    background-color var(--rune-duration-micro) ease,
+    transform var(--rune-duration-press) var(--rune-ease-out);
+}
+.slides-create-editable-copy:hover { border-color: color-mix(in srgb, var(--theme-accent) 38%, transparent); background: var(--rune-material-solid); }
+.slides-create-editable-copy:active { transform: scale(.97); }
+.slides-create-editable-copy svg { width: 13px; height: 13px; }
 .paper-meta,
 .lineage-strip,
 .chart-stage-toolbar > div:first-child span { font-size: 10px; }

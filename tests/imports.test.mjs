@@ -67,10 +67,15 @@ test("holds a deduplicated import review against the exact base workspace", () =
   );
   assert.deepEqual(prepared.errors, []);
   assert.ok(prepared.review);
+  assert.equal(prepared.review.purpose, "import");
   assert.equal(prepared.review.baseArtifacts, defaultArtifacts);
   assert.deepEqual(prepared.review.warnings, ["An image was omitted."]);
   assert.deepEqual(validateWorkspaceImportReview(defaultArtifacts, prepared.review), []);
   assert.match(validateWorkspaceImportReview([...defaultArtifacts], prepared.review).join(" "), /workspace changed/i);
+  assert.match(
+    validateWorkspaceImportReview(defaultArtifacts, { ...prepared.review, purpose: "unknown" }).join(" "),
+    /invalid purpose/i,
+  );
 });
 
 test("bounds import source previews without changing source statistics", () => {

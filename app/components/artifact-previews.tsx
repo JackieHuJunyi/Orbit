@@ -164,6 +164,8 @@ export type DeckSlideEditHandler = (
   input: VisualDeckSlideEditInput,
 ) => Promise<string | null>;
 
+export type SemanticHtmlEditableCopyHandler = (artifact: WorkspaceArtifact) => void | Promise<void>;
+
 export type ChartSpecEditHandler = (
   artifact: WorkspaceArtifact,
   target: PreviewSourceTarget,
@@ -2650,6 +2652,7 @@ function SlidesPreview({
   activeSelection,
   onTargetSource,
   onEditDeckSlide,
+  onCreateEditableDeckCopy,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
 }: {
@@ -2661,6 +2664,7 @@ function SlidesPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
+  onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
@@ -2788,7 +2792,21 @@ function SlidesPreview({
     <div className="slides-stage">
       <div className="slides-stage-meta">
         <span>{copy.slides(slideCount)}</span>
-        <span>{copy.deckMode(deckCompilation ? (onEditDeckSlide ? "edit" : "sandbox") : "legacy")}</span>
+        <div>
+          <span>{copy.deckMode(deckCompilation ? (onEditDeckSlide ? "edit" : "sandbox") : "legacy")}</span>
+          {!deckCompilation && legacyCompilation && !legacyCompilation.errors.length && onCreateEditableDeckCopy && (
+            <button
+              className="slides-create-editable-copy"
+              type="button"
+              aria-label={copy.createEditableDeck}
+              title={copy.createEditableDeck}
+              onClick={() => void onCreateEditableDeckCopy(artifact)}
+            >
+              <Plus aria-hidden="true" />
+              {copy.createEditableDeck}
+            </button>
+          )}
+        </div>
       </div>
       {targets.length > 0 && (deckCompilation || !legacyCompilation?.errors.length) && (
         <nav className="slide-targets" aria-label={copy.selectDeckSlide}>
@@ -3025,6 +3043,7 @@ export function ArtifactPreview({
   onEditDocumentBlock,
   onReviewDocumentBlockStructure,
   onEditDeckSlide,
+  onCreateEditableDeckCopy,
   onEditChartSpec,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
@@ -3039,6 +3058,7 @@ export function ArtifactPreview({
   onEditDocumentBlock?: DocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
+  onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onEditChartSpec?: ChartSpecEditHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
@@ -3122,6 +3142,7 @@ export function ArtifactPreview({
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
             onEditDeckSlide={onEditDeckSlide}
+            onCreateEditableDeckCopy={onCreateEditableDeckCopy}
             onVisualSourceDraftChange={onVisualSourceDraftChange}
             resolveLocalAssetUrl={resolveLocalAssetUrl}
           />

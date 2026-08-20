@@ -2314,6 +2314,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在儲存到本機"
   ],
   [
+    "正在核验源内容",
+    "正在核驗源內容"
+  ],
+  [
     "正在编排并验证",
     "正在編排並驗證"
   ],
@@ -2600,6 +2604,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "切换专注视图",
     "切換專注檢視"
+  ],
+  [
+    "创建可编辑的",
+    "建立可編輯的"
   ],
   [
     "创建经营汇报",

@@ -247,6 +247,23 @@ ${firstBody}
   await editor.press("ArrowRight");
   await expect(flow.locator(".deck-slide-canvas").first()).toHaveClass(/active/);
   await expect(flow.locator(".deck-slide-page").first()).toBeInViewport();
+
+  await page.getByRole("button", { name: "Create an editable Deck Markdown presentation" }).click();
+  const copyReview = page.getByRole("dialog", { name: "Review imported sources" });
+  await expect(copyReview).toBeVisible();
+  await expect(copyReview.getByText("semantic-brief.deck.md", { exact: true })).toBeVisible();
+  await expect(copyReview).toContainText("original semantic HTML remains unchanged");
+  await copyReview.getByRole("button", { name: "Create an editable Deck Markdown presentation" }).click();
+  await expect(copyReview).toBeHidden();
+
+  const fileRail = page.locator("aside.file-rail");
+  await expect(fileRail.getByText("semantic-brief.html", { exact: true })).toBeVisible();
+  await expect(fileRail.getByText("semantic-brief.deck.md", { exact: true })).toBeVisible();
+  await expect(editor).toHaveValue(/version: 1/);
+  await expect(page.locator(".slide-target-edit")).toHaveCount(2);
+
+  await fileRail.getByText("semantic-brief.html", { exact: true }).click();
+  await expect(editor).toHaveValue(source);
   expect(pageErrors).toEqual([]);
 });
 

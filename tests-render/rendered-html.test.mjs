@@ -235,6 +235,27 @@ test("keeps semantic HTML presentation handoff explicit and outside the startup 
   assert.doesNotMatch(conversion, /fetch\(|localStorage|indexedDB|persist|download/iu);
 });
 
+test("offers semantic HTML an explicit reviewed path into the controlled visual editor", async () => {
+  const [workbench, preview, conversion, imports, reviewDialog] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/semantic-html-editable-copy.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/imports.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/import-review-dialog.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(preview, /className="slides-create-editable-copy"/);
+  assert.match(preview, /onCreateEditableDeckCopy\(artifact\)/);
+  assert.match(workbench, /await import\("\.\.\/lib\/semantic-html-editable-copy"\)/);
+  assert.doesNotMatch(workbench, /^import .*semantic-html-editable-copy/m);
+  assert.match(conversion, /convertSemanticHtmlPresentationToDeck/);
+  assert.match(conversion, /prepareWorkspaceImportReview/);
+  assert.match(conversion, /original semantic HTML remains unchanged/);
+  assert.doesNotMatch(conversion, /fetch\(|localStorage|indexedDB|persist|download|putRuneImageAsset/iu);
+  assert.match(imports, /purpose:\s*"import" \| "editable-copy"/);
+  assert.match(reviewDialog, /purpose === "editable-copy"/);
+});
+
 test("renders a complete read-only Agent proposal through the live source and output panes before Apply", async () => {
   const [workbench, projection, localization, contentStyles] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),

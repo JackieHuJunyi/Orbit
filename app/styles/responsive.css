@@ -89,6 +89,9 @@
   .command-menu-search input { font-size: 16px; }
   .command-menu-results { padding: 7px; }
   .import-review-dialog { border-radius: 22px; }
+  .slides-stage-meta { align-items: flex-start; flex-direction: column; }
+  .slides-stage-meta > div { width: 100%; justify-content: space-between; }
+  .slides-create-editable-copy { max-width: 100%; flex: 0 1 auto; white-space: normal; text-align: start; }
   .import-review-header,
   .import-review-body,
   .import-review-actions { padding-inline: 18px; }

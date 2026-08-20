@@ -1074,6 +1074,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         ? "一页绑定当前版本的演示 · 绑定保持固定 · 保存会写入规范源内容"
         : "One revision-bound slide · bindings stay fixed · save writes canonical source",
       saveSlide: zh ? "保存演示页" : "Save slide",
+      createEditableDeck: zh ? "创建可编辑的 Deck Markdown 演示" : "Create an editable Deck Markdown presentation",
       renderedPresentation: zh ? "已渲染演示预览" : "Rendered presentation preview",
       startWriting: zh ? "开始输入即可编译预览。" : "Start writing to compile a preview.",
       formattingLabels: {

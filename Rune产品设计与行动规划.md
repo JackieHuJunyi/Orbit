@@ -2228,3 +2228,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - `WelcomeExperience` 继续唯一拥有 timeout、语言顺序和 onboarding 状态；`HandwrittenGreeting` 不得接触 storage、network、model、credential、Artifact 或 mutation。动效仍位于 deferred welcome chunk。
 - reduced motion 直接打开 mask 并显示完整文字，forced colors 使用 `CanvasText`；结构测试、LTR/RTL planner 单测、运行时 animation 检查与九语言桌面/390px 无溢出门槛必须继续通过。
 - 视觉目标学习 Apple 设备开机的克制、留白与书写仪式感，但不得复制 Apple 字形路径、插画、动画文件、商标资产或远程字体。
+
+### 17.54 v1.23 语义 HTML 必须有明确、可审核的可视编辑入口
+
+- 已证明 section identity 的语义 HTML 演示不能永远停留在只读兼容模式；Preview 应提供一个明确动作，把当前精确版本转换为受控、可视编辑的 Deck Markdown 副本。
+- 不能直接让任意 DOM 获得右侧写权限，也不能静默替换原 `.html`。转换必须复用 v1.21 的同一有界投影，重新验证 source、脚本、结构、字符/页数限制与完整 Deck 输出。
+- 候选副本必须先进入现有 fidelity review，显示完整可读源、CSS/定位/动画/链接/媒体等损失，并明确说明原 HTML 保持不变、两个 Artifact 后续不会实时同步。
+- 新 id 与 `.deck.md` 文件名由现有 case-insensitive collision resolver 分配；确认只执行一次 additive device write，取消、旧 revision、workspace 变化、无效输入或持久化失败都保持原工作区不变。
+- `semantic-html-editable-copy` 保持 React-free 且按需加载，不能拥有 storage、download、network、provider、credential、image 或 mutation 权限；Workbench 仍是唯一事务 owner。
+- 单测必须证明确定性、冲突改名、原 HTML 不变、stale/script refusal 与 review purpose；真实导入 E2E 必须从 HTML Preview 打开审核、确认副本可编辑，并重新打开原文件证明字节未变。

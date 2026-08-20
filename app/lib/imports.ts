@@ -16,6 +16,7 @@ export type PreparedWorkspaceImport = {
 };
 
 export type WorkspaceImportReview = {
+  purpose: "import" | "editable-copy";
   sourceName: string;
   baseArtifacts: WorkspaceArtifact[];
   importedArtifacts: WorkspaceArtifact[];
@@ -63,6 +64,7 @@ export function prepareWorkspaceImportReview(
   sourceName: string,
   warnings: string[] = [],
   assets: PreparedRuneImageAsset[] = [],
+  purpose: WorkspaceImportReview["purpose"] = "import",
 ): PreparedWorkspaceImportReview {
   if (!sourceName.trim()) return { review: null, errors: ["The import source needs a filename."] };
   const prepared = prepareWorkspaceImport(existing, imported);
@@ -114,6 +116,7 @@ export function prepareWorkspaceImportReview(
   }
   return {
     review: {
+      purpose,
       sourceName,
       baseArtifacts: existing,
       importedArtifacts: prepared.importedArtifacts,
@@ -126,6 +129,9 @@ export function prepareWorkspaceImportReview(
 }
 
 export function validateWorkspaceImportReview(current: WorkspaceArtifact[], review: WorkspaceImportReview) {
+  if (review.purpose !== "import" && review.purpose !== "editable-copy") {
+    return ["The reviewed workspace operation has an invalid purpose."];
+  }
   if (current !== review.baseArtifacts) {
     return [
       "The workspace changed while this file was being converted. Cancel and import it again to review a fresh transaction.",

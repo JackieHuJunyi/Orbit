@@ -61,6 +61,7 @@ import {
   type DocumentBlockEditHandler,
   type DocumentBlockStructureReviewHandler,
   type DocumentSectionEditHandler,
+  type SemanticHtmlEditableCopyHandler,
   type VisualSourceDraft,
 } from "./artifact-previews";
 import { AgentComposer, type AgentScope } from "./agent-composer";
@@ -2249,6 +2250,49 @@ export function RuneWorkbench() {
       verificationNotice: `Verifying ${target.label} against the complete workspace…`,
       compile: (currentArtifact) => prepareVisualDeckSlideEdit(currentArtifact, target, input),
     });
+
+  const reviewSemanticHtmlEditableCopy: SemanticHtmlEditableCopyHandler = async (targetArtifact) => {
+    if (
+      importInFlightRef.current ||
+      importState !== "idle" ||
+      visualEditState !== "idle" ||
+      pendingChange ||
+      pendingImport ||
+      pendingPdfOcr ||
+      pendingExport ||
+      pendingDocumentStructure ||
+      pendingLocalImage ||
+      agentState === "planning"
+    )
+      return;
+    const baseArtifacts = artifactsRef.current;
+    const currentArtifact = baseArtifacts.find((artifact) => artifact.id === targetArtifact.id);
+    if (!currentArtifact || currentArtifact !== targetArtifact || currentArtifact.source !== targetArtifact.source) {
+      setNotice("The semantic HTML source changed before Rune could prepare an editable copy");
+      return;
+    }
+    importInFlightRef.current = true;
+    setImportState("reading");
+    setImportError("");
+    setNotice(runeText(locale, "Verifying source…", "正在核验源内容…"));
+    try {
+      const { prepareSemanticHtmlEditableCopy } = await import("../lib/semantic-html-editable-copy");
+      const prepared = prepareSemanticHtmlEditableCopy(baseArtifacts, currentArtifact);
+      if (prepared.errors.length || !prepared.review) {
+        throw new Error(prepared.errors[0] ?? "Rune could not prepare an editable presentation copy.");
+      }
+      setPendingImport(prepared.review);
+      setTaskSession(null);
+      setNotice(runeText(locale, "Create an editable Deck Markdown presentation", "创建可编辑的 Deck Markdown 演示"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Rune could not prepare an editable presentation copy.";
+      setImportError(message);
+      setNotice(message);
+    } finally {
+      importInFlightRef.current = false;
+      setImportState("idle");
+    }
+  };
 
   const commitVisualChartSpecEdit: ChartSpecEditHandler = async (targetArtifact, target, input) =>
     commitVisualSourceEdit({
@@ -6082,6 +6126,9 @@ export function RuneWorkbench() {
                     onEditDeckSlide={
                       !proposalReviewActive && visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined
                     }
+                    onCreateEditableDeckCopy={
+                      !proposalReviewActive && visualEditState === "idle" ? reviewSemanticHtmlEditableCopy : undefined
+                    }
                     onEditChartSpec={
                       !proposalReviewActive && visualEditState === "idle" ? commitVisualChartSpecEdit : undefined
                     }
@@ -6178,6 +6225,7 @@ export function RuneWorkbench() {
             busy={importState === "reading"}
             locale={locale}
             continuationTask={taskSession?.phase === "reviewing-source" ? taskSession.taskId : undefined}
+            purpose={pendingImport.purpose}
             onCancel={cancelPendingImport}
             onConfirm={applyPendingImport}
           />

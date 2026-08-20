@@ -12,7 +12,7 @@ import {
   TableProperties,
   TriangleAlert,
 } from "lucide-react";
-import { createImportSourcePreview } from "../lib/imports";
+import { createImportSourcePreview, type WorkspaceImportReview } from "../lib/imports";
 import { localizeRuneCopy, runeUICopy, type RuneLocale } from "../lib/localization";
 import { formatInteger } from "../lib/number-format";
 import type { RuneTaskId } from "../lib/task-runtime";
@@ -62,6 +62,7 @@ export function ImportReviewDialog({
   busy = false,
   locale,
   continuationTask,
+  purpose = "import",
   onCancel,
   onConfirm,
 }: {
@@ -72,6 +73,7 @@ export function ImportReviewDialog({
   busy?: boolean;
   locale: RuneLocale;
   continuationTask?: RuneTaskId;
+  purpose?: WorkspaceImportReview["purpose"];
   onCancel: () => void;
   onConfirm: () => void | Promise<void>;
 }) {
@@ -105,11 +107,13 @@ export function ImportReviewDialog({
             </button>
             <button className="button primary-button" onClick={() => void onConfirm()} disabled={busy}>
               <Check aria-hidden="true" />{" "}
-              {continuesTask
-                ? continuesBriefing
-                  ? taskCopy.briefingConfirm
-                  : taskCopy.confirm
-                : copy.importReview.importSources(artifacts.length)}
+              {purpose === "editable-copy"
+                ? copy.preview.createEditableDeck
+                : continuesTask
+                  ? continuesBriefing
+                    ? taskCopy.briefingConfirm
+                    : taskCopy.confirm
+                  : copy.importReview.importSources(artifacts.length)}
             </button>
           </span>
         </>
