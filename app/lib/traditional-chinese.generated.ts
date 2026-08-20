@@ -662,6 +662,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "從一份真實經營彙報開始"
   ],
   [
+    "会先审核可追溯转换结果",
+    "會先稽核可追溯轉換結果"
+  ],
+  [
     "会定位并高亮对应源内容",
     "會定位並高亮對應源內容"
   ],
@@ -924,10 +928,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "会从当前站点加载内置",
     "會從當前站點載入內建"
-  ],
-  [
-    "会先让你审核导入结果",
-    "會先讓你稽核匯入結果"
   ],
   [
     "使用内置确定性规划器",
@@ -1494,10 +1494,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "修正即時數值繫結"
   ],
   [
-    "再引导你确认字段",
-    "再引導你確認欄位"
-  ],
-  [
     "再显示逐页置信度",
     "再顯示逐頁置信度"
   ],
@@ -2004,6 +2000,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "再决定是否应用",
     "再決定是否應用"
+  ],
+  [
+    "再带你确认字段",
+    "再帶你確認欄位"
   ],
   [
     "再由你确认写入",
@@ -3766,6 +3766,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "使用文件"
   ],
   [
+    "使用状況",
+    "使用狀況"
+  ],
+  [
     "便携成品",
     "便攜成品"
   ],
@@ -4894,6 +4898,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "負責人"
   ],
   [
+    "超凡蓝",
+    "超凡藍"
+  ],
+  [
     "输入框",
     "輸入框"
   ],
@@ -5084,6 +5092,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "周期",
     "週期"
+  ],
+  [
+    "回避",
+    "迴避"
   ],
   [
     "团队",

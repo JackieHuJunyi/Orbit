@@ -17,7 +17,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ModelProfileManager } from "./model-profile-manager";
 import {
   localeDirection,
@@ -29,6 +29,7 @@ import {
   type RuneLocale,
 } from "../lib/localization";
 import { type ModelProviderStatus, type RuneModelMode } from "../lib/model-preference";
+import { resetFluidSurface, trackFluidSurface } from "../lib/fluid-surface";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
 export type WelcomeAction = "guide" | "review" | "briefing" | "sample";
@@ -188,6 +189,8 @@ export function WelcomeExperience({
   const [modelStatusError, setModelStatusError] = useState("");
   const [checkingModel, setCheckingModel] = useState(true);
   const [greetingIndex, setGreetingIndex] = useState(0);
+  const languageOptionsRef = useRef<HTMLDivElement>(null);
+  const selectedLanguageOptionRef = useRef<HTMLButtonElement>(null);
   const [modifier] = useState(() =>
     typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
       ? "Ctrl"
@@ -215,6 +218,19 @@ export function WelcomeExperience({
     }, 3_200);
     return () => window.clearInterval(timer);
   }, [greetings, step]);
+
+  useEffect(() => {
+    if (step !== "welcome") return;
+    const frame = window.requestAnimationFrame(() => {
+      const options = languageOptionsRef.current;
+      const selected = selectedLanguageOptionRef.current;
+      if (!options || !selected) return;
+      const centeredTop = selected.offsetTop - (options.clientHeight - selected.offsetHeight) / 2;
+      const maximumTop = Math.max(0, options.scrollHeight - options.clientHeight);
+      options.scrollTop = Math.min(maximumTop, Math.max(0, centeredTop));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [locale, step]);
 
   async function checkModelStatus() {
     setCheckingModel(true);
@@ -298,7 +314,7 @@ export function WelcomeExperience({
 
   return (
     <div className="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
-      <section className="welcome-window">
+      <section className="welcome-window" onPointerMove={trackFluidSurface} onPointerLeave={resetFluidSurface}>
         <header className="welcome-chrome">
           <div className="welcome-chrome-brand" aria-hidden="true">
             <span>R</span>
@@ -353,6 +369,7 @@ export function WelcomeExperience({
                         <span
                           aria-hidden="true"
                           className="welcome-greeting-character"
+                          data-character={character}
                           style={{ "--greeting-order": index } as CSSProperties}
                           key={`${character}-${index}`}
                         >
@@ -380,13 +397,19 @@ export function WelcomeExperience({
                       <small>{text.languageBody}</small>
                     </div>
                   </div>
-                  <div className="language-options" role="radiogroup" aria-label={text.languageTitle}>
+                  <div
+                    className="language-options"
+                    role="radiogroup"
+                    aria-label={text.languageTitle}
+                    ref={languageOptionsRef}
+                  >
                     {RUNE_LOCALE_REGISTRY.map(({ locale: option }) => (
                       <button
                         type="button"
                         role="radio"
                         aria-checked={locale === option}
                         className={locale === option ? "selected" : ""}
+                        ref={locale === option ? selectedLanguageOptionRef : undefined}
                         onClick={() => onLocaleChange(option)}
                         key={option}
                       >

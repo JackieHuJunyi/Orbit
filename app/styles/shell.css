@@ -23,7 +23,12 @@
 }
 
 .rune-shell > .workspace { position: relative; z-index: var(--rune-layer-workspace); }
-.rune-shell > .statusbar { position: relative; z-index: var(--rune-layer-status); }
+.rune-shell > .statusbar {
+  position: relative;
+  z-index: var(--rune-layer-status);
+  min-width: 0;
+  overflow: hidden;
+}
 .rune-shell > .topbar { position: relative; z-index: var(--rune-layer-topbar); }
 
 .topbar {

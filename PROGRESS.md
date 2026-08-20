@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-20 — Shipped Rune v1.15 with a spectrum-ink handwritten welcome, twelve fully localized material themes, lighter welcome/empty/workspace geometry, corrected Preview-to-Source centering, and a nine-locale desktop/compact browser geometry gate.
+
 - 2026-08-20 — Stabilized the release E2E gate on the exact Playwright runtime image so GitHub no longer depends on a live Ubuntu APT browser installation.
 
 - 2026-08-19 — Shipped Rune v1.14 with source-ordered area Charts across strict creation/Agent/configuration contracts, exact point provenance, React and scriptless HTML fills, PPTX/PDF vector fills, semantic DOCX/ODT trends, and nine-locale controls.

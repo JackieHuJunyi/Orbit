@@ -2375,3 +2375,11 @@ v1.01 的单页画布解决了 iframe 内页面无法与源码精确对应的问
 v1.07 继续让 `compileDeckSource` 成为唯一语义 owner，不复制 React slide renderer，也不给 iframe script 或 same-origin 权限。编译器产生的每个独立页面按源码顺序进入同一纵向流，并使用浏览器 lazy loading；页码和标题只是安静的身份标记，顶部索引变成跳转/编辑入口而非控制当前唯一页面。完整 HTML、PPTX、ODP 和 PDF 导出合同不变，legacy HTML 因没有可证明的逐页源码身份仍保持单个兼容 iframe。
 
 双向导航也不再散落计算。React-free `source-navigation` 只校验 exact artifact、source revision、UTF-16 range 或 bounded diagnostic reference，返回 immutable effect plan；Workbench 独占 Split reveal、artifact switch、focus、selection、scroll、Agent scope 和 history effects。左侧光标用同一纯 selector 找到右侧真实页面并滚动，点击任意页面用同一 planner 选择并居中左侧范围。这样连续预览、错误修复和未来其他 Preview 定位共享边界，却都没有写入权。
+
+## 114. v1.15 轻盈不能依赖英文样机，必须成为九语言几何合同
+
+Apple 式轻盈不是加更多模糊、渐变和无限漂浮，而是层级、尺寸、留白与反馈在内容变化后仍然稳定。Rune 的欢迎页和空白页因此复用一套更克制的 material token：问候语用适合不同文字系统的书写字体，炫彩墨迹随笔画逐段显现并在收笔后停止；指针只改变当前表面的局部光位，触摸设备与 reduced motion 直接关闭，reduced transparency、high contrast 与 forced colors 恢复实色边界。装饰动画不拥有布局尺寸，空白页把任务说明和打开/拖放动作合成一个清楚的响应式首屏。
+
+“九种语言都存在”不等于九种语言下都可用。日文默认选择曾在窄屏语言列表的可视区之外，法语、西班牙语和俄语的长状态文案还会扩大隐式 grid track，使顶部栏与空白页出现 22–83px 横向溢出。v1.15 让所选语言在布局完成后进入自己的 scroll container，并把 statusbar 明确限制在 shell track 内；外观增加超凡蓝、星光白和玫瑰珍珠后，十二个主题名称必须在法、西、俄、阿、日、韩语中逐项验证，不能静默回退英文。
+
+这些不是只靠截图判断的 CSS 调整。新的几何门槛对九种 locale 分别运行 1440×900 与 390×844：验证根节点 locale/direction、九个语言选项、所选项可见、欢迎窗口在 viewport 内、文案与语言卡不遮挡、主动作至少 44px、空白拖放区在其 canvas 内、全页零横向溢出和零脚本错误。Preview→Source 继续使用唯一的 revision-bound navigation plan；布局切回 Split 后再用下一帧对 canonical textarea 做一次滚动校正，不增加第二套 target、source 或 writer。

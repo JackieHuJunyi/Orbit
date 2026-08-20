@@ -2,6 +2,22 @@ export const RUNE_APPEARANCE_STORAGE_KEY = "rune-appearance-theme-v1";
 
 export const RUNE_APPEARANCE_THEMES = [
   {
+    id: "ultramarine",
+    english: "Ultramarine",
+    chinese: "超凡蓝",
+    color: "#0a72ea",
+    soft: "#e4f1ff",
+    finish: ["#cde4ff", "#88bdf2"],
+  },
+  {
+    id: "starlight",
+    english: "Starlight",
+    chinese: "星光白",
+    color: "#8d8576",
+    soft: "#f4f2ef",
+    finish: ["#f6f2ec", "#cec4b4"],
+  },
+  {
     id: "mist-blue",
     english: "Mist Blue",
     chinese: "雾蓝",
@@ -56,6 +72,14 @@ export const RUNE_APPEARANCE_THEMES = [
     color: "#a84b24",
     soft: "#f9ece5",
     finish: ["#e08a58", "#b95027"],
+  },
+  {
+    id: "rose-pearl",
+    english: "Rose Pearl",
+    chinese: "玫瑰珍珠",
+    color: "#c94f66",
+    soft: "#f7e7eb",
+    finish: ["#e5a7b2", "#b65164"],
   },
   {
     id: "silver",

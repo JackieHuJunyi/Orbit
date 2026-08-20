@@ -199,6 +199,7 @@ import {
   RUNE_APPEARANCE_THEMES,
   type RuneAppearanceTheme,
 } from "../lib/appearance";
+import { RUNE_PRODUCT_VERSION } from "../lib/product-meta";
 import {
   buildRuneImageInsertion,
   deleteRuneImageAsset,
@@ -2272,12 +2273,22 @@ export function RuneWorkbench() {
       inspectSourceNavigationRef.current = !plan.activateSelectionAgent;
       editor.focus({ preventScroll: true });
       editor.setSelectionRange(plan.start, plan.end, "forward");
-      const computedLineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight);
+      const editorStyle = window.getComputedStyle(editor);
+      const rawLineHeight = Number.parseFloat(editorStyle.lineHeight);
+      const fontSize = Number.parseFloat(editorStyle.fontSize);
+      const safeLineHeight =
+        Number.isFinite(rawLineHeight) && rawLineHeight > 0
+          ? rawLineHeight < 5 && Number.isFinite(fontSize)
+            ? rawLineHeight * fontSize
+            : rawLineHeight
+          : Number.isFinite(fontSize)
+            ? fontSize * 1.72
+            : 22;
       const nextScrollTop = sourceSelectionScrollTop({
         source: plan.sourceRevision,
         start: plan.start,
         end: plan.end,
-        lineHeight: computedLineHeight,
+        lineHeight: safeLineHeight,
         viewportHeight: editor.clientHeight,
         scrollHeight: editor.scrollHeight,
       });
@@ -2286,6 +2297,11 @@ export function RuneWorkbench() {
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       });
       if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
+      window.requestAnimationFrame(() => {
+        if (Math.abs(editor.scrollTop - nextScrollTop) < 2) return;
+        editor.scrollTo({ top: nextScrollTop, behavior: "auto" });
+        if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
+      });
       if (!plan.activateSelectionAgent) {
         window.setTimeout(() => {
           inspectSourceNavigationRef.current = false;
@@ -4921,7 +4937,7 @@ export function RuneWorkbench() {
             </div>
             <footer className="tools-version">
               <span>{ui.version}</span>
-              <strong>Rune 1.09</strong>
+              <strong>Rune {RUNE_PRODUCT_VERSION}</strong>
             </footer>
           </div>
         )}

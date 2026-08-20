@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { RUNE_PRODUCT_VERSION } from "../app/lib/product-meta.ts";
+
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -431,7 +433,7 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(source, /setToolsMenuOpen\(false\);\s*openWelcomeGuide\(\);/s);
   assert.match(source, /role="menuitemradio"/);
   assert.match(source, /className="tools-theme-name"/);
-  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(9, minmax\(0, 1fr\)\)/s);
+  assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit, minmax\(34px, 1fr\)\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
   assert.match(styles, /\.settings-popover\s*\{[^}]*bottom:\s*14px;/s);
 });
@@ -494,7 +496,8 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const response = await render();
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune 1\.09<\/strong>/);
+  assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune \{RUNE_PRODUCT_VERSION\}<\/strong>/);
+  assert.equal(RUNE_PRODUCT_VERSION, "1.15");
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);
@@ -633,7 +636,7 @@ test("ships reviewed device-local images as content-hash Markdown references wit
 });
 
 test("ships one Apple-informed optical and motion system across onboarding and the editing workspace", async () => {
-  const [legacyStyles, styleFiles, source, welcome] = await Promise.all([
+  const [legacyStyles, styleFiles, source, welcome, fluidSurface] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     Promise.all(
       ["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) =>
@@ -642,6 +645,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     ),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/fluid-surface.ts", import.meta.url), "utf8"),
   ]);
   const styles = [legacyStyles, ...styleFiles].join("\n");
   assert.match(styles, /--rune-content-wide:\s*1260px;/);
@@ -665,12 +669,19 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
-  assert.match(styles, /@keyframes rune-ambient-drift/);
+  assert.match(styles, /@keyframes rune-greeting-pen/);
+  assert.match(styles, /#ff375f[^]*#30d158[^]*#0a84ff[^]*#bf5af2/);
+  assert.match(styles, /circle at var\(--rune-pointer-x\) var\(--rune-pointer-y\)/);
+  assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)/);
   assert.match(styles, /html\[data-locale="ar"\][^]*\.welcome-page h1/);
   assert.match(styles, /html\[data-locale="ja"\]/);
   assert.match(styles, /html\[data-locale="ko"\]/);
   assert.match(source, /moveMaterialLight/);
   assert.match(source, /className="tools-material-preview"/);
   assert.match(welcome, /className="welcome-greeting-character"/);
+  assert.match(welcome, /data-character=\{character\}/);
   assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
+  assert.match(fluidSurface, /trackFluidSurface/);
+  assert.match(fluidSurface, /event\.pointerType === "touch"/);
+  assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);
 });

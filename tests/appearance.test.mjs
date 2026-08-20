@@ -7,12 +7,26 @@ import {
   RUNE_APPEARANCE_STORAGE_KEY,
   RUNE_APPEARANCE_THEMES,
 } from "../app/lib/appearance.ts";
+import { runeText } from "../app/lib/localization.ts";
 
 test("ships a restrained current-iPhone-inspired material palette with one stable default", () => {
   assert.equal(RUNE_APPEARANCE_STORAGE_KEY, "rune-appearance-theme-v1");
   assert.deepEqual(
     RUNE_APPEARANCE_THEMES.map(({ id }) => id),
-    ["mist-blue", "sage", "lavender", "sky-blue", "light-gold", "deep-blue", "cosmic-orange", "silver", "space-black"],
+    [
+      "ultramarine",
+      "starlight",
+      "mist-blue",
+      "sage",
+      "lavender",
+      "sky-blue",
+      "light-gold",
+      "deep-blue",
+      "cosmic-orange",
+      "rose-pearl",
+      "silver",
+      "space-black",
+    ],
   );
   assert.equal(new Set(RUNE_APPEARANCE_THEMES.map(({ color }) => color)).size, RUNE_APPEARANCE_THEMES.length);
   for (const theme of RUNE_APPEARANCE_THEMES) {
@@ -33,4 +47,16 @@ test("keeps Rune vermilion distinct and supplies real RTL/LTR boundaries", async
   assert.match(css, /html\[dir="rtl"\] \.source-editor/);
   assert.match(css, /html\[dir="rtl"\] \.canonical-ltr/);
   assert.match(css, /direction:\s*ltr/);
+});
+
+test("names every material theme in every non-Chinese interface locale", () => {
+  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
+    for (const theme of RUNE_APPEARANCE_THEMES) {
+      assert.notEqual(
+        runeText(locale, theme.english, theme.chinese),
+        theme.english,
+        `${theme.id} falls back to English in ${locale}`,
+      );
+    }
+  }
 });

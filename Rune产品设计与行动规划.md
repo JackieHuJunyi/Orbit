@@ -1924,7 +1924,7 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 
 ### 17.18 v0.73 当季设备材质主题
 
-- 将当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的代表性 finish 转译为九个 Rune 主题，不把硬件营销色直接当作控件颜色。
+- 将当季设备的代表性 finish 转译为十二个 Rune 主题，不把硬件营销色直接当作控件颜色。
 - 每个主题拥有独立的材质 swatch、对比度安全的交互 accent 与柔和 surface tint；Rune 朱红标志始终独立。
 - 外观面板显示主题名称、当前选择和原生 `menuitemradio` 状态，支持全部九种界面语言与设备本地持久化。
 
@@ -2156,3 +2156,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - React 与 scriptless HTML 在同一折线点集和底线之间绘制有界 fill，点与标签仍可键盘打开精确源单元格；fill 本身不成为新的选择或写入 authority。
 - PPTX 与 PDF 冻结真实 vector fill 和原有点/线/标签；DOCX 与 ODT 使用可选择、可回导的 semantic trend table。所有 handoff 仍丢失 live binding，并通过既有 fidelity review 披露。
 - scatter、多序列、stacked、双轴和任意 layout 继续被 schema 拒绝；它们会改变字段、系列和可访问性合同，必须由真实任务证据定义后再扩展。
+
+### 17.45 v1.15 九语言材质与几何门槛
+
+- 欢迎页、空白页与工作区共享更轻的材质、圆角、间距和层级 token；欢迎语使用沿字形显现的有界炫彩墨迹，指针光只响应当前表面，触摸设备、reduced motion、reduced transparency、high contrast 与 forced colors 均有明确降级。
+- 外观扩展为十二款具名主题；名称在九种界面语言中完整本地化，主题仍只写设备偏好，Rune 朱红品牌标记与 canonical source 不变。
+- 欢迎页所选语言必须自动进入列表可视区，intro 与语言卡不得遮挡；长语言状态文案不得撑宽应用网格。
+- 浏览器门槛覆盖九种语言 × 桌面/窄屏 18 种几何组合，验证 RTL、viewport 边界、组件分离、44px 主动作与零横向溢出。
+- Preview 点击继续沿唯一 source-navigation 合同定位左侧，并在布局完成后的下一帧校正 textarea 滚动，避免视觉层变化后偏离精确 canonical range。

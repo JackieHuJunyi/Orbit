@@ -76,7 +76,7 @@
   gap: 4px;
   padding: 10px 11px;
   border: 1px solid color-mix(in srgb, var(--danger) 11%, transparent);
-  border-radius: 12px;
+  border-radius: var(--rune-radius-control);
   background: color-mix(in srgb, var(--danger) 4%, var(--paper));
 }
 .preview-diagnostics li > strong { color: color-mix(in srgb, var(--danger) 72%, var(--ink)); font-size: 10px; font-weight: 690; line-height: 1.35; }
@@ -153,30 +153,30 @@
   display: grid;
   width: min(610px, 100%);
   gap: var(--rune-space-3);
-  margin-top: var(--rune-space-8);
+  margin-top: var(--rune-space-6);
 }
 .empty-task-primary {
   display: grid;
   width: min(610px, 100%);
-  min-height: 82px;
+  min-height: 76px;
   grid-template-columns: 46px minmax(0, 1fr) 20px;
   align-items: center;
   gap: var(--rune-space-4);
   margin-top: 0;
-  padding: var(--rune-space-4) var(--rune-space-5);
-  border: 1px solid rgba(var(--theme-rgb), .15);
-  border-radius: var(--rune-radius-card);
-  background: color-mix(in srgb, var(--theme-soft) 48%, rgba(255, 255, 255, .88));
-  box-shadow: 0 14px 36px rgba(24, 24, 28, .06), inset 0 1px rgba(255, 255, 255, .82);
+  padding: 15px var(--rune-space-5);
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 16%, var(--rune-material-divider));
+  border-radius: var(--rune-radius-control);
+  background: color-mix(in srgb, var(--theme-soft) 28%, var(--rune-material-control));
+  box-shadow: 0 8px 20px rgba(24, 24, 28, .045), inset 0 1px var(--rune-material-highlight);
   color: var(--ink);
   cursor: pointer;
   text-align: left;
-  transition: transform var(--rune-duration-micro) var(--rune-ease-out), border-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-micro) ease;
+  transition: transform var(--rune-duration-press) var(--rune-ease-out), border-color var(--rune-duration-micro) ease, background-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-micro) ease;
 }
 .empty-task-primary.quiet {
-  border-color: var(--rune-hairline);
-  background: rgba(255, 255, 255, .62);
-  box-shadow: inset 0 1px rgba(255, 255, 255, .82);
+  border-color: var(--rune-material-divider);
+  background: color-mix(in srgb, var(--rune-material-control) 84%, transparent);
+  box-shadow: inset 0 1px var(--rune-material-highlight);
 }
 .empty-task-primary.quiet > span:first-child {
   background: color-mix(in srgb, var(--theme-soft) 78%, white);
@@ -184,25 +184,26 @@
   color: var(--theme-accent);
 }
 .empty-task-primary:hover {
-  border-color: rgba(var(--theme-rgb), .3);
-  box-shadow: 0 18px 44px rgba(24, 24, 28, .085), inset 0 1px rgba(255, 255, 255, .9);
-  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--theme-accent) 34%, transparent);
+  background: var(--rune-material-solid);
+  box-shadow: 0 12px 28px rgba(24, 24, 28, .06), inset 0 1px var(--rune-material-highlight);
+  transform: translateY(-1px);
 }
-.empty-task-primary:active { transform: translateY(0) scale(.995); }
+.empty-task-primary:active { transform: translateY(0) scale(.975); }
 .empty-task-primary > span:first-child {
   display: grid;
   width: 46px;
   height: 46px;
   place-items: center;
-  border-radius: var(--rune-radius-control);
+  border-radius: 12px;
   background: var(--theme-accent);
-  box-shadow: 0 8px 20px rgba(var(--theme-rgb), .2);
+  box-shadow: 0 8px 18px rgba(var(--theme-rgb), .18);
   color: white;
 }
 .empty-task-primary > span:nth-child(2) { display: grid; min-width: 0; gap: 4px; }
-.empty-task-primary strong { font-size: var(--rune-type-ui); font-weight: 680; line-height: 1.25; }
+.empty-task-primary strong { font-size: 13.5px; font-weight: 660; line-height: 1.25; }
 .empty-task-primary small { color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.4; text-wrap: pretty; }
-.empty-task-primary svg { width: 18px; height: 18px; }
+.empty-task-primary svg { width: 17px; height: 17px; }
 .empty-task-primary > svg { color: var(--theme-accent); transition: transform var(--rune-duration-micro) var(--rune-ease-out); }
 .empty-task-primary:hover > svg { transform: translateX(3px); }
 .empty-choice-divider {

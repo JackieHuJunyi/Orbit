@@ -11,13 +11,14 @@ import {
   Upload,
 } from "lucide-react";
 import { useState, type DragEvent } from "react";
+import { resetFluidSurface, trackFluidSurface } from "../lib/fluid-surface";
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 
 export const EMPTY_WORKSPACE_BASE_COPY = {
   "zh-CN": {
     eyebrow: "从真实结果开始",
     title: "把数据变成可核验的汇报。",
-    body: "选择 CSV、JSON、XLSX 或 ODS。Rune 会先让你审核导入结果，再引导你确认字段、口径、图表和交付物。",
+    body: "导入 PDF、DOC、DOCX、MD、PPT、HTML、CSV、JSON、XLSX，或 ODS。Rune 会先审核可追溯转换结果，再带你确认字段、口径、图表和交付物。",
     startReview: "创建经营汇报",
     startReviewBody: "导入数据后，直接进入字段映射和成品设置",
     startBriefing: "从文档创建演示",
@@ -33,7 +34,7 @@ export const EMPTY_WORKSPACE_BASE_COPY = {
   en: {
     eyebrow: "Start with a real outcome",
     title: "Turn data into a verifiable review.",
-    body: "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.",
+    body: "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.",
     startReview: "Create operating review",
     startReviewBody: "Import data, then continue directly to mapping and output setup",
     startBriefing: "Create presentation from document",
@@ -96,61 +97,67 @@ export function EmptyWorkspace({
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
         }}
         onDrop={acceptDrop}
+        onPointerMove={trackFluidSurface}
+        onPointerLeave={resetFluidSurface}
       >
-        <div className="empty-file-stack" aria-hidden="true">
-          <span>
-            <FileText />
-          </span>
-          <span>
-            <Sparkles />
-          </span>
-          <span>
-            <Upload />
-          </span>
-        </div>
-        <span className="empty-eyebrow">{dragging ? text.drop : text.eyebrow}</span>
-        <h1>{text.title}</h1>
-        <p>{text.body}</p>
-        <div className="empty-task-list">
-          <button type="button" className="empty-task-primary" onClick={onStartReview}>
+        <div className="empty-hero">
+          <div className="empty-file-stack" aria-hidden="true">
             <span>
-              <ClipboardList aria-hidden="true" />
+              <FileText />
             </span>
             <span>
-              <strong>{text.startReview}</strong>
-              <small>{text.startReviewBody}</small>
-            </span>
-            <ArrowRight aria-hidden="true" />
-          </button>
-          <button type="button" className="empty-task-primary quiet" onClick={onStartBriefing}>
-            <span>
-              <Presentation aria-hidden="true" />
+              <Upload />
             </span>
             <span>
-              <strong>{text.startBriefing}</strong>
-              <small>{text.startBriefingBody}</small>
+              <Sparkles />
             </span>
-            <ArrowRight aria-hidden="true" />
-          </button>
+          </div>
+          <span className="empty-eyebrow">{dragging ? text.drop : text.eyebrow}</span>
+          <h1>{text.title}</h1>
+          <p>{text.body}</p>
+          <small className="empty-support">{text.support}</small>
         </div>
-        <div className="empty-choice-divider">
-          <span>{text.orOpen}</span>
+        <div className="empty-start-panel">
+          <div className="empty-task-list">
+            <button type="button" className="empty-task-primary" onClick={onStartReview}>
+              <span>
+                <ClipboardList aria-hidden="true" />
+              </span>
+              <span>
+                <strong>{text.startReview}</strong>
+                <small>{text.startReviewBody}</small>
+              </span>
+              <ArrowRight aria-hidden="true" />
+            </button>
+            <button type="button" className="empty-task-primary quiet" onClick={onStartBriefing}>
+              <span>
+                <Presentation aria-hidden="true" />
+              </span>
+              <span>
+                <strong>{text.startBriefing}</strong>
+                <small>{text.startBriefingBody}</small>
+              </span>
+              <ArrowRight aria-hidden="true" />
+            </button>
+          </div>
+          <div className="empty-choice-divider">
+            <span>{text.orOpen}</span>
+          </div>
+          <div className="empty-actions">
+            <button type="button" onClick={onChooseFiles}>
+              <FolderOpen />
+              {text.choose}
+            </button>
+            <button type="button" onClick={onCreate}>
+              <FilePlus2 />
+              {text.create}
+            </button>
+            <button type="button" onClick={onOpenSample}>
+              <Sparkles />
+              {text.sample}
+            </button>
+          </div>
         </div>
-        <div className="empty-actions">
-          <button type="button" onClick={onChooseFiles}>
-            <FolderOpen />
-            {text.choose}
-          </button>
-          <button type="button" onClick={onCreate}>
-            <FilePlus2 />
-            {text.create}
-          </button>
-          <button type="button" onClick={onOpenSample}>
-            <Sparkles />
-            {text.sample}
-          </button>
-        </div>
-        <small>{text.support}</small>
       </div>
       <p className="empty-guide-note">{text.guide}</p>
     </section>

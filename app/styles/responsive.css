@@ -1,8 +1,9 @@
 @media (max-width: 1180px) {
   .workspace { padding: 11px 12px 13px; }
-  .welcome-intro-grid { gap: 54px; }
-  .welcome-greeting { font-size: clamp(78px, 8.4vw, 108px); }
+  .welcome-intro-grid { grid-template-columns: minmax(0, 1fr) minmax(340px, .9fr); gap: var(--rune-space-12); }
+  .welcome-greeting { font-size: clamp(74px, 8.2vw, 106px); }
   .welcome-greeting.long { font-size: clamp(52px, 5.7vw, 76px); }
+  .empty-drop-zone { width: min(var(--rune-frame-width), 860px); grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr); gap: var(--rune-space-8); }
 }
 
 @media (max-width: 960px) {
@@ -18,8 +19,26 @@
   .workspace.view-preview.without-file-rail > .preview-pane,
   html[dir="rtl"] .activity-rail,
   html[dir="rtl"] .preview-pane { border-radius: 20px; }
-  .welcome-page { padding-inline: 6.25%; }
-  .welcome-intro-grid { gap: 42px; }
+  .welcome-page { justify-content: flex-start; padding-inline: 6.25%; }
+  .welcome-intro-grid { width: min(640px, 100%); grid-template-columns: minmax(0, 1fr); gap: var(--rune-space-8); }
+  .welcome-intro-copy { text-align: center; }
+  .welcome-greeting-stage { justify-content: center; }
+  .welcome-intro-copy h1,
+  .welcome-intro-copy > p,
+  .welcome-principles { margin-inline: auto; }
+  .welcome-language-card { width: min(620px, 100%); margin-inline: auto; }
+  .empty-workspace-canvas { padding: var(--rune-space-4); }
+  .empty-drop-zone {
+    width: min(720px, 100%);
+    min-height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--rune-space-8);
+    padding: var(--rune-space-10) clamp(var(--rune-space-5), 5vw, var(--rune-space-10));
+  }
+  .empty-hero { align-items: center; text-align: center; }
+  .empty-task-list,
+  .empty-start-panel { width: min(620px, 100%); margin-inline: auto; }
+  .empty-actions { justify-content: center; }
 }
 
 @media (max-width: 860px) {
@@ -31,11 +50,11 @@
 }
 
 @media (max-height: 780px) and (min-width: 681px) {
-  .welcome-page { justify-content: flex-start; padding-block: 44px 56px; }
-  .welcome-greeting-stage { height: 104px; }
-  .welcome-greeting { font-size: clamp(72px, 8vw, 102px); }
+  .welcome-page { justify-content: flex-start; padding-block: var(--rune-space-8) var(--rune-space-10); }
+  .welcome-greeting-stage { height: 96px; margin-bottom: var(--rune-space-3); }
+  .welcome-greeting { font-size: clamp(68px, 7.5vw, 96px); }
   .welcome-language-card { padding: 20px; }
-  .language-options { max-height: min(34vh, 280px); }
+  .language-options { max-height: min(32vh, 260px); }
 }
 
 @media (max-width: 680px) {
@@ -43,18 +62,22 @@
   .topbar { gap: 8px; padding-inline: 10px 12px; }
   .topbar-actions { gap: 5px; }
   .workspace { gap: 8px; padding: 8px; }
-  .welcome-page { padding: 46px 20px 58px; }
-  .welcome-greeting-stage { height: 92px; margin-bottom: 12px; overflow: hidden; }
-  .welcome-greeting { font-size: clamp(62px, 19vw, 82px); }
+  .welcome-backdrop { padding: 0; }
+  .welcome-window { width: 100%; height: 100dvh; border-width: 0; border-radius: 0; }
+  .welcome-chrome { padding-inline: var(--rune-space-4); }
+  .welcome-chrome-brand strong { display: none; }
+  .welcome-page { padding: var(--rune-space-8) var(--rune-space-5) var(--rune-space-10); }
+  .welcome-greeting-stage { height: 84px; margin-bottom: var(--rune-space-3); overflow: hidden; }
+  .welcome-greeting { font-size: clamp(58px, 18vw, 76px); }
   .welcome-greeting.long { font-size: clamp(42px, 12vw, 58px); }
-  .welcome-intro-grid { gap: 30px; }
+  .welcome-intro-grid { gap: var(--rune-space-6); }
   .welcome-intro-copy > p,
   .welcome-page > p { font-size: 15px; }
-  .welcome-language-card { padding: 19px; border-radius: 26px; }
+  .welcome-language-card { padding: var(--rune-space-4); border-radius: var(--rune-radius-card); }
   .welcome-language-heading { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; }
-  .welcome-language-heading > span { width: 42px; height: 42px; border-radius: 14px; }
-  .language-options { max-height: 340px; }
-  .language-options button { min-height: 58px; border-radius: 15px; }
+  .welcome-language-heading > span { width: 42px; height: 42px; border-radius: var(--rune-radius-control); }
+  .language-options { max-height: min(42dvh, 330px); }
+  .language-options button { min-height: 56px; border-radius: var(--rune-radius-control); }
   .welcome-language-card > .welcome-primary { margin-top: 14px; }
   .tools-popover,
   .export-popover { max-height: calc(100dvh - var(--rune-topbar-height) - 18px); }
@@ -69,11 +92,16 @@
   .import-review-header,
   .import-review-body,
   .import-review-actions { padding-inline: 18px; }
-  .empty-task-primary { min-height: 76px; grid-template-columns: 42px minmax(0, 1fr) 18px; gap: var(--rune-space-3); padding: var(--rune-space-3) var(--rune-space-4); border-radius: var(--rune-radius-card); }
+  .empty-workspace-canvas { padding: var(--rune-space-3); }
+  .empty-drop-zone { gap: var(--rune-space-6); padding: var(--rune-space-8) var(--rune-space-4); border-radius: var(--rune-radius-card); }
+  .empty-file-stack { margin-bottom: var(--rune-space-6); }
+  .empty-hero h1 { font-size: clamp(34px, 10vw, 44px); }
+  .empty-task-primary { min-height: 74px; grid-template-columns: 42px minmax(0, 1fr) 18px; gap: var(--rune-space-3); padding: var(--rune-space-3) var(--rune-space-4); border-radius: var(--rune-radius-control); }
   .empty-task-primary > span:first-child { width: 42px; height: 42px; border-radius: var(--rune-radius-control); }
   .empty-task-primary small { font-size: 10px; }
-  .empty-choice-divider { width: 94%; }
-  .empty-actions { max-width: 340px; }
+  .empty-choice-divider { width: 100%; }
+  .empty-actions { width: 100%; max-width: 340px; margin-inline: auto; }
+  .empty-actions > button:not(.welcome-primary) { width: 100%; justify-content: center; }
   .import-task-continuation { grid-template-columns: 34px minmax(0, 1fr); padding: var(--rune-space-3); border-radius: var(--rune-radius-control); }
   .import-task-continuation > svg { width: 34px; height: 34px; padding: 9px; }
   .delivery-outcome-context { grid-template-columns: 1fr; }

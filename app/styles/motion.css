@@ -49,10 +49,12 @@
 .welcome-page > :nth-child(3) { animation-delay: 120ms; }
 .welcome-page > :nth-child(4) { animation-delay: 170ms; }
 .welcome-page > :nth-child(5) { animation-delay: 220ms; }
-.welcome-greeting-character { animation: rune-greeting-write 720ms var(--rune-ease-out) forwards; animation-delay: calc(var(--greeting-order) * 105ms + 80ms); }
+.welcome-greeting::before { animation: rune-greeting-prism 1.45s var(--rune-ease-out) both; }
+.welcome-greeting-character { animation: rune-greeting-write 760ms var(--rune-ease-out) forwards; animation-delay: calc(var(--greeting-order) * 92ms + 110ms); }
+.welcome-greeting-character::after { animation: rune-greeting-pen 760ms var(--rune-ease-out) forwards; animation-delay: calc(var(--greeting-order) * 92ms + 110ms); }
 .welcome-greeting[dir="rtl"] .welcome-greeting-character { animation-name: rune-greeting-write-rtl; }
-.welcome-backdrop::before { animation: rune-ambient-drift 14s ease-in-out infinite alternate; }
-.welcome-backdrop::after { animation: rune-ambient-drift 18s ease-in-out -5s infinite alternate-reverse; }
+.welcome-greeting[dir="rtl"] .welcome-greeting-character::after { animation-name: rune-greeting-pen-rtl; }
+.empty-drop-zone { animation: rune-surface-enter 520ms var(--rune-ease-out) backwards; }
 
 @media (hover: hover) {
   .button:hover:not(:disabled),
@@ -61,7 +63,6 @@
   .run-button:hover:not(:disabled),
   .welcome-primary:hover:not(:disabled) { transform: translateY(-1px); }
   .artifact-row:hover,
-  .language-options button:hover,
   .welcome-actions button:hover,
   .shortcut-lessons > div:hover { transform: translateY(-2px); }
   .artifact-row:hover { box-shadow: var(--rune-shadow-card-hover); }
@@ -79,7 +80,10 @@
 .run-button:active:not(:disabled),
 .welcome-primary:active:not(:disabled),
 .language-options button:active:not(:disabled),
-.welcome-actions button:active:not(:disabled) { transform: scale(.975); }
+.welcome-actions button:active:not(:disabled) {
+  transform: scale(.975);
+  transition-duration: var(--rune-duration-press);
+}
 
 @keyframes rune-preview-settle { from { opacity: .45; transform: translate3d(0, 8px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-surface-enter { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
@@ -91,23 +95,19 @@
 @keyframes rune-scene-enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
 @keyframes rune-window-enter { from { opacity: 0; transform: translate3d(0, 26px, 0) scale(.975); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-content-reveal { from { opacity: 0; filter: blur(8px); transform: translate3d(0, 18px, 0); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); } }
-@keyframes rune-greeting-write { 0% { opacity: 0; filter: blur(6px); clip-path: inset(0 100% 0 0); transform: translate3d(0, 8px, 0) rotate(-1.5deg); } 52% { opacity: 1; filter: blur(1px); } 100% { opacity: 1; filter: blur(0); clip-path: inset(0); transform: translate3d(0, 0, 0) rotate(0); } }
-@keyframes rune-greeting-write-rtl { 0% { opacity: 0; filter: blur(6px); clip-path: inset(0 0 0 100%); transform: translate3d(0, 8px, 0) rotate(1.5deg); } 52% { opacity: 1; filter: blur(1px); } 100% { opacity: 1; filter: blur(0); clip-path: inset(0); transform: translate3d(0, 0, 0) rotate(0); } }
-@keyframes rune-ambient-drift { from { transform: translate3d(-2%, -1%, 0) scale(.96); } to { transform: translate3d(4%, 3%, 0) scale(1.05); } }
-
-/* Quiet levitation for hero surfaces (Apple-style floating board). */
-@keyframes rune-float {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50% { transform: translate3d(0, -7px, 0) rotate(.4deg); }
-}
-
-.empty-file-stack { animation: rune-float var(--rune-duration-float) var(--rune-ease-smooth) infinite; }
+@keyframes rune-greeting-prism { 0% { opacity: 0; transform: translate3d(-5%, 8%, 0) scale(.78); } 58% { opacity: .19; } 100% { opacity: .12; transform: translate3d(2%, 0, 0) scale(1); } }
+@keyframes rune-greeting-write { 0% { opacity: 0; filter: blur(4px) saturate(1.35); clip-path: inset(0 100% 0 0); background-position: 100% 50%; transform: translate3d(0, 7px, 0) rotate(-1deg); } 48% { opacity: 1; filter: blur(.7px) saturate(1.25); } 100% { opacity: 1; filter: blur(0) saturate(1.08); clip-path: inset(0); background-position: 0 50%; transform: translate3d(0, 0, 0) rotate(0); } }
+@keyframes rune-greeting-write-rtl { 0% { opacity: 0; filter: blur(4px) saturate(1.35); clip-path: inset(0 0 0 100%); background-position: 0 50%; transform: translate3d(0, 7px, 0) rotate(1deg); } 48% { opacity: 1; filter: blur(.7px) saturate(1.25); } 100% { opacity: 1; filter: blur(0) saturate(1.08); clip-path: inset(0); background-position: 100% 50%; transform: translate3d(0, 0, 0) rotate(0); } }
+@keyframes rune-greeting-pen { 0%, 8% { left: 0; opacity: 0; transform: scale(.55); } 22%, 72% { opacity: .92; } 94% { left: calc(100% - .085em); opacity: .55; transform: scale(1); } 100% { left: calc(100% - .085em); opacity: 0; transform: scale(.4); } }
+@keyframes rune-greeting-pen-rtl { 0%, 8% { right: 0; opacity: 0; transform: scale(.55); } 22%, 72% { opacity: .92; } 94% { right: calc(100% - .085em); opacity: .55; transform: scale(1); } 100% { right: calc(100% - .085em); opacity: 0; transform: scale(.4); } }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
-  .welcome-greeting-character { opacity: 1; filter: none; clip-path: none; transform: none; }
+  .welcome-greeting::before,
+  .welcome-greeting-character::after { animation: none !important; }
+  .welcome-greeting-character { opacity: 1; filter: none; clip-path: none; background-position: 0 50%; transform: none; }
   .rune-shell::before { display: none; }
   .workspace > .activity-rail,
   .workspace > .file-rail,
