@@ -2559,3 +2559,9 @@ v1.31 把五套重复的发布/清理 effect 收口到 `useVisualSourceDraftMirr
 Agent 已经能生成原子 proposal，但如果 Workbench 分别计算“左侧候选文件”“右侧候选 workspace”和 review flags，同一笔事务仍可能在重构时产生两个视图。v1.32 用纯 `prepareWorkspaceProposalSurface` 一次返回候选 Artifact、完整候选 Artifact 数组和 review 状态；Source 与 Preview 只能消费这份共同快照。无 proposal 时两侧回到 canonical，proposal 过期或无效时 review 仍明确存在，但两侧都只显示完全未改的 canonical fallback，绝不暴露半笔事务。
 
 真实 Chromium 不再只调用 projection helper。它从工作台运行本地 Agent：单文件路径证明候选 Markdown 的完整只读 Source 与渲染内容一致、Discard 后逐字恢复、Apply 前 storage 没有候选、Apply 后刷新仍是同一候选；Workspace 路径同时修改报告和 semantic HTML 演示，能在审阅中切换到第 5 页候选结论，同时证明 canonical 演示仍为 4 页，Discard 后没有残留。这样“AI 改左边，右边实时变化”覆盖了真正的 Agent Prepare → Review → Apply 边界，而不是只覆盖人工输入。
+
+## 135. 炫彩必须跟着笔尖发生，不能把整词当作一块渐变蒙版
+
+欢迎页已经有炫彩、湿边和书写头，但拉丁/西里尔词仍由一条通用大曲线扫过后再补全字形，视觉上容易被读成“渐变文字揭示”。v1.33 把首字母起笔、横笔和后续字形拆成有界的逐段 gesture；每段共享同一 reveal path、pressure nib 和 clock。新增的窄 spectrum ribbon 只沿当前笔尖短暂移动，写过的墨迹立即安静下来，最终仍由一次 dry settle 完整收口，不出现循环霓虹或背景粒子。
+
+不同文字系统不能为了统一代码而统一书写法。简中/繁中、日文和韩文继续使用各自的有序 brush plan；阿拉伯语保持一个不拆 shaping run、只有一个运动起点的连续 RTL 主体，再补充附标。英文、法文、西文和长俄文最多 12 组笔势，避免超长动画。真实 Chromium 对九种语言分别在 1440×900 与 390×844 检查脚本类型、笔画数量、方向、容器边界和整页零溢出；reduced motion 与 forced colors 仍直接显示完整静态问候。

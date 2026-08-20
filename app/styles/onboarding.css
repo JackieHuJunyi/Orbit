@@ -259,6 +259,18 @@
 .welcome-greeting-ink-trails-glow {
   opacity: .56;
 }
+.welcome-greeting-ink-ribbons {
+  mix-blend-mode: screen;
+  opacity: .88;
+  pointer-events: none;
+}
+.welcome-greeting-ink-ribbon {
+  opacity: 0;
+  stroke-dasharray: .16 .84;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
+  will-change: opacity, stroke-dashoffset;
+}
 .welcome-greeting-ink-trail {
   opacity: 0;
   stroke-dasharray: 1;
@@ -695,6 +707,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .welcome-greeting-stroke-head,
   .welcome-greeting-ink-bleed,
   .welcome-greeting-ink-trails,
+  .welcome-greeting-ink-ribbons,
   .welcome-greeting-ink-sheen { display: none; }
   .welcome-greeting-ink-texture { filter: none; }
   .welcome-greeting-fill { fill: CanvasText; }

@@ -2315,3 +2315,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 无 proposal 时两侧使用 canonical selection/workspace；stale、invalid 或无法预览的 proposal 必须保留明确 review/error 状态，但两侧共同 fail closed 到 canonical，不能暴露部分候选。
 - Apply 前 proposal 不得进入 Artifact state、checkpoint、device storage 或 folder；Discard 必须逐字恢复。Apply 仍重复 revision、whole-workspace validation 和原子 persistence，刷新后只能得到审阅过的候选。
 - 真实 Chromium 必须运行实际 local Agent，分别覆盖单文件 Document proposal 与多文件 Document + semantic HTML Presentation proposal，包括候选 source/output 一致、文件切换、Discard 零写入、Apply 后精确持久化与 reload；helper 测试不能替代端到端证据。
+
+### 17.64 v1.33 开机炫彩必须由真实书写进度驱动
+
+- 拉丁与西里尔问候必须先完成首字母起笔和横笔，再按字形尺度顺序写后续 gesture；不得再用一条整词大曲线制造横向 wipe。长词必须有明确的最大笔势数与总时长。
+- 炫彩强调必须是一条与 active nib 共享 path、delay 和 duration 的窄 ink ribbon；每一笔结束时强调消失，已写墨迹保持安静，不能使用 infinite gradient、粒子场或独立计时器。
+- 简中、繁中、日文和韩文保留 script-specific brush order；阿拉伯语必须保持完整 shaped text，并使用只有一个 `M` 起点的连续 RTL motion body，不能为了复用拉丁分段逻辑破坏连接。
+- 最终完整字形仍通过同一 reveal mask 的湿边、纹理和一次 settle 补全；setup chrome、说明和语言选择只能在第一词 settle 后出现。不得复制 Apple 字体、字形、动画文件或品牌资产。
+- `prefers-reduced-motion` 与 forced colors 必须去除 ribbon、笔尖和瞬态材质并立即显示静态问候；九种语言必须在桌面与 390px 窄屏下证明方向、script、笔势数量、容器边界和零页面溢出。

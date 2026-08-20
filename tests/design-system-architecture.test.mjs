@@ -91,8 +91,10 @@ test("keeps the startup spectrum inside one textured handwritten performance", a
   assert.match(component, /data-motion-sequence="write-settle-reveal"/);
   assert.match(component, /<feTurbulence[^>]+type="fractalNoise"/);
   assert.match(component, /className="welcome-greeting-ink-trail welcome-greeting-ink-bristle"/);
+  assert.match(component, /className="welcome-greeting-ink-ribbon"/);
   assert.match(component, /className="welcome-greeting-stroke-head-bristle"/);
   assert.match(onboarding, /\.welcome-greeting-spectrum stop\s*\{[^}]*animation:[^;]+\s1 both;/s);
   assert.doesNotMatch(onboarding, /\.welcome-greeting-spectrum stop\s*\{[^}]*animation:[^;]*infinite/s);
   assert.match(motion, /@keyframes rune-greeting-spectrum-flow/);
+  assert.match(motion, /@keyframes rune-greeting-ink-ribbon/);
 });

@@ -48,25 +48,27 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
   await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-sheen");
   await expect(greeting).toHaveAttribute("data-ink-material", "wet-spectrum");
+  await expect(greeting).toHaveAttribute("data-ink-motion", "nib-led-ribbon");
   await expect(greeting).toHaveAttribute("data-ink-trace", "progressive");
   await expect(greeting).toHaveAttribute("data-motion-sequence", "write-settle-reveal");
   await expect(greeting).toHaveAttribute("data-writing-style", "pressure-calligraphy");
-  await expect(greeting).toHaveAttribute("data-stroke-count", "3");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "6");
   await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
-  await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-ink-trail")).toHaveCount(9);
-  await expect(greeting.locator(".welcome-greeting-ink-bristle")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(6);
+  await expect(greeting.locator(".welcome-greeting-ink-trail")).toHaveCount(18);
+  await expect(greeting.locator(".welcome-greeting-ink-ribbon")).toHaveCount(6);
+  await expect(greeting.locator(".welcome-greeting-ink-bristle")).toHaveCount(6);
   await expect(greeting.locator(".welcome-greeting-ink-bleed")).toHaveCount(1);
-  await expect(greeting.locator(".welcome-greeting-stroke-head-bristle")).toHaveCount(6);
-  await expect(greeting.locator(".welcome-greeting-stroke-head-wake")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-stroke-head-drop")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-stroke-head-bristle")).toHaveCount(12);
+  await expect(greeting.locator(".welcome-greeting-stroke-head-wake")).toHaveCount(6);
+  await expect(greeting.locator(".welcome-greeting-stroke-head-drop")).toHaveCount(6);
+  await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(6);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
 
   const animationNames = await greeting.evaluate((element) =>
     Array.from(
       element.querySelectorAll(
-        ".welcome-greeting-reveal-stroke, .welcome-greeting-ink-trail, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
+        ".welcome-greeting-reveal-stroke, .welcome-greeting-ink-trail, .welcome-greeting-ink-ribbon, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
       ),
     )
       .flatMap((unit) => unit.getAnimations())
@@ -74,6 +76,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   );
   expect(animationNames).toContain("rune-greeting-write");
   expect(animationNames).toContain("rune-greeting-ink-trace");
+  expect(animationNames).toContain("rune-greeting-ink-ribbon");
   expect(animationNames).toContain("rune-greeting-ink-settle");
   expect(animationNames).toContain("rune-greeting-stroke-head");
   expect(animationNames).toContain("rune-greeting-pressure");

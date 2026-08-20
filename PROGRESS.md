@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.33 with sequential letter-scale cursive gestures, a nib-led moving spectrum ribbon, one continuous Arabic RTL body, and nine-locale desktop/compact browser geometry proof for the first-run startup ritual.
+
 - 2026-08-21 — Shipped Rune v1.32 with one pure Agent proposal surface shared by Source and Preview, plus real Chromium proof for single-file and multi-file Prepare → inspect → Discard/Apply → reload flows with zero canonical writes before Apply.
 
 - 2026-08-21 — Shipped Rune v1.31 with browser-proven live Source → Preview recompilation plus right-edit → complete-Source mirroring for Documents, Data, Charts, and semantic HTML Presentations through one shared draft bridge.

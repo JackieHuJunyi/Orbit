@@ -102,6 +102,7 @@ export function HandwrittenGreeting({
       data-motion-script={script}
       data-ink-effect="spectrum-sheen"
       data-ink-material="wet-spectrum"
+      data-ink-motion="nib-led-ribbon"
       data-ink-trace="progressive"
       data-motion-sequence="write-settle-reveal"
       data-writing-style="pressure-calligraphy"
@@ -264,6 +265,32 @@ export function HandwrittenGreeting({
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={Math.max(2.8, Math.round(stroke.strokeWidth * 0.075 * 10) / 10)}
+            style={
+              {
+                "--greeting-stroke-delay": `${stroke.delayMs}ms`,
+                "--greeting-stroke-duration": `${stroke.durationMs}ms`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </g>
+      <g
+        aria-hidden="true"
+        className="welcome-greeting-ink-ribbons"
+        clipPath={`url(#${textClipId})`}
+        filter={`url(#${trailGlowId})`}
+      >
+        {motion.strokes.map((stroke, index) => (
+          <path
+            className="welcome-greeting-ink-ribbon"
+            d={stroke.path}
+            fill="none"
+            key={`ribbon-${index}-${stroke.path}`}
+            pathLength="1"
+            stroke={`url(#${gradientId})`}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={Math.max(6.4, Math.round(stroke.strokeWidth * 0.15 * 10) / 10)}
             style={
               {
                 "--greeting-stroke-delay": `${stroke.delayMs}ms`,

@@ -45,30 +45,35 @@ function mirrorX(path: string, width: number) {
   });
 }
 
-function cursiveBodyPath(width: number, count: number) {
+function cursiveBodyPaths(width: number, count: number) {
   const margin = 40;
   const openingWidth = Math.min(104, (width - margin * 2) / Math.max(2.8, count));
   const start = margin + openingWidth * 0.66;
   const end = width - margin;
-  const segments = Math.max(2, Math.min(9, count));
+  const segments = Math.max(1, Math.min(10, count - 1));
   const segmentWidth = (end - start) / segments;
-  let path = `M${point(start)} 148`;
-
-  for (let index = 0; index < segments; index += 1) {
+  return Array.from({ length: segments }, (_, index) => {
     const segmentStart = start + segmentWidth * index;
     const segmentEnd = segmentStart + segmentWidth;
-    const upper = 91 + (index % 3) * 7;
-    const lower = 174 - (index % 2) * 8;
-    path += ` C${point(segmentStart + segmentWidth * 0.18)} ${upper} ${point(
-      segmentStart + segmentWidth * 0.45,
-    )} ${upper - 9} ${point(segmentStart + segmentWidth * 0.5)} 132`;
-    path += ` C${point(segmentStart + segmentWidth * 0.56)} ${lower} ${point(
-      segmentStart + segmentWidth * 0.82,
-    )} ${lower} ${point(segmentEnd)} ${index === segments - 1 ? 148 : 144}`;
-  }
+    const upper = 91 + (index % 3) * 6;
+    const lower = 173 - (index % 2) * 7;
+    const exit = index === segments - 1 ? Math.min(width - 24, segmentEnd + 17) : segmentEnd;
+    return `M${point(segmentStart)} 148 C${point(segmentStart + segmentWidth * 0.14)} ${upper} ${point(
+      segmentStart + segmentWidth * 0.4,
+    )} ${upper - 9} ${point(segmentStart + segmentWidth * 0.49)} 132 C${point(
+      segmentStart + segmentWidth * 0.57,
+    )} ${lower} ${point(segmentStart + segmentWidth * 0.82)} ${lower} ${point(
+      segmentEnd,
+    )} ${index === segments - 1 ? 148 : 144} C${point(segmentEnd + (exit - segmentEnd) * 0.48)} 146 ${point(
+      segmentEnd + (exit - segmentEnd) * 0.78,
+    )} 140 ${point(exit)} 136`;
+  });
+}
 
-  path += ` C${point(end + 9)} 146 ${point(end + 13)} 140 ${point(Math.min(width - 24, end + 17))} 136`;
-  return path;
+function connectedCursiveBodyPath(width: number, count: number) {
+  return cursiveBodyPaths(width, count)
+    .map((path, index) => (index === 0 ? path : path.replace(/^M-?\d+(?:\.\d+)? -?\d+(?:\.\d+)? /, "")))
+    .join(" ");
 }
 
 function cursiveStrokes(width: number, count: number, direction: GreetingWritingDirection): RawStroke[] {
@@ -94,11 +99,11 @@ function cursiveStrokes(width: number, count: number, direction: GreetingWriting
       strokeWidth: 24,
       weight: 0.09,
     },
-    {
-      path: cursiveBodyPath(width, count),
-      strokeWidth: 58,
-      weight: 0.65,
-    },
+    ...cursiveBodyPaths(width, count).map((path, index, paths) => ({
+      path,
+      strokeWidth: 54 - (index % 3) * 2,
+      weight: 0.65 / paths.length,
+    })),
   ];
 
   if (direction === "ltr") return raw;
@@ -152,7 +157,7 @@ function compactScriptStrokes(
 }
 
 function arabicStrokes(width: number, count: number): RawStroke[] {
-  const body = cursiveBodyPath(width, Math.max(3, count));
+  const body = connectedCursiveBodyPath(width, Math.max(3, count));
   return [
     { path: mirrorX(body, width), strokeWidth: 78, weight: 0.78 },
     {

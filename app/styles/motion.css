@@ -76,6 +76,10 @@
   animation: rune-greeting-ink-trace var(--greeting-stroke-duration) cubic-bezier(.42, 0, .18, 1) forwards;
   animation-delay: var(--greeting-stroke-delay);
 }
+.welcome-greeting-ink-ribbon {
+  animation: rune-greeting-ink-ribbon var(--greeting-stroke-duration) cubic-bezier(.42, 0, .18, 1) forwards;
+  animation-delay: var(--greeting-stroke-delay);
+}
 .welcome-greeting-fill-glow { animation: rune-greeting-ink-bloom var(--greeting-write-duration) var(--rune-ease-smooth) forwards; }
 .welcome-greeting-ink-bleed {
   animation: rune-greeting-wet-ink calc(var(--greeting-write-duration) + 520ms) var(--rune-ease-smooth) forwards;
@@ -153,6 +157,12 @@
   72% { opacity: 1; }
   100% { opacity: .76; stroke-dashoffset: 0; }
 }
+@keyframes rune-greeting-ink-ribbon {
+  0% { opacity: 0; stroke-dashoffset: 1; }
+  7% { opacity: .98; }
+  74% { opacity: .82; }
+  100% { opacity: 0; stroke-dashoffset: -.16; }
+}
 @keyframes rune-greeting-spectrum-flow {
   0%, 16% { stop-color: var(--greeting-spectrum-color); }
   82%, 100% { stop-color: var(--greeting-spectrum-next); }
@@ -179,6 +189,7 @@
   .welcome-greeting-stage::before,
   .welcome-greeting-reveal-stroke,
   .welcome-greeting-ink-trail,
+  .welcome-greeting-ink-ribbon,
   .welcome-greeting-fill-glow,
   .welcome-greeting-ink-bleed,
   .welcome-greeting-fill-settled,
@@ -192,6 +203,7 @@
   .welcome-greeting-spectrum stop { animation: none !important; }
   .welcome-greeting-stroke-head { display: none; }
   .welcome-greeting-ink-trails { display: none; }
+  .welcome-greeting-ink-ribbons { display: none; }
   .welcome-greeting-reveal-stroke { stroke-dashoffset: 0; }
   .welcome-greeting-fill-glow { display: none; }
   .welcome-greeting-ink-bleed { display: none; }
