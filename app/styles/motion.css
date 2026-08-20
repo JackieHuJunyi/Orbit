@@ -175,6 +175,13 @@
   .welcome-greeting-fill-glow { display: none; }
   .welcome-greeting-ink-sheen { display: none; }
   .welcome-greeting-fill-settled { opacity: 1; filter: none; }
+  .welcome-welcome .welcome-intro-grid[data-intro-phase="writing"] .welcome-intro-copy,
+  .welcome-welcome .welcome-intro-grid[data-intro-phase="writing"] .welcome-language-card {
+    opacity: 1;
+    filter: none;
+    pointer-events: auto;
+    transform: none;
+  }
   .rune-shell::before { display: none; }
   .workspace > .activity-rail,
   .workspace > .file-rail,

@@ -224,11 +224,8 @@ export function WelcomeExperience({
 
   useEffect(() => {
     if (step !== "welcome" || greetingIntroComplete) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setGreetingIntroComplete(true);
-      return;
-    }
-    const fallback = window.setTimeout(() => setGreetingIntroComplete(true), 3_400);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fallback = window.setTimeout(() => setGreetingIntroComplete(true), reducedMotion ? 0 : 3_400);
     return () => window.clearTimeout(fallback);
   }, [greetingIntroComplete, step]);
 
