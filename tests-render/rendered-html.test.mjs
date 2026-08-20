@@ -287,9 +287,9 @@ test("renders a complete read-only Agent proposal through the live source and ou
     readFile(new URL("../app/lib/localization.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
   ]);
-  assert.match(workbench, /prepareWorkspaceProposalPreview\(\{/);
+  assert.match(workbench, /prepareWorkspaceProposalSurface\(\{/);
   assert.match(workbench, /requestedArtifactId: pendingReviewId \|\| undefined/);
-  assert.match(workbench, /const presentedArtifacts = proposalPreviewActive/);
+  assert.match(workbench, /presentedArtifact,[\s\S]*presentedArtifacts,[\s\S]*= useMemo/);
   assert.match(workbench, /readOnly=\{Boolean\(activeVisualSourceDraft\) \|\| proposalReviewActive\}/);
   assert.match(workbench, /artifact=\{presentedArtifact\}/);
   assert.match(workbench, /artifacts=\{presentedArtifacts\}/);
@@ -299,6 +299,8 @@ test("renders a complete read-only Agent proposal through the live source and ou
   assert.match(projection, /workspaceMatchesSourceRevision\(input\.artifacts, input\.baseRevision\)/);
   assert.match(projection, /prepareWorkspaceMutation\(input\.artifacts, input\.patches, input\.creations\)/);
   assert.match(projection, /requestedArtifactId/);
+  assert.match(projection, /presentedArtifact: proposalArtifact \?\? input\.selectedArtifact \?\? null/);
+  assert.match(projection, /presentedArtifacts: proposalPreviewActive/);
   assert.doesNotMatch(projection, /persist|localStorage|indexedDB|fetch\(/i);
   assert.match(contentStyles, /\.source-editor\.proposal-source-preview/);
   assert.match(contentStyles, /\.preview-pane\[data-proposal-preview="true"\]/);

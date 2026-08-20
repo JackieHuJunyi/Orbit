@@ -2553,3 +2553,9 @@ v1.30 把这项 DOM effect 从大型 Workbench 抽到单一 `use-source-preview-
 v1.31 把五套重复的发布/清理 effect 收口到 `useVisualSourceDraftMirror`。普通 `null` 明确清除草稿；Deck 父组件在 semantic HTML 子编辑器仍挂载时使用 `undefined` 明确让渡发布权，避免父 effect 把子组件刚发布的完整 HTML 短暂清回 canonical。Hook 只搬运 `{ artifactId, sourceRevision, nextSource, range, errors }`，不编译、不读 iframe、不写 Artifact、不持久化，也不调用模型；保存仍由 Workbench 的 revision/checkpoint/validation/persistence 事务完成。
 
 真实 Chromium 先直接修改左侧 Markdown、CSV 与 semantic HTML，证明 Document、Data grid 和 Presentation Preview 无需刷新即可重编译；再分别完成 Markdown section、CSV cell 和 Chart configuration 的“打开编辑 → 每次输入同步完整左源与右侧草稿 → Cancel 零写入 → 再编辑并 Save → canonical 与成品一致”。现有 semantic HTML E2E 继续证明完整演示 HTML 与隔离单页预览同步。这使双向实时编辑成为 Word / Excel / PPT 三类核心表面的可回归产品合同，同时保持一个 source of truth。
+
+## 134. Agent 审阅中的左右两侧必须来自同一个候选工作区
+
+Agent 已经能生成原子 proposal，但如果 Workbench 分别计算“左侧候选文件”“右侧候选 workspace”和 review flags，同一笔事务仍可能在重构时产生两个视图。v1.32 用纯 `prepareWorkspaceProposalSurface` 一次返回候选 Artifact、完整候选 Artifact 数组和 review 状态；Source 与 Preview 只能消费这份共同快照。无 proposal 时两侧回到 canonical，proposal 过期或无效时 review 仍明确存在，但两侧都只显示完全未改的 canonical fallback，绝不暴露半笔事务。
+
+真实 Chromium 不再只调用 projection helper。它从工作台运行本地 Agent：单文件路径证明候选 Markdown 的完整只读 Source 与渲染内容一致、Discard 后逐字恢复、Apply 前 storage 没有候选、Apply 后刷新仍是同一候选；Workspace 路径同时修改报告和 semantic HTML 演示，能在审阅中切换到第 5 页候选结论，同时证明 canonical 演示仍为 4 页，Discard 后没有残留。这样“AI 改左边，右边实时变化”覆盖了真正的 Agent Prepare → Review → Apply 边界，而不是只覆盖人工输入。

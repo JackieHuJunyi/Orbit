@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.32 with one pure Agent proposal surface shared by Source and Preview, plus real Chromium proof for single-file and multi-file Prepare → inspect → Discard/Apply → reload flows with zero canonical writes before Apply.
+
 - 2026-08-21 — Shipped Rune v1.31 with browser-proven live Source → Preview recompilation plus right-edit → complete-Source mirroring for Documents, Data, Charts, and semantic HTML Presentations through one shared draft bridge.
 
 - 2026-08-21 — Shipped Rune v1.30 with one reusable Source→Preview scroll effect, exact browser-proven Markdown/CSV/semantic-HTML bidirectional positioning, and nearest-edge recovery when a user manually scrolls away from the still-active source target.

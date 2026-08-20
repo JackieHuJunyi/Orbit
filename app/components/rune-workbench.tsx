@@ -123,7 +123,7 @@ import {
   type ArtifactSourcePatch,
   type WorkspaceSourceRevision,
 } from "../lib/patches";
-import { prepareWorkspaceProposalPreview } from "../lib/proposal-preview";
+import { prepareWorkspaceProposalSurface } from "../lib/proposal-preview";
 import {
   prepareWorkspaceImportReview,
   validateWorkspaceImportReview,
@@ -1301,24 +1301,29 @@ export function RuneWorkbench() {
     }));
     return [...patches, ...creations];
   }, [artifacts, pendingChange]);
-  const proposalPreview = useMemo(
+  const {
+    proposalPreview,
+    proposalArtifact,
+    proposalReviewActive,
+    proposalPreviewActive,
+    presentedArtifact,
+    presentedArtifacts,
+  } = useMemo(
     () =>
-      pendingChange
-        ? prepareWorkspaceProposalPreview({
-            artifacts,
-            baseRevision: pendingChange.baseRevision,
-            patches: pendingChange.patches,
-            creations: pendingChange.creations,
-            requestedArtifactId: pendingReviewId || undefined,
-          })
-        : null,
-    [artifacts, pendingChange, pendingReviewId],
+      prepareWorkspaceProposalSurface({
+        artifacts,
+        selectedArtifact,
+        proposal: pendingChange
+          ? {
+              baseRevision: pendingChange.baseRevision,
+              patches: pendingChange.patches,
+              creations: pendingChange.creations,
+            }
+          : null,
+        requestedArtifactId: pendingReviewId || undefined,
+      }),
+    [artifacts, pendingChange, pendingReviewId, selectedArtifact],
   );
-  const proposalArtifact = proposalPreview?.artifact ?? null;
-  const proposalReviewActive = Boolean(pendingChange);
-  const proposalPreviewActive = Boolean(proposalArtifact);
-  const presentedArtifact = proposalArtifact ?? selectedArtifact;
-  const presentedArtifacts = proposalPreviewActive ? (proposalPreview?.artifacts ?? artifacts) : artifacts;
   const editorSource = activeVisualSourceDraft?.nextSource ?? presentedArtifact?.source ?? "";
   const lineNumbers = useMemo(
     () => Array.from({ length: editorSource.split("\n").length || 1 }, (_, index) => index + 1).join("\n"),

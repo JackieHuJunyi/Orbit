@@ -2307,3 +2307,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 所有视觉编辑器共享 `useVisualSourceDraftMirror`。`null` 表示明确清除；Deck 父级在已挂载的 semantic HTML 子编辑器拥有草稿时用 `undefined` 让渡发布权，不能依赖 effect 执行顺序避免闪回。
 - Hook 只能发布或释放 `{ artifactId, sourceRevision, nextSource, start, end, errors }`；不得编译、读 iframe DOM、写 Artifact、访问 storage/provider/credential 或创建 checkpoint。Workbench 继续唯一拥有保存事务。
 - 真实 Chromium 必须先证明左侧 Markdown、CSV 与 semantic HTML 的每次 canonical edit 都立即重编译右侧 Document、Data 与 Presentation；再对 Markdown section、CSV cell 与 Chart spec 分别证明 live mirror、右侧 draft、Cancel 零写入和 Save 后一致。semantic HTML 必须继续证明完整 HTML 左侧镜像和隔离单页实时预览。源码断言只能保护边界，不能替代交互证据。
+
+### 17.63 v1.32 Agent proposal 的 Source 与 Preview 必须消费同一候选工作区
+
+- 所有 proposal presentation state 必须由一个 React-free surface adapter 从 atomic workspace projection 一次派生；Workbench 不得分别计算候选 Artifact、候选 Artifact 数组和 active flags。
+- Source 必须显示当前审阅文件的完整候选 source，Preview 必须用同一候选 workspace 编译该文件及其依赖；在 transaction map 中切换文件只改变审阅焦点，不改变 proposal 或授予编辑权。
+- 无 proposal 时两侧使用 canonical selection/workspace；stale、invalid 或无法预览的 proposal 必须保留明确 review/error 状态，但两侧共同 fail closed 到 canonical，不能暴露部分候选。
+- Apply 前 proposal 不得进入 Artifact state、checkpoint、device storage 或 folder；Discard 必须逐字恢复。Apply 仍重复 revision、whole-workspace validation 和原子 persistence，刷新后只能得到审阅过的候选。
+- 真实 Chromium 必须运行实际 local Agent，分别覆盖单文件 Document proposal 与多文件 Document + semantic HTML Presentation proposal，包括候选 source/output 一致、文件切换、Discard 零写入、Apply 后精确持久化与 reload；helper 测试不能替代端到端证据。

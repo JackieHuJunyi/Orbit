@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { captureWorkspaceSourceRevision } from "../app/lib/patches.ts";
-import { prepareWorkspaceProposalPreview } from "../app/lib/proposal-preview.ts";
+import { prepareWorkspaceProposalPreview, prepareWorkspaceProposalSurface } from "../app/lib/proposal-preview.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 
 function artifact(id) {
@@ -142,4 +142,57 @@ test("fails closed for stale or invalid proposals and exposes no partial candida
   assert.equal(invalid.artifact, null);
   assert.match(invalid.errors.join(" "), /unresolved metric missing/);
   assert.equal(invalid.artifacts, defaultArtifacts);
+});
+
+test("gives Source and Preview one shared proposal surface or one canonical fallback", () => {
+  const report = artifact("q2-review");
+  const nextSource = report.source.replace("## Executive summary", "## Executive summary — reviewed");
+  const proposal = {
+    baseRevision: captureWorkspaceSourceRevision(defaultArtifacts),
+    patches: [
+      {
+        artifactId: report.id,
+        summary: "Review the summary",
+        detail: "Both panes must receive the same candidate snapshot.",
+        nextSource,
+      },
+    ],
+    creations: [],
+  };
+
+  const inactive = prepareWorkspaceProposalSurface({
+    artifacts: defaultArtifacts,
+    selectedArtifact: report,
+  });
+  assert.equal(inactive.proposalReviewActive, false);
+  assert.equal(inactive.proposalPreviewActive, false);
+  assert.equal(inactive.presentedArtifact, report);
+  assert.equal(inactive.presentedArtifacts, defaultArtifacts);
+
+  const active = prepareWorkspaceProposalSurface({
+    artifacts: defaultArtifacts,
+    selectedArtifact: artifact("regional-revenue"),
+    proposal,
+  });
+  assert.equal(active.proposalReviewActive, true);
+  assert.equal(active.proposalPreviewActive, true);
+  assert.equal(active.presentedArtifact?.source, nextSource);
+  assert.equal(
+    active.presentedArtifacts.find((candidate) => candidate.id === report.id),
+    active.presentedArtifact,
+  );
+
+  const invalid = prepareWorkspaceProposalSurface({
+    artifacts: defaultArtifacts,
+    selectedArtifact: report,
+    proposal: {
+      ...proposal,
+      patches: [{ ...proposal.patches[0], nextSource: `${report.source}\n\n{{ metric("missing") }}` }],
+    },
+  });
+  assert.equal(invalid.proposalReviewActive, true);
+  assert.equal(invalid.proposalPreviewActive, false);
+  assert.equal(invalid.presentedArtifact, report);
+  assert.equal(invalid.presentedArtifacts, defaultArtifacts);
+  assert.match(invalid.proposalPreview?.errors.join(" ") ?? "", /unresolved metric missing/);
 });

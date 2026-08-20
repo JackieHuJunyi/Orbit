@@ -15,6 +15,21 @@ export type WorkspaceProposalPreview = {
   errors: string[];
 };
 
+export type WorkspaceProposalChange = {
+  baseRevision: WorkspaceSourceRevision;
+  patches: ArtifactSourcePatch[];
+  creations: ArtifactCreationChange[];
+};
+
+export type WorkspaceProposalSurface = {
+  proposalPreview: WorkspaceProposalPreview | null;
+  proposalArtifact: WorkspaceArtifact | null;
+  proposalReviewActive: boolean;
+  proposalPreviewActive: boolean;
+  presentedArtifact: WorkspaceArtifact | null;
+  presentedArtifacts: WorkspaceArtifact[];
+};
+
 export function prepareWorkspaceProposalPreview(input: {
   artifacts: WorkspaceArtifact[];
   baseRevision: WorkspaceSourceRevision;
@@ -65,5 +80,37 @@ export function prepareWorkspaceProposalPreview(input: {
     changedArtifactIds,
     isCreation: Boolean(artifact && creationIds.has(artifact.id)),
     errors: artifact ? [] : ["The proposed workspace does not contain a previewable artifact."],
+  };
+}
+
+/**
+ * Derives the single candidate snapshot consumed by both Source and Preview.
+ * Invalid or absent proposals fall back to the unchanged canonical workspace;
+ * review state remains explicit so the UI can fail closed without divergence.
+ */
+export function prepareWorkspaceProposalSurface(input: {
+  artifacts: WorkspaceArtifact[];
+  selectedArtifact?: WorkspaceArtifact | null;
+  proposal?: WorkspaceProposalChange | null;
+  requestedArtifactId?: string;
+}): WorkspaceProposalSurface {
+  const proposalPreview = input.proposal
+    ? prepareWorkspaceProposalPreview({
+        artifacts: input.artifacts,
+        ...input.proposal,
+        requestedArtifactId: input.requestedArtifactId,
+      })
+    : null;
+  const proposalArtifact = proposalPreview?.artifact ?? null;
+  const proposalReviewActive = Boolean(input.proposal);
+  const proposalPreviewActive = Boolean(proposalArtifact);
+
+  return {
+    proposalPreview,
+    proposalArtifact,
+    proposalReviewActive,
+    proposalPreviewActive,
+    presentedArtifact: proposalArtifact ?? input.selectedArtifact ?? null,
+    presentedArtifacts: proposalPreviewActive ? (proposalPreview?.artifacts ?? input.artifacts) : input.artifacts,
   };
 }
