@@ -143,6 +143,10 @@
   78% { opacity: 1; }
   100% { opacity: .68; stroke-dashoffset: 0; }
 }
+@keyframes rune-greeting-spectrum-flow {
+  0%, 16% { stop-color: var(--greeting-spectrum-color); }
+  82%, 100% { stop-color: var(--greeting-spectrum-next); }
+}
 @keyframes rune-greeting-ink-bloom { 0% { opacity: .06; } 38% { opacity: .38; } 100% { opacity: .2; } }
 @keyframes rune-greeting-ink-settle { 0% { opacity: 0; filter: blur(2.5px); } 48% { opacity: .68; } 100% { opacity: 1; filter: blur(0); } }
 @keyframes rune-greeting-stroke-head { 0% { opacity: 0; offset-distance: 0%; transform: scale(.42); } 5% { opacity: .9; } 22% { transform: scale(.78); } 48% { opacity: .82; transform: scale(.6); } 76% { transform: scale(.88); } 94% { opacity: .64; } 100% { opacity: 0; offset-distance: 100%; transform: scale(.28); } }
@@ -169,6 +173,7 @@
   .welcome-greeting-stroke-head-ink,
   .deferred-surface-status > i::after { animation: none !important; }
   .welcome-greeting { animation: none !important; }
+  .welcome-greeting-spectrum stop { animation: none !important; }
   .welcome-greeting-stroke-head { display: none; }
   .welcome-greeting-ink-trails { display: none; }
   .welcome-greeting-reveal-stroke { stroke-dashoffset: 0; }

@@ -4,6 +4,18 @@ import { useId, useMemo, type AnimationEvent, type CSSProperties, type SVGProps 
 import { planGreetingMotion, type GreetingWritingScript } from "../lib/greeting-motion";
 import { localeDirection, type RuneLocale } from "../lib/localization";
 
+const SPECTRUM_INK = [
+  ["#ff375f", "#ff6482"],
+  ["#ff9f0a", "#ffc548"],
+  ["#ffd60a", "#d9f13d"],
+  ["#30d158", "#5ee49b"],
+  ["#64d2ff", "#4bb8ff"],
+  ["#0a84ff", "#5e8cff"],
+  ["#5e5ce6", "#8b72ff"],
+  ["#bf5af2", "#ee68d8"],
+  ["#ff375f", "#ff765d"],
+] as const;
+
 function greetingUnits(value: string, locale: RuneLocale) {
   if (localeDirection(locale) === "rtl") return [value];
   return value.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(value);
@@ -65,6 +77,7 @@ export function HandwrittenGreeting({
   const gradientId = `rune-greeting-spectrum-${identifier}`;
   const glowId = `rune-greeting-glow-${identifier}`;
   const trailGlowId = `rune-greeting-trail-glow-${identifier}`;
+  const inkTextureId = `rune-greeting-ink-texture-${identifier}`;
   const revealMaskId = `rune-greeting-reveal-${identifier}`;
   const textClipId = `rune-greeting-text-${identifier}`;
   const sheenId = `rune-greeting-sheen-${identifier}`;
@@ -88,6 +101,7 @@ export function HandwrittenGreeting({
       data-motion-script={script}
       data-ink-effect="spectrum-sheen"
       data-ink-trace="progressive"
+      data-motion-sequence="write-settle-reveal"
       data-writing-style="pressure-calligraphy"
       data-stroke-count={motion.strokes.length}
       preserveAspectRatio="xMidYMid meet"
@@ -113,15 +127,20 @@ export function HandwrittenGreeting({
           y1="34"
           y2="190"
         >
-          <stop offset="0" stopColor="#ff375f" />
-          <stop offset="0.14" stopColor="#ff9f0a" />
-          <stop offset="0.27" stopColor="#ffd60a" />
-          <stop offset="0.4" stopColor="#30d158" />
-          <stop offset="0.54" stopColor="#64d2ff" />
-          <stop offset="0.67" stopColor="#0a84ff" />
-          <stop offset="0.8" stopColor="#5e5ce6" />
-          <stop offset="0.91" stopColor="#bf5af2" />
-          <stop offset="1" stopColor="#ff375f" />
+          {SPECTRUM_INK.map(([color, nextColor], index) => (
+            <stop
+              key={`${color}-${index}`}
+              offset={index / (SPECTRUM_INK.length - 1)}
+              stopColor={color}
+              style={
+                {
+                  "--greeting-spectrum-color": color,
+                  "--greeting-spectrum-next": nextColor,
+                  "--greeting-spectrum-delay": `${index * -170}ms`,
+                } as CSSProperties
+              }
+            />
+          ))}
         </linearGradient>
         <linearGradient className="welcome-greeting-sheen-gradient" id={sheenId} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="white" stopOpacity="0" />
@@ -135,6 +154,10 @@ export function HandwrittenGreeting({
         </filter>
         <filter height="180%" id={trailGlowId} width="140%" x="-20%" y="-40%">
           <feGaussianBlur stdDeviation="2.8" />
+        </filter>
+        <filter height="130%" id={inkTextureId} width="106%" x="-3%" y="-15%">
+          <feTurbulence baseFrequency="0.72" numOctaves="2" result="inkGrain" seed="17" type="fractalNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="inkGrain" scale="0.72" xChannelSelector="R" yChannelSelector="G" />
         </filter>
         <mask height="220" id={revealMaskId} maskUnits="userSpaceOnUse" width={canvasWidth} x="0" y="0">
           {motion.strokes.map((stroke, index) => (
@@ -178,14 +201,16 @@ export function HandwrittenGreeting({
         mask={`url(#${revealMaskId})`}
         value={value}
       />
-      <GreetingText
-        className="welcome-greeting-fill welcome-greeting-fill-reveal"
-        canvasWidth={canvasWidth}
-        direction={direction}
-        gradientId={gradientId}
-        mask={`url(#${revealMaskId})`}
-        value={value}
-      />
+      <g className="welcome-greeting-ink-texture" filter={`url(#${inkTextureId})`}>
+        <GreetingText
+          className="welcome-greeting-fill welcome-greeting-fill-reveal"
+          canvasWidth={canvasWidth}
+          direction={direction}
+          gradientId={gradientId}
+          mask={`url(#${revealMaskId})`}
+          value={value}
+        />
+      </g>
       <g
         aria-hidden="true"
         className="welcome-greeting-ink-trails welcome-greeting-ink-trails-glow"
@@ -233,16 +258,44 @@ export function HandwrittenGreeting({
           />
         ))}
       </g>
-      <GreetingText
-        className="welcome-greeting-fill welcome-greeting-fill-settled"
-        canvasWidth={canvasWidth}
-        direction={direction}
-        gradientId={gradientId}
-        onAnimationEnd={(event: AnimationEvent<SVGTextElement>) => {
-          if (event.animationName === "rune-greeting-ink-settle") onWritingComplete?.();
-        }}
-        value={value}
-      />
+      <g
+        aria-hidden="true"
+        className="welcome-greeting-ink-trails welcome-greeting-ink-bristles"
+        clipPath={`url(#${textClipId})`}
+      >
+        {motion.strokes.map((stroke, index) => (
+          <path
+            className="welcome-greeting-ink-trail welcome-greeting-ink-bristle"
+            d={stroke.path}
+            fill="none"
+            key={`bristle-${index}-${stroke.path}`}
+            pathLength="1"
+            stroke="rgba(255,255,255,.72)"
+            strokeDasharray="0.024 0.018"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={Math.max(0.9, Math.round(stroke.strokeWidth * 0.022 * 10) / 10)}
+            style={
+              {
+                "--greeting-stroke-delay": `${stroke.delayMs + 24}ms`,
+                "--greeting-stroke-duration": `${Math.max(110, stroke.durationMs - 24)}ms`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </g>
+      <g className="welcome-greeting-ink-texture" filter={`url(#${inkTextureId})`}>
+        <GreetingText
+          className="welcome-greeting-fill welcome-greeting-fill-settled"
+          canvasWidth={canvasWidth}
+          direction={direction}
+          gradientId={gradientId}
+          onAnimationEnd={(event: AnimationEvent<SVGTextElement>) => {
+            if (event.animationName === "rune-greeting-ink-settle") onWritingComplete?.();
+          }}
+          value={value}
+        />
+      </g>
       <g aria-hidden="true" clipPath={`url(#${textClipId})`} mask={`url(#${revealMaskId})`}>
         <rect
           className="welcome-greeting-ink-sheen"
@@ -277,6 +330,8 @@ export function HandwrittenGreeting({
             rx="4.6"
             ry="2.3"
           />
+          <ellipse className="welcome-greeting-stroke-head-bristle" cx="-1.2" cy="1.3" rx="3.1" ry=".42" />
+          <ellipse className="welcome-greeting-stroke-head-bristle" cx="-.4" cy="-1.25" rx="2.6" ry=".34" />
           <ellipse className="welcome-greeting-stroke-head-light" cx="-0.8" cy="-0.6" rx="1.7" ry="0.55" />
         </g>
       ))}

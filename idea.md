@@ -2505,3 +2505,11 @@ v1.27 让每条已有的 immutable motion stroke 同时绘制两层被最终 gly
 欢迎页的信息节奏也随之调整：问候语先落笔，价值说明和语言卡分别在 420ms 与 560ms 后轻柔进入，让第一眼更像设备启动仪式，同时按钮一旦挂载即可操作。Latin/Cyrillic、中文、日文、韩文和不拆 shaping 的 RTL 阿拉伯文继续使用各自路径策略；reduced motion 与 forced colors 完全移除 trace、bloom、nib、轮播和 sheen，立即显示完整静态文字。
 
 后续视觉复核进一步确认，420ms/560ms 仍会让信息界面在问候尚未完成时出现，第一眼依旧像普通网页而不是设备启动。v1.27 follow-up 因此把首屏明确分成两幕：`writing` 阶段只保留跨栏居中的问候语，final ink settle 后才进入 `ready`，价值说明与语言卡再以 140ms 的层级差出现。浏览器不能触发 animation-end 时有 3.4 秒有界 fallback，reduced motion 则立即进入 ready；它改变的是 presentation choreography，不增加新的产品状态、持久化或写入权限。拉丁手写 mask 同时收窄，减少笔尖尚未经过时相邻字形被整块提前揭开的现象。
+
+## 128. 炫彩应该属于墨迹，而不是属于背景
+
+用户再次指出，欢迎动画要像设备初次开机：能看见手写动作，而且彩色是笔尖一点一点留下来的。v1.27 已经建立了逐笔 path、glyph clip 和两幕式信息节奏，但实机观感仍可能被两个细节削弱：过于平滑的 font fill 像数字遮罩，四周彩色光晕又容易被看成通用 AI 渐变。
+
+这次 follow-up 不增加粒子、Canvas 或新的动画状态，而是在现有 SVG 内补足“墨”的材料感。最终字形经过固定 seed 的轻微 turbulence/displacement，边缘不再完全像矢量切割；每条原有笔画增加一条被字形裁切的干笔分叉，移动笔尖也增加两根细小笔刷纤维。九个颜色 stop 只在既有 write duration 内完成一次有界流动，然后静止。背景 aurora 同时降到更低透明度，让彩色集中在正在生成的字迹，而不是铺满界面。
+
+时序仍然只有 `write → settle → reveal`：最长文字完成前，说明和语言卡不抢占注意力；正常路径由 final ink 的 animation-end 进入第二幕，4.15 秒只作为有界事件兜底，reduced motion 立即显示完整静态文字。结构测试明确拒绝 spectrum 的 infinite loop，并验证纹理、干笔和 split nib 都位于 deferred、无业务权限的欢迎组件中。

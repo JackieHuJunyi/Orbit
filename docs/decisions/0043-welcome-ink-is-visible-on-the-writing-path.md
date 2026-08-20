@@ -19,7 +19,9 @@ The frozen `greeting-motion.ts` output remains the only source of path geometry 
 
 Both traces reuse the stroke's existing path, delay, and duration. They introduce no timer, layout measurement, or second motion plan. The reveal mask still uncovers the complete colored glyph, the pressure nib still follows the same CSS offset path, and the final system-font layer still restores exact shaping before the existing one-shot sheen.
 
-The welcome copy and language card use the existing scene-entry animation with short 420ms and 560ms delays. This establishes the greeting before supporting controls compete for attention without adding a blocking splash state; mounted controls remain interactive.
+A follow-up keeps that ownership model while making the material more visibly handwritten. One deterministic SVG turbulence/displacement filter gives the filled ink a restrained paper edge, each existing stroke gains one glyph-clipped dry-brush bristle, and the nib gains two tiny split fibers. The nine spectrum stops make one bounded transition during the existing write duration and then become still; they never run as ambient infinite motion. The backdrop aurora is reduced so color remains concentrated in the mark rather than becoming a generic AI gradient.
+
+The welcome copy and language card remain mounted but hidden during the `writing` act. Final ink settle owns the normal transition into `ready`, with a 4.15-second browser-event fallback for the longest bounded scripts and an immediate fallback under reduced motion. This keeps the greeting as the first visual act without adding a persisted splash step or removing access to setup controls after the animation.
 
 Reduced-motion and forced-color modes hide both trace layers together with the nib and sheen and immediately show the complete static greeting. The component retains no storage, network, model, credential, Artifact, workspace, Canvas, remote-font, or mutation authority.
 
@@ -28,4 +30,5 @@ Reduced-motion and forced-color modes hide both trace layers together with the n
 - The moving nib now has an explicit visual cause-and-effect relationship with the colored word left behind it.
 - Latin/Cyrillic, Chinese, Japanese, Korean, and connected RTL Arabic continue to share one renderer while retaining their separate immutable path strategies.
 - The extra SVG paths are bounded by the existing maximum of twelve strokes, remain inside the deferred welcome chunk, and do not affect canonical product state.
+- Ink texture, bristles, and spectrum motion reuse the same bounded SVG and CSS timeline; there is no Canvas loop or ambient color cycle.
 - Source and browser gates require the progressive ink-trace contract, mounted trace animation, static accessibility fallback, and existing multilingual geometry containment.

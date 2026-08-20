@@ -162,8 +162,8 @@
     radial-gradient(circle at 71% 49%, rgba(10, 132, 255, .28), transparent 28%),
     radial-gradient(circle at 91% 55%, rgba(191, 90, 242, .24), transparent 22%);
   content: "";
-  filter: blur(34px) saturate(1.22);
-  opacity: .16;
+  filter: blur(38px) saturate(1.12);
+  opacity: .09;
   pointer-events: none;
 }
 
@@ -178,7 +178,7 @@
   font-size: 174px;
   font-kerning: normal;
   font-optical-sizing: auto;
-  font-weight: 480;
+  font-weight: 400;
   letter-spacing: -.058em;
   text-rendering: geometricPrecision;
   --greeting-cycle-duration: 4400ms;
@@ -194,7 +194,6 @@
 .welcome-greeting-fill-glow { opacity: .22; }
 .welcome-greeting-fill-reveal {
   opacity: .98;
-  filter: drop-shadow(0 1px 1px rgba(94, 92, 230, .08));
 }
 .welcome-greeting-fill-settled { opacity: 0; }
 .welcome-greeting-reveal-stroke {
@@ -205,7 +204,7 @@
   pointer-events: none;
 }
 .welcome-greeting-ink-trails-glow {
-  opacity: .54;
+  opacity: .46;
 }
 .welcome-greeting-ink-trail {
   opacity: 0;
@@ -220,6 +219,12 @@
   transform-origin: center;
   will-change: opacity, transform;
 }
+.welcome-greeting-spectrum stop {
+  animation: rune-greeting-spectrum-flow var(--greeting-write-duration) ease-in-out var(--greeting-spectrum-delay) 1 both;
+  stop-color: var(--greeting-spectrum-color);
+}
+.welcome-greeting-ink-bristles { mix-blend-mode: screen; opacity: .58; }
+.welcome-greeting-ink-bristle { stroke-dashoffset: 1; }
 .welcome-greeting-stroke-head { opacity: 0; }
 .welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .22); filter: blur(4.5px); }
 .welcome-greeting-stroke-head-ink {
@@ -231,6 +236,12 @@
 .welcome-greeting-stroke-head-light {
   fill: rgba(255, 255, 255, .78);
   filter: blur(.22px);
+  transform: rotate(-16deg);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.welcome-greeting-stroke-head-bristle {
+  fill: rgba(255, 255, 255, .64);
   transform: rotate(-16deg);
   transform-box: fill-box;
   transform-origin: center;
@@ -623,6 +634,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .welcome-greeting-stroke-head,
   .welcome-greeting-ink-trails,
   .welcome-greeting-ink-sheen { display: none; }
+  .welcome-greeting-ink-texture { filter: none; }
   .welcome-greeting-fill { fill: CanvasText; }
   .welcome-greeting-reveal-stroke { animation: none; stroke-dashoffset: 0; }
   .welcome-greeting-fill-glow { display: none; }
