@@ -787,6 +787,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
+  assert.match(styles, /@keyframes rune-greeting-ink-trace/);
   assert.match(styles, /@keyframes rune-greeting-stroke-head/);
   assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
@@ -807,12 +808,14 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
   assert.match(handwrittenGreeting, /<linearGradient/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-reveal-stroke"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-ink-trail"/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-fill welcome-greeting-fill-reveal"/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-stroke-head"/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-ink-sheen"/);
   assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
   assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
+  assert.match(handwrittenGreeting, /data-ink-trace="progressive"/);
   assert.match(handwrittenGreeting, /data-motion-script=\{script\}/);
   assert.match(handwrittenGreeting, /motion\.strokes\.map/);
   assert.match(handwrittenGreeting, /planGreetingMotion/);

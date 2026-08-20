@@ -43,22 +43,25 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
   await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
   await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-sheen");
+  await expect(greeting).toHaveAttribute("data-ink-trace", "progressive");
   await expect(greeting).toHaveAttribute("data-stroke-count", "3");
   await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
   await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-ink-trail")).toHaveCount(6);
   await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
 
   const animationNames = await greeting.evaluate((element) =>
     Array.from(
       element.querySelectorAll(
-        ".welcome-greeting-reveal-stroke, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
+        ".welcome-greeting-reveal-stroke, .welcome-greeting-ink-trail, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
       ),
     )
       .flatMap((unit) => unit.getAnimations())
       .map((animation) => ("animationName" in animation ? String(animation.animationName) : "")),
   );
   expect(animationNames).toContain("rune-greeting-write");
+  expect(animationNames).toContain("rune-greeting-ink-trace");
   expect(animationNames).toContain("rune-greeting-ink-settle");
   expect(animationNames).toContain("rune-greeting-stroke-head");
   expect(animationNames).toContain("rune-greeting-pressure");

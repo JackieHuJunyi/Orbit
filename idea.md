@@ -2495,3 +2495,11 @@ v1.24 已经按五类文字系统安排落笔顺序，但“有多条 stroke”�
 v1.26 不改 planner，也不改任何 locale 时序。每个 active spectrum head 只增加一个极小的笔锋反光，让椭圆压力变化更像柔软墨点；settle 之后只有一条窄高光穿过一次，并同时被完整字形 clip 与已完成 stroke mask 限制。它不会跑出文字，不会循环，也没有 pointer 或业务状态。九色仍来自 Rune 自己的 palette，轨迹仍是原创近似手势，最终 glyph 仍由设备本地字体完成，因此学习的是 Apple 启动体验的节奏而不是复制其素材。
 
 reduced motion 和 forced colors 直接跳过笔锋与高光，只保留完整静态问候；语言卡和继续按钮从第一帧起就能使用。验证同时检查源码中没有 storage、network、model、workspace、remote font、Canvas 或第二个 timer，真实浏览器检查 `write / pressure / settle / sheen` 确实挂载，九语言几何门槛继续防止视觉调整破坏长文本、RTL 和窄屏比例。
+
+## 127. v1.27 真正的手写需要看见笔尖刚刚留下的墨迹
+
+v1.26 已有正确的笔画顺序、移动笔锋和收墨高光，但宽 mask 本身不可见；用户主要看到的是彩色字形被逐步揭开，笔尖与其身后的“新鲜墨迹”关系仍不够明确。继续增强整词 glow 或增加粒子会放大网页特效感，无法解决动作因果。
+
+v1.27 让每条已有的 immutable motion stroke 同时绘制两层被最终 glyph clip 的真实轨迹：外层是低透明度、轻微模糊的 spectrum ink bloom，内层是窄而清晰的彩色核心。两层与 reveal mask、pressure nib 复用完全相同的 path、delay 和 duration，因此笔尖经过哪里，墨迹就从哪里留下；写完后准确的本地系统字体再落定并运行原有一次性 sheen。没有第二个 planner、timer 或 Canvas loop，也没有复制 Apple 字形、字体或动画素材。
+
+欢迎页的信息节奏也随之调整：问候语先落笔，价值说明和语言卡分别在 420ms 与 560ms 后轻柔进入，让第一眼更像设备启动仪式，同时按钮一旦挂载即可操作。Latin/Cyrillic、中文、日文、韩文和不拆 shaping 的 RTL 阿拉伯文继续使用各自路径策略；reduced motion 与 forced colors 完全移除 trace、bloom、nib、轮播和 sheen，立即显示完整静态文字。

@@ -62,6 +62,7 @@ export function HandwrittenGreeting({
   const identifier = useId().replaceAll(":", "");
   const gradientId = `rune-greeting-spectrum-${identifier}`;
   const glowId = `rune-greeting-glow-${identifier}`;
+  const trailGlowId = `rune-greeting-trail-glow-${identifier}`;
   const revealMaskId = `rune-greeting-reveal-${identifier}`;
   const textClipId = `rune-greeting-text-${identifier}`;
   const sheenId = `rune-greeting-sheen-${identifier}`;
@@ -84,6 +85,7 @@ export function HandwrittenGreeting({
       data-motion-renderer="calligraphic-mask"
       data-motion-script={script}
       data-ink-effect="spectrum-sheen"
+      data-ink-trace="progressive"
       data-stroke-count={motion.strokes.length}
       preserveAspectRatio="xMidYMid meet"
       role="img"
@@ -127,6 +129,9 @@ export function HandwrittenGreeting({
         </linearGradient>
         <filter height="180%" id={glowId} width="130%" x="-15%" y="-40%">
           <feGaussianBlur stdDeviation="5.5" />
+        </filter>
+        <filter height="180%" id={trailGlowId} width="140%" x="-20%" y="-40%">
+          <feGaussianBlur stdDeviation="2.8" />
         </filter>
         <mask height="220" id={revealMaskId} maskUnits="userSpaceOnUse" width={canvasWidth} x="0" y="0">
           {motion.strokes.map((stroke, index) => (
@@ -178,6 +183,53 @@ export function HandwrittenGreeting({
         mask={`url(#${revealMaskId})`}
         value={value}
       />
+      <g
+        aria-hidden="true"
+        className="welcome-greeting-ink-trails welcome-greeting-ink-trails-glow"
+        clipPath={`url(#${textClipId})`}
+        filter={`url(#${trailGlowId})`}
+      >
+        {motion.strokes.map((stroke, index) => (
+          <path
+            className="welcome-greeting-ink-trail"
+            d={stroke.path}
+            fill="none"
+            key={`trail-glow-${index}-${stroke.path}`}
+            pathLength="1"
+            stroke={`url(#${gradientId})`}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={Math.max(6, Math.round(stroke.strokeWidth * 0.2))}
+            style={
+              {
+                "--greeting-stroke-delay": `${stroke.delayMs}ms`,
+                "--greeting-stroke-duration": `${stroke.durationMs}ms`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </g>
+      <g aria-hidden="true" className="welcome-greeting-ink-trails" clipPath={`url(#${textClipId})`}>
+        {motion.strokes.map((stroke, index) => (
+          <path
+            className="welcome-greeting-ink-trail"
+            d={stroke.path}
+            fill="none"
+            key={`trail-${index}-${stroke.path}`}
+            pathLength="1"
+            stroke={`url(#${gradientId})`}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={Math.max(2.8, Math.round(stroke.strokeWidth * 0.075 * 10) / 10)}
+            style={
+              {
+                "--greeting-stroke-delay": `${stroke.delayMs}ms`,
+                "--greeting-stroke-duration": `${stroke.durationMs}ms`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </g>
       <GreetingText
         className="welcome-greeting-fill welcome-greeting-fill-settled"
         canvasWidth={canvasWidth}

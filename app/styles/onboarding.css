@@ -196,6 +196,19 @@
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
 }
+.welcome-greeting-ink-trails {
+  pointer-events: none;
+}
+.welcome-greeting-ink-trails-glow {
+  opacity: .54;
+}
+.welcome-greeting-ink-trail {
+  opacity: 0;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
+  will-change: opacity, stroke-dashoffset;
+}
 .welcome-greeting-ink-sheen {
   opacity: 0;
   transform-box: fill-box;
@@ -603,6 +616,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before,
   .welcome-greeting-stroke-head,
+  .welcome-greeting-ink-trails,
   .welcome-greeting-ink-sheen { display: none; }
   .welcome-greeting-fill { fill: CanvasText; }
   .welcome-greeting-reveal-stroke { animation: none; stroke-dashoffset: 0; }

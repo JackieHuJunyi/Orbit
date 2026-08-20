@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.27 with a visible dual-width spectrum ink trace on every writing-system-aware stroke, exact shared timing with the pressure nib and reveal mask, a quieter staged entrance for setup controls, and unchanged static accessibility fallbacks.
+
 - 2026-08-21 — Shipped Rune v1.26 with a Rune-original calligraphic spectrum treatment: ordered source-shaped reveal, pressure-responsive ink heads, a single clipped completion sheen, and static reduced-motion/forced-color fallbacks.
 
 - 2026-08-21 — Shipped Rune v1.25 with exact-section semantic HTML slide editing, complete live Source mirroring, isolated draft preview, binding-preserving compilation, and the shared checkpointed atomic visual-write transaction.
