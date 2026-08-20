@@ -35,19 +35,22 @@ test("starts a fresh user with outcome-first task choices", async ({ page }) => 
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
 });
 
-test("writes the opening greeting through one continuous spectrum-ink mask", async ({ page }) => {
+test("writes the opening greeting through ordered spectrum-ink strokes", async ({ page }) => {
   await page.goto("/");
 
   const greeting = page.locator(".welcome-greeting");
   await expect(greeting).toBeVisible();
+  await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "3");
   await expect(greeting.locator("linearGradient stop")).toHaveCount(9);
-  await expect(greeting.locator(".welcome-greeting-reveal")).toHaveCount(1);
+  await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
 
   const animationNames = await greeting.evaluate((element) =>
     Array.from(
       element.querySelectorAll(
-        ".welcome-greeting-reveal, .welcome-greeting-fill-settled, .welcome-greeting-writehead, .welcome-greeting-writehead-nib, .welcome-greeting-flourish",
+        ".welcome-greeting-reveal-stroke, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
       ),
     )
       .flatMap((unit) => unit.getAnimations())
@@ -55,10 +58,11 @@ test("writes the opening greeting through one continuous spectrum-ink mask", asy
   );
   expect(animationNames).toContain("rune-greeting-write");
   expect(animationNames).toContain("rune-greeting-ink-settle");
-  expect(animationNames).toContain("rune-greeting-writehead");
+  expect(animationNames).toContain("rune-greeting-stroke-head");
   expect(animationNames).toContain("rune-greeting-pressure");
-  expect(animationNames).toContain("rune-greeting-flourish");
-  await expect(greeting.locator(".welcome-greeting-writehead")).toHaveCSS("offset-path", /path\(/);
+  for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
+    await expect(head).toHaveCSS("offset-path", /path\(/);
+  }
 });
 
 test("moves the Arabic writing head right to left without splitting its shaping run", async ({ page }) => {
@@ -69,8 +73,10 @@ test("moves the Arabic writing head right to left without splitting its shaping 
   await expect(greeting).toBeVisible();
   await expect(greeting).toHaveAttribute("data-direction", "rtl");
   await expect(greeting).toHaveAttribute("data-motion-count", "5");
+  await expect(greeting).toHaveAttribute("data-motion-script", "arabic");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "3");
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toHaveText("مرحبًا");
-  await expect(greeting.locator(".welcome-greeting-writehead")).toHaveCSS("offset-path", /M 640 145[^]*40 148/);
+  await expect(greeting.locator(".welcome-greeting-stroke-head").first()).toHaveCSS("offset-path", /M 571\.4 148/);
 });
 
 test("renders the local-first workbench with its sample workspace", async ({ page }) => {

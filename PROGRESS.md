@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.24 with writing-system-aware spectrum-ink strokes, ordered pen lifts and pressure, intact Arabic RTL shaping, and static reduced-motion/forced-color fallbacks.
+
 - 2026-08-21 — Shipped Rune v1.23 with an explicit semantic HTML → editable Deck copy action, exact-revision conversion, collision-safe identity, fidelity review before one additive write, and preserved original HTML.
 
 - 2026-08-21 — Shipped Rune v1.22 with a centered startup greeting, one direction-aware SVG ink-reveal mask, synchronized nib/pressure/settle/flourish timing, nine-stop spectrum ink, and static reduced-motion/forced-color fallbacks.

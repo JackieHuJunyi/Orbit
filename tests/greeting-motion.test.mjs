@@ -3,28 +3,59 @@ import test from "node:test";
 
 import { planGreetingMotion } from "../app/lib/greeting-motion.ts";
 
-test("plans one bounded left-to-right writing gesture from visible symbols", () => {
-  const plan = planGreetingMotion({ canvasWidth: 592, direction: "ltr", unitCount: 6, value: "Hello!" });
+test("plans a bounded cursive greeting as an opening, cross stroke, and connected body", () => {
+  const plan = planGreetingMotion({
+    canvasWidth: 592,
+    direction: "ltr",
+    script: "cursive",
+    unitCount: 6,
+    value: "Hello!",
+  });
 
   assert.equal(plan.motionCount, 6);
   assert.equal(plan.writeDurationMs, 2_190);
-  assert.equal(plan.settleDelayMs, 2_260);
-  assert.equal(plan.finishDelayMs, 2_370);
-  assert.match(plan.writePath, /^M40 145 /);
-  assert.match(plan.writePath, / 552 148$/);
+  assert.equal(plan.settleDelayMs, 2_382);
+  assert.equal(plan.strokes.length, 3);
+  assert.match(plan.strokes[0].path, /^M48 174 /);
+  assert.match(plan.strokes[2].path, /^M96\.3 148 /);
+  assert.ok(plan.strokes[0].delayMs < plan.strokes[1].delayMs);
+  assert.ok(plan.strokes[1].delayMs < plan.strokes[2].delayMs);
+  assert.ok(plan.strokes.at(-1).delayMs + plan.strokes.at(-1).durationMs < plan.settleDelayMs);
   assert.equal(Object.isFrozen(plan), true);
+  assert.equal(Object.isFrozen(plan.strokes), true);
+  assert.equal(plan.strokes.every(Object.isFrozen), true);
 });
 
-test("keeps Arabic shaping intact while planning a longer right-to-left gesture", () => {
+test("keeps Arabic shaping intact while planning its body and marks right to left", () => {
   const value = "مرحبًا";
-  const plan = planGreetingMotion({ canvasWidth: 680, direction: "rtl", unitCount: 1, value });
+  const plan = planGreetingMotion({ canvasWidth: 680, direction: "rtl", script: "arabic", unitCount: 1, value });
 
   assert.equal(plan.motionCount, 5);
   assert.equal(plan.writeDurationMs, 2_000);
-  assert.equal(plan.settleDelayMs, 2_070);
-  assert.equal(plan.finishDelayMs, 2_180);
-  assert.match(plan.writePath, /^M640 145 /);
-  assert.match(plan.writePath, / 40 148$/);
+  assert.equal(plan.settleDelayMs, 2_192);
+  assert.equal(plan.strokes.length, 3);
+  assert.match(plan.strokes[0].path, /^M571\.4 148 /);
+  assert.match(plan.strokes[0].path, / 24 136$/);
+  assert.equal(plan.strokes[0].strokeWidth, 78);
+  assert.equal(plan.strokes[1].strokeWidth, 29);
+});
+
+test("gives logographic, kana, and Hangul greetings bounded sequential brush strokes", () => {
+  const plans = [
+    planGreetingMotion({ canvasWidth: 430, direction: "ltr", script: "logographic", unitCount: 2, value: "你好" }),
+    planGreetingMotion({ canvasWidth: 875, direction: "ltr", script: "kana", unitCount: 5, value: "こんにちは" }),
+    planGreetingMotion({ canvasWidth: 875, direction: "ltr", script: "hangul", unitCount: 5, value: "안녕하세요" }),
+  ];
+
+  assert.deepEqual(
+    plans.map((plan) => plan.strokes.length),
+    [6, 12, 12],
+  );
+  for (const plan of plans) {
+    assert.ok(plan.strokes.length > 3);
+    assert.ok(plan.strokes.every((stroke, index) => index === 0 || stroke.delayMs > plan.strokes[index - 1].delayMs));
+    assert.ok(plan.strokes.at(-1).delayMs + plan.strokes.at(-1).durationMs < plan.settleDelayMs);
+  }
 });
 
 test("bounds hostile geometry and visible-symbol counts without mutating input", () => {
@@ -38,12 +69,14 @@ test("bounds hostile geometry and visible-symbol counts without mutating input",
 
   assert.equal(plan.motionCount, 14);
   assert.equal(plan.writeDurationMs, 3_000);
-  assert.match(plan.writePath, /^M40 145 /);
-  assert.match(plan.writePath, / 390 148$/);
+  assert.equal(plan.strokes.length, 3);
+  assert.match(plan.strokes[0].path, /^M48 174 /);
+  assert.ok(plan.strokes.at(-1).delayMs + plan.strokes.at(-1).durationMs < plan.settleDelayMs);
   assert.deepEqual(input, { canvasWidth: Number.POSITIVE_INFINITY, direction: "ltr", unitCount: 9_999, value: "Hi" });
 
   const nonfinite = planGreetingMotion({ canvasWidth: Number.NaN, direction: "ltr", unitCount: Number.NaN, value: "" });
   assert.equal(nonfinite.motionCount, 1);
   assert.equal(nonfinite.writeDurationMs, 1_240);
-  assert.match(nonfinite.writePath, / 390 148$/);
+  assert.equal(nonfinite.strokes.length, 3);
+  assert.ok(nonfinite.strokes.at(-1).delayMs + nonfinite.strokes.at(-1).durationMs < nonfinite.settleDelayMs);
 });

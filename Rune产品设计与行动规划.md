@@ -2237,3 +2237,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 新 id 与 `.deck.md` 文件名由现有 case-insensitive collision resolver 分配；确认只执行一次 additive device write，取消、旧 revision、workspace 变化、无效输入或持久化失败都保持原工作区不变。
 - `semantic-html-editable-copy` 保持 React-free 且按需加载，不能拥有 storage、download、network、provider、credential、image 或 mutation 权限；Workbench 仍是唯一事务 owner。
 - 单测必须证明确定性、冲突改名、原 HTML 不变、stale/script refusal 与 review purpose；真实导入 E2E 必须从 HTML Preview 打开审核、确认副本可编辑，并重新打开原文件证明字节未变。
+
+### 17.55 v1.24 开机问候必须真正按书写系统分笔落墨
+
+- v1.22 的单条宽 mask 仍会被看成横向擦出整词；新的 `greeting-motion` 必须输出有序且冻结的 `{ path, strokeWidth, delayMs, durationMs }[]`，让每一次落笔、提笔、连接和补笔都可见，而不是只移动一个装饰光点。
+- 拉丁与西里尔文字采用起笔、短横补笔和连写主体；简中与繁中按每字三笔；日文和韩文按字符分组且全词最多十二笔；阿拉伯文保留一个完整 RTL shaping run，只让主体和附加符号从右向左依次显现。
+- 每个彩色 ink head 必须与对应 luminance mask 复用完全相同的 SVG path、delay 和 duration；主体写完后才以一次 crisp fill 补全设备字体细节。删除独立下划线 flourish、白色 cursor 和整词宽擦除。
+- 学习 Apple 设备开机与官方 Draw On motion 的书写秩序、短促反馈和可退出原则，但所有轨迹、渐变与代码必须是 Rune 原创；不得复制 Apple 字形路径、字体、动画文件、插画或品牌资产，也不新增 Canvas、远程字体和第二个 timer。
+- `WelcomeExperience` 继续唯一拥有语言轮播与 onboarding 状态，写字组件仍不得接触 storage、network、model、credential、Artifact 或 mutation；用户在动画期间可立即继续设置。
+- reduced motion 和 forced colors 立即显示完整静态问候。纯单测覆盖五种 script strategy、严格时序、嵌套冻结、RTL 与 hostile bounds；真实 Chromium 证明多笔 offset path/animation 挂载，九语言桌面与窄屏几何继续零溢出。

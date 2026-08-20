@@ -1,12 +1,20 @@
 "use client";
 
 import { useId, useMemo, type CSSProperties, type SVGProps } from "react";
-import { planGreetingMotion } from "../lib/greeting-motion";
+import { planGreetingMotion, type GreetingWritingScript } from "../lib/greeting-motion";
 import { localeDirection, type RuneLocale } from "../lib/localization";
 
 function greetingUnits(value: string, locale: RuneLocale) {
   if (localeDirection(locale) === "rtl") return [value];
   return value.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(value);
+}
+
+function greetingScript(locale: RuneLocale): GreetingWritingScript {
+  if (locale === "ar") return "arabic";
+  if (locale === "ja") return "kana";
+  if (locale === "ko") return "hangul";
+  if (locale === "zh-CN" || locale === "zh-TW") return "logographic";
+  return "cursive";
 }
 
 function GreetingText({
@@ -49,6 +57,7 @@ export function HandwrittenGreeting({
   value: string;
 }) {
   const direction = localeDirection(locale);
+  const script = greetingScript(locale);
   const units = useMemo(() => greetingUnits(value, locale), [locale, value]);
   const identifier = useId().replaceAll(":", "");
   const gradientId = `rune-greeting-spectrum-${identifier}`;
@@ -59,13 +68,9 @@ export function HandwrittenGreeting({
     locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
   const isLong = canvasWidth > 900;
   const motion = useMemo(
-    () => planGreetingMotion({ canvasWidth, direction, unitCount: units.length, value }),
-    [canvasWidth, direction, units.length, value],
+    () => planGreetingMotion({ canvasWidth, direction, script, unitCount: units.length, value }),
+    [canvasWidth, direction, script, units.length, value],
   );
-  const flourishPath =
-    direction === "rtl"
-      ? `M${canvasWidth - 40} 179 C${canvasWidth * 0.76} 202 ${canvasWidth * 0.38} 190 40 179`
-      : `M40 179 C${canvasWidth * 0.38} 190 ${canvasWidth * 0.76} 202 ${canvasWidth - 40} 179`;
 
   return (
     <svg
@@ -74,12 +79,13 @@ export function HandwrittenGreeting({
       data-direction={direction}
       data-greeting-locale={locale}
       data-motion-count={motion.motionCount}
+      data-motion-script={script}
+      data-stroke-count={motion.strokes.length}
       preserveAspectRatio="xMidYMid meet"
       role="img"
       style={
         {
           "--greeting-cycle-duration": `${cycleDuration}ms`,
-          "--greeting-finish-delay": `${motion.finishDelayMs}ms`,
           "--greeting-settle-delay": `${motion.settleDelayMs}ms`,
           "--greeting-write-duration": `${motion.writeDurationMs}ms`,
         } as CSSProperties
@@ -102,16 +108,25 @@ export function HandwrittenGreeting({
           <feGaussianBlur stdDeviation="5.5" />
         </filter>
         <mask height="220" id={revealMaskId} maskUnits="userSpaceOnUse" width={canvasWidth} x="0" y="0">
-          <path
-            className="welcome-greeting-reveal"
-            d={motion.writePath}
-            fill="none"
-            pathLength="1"
-            stroke="white"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="176"
-          />
+          {motion.strokes.map((stroke, index) => (
+            <path
+              className="welcome-greeting-reveal-stroke"
+              d={stroke.path}
+              fill="none"
+              key={`${index}-${stroke.path}`}
+              pathLength="1"
+              stroke="white"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={stroke.strokeWidth}
+              style={
+                {
+                  "--greeting-stroke-delay": `${stroke.delayMs}ms`,
+                  "--greeting-stroke-duration": `${stroke.durationMs}ms`,
+                } as CSSProperties
+              }
+            />
+          ))}
         </mask>
       </defs>
 
@@ -139,29 +154,32 @@ export function HandwrittenGreeting({
         gradientId={gradientId}
         value={value}
       />
-      <g
-        className="welcome-greeting-writehead"
-        aria-hidden="true"
-        style={{ offsetPath: `path("${motion.writePath}")`, offsetRotate: "auto" }}
-      >
-        <circle className="welcome-greeting-writehead-halo" cx="0" cy="0" r="14" />
-        <ellipse className="welcome-greeting-writehead-nib" cx="0" cy="0" rx="4.8" ry="2.1" />
-      </g>
-      <path
-        className="welcome-greeting-flourish"
-        d={flourishPath}
-        fill="none"
-        pathLength="1"
-        stroke={`url(#${gradientId})`}
-      />
-      <g
-        className="welcome-greeting-pen"
-        aria-hidden="true"
-        style={{ offsetPath: `path("${flourishPath}")`, offsetRotate: "0deg" }}
-      >
-        <circle className="welcome-greeting-pen-halo" cx="0" cy="0" r="13" />
-        <circle className="welcome-greeting-pen-point" cx="0" cy="0" r="3.6" />
-      </g>
+      {motion.strokes.map((stroke, index) => (
+        <g
+          className="welcome-greeting-stroke-head"
+          aria-hidden="true"
+          data-stroke-index={index}
+          key={`head-${index}-${stroke.path}`}
+          style={
+            {
+              "--greeting-stroke-delay": `${stroke.delayMs}ms`,
+              "--greeting-stroke-duration": `${stroke.durationMs}ms`,
+              offsetPath: `path("${stroke.path}")`,
+              offsetRotate: "auto",
+            } as CSSProperties
+          }
+        >
+          <circle className="welcome-greeting-stroke-head-bloom" cx="0" cy="0" r="10" />
+          <ellipse
+            className="welcome-greeting-stroke-head-ink"
+            cx="0"
+            cy="0"
+            fill={`url(#${gradientId})`}
+            rx="4.6"
+            ry="2.3"
+          />
+        </g>
+      ))}
     </svg>
   );
 }

@@ -1,15 +1,15 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LOCALES = [
-  { id: "zh-CN", direction: "ltr" },
-  { id: "zh-TW", direction: "ltr" },
-  { id: "en", direction: "ltr" },
-  { id: "fr", direction: "ltr" },
-  { id: "es", direction: "ltr" },
-  { id: "ru", direction: "ltr" },
-  { id: "ar", direction: "rtl" },
-  { id: "ja", direction: "ltr" },
-  { id: "ko", direction: "ltr" },
+  { id: "zh-CN", direction: "ltr", script: "logographic", strokes: "6" },
+  { id: "zh-TW", direction: "ltr", script: "logographic", strokes: "6" },
+  { id: "en", direction: "ltr", script: "cursive", strokes: "3" },
+  { id: "fr", direction: "ltr", script: "cursive", strokes: "3" },
+  { id: "es", direction: "ltr", script: "cursive", strokes: "3" },
+  { id: "ru", direction: "ltr", script: "cursive", strokes: "3" },
+  { id: "ar", direction: "rtl", script: "arabic", strokes: "3" },
+  { id: "ja", direction: "ltr", script: "kana", strokes: "12" },
+  { id: "ko", direction: "ltr", script: "hangul", strokes: "12" },
 ] as const;
 
 const VIEWPORTS = [
@@ -88,6 +88,7 @@ for (const viewport of VIEWPORTS) {
         const dialog = page.locator(".welcome-backdrop");
         const welcomeWindow = dialog.locator(".welcome-window");
         const languageOptions = dialog.locator(".language-options");
+        const greeting = dialog.locator(`.welcome-greeting[data-greeting-locale="${locale.id}"]`);
         const introCopy = dialog.locator(".welcome-intro-copy");
         const languageCard = dialog.locator(".welcome-language-card");
         const selectedLanguage = languageOptions.locator('[role="radio"][aria-checked="true"]');
@@ -96,6 +97,8 @@ for (const viewport of VIEWPORTS) {
         await expect(root).toHaveAttribute("data-locale", locale.id);
         await expect(root).toHaveAttribute("dir", locale.direction);
         await expect(dialog).toBeVisible();
+        await expect(greeting).toHaveAttribute("data-motion-script", locale.script);
+        await expect(greeting).toHaveAttribute("data-stroke-count", locale.strokes);
         await expect(languageOptions.getByRole("radio")).toHaveCount(LOCALES.length);
         await expect(selectedLanguage).toHaveCount(1);
         await expectInsideContainer(selectedLanguage, languageOptions);

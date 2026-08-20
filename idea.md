@@ -2469,3 +2469,13 @@ v1.23 不伪装任意 HTML 可被安全结构化编辑，而是在有效 HTML Pr
 审核界面展示完整 `.deck.md` 预览和全部 fidelity warnings，第一条明确说明这是独立副本：原 HTML 保持不变，之后两个文件不会实时联动。确认后现有原子导入路径只新增一份 collision-safe Artifact 并选中它，因而原 HTML、其他文件和 checkpoint 都不被重写；取消、stale workspace 或 persistence failure 仍是零部分写入。用户随后获得既有的单页右侧编辑、左侧实时 draft、保存前完整 workspace/runtime 校验和恢复点。
 
 这不是把 HTML 降级后藏起来。真实浏览器门槛从审核导入 `.html` 开始，先证明连续页面和精确导航，再从 Preview 打开 editable-copy review、读取“不联动”的保真说明、确认新文件出现和每页铅笔可用，最后重新选择原 `.html` 并逐字比较源内容。这样兼容入口第一次同时拥有“保留原件”和“继续编辑”两条清晰路径。
+
+## 124. v1.24 “手写”必须表现书写顺序，而不是只表现显现方向
+
+v1.22 把空心轮廓修正成了彩色实心墨迹，也把问候提升到了首屏中心，但它仍用一条宽达 176 个 SVG 单位的曲线扫过整词。笔尖从左到右或从右到左移动了，用户看到的却依旧是“一块渐变逐渐打开”：没有字母起笔、字符内转折、提笔后补横，也没有中日韩文字逐笔落下的节奏。这正是它仍不像设备开机手写的根因。
+
+v1.24 保留系统字体负责最终字形与 shaping，让纯 `greeting-motion` 负责另一件事：为书写系统产生有序的 original Rune mask strokes。拉丁/西里尔分为首字起笔、短横和连续主体；中文每字三笔；日文、韩文按字符给出水平/垂直/收尾组合并限制总数；阿拉伯文始终只渲染一个 RTL text run，主连笔完成后再补附加符号。每笔都有自己的宽度、delay 和 duration，数组与其中每个对象都冻结。
+
+SVG 不再保留独立的下划线 flourish 和白色装饰 cursor。每个 active stroke 只有一个很小的 spectrum ink head，它与 mask 使用完全相同的 path 和 clock；笔压只改变墨点椭圆形变。最后一笔结束后，完整九色 system-font fill 才沉淀进来，补全不同设备字体与原创近似轨迹之间无法完全重合的细节。因此开场能看到真实书写秩序，静止时仍得到准确、完整且本地 shaping 的文字。
+
+这次学习的是 Apple 官方 motion 与 Draw On 所强调的 layer-aware calligraphic choreography、简洁反馈、可选动态和不阻塞操作，而不是复制他们的字形或动画素材。欢迎步骤的按钮从始至终可用；reduced motion/forced colors 直接展示完整静态问候；组件继续没有 timer、存储、网络、模型、凭据、工作区或写权限。版本门槛把五类书写系统、RTL、时序上界、嵌套冻结、多笔真实 CSS animation 和九语言几何一起纳入验证。
