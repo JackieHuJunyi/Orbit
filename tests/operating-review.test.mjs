@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { parseChartSource } from "../app/lib/charts.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
-import { parseDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
 import {
   appendOperatingReviewRun,
@@ -17,6 +17,7 @@ import {
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
+import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 
 await loadRuneLocaleCatalog("zh-TW");
 
@@ -85,7 +86,7 @@ test("creates an English Document + Slides review chain with exact evidence bind
       ["fy26-growth-review-analysis", "fy26-growth-review-analysis.sql"],
       ["fy26-growth-review-view", "fy26-growth-review-view.chart.json"],
       ["fy26-growth-review-report", "fy26-growth-review-report.md"],
-      ["fy26-growth-review-briefing", "fy26-growth-review-briefing.deck.md"],
+      ["fy26-growth-review-briefing", "fy26-growth-review-briefing.html"],
     ],
   );
   assert.deepEqual(parseQueryDataSourceDirective(created.query.source), {
@@ -114,8 +115,9 @@ test("creates an English Document + Slides review chain with exact evidence bind
   assert.equal(created.slides.source.split(exactChartBinding).length - 1, 1);
   assert.match(created.document.source, /## Verifiable view/);
   assert.match(created.document.source, /Rune has not invented a business conclusion without evidence/);
-  assert.match(created.slides.source, /^---\nversion: 1[\s\S]*\nlang: en\n---/);
-  assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
+  assert.equal(created.slides.language, "Semantic HTML");
+  assert.equal(semanticHtmlPresentationMetadata(created.slides.source)?.lang, "en");
+  assert.deepEqual(compileLegacyHtmlSlides(created.slides.source).errors, []);
   assert.deepEqual(
     validateWorkspaceArtifacts([...artifacts, ...result.plan.creations.map(({ artifact }) => artifact)]),
     [],
@@ -433,7 +435,7 @@ test("compiles model-proposed review questions with every number kept in a live 
   }
   assert.match(created.document.source, /Evidence-led review prompts/u);
   assert.match(created.slides.source, /What the evidence must decide/u);
-  assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
+  assert.deepEqual(compileLegacyHtmlSlides(created.slides.source).errors, []);
   const workspace = [data, ...result.plan.creations.map(({ artifact }) => artifact)];
   assert.deepEqual(validateWorkspaceArtifacts(workspace), []);
 
@@ -545,10 +547,10 @@ test("creates a Chinese Document + Slides review chain without translating canon
   assert.match(created.document.source, /## 本次目标/);
   assert.match(created.document.source, /管理层/);
   assert.ok(created.document.source.includes(exactChartBinding));
-  assert.match(created.slides.source, /\nlang: zh-CN\n/);
-  assert.match(created.slides.source, /<!-- eyebrow: 可核验证据 -->/);
+  assert.equal(semanticHtmlPresentationMetadata(created.slides.source)?.lang, "zh-CN");
+  assert.match(created.slides.source, /data-eyebrow="可核验证据"/);
   assert.ok(created.slides.source.includes(exactChartBinding));
-  assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
+  assert.deepEqual(compileLegacyHtmlSlides(created.slides.source).errors, []);
   assert.deepEqual(
     validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()),
     [],
@@ -579,9 +581,9 @@ test("creates a complete Traditional Chinese review chain while preserving exact
   assert.match(created.query.source, /SUM\(CAST\("淨收入" AS DOUBLE\)\) AS "淨收入"/);
   assert.match(created.document.source, /## 本次目標/);
   assert.match(created.document.source, /董事會/);
-  assert.match(created.slides.source, /\nlang: zh-TW\n/);
-  assert.match(created.slides.source, /<!-- eyebrow: 可核驗證據 -->/);
-  assert.deepEqual(parseDeckSource(created.slides.source).errors, []);
+  assert.equal(semanticHtmlPresentationMetadata(created.slides.source)?.lang, "zh-TW");
+  assert.match(created.slides.source, /data-eyebrow="可核驗證據"/);
+  assert.deepEqual(compileLegacyHtmlSlides(created.slides.source).errors, []);
   assert.deepEqual(
     validateWorkspaceArtifacts([[data], result.plan.creations.map(({ artifact }) => artifact)].flat()),
     [],
@@ -685,7 +687,7 @@ test("resolves every generated id and filename collision while preserving the ne
       ["collision-review-analysis-2", "collision-review-analysis-2.sql"],
       ["collision-review-view-2", "collision-review-view-2.chart.json"],
       ["collision-review-report-2", "collision-review-report-2.md"],
-      ["collision-review-briefing-2", "collision-review-briefing-2.deck.md"],
+      ["collision-review-briefing-2", "collision-review-briefing-2.html"],
     ],
   );
   assert.equal(parseQueryDataSourceDirective(created.query.source).artifactId, data.id);

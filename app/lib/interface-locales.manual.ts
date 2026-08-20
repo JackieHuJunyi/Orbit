@@ -1668,7 +1668,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
     "Choisissez un document vérifié, un public et un objectif. Rune peut créer une présentation ou actualiser une présentation liée tout en conservant l’identité du fichier et sa relation avec la source.",
   "Create a new presentation": "Créer une nouvelle présentation",
   "Create or refresh a light presentation": "Créer ou actualiser une présentation légère",
-  "New Deck Markdown": "Nouveau Deck Markdown",
+  "New semantic HTML": "Nouveau HTML sémantique",
   "Presentation destination": "Destination de la présentation",
   "Refresh linked presentation in place": "Actualiser la présentation liée sur place",
   "Update in place · identity preserved": "Mise à jour sur place · identité préservée",
@@ -1678,7 +1678,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
     "Elige un documento revisado, el público y el objetivo. Rune puede crear una presentación nueva o actualizar una vinculada conservando la identidad del archivo y su relación con el origen.",
   "Create a new presentation": "Crear una presentación nueva",
   "Create or refresh a light presentation": "Crear o actualizar una presentación ligera",
-  "New Deck Markdown": "Nuevo Deck Markdown",
+  "New semantic HTML": "Nuevo HTML semántico",
   "Presentation destination": "Destino de la presentación",
   "Refresh linked presentation in place": "Actualizar la presentación vinculada en el mismo archivo",
   "Update in place · identity preserved": "Actualización en el mismo archivo · identidad conservada",
@@ -1688,7 +1688,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
     "Выберите проверенный документ, аудиторию и цель. Rune может создать новую презентацию или обновить связанную, сохранив идентичность файла и связь с источником.",
   "Create a new presentation": "Создать новую презентацию",
   "Create or refresh a light presentation": "Создайте или обновите лёгкую презентацию",
-  "New Deck Markdown": "Новый Deck Markdown",
+  "New semantic HTML": "Новый семантический HTML",
   "Presentation destination": "Куда сохранить презентацию",
   "Refresh linked presentation in place": "Обновить связанную презентацию на месте",
   "Update in place · identity preserved": "Обновление на месте · идентичность сохранена",
@@ -1698,7 +1698,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
     "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Rune إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
   "Create a new presentation": "إنشاء عرض جديد",
   "Create or refresh a light presentation": "أنشئ عرضًا خفيفًا أو حدّثه",
-  "New Deck Markdown": "Deck Markdown جديد",
+  "New semantic HTML": "HTML دلالي جديد",
   "Presentation destination": "وجهة العرض",
   "Refresh linked presentation in place": "تحديث العرض المرتبط في مكانه",
   "Update in place · identity preserved": "تحديث في المكان · الهوية محفوظة",
@@ -1708,7 +1708,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
     "確認済みの文書、対象者、目的を選択してください。Rune は新しいプレゼンテーションを作成することも、ファイル ID と元文書との関係を保ったまま既存の連携プレゼンテーションを更新することもできます。",
   "Create a new presentation": "新しいプレゼンテーションを作成",
   "Create or refresh a light presentation": "軽やかなプレゼンテーションを作成・更新",
-  "New Deck Markdown": "新しい Deck Markdown",
+  "New semantic HTML": "新しいセマンティック HTML",
   "Presentation destination": "プレゼンテーションの保存先",
   "Refresh linked presentation in place": "連携プレゼンテーションをそのまま更新",
   "Update in place · identity preserved": "同じファイルを更新 · ID を保持",
@@ -1718,10 +1718,60 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
     "검토된 문서, 대상, 목적을 선택하세요. Rune은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
   "Create a new presentation": "새 프레젠테이션 만들기",
   "Create or refresh a light presentation": "가벼운 프레젠테이션 만들기 또는 갱신",
-  "New Deck Markdown": "새 Deck Markdown",
+  "New semantic HTML": "새 시맨틱 HTML",
   "Presentation destination": "프레젠테이션 대상",
   "Refresh linked presentation in place": "연결된 프레젠테이션을 제자리에서 갱신",
   "Update in place · identity preserved": "제자리 업데이트 · ID 유지",
+});
+
+// Human-reviewed copy for semantic HTML as the default presentation source.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Create an editable semantic HTML presentation": "Créer une présentation HTML sémantique modifiable",
+  "Presentation authored in semantic HTML": "Présentation créée en HTML sémantique",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. Modifiez Markdown, CSV/JSON, SQL, Chart JSON ou le HTML sémantique à gauche. Le Deck Markdown existant reste modifiable.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **Présentations :** le HTML sémantique est la source lisible par défaut et peut être livré en PPTX, ODP, HTML ou PDF. Le Deck Markdown existant reste pris en charge.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Create an editable semantic HTML presentation": "Crear una presentación HTML semántica editable",
+  "Presentation authored in semantic HTML": "Presentación creada en HTML semántico",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. Edita Markdown, CSV/JSON, SQL, Chart JSON o HTML semántico a la izquierda. El Deck Markdown existente sigue siendo editable.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **Presentaciones:** HTML semántico es el origen legible predeterminado y puede entregarse como PPTX, ODP, HTML o PDF. El Deck Markdown existente sigue siendo compatible.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Create an editable semantic HTML presentation": "Создать редактируемую презентацию в семантическом HTML",
+  "Presentation authored in semantic HTML": "Презентация в семантическом HTML",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. Редактируйте Markdown, CSV/JSON, SQL, Chart JSON или семантический HTML слева. Существующий Deck Markdown остаётся редактируемым.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **Презентации:** семантический HTML — читаемый исходный формат по умолчанию с экспортом в PPTX, ODP, HTML или PDF. Существующий Deck Markdown по-прежнему поддерживается.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Create an editable semantic HTML presentation": "إنشاء عرض HTML دلالي قابل للتعديل",
+  "Presentation authored in semantic HTML": "عرض مكتوب بلغة HTML الدلالية",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. حرّر Markdown أو CSV/JSON أو SQL أو Chart JSON أو HTML الدلالي على اليسار. يظل Deck Markdown الحالي قابلاً للتحرير.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **العروض التقديمية:** HTML الدلالي هو المصدر المقروء الافتراضي ويمكن تسليمه بصيغ PPTX أو ODP أو HTML أو PDF. يظل Deck Markdown الحالي مدعومًا.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Create an editable semantic HTML presentation": "編集可能なセマンティック HTML プレゼンテーションを作成",
+  "Presentation authored in semantic HTML": "セマンティック HTML で作成するプレゼンテーション",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. 左側で Markdown、CSV/JSON、SQL、Chart JSON、またはセマンティック HTML を編集します。既存の Deck Markdown も引き続き編集できます。",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **プレゼンテーション:** セマンティック HTML が既定の読みやすいソースで、PPTX、ODP、HTML、PDF に書き出せます。既存の Deck Markdown も引き続き対応します。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Create an editable semantic HTML presentation": "편집 가능한 시맨틱 HTML 프레젠테이션 만들기",
+  "Presentation authored in semantic HTML": "시맨틱 HTML로 작성하는 프레젠테이션",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. 왼쪽에서 Markdown, CSV/JSON, SQL, Chart JSON 또는 시맨틱 HTML을 편집하세요. 기존 Deck Markdown도 계속 편집할 수 있습니다.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **프레젠테이션:** 시맨틱 HTML이 기본 읽기 가능 소스이며 PPTX, ODP, HTML 또는 PDF로 전달할 수 있습니다. 기존 Deck Markdown도 계속 지원됩니다.",
 });
 
 // Human-reviewed source-freshness copy for linked presentations.

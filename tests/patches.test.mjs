@@ -10,6 +10,7 @@ import {
   workspaceMatchesSourceRevision,
 } from "../app/lib/patches.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
+import { deckArtifactFixture } from "./deck-fixture.mjs";
 
 function artifact(kind) {
   const match = defaultArtifacts.find((item) => item.kind === kind);
@@ -177,8 +178,9 @@ test("rejects duplicate, unknown, and unchanged file entries atomically", () => 
 
 test("rejects unsafe SQL or raw Deck HTML without exposing a partial next workspace", () => {
   const query = artifact("query");
-  const slides = artifact("slides");
-  const result = prepareWorkspacePatch(defaultArtifacts, [
+  const slides = deckArtifactFixture({ id: "legacy-deck", name: "legacy.deck.md" });
+  const workspace = [...defaultArtifacts, slides];
+  const result = prepareWorkspacePatch(workspace, [
     {
       artifactId: query.id,
       summary: "Unsafe query",
@@ -197,7 +199,7 @@ test("rejects unsafe SQL or raw Deck HTML without exposing a partial next worksp
   ]);
   assert.match(result.errors.join(" "), /read-only|SELECT|WITH/i);
   assert.match(result.errors.join(" "), /raw HTML/);
-  assert.equal(result.nextArtifacts, defaultArtifacts);
+  assert.equal(result.nextArtifacts, workspace);
 });
 
 test("rejects a Query whose explicit Data binding is missing", () => {

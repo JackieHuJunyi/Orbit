@@ -15,6 +15,12 @@ import { findChartReferences, formatChartReference } from "./charts.ts";
 import { isDeckMarkdownArtifact } from "./deck.ts";
 import { buildWorkspaceDependencyGraph } from "./dependency-graph.ts";
 import { sourceOutsideSelectionIsUnchanged } from "./source-selection.ts";
+import {
+  appendSemanticHtmlPresentationSlide,
+  escapeSemanticHtml,
+  insertSemanticHtmlPresentationSlideAfter,
+  replaceSemanticHtmlPresentationSlide,
+} from "./semantic-html-presentation.ts";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_COMPILED_AGENT_SOURCE_CHARS = 120_000;
@@ -497,15 +503,24 @@ function appendChart(
       errors: [],
     };
   }
-  if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) {
-    return {
-      nextSource: `${source.trimEnd()}\n\n---\n\n<!-- layout: split -->\n\n# ${edit.heading}\n\n${reference}\n`,
-      errors: [],
-    };
+  if (artifact.kind === "slides") {
+    if (isDeckMarkdownArtifact(artifact)) {
+      return {
+        nextSource: `${source.trimEnd()}\n\n---\n\n<!-- layout: split -->\n\n# ${edit.heading}\n\n${reference}\n`,
+        errors: [],
+      };
+    }
+    const appended = appendSemanticHtmlPresentationSlide(
+      source,
+      `<section class="slide split" data-layout="split"><div class="slide-body"><h2>${escapeSemanticHtml(edit.heading)}</h2><div class="chart-slot">${reference}</div></div></section>`,
+    );
+    return appended.source
+      ? { nextSource: appended.source, errors: [] }
+      : { nextSource: source, errors: [...appended.errors] };
   }
   return {
     nextSource: source,
-    errors: ["append_chart only supports Markdown documents or Deck Markdown presentations."],
+    errors: ["append_chart only supports Markdown documents or semantic presentations."],
   };
 }
 
@@ -549,6 +564,30 @@ function applyArtifactOperation(
     return artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
       ? insertDeckSlide(source, edit)
       : { nextSource: source, errors: ["insert_deck_slide_after only supports Deck Markdown presentations."] };
+  }
+  if (edit.type === "replace_html_slide") {
+    if (artifact.kind !== "slides" || isDeckMarkdownArtifact(artifact)) {
+      return {
+        nextSource: source,
+        errors: ["replace_html_slide only supports semantic HTML presentations."],
+      };
+    }
+    const replaced = replaceSemanticHtmlPresentationSlide(source, edit.index, edit.section);
+    return replaced.source
+      ? { nextSource: replaced.source, errors: [] }
+      : { nextSource: source, errors: [...replaced.errors] };
+  }
+  if (edit.type === "insert_html_slide_after") {
+    if (artifact.kind !== "slides" || isDeckMarkdownArtifact(artifact)) {
+      return {
+        nextSource: source,
+        errors: ["insert_html_slide_after only supports semantic HTML presentations."],
+      };
+    }
+    const inserted = insertSemanticHtmlPresentationSlideAfter(source, edit.index, edit.section);
+    return inserted.source
+      ? { nextSource: inserted.source, errors: [] }
+      : { nextSource: source, errors: [...inserted.errors] };
   }
   return appendChart(artifact, source, edit);
 }

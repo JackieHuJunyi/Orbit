@@ -1,9 +1,14 @@
 import { prepareArtifactCreation } from "./artifact-creation.ts";
 import { isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
+import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
 import { derivePreviewSourceTargets } from "./preview-targets.ts";
 import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSourcePatch } from "./patches.ts";
-import { runeText, type RuneLocale } from "./localization.ts";
+import { normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
 import { portableSourceRevision } from "./source-revision.ts";
+import {
+  semanticHtmlPresentationFromDeckSource,
+  semanticHtmlPresentationMetadata,
+} from "./semantic-html-presentation.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 import {
   validateDocumentBriefingModelOutline,
@@ -57,10 +62,46 @@ type RawBriefingUnit = Omit<BriefingUnit, "id">;
 export type { DocumentBriefingModelOutline } from "./document-briefing-contract.ts";
 
 export function documentBriefingSourceIdForPresentation(artifact: WorkspaceArtifact) {
-  if (artifact.kind !== "slides" || !isDeckMarkdownArtifact(artifact)) return null;
-  const parsed = parseDeckSource(artifact.source);
-  if (!parsed.deck || parsed.errors.length) return null;
-  return parsed.deck.frontmatter.origin ?? null;
+  if (artifact.kind !== "slides") return null;
+  if (isDeckMarkdownArtifact(artifact)) {
+    const parsed = parseDeckSource(artifact.source);
+    if (!parsed.deck || parsed.errors.length) return null;
+    return parsed.deck.frontmatter.origin ?? null;
+  }
+  return semanticHtmlPresentationMetadata(artifact.source)?.origin ?? null;
+}
+
+function documentBriefingPresentationFacts(artifact: WorkspaceArtifact) {
+  if (artifact.kind !== "slides") return null;
+  if (isDeckMarkdownArtifact(artifact)) {
+    const parsed = parseDeckSource(artifact.source);
+    if (!parsed.deck || parsed.errors.length) return null;
+    return {
+      title: parsed.deck.frontmatter.title,
+      slideCount: parsed.deck.slides.length,
+      locale: parsed.deck.frontmatter.lang,
+      audience: parsed.deck.frontmatter.audience,
+      purpose: parsed.deck.frontmatter.purpose,
+      origin: parsed.deck.frontmatter.origin,
+      originRevision: parsed.deck.frontmatter.origin_revision,
+      theme: parsed.deck.frontmatter.theme,
+      format: "deck" as const,
+    };
+  }
+  const metadata = semanticHtmlPresentationMetadata(artifact.source);
+  const compilation = compileLegacyHtmlSlides(artifact.source);
+  if (!metadata || compilation.errors.length) return null;
+  return {
+    title: metadata.title,
+    slideCount: compilation.slides.length,
+    locale: normalizeRuneLocale(metadata.lang) ?? "en",
+    audience: metadata.audience,
+    purpose: metadata.purpose,
+    origin: metadata.origin,
+    originRevision: metadata.originRevision,
+    theme: metadata.theme,
+    format: "html" as const,
+  };
 }
 
 export function documentBriefingTargets(
@@ -71,22 +112,21 @@ export function documentBriefingTargets(
   if (!source) return [];
   const currentSourceRevision = portableSourceRevision(source.source);
   return artifacts.flatMap((artifact): DocumentBriefingTarget[] => {
-    if (documentBriefingSourceIdForPresentation(artifact) !== sourceArtifactId) return [];
-    const parsed = parseDeckSource(artifact.source);
-    if (!parsed.deck || parsed.errors.length) return [];
+    const facts = documentBriefingPresentationFacts(artifact);
+    if (!facts || facts.origin !== sourceArtifactId) return [];
     return [
       {
         artifactId: artifact.id,
         name: artifact.name,
-        title: parsed.deck.frontmatter.title,
-        slideCount: parsed.deck.slides.length,
-        locale: parsed.deck.frontmatter.lang,
-        audience: parsed.deck.frontmatter.audience,
-        purpose: parsed.deck.frontmatter.purpose,
+        title: facts.title,
+        slideCount: facts.slideCount,
+        locale: facts.locale,
+        audience: facts.audience,
+        purpose: facts.purpose,
         freshness:
-          parsed.deck.frontmatter.origin_revision == null
+          facts.originRevision == null
             ? "unknown"
-            : parsed.deck.frontmatter.origin_revision === currentSourceRevision
+            : facts.originRevision === currentSourceRevision
               ? "current"
               : "changed",
       },
@@ -303,18 +343,11 @@ export function prepareDocumentBriefingWorkflow(
   if (input.targetArtifactId && !target) {
     errors.push(`Presentation target is missing: ${input.targetArtifactId}`);
   } else if (target) {
-    if (target.kind !== "slides" || !isDeckMarkdownArtifact(target)) {
-      errors.push(`Presentation target must be a Deck Markdown artifact: ${target.id}`);
-    } else {
-      const parsedTarget = parseDeckSource(target.source);
-      if (!parsedTarget.deck || parsedTarget.errors.length) {
-        errors.push(`${target.name} is not a valid Deck Markdown presentation.`);
-      } else if (parsedTarget.deck.frontmatter.origin !== input.sourceArtifactId) {
-        errors.push(`${target.name} is not linked to Document source ${input.sourceArtifactId}.`);
-      } else {
-        targetTheme = parsedTarget.deck.frontmatter.theme;
-      }
-    }
+    const facts = documentBriefingPresentationFacts(target);
+    if (!facts) errors.push(`Presentation target must be valid Semantic HTML or Deck Markdown: ${target.id}`);
+    else if (facts.origin !== input.sourceArtifactId)
+      errors.push(`${target.name} is not linked to Document source ${input.sourceArtifactId}.`);
+    else targetTheme = facts.theme;
   }
   if (errors.length || !source || source.kind !== "document") return { errors };
 
@@ -331,7 +364,14 @@ export function prepareDocumentBriefingWorkflow(
     outline = validatedOutline.outline;
   }
 
-  const nextSource = deckSource(source, input, units, targetTheme, outline);
+  const nextDeckSource = deckSource(source, input, units, targetTheme, outline);
+  const targetFacts = target ? documentBriefingPresentationFacts(target) : null;
+  const nextSemanticHtml =
+    targetFacts?.format === "deck" ? null : semanticHtmlPresentationFromDeckSource(nextDeckSource);
+  if (nextSemanticHtml?.errors.length || (targetFacts?.format !== "deck" && !nextSemanticHtml?.source)) {
+    return { errors: [...(nextSemanticHtml?.errors ?? ["Rune could not compile the presentation as semantic HTML."])] };
+  }
+  const nextSource = targetFacts?.format === "deck" ? nextDeckSource : (nextSemanticHtml?.source as string);
   let patches: ArtifactSourcePatch[] = [];
   let creations: ArtifactCreationChange[] = [];
   if (target) {
@@ -352,7 +392,7 @@ export function prepareDocumentBriefingWorkflow(
       {
         artifact,
         summary: `Create “${artifact.name}” from ${source.name}`,
-        detail: `${input.slideCount} editable Deck Markdown slides with an explicit origin link to ${source.id}.`,
+        detail: `${input.slideCount} directly editable semantic HTML slides with an explicit origin link to ${source.id}.`,
         operationCount: input.slideCount,
       },
     ];

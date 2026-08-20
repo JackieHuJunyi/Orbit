@@ -196,7 +196,7 @@ test("exports typed formula-safe ODS values and imports them back", () => {
   assert.match(roundTrip.source, /APAC,1840000,true,'=WEBSERVICE/u);
 });
 
-test("exports deterministic ODP slides with current chart values and imports them back", () => {
+test("exports the default semantic HTML presentation to ODP with current chart values and imports it back", () => {
   const artifact = defaultArtifacts.find((candidate) => candidate.kind === "slides");
   assert.ok(artifact);
   const runtime = snapshots();

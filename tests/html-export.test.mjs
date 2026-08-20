@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { exportDeckHtml, MAX_STANDALONE_HTML_BYTES } from "../app/lib/html-export.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
+import { deckArtifactFixture } from "./deck-fixture.mjs";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function defaultRuntimeSnapshots() {
@@ -10,9 +11,7 @@ function defaultRuntimeSnapshots() {
 }
 
 function defaultDeck() {
-  const deck = defaultArtifacts.find((artifact) => artifact.kind === "slides");
-  assert.ok(deck);
-  return deck;
+  return deckArtifactFixture();
 }
 
 const onePixelPng = new Uint8Array(
@@ -45,7 +44,7 @@ test("exports a deterministic self-contained Deck HTML handoff", () => {
   const html = new TextDecoder().decode(first.bytes);
   assert.match(html, /^<!doctype html>/);
   assert.match(html, /<meta name="generator" content="Rune" \/>/);
-  assert.match(html, /data-deck-title="Q2 Board Briefing"/);
+  assert.match(html, /data-rune-title="Q2 Board Briefing"/);
   assert.match(html, /\$4\.82M/);
   assert.match(html, /Q2 revenue by region/);
   assert.match(html, /class="rune-embedded-chart"/);

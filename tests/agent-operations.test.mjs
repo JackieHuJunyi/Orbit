@@ -846,7 +846,7 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
   assert.match(prepared.nextArtifacts.find((artifact) => artifact.id === "briefing").source, /Shared result/);
 });
 
-test("compiles document, data, and Deck creations from Rune-owned templates", () => {
+test("compiles document, data, and semantic HTML Presentation creations from Rune-owned templates", () => {
   const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
     summary: "Create three Office-core artifacts",
     detail: "Every new file starts from a deterministic Rune template and bounded typed edits.",
@@ -890,11 +890,17 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
         detail: "Refine the cover and insert one complete slide.",
         edits: [
           {
-            type: "replace_deck_slide",
-            title: "Launch Review",
-            slide: "# Launch Review\n\nA visible-source narrative.",
+            type: "replace_html_slide",
+            index: 0,
+            section:
+              '<section class="slide cover" data-layout="cover"><div class="slide-body"><h1>Launch Review</h1><p>A visible-source narrative.</p></div></section>',
           },
-          { type: "insert_deck_slide_after", title: "Launch Review", slide: "## Decision\n\nProceed with review." },
+          {
+            type: "insert_html_slide_after",
+            index: 0,
+            section:
+              '<section class="slide conclusion" data-layout="conclusion"><div class="slide-body"><h2>Decision</h2><p>Proceed with review.</p></div></section>',
+          },
         ],
       },
     ],
@@ -908,12 +914,12 @@ test("compiles document, data, and Deck creations from Rune-owned templates", ()
   );
   assert.deepEqual(
     compiled.plan.creations.map((creation) => creation.artifact.name),
-    ["launch-brief.md", "launch-metrics.csv", "launch-review.deck.md"],
+    ["launch-brief.md", "launch-metrics.csv", "launch-review.html"],
   );
   const prepared = prepareWorkspaceMutation(defaultArtifacts, compiled.plan.patches, compiled.plan.creations);
   assert.deepEqual(prepared.errors, []);
   assert.equal(prepared.nextArtifacts.length, defaultArtifacts.length + 3);
-  assert.match(prepared.nextArtifacts.at(-1).source, /## Decision/);
+  assert.match(prepared.nextArtifacts.at(-1).source, /<h2>Decision<\/h2>/);
 });
 
 test("compiles zero-edit Query and Chart creations from exact visible bindings", () => {
@@ -1229,9 +1235,9 @@ test("keeps mixed patch-and-create plans atomic at the full-workspace safety gat
           detail: "The final safety gate must reject raw HTML.",
           edits: [
             {
-              type: "replace_deck_slide",
-              title: "Unsafe Briefing",
-              slide: "# Unsafe Briefing\n\n<script>alert(1)</script>",
+              type: "replace_text",
+              find: "<h1>Unsafe Briefing</h1>",
+              replace: "<h1>Unsafe Briefing</h1><script>alert(1)</script>",
             },
           ],
         },
@@ -1240,7 +1246,7 @@ test("keeps mixed patch-and-create plans atomic at the full-workspace safety gat
   );
   assert.deepEqual(compiled.errors, []);
   const prepared = prepareWorkspaceMutation(defaultArtifacts, compiled.plan.patches, compiled.plan.creations);
-  assert.match(prepared.errors.join(" "), /raw HTML/i);
+  assert.match(prepared.errors.join(" "), /scripts? (?:are )?blocked|raw HTML/i);
   assert.equal(prepared.nextArtifacts, defaultArtifacts);
 });
 
@@ -1291,8 +1297,8 @@ test("keeps compiled exact fallbacks behind the existing whole-workspace safety 
         edits: [
           {
             type: "replace_text",
-            find: "# Growth became more durable.",
-            replace: "# Growth became more durable.\n\n<script>alert(1)</script>",
+            find: "<h1>Growth became more durable.</h1>",
+            replace: "<h1>Growth became more durable.</h1><script>alert(1)</script>",
           },
         ],
       },
@@ -1303,6 +1309,6 @@ test("keeps compiled exact fallbacks behind the existing whole-workspace safety 
   assert.ok(compiled.plan);
   const prepared = prepareWorkspacePatch(defaultArtifacts, compiled.plan.patches);
   assert.match(prepared.errors.join(" "), /read-only|SELECT|WITH/i);
-  assert.match(prepared.errors.join(" "), /raw HTML/i);
+  assert.match(prepared.errors.join(" "), /scripts? (?:are )?blocked|raw HTML/i);
   assert.equal(prepared.nextArtifacts, defaultArtifacts);
 });

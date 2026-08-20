@@ -9,9 +9,10 @@ import {
   prepareArtifactCreation,
 } from "../app/lib/artifact-creation.ts";
 import { parseChartSource } from "../app/lib/charts.ts";
-import { parseDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { validateWorkspaceArtifacts } from "../app/lib/patches.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
+import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 import { parseDataSource } from "../app/lib/workspace.ts";
 
 test("creates a readable blank Markdown document without mutating the workspace", () => {
@@ -45,15 +46,20 @@ test("creates an empty valid CSV table with explicit columns", () => {
   });
 });
 
-test("creates strict Deck Markdown that compiles from one readable cover slide", () => {
+test("creates complete semantic HTML that compiles from one readable cover slide", () => {
   const prepared = prepareArtifactCreation([], { kind: "slides", title: "Board Narrative" });
   assert.deepEqual(prepared.errors, []);
-  assert.equal(prepared.artifact.name, "board-narrative.deck.md");
-  const parsed = parseDeckSource(prepared.artifact.source);
+  assert.equal(prepared.artifact.name, "board-narrative.html");
+  assert.equal(prepared.artifact.language, "Semantic HTML");
+  const parsed = compileLegacyHtmlSlides(prepared.artifact.source);
   assert.deepEqual(parsed.errors, []);
-  assert.equal(parsed.deck.frontmatter.title, "Board Narrative");
-  assert.equal(parsed.deck.slides.length, 1);
-  assert.match(parsed.deck.slides[0].source, /^# Board Narrative/);
+  assert.equal(parsed.slides.length, 1);
+  assert.match(parsed.slides[0].source, /<h1>Board Narrative<\/h1>/);
+  assert.deepEqual(semanticHtmlPresentationMetadata(prepared.artifact.source), {
+    title: "Board Narrative",
+    theme: "rune",
+    lang: "en",
+  });
 });
 
 test("creates an explicit Query from one exact Data source", () => {
@@ -223,6 +229,38 @@ test("resolves filename and id collisions case-insensitively", () => {
   assert.deepEqual(prepared.errors, []);
   assert.equal(prepared.artifact.id, "project-brief-2");
   assert.equal(prepared.artifact.name, "project-brief-2.md");
+});
+
+test("keeps the id and filename suffix aligned when only one identity collides", () => {
+  const idOnly = prepareArtifactCreation(
+    [
+      {
+        id: "project-brief",
+        name: "legacy-name.md",
+        kind: "document",
+        language: "Markdown",
+        source: "# Existing\n",
+      },
+    ],
+    { kind: "document", title: "Project Brief" },
+  );
+  assert.equal(idOnly.artifact.id, "project-brief-2");
+  assert.equal(idOnly.artifact.name, "project-brief-2.md");
+
+  const nameOnly = prepareArtifactCreation(
+    [
+      {
+        id: "legacy-id",
+        name: "project-brief.md",
+        kind: "document",
+        language: "Markdown",
+        source: "# Existing\n",
+      },
+    ],
+    { kind: "document", title: "Project Brief" },
+  );
+  assert.equal(nameOnly.artifact.id, "project-brief-2");
+  assert.equal(nameOnly.artifact.name, "project-brief-2.md");
 });
 
 test("keeps Unicode titles readable while producing portable source identity", () => {

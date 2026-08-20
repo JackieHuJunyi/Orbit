@@ -149,13 +149,13 @@ export function HandwrittenGreeting({
           <stop offset="0.58" stopColor="white" stopOpacity="0" />
           <stop offset="1" stopColor="white" stopOpacity="0" />
         </linearGradient>
-        <filter height="180%" id={glowId} width="130%" x="-15%" y="-40%">
-          <feGaussianBlur stdDeviation="5.5" />
+        <filter colorInterpolationFilters="sRGB" height="180%" id={glowId} width="130%" x="-15%" y="-40%">
+          <feGaussianBlur stdDeviation="5.2" />
         </filter>
-        <filter height="180%" id={trailGlowId} width="140%" x="-20%" y="-40%">
-          <feGaussianBlur stdDeviation="2.8" />
+        <filter colorInterpolationFilters="sRGB" height="180%" id={trailGlowId} width="140%" x="-20%" y="-40%">
+          <feGaussianBlur stdDeviation="2.55" />
         </filter>
-        <filter height="130%" id={inkTextureId} width="106%" x="-3%" y="-15%">
+        <filter colorInterpolationFilters="sRGB" height="130%" id={inkTextureId} width="106%" x="-3%" y="-15%">
           <feTurbulence baseFrequency="0.72" numOctaves="2" result="inkGrain" seed="17" type="fractalNoise" />
           <feDisplacementMap in="SourceGraphic" in2="inkGrain" scale="0.72" xChannelSelector="R" yChannelSelector="G" />
         </filter>

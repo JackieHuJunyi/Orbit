@@ -9,8 +9,8 @@ export const INTERFACE_TRANSLATIONS = {
     "- **データ:** 読み取り可能な CSV / JSON はローカルの DuckDB SQL で分析できます。",
   "- **Documents:** readable Markdown compiles into a document.":
     "- **ドキュメント:** 読み取り可能な Markdown はドキュメントにコンパイルされます。",
-  "- **Presentations:** Deck Markdown compiles into safe HTML and can hand off as PPTX, HTML, or PDF.":
-    "- **プレゼンテーション:** Deck Markdown は安全な HTML にコンパイルされ、PPTX、HTML、または PDF としてハンドオフできます。",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **プレゼンテーション:** セマンティック HTML が既定の読みやすいソースで、PPTX、ODP、HTML、PDF に書き出せます。既存の Deck Markdown も引き続き対応します。",
   "- A personal model key exists only in the unsaved form, then becomes a server-encrypted HttpOnly credential; it never enters the workspace, localStorage, an Artifact, or Git.":
     "- 個人モデル キーは未保存の形式でのみ存在し、サーバーで暗号化された HttpOnly 資格情報になります。ワークスペース、localStorage、Artifact、または Git には決して入りません。",
   "- Apply creates a checkpoint; a failed transaction writes nothing.":
@@ -48,8 +48,8 @@ export const INTERFACE_TRANSLATIONS = {
   "1 source": "1 ソース",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. ツールバーで **インポート** を選択するか、現在のファイルを閉じてファイルを中央にドロップします。",
-  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or Deck Markdown on the left.":
-    "2. 左側の Markdown、CSV/JSON、SQL、Chart JSON、または Deck Markdown を編集します。",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. 左側で Markdown、CSV/JSON、SQL、Chart JSON、またはセマンティック HTML を編集します。既存の Deck Markdown も引き続き編集できます。",
   "3. Inspect the compiled result immediately on the right.": "3. すぐ右側でコンパイル結果を確認します。",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
     "4. ドキュメントの見出し、段落、個々のリスト項目、表のセル、太字/斜体/点線付きテキスト、インライン コード、リンク、画像、またはデータ セル、グラフ データム、スライドを選択して、正確なソースを見つけて強調表示します。ソース キャレットを移動するか、実績のある範囲を選択すると、一致するプレビュー ターゲットがハイライト表示され、スクロールします。通常のリンクをクリックするとソースが見つかります。 Command/Control キーを押しながらクリックしても開きます。",
@@ -247,6 +247,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create an analysis, chart, and report from revenue data": "収益データから分析、グラフ、レポートを作成する",
   "Create an editable Deck Markdown presentation": "編集可能な Deck Markdown プレゼンテーションを作成します",
   "Create an editable Markdown report": "編集可能な Markdown レポートを作成する",
+  "Create an editable semantic HTML presentation": "編集可能なセマンティック HTML プレゼンテーションを作成",
   "Create blank": "空白の作成",
   "Create operating review": "運用レビューの作成",
   "Create or refresh a light presentation": "軽やかなプレゼンテーションを作成・更新",
@@ -558,8 +559,8 @@ export const INTERFACE_TRANSLATIONS = {
   "New artifact details": "新しいアーティファクトの詳細",
   "New block after": "後の新しいブロック",
   "New block before": "前の新しいブロック",
-  "New Deck Markdown": "新しい Deck Markdown",
   "New file": "新しいファイル",
+  "New semantic HTML": "新しいセマンティック HTML",
   "New source diff": "新しいソースの差分",
   "New source preview": "新しいソースのプレビュー",
   "Next step": "次のステップ",
@@ -687,7 +688,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepares a change before you approve the write": "書き込みを承認する前に変更を準備します",
   "Preparing OCR": "OCR を準備しています",
   Presentation: "プレゼンテーション",
-  "Presentation authored in Markdown": "プレゼンテーションは Markdown で作成されました",
+  "Presentation authored in semantic HTML": "セマンティック HTML で作成するプレゼンテーション",
   "Presentation destination": "プレゼンテーションの保存先",
   "Presentation length": "プレゼンの長さ",
   "Presentation title": "プレゼンのタイトル",

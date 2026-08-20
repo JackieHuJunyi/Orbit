@@ -8,6 +8,7 @@ import {
 import { findChartReferences, parseChartSource } from "./charts.ts";
 import { isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
+import { semanticHtmlPresentationMetadata } from "./semantic-html-presentation.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const WORKSPACE_DEPENDENCY_KINDS = [
@@ -78,9 +79,10 @@ export function buildWorkspaceDependencyGraph(artifacts: WorkspaceArtifact[]): W
   };
 
   artifacts.forEach((artifact) => {
-    if (artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)) {
-      const parsedDeck = parseDeckSource(artifact.source);
-      const originId = parsedDeck.deck?.frontmatter.origin;
+    if (artifact.kind === "slides") {
+      const originId = isDeckMarkdownArtifact(artifact)
+        ? parseDeckSource(artifact.source).deck?.frontmatter.origin
+        : semanticHtmlPresentationMetadata(artifact.source)?.origin;
       if (originId) {
         const origin = artifactById.get(originId);
         if (origin?.kind === "document") {

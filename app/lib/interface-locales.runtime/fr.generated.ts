@@ -9,8 +9,8 @@ export const INTERFACE_TRANSLATIONS = {
     "- **Données :** lisibles CSV / JSON peuvent être analysées avec le DuckDB SQL local.",
   "- **Documents:** readable Markdown compiles into a document.":
     "- **Documents :** lisibles Markdown se compile dans un document.",
-  "- **Presentations:** Deck Markdown compiles into safe HTML and can hand off as PPTX, HTML, or PDF.":
-    "- **Présentations :** Deck Markdown se compile en HTML sécurisé et peut être transféré sous le nom de PPTX, HTML ou PDF.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **Présentations :** le HTML sémantique est la source lisible par défaut et peut être livré en PPTX, ODP, HTML ou PDF. Le Deck Markdown existant reste pris en charge.",
   "- A personal model key exists only in the unsaved form, then becomes a server-encrypted HttpOnly credential; it never enters the workspace, localStorage, an Artifact, or Git.":
     "- Une clé de modèle personnel n'existe que sous sa forme non enregistrée, puis devient un identifiant HttpOnly crypté par le serveur ; il n'entre jamais dans l'espace de travail, localStorage, un Artifact ou Git.",
   "- Apply creates a checkpoint; a failed transaction writes nothing.":
@@ -48,8 +48,8 @@ export const INTERFACE_TRANSLATIONS = {
   "1 source": "1 source",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. Choisissez **Importer** dans la barre d'outils ou fermez le fichier actuel et déposez-en un au centre.",
-  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or Deck Markdown on the left.":
-    "2. Modifiez Markdown, CSV/JSON, SQL, Chart JSON ou Deck Markdown sur la gauche.",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. Modifiez Markdown, CSV/JSON, SQL, Chart JSON ou le HTML sémantique à gauche. Le Deck Markdown existant reste modifiable.",
   "3. Inspect the compiled result immediately on the right.":
     "3. Inspectez le résultat compilé immédiatement à droite.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
@@ -252,6 +252,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Créez une analyse, un graphique et un rapport à partir des données de revenus",
   "Create an editable Deck Markdown presentation": "Créer une présentation Deck Markdown modifiable",
   "Create an editable Markdown report": "Créer un rapport Markdown modifiable",
+  "Create an editable semantic HTML presentation": "Créer une présentation HTML sémantique modifiable",
   "Create blank": "Créer un blanc",
   "Create operating review": "Créer une revue opérationnelle",
   "Create or refresh a light presentation": "Créer ou actualiser une présentation légère",
@@ -564,8 +565,8 @@ export const INTERFACE_TRANSLATIONS = {
   "New artifact details": "Détails des nouveaux artefacts",
   "New block after": "Nouveau bloc après",
   "New block before": "Nouveau bloc avant",
-  "New Deck Markdown": "Nouveau Deck Markdown",
   "New file": "Nouveau fichier",
+  "New semantic HTML": "Nouveau HTML sémantique",
   "New source diff": "Nouvelle différence de source",
   "New source preview": "Aperçu de la nouvelle source",
   "Next step": "Étape suivante",
@@ -696,7 +697,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepares a change before you approve the write": "Prépare un changement avant d'approuver l'écriture",
   "Preparing OCR": "Préparation de l’OCR",
   Presentation: "Présentation",
-  "Presentation authored in Markdown": "Présentation rédigée dans Markdown",
+  "Presentation authored in semantic HTML": "Présentation créée en HTML sémantique",
   "Presentation destination": "Destination de la présentation",
   "Presentation length": "Longueur de la présentation",
   "Presentation title": "Titre de la présentation",

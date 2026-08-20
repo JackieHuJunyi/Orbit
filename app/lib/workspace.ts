@@ -2,6 +2,11 @@ import Papa from "papaparse";
 import { parseChartSource, validateChartSourceBinding } from "./charts.ts";
 import { compileDeckSource, isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
+import {
+  appendSemanticHtmlPresentationSlide,
+  semanticHtmlPresentationFromDeckSource,
+  semanticHtmlPresentationStarter,
+} from "./semantic-html-presentation.ts";
 import { formatQueryDataSourceDirective, parseQueryDataSourceDirective } from "./query-source.ts";
 import { validateReadQuery } from "./sql.ts";
 import { formatInteger } from "./number-format.ts";
@@ -186,6 +191,11 @@ This chart is computed from readable DuckDB SQL, not copied into the deck.
 {{ chart("regional-margin-chart") }}
 `;
 
+const compiledDefaultSlides = semanticHtmlPresentationFromDeckSource(slidesSource);
+if (!compiledDefaultSlides.source) {
+  throw new Error(compiledDefaultSlides.errors[0] ?? "Rune could not compile its default semantic HTML presentation.");
+}
+
 export const defaultArtifacts: WorkspaceArtifact[] = [
   {
     id: "q2-review",
@@ -231,10 +241,10 @@ export const defaultArtifacts: WorkspaceArtifact[] = [
   },
   {
     id: "board-briefing",
-    name: "board-briefing.deck.md",
+    name: "board-briefing.html",
     kind: "slides",
-    language: "Deck Markdown",
-    source: slidesSource,
+    language: "Semantic HTML",
+    source: compiledDefaultSlides.source,
   },
 ];
 
@@ -465,9 +475,9 @@ export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
     order: 50,
     creation: {
       label: "Presentation",
-      format: "Deck Markdown",
-      extension: ".deck.md",
-      description: "A structured deck compiled to live HTML.",
+      format: "Semantic HTML",
+      extension: ".html",
+      description: "A readable semantic presentation rendered directly from source.",
     },
     quickCommands: ["把主题改成深色", "新增一页结论"],
     detectLanguage(name) {
@@ -475,18 +485,11 @@ export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
       if (normalized.endsWith(".deck.md")) return "Deck Markdown";
       return normalized.endsWith(".html") || normalized.endsWith(".htm") ? "Semantic HTML" : null;
     },
-    starterSource: ({ title }) => `---
-version: 1
-title: ${title}
-theme: rune
-ratio: 16:9
-lang: en
----
-
-<!-- layout: cover -->
-
-# ${title}
-`,
+    starterSource({ title }) {
+      const prepared = semanticHtmlPresentationStarter(title);
+      if (!prepared.source) throw new Error(prepared.errors[0] ?? "Rune could not create semantic HTML.");
+      return prepared.source;
+    },
     validate(artifact) {
       if (isDeckMarkdownArtifact(artifact)) return parseDeckSource(artifact.source).errors;
       return [...compileLegacyHtmlSlides(artifact.source).errors];
@@ -618,6 +621,8 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
   const source = artifact.source;
   if (/深色|dark|night/i.test(prompt)) {
     const themed = source
+      .replace(/data-rune-theme=(['"])rune\1/i, 'data-rune-theme="rune-dark"')
+      .replace(/<body\b[^>]*\bclass=(['"])[^'"]*\1/i, '<body class="rune-dark"')
       .replace(/--ink:\s*#[0-9a-f]{3,8}/i, "--ink: #f5f1e8")
       .replace(/--muted:\s*#[0-9a-f]{3,8}/i, "--muted: #a9b5ad")
       .replace(/--paper:\s*#[0-9a-f]{3,8}/i, "--paper: #17201b")
@@ -631,21 +636,33 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
   }
 
   if (/结论|conclusion|summary slide|新增.*页/i.test(prompt)) {
-    const conclusionPattern = /<section class="slide" data-layout="conclusion">[\s\S]*?<\/section>/i;
-    const hasConclusion = conclusionPattern.test(source);
-    const slideCount = (source.match(/<section[\s>]/gi)?.length ?? 0) + (hasConclusion ? 0 : 1);
+    const compilation = compileLegacyHtmlSlides(source);
+    if (compilation.errors.length) throw new Error(compilation.errors[0]);
+    const existingConclusion = compilation.slides.find((slide) =>
+      /\bdata-layout=(['"])conclusion\1/iu.test(slide.source),
+    );
+    const slideCount = compilation.slides.length + (existingConclusion ? 0 : 1);
     const totalLabel = String(slideCount).padStart(2, "0");
-    const conclusion = `    <section class="slide" data-layout="conclusion">\n      <p class="eyebrow">Decision</p>\n      <h2>Scale the repeatable channel, protect the margin.</h2>\n      <p class="lede">Fund APAC partner growth while standardizing the revenue model used by every artifact.</p>\n      <span class="number">${totalLabel} / ${totalLabel}</span>\n    </section>\n`;
-    const withConclusion = hasConclusion
-      ? source.replace(conclusionPattern, conclusion.trim())
-      : source.replace(/\s*<\/main>/i, `\n${conclusion}  </main>`);
+    const conclusion = `<section class="slide conclusion" data-layout="conclusion" data-slide-index="${slideCount - 1}" data-eyebrow="Decision">
+      <p class="eyebrow">Decision</p>
+      <div class="slide-body"><h2>Scale the repeatable channel, protect the margin.</h2>
+      <p>Fund APAC partner growth while standardizing the revenue model used by every artifact.</p></div>
+      <span class="number">${totalLabel} / ${totalLabel}</span>
+    </section>`;
+    const appended = existingConclusion ? null : appendSemanticHtmlPresentationSlide(source, conclusion);
+    if (appended?.errors.length || (!existingConclusion && !appended?.source)) {
+      throw new Error(appended?.errors[0] ?? "Rune could not append the semantic HTML conclusion.");
+    }
+    const withConclusion = existingConclusion
+      ? `${source.slice(0, existingConclusion.start)}${conclusion}${source.slice(existingConclusion.end)}`
+      : (appended?.source as string);
     return {
       nextSource: withConclusion.replace(
         /(<span class="number">\s*\d+\s*\/\s*)\d+(\s*<\/span>)/gi,
         `$1${totalLabel}$2`,
       ),
-      summary: hasConclusion ? "Refresh the decision-led conclusion slide" : "Add a decision-led conclusion slide",
-      detail: hasConclusion
+      summary: existingConclusion ? "Refresh the decision-led conclusion slide" : "Add a decision-led conclusion slide",
+      detail: existingConclusion
         ? "The existing conclusion section is replaced in place."
         : "A semantic section is inserted before the deck closes.",
     };

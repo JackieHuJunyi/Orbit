@@ -2513,3 +2513,19 @@ v1.27 让每条已有的 immutable motion stroke 同时绘制两层被最终 gly
 这次 follow-up 不增加粒子、Canvas 或新的动画状态，而是在现有 SVG 内补足“墨”的材料感。最终字形经过固定 seed 的轻微 turbulence/displacement，边缘不再完全像矢量切割；每条原有笔画增加一条被字形裁切的干笔分叉，移动笔尖也增加两根细小笔刷纤维。九个颜色 stop 只在既有 write duration 内完成一次有界流动，然后静止。背景 aurora 同时降到更低透明度，让彩色集中在正在生成的字迹，而不是铺满界面。
 
 时序仍然只有 `write → settle → reveal`：最长文字完成前，说明和语言卡不抢占注意力；正常路径由 final ink 的 animation-end 进入第二幕，4.15 秒只作为有界事件兜底，reduced motion 立即显示完整静态文字。结构测试明确拒绝 spectrum 的 infinite loop，并验证纹理、干笔和 split nib 都位于 deferred、无业务权限的欢迎组件中。
+
+## 129. 默认演示源必须回到 HTML，兼容层不能反过来定义产品
+
+Deck Markdown 曾经是把导入、编辑、预览和 Office 导出快速闭环的合理受控模型，但它不应因为实现较早就永久成为 Rune 自己创建演示的默认语言。产品最初的可读源承诺是 PPT → HTML：页面结构、样式、文本和绑定应该留在普通工具可理解的语义源码中，而不是要求用户先学习一套只属于 Rune 的幻灯片方言。
+
+v1.28 因此让 sample、New、Operating Review、Document-to-Presentation、local Agent 和 configured Agent 统一从 `semantic-html-presentation` 工厂创建 `.html`。一个显式 `data-rune-format="presentation-v1"` 的 `<main>` 保存 title/theme/lang/origin/origin revision/audience/purpose，最外层 section 是唯一页面身份；替换、插入和 Chart append 都绑定 compiler-proven index，并只为 Rune-owned 文件重排 `data-slide-index` 与 `NN / TT`。右侧 section 编辑、左侧完整候选镜像、Preview↔Source 精确滚动继续复用同一身份。
+
+兼容不等于静默迁移。现有 `.deck.md` 继续完整可编辑，Document 刷新保持目标当前 HTML-or-Deck 格式；PPTX/ODP 导入仍产生 Deck，因为本地图片的 content-hash 位置合同尚未在语义 HTML 中得到同等证明。PPTX、ODP、legacy PPT 与固定 PDF 导出可以在一次审核事务内部把已证明 HTML 投影为不可变临时 Deck，但不能回写 canonical HTML。这样默认方向被纠正，旧文件和真实 Office 交付也没有被假装完成的格式转换破坏。
+
+## 130. Apple 式开机问候首先是一幕独立仪式，而不是页面顶部的动效组件
+
+即使彩色墨迹和笔锋本身成立，只要顶部进度、品牌、跳过按钮、说明文字和语言卡在第一帧同时出现，用户感受到的仍是一张带动画的网页。设备开机问候之所以轻，是因为书写发生时屏幕只承担一件事；写完后，系统界面才进入。
+
+欢迎状态机现在派生一个不持久化的 `writing | ready` presentation phase。`writing` 阶段把 setup chrome 设为不可见、不可点击且不可键盘聚焦，让问候在现有稳定网格上通过可逆 transform 到达光学中心；背景保持接近纸白，彩色只集中在逐笔形成的 spectrum ink、轻微湿边、干笔纤维和 pressure nib。final fill 的 settle event 触发 `ready` 后，问候平滑回到正式位置，chrome、价值说明和语言选择再按层级展开，不建立第二个业务状态或 layout owner。
+
+这仍是 Rune 原创的 Apple-informed choreography，不复制 Apple 字体、字形路径、动画文件、插画或商标。正常模式只有一个由现有 planner 控制的有界写入周期；4.15 秒 timeout 只是 animation event 的失效保护。`prefers-reduced-motion` 立即进入完整静态文字与可操作设置，forced colors 使用系统色；阿拉伯 RTL shaping、中日韩与长俄文继续使用各自的本地字体、画布和笔画计划。

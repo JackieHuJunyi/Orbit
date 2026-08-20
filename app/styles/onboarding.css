@@ -13,6 +13,13 @@
     radial-gradient(circle at 78% 5%, rgba(var(--theme-rgb), .1), transparent 48%),
     radial-gradient(circle at 12% 100%, rgba(29, 29, 31, .055), transparent 42%),
     var(--rune-material-canvas);
+  transition: background-color 720ms var(--rune-ease-out);
+}
+
+.welcome-backdrop[data-intro-phase="writing"] {
+  background:
+    radial-gradient(circle at 50% 47%, rgba(255, 255, 255, .98), rgba(250, 250, 252, .94) 42%, transparent 72%),
+    var(--rune-material-canvas);
 }
 
 .welcome-window {
@@ -35,6 +42,18 @@
   box-shadow: var(--rune-shadow-window);
   backdrop-filter: blur(30px) saturate(155%);
   -webkit-backdrop-filter: blur(30px) saturate(155%);
+  transition:
+    border-color 720ms var(--rune-ease-out),
+    background-color 720ms var(--rune-ease-out),
+    box-shadow 720ms var(--rune-ease-out);
+}
+
+.welcome-window[data-intro-phase="writing"] {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .welcome-window::before {
@@ -61,6 +80,23 @@
   background: color-mix(in srgb, var(--rune-material-window) 84%, transparent);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
+  transition:
+    opacity 620ms var(--rune-ease-out),
+    transform 620ms var(--rune-ease-out),
+    visibility 0s linear;
+}
+
+.welcome-window[data-intro-phase="writing"] .welcome-chrome {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, -10px, 0);
+}
+
+.welcome-window[data-intro-phase="ready"] .welcome-chrome {
+  visibility: visible;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
 }
 
 .welcome-chrome > button {
@@ -149,6 +185,21 @@
   align-items: center;
   justify-self: center;
   overflow: visible;
+  transform-origin: 50% 54%;
+  transition:
+    filter 880ms var(--rune-ease-out),
+    transform 880ms var(--rune-ease-out);
+  will-change: filter, transform;
+}
+
+.welcome-intro-grid[data-intro-phase="writing"] .welcome-greeting-stage {
+  filter: saturate(1.08);
+  transform: translate3d(0, clamp(112px, 18vh, 180px), 0) scale(1.08);
+}
+
+.welcome-intro-grid[data-intro-phase="ready"] .welcome-greeting-stage {
+  filter: saturate(1);
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 .welcome-greeting-stage::before {
@@ -163,7 +214,7 @@
     radial-gradient(circle at 91% 55%, rgba(191, 90, 242, .24), transparent 22%);
   content: "";
   filter: blur(38px) saturate(1.12);
-  opacity: .09;
+  opacity: .055;
   pointer-events: none;
 }
 
@@ -191,7 +242,7 @@
 .welcome-greeting[data-greeting-locale="ru"] { font-family: "PT Serif", Georgia, serif; font-style: italic; font-weight: 500; letter-spacing: -.05em; }
 .welcome-greeting[data-greeting-locale="ar"] { font-family: "Geeza Pro", "Noto Naskh Arabic", serif; font-weight: 500; letter-spacing: 0; }
 .welcome-greeting-fill { stroke: none; }
-.welcome-greeting-fill-glow { opacity: .22; }
+.welcome-greeting-fill-glow { opacity: .28; }
 .welcome-greeting-fill-reveal {
   opacity: .98;
 }
@@ -204,7 +255,7 @@
   pointer-events: none;
 }
 .welcome-greeting-ink-trails-glow {
-  opacity: .46;
+  opacity: .56;
 }
 .welcome-greeting-ink-trail {
   opacity: 0;

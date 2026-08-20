@@ -13,20 +13,15 @@ export function resolveArtifactConflicts(existing: WorkspaceArtifact[], incoming
   const ids = new Set(existing.map((artifact) => artifact.id));
   return incoming.map((artifact) => {
     const parts = artifactNameParts(artifact.name);
+    let suffix = 1;
     let name = artifact.name;
-    let nameSuffix = 2;
-    while (names.has(name.normalize("NFKC").toLocaleLowerCase("en-US"))) {
-      name = `${parts.stem}-${nameSuffix}${parts.extension}`;
-      nameSuffix += 1;
+    let id = artifact.id;
+    while (names.has(name.normalize("NFKC").toLocaleLowerCase("en-US")) || ids.has(id)) {
+      suffix += 1;
+      name = `${parts.stem}-${suffix}${parts.extension}`;
+      id = `${artifact.id}-${suffix}`;
     }
     names.add(name.normalize("NFKC").toLocaleLowerCase("en-US"));
-
-    let id = artifact.id;
-    let idSuffix = 2;
-    while (ids.has(id)) {
-      id = `${artifact.id}-${idSuffix}`;
-      idSuffix += 1;
-    }
     ids.add(id);
     return { ...artifact, id, name };
   });

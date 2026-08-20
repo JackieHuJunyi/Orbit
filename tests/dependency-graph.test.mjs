@@ -89,6 +89,29 @@ test("connects a Deck Markdown presentation to its exact Document origin", () =>
   );
 });
 
+test("connects a semantic HTML presentation to its exact Document origin", () => {
+  const document = { id: "brief", name: "brief.md", kind: "document", language: "Markdown", source: "# Brief" };
+  const presentation = {
+    id: "presentation",
+    name: "presentation.html",
+    kind: "slides",
+    language: "Semantic HTML",
+    source:
+      '<!doctype html><html lang="en"><body><main data-rune-format="presentation-v1" data-rune-title="Presentation" data-rune-theme="rune" data-rune-lang="en" data-rune-origin="brief"><section><h1>Presentation</h1></section></main></body></html>',
+  };
+  const graph = buildWorkspaceDependencyGraph([document, presentation]);
+  assert.deepEqual(graph.issues, []);
+  assert.deepEqual(graph.edges, [
+    {
+      fromArtifactId: document.id,
+      toArtifactId: presentation.id,
+      kind: "deck-origin",
+      label: "presentation source",
+      references: [document.id],
+    },
+  ]);
+});
+
 test("reports a missing Deck origin without inventing a dependency", () => {
   const linkedDeck = {
     id: "deck",

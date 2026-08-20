@@ -88,5 +88,5 @@ test("is deterministic for the same exact workspace revision", () => {
   const second = prepareSemanticHtmlEditableCopy(workspace, html);
   assert.deepEqual(first, second);
   assert.equal(first.review?.importedArtifacts[0].id, "quarterly-brief-2");
-  assert.equal(first.review?.importedArtifacts[0].name, "quarterly-brief.deck.md");
+  assert.equal(first.review?.importedArtifacts[0].name, "quarterly-brief-2.deck.md");
 });

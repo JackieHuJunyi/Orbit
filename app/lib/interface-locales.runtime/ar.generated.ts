@@ -9,8 +9,8 @@ export const INTERFACE_TRANSLATIONS = {
     "- **البيانات:** يمكن تحليل CSV / JSON القابلة للقراءة باستخدام DuckDB SQL المحلي.",
   "- **Documents:** readable Markdown compiles into a document.":
     "- **المستندات:** يتم تجميع Markdown القابلة للقراءة في مستند.",
-  "- **Presentations:** Deck Markdown compiles into safe HTML and can hand off as PPTX, HTML, or PDF.":
-    "- **العروض التقديمية:** يتم تجميع Deck Markdown في HTML آمن ويمكن تسليمه كـ PPTX أو HTML أو PDF.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **العروض التقديمية:** HTML الدلالي هو المصدر المقروء الافتراضي ويمكن تسليمه بصيغ PPTX أو ODP أو HTML أو PDF. يظل Deck Markdown الحالي مدعومًا.",
   "- A personal model key exists only in the unsaved form, then becomes a server-encrypted HttpOnly credential; it never enters the workspace, localStorage, an Artifact, or Git.":
     "- يوجد مفتاح النموذج الشخصي فقط في النموذج غير المحفوظ، ثم يصبح بيانات اعتماد HttpOnly مشفرة بواسطة الخادم؛ لا يدخل مطلقًا إلى مساحة العمل، localStorage، أو Artifact، أو Git.",
   "- Apply creates a checkpoint; a failed transaction writes nothing.":
@@ -48,8 +48,8 @@ export const INTERFACE_TRANSLATIONS = {
   "1 source": "1 مصدر",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. اختر **استيراد** في شريط الأدوات، أو أغلق الملف الحالي وقم بإسقاط واحد في المنتصف.",
-  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or Deck Markdown on the left.":
-    "2. قم بتحرير Markdown، CSV/JSON، SQL، Chart JSON، أو Deck Markdown على اليسار.",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. حرّر Markdown أو CSV/JSON أو SQL أو Chart JSON أو HTML الدلالي على اليسار. يظل Deck Markdown الحالي قابلاً للتحرير.",
   "3. Inspect the compiled result immediately on the right.": "3. افحص النتيجة المجمعة فورًا على اليمين.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
     "4. اختر عنوان مستند، أو فقرة، أو عنصر قائمة فردي، أو خلية جدول، أو نص غامق/مائل/مشطب، أو رمز مضمّن، أو رابط، أو صورة - أو خلية بيانات، أو مرجع مرجعي للمخطط، أو شريحة - لتحديد مصدرها الدقيق وإبرازه. يؤدي أيضًا تحريك علامة الإقحام المصدر أو تحديد نطاق مثبت إلى تمييز هدف المعاينة المطابق وتمريره. يؤدي النقر العادي على الرابط إلى تحديد المصدر؛ لا يزال النقر على الأمر/التحكم يفتحه.",
@@ -243,6 +243,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create an analysis, chart, and report from revenue data": "إنشاء تحليل ومخطط وتقرير من بيانات الإيرادات",
   "Create an editable Deck Markdown presentation": "إنشاء عرض تقديمي Deck Markdown قابل للتعديل",
   "Create an editable Markdown report": "قم بإنشاء تقرير Markdown قابل للتحرير",
+  "Create an editable semantic HTML presentation": "إنشاء عرض HTML دلالي قابل للتعديل",
   "Create blank": "إنشاء فارغة",
   "Create operating review": "إنشاء مراجعة التشغيل",
   "Create or refresh a light presentation": "أنشئ عرضًا خفيفًا أو حدّثه",
@@ -544,8 +545,8 @@ export const INTERFACE_TRANSLATIONS = {
   "New artifact details": "تفاصيل قطعة أثرية جديدة",
   "New block after": "كتلة جديدة بعد",
   "New block before": "كتلة جديدة من قبل",
-  "New Deck Markdown": "Deck Markdown جديد",
   "New file": "ملف جديد",
+  "New semantic HTML": "HTML دلالي جديد",
   "New source diff": "اختلاف المصدر الجديد",
   "New source preview": "معاينة المصدر الجديد",
   "Next step": "الخطوة التالية",
@@ -668,7 +669,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepares a change before you approve the write": "يقوم بإعداد التغيير قبل الموافقة على الكتابة",
   "Preparing OCR": "جارٍ إعداد التعرّف الضوئي",
   Presentation: "العرض التقديمي",
-  "Presentation authored in Markdown": "تم تأليف العرض التقديمي باللغة Markdown",
+  "Presentation authored in semantic HTML": "عرض مكتوب بلغة HTML الدلالية",
   "Presentation destination": "وجهة العرض",
   "Presentation length": "طول العرض",
   "Presentation title": "عنوان العرض",

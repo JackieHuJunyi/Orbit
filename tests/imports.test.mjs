@@ -9,6 +9,7 @@ import {
 } from "../app/lib/imports.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { prepareRuneImageAsset } from "../app/lib/local-assets.ts";
+import { deckArtifactFixture } from "./deck-fixture.mjs";
 
 const onePixelPng = new Uint8Array(
   Buffer.from(
@@ -18,14 +19,14 @@ const onePixelPng = new Uint8Array(
 );
 
 test("renames duplicate compound filenames and ids without changing source", () => {
-  const deck = defaultArtifacts.find((artifact) => artifact.kind === "slides");
-  assert.ok(deck);
-  const prepared = prepareWorkspaceImport(defaultArtifacts, [{ ...deck }]);
+  const deck = deckArtifactFixture();
+  const workspace = defaultArtifacts.map((artifact) => (artifact.kind === "slides" ? deck : artifact));
+  const prepared = prepareWorkspaceImport(workspace, [{ ...deck }]);
   assert.deepEqual(prepared.errors, []);
   assert.equal(prepared.importedArtifacts[0].name, "board-briefing-2.deck.md");
   assert.equal(prepared.importedArtifacts[0].id, "board-briefing-2");
   assert.equal(prepared.importedArtifacts[0].source, deck.source);
-  assert.equal(prepared.nextArtifacts.length, defaultArtifacts.length + 1);
+  assert.equal(prepared.nextArtifacts.length, workspace.length + 1);
 });
 
 test("treats imported filenames as case-insensitive filesystem identities", () => {

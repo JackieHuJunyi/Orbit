@@ -213,6 +213,7 @@ export function WelcomeExperience({
       : (greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting));
   const greetingCycleDuration = Math.max(5_000, Math.min(7_000, 3_600 + greetingCharacters.length * 200));
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
+  const introPhase = step === "welcome" && !greetingIntroComplete ? "writing" : "ready";
 
   useEffect(() => {
     if (step !== "welcome" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -323,8 +324,20 @@ export function WelcomeExperience({
   );
 
   return (
-    <div className="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
-      <section className="welcome-window" onPointerMove={trackFluidSurface} onPointerLeave={resetFluidSurface}>
+    <div
+      className="welcome-backdrop"
+      data-intro-phase={introPhase}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="welcome-title"
+    >
+      <section
+        className="welcome-window"
+        data-intro-phase={introPhase}
+        data-onboarding-sequence="boot-write-settle-unfold"
+        onPointerMove={trackFluidSurface}
+        onPointerLeave={resetFluidSurface}
+      >
         <header className="welcome-chrome">
           <div className="welcome-chrome-brand" aria-hidden="true">
             <span>R</span>
@@ -365,7 +378,7 @@ export function WelcomeExperience({
         <div className={"welcome-page welcome-" + step}>
           {step === "welcome" && (
             <>
-              <div className="welcome-intro-grid" data-intro-phase={greetingIntroComplete ? "ready" : "writing"}>
+              <div className="welcome-intro-grid" data-intro-phase={introPhase}>
                 <div className="welcome-greeting-stage" aria-hidden="true">
                   <HandwrittenGreeting
                     cycleDuration={greetingCycleDuration}

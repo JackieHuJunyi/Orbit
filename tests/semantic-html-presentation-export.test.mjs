@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { compileDeckSource, parseDeckSource } from "../app/lib/deck.ts";
 import { convertSemanticHtmlPresentationToDeck } from "../app/lib/semantic-html-presentation-export.ts";
+import { semanticHtmlPresentationFromDeckSource } from "../app/lib/semantic-html-presentation.ts";
 
 function semanticHtmlArtifact(source) {
   return {
@@ -74,6 +75,60 @@ test("falls back visibly for unsupported layouts and irregular tables", () => {
   assert.match(result.warnings.join(" "), /Unsupported semantic HTML data-layout/iu);
   assert.match(result.warnings.join(" "), /flattened into readable row bullets/iu);
   assert.deepEqual(parseDeckSource(result.artifact.source).errors, []);
+});
+
+test("round-trips Rune semantic metadata, metrics, and bindings without exporting presentation chrome", () => {
+  const canonical = semanticHtmlPresentationFromDeckSource(`---
+version: 1
+title: Current board review
+theme: rune-dark
+ratio: 16:9
+lang: ja
+origin: review.md
+origin_revision: r1-a-aaaaaaaaaaaaaaaa
+audience: leadership
+purpose: Approve the next operating plan
+---
+
+<!-- layout: metrics -->
+<!-- eyebrow: Current evidence -->
+
+# Evidence that stays live
+
+| Revenue | Margin |
+| --- | --- |
+| **{{ metric("review-query", "revenue", "currency") }}** | **{{ metric("review-query", "margin", "percent") }}** |
+
+---
+
+<!-- layout: split -->
+
+## Regional signal
+
+{{ chart("review-chart") }}
+  `);
+  assert.deepEqual(canonical.errors, []);
+  assert.ok(canonical.source);
+  const result = convertSemanticHtmlPresentationToDeck({
+    ...semanticHtmlArtifact(canonical.source),
+    name: "review.html",
+  });
+
+  assert.match(result.artifact.source, /title: Current board review/u);
+  assert.match(result.artifact.source, /theme: rune-dark/u);
+  assert.match(result.artifact.source, /lang: ja/u);
+  assert.match(result.artifact.source, /origin: review\.md/u);
+  assert.match(result.artifact.source, /origin_revision: r1-a-aaaaaaaaaaaaaaaa/u);
+  assert.match(result.artifact.source, /audience: leadership/u);
+  assert.match(result.artifact.source, /purpose: Approve the next operating plan/u);
+  assert.match(result.artifact.source, /\| Revenue \| Margin \|/u);
+  assert.match(result.artifact.source, /\{\{ metric\("review-query", "revenue", "currency"\) \}\}/u);
+  assert.match(result.artifact.source, /\{\{ chart\("review-chart"\) \}\}/u);
+  assert.doesNotMatch(result.artifact.source, /01 \/ 02|02 \/ 02/u);
+  assert.equal((result.artifact.source.match(/Current evidence/gu) ?? []).length, 1);
+  const recompiled = compileDeckSource(result.artifact.source);
+  assert.deepEqual(recompiled.errors, []);
+  assert.doesNotMatch(recompiled.html ?? "", /<strong><strong>/u);
 });
 
 test("refuses non-semantic, malformed, scripted, or oversized presentation input", () => {

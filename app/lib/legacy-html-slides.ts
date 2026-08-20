@@ -9,6 +9,13 @@ export type LegacyHtmlSlide = Readonly<{
 
 export type LegacyHtmlSlideCompilation = Readonly<{
   errors: readonly string[];
+  root?: Readonly<{
+    closeEnd: number;
+    closeStart: number;
+    openEnd: number;
+    openStart: number;
+    source: string;
+  }>;
   slides: readonly LegacyHtmlSlide[];
 }>;
 
@@ -97,6 +104,10 @@ export function compileLegacyHtmlSlides(source: string): LegacyHtmlSlideCompilat
   const sharedStyles: string[] = [];
   let htmlOpen = "";
   let mainOpen = "";
+  let mainOpenStart = -1;
+  let mainOpenEnd = -1;
+  let mainCloseStart = -1;
+  let mainCloseEnd = -1;
   let mainSeen = false;
   let insideMain = false;
   let sectionDepth = 0;
@@ -152,12 +163,16 @@ export function compileLegacyHtmlSlides(source: string): LegacyHtmlSlideCompilat
         insideMain = true;
         mainSeen = true;
         mainOpen = token.source;
+        mainOpenStart = token.start;
+        mainOpenEnd = token.end;
       } else {
         if (!insideMain || sectionDepth > 0) {
           errors.push("Semantic HTML closes <main> before its slide sections are complete.");
           break;
         }
         insideMain = false;
+        mainCloseStart = token.start;
+        mainCloseEnd = token.end;
       }
       continue;
     }
@@ -201,5 +216,12 @@ export function compileLegacyHtmlSlides(source: string): LegacyHtmlSlideCompilat
       source: section,
     });
   });
-  return Object.freeze({ slides: Object.freeze(slides), errors: Object.freeze([]) });
+  const root = Object.freeze({
+    openStart: mainOpenStart,
+    openEnd: mainOpenEnd,
+    closeStart: mainCloseStart,
+    closeEnd: mainCloseEnd,
+    source: mainOpen,
+  });
+  return Object.freeze({ root, slides: Object.freeze(slides), errors: Object.freeze([]) });
 }

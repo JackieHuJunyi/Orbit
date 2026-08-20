@@ -358,6 +358,8 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
     "rename_data_column",
     "replace_deck_slide",
     "insert_deck_slide_after",
+    "replace_html_slide",
+    "insert_html_slide_after",
   ]);
   assert.equal("nextSource" in providerRequest.text.format.schema.properties, false);
   assert.match(providerRequest.input[0].content, /Markdown by exact heading|ordered edits/i);
@@ -961,7 +963,7 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
   assert.deepEqual(payload.plan.creations, []);
 });
 
-test("creates a new Deck through Rune-owned identity, template compilation, and review output", async () => {
+test("creates a new semantic HTML presentation through Rune-owned identity, template compilation, and review output", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [
     requestBody().artifact,
@@ -980,7 +982,7 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
       JSON.stringify(
         providerResponse({
           summary: "Create a presentation from workspace context",
-          detail: "One new Deck is prepared without model-authored file metadata.",
+          detail: "One new semantic HTML presentation is prepared without model-authored file metadata.",
           actions: [
             {
               type: "create_artifact",
@@ -991,11 +993,17 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
               detail: "Replace the cover and insert a supporting slide.",
               edits: [
                 {
-                  type: "replace_deck_slide",
-                  title: "Board Review",
-                  slide: "# Board Review\n\nShared workspace context.",
+                  type: "replace_html_slide",
+                  index: 0,
+                  section:
+                    '<section class="slide cover" data-layout="cover"><div class="slide-body"><h1>Board Review</h1><p>Shared workspace context.</p></div></section>',
                 },
-                { type: "insert_deck_slide_after", title: "Board Review", slide: "## Decision\n\nProceed." },
+                {
+                  type: "insert_html_slide_after",
+                  index: 0,
+                  section:
+                    '<section class="slide conclusion" data-layout="conclusion"><div class="slide-body"><h2>Decision</h2><p>Proceed.</p></div></section>',
+                },
               ],
             },
           ],
@@ -1032,12 +1040,13 @@ test("creates a new Deck through Rune-owned identity, template compilation, and 
     },
     {
       id: "board-review",
-      name: "board-review.deck.md",
+      name: "board-review.html",
       kind: "slides",
-      language: "Deck Markdown",
+      language: "Semantic HTML",
     },
   );
-  assert.match(payload.plan.creations[0].artifact.source, /## Decision/);
+  assert.match(payload.plan.creations[0].artifact.source, /<h2>Decision<\/h2>/);
+  assert.match(payload.plan.creations[0].artifact.source, /data-slide-index="1"/);
   assert.equal(payload.plan.creations[0].operationCount, 2);
   assert.equal("edits" in payload.plan.creations[0], false);
 
@@ -1240,9 +1249,9 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
     detail: "The request must remain bounded.",
     edits: [
       {
-        type: "replace_deck_slide",
-        title: "Unsafe Deck",
-        slide: "# Unsafe Deck\n\n<script>alert(1)</script>",
+        type: "replace_html_slide",
+        index: 0,
+        section: '<section class="slide cover"><h1>Unsafe Deck</h1><script>alert(1)</script></section>',
       },
     ],
   };
@@ -1302,8 +1311,8 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
   );
   assert.equal(unsafeResponse.status, 502);
   const unsafePayload = await unsafeResponse.json();
-  assert.match(unsafePayload.error, /workspace safety gate/i);
-  assert.match(unsafePayload.details.join(" "), /raw HTML/i);
+  assert.match(unsafePayload.error, /source operations/i);
+  assert.match(unsafePayload.details.join(" "), /script/i);
   assert.equal(unsafePayload.plan, undefined);
 });
 

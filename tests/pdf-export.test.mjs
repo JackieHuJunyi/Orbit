@@ -84,7 +84,7 @@ test("fails PDF export closed when a referenced Rune image is missing", async ()
   );
 });
 
-test("exports one deterministic 16:9 PDF page per Deck Markdown slide", async () => {
+test("exports one deterministic 16:9 PDF page per default semantic HTML slide", async () => {
   const artifact = defaultArtifacts.find((candidate) => candidate.kind === "slides");
   const first = await exportPdfArtifact(artifact, defaultArtifacts, runtimeSnapshots(), fontBytes);
   const second = await exportPdfArtifact(artifact, defaultArtifacts, runtimeSnapshots(), fontBytes);

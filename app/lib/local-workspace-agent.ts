@@ -5,7 +5,9 @@ import {
   type CreatableArtifactKind,
 } from "./artifact-creation.ts";
 import { prepareChartEmbedding } from "./chart-embedding.ts";
+import { isDeckMarkdownArtifact } from "./deck.ts";
 import { prepareWorkspaceMutation, type ArtifactCreationChange } from "./patches.ts";
+import { appendSemanticHtmlPresentationSlide, escapeSemanticHtml } from "./semantic-html-presentation.ts";
 import { planLocalWorkspaceChange, type LocalWorkspacePlan, type WorkspaceArtifact } from "./workspace.ts";
 
 export type LocalWorkspaceAgentPlan = LocalWorkspacePlan & {
@@ -55,6 +57,30 @@ function contextualSource(artifact: WorkspaceArtifact, existing: WorkspaceArtifa
     return `Artifact,Type\n${rows.join("\n")}\n`;
   }
   if (artifact.kind === "query" || artifact.kind === "chart") return artifact.source;
+  if (!isDeckMarkdownArtifact(artifact)) {
+    const items = existing
+      .slice(0, 8)
+      .map(
+        (item) =>
+          `<li><strong>${escapeSemanticHtml(item.kind)}</strong> · <code>${escapeSemanticHtml(item.name)}</code></li>`,
+      )
+      .join("");
+    const context = appendSemanticHtmlPresentationSlide(
+      artifact.source,
+      `<section class="slide content" data-layout="content" data-eyebrow="Workspace context">
+        <p class="eyebrow">Workspace context</p><div class="slide-body"><h2>Canonical source map</h2><ul>${items}</ul></div>
+      </section>`,
+    );
+    if (!context.source) throw new Error(context.errors[0] ?? "Rune could not append semantic HTML context.");
+    const next = appendSemanticHtmlPresentationSlide(
+      context.source,
+      `<section class="slide conclusion" data-layout="conclusion" data-eyebrow="Next step">
+        <p class="eyebrow">Next step</p><div class="slide-body"><h2>Review-ready starting point</h2><p>Use the canonical files above to refine this narrative without copying hidden state.</p></div>
+      </section>`,
+    );
+    if (!next.source) throw new Error(next.errors[0] ?? "Rune could not append the semantic HTML next step.");
+    return next.source;
+  }
   return `${artifact.source.trimEnd()}
 
 ---

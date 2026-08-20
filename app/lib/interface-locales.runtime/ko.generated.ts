@@ -9,8 +9,8 @@ export const INTERFACE_TRANSLATIONS = {
     "- **데이터:** 읽기 가능한 CSV / JSON은 로컬 DuckDB SQL을(를) 사용하여 분석할 수 있습니다.",
   "- **Documents:** readable Markdown compiles into a document.":
     "- **문서:** 읽기 가능 Markdown이 문서로 컴파일됩니다.",
-  "- **Presentations:** Deck Markdown compiles into safe HTML and can hand off as PPTX, HTML, or PDF.":
-    "- **프레젠테이션:** Deck Markdown은 안전한 HTML으로 컴파일되고 PPTX, HTML 또는 PDF으로 전달될 수 있습니다.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **프레젠테이션:** 시맨틱 HTML이 기본 읽기 가능 소스이며 PPTX, ODP, HTML 또는 PDF로 전달할 수 있습니다. 기존 Deck Markdown도 계속 지원됩니다.",
   "- A personal model key exists only in the unsaved form, then becomes a server-encrypted HttpOnly credential; it never enters the workspace, localStorage, an Artifact, or Git.":
     "- 개인 모델 키는 저장되지 않은 형태로만 존재하며 서버에서 암호화된 HttpOnly 자격 증명이 됩니다. 작업공간, localStorage, Artifact 또는 Git에 들어가지 않습니다.",
   "- Apply creates a checkpoint; a failed transaction writes nothing.":
@@ -48,8 +48,8 @@ export const INTERFACE_TRANSLATIONS = {
   "1 source": "소스 1개",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. 툴바에서 **가져오기**를 선택하거나 현재 파일을 닫고 파일을 가운데에 놓습니다.",
-  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or Deck Markdown on the left.":
-    "2. 왼쪽에서 Markdown, CSV/JSON, SQL, Chart JSON 또는 Deck Markdown을(를) 편집합니다.",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. 왼쪽에서 Markdown, CSV/JSON, SQL, Chart JSON 또는 시맨틱 HTML을 편집하세요. 기존 Deck Markdown도 계속 편집할 수 있습니다.",
   "3. Inspect the compiled result immediately on the right.": "3. 컴파일된 결과를 오른쪽에서 바로 확인해보세요.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
     "4. 문서 제목, 단락, 개별 목록 항목, 표 셀, 굵게/기울임꼴/줄바꿈 텍스트, 인라인 코드, 링크 또는 이미지 또는 데이터 셀, 차트 데이텀 또는 슬라이드를 선택하여 정확한 소스를 찾아 강조 표시합니다. 소스 캐럿을 이동하거나 검증된 범위를 선택하면 일치하는 미리보기 대상이 강조 표시되고 스크롤됩니다. 일반적인 링크 클릭은 소스를 찾습니다. Command/Control을 누른 채 클릭하면 여전히 열립니다.",
@@ -246,6 +246,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create an analysis, chart, and report from revenue data": "수익 데이터를 바탕으로 분석, 차트, 보고서 만들기",
   "Create an editable Deck Markdown presentation": "편집 가능한 Deck Markdown 프레젠테이션 만들기",
   "Create an editable Markdown report": "편집 가능한 Markdown 보고서 만들기",
+  "Create an editable semantic HTML presentation": "편집 가능한 시맨틱 HTML 프레젠테이션 만들기",
   "Create blank": "공백 만들기",
   "Create operating review": "운영 검토 작성",
   "Create or refresh a light presentation": "가벼운 프레젠테이션 만들기 또는 갱신",
@@ -550,8 +551,8 @@ export const INTERFACE_TRANSLATIONS = {
   "New artifact details": "새로운 아티팩트 세부정보",
   "New block after": "이후 새 블록",
   "New block before": "이전에 새 블록",
-  "New Deck Markdown": "새 Deck Markdown",
   "New file": "새 파일",
+  "New semantic HTML": "새 시맨틱 HTML",
   "New source diff": "새로운 소스 차이점",
   "New source preview": "새로운 소스 미리보기",
   "Next step": "다음 단계",
@@ -674,7 +675,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepares a change before you approve the write": "쓰기를 승인하기 전에 변경 사항을 준비합니다.",
   "Preparing OCR": "OCR 준비 중",
   Presentation: "프리젠테이션",
-  "Presentation authored in Markdown": "Markdown에서 작성된 프레젠테이션",
+  "Presentation authored in semantic HTML": "시맨틱 HTML로 작성하는 프레젠테이션",
   "Presentation destination": "프레젠테이션 대상",
   "Presentation length": "프레젠테이션 길이",
   "Presentation title": "프레젠테이션 제목",

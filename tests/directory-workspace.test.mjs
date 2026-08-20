@@ -90,7 +90,7 @@ test("writes and reads a complete real-file workspace round trip", async () => {
   assert.ok(directory.files.has(WORKSPACE_MANIFEST_NAME));
   assert.ok(directory.files.has("q2-review.md"));
   assert.ok(directory.files.has("regional-revenue.chart.json"));
-  assert.ok(directory.files.has("board-briefing.deck.md"));
+  assert.ok(directory.files.has("board-briefing.html"));
 
   const result = await readWorkspaceDirectory(directory);
   assert.equal(result.source, "manifest");

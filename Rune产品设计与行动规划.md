@@ -2263,3 +2263,21 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 最后一笔落定后只允许一次窄幅柔和 sheen。它必须同时受完整 glyph clip 与完成后的 stroke mask 约束，不能溢出文字、循环、改变布局、遮挡语言卡或抢占 pointer event。
 - 九色顺序、设备本地书写字体、阿拉伯文完整 RTL shaping、语言轮播和欢迎状态仍不变；所有 path、渐变与效果为 Rune 原创，不复制 Apple 字形、字体、动画文件、图形资产或品牌标识。
 - reduced motion 和 forced colors 必须隐藏所有 transient nib/sheen 并立即显示静态完整问候；设置按钮从第一帧起可操作。源码门槛、真实 Chromium animation 检查和九语言桌面/窄屏几何继续同时通过。
+
+### 17.58 v1.28 Rune 创建的演示默认使用语义 HTML
+
+- sample workspace、New、Operating Review、Document-to-Presentation、local Agent 与 configured Agent 统一创建 `.html`；默认源必须来自一个 React-free 工厂，而不是六套各自拼接的模板。
+- 每份 Rune-owned Presentation 只允许一个带 `data-rune-format="presentation-v1"` 的 `<main>`，以可读 attributes 保存 title/theme/lang/origin/origin revision/audience/purpose；每个最外层 `<section>` 是一页，保留确定性 index 与 `NN / TT`。
+- Agent 的 `replace_html_slide` / `insert_html_slide_after` 只能按 compiler-proven zero-based index 操作一份完整 section；Chart append 根据目标格式生成 HTML section 或兼容 Deck slide，结构变更后只重排 Rune-owned page metadata。
+- Document-to-Presentation 新目标使用 HTML；刷新必须保留既有目标的 HTML-or-Deck 格式、id、filename 与 lineage，不能借刷新静默迁移 canonical source。
+- PPTX、ODP、legacy PPT 与固定 PDF 导出在审核事务内使用不可变 temporary Deck projection；投影要保留 Rune metadata、metric grids 与 metric/Chart bindings，不能写回 HTML。
+- 既有 Deck Markdown 保持可编辑；PPTX/ODP import 在语义 HTML 拥有同等的本地 content-hash image contract 前继续输出 Deck，并向用户如实说明这一兼容边界。
+
+### 17.59 v1.28 开机手写必须先独占舞台，再展开设置
+
+- 欢迎页从既有状态派生 `writing | ready` 视觉阶段：writing 时 setup chrome、说明和语言卡不可见、不可点击、不可聚焦，只让炫彩问候占据屏幕光学中心。
+- 问候仍使用系统书写字体与 Rune 原创 SVG path；spectrum ink、湿边、干笔纤维、split pressure nib 和一次 settle sheen 必须共享同一个 frozen motion plan，不能添加粒子、Canvas loop、远程字体或第二个 timer。
+- final ink settle 后，问候以同一 DOM 平滑回到正式网格，chrome、价值说明与语言卡再分层进入；不能用整页重载、临时截图或另一份欢迎组件制造切换。
+- 背景保持接近设备开机的安静纸白，炫彩集中在正在形成的墨迹；不得复制 Apple 字体、字形路径、动画文件、插画、商标或品牌资产。
+- `prefers-reduced-motion` 立即显示完整静态问候和全部设置，forced colors 使用系统色；RTL、中文/繁中、英文、法/西/俄/阿、日文、韩文在桌面与窄屏都必须零溢出。
+- 正常完成由 final fill 的 animation event 驱动，4.15 秒只作为有界失效保护；视觉阶段不进入 Artifact、workspace persistence、model credentials、checkpoint 或 export state。

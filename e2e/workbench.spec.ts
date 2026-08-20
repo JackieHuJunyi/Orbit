@@ -38,7 +38,11 @@ test("starts a fresh user with outcome-first task choices", async ({ page }) => 
 test("writes the opening greeting through ordered spectrum-ink strokes", async ({ page }) => {
   await page.goto("/");
 
+  const welcomeWindow = page.locator(".welcome-window");
   const greeting = page.locator(".welcome-greeting");
+  await expect(welcomeWindow).toHaveAttribute("data-onboarding-sequence", "boot-write-settle-unfold");
+  await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "writing");
+  await expect(welcomeWindow.locator(".welcome-chrome")).toBeHidden();
   await expect(greeting).toBeVisible();
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
   await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
@@ -73,6 +77,8 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
     await expect(head).toHaveCSS("offset-path", /path\(/);
   }
+  await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
+  await expect(welcomeWindow.locator(".welcome-chrome")).toBeVisible();
   await expect(page.locator('.welcome-intro-grid[data-intro-phase="ready"]')).toBeVisible();
 });
 
@@ -94,6 +100,7 @@ test("renders the local-first workbench with its sample workspace", async ({ pag
   await openWorkbench(page);
   await expect(page.getByRole("main")).toContainText("Rune");
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
+  await expect(page.locator("aside.file-rail").getByText("board-briefing.html")).toBeVisible();
   await expect(page.locator("aside.file-rail").getByText("regional-revenue.csv")).toBeVisible();
   await expect(page.getByRole("button", { name: "More tools" })).toBeVisible();
 });
@@ -183,6 +190,39 @@ test("creates and renders a source-ordered area Chart", async ({ page }) => {
   await expect(page.locator("aside.file-rail").getByText("revenue-volume.chart.json")).toBeVisible();
   await expect(page.locator(".chart-area-series")).toBeVisible();
   await expect(page.locator(".chart-line-point")).toHaveCount(4);
+  expect(pageErrors).toEqual([]);
+});
+
+test("creates semantic HTML as the readable default presentation source", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+  await page.getByRole("button", { name: "New", exact: true }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Create a new artifact" });
+  await dialog.getByRole("radio", { name: /Presentation authored in semantic HTML/ }).click();
+  await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Launch narrative");
+  const preview = dialog.getByRole("region", { name: "New source preview" });
+  await expect(preview).toContainText('data-rune-format="presentation-v1"');
+  await expect(preview).toContainText('<section class="slide cover"');
+  await dialog.getByRole("button", { name: "Create source" }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("aside.file-rail").getByText("launch-narrative.html", { exact: true })).toBeVisible();
+  const editor = page.locator("textarea.source-editor");
+  await expect(editor).toHaveValue(/data-rune-title="Launch narrative"/u);
+  await expect(editor).toHaveValue(/<span class="number">01 \/ 01<\/span>/u);
+  await expect(page.locator(".deck-slide-page")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Edit Launch narrative", exact: true }).click();
+  const htmlEditor = page.locator("form.semantic-html-slide-editor");
+  const htmlDraft = htmlEditor.getByRole("textbox", { name: "Slide HTML · Launch narrative" });
+  const currentSection = await htmlDraft.inputValue();
+  await htmlDraft.fill(currentSection.replace("Launch narrative", "Launch narrative refined"));
+  await expect(editor).toHaveValue(/<h1>Launch narrative refined<\/h1>/u);
+  await expect(editor).not.toBeEditable();
+  await htmlEditor.getByRole("button", { name: "Save HTML slide" }).click();
+  await expect(htmlEditor).toBeHidden();
+  await expect(page.locator("iframe.slides-frame")).toHaveAttribute("srcdoc", /Launch narrative refined/u);
   expect(pageErrors).toEqual([]);
 });
 

@@ -33,6 +33,7 @@ export type DeckLayout = z.infer<typeof DeckLayoutSchema>;
 export type DeckSlide = {
   layout: DeckLayout;
   eyebrow: string;
+  sourceUnit?: string;
   source: string;
 };
 
@@ -65,6 +66,7 @@ export type DeckCompileOptions = {
 const MAX_DECK_SOURCE_CHARS = 120_000;
 const MAX_DECK_SLIDES = 40;
 const chartTokenPattern = /\{\{\s*chart\(["'][a-z0-9_.-]+["']\)\s*\}\}/gi;
+const liveBindingTokenPattern = /\{\{\s*(?:metric|chart)\([^{}\r\n]*\)\s*\}\}/giu;
 
 function formatZodIssues(error: z.ZodError) {
   return error.issues.map((issue) => {
@@ -105,7 +107,8 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
   let body = source.trim();
   let layout: DeckLayout = "content";
   let eyebrow = "";
-  const metadataPattern = /^\s*<!--\s*(layout|eyebrow)\s*:\s*([^]*?)\s*-->\s*/i;
+  let sourceUnit = "";
+  const metadataPattern = /^\s*<!--\s*(layout|eyebrow|source-unit)\s*:\s*([^]*?)\s*-->\s*/i;
   const seen = new Set<string>();
   while (metadataPattern.test(body)) {
     const match = body.match(metadataPattern);
@@ -118,9 +121,14 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
       const parsedLayout = DeckLayoutSchema.safeParse(value);
       if (!parsedLayout.success) return { errors: [`Slide ${index + 1} has an unsupported layout: ${value}`] };
       layout = parsedLayout.data;
-    } else {
+    } else if (key === "eyebrow") {
       if (value.length > 100) return { errors: [`Slide ${index + 1} eyebrow exceeds 100 characters.`] };
       eyebrow = value;
+    } else {
+      if (!/^[a-z0-9][a-z0-9_-]{0,79}$/iu.test(value)) {
+        return { errors: [`Slide ${index + 1} source-unit must be one portable identifier.`] };
+      }
+      sourceUnit = value;
     }
     body = body.slice(match[0].length);
   }
@@ -156,7 +164,7 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
   ) {
     return { errors: [`Slide ${index + 1} must choose either one image or one table as its primary visual.`] };
   }
-  return { slide: { layout, eyebrow, source: body }, errors: [] };
+  return { slide: { layout, eyebrow, ...(sourceUnit ? { sourceUnit } : {}), source: body }, errors: [] };
 }
 
 export function parseDeckSource(source: string): DeckParseResult {
@@ -192,7 +200,7 @@ function escapeHtml(value: string) {
 
 function compileInline(source: string) {
   const tokens: string[] = [];
-  const protectedSource = source.replace(/\\([\\<>*_`\[\]#+-])/g, "$1").replace(chartTokenPattern, (token) => {
+  const protectedSource = source.replace(/\\([\\<>*_`\[\]#+-])/g, "$1").replace(liveBindingTokenPattern, (token) => {
     const placeholder = `RUNECHARTTOKEN${tokens.length}END`;
     tokens.push(token);
     return placeholder;
@@ -227,7 +235,13 @@ function compileTable(lines: string[], layout: DeckLayout) {
     .map(tableCells)
     .filter((row) => row.length === headers.length);
   if (layout === "metrics" && rows[0]) {
-    return `<div class="metric-grid">${headers.map((header, index) => `<div class="metric"><strong>${compileInline(rows[0][index] ?? "")}</strong><span>${compileInline(header)}</span></div>`).join("")}</div>`;
+    return `<div class="metric-grid">${headers
+      .map((header, index) => {
+        const value = rows[0][index] ?? "";
+        const unwrapped = value.match(/^\*\*([^]*)\*\*$/u)?.[1] ?? value;
+        return `<div class="metric"><strong>${compileInline(unwrapped)}</strong><span>${compileInline(header)}</span></div>`;
+      })
+      .join("")}</div>`;
   }
   return `<table><thead><tr>${headers.map((header) => `<th>${compileInline(header)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${compileInline(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
@@ -323,11 +337,25 @@ function deckStyles() {
   `;
 }
 
+function deckMetadataAttributes(frontmatter: DeckFrontmatter) {
+  const entries = [
+    ["data-rune-format", "presentation-v1"],
+    ["data-rune-title", frontmatter.title],
+    ["data-rune-theme", frontmatter.theme],
+    ["data-rune-lang", frontmatter.lang],
+    ["data-rune-origin", frontmatter.origin],
+    ["data-rune-origin-revision", frontmatter.origin_revision],
+    ["data-rune-audience", frontmatter.audience],
+    ["data-rune-purpose", frontmatter.purpose],
+  ] as const;
+  return entries.flatMap(([name, value]) => (value ? [`${name}="${escapeHtml(value)}"`] : [])).join(" ");
+}
+
 function deckHtmlDocument(frontmatter: DeckFrontmatter, slides: string) {
   return `<!doctype html>
 <html lang="${frontmatter.lang}">
 <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style></head>
-<body class="${frontmatter.theme === "rune-dark" ? "rune-dark" : ""}"><main class="deck" data-deck-title="${escapeHtml(frontmatter.title)}">${slides}</main></body>
+<body class="${frontmatter.theme === "rune-dark" ? "rune-dark" : ""}"><main class="deck" ${deckMetadataAttributes(frontmatter)}>${slides}</main></body>
 </html>`;
 }
 
@@ -338,7 +366,7 @@ export function compileDeckSource(source: string, options: DeckCompileOptions = 
   const slides = parsed.deck.slides.map((slide, index) => {
     const number = String(index + 1).padStart(2, "0");
     const totalLabel = String(total).padStart(2, "0");
-    return `<section class="slide ${slide.layout}" data-layout="${slide.layout}" data-slide-index="${index}">
+    return `<section class="slide ${slide.layout}" data-layout="${slide.layout}" data-slide-index="${index}"${slide.eyebrow ? ` data-eyebrow="${escapeHtml(slide.eyebrow)}"` : ""}${slide.sourceUnit ? ` data-rune-source-unit="${escapeHtml(slide.sourceUnit)}"` : ""}>
       ${slide.eyebrow ? `<p class="eyebrow">${escapeHtml(slide.eyebrow)}</p>` : ""}
       <div class="slide-body">${compileBlocks(slide.source, slide.layout, options)}</div>
       <span class="number">${number} / ${totalLabel}</span>

@@ -221,7 +221,7 @@ test("exports CSV values as deterministic formula-safe XLSX and imports them bac
   assert.equal(data.rows[1].Active, false);
 });
 
-test("exports Deck Markdown as deterministic semantic PPTX and imports it back", () => {
+test("exports the default semantic HTML presentation as deterministic PPTX and imports it back", () => {
   const artifact = defaultArtifacts.find((candidate) => candidate.kind === "slides");
   assert.ok(artifact);
   const snapshots = defaultRuntimeSnapshots();

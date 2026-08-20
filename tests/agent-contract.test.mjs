@@ -359,6 +359,8 @@ test("converts both operation protocols into provider structured-output schemas"
     "rename_data_column",
     "replace_deck_slide",
     "insert_deck_slide_after",
+    "replace_html_slide",
+    "insert_html_slide_after",
   ]);
   assert.equal(JSON.stringify(artifactFormat.schema).includes("nextSource"), false);
   const actions = workspaceFormat.schema.properties.actions.items.anyOf;
@@ -455,6 +457,16 @@ test("accepts strict artifact-aware section, row, and slide operations", () => {
     { type: "rename_data_column", column: "Revenue", nextColumn: "Net revenue" },
     { type: "replace_deck_slide", title: "Results", slide: "# Results\n\nImproved." },
     { type: "insert_deck_slide_after", title: "Results", slide: "# Outlook\n\nDurable." },
+    {
+      type: "replace_html_slide",
+      index: 0,
+      section: "<section><h1>Results</h1><p>Improved.</p></section>",
+    },
+    {
+      type: "insert_html_slide_after",
+      index: 0,
+      section: "<section><h2>Outlook</h2><p>Durable.</p></section>",
+    },
   ];
   operations.forEach((operation) => {
     assert.equal(AgentOperationPatchSchema.safeParse({ ...base, edits: [operation] }).success, true);

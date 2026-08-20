@@ -9,8 +9,8 @@ export const INTERFACE_TRANSLATIONS = {
     "- **Данные:** читаемые CSV / JSON можно анализировать с помощью локального DuckDB SQL.",
   "- **Documents:** readable Markdown compiles into a document.":
     "- **Документы:** читаемый Markdown компилируется в документ.",
-  "- **Presentations:** Deck Markdown compiles into safe HTML and can hand off as PPTX, HTML, or PDF.":
-    "- **Презентации:** Deck Markdown компилируется в безопасный HTML и может передаваться как PPTX, HTML или PDF.",
+  "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.":
+    "- **Презентации:** семантический HTML — читаемый исходный формат по умолчанию с экспортом в PPTX, ODP, HTML или PDF. Существующий Deck Markdown по-прежнему поддерживается.",
   "- A personal model key exists only in the unsaved form, then becomes a server-encrypted HttpOnly credential; it never enters the workspace, localStorage, an Artifact, or Git.":
     "- Персональный ключ модели существует только в несохраненном виде, затем становится зашифрованным на сервере учетными данными HttpOnly; он никогда не попадает в рабочую область, localStorage, Artifact или Git.",
   "- Apply creates a checkpoint; a failed transaction writes nothing.":
@@ -48,8 +48,8 @@ export const INTERFACE_TRANSLATIONS = {
   "1 source": "1 источник",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. Выберите **Импорт** на панели инструментов или закройте текущий файл и перетащите его в центр.",
-  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or Deck Markdown on the left.":
-    "2. Отредактируйте Markdown, CSV/JSON, SQL, Chart JSON или Deck Markdown слева.",
+  "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
+    "2. Редактируйте Markdown, CSV/JSON, SQL, Chart JSON или семантический HTML слева. Существующий Deck Markdown остаётся редактируемым.",
   "3. Inspect the compiled result immediately on the right.": "3. Осмотрите скомпилированный результат сразу справа.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
     "4. Выберите заголовок документа, абзац, отдельный элемент списка, ячейку таблицы, жирный/курсивный/вычеркнутый текст, встроенный код, ссылку или изображение — или ячейку данных, дату диаграммы или слайд — чтобы найти и выделить его точный источник. Перемещение курсора источника или выбор проверенного диапазона также выделяет и прокручивает соответствующую цель предварительного просмотра. Обычный щелчок по ссылке позволяет найти источник; Command/Control-щелчок по-прежнему открывает его.",
@@ -249,6 +249,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Создайте анализ, диаграмму и отчет на основе данных о доходах.",
   "Create an editable Deck Markdown presentation": "Создайте редактируемую презентацию Deck Markdown.",
   "Create an editable Markdown report": "Создайте редактируемый отчет Markdown.",
+  "Create an editable semantic HTML presentation": "Создать редактируемую презентацию в семантическом HTML",
   "Create blank": "Создать пустой",
   "Create operating review": "Создать операционный обзор",
   "Create or refresh a light presentation": "Создайте или обновите лёгкую презентацию",
@@ -557,8 +558,8 @@ export const INTERFACE_TRANSLATIONS = {
   "New artifact details": "Подробности о новых артефактах",
   "New block after": "Новый блок после",
   "New block before": "Новый блок раньше",
-  "New Deck Markdown": "Новый Deck Markdown",
   "New file": "Новый файл",
+  "New semantic HTML": "Новый семантический HTML",
   "New source diff": "Новый исходный код",
   "New source preview": "Предварительный просмотр нового исходного кода",
   "Next step": "Следующий шаг",
@@ -687,7 +688,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepares a change before you approve the write": "Подготавливает изменение перед тем, как вы одобрите запись.",
   "Preparing OCR": "Подготовка OCR",
   Presentation: "Презентация",
-  "Presentation authored in Markdown": "Презентация создана в Markdown",
+  "Presentation authored in semantic HTML": "Презентация в семантическом HTML",
   "Presentation destination": "Куда сохранить презентацию",
   "Presentation length": "Объём презентации",
   "Presentation title": "Название презентации",

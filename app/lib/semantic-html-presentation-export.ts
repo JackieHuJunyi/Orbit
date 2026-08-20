@@ -1,6 +1,7 @@
 import { DOMParser, type Element as XmlElement, type Node as XmlNode } from "@xmldom/xmldom";
 import { safeExportBaseName } from "./export-contract.ts";
 import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
+import { semanticHtmlPresentationMetadata } from "./semantic-html-presentation.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export type SemanticHtmlPresentationExport = Readonly<{
@@ -12,6 +13,7 @@ const SUPPORTED_DECK_LAYOUTS = new Set(["cover", "content", "metrics", "split", 
 const OMITTED_TEXT_ELEMENTS = new Set(["script", "style", "template", "noscript", "svg", "canvas"]);
 const BLOCK_TEXT_ELEMENTS = new Set(["p", "blockquote", "pre", "figcaption"]);
 const RUNE_LOCALES = new Set(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]);
+const LIVE_BINDING_PATTERN = /\{\{\s*(?:metric|chart)\([^{}\r\n]*\)\s*\}\}/giu;
 
 function tagName(node: XmlNode) {
   return node.nodeType === 1 ? (node as XmlElement).tagName.toLowerCase() : "";
@@ -25,12 +27,21 @@ function readableText(node: XmlNode): string {
   return Array.from(node.childNodes).map(readableText).join(" ").replace(/\s+/gu, " ").trim();
 }
 
+function escapePlainDeckText(value: string) {
+  return value.replace(/\\/gu, "\\\\").replace(/([`*_[\]<>#+\-])/gu, "\\$1");
+}
+
 function escapeDeckText(value: string) {
-  return value
-    .replace(/\s+/gu, " ")
-    .trim()
-    .replace(/\\/gu, "\\\\")
-    .replace(/([`*_[\]<>#+\-])/gu, "\\$1");
+  const normalized = value.replace(/\s+/gu, " ").trim();
+  let escaped = "";
+  let offset = 0;
+  for (const match of normalized.matchAll(LIVE_BINDING_PATTERN)) {
+    const start = match.index ?? 0;
+    escaped += escapePlainDeckText(normalized.slice(offset, start));
+    escaped += match[0];
+    offset = start + match[0].length;
+  }
+  return `${escaped}${escapePlainDeckText(normalized.slice(offset))}`;
 }
 
 function firstHeading(root: XmlElement) {
@@ -49,6 +60,37 @@ function directElements(root: XmlElement, name: string) {
   return Array.from(root.childNodes).filter(
     (node): node is XmlElement => node.nodeType === 1 && tagName(node) === name,
   );
+}
+
+function hasClass(element: XmlElement, token: string) {
+  return (element.getAttribute("class") ?? "").split(/\s+/u).includes(token);
+}
+
+function firstDescendant(root: XmlElement, name: string) {
+  return Array.from(root.getElementsByTagName(name))[0] ?? null;
+}
+
+function metricGridMarkdown(grid: XmlElement, warnings: Set<string>) {
+  const metrics = directElements(grid, "div").filter((element) => hasClass(element, "metric"));
+  if (!metrics.length || metrics.length > 8) {
+    warnings.add("Unsupported semantic HTML metric groups are flattened into readable presentation text.");
+    return null;
+  }
+  const columns = metrics.map((metric) => ({
+    label: escapeDeckText(readableText(firstDescendant(metric, "span") ?? metric)),
+    value: escapeDeckText(readableText(firstDescendant(metric, "strong") ?? metric)),
+  }));
+  if (
+    columns.some((column) => !column.label || !column.value || column.label.includes("|") || column.value.includes("|"))
+  ) {
+    warnings.add("Unsupported semantic HTML metric groups are flattened into readable presentation text.");
+    return null;
+  }
+  return [
+    `| ${columns.map((column) => column.label).join(" | ")} |`,
+    `| ${columns.map(() => "---").join(" | ")} |`,
+    `| ${columns.map((column) => column.value).join(" | ")} |`,
+  ].join("\n");
 }
 
 function tableMarkdown(table: XmlElement, warnings: Set<string>) {
@@ -113,6 +155,7 @@ function collectBlocks(root: XmlElement, primaryHeading: XmlElement | null, warn
     const element = node as XmlElement;
     const name = tagName(element);
     if (OMITTED_TEXT_ELEMENTS.has(name) || name === "img" || name === "picture" || name === "video") return;
+    if (hasClass(element, "eyebrow") || hasClass(element, "number")) return;
     if (element === primaryHeading) return;
     if (/^h[1-6]$/u.test(name)) {
       const value = escapeDeckText(readableText(element));
@@ -133,6 +176,13 @@ function collectBlocks(root: XmlElement, primaryHeading: XmlElement | null, warn
       const table = tableMarkdown(element, warnings).join("\n");
       if (table) blocks.push(table);
       return;
+    }
+    if (name === "div" && hasClass(element, "metric-grid")) {
+      const metrics = metricGridMarkdown(element, warnings);
+      if (metrics) {
+        blocks.push(metrics);
+        return;
+      }
     }
     const descendants = Array.from(element.getElementsByTagName("*"));
     const hasStructuredDescendant = descendants.some((child) => {
@@ -200,13 +250,23 @@ export function convertSemanticHtmlPresentationToDeck(artifact: WorkspaceArtifac
     );
   }
   const slides = compilation.slides.map((slide) => parseSection(slide.source, slide.index, slide.label, warnings));
-  const title = escapeDeckText(safeExportBaseName(artifact.name));
+  const metadata = semanticHtmlPresentationMetadata(artifact.source);
+  const title = escapeDeckText(metadata?.title ?? safeExportBaseName(artifact.name));
+  const lang = metadata && RUNE_LOCALES.has(metadata.lang) ? metadata.lang : sourceLocale(artifact.source);
+  const lineage = metadata
+    ? [
+        metadata.origin ? `origin: ${metadata.origin}` : "",
+        metadata.originRevision ? `origin_revision: ${metadata.originRevision}` : "",
+        metadata.audience ? `audience: ${metadata.audience}` : "",
+        metadata.purpose ? `purpose: ${escapeDeckText(metadata.purpose)}` : "",
+      ].filter(Boolean)
+    : [];
   const source = `---
 version: 1
 title: ${title}
-theme: rune
+theme: ${metadata?.theme ?? "rune"}
 ratio: 16:9
-lang: ${sourceLocale(artifact.source)}
+lang: ${lang}${lineage.length ? `\n${lineage.join("\n")}` : ""}
 ---
 
 ${slides.join("\n\n---\n\n")}`;

@@ -17,7 +17,7 @@ import {
   findQueryMetricReferences,
 } from "../app/lib/bindings.ts";
 import { prepareWorkspacePatch, validateWorkspaceArtifacts } from "../app/lib/patches.ts";
-import { compileDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
@@ -170,10 +170,10 @@ test("coordinates analysis, report, and slides as one valid local workspace plan
     defaultArtifacts.find((artifact) => artifact.kind === "query")?.source,
   );
   const nextSlides = prepared.nextArtifacts.find((artifact) => artifact.kind === "slides")?.source ?? "";
-  assert.match(nextSlides, /layout: conclusion/);
-  const compiledDeck = compileDeckSource(nextSlides);
-  assert.equal(compiledDeck.slideCount, 5);
-  assert.match(compiledDeck.html ?? "", /data-layout="conclusion"/);
-  assert.match(compiledDeck.html ?? "", /01 \/ 05/);
-  assert.match(compiledDeck.html ?? "", /05 \/ 05/);
+  assert.match(nextSlides, /data-layout="conclusion"/);
+  const compiledSlides = compileLegacyHtmlSlides(nextSlides);
+  assert.deepEqual(compiledSlides.errors, []);
+  assert.equal(compiledSlides.slides.length, 5);
+  assert.match(compiledSlides.slides[0].source, /01 \/ 05/);
+  assert.match(compiledSlides.slides[4].source, /05 \/ 05/);
 });

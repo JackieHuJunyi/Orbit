@@ -7,8 +7,9 @@ import {
   prepareDocumentBriefingEvidence,
   prepareDocumentBriefingWorkflow,
 } from "../app/lib/document-briefing.ts";
-import { parseDeckSource } from "../app/lib/deck.ts";
+import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
+import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 import { buildWorkspaceDependencyGraph } from "../app/lib/dependency-graph.ts";
 import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
@@ -52,30 +53,35 @@ function input(overrides = {}) {
   };
 }
 
-test("compiles one reviewed Document into an exact source-linked Deck transaction", () => {
+test("compiles one reviewed Document into an exact source-linked semantic HTML transaction", () => {
   const artifacts = [sourceDocument];
   const result = prepareDocumentBriefingWorkflow(artifacts, input());
   assert.deepEqual(result.errors, []);
   assert.equal(result.plan?.patches.length, 0);
   assert.equal(result.plan?.creations.length, 1);
-  const deck = result.plan?.creations[0].artifact;
-  assert.ok(deck);
-  assert.equal(deck.kind, "slides");
-  assert.equal(deck.language, "Deck Markdown");
-  const parsed = parseDeckSource(deck.source);
+  const presentation = result.plan?.creations[0].artifact;
+  assert.ok(presentation);
+  assert.equal(presentation.kind, "slides");
+  assert.equal(presentation.language, "Semantic HTML");
+  assert.equal(presentation.name, "launch-briefing.html");
+  const parsed = compileLegacyHtmlSlides(presentation.source);
   assert.deepEqual(parsed.errors, []);
-  assert.equal(parsed.deck?.slides.length, 6);
-  assert.equal(parsed.deck?.frontmatter.origin, sourceDocument.id);
-  assert.equal(parsed.deck?.frontmatter.origin_revision, portableSourceRevision(sourceDocument.source));
-  assert.equal(parsed.deck?.frontmatter.lang, "en");
-  assert.equal(parsed.deck?.frontmatter.audience, "leadership");
-  assert.equal(parsed.deck?.frontmatter.purpose, "Decide whether the launch is ready for the next cohort.");
+  assert.equal(parsed.slides.length, 6);
+  assert.deepEqual(semanticHtmlPresentationMetadata(presentation.source), {
+    title: "Launch briefing",
+    theme: "rune",
+    lang: "en",
+    origin: sourceDocument.id,
+    originRevision: portableSourceRevision(sourceDocument.source),
+    audience: "leadership",
+    purpose: "Decide whether the launch is ready for the next cohort.",
+  });
 
-  const graph = buildWorkspaceDependencyGraph([...artifacts, deck]);
+  const graph = buildWorkspaceDependencyGraph([...artifacts, presentation]);
   assert.deepEqual(graph.issues, []);
   assert.deepEqual(
     graph.edges.map((edge) => [edge.fromArtifactId, edge.toArtifactId, edge.kind]),
-    [[sourceDocument.id, deck.id, "deck-origin"]],
+    [[sourceDocument.id, presentation.id, "deck-origin"]],
   );
   const review = buildWorkspaceTransactionReview(artifacts, [], result.plan.creations);
   assert.deepEqual(review.errors, []);
@@ -83,7 +89,7 @@ test("compiles one reviewed Document into an exact source-linked Deck transactio
     review.nodes.map((node) => [node.artifactId, node.status]),
     [
       [sourceDocument.id, "input"],
-      [deck.id, "created"],
+      [presentation.id, "created"],
     ],
   );
   assert.deepEqual(
@@ -106,10 +112,11 @@ test("compiles a model-shaped outline only when every bounded source unit remain
   const result = prepareDocumentBriefingWorkflow([sourceDocument], input(), outline);
   assert.deepEqual(result.errors, []);
   const source = result.plan?.creations[0].artifact.source ?? "";
-  for (const unit of evidence.evidenceUnits) assert.match(source, new RegExp(`source-unit: ${unit.id}`, "u"));
-  assert.match(source, /## Decision signal 1/u);
-  assert.match(source, /- Evidence-grounded point 4/u);
-  assert.equal(parseDeckSource(source).deck?.slides.length, 6);
+  for (const unit of evidence.evidenceUnits)
+    assert.match(source, new RegExp(`data-rune-source-unit="${unit.id}"`, "u"));
+  assert.match(source, /<h2>Decision signal 1<\/h2>/u);
+  assert.match(source, /<li>Evidence-grounded point 4<\/li>/u);
+  assert.equal(compileLegacyHtmlSlides(source).slides.length, 6);
 
   const duplicateEvidence = {
     slides: outline.slides.map((slide) => ({ ...slide, sourceUnitId: "source-1" })),
@@ -136,25 +143,28 @@ test("rejects executable model text without mutating the reviewed Document", () 
   assert.equal(JSON.stringify(frozen), before);
 });
 
-test("preserves all nine interface locales as Deck document metadata", () => {
+test("preserves all nine interface locales as semantic HTML presentation metadata", () => {
   for (const locale of ["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]) {
     const result = prepareDocumentBriefingWorkflow([sourceDocument], input({ locale, slideCount: 4 }));
     assert.deepEqual(result.errors, [], locale);
     const source = result.plan?.creations[0].artifact.source;
     assert.ok(source);
-    assert.equal(parseDeckSource(source).deck?.frontmatter.lang, locale);
+    assert.equal(semanticHtmlPresentationMetadata(source)?.lang, locale);
   }
 });
 
 test("refreshes one linked presentation in place while retaining identity and lineage", () => {
   const created = prepareDocumentBriefingWorkflow([sourceDocument], input()).plan?.creations[0].artifact;
   assert.ok(created);
-  const themedDeck = { ...created, source: created.source.replace("theme: rune", "theme: rune-dark") };
-  assert.equal(documentBriefingSourceIdForPresentation(themedDeck), sourceDocument.id);
-  assert.deepEqual(documentBriefingTargets([sourceDocument, themedDeck], sourceDocument.id), [
+  const themedPresentation = {
+    ...created,
+    source: created.source.replace('data-rune-theme="rune"', 'data-rune-theme="rune-dark"'),
+  };
+  assert.equal(documentBriefingSourceIdForPresentation(themedPresentation), sourceDocument.id);
+  assert.deepEqual(documentBriefingTargets([sourceDocument, themedPresentation], sourceDocument.id), [
     {
-      artifactId: themedDeck.id,
-      name: themedDeck.name,
+      artifactId: themedPresentation.id,
+      name: themedPresentation.name,
       title: "Launch briefing",
       slideCount: 6,
       locale: "en",
@@ -168,31 +178,47 @@ test("refreshes one linked presentation in place while retaining identity and li
     ...sourceDocument,
     source: sourceDocument.source.replace("Launch with a focused workflow", "Launch the reviewed workflow this month"),
   };
-  assert.equal(documentBriefingTargets([updatedDocument, themedDeck], updatedDocument.id)[0]?.freshness, "changed");
+  assert.equal(
+    documentBriefingTargets([updatedDocument, themedPresentation], updatedDocument.id)[0]?.freshness,
+    "changed",
+  );
   const refreshed = prepareDocumentBriefingWorkflow(
-    [updatedDocument, themedDeck],
-    input({ targetArtifactId: themedDeck.id, focus: "Approve the launch plan for this month." }),
+    [updatedDocument, themedPresentation],
+    input({ targetArtifactId: themedPresentation.id, focus: "Approve the launch plan for this month." }),
   );
   assert.deepEqual(refreshed.errors, []);
   assert.equal(refreshed.plan?.creations.length, 0);
   assert.equal(refreshed.plan?.patches.length, 1);
-  assert.equal(refreshed.plan?.patches[0].artifactId, themedDeck.id);
-  assert.notEqual(refreshed.plan?.patches[0].nextSource, themedDeck.source);
-  const nextDeck = { ...themedDeck, source: refreshed.plan?.patches[0].nextSource ?? "" };
-  assert.equal(nextDeck.id, themedDeck.id);
-  assert.equal(nextDeck.name, themedDeck.name);
-  assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.origin, sourceDocument.id);
-  assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.theme, "rune-dark");
-  assert.equal(parseDeckSource(nextDeck.source).deck?.frontmatter.purpose, "Approve the launch plan for this month.");
-  assert.equal(documentBriefingTargets([updatedDocument, nextDeck], updatedDocument.id)[0]?.freshness, "current");
+  assert.equal(refreshed.plan?.patches[0].artifactId, themedPresentation.id);
+  assert.notEqual(refreshed.plan?.patches[0].nextSource, themedPresentation.source);
+  const nextPresentation = { ...themedPresentation, source: refreshed.plan?.patches[0].nextSource ?? "" };
+  assert.equal(nextPresentation.id, themedPresentation.id);
+  assert.equal(nextPresentation.name, themedPresentation.name);
+  assert.deepEqual(semanticHtmlPresentationMetadata(nextPresentation.source), {
+    title: "Launch briefing",
+    theme: "rune-dark",
+    lang: "en",
+    origin: sourceDocument.id,
+    originRevision: portableSourceRevision(updatedDocument.source),
+    audience: "leadership",
+    purpose: "Approve the launch plan for this month.",
+  });
+  assert.equal(
+    documentBriefingTargets([updatedDocument, nextPresentation], updatedDocument.id)[0]?.freshness,
+    "current",
+  );
 
-  const review = buildWorkspaceTransactionReview([updatedDocument, themedDeck], refreshed.plan?.patches ?? [], []);
+  const review = buildWorkspaceTransactionReview(
+    [updatedDocument, themedPresentation],
+    refreshed.plan?.patches ?? [],
+    [],
+  );
   assert.deepEqual(review.errors, []);
   assert.deepEqual(
     review.nodes.map((node) => [node.artifactId, node.status]),
     [
       [updatedDocument.id, "input"],
-      [themedDeck.id, "edited"],
+      [themedPresentation.id, "edited"],
     ],
   );
   assert.deepEqual(
@@ -201,7 +227,7 @@ test("refreshes one linked presentation in place while retaining identity and li
   );
 });
 
-test("round-trips a portable briefing recipe from Deck source into the next refresh", () => {
+test("round-trips a portable briefing recipe from semantic HTML into the next refresh", () => {
   const created = prepareDocumentBriefingWorkflow(
     [sourceDocument],
     input({
@@ -235,12 +261,46 @@ test("round-trips a portable briefing recipe from Deck source into the next refr
   assert.match(refreshed.errors.join(" "), /proposed source is unchanged/);
 });
 
-test("keeps pre-freshness Decks refreshable with an explicit unknown baseline", () => {
-  const created = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0]
-    .artifact;
-  assert.ok(created);
-  const legacy = { ...created, source: created.source.replace(/^origin_revision: .*\n/mu, "") };
-  assert.deepEqual(parseDeckSource(legacy.source).errors, []);
+test("keeps pre-freshness Deck Markdown refreshable as a compatibility source", () => {
+  const legacy = {
+    id: "legacy-briefing",
+    name: "legacy-briefing.deck.md",
+    kind: "slides",
+    language: "Deck Markdown",
+    source: `---
+version: 1
+title: Launch briefing
+theme: rune
+ratio: 16:9
+lang: en
+origin: launch-source
+audience: leadership
+purpose: Decide whether the launch is ready for the next cohort.
+---
+
+# Launch briefing
+
+Source
+
+---
+
+## Context
+
+One
+
+---
+
+## Evidence
+
+Two
+
+---
+
+## Decision
+
+Three
+`,
+  };
   assert.equal(documentBriefingTargets([sourceDocument, legacy], sourceDocument.id)[0]?.freshness, "unknown");
   const refreshed = prepareDocumentBriefingWorkflow(
     [sourceDocument, legacy],
@@ -249,6 +309,7 @@ test("keeps pre-freshness Decks refreshable with an explicit unknown baseline", 
   assert.deepEqual(refreshed.errors, []);
   assert.equal(refreshed.plan?.patches.length, 1);
   assert.match(refreshed.plan?.patches[0].nextSource ?? "", /^origin_revision: r1-/mu);
+  assert.match(refreshed.plan?.patches[0].nextSource ?? "", /^---/u);
 });
 
 test("sanitizes imported document syntax instead of creating executable or implicit bindings", () => {
@@ -262,7 +323,7 @@ test("sanitizes imported document syntax instead of creating executable or impli
   assert.deepEqual(result.errors, []);
   const source = result.plan?.creations[0].artifact.source ?? "";
   assert.doesNotMatch(source, /<script/u);
-  assert.deepEqual(parseDeckSource(source).errors, []);
+  assert.deepEqual(compileLegacyHtmlSlides(source).errors, []);
 });
 
 test("resolves presentation name and id conflicts case-insensitively", () => {
@@ -316,7 +377,7 @@ test("refuses missing, wrong-kind, unrelated, and unchanged refresh targets with
     input({ slideCount: 4, targetArtifactId: sourceDocument.id }),
   );
   assert.equal(wrongKind.plan, undefined);
-  assert.match(wrongKind.errors.join(" "), /must be a Deck Markdown/);
+  assert.match(wrongKind.errors.join(" "), /valid Semantic HTML or Deck Markdown/);
   const otherSource = { ...sourceDocument, id: "other-source", name: "other.md" };
   const unrelated = prepareDocumentBriefingWorkflow(
     [otherSource, created],
@@ -330,14 +391,14 @@ test("refuses missing, wrong-kind, unrelated, and unchanged refresh targets with
   assert.equal(JSON.stringify(frozen), before);
 });
 
-test("rejects a created Deck whose explicit Document origin cannot resolve", () => {
+test("rejects a created semantic HTML presentation whose explicit Document origin cannot resolve", () => {
   const creation = prepareDocumentBriefingWorkflow([sourceDocument], input({ slideCount: 4 })).plan?.creations[0];
   assert.ok(creation);
   const invalid = {
     ...creation,
     artifact: {
       ...creation.artifact,
-      source: creation.artifact.source.replace("origin: launch-source", "origin: missing"),
+      source: creation.artifact.source.replace('data-rune-origin="launch-source"', 'data-rune-origin="missing"'),
     },
   };
   const result = prepareWorkspaceMutation([sourceDocument], [], [invalid]);

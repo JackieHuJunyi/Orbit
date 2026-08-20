@@ -101,8 +101,8 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /regional-revenue\.chart\.json/);
   assert.match(html, /regional-margin\.chart\.json/);
   assert.match(html, /Chart JSON/);
-  assert.match(html, /board-briefing\.deck\.md/);
-  assert.match(html, /Deck Markdown/);
+  assert.match(html, /board-briefing\.html/);
+  assert.match(html, /Semantic HTML/);
   assert.match(html, /aria-label="Data graph"/);
   assert.match(html, /aria-label="Pin q2-review\.md in Workspace Agent context"/);
   assert.match(html, />Selection</);
@@ -647,7 +647,7 @@ test("organizes workspace files by product workflow rather than internal artifac
   assert.match(html, /class="artifact-group artifact-group-deliverables"[\s\S]*>Deliverables<\/h2>/);
   assert.match(
     html,
-    /artifact-group-sources[\s\S]*regional-revenue\.csv[\s\S]*artifact-group-analysis[\s\S]*regional-analysis\.sql[\s\S]*regional-revenue\.chart\.json[\s\S]*artifact-group-deliverables[\s\S]*q2-review\.md[\s\S]*board-briefing\.deck\.md/,
+    /artifact-group-sources[\s\S]*regional-revenue\.csv[\s\S]*artifact-group-analysis[\s\S]*regional-analysis\.sql[\s\S]*regional-revenue\.chart\.json[\s\S]*artifact-group-deliverables[\s\S]*q2-review\.md[\s\S]*board-briefing\.html/,
   );
   assert.doesNotMatch(html, /class="active-notch"/);
   assert.match(
@@ -816,6 +816,8 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
   assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
   assert.match(handwrittenGreeting, /data-ink-trace="progressive"/);
+  assert.match(handwrittenGreeting, /data-motion-sequence="write-settle-reveal"/);
+  assert.match(welcome, /data-onboarding-sequence="boot-write-settle-unfold"/);
   assert.match(handwrittenGreeting, /data-writing-style="pressure-calligraphy"/);
   assert.match(handwrittenGreeting, /data-motion-script=\{script\}/);
   assert.match(handwrittenGreeting, /motion\.strokes\.map/);
@@ -825,7 +827,12 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.doesNotMatch(handwrittenGreeting, /fetch\(|localStorage|indexedDB|WorkspaceArtifact|ModelProvider/);
   assert.match(handwrittenGreeting, /localeDirection\(locale\)/);
   assert.match(handwrittenGreeting, /--greeting-cycle-duration/);
-  assert.match(welcome, /data-intro-phase=\{greetingIntroComplete \? "ready" : "writing"\}/);
+  assert.match(welcome, /data-intro-phase=\{introPhase\}/);
+  assert.match(styles, /\.welcome-window\[data-intro-phase="writing"\][^}]*box-shadow:\s*none/s);
+  assert.match(
+    styles,
+    /\.welcome-intro-grid\[data-intro-phase="writing"\] \.welcome-greeting-stage[^}]*translate3d\(0,\s*clamp\(112px,\s*18vh,\s*180px\),\s*0\)\s*scale\(1\.08\)/s,
+  );
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);
   assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);

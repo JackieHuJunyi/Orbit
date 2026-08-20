@@ -8,6 +8,7 @@ import { formatChartReference } from "./charts.ts";
 import { formatQueryMetricReference } from "./bindings.ts";
 import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSourcePatch } from "./patches.ts";
 import { formatQueryDataSourceDirective } from "./query-source.ts";
+import { semanticHtmlPresentationFromDeckSource } from "./semantic-html-presentation.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 import { isChineseRuneLocale, normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
 import {
@@ -762,12 +763,25 @@ export function prepareOperatingReviewWorkflow(
         errors: prepared.errors.length ? prepared.errors : [`Rune could not prepare the ${deliverable} deliverable.`],
       };
     }
+    let deliverableSource: string;
+    if (deliverable === "document") {
+      deliverableSource = reportSource(input, data, query, chart, scope, comparisonScope, narrative);
+    } else {
+      const semanticHtml = semanticHtmlPresentationFromDeckSource(
+        deckSource(input, data, query, chart, scope, comparisonScope, narrative),
+      );
+      if (!semanticHtml.source || semanticHtml.errors.length) {
+        return {
+          errors: semanticHtml.errors.length
+            ? [...semanticHtml.errors]
+            : ["Rune could not compile the operating-review presentation as semantic HTML."],
+        };
+      }
+      deliverableSource = semanticHtml.source;
+    }
     const artifact = {
       ...prepared.artifact,
-      source:
-        deliverable === "document"
-          ? reportSource(input, data, query, chart, scope, comparisonScope, narrative)
-          : deckSource(input, data, query, chart, scope, comparisonScope, narrative),
+      source: deliverableSource,
     };
     creations.push({
       artifact,

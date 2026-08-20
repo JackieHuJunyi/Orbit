@@ -12,11 +12,11 @@ import {
   planLocalChange,
   validateArtifact,
 } from "../app/lib/workspace.ts";
+import { deckArtifactFixture } from "./deck-fixture.mjs";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
 function deckArtifact() {
-  const artifact = defaultArtifacts.find((item) => item.kind === "slides");
-  assert.ok(artifact);
+  const artifact = deckArtifactFixture();
   assert.equal(isDeckMarkdownArtifact(artifact), true);
   return artifact;
 }

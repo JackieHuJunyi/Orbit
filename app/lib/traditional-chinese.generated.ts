@@ -1078,6 +1078,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "瀏覽器指令碼不能讀回它"
   ],
   [
+    "生成可继续编辑的语义",
+    "生成可繼續編輯的語義"
+  ],
+  [
     "的事务审核中明确确认",
     "的事務稽核中明確確認"
   ],
@@ -1720,6 +1724,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "无法连接该文件夹",
     "無法連線該資料夾"
+  ],
+  [
+    "是默认可读源内容",
+    "是預設可讀源內容"
   ],
   [
     "显示源内容与成品",
@@ -2550,6 +2558,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "僅在本地編譯"
   ],
   [
+    "仍可继续编辑",
+    "仍可繼續編輯"
+  ],
+  [
     "从可读源开始",
     "從可讀源開始"
   ],
@@ -3006,10 +3018,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "編寫的長文件"
   ],
   [
-    "编译为安全的",
-    "編譯為安全的"
-  ],
-  [
     "聚合证据预览",
     "聚合證據預覽"
   ],
@@ -3388,10 +3396,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "常用快捷键",
     "常用快捷鍵"
-  ],
-  [
-    "并可交付为",
-    "並可交付為"
   ],
   [
     "应用前只读",
@@ -3890,6 +3894,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "只顯示前"
   ],
   [
+    "可交付为",
+    "可交付為"
+  ],
+  [
     "可以保存",
     "可以儲存"
   ],
@@ -4182,6 +4190,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "新建內容"
   ],
   [
+    "新的语义",
+    "新的語義"
+  ],
+  [
     "方向正确",
     "方向正確"
   ],
@@ -4446,6 +4458,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "絕不寫入"
   ],
   [
+    "继续兼容",
+    "繼續相容"
+  ],
+  [
     "继续设置",
     "繼續設定"
   ],
@@ -4622,6 +4638,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "程式碼塊"
   ],
   [
+    "以语义",
+    "以語義"
+  ],
+  [
     "余白列",
     "餘白列"
   ],
@@ -4772,6 +4792,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "恢复点",
     "恢復點"
+  ],
+  [
+    "或语义",
+    "或語義"
   ],
   [
     "折线图",

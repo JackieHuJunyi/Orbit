@@ -53,7 +53,8 @@ test("passes an evidence-bound model outline through the same pure compiler boun
     },
   });
   assert.deepEqual(prepared.errors, []);
-  assert.match(prepared.plan?.creations[0].artifact.source ?? "", /## Context\n\n- A detailed context/u);
+  assert.match(prepared.plan?.creations[0].artifact.source ?? "", /<h2>Context<\/h2>/u);
+  assert.match(prepared.plan?.creations[0].artifact.source ?? "", /<li>A detailed context supports/u);
 });
 
 test("routes a typed operating-review task through the same provider boundary", () => {
