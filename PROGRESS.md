@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-20 — Stabilized the release E2E gate on the exact Playwright runtime image so GitHub no longer depends on a live Ubuntu APT browser installation.
+
 - 2026-08-19 — Shipped Rune v1.14 with source-ordered area Charts across strict creation/Agent/configuration contracts, exact point provenance, React and scriptless HTML fills, PPTX/PDF vector fills, semantic DOCX/ODT trends, and nine-locale controls.
 
 - 2026-08-19 — Shipped Rune v1.13 with explicit-consent, paper-aligned per-page OCR region selection, keyboard percentage controls, conversion-side crop validation, crop-aware provenance/review warnings, and unchanged browser-local zero-write cancellation.
