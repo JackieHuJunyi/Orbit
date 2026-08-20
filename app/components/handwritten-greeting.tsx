@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, type CSSProperties, type SVGProps } from "react";
+import { planGreetingMotion } from "../lib/greeting-motion";
 import { localeDirection, type RuneLocale } from "../lib/localization";
 
 function greetingUnits(value: string, locale: RuneLocale) {
@@ -64,6 +65,10 @@ export function HandwrittenGreeting({
   const canvasWidth =
     locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
   const isLong = canvasWidth > 900;
+  const motion = useMemo(
+    () => planGreetingMotion({ canvasWidth, direction, unitCount: units.length, value }),
+    [canvasWidth, direction, units.length, value],
+  );
   const flourishPath =
     direction === "rtl"
       ? `M${canvasWidth - 40} 179 C${canvasWidth * 0.76} 202 ${canvasWidth * 0.38} 190 40 179`
@@ -75,12 +80,17 @@ export function HandwrittenGreeting({
       className={`welcome-greeting ${isLong ? "long" : ""}`.trim()}
       data-direction={direction}
       data-greeting-locale={locale}
+      data-motion-count={motion.motionCount}
       preserveAspectRatio="xMinYMid meet"
       role="img"
       style={
         {
           "--greeting-count": units.length,
           "--greeting-cycle-duration": `${cycleDuration}ms`,
+          "--greeting-finish-delay": `${motion.finishDelayMs}ms`,
+          "--greeting-settle-delay": `${motion.settleDelayMs}ms`,
+          "--greeting-unit-duration": `${motion.unitDurationMs}ms`,
+          "--greeting-write-duration": `${motion.writeDurationMs}ms`,
         } as CSSProperties
       }
       viewBox={`0 0 ${canvasWidth} 220`}
@@ -122,6 +132,14 @@ export function HandwrittenGreeting({
         gradientId={gradientId}
         units={units}
       />
+      <g
+        className="welcome-greeting-writehead"
+        aria-hidden="true"
+        style={{ offsetPath: `path("${motion.writePath}")`, offsetRotate: "auto" }}
+      >
+        <circle className="welcome-greeting-writehead-halo" cx="0" cy="0" r="14" />
+        <ellipse className="welcome-greeting-writehead-nib" cx="0" cy="0" rx="4.8" ry="2.1" />
+      </g>
       <path
         className="welcome-greeting-flourish"
         d={flourishPath}

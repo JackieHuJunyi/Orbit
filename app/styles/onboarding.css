@@ -195,6 +195,15 @@
   stroke-dashoffset: 14em;
 }
 .welcome-greeting-fill .welcome-greeting-ink-unit { fill-opacity: 0; }
+.welcome-greeting-writehead { opacity: 0; }
+.welcome-greeting-writehead-halo { fill: rgba(100, 210, 255, .3); filter: blur(5px); }
+.welcome-greeting-writehead-nib {
+  fill: #fff;
+  stroke: rgba(255, 255, 255, .48);
+  stroke-width: 1.2px;
+  transform-box: fill-box;
+  transform-origin: center;
+}
 .welcome-greeting-flourish {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
@@ -607,6 +616,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before,
   .welcome-greeting-trace,
+  .welcome-greeting-writehead,
   .welcome-greeting-flourish,
   .welcome-greeting-pen { display: none; }
   .welcome-greeting-fill { fill: CanvasText; }

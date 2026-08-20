@@ -2195,3 +2195,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 等待 chunk 时必须显示本地化、`role=status`、`aria-live=polite` 的无写入 fallback；欢迎、blocking overlay 与 inline lineage 使用不同几何，但不能出现空白屏、远程 loader 或伪造进度。
 - 高频 notice 文案进入 React-free `workbench-surface-copy` 端口，让 Workbench 无需导入完整 dialog；生成器必须显式收集该端口的英文目录，确保法、西、俄、阿、日、韩不会因文件搬迁退回英文。
 - minified initial Workbench 从 701,634 bytes 降到 489,283 bytes，gzip 从 210,332 降到 143,333 bytes；530 KB manifest gate、无静态回流测试和实际 E2E 打开流程共同约束后续迭代。
+
+### 17.50 v1.19 书写方向、笔压与落墨时间必须来自同一运动计划
+
+- 字体轮廓 dash 只能表达“出现”，不能单独表达落笔方向；欢迎语需要一个沿整词移动的可见 write head，同时轮廓描边粗细与笔尖形变以单次有界 pressure sequence 变化。
+- React-free `planGreetingMotion` 根据 canvas、LTR/RTL、shaping unit 数与可见符号数一次性产生 `writePath / unitDuration / settleDelay / finishDelay`；组件只把计划翻译为 SVG 与 CSS properties，不建立第二个 timer。
+- LTR 可以按 grapheme stagger；阿拉伯文必须保持一个完整 shaping run，但运动时长按忽略 combining mark 后的可见字母计数，路径从右向左，落墨与收笔不得在主体写完前开始。
+- 非有限 canvas 或 unit count 必须归一到有界 presentation 值；planner 不读取 locale catalog、DOM、Canvas、storage、provider、credential 或 Artifact，也不修改输入。
+- reduced motion 和 forced colors 继续隐藏 write head、trace 与 flourish，立即显示完整系统色文字；运行时必须证明 `writehead / pressure` animation 挂载并验证阿拉伯路径端点。首包仍受 530 KB gate 约束。

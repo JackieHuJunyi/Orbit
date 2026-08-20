@@ -713,6 +713,8 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
+  assert.match(styles, /@keyframes rune-greeting-writehead/);
+  assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-pen/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
   assert.match(styles, /stroke-dasharray:\s*14em/);
@@ -730,6 +732,8 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
   assert.match(handwrittenGreeting, /<linearGradient/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-ink-unit"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-writehead"/);
+  assert.match(handwrittenGreeting, /planGreetingMotion/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-flourish"/);
   assert.match(handwrittenGreeting, /offsetPath:\s*`path/);
   assert.match(handwrittenGreeting, /localeDirection\(locale\)/);

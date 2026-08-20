@@ -2419,3 +2419,13 @@ v1.18 给十三个低频 surface 建立 typed `React.lazy` 边界。`RuneWorkben
 拆包最容易出现的架构回流来自文案：Workbench 需要显示“已准备审核”等即时 notice，但直接导入 dialog copy 会把整个 dialog 拉回首包。因此这些共享字段进入一个 React-free `workbench-surface-copy` 端口，弹窗再组合相同对象。多语言生成器显式扫描这个端口，九种语言仍然完整，未加载语言仍按既有 load-before-use 合同 fail loud。
 
 这次边界把 minified Workbench 从 701,634 bytes 降到 489,283 bytes，gzip 从 210,332 降到 143,333 bytes。530 KB manifest budget、十三个 dynamic-entry 断言、无静态 import 回流测试和现有真实打开 E2E 共同把收益变成长期合同，而不是一次构建偶然值。
+
+## 119. v1.19 真正的笔感来自方向和压力共享同一时间轴
+
+上一版已经能看到彩色轮廓逐字生成，但可见笔尖只沿最后的 flourish 移动，因此主体更像“描边动画”，不像有人正在写。阿拉伯语为了保护连写被保留为一个 SVG text unit，却也因此只得到一个字的时长，落墨和收笔会在长词主体完成前启动。
+
+v1.19 增加纯 `planGreetingMotion`：它不认识 React 或产品状态，只根据画布宽度、方向、shaping unit 数和可见符号数返回整词路径、单元时长、落墨点与收笔点。欢迎组件把这份不可变计划变成 CSS custom properties；没有第二个 timeout，也没有 Canvas 测量状态。非有限输入会回到 430px / 1 unit 的安全演示值。
+
+主文字上方现在有一个沿整词移动的发光 nib，内部经过六段 pressure 变化；彩色 edge 和 glow 也在写出时改变 stroke width，让落笔、加压、提笔能在视觉上互相解释。LTR 保持 grapheme stagger；阿拉伯文仍只有一个连续 text run，却按五个可见字母获得 1,985ms 的 RTL 运动，从 x=640 写到 x=40，1,885ms 后才收笔。
+
+这套运动仍位于 v1.18 的 deferred welcome chunk，initial Workbench 保持 489,283 bytes。reduced motion / forced colors 直接移除 nib、trace 与 flourish；纯单测验证 LTR、RTL、冻结输入和非有限边界，真实 Chromium 验证 `rune-greeting-writehead`、`rune-greeting-pressure` 与阿拉伯路径端点，而不是把源码存在当成动画生效。
