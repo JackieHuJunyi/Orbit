@@ -464,6 +464,7 @@ export const INTERFACE_TRANSLATIONS = {
   "just now": "지금 막",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "SELECT 또는 WITH 문 하나만 유지하고 명시적인 Data 소스를 확인하세요.",
+  "Keep one valid outer <section> slide.": "유효한 외부 <section> 슬라이드 하나를 유지하세요.",
   "Keep readable Markdown structure and check unfinished syntax or bindings.":
     "읽기 쉬운 Markdown 구조를 유지하고 미완성 구문이나 바인딩을 확인하세요.",
   "Keep source order": "소스 순서 유지",
@@ -606,6 +607,8 @@ export const INTERFACE_TRANSLATIONS = {
     "새 블록 1개 · 라이브 바인딩 없음 · 작성하기 전에 정확한 소스 차이점을 검토하세요.",
   "One revision-bound section · live bindings stay fixed · save writes canonical source":
     "하나의 개정 바인딩 섹션 · 라이브 바인딩은 고정된 상태로 유지됨 · 저장 시 정식 소스 쓰기",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "현재 리비전에 고정된 시맨틱 HTML 슬라이드 하나 · Source에 실시간 반영 · 저장 전 전체 프레젠테이션 검증",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "한 개의 개정판 슬라이드 · 바인딩은 고정된 상태로 유지됨 · 저장 시 표준 소스 쓰기",
   "One source workspace": "단일 소스 작업 공간",
@@ -821,6 +824,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save block": "블록 저장",
   "Save Chart": "Chart 저장",
   "Save current": "현재 저장",
+  "Save HTML slide": "HTML 슬라이드 저장",
   "Save section": "섹션 저장",
   "Save slide": "슬라이드 저장",
   "Save to canonical source": "표준 소스에 저장",
@@ -841,6 +845,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Agent 선택에는 현재 비어 있지 않은 소스 선택이 필요합니다.",
   "self-contained scriptless file": "자체 포함된 스크립트 없는 파일",
   semantic: "의미론적",
+  "Semantic HTML → select or edit one exact slide": "시맨틱 HTML → 정확한 슬라이드 하나 선택 또는 편집",
   "Send nothing to a model service and use built-in deterministic planners":
     "모델 서비스에 아무 것도 보내지 않고 내장된 결정론적 플래너를 사용합니다.",
   "Shaping and verifying…": "구성하고 확인하는 중…",
@@ -853,6 +858,7 @@ export const INTERFACE_TRANSLATIONS = {
   Silver: "실버",
   Skip: "건너뛰기",
   "Sky Blue": "스카이 블루",
+  "Slide HTML": "슬라이드 HTML",
   "Slide Markdown": "슬라이드 Markdown",
   slides: "슬라이드",
   Slides: "슬라이드",

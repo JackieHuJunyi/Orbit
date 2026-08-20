@@ -2479,3 +2479,19 @@ v1.24 保留系统字体负责最终字形与 shaping，让纯 `greeting-motion`
 SVG 不再保留独立的下划线 flourish 和白色装饰 cursor。每个 active stroke 只有一个很小的 spectrum ink head，它与 mask 使用完全相同的 path 和 clock；笔压只改变墨点椭圆形变。最后一笔结束后，完整九色 system-font fill 才沉淀进来，补全不同设备字体与原创近似轨迹之间无法完全重合的细节。因此开场能看到真实书写秩序，静止时仍得到准确、完整且本地 shaping 的文字。
 
 这次学习的是 Apple 官方 motion 与 Draw On 所强调的 layer-aware calligraphic choreography、简洁反馈、可选动态和不阻塞操作，而不是复制他们的字形或动画素材。欢迎步骤的按钮从始至终可用；reduced motion/forced colors 直接展示完整静态问候；组件继续没有 timer、存储、网络、模型、凭据、工作区或写权限。版本门槛把五类书写系统、RTL、时序上界、嵌套冻结、多笔真实 CSS animation 和九语言几何一起纳入验证。
+
+## 125. v1.25 PPT → HTML 的主路径不应为了右侧编辑被迫改成 Deck Markdown
+
+早期把 Deck Markdown 设为唯一受控可视编辑格式，解决了任意 DOM 回写的安全问题；v1.23 再通过 fidelity review 生成独立 Deck 副本，让旧 HTML 至少有一条可继续编辑的路径。但原始产品目标明确包含“PPT 以 HTML 作为可读 canonical source”。如果用户只想修改一页 HTML 的标题或结构，却必须先接受有损投影并维护两个不联动文件，这条主路径仍然没有兑现。
+
+v1.25 把“直接编辑 HTML”缩成一个可证明的 capability，而不是放开 DOM。只有 `compileLegacyHtmlSlides` 已确定的当前 outer section 能打开编辑器；textarea 中的 exact section source 是唯一 draft，完整候选由纯 compiler 替换该区间得到。iframe 只消费重新编译后的 scriptless `srcdoc`，从不提供 innerHTML、节点或选择状态。左侧收到的是完整 proposed source mirror，因此用户每次右侧输入都能看到真实 HTML 会变成什么，而不是只看渲染结果。
+
+保存边界与 Document/Data/Chart/Deck 相同：重查 exact revision 和 range，证明区间外完全不变、页数不变、live binding token 不变，再做 whole-workspace validation、runtime preflight、checkpoint 和一次 persistence。独立 Deck copy 仍有价值，但它服务“进入 Rune typed Deck model”，不再服务“获得任意编辑能力”。这次修正使架构重新对齐最初的 PPT → HTML 目标；仍未完成的下一层是让“新建 Presentation”的默认 canonical format 从 Deck Markdown 与 HTML 之间形成清楚的产品决策，当前版本不假装这项选择已经解决。
+
+## 126. v1.26 开机式彩色手写的高级感出现在收笔后安静下来
+
+v1.24 已经按五类文字系统安排落笔顺序，但“有多条 stroke”只是必要条件。若写完时从动态 mask 突然切到完整 font fill，视觉仍可能像一个实现细节；若用持续 hue rotation、粒子、长尾光或循环闪烁补救，又会回到用户不喜欢的 AI 产品特效语言。设备开机问候真正有价值的不是效果数量，而是一段完整的仪式：写出、停稳、让界面重新安静。
+
+v1.26 不改 planner，也不改任何 locale 时序。每个 active spectrum head 只增加一个极小的笔锋反光，让椭圆压力变化更像柔软墨点；settle 之后只有一条窄高光穿过一次，并同时被完整字形 clip 与已完成 stroke mask 限制。它不会跑出文字，不会循环，也没有 pointer 或业务状态。九色仍来自 Rune 自己的 palette，轨迹仍是原创近似手势，最终 glyph 仍由设备本地字体完成，因此学习的是 Apple 启动体验的节奏而不是复制其素材。
+
+reduced motion 和 forced colors 直接跳过笔锋与高光，只保留完整静态问候；语言卡和继续按钮从第一帧起就能使用。验证同时检查源码中没有 storage、network、model、workspace、remote font、Canvas 或第二个 timer，真实浏览器检查 `write / pressure / settle / sheen` 确实挂载，九语言几何门槛继续防止视觉调整破坏长文本、RTL 和窄屏比例。

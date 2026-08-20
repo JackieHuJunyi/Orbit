@@ -469,6 +469,7 @@ export const INTERFACE_TRANSLATIONS = {
   "just now": "たった今",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "SELECT または WITH 文を 1 つだけ残し、明示的な Data ソースを確認してください。",
+  "Keep one valid outer <section> slide.": "有効な外側の <section> スライドを 1 つ維持してください。",
   "Keep readable Markdown structure and check unfinished syntax or bindings.":
     "読みやすい Markdown 構造を保ち、未完了の構文やバインディングを確認してください。",
   "Keep source order": "ソースの順序を維持する",
@@ -615,6 +616,8 @@ export const INTERFACE_TRANSLATIONS = {
     "1 つの新しいブロック · ライブ バインディングなし · 書き込む前に正確なソース diff を確認する",
   "One revision-bound section · live bindings stay fixed · save writes canonical source":
     "1 つのリビジョン バインド セクション · ライブ バインディングは固定されたまま · 保存は正規ソースを書き込みます",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "リビジョンに固定された 1 枚のセマンティック HTML スライド · Source にリアルタイム反映 · 保存前にプレゼンテーション全体を検証",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "1 つのリビジョンバインドされたスライド · バインディングは固定されたまま · 保存は正規ソースを書き込みます",
   "One source workspace": "1 つのソース ワークスペース",
@@ -837,6 +840,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save block": "ブロックを保存する",
   "Save Chart": "Chart を節約",
   "Save current": "現在の保存",
+  "Save HTML slide": "HTML スライドを保存",
   "Save section": "セクションの保存",
   "Save slide": "スライドを保存",
   "Save to canonical source": "正規のソースに保存する",
@@ -856,6 +860,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Selection Agent needs a current non-empty source selection": "選択 Agent には、空ではない現在のソース選択が必要です",
   "self-contained scriptless file": "自己完結型のスクリプトレス ファイル",
   semantic: "意味論的な",
+  "Semantic HTML → select or edit one exact slide": "セマンティック HTML → 1 枚の正確なスライドを選択または編集",
   "Send nothing to a model service and use built-in deterministic planners":
     "モデル サービスには何も送信せず、組み込みの決定論的プランナーを使用します",
   "Shaping and verifying…": "構成して検証中…",
@@ -868,6 +873,7 @@ export const INTERFACE_TRANSLATIONS = {
   Silver: "シルバー",
   Skip: "スキップ",
   "Sky Blue": "スカイブルー",
+  "Slide HTML": "スライド HTML",
   "Slide Markdown": "スライド Markdown",
   slides: "枚",
   Slides: "スライド",

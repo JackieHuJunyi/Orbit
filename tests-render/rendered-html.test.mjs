@@ -194,6 +194,7 @@ test("ships a complete-source live mirror for revision-bound visual Document dra
   assert.match(previewSource, /projectVisualDocumentBlockDraft/);
   assert.match(previewSource, /projectVisualDataCellDraft/);
   assert.match(previewSource, /projectVisualDeckSlideDraft/);
+  assert.match(previewSource, /onEditSemanticHtmlSlide/);
   assert.match(previewSource, /projectVisualChartSpecDraft/);
 });
 
@@ -235,15 +236,29 @@ test("keeps semantic HTML presentation handoff explicit and outside the startup 
   assert.doesNotMatch(conversion, /fetch\(|localStorage|indexedDB|persist|download/iu);
 });
 
-test("offers semantic HTML an explicit reviewed path into the controlled visual editor", async () => {
-  const [workbench, preview, conversion, imports, reviewDialog] = await Promise.all([
+test("offers semantic HTML direct source-bound editing plus an optional reviewed Deck copy", async () => {
+  const [workbench, preview, editor, directEdit, conversion, imports, reviewDialog] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/semantic-html-slide-editor.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/visual-semantic-html-slide-edit.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/semantic-html-editable-copy.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/imports.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/import-review-dialog.tsx", import.meta.url), "utf8"),
   ]);
 
+  assert.match(preview, /canVisualEditSemanticHtmlSlide/);
+  assert.match(preview, /<SemanticHtmlSlideEditor/);
+  assert.match(preview, /onEditSemanticHtmlSlide/);
+  assert.match(editor, /projectVisualSemanticHtmlSlideDraft/);
+  assert.match(editor, /visualSemanticHtmlSlidePreview/);
+  assert.match(editor, /onVisualSourceDraftChange/);
+  assert.match(workbench, /prepareVisualSemanticHtmlSlideEdit/);
+  assert.match(workbench, /commitVisualSemanticHtmlSlideEdit/);
+  assert.match(directEdit, /sourceOutsideSelectionIsUnchanged/);
+  assert.match(directEdit, /Keep live metric and Chart bindings unchanged/);
+  assert.match(directEdit, /compileLegacyHtmlSlides\(candidate\.nextSource\)/);
+  assert.doesNotMatch(directEdit, /DOMParser|innerHTML|fetch\(|localStorage|indexedDB|persist|download|provider/iu);
   assert.match(preview, /className="slides-create-editable-copy"/);
   assert.match(preview, /onCreateEditableDeckCopy\(artifact\)/);
   assert.match(workbench, /await import\("\.\.\/lib\/semantic-html-editable-copy"\)/);
@@ -775,6 +790,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /@keyframes rune-greeting-stroke-head/);
   assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
+  assert.match(styles, /@keyframes rune-greeting-sheen/);
   assert.match(styles, /\.welcome-greeting-reveal-stroke\s*\{[^}]*stroke-dasharray:\s*1/s);
   assert.match(styles, /stroke-dasharray:\s*1/);
   assert.match(styles, /grid-template-areas:\s*"greeting greeting"\s*"copy language"/s);
@@ -794,6 +810,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /className="welcome-greeting-fill welcome-greeting-fill-reveal"/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-stroke-head"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-ink-sheen"/);
+  assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
+  assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
   assert.match(handwrittenGreeting, /data-motion-script=\{script\}/);
   assert.match(handwrittenGreeting, /motion\.strokes\.map/);
   assert.match(handwrittenGreeting, /planGreetingMotion/);

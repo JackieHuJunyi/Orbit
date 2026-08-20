@@ -473,6 +473,7 @@ export const INTERFACE_TRANSLATIONS = {
   "just now": "justo ahora",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "Mantén una sola sentencia SELECT o WITH y comprueba su fuente Data explícita.",
+  "Keep one valid outer <section> slide.": "Mantén una única diapositiva externa <section> válida.",
   "Keep readable Markdown structure and check unfinished syntax or bindings.":
     "Mantén una estructura Markdown legible y revisa la sintaxis o los enlaces incompletos.",
   "Keep source order": "Mantener el orden de origen",
@@ -621,6 +622,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Un bloque nuevo · sin enlaces activos · revise la diferencia fuente exacta antes de escribir",
   "One revision-bound section · live bindings stay fixed · save writes canonical source":
     "Una sección sujeta a revisión · los enlaces activos permanecen fijos · guardar escrituras en la fuente canónica",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "Una diapositiva HTML semántica vinculada a la revisión · reflejada en vivo en Source · presentación completa verificada antes de guardar",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "Una diapositiva encuadernada con revisión · los enlaces permanecen fijos · guardar escrituras fuente canónica",
   "One source workspace": "Espacio de trabajo de una sola fuente",
@@ -843,6 +846,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save block": "Guardar bloque",
   "Save Chart": "Guardar Chart",
   "Save current": "Guardar actual",
+  "Save HTML slide": "Guardar diapositiva HTML",
   "Save section": "Guardar sección",
   "Save slide": "Guardar diapositiva",
   "Save to canonical source": "Guardar en fuente canónica",
@@ -864,6 +868,7 @@ export const INTERFACE_TRANSLATIONS = {
     "La selección Agent necesita una selección de fuente actual que no esté vacía",
   "self-contained scriptless file": "archivo autónomo sin secuencias de comandos",
   semantic: "semántico",
+  "Semantic HTML → select or edit one exact slide": "HTML semántico → seleccionar o editar una diapositiva exacta",
   "Send nothing to a model service and use built-in deterministic planners":
     "No envíe nada a un servicio modelo y utilice planificadores deterministas integrados",
   "Shaping and verifying…": "Estructurando y verificando…",
@@ -876,6 +881,7 @@ export const INTERFACE_TRANSLATIONS = {
   Silver: "Plateado",
   Skip: "Saltar",
   "Sky Blue": "Azul cielo",
+  "Slide HTML": "HTML de la diapositiva",
   "Slide Markdown": "Diapositiva Markdown",
   slides: "diapositivas",
   Slides: "Diapositivas",

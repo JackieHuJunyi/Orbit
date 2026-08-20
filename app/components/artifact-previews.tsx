@@ -121,6 +121,10 @@ import {
   type VisualDeckSlideEditInput,
 } from "../lib/visual-deck-edit";
 import {
+  canVisualEditSemanticHtmlSlide,
+  type VisualSemanticHtmlSlideEditInput,
+} from "../lib/visual-semantic-html-slide-edit";
+import {
   canVisualEditChartSpec,
   projectVisualChartSpecDraft,
   visualChartSourceFields,
@@ -128,6 +132,7 @@ import {
   visualChartSpecPreviewSource,
   type VisualChartSpecEditInput,
 } from "../lib/visual-chart-edit";
+import { SemanticHtmlSlideEditor } from "./semantic-html-slide-editor";
 
 type GridCell = DataCell | QueryCell;
 type PreviewTargetHandler = (artifact: WorkspaceArtifact, target: PreviewSourceTarget, viaLabel?: string) => void;
@@ -162,6 +167,12 @@ export type DeckSlideEditHandler = (
   artifact: WorkspaceArtifact,
   target: PreviewSourceTarget,
   input: VisualDeckSlideEditInput,
+) => Promise<string | null>;
+
+export type SemanticHtmlSlideEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: PreviewSourceTarget,
+  input: VisualSemanticHtmlSlideEditInput,
 ) => Promise<string | null>;
 
 export type SemanticHtmlEditableCopyHandler = (artifact: WorkspaceArtifact) => void | Promise<void>;
@@ -2652,6 +2663,7 @@ function SlidesPreview({
   activeSelection,
   onTargetSource,
   onEditDeckSlide,
+  onEditSemanticHtmlSlide,
   onCreateEditableDeckCopy,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
@@ -2664,6 +2676,7 @@ function SlidesPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
+  onEditSemanticHtmlSlide?: SemanticHtmlSlideEditHandler;
   onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
@@ -2678,6 +2691,11 @@ function SlidesPreview({
     draft: string;
     error: string;
     submitting: boolean;
+  } | null>(null);
+  const [editingSemanticHtmlSlide, setEditingSemanticHtmlSlide] = useState<{
+    artifactId: string;
+    sourceRevision: string;
+    targetId: string;
   } | null>(null);
   const slideFlowRef = useRef<HTMLDivElement>(null);
   const deckCompilation = isDeckMarkdownArtifact(artifact) ? compileDeckSource(source, { resolveLocalAssetUrl }) : null;
@@ -2699,6 +2717,10 @@ function SlidesPreview({
   const editingTarget =
     editingSlide?.artifactId === artifact.id && editingSlide.sourceRevision === artifact.source
       ? targets.find((target) => target.id === editingSlide.targetId)
+      : undefined;
+  const editingSemanticHtmlTarget =
+    editingSemanticHtmlSlide?.artifactId === artifact.id && editingSemanticHtmlSlide.sourceRevision === artifact.source
+      ? targets.find((target) => target.id === editingSemanticHtmlSlide.targetId)
       : undefined;
   const draftInput = useMemo<VisualDeckSlideEditInput | null>(
     () =>
@@ -2737,7 +2759,7 @@ function SlidesPreview({
 
   useEffect(() => {
     if (!editingSlide || !editingTarget || !draftInput) {
-      onVisualSourceDraftChange?.(null);
+      if (!editingSemanticHtmlSlide) onVisualSourceDraftChange?.(null);
       return;
     }
     onVisualSourceDraftChange?.({
@@ -2745,23 +2767,34 @@ function SlidesPreview({
       sourceRevision: artifact.source,
       ...projectVisualDeckSlideDraft(artifact, editingTarget, draftInput),
     });
-  }, [artifact, draftInput, editingSlide, editingTarget, onVisualSourceDraftChange]);
+  }, [artifact, draftInput, editingSemanticHtmlSlide, editingSlide, editingTarget, onVisualSourceDraftChange]);
 
   useEffect(() => () => onVisualSourceDraftChange?.(null), [onVisualSourceDraftChange]);
 
   if (deckCompilation?.errors.length) return <EmptyPreview message={deckCompilation.errors[0]} />;
 
   function beginSlideEdit(target: PreviewSourceTarget) {
-    if (!onEditDeckSlide || !canVisualEditDeckSlide(artifact, target)) return;
-    const draft = visualDeckSlideDraft(artifact, target);
-    if (!draft) return;
-    setEditingSlide({
+    if (deckCompilation) {
+      if (!onEditDeckSlide || !canVisualEditDeckSlide(artifact, target)) return;
+      const draft = visualDeckSlideDraft(artifact, target);
+      if (!draft) return;
+      setEditingSemanticHtmlSlide(null);
+      setEditingSlide({
+        targetId: target.id,
+        artifactId: artifact.id,
+        sourceRevision: artifact.source,
+        ...draft,
+        error: "",
+        submitting: false,
+      });
+      return;
+    }
+    if (!onEditSemanticHtmlSlide || !canVisualEditSemanticHtmlSlide(artifact, target)) return;
+    setEditingSlide(null);
+    setEditingSemanticHtmlSlide({
       targetId: target.id,
       artifactId: artifact.id,
       sourceRevision: artifact.source,
-      ...draft,
-      error: "",
-      submitting: false,
     });
   }
 
@@ -2793,7 +2826,11 @@ function SlidesPreview({
       <div className="slides-stage-meta">
         <span>{copy.slides(slideCount)}</span>
         <div>
-          <span>{copy.deckMode(deckCompilation ? (onEditDeckSlide ? "edit" : "sandbox") : "legacy")}</span>
+          <span>
+            {!deckCompilation && onEditSemanticHtmlSlide
+              ? copy.semanticHtmlEditMode
+              : copy.deckMode(deckCompilation ? (onEditDeckSlide ? "edit" : "sandbox") : "legacy")}
+          </span>
           {!deckCompilation && legacyCompilation && !legacyCompilation.errors.length && onCreateEditableDeckCopy && (
             <button
               className="slides-create-editable-copy"
@@ -2812,8 +2849,10 @@ function SlidesPreview({
         <nav className="slide-targets" aria-label={copy.selectDeckSlide}>
           {targets.map((target, targetIndex) => {
             const active = targetIndex === sourceLinkedSlideIndex;
-            const editable = Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target));
-            const editing = editingTarget?.id === target.id;
+            const editable = deckCompilation
+              ? Boolean(onEditDeckSlide && canVisualEditDeckSlide(artifact, target))
+              : Boolean(onEditSemanticHtmlSlide && canVisualEditSemanticHtmlSlide(artifact, target));
+            const editing = editingTarget?.id === target.id || editingSemanticHtmlTarget?.id === target.id;
             return (
               <span
                 className={`slide-target ${active ? "active" : ""} ${editing ? "editing" : ""}`.trim()}
@@ -2975,6 +3014,17 @@ function SlidesPreview({
           </footer>
         </form>
       )}
+      {editingSemanticHtmlTarget && onEditSemanticHtmlSlide && (
+        <SemanticHtmlSlideEditor
+          key={`${artifact.id}:${artifact.source}:${editingSemanticHtmlTarget.id}`}
+          artifact={artifact}
+          copy={copy}
+          target={editingSemanticHtmlTarget}
+          onClose={() => setEditingSemanticHtmlSlide(null)}
+          onSave={onEditSemanticHtmlSlide}
+          onVisualSourceDraftChange={onVisualSourceDraftChange}
+        />
+      )}
       {renderedPreviewSlides.length ? (
         <div className="deck-slide-flow" aria-label={copy.renderedPresentation} ref={slideFlowRef}>
           {renderedPreviewSlides.map((slide, slideIndex) => {
@@ -3043,6 +3093,7 @@ export function ArtifactPreview({
   onEditDocumentBlock,
   onReviewDocumentBlockStructure,
   onEditDeckSlide,
+  onEditSemanticHtmlSlide,
   onCreateEditableDeckCopy,
   onEditChartSpec,
   onVisualSourceDraftChange,
@@ -3058,6 +3109,7 @@ export function ArtifactPreview({
   onEditDocumentBlock?: DocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
+  onEditSemanticHtmlSlide?: SemanticHtmlSlideEditHandler;
   onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onEditChartSpec?: ChartSpecEditHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
@@ -3142,6 +3194,7 @@ export function ArtifactPreview({
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
             onEditDeckSlide={onEditDeckSlide}
+            onEditSemanticHtmlSlide={onEditSemanticHtmlSlide}
             onCreateEditableDeckCopy={onCreateEditableDeckCopy}
             onVisualSourceDraftChange={onVisualSourceDraftChange}
             resolveLocalAssetUrl={resolveLocalAssetUrl}

@@ -284,6 +284,8 @@
 .visual-document-editor,
 .visual-chart-editor,
 .visual-deck-editor { border-radius: var(--rune-radius-card); }
+.semantic-html-slide-editor .visual-deck-fields { grid-template-rows: minmax(0, 1fr); }
+.semantic-html-slide-editor .visual-deck-fields textarea { min-height: 274px; }
 
 .deck-slide-canvas {
   position: relative;

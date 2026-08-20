@@ -41,8 +41,10 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   const greeting = page.locator(".welcome-greeting");
   await expect(greeting).toBeVisible();
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
+  await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
+  await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-sheen");
   await expect(greeting).toHaveAttribute("data-stroke-count", "3");
-  await expect(greeting.locator("linearGradient stop")).toHaveCount(9);
+  await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
   await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
@@ -60,6 +62,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   expect(animationNames).toContain("rune-greeting-ink-settle");
   expect(animationNames).toContain("rune-greeting-stroke-head");
   expect(animationNames).toContain("rune-greeting-pressure");
+  await expect(greeting.locator(".welcome-greeting-ink-sheen")).toHaveCSS("animation-name", "rune-greeting-sheen");
   for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
     await expect(head).toHaveCSS("offset-path", /path\(/);
   }
@@ -245,6 +248,7 @@ ${firstBody}
   await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
   const firstSectionStart = source.indexOf('<section class="cover">');
+  const firstSectionEnd = source.indexOf("</section>", firstSectionStart) + "</section>".length;
   await editor.evaluate((element, caret) => {
     const textarea = element as HTMLTextAreaElement;
     textarea.focus();
@@ -253,6 +257,24 @@ ${firstBody}
   await editor.press("ArrowRight");
   await expect(flow.locator(".deck-slide-canvas").first()).toHaveClass(/active/);
   await expect(flow.locator(".deck-slide-page").first()).toBeInViewport();
+
+  const editedFirstSection = `<section class="cover" data-layout="cover">
+      <h1>Opening, refined</h1>
+      <p>Directly edited in canonical semantic HTML.</p>
+    </section>`;
+  const editedSource = `${source.slice(0, firstSectionStart)}${editedFirstSection}${source.slice(firstSectionEnd)}`;
+  await page.getByRole("button", { name: "Edit Opening", exact: true }).click();
+  const htmlEditor = page.locator("form.semantic-html-slide-editor");
+  await expect(htmlEditor).toBeVisible();
+  const htmlDraft = htmlEditor.getByRole("textbox", { name: "Slide HTML · Opening" });
+  await htmlDraft.fill(editedFirstSection);
+  await expect(editor).toHaveValue(editedSource);
+  await expect(editor).not.toBeEditable();
+  await expect(htmlEditor.locator("iframe")).toHaveAttribute("srcdoc", /Opening, refined/u);
+  await htmlEditor.getByRole("button", { name: "Save HTML slide" }).click();
+  await expect(htmlEditor).toBeHidden();
+  await expect(editor).toHaveValue(editedSource);
+  await expect(flow.locator("iframe.slides-frame").first()).toHaveAttribute("srcdoc", /Opening, refined/u);
 
   await page.getByRole("button", { name: "Create an editable Deck Markdown presentation" }).click();
   const copyReview = page.getByRole("dialog", { name: "Review imported sources" });
@@ -269,7 +291,7 @@ ${firstBody}
   await expect(page.locator(".slide-target-edit")).toHaveCount(2);
 
   await fileRail.getByText("semantic-brief.html", { exact: true }).click();
-  await expect(editor).toHaveValue(source);
+  await expect(editor).toHaveValue(editedSource);
   expect(pageErrors).toEqual([]);
 });
 

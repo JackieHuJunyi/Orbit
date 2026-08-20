@@ -646,6 +646,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "一頁綁定當前版本的演示"
   ],
   [
+    "一页绑定当前版本的语义",
+    "一頁綁定當前版本的語義"
+  ],
+  [
     "不能删除最后一个内容块",
     "不能刪除最後一個內容塊"
   ],
@@ -1094,6 +1098,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "試點證據仍在等待稽核"
   ],
   [
+    "请保留一个有效的外层",
+    "請保留一個有效的外層"
+  ],
+  [
     "请先下载此大型源文件",
     "請先下載此大型原始檔"
   ],
@@ -1162,6 +1170,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "依賴變化和執行驗證"
   ],
   [
+    "保存前核验完整演示",
+    "儲存前核驗完整演示"
+  ],
+  [
     "保留来源关系的演示",
     "保留來源關係的演示"
   ],
@@ -1212,6 +1224,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "实时源内容核验失败",
     "即時源內容核驗失敗"
+  ],
+  [
+    "实时镜像左侧源内容",
+    "即時映象左側源內容"
   ],
   [
     "审核后直接确认受众",
@@ -4622,6 +4638,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "儲存先"
   ],
   [
+    "保存前",
+    "儲存前"
+  ],
+  [
     "保存後",
     "儲存後"
   ],
@@ -5516,6 +5536,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "识别",
     "識別"
+  ],
+  [
+    "语义",
+    "語義"
   ],
   [
     "语句",

@@ -469,6 +469,7 @@ export const INTERFACE_TRANSLATIONS = {
   "just now": "только что",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "Оставьте один запрос SELECT или WITH и проверьте его явно заданный источник Data.",
+  "Keep one valid outer <section> slide.": "Сохраните один допустимый внешний слайд <section>.",
   "Keep readable Markdown structure and check unfinished syntax or bindings.":
     "Сохраните читаемую структуру Markdown и проверьте незавершённый синтаксис или связи.",
   "Keep source order": "Сохранять исходный порядок",
@@ -615,6 +616,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Один новый блок · нет живых привязок · просмотрите точную разницу исходного кода перед написанием",
   "One revision-bound section · live bindings stay fixed · save writes canonical source":
     "Один раздел с привязкой к ревизии · живые привязки остаются фиксированными · сохранение записывает канонический исходный код",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "Один семантический HTML-слайд для текущей ревизии · в реальном времени отражается в Source · перед сохранением проверяется вся презентация",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "Один слайд с привязкой к ревизии · привязки остаются фиксированными · сохранение записывает канонический исходный код",
   "One source workspace": "Одно исходное рабочее пространство",
@@ -837,6 +840,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save block": "Сохранить блок",
   "Save Chart": "Сохранить Chart",
   "Save current": "Сохранить текущий",
+  "Save HTML slide": "Сохранить HTML-слайд",
   "Save section": "Сохранить раздел",
   "Save slide": "Сохранить слайд",
   "Save to canonical source": "Сохранить в канонический источник",
@@ -859,6 +863,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Для выбора Agent требуется текущий непустой исходный выбор.",
   "self-contained scriptless file": "автономный файл без сценариев",
   semantic: "смысловой",
+  "Semantic HTML → select or edit one exact slide": "Семантический HTML → выбрать или изменить один точный слайд",
   "Send nothing to a model service and use built-in deterministic planners":
     "Ничего не отправляйте в модельный сервис и используйте встроенные детерминированные планировщики.",
   "Shaping and verifying…": "Формирование и проверка…",
@@ -871,6 +876,7 @@ export const INTERFACE_TRANSLATIONS = {
   Silver: "Серебристый",
   Skip: "Пропустить",
   "Sky Blue": "Небесно-голубой",
+  "Slide HTML": "HTML слайда",
   "Slide Markdown": "Слайд Markdown",
   slides: "слайдов",
   Slides: "Слайды",

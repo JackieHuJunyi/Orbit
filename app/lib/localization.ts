@@ -1059,6 +1059,9 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               sandbox: "Deck Markdown → sandboxed HTML",
               legacy: "Legacy sandboxed HTML",
             }[mode],
+      semanticHtmlEditMode: zh
+        ? "语义 HTML → 选择或编辑一页精确演示"
+        : "Semantic HTML → select or edit one exact slide",
       selectDeckSlide: zh ? "选择或编辑 Deck 演示页" : "Select or edit a Deck slide",
       editingSlide: (index: number) => (zh ? `正在编辑第 ${index} 页精确演示` : `Editing exact slide ${index}`),
       chooseLayout: (label: string) => (zh ? `选择 ${label} 的版式` : `Choose layout for ${label}`),
@@ -1068,12 +1071,18 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       layout: zh ? "版式" : "Layout",
       eyebrow: zh ? "眉题" : "Eyebrow",
       slideMarkdown: zh ? "演示页 Markdown" : "Slide Markdown",
+      slideHtml: zh ? "演示页 HTML" : "Slide HTML",
       sandboxedSlide: zh ? "单页沙盒预览" : "Sandboxed one-slide preview",
       validSlideHeading: zh ? "请添加有效的 # 或 ## 演示页标题。" : "Add a valid # or ## slide heading.",
+      validHtmlSlide: zh ? "请保留一个有效的外层 <section> 演示页。" : "Keep one valid outer <section> slide.",
       slideContract: zh
         ? "一页绑定当前版本的演示 · 绑定保持固定 · 保存会写入规范源内容"
         : "One revision-bound slide · bindings stay fixed · save writes canonical source",
       saveSlide: zh ? "保存演示页" : "Save slide",
+      htmlSlideContract: zh
+        ? "一页绑定当前版本的语义 HTML · 实时镜像左侧源内容 · 保存前核验完整演示"
+        : "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save",
+      saveHtmlSlide: zh ? "保存 HTML 演示页" : "Save HTML slide",
       createEditableDeck: zh ? "创建可编辑的 Deck Markdown 演示" : "Create an editable Deck Markdown presentation",
       renderedPresentation: zh ? "已渲染演示预览" : "Rendered presentation preview",
       startWriting: zh ? "开始输入即可编译预览。" : "Start writing to compile a preview.",

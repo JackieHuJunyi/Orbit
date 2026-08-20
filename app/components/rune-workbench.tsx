@@ -62,6 +62,7 @@ import {
   type DocumentBlockStructureReviewHandler,
   type DocumentSectionEditHandler,
   type SemanticHtmlEditableCopyHandler,
+  type SemanticHtmlSlideEditHandler,
   type VisualSourceDraft,
 } from "./artifact-previews";
 import { AgentComposer, type AgentScope } from "./agent-composer";
@@ -241,6 +242,7 @@ import {
   type VisualDocumentBlockStructureInput,
 } from "../lib/visual-document-block-structure";
 import { prepareVisualDeckSlideEdit } from "../lib/visual-deck-edit";
+import { prepareVisualSemanticHtmlSlideEdit } from "../lib/visual-semantic-html-slide-edit";
 import { prepareVisualChartSpecEdit } from "../lib/visual-chart-edit";
 import {
   createSavedOperatingReview,
@@ -2249,6 +2251,16 @@ export function RuneWorkbench() {
       detail: "Replace one revision-bound Deck slide through the controlled visual editor.",
       verificationNotice: `Verifying ${target.label} against the complete workspace…`,
       compile: (currentArtifact) => prepareVisualDeckSlideEdit(currentArtifact, target, input),
+    });
+
+  const commitVisualSemanticHtmlSlideEdit: SemanticHtmlSlideEditHandler = async (targetArtifact, target, input) =>
+    commitVisualSourceEdit({
+      targetArtifact,
+      targetLabel: target.label,
+      targetNoun: "semantic HTML slide",
+      detail: "Replace one revision-bound semantic HTML section through the controlled visual editor.",
+      verificationNotice: `Verifying ${target.label} against the complete HTML presentation…`,
+      compile: (currentArtifact) => prepareVisualSemanticHtmlSlideEdit(currentArtifact, target, input),
     });
 
   const reviewSemanticHtmlEditableCopy: SemanticHtmlEditableCopyHandler = async (targetArtifact) => {
@@ -6125,6 +6137,11 @@ export function RuneWorkbench() {
                     }
                     onEditDeckSlide={
                       !proposalReviewActive && visualEditState === "idle" ? commitVisualDeckSlideEdit : undefined
+                    }
+                    onEditSemanticHtmlSlide={
+                      !proposalReviewActive && visualEditState === "idle"
+                        ? commitVisualSemanticHtmlSlideEdit
+                        : undefined
                     }
                     onCreateEditableDeckCopy={
                       !proposalReviewActive && visualEditState === "idle" ? reviewSemanticHtmlEditableCopy : undefined

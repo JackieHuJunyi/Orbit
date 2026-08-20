@@ -477,6 +477,7 @@ export const INTERFACE_TRANSLATIONS = {
   "just now": "juste maintenant",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "Conservez une seule instruction SELECT ou WITH et vérifiez sa source Data explicite.",
+  "Keep one valid outer <section> slide.": "Conservez une seule diapositive externe <section> valide.",
   "Keep readable Markdown structure and check unfinished syntax or bindings.":
     "Conservez une structure Markdown lisible et vérifiez les syntaxes ou liaisons inachevées.",
   "Keep source order": "Conserver l'ordre des sources",
@@ -623,6 +624,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Un nouveau bloc · pas de liaisons en direct · examinez la différence exacte de la source avant d'écrire",
   "One revision-bound section · live bindings stay fixed · save writes canonical source":
     "Une section liée à la révision · les liaisons dynamiques restent fixes · sauvegarder écrit la source canonique",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "Une diapositive HTML sémantique liée à la révision · reflétée en direct dans Source · présentation complète vérifiée avant l’enregistrement",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "Une diapositive liée à la révision · les liaisons restent fixes · enregistrer l'écriture de la source canonique",
   "One source workspace": "Un espace de travail source",
@@ -845,6 +848,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save block": "Enregistrer le bloc",
   "Save Chart": "Enregistrer Chart",
   "Save current": "Enregistrer le courant",
+  "Save HTML slide": "Enregistrer la diapositive HTML",
   "Save section": "Enregistrer la section",
   "Save slide": "Enregistrer la diapositive",
   "Save to canonical source": "Enregistrer dans une source canonique",
@@ -866,6 +870,8 @@ export const INTERFACE_TRANSLATIONS = {
     "La sélection Agent nécessite une sélection de source actuelle non vide.",
   "self-contained scriptless file": "fichier autonome sans script",
   semantic: "sémantique",
+  "Semantic HTML → select or edit one exact slide":
+    "HTML sémantique → sélectionner ou modifier une diapositive précise",
   "Send nothing to a model service and use built-in deterministic planners":
     "N'envoyez rien à un service modèle et utilisez des planificateurs déterministes intégrés",
   "Shaping and verifying…": "Structuration et vérification…",
@@ -878,6 +884,7 @@ export const INTERFACE_TRANSLATIONS = {
   Silver: "Argent",
   Skip: "Sauter",
   "Sky Blue": "Bleu ciel",
+  "Slide HTML": "HTML de la diapositive",
   "Slide Markdown": "Diapositive Markdown",
   slides: "diapositives",
   Slides: "Diapositives",

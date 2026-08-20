@@ -1,5 +1,9 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.26 with a Rune-original calligraphic spectrum treatment: ordered source-shaped reveal, pressure-responsive ink heads, a single clipped completion sheen, and static reduced-motion/forced-color fallbacks.
+
+- 2026-08-21 — Shipped Rune v1.25 with exact-section semantic HTML slide editing, complete live Source mirroring, isolated draft preview, binding-preserving compilation, and the shared checkpointed atomic visual-write transaction.
+
 - 2026-08-21 — Shipped Rune v1.24 with writing-system-aware spectrum-ink strokes, ordered pen lifts and pressure, intact Arabic RTL shaping, and static reduced-motion/forced-color fallbacks.
 
 - 2026-08-21 — Shipped Rune v1.23 with an explicit semantic HTML → editable Deck copy action, exact-revision conversion, collision-safe identity, fidelity review before one additive write, and preserved original HTML.

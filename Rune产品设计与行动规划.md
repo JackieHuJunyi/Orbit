@@ -2246,3 +2246,20 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 学习 Apple 设备开机与官方 Draw On motion 的书写秩序、短促反馈和可退出原则，但所有轨迹、渐变与代码必须是 Rune 原创；不得复制 Apple 字形路径、字体、动画文件、插画或品牌资产，也不新增 Canvas、远程字体和第二个 timer。
 - `WelcomeExperience` 继续唯一拥有语言轮播与 onboarding 状态，写字组件仍不得接触 storage、network、model、credential、Artifact 或 mutation；用户在动画期间可立即继续设置。
 - reduced motion 和 forced colors 立即显示完整静态问候。纯单测覆盖五种 script strategy、严格时序、嵌套冻结、RTL 与 hostile bounds；真实 Chromium 证明多笔 offset path/animation 挂载，九语言桌面与窄屏几何继续零溢出。
+
+### 17.56 v1.25 语义 HTML 幻灯片应直接编辑 canonical source
+
+- 只有经过 `compileLegacyHtmlSlides` 证明的当前最外层 `<section>` 才显示右侧编辑入口；iframe DOM、渲染文本、CSS 计算结果和浏览器修复后的结构都不能成为写入身份。
+- 编辑器以该完整 section 源码作为唯一 draft authority，最多 16,000 字符；左侧必须实时显示替换该范围后的完整候选 HTML，并在 draft 期间保持只读，不能只显示局部片段或建立第二份 canonical state。
+- 每次有效变更都重新编译完整候选，并复用原文档共享 style 生成独立 scriptless iframe；draft 必须恰好是一个外层 section，不能含 script、额外 wrapper/section、改变页数或改变任何 `{{ ... }}` binding token。
+- 保存时重新验证 artifact 对象、source revision、target range、target label/index 与区间外逐字不变，再走已有 whole-workspace validation、runtime preflight、checkpoint 和单次原子 persistence；取消、no-op、stale、超限和下游失败均为零写入。
+- 独立 Deck Markdown 副本仍作为可选的 typed-layout 路径保留，并继续经过 fidelity review；它不再是修正 canonical HTML 的前置步骤，两个路径的写入语义必须明确区分。
+- 单测覆盖 exact preservation、共享 style、sandbox、CRLF、冻结输入与所有 fail-closed 条件；真实浏览器从审核导入 HTML 开始，证明右侧编辑、左侧完整实时镜像、draft preview、保存重开和可选 Deck copy。
+
+### 17.57 v1.26 手写彩墨的完成感必须克制且只发生一次
+
+- v1.24 的五类书写系统计划继续是唯一时序来源；不能为了视觉修饰新增第二套 path、timer、locale 分支或 Canvas loop，也不能把字重新退化为整块 clip/opacity 揭示。
+- active stroke 的 spectrum ink head 增加小范围笔锋高光，但 path、delay、duration 与 reveal mask 完全一致；它应读成有压力的彩色墨点，不应成为独立白色 cursor、粒子或光标。
+- 最后一笔落定后只允许一次窄幅柔和 sheen。它必须同时受完整 glyph clip 与完成后的 stroke mask 约束，不能溢出文字、循环、改变布局、遮挡语言卡或抢占 pointer event。
+- 九色顺序、设备本地书写字体、阿拉伯文完整 RTL shaping、语言轮播和欢迎状态仍不变；所有 path、渐变与效果为 Rune 原创，不复制 Apple 字形、字体、动画文件、图形资产或品牌标识。
+- reduced motion 和 forced colors 必须隐藏所有 transient nib/sheen 并立即显示静态完整问候；设置按钮从第一帧起可操作。源码门槛、真实 Chromium animation 检查和九语言桌面/窄屏几何继续同时通过。

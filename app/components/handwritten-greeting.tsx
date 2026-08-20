@@ -63,6 +63,8 @@ export function HandwrittenGreeting({
   const gradientId = `rune-greeting-spectrum-${identifier}`;
   const glowId = `rune-greeting-glow-${identifier}`;
   const revealMaskId = `rune-greeting-reveal-${identifier}`;
+  const textClipId = `rune-greeting-text-${identifier}`;
+  const sheenId = `rune-greeting-sheen-${identifier}`;
   const compactScript = locale === "zh-CN" || locale === "zh-TW" || locale === "ja" || locale === "ko";
   const canvasWidth =
     locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
@@ -79,7 +81,9 @@ export function HandwrittenGreeting({
       data-direction={direction}
       data-greeting-locale={locale}
       data-motion-count={motion.motionCount}
+      data-motion-renderer="calligraphic-mask"
       data-motion-script={script}
+      data-ink-effect="spectrum-sheen"
       data-stroke-count={motion.strokes.length}
       preserveAspectRatio="xMidYMid meet"
       role="img"
@@ -87,13 +91,23 @@ export function HandwrittenGreeting({
         {
           "--greeting-cycle-duration": `${cycleDuration}ms`,
           "--greeting-settle-delay": `${motion.settleDelayMs}ms`,
+          "--greeting-sheen-delay": `${motion.settleDelayMs + 120}ms`,
+          "--greeting-sheen-distance": `${Math.round(canvasWidth * 1.48)}px`,
           "--greeting-write-duration": `${motion.writeDurationMs}ms`,
         } as CSSProperties
       }
       viewBox={`0 0 ${canvasWidth} 220`}
     >
       <defs>
-        <linearGradient gradientUnits="userSpaceOnUse" id={gradientId} x1="22" x2={canvasWidth - 22} y1="34" y2="190">
+        <linearGradient
+          className="welcome-greeting-spectrum"
+          gradientUnits="userSpaceOnUse"
+          id={gradientId}
+          x1="22"
+          x2={canvasWidth - 22}
+          y1="34"
+          y2="190"
+        >
           <stop offset="0" stopColor="#ff375f" />
           <stop offset="0.14" stopColor="#ff9f0a" />
           <stop offset="0.27" stopColor="#ffd60a" />
@@ -103,6 +117,13 @@ export function HandwrittenGreeting({
           <stop offset="0.8" stopColor="#5e5ce6" />
           <stop offset="0.91" stopColor="#bf5af2" />
           <stop offset="1" stopColor="#ff375f" />
+        </linearGradient>
+        <linearGradient className="welcome-greeting-sheen-gradient" id={sheenId} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="white" stopOpacity="0" />
+          <stop offset="0.42" stopColor="white" stopOpacity="0" />
+          <stop offset="0.5" stopColor="white" stopOpacity="0.7" />
+          <stop offset="0.58" stopColor="white" stopOpacity="0" />
+          <stop offset="1" stopColor="white" stopOpacity="0" />
         </linearGradient>
         <filter height="180%" id={glowId} width="130%" x="-15%" y="-40%">
           <feGaussianBlur stdDeviation="5.5" />
@@ -128,6 +149,16 @@ export function HandwrittenGreeting({
             />
           ))}
         </mask>
+        <clipPath id={textClipId}>
+          <text
+            direction={direction}
+            textAnchor={direction === "rtl" ? "end" : "start"}
+            x={direction === "rtl" ? canvasWidth - 36 : 36}
+            y="166"
+          >
+            {value}
+          </text>
+        </clipPath>
       </defs>
 
       <GreetingText
@@ -154,6 +185,16 @@ export function HandwrittenGreeting({
         gradientId={gradientId}
         value={value}
       />
+      <g aria-hidden="true" clipPath={`url(#${textClipId})`} mask={`url(#${revealMaskId})`}>
+        <rect
+          className="welcome-greeting-ink-sheen"
+          fill={`url(#${sheenId})`}
+          height="220"
+          width={Math.round(canvasWidth * 0.42)}
+          x={Math.round(canvasWidth * -0.46)}
+          y="0"
+        />
+      </g>
       {motion.strokes.map((stroke, index) => (
         <g
           className="welcome-greeting-stroke-head"
@@ -178,6 +219,7 @@ export function HandwrittenGreeting({
             rx="4.6"
             ry="2.3"
           />
+          <ellipse className="welcome-greeting-stroke-head-light" cx="-0.8" cy="-0.6" rx="1.7" ry="0.55" />
         </g>
       ))}
     </svg>

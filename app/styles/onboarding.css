@@ -192,12 +192,28 @@
 .welcome-greeting-fill-glow { opacity: .22; }
 .welcome-greeting-fill-reveal { opacity: .98; }
 .welcome-greeting-fill-settled { opacity: 0; }
-.welcome-greeting-reveal-stroke { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.welcome-greeting-reveal-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.welcome-greeting-ink-sheen {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: opacity, transform;
+}
 .welcome-greeting-stroke-head { opacity: 0; }
-.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .26); filter: blur(4px); }
+.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .22); filter: blur(4.5px); }
 .welcome-greeting-stroke-head-ink {
   stroke: rgba(255, 255, 255, .32);
   stroke-width: .8px;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.welcome-greeting-stroke-head-light {
+  fill: rgba(255, 255, 255, .78);
+  filter: blur(.22px);
+  transform: rotate(-16deg);
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -586,7 +602,8 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .welcome-language-card::before,
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before,
-  .welcome-greeting-stroke-head { display: none; }
+  .welcome-greeting-stroke-head,
+  .welcome-greeting-ink-sheen { display: none; }
   .welcome-greeting-fill { fill: CanvasText; }
   .welcome-greeting-reveal-stroke { animation: none; stroke-dashoffset: 0; }
   .welcome-greeting-fill-glow { display: none; }

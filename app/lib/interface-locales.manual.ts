@@ -2825,3 +2825,53 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   Area: "영역",
   "Area · volume sequence": "영역 · 규모 추이",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Semantic HTML → select or edit one exact slide":
+    "HTML sémantique → sélectionner ou modifier une diapositive précise",
+  "Slide HTML": "HTML de la diapositive",
+  "Keep one valid outer <section> slide.": "Conservez une seule diapositive externe <section> valide.",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "Une diapositive HTML sémantique liée à la révision · reflétée en direct dans Source · présentation complète vérifiée avant l’enregistrement",
+  "Save HTML slide": "Enregistrer la diapositive HTML",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Semantic HTML → select or edit one exact slide": "HTML semántico → seleccionar o editar una diapositiva exacta",
+  "Slide HTML": "HTML de la diapositiva",
+  "Keep one valid outer <section> slide.": "Mantén una única diapositiva externa <section> válida.",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "Una diapositiva HTML semántica vinculada a la revisión · reflejada en vivo en Source · presentación completa verificada antes de guardar",
+  "Save HTML slide": "Guardar diapositiva HTML",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Semantic HTML → select or edit one exact slide": "Семантический HTML → выбрать или изменить один точный слайд",
+  "Slide HTML": "HTML слайда",
+  "Keep one valid outer <section> slide.": "Сохраните один допустимый внешний слайд <section>.",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "Один семантический HTML-слайд для текущей ревизии · в реальном времени отражается в Source · перед сохранением проверяется вся презентация",
+  "Save HTML slide": "Сохранить HTML-слайд",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Semantic HTML → select or edit one exact slide": "HTML دلالي ← تحديد شريحة واحدة دقيقة أو تحريرها",
+  "Slide HTML": "HTML الشريحة",
+  "Keep one valid outer <section> slide.": "احتفظ بشريحة خارجية واحدة صالحة من نوع <section>.",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "شريحة HTML دلالية مرتبطة بالمراجعة · تنعكس مباشرة في Source · يُتحقق من العرض الكامل قبل الحفظ",
+  "Save HTML slide": "حفظ شريحة HTML",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Semantic HTML → select or edit one exact slide": "セマンティック HTML → 1 枚の正確なスライドを選択または編集",
+  "Slide HTML": "スライド HTML",
+  "Keep one valid outer <section> slide.": "有効な外側の <section> スライドを 1 つ維持してください。",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "リビジョンに固定された 1 枚のセマンティック HTML スライド · Source にリアルタイム反映 · 保存前にプレゼンテーション全体を検証",
+  "Save HTML slide": "HTML スライドを保存",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Semantic HTML → select or edit one exact slide": "시맨틱 HTML → 정확한 슬라이드 하나 선택 또는 편집",
+  "Slide HTML": "슬라이드 HTML",
+  "Keep one valid outer <section> slide.": "유효한 외부 <section> 슬라이드 하나를 유지하세요.",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "현재 리비전에 고정된 시맨틱 HTML 슬라이드 하나 · Source에 실시간 반영 · 저장 전 전체 프레젠테이션 검증",
+  "Save HTML slide": "HTML 슬라이드 저장",
+});

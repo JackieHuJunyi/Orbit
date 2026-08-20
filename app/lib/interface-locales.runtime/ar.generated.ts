@@ -458,6 +458,7 @@ export const INTERFACE_TRANSLATIONS = {
   "just now": "الآن فقط",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "احتفظ بعبارة SELECT أو WITH واحدة وتحقق من مصدر Data الصريح لها.",
+  "Keep one valid outer <section> slide.": "احتفظ بشريحة خارجية واحدة صالحة من نوع <section>.",
   "Keep readable Markdown structure and check unfinished syntax or bindings.":
     "حافظ على بنية Markdown مقروءة وتحقق من الصياغة أو الروابط غير المكتملة.",
   "Keep source order": "الحفاظ على ترتيب المصدر",
@@ -599,6 +600,8 @@ export const INTERFACE_TRANSLATIONS = {
     "كتلة جديدة واحدة · لا توجد روابط مباشرة · قم بمراجعة فرق المصدر الدقيق قبل الكتابة",
   "One revision-bound section · live bindings stay fixed · save writes canonical source":
     "قسم واحد مرتبط بالمراجعة · تظل الارتباطات المباشرة ثابتة · حفظ ما يكتبه المصدر الأساسي",
+  "One revision-bound semantic HTML slide · mirrored live to Source · complete presentation verified before save":
+    "شريحة HTML دلالية مرتبطة بالمراجعة · تنعكس مباشرة في Source · يُتحقق من العرض الكامل قبل الحفظ",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "شريحة واحدة مرتبطة بالمراجعة · تبقى الارتباطات ثابتة · حفظ يكتب المصدر الأساسي",
   "One source workspace": "مساحة عمل مصدر واحد",
@@ -816,6 +819,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save block": "حفظ الكتلة",
   "Save Chart": "حفظ Chart",
   "Save current": "حفظ الحالي",
+  "Save HTML slide": "حفظ شريحة HTML",
   "Save section": "حفظ القسم",
   "Save slide": "حفظ الشريحة",
   "Save to canonical source": "حفظ إلى المصدر الكنسي",
@@ -835,6 +839,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Selection Agent needs a current non-empty source selection": "يحتاج التحديد Agent إلى تحديد مصدر حالي غير فارغ",
   "self-contained scriptless file": "ملف نصي قائم بذاته",
   semantic: "دلالي",
+  "Semantic HTML → select or edit one exact slide": "HTML دلالي ← تحديد شريحة واحدة دقيقة أو تحريرها",
   "Send nothing to a model service and use built-in deterministic planners":
     "لا ترسل شيئًا إلى خدمة نموذجية واستخدم المخططات الحتمية المضمنة",
   "Shaping and verifying…": "جارٍ التشكيل والتحقق…",
@@ -847,6 +852,7 @@ export const INTERFACE_TRANSLATIONS = {
   Silver: "فضي",
   Skip: "تخطي",
   "Sky Blue": "أزرق سماوي",
+  "Slide HTML": "HTML الشريحة",
   "Slide Markdown": "الشريحة Markdown",
   slides: "شرائح",
   Slides: "الشرائح",
