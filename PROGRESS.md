@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Upgraded the release workflow to the official Node 24-based checkout, setup-node, and failure-artifact actions, removing GitHub's deprecated Node 20 action runtime warning without changing Rune's pinned Node runtime.
+
 - 2026-08-20 — Shipped Rune v1.15 with a spectrum-ink handwritten welcome, twelve fully localized material themes, lighter welcome/empty/workspace geometry, corrected Preview-to-Source centering, and a nine-locale desktop/compact browser geometry gate.
 
 - 2026-08-20 — Stabilized the release E2E gate on the exact Playwright runtime image so GitHub no longer depends on a live Ubuntu APT browser installation.
