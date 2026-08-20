@@ -69,6 +69,7 @@
   animation: rune-greeting-pen 820ms var(--rune-ease-out) forwards;
   animation-delay: calc(var(--greeting-count) * 124ms + 540ms);
 }
+.deferred-surface-status > i::after { animation: rune-deferred-surface-progress 1.1s var(--rune-ease-smooth) infinite alternate; }
 .empty-drop-zone { animation: rune-surface-enter 520ms var(--rune-ease-out) backwards; }
 
 @media (hover: hover) {
@@ -117,6 +118,7 @@
 @keyframes rune-greeting-ink-settle { 0% { fill-opacity: 0; filter: blur(2.5px); } 42% { fill-opacity: .68; } 100% { fill-opacity: 1; filter: blur(0); } }
 @keyframes rune-greeting-flourish { 0% { opacity: 0; stroke-dashoffset: 1; } 16% { opacity: .76; } 82% { opacity: .52; } 100% { opacity: .32; stroke-dashoffset: 0; } }
 @keyframes rune-greeting-pen { 0% { opacity: 0; offset-distance: 0%; transform: scale(.45); } 14%, 76% { opacity: .92; } 92% { opacity: .52; transform: scale(1); } 100% { opacity: 0; offset-distance: 100%; transform: scale(.3); } }
+@keyframes rune-deferred-surface-progress { from { opacity: .48; transform: scaleX(.18); } to { opacity: 1; transform: scaleX(1); } }
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -126,7 +128,8 @@
   .welcome-greeting-trace .welcome-greeting-ink-unit,
   .welcome-greeting-fill .welcome-greeting-ink-unit,
   .welcome-greeting-flourish,
-  .welcome-greeting-pen { animation: none !important; }
+  .welcome-greeting-pen,
+  .deferred-surface-status > i::after { animation: none !important; }
   .welcome-greeting { animation: none !important; }
   .welcome-greeting-trace,
   .welcome-greeting-flourish,

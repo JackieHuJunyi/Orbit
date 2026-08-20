@@ -2409,3 +2409,13 @@ v1.17 把这项视觉表达收进 props-only `HandwrittenGreeting`。每个 LTR 
 多文字系统不能靠一个英文 viewBox 伸缩。组件按 CJK、阿拉伯文、长西里尔文和拉丁字符估算独立画布宽度，让短中文和长俄文都以接近的光学高度进入同一个固定舞台；阿拉伯文保持完整 shaping run、right anchor 和 RTL 方向，不按字符拆断。渐变与路径全部由 Rune 原生代码生成，不复制 Apple 字形或动画资产，也不引入远端字体、Canvas 状态和额外下载。
 
 可访问性仍是动画合同的一部分：reduced motion 直接移除 trace、pen 与 flourish，只显示最终完整文字；forced colors 使用 `CanvasText`。E2E 除原有九语言 × 桌面/390px 零溢出外，额外读取运行时 CSSAnimation，证明 `rune-greeting-write`、`rune-greeting-ink-settle` 和 `rune-greeting-flourish` 确实存在，而不是只检查源码字符串。
+
+## 118. v1.18 动画高级感也取决于首次下载路径足够轻
+
+真正的手写动画即使视觉正确，如果每次打开都先下载所有审核弹窗、OCR 设置和命令面板，用户仍会感到迟钝。欢迎页不是工作区的附属装饰，它应当只在首次设置或用户主动重开教程时加载；同理，创建、导入、导出和任务审核都应该在明确动作发生后才进入浏览器执行图。
+
+v1.18 给十三个低频 surface 建立 typed `React.lazy` 边界。`RuneWorkbench` 仍拥有全部状态、事务和写入 handler，延迟组件没有因为拆包获得新的 authority；本地同源模块完成后只接收原来的 props。等待阶段由三种几何一致的 localized `Suspense` fallback 承接，分别服务 welcome、blocking overlay 和 inline lineage，并使用 `role=status` / `aria-live=polite`，不会制造白屏或接触 workspace。
+
+拆包最容易出现的架构回流来自文案：Workbench 需要显示“已准备审核”等即时 notice，但直接导入 dialog copy 会把整个 dialog 拉回首包。因此这些共享字段进入一个 React-free `workbench-surface-copy` 端口，弹窗再组合相同对象。多语言生成器显式扫描这个端口，九种语言仍然完整，未加载语言仍按既有 load-before-use 合同 fail loud。
+
+这次边界把 minified Workbench 从 701,634 bytes 降到 489,283 bytes，gzip 从 210,332 降到 143,333 bytes。530 KB manifest budget、十三个 dynamic-entry 断言、无静态 import 回流测试和现有真实打开 E2E 共同把收益变成长期合同，而不是一次构建偶然值。

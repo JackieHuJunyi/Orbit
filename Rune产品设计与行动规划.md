@@ -2187,3 +2187,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 阿拉伯文必须保留一个连续 shaping run，并从右向左锚定；中、日、韩、阿、俄与拉丁文字使用 script-aware viewBox 估算，长短问候在同一舞台获得接近的视觉高度而不挤压语言卡。
 - 渐变、描边、柔光与收笔路径均为 Rune 原生代码，不复制 Apple 字形路径、动画文件或图形资产，也不加载远端字体和 Canvas runtime。
 - reduced motion 立即隐藏 trace/pen/flourish 并显示完整 fill；forced colors 使用系统 `CanvasText`。运行时门槛除九语言桌面/390px 几何外，还必须证明 `write / ink-settle / flourish` 三段 CSS animation 真正挂载。
+
+### 17.49 v1.18 手写欢迎与低频审核界面必须按需加载
+
+- 欢迎页、Quick Actions、transaction lineage、OCR 设置以及创建、导入、导出和任务审核弹窗属于低频 interaction surface，不应静态进入每次启动的 Workbench；每个 surface 使用同源静态 `React.lazy` import，并保持原有 typed props，不引入运行时插件主机。
+- `RuneWorkbench` 继续唯一拥有打开状态、canonical artifacts、review transaction、persistence 与 mutation handler；延迟组件只能消费 props 和回传显式事件，chunk 拆分不能形成第二个业务 owner。
+- 等待 chunk 时必须显示本地化、`role=status`、`aria-live=polite` 的无写入 fallback；欢迎、blocking overlay 与 inline lineage 使用不同几何，但不能出现空白屏、远程 loader 或伪造进度。
+- 高频 notice 文案进入 React-free `workbench-surface-copy` 端口，让 Workbench 无需导入完整 dialog；生成器必须显式收集该端口的英文目录，确保法、西、俄、阿、日、韩不会因文件搬迁退回英文。
+- minified initial Workbench 从 701,634 bytes 降到 489,283 bytes，gzip 从 210,332 降到 143,333 bytes；530 KB manifest gate、无静态回流测试和实际 E2E 打开流程共同约束后续迭代。

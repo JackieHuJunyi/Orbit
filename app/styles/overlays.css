@@ -1,6 +1,107 @@
 .export-menu,
 .tools-menu { position: relative; overflow: visible; }
 
+.deferred-surface-backdrop {
+  position: fixed;
+  z-index: var(--rune-layer-modal);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--rune-space-6);
+  background: color-mix(in srgb, var(--rune-material-canvas) 68%, transparent);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+}
+
+.deferred-surface-status {
+  display: grid;
+  min-width: 164px;
+  justify-items: center;
+  gap: var(--rune-space-3);
+  padding: var(--rune-space-5) var(--rune-space-6);
+  border: 1px solid var(--rune-material-edge);
+  border-radius: var(--rune-radius-card);
+  background: var(--rune-material-raised);
+  box-shadow: var(--rune-shadow-raised);
+  color: var(--ink);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.deferred-surface-status strong {
+  font-size: var(--rune-type-ui);
+  font-weight: 620;
+  letter-spacing: -.015em;
+}
+
+.deferred-surface-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 12px 12px 12px 5px;
+  background: color-mix(in srgb, var(--rune-mark) 13%, var(--rune-material-solid));
+  color: var(--rune-mark);
+  font-family: Georgia, serif;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.deferred-surface-status > i {
+  position: relative;
+  width: 64px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
+}
+
+.deferred-surface-status > i::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--theme-accent);
+  content: "";
+  transform: scaleX(.18);
+  transform-origin: left center;
+}
+
+.deferred-surface-inline {
+  display: grid;
+  min-height: 90px;
+  place-items: center;
+  border: 1px solid var(--rune-hairline);
+  border-radius: var(--rune-radius-control);
+  background: color-mix(in srgb, var(--rune-material-raised) 68%, transparent);
+}
+
+.deferred-surface-inline .deferred-surface-status {
+  min-width: 0;
+  grid-template-columns: 26px minmax(0, auto);
+  gap: var(--rune-space-2);
+  padding: var(--rune-space-3);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.deferred-surface-inline .deferred-surface-mark { width: 26px; height: 26px; border-radius: 9px 9px 9px 4px; font-size: 15px; }
+.deferred-surface-inline .deferred-surface-status > i { display: none; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .deferred-surface-backdrop { background: var(--rune-material-canvas); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .deferred-surface-status { background: var(--rune-material-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+@media (forced-colors: active) {
+  .deferred-surface-status,
+  .deferred-surface-inline { border: 1px solid CanvasText; background: Canvas; color: CanvasText; }
+  .deferred-surface-mark { background: Canvas; color: CanvasText; }
+  .deferred-surface-status > i { display: none; }
+}
+
 .command-menu-backdrop {
   position: fixed;
   inset: 0;

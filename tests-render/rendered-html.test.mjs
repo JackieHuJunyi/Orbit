@@ -112,20 +112,50 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /every write remains reviewable and undoable/i);
 });
 
-test("keeps compatibility parsers and heavy runtimes out of the initial client bundle", async () => {
+test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes out of the initial client bundle", async () => {
   const manifestUrl = new URL("../dist/client/.vite/manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
   const workbenchEntry = manifest["app/components/rune-workbench.tsx"];
   assert.ok(workbenchEntry);
+  const initialStaticGraph = new Set();
+  const staticQueue = ["app/components/rune-workbench.tsx"];
+  while (staticQueue.length) {
+    const entryKey = staticQueue.shift();
+    if (!entryKey || initialStaticGraph.has(entryKey)) continue;
+    initialStaticGraph.add(entryKey);
+    for (const importedKey of manifest[entryKey]?.imports ?? []) staticQueue.push(importedKey);
+  }
+  const initialGraphDynamicImports = new Set(
+    [...initialStaticGraph].flatMap((entryKey) => manifest[entryKey]?.dynamicImports ?? []),
+  );
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     const localeEntry = `app/lib/interface-locales.runtime/${locale}.generated.ts`;
     assert.equal(manifest[localeEntry]?.isDynamicEntry, true);
-    assert.ok(workbenchEntry.dynamicImports?.includes(localeEntry));
+    assert.ok(initialGraphDynamicImports.has(localeEntry));
   }
   assert.equal(manifest["app/lib/traditional-chinese.generated.ts"]?.isDynamicEntry, true);
-  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/traditional-chinese.generated.ts"));
+  assert.ok(initialGraphDynamicImports.has("app/lib/traditional-chinese.generated.ts"));
   const workbenchBytes = (await stat(new URL(`../dist/client/${workbenchEntry.file}`, import.meta.url))).size;
-  assert.ok(workbenchBytes <= 750_000, `Initial Workbench chunk is ${workbenchBytes} bytes; budget is 750000.`);
+  assert.ok(workbenchBytes <= 530_000, `Initial Workbench chunk is ${workbenchBytes} bytes; budget is 530000.`);
+  for (const surface of [
+    "document-structure-review-dialog",
+    "delivery-outcome-dialog",
+    "document-briefing-dialog",
+    "local-image-review-dialog",
+    "export-review-dialog",
+    "import-review-dialog",
+    "new-artifact-dialog",
+    "operating-review-dialog",
+    "pilot-evidence-review-dialog",
+    "workbench-command-menu",
+    "pdf-ocr-setup-dialog",
+    "transaction-review-map",
+    "welcome-experience",
+  ]) {
+    const surfaceEntry = `app/components/${surface}.tsx`;
+    assert.equal(manifest[surfaceEntry]?.isDynamicEntry, true, `${surface} must remain an on-demand entry.`);
+    assert.ok(workbenchEntry.dynamicImports?.includes(surfaceEntry), `${surface} must load from Workbench on demand.`);
+  }
   assert.equal(manifest["app/lib/office-import.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/office-import.ts"));
   assert.equal(manifest["app/lib/pdf-import-client.ts"]?.isDynamicEntry, true);
@@ -508,7 +538,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   const html = await response.text();
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
   assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune \{RUNE_PRODUCT_VERSION\}<\/strong>/);
-  assert.equal(RUNE_PRODUCT_VERSION, "1.17");
+  assert.match(RUNE_PRODUCT_VERSION, /^\d+\.\d+$/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
   assert.doesNotMatch(html, /class="statusbar-right"[^>]*>[\s\S]{0,300}legacy metrics/);

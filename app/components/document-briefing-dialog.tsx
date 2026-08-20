@@ -13,6 +13,7 @@ import {
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 import type { RuneModelMode } from "../lib/model-preference";
 import type { WorkspaceArtifact } from "../lib/workspace";
+import { DOCUMENT_BRIEFING_NOTICE_BASE_COPY } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
 type DocumentBriefingDialogProps = {
@@ -28,6 +29,7 @@ type DocumentBriefingDialogProps = {
 
 export const DOCUMENT_BRIEFING_BASE_COPY = {
   "zh-CN": {
+    ...DOCUMENT_BRIEFING_NOTICE_BASE_COPY["zh-CN"],
     kicker: "文档到演示 · 来源相连",
     title: "创建或刷新一份轻盈的演示",
     description:
@@ -68,14 +70,10 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     prepare: "准备审核",
     modelFooter: "模型可用时辅助提纲 · Rune 编译 · 审核后写入",
     localFooter: "本地确定性编译 · 审核后写入",
-    modelShaping: "模型正在根据有界来源证据编排演示…",
-    modelPrepared: "已准备模型辅助、保留来源关系的演示；审核后才会写入",
-    localPrepared: "已准备本地确定性演示；审核后才会写入",
-    localFallback: "模型当前不可用，已准备本地确定性演示；审核后才会写入",
-    sourceTooLargeFallback: "文档超过模型上下文安全上限，已准备本地确定性演示；审核后才会写入",
     localErrors: "请先检查以下设置：",
   },
   en: {
+    ...DOCUMENT_BRIEFING_NOTICE_BASE_COPY.en,
     kicker: "Document to presentation · source linked",
     title: "Create or refresh a light presentation",
     description:
@@ -116,12 +114,6 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
     prepare: "Prepare review",
     modelFooter: "Model-assisted outline when available · Rune compile · review before write",
     localFooter: "Deterministic local compile · review before write",
-    modelShaping: "The model is shaping this presentation from bounded source evidence…",
-    modelPrepared: "Model-assisted source-linked presentation prepared; nothing writes until review",
-    localPrepared: "Deterministic local presentation prepared; nothing writes until review",
-    localFallback: "Model unavailable; deterministic local presentation prepared for review",
-    sourceTooLargeFallback:
-      "Document exceeds the model context safety limit; deterministic local presentation prepared for review",
     localErrors: "Check these settings first:",
   },
 } as const;

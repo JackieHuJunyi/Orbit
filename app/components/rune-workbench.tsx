@@ -43,6 +43,8 @@ import {
 import {
   ChangeEvent,
   KeyboardEvent,
+  lazy,
+  Suspense,
   SyntheticEvent,
   useCallback,
   useEffect,
@@ -64,21 +66,10 @@ import {
 import { AgentComposer, type AgentScope } from "./agent-composer";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchStatusBar } from "./workbench-statusbar";
-import { DocumentStructureReviewDialog } from "./document-structure-review-dialog";
-import { DeliveryOutcomeDialog } from "./delivery-outcome-dialog";
-import { DocumentBriefingDialog, documentBriefingCopy } from "./document-briefing-dialog";
-import { LocalImageReviewDialog, localImageCopy } from "./local-image-review-dialog";
 import { EmptyWorkspace } from "./empty-workspace";
-import { ExportReviewDialog } from "./export-review-dialog";
-import { ImportReviewDialog } from "./import-review-dialog";
-import { NewArtifactDialog } from "./new-artifact-dialog";
-import { OperatingReviewDialog, operatingReviewCopy } from "./operating-review-dialog";
-import { PilotEvidenceReviewDialog, pilotEvidenceCopy } from "./pilot-evidence-review-dialog";
-import { WorkbenchCommandMenu } from "./workbench-command-menu";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
-import { PdfOcrSetupDialog, type PdfOcrCandidate, type PdfOcrSelection } from "./pdf-ocr-setup-dialog";
-import { TransactionReviewMap } from "./transaction-review-map";
-import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
+import type { PdfOcrCandidate, PdfOcrSelection } from "./pdf-ocr-setup-dialog";
+import type { WelcomeAction, WelcomeStep } from "./welcome-experience";
 import {
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
@@ -202,6 +193,13 @@ import {
 } from "../lib/appearance";
 import { RUNE_PRODUCT_VERSION } from "../lib/product-meta";
 import {
+  deferredSurfaceCopy,
+  documentBriefingNoticeCopy,
+  localImageActionCopy,
+  operatingReviewNoticeCopy,
+  pilotEvidenceNoticeCopy,
+} from "../lib/workbench-surface-copy";
+import {
   buildRuneImageInsertion,
   deleteRuneImageAsset,
   extractRuneAssetIds,
@@ -295,6 +293,73 @@ import {
   MAX_LEGACY_OFFICE_IMPORT_BYTES,
   supportsLegacyOfficeDesktopExport,
 } from "../lib/desktop-bridge";
+
+const DocumentStructureReviewDialog = lazy(() =>
+  import("./document-structure-review-dialog").then((module) => ({ default: module.DocumentStructureReviewDialog })),
+);
+const DeliveryOutcomeDialog = lazy(() =>
+  import("./delivery-outcome-dialog").then((module) => ({ default: module.DeliveryOutcomeDialog })),
+);
+const DocumentBriefingDialog = lazy(() =>
+  import("./document-briefing-dialog").then((module) => ({ default: module.DocumentBriefingDialog })),
+);
+const LocalImageReviewDialog = lazy(() =>
+  import("./local-image-review-dialog").then((module) => ({ default: module.LocalImageReviewDialog })),
+);
+const ExportReviewDialog = lazy(() =>
+  import("./export-review-dialog").then((module) => ({ default: module.ExportReviewDialog })),
+);
+const ImportReviewDialog = lazy(() =>
+  import("./import-review-dialog").then((module) => ({ default: module.ImportReviewDialog })),
+);
+const NewArtifactDialog = lazy(() =>
+  import("./new-artifact-dialog").then((module) => ({ default: module.NewArtifactDialog })),
+);
+const OperatingReviewDialog = lazy(() =>
+  import("./operating-review-dialog").then((module) => ({ default: module.OperatingReviewDialog })),
+);
+const PilotEvidenceReviewDialog = lazy(() =>
+  import("./pilot-evidence-review-dialog").then((module) => ({ default: module.PilotEvidenceReviewDialog })),
+);
+const WorkbenchCommandMenu = lazy(() =>
+  import("./workbench-command-menu").then((module) => ({ default: module.WorkbenchCommandMenu })),
+);
+const PdfOcrSetupDialog = lazy(() =>
+  import("./pdf-ocr-setup-dialog").then((module) => ({ default: module.PdfOcrSetupDialog })),
+);
+const TransactionReviewMap = lazy(() =>
+  import("./transaction-review-map").then((module) => ({ default: module.TransactionReviewMap })),
+);
+const WelcomeExperience = lazy(() =>
+  import("./welcome-experience").then((module) => ({ default: module.WelcomeExperience })),
+);
+
+function DeferredWorkbenchSurfaceFallback({
+  locale,
+  variant = "overlay",
+}: {
+  locale: RuneLocale;
+  variant?: "inline" | "overlay" | "welcome";
+}) {
+  const copy = deferredSurfaceCopy(locale);
+  const className =
+    variant === "inline"
+      ? "deferred-surface-inline"
+      : variant === "welcome"
+        ? "welcome-backdrop deferred-surface-backdrop deferred-surface-welcome"
+        : "deferred-surface-backdrop";
+  return (
+    <div className={className} role="status" aria-live="polite" aria-atomic="true">
+      <div className="deferred-surface-status">
+        <span className="deferred-surface-mark" aria-hidden="true">
+          R
+        </span>
+        <strong>{copy.preparing}</strong>
+        <i aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
 
 const STORAGE_KEY = "rune-workspace-v0";
 const MAX_SOURCE_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -1282,7 +1347,8 @@ export function RuneWorkbench() {
     visualEditState !== "idle" ||
     Boolean(activeVisualSourceDraft);
   const commandMenuCopy = useMemo(() => runeCommandMenuCopy(locale), [locale]);
-  const pilotEvidenceUI = useMemo(() => pilotEvidenceCopy(locale), [locale]);
+  const pilotEvidenceUI = useMemo(() => pilotEvidenceNoticeCopy(locale), [locale]);
+  const localImageUI = useMemo(() => localImageActionCopy(locale), [locale]);
   const workbenchCommands = useMemo(
     () =>
       createRuneWorkbenchCommands({
@@ -3346,7 +3412,7 @@ export function RuneWorkbench() {
     setOperatingReviewState("checking");
     const baseArtifacts = artifactsRef.current;
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
-    const copy = operatingReviewCopy(locale);
+    const copy = operatingReviewNoticeCopy(locale);
     try {
       const savedWorkflow = savedOperatingReviewsRef.current.find(
         (workflow) => workflow.id === editingOperatingReviewId,
@@ -3486,7 +3552,7 @@ export function RuneWorkbench() {
     setDocumentBriefingState("checking");
     const baseArtifacts = artifactsRef.current;
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
-    const copy = documentBriefingCopy(locale);
+    const copy = documentBriefingNoticeCopy(locale);
     try {
       const assistance = await prepareRuneTaskModelAssistance(
         baseArtifacts,
@@ -4450,15 +4516,17 @@ export function RuneWorkbench() {
 
   return (
     <main className="rune-shell" ref={shellRef}>
-      {commandMenuOpen && (
-        <WorkbenchCommandMenu
-          commands={workbenchCommands}
-          locale={locale}
-          direction={localeDirection(locale)}
-          onClose={() => setCommandMenuOpen(false)}
-          onRun={runWorkbenchCommand}
-        />
-      )}
+      <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} />}>
+        {commandMenuOpen && (
+          <WorkbenchCommandMenu
+            commands={workbenchCommands}
+            locale={locale}
+            direction={localeDirection(locale)}
+            onClose={() => setCommandMenuOpen(false)}
+            onRun={runWorkbenchCommand}
+          />
+        )}
+      </Suspense>
       <header className="topbar">
         <div className="topbar-left">
           <button
@@ -4742,7 +4810,7 @@ export function RuneWorkbench() {
             ref={imageImportRef}
             className="visually-hidden"
             type="file"
-            aria-label={localImageCopy(locale).insertLocal}
+            aria-label={localImageUI.insertLocal}
             accept={RUNE_IMAGE_ACCEPT}
             onChange={(event) => void prepareLocalImage(event)}
             disabled={
@@ -5375,8 +5443,8 @@ export function RuneWorkbench() {
                           Boolean(pendingDocumentStructure) ||
                           Boolean(pendingLocalImage)
                         }
-                        aria-label={localImageCopy(locale).insertLocal}
-                        title={localImageCopy(locale).insertLocalAtCursor}
+                        aria-label={localImageUI.insertLocal}
+                        title={localImageUI.insertLocalAtCursor}
                       >
                         <ImagePlus aria-hidden="true" />
                       </button>
@@ -5623,14 +5691,16 @@ export function RuneWorkbench() {
                           </span>
                         </div>
                       )}
-                      {pendingTransactionReview && !pendingTransactionReview.errors.length && (
-                        <TransactionReviewMap
-                          review={pendingTransactionReview}
-                          activeArtifactId={proposalArtifact?.id ?? selectedPendingStat?.artifact.id ?? ""}
-                          locale={locale}
-                          onSelect={setPendingReviewId}
-                        />
-                      )}
+                      <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} variant="inline" />}>
+                        {pendingTransactionReview && !pendingTransactionReview.errors.length && (
+                          <TransactionReviewMap
+                            review={pendingTransactionReview}
+                            activeArtifactId={proposalArtifact?.id ?? selectedPendingStat?.artifact.id ?? ""}
+                            locale={locale}
+                            onSelect={setPendingReviewId}
+                          />
+                        )}
+                      </Suspense>
                       <div className="diff-summary">
                         <span>{ui.changedFiles(pendingStats.length)}</span>
                         <span className="additions">+{pendingTotals.additions}</span>
@@ -6027,188 +6097,192 @@ export function RuneWorkbench() {
 
       <WorkbenchStatusBar visibleNotice={visibleNotice} artifactStatsText={artifactStats(presentedArtifact)} />
 
-      {newArtifactOpen && (
-        <NewArtifactDialog
-          artifacts={artifacts}
-          error={newArtifactError}
-          locale={locale}
-          onCancel={() => {
-            setNewArtifactOpen(false);
-            setNewArtifactError("");
-            setNotice(ui.newCancelled);
-          }}
-          onCreate={createNewArtifact}
-        />
-      )}
-      {operatingReviewOpen && (
-        <OperatingReviewDialog
-          key={`${editingOperatingReviewId || "new-operating-review"}:${taskSession?.phase === "configuring" ? (taskSession.preferredArtifactId ?? "default") : "default"}`}
-          artifacts={artifacts}
-          locale={locale}
-          error={operatingReviewError}
-          initialInput={savedOperatingReviews.find((workflow) => workflow.id === editingOperatingReviewId)?.input}
-          preferredDataArtifactId={
-            taskSession?.phase === "configuring" ? (taskSession.preferredArtifactId ?? undefined) : undefined
-          }
-          modelMode={modelMode}
-          onCancel={() => {
-            if (operatingReviewState !== "idle") return;
-            setOperatingReviewOpen(false);
-            setOperatingReviewError("");
-            setEditingOperatingReviewId("");
-            setTaskSession(null);
-            setNotice(
-              runeText(
-                locale,
-                "Operating review cancelled — the workspace is unchanged",
-                "已取消经营汇报 — 工作区保持不变",
-              ),
-            );
-          }}
-          onPrepare={prepareOperatingReview}
-        />
-      )}
-      {documentBriefingOpen && (
-        <DocumentBriefingDialog
-          key={`document-briefing:${taskSession?.phase === "configuring" ? (taskSession.preferredArtifactId ?? "default") : "default"}:${preferredDocumentBriefingTargetId || "new"}`}
-          artifacts={artifacts}
-          locale={locale}
-          error={documentBriefingError}
-          preferredDocumentArtifactId={
-            taskSession?.phase === "configuring" && taskSession.taskId === "document-briefing"
-              ? (taskSession.preferredArtifactId ?? undefined)
-              : undefined
-          }
-          preferredPresentationArtifactId={preferredDocumentBriefingTargetId || undefined}
-          modelMode={modelMode}
-          onCancel={() => {
-            if (documentBriefingState !== "idle") return;
-            setDocumentBriefingOpen(false);
-            setDocumentBriefingError("");
-            setPreferredDocumentBriefingTargetId("");
-            setTaskSession(null);
-            setNotice(
-              runeText(
-                locale,
-                "Document presentation cancelled — the workspace is unchanged",
-                "已取消文档演示 — 工作区保持不变",
-              ),
-            );
-          }}
-          onPrepare={prepareDocumentBriefing}
-        />
-      )}
-      {pendingImport && (
-        <ImportReviewDialog
-          sourceName={pendingImport.sourceName}
-          artifacts={pendingImport.importedArtifacts}
-          warnings={pendingImport.warnings}
-          error={importError}
-          busy={importState === "reading"}
-          locale={locale}
-          continuationTask={taskSession?.phase === "reviewing-source" ? taskSession.taskId : undefined}
-          onCancel={cancelPendingImport}
-          onConfirm={applyPendingImport}
-        />
-      )}
-      {pendingPdfOcr && (
-        <PdfOcrSetupDialog
-          key={pendingPdfOcr.candidates
-            .map((candidate) => `${candidate.fileIndex}:${candidate.analysis.ocrCandidatePageNumbers.join(",")}`)
-            .join("|")}
-          candidates={pendingPdfOcr.candidates}
-          locale={locale}
-          processing={pdfOcrProcessing}
-          progress={pdfOcrProgress}
-          activeFileName={pdfOcrActiveFileName}
-          error={pdfOcrError}
-          onCancel={cancelPendingPdfOcr}
-          onRecognize={(selections) => void recognizePendingPdfPages(selections)}
-        />
-      )}
-      {pendingExport && (
-        <ExportReviewDialog
-          sourceName={pendingExport.sourceArtifactName}
-          result={pendingExport.result}
-          error={exportError}
-          locale={locale}
-          onCancel={cancelExport}
-          onConfirm={confirmExport}
-        />
-      )}
-      {pendingPilotEvidence && (
-        <PilotEvidenceReviewDialog
-          result={pendingPilotEvidence.result}
-          locale={locale}
-          error={pilotEvidenceError}
-          onCancel={cancelPilotEvidenceExport}
-          onConfirm={confirmPilotEvidenceExport}
-        />
-      )}
-      {pendingDeliveryConfirmation && (
-        <DeliveryOutcomeDialog
-          key={`${pendingDeliveryConfirmation.runId}:${pendingDeliveryConfirmation.artifactId}:${pendingDeliveryConfirmation.target}`}
-          workflowTitle={pendingDeliveryConfirmation.workflowTitle}
-          artifactName={pendingDeliveryConfirmation.artifactName}
-          handoffLabel={pendingDeliveryConfirmation.handoffLabel}
-          locale={locale}
-          submitting={deliveryOutcomeState === "recording"}
-          error={deliveryOutcomeError}
-          onCancel={() => {
-            if (deliveryOutcomeState !== "idle") return;
-            setPendingDeliveryConfirmation(null);
-            setDeliveryOutcomeError("");
-            setNotice(ui.noDeliveryOutcomes);
-          }}
-          onConfirm={confirmDeliveryOutcome}
-        />
-      )}
-      {pendingDocumentStructure && (
-        <DocumentStructureReviewDialog
-          artifactName={pendingDocumentStructure.targetArtifact.name}
-          targetLabel={pendingDocumentStructure.target.label}
-          action={pendingDocumentStructure.input.action}
-          beforeSource={pendingDocumentStructure.targetArtifact.source}
-          nextSource={pendingDocumentStructure.prepared.nextSource}
-          warnings={pendingDocumentStructure.prepared.warnings}
-          error={pendingDocumentStructure.error}
-          submitting={pendingDocumentStructure.submitting}
-          locale={locale}
-          onCancel={() => {
-            if (pendingDocumentStructure.submitting) return;
-            setPendingDocumentStructure(null);
-            setNotice(ui.structureCancelled);
-          }}
-          onConfirm={() => void confirmVisualDocumentBlockStructure()}
-        />
-      )}
-      {pendingLocalImage && (
-        <LocalImageReviewDialog
-          asset={pendingLocalImage.asset}
-          artifactName={pendingLocalImage.artifact.name}
-          insertion={pendingLocalImage.insertion}
-          alt={pendingLocalImage.alt}
-          error={pendingLocalImage.error}
-          submitting={pendingLocalImage.submitting}
-          locale={locale}
-          onAltChange={updatePendingLocalImageAlt}
-          onCancel={cancelPendingLocalImage}
-          onConfirm={() => void confirmPendingLocalImage()}
-        />
-      )}
-      {welcomeOpen && hydrated && (
-        <WelcomeExperience
-          detectedLocale={detectedLocale}
-          locale={locale}
-          modelMode={modelMode}
-          startAt={welcomeStartAt}
-          dismissible={welcomeDismissible}
-          onLocaleChange={setInterfaceLocale}
-          onModelModeChange={setPreferredModelMode}
-          onComplete={finishWelcome}
-          onDismiss={() => setWelcomeOpen(false)}
-        />
-      )}
+      <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} />}>
+        {newArtifactOpen && (
+          <NewArtifactDialog
+            artifacts={artifacts}
+            error={newArtifactError}
+            locale={locale}
+            onCancel={() => {
+              setNewArtifactOpen(false);
+              setNewArtifactError("");
+              setNotice(ui.newCancelled);
+            }}
+            onCreate={createNewArtifact}
+          />
+        )}
+        {operatingReviewOpen && (
+          <OperatingReviewDialog
+            key={`${editingOperatingReviewId || "new-operating-review"}:${taskSession?.phase === "configuring" ? (taskSession.preferredArtifactId ?? "default") : "default"}`}
+            artifacts={artifacts}
+            locale={locale}
+            error={operatingReviewError}
+            initialInput={savedOperatingReviews.find((workflow) => workflow.id === editingOperatingReviewId)?.input}
+            preferredDataArtifactId={
+              taskSession?.phase === "configuring" ? (taskSession.preferredArtifactId ?? undefined) : undefined
+            }
+            modelMode={modelMode}
+            onCancel={() => {
+              if (operatingReviewState !== "idle") return;
+              setOperatingReviewOpen(false);
+              setOperatingReviewError("");
+              setEditingOperatingReviewId("");
+              setTaskSession(null);
+              setNotice(
+                runeText(
+                  locale,
+                  "Operating review cancelled — the workspace is unchanged",
+                  "已取消经营汇报 — 工作区保持不变",
+                ),
+              );
+            }}
+            onPrepare={prepareOperatingReview}
+          />
+        )}
+        {documentBriefingOpen && (
+          <DocumentBriefingDialog
+            key={`document-briefing:${taskSession?.phase === "configuring" ? (taskSession.preferredArtifactId ?? "default") : "default"}:${preferredDocumentBriefingTargetId || "new"}`}
+            artifacts={artifacts}
+            locale={locale}
+            error={documentBriefingError}
+            preferredDocumentArtifactId={
+              taskSession?.phase === "configuring" && taskSession.taskId === "document-briefing"
+                ? (taskSession.preferredArtifactId ?? undefined)
+                : undefined
+            }
+            preferredPresentationArtifactId={preferredDocumentBriefingTargetId || undefined}
+            modelMode={modelMode}
+            onCancel={() => {
+              if (documentBriefingState !== "idle") return;
+              setDocumentBriefingOpen(false);
+              setDocumentBriefingError("");
+              setPreferredDocumentBriefingTargetId("");
+              setTaskSession(null);
+              setNotice(
+                runeText(
+                  locale,
+                  "Document presentation cancelled — the workspace is unchanged",
+                  "已取消文档演示 — 工作区保持不变",
+                ),
+              );
+            }}
+            onPrepare={prepareDocumentBriefing}
+          />
+        )}
+        {pendingImport && (
+          <ImportReviewDialog
+            sourceName={pendingImport.sourceName}
+            artifacts={pendingImport.importedArtifacts}
+            warnings={pendingImport.warnings}
+            error={importError}
+            busy={importState === "reading"}
+            locale={locale}
+            continuationTask={taskSession?.phase === "reviewing-source" ? taskSession.taskId : undefined}
+            onCancel={cancelPendingImport}
+            onConfirm={applyPendingImport}
+          />
+        )}
+        {pendingPdfOcr && (
+          <PdfOcrSetupDialog
+            key={pendingPdfOcr.candidates
+              .map((candidate) => `${candidate.fileIndex}:${candidate.analysis.ocrCandidatePageNumbers.join(",")}`)
+              .join("|")}
+            candidates={pendingPdfOcr.candidates}
+            locale={locale}
+            processing={pdfOcrProcessing}
+            progress={pdfOcrProgress}
+            activeFileName={pdfOcrActiveFileName}
+            error={pdfOcrError}
+            onCancel={cancelPendingPdfOcr}
+            onRecognize={(selections) => void recognizePendingPdfPages(selections)}
+          />
+        )}
+        {pendingExport && (
+          <ExportReviewDialog
+            sourceName={pendingExport.sourceArtifactName}
+            result={pendingExport.result}
+            error={exportError}
+            locale={locale}
+            onCancel={cancelExport}
+            onConfirm={confirmExport}
+          />
+        )}
+        {pendingPilotEvidence && (
+          <PilotEvidenceReviewDialog
+            result={pendingPilotEvidence.result}
+            locale={locale}
+            error={pilotEvidenceError}
+            onCancel={cancelPilotEvidenceExport}
+            onConfirm={confirmPilotEvidenceExport}
+          />
+        )}
+        {pendingDeliveryConfirmation && (
+          <DeliveryOutcomeDialog
+            key={`${pendingDeliveryConfirmation.runId}:${pendingDeliveryConfirmation.artifactId}:${pendingDeliveryConfirmation.target}`}
+            workflowTitle={pendingDeliveryConfirmation.workflowTitle}
+            artifactName={pendingDeliveryConfirmation.artifactName}
+            handoffLabel={pendingDeliveryConfirmation.handoffLabel}
+            locale={locale}
+            submitting={deliveryOutcomeState === "recording"}
+            error={deliveryOutcomeError}
+            onCancel={() => {
+              if (deliveryOutcomeState !== "idle") return;
+              setPendingDeliveryConfirmation(null);
+              setDeliveryOutcomeError("");
+              setNotice(ui.noDeliveryOutcomes);
+            }}
+            onConfirm={confirmDeliveryOutcome}
+          />
+        )}
+        {pendingDocumentStructure && (
+          <DocumentStructureReviewDialog
+            artifactName={pendingDocumentStructure.targetArtifact.name}
+            targetLabel={pendingDocumentStructure.target.label}
+            action={pendingDocumentStructure.input.action}
+            beforeSource={pendingDocumentStructure.targetArtifact.source}
+            nextSource={pendingDocumentStructure.prepared.nextSource}
+            warnings={pendingDocumentStructure.prepared.warnings}
+            error={pendingDocumentStructure.error}
+            submitting={pendingDocumentStructure.submitting}
+            locale={locale}
+            onCancel={() => {
+              if (pendingDocumentStructure.submitting) return;
+              setPendingDocumentStructure(null);
+              setNotice(ui.structureCancelled);
+            }}
+            onConfirm={() => void confirmVisualDocumentBlockStructure()}
+          />
+        )}
+        {pendingLocalImage && (
+          <LocalImageReviewDialog
+            asset={pendingLocalImage.asset}
+            artifactName={pendingLocalImage.artifact.name}
+            insertion={pendingLocalImage.insertion}
+            alt={pendingLocalImage.alt}
+            error={pendingLocalImage.error}
+            submitting={pendingLocalImage.submitting}
+            locale={locale}
+            onAltChange={updatePendingLocalImageAlt}
+            onCancel={cancelPendingLocalImage}
+            onConfirm={() => void confirmPendingLocalImage()}
+          />
+        )}
+      </Suspense>
+      <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} variant="welcome" />}>
+        {welcomeOpen && hydrated && (
+          <WelcomeExperience
+            detectedLocale={detectedLocale}
+            locale={locale}
+            modelMode={modelMode}
+            startAt={welcomeStartAt}
+            dismissible={welcomeDismissible}
+            onLocaleChange={setInterfaceLocale}
+            onModelModeChange={setPreferredModelMode}
+            onComplete={finishWelcome}
+            onDismiss={() => setWelcomeOpen(false)}
+          />
+        )}
+      </Suspense>
     </main>
   );
 }

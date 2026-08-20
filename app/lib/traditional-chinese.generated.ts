@@ -4278,6 +4278,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在儲存"
   ],
   [
+    "正在准备",
+    "正在準備"
+  ],
+  [
     "正在核验",
     "正在核驗"
   ],

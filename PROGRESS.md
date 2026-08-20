@@ -1,5 +1,7 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.18 with typed on-demand boundaries for the handwritten welcome and twelve other low-frequency surfaces, localized accessible loading fallbacks, preserved nine-locale copy generation, and a 530 KB gate after reducing the minified initial Workbench from 701,634 to 489,283 bytes.
+
 - 2026-08-21 — Shipped Rune v1.17 with an isolated code-native SVG welcome writer: rounded spectrum outlines draw by grapheme, colored ink settles behind the stroke, one restrained flourish closes the gesture, Arabic stays connected RTL, and static accessibility fallbacks plus all nine desktop/compact geometry checks remain intact.
 
 - 2026-08-21 — Shipped Rune v1.16 with load-before-use same-origin locale modules, fail-loud synchronous copy, server/client parity, stale-catalog checks, a 750 KB Workbench budget after cutting the minified entry from about 1.4 MB to 699,297 bytes, and a viewport-contained feathered spectrum-ink welcome that writes each script at its own bounded pace.

@@ -4,10 +4,12 @@ import { Check, FileJson2, ListChecks, ShieldCheck, TriangleAlert } from "lucide
 import { useState } from "react";
 import type { RunePilotEvidenceExport } from "../lib/pilot-evidence";
 import { localizeRuneCopy, runeUICopy, type RuneLocale } from "../lib/localization";
+import { PILOT_EVIDENCE_NOTICE_BASE_COPY } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
 export const PILOT_EVIDENCE_BASE_COPY = {
   "zh-CN": {
+    ...PILOT_EVIDENCE_NOTICE_BASE_COPY["zh-CN"],
     kicker: "Pilot Evidence · 设备本地",
     title: "审阅即将导出的试点证据",
     description:
@@ -17,15 +19,6 @@ export const PILOT_EVIDENCE_BASE_COPY = {
     deliveryOutcomes: "交付结果",
     reviewedTasks: "已人工评估的真实任务",
     packageSize: "文件大小",
-    menuTitle: "导出试点证据",
-    menuBody: "匿名 JSON · 审核后下载 · 零上传",
-    menuEmpty: "完成一次引导任务后可用",
-    reviewNotice: "请在下载到本机前审核匿名任务记录",
-    prepareError: "Rune 无法准备试点证据。",
-    cancelNotice: "已取消试点证据导出 — 未下载任何文件",
-    changedError: "审核期间任务证据已变化。请取消并重新准备导出。",
-    changedNotice: "试点证据仍在等待审核 — 本机记录已变化",
-    downloadedNotice: "匿名 Pilot Evidence 已下载到本机 · 未执行任何上传",
     includedTitle: "这份文件包含",
     included: [
       "任务类型、成功或停止状态、耗时和有限的影响数量",
@@ -48,6 +41,7 @@ export const PILOT_EVIDENCE_BASE_COPY = {
     download: "下载匿名 JSON",
   },
   en: {
+    ...PILOT_EVIDENCE_NOTICE_BASE_COPY.en,
     kicker: "Pilot Evidence · on device",
     title: "Review the pilot evidence export",
     description:
@@ -57,15 +51,6 @@ export const PILOT_EVIDENCE_BASE_COPY = {
     deliveryOutcomes: "Delivery outcomes",
     reviewedTasks: "Human-reviewed real tasks",
     packageSize: "File size",
-    menuTitle: "Export pilot evidence",
-    menuBody: "Anonymous JSON · review first · zero upload",
-    menuEmpty: "Available after one guided task",
-    reviewNotice: "Review the anonymous task records before local download",
-    prepareError: "Rune could not prepare pilot evidence.",
-    cancelNotice: "Pilot evidence export cancelled — nothing was downloaded",
-    changedError: "Task evidence changed while this file was under review. Cancel and prepare a fresh export.",
-    changedNotice: "Pilot evidence held for review — device records changed",
-    downloadedNotice: "Anonymous Pilot Evidence downloaded locally · no upload performed",
     includedTitle: "This file includes",
     included: [
       "Task type, applied or stopped status, elapsed time, and bounded impact counts",

@@ -19,6 +19,9 @@ const componentCatalogs = [
   ["app/components/delivery-outcome-dialog.tsx", "DELIVERY_OUTCOME_BASE_COPY"],
   ["app/components/pilot-evidence-review-dialog.tsx", "PILOT_EVIDENCE_BASE_COPY"],
   ["app/components/pdf-ocr-setup-dialog.tsx", "PDF_OCR_BASE_COPY"],
+  ["app/lib/workbench-surface-copy.ts", "OPERATING_REVIEW_NOTICE_BASE_COPY"],
+  ["app/lib/workbench-surface-copy.ts", "DOCUMENT_BRIEFING_NOTICE_BASE_COPY"],
+  ["app/lib/workbench-surface-copy.ts", "PILOT_EVIDENCE_NOTICE_BASE_COPY"],
 ];
 const protectedTerms = [
   "Rune",

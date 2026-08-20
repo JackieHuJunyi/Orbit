@@ -4,13 +4,12 @@ import { Check, HardDrive, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PreparedRuneImageAsset, RuneImageInsertion } from "../lib/local-assets";
 import type { RuneLocale } from "../lib/localization";
+import { localImageActionCopy } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
 const LOCAL_IMAGE_COPY: Record<
   RuneLocale,
   {
-    insertLocal: string;
-    insertLocalAtCursor: string;
     kicker: string;
     title: string;
     description: (name: string) => string;
@@ -27,8 +26,6 @@ const LOCAL_IMAGE_COPY: Record<
   }
 > = {
   en: {
-    insertLocal: "Insert local image",
-    insertLocalAtCursor: "Insert local image at the source cursor",
     kicker: "Device-local asset",
     title: "Review local image",
     description: (name) => `Confirm the image and its readable Markdown reference before updating ${name}.`,
@@ -44,8 +41,6 @@ const LOCAL_IMAGE_COPY: Record<
     sourceContract: "Rune stores a content-hash reference in Markdown, never base64 image data.",
   },
   "zh-CN": {
-    insertLocal: "插入本机图片",
-    insertLocalAtCursor: "在源内容光标处插入本机图片",
     kicker: "本机资源",
     title: "审核本机图片",
     description: (name) => `确认图片及其可读 Markdown 引用，再更新 ${name}。`,
@@ -61,8 +56,6 @@ const LOCAL_IMAGE_COPY: Record<
     sourceContract: "Rune 只在 Markdown 中保存内容哈希引用，不保存 base64 图片数据。",
   },
   "zh-TW": {
-    insertLocal: "插入本機圖片",
-    insertLocalAtCursor: "在來源內容游標處插入本機圖片",
     kicker: "本機資源",
     title: "審閱本機圖片",
     description: (name) => `確認圖片及其可讀 Markdown 參照，再更新 ${name}。`,
@@ -78,8 +71,6 @@ const LOCAL_IMAGE_COPY: Record<
     sourceContract: "Rune 只在 Markdown 中儲存內容雜湊參照，不儲存 base64 圖片資料。",
   },
   fr: {
-    insertLocal: "Insérer une image locale",
-    insertLocalAtCursor: "Insérer une image locale au curseur de la source",
     kicker: "Ressource sur l’appareil",
     title: "Vérifier l’image locale",
     description: (name) => `Confirmez l’image et sa référence Markdown lisible avant de mettre à jour ${name}.`,
@@ -96,8 +87,6 @@ const LOCAL_IMAGE_COPY: Record<
       "Rune stocke dans Markdown une référence par empreinte de contenu, jamais les données de l’image en base64.",
   },
   es: {
-    insertLocal: "Insertar imagen local",
-    insertLocalAtCursor: "Insertar una imagen local en el cursor de la fuente",
     kicker: "Recurso del dispositivo",
     title: "Revisar imagen local",
     description: (name) => `Confirma la imagen y su referencia Markdown legible antes de actualizar ${name}.`,
@@ -114,8 +103,6 @@ const LOCAL_IMAGE_COPY: Record<
       "Rune guarda en Markdown una referencia por hash de contenido, nunca los datos de imagen en base64.",
   },
   ru: {
-    insertLocal: "Вставить локальное изображение",
-    insertLocalAtCursor: "Вставить локальное изображение в позицию курсора",
     kicker: "Ресурс на устройстве",
     title: "Проверка локального изображения",
     description: (name) => `Подтвердите изображение и читаемую ссылку Markdown перед обновлением ${name}.`,
@@ -131,8 +118,6 @@ const LOCAL_IMAGE_COPY: Record<
     sourceContract: "Rune хранит в Markdown ссылку по хэшу содержимого, а не данные изображения в base64.",
   },
   ar: {
-    insertLocal: "إدراج صورة محلية",
-    insertLocalAtCursor: "إدراج صورة محلية عند مؤشر المصدر",
     kicker: "مورد على الجهاز",
     title: "مراجعة الصورة المحلية",
     description: (name) => `أكّد الصورة ومرجع Markdown المقروء قبل تحديث ${name}.`,
@@ -148,8 +133,6 @@ const LOCAL_IMAGE_COPY: Record<
     sourceContract: "يخزّن Rune في Markdown مرجعًا ببصمة المحتوى، ولا يخزّن بيانات الصورة بصيغة base64.",
   },
   ja: {
-    insertLocal: "ローカル画像を挿入",
-    insertLocalAtCursor: "ソースのカーソル位置にローカル画像を挿入",
     kicker: "デバイス内アセット",
     title: "ローカル画像を確認",
     description: (name) => `画像と読み取り可能な Markdown 参照を確認してから ${name} を更新します。`,
@@ -165,8 +148,6 @@ const LOCAL_IMAGE_COPY: Record<
     sourceContract: "Rune は Markdown にコンテンツハッシュ参照だけを保存し、base64 画像データは保存しません。",
   },
   ko: {
-    insertLocal: "로컬 이미지 삽입",
-    insertLocalAtCursor: "소스 커서 위치에 로컬 이미지 삽입",
     kicker: "기기 내 자산",
     title: "로컬 이미지 검토",
     description: (name) => `이미지와 읽을 수 있는 Markdown 참조를 확인한 뒤 ${name}을 업데이트합니다.`,
@@ -184,7 +165,7 @@ const LOCAL_IMAGE_COPY: Record<
 };
 
 export function localImageCopy(locale: RuneLocale) {
-  return LOCAL_IMAGE_COPY[locale];
+  return { ...LOCAL_IMAGE_COPY[locale], ...localImageActionCopy(locale) };
 }
 
 function readableBytes(bytes: number) {

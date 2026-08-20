@@ -28,6 +28,7 @@ import {
   type OperatingReviewScopeCondition,
 } from "../lib/operating-review-scope";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
+import { OPERATING_REVIEW_NOTICE_BASE_COPY } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
 type OperatingReviewDialogProps = {
@@ -45,6 +46,7 @@ const MAX_OPERATING_REVIEW_PREVIEW_ROWS = 5;
 
 export const OPERATING_REVIEW_BASE_COPY = {
   "zh-CN": {
+    ...OPERATING_REVIEW_NOTICE_BASE_COPY["zh-CN"],
     kicker: "经营汇报 · 任务优先",
     title: "准备一条可核验的经营汇报链",
     description: "先明确数据、口径和交付对象。Rune 会把分析、图表、报告和演示编译为一次待审核事务。",
@@ -118,11 +120,6 @@ export const OPERATING_REVIEW_BASE_COPY = {
     localPlanner: "本地确定性编译器",
     modelFooter: "向你的模型发送有界聚合 · 审核后写入",
     localFooter: "一次原子事务 · 仅在本地编译",
-    modelShaping: "模型正在根据有界聚合证据准备审核问题…",
-    modelPrepared: "已准备模型辅助、数字保持实时绑定的经营汇报；审核后才会写入",
-    localPrepared: "已准备本地确定性经营汇报；审核后才会写入",
-    localFallback: "模型当前不可用，已准备本地确定性经营汇报；审核后才会写入",
-    sourceTooLargeFallback: "数据超过模型上下文安全上限，已准备本地确定性经营汇报；审核后才会写入",
     localErrors: "请先检查以下设置：",
     chain: "交付链",
     fields: "字段与口径",
@@ -150,6 +147,7 @@ export const OPERATING_REVIEW_BASE_COPY = {
     monthlyFocus: "解释本月最重要的变化，以及管理层接下来需要做出的决策。",
   },
   en: {
+    ...OPERATING_REVIEW_NOTICE_BASE_COPY.en,
     kicker: "Operating review · task first",
     title: "Prepare a verifiable operating-review chain",
     description:
@@ -226,12 +224,6 @@ export const OPERATING_REVIEW_BASE_COPY = {
     localPlanner: "Deterministic local compiler",
     modelFooter: "Bounded aggregates to your model · review before write",
     localFooter: "One atomic transaction · compiled locally",
-    modelShaping: "The model is preparing review questions from bounded aggregate evidence…",
-    modelPrepared: "Model-assisted operating review prepared with live-bound numbers; nothing writes until review",
-    localPrepared: "Deterministic local operating review prepared; nothing writes until review",
-    localFallback: "Model unavailable; deterministic local operating review prepared for review",
-    sourceTooLargeFallback:
-      "Data exceeds the model context safety limit; deterministic local operating review prepared for review",
     localErrors: "Check these settings first:",
     chain: "Delivery chain",
     fields: "Fields and measure",
