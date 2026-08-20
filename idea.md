@@ -2537,3 +2537,11 @@ v1.28 让 Rune-authored Presentation 回到 HTML，但 PPTX/ODP 仍因为图片�
 v1.29 保留当前成熟的 package parser 和临时 strict Deck proof：PPTX/ODP 的 title、paragraph、bullet、table、picture、页序、数量上限与 hostile-package 检查仍只实现一次；图片候选经共享 finalizer 验证字节、尺寸、哈希、去重和唯一位置后，完整临时 Deck 再编译成最终 `.html`。临时 Deck 不进入 workspace。HTML 中只保存普通 `<img src="rune-asset:sha256:…" alt="…">`，不保存 base64；浏览器 Preview 只解析成临时 `blob:`，连接目录继续使用 `.rune-assets`，经审核的 standalone HTML 才把同一 bytes 内嵌成 `data:`。
 
 反向交付仍不让 OOXML、ODF 和 PDF writer 获得任意 DOM 权限。语义 HTML → temporary Deck projection 只接受每页至多一张经过验证的本机图片，把它恢复成相同 hash 的可读图片引用，再调用既有确定性 writer。手动插图也只允许在 compiler-proven section 中、紧邻 closing tag 插入一项 primary visual，并复用 review、checkpoint、asset-first save 与失败补偿。真实 PPTX/ODP 图片 round trip 证明最终 Artifact 是 Semantic HTML、图片 bytes 完全一致、source 中没有 converter placeholder，且仍可继续导出；crop、overlap、母版、动画、备注、对象和 live Office chart 继续作为明确 fidelity loss。
+
+## 132. 双向定位必须在用户把成品滚走后仍能找回，而不只是第一次高亮
+
+早期 Source → Preview effect 只监听 target id 与 kind；这能覆盖“从一个章节跳到另一个章节”，却遗漏了一个真实使用细节：某个 paragraph、cell 或 slide 已经 active 后，用户可以手动浏览到别处，再继续在同一源范围内移动光标。因为 target identity 没变，右侧不会再次找回，视觉上就像左右同步失效。
+
+v1.30 把这项 DOM effect 从大型 Workbench 抽到单一 `use-source-preview-scroll` 边界。parser/compiler 仍唯一决定 UTF-16 range 与 target identity；Hook 只在已经渲染的 provenance attributes 中选择节点。第一次进入新 target 使用 center，之后同 target 的 caret 变化使用 nearest：目标仍可见时页面不动，手动滚走后才以最短距离恢复。它不读取 DOM text、iframe 或滚动比例，也不获得任何 Artifact、Agent、storage 或 persistence 权限。
+
+验证不再停留在 helper。真实 Chromium 从审核导入开始，分别用长 Markdown、80 行 CSV 和多页 semantic HTML 证明 Preview → Source 精确选择/左侧滚动、Source → Preview active/右侧定位，以及同一目标在 Preview 被手动滚走后的恢复。这使“Word / Excel / PPT 三类内容共享一套 Overleaf 式双向定位”成为可回归的产品合同，而不是只在某个演示样例里看起来成立。

@@ -57,10 +57,17 @@ test("clamps first and last source targets and handles a non-scrollable editor",
 
 test("workbench applies preview selection, source scrolling, and gutter synchronization together", async () => {
   const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const previewScroll = await readFile(
+    new URL("../app/components/use-source-preview-scroll.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(workbench, /sourceSelectionScrollTop\(\{/);
   assert.match(workbench, /editor\.scrollTo\(\{[\s\S]*behavior:[\s\S]*prefers-reduced-motion/);
   assert.match(workbench, /gutterRef\.current\.scrollTop = nextScrollTop/);
-  assert.match(workbench, /selectPreviewNavigationCandidate\([\s\S]*previewSourcePrimary === "true"/);
+  assert.match(workbench, /useSourcePreviewScroll\(\{/);
+  assert.match(previewScroll, /selectPreviewNavigationCandidate\([\s\S]*previewSourcePrimary === "true"/);
+  assert.match(previewScroll, /block: repeatedTarget \? "nearest" : "center"/);
+  assert.match(previewScroll, /cursorEnd,[\s\S]*cursorStart/);
   assert.match(workbench, /wrap="off"/);
 });
 

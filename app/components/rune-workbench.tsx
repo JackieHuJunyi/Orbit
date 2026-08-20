@@ -70,6 +70,7 @@ import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchStatusBar } from "./workbench-statusbar";
 import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
+import { useSourcePreviewScroll } from "./use-source-preview-scroll";
 import type { PdfOcrCandidate, PdfOcrSelection } from "./pdf-ocr-setup-dialog";
 import type { WelcomeAction, WelcomeStep } from "./welcome-experience";
 import {
@@ -228,11 +229,7 @@ import {
   type RuneWorkspaceView,
 } from "../lib/workspace-layout";
 import { sourceSelectionScrollTop } from "../lib/source-editor-scroll";
-import {
-  prepareSourceNavigation,
-  selectPreviewNavigationCandidate,
-  type PreparedSourceNavigation,
-} from "../lib/source-navigation";
+import { prepareSourceNavigation, type PreparedSourceNavigation } from "../lib/source-navigation";
 import { portableSourceRevision } from "../lib/source-revision";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
@@ -1205,8 +1202,6 @@ export function RuneWorkbench() {
         : null,
     [currentSourceCursor, selectedArtifact, sourceLinkedPreviewTargets],
   );
-  const activePreviewTargetId = activePreviewTarget?.id ?? "";
-  const activePreviewTargetKind = activePreviewTarget?.kind ?? null;
   const selectedCharacterCount = validSourceSelection ? validSourceSelection.end - validSourceSelection.start : 0;
   const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
   const selectedQueryDataResolution = useMemo(
@@ -1536,32 +1531,14 @@ export function RuneWorkbench() {
     return () => window.clearTimeout(timer);
   }, [artifacts, checkpoints, hydrated, locale, savedOperatingReviews, selectedId, taskEvidence]);
 
-  useEffect(() => {
-    if (!activePreviewTargetId || workspaceView === "source") return;
-    const frame = window.requestAnimationFrame(() => {
-      const linkedElements = [
-        ...(previewScrollRef.current?.querySelectorAll<HTMLElement>(
-          "[data-preview-source-id], [data-preview-section-id]",
-        ) ?? []),
-      ];
-      const linkedIndex = selectPreviewNavigationCandidate(
-        { id: activePreviewTargetId, kind: activePreviewTargetKind ?? "" },
-        linkedElements.map((element) => ({
-          sourceId: element.dataset.previewSourceId,
-          sectionId: element.dataset.previewSectionId,
-          primary: element.dataset.previewSourcePrimary === "true",
-        })),
-      );
-      const linkedElement = linkedElements[linkedIndex];
-      if (!linkedElement) return;
-      linkedElement.scrollIntoView({
-        block: "center",
-        inline: "nearest",
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [activePreviewTargetId, activePreviewTargetKind, selectedArtifact?.id, workspaceView]);
+  useSourcePreviewScroll({
+    artifactId: selectedArtifact?.id ?? "",
+    cursorEnd: currentSourceCursor?.end,
+    cursorStart: currentSourceCursor?.start,
+    enabled: workspaceView !== "source",
+    previewScrollRef,
+    target: activePreviewTarget,
+  });
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {

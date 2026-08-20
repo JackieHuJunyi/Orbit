@@ -477,9 +477,10 @@ test("keeps an expanded transaction review scrollable inside the source pane", a
 });
 
 test("ships persistent presentation-only workspace focus modes without unmounting either synchronized pane", async () => {
-  const [styles, source, response] = await Promise.all([
+  const [styles, source, previewScroll, response] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/use-source-preview-scroll.ts", import.meta.url), "utf8"),
     render(),
   ]);
   const html = await response.text();
@@ -496,7 +497,9 @@ test("ships persistent presentation-only workspace focus modes without unmountin
   assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
   assert.match(html, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
   assert.match(source, /if \(plan\.revealsSource\) setPreferredWorkspaceView\("split"\)/);
-  assert.match(source, /activePreviewTargetId, activePreviewTargetKind, selectedArtifact\?\.id, workspaceView/);
+  assert.match(source, /useSourcePreviewScroll\(\{[\s\S]*target: activePreviewTarget/);
+  assert.match(previewScroll, /cursorEnd,[\s\S]*cursorStart,[\s\S]*block: repeatedTarget \? "nearest" : "center"/);
+  assert.doesNotMatch(previewScroll, /setArtifacts|persistDeviceWorkspace|fetch\(|localStorage|indexedDB/);
 });
 
 test("keeps preview validation visible while progressively disclosing detailed evidence", async () => {

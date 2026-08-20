@@ -311,6 +311,17 @@ ${firstBody}
   await expect(flow.locator(".deck-slide-canvas").first()).toHaveClass(/active/);
   await expect(flow.locator(".deck-slide-page").first()).toBeInViewport();
 
+  const previewScroll = page.locator(".preview-scroll");
+  await previewScroll.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "auto" }));
+  await expect(flow.locator(".deck-slide-page").first()).not.toBeInViewport({ ratio: 0.8 });
+  await editor.evaluate((element, caret) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(caret, caret);
+  }, firstSectionStart + 3);
+  await editor.press("ArrowRight");
+  await expect(flow.locator(".deck-slide-page").first()).toBeInViewport({ ratio: 0.8 });
+
   const editedFirstSection = `<section class="cover" data-layout="cover">
       <h1>Opening, refined</h1>
       <p>Directly edited in canonical semantic HTML.</p>

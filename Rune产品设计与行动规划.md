@@ -2291,3 +2291,11 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - HTML → PPTX/ODP/PPT/PDF projection 每页只允许一张验证图片并恢复为相同 hash 的临时 Deck 引用；writer 不获得任意 DOM 权限，canonical HTML 不改变。
 - 手动图片插入必须绑定一个当前 compiler-proven section、放在 closing tag 前、限制一项 primary visual，并复用 checkpoint、asset-first persistence 与失败补偿。
 - 发布证据必须包括带真实图片的 PPTX/ODP → HTML round trip、图片 bytes 一致、source hash 引用、无 placeholder、完整 Artifact validation、独立 HTML data URL 与 active/external boundary 拒绝。
+
+### 17.61 v1.30 双向定位必须能恢复仍然 active 的目标
+
+- Markdown Document、CSV/JSON Data 与 semantic HTML Presentation 必须共享一套 Source → Preview mounted effect；各 renderer 只贡献 compiler/parser-owned target identity 和 provenance attributes，不能复制滚动实现。
+- 首次进入不同 artifact/target 时应居中；用户手动把 Preview 滚走后，在同一 source block/cell/slide 内继续移动 caret 必须用 nearest-edge 找回，目标仍可见时不能反复居中造成跳动。
+- Preview → Source 继续通过 revision-bound immutable navigation plan，Workbench 仍唯一拥有 view、focus、textarea selection、scroll、gutter 与 Selection Agent effects；Source → Preview Hook 不得写 Artifact 或访问 persistence/provider/credential。
+- 不允许从渲染文本、iframe DOM、像素或滚动百分比猜测身份；无 compiler/parser target 的内容继续不高亮、不导航、不获得编辑能力。
+- 真实 Chromium 必须从审核导入开始，用长 Markdown、长 CSV 精确 cell 和多页 semantic HTML 分别证明 Preview → Source、Source → Preview 与同 target displacement recovery；纯函数与源码断言不能代替浏览器证据。

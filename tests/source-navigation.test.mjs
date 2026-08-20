@@ -169,10 +169,16 @@ test("keeps navigation planning outside React, DOM, provider, persistence, and m
 
 test("routes Preview clicks and diagnostic repair through one Workbench effect executor", async () => {
   const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const previewScroll = await readFile(
+    new URL("../app/components/use-source-preview-scroll.ts", import.meta.url),
+    "utf8",
+  );
   assert.equal(source.split("executeSourceNavigation(navigation.plan").length - 1, 2);
   assert.match(source, /function executeSourceNavigation\([\s\S]*editor\.setSelectionRange\(plan\.start, plan\.end/);
   assert.match(source, /if \(plan\.activateSelectionAgent\) \{[\s\S]*setAgentScope\("selection"\)/);
   assert.match(source, /inspectSourceNavigationRef\.current = !plan\.activateSelectionAgent/);
   assert.match(source, /if \(inspectSourceNavigationRef\.current\) \{[\s\S]*setSourceSelection[\s\S]*return;/);
-  assert.match(source, /selectPreviewNavigationCandidate\([\s\S]*linkedElements\.map/);
+  assert.match(source, /useSourcePreviewScroll\(\{/);
+  assert.match(previewScroll, /selectPreviewNavigationCandidate\([\s\S]*linkedElements\.map/);
+  assert.doesNotMatch(previewScroll, /setArtifacts|persistDeviceWorkspace|fetch\(|localStorage|indexedDB/);
 });
