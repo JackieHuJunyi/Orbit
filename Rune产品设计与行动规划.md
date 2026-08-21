@@ -2374,3 +2374,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Cancel 必须产生零 download；workspace identity 在准备后变化必须拒绝 Confirm；只有确认才能创建一个本地 object URL。任务 evidence 只把 MD 与兼容 DECK.MD 视为 source deliverable，不能把输入 Data、Query、Chart 或非独立 HTML 下载冒充任务成品。
 - 九种界面语言必须拥有 source review title、output kind、descriptor 与 source-preservation explanation；raw converter warning 保持事实原文，后续只有在 owner 提供稳定 code/parameter 后才能本地化。
 - 发布证据必须逐类证明 target/filename/bytes、frozen input、12 MB 拒绝、image warning、zero Query/asset port，并由 Chromium 证明 Cancel 零下载和 Confirm 后真实文件与 Source 逐字节一致。
+
+### 17.71 v1.40 欢迎问候必须先完成一幕真正的设备开机手写
+
+- `writing` 阶段必须由问候独占全画布中心；chrome、产品文案和语言卡不得只做透明隐藏后继续影响布局。书写完成后才恢复稳定设置 grid，并用同一字形的一次 dock motion 解释两幕之间的关系。
+- 炫彩必须附着在笔迹和有限背景光场上。SVG 只保留 mask reveal、glyph bloom、crisp trace、小型 pressure head、settled fill 与一次 clipped sheen；不得继续累积 ribbon、bristle、bleed、wake、drop、particle 或无限渐变循环。
+- 所有可见笔迹层必须复用 `greeting-motion` 的 exact path、delay 与 duration。拉丁/西里尔保持连续主体，阿拉伯文保持完整 RTL shaping run，简中、繁中、日文和韩文保持有序 script-aware brush plan。
+- 第一帧继续由服务器不透明输出，背景不得暴露工作区；动画完成只由现有 settle event 与单一 fallback 推进，不能新增第二个定时状态机、Canvas 循环或 DOM 测量 owner。
+- reduced motion 必须立即进入正常设置布局并显示完整静态问候；forced colors 必须移除全部色彩、光晕、trace、head 与 sheen 并使用系统颜色。键盘、语言选择和 44px 主动作要求不变。
+- 实现学习 Apple 设备启动的单一焦点、自然缓动与状态连续性，但不得复制 Apple 字体、字形路径、品牌图形或动画资产。首屏仍受 530 KB 上限保护。
+- 发布证据必须读取真实 CSSAnimation，证明 write、bloom、settle、pressure 与 sheen 同时挂载；必须测量 desktop opening mark 中心与 viewport 中心误差，并继续通过九语言 × desktop/compact 零溢出、RTL、首帧、ready unfold、reduced-motion 与 forced-color 合同。

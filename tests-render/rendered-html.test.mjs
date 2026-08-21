@@ -813,7 +813,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
   assert.match(styles, /@keyframes rune-greeting-ink-trace/);
-  assert.match(styles, /@keyframes rune-greeting-wet-ink/);
+  assert.match(styles, /@keyframes rune-greeting-color-bloom/);
+  assert.match(styles, /@keyframes rune-boot-chroma/);
+  assert.match(styles, /@keyframes rune-greeting-dock/);
   assert.match(styles, /@keyframes rune-greeting-stroke-head/);
   assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
@@ -841,7 +843,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /className="welcome-greeting-ink-sheen"/);
   assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
   assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
-  assert.match(handwrittenGreeting, /data-ink-material="wet-spectrum"/);
+  assert.match(handwrittenGreeting, /data-ink-material="luminous-spectrum"/);
+  assert.match(handwrittenGreeting, /data-color-system="apple-six-color"/);
+  assert.match(handwrittenGreeting, /data-boot-motion="center-write-dock-unfold"/);
   assert.match(handwrittenGreeting, /data-ink-trace="progressive"/);
   assert.match(handwrittenGreeting, /data-motion-sequence="write-settle-reveal"/);
   assert.match(welcome, /data-onboarding-sequence="boot-write-settle-unfold"/);
@@ -858,8 +862,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /\.welcome-window\[data-intro-phase="writing"\][^}]*box-shadow:\s*none/s);
   assert.match(
     styles,
-    /\.welcome-intro-grid\[data-intro-phase="writing"\] \.welcome-greeting-stage[^}]*translate3d\(0,\s*clamp\(112px,\s*18vh,\s*180px\),\s*0\)\s*scale\(1\.08\)/s,
+    /\.welcome-intro-grid\[data-intro-phase="writing"\]\s*\{[^}]*position:\s*absolute;[^}]*place-items:\s*center;/s,
   );
+  assert.match(styles, /@keyframes rune-greeting-dock\s*\{[^}]*clamp\(150px,\s*24vh,\s*230px\)/s);
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);
   assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);

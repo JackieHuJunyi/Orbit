@@ -75,9 +75,7 @@ export function HandwrittenGreeting({
   const units = useMemo(() => greetingUnits(value, locale), [locale, value]);
   const identifier = useId().replaceAll(":", "");
   const gradientId = `rune-greeting-spectrum-${identifier}`;
-  const glowId = `rune-greeting-glow-${identifier}`;
-  const inkBleedId = `rune-greeting-ink-bleed-${identifier}`;
-  const trailGlowId = `rune-greeting-trail-glow-${identifier}`;
+  const auraId = `rune-greeting-aura-${identifier}`;
   const inkTextureId = `rune-greeting-ink-texture-${identifier}`;
   const revealMaskId = `rune-greeting-reveal-${identifier}`;
   const textClipId = `rune-greeting-text-${identifier}`;
@@ -101,9 +99,11 @@ export function HandwrittenGreeting({
       data-motion-renderer="calligraphic-mask"
       data-motion-script={script}
       data-ink-effect="spectrum-sheen"
-      data-ink-material="wet-spectrum"
-      data-ink-motion="nib-led-ribbon"
+      data-ink-material="luminous-spectrum"
+      data-ink-motion="nib-led-line"
       data-ink-trace="progressive"
+      data-color-system="apple-six-color"
+      data-boot-motion="center-write-dock-unfold"
       data-motion-sequence="write-settle-reveal"
       data-writing-continuity={script === "cursive" || script === "arabic" ? "connected" : "stroke-ordered"}
       data-writing-style="pressure-calligraphy"
@@ -153,14 +153,8 @@ export function HandwrittenGreeting({
           <stop offset="0.58" stopColor="white" stopOpacity="0" />
           <stop offset="1" stopColor="white" stopOpacity="0" />
         </linearGradient>
-        <filter colorInterpolationFilters="sRGB" height="180%" id={glowId} width="130%" x="-15%" y="-40%">
-          <feGaussianBlur stdDeviation="3.4" />
-        </filter>
-        <filter colorInterpolationFilters="sRGB" height="150%" id={inkBleedId} width="112%" x="-6%" y="-25%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.15" />
-        </filter>
-        <filter colorInterpolationFilters="sRGB" height="180%" id={trailGlowId} width="140%" x="-20%" y="-40%">
-          <feGaussianBlur stdDeviation="2.55" />
+        <filter colorInterpolationFilters="sRGB" height="190%" id={auraId} width="136%" x="-18%" y="-45%">
+          <feGaussianBlur stdDeviation="10.5" />
         </filter>
         <filter colorInterpolationFilters="sRGB" height="130%" id={inkTextureId} width="106%" x="-3%" y="-15%">
           <feTurbulence baseFrequency="0.72" numOctaves="2" result="inkGrain" seed="17" type="fractalNoise" />
@@ -199,9 +193,9 @@ export function HandwrittenGreeting({
         </clipPath>
       </defs>
 
-      <g aria-hidden="true" className="welcome-greeting-ink-bleed" filter={`url(#${inkBleedId})`}>
+      <g aria-hidden="true" className="welcome-greeting-color-bloom" filter={`url(#${auraId})`}>
         <GreetingText
-          className="welcome-greeting-fill welcome-greeting-fill-bleed"
+          className="welcome-greeting-fill welcome-greeting-fill-aura"
           canvasWidth={canvasWidth}
           direction={direction}
           gradientId={gradientId}
@@ -209,15 +203,6 @@ export function HandwrittenGreeting({
           value={value}
         />
       </g>
-      <GreetingText
-        className="welcome-greeting-fill welcome-greeting-fill-glow"
-        canvasWidth={canvasWidth}
-        direction={direction}
-        filter={`url(#${glowId})`}
-        gradientId={gradientId}
-        mask={`url(#${revealMaskId})`}
-        value={value}
-      />
       <g className="welcome-greeting-ink-texture" filter={`url(#${inkTextureId})`}>
         <GreetingText
           className="welcome-greeting-fill welcome-greeting-fill-reveal"
@@ -227,32 +212,6 @@ export function HandwrittenGreeting({
           mask={`url(#${revealMaskId})`}
           value={value}
         />
-      </g>
-      <g
-        aria-hidden="true"
-        className="welcome-greeting-ink-trails welcome-greeting-ink-trails-glow"
-        clipPath={`url(#${textClipId})`}
-        filter={`url(#${trailGlowId})`}
-      >
-        {motion.strokes.map((stroke, index) => (
-          <path
-            className="welcome-greeting-ink-trail"
-            d={stroke.path}
-            fill="none"
-            key={`trail-glow-${index}-${stroke.path}`}
-            pathLength="1"
-            stroke={`url(#${gradientId})`}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={Math.max(6, Math.round(stroke.strokeWidth * 0.2))}
-            style={
-              {
-                "--greeting-stroke-delay": `${stroke.delayMs}ms`,
-                "--greeting-stroke-duration": `${stroke.durationMs}ms`,
-              } as CSSProperties
-            }
-          />
-        ))}
       </g>
       <g aria-hidden="true" className="welcome-greeting-ink-trails" clipPath={`url(#${textClipId})`}>
         {motion.strokes.map((stroke, index) => (
@@ -265,63 +224,11 @@ export function HandwrittenGreeting({
             stroke={`url(#${gradientId})`}
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={Math.max(2.8, Math.round(stroke.strokeWidth * 0.075 * 10) / 10)}
+            strokeWidth={Math.max(2.4, Math.round(stroke.strokeWidth * 0.062 * 10) / 10)}
             style={
               {
                 "--greeting-stroke-delay": `${stroke.delayMs}ms`,
                 "--greeting-stroke-duration": `${stroke.durationMs}ms`,
-              } as CSSProperties
-            }
-          />
-        ))}
-      </g>
-      <g
-        aria-hidden="true"
-        className="welcome-greeting-ink-ribbons"
-        clipPath={`url(#${textClipId})`}
-        filter={`url(#${trailGlowId})`}
-      >
-        {motion.strokes.map((stroke, index) => (
-          <path
-            className="welcome-greeting-ink-ribbon"
-            d={stroke.path}
-            fill="none"
-            key={`ribbon-${index}-${stroke.path}`}
-            pathLength="1"
-            stroke={`url(#${gradientId})`}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={Math.max(6.4, Math.round(stroke.strokeWidth * 0.15 * 10) / 10)}
-            style={
-              {
-                "--greeting-stroke-delay": `${stroke.delayMs}ms`,
-                "--greeting-stroke-duration": `${stroke.durationMs}ms`,
-              } as CSSProperties
-            }
-          />
-        ))}
-      </g>
-      <g
-        aria-hidden="true"
-        className="welcome-greeting-ink-trails welcome-greeting-ink-bristles"
-        clipPath={`url(#${textClipId})`}
-      >
-        {motion.strokes.map((stroke, index) => (
-          <path
-            className="welcome-greeting-ink-trail welcome-greeting-ink-bristle"
-            d={stroke.path}
-            fill="none"
-            key={`bristle-${index}-${stroke.path}`}
-            pathLength="1"
-            stroke="rgba(255,255,255,.72)"
-            strokeDasharray="0.024 0.018"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={Math.max(0.9, Math.round(stroke.strokeWidth * 0.022 * 10) / 10)}
-            style={
-              {
-                "--greeting-stroke-delay": `${stroke.delayMs + 24}ms`,
-                "--greeting-stroke-duration": `${Math.max(110, stroke.durationMs - 24)}ms`,
               } as CSSProperties
             }
           />
@@ -364,24 +271,13 @@ export function HandwrittenGreeting({
             } as CSSProperties
           }
         >
-          <circle className="welcome-greeting-stroke-head-bloom" cx="0" cy="0" r="9.5" />
-          <ellipse
-            className="welcome-greeting-stroke-head-wake"
-            cx="-5.2"
-            cy="0"
-            fill={`url(#${gradientId})`}
-            rx="7.4"
-            ry="2.8"
-          />
+          <circle className="welcome-greeting-stroke-head-bloom" cx="0" cy="0" r="7.5" />
           <path
             className="welcome-greeting-stroke-head-ink"
-            d="M -6.8 1.5 C -4.1 -2.8 1.7 -3.6 6.2 -1.2 C 3.4 2.6 -2.4 4 -6.8 1.5 Z"
+            d="M -5.8 1.2 C -3.6 -2.4 1.4 -3.1 5.3 -1 C 2.8 2.2 -2.1 3.4 -5.8 1.2 Z"
             fill={`url(#${gradientId})`}
           />
-          <circle className="welcome-greeting-stroke-head-drop" cx="-6.8" cy="3.2" r="1.05" />
-          <ellipse className="welcome-greeting-stroke-head-bristle" cx="-1.2" cy="1.3" rx="3.1" ry=".42" />
-          <ellipse className="welcome-greeting-stroke-head-bristle" cx="-.4" cy="-1.25" rx="2.6" ry=".34" />
-          <ellipse className="welcome-greeting-stroke-head-light" cx="-0.8" cy="-0.6" rx="1.7" ry="0.55" />
+          <ellipse className="welcome-greeting-stroke-head-light" cx="-.7" cy="-.55" rx="1.45" ry=".48" />
         </g>
       ))}
     </svg>

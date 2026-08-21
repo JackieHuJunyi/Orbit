@@ -2611,3 +2611,11 @@ v1.38 统一了转换成品，却留下了最重要的例外：Export 菜单里�
 v1.39 把 `source` 加入同一冻结 capability 表。Document → MD，Data 保留 exact CSV/JSON，Query → SQL，Chart → CHART.JSON，semantic HTML → HTML，兼容 Deck → DECK.MD。lazy runtime 只做逐字节 UTF-8 编码与 12 MB 检查，不启动 DuckDB、不读取 image store、不编译 binding、不改 filename；它用明确 warnings 区分 exact source 与 portable/frozen handoff。带图片的源继续保留 `rune-asset` id，并提示接收方需要 connected `.rune-assets` 或选择 standalone/package export。
 
 旧 `downloadArtifact` 与 `downloadSelectedArtifactSource` 被删除。Canonical source 现在和 Office/PDF 一样捕获 exact base workspace、进入九语言 review、Cancel 零下载、stale context 拒绝，只有 Confirm 能创建 object URL。真实 Chromium 先取消并证明没有 download event，再确认并比较实际下载的 `q2-review.md` 与左侧 Source 逐字节相同。Workbench 为 6,102 行、首屏 525,221 bytes，lazy export runtime 7,434 bytes；649 unit、27 render 与 50 Chromium gate 保护这条边界。
+
+## 142. 开机手写的高级感来自一个清晰动作，而不是更多发光装饰
+
+此前问候已经具备 script-aware mask、九段彩色渐变、压力笔尖和完成态，却又累积了三组重复轨迹、粗 ribbon、bristle、bleed、wake 与 terminal drop。每个局部都能被测试证明，叠在一起却更接近技术演示：边缘过亮、笔尖过重、背景与字同时争夺注意力。另一方面，语言文案和选项即使隐藏仍参与 grid 尺寸，问候只能靠固定 `translateY` 猜测视觉中心，不同窗口高度下都不是真正的设备开机画面。
+
+v1.40 把 `writing` 变成独立的全画布布局：chrome 行收为 0，copy 与 language card 完全离开布局，问候在当前 viewport 精确居中。一层低透明度六色光场只在第一幕运行一次；字本身只保留 broad mask reveal、glyph-shaped bloom、细彩色 trace、小型 pressure head、settled fill 与一次 clipped sheen。所有可见墨迹继续使用纯 `greeting-motion` 返回的同一 path、delay 和 duration；阿拉伯文不拆 shaping run，中日韩保留各自笔序，拉丁/西里尔保留首字母、横笔和连续主体。
+
+最后一笔稳定后，正常两列 grid 恢复，同一个问候从画布中心沿一条 dock 动画回到顶部，chrome、产品说明和语言选择依次展开。reduced motion 不播放开机布局，直接显示完整设置；forced colors 移除全部色彩层并使用 `CanvasText`。删掉装饰节点后首屏 minified entry 从 525,221 降至 522,675 bytes。这里学习的是 Apple 开机体验的节奏、层级与克制，不复制其字体、字形路径、品牌资产或动画文件。
