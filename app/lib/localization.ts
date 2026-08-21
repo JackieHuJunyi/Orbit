@@ -399,7 +399,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       },
       focusAgent: zh ? "聚焦 Rune Agent" : "Focus Rune Agent",
       dataGraph: zh ? "数据关系图" : "Data graph",
-      resetSample: zh ? "重置示例工作区" : "Reset sample workspace",
+      resetSample: zh ? "恢复示例工作区" : "Restore sample workspace",
       checkpoints: zh ? "恢复点历史" : "Checkpoint history",
       sourceVersions: zh ? "源内容与版本" : "Source and versions",
       closeFile: zh ? "关闭当前文件" : "Close current file",
@@ -697,6 +697,50 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       verifying: zh ? "正在核验…" : "Verifying…",
       restore: zh ? "确认恢复" : "Confirm restore",
       diff: zh ? "恢复前后的规范源差异" : "Canonical source diff after restore",
+    },
+    workspaceReset: {
+      kicker: zh ? "本机工作区 · 可恢复切换" : "Device workspace · recoverable switch",
+      sampleTitle: zh ? "恢复示例工作区？" : "Restore the sample workspace?",
+      sampleDescription: zh
+        ? "Rune 会用内置示例替换当前本机工作区，并把当前文件、恢复点和任务记录完整保留为上一个工作区。"
+        : "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.",
+      recoveryTitle: zh ? "恢复上一个工作区？" : "Restore the previous workspace?",
+      recoveryDescription: zh
+        ? "Rune 会恢复重置前的完整本机工作区，并把当前工作区保留为下一次可恢复版本。"
+        : "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.",
+      details: zh ? "工作区切换详情" : "Workspace switch details",
+      transition: zh ? "当前与目标工作区" : "Current and target workspaces",
+      current: zh ? "当前工作区" : "Current workspace",
+      previous: zh ? "上一个工作区" : "Previous workspace",
+      sample: zh ? "内置示例" : "Built-in sample",
+      filesLabel: zh ? "个文件" : "files",
+      checkpointsLabel: zh ? "个源内容恢复点" : "source checkpoints",
+      savedTasksLabel: zh ? "个已保存任务" : "saved tasks",
+      taskRunsLabel: zh ? "次运行记录" : "recorded runs",
+      targetFiles: zh ? "切换后可用文件" : "Files available after the switch",
+      moreFiles: zh ? "个其他文件" : "more files",
+      sampleSafety: zh
+        ? "当前工作区会作为一份完整本机恢复版本，与示例工作区在同一次写入中保存。"
+        : "The current workspace becomes one complete device recovery version in the same write as the sample workspace.",
+      recoverySafety: zh
+        ? "当前工作区与上一个工作区会安全互换，因此这次恢复本身仍可撤销。"
+        : "The current and previous workspaces swap safely, so this recovery remains reversible.",
+      folderSafety: zh
+        ? "已连接文件夹不会自动更改；只有之后明确选择“写回工作区文件”才会写入。"
+        : "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.",
+      atomic: zh
+        ? "一次原子本机写入 · 存储失败时当前工作区保持不变"
+        : "One atomic device write · the current workspace stays unchanged if storage fails",
+      restoreSample: zh ? "恢复示例" : "Restore sample",
+      restorePrevious: zh ? "恢复上一个工作区" : "Restore previous workspace",
+      saving: zh ? "正在安全切换…" : "Switching safely…",
+      previousAvailable: zh ? "恢复上一个工作区" : "Restore previous workspace",
+      previousAvailableDetail: zh
+        ? "完整恢复重置前的文件、版本与任务记录"
+        : "Recover files, versions, and task records from before reset",
+      sampleDetail: zh
+        ? "先审核，再保留当前工作区并打开内置示例"
+        : "Review first, preserve the current workspace, then open the sample",
     },
     importReview: {
       kicker: zh ? "本地转换 · 不上传" : "Local conversion · no upload",

@@ -204,6 +204,61 @@ test("reviews, cancels, and atomically persists a checkpoint restore", async ({ 
   await expect(editor).toHaveValue(originalSource);
 });
 
+test("reviews a sample reset, preserves the full workspace, and restores it after reload", async ({ page }) => {
+  await openWorkbench(page);
+  const editor = page.locator("textarea.source-editor");
+  const originalSource = await editor.inputValue();
+  const changedSource = `${originalSource}\n\nRecover this complete workspace after sample reset.`;
+  await editor.fill(changedSource);
+  await expect(editor).toHaveValue(changedSource);
+  await page.waitForTimeout(520);
+
+  const tools = page.getByRole("button", { name: "More tools" });
+  await tools.click();
+  await page.getByRole("menuitem", { name: /Restore sample workspace/u }).click();
+  const sampleReview = page.getByRole("dialog", { name: "Restore the sample workspace?" });
+  await expect(sampleReview).toBeVisible();
+  await expect(
+    sampleReview.getByText(/current workspace becomes one complete device recovery version/iu),
+  ).toBeVisible();
+  await expect(sampleReview.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(sampleReview).toBeHidden();
+  await expect(editor).toHaveValue(changedSource);
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}").resetRecovery),
+  ).toBeUndefined();
+
+  await tools.click();
+  await page.getByRole("menuitem", { name: /Restore sample workspace/u }).click();
+  await sampleReview.getByRole("button", { name: "Restore sample", exact: true }).click();
+  await expect(sampleReview).toBeHidden();
+  await expect(editor).toHaveValue(originalSource);
+  let stored = await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}"));
+  expect(stored.resetRecovery.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(
+    changedSource,
+  );
+
+  await page.reload();
+  await expect(editor).toHaveValue(originalSource);
+  await tools.click();
+  await page.getByRole("menuitem", { name: /Restore previous workspace/u }).click();
+  const recoveryReview = page.getByRole("dialog", { name: "Restore the previous workspace?" });
+  await expect(recoveryReview).toBeVisible();
+  await expect(recoveryReview.getByText(/swap safely/iu)).toBeVisible();
+  await recoveryReview.getByRole("button", { name: "Restore previous workspace", exact: true }).click();
+  await expect(recoveryReview).toBeHidden();
+  await expect(editor).toHaveValue(changedSource);
+  stored = await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}"));
+  expect(stored.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(changedSource);
+  expect(stored.resetRecovery.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(
+    originalSource,
+  );
+
+  await page.reload();
+  await expect(editor).toHaveValue(changedSource);
+});
+
 test("reviews canonical source before downloading its exact UTF-8 bytes", async ({ page }) => {
   await openWorkbench(page);
   const editor = page.locator("textarea.source-editor");
@@ -586,7 +641,7 @@ test("owns complete keyboard focus in the bottom-left settings menu", async ({ p
   await trigger.focus();
   await trigger.press("ArrowDown");
   await expect(panel).toBeVisible();
-  await expect(actions).toHaveCount(4);
+  await expect(actions).toHaveCount(5);
   await expect(themes).toHaveCount(12);
   await expect(actions.nth(0)).toBeFocused();
   await page.keyboard.press("ArrowDown");

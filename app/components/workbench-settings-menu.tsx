@@ -1,10 +1,21 @@
 "use client";
 
-import { BookOpen, Check, FileCode2, FolderOpen, Palette, RefreshCw, Save, Settings } from "lucide-react";
+import {
+  ArchiveRestore,
+  BookOpen,
+  Check,
+  FileCode2,
+  FolderOpen,
+  Palette,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Settings,
+} from "lucide-react";
 import type { RefObject } from "react";
 import { useWorkbenchMenuFocus, type WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 import { RUNE_APPEARANCE_THEMES, type RuneAppearanceTheme } from "../lib/appearance";
-import { runeText, type RuneLocale, type RuneUICopy } from "../lib/localization";
+import { runeText, runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
 import { RUNE_PRODUCT_VERSION } from "../lib/product-meta";
 
 type WorkbenchSettingsMenuProps = {
@@ -16,6 +27,8 @@ type WorkbenchSettingsMenuProps = {
   directoryChanged: boolean;
   directoryName: string | null;
   hasPilotEvidence: boolean;
+  hasWorkspaceRecovery: boolean;
+  workspaceResetBlocked: boolean;
   locale: RuneLocale;
   open: boolean;
   pilotEvidenceBody: string;
@@ -30,6 +43,8 @@ type WorkbenchSettingsMenuProps = {
   onOpenModels: () => void;
   onPullFolder: () => void;
   onPushFolder: () => void;
+  onRestorePreviousWorkspace: () => void;
+  onRestoreSampleWorkspace: () => void;
   onThemeChange: (theme: RuneAppearanceTheme) => void;
 };
 
@@ -42,6 +57,8 @@ export function WorkbenchSettingsMenu({
   directoryChanged,
   directoryName,
   hasPilotEvidence,
+  hasWorkspaceRecovery,
+  workspaceResetBlocked,
   locale,
   open,
   pilotEvidenceBody,
@@ -56,10 +73,13 @@ export function WorkbenchSettingsMenu({
   onOpenModels,
   onPullFolder,
   onPushFolder,
+  onRestorePreviousWorkspace,
+  onRestoreSampleWorkspace,
   onThemeChange,
 }: WorkbenchSettingsMenuProps) {
   const activeAppearance =
     RUNE_APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) ?? RUNE_APPEARANCE_THEMES[0];
+  const workspaceResetCopy = runeUICopy(locale).workspaceReset;
   const actions = [
     {
       id: "guide",
@@ -113,6 +133,26 @@ export function WorkbenchSettingsMenu({
           },
         ]
       : []),
+    ...(hasWorkspaceRecovery
+      ? [
+          {
+            id: "restore-previous-workspace",
+            icon: <ArchiveRestore aria-hidden="true" />,
+            label: workspaceResetCopy.previousAvailable,
+            detail: workspaceResetCopy.previousAvailableDetail,
+            disabled: blocked || workspaceResetBlocked,
+            onSelect: onRestorePreviousWorkspace,
+          },
+        ]
+      : []),
+    {
+      id: "restore-sample-workspace",
+      icon: <RotateCcw aria-hidden="true" />,
+      label: copy.resetSample,
+      detail: workspaceResetCopy.sampleDetail,
+      disabled: blocked || workspaceResetBlocked,
+      onSelect: onRestoreSampleWorkspace,
+    },
   ];
   const { onMenuKeyDown, setItemRef } = useWorkbenchMenuFocus({
     itemCount: actions.length + RUNE_APPEARANCE_THEMES.length,

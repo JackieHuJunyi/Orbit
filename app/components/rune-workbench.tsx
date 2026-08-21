@@ -60,7 +60,6 @@ import {
 import { AgentComposer, type AgentScope } from "./agent-composer";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchExportMenu } from "./workbench-export-menu";
-import { WorkbenchSettingsMenu } from "./workbench-settings-menu";
 import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 import { WorkbenchStatusBar } from "./workbench-statusbar";
 import { EmptyWorkspace } from "./empty-workspace";
@@ -100,6 +99,7 @@ import {
   type WorkspaceCheckpoint,
 } from "../lib/checkpoints";
 import type { CheckpointRestorePlan } from "../lib/checkpoint-restore";
+import type { WorkspaceDeviceState, WorkspaceResetPlan } from "../lib/workspace-reset";
 import {
   captureWorkspaceSourceRevision,
   createLineDiffPreview,
@@ -284,6 +284,12 @@ const DocumentStructureReviewDialog = lazy(() =>
 const CheckpointRestoreDialog = lazy(() =>
   import("./checkpoint-restore-dialog").then((module) => ({ default: module.CheckpointRestoreDialog })),
 );
+const WorkspaceResetDialog = lazy(() =>
+  import("./workspace-reset-dialog").then((module) => ({ default: module.WorkspaceResetDialog })),
+);
+const WorkbenchSettingsMenu = lazy(() =>
+  import("./workbench-settings-menu").then((module) => ({ default: module.WorkbenchSettingsMenu })),
+);
 const DeliveryOutcomeDialog = lazy(() =>
   import("./delivery-outcome-dialog").then((module) => ({ default: module.DeliveryOutcomeDialog })),
 );
@@ -440,6 +446,12 @@ type PendingDocumentStructure = {
 
 type PendingCheckpointRestore = {
   plan: CheckpointRestorePlan;
+  error: string;
+  submitting: boolean;
+};
+
+type PendingWorkspaceReset = {
+  plan: WorkspaceResetPlan;
   error: string;
   submitting: boolean;
 };
@@ -743,10 +755,29 @@ function persistDeviceWorkspace(
   checkpoints: CheckpointMap,
   savedOperatingReviews: SavedOperatingReview[],
   taskEvidence: RuneTaskEvidence,
+  resetRecovery?: WorkspaceDeviceState | null,
 ) {
+  let preservedResetRecovery: unknown;
+  if (resetRecovery === undefined) {
+    try {
+      const current = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") as { resetRecovery?: unknown } | null;
+      preservedResetRecovery = current?.resetRecovery;
+    } catch {
+      preservedResetRecovery = undefined;
+    }
+  } else {
+    preservedResetRecovery = resetRecovery ?? undefined;
+  }
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ artifacts, selectedId, checkpoints, savedOperatingReviews, taskEvidence }),
+    JSON.stringify({
+      artifacts,
+      selectedId,
+      checkpoints,
+      savedOperatingReviews,
+      taskEvidence,
+      ...(preservedResetRecovery ? { resetRecovery: preservedResetRecovery } : {}),
+    }),
   );
 }
 
@@ -825,6 +856,8 @@ export function RuneWorkbench() {
   const [deliveryOutcomeState, setDeliveryOutcomeState] = useState<"idle" | "recording">("idle");
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [pendingCheckpointRestore, setPendingCheckpointRestore] = useState<PendingCheckpointRestore | null>(null);
+  const [pendingWorkspaceReset, setPendingWorkspaceReset] = useState<PendingWorkspaceReset | null>(null);
+  const [workspaceResetRecovery, setWorkspaceResetRecovery] = useState<WorkspaceDeviceState | null>(null);
   const [pendingLocalImage, setPendingLocalImage] = useState<PendingLocalImage | null>(null);
   const [localAssetUrls, setLocalAssetUrls] = useState<Record<string, string>>({});
   const [exportError, setExportError] = useState("");
@@ -864,6 +897,7 @@ export function RuneWorkbench() {
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const checkpointRestoreInFlightRef = useRef(false);
+  const workspaceResetInFlightRef = useRef(false);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
   const toolsMenuRequestedFocusRef = useRef<WorkbenchMenuFocusEdge>("first");
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
@@ -885,12 +919,14 @@ export function RuneWorkbench() {
   const savedOperatingReviewsRef = useRef(savedOperatingReviews);
   const taskEvidenceRef = useRef(taskEvidence);
   const selectedIdRef = useRef(selectedId);
+  const workspaceResetRecoveryRef = useRef(workspaceResetRecovery);
   const recordedStoppedTaskIdsRef = useRef(new Set<string>());
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
   savedOperatingReviewsRef.current = savedOperatingReviews;
   taskEvidenceRef.current = taskEvidence;
   selectedIdRef.current = selectedId;
+  workspaceResetRecoveryRef.current = workspaceResetRecovery;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
@@ -1307,6 +1343,7 @@ export function RuneWorkbench() {
     Boolean(pendingPilotEvidence) ||
     Boolean(pendingDeliveryConfirmation) ||
     Boolean(pendingCheckpointRestore) ||
+    Boolean(pendingWorkspaceReset) ||
     Boolean(pendingDocumentStructure) ||
     Boolean(pendingLocalImage) ||
     operatingReviewOpen ||
@@ -1388,6 +1425,7 @@ export function RuneWorkbench() {
               checkpoints?: unknown;
               savedOperatingReviews?: unknown;
               taskEvidence?: unknown;
+              resetRecovery?: unknown;
             };
             const restoredArtifacts = normalizeWorkspaceArtifacts(parsed.artifacts);
             const restoredId =
@@ -1400,6 +1438,11 @@ export function RuneWorkbench() {
             setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
             setSavedOperatingReviews(normalizeSavedOperatingReviews(parsed.savedOperatingReviews));
             setTaskEvidence(normalizeRuneTaskEvidence(parsed.taskEvidence));
+            if (parsed.resetRecovery) {
+              const { normalizeWorkspaceDeviceState } = await import("../lib/workspace-reset");
+              if (cancelled) return;
+              setWorkspaceResetRecovery(normalizeWorkspaceDeviceState(parsed.resetRecovery));
+            }
             setNotice("Restored the latest device draft");
           }
         } catch {
@@ -1487,6 +1530,7 @@ export function RuneWorkbench() {
         activeVisualSourceDraft ||
         commandMenuOpen ||
         pendingCheckpointRestore ||
+        pendingWorkspaceReset ||
         pendingDocumentStructure ||
         pendingLocalImage ||
         operatingReviewOpen ||
@@ -1573,6 +1617,7 @@ export function RuneWorkbench() {
     operatingReviewOpen,
     pendingChange,
     pendingCheckpointRestore,
+    pendingWorkspaceReset,
     pendingDeliveryConfirmation,
     pendingDocumentStructure,
     pendingExport,
@@ -1754,7 +1799,8 @@ export function RuneWorkbench() {
   }
 
   function updateSource(source: string, cursor?: SourceSelection) {
-    if (pendingCheckpointRestore || pendingDocumentStructure || activeVisualSourceDraft) return;
+    if (pendingCheckpointRestore || pendingWorkspaceReset || pendingDocumentStructure || activeVisualSourceDraft)
+      return;
     setSaveState("saving");
     setArtifacts((current) =>
       current.map((artifact) => (artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact)),
@@ -1790,6 +1836,7 @@ export function RuneWorkbench() {
       pendingPdfOcr ||
       pendingExport ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       activeVisualSourceDraft
@@ -2006,6 +2053,7 @@ export function RuneWorkbench() {
       pendingPdfOcr ||
       pendingExport ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       (pendingDocumentStructure && !allowDocumentStructureReview) ||
       agentState === "planning"
     ) {
@@ -2156,6 +2204,7 @@ export function RuneWorkbench() {
       pendingPdfOcr ||
       pendingExport ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       agentState === "planning"
@@ -2241,6 +2290,7 @@ export function RuneWorkbench() {
       pendingPdfOcr ||
       pendingExport ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       agentState === "planning"
@@ -2687,7 +2737,8 @@ export function RuneWorkbench() {
   }
 
   async function connectWorkspaceFolder() {
-    if (directoryState === "syncing" || pendingCheckpointRestore || pendingDocumentStructure) return;
+    if (directoryState === "syncing" || pendingCheckpointRestore || pendingWorkspaceReset || pendingDocumentStructure)
+      return;
     if (!supportsDirectoryWorkspace()) {
       setDirectoryState("error");
       setNotice("Folder workspaces require a browser with the File System Access API");
@@ -2771,7 +2822,13 @@ export function RuneWorkbench() {
   }
 
   async function reviewCheckpointRestore(checkpoint: WorkspaceCheckpoint) {
-    if (activeVisualSourceDraft || pendingCheckpointRestore || checkpointRestoreInFlightRef.current) return;
+    if (
+      activeVisualSourceDraft ||
+      pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
+      checkpointRestoreInFlightRef.current
+    )
+      return;
     checkpointRestoreInFlightRef.current = true;
     try {
       if (checkpoint.artifactId !== selectedArtifact.id) {
@@ -2883,6 +2940,7 @@ export function RuneWorkbench() {
       visualEditState !== "idle" ||
       activeVisualSourceDraft ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       pendingDocumentStructure
     )
       return;
@@ -3397,35 +3455,131 @@ export function RuneWorkbench() {
     void reviewCheckpointRestore(previous);
   }
 
-  function resetWorkspace() {
-    if (pendingCheckpointRestore || pendingDocumentStructure) return;
-    if (!window.confirm("Reset this device draft to the Rune sample workspace?")) return;
-    const defaults = cloneDefaultArtifacts();
+  function currentWorkspaceDeviceState(): WorkspaceDeviceState {
+    return {
+      artifacts: artifactsRef.current,
+      selectedId: selectedIdRef.current,
+      checkpoints: checkpointsRef.current,
+      savedOperatingReviews: savedOperatingReviewsRef.current,
+      taskEvidence: taskEvidenceRef.current,
+    };
+  }
+
+  function sampleWorkspaceDeviceState(): WorkspaceDeviceState {
+    const sampleArtifacts = [createRuneGuideArtifact(locale), ...cloneDefaultArtifacts()];
+    return {
+      artifacts: sampleArtifacts,
+      selectedId: sampleArtifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? sampleArtifacts[0].id,
+      checkpoints: {},
+      savedOperatingReviews: [],
+      taskEvidence: EMPTY_RUNE_TASK_EVIDENCE,
+    };
+  }
+
+  async function reviewWorkspaceReset(mode: "sample" | "recovery") {
+    if (artifactCreationDisabled || directoryState === "syncing" || workspaceResetInFlightRef.current) return;
+    const target = mode === "sample" ? sampleWorkspaceDeviceState() : workspaceResetRecoveryRef.current;
+    if (!target) {
+      setNotice(runeText(locale, "No previous workspace is available on this device", "本机没有可恢复的上一个工作区"));
+      return;
+    }
+    workspaceResetInFlightRef.current = true;
+    try {
+      const { prepareWorkspaceReset } = await import("../lib/workspace-reset");
+      const prepared = prepareWorkspaceReset(currentWorkspaceDeviceState(), target, mode);
+      if (!prepared.plan || prepared.errors.length) {
+        setNotice(prepared.errors[0] ?? "Rune could not prepare this workspace switch");
+        return;
+      }
+      setPendingWorkspaceReset({ plan: prepared.plan, error: "", submitting: false });
+      setToolsMenuOpen(false);
+      setNotice(
+        runeText(
+          locale,
+          "Workspace switch ready for review — nothing has been written",
+          "工作区切换已可审核 — 尚未写入任何内容",
+        ),
+      );
+    } finally {
+      workspaceResetInFlightRef.current = false;
+    }
+  }
+
+  function cancelWorkspaceReset() {
+    if (!pendingWorkspaceReset || pendingWorkspaceReset.submitting) return;
+    setPendingWorkspaceReset(null);
+    setNotice(runeText(locale, "Workspace switch cancelled — nothing changed", "已取消工作区切换 — 所有内容保持不变"));
+  }
+
+  async function confirmWorkspaceReset() {
+    const pending = pendingWorkspaceReset;
+    if (!pending || pending.submitting) return;
+    setPendingWorkspaceReset((current) => (current ? { ...current, error: "", submitting: true } : current));
     setSaveState("saving");
-    setArtifacts(defaults);
-    setSelectedId(defaults[0].id);
-    setEmptyWorkspace(false);
-    setWorkspacePinnedArtifactIds([]);
-    setSourceSelection(null);
-    setSourceCursor(null);
-    if (agentScope === "selection") setAgentScope("artifact");
-    setCheckpoints({});
-    setSavedOperatingReviews([]);
-    setTaskEvidence(EMPTY_RUNE_TASK_EVIDENCE);
-    setEditingOperatingReviewId("");
-    setTaskSession(null);
-    setOperatingReviewOpen(false);
-    setOperatingReviewError("");
-    setDocumentBriefingOpen(false);
-    setDocumentBriefingError("");
-    setPreferredDocumentBriefingTargetId("");
-    setHistoryOpen(false);
-    setNewArtifactOpen(false);
-    setNewArtifactError("");
-    setPendingChange(null);
-    setPendingReviewId("");
-    localStorage.removeItem(STORAGE_KEY);
-    setNotice("Sample workspace restored");
+    try {
+      const { commitWorkspaceReset } = await import("../lib/workspace-reset");
+      const committed = await commitWorkspaceReset({
+        expectedPlan: pending.plan,
+        readCurrent: currentWorkspaceDeviceState,
+        readTarget: () =>
+          pending.plan.mode === "sample" ? sampleWorkspaceDeviceState() : workspaceResetRecoveryRef.current,
+        persist: (nextState, nextRecovery) =>
+          persistDeviceWorkspace(
+            nextState.artifacts,
+            nextState.selectedId,
+            nextState.checkpoints,
+            nextState.savedOperatingReviews,
+            nextState.taskEvidence,
+            nextRecovery,
+          ),
+      });
+      const next = committed.nextState;
+      setArtifacts(next.artifacts);
+      setSelectedId(next.selectedId);
+      setCheckpoints(next.checkpoints);
+      setSavedOperatingReviews(next.savedOperatingReviews);
+      setTaskEvidence(next.taskEvidence);
+      setWorkspaceResetRecovery(committed.nextRecovery);
+      setEmptyWorkspace(false);
+      setWorkspacePinnedArtifactIds([]);
+      setSourceSelection(null);
+      setSourceCursor(null);
+      setVisualSourceDraft(null);
+      if (agentScope === "selection") setAgentScope("artifact");
+      setEditingOperatingReviewId("");
+      setTaskSession(null);
+      setOperatingReviewOpen(false);
+      setOperatingReviewError("");
+      setDocumentBriefingOpen(false);
+      setDocumentBriefingError("");
+      setPreferredDocumentBriefingTargetId("");
+      setHistoryOpen(false);
+      setNewArtifactOpen(false);
+      setNewArtifactError("");
+      setPendingChange(null);
+      setPendingReviewId("");
+      setPendingWorkspaceReset(null);
+      setSaveState("saved");
+      setSavedAt("");
+      setNotice(
+        committed.mode === "sample"
+          ? runeText(
+              locale,
+              "Sample workspace restored · previous workspace remains recoverable",
+              "示例工作区已恢复 · 上一个工作区仍可恢复",
+            )
+          : runeText(
+              locale,
+              "Previous workspace restored · this switch remains reversible",
+              "上一个工作区已恢复 · 本次切换仍可撤销",
+            ),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Rune could not switch this workspace.";
+      setSaveState(message.startsWith("Device persistence failed") ? "error" : "saved");
+      setPendingWorkspaceReset((current) => (current ? { ...current, error: message, submitting: false } : current));
+      setNotice(runeText(locale, "Workspace switch held — nothing changed", "工作区切换已暂停 — 所有内容保持不变"));
+    }
   }
 
   function openNewArtifact() {
@@ -3770,7 +3924,7 @@ export function RuneWorkbench() {
   }
 
   async function createNewArtifact(input: ArtifactCreationInput, embedArtifactId?: string) {
-    if (pendingCheckpointRestore || pendingDocumentStructure) return;
+    if (pendingCheckpointRestore || pendingWorkspaceReset || pendingDocumentStructure) return;
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
@@ -3889,6 +4043,7 @@ export function RuneWorkbench() {
       pendingPdfOcr ||
       pendingExport ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       pendingDocumentStructure ||
       exportState !== "idle"
     )
@@ -4187,6 +4342,7 @@ export function RuneWorkbench() {
       pendingImport ||
       pendingPdfOcr ||
       pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
       pendingDocumentStructure ||
       importInFlightRef.current ||
       exportInFlightRef.current
@@ -4488,6 +4644,7 @@ export function RuneWorkbench() {
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
+              Boolean(pendingWorkspaceReset) ||
               Boolean(pendingDocumentStructure)
             }
           >
@@ -4514,6 +4671,7 @@ export function RuneWorkbench() {
                 Boolean(pendingPdfOcr) ||
                 Boolean(pendingExport) ||
                 Boolean(pendingCheckpointRestore) ||
+                Boolean(pendingWorkspaceReset) ||
                 Boolean(pendingDocumentStructure)
               }
               legacyOfficeAvailable={legacyOfficeExportAvailable}
@@ -4549,6 +4707,7 @@ export function RuneWorkbench() {
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
+              Boolean(pendingWorkspaceReset) ||
               Boolean(pendingDocumentStructure)
             }
           />
@@ -4570,6 +4729,7 @@ export function RuneWorkbench() {
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
+              Boolean(pendingWorkspaceReset) ||
               Boolean(pendingDocumentStructure)
             }
           />
@@ -4593,6 +4753,7 @@ export function RuneWorkbench() {
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
+              Boolean(pendingWorkspaceReset) ||
               Boolean(pendingDocumentStructure) ||
               Boolean(pendingLocalImage)
             }
@@ -4623,7 +4784,6 @@ export function RuneWorkbench() {
           )}
           focusAgentLabel={ui.focusAgent}
           dataGraphLabel={ui.dataGraph}
-          resetSampleLabel={ui.resetSample}
           settingsLabel={ui.moreTools}
           settingsExpanded={toolsMenuOpen}
           settingsTriggerRef={settingsTriggerRef}
@@ -4647,7 +4807,6 @@ export function RuneWorkbench() {
             promptRef.current?.focus();
             setNotice(ui.focusAgent);
           }}
-          onReset={resetWorkspace}
           onToggleSettings={() => {
             setExportMenuOpen(false);
             if (!toolsMenuOpen) toolsMenuRequestedFocusRef.current = "first";
@@ -4660,31 +4819,50 @@ export function RuneWorkbench() {
           }}
         />
 
-        <WorkbenchSettingsMenu
-          appearanceTheme={appearanceTheme}
-          blocked={Boolean(activeVisualSourceDraft)}
-          containerRef={toolsMenuRef}
-          copy={ui}
-          directoryBusy={directoryState === "syncing"}
-          directoryChanged={directoryState === "changed"}
-          directoryName={directoryHandle?.name ?? null}
-          hasPilotEvidence={Boolean(taskEvidence.runs.length)}
-          locale={locale}
-          open={toolsMenuOpen}
-          pilotEvidenceBody={pilotEvidenceUI.menuBody}
-          pilotEvidenceEmpty={pilotEvidenceUI.menuEmpty}
-          pilotEvidenceTitle={pilotEvidenceUI.menuTitle}
-          requestedFocusRef={toolsMenuRequestedFocusRef}
-          triggerRef={settingsTriggerRef}
-          onExportPilotEvidence={reviewPilotEvidenceExport}
-          onOpenChange={setToolsMenuOpen}
-          onOpenFolder={() => void connectWorkspaceFolder()}
-          onOpenGuide={openWelcomeGuide}
-          onOpenModels={openModelSettings}
-          onPullFolder={() => void pullWorkspaceFolder()}
-          onPushFolder={() => void pushWorkspaceFolder()}
-          onThemeChange={setAppearanceTheme}
-        />
+        {toolsMenuOpen && (
+          <Suspense
+            fallback={
+              <div
+                className="tools-popover settings-popover settings-popover-loading"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <DeferredWorkbenchSurfaceFallback locale={locale} variant="inline" />
+              </div>
+            }
+          >
+            <WorkbenchSettingsMenu
+              appearanceTheme={appearanceTheme}
+              blocked={Boolean(activeVisualSourceDraft)}
+              containerRef={toolsMenuRef}
+              copy={ui}
+              directoryBusy={directoryState === "syncing"}
+              directoryChanged={directoryState === "changed"}
+              directoryName={directoryHandle?.name ?? null}
+              hasPilotEvidence={Boolean(taskEvidence.runs.length)}
+              hasWorkspaceRecovery={Boolean(workspaceResetRecovery)}
+              workspaceResetBlocked={artifactCreationDisabled || directoryState === "syncing"}
+              locale={locale}
+              open
+              pilotEvidenceBody={pilotEvidenceUI.menuBody}
+              pilotEvidenceEmpty={pilotEvidenceUI.menuEmpty}
+              pilotEvidenceTitle={pilotEvidenceUI.menuTitle}
+              requestedFocusRef={toolsMenuRequestedFocusRef}
+              triggerRef={settingsTriggerRef}
+              onExportPilotEvidence={reviewPilotEvidenceExport}
+              onOpenChange={setToolsMenuOpen}
+              onOpenFolder={() => void connectWorkspaceFolder()}
+              onOpenGuide={openWelcomeGuide}
+              onOpenModels={openModelSettings}
+              onPullFolder={() => void pullWorkspaceFolder()}
+              onPushFolder={() => void pushWorkspaceFolder()}
+              onRestorePreviousWorkspace={() => void reviewWorkspaceReset("recovery")}
+              onRestoreSampleWorkspace={() => void reviewWorkspaceReset("sample")}
+              onThemeChange={setAppearanceTheme}
+            />
+          </Suspense>
+        )}
 
         {fileRailOpen &&
           (railView === "graph" ? (
@@ -5090,6 +5268,7 @@ export function RuneWorkbench() {
                           Boolean(pendingPdfOcr) ||
                           Boolean(pendingExport) ||
                           Boolean(pendingCheckpointRestore) ||
+                          Boolean(pendingWorkspaceReset) ||
                           Boolean(pendingDocumentStructure) ||
                           Boolean(pendingLocalImage)
                         }
@@ -5254,10 +5433,16 @@ export function RuneWorkbench() {
                   wrap="off"
                   readOnly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
                   disabled={
-                    visualEditState !== "idle" || Boolean(pendingCheckpointRestore) || Boolean(pendingDocumentStructure)
+                    visualEditState !== "idle" ||
+                    Boolean(pendingCheckpointRestore) ||
+                    Boolean(pendingWorkspaceReset) ||
+                    Boolean(pendingDocumentStructure)
                   }
                   aria-busy={
-                    visualEditState !== "idle" || Boolean(pendingCheckpointRestore) || Boolean(pendingDocumentStructure)
+                    visualEditState !== "idle" ||
+                    Boolean(pendingCheckpointRestore) ||
+                    Boolean(pendingWorkspaceReset) ||
+                    Boolean(pendingDocumentStructure)
                   }
                   aria-readonly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
                   aria-label={
@@ -5732,6 +5917,7 @@ export function RuneWorkbench() {
                       !proposalReviewActive &&
                       visualEditState === "idle" &&
                       !pendingCheckpointRestore &&
+                      !pendingWorkspaceReset &&
                       !pendingDocumentStructure
                         ? reviewVisualDocumentBlockStructure
                         : undefined
@@ -5908,6 +6094,16 @@ export function RuneWorkbench() {
             locale={locale}
             onCancel={cancelCheckpointRestore}
             onConfirm={() => void confirmCheckpointRestore()}
+          />
+        )}
+        {pendingWorkspaceReset && (
+          <WorkspaceResetDialog
+            plan={pendingWorkspaceReset.plan}
+            locale={locale}
+            error={pendingWorkspaceReset.error}
+            submitting={pendingWorkspaceReset.submitting}
+            onCancel={cancelWorkspaceReset}
+            onConfirm={() => void confirmWorkspaceReset()}
           />
         )}
         {pendingDocumentStructure && (

@@ -144,6 +144,8 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   assert.ok(workbenchBytes <= 530_000, `Initial Workbench chunk is ${workbenchBytes} bytes; budget is 530000.`);
   for (const surface of [
     "checkpoint-restore-dialog",
+    "workspace-reset-dialog",
+    "workbench-settings-menu",
     "document-structure-review-dialog",
     "delivery-outcome-dialog",
     "document-briefing-dialog",
@@ -184,6 +186,8 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/query-preflight.ts"));
   assert.equal(manifest["app/lib/checkpoint-restore.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/checkpoint-restore.ts"));
+  assert.equal(manifest["app/lib/workspace-reset.ts"]?.isDynamicEntry, true);
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/workspace-reset.ts"));
 });
 
 test("ships one complete-source live mirror boundary for every revision-bound visual draft", async () => {
@@ -608,6 +612,35 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
     /@media \(max-width:\s*680px\)[\s\S]*\.settings-popover\s*\{[^}]*right:\s*10px;[^}]*bottom:\s*auto;[^}]*left:\s*10px;/,
   );
   assert.match(responsiveStyles, /html\[dir="rtl"\] \.settings-popover\s*\{[^}]*right:\s*10px;[^}]*left:\s*10px;/);
+});
+
+test("reviews sample reset as a recoverable atomic workspace switch", async () => {
+  const [workbench, activityRail, settingsMenu, dialog, planner, overlays] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-activity-rail.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workspace-reset-dialog.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/workspace-reset.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(activityRail, /RotateCcw|onReset|resetSampleLabel/);
+  assert.match(settingsMenu, /id: "restore-sample-workspace"/);
+  assert.match(settingsMenu, /id: "restore-previous-workspace"/);
+  assert.match(workbench, /prepareWorkspaceReset\(currentWorkspaceDeviceState\(\), target, mode\)/);
+  assert.match(workbench, /commitWorkspaceReset\(\{/);
+  assert.match(workbench, /persistDeviceWorkspace\([\s\S]*nextRecovery/s);
+  assert.match(workbench, /resetRecovery: preservedResetRecovery/);
+  assert.doesNotMatch(workbench, /confirm\("Reset this device draft|localStorage\.removeItem\(STORAGE_KEY\)/);
+  assert.match(dialog, /ReviewDialog/);
+  assert.match(dialog, /data-dialog-initial-focus/);
+  assert.match(dialog, /plan\.target\.artifactNames\.map/);
+  assert.doesNotMatch(dialog, /localStorage|setArtifacts|persistDeviceWorkspace/);
+  assert.match(planner, /serializeWorkspaceDeviceState\(current\) !== expectedPlan\.baseSnapshot/);
+  assert.match(planner, /serializeWorkspaceDeviceState\(target\) !== expectedPlan\.targetSnapshot/);
+  assert.match(planner, /persist\(prepared\.plan\.nextState, prepared\.plan\.nextRecovery\)/);
+  assert.doesNotMatch(planner, /from "react"|localStorage|setArtifacts/);
+  assert.match(overlays, /\.workspace-reset-route\s*\{[^}]*grid-template-columns:/s);
+  assert.match(overlays, /@media \(max-width:\s*620px\)[\s\S]*\.workspace-reset-route/);
 });
 
 test("records user-confirmed deliverable outcomes through the shared exact-revision ledger", async () => {

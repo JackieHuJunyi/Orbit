@@ -59,6 +59,8 @@ export const INTERFACE_TRANSLATIONS = {
     "5. Используйте карандаш рядом с разделом документа или основным блоком, ячейкой данных, свойствами Chart или слайдом Deck, чтобы изменить проверенный диапазон справа. Левая сторона отражает и выделяет полный исходный проект в реальном времени; Отмена ничего не записывает, а Сохранить проверяет перед синхронизацией одной ревизии. F2 также редактирует, тогда как левые элементы управления блока вставляют, перемещают или удаляют только после точного анализа исходных различий.",
   "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
     "6. Попросите Rune Agent предложить изменение. Прежде чем применять его, просмотрите разницу и влияние.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "Подключённая папка не изменяется; Rune запишет в неё данные только после явного действия «Записать файлы рабочей области».",
   "A leadership report and slides focused on decisions": "Отчёт и презентация для руководства с акцентом на решениях",
   "A material error, omission, or rework still blocks delivery.":
     "Существенная ошибка, пропуск или необходимость переработки всё ещё мешают передаче результата.",
@@ -157,6 +159,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Ограниченные агрегаты для вашей модели · проверка до записи",
   "Browser-local export · no upload": "Локальный экспорт в браузере · без загрузки",
   "Browser-local query output": "Вывод локального запроса браузера",
+  "Built-in sample": "Встроенный образец",
   "Bulleted list": "Маркированный список",
   "Calculate margin and sort": "Рассчитать маржу и отсортировать",
   Cancel: "Отмена",
@@ -265,11 +268,13 @@ export const INTERFACE_TRANSLATIONS = {
   Currency: "Валюта",
   "Currency · USD": "Валюта · доллары США",
   Current: "Текущий",
+  "Current and target workspaces": "Текущая и целевая рабочие области",
   "Current bindings and temporary pins choose a bounded, revision-live context pack.":
     "Текущие привязки и временные закрепления выбирают ограниченный, постоянно обновляемый контекстный пакет.",
   "Current source is already checkpointed": "Текущий источник уже отмечен контрольной точкой",
   "Current source revision will be recorded": "Текущая версия источника будет записана",
   "Current theme": "Текущая тема",
+  "Current workspace": "Текущая рабочая область",
   Customer: "Клиенты",
   Data: "Данные",
   "Data exceeds the model context safety limit; deterministic local operating review prepared for review":
@@ -325,6 +330,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Device storage is full — checkpoint was not saved": "Память устройства заполнена — контрольная точка не сохранилась",
   "Device storage is full — download the source before leaving":
     "Память устройства заполнена — загрузите исходный код перед выходом",
+  "Device workspace · recoverable switch": "Локальная рабочая область · обратимое переключение",
   "Did this result become usable in real work?": "Стал ли этот результат пригоден для реальной работы?",
   Discard: "Отбросить",
   "Discard proposed patch": "Отменить предложенный патч",
@@ -404,6 +410,8 @@ export const INTERFACE_TRANSLATIONS = {
   "File names, Artifact IDs, workspace paths, and user identity":
     "Имена файлов, идентификаторы Artifact, пути рабочей области и личность пользователя",
   "File size": "Размер файла",
+  files: "файлы",
+  "Files available after the switch": "Файлы, доступные после переключения",
   "Files in proposed patch": "Файлы в предлагаемом патче",
   "Filter value": "Значение фильтра",
   "First proposal stayed unapplied": "Первое предложение осталось без применения",
@@ -550,6 +558,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Связанная с источником презентация с помощью модели подготовлена; до проверки ничего не записывается",
   "Monthly operating review": "Ежемесячный операционный обзор",
   "Monthly review": "Ежемесячный обзор",
+  "more files": "больше файлов",
   "More tools": "Другие инструменты",
   "Move block down": "Переместить блок вниз",
   "Move block up": "Переместить блок вверх",
@@ -619,6 +628,8 @@ export const INTERFACE_TRANSLATIONS = {
   "One atomic device write · every source stays unchanged on failure":
     "Одна атомарная запись на устройстве · при сбое все исходники остаются без изменений",
   "One atomic device write · no upload": "Одно атомное устройство пишет · нет загрузки",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "Одна атомарная локальная запись · при сбое хранилища текущая область не изменяется",
   "One atomic device write after confirmation": "Одно атомное устройство пишет после подтверждения",
   "One atomic transaction · compiled locally": "Одна атомарная транзакция · локальная компиляция",
   "One Markdown block": "Один блок Markdown",
@@ -713,6 +724,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Preview page": "Страница предпросмотра",
   "Preview target is too large or no longer matches the current source":
     "Цель предварительного просмотра слишком велика или больше не соответствует текущему источнику.",
+  "Previous workspace": "Предыдущая рабочая область",
   "Primary and comparison scopes each need at least one complete condition.":
     "Для основной области и области сравнения требуется хотя бы одно полное условие.",
   "Profile name": "Имя профиля",
@@ -754,7 +766,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Reconnect the missing metric": "Подключить отсутствующую метрику",
   "Reconnect the Query Data source": "Подключить источник Data для Query",
   "Recorded after first Apply": "Записано после первого применения",
+  "recorded runs": "записанные пробежки",
   "Recording…": "Сохранение…",
+  "Recover files, versions, and task records from before reset": "Восстановить файлы, версии и историю задач до сброса",
   "Recovered after one compiler-guided repair":
     "Восстановлено после одного восстановления под руководством компилятора.",
   "Refresh available": "Доступно обновление",
@@ -781,14 +795,18 @@ export const INTERFACE_TRANSLATIONS = {
   Report: "Отчет",
   "Reporting period": "Отчетный период",
   Rerun: "Повторный запуск",
-  "Reset sample workspace": "Сбросить образец рабочего пространства",
   "Reset source and preview widths": "Восстановить ширину по умолчанию",
   "Reset to whole page": "Вернуть всю страницу",
   "Resize source and preview": "Изменить ширину исходника и предпросмотра",
   Restore: "Восстановить",
   "Restore latest checkpoint": "Восстановить последнюю контрольную точку",
   "Restore latest different checkpoint": "Восстановить последнюю другую контрольную точку",
+  "Restore previous workspace": "Восстановить предыдущую рабочую область",
   "Restore safety": "Восстановить безопасность",
+  "Restore sample": "Восстановить пример",
+  "Restore sample workspace": "Восстановить пример рабочей области",
+  "Restore the previous workspace?": "Восстановить предыдущую рабочую область?",
+  "Restore the sample workspace?": "Восстановить пример рабочей области?",
   "Restored the latest device draft": "Восстановлен последний черновик устройства",
   "Result summary": "Сводка результатов",
   "Revenue analysis": "Анализ доходов",
@@ -796,6 +814,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "Обзор, прежде чем писать",
   "Review canonical source": "Проверить канонический исходник",
   "Review checkpoint restore": "Проверить восстановление контрольной точки",
+  "Review first, preserve the current workspace, then open the sample":
+    "Сначала проверить, сохранить текущую область, затем открыть пример",
   "Review focus": "Фокус обзора",
   "Review imported sources": "Просмотрите импортированные источники",
   "Review insertion": "Проверить вставку",
@@ -843,6 +863,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune хранит на этом устройстве только оценку, формат, затраченное время и отпечаток версии исходника — без текста документа и запросов.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune поддерживает личные профили OpenAI Responses, OpenRouter/совместимых Chat Completions, Anthropic Messages, Gemini generateContent и пользовательских протоколов. После сохранения сервер шифрует ключ в учётных данных HttpOnly, недоступных сценариям браузера; ключ никогда не попадает в рабочую область или localStorage. Локальным и развёрнутым веб-серверам нужен отдельный `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop защищает этот главный ключ с помощью Связки ключей macOS. Переключение между поставщиками по умолчанию выключено и работает только после явного разрешения в настройках моделей; детерминированные локальные планировщики доступны и без модели.",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune заменит текущую локальную рабочую область встроенным примером, а её файлы, точки восстановления и историю задач сохранит как предыдущую область.",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune восстановит всю локальную рабочую область до сброса, а текущую сохранит как следующую восстанавливаемую версию.",
   "Rune will use the currently enabled secure profile.": "Rune будет использовать текущий активный безопасный профиль.",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "Rune записывает явную директиву -- rune:data, поэтому данные workspace_data никогда не изменяются при переупорядочении файлов.",
@@ -866,6 +890,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save to canonical source": "Сохранить в канонический источник",
   "Saved on device": "Сохранено на устройстве",
   "Saved task · repeatable": "Сохраненная задача · повторяемая",
+  "saved tasks": "сохраненные задачи",
   "Saved tasks": "Сохраненные задачи",
   Saving: "Сохранение",
   "Scanned PDF · explicit selection": "Сканированный PDF · явный выбор",
@@ -907,6 +932,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source and versions": "Исходник и версии",
   "Source binding": "Привязка источника",
   "Source changed · refresh available": "Источник изменён · доступно обновление",
+  "source checkpoints": "контрольные точки источника",
   "Source diff": "Разница в исходном коде",
   "Source draft": "Исходный проект",
   "Source editor": "Редактор исходного кода",
@@ -949,6 +975,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Summarize quarterly revenue": "Подведите итоги квартальной выручки",
   "Switch to the dark theme": "Переключиться на темную тему",
   "Switched artifact context": "Переключенный контекст артефакта",
+  "Switching safely…": "Безопасное переключение…",
   "Synced live": "Синхронизировано в прямом эфире",
   "Synchronize the quarterly conclusions across the report and presentation":
     "Синхронизируйте квартальные выводы в отчете и презентации.",
@@ -974,7 +1001,11 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "Не удалось скомпилировать диаграмму.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "Chart JSON хранит точный идентификатор источника и имена полей; отчеты и колоды могут повторно использовать его с одной привязкой к диаграмме.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "Текущая и предыдущая рабочие области безопасно меняются местами, поэтому восстановление можно отменить.",
   "The current Chart JSON is invalid.": "Текущий Chart JSON недействителен.",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "Текущая рабочая область сохраняется как полная локальная версия восстановления в одной записи с примером.",
   "The detected scan pages changed. Import the file again.":
     "Набор обнаруженных сканированных страниц изменился. Импортируйте файл снова.",
   "The direction is right and only limited manual changes remain.":
@@ -1070,6 +1101,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace dependency graph": "График зависимости рабочей области",
   "Workspace files": "Файлы рабочей области",
   "Workspace revision changed": "Версия рабочей области изменена",
+  "Workspace switch details": "Сведения о переключении рабочей области",
   "Workspace tools": "Инструменты рабочей области",
   "Workspace view": "Вид рабочей области",
   "Write in Source and the live output will recompile immediately.":

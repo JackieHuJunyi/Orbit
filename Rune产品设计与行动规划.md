@@ -2430,3 +2430,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 当前 source 必须作为可恢复保护点，与 restored Artifacts 在同一次 `persistDeviceWorkspace` 中写入；只有持久化成功后 React state 才能前进。stale、missing history、static/runtime failure 或 storage failure 都不能留下半个恢复或只有内存中的保护点。
 - 法、西、俄、阿、日、韩的关键标题、安全说明和确认动作使用人工校订文案；RTL 继续由共享 ReviewDialog 负责。planner 与 dialog 都延迟加载，不让欢迎页和普通编辑为低频恢复流程支付首包成本。
 - 发布证据必须覆盖 valid/unchanged/missing/oversized/dependency-breaking 与 frozen-input unit contract、lazy authority render contract，以及真实 Chromium 的 Cancel、Confirm、安全恢复点、localStorage 与 reload 一致性。
+
+### 17.77 v1.46 完整工作区重置必须保留一个可逆设备版本
+
+- 示例工作区恢复不得继续出现在高频 Activity rail，也不得使用浏览器原生确认后删除设备状态；它属于“更多工具”中的低频危险操作，必须先进入 Rune 统一 ReviewDialog，默认焦点为 Cancel。
+- review 必须比较 current/target 的文件、source checkpoint、保存任务与运行记录，并展示有界目标文件名；九种界面语言必须有完整关键文案。已连接文件夹保持不变，除非用户之后明确 Push。
+- React-free planner 必须规范化完整 device state，拒绝空 Artifact、未知 kind、重复 id/filename、无效 selection、相同状态或超过 12 MB 的 snapshot，并捕获 exact current/target serialized identity；不得导入 React、localStorage 或 mutation capability。
+- Confirm 必须从当前 authority 重新读取双方状态，逐字节核对 review snapshot，再准备一次计划。一次 `rune-workspace-v0` localStorage 写入必须同时持久化 target 与完整 current `resetRecovery`，只有成功后才能更新 Artifacts、selection、checkpoints、saved task、task evidence 与 recovery React state。
+- “恢复上一个工作区”必须把 current 与 recovery 互换，使恢复动作本身仍可撤销并跨 reload 保持；Cancel、Escape、stale current、changed/missing target 与 persistence failure 必须保持全部 caller state 和存储不变。
+- Settings menu 的动态导入必须和 open state 绑定；关闭时不得为了一个返回 `null` 的低频组件下载整个菜单。Manifest gate 必须保护该 boundary，首屏继续受 530 KB 上限约束。
+- 发布证据必须包括 planner normalizing/limit/immutability、application stale/target/persist failure、lazy/presentation authority，以及真实 Chromium Cancel → sample Confirm → reload → previous Confirm → reload 的完整交换链。

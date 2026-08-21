@@ -60,6 +60,8 @@ export const INTERFACE_TRANSLATIONS = {
     "5. Utilice el lápiz al lado de una sección de documento o bloque de cuerpo, celda de datos, propiedades Chart o diapositiva Deck para editar un rango probado a la derecha. El lado izquierdo refleja y resalta el borrador fuente completo en vivo; Cancelar no escribe nada y Guardar verifica antes de sincronizar una revisión. F2 también edita, mientras que los controles izquierdos del bloque insertan, mueven o eliminan solo después de una revisión exacta de la fuente.",
   "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
     "6. Pídale a Rune Agent que proponga un cambio. Revise la diferencia y el impacto antes de aplicarlo.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "Las carpetas conectadas no cambian; Rune solo escribe en ellas después de elegir explícitamente «Escribir archivos del espacio de trabajo».",
   "A leadership report and slides focused on decisions":
     "Un informe y una presentación para la dirección centrados en las decisiones",
   "A material error, omission, or rework still blocks delivery.":
@@ -159,6 +161,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Agregados acotados para tu modelo · revisión antes de escribir",
   "Browser-local export · no upload": "Exportación local del navegador · sin carga",
   "Browser-local query output": "Salida de consulta local del navegador",
+  "Built-in sample": "Muestra incorporada",
   "Bulleted list": "Lista con viñetas",
   "Calculate margin and sort": "Calcular margen y ordenar",
   Cancel: "Cancelar",
@@ -267,11 +270,13 @@ export const INTERFACE_TRANSLATIONS = {
   Currency: "Moneda",
   "Currency · USD": "Moneda · USD",
   Current: "Actual",
+  "Current and target workspaces": "Espacios de trabajo actual y de destino",
   "Current bindings and temporary pins choose a bounded, revision-live context pack.":
     "Los enlaces actuales y los pines temporales eligen un paquete contextual limitado y de revisión en vivo.",
   "Current source is already checkpointed": "La fuente actual ya está controlada",
   "Current source revision will be recorded": "Se registrará la versión actual del origen",
   "Current theme": "Tema actual",
+  "Current workspace": "Espacio de trabajo actual",
   Customer: "Cliente",
   Data: "Datos",
   "Data exceeds the model context safety limit; deterministic local operating review prepared for review":
@@ -328,6 +333,7 @@ export const INTERFACE_TRANSLATIONS = {
     "El almacenamiento del dispositivo está lleno: el punto de control no se guardó",
   "Device storage is full — download the source before leaving":
     "El almacenamiento del dispositivo está lleno: descarga la fuente antes de salir",
+  "Device workspace · recoverable switch": "Espacio de trabajo local · cambio reversible",
   "Did this result become usable in real work?": "¿Este resultado llegó a ser útil en un trabajo real?",
   Discard: "Descartar",
   "Discard proposed patch": "Descartar el parche propuesto",
@@ -407,6 +413,8 @@ export const INTERFACE_TRANSLATIONS = {
   "File names, Artifact IDs, workspace paths, and user identity":
     "Nombres de archivo, identificadores Artifact, rutas del espacio de trabajo e identidad del usuario",
   "File size": "Tamaño del archivo",
+  files: "archivos",
+  "Files available after the switch": "Archivos disponibles después del cambio",
   "Files in proposed patch": "Archivos en el parche propuesto",
   "Filter value": "Valor del filtro",
   "First proposal stayed unapplied": "La primera propuesta quedó sin aplicar",
@@ -554,6 +562,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Presentación vinculada al origen y asistida por modelo preparada; no se escribe nada antes de revisarla",
   "Monthly operating review": "Revisión operativa mensual",
   "Monthly review": "Revisión mensual",
+  "more files": "más archivos",
   "More tools": "Más herramientas",
   "Move block down": "Mover bloque hacia abajo",
   "Move block up": "Mover bloque hacia arriba",
@@ -625,6 +634,8 @@ export const INTERFACE_TRANSLATIONS = {
   "One atomic device write · every source stays unchanged on failure":
     "Una escritura atómica en el dispositivo · todas las fuentes permanecen intactas si falla",
   "One atomic device write · no upload": "Escritura en un dispositivo atómico · sin carga",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "Una escritura atómica local · el espacio actual permanece intacto si falla el almacenamiento",
   "One atomic device write after confirmation": "Un dispositivo atómico escribe después de la confirmación.",
   "One atomic transaction · compiled locally": "Una transacción atómica · compilada localmente",
   "One Markdown block": "Un bloque Markdown",
@@ -720,6 +731,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Preview page": "Página de vista previa",
   "Preview target is too large or no longer matches the current source":
     "El objetivo de vista previa es demasiado grande o ya no coincide con la fuente actual",
+  "Previous workspace": "Espacio de trabajo anterior",
   "Primary and comparison scopes each need at least one complete condition.":
     "Los ámbitos primario y de comparación necesitan cada uno al menos una condición completa.",
   "Profile name": "Nombre del perfil",
@@ -761,7 +773,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Reconnect the missing metric": "Volver a conectar la métrica ausente",
   "Reconnect the Query Data source": "Volver a conectar la fuente Data de Query",
   "Recorded after first Apply": "Grabado después de la primera solicitud",
+  "recorded runs": "carreras grabadas",
   "Recording…": "Guardando…",
+  "Recover files, versions, and task records from before reset":
+    "Recuperar archivos, versiones y registros de tareas anteriores al restablecimiento",
   "Recovered after one compiler-guided repair": "Recuperado después de una reparación guiada por el compilador",
   "Refresh available": "Actualización disponible",
   "Refresh linked presentation in place": "Actualizar la presentación vinculada en el mismo archivo",
@@ -787,14 +802,18 @@ export const INTERFACE_TRANSLATIONS = {
   Report: "Informe",
   "Reporting period": "Período del informe",
   Rerun: "Volver a ejecutar",
-  "Reset sample workspace": "Restablecer espacio de trabajo de muestra",
   "Reset source and preview widths": "Restablecer los anchos predeterminados",
   "Reset to whole page": "Restablecer página completa",
   "Resize source and preview": "Cambiar el tamaño de la fuente y la vista previa",
   Restore: "Restaurar",
   "Restore latest checkpoint": "Restaurar el último punto de control",
   "Restore latest different checkpoint": "Restaurar el último punto de control diferente",
+  "Restore previous workspace": "Restaurar espacio de trabajo anterior",
   "Restore safety": "Restaurar la seguridad",
+  "Restore sample": "Restaurar ejemplo",
+  "Restore sample workspace": "Restaurar el espacio de trabajo de ejemplo",
+  "Restore the previous workspace?": "¿Restaurar el espacio de trabajo anterior?",
+  "Restore the sample workspace?": "¿Restaurar el espacio de trabajo de ejemplo?",
   "Restored the latest device draft": "Restaurado el último borrador del dispositivo.",
   "Result summary": "Resumen de resultados",
   "Revenue analysis": "Análisis de ingresos",
@@ -802,6 +821,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "Revisar antes de escribir",
   "Review canonical source": "Revisar la fuente canónica",
   "Review checkpoint restore": "Revisar la restauración del punto de control",
+  "Review first, preserve the current workspace, then open the sample":
+    "Revisar primero, conservar el espacio actual y después abrir el ejemplo",
   "Review focus": "Enfoque de revisión",
   "Review imported sources": "Revisar fuentes importadas",
   "Review insertion": "Inserción de reseñas",
@@ -849,6 +870,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune guarda en este dispositivo solo la valoración, el formato, el tiempo transcurrido y la huella de revisión de la fuente; nunca el texto del documento ni las instrucciones.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune admite perfiles personales de OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent y protocolos personalizados. Después de guardar, el servidor cifra la clave en una credencial HttpOnly que los scripts del navegador no pueden leer; nunca entra en el espacio de trabajo ni en localStorage. Los servidores web locales o desplegados necesitan un `RUNE_CREDENTIAL_ENCRYPTION_KEY` independiente; Rune Desktop protege esa clave maestra con el llavero de macOS. La conmutación entre proveedores está desactivada de forma predeterminada y solo funciona después de autorizarla expresamente en los ajustes de modelos; los planificadores locales deterministas siguen disponibles sin un modelo.",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune sustituirá el espacio de trabajo local por el ejemplo integrado y conservará sus archivos, puntos de restauración y registros de tareas como espacio anterior.",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune restaurará el espacio de trabajo local completo anterior al restablecimiento y conservará el actual como la siguiente versión recuperable.",
   "Rune will use the currently enabled secure profile.": "Rune utilizará el perfil seguro actualmente habilitado.",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "Rune escribe una directiva explícita -- rune:data, por lo que workspace_data nunca cambia cuando se reordenan los archivos.",
@@ -872,6 +897,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save to canonical source": "Guardar en fuente canónica",
   "Saved on device": "Guardado en el dispositivo",
   "Saved task · repeatable": "Tarea guardada · repetible",
+  "saved tasks": "tareas guardadas",
   "Saved tasks": "Tareas guardadas",
   Saving: "Ahorro",
   "Scanned PDF · explicit selection": "PDF escaneado · selección explícita",
@@ -912,6 +938,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source and versions": "Fuente y versiones",
   "Source binding": "Enlace de origen",
   "Source changed · refresh available": "El origen cambió · actualización disponible",
+  "source checkpoints": "puntos de control de origen",
   "Source diff": "Diferencia de fuente",
   "Source draft": "Borrador fuente",
   "Source editor": "editor de código fuente",
@@ -954,6 +981,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Summarize quarterly revenue": "Resumir los ingresos trimestrales",
   "Switch to the dark theme": "Cambiar al tema oscuro",
   "Switched artifact context": "Contexto de artefacto cambiado",
+  "Switching safely…": "Cambiando de forma segura…",
   "Synced live": "sincronizado en vivo",
   "Synchronize the quarterly conclusions across the report and presentation":
     "Sincronizar las conclusiones trimestrales en el informe y la presentación.",
@@ -980,7 +1008,11 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "El gráfico no se pudo compilar.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "El Chart JSON almacena la identificación de fuente exacta y los nombres de campo; Los informes y presentaciones pueden reutilizarlo con un enlace de gráfico.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "Los espacios de trabajo actual y anterior se intercambian de forma segura, por lo que esta restauración sigue siendo reversible.",
   "The current Chart JSON is invalid.": "El Chart JSON actual no es válido.",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "El espacio de trabajo actual se convierte en una versión de recuperación local completa en la misma escritura que el espacio de ejemplo.",
   "The detected scan pages changed. Import the file again.":
     "Las páginas escaneadas detectadas han cambiado. Vuelve a importar el archivo.",
   "The direction is right and only limited manual changes remain.":
@@ -1075,6 +1107,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace dependency graph": "Gráfico de dependencia del espacio de trabajo",
   "Workspace files": "Archivos de espacio de trabajo",
   "Workspace revision changed": "La revisión del espacio de trabajo cambió",
+  "Workspace switch details": "Detalles del cambio de espacio de trabajo",
   "Workspace tools": "Herramientas del espacio de trabajo",
   "Workspace view": "Vista del espacio de trabajo",
   "Write in Source and the live output will recompile immediately.":

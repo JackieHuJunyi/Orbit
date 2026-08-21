@@ -131,6 +131,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
   assert.equal(chinese.checkpointRestore.title, "审核版本恢复");
   assert.equal(traditionalChinese.checkpointRestore.title, "稽核版本恢復");
   assert.equal(english.checkpointRestore.title, "Review checkpoint restore");
+  assert.equal(chinese.workspaceReset.sampleTitle, "恢复示例工作区？");
+  assert.equal(traditionalChinese.workspaceReset.sampleTitle, "恢復範例工作區？");
+  assert.equal(english.workspaceReset.sampleTitle, "Restore the sample workspace?");
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     assert.notEqual(runeUICopy(locale).workbench.livePreview, english.workbench.livePreview);
     assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
@@ -149,6 +152,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
     assert.notEqual(runeUICopy(locale).checkpointRestore.title, english.checkpointRestore.title);
     assert.notEqual(runeUICopy(locale).checkpointRestore.description, english.checkpointRestore.description);
     assert.notEqual(runeUICopy(locale).checkpointRestore.safety, english.checkpointRestore.safety);
+    assert.notEqual(runeUICopy(locale).workspaceReset.sampleTitle, english.workspaceReset.sampleTitle);
+    assert.notEqual(runeUICopy(locale).workspaceReset.sampleDescription, english.workspaceReset.sampleDescription);
+    assert.notEqual(runeUICopy(locale).workspaceReset.recoverySafety, english.workspaceReset.recoverySafety);
     assert.match(runeUICopy(locale).preview.validHtmlSlide, /<section>/u);
     assert.doesNotMatch(runeUICopy(locale).preview.validHtmlSlide, /<(?:sección|قسم|セクション|섹션)>/iu);
     assert.notEqual(runeUICopy(locale).workbench.diagnostics.openSource, english.workbench.diagnostics.openSource);

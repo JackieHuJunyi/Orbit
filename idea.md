@@ -2650,6 +2650,8 @@ v1.42 已经证明 Export 可以是一个受控、registry-rendered 的菜单，
 
 v1.44 抽出受控 `WorkbenchSettingsMenu`，再用一个窄 `useWorkbenchMenuFocus` 统一两者的纯交互效果。hook 只知道 ordered button refs、open state 和 trigger，不知道导出格式、模型、文件夹或主题；WorkBench 仍独占 mutual exclusion 和每个 callback 的能力。folder 未连接时四个 action，连接后增加 Pull/Push；disabled Pilot Evidence 不进入方向键序列，动态 ref 在 paint 前按当前数量截断。这样复用的是可证明的 focus protocol，不是把不相关业务塞进一个“万能菜单”。
 
+九语言几何回归同时找到了真实的 compact 缺陷：390px 下 Settings 仍带 desktop rail offset，LTR 向右溢出，Arabic RTL 向左溢出。修复用 compact 的双侧 10px physical inset 明确替换桌面 anchor，而不是只把 width 改小。现在 desktop/compact × 九语言都验证菜单位于 viewport、首项聚焦和 Escape 回到 trigger。Workbench 从 5,957 降到 5,826 行，首包为 525,898 bytes / 530 KB；后续新增工具只需给受控 Settings 增加显示事实与 Workbench callback，不需要再复制键盘或定位状态机。
+
 ## 147. 恢复不是“回到过去”的按钮，而是一笔新的可信写入
 
 过去的 checkpoint 数据模型已经可逆，但 Restore 的交互仍是一个例外：点击后先在 React state 追加保护点，再调用普通 Source 更新，等待 debounced persistence 才把两者送进 localStorage。用户看不到精确差异，旧 Data/Query 是否会让当前 Chart、报告或演示失效也没有进入同一审核。这不是丢失历史的问题，而是恢复动作本身没有遵守 Rune 的产品原则。
@@ -2658,4 +2660,10 @@ v1.45 把任意 Restore 和顶部 Undo 都变成显式 review。纯 planner 只�
 
 Confirm 会从当前 checkpoint map 重新解析同一个 id 和 bytes，重新准备 patch，对 Data/Query/Chart 执行真实本地 runtime preflight，并在异步检查后再次比较完整 workspace revision。随后把当前 source 作为 restore-safety checkpoint，与 restored Artifacts 一次持久化；只有落盘成功才更新 React。这样 Undo 不再是隐藏的快速覆盖，而是可解释、可验证、可再次撤销的历史写入。planner 与 dialog 都不进入首屏依赖图，恢复安全不会变成欢迎页的启动成本。
 
-九语言几何回归同时找到了真实的 compact 缺陷：390px 下 Settings 仍带 desktop rail offset，LTR 向右溢出，Arabic RTL 向左溢出。修复用 compact 的双侧 10px physical inset 明确替换桌面 anchor，而不是只把 width 改小。现在 desktop/compact × 九语言都验证菜单位于 viewport、首项聚焦和 Escape 回到 trigger。Workbench 从 5,957 降到 5,826 行，首包为 525,898 bytes / 530 KB；后续新增工具只需给受控 Settings 增加显示事实与 Workbench callback，不需要再复制键盘或定位状态机。
+## 148. 完整工作区重置必须是可逆交换，而不是删除
+
+示例工作区恢复原本是 Activity rail 上的高频图标：一次原生确认后立即替换内存状态，再删除设备存储。它既没有产品级审核，也无法在误操作后找回文件、恢复点、保存任务和运行证据。这和 Rune 已建立的 review-before-write、零部分写入及恢复承诺冲突。
+
+v1.46 把该动作移入低频“更多工具”，并用一个惰性九语言 review 显示当前与目标文件数、恢复点、任务记录和有界目标文件名。纯 `workspace-reset` planner 捕获完整 current/target snapshot，拒绝 malformed、重复 identity、相同或超过 12 MB 的状态；确认时再次读取并逐字节核对双方。一次 `rune-workspace-v0` 写入同时保存目标和完整 `resetRecovery`，成功后 React 才前进。恢复上一个工作区时两者安全互换，因此恢复本身仍可撤销并跨 reload 保留；Cancel、Escape、stale、target drift 与 storage failure 都是零写入。连接文件夹不参与这笔设备切换，仍只会在用户明确 Push 后改变。
+
+低频 Settings 组件也从“代码动态导入但首屏无条件挂载”改为只有打开时才挂载，首屏从 532,178 降到 527,660 bytes，继续维持 530 KB 预算。发布门为 664 unit、28 render/architecture 与 53 Chromium；真实浏览器覆盖取消、确认、刷新、恢复和再次刷新。

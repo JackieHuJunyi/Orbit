@@ -59,6 +59,8 @@ export const INTERFACE_TRANSLATIONS = {
     "5. 문서 섹션이나 본문 블록, 데이터 셀, Chart 속성 또는 Deck 슬라이드 옆에 있는 연필을 사용하여 오른쪽의 검증된 범위를 편집합니다. 왼쪽은 전체 소스 초안을 실시간으로 미러링하고 강조 표시합니다. 취소는 아무것도 쓰지 않으며 저장은 하나의 개정판을 동기화하기 전에 확인합니다. F2는 또한 편집하는 반면 블록의 왼쪽 컨트롤은 정확한 소스 차이 검토 후에만 삽입, 이동 또는 삭제를 제어합니다.",
   "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
     "6. 변경을 제안하려면 Rune Agent에 문의하세요. 적용하기 전에 차이점과 영향을 검토하세요.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "연결된 폴더는 바뀌지 않습니다. ‘작업공간 파일 쓰기’를 명시적으로 선택한 경우에만 Rune이 기록합니다.",
   "A leadership report and slides focused on decisions": "의사결정에 초점을 둔 리더십 보고서와 슬라이드",
   "A material error, omission, or rework still blocks delivery.":
     "중대한 오류, 누락 또는 재작업이 남아 있어 아직 전달할 수 없습니다.",
@@ -155,6 +157,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Bounded aggregates to your model · review before write": "범위가 제한된 집계를 모델로 전송 · 쓰기 전 검토",
   "Browser-local export · no upload": "브라우저-로컬 내보내기 · 업로드 없음",
   "Browser-local query output": "브라우저-로컬 쿼리 출력",
+  "Built-in sample": "내장 샘플",
   "Bulleted list": "글머리 기호 목록",
   "Calculate margin and sort": "여백 계산 및 정렬",
   Cancel: "취소",
@@ -262,11 +265,13 @@ export const INTERFACE_TRANSLATIONS = {
   Currency: "통화",
   "Currency · USD": "통화 · USD",
   Current: "현재",
+  "Current and target workspaces": "현재 및 대상 작업공간",
   "Current bindings and temporary pins choose a bounded, revision-live context pack.":
     "현재 바인딩과 임시 핀은 제한된 개정 라이브 컨텍스트 팩을 선택합니다.",
   "Current source is already checkpointed": "현재 소스가 이미 체크포인트되었습니다.",
   "Current source revision will be recorded": "현재 원본 버전을 기록합니다",
   "Current theme": "현재 테마",
+  "Current workspace": "현재 작업공간",
   Customer: "고객",
   Data: "데이터",
   "Data exceeds the model context safety limit; deterministic local operating review prepared for review":
@@ -323,6 +328,7 @@ export const INTERFACE_TRANSLATIONS = {
     "기기 저장공간이 가득 찼습니다. 체크포인트가 저장되지 않았습니다.",
   "Device storage is full — download the source before leaving":
     "기기 저장공간이 가득 찼습니다. 떠나기 전에 소스를 다운로드하세요.",
+  "Device workspace · recoverable switch": "기기 작업공간 · 되돌릴 수 있는 전환",
   "Did this result become usable in real work?": "이 결과를 실제 업무에 사용할 수 있었나요?",
   Discard: "폐기",
   "Discard proposed patch": "제안된 패치 폐기",
@@ -401,6 +407,8 @@ export const INTERFACE_TRANSLATIONS = {
   "File names, Artifact IDs, workspace paths, and user identity":
     "파일 이름, Artifact ID, 작업 공간 경로, 사용자 식별 정보",
   "File size": "파일 크기",
+  files: "파일",
+  "Files available after the switch": "전환 후 사용 가능한 파일",
   "Files in proposed patch": "제안된 패치의 파일",
   "Filter value": "필터 값",
   "First proposal stayed unapplied": "첫 번째 제안이 적용되지 않은 상태로 유지됨",
@@ -543,6 +551,7 @@ export const INTERFACE_TRANSLATIONS = {
     "모델 보조 원본 연결 프레젠테이션을 준비했습니다. 검토 전에는 쓰지 않습니다",
   "Monthly operating review": "월간 운영 리뷰",
   "Monthly review": "월간 리뷰",
+  "more files": "더 많은 파일",
   "More tools": "도구 더 보기",
   "Move block down": "블록을 아래로 이동",
   "Move block up": "블록을 위로 이동",
@@ -610,6 +619,8 @@ export const INTERFACE_TRANSLATIONS = {
   "One atomic device write · every source stays unchanged on failure":
     "기기에 한 번만 원자적으로 기록 · 실패하면 모든 소스가 그대로 유지됩니다",
   "One atomic device write · no upload": "원자 장치 1개 쓰기 · 업로드 없음",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "기기에 한 번만 원자적으로 기록 · 저장에 실패하면 현재 작업공간은 바뀌지 않습니다",
   "One atomic device write after confirmation": "확인 후 하나의 원자 장치 쓰기",
   "One atomic transaction · compiled locally": "하나의 원자적 트랜잭션 · 로컬 컴파일",
   "One Markdown block": "Markdown 블록 1개",
@@ -699,6 +710,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Preview page": "미리보기 페이지",
   "Preview target is too large or no longer matches the current source":
     "미리보기 대상이 너무 크거나 현재 소스와 더 이상 일치하지 않습니다.",
+  "Previous workspace": "이전 작업공간",
   "Primary and comparison scopes each need at least one complete condition.":
     "기본 범위와 비교 범위에는 각각 하나 이상의 완전한 조건이 필요합니다.",
   "Profile name": "프로필 이름",
@@ -740,7 +752,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Reconnect the missing metric": "누락된 지표 다시 연결",
   "Reconnect the Query Data source": "Query Data 소스 다시 연결",
   "Recorded after first Apply": "최초 적용 후 기록됨",
+  "recorded runs": "기록된 달리기",
   "Recording…": "기록 중…",
+  "Recover files, versions, and task records from before reset": "재설정 전 파일, 버전 및 작업 기록 복원",
   "Recovered after one compiler-guided repair": "한 번의 컴파일러 기반 복구 후에 복구됨",
   "Refresh available": "갱신 가능",
   "Refresh linked presentation in place": "연결된 프레젠테이션을 제자리에서 갱신",
@@ -766,14 +780,18 @@ export const INTERFACE_TRANSLATIONS = {
   Report: "신고",
   "Reporting period": "보고기간",
   Rerun: "재방송",
-  "Reset sample workspace": "샘플 작업공간 재설정",
   "Reset source and preview widths": "기본 너비로 복원",
   "Reset to whole page": "전체 페이지로 재설정",
   "Resize source and preview": "소스와 미리보기 너비 조절",
   Restore: "복원",
   "Restore latest checkpoint": "최신 체크포인트 복원",
   "Restore latest different checkpoint": "최신 다른 체크포인트 복원",
+  "Restore previous workspace": "이전 작업공간 복원",
   "Restore safety": "안전을 회복하다",
+  "Restore sample": "샘플 복원",
+  "Restore sample workspace": "샘플 작업공간 복원",
+  "Restore the previous workspace?": "이전 작업공간을 복원할까요?",
+  "Restore the sample workspace?": "샘플 작업공간을 복원할까요?",
   "Restored the latest device draft": "최신 장치 초안을 복원했습니다.",
   "Result summary": "결과 요약",
   "Revenue analysis": "수익분석",
@@ -781,6 +799,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "쓰기 전에 검토하세요",
   "Review canonical source": "정규 소스 검토",
   "Review checkpoint restore": "체크포인트 복원 검토",
+  "Review first, preserve the current workspace, then open the sample":
+    "먼저 검토하고 현재 작업공간을 보존한 뒤 샘플 열기",
   "Review focus": "검토 초점",
   "Review imported sources": "가져온 소스 검토",
   "Review insertion": "리뷰 삽입",
@@ -827,6 +847,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `RUNE_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Rune Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
   "Rune will use the currently enabled secure profile.": "Rune은(는) 현재 활성화된 보안 프로필을 사용합니다.",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "Rune은 명시적인 --rune:data 지시문을 작성하므로 파일이 다시 정렬될 때 작업 공간_데이터가 변경되지 않습니다.",
@@ -850,6 +874,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save to canonical source": "표준 소스에 저장",
   "Saved on device": "기기에 저장됨",
   "Saved task · repeatable": "저장된 작업 · 반복 가능",
+  "saved tasks": "저장된 작업",
   "Saved tasks": "저장된 작업",
   Saving: "저장 중",
   "Scanned PDF · explicit selection": "스캔 PDF · 명시적 선택",
@@ -889,6 +914,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source and versions": "소스 및 버전",
   "Source binding": "소스 바인딩",
   "Source changed · refresh available": "원본 변경됨 · 갱신 가능",
+  "source checkpoints": "소스 체크포인트",
   "Source diff": "소스 차이",
   "Source draft": "소스 초안",
   "Source editor": "소스 편집기",
@@ -931,6 +957,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Summarize quarterly revenue": "분기별 수익 요약",
   "Switch to the dark theme": "어두운 테마로 전환",
   "Switched artifact context": "전환된 아티팩트 컨텍스트",
+  "Switching safely…": "안전하게 전환 중…",
   "Synced live": "실시간으로 동기화됨",
   "Synchronize the quarterly conclusions across the report and presentation":
     "보고서와 프레젠테이션 전반에 걸쳐 분기별 결론을 동기화합니다.",
@@ -956,7 +983,11 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "차트를 컴파일할 수 없습니다.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "Chart JSON은 정확한 소스 ID와 필드 이름을 저장합니다. 보고서와 데크는 하나의 차트 바인딩으로 재사용할 수 있습니다.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "현재 작업공간과 이전 작업공간을 안전하게 맞바꾸므로 이 복원도 다시 되돌릴 수 있습니다.",
   "The current Chart JSON is invalid.": "현재 Chart JSON이(가) 잘못되었습니다.",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "현재 작업공간은 샘플 작업공간과 같은 한 번의 쓰기에서 완전한 기기 복원 버전으로 저장됩니다.",
   "The detected scan pages changed. Import the file again.":
     "감지된 스캔 페이지가 변경되었습니다. 파일을 다시 가져오세요.",
   "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.",
@@ -1047,6 +1078,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace dependency graph": "작업공간 종속성 그래프",
   "Workspace files": "작업공간 파일",
   "Workspace revision changed": "작업공간 버전이 변경됨",
+  "Workspace switch details": "작업공간 전환 세부 정보",
   "Workspace tools": "작업 공간 도구",
   "Workspace view": "작업 공간 보기",
   "Write in Source and the live output will recompile immediately.":

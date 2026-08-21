@@ -4,6 +4,8 @@ import test from "node:test";
 
 const surfaceModules = [
   "checkpoint-restore-dialog",
+  "workspace-reset-dialog",
+  "workbench-settings-menu",
   "document-structure-review-dialog",
   "delivery-outcome-dialog",
   "document-briefing-dialog",
@@ -36,6 +38,7 @@ test("loads low-frequency Workbench surfaces through typed lazy boundaries", asy
   assert.match(source, /<Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale}/);
   assert.match(source, /role="status" aria-live="polite" aria-atomic="true"/);
   assert.match(source, /variant="inline"/);
+  assert.match(source, /toolsMenuOpen && \(/);
   assert.match(source, /import \{ WelcomeExperience,[^;]+from "\.\/welcome-experience";/s);
   assert.doesNotMatch(source, /import\("\.\/welcome-experience"\)/);
   assert.match(welcome, /import\("\.\/welcome-model-step"\)/);

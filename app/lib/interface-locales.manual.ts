@@ -3065,3 +3065,164 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Confirm restore": "복원 확인",
   "Canonical source diff after restore": "복원 후 정규 소스 차이",
 });
+
+// Human-reviewed copy for reversible full-workspace reset and recovery.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Device workspace · recoverable switch": "Espace de travail local · changement réversible",
+  "Restore sample workspace": "Restaurer l’espace de travail d’exemple",
+  "Restore the sample workspace?": "Restaurer l’espace de travail d’exemple ?",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune remplacera l’espace de travail local par l’exemple intégré et conservera ses fichiers, points de restauration et historiques de tâches comme espace de travail précédent.",
+  "Restore the previous workspace?": "Restaurer l’espace de travail précédent ?",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune restaurera l’espace de travail local complet d’avant la réinitialisation et conservera l’espace actuel comme prochaine version récupérable.",
+  "Workspace switch details": "Détails du changement d’espace de travail",
+  "Current and target workspaces": "Espaces de travail actuel et cible",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "L’espace de travail actuel devient une version de récupération locale complète dans la même écriture que l’espace d’exemple.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "Les espaces de travail actuel et précédent sont échangés en toute sécurité ; cette restauration reste donc réversible.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "Un dossier connecté reste inchangé ; Rune n’y écrit qu’après l’action explicite « Écrire les fichiers de l’espace de travail ».",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "Une écriture atomique locale · l’espace de travail actuel reste inchangé si le stockage échoue",
+  "Restore sample": "Restaurer l’exemple",
+  "Restore previous workspace": "Restaurer l’espace de travail précédent",
+  "Switching safely…": "Changement sécurisé…",
+  "Recover files, versions, and task records from before reset":
+    "Récupérer les fichiers, versions et historiques de tâches d’avant la réinitialisation",
+  "Review first, preserve the current workspace, then open the sample":
+    "Vérifier d’abord, conserver l’espace actuel, puis ouvrir l’exemple",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Device workspace · recoverable switch": "Espacio de trabajo local · cambio reversible",
+  "Restore sample workspace": "Restaurar el espacio de trabajo de ejemplo",
+  "Restore the sample workspace?": "¿Restaurar el espacio de trabajo de ejemplo?",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune sustituirá el espacio de trabajo local por el ejemplo integrado y conservará sus archivos, puntos de restauración y registros de tareas como espacio anterior.",
+  "Restore the previous workspace?": "¿Restaurar el espacio de trabajo anterior?",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune restaurará el espacio de trabajo local completo anterior al restablecimiento y conservará el actual como la siguiente versión recuperable.",
+  "Workspace switch details": "Detalles del cambio de espacio de trabajo",
+  "Current and target workspaces": "Espacios de trabajo actual y de destino",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "El espacio de trabajo actual se convierte en una versión de recuperación local completa en la misma escritura que el espacio de ejemplo.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "Los espacios de trabajo actual y anterior se intercambian de forma segura, por lo que esta restauración sigue siendo reversible.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "Las carpetas conectadas no cambian; Rune solo escribe en ellas después de elegir explícitamente «Escribir archivos del espacio de trabajo».",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "Una escritura atómica local · el espacio actual permanece intacto si falla el almacenamiento",
+  "Restore sample": "Restaurar ejemplo",
+  "Restore previous workspace": "Restaurar espacio de trabajo anterior",
+  "Switching safely…": "Cambiando de forma segura…",
+  "Recover files, versions, and task records from before reset":
+    "Recuperar archivos, versiones y registros de tareas anteriores al restablecimiento",
+  "Review first, preserve the current workspace, then open the sample":
+    "Revisar primero, conservar el espacio actual y después abrir el ejemplo",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Device workspace · recoverable switch": "Локальная рабочая область · обратимое переключение",
+  "Restore sample workspace": "Восстановить пример рабочей области",
+  "Restore the sample workspace?": "Восстановить пример рабочей области?",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune заменит текущую локальную рабочую область встроенным примером, а её файлы, точки восстановления и историю задач сохранит как предыдущую область.",
+  "Restore the previous workspace?": "Восстановить предыдущую рабочую область?",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune восстановит всю локальную рабочую область до сброса, а текущую сохранит как следующую восстанавливаемую версию.",
+  "Workspace switch details": "Сведения о переключении рабочей области",
+  "Current and target workspaces": "Текущая и целевая рабочие области",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "Текущая рабочая область сохраняется как полная локальная версия восстановления в одной записи с примером.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "Текущая и предыдущая рабочие области безопасно меняются местами, поэтому восстановление можно отменить.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "Подключённая папка не изменяется; Rune запишет в неё данные только после явного действия «Записать файлы рабочей области».",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "Одна атомарная локальная запись · при сбое хранилища текущая область не изменяется",
+  "Restore sample": "Восстановить пример",
+  "Restore previous workspace": "Восстановить предыдущую рабочую область",
+  "Switching safely…": "Безопасное переключение…",
+  "Recover files, versions, and task records from before reset": "Восстановить файлы, версии и историю задач до сброса",
+  "Review first, preserve the current workspace, then open the sample":
+    "Сначала проверить, сохранить текущую область, затем открыть пример",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Device workspace · recoverable switch": "مساحة العمل المحلية · تبديل قابل للتراجع",
+  "Restore sample workspace": "استعادة مساحة العمل النموذجية",
+  "Restore the sample workspace?": "هل تريد استعادة مساحة العمل النموذجية؟",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "سيستبدل Rune مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
+  "Restore the previous workspace?": "هل تريد استعادة مساحة العمل السابقة؟",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "سيستعيد Rune مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
+  "Workspace switch details": "تفاصيل تبديل مساحة العمل",
+  "Current and target workspaces": "مساحتا العمل الحالية والمستهدفة",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "تُحفظ مساحة العمل الحالية كإصدار استعادة محلي كامل في عملية الكتابة نفسها مع مساحة العمل النموذجية.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "تتبادل مساحتا العمل الحالية والسابقة موضعهما بأمان، لذلك تظل الاستعادة قابلة للتراجع.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "لا يتغير المجلد المتصل؛ ولا يكتب Rune إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "كتابة ذرية محلية واحدة · تبقى مساحة العمل الحالية دون تغيير إذا فشل التخزين",
+  "Restore sample": "استعادة النموذج",
+  "Restore previous workspace": "استعادة مساحة العمل السابقة",
+  "Switching safely…": "جارٍ التبديل بأمان…",
+  "Recover files, versions, and task records from before reset":
+    "استعادة الملفات والإصدارات وسجلات المهام من قبل إعادة الضبط",
+  "Review first, preserve the current workspace, then open the sample":
+    "راجع أولاً، ثم احفظ مساحة العمل الحالية وافتح النموذج",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Device workspace · recoverable switch": "デバイス上のワークスペース · 元に戻せる切り替え",
+  "Restore sample workspace": "サンプルワークスペースを復元",
+  "Restore the sample workspace?": "サンプルワークスペースを復元しますか？",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune は現在のデバイス上のワークスペースを内蔵サンプルに置き換え、ファイル、復元ポイント、タスク履歴を以前のワークスペースとして完全に保持します。",
+  "Restore the previous workspace?": "以前のワークスペースを復元しますか？",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune はリセット前のワークスペース全体を復元し、現在のワークスペースを次に復元できるバージョンとして保持します。",
+  "Workspace switch details": "ワークスペース切り替えの詳細",
+  "Current and target workspaces": "現在と切り替え先のワークスペース",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "現在のワークスペースは、サンプルと同じ 1 回の書き込みで完全なデバイス復元版として保存されます。",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "現在と以前のワークスペースを安全に入れ替えるため、この復元自体も元に戻せます。",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "接続済みフォルダは変更されません。明示的に「ワークスペースのファイルを書き込む」を選んだ場合だけ Rune が書き込みます。",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "デバイスへ 1 回だけアトミックに書き込み · 保存に失敗しても現在のワークスペースは変わりません",
+  "Restore sample": "サンプルを復元",
+  "Restore previous workspace": "以前のワークスペースを復元",
+  "Switching safely…": "安全に切り替え中…",
+  "Recover files, versions, and task records from before reset": "リセット前のファイル、バージョン、タスク履歴を復元",
+  "Review first, preserve the current workspace, then open the sample":
+    "先に確認し、現在のワークスペースを保持してからサンプルを開く",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Device workspace · recoverable switch": "기기 작업공간 · 되돌릴 수 있는 전환",
+  "Restore sample workspace": "샘플 작업공간 복원",
+  "Restore the sample workspace?": "샘플 작업공간을 복원할까요?",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
+  "Restore the previous workspace?": "이전 작업공간을 복원할까요?",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
+  "Workspace switch details": "작업공간 전환 세부 정보",
+  "Current and target workspaces": "현재 및 대상 작업공간",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "현재 작업공간은 샘플 작업공간과 같은 한 번의 쓰기에서 완전한 기기 복원 버전으로 저장됩니다.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "현재 작업공간과 이전 작업공간을 안전하게 맞바꾸므로 이 복원도 다시 되돌릴 수 있습니다.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "연결된 폴더는 바뀌지 않습니다. ‘작업공간 파일 쓰기’를 명시적으로 선택한 경우에만 Rune이 기록합니다.",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "기기에 한 번만 원자적으로 기록 · 저장에 실패하면 현재 작업공간은 바뀌지 않습니다",
+  "Restore sample": "샘플 복원",
+  "Restore previous workspace": "이전 작업공간 복원",
+  "Switching safely…": "안전하게 전환 중…",
+  "Recover files, versions, and task records from before reset": "재설정 전 파일, 버전 및 작업 기록 복원",
+  "Review first, preserve the current workspace, then open the sample":
+    "먼저 검토하고 현재 작업공간을 보존한 뒤 샘플 열기",
+});

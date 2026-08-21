@@ -59,6 +59,8 @@ export const INTERFACE_TRANSLATIONS = {
     "5. ドキュメントセクションまたは本文ブロック、データセル、Chart プロパティ、または Deck スライドの横にある鉛筆を使用して、右側の証明済み範囲を編集します。左側には、完全なソース ドラフトがライブで反映され、ハイライト表示されます。 「キャンセル」では何も書き込まれず、「保存」では 1 つのリビジョンを同期する前に検証されます。 F2 キーも編集できますが、ブロックの左側のコントロールは、正確なソース差分レビュー後にのみ挿入、移動、または削除を制御します。",
   "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
     "6. Rune Agent に変更を提案するよう依頼します。適用する前に、差分と影響を確認してください。",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "接続済みフォルダは変更されません。明示的に「ワークスペースのファイルを書き込む」を選んだ場合だけ Rune が書き込みます。",
   "A leadership report and slides focused on decisions": "意思決定に焦点を当てた経営層向けレポートとスライド",
   "A material error, omission, or rework still blocks delivery.":
     "重大な誤り、欠落、または手戻りがあり、まだ納品できません。",
@@ -156,6 +158,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Bounded aggregates to your model · review before write": "範囲を限定した集計をモデルへ · 書き込み前に確認",
   "Browser-local export · no upload": "ブラウザローカルエクスポート · アップロードなし",
   "Browser-local query output": "ブラウザローカルクエリ出力",
+  "Built-in sample": "内蔵サンプル",
   "Bulleted list": "箇条書きリスト",
   "Calculate margin and sort": "余白を計算して並べ替える",
   Cancel: "キャンセル",
@@ -263,11 +266,13 @@ export const INTERFACE_TRANSLATIONS = {
   Currency: "通貨",
   "Currency · USD": "通貨・米ドル",
   Current: "現在",
+  "Current and target workspaces": "現在と切り替え先のワークスペース",
   "Current bindings and temporary pins choose a bounded, revision-live context pack.":
     "現在のバインディングと一時ピンは、制限されたリビジョンライブ コンテキスト パックを選択します。",
   "Current source is already checkpointed": "現在のソースはすでにチェックポイントが設定されています",
   "Current source revision will be recorded": "現在のソース版を記録します",
   "Current theme": "現在のテーマ",
+  "Current workspace": "現在のワークスペース",
   Customer: "顧客",
   Data: "データ",
   "Data exceeds the model context safety limit; deterministic local operating review prepared for review":
@@ -324,6 +329,7 @@ export const INTERFACE_TRANSLATIONS = {
     "デバイスのストレージがいっぱいです — チェックポイントが保存されませんでした",
   "Device storage is full — download the source before leaving":
     "デバイスのストレージがいっぱいです — 終了する前にソースをダウンロードしてください",
+  "Device workspace · recoverable switch": "デバイス上のワークスペース · 元に戻せる切り替え",
   "Did this result become usable in real work?": "この結果は実際の業務で使えるものになりましたか？",
   Discard: "廃棄する",
   "Discard proposed patch": "提案されたパッチを破棄する",
@@ -403,6 +409,8 @@ export const INTERFACE_TRANSLATIONS = {
   "File names, Artifact IDs, workspace paths, and user identity":
     "ファイル名、Artifact ID、ワークスペースのパス、ユーザーの識別情報",
   "File size": "ファイルサイズ",
+  files: "ファイル",
+  "Files available after the switch": "切り替え後に使用できるファイル",
   "Files in proposed patch": "提案されたパッチ内のファイル",
   "Filter value": "フィルター値",
   "First proposal stayed unapplied": "最初の提案は適用されなかった",
@@ -550,6 +558,7 @@ export const INTERFACE_TRANSLATIONS = {
     "モデル支援のソース連携プレゼンテーションを準備しました。確認するまで書き込みません",
   "Monthly operating review": "月次経営レビュー",
   "Monthly review": "月次レビュー",
+  "more files": "さらに多くのファイル",
   "More tools": "その他のツール",
   "Move block down": "ブロックを下に移動",
   "Move block up": "ブロックを上に移動",
@@ -619,6 +628,8 @@ export const INTERFACE_TRANSLATIONS = {
   "One atomic device write · every source stays unchanged on failure":
     "デバイスへ 1 回だけアトミックに書き込み · 失敗時はすべてのソースを変更しません",
   "One atomic device write · no upload": "1 つのアトミック デバイス書き込み、アップロードなし",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "デバイスへ 1 回だけアトミックに書き込み · 保存に失敗しても現在のワークスペースは変わりません",
   "One atomic device write after confirmation": "確認後に 1 つのアトミックデバイスを書き込む",
   "One atomic transaction · compiled locally": "一つのアトミックなトランザクション · ローカルでコンパイル",
   "One Markdown block": "1 つの Markdown ブロック",
@@ -713,6 +724,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Preview page": "プレビューページ",
   "Preview target is too large or no longer matches the current source":
     "プレビュー ターゲットが大きすぎるか、現在のソースと一致しません",
+  "Previous workspace": "以前のワークスペース",
   "Primary and comparison scopes each need at least one complete condition.":
     "主スコープと比較スコープには、それぞれ少なくとも 1 つの完全な条件が必要です。",
   "Profile name": "プロファイル名",
@@ -754,7 +766,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Reconnect the missing metric": "見つからない指標を再接続",
   "Reconnect the Query Data source": "Query の Data ソースを再接続",
   "Recorded after first Apply": "最初の適用後に記録される",
+  "recorded runs": "記録された走行",
   "Recording…": "記録中…",
+  "Recover files, versions, and task records from before reset": "リセット前のファイル、バージョン、タスク履歴を復元",
   "Recovered after one compiler-guided repair": "コンパイラによる 1 回の修復後に回復",
   "Refresh available": "更新できます",
   "Refresh linked presentation in place": "連携プレゼンテーションをそのまま更新",
@@ -780,14 +794,18 @@ export const INTERFACE_TRANSLATIONS = {
   Report: "レポート",
   "Reporting period": "報告期間",
   Rerun: "再実行",
-  "Reset sample workspace": "サンプルワークスペースをリセットする",
   "Reset source and preview widths": "既定の幅に戻す",
   "Reset to whole page": "ページ全体に戻す",
   "Resize source and preview": "ソースとプレビューの幅を調整",
   Restore: "復元",
   "Restore latest checkpoint": "最新のチェックポイントを復元する",
   "Restore latest different checkpoint": "最新の異なるチェックポイントを復元する",
+  "Restore previous workspace": "以前のワークスペースを復元",
   "Restore safety": "安全を回復する",
+  "Restore sample": "サンプルを復元",
+  "Restore sample workspace": "サンプルワークスペースを復元",
+  "Restore the previous workspace?": "以前のワークスペースを復元しますか？",
+  "Restore the sample workspace?": "サンプルワークスペースを復元しますか？",
   "Restored the latest device draft": "最新のデバイスドラフトを復元しました",
   "Result summary": "結果の概要",
   "Revenue analysis": "収益分析",
@@ -795,6 +813,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "書く前に見直す",
   "Review canonical source": "正規ソースを確認",
   "Review checkpoint restore": "チェックポイントの復元を確認",
+  "Review first, preserve the current workspace, then open the sample":
+    "先に確認し、現在のワークスペースを保持してからサンプルを開く",
   "Review focus": "レビューの焦点",
   "Review imported sources": "インポートされたソースを確認する",
   "Review insertion": "レビューの挿入",
@@ -842,6 +862,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune は、個人用の OpenAI Responses、OpenRouter/互換 Chat Completions、Anthropic Messages、Gemini generateContent、カスタムプロトコルの各プロファイルに対応しています。保存後、サーバーはキーをブラウザスクリプトから読み取れない HttpOnly 認証情報として暗号化し、ワークスペースや localStorage には一切保存しません。ローカルまたはデプロイ済みの Web サーバーには別の `RUNE_CREDENTIAL_ENCRYPTION_KEY` が必要で、Rune Desktop はそのマスターキーを macOS キーチェーンで保護します。プロバイダー間のフェイルオーバーは初期設定ではオフで、モデル設定で明示的に許可した場合にのみ実行されます。モデルがなくても決定論的なローカルプランナーを利用できます。",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Rune は現在のデバイス上のワークスペースを内蔵サンプルに置き換え、ファイル、復元ポイント、タスク履歴を以前のワークスペースとして完全に保持します。",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Rune はリセット前のワークスペース全体を復元し、現在のワークスペースを次に復元できるバージョンとして保持します。",
   "Rune will use the currently enabled secure profile.":
     "Rune は、現在有効になっている安全なプロファイルを使用します。",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
@@ -866,6 +890,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save to canonical source": "正規のソースに保存する",
   "Saved on device": "デバイスに保存されました",
   "Saved task · repeatable": "保存されたタスク · 繰り返し可能",
+  "saved tasks": "保存されたタスク",
   "Saved tasks": "保存されたタスク",
   Saving: "保存",
   "Scanned PDF · explicit selection": "スキャン PDF · 明示的な選択",
@@ -904,6 +929,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source and versions": "ソースとバージョン",
   "Source binding": "ソースバインディング",
   "Source changed · refresh available": "元文書が変更されました · 更新できます",
+  "source checkpoints": "ソースチェックポイント",
   "Source diff": "ソースの差分",
   "Source draft": "ソース草案",
   "Source editor": "ソースエディタ",
@@ -946,6 +972,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Summarize quarterly revenue": "四半期収益を要約する",
   "Switch to the dark theme": "ダークテーマに切り替える",
   "Switched artifact context": "切り替えられたアーティファクト コンテキスト",
+  "Switching safely…": "安全に切り替え中…",
   "Synced live": "ライブで同期されました",
   "Synchronize the quarterly conclusions across the report and presentation":
     "四半期ごとの結論をレポートとプレゼンテーション全体で同期させる",
@@ -971,7 +998,11 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "チャートをコンパイルできませんでした。",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "Chart JSON には、正確なソース ID とフィールド名が保存されます。レポートとデッキでは、1 つのチャート バインディングでそれを再利用できます。",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "現在と以前のワークスペースを安全に入れ替えるため、この復元自体も元に戻せます。",
   "The current Chart JSON is invalid.": "現在の Chart JSON は無効です。",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "現在のワークスペースは、サンプルと同じ 1 回の書き込みで完全なデバイス復元版として保存されます。",
   "The detected scan pages changed. Import the file again.":
     "検出されたスキャンページが変わりました。ファイルをもう一度読み込んでください。",
   "The direction is right and only limited manual changes remain.":
@@ -1065,6 +1096,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace dependency graph": "ワークスペースの依存関係グラフ",
   "Workspace files": "ワークスペースファイル",
   "Workspace revision changed": "ワークスペースのリビジョンが変更されました",
+  "Workspace switch details": "ワークスペース切り替えの詳細",
   "Workspace tools": "ワークスペースツール",
   "Workspace view": "ワークスペース表示",
   "Write in Source and the live output will recompile immediately.":

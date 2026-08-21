@@ -6,6 +6,11 @@ const projectRoot = path.resolve(import.meta.dirname, "..");
 const appRoot = path.join(projectRoot, "app");
 const outputPath = path.join(appRoot, "lib", "traditional-chinese.generated.ts");
 const converter = OpenCC.Converter({ from: "cn", to: "twp" });
+const taiwanProductTerms = [["示例", "範例"]];
+
+function convertForTaiwan(source) {
+  return taiwanProductTerms.reduce((value, [from, to]) => value.replaceAll(from, to), converter(source));
+}
 
 async function sourceFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -26,7 +31,7 @@ for (const file of await sourceFiles(appRoot)) {
 }
 
 const mappings = [...segments]
-  .map((source) => [source, converter(source)])
+  .map((source) => [source, convertForTaiwan(source)])
   .filter(([source, target]) => source !== target)
   .sort((left, right) => right[0].length - left[0].length || left[0].localeCompare(right[0], "en"));
 

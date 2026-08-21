@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ClipboardList,
-  Database,
-  FilePlus2,
-  FolderOpen,
-  Presentation,
-  RotateCcw,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { ClipboardList, Database, FilePlus2, FolderOpen, Presentation, Settings, Sparkles } from "lucide-react";
 import type { RefObject } from "react";
 import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 
@@ -22,7 +13,6 @@ export type WorkbenchActivityRailProps = Readonly<{
   documentBriefingLabel: string;
   focusAgentLabel: string;
   dataGraphLabel: string;
-  resetSampleLabel: string;
   settingsLabel: string;
   settingsExpanded: boolean;
   settingsTriggerRef: RefObject<HTMLButtonElement | null>;
@@ -35,7 +25,6 @@ export type WorkbenchActivityRailProps = Readonly<{
   onOperatingReview: () => void;
   onDocumentBriefing: () => void;
   onFocusAgent: () => void;
-  onReset: () => void;
   onToggleSettings: () => void;
   onOpenSettings: (edge: WorkbenchMenuFocusEdge) => void;
 }>;
@@ -50,7 +39,6 @@ export function WorkbenchActivityRail({
   documentBriefingLabel,
   focusAgentLabel,
   dataGraphLabel,
-  resetSampleLabel,
   settingsLabel,
   settingsExpanded,
   settingsTriggerRef,
@@ -63,7 +51,6 @@ export function WorkbenchActivityRail({
   onOperatingReview,
   onDocumentBriefing,
   onFocusAgent,
-  onReset,
   onToggleSettings,
   onOpenSettings,
 }: WorkbenchActivityRailProps) {
@@ -120,9 +107,6 @@ export function WorkbenchActivityRail({
         </button>
       </div>
       <div className="activity-group">
-        <button className="activity-button" onClick={onReset} aria-label={resetSampleLabel} title={resetSampleLabel}>
-          <RotateCcw />
-        </button>
         <button
           ref={settingsTriggerRef}
           className="activity-button"

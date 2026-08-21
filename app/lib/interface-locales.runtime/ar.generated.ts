@@ -59,6 +59,8 @@ export const INTERFACE_TRANSLATIONS = {
     "5. استخدم القلم الرصاص بجوار قسم المستند أو كتلة النص، أو خلية البيانات، أو خصائص Chart، أو شريحة Deck لتحرير نطاق مثبت على اليمين. يعكس الجانب الأيسر مسودة المصدر الكاملة ويسلط الضوء عليها مباشرة؛ لا يؤدي الإلغاء إلى كتابة أي شيء ويتم التحقق من الحفظ قبل مزامنة مراجعة واحدة. يقوم F2 أيضًا بالتحرير، بينما يتم إدراج عناصر التحكم اليسرى للكتلة أو نقلها أو حذفها فقط بعد مراجعة دقيقة لاختلاف المصدر.",
   "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
     "6. اطلب من Rune Agent اقتراح تغيير. راجع الفرق والتأثير قبل تطبيقه.",
+  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
+    "لا يتغير المجلد المتصل؛ ولا يكتب Rune إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
   "A leadership report and slides focused on decisions": "تقرير وعرض للقيادة يركزان على القرارات",
   "A material error, omission, or rework still blocks delivery.": "لا يزال خطأ جوهري أو نقص أو عمل إضافي يمنع التسليم.",
   "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.":
@@ -153,6 +155,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Bounded aggregates to your model · review before write": "تجميعات محدودة إلى نموذجك · مراجعة قبل الكتابة",
   "Browser-local export · no upload": "تصدير المتصفح المحلي · لا يوجد تحميل",
   "Browser-local query output": "إخراج الاستعلام المحلي للمتصفح",
+  "Built-in sample": "عينة مدمجة",
   "Bulleted list": "قائمة نقطية",
   "Calculate margin and sort": "حساب الهامش والفرز",
   Cancel: "إلغاء",
@@ -259,11 +262,13 @@ export const INTERFACE_TRANSLATIONS = {
   Currency: "العملة",
   "Currency · USD": "العملة · الدولار الأمريكي",
   Current: "الحالي",
+  "Current and target workspaces": "مساحتا العمل الحالية والمستهدفة",
   "Current bindings and temporary pins choose a bounded, revision-live context pack.":
     "تختار الارتباطات الحالية والدبابيس المؤقتة حزمة سياق محدودة للمراجعة المباشرة.",
   "Current source is already checkpointed": "المصدر الحالي تم فحصه بالفعل",
   "Current source revision will be recorded": "سيُسجّل إصدار المصدر الحالي",
   "Current theme": "السمة الحالية",
+  "Current workspace": "مساحة العمل الحالية",
   Customer: "العميل",
   Data: "البيانات",
   "Data exceeds the model context safety limit; deterministic local operating review prepared for review":
@@ -319,6 +324,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Device storage is full — checkpoint was not saved": "مساحة تخزين الجهاز ممتلئة - لم يتم حفظ نقطة التفتيش",
   "Device storage is full — download the source before leaving":
     "مساحة تخزين الجهاز ممتلئة - قم بتنزيل المصدر قبل المغادرة",
+  "Device workspace · recoverable switch": "مساحة العمل المحلية · تبديل قابل للتراجع",
   "Did this result become usable in real work?": "هل أصبحت هذه النتيجة قابلة للاستخدام في عمل حقيقي؟",
   Discard: "تجاهل",
   "Discard proposed patch": "تجاهل التصحيح المقترح",
@@ -395,6 +401,8 @@ export const INTERFACE_TRANSLATIONS = {
   "File names, Artifact IDs, workspace paths, and user identity":
     "أسماء الملفات ومعرفات Artifact ومسارات مساحة العمل وهوية المستخدم",
   "File size": "حجم الملف",
+  files: "ملفات",
+  "Files available after the switch": "الملفات المتاحة بعد التبديل",
   "Files in proposed patch": "الملفات في التصحيح المقترح",
   "Filter value": "قيمة التصفية",
   "First proposal stayed unapplied": "بقي الاقتراح الأول دون تطبيق",
@@ -537,6 +545,7 @@ export const INTERFACE_TRANSLATIONS = {
     "أُعد عرض مرتبط بالمصدر بمساعدة النموذج؛ لن يُكتب شيء قبل المراجعة",
   "Monthly operating review": "مراجعة تشغيلية شهرية",
   "Monthly review": "مراجعة شهرية",
+  "more files": "المزيد من الملفات",
   "More tools": "المزيد من الأدوات",
   "Move block down": "حرك الكتلة للأسفل",
   "Move block up": "حرك الكتلة لأعلى",
@@ -603,6 +612,8 @@ export const INTERFACE_TRANSLATIONS = {
   "One atomic device write · every source stays unchanged on failure":
     "كتابة ذرية واحدة على الجهاز · تبقى جميع المصادر دون تغيير عند الفشل",
   "One atomic device write · no upload": "جهاز ذري واحد يكتب · لا يوجد تحميل",
+  "One atomic device write · the current workspace stays unchanged if storage fails":
+    "كتابة ذرية محلية واحدة · تبقى مساحة العمل الحالية دون تغيير إذا فشل التخزين",
   "One atomic device write after confirmation": "جهاز ذري واحد يكتب بعد التأكيد",
   "One atomic transaction · compiled locally": "معاملة ذرية واحدة · مجمّعة محليًا",
   "One Markdown block": "كتلة واحدة Markdown.",
@@ -694,6 +705,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Preview page": "صفحة المعاينة",
   "Preview target is too large or no longer matches the current source":
     "هدف المعاينة كبير جدًا أو لم يعد يطابق المصدر الحالي",
+  "Previous workspace": "مساحة العمل السابقة",
   "Primary and comparison scopes each need at least one complete condition.":
     "يحتاج كل من النطاقات الأساسية ونطاقات المقارنة إلى شرط كامل واحد على الأقل.",
   "Profile name": "اسم الملف الشخصي",
@@ -735,7 +747,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Reconnect the missing metric": "أعد ربط المقياس المفقود",
   "Reconnect the Query Data source": "أعد ربط مصدر Data الخاص بـ Query",
   "Recorded after first Apply": "تم التسجيل بعد التقديم لأول مرة",
+  "recorded runs": "أشواط مسجلة",
   "Recording…": "جارٍ التسجيل…",
+  "Recover files, versions, and task records from before reset":
+    "استعادة الملفات والإصدارات وسجلات المهام من قبل إعادة الضبط",
   "Recovered after one compiler-guided repair": "تم استرداده بعد إصلاح موجه بواسطة المترجم",
   "Refresh available": "يتوفر تحديث",
   "Refresh linked presentation in place": "تحديث العرض المرتبط في مكانه",
@@ -761,14 +776,18 @@ export const INTERFACE_TRANSLATIONS = {
   Report: "تقرير",
   "Reporting period": "فترة التقرير",
   Rerun: "أعد التشغيل",
-  "Reset sample workspace": "إعادة تعيين مساحة العمل النموذجية",
   "Reset source and preview widths": "استعادة العرض الافتراضي",
   "Reset to whole page": "إعادة الضبط إلى الصفحة كاملة",
   "Resize source and preview": "تغيير عرض المصدر والمعاينة",
   Restore: "استعادة",
   "Restore latest checkpoint": "استعادة أحدث نقطة تفتيش",
   "Restore latest different checkpoint": "استعادة أحدث نقطة تفتيش مختلفة",
+  "Restore previous workspace": "استعادة مساحة العمل السابقة",
   "Restore safety": "استعادة السلامة",
+  "Restore sample": "استعادة النموذج",
+  "Restore sample workspace": "استعادة مساحة العمل النموذجية",
+  "Restore the previous workspace?": "هل تريد استعادة مساحة العمل السابقة؟",
+  "Restore the sample workspace?": "هل تريد استعادة مساحة العمل النموذجية؟",
   "Restored the latest device draft": "تمت استعادة أحدث مسودة للجهاز",
   "Result summary": "ملخص النتيجة",
   "Revenue analysis": "تحليل الإيرادات",
@@ -776,6 +795,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "المراجعة قبل الكتابة",
   "Review canonical source": "مراجعة المصدر الأساسي",
   "Review checkpoint restore": "مراجعة استعادة نقطة الحفظ",
+  "Review first, preserve the current workspace, then open the sample":
+    "راجع أولاً، ثم احفظ مساحة العمل الحالية وافتح النموذج",
   "Review focus": "مراجعة التركيز",
   "Review imported sources": "مراجعة المصادر المستوردة",
   "Review insertion": "مراجعة الإدراج",
@@ -822,6 +843,10 @@ export const INTERFACE_TRANSLATIONS = {
     "يخزّن Rune على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "يدعم Rune ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Rune Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
+  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "سيستبدل Rune مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
+  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "سيستعيد Rune مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
   "Rune will use the currently enabled secure profile.": "سيستخدم Rune الملف الشخصي الآمن الممكّن حاليًا.",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "يكتب Rune توجيهًا صريحًا -- rune:data، لذا لا تتغير بيانات مساحة العمل أبدًا عند إعادة ترتيب الملفات.",
@@ -845,6 +870,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Save to canonical source": "حفظ إلى المصدر الكنسي",
   "Saved on device": "تم الحفظ على الجهاز",
   "Saved task · repeatable": "المهمة المحفوظة · قابلة للتكرار",
+  "saved tasks": "المهام المحفوظة",
   "Saved tasks": "المهام المحفوظة",
   Saving: "الادخار",
   "Scanned PDF · explicit selection": "PDF ممسوح ضوئيًا · اختيار صريح",
@@ -883,6 +909,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source and versions": "المصدر والإصدارات",
   "Source binding": "ربط المصدر",
   "Source changed · refresh available": "تغيّر المصدر · يتوفر تحديث",
+  "source checkpoints": "نقاط التفتيش المصدر",
   "Source diff": "اختلاف المصدر",
   "Source draft": "مسودة المصدر",
   "Source editor": "محرر المصدر",
@@ -925,6 +952,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Summarize quarterly revenue": "تلخيص الإيرادات ربع السنوية",
   "Switch to the dark theme": "قم بالتبديل إلى المظهر المظلم",
   "Switched artifact context": "تبديل سياق قطعة أثرية",
+  "Switching safely…": "جارٍ التبديل بأمان…",
   "Synced live": "تمت مزامنتها مباشرة",
   "Synchronize the quarterly conclusions across the report and presentation":
     "مزامنة الاستنتاجات ربع السنوية عبر التقرير والعرض التقديمي",
@@ -950,7 +978,11 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "تعذر تجميع المخطط.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "يقوم Chart JSON بتخزين معرف المصدر الدقيق وأسماء الحقول؛ يمكن إعادة استخدام التقارير والطوابق مع مخطط واحد ملزم.",
+  "The current and previous workspaces swap safely, so this recovery remains reversible.":
+    "تتبادل مساحتا العمل الحالية والسابقة موضعهما بأمان، لذلك تظل الاستعادة قابلة للتراجع.",
   "The current Chart JSON is invalid.": "Chart JSON الحالي غير صالح.",
+  "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
+    "تُحفظ مساحة العمل الحالية كإصدار استعادة محلي كامل في عملية الكتابة نفسها مع مساحة العمل النموذجية.",
   "The detected scan pages changed. Import the file again.": "تغيّرت الصفحات الممسوحة المكتشفة. أعد استيراد الملف.",
   "The direction is right and only limited manual changes remain.": "الاتجاه صحيح ولا يتبقى سوى تعديلات يدوية محدودة.",
   "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
@@ -1039,6 +1071,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace dependency graph": "الرسم البياني لتبعية مساحة العمل",
   "Workspace files": "ملفات مساحة العمل",
   "Workspace revision changed": "تم تغيير مراجعة مساحة العمل",
+  "Workspace switch details": "تفاصيل تبديل مساحة العمل",
   "Workspace tools": "أدوات مساحة العمل",
   "Workspace view": "عرض مساحة العمل",
   "Write in Source and the live output will recompile immediately.":
