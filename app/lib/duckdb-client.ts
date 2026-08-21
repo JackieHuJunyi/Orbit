@@ -20,17 +20,51 @@ import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 export type { QueryCell, WorkspaceQueryResult, WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 
 const DUCKDB_VERSION = "1.32.0";
-const DUCKDB_CDN = `https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@${DUCKDB_VERSION}/dist`;
-const PINNED_BUNDLES: duckdb.DuckDBBundles = {
-  mvp: {
-    mainModule: `${DUCKDB_CDN}/duckdb-mvp.wasm`,
-    mainWorker: `${DUCKDB_CDN}/duckdb-browser-mvp.worker.js`,
-  },
-  eh: {
-    mainModule: `${DUCKDB_CDN}/duckdb-eh.wasm`,
-    mainWorker: `${DUCKDB_CDN}/duckdb-browser-eh.worker.js`,
-  },
-};
+const DUCKDB_INIT_TIMEOUT_MS = 30_000;
+const DUCKDB_MAX_WASM_BYTES = 45 * 1024 * 1024;
+
+function sameOriginMvpBundle(): duckdb.DuckDBBundle {
+  const assetUrl = (name: string) => new URL(`/duckdb/${name}`, window.location.origin).href;
+  return {
+    mainModule: assetUrl("duckdb-mvp.wasm"),
+    mainWorker: assetUrl("duckdb-browser-mvp.worker.js"),
+    pthreadWorker: null,
+  };
+}
+
+async function instantiateDatabase(database: duckdb.AsyncDuckDB, mainModule: string, pthreadWorker?: string) {
+  let timer = 0;
+  let wasmModuleUrl: string | null = null;
+  const abortController = new AbortController();
+  try {
+    await Promise.race([
+      (async () => {
+        const response = await fetch(mainModule, { credentials: "same-origin", signal: abortController.signal });
+        if (!response.ok) throw new Error(`DuckDB's same-origin Wasm returned HTTP ${response.status}.`);
+        const declaredSize = Number(response.headers.get("content-length"));
+        if (Number.isFinite(declaredSize) && declaredSize > DUCKDB_MAX_WASM_BYTES) {
+          throw new Error("DuckDB's same-origin Wasm exceeds Rune's 45 MB runtime limit.");
+        }
+        const wasmBlob = await response.blob();
+        if (!wasmBlob.size || wasmBlob.size > DUCKDB_MAX_WASM_BYTES) {
+          throw new Error("DuckDB's same-origin Wasm is empty or exceeds Rune's 45 MB runtime limit.");
+        }
+        wasmModuleUrl = URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" }));
+        await database.instantiate(wasmModuleUrl, pthreadWorker);
+      })(),
+      new Promise<never>((_, reject) => {
+        timer = window.setTimeout(
+          () => reject(new Error("DuckDB could not start from Rune's same-origin runtime within 30 seconds.")),
+          DUCKDB_INIT_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    abortController.abort();
+    window.clearTimeout(timer);
+    if (wasmModuleUrl) URL.revokeObjectURL(wasmModuleUrl);
+  }
+}
 
 let databasePromise: Promise<duckdb.AsyncDuckDB> | null = null;
 let queryQueue: Promise<void> = Promise.resolve();
@@ -38,22 +72,17 @@ let queryQueue: Promise<void> = Promise.resolve();
 function getDatabase(): Promise<duckdb.AsyncDuckDB> {
   if (!databasePromise) {
     databasePromise = (async () => {
-      const bundle = await duckdb.selectBundle(PINNED_BUNDLES);
+      const bundle = sameOriginMvpBundle();
       if (!bundle.mainWorker) throw new Error("No compatible DuckDB worker is available in this browser.");
-      const workerUrl = URL.createObjectURL(
-        new Blob([`importScripts(${JSON.stringify(bundle.mainWorker)});`], { type: "text/javascript" }),
-      );
-      const worker = new Worker(workerUrl);
+      const worker = new Worker(bundle.mainWorker);
       const database = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING), worker);
       try {
-        await database.instantiate(bundle.mainModule, bundle.pthreadWorker ?? undefined);
+        await instantiateDatabase(database, bundle.mainModule, bundle.pthreadWorker ?? undefined);
         return database;
       } catch (error) {
         worker.terminate();
         databasePromise = null;
         throw error;
-      } finally {
-        URL.revokeObjectURL(workerUrl);
       }
     })();
   }
@@ -84,7 +113,9 @@ async function executeQuery(
   sql: string,
   dataSource: string,
   dataFormat: "CSV" | "JSON",
+  signal?: AbortSignal,
 ): Promise<WorkspaceQueryResult> {
+  signal?.throwIfAborted();
   const parsedData = parseDataSource(dataSource);
   if (parsedData.errors.length) throw new Error(parsedData.errors[0]);
   if (!parsedData.columns.length) throw new Error("Add at least one data column before running SQL.");
@@ -94,11 +125,14 @@ async function executeQuery(
   const canonicalRows = parsedData.rows.map((row, index) => ({ ...row, [importOrderColumn]: index }));
   const fileName = `rune-workspace-${dataFormat.toLocaleLowerCase()}.json`;
   const database = await getDatabase();
+  signal?.throwIfAborted();
   await database.dropFiles();
   await database.registerFileText(fileName, JSON.stringify(canonicalRows));
+  signal?.throwIfAborted();
   const connection = await database.connect();
 
   try {
+    signal?.throwIfAborted();
     if (parsedData.rows.length) {
       const projection = parsedData.columns.map(quoteSqlIdentifier).join(", ");
       await connection.query(
@@ -108,9 +142,11 @@ async function executeQuery(
       const columns = parsedData.columns.map((column) => `${quoteSqlIdentifier(column)} VARCHAR`).join(", ");
       await connection.query(`CREATE OR REPLACE TABLE workspace_data (${columns})`);
     }
+    signal?.throwIfAborted();
     const lineagePlan = queryLineageSourceIsSupported(parsedData.columns) ? buildQueryLineagePlan(sql) : null;
     const startedAt = performance.now();
     const table = await connection.query(buildBoundedQuery(lineagePlan?.sql ?? sql));
+    signal?.throwIfAborted();
     const elapsedMs = performance.now() - startedAt;
     const tableColumns = table.schema.fields.map((field) => field.name);
     const lineageColumnIndex = tableColumns.indexOf(QUERY_PROVENANCE_COLUMN);
@@ -154,8 +190,9 @@ export function runWorkspaceQuery(
   sql: string,
   dataSource: string,
   dataFormat: "CSV" | "JSON",
+  signal?: AbortSignal,
 ): Promise<WorkspaceQueryResult> {
-  const job = queryQueue.then(() => executeQuery(sql, dataSource, dataFormat));
+  const job = queryQueue.then(() => executeQuery(sql, dataSource, dataFormat, signal));
   queryQueue = job.then(
     () => undefined,
     () => undefined,
@@ -166,6 +203,7 @@ export function runWorkspaceQuery(
 export async function runWorkspaceQuerySnapshot(
   queryArtifact: WorkspaceArtifact,
   dataArtifact: WorkspaceArtifact,
+  signal?: AbortSignal,
 ): Promise<WorkspaceQuerySnapshot> {
   if (queryArtifact.kind !== "query") throw new Error("Choose a Query artifact as the derived chart source.");
   if (dataArtifact.kind !== "data") throw new Error("Add a canonical CSV or JSON artifact before running SQL.");
@@ -178,6 +216,6 @@ export async function runWorkspaceQuerySnapshot(
   }
   const dataFormat =
     dataArtifact.source.trim().startsWith("[") || dataArtifact.source.trim().startsWith("{") ? "JSON" : "CSV";
-  const result = await runWorkspaceQuery(queryArtifact.source, dataArtifact.source, dataFormat);
+  const result = await runWorkspaceQuery(queryArtifact.source, dataArtifact.source, dataFormat, signal);
   return createWorkspaceQuerySnapshot(queryArtifact, dataArtifact, result);
 }

@@ -93,7 +93,7 @@ test("mirrors an exact Data-cell draft into complete Source, then cancels or sav
   await cellEditor.getByRole("button", { name: "Save Row 3 · Q2 Revenue" }).click();
 
   // A first Data save can cold-start DuckDB/WASM to revalidate every downstream consumer.
-  await expect(cellEditor).toBeHidden({ timeout: 15_000 });
+  await expect(cellEditor).toBeHidden({ timeout: 35_000 });
   await expect(editor).toHaveValue(/Europe,990000,920000,690000,84/u);
   await expect(editor).toBeEditable();
   await expect(page.locator("td.preview-data-cell").filter({ hasText: "990000" })).toBeVisible();

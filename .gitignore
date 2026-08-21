@@ -55,6 +55,10 @@ rune-pilot-cohort-*.md
 # `npm run prepare:ocr`; never commit the generated copies.
 /public/ocr/
 
+# DuckDB browser worker/Wasm assets are regenerated from node_modules by
+# `npm run prepare:duckdb`; never commit the generated ~39 MB pair.
+/public/duckdb/
+
 # Local OpenAI Sites hosting metadata (project id, optional d1/r2 bindings).
 # Copy from .openai/hosting.example.json — never commit a real project id.
 .openai/hosting.json

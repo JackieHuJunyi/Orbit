@@ -382,7 +382,8 @@ test("ships same-origin OCR worker, core variants, and both compressed language 
   assert.doesNotMatch(clientSource, /cdn\.jsdelivr|unpkg/iu);
 });
 
-test("prepares ignored OCR runtime assets before the direct unit suite", async () => {
+test("prepares ignored browser runtime assets before the direct unit suite", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
-  assert.match(packageJson.scripts["test:unit"], /^npm run prepare:ocr && node /u);
+  assert.match(packageJson.scripts["test:unit"], /^npm run prepare:runtime && node /u);
+  assert.equal(packageJson.scripts["prepare:runtime"], "npm run prepare:ocr && npm run prepare:duckdb");
 });

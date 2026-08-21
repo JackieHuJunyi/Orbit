@@ -193,6 +193,7 @@ type QueryRuntimeEntry =
   { status: "loading" } | { status: "ready"; snapshot: WorkspaceQuerySnapshot } | { status: "error"; error: string };
 
 type QueryRuntime = Record<string, QueryRuntimeEntry>;
+const PREVIEW_QUERY_IDLE_DELAY_MS = 1_200;
 
 const PreviewCopyContext = createContext<RuneUICopy["preview"]>(runeUICopy("en").preview);
 
@@ -273,6 +274,7 @@ function usePreviewQueryRuntime(artifact: WorkspaceArtifact, artifacts: Workspac
   useEffect(() => {
     if (!queryBindings.length) return;
     let active = true;
+    const abortController = new AbortController();
     const timer = window.setTimeout(() => {
       const blockedEntries = queryBindings.flatMap(({ query, resolution }) =>
         resolution.artifact
@@ -302,7 +304,7 @@ function usePreviewQueryRuntime(artifact: WorkspaceArtifact, artifacts: Workspac
                   query.id,
                   {
                     status: "ready",
-                    snapshot: await runWorkspaceQuerySnapshot(query, resolution.artifact),
+                    snapshot: await runWorkspaceQuerySnapshot(query, resolution.artifact, abortController.signal),
                   },
                 ] as const;
               } catch (error) {
@@ -337,9 +339,10 @@ function usePreviewQueryRuntime(artifact: WorkspaceArtifact, artifacts: Workspac
             ]),
           });
         });
-    }, 350);
+    }, PREVIEW_QUERY_IDLE_DELAY_MS);
     return () => {
       active = false;
+      abortController.abort();
       window.clearTimeout(timer);
     };
   }, [queryBindings, revisionKey]);
