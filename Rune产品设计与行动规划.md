@@ -2356,3 +2356,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - adapter 不得获得 collision resolution、task binding、review approval、workspace validation、asset storage、persistence 或 React state 权限；这些仍属于原有 reviewed import transaction。
 - OOXML、OpenDocument、PDF.js 与 OCR 必须保持 dynamic import。架构拆分不能用增加首包换取整洁，WorkBench entry 继续受 530 KB gate 约束。
 - 新格式必须同时提供体积/敌对输入/保真合同、真实 fixture 与 reviewed zero-partial-write 证据；adapter 列表是封闭产品词汇，不是允许任意第三方代码执行的 runtime plugin system。
+
+### 17.69 v1.38 所有文件交付必须共享一个轻量能力表与惰性运行时
+
+- Document、Data 与 Presentation 的 CSV/JSON、现代/传统 Office、OpenDocument、HTML 和 PDF 能力必须由一个冻结表声明；菜单、label、busy target 和准备入口不能各自判断 Artifact kind。Query/Chart 暂不作为直接交付文件。
+- Workbench 只允许按需加载一个 export runtime。该边界负责 referenced Query union、exact Data revision snapshots、truncation rejection、本地 content-hash image closure 与 package binding compilation，再通过 exhaustive destination record 调用具体 writer。
+- CSV/JSON 交付不得启动 DuckDB 或读取 image store；Office/ODF/HTML/PDF 只获得自己需要的 evidence。所有具体 writer 与 PDF/DuckDB 重运行时继续保持 nested dynamic entry，首屏不得突破 530 KB。
+- export runtime 只能返回 immutable bytes、filename、MIME、target 与 warnings；不能下载、确认、持久化、创建 checkpoint、读取 credential 或改变 canonical source。pending review 继续唯一拥有 exact base workspace、stale rejection 与 object URL。
+- 开机问候的拉丁/西里尔主体必须是一条连续连笔而不是逐字短曲线；中日韩保留 script-aware brush order 并加入有方向收锋。墨迹必须清晰、有限、在完成后再展开语言设置，且 reduced-motion/forced-color 立即得到完整静态字形。
+- 发布证据必须覆盖每种 Artifact 的 exact capability、portable fast path、Query/package path、truncation/missing-asset rejection、frozen input、两级 lazy manifest，以及九语言桌面/窄屏开机几何和真实动画关键帧。

@@ -92,18 +92,8 @@ import {
 import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
 import { prepareArtifactDiagnostics } from "../lib/artifact-diagnostics";
 import { planLocalSelectionChange } from "../lib/local-selection-agent";
-import {
-  compileArtifactSource,
-  findMetricReferences,
-  findQueryMetricReferences,
-  queryMetricSourceIdsForArtifact,
-} from "../lib/bindings";
-import {
-  chartQuerySourceIdsForArtifact,
-  findChartReferences,
-  parseChartSource,
-  validateChartSourceBinding,
-} from "../lib/charts";
+import { compileArtifactSource, findMetricReferences, findQueryMetricReferences } from "../lib/bindings";
+import { findChartReferences, parseChartSource, validateChartSourceBinding } from "../lib/charts";
 import { prepareChartEmbedding } from "../lib/chart-embedding";
 import { isDeckMarkdownArtifact, parseDeckSource } from "../lib/deck";
 import {
@@ -139,8 +129,8 @@ import {
 } from "../lib/directory-workspace";
 import { observeWorkspaceDirectory } from "../lib/directory-observer";
 import type { ArtifactExportResult } from "../lib/export-contract";
+import { workspaceFileExportCapabilities, type WorkspaceFileExportDestination } from "../lib/workspace-file-export";
 import { prepareRunePilotEvidenceExport, type RunePilotEvidenceExport } from "../lib/pilot-evidence";
-import type { WorkspaceQuerySnapshot } from "../lib/query-snapshot";
 import type { RuntimeImpactPreflight } from "../lib/query-preflight";
 import { buildAgentRuntimeRepair, type AgentRuntimeRepair } from "../lib/agent-repair";
 import { resolveQueryDataArtifact } from "../lib/query-source";
@@ -727,26 +717,6 @@ function DependencyGraphRail({
   );
 }
 
-function officeExportType(artifact: WorkspaceArtifact): "DOCX" | "XLSX" | "PPTX" | null {
-  if (artifact.kind === "document") return "DOCX";
-  if (artifact.kind === "data") return "XLSX";
-  if (artifact.kind === "slides") return "PPTX";
-  return null;
-}
-
-function legacyOfficeExportType(artifact: WorkspaceArtifact): "DOC" | "PPT" | null {
-  if (artifact.kind === "document") return "DOC";
-  if (artifact.kind === "slides") return "PPT";
-  return null;
-}
-
-function odfExportType(artifact: WorkspaceArtifact): "ODT" | "ODS" | "ODP" | null {
-  if (artifact.kind === "document") return "ODT";
-  if (artifact.kind === "data") return "ODS";
-  if (artifact.kind === "slides") return "ODP";
-  return null;
-}
-
 function getDiffStats(before: string, after: string) {
   const beforeLines = new Set(before.split("\n"));
   const afterLines = new Set(after.split("\n"));
@@ -878,9 +848,7 @@ export function RuneWorkbench() {
   const [pendingLocalImage, setPendingLocalImage] = useState<PendingLocalImage | null>(null);
   const [localAssetUrls, setLocalAssetUrls] = useState<Record<string, string>>({});
   const [exportError, setExportError] = useState("");
-  const [exportState, setExportState] = useState<
-    "idle" | "office" | "legacy-office" | "odf" | "html" | "pdf" | "csv" | "json"
-  >("idle");
+  const [exportState, setExportState] = useState<"idle" | WorkspaceFileExportDestination>("idle");
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
@@ -1153,15 +1121,16 @@ export function RuneWorkbench() {
     visualSourceDraft.sourceRevision === selectedArtifact.source
       ? visualSourceDraft
       : null;
-  const selectedOfficeExportType = selectedArtifact ? officeExportType(selectedArtifact) : null;
-  const selectedLegacyOfficeExportType = selectedArtifact ? legacyOfficeExportType(selectedArtifact) : null;
+  const selectedExportCapabilities = selectedArtifact ? workspaceFileExportCapabilities(selectedArtifact) : [];
+  const selectedExportCapability = (destination: WorkspaceFileExportDestination) =>
+    selectedExportCapabilities.find((capability) => capability.destination === destination) ?? null;
+  const selectedOfficeExportType = selectedExportCapability("office")?.label ?? null;
+  const selectedLegacyOfficeExportType = selectedExportCapability("legacy-office")?.label ?? null;
   const legacyOfficeExportAvailable =
     hydrated && selectedLegacyOfficeExportType ? supportsLegacyOfficeDesktopExport() : false;
-  const selectedOdfExportType = selectedArtifact ? odfExportType(selectedArtifact) : null;
-  const selectedHtmlExport = Boolean(selectedArtifact?.kind === "slides");
-  const selectedPdfExport = Boolean(
-    selectedArtifact?.kind === "document" || selectedArtifact?.kind === "data" || selectedArtifact?.kind === "slides",
-  );
+  const selectedOdfExportType = selectedExportCapability("odf")?.label ?? null;
+  const selectedHtmlExport = Boolean(selectedExportCapability("html"));
+  const selectedPdfExport = Boolean(selectedExportCapability("pdf"));
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const currentSourceSelection =
     sourceSelection?.artifactId === selectedArtifact?.id && sourceSelection.sourceRevision === selectedArtifact?.source
@@ -4145,25 +4114,9 @@ export function RuneWorkbench() {
       openDeliveryConfirmationForArtifact(artifact, "download", target, `${target.toUpperCase()} · ${ui.download}`);
   }
 
-  async function prepareExport(destination: "office" | "legacy-office" | "odf" | "html" | "pdf" | "csv" | "json") {
-    const targetType =
-      destination === "office"
-        ? selectedOfficeExportType
-        : destination === "legacy-office"
-          ? selectedLegacyOfficeExportType
-          : destination === "odf"
-            ? selectedOdfExportType
-            : destination === "html"
-              ? selectedHtmlExport
-                ? "HTML"
-                : null
-              : destination === "pdf"
-                ? selectedPdfExport
-                  ? "PDF"
-                  : null
-                : selectedArtifact.kind === "data"
-                  ? destination.toUpperCase()
-                  : null;
+  async function prepareExport(destination: WorkspaceFileExportDestination) {
+    const capability = selectedExportCapability(destination);
+    const targetType = capability?.label;
     if (
       !targetType ||
       exportState !== "idle" ||
@@ -4183,93 +4136,10 @@ export function RuneWorkbench() {
     setExportError("");
     setNotice(`Preparing ${targetType} locally from ${targetArtifact.name}…`);
     try {
-      let result: ArtifactExportResult;
-      const referencedQueryIds = new Set([
-        ...chartQuerySourceIdsForArtifact(targetArtifact, baseArtifacts),
-        ...queryMetricSourceIdsForArtifact(targetArtifact.source),
-      ]);
-      const querySourceIds = baseArtifacts
-        .filter((artifact) => artifact.kind === "query" && referencedQueryIds.has(artifact.id))
-        .map((artifact) => artifact.id);
-      let querySnapshots: WorkspaceQuerySnapshot[] = [];
-      if (querySourceIds.length) {
-        const { runWorkspaceQuerySnapshot } = await import("../lib/duckdb-client");
-        querySnapshots = await Promise.all(
-          querySourceIds.map((queryId) => {
-            const queryArtifact = baseArtifacts.find(
-              (artifact) => artifact.id === queryId && artifact.kind === "query",
-            );
-            if (!queryArtifact) throw new Error(`Query source not found: ${queryId}`);
-            const dataResolution = resolveQueryDataArtifact(queryArtifact, baseArtifacts);
-            if (!dataResolution.artifact)
-              throw new Error(dataResolution.errors[0] ?? `Data source not found for ${queryArtifact.name}`);
-            return runWorkspaceQuerySnapshot(queryArtifact, dataResolution.artifact);
-          }),
-        );
-        const truncated = querySnapshots.find((snapshot) => snapshot.result.truncated);
-        if (truncated)
-          throw new Error(`Narrow ${truncated.queryArtifactName} to 500 rows or fewer before exporting its consumers.`);
-      }
-      const imageAssets =
-        (targetArtifact.kind === "document" || targetArtifact.kind === "slides") &&
-        extractRuneAssetIds(targetArtifact.source).length
-          ? await collectWorkspaceLocalAssets([targetArtifact])
-          : [];
-      if (destination === "csv" || destination === "json") {
-        const { exportPortableDataArtifact } = await import("../lib/data-export");
-        result = exportPortableDataArtifact(targetArtifact, destination);
-      } else if (destination === "office" || destination === "legacy-office" || destination === "odf") {
-        const compiled =
-          targetArtifact.kind === "document" || targetArtifact.kind === "slides"
-            ? compileArtifactSource(targetArtifact.source, baseArtifacts, querySnapshots)
-            : null;
-        if (compiled?.metricBindingErrors.length) throw new Error(compiled.metricBindingErrors[0]);
-        if (compiled?.unresolved.length)
-          throw new Error(
-            `Resolve ${compiled.unresolved.length} missing metric ${compiled.unresolved.length === 1 ? "reference" : "references"} before ${destination === "odf" ? "OpenDocument" : "Office"} export.`,
-          );
-        if (compiled?.unresolvedQueryMetrics.length) throw new Error(compiled.unresolvedQueryMetrics[0]);
-        if (compiled?.pendingQueryMetrics.length)
-          throw new Error(
-            `Run ${compiled.pendingQueryMetrics[0]} before ${destination === "odf" ? "OpenDocument" : "Office"} export.`,
-          );
-        if (compiled?.queryMetricRuntimeErrors.length) throw new Error(compiled.queryMetricRuntimeErrors[0]);
-        if (compiled?.unresolvedCharts.length)
-          throw new Error(
-            `Resolve ${compiled.unresolvedCharts.length} missing chart ${compiled.unresolvedCharts.length === 1 ? "reference" : "references"} before ${destination === "odf" ? "OpenDocument" : "Office"} export.`,
-          );
-        const exportArtifact = compiled ? { ...targetArtifact, source: compiled.source } : targetArtifact;
-        if (destination === "odf") {
-          const { exportOdfArtifact } = await import("../lib/odf-export");
-          result = exportOdfArtifact(exportArtifact, baseArtifacts, querySnapshots, imageAssets);
-        } else {
-          const { exportOfficeArtifact } = await import("../lib/office-export");
-          const modernResult = exportOfficeArtifact(exportArtifact, baseArtifacts, querySnapshots, imageAssets);
-          if (destination === "legacy-office") {
-            const { exportLegacyOfficeFile } = await import("../lib/desktop-bridge");
-            const legacy = await exportLegacyOfficeFile({ bytes: modernResult.bytes, fileName: modernResult.fileName });
-            result = {
-              bytes: legacy.bytes,
-              fileName: legacy.fileName,
-              mimeType: targetType === "DOC" ? "application/msword" : "application/vnd.ms-powerpoint",
-              targetType: targetType === "DOC" ? "doc" : "ppt",
-              warnings: [
-                ...modernResult.warnings,
-                legacy.warning,
-                "Legacy Office output is a compatibility handoff, not Rune's canonical source. Verify the downloaded file in Microsoft Office before delivery.",
-              ],
-            };
-          } else {
-            result = modernResult;
-          }
-        }
-      } else if (destination === "html") {
-        const { exportDeckHtml } = await import("../lib/html-export");
-        result = exportDeckHtml(targetArtifact, baseArtifacts, querySnapshots, imageAssets);
-      } else {
-        const { exportPdfArtifact } = await import("../lib/pdf-export");
-        result = await exportPdfArtifact(targetArtifact, baseArtifacts, querySnapshots, undefined, imageAssets);
-      }
+      const { prepareWorkspaceFileExport } = await import("../lib/workspace-file-export-runtime");
+      const result = await prepareWorkspaceFileExport(destination, targetArtifact, baseArtifacts, {
+        loadImageAsset: getRuneImageAsset,
+      });
       setPendingExport({
         sourceArtifactId: targetArtifact.id,
         sourceArtifactName: targetArtifact.name,

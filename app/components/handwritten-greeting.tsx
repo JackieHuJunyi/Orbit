@@ -105,6 +105,7 @@ export function HandwrittenGreeting({
       data-ink-motion="nib-led-ribbon"
       data-ink-trace="progressive"
       data-motion-sequence="write-settle-reveal"
+      data-writing-continuity={script === "cursive" || script === "arabic" ? "connected" : "stroke-ordered"}
       data-writing-style="pressure-calligraphy"
       data-stroke-count={motion.strokes.length}
       preserveAspectRatio="xMidYMid meet"
@@ -153,7 +154,7 @@ export function HandwrittenGreeting({
           <stop offset="1" stopColor="white" stopOpacity="0" />
         </linearGradient>
         <filter colorInterpolationFilters="sRGB" height="180%" id={glowId} width="130%" x="-15%" y="-40%">
-          <feGaussianBlur stdDeviation="5.2" />
+          <feGaussianBlur stdDeviation="3.4" />
         </filter>
         <filter colorInterpolationFilters="sRGB" height="150%" id={inkBleedId} width="112%" x="-6%" y="-25%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="1.15" />
@@ -163,7 +164,7 @@ export function HandwrittenGreeting({
         </filter>
         <filter colorInterpolationFilters="sRGB" height="130%" id={inkTextureId} width="106%" x="-3%" y="-15%">
           <feTurbulence baseFrequency="0.72" numOctaves="2" result="inkGrain" seed="17" type="fractalNoise" />
-          <feDisplacementMap in="SourceGraphic" in2="inkGrain" scale="0.72" xChannelSelector="R" yChannelSelector="G" />
+          <feDisplacementMap in="SourceGraphic" in2="inkGrain" scale="0.44" xChannelSelector="R" yChannelSelector="G" />
         </filter>
         <mask height="220" id={revealMaskId} maskUnits="userSpaceOnUse" width={canvasWidth} x="0" y="0">
           {motion.strokes.map((stroke, index) => (

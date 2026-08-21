@@ -2593,3 +2593,13 @@ Rune 已经支持 readable source、桌面端 legacy Office、OOXML、OpenDocume
 v1.37 新增轻量 `workspace-file-import` 边界。一个有序、冻结的 adapter 列表为 legacy Office、OOXML、ODF、PDF 和 readable source 分别声明 extensions、case-insensitive matcher、byte limit/label 与 async converter；最后的 source fallback 仍必须经过 canonical Artifact detector，不能为未知字节猜类型。文件选择器的 `accept`、读取前体积拒绝、PDF 扫描页分析、普通批量转换和 OCR 后续批量转换都消费这组事实。OCR 路径只额外提供按原始 file index 绑定的选择、abort signal 和 progress callback。
 
 适配器只返回按输入顺序排列的 Artifact candidates、带文件名前缀的 fidelity warnings 与 prepared content-hash assets；collision、focused-task binding、whole-workspace validation、review、asset compensation 和 persistence 继续属于原有事务。Office/ODF/PDF/OCR converter 仍用 dynamic import，不因抽象而进入首包。Workbench 从 6,381 行降到 6,255 行，minified entry 为 527,519 bytes；5 条新合同、643 条 unit、27 条 render 与 49 条 Chromium 全部通过。未来新增格式需要一项 adapter、明确的输入/保真/敌对文件合同和对应 fixture，而不是再向 UI 协调器复制条件分支。
+
+## 140. 导出能力必须先声明，再由一个惰性运行时准备可审核交付
+
+v1.38 将 CSV/JSON、DOCX/XLSX/PPTX、DOC/PPT、ODT/ODS/ODP、HTML 与 PDF 从 Workbench 的多个 helper、布尔值和长条件链收进两层边界。轻量 `workspace-file-export` 只回答“这个 Artifact 可以交付成什么”；Document、Data、Presentation 分别得到固定目标，Query 与 Chart 继续作为依赖而不假装是独立成品。UI 标签、菜单可见性与准备入口消费同一组 capability，新增格式不再需要到多个组件位置复制 kind 判断。
+
+`workspace-file-export-runtime` 只在用户选择目标后加载。它一次收集 metric/Chart 引用的 Query，重跑 exact Data revision，拒绝 truncated evidence，校验本地 content-hash 图片闭包，并在 Office/ODF 类交付前编译 binding；随后由 exhaustive destination record 懒加载对应 writer。CSV/JSON 不启动 DuckDB 或图片存储。运行时只能返回 bytes、filename、MIME、target 与 fidelity notes，不能下载、审批、持久化或写 source；原 pending review 继续拥有 base-workspace capture、stale rejection 与唯一确认下载能力。
+
+同一版本把首轮开机表演从“分段擦出 Hello”收敛为真正的连续主笔势：拉丁/西里尔首字母与横笔完成后，余下连笔由一个不中断的 path 写成；简中/繁中和日文增加有方向的收锋，中日韩仍保持有界笔势。彩墨减少雾化、提高干净边缘，完成后才展开设置；reduced motion 与 forced colors 继续立即静态显示。这是 Rune 自己的字形遮罩、笔势与光谱，不复制 Apple 资产。
+
+Workbench 降至 6,125 行，首屏 entry 为 525,336 bytes；5 条导出合同与完整 648 unit、27 render、49 Chromium gate 保护这次收敛。下一格式仍必须先定义产品能力、输入上限、保真边界、敌对输入和真实 fixture，不能把 converter registry 扩张成任意第三方插件权限。

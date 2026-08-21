@@ -99,11 +99,11 @@ function cursiveStrokes(width: number, count: number, direction: GreetingWriting
       strokeWidth: 24,
       weight: 0.09,
     },
-    ...cursiveBodyPaths(width, count).map((path, index, paths) => ({
-      path,
-      strokeWidth: 54 - (index % 3) * 2,
-      weight: 0.65 / paths.length,
-    })),
+    {
+      path: connectedCursiveBodyPath(width, count),
+      strokeWidth: 52,
+      weight: 0.65,
+    },
   ];
 
   if (direction === "ltr") return raw;
@@ -149,6 +149,15 @@ function compactScriptStrokes(
         )} 165 ${point(right - slot * 0.08)} 170`,
         strokeWidth: brushWidth,
         weight: 0.86,
+      });
+    }
+    if (strokes.length < 12 && (script === "logographic" || script === "kana")) {
+      strokes.push({
+        path: `M${point(left + slot * 0.22)} 171 C${point(left + slot * 0.4)} 145 ${point(
+          left + slot * 0.67,
+        )} 121 ${point(right - slot * 0.12)} 108`,
+        strokeWidth: brushWidth - 3,
+        weight: 0.82,
       });
     }
   }

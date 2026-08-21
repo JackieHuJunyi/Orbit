@@ -2,14 +2,16 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [main, legacyOffice, preload, packageJson, workbench, workspaceFileImport] = await Promise.all([
-  readFile(new URL("../desktop/main.mjs", import.meta.url), "utf8"),
-  readFile(new URL("../desktop/legacy-office.mjs", import.meta.url), "utf8"),
-  readFile(new URL("../desktop/preload.cjs", import.meta.url), "utf8"),
-  readFile(new URL("../package.json", import.meta.url), "utf8"),
-  readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
-  readFile(new URL("../app/lib/workspace-file-import.ts", import.meta.url), "utf8"),
-]);
+const [main, legacyOffice, preload, packageJson, workbench, workspaceFileImport, workspaceFileExportRuntime] =
+  await Promise.all([
+    readFile(new URL("../desktop/main.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/legacy-office.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/preload.cjs", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/workspace-file-import.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
+  ]);
 
 test("ships one context-isolated desktop conversion capability without renderer Node access", () => {
   assert.match(main, /contextIsolation:\s*true/);
@@ -44,8 +46,9 @@ test("legacy Office conversion is bounded, macro-disabled, temporary, and review
   assert.match(workbench, /prepareWorkspaceImportReview/);
   assert.match(legacyOffice, /format document97/);
   assert.match(legacyOffice, /save as presentation/);
-  assert.match(workbench, /exportLegacyOfficeFile/);
-  assert.match(workbench, /Legacy Office output is a compatibility handoff/);
+  assert.match(workspaceFileExportRuntime, /exportLegacyOfficeFile/);
+  assert.match(workbench, /workspace-file-export-runtime/);
+  assert.match(workspaceFileExportRuntime, /Legacy Office output is a compatibility handoff/);
 });
 
 test("desktop navigation remains pinned to Rune's ephemeral loopback origin", () => {

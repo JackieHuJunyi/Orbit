@@ -168,14 +168,14 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/pdf-import-client.ts"));
   assert.equal(manifest["app/lib/odf-import.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/odf-import.ts"));
-  assert.equal(manifest["app/lib/office-export.ts"]?.isDynamicEntry, true);
-  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/office-export.ts"));
-  assert.equal(manifest["app/lib/odf-export.ts"]?.isDynamicEntry, true);
-  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/odf-export.ts"));
-  assert.equal(manifest["app/lib/html-export.ts"]?.isDynamicEntry, true);
-  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/html-export.ts"));
-  assert.equal(manifest["app/lib/pdf-export.ts"]?.isDynamicEntry, true);
-  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/pdf-export.ts"));
+  const exportRuntimeEntry = manifest["app/lib/workspace-file-export-runtime.ts"];
+  assert.equal(exportRuntimeEntry?.isDynamicEntry, true);
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/workspace-file-export-runtime.ts"));
+  for (const exportModule of ["office-export", "odf-export", "html-export", "pdf-export"]) {
+    const exportModuleEntry = `app/lib/${exportModule}.ts`;
+    assert.equal(manifest[exportModuleEntry]?.isDynamicEntry, true);
+    assert.ok(exportRuntimeEntry.dynamicImports?.includes(exportModuleEntry));
+  }
   assert.equal(manifest["app/lib/agent-evidence.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/agent-evidence.ts"));
   assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
@@ -233,17 +233,19 @@ test("ships bounded semantic HTML slides as continuous exact-source preview page
 });
 
 test("keeps semantic HTML presentation handoff explicit and outside the startup graph", async () => {
-  const [workbench, officeExport, odfExport, pdfExport, conversion] = await Promise.all([
+  const [workbench, exportCapabilities, officeExport, odfExport, pdfExport, conversion] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/office-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/odf-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/pdf-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/semantic-html-presentation-export.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(workbench, /if \(artifact\.kind === "slides"\) return "PPTX"/u);
-  assert.match(workbench, /if \(artifact\.kind === "slides"\) return "ODP"/u);
-  assert.match(workbench, /selectedArtifact\?\.kind === "slides"/u);
+  assert.match(exportCapabilities, /slides: "pptx" as const/u);
+  assert.match(exportCapabilities, /slides: "odp" as const/u);
+  assert.match(exportCapabilities, /slides: "html" as const/u);
+  assert.match(workbench, /selectedExportCapability\("html"\)/u);
   assert.match(officeExport, /convertSemanticHtmlPresentationToDeck/);
   assert.match(odfExport, /convertSemanticHtmlPresentationToDeck/);
   assert.match(pdfExport, /convertSemanticHtmlPresentationToDeck/);

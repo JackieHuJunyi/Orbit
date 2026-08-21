@@ -232,7 +232,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   height: 100%;
   overflow: visible;
   font-family: "Snell Roundhand", "Segoe Script", "Apple Chancery", cursive;
-  font-size: 174px;
+  font-size: 188px;
   font-kerning: normal;
   font-optical-sizing: auto;
   font-weight: 400;
@@ -241,18 +241,18 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   --greeting-cycle-duration: 4400ms;
 }
 
-.welcome-greeting.long { font-size: 120px; letter-spacing: -.035em; }
+.welcome-greeting.long { font-size: 126px; letter-spacing: -.035em; }
 .welcome-greeting[data-greeting-locale^="zh"] { font-family: "Kaiti SC", STKaiti, "Songti SC", serif; font-weight: 560; letter-spacing: -.075em; }
 .welcome-greeting[data-greeting-locale="ja"] { font-family: YuKyokasho, "Hiragino Mincho ProN", serif; font-weight: 560; letter-spacing: -.07em; }
 .welcome-greeting[data-greeting-locale="ko"] { font-family: AppleMyungjo, "Nanum Myeongjo", serif; font-weight: 560; letter-spacing: -.06em; }
 .welcome-greeting[data-greeting-locale="ru"] { font-family: "PT Serif", Georgia, serif; font-style: italic; font-weight: 500; letter-spacing: -.05em; }
 .welcome-greeting[data-greeting-locale="ar"] { font-family: "Geeza Pro", "Noto Naskh Arabic", serif; font-weight: 500; letter-spacing: 0; }
 .welcome-greeting-fill { stroke: none; }
-.welcome-greeting-fill-glow { opacity: .22; }
+.welcome-greeting-fill-glow { opacity: .16; }
 .welcome-greeting-ink-bleed { opacity: 0; pointer-events: none; }
 .welcome-greeting-fill-bleed { opacity: .44; }
 .welcome-greeting-fill-reveal {
-  opacity: .92;
+  opacity: .98;
 }
 .welcome-greeting-fill-settled { opacity: 0; }
 .welcome-greeting-reveal-stroke {
@@ -263,11 +263,11 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   pointer-events: none;
 }
 .welcome-greeting-ink-trails-glow {
-  opacity: .56;
+  opacity: .4;
 }
 .welcome-greeting-ink-ribbons {
   mix-blend-mode: screen;
-  opacity: .88;
+  opacity: .74;
   pointer-events: none;
 }
 .welcome-greeting-ink-ribbon {
@@ -297,7 +297,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .welcome-greeting-ink-bristles { mix-blend-mode: screen; opacity: .58; }
 .welcome-greeting-ink-bristle { stroke-dashoffset: 1; }
 .welcome-greeting-stroke-head { opacity: 0; }
-.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .2); filter: blur(4.5px); }
+.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .18); filter: blur(3.2px); }
 .welcome-greeting-stroke-head-wake {
   opacity: .34;
   filter: blur(1.9px);

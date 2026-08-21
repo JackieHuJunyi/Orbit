@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { planGreetingMotion } from "../app/lib/greeting-motion.ts";
 
-test("plans a bounded cursive greeting as an opening, cross stroke, and sequential letter gestures", () => {
+test("plans a bounded cursive greeting as an opening, cross stroke, and one connected letter gesture", () => {
   const plan = planGreetingMotion({
     canvasWidth: 592,
     direction: "ltr",
@@ -15,9 +15,10 @@ test("plans a bounded cursive greeting as an opening, cross stroke, and sequenti
   assert.equal(plan.motionCount, 6);
   assert.equal(plan.writeDurationMs, 2_190);
   assert.equal(plan.settleDelayMs, 2_382);
-  assert.equal(plan.strokes.length, 7);
+  assert.equal(plan.strokes.length, 3);
   assert.match(plan.strokes[0].path, /^M48 174 /);
   assert.match(plan.strokes[2].path, /^M96\.3 148 /);
+  assert.equal(plan.strokes[2].path.match(/M/g)?.length, 1);
   assert.ok(plan.strokes[0].delayMs < plan.strokes[1].delayMs);
   assert.ok(plan.strokes[1].delayMs < plan.strokes[2].delayMs);
   assert.ok(plan.strokes.at(-1).delayMs + plan.strokes.at(-1).durationMs < plan.settleDelayMs);
@@ -50,7 +51,7 @@ test("gives logographic, kana, and Hangul greetings bounded sequential brush str
 
   assert.deepEqual(
     plans.map((plan) => plan.strokes.length),
-    [6, 12, 12],
+    [8, 12, 12],
   );
   for (const plan of plans) {
     assert.ok(plan.strokes.length > 3);
@@ -70,7 +71,7 @@ test("bounds hostile geometry and visible-symbol counts without mutating input",
 
   assert.equal(plan.motionCount, 14);
   assert.equal(plan.writeDurationMs, 3_000);
-  assert.equal(plan.strokes.length, 12);
+  assert.equal(plan.strokes.length, 3);
   assert.match(plan.strokes[0].path, /^M48 174 /);
   assert.ok(plan.strokes.at(-1).delayMs + plan.strokes.at(-1).durationMs < plan.settleDelayMs);
   assert.deepEqual(input, { canvasWidth: Number.POSITIVE_INFINITY, direction: "ltr", unitCount: 9_999, value: "Hi" });
