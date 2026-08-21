@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.44 with one shared non-modal menu focus protocol, an extracted capability-free Settings surface, complete keyboard entry/exit, and nine-locale compact/RTL popover geometry.
 - 2026-08-21 — Shipped Rune v1.43 with one frozen nine-locale handwriting timeline, exact path-length completion shared by the welcome scene, and a lighter spectrum ink stack informed by Chánh Đại's Apple Hello Effect without copying its credited glyph assets.
 - 2026-08-21 — Shipped Rune v1.42 with one registry-rendered export menu, exact capability-owned presentation metadata, and complete before-paint keyboard focus across changing Artifact formats.
 - 2026-08-21 — Shipped Rune v1.41 with a finite full-screen spectrum-ribbon crossfade behind the multilingual startup mark, derived from reviewed screensaver choreography without copying Apple-owned videos or glyph paths.

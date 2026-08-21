@@ -2643,3 +2643,11 @@ Chánh Đại 的 Apple Hello Effect 值得学习的不是现成 `hello` 字形�
 v1.43 新增 React-free `greeting-presentation`：locale、问候文字和可选速度一次编译为 direction、script strategy、canvas width 与完整 frozen motion plan。stroke write、settle、completion、5–7 秒 cycle 都只有一个 owner；`HandwrittenGreeting`、`WelcomeExperience` 与背景 crossfade 只消费这份结果。九种语言逐项回归，阿拉伯文仍以完整 RTL shaping run 运动，中日韩仍使用有界有序笔势。
 
 视觉也按参考的克制原则减法：保留彩色 mask、轻微字形 bloom、纹理 settle 和一个小型 path front，移除重复细轨迹、横向扫光及笔尖的独立 bloom/highlight。Rune 不导入参考页的 Motion 依赖，也不复制其 credit 指向的 Apple/SF-Hello 字形路径、字体或资产。首屏从 525,719 降至 524,689 bytes；高级感来自一条清楚、连续、可完成的动作，而不是更多发光节点。
+
+## 146. 相同形状的菜单应该共享交互效果，而不是共享业务状态
+
+v1.42 已经证明 Export 可以是一个受控、registry-rendered 的菜单，但左下角 More Tools 仍把帮助、模型、Pilot Evidence、文件夹同步、外观和版本的完整 JSX 留在 Workbench。两者看起来都是 popover，却只有 Export 能在打开时获得焦点、使用方向键和归还 trigger；用户用键盘进入 Settings 时会遇到另一套不完整产品。这也使 theme lookup、folder 条件项和菜单图标继续扩大主协调器。
+
+v1.44 抽出受控 `WorkbenchSettingsMenu`，再用一个窄 `useWorkbenchMenuFocus` 统一两者的纯交互效果。hook 只知道 ordered button refs、open state 和 trigger，不知道导出格式、模型、文件夹或主题；WorkBench 仍独占 mutual exclusion 和每个 callback 的能力。folder 未连接时四个 action，连接后增加 Pull/Push；disabled Pilot Evidence 不进入方向键序列，动态 ref 在 paint 前按当前数量截断。这样复用的是可证明的 focus protocol，不是把不相关业务塞进一个“万能菜单”。
+
+九语言几何回归同时找到了真实的 compact 缺陷：390px 下 Settings 仍带 desktop rail offset，LTR 向右溢出，Arabic RTL 向左溢出。修复用 compact 的双侧 10px physical inset 明确替换桌面 anchor，而不是只把 width 改小。现在 desktop/compact × 九语言都验证菜单位于 viewport、首项聚焦和 Escape 回到 trigger。Workbench 从 5,957 降到 5,826 行，首包为 525,898 bytes / 530 KB；后续新增工具只需给受控 Settings 增加显示事实与 Workbench callback，不需要再复制键盘或定位状态机。

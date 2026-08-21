@@ -118,6 +118,18 @@ for (const viewport of VIEWPORTS) {
         await expect(page.getByRole("main")).toBeVisible();
         await expect(page.locator(".topbar")).toBeVisible();
 
+        const settingsTrigger = page.locator("[data-settings-trigger]");
+        const settingsMenu = page.locator(".settings-popover");
+        await settingsTrigger.focus();
+        await settingsTrigger.press("ArrowDown");
+        await expect(settingsMenu).toBeVisible();
+        await expect(settingsMenu.locator('[role="menuitem"]:not(:disabled)').first()).toBeFocused();
+        await expectInsideViewport(page, settingsMenu);
+        await expectNoDocumentOverflow(page);
+        await page.keyboard.press("Escape");
+        await expect(settingsMenu).toBeHidden();
+        await expect(settingsTrigger).toBeFocused();
+
         await page.evaluate(() =>
           window.dispatchEvent(
             new KeyboardEvent("keydown", { key: "w", ctrlKey: true, bubbles: true, cancelable: true }),

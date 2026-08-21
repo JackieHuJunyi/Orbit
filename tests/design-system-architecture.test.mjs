@@ -81,6 +81,35 @@ test("keeps the navigable Deck canvas inside the content layer and semantic moti
   assert.doesNotMatch(motion, /\.welcome-window\s*\{[^}]*animation:\s*rune-float/s);
 });
 
+test("keeps non-modal menu focus shared while business capabilities remain in the Workbench", async () => {
+  const [workbench, activityRail, exportMenu, settingsMenu, menuFocus, responsive] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-activity-rail.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/use-workbench-menu-focus.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/responsive.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(workbench, /<WorkbenchSettingsMenu/);
+  assert.match(activityRail, /onOpenSettings:\s*\(edge: WorkbenchMenuFocusEdge\) => void/);
+  assert.match(exportMenu, /useWorkbenchMenuFocus\(\{/);
+  assert.match(settingsMenu, /useWorkbenchMenuFocus\(\{/);
+  assert.match(settingsMenu, /actions\.length \+ RUNE_APPEARANCE_THEMES\.length/);
+  assert.doesNotMatch(
+    settingsMenu,
+    /useState|setArtifacts|persistDeviceWorkspace|localStorage|sessionStorage|indexedDB|fetch\(|showDirectoryPicker|createObjectURL/,
+  );
+  assert.doesNotMatch(menuFocus, /WorkspaceArtifact|model|directory|theme|persist|localStorage|indexedDB|fetch\(/i);
+  assert.match(menuFocus, /!item\.disabled/);
+  assert.match(menuFocus, /itemRefs\.current\.length = itemCount/);
+  assert.match(
+    responsive,
+    /@media \(max-width:\s*680px\)[\s\S]*\.settings-popover\s*\{[^}]*right:\s*10px;[^}]*bottom:\s*auto;[^}]*left:\s*10px;/,
+  );
+  assert.match(responsive, /html\[dir="rtl"\] \.settings-popover\s*\{[^}]*right:\s*10px;[^}]*left:\s*10px;/);
+});
+
 test("keeps the startup spectrum inside one restrained path-timed handwritten performance", async () => {
   const [component, ambient, experience, onboarding, motion] = await Promise.all([
     readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),

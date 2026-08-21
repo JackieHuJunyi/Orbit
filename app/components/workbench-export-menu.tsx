@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronDown, FileArchive, FileCode2, FileOutput, FileText, LoaderCircle } from "lucide-react";
-import { useLayoutEffect, useRef, type KeyboardEvent, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
+import { useWorkbenchMenuFocus } from "./use-workbench-menu-focus";
 import type { RuneUICopy } from "../lib/localization";
 import type { WorkspaceFileExportCapability, WorkspaceFileExportDestination } from "../lib/workspace-file-export";
 
@@ -71,47 +72,15 @@ export function WorkbenchExportMenu({
   onPrepare,
 }: WorkbenchExportMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const requestedFocusRef = useRef<"first" | "last">("first");
   const visibleCapabilities = capabilities.filter(
     (capability) => !capability.presentation.desktopOnly || legacyOfficeAvailable,
   );
-
-  useLayoutEffect(() => {
-    itemRefs.current.length = visibleCapabilities.length;
-    if (!open) return;
-    const requestedIndex = requestedFocusRef.current === "last" ? visibleCapabilities.length - 1 : 0;
-    itemRefs.current[requestedIndex]?.focus({ preventScroll: true });
-  }, [open, visibleCapabilities.length]);
-
-  function closeAndRestoreFocus() {
-    onOpenChange(false);
-    window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
-  }
-
-  function moveMenuFocus(event: KeyboardEvent<HTMLDivElement>) {
-    const items = itemRefs.current.filter((item): item is HTMLButtonElement => Boolean(item));
-    if (!items.length) return;
-    const currentIndex = Math.max(0, items.indexOf(document.activeElement as HTMLButtonElement));
-    let nextIndex: number | null = null;
-    if (event.key === "ArrowDown") nextIndex = (currentIndex + 1) % items.length;
-    if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + items.length) % items.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = items.length - 1;
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeAndRestoreFocus();
-      return;
-    }
-    if (event.key === "Tab") {
-      onOpenChange(false);
-      return;
-    }
-    if (nextIndex == null) return;
-    event.preventDefault();
-    items[nextIndex]?.focus({ preventScroll: true });
-  }
+  const { onMenuKeyDown, requestOpen, setItemRef } = useWorkbenchMenuFocus({
+    itemCount: visibleCapabilities.length,
+    open,
+    onOpenChange,
+    restoreFocusRef: triggerRef,
+  });
 
   return (
     <div className="export-menu" ref={containerRef}>
@@ -120,14 +89,13 @@ export function WorkbenchExportMenu({
         className={`button ghost-button export-menu-trigger ${open ? "active" : ""}`.trim()}
         type="button"
         onClick={() => {
-          requestedFocusRef.current = "first";
-          onOpenChange(!open);
+          if (open) onOpenChange(false);
+          else requestOpen("first");
         }}
         onKeyDown={(event) => {
           if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
           event.preventDefault();
-          requestedFocusRef.current = event.key === "ArrowUp" ? "last" : "first";
-          onOpenChange(true);
+          requestOpen(event.key === "ArrowUp" ? "last" : "first");
         }}
         disabled={disabled}
         aria-haspopup="menu"
@@ -138,7 +106,7 @@ export function WorkbenchExportMenu({
         <ChevronDown aria-hidden="true" />
       </button>
       {open && (
-        <div className="export-popover" role="menu" aria-label={copy.exportMenuBody} onKeyDown={moveMenuFocus}>
+        <div className="export-popover" role="menu" aria-label={copy.exportMenuBody} onKeyDown={onMenuKeyDown}>
           <div>
             <span className="overline">{copy.exportMenu}</span>
             <strong>{copy.exportMenuBody}</strong>
@@ -146,7 +114,7 @@ export function WorkbenchExportMenu({
           {visibleCapabilities.map((capability, index) => (
             <button
               ref={(element) => {
-                itemRefs.current[index] = element;
+                setItemRef(index, element);
               }}
               type="button"
               role="menuitem"

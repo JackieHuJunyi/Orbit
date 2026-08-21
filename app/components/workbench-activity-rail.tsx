@@ -10,6 +10,8 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
+import type { RefObject } from "react";
+import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 
 export type WorkbenchActivityRailProps = Readonly<{
   railView: "workspace" | "graph";
@@ -23,6 +25,7 @@ export type WorkbenchActivityRailProps = Readonly<{
   resetSampleLabel: string;
   settingsLabel: string;
   settingsExpanded: boolean;
+  settingsTriggerRef: RefObject<HTMLButtonElement | null>;
   newArtifactDisabled: boolean;
   operatingReviewDisabled: boolean;
   documentBriefingDisabled: boolean;
@@ -34,6 +37,7 @@ export type WorkbenchActivityRailProps = Readonly<{
   onFocusAgent: () => void;
   onReset: () => void;
   onToggleSettings: () => void;
+  onOpenSettings: (edge: WorkbenchMenuFocusEdge) => void;
 }>;
 
 /** Props-only activity rail; the Workbench owns every action it dispatches. */
@@ -49,6 +53,7 @@ export function WorkbenchActivityRail({
   resetSampleLabel,
   settingsLabel,
   settingsExpanded,
+  settingsTriggerRef,
   newArtifactDisabled,
   operatingReviewDisabled,
   documentBriefingDisabled,
@@ -60,6 +65,7 @@ export function WorkbenchActivityRail({
   onFocusAgent,
   onReset,
   onToggleSettings,
+  onOpenSettings,
 }: WorkbenchActivityRailProps) {
   return (
     <aside className="activity-rail" aria-label={sectionLabel}>
@@ -118,9 +124,15 @@ export function WorkbenchActivityRail({
           <RotateCcw />
         </button>
         <button
+          ref={settingsTriggerRef}
           className="activity-button"
           data-settings-trigger
           onClick={onToggleSettings}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+            event.preventDefault();
+            onOpenSettings(event.key === "ArrowUp" ? "last" : "first");
+          }}
           aria-label={settingsLabel}
           aria-expanded={settingsExpanded}
           aria-haspopup="menu"

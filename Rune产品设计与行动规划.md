@@ -2412,3 +2412,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - 视觉层只保留 spectrum mask、faint glyph bloom、textured settle 与 small path front；重复 trace、clipped sheen 和独立 head bloom/highlight 必须删除，避免把开机仪式重新堆成技术展示。
 - 只学习 Chánh Đại Apple Hello Effect 的显式时间轴和克制，不复制其 credit 指向的 glyph geometry，不加入 Motion、远程字体、Canvas 或外部媒体。Rune 的九语言 shaping、原创 path plan 和炫彩识别度保持独立。
 - duration scale 必须限制在 0.6–1.6，cycle 限制在 5–7 秒；reduced motion 立即显示完整静态字形。SSR 无 JavaScript 首帧、英文真实动画、阿拉伯 RTL、多语言 geometry 与 530 KB 首屏预算继续是发布门禁。
+
+### 17.75 v1.44 非模态菜单必须共享键盘协议，但不能共享业务权限
+
+- Export 与 More Tools 必须消费同一个 before-paint focus owner：点击或 Arrow Down 从首个 enabled item 开始，Arrow Up 从最后一项开始；方向键循环，Home/End 跳转，Tab 退出且不设 trap，Escape 关闭并把焦点归还给原 trigger。
+- disabled action 不得进入方向键序列。folder connect 使 Settings 从四个 action 扩到六个，或 Artifact 切换改变 Export item count 时，都必须按当前渲染数量截断 ref，不能保留 detached DOM identity。
+- `WorkbenchSettingsMenu` 只接收本地化 copy、theme、directory/evidence/busy facts 与 callbacks。它不得读取 Artifact、credential、storage、network 或 filesystem API，也不得拥有 review、persistence、download 或 workspace mutation。
+- Activity rail 继续是 props-only trigger surface；Settings/Export 的 mutual exclusion、guide/model/evidence/folder/theme 状态和所有业务 dispatch 仍由 Workbench 组装。
+- compact Settings 必须显式覆盖 desktop activity-rail offset，在 390px 的 LTR 与 RTL 中都保留 10px viewport inset、内部纵向滚动与正确 transform origin；不能只缩小 width 而保留会溢出的 left/right anchor。
+- 发布证据必须覆盖首次/末次 focus、disabled skip、Arrow wrap、Home/End、theme Enter、Tab dismissal、Escape return，以及简中、繁中、英、法、西、俄、阿、日、韩在 desktop/compact 的 viewport containment 与零横向溢出。

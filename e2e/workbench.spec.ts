@@ -535,14 +535,41 @@ test("selects an on-device OCR region without writing the workspace", async ({ p
   expect(pageErrors).toEqual([]);
 });
 
-test("opens the settings panel from the bottom-left gear", async ({ page }) => {
+test("owns complete keyboard focus in the bottom-left settings menu", async ({ page }) => {
   await openWorkbench(page);
+  const trigger = page.getByRole("button", { name: "More tools" });
   const panel = page.getByRole("menu", { name: "Workspace tools" });
-  await page.getByRole("button", { name: "More tools" }).click();
+  const actions = panel.getByRole("menuitem");
+  const themes = panel.getByRole("menuitemradio");
+
+  await trigger.focus();
+  await trigger.press("ArrowDown");
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole("menuitem", { name: /Model settings/ })).toBeVisible();
+  await expect(actions).toHaveCount(4);
+  await expect(themes).toHaveCount(12);
+  await expect(actions.nth(0)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(actions.nth(1)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(actions.nth(2)).toBeDisabled();
+  await expect(actions.nth(3)).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(themes.nth(11)).toHaveAccessibleName("Space Black");
+  await expect(themes.nth(11)).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "space-black");
+  await expect(panel).toBeVisible();
+  await page.keyboard.press("Home");
+  await expect(actions.nth(0)).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.press("ArrowUp");
+  await expect(themes.nth(11)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(panel).toBeHidden();
+  await expect.poll(() => page.evaluate(() => document.activeElement?.closest(".settings-popover") == null)).toBe(true);
 });
 
 test("applies weekly and monthly operating-review presets without guessing the exact period", async ({ page }) => {

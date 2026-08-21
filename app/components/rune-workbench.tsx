@@ -2,7 +2,6 @@
 
 import {
   BarChart3,
-  BookOpen,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -16,7 +15,6 @@ import {
   FileCode2,
   FilePlus2,
   FileText,
-  FolderOpen,
   History,
   LayoutGrid,
   ImagePlus,
@@ -24,14 +22,11 @@ import {
   LoaderCircle,
   PanelLeftClose,
   PanelLeftOpen,
-  Palette,
   Pin,
   Play,
   Presentation,
-  Search,
   RefreshCw,
-  Save,
-  Settings,
+  Search,
   TableProperties,
   Undo2,
   Upload,
@@ -65,6 +60,8 @@ import {
 import { AgentComposer, type AgentScope } from "./agent-composer";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchExportMenu } from "./workbench-export-menu";
+import { WorkbenchSettingsMenu } from "./workbench-settings-menu";
+import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 import { WorkbenchStatusBar } from "./workbench-statusbar";
 import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
@@ -176,13 +173,7 @@ import {
   type RuneUICopy,
 } from "../lib/localization";
 import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode } from "../lib/model-preference";
-import {
-  normalizeRuneAppearanceTheme,
-  RUNE_APPEARANCE_STORAGE_KEY,
-  RUNE_APPEARANCE_THEMES,
-  type RuneAppearanceTheme,
-} from "../lib/appearance";
-import { RUNE_PRODUCT_VERSION } from "../lib/product-meta";
+import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
 import {
   deferredSurfaceCopy,
   documentBriefingNoticeCopy,
@@ -862,6 +853,8 @@ export function RuneWorkbench() {
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
+  const toolsMenuRequestedFocusRef = useRef<WorkbenchMenuFocusEdge>("first");
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
@@ -885,10 +878,6 @@ export function RuneWorkbench() {
   savedOperatingReviewsRef.current = savedOperatingReviews;
   taskEvidenceRef.current = taskEvidence;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
-  const activeAppearance = useMemo(
-    () => RUNE_APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) ?? RUNE_APPEARANCE_THEMES[0],
-    [appearanceTheme],
-  );
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
     () =>
@@ -4180,7 +4169,6 @@ export function RuneWorkbench() {
   }
 
   function reviewPilotEvidenceExport() {
-    setToolsMenuOpen(false);
     setPilotEvidenceError("");
     try {
       const baseEvidence = taskEvidenceRef.current;
@@ -4520,6 +4508,7 @@ export function RuneWorkbench() {
           resetSampleLabel={ui.resetSample}
           settingsLabel={ui.moreTools}
           settingsExpanded={toolsMenuOpen}
+          settingsTriggerRef={settingsTriggerRef}
           newArtifactDisabled={artifactCreationDisabled}
           operatingReviewDisabled={artifactCreationDisabled}
           documentBriefingDisabled={
@@ -4543,161 +4532,41 @@ export function RuneWorkbench() {
           onReset={resetWorkspace}
           onToggleSettings={() => {
             setExportMenuOpen(false);
+            if (!toolsMenuOpen) toolsMenuRequestedFocusRef.current = "first";
             setToolsMenuOpen((open) => !open);
+          }}
+          onOpenSettings={(edge) => {
+            setExportMenuOpen(false);
+            toolsMenuRequestedFocusRef.current = edge;
+            setToolsMenuOpen(true);
           }}
         />
 
-        {toolsMenuOpen && (
-          <div className="tools-popover settings-popover" role="menu" aria-label={ui.workspaceTools} ref={toolsMenuRef}>
-            <header>
-              <span className="overline">{ui.workspaceTools}</span>
-              <strong>{ui.workspaceToolsBody}</strong>
-            </header>
-            <div className="tools-menu-actions">
-              <button
-                type="button"
-                role="menuitem"
-                disabled={Boolean(activeVisualSourceDraft)}
-                onClick={() => {
-                  setToolsMenuOpen(false);
-                  openWelcomeGuide();
-                }}
-              >
-                <BookOpen aria-hidden="true" />
-                <span>
-                  <strong>{ui.help}</strong>
-                  <small>{ui.brandSubtitle}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                disabled={Boolean(activeVisualSourceDraft)}
-                onClick={() => {
-                  setToolsMenuOpen(false);
-                  openModelSettings();
-                }}
-              >
-                <Settings aria-hidden="true" />
-                <span>
-                  <strong>{ui.models}</strong>
-                  <small>{ui.localFirst}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                disabled={!taskEvidence.runs.length || Boolean(activeVisualSourceDraft)}
-                onClick={reviewPilotEvidenceExport}
-              >
-                <FileCode2 aria-hidden="true" />
-                <span>
-                  <strong>{pilotEvidenceUI.menuTitle}</strong>
-                  <small>{taskEvidence.runs.length ? pilotEvidenceUI.menuBody : pilotEvidenceUI.menuEmpty}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)}
-                onClick={() => {
-                  setToolsMenuOpen(false);
-                  void connectWorkspaceFolder();
-                }}
-              >
-                <FolderOpen aria-hidden="true" />
-                <span>
-                  <strong>{directoryHandle?.name ?? ui.openFolder}</strong>
-                  <small>{ui.workspace}</small>
-                </span>
-              </button>
-              {directoryHandle && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)}
-                  onClick={() => {
-                    setToolsMenuOpen(false);
-                    void pullWorkspaceFolder();
-                  }}
-                >
-                  <RefreshCw aria-hidden="true" />
-                  <span>
-                    <strong>{ui.pull}</strong>
-                    <small>
-                      {directoryState === "changed"
-                        ? runeText(locale, "Changes detected", "检测到变化")
-                        : directoryHandle.name}
-                    </small>
-                  </span>
-                </button>
-              )}
-              {directoryHandle && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={directoryState === "syncing" || Boolean(activeVisualSourceDraft)}
-                  onClick={() => {
-                    setToolsMenuOpen(false);
-                    void pushWorkspaceFolder();
-                  }}
-                >
-                  <Save aria-hidden="true" />
-                  <span>
-                    <strong>{ui.push}</strong>
-                    <small>{directoryHandle.name}</small>
-                  </span>
-                </button>
-              )}
-            </div>
-            <div className="tools-appearance-header">
-              <Palette aria-hidden="true" />
-              <span>
-                <strong>{ui.appearance}</strong>
-                <small>{ui.appearanceBody}</small>
-              </span>
-            </div>
-            <div className="tools-material-preview" aria-live="polite">
-              <span
-                className="appearance-swatch"
-                aria-hidden="true"
-                style={{
-                  background: `linear-gradient(145deg, ${activeAppearance.finish[0]}, ${activeAppearance.finish[1]})`,
-                }}
-              />
-              <span>
-                <small>{ui.activeTheme}</small>
-                <strong>{runeText(locale, activeAppearance.english, activeAppearance.chinese)}</strong>
-              </span>
-            </div>
-            <div className="tools-theme-grid" aria-label={ui.appearanceBody}>
-              {RUNE_APPEARANCE_THEMES.map((theme) => (
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={appearanceTheme === theme.id}
-                  className={appearanceTheme === theme.id ? "selected" : ""}
-                  aria-label={runeText(locale, theme.english, theme.chinese)}
-                  title={runeText(locale, theme.english, theme.chinese)}
-                  onClick={() => setAppearanceTheme(theme.id)}
-                  key={theme.id}
-                >
-                  <span
-                    className="appearance-swatch"
-                    aria-hidden="true"
-                    style={{ background: `linear-gradient(145deg, ${theme.finish[0]}, ${theme.finish[1]})` }}
-                  />
-                  <span className="tools-theme-name">{runeText(locale, theme.english, theme.chinese)}</span>
-                  {appearanceTheme === theme.id && <Check aria-hidden="true" />}
-                </button>
-              ))}
-            </div>
-            <footer className="tools-version">
-              <span>{ui.version}</span>
-              <strong>Rune {RUNE_PRODUCT_VERSION}</strong>
-            </footer>
-          </div>
-        )}
+        <WorkbenchSettingsMenu
+          appearanceTheme={appearanceTheme}
+          blocked={Boolean(activeVisualSourceDraft)}
+          containerRef={toolsMenuRef}
+          copy={ui}
+          directoryBusy={directoryState === "syncing"}
+          directoryChanged={directoryState === "changed"}
+          directoryName={directoryHandle?.name ?? null}
+          hasPilotEvidence={Boolean(taskEvidence.runs.length)}
+          locale={locale}
+          open={toolsMenuOpen}
+          pilotEvidenceBody={pilotEvidenceUI.menuBody}
+          pilotEvidenceEmpty={pilotEvidenceUI.menuEmpty}
+          pilotEvidenceTitle={pilotEvidenceUI.menuTitle}
+          requestedFocusRef={toolsMenuRequestedFocusRef}
+          triggerRef={settingsTriggerRef}
+          onExportPilotEvidence={reviewPilotEvidenceExport}
+          onOpenChange={setToolsMenuOpen}
+          onOpenFolder={() => void connectWorkspaceFolder()}
+          onOpenGuide={openWelcomeGuide}
+          onOpenModels={openModelSettings}
+          onPullFolder={() => void pullWorkspaceFolder()}
+          onPushFolder={() => void pushWorkspaceFolder()}
+          onThemeChange={setAppearanceTheme}
+        />
 
         {fileRailOpen &&
           (railView === "graph" ? (

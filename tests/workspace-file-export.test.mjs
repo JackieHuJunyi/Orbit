@@ -270,11 +270,12 @@ test("fails before handoff on unsupported targets, truncated evidence, or missin
 });
 
 test("keeps capability metadata eager and the complete export runtime behind one typed lazy boundary", async () => {
-  const [capabilities, runtime, workbench, exportMenu] = await Promise.all([
+  const [capabilities, runtime, workbench, exportMenu, menuFocus] = await Promise.all([
     readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/use-workbench-menu-focus.ts", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(capabilities, /duckdb-client|office-export|odf-export|html-export|pdf-export|local-assets/);
@@ -302,10 +303,12 @@ test("keeps capability metadata eager and the complete export runtime behind one
   assert.match(workbench, /<WorkbenchExportMenu/);
   assert.match(exportMenu, /visibleCapabilities\.map\(\(capability, index\)/);
   assert.match(exportMenu, /capability\.presentation\.desktopOnly/);
-  assert.match(exportMenu, /ArrowDown/);
-  assert.match(exportMenu, /ArrowUp/);
-  assert.match(exportMenu, /Home/);
-  assert.match(exportMenu, /End/);
-  assert.match(exportMenu, /Escape/);
+  assert.match(exportMenu, /useWorkbenchMenuFocus\(\{/);
+  assert.match(exportMenu, /requestOpen\(event\.key === "ArrowUp" \? "last" : "first"\)/);
+  assert.match(menuFocus, /ArrowDown/);
+  assert.match(menuFocus, /ArrowUp/);
+  assert.match(menuFocus, /Home/);
+  assert.match(menuFocus, /End/);
+  assert.match(menuFocus, /Escape/);
   assert.doesNotMatch(exportMenu, /selectedArtifact\.kind|destination === "csv"|destination === "json"/);
 });

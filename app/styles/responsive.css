@@ -82,6 +82,8 @@
   .tools-popover,
   .export-popover { max-height: calc(100dvh - var(--rune-topbar-height) - 18px); }
   .tools-popover { top: 62px; width: calc(100vw - 20px); border-radius: 23px; }
+  .settings-popover { right: 10px; bottom: auto; left: 10px; transform-origin: top center; }
+  html[dir="rtl"] .settings-popover { right: 10px; left: 10px; transform-origin: top center; }
   .command-menu-backdrop { align-items: end; padding: 12px; }
   .command-menu { width: 100%; max-height: min(76dvh, 620px); border-radius: 24px; }
   .command-menu-search { min-height: 58px; grid-template-columns: 20px minmax(0, 1fr) 30px; padding-inline: 15px 11px; }

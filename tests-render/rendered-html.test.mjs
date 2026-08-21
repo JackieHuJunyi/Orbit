@@ -573,15 +573,38 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(html, />New</);
   assert.match(html, />Import</);
   assert.match(html, />Export</);
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-popover settings-popover" role="menu"/);
-  assert.match(source, /ui\.openFolder/);
-  assert.match(source, /setToolsMenuOpen\(false\);\s*openWelcomeGuide\(\);/s);
-  assert.match(source, /role="menuitemradio"/);
-  assert.match(source, /className="tools-theme-name"/);
+  const [source, settingsMenu, menuFocus] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/use-workbench-menu-focus.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(source, /<WorkbenchSettingsMenu/);
+  assert.doesNotMatch(source, /tools-theme-grid|RUNE_APPEARANCE_THEMES\.map/);
+  assert.match(settingsMenu, /className="tools-popover settings-popover"/);
+  assert.match(settingsMenu, /role="menu"/);
+  assert.match(settingsMenu, /label: directoryName \?\? copy\.openFolder/);
+  assert.match(settingsMenu, /actions\.length \+ RUNE_APPEARANCE_THEMES\.length/);
+  assert.match(settingsMenu, /role="menuitemradio"/);
+  assert.match(settingsMenu, /className="tools-theme-name"/);
+  assert.match(settingsMenu, /useWorkbenchMenuFocus\(\{/);
+  assert.match(menuFocus, /itemRefs\.current\.length = itemCount/);
+  assert.match(menuFocus, /!item\.disabled/);
+  assert.match(menuFocus, /event\.key === "ArrowDown"/);
+  assert.match(menuFocus, /event\.key === "ArrowUp"/);
+  assert.match(menuFocus, /event\.key === "Home"/);
+  assert.match(menuFocus, /event\.key === "End"/);
+  assert.match(menuFocus, /event\.key === "Tab"/);
+  assert.match(menuFocus, /event\.key === "Escape"/);
+  assert.match(menuFocus, /restoreFocusRef\.current\?\.focus/);
   assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit, minmax\(34px, 1fr\)\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
   assert.match(styles, /\.settings-popover\s*\{[^}]*bottom:\s*14px;/s);
+  const responsiveStyles = await readFile(new URL("../app/styles/responsive.css", import.meta.url), "utf8");
+  assert.match(
+    responsiveStyles,
+    /@media \(max-width:\s*680px\)[\s\S]*\.settings-popover\s*\{[^}]*right:\s*10px;[^}]*bottom:\s*auto;[^}]*left:\s*10px;/,
+  );
+  assert.match(responsiveStyles, /html\[dir="rtl"\] \.settings-popover\s*\{[^}]*right:\s*10px;[^}]*left:\s*10px;/);
 });
 
 test("records user-confirmed deliverable outcomes through the shared exact-revision ledger", async () => {
@@ -642,8 +665,11 @@ test("consolidates source language, checkpoints, and undo into one version surfa
 test("keeps the status bar task-focused and moves product version into More Tools", async () => {
   const response = await render();
   const html = await response.text();
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="tools-version"[\s\S]{0,120}<strong>Rune \{RUNE_PRODUCT_VERSION\}<\/strong>/);
+  const settingsMenu = await readFile(
+    new URL("../app/components/workbench-settings-menu.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(settingsMenu, /className="tools-version"[\s\S]{0,120}<strong>Rune \{RUNE_PRODUCT_VERSION\}<\/strong>/);
   assert.match(RUNE_PRODUCT_VERSION, /^\d+\.\d+$/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
   assert.doesNotMatch(html, /<span>UTF-8<\/span>/);
@@ -783,18 +809,20 @@ test("ships reviewed device-local images as content-hash Markdown references wit
 });
 
 test("ships one Apple-informed optical and motion system across onboarding and the editing workspace", async () => {
-  const [legacyStyles, styleFiles, source, welcome, handwrittenGreeting, fluidSurface] = await Promise.all([
-    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
-    Promise.all(
-      ["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) =>
-        readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8"),
+  const [legacyStyles, styleFiles, source, settingsMenu, welcome, handwrittenGreeting, fluidSurface] =
+    await Promise.all([
+      readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+      Promise.all(
+        ["tokens", "shell", "content", "overlays", "onboarding", "motion", "responsive"].map((name) =>
+          readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8"),
+        ),
       ),
-    ),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/fluid-surface.ts", import.meta.url), "utf8"),
-  ]);
+      readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/fluid-surface.ts", import.meta.url), "utf8"),
+    ]);
   const styles = [legacyStyles, ...styleFiles].join("\n");
   assert.match(styles, /--rune-content-wide:\s*1260px;/);
   assert.match(styles, /--rune-frame-width:\s*87\.5%;/);
@@ -840,7 +868,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /html\[data-locale="ja"\]/);
   assert.match(styles, /html\[data-locale="ko"\]/);
   assert.match(source, /moveMaterialLight/);
-  assert.match(source, /className="tools-material-preview"/);
+  assert.match(settingsMenu, /className="tools-material-preview"/);
   assert.match(welcome, /<HandwrittenGreeting/);
   assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /planGreetingPresentation\(\{ locale: greetingLocale, value: greeting \}\)/);
