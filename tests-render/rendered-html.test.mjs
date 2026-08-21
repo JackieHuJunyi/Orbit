@@ -234,19 +234,25 @@ test("ships bounded semantic HTML slides as continuous exact-source preview page
 });
 
 test("keeps semantic HTML presentation handoff explicit and outside the startup graph", async () => {
-  const [workbench, exportCapabilities, officeExport, odfExport, pdfExport, conversion] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/office-export.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/odf-export.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/pdf-export.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/semantic-html-presentation-export.ts", import.meta.url), "utf8"),
-  ]);
+  const [workbench, exportMenu, exportCapabilities, officeExport, odfExport, pdfExport, conversion] = await Promise.all(
+    [
+      readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/office-export.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/odf-export.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/pdf-export.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/semantic-html-presentation-export.ts", import.meta.url), "utf8"),
+    ],
+  );
 
   assert.match(exportCapabilities, /slides: "pptx" as const/u);
   assert.match(exportCapabilities, /slides: "odp" as const/u);
   assert.match(exportCapabilities, /slides: "html" as const/u);
-  assert.match(workbench, /selectedExportCapability\("html"\)/u);
+  assert.match(exportCapabilities, /detail: "standalone-html"/u);
+  assert.match(workbench, /capabilities=\{selectedExportCapabilities\}/u);
+  assert.match(exportMenu, /visibleCapabilities\.map/u);
+  assert.doesNotMatch(workbench, /selectedExportCapability\("html"\)/u);
   assert.match(officeExport, /convertSemanticHtmlPresentationToDeck/);
   assert.match(odfExport, /convertSemanticHtmlPresentationToDeck/);
   assert.match(pdfExport, /convertSemanticHtmlPresentationToDeck/);

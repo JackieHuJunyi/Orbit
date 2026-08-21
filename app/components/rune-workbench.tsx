@@ -13,10 +13,8 @@ import {
   Code2,
   Database,
   Eye,
-  FileArchive,
   FileCode2,
   FilePlus2,
-  FileOutput,
   FileText,
   FolderOpen,
   History,
@@ -66,6 +64,7 @@ import {
 } from "./artifact-previews";
 import { AgentComposer, type AgentScope } from "./agent-composer";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
+import { WorkbenchExportMenu } from "./workbench-export-menu";
 import { WorkbenchStatusBar } from "./workbench-statusbar";
 import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
@@ -1103,13 +1102,9 @@ export function RuneWorkbench() {
   const selectedExportCapabilities = selectedArtifact ? workspaceFileExportCapabilities(selectedArtifact) : [];
   const selectedExportCapability = (destination: WorkspaceFileExportDestination) =>
     selectedExportCapabilities.find((capability) => capability.destination === destination) ?? null;
-  const selectedOfficeExportType = selectedExportCapability("office")?.label ?? null;
   const selectedLegacyOfficeExportType = selectedExportCapability("legacy-office")?.label ?? null;
   const legacyOfficeExportAvailable =
     hydrated && selectedLegacyOfficeExportType ? supportsLegacyOfficeDesktopExport() : false;
-  const selectedOdfExportType = selectedExportCapability("odf")?.label ?? null;
-  const selectedHtmlExport = Boolean(selectedExportCapability("html"));
-  const selectedPdfExport = Boolean(selectedExportCapability("pdf"));
   const selectedCheckpoints = checkpoints[selectedArtifact?.id] ?? [];
   const currentSourceSelection =
     sourceSelection?.artifactId === selectedArtifact?.id && sourceSelection.sourceRevision === selectedArtifact?.source
@@ -4402,171 +4397,31 @@ export function RuneWorkbench() {
             {ui.import}
           </button>
           {!emptyWorkspace && (
-            <div className="export-menu" ref={exportMenuRef}>
-              <button
-                className={`button ghost-button export-menu-trigger ${exportMenuOpen ? "active" : ""}`.trim()}
-                type="button"
-                onClick={() => {
-                  setToolsMenuOpen(false);
-                  setExportMenuOpen((open) => !open);
-                }}
-                disabled={
-                  !hydrated ||
-                  exportState !== "idle" ||
-                  importState === "reading" ||
-                  visualEditState !== "idle" ||
-                  Boolean(activeVisualSourceDraft) ||
-                  Boolean(pendingImport) ||
-                  Boolean(pendingPdfOcr) ||
-                  Boolean(pendingExport) ||
-                  Boolean(pendingDocumentStructure)
-                }
-                aria-haspopup="menu"
-                aria-expanded={exportMenuOpen}
-              >
-                {exportState === "idle" ? (
-                  <FileOutput aria-hidden="true" />
-                ) : (
-                  <LoaderCircle className="agent-spinner" aria-hidden="true" />
-                )}
-                <span>{ui.exportMenu}</span>
-                <ChevronDown aria-hidden="true" />
-              </button>
-              {exportMenuOpen && (
-                <div className="export-popover" role="menu" aria-label={ui.exportMenuBody}>
-                  <div>
-                    <span className="overline">{ui.exportMenu}</span>
-                    <strong>{ui.exportMenuBody}</strong>
-                  </div>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setExportMenuOpen(false);
-                      void prepareExport("source");
-                    }}
-                  >
-                    <FileCode2 aria-hidden="true" />
-                    <span>
-                      <strong>{ui.canonicalSource}</strong>
-                      <small>{selectedArtifact.name}</small>
-                    </span>
-                  </button>
-                  {selectedArtifact.kind === "data" && (
-                    <>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setExportMenuOpen(false);
-                          void prepareExport("csv");
-                        }}
-                      >
-                        <FileCode2 aria-hidden="true" />
-                        <span>
-                          <strong>CSV</strong>
-                          <small>{ui.exportAs("CSV")}</small>
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setExportMenuOpen(false);
-                          void prepareExport("json");
-                        }}
-                      >
-                        <FileCode2 aria-hidden="true" />
-                        <span>
-                          <strong>JSON</strong>
-                          <small>{ui.exportAs("JSON")}</small>
-                        </span>
-                      </button>
-                    </>
-                  )}
-                  {selectedOfficeExportType && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        void prepareExport("office");
-                      }}
-                    >
-                      <FileArchive aria-hidden="true" />
-                      <span>
-                        <strong>{selectedOfficeExportType}</strong>
-                        <small>{ui.exportAs(selectedOfficeExportType)}</small>
-                      </span>
-                    </button>
-                  )}
-                  {legacyOfficeExportAvailable && selectedLegacyOfficeExportType && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        void prepareExport("legacy-office");
-                      }}
-                    >
-                      <FileArchive aria-hidden="true" />
-                      <span>
-                        <strong>{selectedLegacyOfficeExportType}</strong>
-                        <small>{ui.exportAs(selectedLegacyOfficeExportType)} · Rune Desktop</small>
-                      </span>
-                    </button>
-                  )}
-                  {selectedOdfExportType && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        void prepareExport("odf");
-                      }}
-                    >
-                      <FileArchive aria-hidden="true" />
-                      <span>
-                        <strong>{selectedOdfExportType}</strong>
-                        <small>{ui.exportAsOpenDocument(selectedOdfExportType)}</small>
-                      </span>
-                    </button>
-                  )}
-                  {selectedHtmlExport && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        void prepareExport("html");
-                      }}
-                    >
-                      <FileCode2 aria-hidden="true" />
-                      <span>
-                        <strong>HTML</strong>
-                        <small>{ui.exportStandaloneHtml}</small>
-                      </span>
-                    </button>
-                  )}
-                  {selectedPdfExport && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        void prepareExport("pdf");
-                      }}
-                    >
-                      <FileText aria-hidden="true" />
-                      <span>
-                        <strong>PDF</strong>
-                        <small>{ui.exportFixedPdf}</small>
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+            <WorkbenchExportMenu
+              artifactName={selectedArtifact.name}
+              capabilities={selectedExportCapabilities}
+              containerRef={exportMenuRef}
+              copy={ui}
+              disabled={
+                !hydrated ||
+                exportState !== "idle" ||
+                importState === "reading" ||
+                visualEditState !== "idle" ||
+                Boolean(activeVisualSourceDraft) ||
+                Boolean(pendingImport) ||
+                Boolean(pendingPdfOcr) ||
+                Boolean(pendingExport) ||
+                Boolean(pendingDocumentStructure)
+              }
+              legacyOfficeAvailable={legacyOfficeExportAvailable}
+              open={exportMenuOpen}
+              preparing={exportState !== "idle"}
+              onOpenChange={(open) => {
+                if (open) setToolsMenuOpen(false);
+                setExportMenuOpen(open);
+              }}
+              onPrepare={(destination) => void prepareExport(destination)}
+            />
           )}
           {!emptyWorkspace && (
             <span className="visually-hidden" aria-live="polite">

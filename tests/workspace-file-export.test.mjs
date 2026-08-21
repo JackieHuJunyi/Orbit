@@ -73,18 +73,64 @@ test("derives every reviewed handoff from one artifact-kind capability table", (
     [{ destination: "source", targetType: "chart-json", label: "CHART.JSON" }],
   );
   assert.equal(workspaceFileExportCapability(artifact("document"), "json"), null);
+  const canonicalSourcePresentation = Object.freeze({
+    icon: "code",
+    detail: "canonical-source",
+    desktopOnly: false,
+  });
   assert.deepEqual(
     workspaceFileExportCapability({ ...artifact("data"), name: "typed.json" }, "source"),
-    Object.freeze({ destination: "source", targetType: "json", label: "JSON" }),
+    Object.freeze({
+      destination: "source",
+      targetType: "json",
+      label: "JSON",
+      presentation: canonicalSourcePresentation,
+    }),
   );
   assert.deepEqual(
     workspaceFileExportCapability(
       { ...artifact("slides"), name: "legacy.deck.md", language: "Deck Markdown" },
       "source",
     ),
-    Object.freeze({ destination: "source", targetType: "deck-md", label: "DECK.MD" }),
+    Object.freeze({
+      destination: "source",
+      targetType: "deck-md",
+      label: "DECK.MD",
+      presentation: canonicalSourcePresentation,
+    }),
   );
-  assert.equal(Object.isFrozen(workspaceFileExportCapabilities(artifact("data"))), true);
+  const dataCapabilities = workspaceFileExportCapabilities(artifact("data"));
+  assert.equal(Object.isFrozen(dataCapabilities), true);
+  assert.deepEqual(
+    dataCapabilities.map(({ destination, presentation }) => ({ destination, presentation })),
+    [
+      { destination: "source", presentation: canonicalSourcePresentation },
+      {
+        destination: "csv",
+        presentation: { icon: "code", detail: "portable-format", desktopOnly: false },
+      },
+      {
+        destination: "json",
+        presentation: { icon: "code", detail: "portable-format", desktopOnly: false },
+      },
+      {
+        destination: "office",
+        presentation: { icon: "archive", detail: "portable-format", desktopOnly: false },
+      },
+      {
+        destination: "odf",
+        presentation: { icon: "archive", detail: "open-document", desktopOnly: false },
+      },
+      {
+        destination: "pdf",
+        presentation: { icon: "document", detail: "fixed-pdf", desktopOnly: false },
+      },
+    ],
+  );
+  assert.equal(
+    dataCapabilities.every(({ presentation }) => Object.isFrozen(presentation)),
+    true,
+  );
 });
 
 test("reviews byte-exact canonical source for every artifact family without starting runtime evidence ports", async () => {
@@ -224,13 +270,20 @@ test("fails before handoff on unsupported targets, truncated evidence, or missin
 });
 
 test("keeps capability metadata eager and the complete export runtime behind one typed lazy boundary", async () => {
-  const [capabilities, runtime, workbench] = await Promise.all([
+  const [capabilities, runtime, workbench, exportMenu] = await Promise.all([
     readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(capabilities, /duckdb-client|office-export|odf-export|html-export|pdf-export|local-assets/);
+  assert.match(
+    capabilities,
+    /satisfies Readonly<Record<WorkspaceFileExportDestination, WorkspaceFileExportDefinition>>/,
+  );
+  assert.match(capabilities, /WORKSPACE_FILE_EXPORT_DESTINATIONS\.flatMap/);
+  assert.doesNotMatch(capabilities, /WORKSPACE_FILE_EXPORT_DEFINITIONS\.find/);
   assert.match(workbench, /import\("\.\.\/lib\/workspace-file-export-runtime"\)/);
   assert.doesNotMatch(workbench, /from "\.\.\/lib\/workspace-file-export-runtime"/);
   assert.match(runtime, /Record<WorkspaceFileExportDestination, WorkspaceFileExportConverter>/);
@@ -246,4 +299,13 @@ test("keeps capability metadata eager and the complete export runtime behind one
   }
   assert.doesNotMatch(workbench, /officeExportType|legacyOfficeExportType|odfExportType/);
   assert.doesNotMatch(workbench, /exportOfficeArtifact|exportOdfArtifact|exportDeckHtml|exportPdfArtifact/);
+  assert.match(workbench, /<WorkbenchExportMenu/);
+  assert.match(exportMenu, /visibleCapabilities\.map\(\(capability, index\)/);
+  assert.match(exportMenu, /capability\.presentation\.desktopOnly/);
+  assert.match(exportMenu, /ArrowDown/);
+  assert.match(exportMenu, /ArrowUp/);
+  assert.match(exportMenu, /Home/);
+  assert.match(exportMenu, /End/);
+  assert.match(exportMenu, /Escape/);
+  assert.doesNotMatch(exportMenu, /selectedArtifact\.kind|destination === "csv"|destination === "json"/);
 });

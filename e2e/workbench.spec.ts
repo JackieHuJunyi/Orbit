@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
-import { openWorkbench } from "./helpers/workbench";
+import { openWorkbench, selectWorkspaceFile } from "./helpers/workbench";
 
 test("paints the handwritten first-run ritual before client JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -198,6 +198,48 @@ test("reviews canonical source before downloading its exact UTF-8 bytes", async 
   expect(await readFile(downloadPath!, "utf8")).toBe(canonicalSource);
   await expect(review).toBeHidden();
   expect(downloadCount).toBe(1);
+});
+
+test("opens every registry-backed export choice with complete menu keyboard behavior", async ({ page }) => {
+  await openWorkbench(page);
+  const trigger = page.getByRole("button", { name: "Export", exact: true });
+  const menu = page.getByRole("menu", { name: "Choose a handoff format" });
+
+  await trigger.focus();
+  await trigger.press("ArrowDown");
+  const documentItems = menu.getByRole("menuitem");
+  await expect(documentItems).toHaveCount(4);
+  await expect(documentItems.nth(0)).toContainText("Canonical source");
+  await expect(documentItems.nth(0)).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(documentItems.nth(3)).toContainText("PDF");
+  await expect(documentItems.nth(3)).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await selectWorkspaceFile(page, "regional-revenue.csv");
+  await trigger.press("ArrowUp");
+  const dataItems = menu.getByRole("menuitem");
+  await expect(dataItems).toHaveCount(6);
+  await expect(dataItems).toContainText(["Canonical source", "CSV", "JSON", "XLSX", "ODS", "PDF"]);
+  await expect(dataItems.nth(5)).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(dataItems.nth(0)).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
+
+  await selectWorkspaceFile(page, "q2-review.md");
+  await trigger.press("ArrowDown");
+  await expect(menu.getByRole("menuitem")).toHaveCount(4);
+  await page.keyboard.press("End");
+  await expect(menu.getByRole("menuitem").nth(3)).toBeFocused();
+  await page.keyboard.press("Escape");
+
+  await trigger.press("ArrowDown");
+  await page.keyboard.press("Tab");
+  await expect(menu).toBeHidden();
+  await expect.poll(() => page.evaluate(() => document.activeElement?.closest(".export-menu") == null)).toBe(true);
 });
 
 test("toggles the workspace file rail without losing the workbench", async ({ page }) => {

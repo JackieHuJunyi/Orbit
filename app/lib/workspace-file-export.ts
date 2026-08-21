@@ -1,18 +1,41 @@
 import type { ArtifactExportKind } from "./export-contract.ts";
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
 
-export type WorkspaceFileExportDestination =
-  "source" | "csv" | "json" | "office" | "legacy-office" | "odf" | "html" | "pdf";
+const WORKSPACE_FILE_EXPORT_DESTINATIONS = Object.freeze([
+  "source",
+  "csv",
+  "json",
+  "office",
+  "legacy-office",
+  "odf",
+  "html",
+  "pdf",
+] as const);
+
+export type WorkspaceFileExportDestination = (typeof WORKSPACE_FILE_EXPORT_DESTINATIONS)[number];
+
+export type WorkspaceFileExportPresentation = Readonly<{
+  icon: "code" | "archive" | "document";
+  detail:
+    | "canonical-source"
+    | "portable-format"
+    | "desktop-compatibility"
+    | "open-document"
+    | "standalone-html"
+    | "fixed-pdf";
+  desktopOnly: boolean;
+}>;
 
 export type WorkspaceFileExportCapability = Readonly<{
   destination: WorkspaceFileExportDestination;
   targetType: ArtifactExportKind;
   label: string;
+  presentation: WorkspaceFileExportPresentation;
 }>;
 
 type WorkspaceFileExportDefinition = Readonly<{
-  destination: WorkspaceFileExportDestination;
   resolveTarget: (artifact: WorkspaceArtifact) => ArtifactExportKind | null;
+  presentation: WorkspaceFileExportPresentation;
 }>;
 
 function sourceExportTarget(artifact: WorkspaceArtifact): ArtifactExportKind {
@@ -33,68 +56,74 @@ function targetLabel(target: ArtifactExportKind) {
   return target.toUpperCase();
 }
 
-const WORKSPACE_FILE_EXPORT_DEFINITIONS: readonly WorkspaceFileExportDefinition[] = Object.freeze([
-  Object.freeze({ destination: "source" as const, resolveTarget: sourceExportTarget }),
-  Object.freeze({
-    destination: "csv" as const,
+const WORKSPACE_FILE_EXPORT_DEFINITIONS = Object.freeze({
+  source: Object.freeze({
+    resolveTarget: sourceExportTarget,
+    presentation: Object.freeze({ icon: "code", detail: "canonical-source", desktopOnly: false }),
+  }),
+  csv: Object.freeze({
     resolveTarget: targetResolver(Object.freeze({ data: "csv" as const })),
+    presentation: Object.freeze({ icon: "code", detail: "portable-format", desktopOnly: false }),
   }),
-  Object.freeze({
-    destination: "json" as const,
+  json: Object.freeze({
     resolveTarget: targetResolver(Object.freeze({ data: "json" as const })),
+    presentation: Object.freeze({ icon: "code", detail: "portable-format", desktopOnly: false }),
   }),
-  Object.freeze({
-    destination: "office" as const,
+  office: Object.freeze({
     resolveTarget: targetResolver(
       Object.freeze({ document: "docx" as const, data: "xlsx" as const, slides: "pptx" as const }),
     ),
+    presentation: Object.freeze({ icon: "archive", detail: "portable-format", desktopOnly: false }),
   }),
-  Object.freeze({
-    destination: "legacy-office" as const,
+  "legacy-office": Object.freeze({
     resolveTarget: targetResolver(Object.freeze({ document: "doc" as const, slides: "ppt" as const })),
+    presentation: Object.freeze({ icon: "archive", detail: "desktop-compatibility", desktopOnly: true }),
   }),
-  Object.freeze({
-    destination: "odf" as const,
+  odf: Object.freeze({
     resolveTarget: targetResolver(
       Object.freeze({ document: "odt" as const, data: "ods" as const, slides: "odp" as const }),
     ),
+    presentation: Object.freeze({ icon: "archive", detail: "open-document", desktopOnly: false }),
   }),
-  Object.freeze({
-    destination: "html" as const,
+  html: Object.freeze({
     resolveTarget: targetResolver(Object.freeze({ slides: "html" as const })),
+    presentation: Object.freeze({ icon: "code", detail: "standalone-html", desktopOnly: false }),
   }),
-  Object.freeze({
-    destination: "pdf" as const,
+  pdf: Object.freeze({
     resolveTarget: targetResolver(
       Object.freeze({ document: "pdf" as const, data: "pdf" as const, slides: "pdf" as const }),
     ),
+    presentation: Object.freeze({ icon: "document", detail: "fixed-pdf", desktopOnly: false }),
   }),
-]);
+}) satisfies Readonly<Record<WorkspaceFileExportDestination, WorkspaceFileExportDefinition>>;
 
 function workspaceFileExportDefinition(destination: WorkspaceFileExportDestination) {
-  const definition = WORKSPACE_FILE_EXPORT_DEFINITIONS.find((candidate) => candidate.destination === destination);
-  if (!definition) throw new Error(`Unknown workspace export destination: ${destination}`);
-  return definition;
+  return WORKSPACE_FILE_EXPORT_DEFINITIONS[destination];
 }
 
 export function workspaceFileExportCapability(
   artifact: WorkspaceArtifact,
   destination: WorkspaceFileExportDestination,
 ): WorkspaceFileExportCapability | null {
-  const targetType = workspaceFileExportDefinition(destination).resolveTarget(artifact);
-  return targetType ? Object.freeze({ destination, targetType, label: targetLabel(targetType) }) : null;
+  const definition = workspaceFileExportDefinition(destination);
+  const targetType = definition.resolveTarget(artifact);
+  return targetType
+    ? Object.freeze({ destination, targetType, label: targetLabel(targetType), presentation: definition.presentation })
+    : null;
 }
 
 export function workspaceFileExportCapabilities(artifact: WorkspaceArtifact) {
   return Object.freeze(
-    WORKSPACE_FILE_EXPORT_DEFINITIONS.flatMap((definition) => {
+    WORKSPACE_FILE_EXPORT_DESTINATIONS.flatMap((destination) => {
+      const definition = workspaceFileExportDefinition(destination);
       const targetType = definition.resolveTarget(artifact);
       return targetType
         ? [
             Object.freeze({
-              destination: definition.destination,
+              destination,
               targetType,
               label: targetLabel(targetType),
+              presentation: definition.presentation,
             }),
           ]
         : [];

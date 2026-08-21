@@ -2394,3 +2394,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - light/Space Black 只改变 blend mode；reduced motion、reduced transparency、high contrast 与 forced colors 必须完整移除环境层，静态问候、语言选择、键盘和触控合同保持不变。
 - SSR 首帧必须包含本地 SVG，老用户 pre-paint gate 仍直接跳过 onboarding。测试必须证明三条本地 path、无 video/MP4/network/dependency、finite CSS animation、pointer transparency、exact-center greeting 和 ready unfold。
 - 首屏 minified Workbench 继续受 530 KB gate 约束；本阶段实测 525,024 bytes，不能用放宽预算交换环境效果。
+
+### 17.73 v1.42 导出菜单必须是 capability registry 的直接投影
+
+- `workspace-file-export` 的每个 destination 除 target type 外，必须同时声明 icon family、detail treatment 与 desktop-only 要求；菜单不得再次依据 Artifact kind 手写 CSV/JSON/Office/ODF/HTML/PDF 条件分支。
+- `WorkbenchExportMenu` 只能消费有序 capability 数组并回传 destination。它不得准备 bytes、读取 Query、加载图片、打开 review、持久化或下载；这些权限继续只属于 Workbench 与 lazy export runtime。
+- 从点击或 Arrow Down/Up 打开时，第一项或最后一项必须在浏览器绘制前获得焦点；Arrow Up/Down 循环、Home/End 跳转、Tab 自然离开、Escape 关闭并把焦点还给 trigger。
+- Artifact 切换导致菜单从六项收缩为四项时必须截断旧 ref，不能让已脱离 DOM 的按钮保留键盘身份；桌面 legacy Office 只由 capability 的 `desktopOnly` 与受隔离 bridge 的运行时支持共同决定。
+- 单元门必须验证所有 Data capability 的冻结 presentation metadata 与菜单无 kind/format 分支；真实 Chromium 必须覆盖 Document 四项 → Data 六项 → Document 四项、首尾焦点、Escape 归还、canonical source review 与 semantic HTML handoff。
+- Workbench 从 6,102 行降到 5,957 行；首屏 minified entry 为 525,719 bytes，继续低于 530 KB，不以扩大预算换取抽象。

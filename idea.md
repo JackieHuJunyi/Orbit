@@ -2627,3 +2627,11 @@ v1.40 把 `writing` 变成独立的全画布布局：chrome 行收为 0，copy �
 v1.41 因此没有复制任何参考路径或视频，也没有把 `motion/react`、Canvas 或 MP4 加进首屏。新的 `WelcomeAmbientMotion` 只接收现有 greeting cycle，使用 Rune 原创的两条宽 Bézier spectrum ribbon 和一条细 thread，在问候后方完成一次有限 crossfade、轻微漂移和收束；语言轮换通过父级已有 key 重新开始同一幕，它自己没有 timer。进入 ready 后峰值自动降低，最终 opacity 回到 0；semantic canvas layer 与 `pointer-events: none` 保证它既不遮挡也不抢交互。
 
 无障碍降级同样属于效果本身：reduced motion、reduced transparency、high contrast 和 forced colors 都完全移除 ambient field，保留完整静态问候和正常设置布局。这样 Rune 学到的是“一个主体、一个环境、一个时间轴”，而不是把开源页面或 Apple 资产换个颜色继续复制。首屏 minified entry 为 525,024 bytes，仍在 530 KB gate 内。
+
+## 144. 文件能力扩展不能在菜单里重新发明一次格式表
+
+导出运行时已经有一份 capability registry，但顶部菜单仍按 Data、Office、legacy Office、OpenDocument、HTML 与 PDF 手写条件。这意味着添加一个格式虽然不必改转换器调度，却仍可能忘记菜单、图标、说明或桌面限制；能力表与可见 UI 仍有漂移空间。菜单同时只有 `role="menu"`，打开后焦点仍留在 trigger，方向键与 Home/End 不工作，也没有可靠的 Escape 焦点归还。
+
+v1.42 把 icon family、detail treatment 与 desktop-only 要求放回每项冻结 capability。新的 `WorkbenchExportMenu` 只对这份有序列表做过滤和 map，不读取 Artifact kind，也不拥有 bytes、review、persistence 或 download。点击或 Arrow Down/Up 打开时，它在 paint 前聚焦首项或末项；Arrow 键循环、Home/End 跳转、Tab 自然退出、Escape 返回 trigger。选中文档、数据再回到文档时，旧的六项 ref 会收缩为当前四项，脱离 DOM 的按钮不能继续进入键盘序列。
+
+因此新增格式现在只需在能力定义中明确 target 与 presentation contract，TypeScript、单元门和通用菜单共同消费；不会再出现 converter 已支持、菜单却漏项的半完成状态。Workbench 从 6,102 行减到 5,957 行，真实 Chromium 覆盖四项 → 六项 → 四项的动态菜单和完整焦点路径，首屏仍为 525,719 bytes / 530 KB。
