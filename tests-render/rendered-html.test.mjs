@@ -33,9 +33,9 @@ test("server-renders the Rune artifact workbench", async () => {
   const html = await response.text();
   assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue" data-rune-onboarding="pending">/);
   assert.match(html, /id="rune-prehydrate-state"/);
-  assert.match(html, /data-onboarding-sequence="boot-write-settle-unfold"/);
-  assert.match(html, /data-ambient-motion="crossfade-ribbon-drift"/);
-  assert.match(html, /data-motion-renderer="calligraphic-mask"/);
+  assert.match(html, /data-onboarding-sequence="spectrum-write-settle-setup"/);
+  assert.doesNotMatch(html, /data-ambient-motion/);
+  assert.match(html, /data-motion-renderer="vector-centerline"/);
   assert.doesNotMatch(html, /Preparing Rune/);
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);
   assert.match(html, /Local workspace/);
@@ -491,7 +491,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Data → Query → Chart/);
   assert.match(clientSource, /Hello/);
   assert.match(clientSource, /你好/);
-  for (const greeting of ["哈囉", "Bonjour", "Hola", "Здравствуйте", "مرحبًا", "こんにちは", "안녕하세요"]) {
+  for (const greeting of ["哈囉", "Bonjour", "Hola", "Привет", "مرحبًا", "こんにちは", "안녕하세요"]) {
     assert.match(clientSource, new RegExp(greeting));
   }
   assert.doesNotMatch(clientSource, /Halo/);
@@ -912,6 +912,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
       readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
       readFile(new URL("../app/lib/fluid-surface.ts", import.meta.url), "utf8"),
     ]);
+  const modularStyles = styleFiles.join("\n");
   const styles = [legacyStyles, ...styleFiles].join("\n");
   assert.match(styles, /--rune-content-wide:\s*1260px;/);
   assert.match(styles, /--rune-frame-width:\s*87\.5%;/);
@@ -921,11 +922,8 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /--rune-duration-scene:\s*760ms;/);
   assert.match(styles, /@keyframes rune-window-enter\s*\{\s*from\s*\{\s*opacity:\s*0;\s*transform:\s*scale\(\.975\);/);
   assert.match(styles, /--rune-file-width:\s*220px;/);
-  assert.match(
-    styles,
-    /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(var\(--rune-frame-width\),\s*var\(--rune-content-wide\)\);/s,
-  );
-  assert.match(styles, /\.welcome-window\s*\{[^}]*max-height:\s*calc\(100dvh - var\(--rune-space-4\)\);/s);
+  assert.match(modularStyles, /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(560px,\s*100%\);/s);
+  assert.match(modularStyles, /\.welcome-window\s*\{[^}]*max-height:\s*calc\(100dvh - var\(--rune-space-6\)\);/s);
   assert.match(
     styles,
     /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s,
@@ -935,22 +933,20 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--rune-stage\);[^}]*background-image:\s*none;/s,
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
-  assert.match(styles, /@keyframes rune-greeting-write/);
-  assert.match(styles, /@keyframes rune-greeting-color-bloom/);
-  assert.match(styles, /@keyframes rune-boot-chroma/);
-  assert.match(styles, /@keyframes rune-greeting-dock/);
-  assert.match(styles, /@keyframes rune-greeting-stroke-head/);
-  assert.match(styles, /@keyframes rune-greeting-pressure/);
-  assert.match(styles, /@keyframes rune-greeting-ink-settle/);
-  assert.doesNotMatch(styles, /@keyframes rune-greeting-(?:ink-trace|sheen)/);
-  assert.match(
-    styles,
-    /\.welcome-greeting-fill-settled\s*\{[^}]*var\(--greeting-settle-duration\)[^}]*var\(--greeting-settle-delay\)/s,
+  assert.match(modularStyles, /@keyframes rune-greeting-dock/);
+  assert.match(modularStyles, /@keyframes rune-greeting-pencil-write/);
+  assert.match(modularStyles, /@keyframes rune-setup-unfold/);
+  assert.doesNotMatch(
+    modularStyles,
+    /@keyframes rune-(?:welcome-ambient|greeting-color-bloom|greeting-stroke-head|greeting-pressure|boot-chroma)/,
   );
-  assert.match(styles, /\.welcome-greeting-reveal-stroke\s*\{[^}]*stroke-dasharray:\s*1/s);
-  assert.match(styles, /stroke-dasharray:\s*1/);
-  assert.match(styles, /grid-template-areas:\s*"greeting greeting"\s*"copy language"/s);
-  assert.match(handwrittenGreeting, /#ff375f[^]*#30d158[^]*#0a84ff[^]*#bf5af2/);
+  assert.match(modularStyles, /\.welcome-greeting-tegaki\s*\{[^}]*white-space:\s*nowrap/s);
+  assert.match(modularStyles, /\.welcome-greeting-vector-stroke\s*\{[^}]*stroke-dasharray:\s*1/s);
+  assert.match(modularStyles, /grid-template-areas:\s*"greeting"\s*"language"/s);
+  assert.match(
+    handwrittenGreeting,
+    /#050506[^]*#30d158[^]*#ffd60a[^]*#ff9f0a[^]*#ff453a[^]*#ff375f[^]*#bf5af2[^]*#0a84ff/,
+  );
   assert.match(styles, /circle at var\(--rune-pointer-x\) var\(--rune-pointer-y\)/);
   assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)/);
   assert.match(styles, /html\[data-locale="ar"\][^]*\.welcome-page h1/);
@@ -961,41 +957,46 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /<HandwrittenGreeting/);
   assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /planGreetingPresentation\(\{ locale: greetingLocale, value: greeting \}\)/);
-  assert.match(welcome, /greetingPresentation\.motion\.completeAfterMs \+ 180/);
+  assert.match(welcome, /greetingPresentation\.completeAfterMs \+ 180/);
   assert.match(handwrittenGreeting, /<linearGradient/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-reveal-stroke"/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-fill welcome-greeting-fill-reveal"/);
+  assert.match(handwrittenGreeting, /className="welcome-greeting-vector-stroke"/);
+  assert.match(handwrittenGreeting, /<TegakiRenderer/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-stroke-head"/);
-  assert.doesNotMatch(handwrittenGreeting, /welcome-greeting-(?:ink-trail|ink-sheen|stroke-head-(?:bloom|light))/);
-  assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
-  assert.match(handwrittenGreeting, /data-motion-timeline="path-length-staggered"/);
-  assert.match(handwrittenGreeting, /data-ink-effect="spectrum-path"/);
-  assert.match(handwrittenGreeting, /data-ink-material="luminous-spectrum"/);
-  assert.match(handwrittenGreeting, /data-color-system="apple-six-color"/);
-  assert.match(handwrittenGreeting, /data-boot-motion="center-write-dock-unfold"/);
-  assert.match(handwrittenGreeting, /data-ink-trace="progressive"/);
-  assert.match(handwrittenGreeting, /data-motion-sequence="write-settle-reveal"/);
-  assert.match(welcome, /data-onboarding-sequence="boot-write-settle-unfold"/);
-  assert.match(handwrittenGreeting, /data-writing-style="pressure-calligraphy"/);
-  assert.match(handwrittenGreeting, /data-motion-script=\{script\}/);
-  assert.match(handwrittenGreeting, /motion\.strokes\.map/);
-  assert.match(handwrittenGreeting, /offsetPath:\s*`path/);
-  assert.doesNotMatch(handwrittenGreeting, /motion\.writePath|welcome-greeting-flourish|welcome-greeting-pen/);
+  assert.match(handwrittenGreeting, /feTurbulence[^]*feDisplacementMap/);
+  assert.doesNotMatch(handwrittenGreeting, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);
+  assert.match(
+    handwrittenGreeting,
+    /"data-motion-renderer": usesVectorCenterline \? "vector-centerline" : "tegaki-font-centerline"/,
+  );
+  assert.match(handwrittenGreeting, /"data-motion-timeline": "path-length-staggered"/);
+  assert.match(handwrittenGreeting, /"data-ink-effect": "spectrum-write"/);
+  assert.match(handwrittenGreeting, /"data-ink-material": "pressure-pencil-spectrum"/);
+  assert.match(handwrittenGreeting, /"data-color-system": "apple-hello-spectrum"/);
+  assert.match(handwrittenGreeting, /"data-boot-motion": "center-write-settle"/);
+  assert.match(handwrittenGreeting, /"data-ink-trace": "progressive"/);
+  assert.match(handwrittenGreeting, /"data-motion-sequence": "write-settle-reveal"/);
+  assert.match(welcome, /data-onboarding-sequence="spectrum-write-settle-setup"/);
+  assert.match(handwrittenGreeting, /"data-writing-style": "font-derived-centerline"/);
+  assert.match(handwrittenGreeting, /"data-motion-script": script/);
+  assert.match(handwrittenGreeting, /ENGLISH_HELLO_STROKES\.map/);
+  assert.doesNotMatch(
+    handwrittenGreeting,
+    /offsetPath|motion\.writePath|welcome-greeting-flourish|welcome-greeting-stroke-head/,
+  );
   assert.doesNotMatch(handwrittenGreeting, /fetch\(|localStorage|indexedDB|WorkspaceArtifact|ModelProvider/);
   assert.doesNotMatch(handwrittenGreeting, /planGreetingMotion|localeDirection/);
-  assert.match(handwrittenGreeting, /--greeting-cycle-duration/);
+  assert.doesNotMatch(welcome, /WelcomeAmbientMotion|greetingCycleDuration|setGreetingIndex/);
   assert.match(welcome, /data-intro-phase=\{introPhase\}/);
-  assert.match(styles, /\.welcome-window\[data-intro-phase="writing"\][^}]*box-shadow:\s*none/s);
+  assert.match(modularStyles, /\.welcome-window\[data-intro-phase="writing"\][^}]*box-shadow:\s*none/s);
   assert.match(
-    styles,
+    modularStyles,
     /\.welcome-window\[data-intro-phase="writing"\] \.welcome-page\s*\{[^}]*overflow:\s*hidden;[^}]*scrollbar-gutter:\s*auto;/s,
   );
   assert.match(
-    styles,
+    modularStyles,
     /\.welcome-intro-grid\[data-intro-phase="writing"\]\s*\{[^}]*position:\s*absolute;[^}]*place-items:\s*center;/s,
   );
-  assert.match(styles, /@keyframes rune-greeting-dock\s*\{[^}]*clamp\(150px,\s*24vh,\s*230px\)/s);
+  assert.match(modularStyles, /@keyframes rune-greeting-dock\s*\{[^}]*clamp\(112px,\s*18vh,\s*170px\)/s);
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);
   assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);

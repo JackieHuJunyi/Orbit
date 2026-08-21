@@ -1,32 +1,17 @@
 "use client";
 
-import {
-  ArrowRight,
-  Check,
-  ClipboardList,
-  Command,
-  FileText,
-  Globe2,
-  Keyboard,
-  Presentation,
-  ShieldCheck,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { ArrowRight, Check, ClipboardList, Command, FileText, Keyboard, Presentation, Sparkles, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HandwrittenGreeting } from "./handwritten-greeting";
-import { WelcomeAmbientMotion } from "./welcome-ambient-motion";
 import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
   localeDisplayName,
-  localeMonogram,
   localizeRuneCopy,
   runeGreetingSequence,
   RUNE_LOCALE_REGISTRY,
   type RuneLocale,
 } from "../lib/localization";
 import { type RuneModelMode } from "../lib/model-preference";
-import { resetFluidSurface, trackFluidSurface } from "../lib/fluid-surface";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
 const WelcomeModelStep = lazy(() =>
@@ -186,7 +171,6 @@ export function WelcomeExperience({
 }) {
   const [step, setStep] = useState<WelcomeStep>(startAt);
   const [completedShortcuts, setCompletedShortcuts] = useState<ShortcutId[]>([]);
-  const [greetingIndex, setGreetingIndex] = useState(0);
   const [greetingIntroComplete, setGreetingIntroComplete] = useState(false);
   const languageOptionsRef = useRef<HTMLDivElement>(null);
   const selectedLanguageOptionRef = useRef<HTMLButtonElement>(null);
@@ -202,33 +186,24 @@ export function WelcomeExperience({
   );
   const text = welcomeCopy(locale);
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
-  const greeting = greetings[greetingIndex] ?? greetings[0] ?? "Hello";
+  const greeting = greetings[0] ?? "Hello";
   const greetingLocale = RUNE_LOCALE_REGISTRY.find((entry) => entry.greeting === greeting)?.locale ?? locale;
   const greetingPresentation = useMemo(
     () => planGreetingPresentation({ locale: greetingLocale, value: greeting }),
     [greeting, greetingLocale],
   );
-  const greetingCycleDuration = greetingPresentation.motion.cycleDurationMs;
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
   const introPhase = step === "welcome" && !greetingIntroComplete ? "writing" : "ready";
-
-  useEffect(() => {
-    if (step !== "welcome" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setTimeout(() => {
-      setGreetingIndex((current) => (current + 1) % greetings.length);
-    }, greetingCycleDuration);
-    return () => window.clearTimeout(timer);
-  }, [greetingCycleDuration, greetingIndex, greetings.length, step]);
 
   useEffect(() => {
     if (step !== "welcome" || greetingIntroComplete) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const fallback = window.setTimeout(
       () => setGreetingIntroComplete(true),
-      reducedMotion ? 0 : greetingPresentation.motion.completeAfterMs + 180,
+      reducedMotion ? 0 : greetingPresentation.completeAfterMs + 180,
     );
     return () => window.clearTimeout(fallback);
-  }, [greetingIntroComplete, greetingPresentation.motion.completeAfterMs, step]);
+  }, [greetingIntroComplete, greetingPresentation.completeAfterMs, step]);
 
   useEffect(() => {
     if (step !== "welcome") return;
@@ -281,15 +256,10 @@ export function WelcomeExperience({
       aria-modal="true"
       aria-labelledby="welcome-title"
     >
-      {step === "welcome" && (
-        <WelcomeAmbientMotion cycleDuration={greetingCycleDuration} key={`ambient-${locale}-${greetingIndex}`} />
-      )}
       <section
         className="welcome-window"
         data-intro-phase={introPhase}
-        data-onboarding-sequence="boot-write-settle-unfold"
-        onPointerMove={trackFluidSurface}
-        onPointerLeave={resetFluidSurface}
+        data-onboarding-sequence="spectrum-write-settle-setup"
       >
         <header className="welcome-chrome">
           <div className="welcome-chrome-brand" aria-hidden="true">
@@ -336,27 +306,14 @@ export function WelcomeExperience({
                   <HandwrittenGreeting
                     onWritingComplete={() => setGreetingIntroComplete(true)}
                     presentation={greetingPresentation}
-                    key={`${locale}-${greetingIndex}`}
+                    key={locale}
                   />
                 </div>
-                <div className="welcome-intro-copy">
-                  <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
-                  <h1 id="welcome-title">{text.welcomeTitle}</h1>
-                  <p>{text.welcomeBody}</p>
-                  <p className="welcome-principles">
-                    <ShieldCheck aria-hidden="true" />
-                    {text.local} · {text.reviewFirst} · {text.live}
-                  </p>
-                </div>
-                <section className="welcome-language-card" aria-labelledby="welcome-language-title">
+                <section className="welcome-language-card" aria-labelledby="welcome-title">
                   <div className="welcome-language-heading">
-                    <span>
-                      <Globe2 aria-hidden="true" />
-                    </span>
-                    <div>
-                      <strong id="welcome-language-title">{text.languageTitle}</strong>
-                      <small>{text.languageBody}</small>
-                    </div>
+                    <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
+                    <h1 id="welcome-title">{text.languageTitle}</h1>
+                    <p>{text.languageBody}</p>
                   </div>
                   <div
                     className="language-options"
@@ -374,7 +331,6 @@ export function WelcomeExperience({
                         onClick={() => onLocaleChange(option)}
                         key={option}
                       >
-                        <span className="language-monogram">{localeMonogram(option)}</span>
                         <span>
                           <strong>{localeDisplayName(option)}</strong>
                           <small>{option === detectedLocale ? text.recommended : option}</small>
@@ -384,7 +340,7 @@ export function WelcomeExperience({
                     ))}
                   </div>
                   <button className="welcome-primary" type="button" onClick={() => setStep("model")}>
-                    {text.begin}
+                    {text.continue}
                     <ArrowRight />
                   </button>
                 </section>

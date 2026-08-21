@@ -8,12 +8,13 @@ test("paints the handwritten first-run ritual before client JavaScript", async (
   const firstFrame = await context.newPage();
   await firstFrame.goto("/");
 
-  const welcome = firstFrame.locator('.welcome-window[data-onboarding-sequence="boot-write-settle-unfold"]');
+  const welcome = firstFrame.locator('.welcome-window[data-onboarding-sequence="spectrum-write-settle-setup"]');
   await expect(firstFrame.locator(".welcome-backdrop")).toHaveCSS("animation-name", "none");
   await expect(welcome).toBeVisible();
   await expect(welcome).toHaveAttribute("data-intro-phase", "writing");
-  await expect(firstFrame.locator('[data-ambient-motion="crossfade-ribbon-drift"]')).toHaveCount(1);
-  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="calligraphic-mask"]')).toContainText(
+  await expect(firstFrame.locator("[data-ambient-motion]")).toHaveCount(0);
+  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveAttribute(
+    "aria-label",
     "Hello",
   );
   await expect(firstFrame.getByText("Preparing Rune…")).toHaveCount(0);
@@ -36,13 +37,12 @@ test("keeps a returning user on the server-rendered workbench before hydration",
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
 });
 
-test("starts a fresh user with outcome-first task choices", async ({ page }) => {
+test("starts a fresh user with language choice before outcome-first task choices", async ({ page }) => {
   await page.goto("/");
 
-  const onboarding = page.getByRole("dialog", { name: "Every piece of work, with a clear source." });
+  const onboarding = page.getByRole("dialog", { name: "Choose your Rune language" });
   await expect(onboarding).toBeVisible();
-  await expect(onboarding.getByText("Local first")).toBeVisible();
-  await expect(onboarding.getByText("Review before write")).toBeVisible();
+  await expect(onboarding.getByRole("radio")).toHaveCount(9);
 
   await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
   const ready = page.getByRole("dialog", { name: "Your workspace, under your control." });
@@ -62,49 +62,45 @@ test("loads model setup after the handwritten opening without restarting it", as
 
   const welcomeWindow = page.locator(".welcome-window");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
-  await page.getByRole("button", { name: "Continue setup", exact: true }).click();
+  await page.locator(".welcome-language-card > .welcome-primary").click();
 
   const modelStep = page.getByRole("dialog", { name: "Choose how Rune uses a model" });
   await expect(modelStep).toBeVisible();
   await expect(modelStep.getByText(/No model connected|Model connected/u)).toBeVisible();
   await expect(modelStep.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
-  await expect(page.locator('.welcome-greeting[data-motion-renderer="calligraphic-mask"]')).toHaveCount(0);
+  await expect(page.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveCount(0);
 });
 
-test("writes the opening greeting through ordered spectrum-ink strokes", async ({ page }) => {
+test("writes the opening greeting as one restrained spectrum performance", async ({ page }) => {
   await page.goto("/");
 
   const welcomeWindow = page.locator(".welcome-window");
   const greeting = page.locator(".welcome-greeting");
-  const ambient = page.locator('[data-ambient-motion="crossfade-ribbon-drift"]');
-  await expect(welcomeWindow).toHaveAttribute("data-onboarding-sequence", "boot-write-settle-unfold");
+  await expect(welcomeWindow).toHaveAttribute("data-onboarding-sequence", "spectrum-write-settle-setup");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "writing");
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeHidden();
+  await expect(page.locator(".welcome-backdrop")).toHaveCSS("background-color", "rgb(5, 5, 6)");
   await expect(greeting).toBeVisible();
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
-  await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
+  await expect(greeting).toHaveAttribute("data-motion-renderer", "vector-centerline");
   await expect(greeting).toHaveAttribute("data-motion-timeline", "path-length-staggered");
-  await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-path");
-  await expect(greeting).toHaveAttribute("data-ink-material", "luminous-spectrum");
-  await expect(greeting).toHaveAttribute("data-ink-motion", "path-front");
+  await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-write");
+  await expect(greeting).toHaveAttribute("data-ink-material", "pressure-pencil-spectrum");
+  await expect(greeting).toHaveAttribute("data-ink-motion", "path-reveal");
   await expect(greeting).toHaveAttribute("data-ink-trace", "progressive");
-  await expect(greeting).toHaveAttribute("data-color-system", "apple-six-color");
-  await expect(greeting).toHaveAttribute("data-boot-motion", "center-write-dock-unfold");
+  await expect(greeting).toHaveAttribute("data-color-system", "apple-hello-spectrum");
+  await expect(greeting).toHaveAttribute("data-boot-motion", "center-write-settle");
   await expect(greeting).toHaveAttribute("data-motion-sequence", "write-settle-reveal");
   await expect(greeting).toHaveAttribute("data-writing-continuity", "connected");
-  await expect(greeting).toHaveAttribute("data-writing-style", "pressure-calligraphy");
-  await expect(greeting).toHaveAttribute("data-stroke-count", "3");
+  await expect(greeting).toHaveAttribute("data-writing-style", "font-derived-centerline");
+  await expect(greeting).toHaveAttribute("data-pen-speed", "reference");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "2");
   await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
-  await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-color-bloom")).toHaveCount(1);
-  await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-ink-trail, .welcome-greeting-ink-sheen")).toHaveCount(0);
-  await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
-  await expect(ambient).toHaveAttribute("data-ambient-renderer", "inline-svg");
-  await expect(ambient.locator(".welcome-ambient-ribbon")).toHaveCount(2);
-  await expect(ambient.locator(".welcome-ambient-thread")).toHaveCount(1);
-  await expect(ambient).toHaveCSS("pointer-events", "none");
-  await expect(ambient).toHaveCSS("animation-name", "rune-welcome-ambient-crossfade");
+  await expect(greeting.locator(".welcome-greeting-vector-stroke")).toHaveCount(2);
+  await expect(greeting.locator(".welcome-greeting-color-bloom, .welcome-greeting-stroke-head")).toHaveCount(0);
+  await expect(greeting.locator("feTurbulence")).toHaveCount(1);
+  await expect(greeting.locator(".welcome-greeting-vector-stroke").first()).toBeVisible();
+  await expect(page.locator("[data-ambient-motion]")).toHaveCount(0);
 
   const openingGeometry = await page.locator(".welcome-greeting-stage").evaluate((stage) => {
     const bounds = stage.getBoundingClientRect();
@@ -119,28 +115,17 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   expect(Math.abs(openingGeometry.centerY - openingGeometry.viewportCenterY)).toBeLessThanOrEqual(24);
 
   const animationNames = await greeting.evaluate((element) =>
-    Array.from(
-      element.querySelectorAll(
-        ".welcome-greeting-reveal-stroke, .welcome-greeting-color-bloom, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
-      ),
-    )
+    Array.from(element.querySelectorAll(".welcome-greeting-vector-stroke"))
       .flatMap((unit) => unit.getAnimations())
       .map((animation) => ("animationName" in animation ? String(animation.animationName) : "")),
   );
-  expect(animationNames).toContain("rune-greeting-write");
-  expect(animationNames).toContain("rune-greeting-color-bloom");
-  expect(animationNames).toContain("rune-greeting-ink-settle");
-  expect(animationNames).toContain("rune-greeting-stroke-head");
-  expect(animationNames).toContain("rune-greeting-pressure");
-  for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
-    await expect(head).toHaveCSS("offset-path", /path\(/);
-  }
+  expect(animationNames).toContain("rune-greeting-pencil-write");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeVisible();
   await expect(page.locator('.welcome-intro-grid[data-intro-phase="ready"]')).toBeVisible();
 });
 
-test("moves the Arabic writing head right to left without splitting its shaping run", async ({ page }) => {
+test("reveals the Arabic writing path right to left without splitting its shaping run", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("rune-locale-v1", "ar"));
   await page.goto("/");
 
@@ -149,9 +134,12 @@ test("moves the Arabic writing head right to left without splitting its shaping 
   await expect(greeting).toHaveAttribute("data-direction", "rtl");
   await expect(greeting).toHaveAttribute("data-motion-count", "5");
   await expect(greeting).toHaveAttribute("data-motion-script", "arabic");
-  await expect(greeting).toHaveAttribute("data-stroke-count", "3");
-  await expect(greeting.locator(".welcome-greeting-fill-reveal")).toHaveText("مرحبًا");
-  await expect(greeting.locator(".welcome-greeting-stroke-head").first()).toHaveCSS("offset-path", /M 571\.4 148/);
+  await expect(greeting).toHaveAttribute("data-motion-renderer", "tegaki-font-centerline");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "5");
+  await expect(greeting).toHaveAttribute("data-font-ready", "true");
+  await expect(greeting.locator('[data-tegaki="root"]')).toHaveAttribute("dir", "rtl");
+  await expect(greeting.locator('[data-tegaki="overlay"]')).toHaveText("مرحبًا");
+  await expect(greeting.locator('[data-tegaki="canvas"]')).toBeVisible();
 });
 
 test("renders the local-first workbench with its sample workspace", async ({ page }) => {

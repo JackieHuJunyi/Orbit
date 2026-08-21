@@ -1,15 +1,29 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LOCALES = [
-  { id: "zh-CN", direction: "ltr", script: "logographic", strokes: "8" },
-  { id: "zh-TW", direction: "ltr", script: "logographic", strokes: "8" },
-  { id: "en", direction: "ltr", script: "cursive", strokes: "3" },
-  { id: "fr", direction: "ltr", script: "cursive", strokes: "3" },
-  { id: "es", direction: "ltr", script: "cursive", strokes: "3" },
-  { id: "ru", direction: "ltr", script: "cursive", strokes: "3" },
-  { id: "ar", direction: "rtl", script: "arabic", strokes: "3" },
-  { id: "ja", direction: "ltr", script: "kana", strokes: "12" },
-  { id: "ko", direction: "ltr", script: "hangul", strokes: "12" },
+  {
+    id: "zh-CN",
+    direction: "ltr",
+    penSpeed: "0.922",
+    renderer: "tegaki-font-centerline",
+    script: "logographic",
+    strokes: "2",
+  },
+  {
+    id: "zh-TW",
+    direction: "ltr",
+    penSpeed: "0.922",
+    renderer: "tegaki-font-centerline",
+    script: "logographic",
+    strokes: "2",
+  },
+  { id: "en", direction: "ltr", penSpeed: "reference", renderer: "vector-centerline", script: "cursive", strokes: "2" },
+  { id: "fr", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "7" },
+  { id: "es", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "4" },
+  { id: "ru", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "6" },
+  { id: "ar", direction: "rtl", penSpeed: "1.068", renderer: "tegaki-font-centerline", script: "arabic", strokes: "5" },
+  { id: "ja", direction: "ltr", penSpeed: "1.146", renderer: "tegaki-font-centerline", script: "kana", strokes: "5" },
+  { id: "ko", direction: "ltr", penSpeed: "1.146", renderer: "tegaki-font-centerline", script: "hangul", strokes: "5" },
 ] as const;
 
 const VIEWPORTS = [
@@ -89,7 +103,7 @@ for (const viewport of VIEWPORTS) {
         const welcomeWindow = dialog.locator(".welcome-window");
         const languageOptions = dialog.locator(".language-options");
         const greeting = dialog.locator(`.welcome-greeting[data-greeting-locale="${locale.id}"]`);
-        const introCopy = dialog.locator(".welcome-intro-copy");
+        const greetingStage = dialog.locator(".welcome-greeting-stage");
         const languageCard = dialog.locator(".welcome-language-card");
         const selectedLanguage = languageOptions.locator('[role="radio"][aria-checked="true"]');
         const primaryAction = dialog.locator(".welcome-language-card > .welcome-primary");
@@ -98,12 +112,17 @@ for (const viewport of VIEWPORTS) {
         await expect(root).toHaveAttribute("dir", locale.direction);
         await expect(dialog).toBeVisible();
         await expect(greeting).toHaveAttribute("data-motion-script", locale.script);
+        await expect(greeting).toHaveAttribute("data-motion-renderer", locale.renderer);
+        await expect(greeting).toHaveAttribute("data-pen-speed", locale.penSpeed);
         await expect(greeting).toHaveAttribute("data-stroke-count", locale.strokes);
+        if (locale.renderer === "tegaki-font-centerline") {
+          await expect(greeting).toHaveAttribute("data-font-state", "ready");
+        }
         await expect(languageOptions.getByRole("radio")).toHaveCount(LOCALES.length);
         await expect(selectedLanguage).toHaveCount(1);
         await expectInsideContainer(selectedLanguage, languageOptions);
         await expectInsideViewport(page, welcomeWindow);
-        await expectSeparated(introCopy, languageCard);
+        await expectSeparated(greetingStage, languageCard);
         await expectNoDocumentOverflow(page);
 
         await primaryAction.scrollIntoViewIfNeeded();

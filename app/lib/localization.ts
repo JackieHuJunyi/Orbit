@@ -69,7 +69,7 @@ export const RUNE_LOCALE_REGISTRY = [
   },
   {
     locale: "ru",
-    greeting: "Здравствуйте",
+    greeting: "Привет",
     monogram: "Ру",
     nativeName: "Русский",
     languagePrefixes: ["ru"],

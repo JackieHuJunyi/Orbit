@@ -53,7 +53,7 @@ test("prevents global and pane overlays from being clipped and keeps modal tiers
   assert.match(onboarding, /\.welcome-backdrop\s*\{[^}]*var\(--rune-layer-onboarding\)/s);
 });
 
-test("keeps ColaMD-informed content geometry and places the primary welcome action with language choice", async () => {
+test("keeps focused content geometry and places the compact primary action with language choice", async () => {
   const [tokens, onboarding, component] = await Promise.all([
     readFile(new URL("../app/styles/tokens.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
@@ -61,7 +61,10 @@ test("keeps ColaMD-informed content geometry and places the primary welcome acti
   ]);
   assert.match(tokens, /--rune-content-reading:\s*780px;/);
   assert.match(tokens, /--rune-file-width:\s*220px;/);
-  assert.match(onboarding, /\.welcome-language-card > \.welcome-primary\s*\{[^}]*width:\s*100%;/s);
+  assert.match(
+    onboarding,
+    /\.welcome-language-card > \.welcome-primary\s*\{[^}]*min-width:\s*118px;[^}]*align-self:\s*flex-end;/s,
+  );
   const cardStart = component.indexOf('<section className="welcome-language-card"');
   const cardEnd = component.indexOf("</section>", cardStart);
   assert.match(component.slice(cardStart, cardEnd), /className="welcome-primary"/);
@@ -110,41 +113,38 @@ test("keeps non-modal menu focus shared while business capabilities remain in th
   assert.match(responsive, /html\[dir="rtl"\] \.settings-popover\s*\{[^}]*right:\s*10px;[^}]*left:\s*10px;/);
 });
 
-test("keeps the startup spectrum inside one restrained path-timed handwritten performance", async () => {
-  const [component, ambient, experience, onboarding, motion] = await Promise.all([
+test("keeps the startup spectrum inside one licensed, path-timed handwritten performance", async () => {
+  const [component, experience, fontBundles, glyphData, onboarding, motion] = await Promise.all([
     readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/welcome-ambient-motion.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/greeting-font-bundles.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/greeting-glyph-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/motion.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(component, /data-motion-sequence="write-settle-reveal"/);
-  assert.match(component, /data-motion-timeline="path-length-staggered"/);
-  assert.match(component, /<feTurbulence[^>]+type="fractalNoise"/);
-  assert.match(component, /className="welcome-greeting-color-bloom"/);
-  assert.match(component, /data-color-system="apple-six-color"/);
-  assert.doesNotMatch(
-    component,
-    /welcome-greeting-ink-trail|welcome-greeting-ink-sheen|welcome-greeting-stroke-head-(?:bloom|light)/,
-  );
-  assert.match(experience, /greetingPresentation\.motion\.cycleDurationMs/);
-  assert.match(experience, /greetingPresentation\.motion\.completeAfterMs \+ 180/);
-  assert.match(onboarding, /\.welcome-greeting-spectrum stop\s*\{[^}]*animation:[^;]+\s1 both;/s);
-  assert.doesNotMatch(onboarding, /\.welcome-greeting-spectrum stop\s*\{[^}]*animation:[^;]*infinite/s);
-  assert.match(motion, /@keyframes rune-greeting-spectrum-flow/);
-  assert.match(motion, /@keyframes rune-greeting-color-bloom/);
-  assert.match(motion, /@keyframes rune-boot-chroma/);
-  assert.match(ambient, /data-ambient-motion="crossfade-ribbon-drift"/);
-  assert.match(ambient, /preserveAspectRatio="xMidYMid slice"/);
-  assert.equal((ambient.match(/<path\s/g) ?? []).length, 3);
-  assert.doesNotMatch(ambient, /<video|\.mp4|fetch\(|motion\/react|SF-Hello|AppleCurveAnimation/);
-  assert.match(experience, /step === "welcome"[\s\S]+<WelcomeAmbientMotion/);
-  assert.match(onboarding, /\.welcome-ambient-motion\s*\{[^}]*pointer-events:\s*none;/s);
-  assert.match(
-    onboarding,
-    /data-intro-phase="ready"\] \.welcome-ambient-motion\s*\{[^}]*--welcome-ambient-peak:\s*\.2;/s,
-  );
-  assert.match(motion, /@keyframes rune-welcome-ambient-crossfade/);
-  assert.doesNotMatch(motion, /\.welcome-ambient-(?:motion|field|ribbon[^\s{]*|thread)\s*\{[^}]*infinite/s);
+  assert.match(component, /"data-motion-sequence": "write-settle-reveal"/);
+  assert.match(component, /"data-motion-timeline": "path-length-staggered"/);
+  assert.match(component, /"data-color-system": "apple-hello-spectrum"/);
+  assert.match(component, /"data-ink-material": "pressure-pencil-spectrum"/);
+  assert.match(component, /<TegakiRenderer/);
+  assert.match(component, /speed: penSpeed/);
+  assert.doesNotMatch(component, /stagger:/);
+  assert.match(component, /feTurbulence[^]*feDisplacementMap/);
+  assert.doesNotMatch(component, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);
+  assert.match(experience, /greetingPresentation\.completeAfterMs \+ 180/);
+  assert.match(fontBundles, /Ma Shan Zheng/);
+  assert.match(fontBundles, /Iansui/);
+  assert.match(fontBundles, /Klee One/);
+  assert.match(fontBundles, /Nanum Pen Script/);
+  assert.match(fontBundles, /tegaki\/fonts\/amiri/);
+  assert.match(glyphData, /SIMPLIFIED_CHINESE_GREETING_GLYPHS/);
+  assert.match(glyphData, /TRADITIONAL_CHINESE_GREETING_GLYPHS/);
+  assert.match(onboarding, /\.welcome-backdrop\[data-intro-phase="writing"\]\s*\{[^}]*background:\s*#050506;/s);
+  assert.match(onboarding, /\.welcome-greeting-spectrum stop\s*\{\s*animation:\s*none;/s);
+  assert.match(motion, /@keyframes rune-greeting-pencil-write/);
+  assert.doesNotMatch(motion, /@keyframes rune-greeting-(?:write|ink-settle)/);
+  assert.match(motion, /@keyframes rune-setup-unfold/);
+  assert.doesNotMatch(experience, /WelcomeAmbientMotion|greetingCycleDuration|setGreetingIndex/);
+  assert.doesNotMatch(onboarding + motion, /welcome-ambient|greeting-color-bloom|greeting-stroke-head/);
 });

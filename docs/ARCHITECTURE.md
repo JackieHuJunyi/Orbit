@@ -632,6 +632,7 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 61. v1.45 turns checkpoint restore and Undo into one exact-diff, revision-bound, static/runtime-validated atomic write with a recoverable current-version safety point and zero-write failure paths.
 62. v1.46 turns sample reset into one reviewed current/target device-state swap, persists a complete reversible recovery snapshot atomically, and defers both its dialog and the low-frequency Settings implementation until requested.
 63. v1.47 turns folder Pull, Push, and initialization into one exact device/folder review, blocks all I/O on detected drift, and makes the complete pre-Pull device workspace recoverable without claiming unavailable browser-level multi-file atomicity.
+64. v1.48 replaces the welcome font mask with licensed centerline handwriting, keeps locale/font/shaper loading outside onboarding state, normalizes apparent pen velocity across nine scripts, and explicitly excludes Apple-owned SF-Hello assets from the public repository.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

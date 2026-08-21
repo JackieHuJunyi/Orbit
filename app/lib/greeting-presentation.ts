@@ -3,10 +3,12 @@ import { localeDirection, type RuneLocale } from "./localization.ts";
 
 export type GreetingPresentationPlan = Readonly<{
   canvasWidth: number;
+  completeAfterMs: number;
   direction: "ltr" | "rtl";
   isLong: boolean;
   locale: RuneLocale;
   motion: GreetingMotionPlan;
+  renderMode: "tegaki-font" | "vector-centerline";
   script: GreetingWritingScript;
   value: string;
 }>;
@@ -36,9 +38,14 @@ export function planGreetingPresentation({
   const direction = localeDirection(locale);
   const script = greetingScript(locale);
   const units = greetingUnits(value, locale);
+  const renderMode = locale === "en" && value === "Hello" ? "vector-centerline" : "tegaki-font";
   const compactScript = script === "logographic" || script === "kana" || script === "hangul";
   const canvasWidth =
-    locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
+    renderMode === "vector-centerline"
+      ? 638
+      : locale === "ar"
+        ? 680
+        : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
   const motion = planGreetingMotion({
     canvasWidth,
     direction,
@@ -47,13 +54,16 @@ export function planGreetingPresentation({
     unitCount: units.length,
     value,
   });
+  const isLong = canvasWidth > 900;
 
   return Object.freeze({
     canvasWidth,
+    completeAfterMs: renderMode === "vector-centerline" ? 3_560 : 9_000,
     direction,
-    isLong: canvasWidth > 900,
+    isLong,
     locale,
     motion,
+    renderMode,
     script,
     value,
   });

@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.48 with licensed pressure-sensitive centerline greetings for all nine interface locales, one apparent pen velocity, Arabic shaping, immediate reduced-motion setup, responsive geometry proof, and explicit exclusion of Apple-owned SF-Hello assets.
 - 2026-08-21 — Shipped Rune v1.47 with nine-language review-before-I/O for folder Pull, Push, and initialization, exact device/folder drift rejection, recoverable Pull, and real Chromium cancellation, initialization, recovery, and external-edit proof.
 - 2026-08-21 — Shipped Rune v1.46 with reviewed full-workspace reset, one atomic current-plus-recovery device write, reversible previous-workspace restore across reloads, and a genuinely deferred More Tools surface.
 - 2026-08-21 — Shipped Rune v1.45 with exact checkpoint-restore review, stale/static/runtime revalidation, one atomic safety-point-plus-workspace write, nine-language copy, zero-write Cancel/failure, and reload-proven recovery.
