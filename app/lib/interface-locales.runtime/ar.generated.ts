@@ -20,6 +20,8 @@ export const INTERFACE_TRANSLATIONS = {
   "- Files stay on this device by default.": "- تبقى الملفات على هذا الجهاز بشكل افتراضي.",
   "- Import and export disclose omissions instead of pretending to be lossless.":
     "- الاستيراد والتصدير يكشف عن السهو بدلاً من التظاهر بعدم الخسارة.",
+  "- Restoring history first shows the exact diff; confirmation rechecks the complete workspace and keeps the current version as a safety checkpoint.":
+    "- استعادة التاريخ يظهر أولاً الفرق الدقيق؛ يؤدي التأكيد إلى إعادة فحص مساحة العمل الكاملة والاحتفاظ بالإصدار الحالي كنقطة تفتيش للسلامة.",
   "- The Agent sees only files and ranges you deliberately select.":
     "- يرى Agent فقط الملفات والنطاقات التي تحددها عمدًا.",
   "# Welcome to Rune": "# مرحبًا بك في Rune",
@@ -159,6 +161,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Canonical data compiled live": "تم تجميع البيانات الأساسية مباشرة",
   "Canonical source": "المصدر الكنسي",
   "Canonical source diff": "اختلاف المصدر الكنسي",
+  "Canonical source diff after restore": "فرق المصدر الأساسي بعد الاستعادة",
   "Canonical source stays unchanged until Apply": "يبقى المصدر الأساسي بلا تغيير حتى التطبيق",
   Capabilities: "الإمكانات",
   "Capture a recoverable source version": "التقط نسخة مصدر قابلة للاسترداد",
@@ -177,6 +180,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check these settings first:": "تحقق من هذه الإعدادات أولاً:",
   "Checking the model connection…": "جارٍ التحقق من اتصال النموذج…",
   "Checkpoint history": "تاريخ نقطة التفتيش",
+  "Checkpoint restore details": "تفاصيل استعادة نقطة الحفظ",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "اختر مصدرًا أساسيًا. يرتبط الاستعلام وملفات Chart بالعناصر والحقول الأولية الدقيقة من المراجعة الأولى الخاصة بهم.",
   "Choose a fetched model": "اختر نموذجًا تم جلبه",
@@ -229,6 +233,7 @@ export const INTERFACE_TRANSLATIONS = {
   Configure: "تكوين",
   "Confirm outcome": "تأكيد النتيجة",
   "Confirm real usability after a handoff": "أكّد قابلية الاستخدام الفعلية بعد التسليم",
+  "Confirm restore": "تأكيد الاستعادة",
   "confirmed deliverables": "مخرجات مؤكدة",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "يؤدي التأكيد إلى التنزيل على هذا الجهاز فقط؛ ولا يرفع Rune الملف أو يرسله.",
@@ -308,6 +313,7 @@ export const INTERFACE_TRANSLATIONS = {
   "deterministic OOXML ZIP": "حتمية OOXML ZIP",
   "deterministic UTF-8 data": "بيانات UTF-8 الحتمية",
   "Device history": "تاريخ الجهاز",
+  "Device history · revision-bound": "سجل الجهاز · مرتبط بهذه المراجعة",
   "Device persistence failed": "فشل استمرار الجهاز",
   "Device storage is full": "مساحة تخزين الجهاز ممتلئة",
   "Device storage is full — checkpoint was not saved": "مساحة تخزين الجهاز ممتلئة - لم يتم حفظ نقطة التفتيش",
@@ -594,6 +600,8 @@ export const INTERFACE_TRANSLATIONS = {
   of: "من",
   "On-device recognition": "تعرّف على الجهاز",
   "One atomic device write · a checkpoint is created first": "جهاز ذري واحد يكتب · يتم إنشاء نقطة تفتيش أولاً",
+  "One atomic device write · every source stays unchanged on failure":
+    "كتابة ذرية واحدة على الجهاز · تبقى جميع المصادر دون تغيير عند الفشل",
   "One atomic device write · no upload": "جهاز ذري واحد يكتب · لا يوجد تحميل",
   "One atomic device write after confirmation": "جهاز ذري واحد يكتب بعد التأكيد",
   "One atomic transaction · compiled locally": "معاملة ذرية واحدة · مجمّعة محليًا",
@@ -767,11 +775,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue by region": "الإيرادات حسب المنطقة",
   "Review before write": "المراجعة قبل الكتابة",
   "Review canonical source": "مراجعة المصدر الأساسي",
+  "Review checkpoint restore": "مراجعة استعادة نقطة الحفظ",
   "Review focus": "مراجعة التركيز",
   "Review imported sources": "مراجعة المصادر المستوردة",
   "Review insertion": "مراجعة الإدراج",
   "Review refresh": "مراجعة التحديث",
   "Review the anonymous task records before local download": "راجع سجلات المهام مجهولة الهوية قبل التنزيل المحلي",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "راجع التغيير الدقيق في المصدر قبل استعادة نقطة الحفظ هذه. لن يُكتب شيء حتى تؤكد.",
   "Review the OCR page selection.": "راجع اختيار صفحات التعرّف الضوئي.",
   "Review the pilot evidence export": "راجع تصدير أدلة التجربة",
   "Review title": "مراجعة العنوان",
@@ -800,6 +811,8 @@ export const INTERFACE_TRANSLATIONS = {
     "وجد Rune صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "جمع Rune سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "يحتفظ Rune بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "يحافظ Rune على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
   "Rune sections": "Rune أقسام",

@@ -2650,4 +2650,12 @@ v1.42 已经证明 Export 可以是一个受控、registry-rendered 的菜单，
 
 v1.44 抽出受控 `WorkbenchSettingsMenu`，再用一个窄 `useWorkbenchMenuFocus` 统一两者的纯交互效果。hook 只知道 ordered button refs、open state 和 trigger，不知道导出格式、模型、文件夹或主题；WorkBench 仍独占 mutual exclusion 和每个 callback 的能力。folder 未连接时四个 action，连接后增加 Pull/Push；disabled Pilot Evidence 不进入方向键序列，动态 ref 在 paint 前按当前数量截断。这样复用的是可证明的 focus protocol，不是把不相关业务塞进一个“万能菜单”。
 
+## 147. 恢复不是“回到过去”的按钮，而是一笔新的可信写入
+
+过去的 checkpoint 数据模型已经可逆，但 Restore 的交互仍是一个例外：点击后先在 React state 追加保护点，再调用普通 Source 更新，等待 debounced persistence 才把两者送进 localStorage。用户看不到精确差异，旧 Data/Query 是否会让当前 Chart、报告或演示失效也没有进入同一审核。这不是丢失历史的问题，而是恢复动作本身没有遵守 Rune 的产品原则。
+
+v1.45 把任意 Restore 和顶部 Undo 都变成显式 review。纯 planner 只接收当前完整 workspace 与 exact checkpoint，生成一项标准 source patch、完整 revision 和最多 24 条变化行；普通 whole-workspace compiler 先拒绝未知、相同、超限或 dependency-breaking 的旧版本。延迟加载的 dialog 显示 exact source diff、安全保护说明和零写入取消，且九语言关键文案经过人工校订。
+
+Confirm 会从当前 checkpoint map 重新解析同一个 id 和 bytes，重新准备 patch，对 Data/Query/Chart 执行真实本地 runtime preflight，并在异步检查后再次比较完整 workspace revision。随后把当前 source 作为 restore-safety checkpoint，与 restored Artifacts 一次持久化；只有落盘成功才更新 React。这样 Undo 不再是隐藏的快速覆盖，而是可解释、可验证、可再次撤销的历史写入。planner 与 dialog 都不进入首屏依赖图，恢复安全不会变成欢迎页的启动成本。
+
 九语言几何回归同时找到了真实的 compact 缺陷：390px 下 Settings 仍带 desktop rail offset，LTR 向右溢出，Arabic RTL 向左溢出。修复用 compact 的双侧 10px physical inset 明确替换桌面 anchor，而不是只把 width 改小。现在 desktop/compact × 九语言都验证菜单位于 viewport、首项聚焦和 Escape 回到 trigger。Workbench 从 5,957 降到 5,826 行，首包为 525,898 bytes / 530 KB；后续新增工具只需给受控 Settings 增加显示事实与 Workbench callback，不需要再复制键盘或定位状态机。

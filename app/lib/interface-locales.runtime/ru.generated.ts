@@ -20,6 +20,8 @@ export const INTERFACE_TRANSLATIONS = {
   "- Files stay on this device by default.": "- По умолчанию файлы остаются на этом устройстве.",
   "- Import and export disclose omissions instead of pretending to be lossless.":
     "- Импорт и экспорт раскрывают упущения вместо того, чтобы делать вид, что они не имеют потерь.",
+  "- Restoring history first shows the exact diff; confirmation rechecks the complete workspace and keeps the current version as a safety checkpoint.":
+    "- Восстановление истории сначала показывает точную разницу; подтверждение перепроверяет всю рабочую область и сохраняет текущую версию в качестве контрольной точки безопасности.",
   "- The Agent sees only files and ranges you deliberately select.":
     "- Agent видит только файлы и диапазоны, которые вы сознательно выбрали.",
   "# Welcome to Rune": "# Добро пожаловать в Rune",
@@ -163,6 +165,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Canonical data compiled live": "Канонические данные, собранные в реальном времени",
   "Canonical source": "Канонический источник",
   "Canonical source diff": "Канонический исходный код",
+  "Canonical source diff after restore": "Разница канонического исходника после восстановления",
   "Canonical source stays unchanged until Apply": "Канонический исходник не изменится до применения",
   Capabilities: "Возможности",
   "Capture a recoverable source version": "Захват восстанавливаемой исходной версии",
@@ -181,6 +184,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check these settings first:": "Сначала проверьте эти настройки:",
   "Checking the model connection…": "Проверяем подключение модели…",
   "Checkpoint history": "История контрольных точек",
+  "Checkpoint restore details": "Сведения о восстановлении контрольной точки",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "Выберите канонический источник. Файлы запросов и Chart привязываются к точным исходным артефактам и полям из их первой версии.",
   "Choose a fetched model": "Выберите полученную модель",
@@ -234,6 +238,7 @@ export const INTERFACE_TRANSLATIONS = {
   Configure: "Настроить",
   "Confirm outcome": "Подтвердить результат",
   "Confirm real usability after a handoff": "Подтвердите реальную пригодность после передачи",
+  "Confirm restore": "Подтвердить восстановление",
   "confirmed deliverables": "подтверждённых материалов",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "После подтверждения файл только скачивается на это устройство; Rune не загружает и не отправляет его.",
@@ -314,6 +319,7 @@ export const INTERFACE_TRANSLATIONS = {
   "deterministic OOXML ZIP": "детерминированный OOXML ZIP",
   "deterministic UTF-8 data": "детерминированные данные UTF-8",
   "Device history": "История устройства",
+  "Device history · revision-bound": "История на устройстве · привязана к версии",
   "Device persistence failed": "Не удалось сохранить устройство",
   "Device storage is full": "Память устройства заполнена",
   "Device storage is full — checkpoint was not saved": "Память устройства заполнена — контрольная точка не сохранилась",
@@ -610,6 +616,8 @@ export const INTERFACE_TRANSLATIONS = {
   "On-device recognition": "Распознавание на устройстве",
   "One atomic device write · a checkpoint is created first":
     "Запись одного атомарного устройства · сначала создается контрольная точка",
+  "One atomic device write · every source stays unchanged on failure":
+    "Одна атомарная запись на устройстве · при сбое все исходники остаются без изменений",
   "One atomic device write · no upload": "Одно атомное устройство пишет · нет загрузки",
   "One atomic device write after confirmation": "Одно атомное устройство пишет после подтверждения",
   "One atomic transaction · compiled locally": "Одна атомарная транзакция · локальная компиляция",
@@ -787,12 +795,15 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue by region": "Выручка по регионам",
   "Review before write": "Обзор, прежде чем писать",
   "Review canonical source": "Проверить канонический исходник",
+  "Review checkpoint restore": "Проверить восстановление контрольной точки",
   "Review focus": "Фокус обзора",
   "Review imported sources": "Просмотрите импортированные источники",
   "Review insertion": "Проверить вставку",
   "Review refresh": "Проверить обновление",
   "Review the anonymous task records before local download":
     "Проверьте анонимные записи задач перед локальным скачиванием",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "Проверьте точное изменение исходника перед восстановлением контрольной точки. До подтверждения ничего не записывается.",
   "Review the OCR page selection.": "Проверьте выбор страниц для OCR.",
   "Review the pilot evidence export": "Проверьте экспорт данных пилота",
   "Review title": "Название отзыва",
@@ -821,6 +832,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune обнаружил страницы без выделяемого текста. Подтвердите страницы и язык; изображения будут прочитаны только после открытия предпросмотра или запуска распознавания.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune собрал записи задач с этого устройства в анонимный JSON. Он может использоваться для сводного анализа реального пилота, но никогда не загружается и не заявляет о подтверждении соответствия продукта рынку.",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune сохраняет текущую версию как восстанавливаемую страховочную точку и повторно проверяет всю рабочую область и влияние на локальное выполнение.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune сохраняет этот проверенный исходник без изменений и не компилирует и не переписывает его динамические ссылки.",
   "Rune sections": "Разделы Rune",

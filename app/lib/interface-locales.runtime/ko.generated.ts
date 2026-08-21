@@ -20,6 +20,8 @@ export const INTERFACE_TRANSLATIONS = {
   "- Files stay on this device by default.": "- 파일은 기본적으로 이 장치에 유지됩니다.",
   "- Import and export disclose omissions instead of pretending to be lossless.":
     "- 수입과 수출은 손실이 없는 척하는 대신 누락된 부분을 공개합니다.",
+  "- Restoring history first shows the exact diff; confirmation rechecks the complete workspace and keeps the current version as a safety checkpoint.":
+    "- 기록을 복원하면 먼저 정확한 차이점이 표시됩니다. 확인은 전체 작업 공간을 다시 확인하고 현재 버전을 안전 체크포인트로 유지합니다.",
   "- The Agent sees only files and ranges you deliberately select.":
     "- Agent에는 의도적으로 선택한 파일과 범위만 표시됩니다.",
   "# Welcome to Rune": "# Rune에 오신 것을 환영합니다.",
@@ -161,6 +163,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Canonical data compiled live": "실시간으로 컴파일된 표준 데이터",
   "Canonical source": "정식 소스",
   "Canonical source diff": "정식 소스 차이",
+  "Canonical source diff after restore": "복원 후 정규 소스 차이",
   "Canonical source stays unchanged until Apply": "적용 전까지 정규 소스는 변경되지 않습니다",
   Capabilities: "기능",
   "Capture a recoverable source version": "복구 가능한 소스 버전 캡처",
@@ -179,6 +182,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check these settings first:": "먼저 다음 설정을 확인하세요.",
   "Checking the model connection…": "모델 연결 확인 중…",
   "Checkpoint history": "체크포인트 내역",
+  "Checkpoint restore details": "체크포인트 복원 세부 정보",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "표준 소스를 선택하세요. 쿼리 및 Chart 파일은 첫 번째 개정의 정확한 업스트림 아티팩트 및 필드에 바인딩됩니다.",
   "Choose a fetched model": "가져온 모델 선택",
@@ -232,6 +236,7 @@ export const INTERFACE_TRANSLATIONS = {
   Configure: "구성",
   "Confirm outcome": "결과 확인",
   "Confirm real usability after a handoff": "전달 후 실제 사용 가능 여부 확인",
+  "Confirm restore": "복원 확인",
   "confirmed deliverables": "개 확인된 결과물",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "확인하면 이 기기에만 다운로드됩니다. Rune은 파일을 업로드하거나 전송하지 않습니다.",
@@ -311,6 +316,7 @@ export const INTERFACE_TRANSLATIONS = {
   "deterministic OOXML ZIP": "결정론적 OOXML ZIP",
   "deterministic UTF-8 data": "결정론적 UTF-8 데이터",
   "Device history": "기기 기록",
+  "Device history · revision-bound": "기기 기록 · 현재 리비전에 고정",
   "Device persistence failed": "장치 지속성 실패",
   "Device storage is full": "기기 저장공간이 가득 찼습니다.",
   "Device storage is full — checkpoint was not saved":
@@ -601,6 +607,8 @@ export const INTERFACE_TRANSLATIONS = {
   of: "/",
   "On-device recognition": "기기 내 인식",
   "One atomic device write · a checkpoint is created first": "하나의 원자 장치 쓰기 · 체크포인트가 먼저 생성됩니다.",
+  "One atomic device write · every source stays unchanged on failure":
+    "기기에 한 번만 원자적으로 기록 · 실패하면 모든 소스가 그대로 유지됩니다",
   "One atomic device write · no upload": "원자 장치 1개 쓰기 · 업로드 없음",
   "One atomic device write after confirmation": "확인 후 하나의 원자 장치 쓰기",
   "One atomic transaction · compiled locally": "하나의 원자적 트랜잭션 · 로컬 컴파일",
@@ -772,11 +780,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue by region": "지역별 수익",
   "Review before write": "쓰기 전에 검토하세요",
   "Review canonical source": "정규 소스 검토",
+  "Review checkpoint restore": "체크포인트 복원 검토",
   "Review focus": "검토 초점",
   "Review imported sources": "가져온 소스 검토",
   "Review insertion": "리뷰 삽입",
   "Review refresh": "갱신 검토",
   "Review the anonymous task records before local download": "로컬 다운로드 전에 익명 작업 기록을 검토하세요",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "이 체크포인트를 복원하기 전에 정확한 소스 변경을 검토하세요. 확인하기 전에는 아무것도 기록하지 않습니다.",
   "Review the OCR page selection.": "OCR 페이지 선택을 확인하세요.",
   "Review the pilot evidence export": "파일럿 증거 내보내기 검토",
   "Review title": "리뷰 제목",
@@ -805,6 +816,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune이 선택 가능한 텍스트가 없는 페이지를 찾았습니다. 페이지와 언어를 확인하세요. 미리보기를 열거나 인식을 시작하기 전에는 이미지 내용을 읽지 않습니다.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune이 이 기기의 작업 기록을 익명 JSON으로 정리했습니다. 실제 파일럿 결과 집계에 사용할 수 있지만 업로드되지 않으며 제품 시장 검증 완료를 의미하지 않습니다.",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune은 현재 버전을 복구 가능한 안전 지점으로 보존하고 전체 작업공간과 로컬 실행 영향을 다시 검증합니다.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
   "Rune sections": "Rune 섹션",

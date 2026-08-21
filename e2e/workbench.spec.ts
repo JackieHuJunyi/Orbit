@@ -163,6 +163,47 @@ test("renders the local-first workbench with its sample workspace", async ({ pag
   await expect(page.getByRole("button", { name: "More tools" })).toBeVisible();
 });
 
+test("reviews, cancels, and atomically persists a checkpoint restore", async ({ page }) => {
+  await openWorkbench(page);
+  const editor = page.locator("textarea.source-editor");
+  const originalSource = await editor.inputValue();
+  const versionTrigger = page.getByRole("button", { name: "Source and versions" });
+
+  await versionTrigger.click();
+  await page.getByRole("button", { name: "Save current", exact: true }).click();
+  await versionTrigger.click();
+  const changedSource = `${originalSource}\n\nTemporary restore review note.`;
+  await editor.fill(changedSource);
+  await expect(editor).toHaveValue(changedSource);
+  await page.waitForTimeout(520);
+
+  await versionTrigger.click();
+  await page.getByRole("button", { name: "Restore", exact: true }).click();
+  const review = page.getByRole("dialog", { name: "Review checkpoint restore" });
+  await expect(review).toBeVisible();
+  await expect(review.getByText("Reviewed baseline")).toHaveCount(0);
+  await expect(review.getByText("Manual checkpoint", { exact: true })).toBeVisible();
+  await expect(review.getByText(/Temporary restore review note/u)).toBeVisible();
+  await expect(review.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(review).toBeHidden();
+  await expect(editor).toHaveValue(changedSource);
+
+  await versionTrigger.click();
+  await page.getByRole("button", { name: "Restore", exact: true }).click();
+  await review.getByRole("button", { name: "Confirm restore", exact: true }).click();
+  await expect(review).toBeHidden();
+  await expect(editor).toHaveValue(originalSource);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}"));
+  expect(stored.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(originalSource);
+  expect(
+    stored.checkpoints["q2-review"].some((checkpoint: { source: string }) => checkpoint.source === changedSource),
+  ).toBe(true);
+
+  await page.reload();
+  await expect(editor).toHaveValue(originalSource);
+});
+
 test("reviews canonical source before downloading its exact UTF-8 bytes", async ({ page }) => {
   await openWorkbench(page);
   const editor = page.locator("textarea.source-editor");

@@ -319,6 +319,39 @@ html[dir="rtl"] .settings-popover {
 .import-review-body { padding: 24px 28px; }
 .import-review-actions { padding: 18px 28px 22px; }
 
+.checkpoint-restore-dialog { width: min(760px, var(--rune-frame-width)); }
+.checkpoint-restore-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--rune-space-3);
+  margin-bottom: var(--rune-space-3);
+  padding: var(--rune-space-3) var(--rune-space-4);
+  border: 1px solid rgba(var(--theme-rgb), .14);
+  border-radius: var(--rune-radius-card);
+  background: rgba(var(--theme-rgb), .055);
+}
+.checkpoint-restore-summary > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(var(--theme-rgb), .12);
+  color: var(--theme-accent);
+}
+.checkpoint-restore-summary svg { width: 17px; height: 17px; }
+.checkpoint-restore-summary > div { display: grid; min-width: 0; gap: var(--rune-space-1); }
+.checkpoint-restore-summary strong,
+.checkpoint-restore-summary small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.checkpoint-restore-summary strong { font-size: var(--rune-type-ui); }
+.checkpoint-restore-summary small { color: var(--muted); }
+.checkpoint-restore-safety {
+  border-color: rgba(var(--theme-rgb), .16);
+  background: rgba(var(--theme-rgb), .055);
+  color: var(--ink);
+}
+
 .delivery-outcome-dialog { width: min(720px, calc(100vw - 32px)); }
 .delivery-outcome-context {
   display: grid;

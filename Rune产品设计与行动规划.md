@@ -2421,3 +2421,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Activity rail 继续是 props-only trigger surface；Settings/Export 的 mutual exclusion、guide/model/evidence/folder/theme 状态和所有业务 dispatch 仍由 Workbench 组装。
 - compact Settings 必须显式覆盖 desktop activity-rail offset，在 390px 的 LTR 与 RTL 中都保留 10px viewport inset、内部纵向滚动与正确 transform origin；不能只缩小 width 而保留会溢出的 left/right anchor。
 - 发布证据必须覆盖首次/末次 focus、disabled skip、Arrow wrap、Home/End、theme Enter、Tab dismissal、Escape return，以及简中、繁中、英、法、西、俄、阿、日、韩在 desktop/compact 的 viewport containment 与零横向溢出。
+
+### 17.76 v1.45 恢复历史版本同样必须先审后写
+
+- Restore 与 Undo 都不得直接调用 source setter。它们先通过纯 `checkpoint-restore` planner 把 exact checkpoint 编译成一项普通 workspace patch，并展示有界的 canonical-source 行差异；Cancel 必须是默认焦点，Escape 与 Cancel 都保持零写入。
+- planner 必须拒绝不存在、已经相同、超过设备历史预算或会破坏当前依赖的版本；它不导入 React、localStorage、网络或 mutation capability。dialog 只负责九语言呈现与共享 modal 键盘协议。
+- Confirm 不能信任弹窗里的旧字符串：重新从当前 checkpoint map 解析 exact id/source，重新准备完整 workspace，执行受影响 Data/Query/Chart 的本地 runtime preflight，并在异步检查后再次验证 complete workspace revision。
+- 当前 source 必须作为可恢复保护点，与 restored Artifacts 在同一次 `persistDeviceWorkspace` 中写入；只有持久化成功后 React state 才能前进。stale、missing history、static/runtime failure 或 storage failure 都不能留下半个恢复或只有内存中的保护点。
+- 法、西、俄、阿、日、韩的关键标题、安全说明和确认动作使用人工校订文案；RTL 继续由共享 ReviewDialog 负责。planner 与 dialog 都延迟加载，不让欢迎页和普通编辑为低频恢复流程支付首包成本。
+- 发布证据必须覆盖 valid/unchanged/missing/oversized/dependency-breaking 与 frozen-input unit contract、lazy authority render contract，以及真实 Chromium 的 Cancel、Confirm、安全恢复点、localStorage 与 reload 一致性。

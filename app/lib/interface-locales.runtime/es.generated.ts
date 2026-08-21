@@ -20,6 +20,8 @@ export const INTERFACE_TRANSLATIONS = {
   "- Files stay on this device by default.": "- Los archivos permanecen en este dispositivo de forma predeterminada.",
   "- Import and export disclose omissions instead of pretending to be lossless.":
     "- Las importaciones y exportaciones revelan omisiones en lugar de pretender no tener pérdidas.",
+  "- Restoring history first shows the exact diff; confirmation rechecks the complete workspace and keeps the current version as a safety checkpoint.":
+    "- Restaurar el historial muestra primero la diferencia exacta; La confirmación vuelve a verificar todo el espacio de trabajo y mantiene la versión actual como punto de control de seguridad.",
   "- The Agent sees only files and ranges you deliberately select.":
     "- El Agent ve solo los archivos y rangos que selecciones deliberadamente.",
   "# Welcome to Rune": "# Bienvenido a Rune",
@@ -165,6 +167,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Canonical data compiled live": "Datos canónicos recopilados en vivo.",
   "Canonical source": "fuente canónica",
   "Canonical source diff": "Diferencia de fuente canónica",
+  "Canonical source diff after restore": "Diferencia de la fuente canónica tras la restauración",
   "Canonical source stays unchanged until Apply": "La fuente canónica permanece sin cambios hasta aplicar",
   Capabilities: "Capacidades",
   "Capture a recoverable source version": "Capturar una versión fuente recuperable",
@@ -183,6 +186,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check these settings first:": "Primero verifique estas configuraciones:",
   "Checking the model connection…": "Comprobando la conexión del modelo...",
   "Checkpoint history": "Historial de puntos de control",
+  "Checkpoint restore details": "Detalles de la restauración del punto de control",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "Elija una fuente canónica. Los archivos de consulta y Chart se vinculan a artefactos y campos ascendentes exactos desde su primera revisión.",
   "Choose a fetched model": "Elija un modelo recuperado",
@@ -236,6 +240,7 @@ export const INTERFACE_TRANSLATIONS = {
   Configure: "Configurar",
   "Confirm outcome": "Confirmar resultado",
   "Confirm real usability after a handoff": "Confirma la utilidad real después de una entrega",
+  "Confirm restore": "Confirmar restauración",
   "confirmed deliverables": "entregables confirmados",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "Al confirmar, solo se descarga en este dispositivo; Rune no sube ni envía el archivo.",
@@ -316,6 +321,7 @@ export const INTERFACE_TRANSLATIONS = {
   "deterministic OOXML ZIP": "ZIP OOXML determinista",
   "deterministic UTF-8 data": "datos deterministas UTF-8",
   "Device history": "Historial del dispositivo",
+  "Device history · revision-bound": "Historial del dispositivo · vinculado a esta revisión",
   "Device persistence failed": "La persistencia del dispositivo falló",
   "Device storage is full": "El almacenamiento del dispositivo está lleno",
   "Device storage is full — checkpoint was not saved":
@@ -616,6 +622,8 @@ export const INTERFACE_TRANSLATIONS = {
   "On-device recognition": "Reconocimiento en el dispositivo",
   "One atomic device write · a checkpoint is created first":
     "Escritura de un dispositivo atómico · primero se crea un punto de control",
+  "One atomic device write · every source stays unchanged on failure":
+    "Una escritura atómica en el dispositivo · todas las fuentes permanecen intactas si falla",
   "One atomic device write · no upload": "Escritura en un dispositivo atómico · sin carga",
   "One atomic device write after confirmation": "Un dispositivo atómico escribe después de la confirmación.",
   "One atomic transaction · compiled locally": "Una transacción atómica · compilada localmente",
@@ -793,12 +801,15 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue by region": "Ingresos por región",
   "Review before write": "Revisar antes de escribir",
   "Review canonical source": "Revisar la fuente canónica",
+  "Review checkpoint restore": "Revisar la restauración del punto de control",
   "Review focus": "Enfoque de revisión",
   "Review imported sources": "Revisar fuentes importadas",
   "Review insertion": "Inserción de reseñas",
   "Review refresh": "Revisar actualización",
   "Review the anonymous task records before local download":
     "Revisa los registros de tareas anónimos antes de descargarlos localmente",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "Revisa el cambio exacto de la fuente antes de restaurar este punto de control. No se escribe nada hasta que confirmes.",
   "Review the OCR page selection.": "Revisa la selección de páginas para OCR.",
   "Review the pilot evidence export": "Revisar la exportación de evidencia piloto",
   "Review title": "Título de la reseña",
@@ -827,6 +838,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune encontró páginas sin texto seleccionable. Confirma las páginas y el idioma; las imágenes solo se leerán al abrir una vista previa o iniciar el reconocimiento.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune ha recopilado los registros de tareas de este dispositivo en un JSON anónimo. Puede apoyar la agregación de un piloto real, pero nunca se sube ni afirma validar el encaje producto-mercado.",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune conserva la versión actual como punto de seguridad recuperable y vuelve a comprobar todo el espacio de trabajo y el impacto de la ejecución local.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune conserva exactamente esta fuente validada; no compila ni reescribe sus referencias dinámicas.",
   "Rune sections": "Rune secciones",

@@ -99,6 +99,7 @@ import {
   type CheckpointMap,
   type WorkspaceCheckpoint,
 } from "../lib/checkpoints";
+import type { CheckpointRestorePlan } from "../lib/checkpoint-restore";
 import {
   captureWorkspaceSourceRevision,
   createLineDiffPreview,
@@ -280,6 +281,9 @@ import {
 const DocumentStructureReviewDialog = lazy(() =>
   import("./document-structure-review-dialog").then((module) => ({ default: module.DocumentStructureReviewDialog })),
 );
+const CheckpointRestoreDialog = lazy(() =>
+  import("./checkpoint-restore-dialog").then((module) => ({ default: module.CheckpointRestoreDialog })),
+);
 const DeliveryOutcomeDialog = lazy(() =>
   import("./delivery-outcome-dialog").then((module) => ({ default: module.DeliveryOutcomeDialog })),
 );
@@ -430,6 +434,12 @@ type PendingDocumentStructure = {
   target: DocumentBlockPreviewSourceTarget;
   input: VisualDocumentBlockStructureInput;
   prepared: PreparedVisualDocumentBlockStructure;
+  error: string;
+  submitting: boolean;
+};
+
+type PendingCheckpointRestore = {
+  plan: CheckpointRestorePlan;
   error: string;
   submitting: boolean;
 };
@@ -814,6 +824,7 @@ export function RuneWorkbench() {
   const [deliveryOutcomeError, setDeliveryOutcomeError] = useState("");
   const [deliveryOutcomeState, setDeliveryOutcomeState] = useState<"idle" | "recording">("idle");
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
+  const [pendingCheckpointRestore, setPendingCheckpointRestore] = useState<PendingCheckpointRestore | null>(null);
   const [pendingLocalImage, setPendingLocalImage] = useState<PendingLocalImage | null>(null);
   const [localAssetUrls, setLocalAssetUrls] = useState<Record<string, string>>({});
   const [exportError, setExportError] = useState("");
@@ -852,6 +863,7 @@ export function RuneWorkbench() {
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const checkpointRestoreInFlightRef = useRef(false);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
   const toolsMenuRequestedFocusRef = useRef<WorkbenchMenuFocusEdge>("first");
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
@@ -872,11 +884,13 @@ export function RuneWorkbench() {
   const checkpointsRef = useRef(checkpoints);
   const savedOperatingReviewsRef = useRef(savedOperatingReviews);
   const taskEvidenceRef = useRef(taskEvidence);
+  const selectedIdRef = useRef(selectedId);
   const recordedStoppedTaskIdsRef = useRef(new Set<string>());
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
   savedOperatingReviewsRef.current = savedOperatingReviews;
   taskEvidenceRef.current = taskEvidence;
+  selectedIdRef.current = selectedId;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
@@ -1292,6 +1306,7 @@ export function RuneWorkbench() {
     Boolean(pendingExport) ||
     Boolean(pendingPilotEvidence) ||
     Boolean(pendingDeliveryConfirmation) ||
+    Boolean(pendingCheckpointRestore) ||
     Boolean(pendingDocumentStructure) ||
     Boolean(pendingLocalImage) ||
     operatingReviewOpen ||
@@ -1471,6 +1486,7 @@ export function RuneWorkbench() {
         visualEditState !== "idle" ||
         activeVisualSourceDraft ||
         commandMenuOpen ||
+        pendingCheckpointRestore ||
         pendingDocumentStructure ||
         pendingLocalImage ||
         operatingReviewOpen ||
@@ -1556,6 +1572,7 @@ export function RuneWorkbench() {
     newArtifactOpen,
     operatingReviewOpen,
     pendingChange,
+    pendingCheckpointRestore,
     pendingDeliveryConfirmation,
     pendingDocumentStructure,
     pendingExport,
@@ -1737,7 +1754,7 @@ export function RuneWorkbench() {
   }
 
   function updateSource(source: string, cursor?: SourceSelection) {
-    if (pendingDocumentStructure || activeVisualSourceDraft) return;
+    if (pendingCheckpointRestore || pendingDocumentStructure || activeVisualSourceDraft) return;
     setSaveState("saving");
     setArtifacts((current) =>
       current.map((artifact) => (artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact)),
@@ -1772,6 +1789,7 @@ export function RuneWorkbench() {
       pendingImport ||
       pendingPdfOcr ||
       pendingExport ||
+      pendingCheckpointRestore ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       activeVisualSourceDraft
@@ -1987,6 +2005,7 @@ export function RuneWorkbench() {
       pendingImport ||
       pendingPdfOcr ||
       pendingExport ||
+      pendingCheckpointRestore ||
       (pendingDocumentStructure && !allowDocumentStructureReview) ||
       agentState === "planning"
     ) {
@@ -2136,6 +2155,7 @@ export function RuneWorkbench() {
       pendingImport ||
       pendingPdfOcr ||
       pendingExport ||
+      pendingCheckpointRestore ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       agentState === "planning"
@@ -2220,6 +2240,7 @@ export function RuneWorkbench() {
       pendingImport ||
       pendingPdfOcr ||
       pendingExport ||
+      pendingCheckpointRestore ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       agentState === "planning"
@@ -2666,7 +2687,7 @@ export function RuneWorkbench() {
   }
 
   async function connectWorkspaceFolder() {
-    if (directoryState === "syncing" || pendingDocumentStructure) return;
+    if (directoryState === "syncing" || pendingCheckpointRestore || pendingDocumentStructure) return;
     if (!supportsDirectoryWorkspace()) {
       setDirectoryState("error");
       setNotice("Folder workspaces require a browser with the File System Access API");
@@ -2749,20 +2770,109 @@ export function RuneWorkbench() {
     }
   }
 
-  function restoreCheckpoint(checkpoint: WorkspaceCheckpoint) {
-    if (activeVisualSourceDraft) return;
-    if (checkpoint.artifactId !== selectedArtifact.id || checkpoint.source === selectedArtifact.source) {
-      setNotice("That checkpoint already matches the current source");
-      return;
+  async function reviewCheckpointRestore(checkpoint: WorkspaceCheckpoint) {
+    if (activeVisualSourceDraft || pendingCheckpointRestore || checkpointRestoreInFlightRef.current) return;
+    checkpointRestoreInFlightRef.current = true;
+    try {
+      if (checkpoint.artifactId !== selectedArtifact.id) {
+        setNotice(
+          runeText(locale, "That checkpoint no longer belongs to the selected file", "该恢复点已不属于当前文件"),
+        );
+        return;
+      }
+      const { prepareCheckpointRestore } = await import("../lib/checkpoint-restore");
+      const currentArtifact = artifactsRef.current.find((artifact) => artifact.id === checkpoint.artifactId);
+      if (
+        checkpoint.artifactId !== selectedIdRef.current ||
+        !currentArtifact ||
+        checkpoint.source === currentArtifact.source
+      ) {
+        setNotice(runeText(locale, "That checkpoint already matches the current source", "该恢复点已与当前源内容一致"));
+        return;
+      }
+      const prepared = prepareCheckpointRestore(artifactsRef.current, checkpoint);
+      if (!prepared.plan || prepared.errors.length) {
+        setNotice(prepared.errors[0] ?? "Rune could not prepare that checkpoint restore");
+        return;
+      }
+      setPendingCheckpointRestore({ plan: prepared.plan, error: "", submitting: false });
+      setHistoryOpen(false);
+      setNotice(runeText(locale, "Checkpoint ready for exact source review", "恢复点已准备好进行精确源内容审核"));
+    } finally {
+      checkpointRestoreInFlightRef.current = false;
     }
-    if (!canCheckpointSource(selectedArtifact.source)) {
-      setNotice("Download this large source before restoring an older checkpoint");
-      return;
+  }
+
+  function cancelCheckpointRestore() {
+    if (!pendingCheckpointRestore || pendingCheckpointRestore.submitting) return;
+    setPendingCheckpointRestore(null);
+    setNotice(
+      runeText(
+        locale,
+        "Checkpoint restore cancelled — every source stayed unchanged",
+        "已取消版本恢复 — 所有源内容保持不变",
+      ),
+    );
+  }
+
+  async function confirmCheckpointRestore() {
+    const pending = pendingCheckpointRestore;
+    if (!pending || pending.submitting) return;
+    setPendingCheckpointRestore((current) => (current ? { ...current, error: "", submitting: true } : current));
+    setSaveState("saving");
+    setNotice(
+      runeText(locale, "Verifying checkpoint against the complete workspace…", "正在对照完整工作区核验恢复点…"),
+    );
+
+    try {
+      const { commitCheckpointRestore } = await import("../lib/checkpoint-restore");
+      const committed = await commitCheckpointRestore({
+        expectedPlan: pending.plan,
+        readWorkspace: () => ({ artifacts: artifactsRef.current, checkpoints: checkpointsRef.current }),
+        preflight: (currentArtifacts, patches) => preflightRuntimeMutation(currentArtifacts, patches, []),
+        persist: (nextArtifacts, nextSelectedId, nextCheckpoints) =>
+          persistDeviceWorkspace(
+            nextArtifacts,
+            nextSelectedId,
+            nextCheckpoints,
+            savedOperatingReviewsRef.current,
+            taskEvidenceRef.current,
+          ),
+      });
+
+      setArtifacts(committed.nextArtifacts);
+      setSelectedId(committed.artifactId);
+      setCheckpoints(committed.nextCheckpoints);
+      setSourceSelection(null);
+      setSourceCursor(null);
+      setPendingChange(null);
+      setPendingReviewId("");
+      if (agentScope === "selection") setAgentScope("artifact");
+      setPendingCheckpointRestore(null);
+      setHistoryOpen(false);
+      setSaveState("saved");
+      setSavedAt("");
+      setNotice(
+        runeText(
+          locale,
+          `Restored checkpoint · ${committed.checkpointLabel}`,
+          `已恢复恢复点 · ${committed.checkpointLabel}`,
+        ),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Rune could not restore this checkpoint.";
+      setSaveState(message.startsWith("Device persistence failed") ? "error" : "saved");
+      setPendingCheckpointRestore((current) =>
+        current
+          ? {
+              ...current,
+              error: message,
+              submitting: false,
+            }
+          : current,
+      );
+      setNotice(runeText(locale, "Restore held — every source stayed unchanged", "恢复已暂停 — 所有源内容保持不变"));
     }
-    const safetyCheckpoint = createCheckpoint(selectedArtifact, `Before restoring ${checkpoint.label}`, "restore");
-    setCheckpoints((current) => appendCheckpoint(current, safetyCheckpoint));
-    updateSource(checkpoint.source);
-    setNotice(`Restored checkpoint · ${checkpoint.label}`);
   }
 
   async function runAgent(nextPrompt = prompt) {
@@ -2772,6 +2882,7 @@ export function RuneWorkbench() {
       agentState === "planning" ||
       visualEditState !== "idle" ||
       activeVisualSourceDraft ||
+      pendingCheckpointRestore ||
       pendingDocumentStructure
     )
       return;
@@ -3283,11 +3394,11 @@ export function RuneWorkbench() {
       .reverse()
       .find((checkpoint) => checkpoint.source !== selectedArtifact.source);
     if (!previous) return;
-    restoreCheckpoint(previous);
+    void reviewCheckpointRestore(previous);
   }
 
   function resetWorkspace() {
-    if (pendingDocumentStructure) return;
+    if (pendingCheckpointRestore || pendingDocumentStructure) return;
     if (!window.confirm("Reset this device draft to the Rune sample workspace?")) return;
     const defaults = cloneDefaultArtifacts();
     setSaveState("saving");
@@ -3659,7 +3770,7 @@ export function RuneWorkbench() {
   }
 
   async function createNewArtifact(input: ArtifactCreationInput, embedArtifactId?: string) {
-    if (pendingDocumentStructure) return;
+    if (pendingCheckpointRestore || pendingDocumentStructure) return;
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
@@ -3777,6 +3888,7 @@ export function RuneWorkbench() {
       pendingImport ||
       pendingPdfOcr ||
       pendingExport ||
+      pendingCheckpointRestore ||
       pendingDocumentStructure ||
       exportState !== "idle"
     )
@@ -4074,6 +4186,7 @@ export function RuneWorkbench() {
       pendingExport ||
       pendingImport ||
       pendingPdfOcr ||
+      pendingCheckpointRestore ||
       pendingDocumentStructure ||
       importInFlightRef.current ||
       exportInFlightRef.current
@@ -4374,6 +4487,7 @@ export function RuneWorkbench() {
               Boolean(pendingImport) ||
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
+              Boolean(pendingCheckpointRestore) ||
               Boolean(pendingDocumentStructure)
             }
           >
@@ -4399,6 +4513,7 @@ export function RuneWorkbench() {
                 Boolean(pendingImport) ||
                 Boolean(pendingPdfOcr) ||
                 Boolean(pendingExport) ||
+                Boolean(pendingCheckpointRestore) ||
                 Boolean(pendingDocumentStructure)
               }
               legacyOfficeAvailable={legacyOfficeExportAvailable}
@@ -4433,6 +4548,7 @@ export function RuneWorkbench() {
               Boolean(pendingImport) ||
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
+              Boolean(pendingCheckpointRestore) ||
               Boolean(pendingDocumentStructure)
             }
           />
@@ -4453,6 +4569,7 @@ export function RuneWorkbench() {
               Boolean(pendingImport) ||
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
+              Boolean(pendingCheckpointRestore) ||
               Boolean(pendingDocumentStructure)
             }
           />
@@ -4475,6 +4592,7 @@ export function RuneWorkbench() {
               Boolean(pendingImport) ||
               Boolean(pendingPdfOcr) ||
               Boolean(pendingExport) ||
+              Boolean(pendingCheckpointRestore) ||
               Boolean(pendingDocumentStructure) ||
               Boolean(pendingLocalImage)
             }
@@ -4971,6 +5089,7 @@ export function RuneWorkbench() {
                           Boolean(pendingImport) ||
                           Boolean(pendingPdfOcr) ||
                           Boolean(pendingExport) ||
+                          Boolean(pendingCheckpointRestore) ||
                           Boolean(pendingDocumentStructure) ||
                           Boolean(pendingLocalImage)
                         }
@@ -5062,7 +5181,7 @@ export function RuneWorkbench() {
                             ) : (
                               <button
                                 disabled={Boolean(activeVisualSourceDraft)}
-                                onClick={() => restoreCheckpoint(checkpoint)}
+                                onClick={() => void reviewCheckpointRestore(checkpoint)}
                               >
                                 {ui.restore}
                               </button>
@@ -5134,8 +5253,12 @@ export function RuneWorkbench() {
                   spellCheck={false}
                   wrap="off"
                   readOnly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
-                  disabled={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
-                  aria-busy={visualEditState !== "idle" || Boolean(pendingDocumentStructure)}
+                  disabled={
+                    visualEditState !== "idle" || Boolean(pendingCheckpointRestore) || Boolean(pendingDocumentStructure)
+                  }
+                  aria-busy={
+                    visualEditState !== "idle" || Boolean(pendingCheckpointRestore) || Boolean(pendingDocumentStructure)
+                  }
                   aria-readonly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
                   aria-label={
                     proposalReviewActive
@@ -5606,7 +5729,10 @@ export function RuneWorkbench() {
                       !proposalReviewActive && visualEditState === "idle" ? commitVisualDocumentBlockEdit : undefined
                     }
                     onReviewDocumentBlockStructure={
-                      !proposalReviewActive && visualEditState === "idle" && !pendingDocumentStructure
+                      !proposalReviewActive &&
+                      visualEditState === "idle" &&
+                      !pendingCheckpointRestore &&
+                      !pendingDocumentStructure
                         ? reviewVisualDocumentBlockStructure
                         : undefined
                     }
@@ -5772,6 +5898,16 @@ export function RuneWorkbench() {
               setNotice(ui.noDeliveryOutcomes);
             }}
             onConfirm={confirmDeliveryOutcome}
+          />
+        )}
+        {pendingCheckpointRestore && (
+          <CheckpointRestoreDialog
+            plan={pendingCheckpointRestore.plan}
+            error={pendingCheckpointRestore.error}
+            submitting={pendingCheckpointRestore.submitting}
+            locale={locale}
+            onCancel={cancelCheckpointRestore}
+            onConfirm={() => void confirmCheckpointRestore()}
           />
         )}
         {pendingDocumentStructure && (

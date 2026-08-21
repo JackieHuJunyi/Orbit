@@ -128,6 +128,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
   assert.equal(chinese.exportReview.title("source"), "审核规范源内容");
   assert.equal(traditionalChinese.exportReview.title("source"), "稽核規範源內容");
   assert.equal(english.exportReview.title("source"), "Review canonical source");
+  assert.equal(chinese.checkpointRestore.title, "审核版本恢复");
+  assert.equal(traditionalChinese.checkpointRestore.title, "稽核版本恢復");
+  assert.equal(english.checkpointRestore.title, "Review checkpoint restore");
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     assert.notEqual(runeUICopy(locale).workbench.livePreview, english.workbench.livePreview);
     assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
@@ -143,6 +146,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
     assert.notEqual(runeUICopy(locale).exportReview.title("source"), english.exportReview.title("source"));
     assert.notEqual(runeUICopy(locale).exportReview.descriptors.source, english.exportReview.descriptors.source);
     assert.notEqual(runeUICopy(locale).exportReview.sourceFileTitle, english.exportReview.sourceFileTitle);
+    assert.notEqual(runeUICopy(locale).checkpointRestore.title, english.checkpointRestore.title);
+    assert.notEqual(runeUICopy(locale).checkpointRestore.description, english.checkpointRestore.description);
+    assert.notEqual(runeUICopy(locale).checkpointRestore.safety, english.checkpointRestore.safety);
     assert.match(runeUICopy(locale).preview.validHtmlSlide, /<section>/u);
     assert.doesNotMatch(runeUICopy(locale).preview.validHtmlSlide, /<(?:sección|قسم|セクション|섹션)>/iu);
     assert.notEqual(runeUICopy(locale).workbench.diagnostics.openSource, english.workbench.diagnostics.openSource);

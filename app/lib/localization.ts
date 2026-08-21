@@ -681,6 +681,23 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       apply: zh ? "应用结构修改" : "Apply structure change",
       diff: zh ? "规范源内容差异" : "Canonical source diff",
     },
+    checkpointRestore: {
+      kicker: zh ? "本机历史 · 绑定当前版本" : "Device history · revision-bound",
+      title: zh ? "审核版本恢复" : "Review checkpoint restore",
+      description: zh
+        ? "请审核恢复此版本所产生的精确源内容变化。确认前不会写入。"
+        : "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.",
+      details: zh ? "版本恢复详情" : "Checkpoint restore details",
+      safety: zh
+        ? "Rune 会保留当前版本作为可恢复保护点，并再次核验完整工作区与本地运行影响。"
+        : "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.",
+      atomic: zh
+        ? "一次原子本机写入 · 失败时所有源内容保持不变"
+        : "One atomic device write · every source stays unchanged on failure",
+      verifying: zh ? "正在核验…" : "Verifying…",
+      restore: zh ? "确认恢复" : "Confirm restore",
+      diff: zh ? "恢复前后的规范源差异" : "Canonical source diff after restore",
+    },
     importReview: {
       kicker: zh ? "本地转换 · 不上传" : "Local conversion · no upload",
       title: zh ? "审核导入后的可读源" : "Review imported sources",
@@ -1358,6 +1375,7 @@ export const CHINESE_RUNE_GUIDE = [
   "- 文件默认保存在当前设备。",
   "- Agent 只能看到你选择的文件和范围。",
   "- 每次改动先显示具体差异、依赖变化和运行验证。",
+  "- 恢复历史版本前会先显示精确差异；确认时再次核验完整工作区，并把当前版本保留为保护恢复点。",
   "- 应用前建立恢复点；失败时整笔修改保持零写入。",
   "- 导入和导出会明确说明无法保留的内容，不假装无损转换。",
   "- 个人模型密钥只在未保存表单中短暂存在，保存后由服务端加密进 HttpOnly 凭据；不会进入工作区、localStorage、Artifact 或 Git。",
@@ -1412,6 +1430,7 @@ export const ENGLISH_RUNE_GUIDE = [
   "- Files stay on this device by default.",
   "- The Agent sees only files and ranges you deliberately select.",
   "- Every proposal shows its concrete diff, dependency change, and runtime checks.",
+  "- Restoring history first shows the exact diff; confirmation rechecks the complete workspace and keeps the current version as a safety checkpoint.",
   "- Apply creates a checkpoint; a failed transaction writes nothing.",
   "- Import and export disclose omissions instead of pretending to be lossless.",
   "- A personal model key exists only in the unsaved form, then becomes a server-encrypted HttpOnly credential; it never enters the workspace, localStorage, an Artifact, or Git.",

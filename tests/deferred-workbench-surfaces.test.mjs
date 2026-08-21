@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const surfaceModules = [
+  "checkpoint-restore-dialog",
   "document-structure-review-dialog",
   "delivery-outcome-dialog",
   "document-briefing-dialog",

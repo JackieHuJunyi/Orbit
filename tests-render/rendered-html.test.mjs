@@ -143,6 +143,7 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   const workbenchBytes = (await stat(new URL(`../dist/client/${workbenchEntry.file}`, import.meta.url))).size;
   assert.ok(workbenchBytes <= 530_000, `Initial Workbench chunk is ${workbenchBytes} bytes; budget is 530000.`);
   for (const surface of [
+    "checkpoint-restore-dialog",
     "document-structure-review-dialog",
     "delivery-outcome-dialog",
     "document-briefing-dialog",
@@ -181,6 +182,8 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/agent-evidence.ts"));
   assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/query-preflight.ts"));
+  assert.equal(manifest["app/lib/checkpoint-restore.ts"]?.isDynamicEntry, true);
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/checkpoint-restore.ts"));
 });
 
 test("ships one complete-source live mirror boundary for every revision-bound visual draft", async () => {
@@ -655,9 +658,28 @@ test("consolidates source language, checkpoints, and undo into one version surfa
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(html, /class="history-trigger source-version-trigger/);
   assert.match(html, /aria-label="Source and versions"/);
+  const restoreDialog = await readFile(
+    new URL("../app/components/checkpoint-restore-dialog.tsx", import.meta.url),
+    "utf8",
+  );
+  const restorePlanner = await readFile(new URL("../app/lib/checkpoint-restore.ts", import.meta.url), "utf8");
   assert.match(source, /className="checkpoint-panel-actions"/);
   assert.match(source, /onClick=\{undoLastAgentChange\}/);
+  assert.match(source, /prepareCheckpointRestore\(artifactsRef\.current, checkpoint\)/);
+  assert.match(source, /commitCheckpointRestore\(\{/);
+  assert.match(source, /preflight: \(currentArtifacts, patches\) => preflightRuntimeMutation/);
+  assert.match(source, /persist: \(nextArtifacts, nextSelectedId, nextCheckpoints\) =>[\s\S]*persistDeviceWorkspace/s);
+  assert.match(source, /<CheckpointRestoreDialog/);
+  assert.doesNotMatch(source, /function restoreCheckpoint\(/);
   assert.match(source, /selectedArtifact\.language/);
+  assert.match(restoreDialog, /ReviewDialog/);
+  assert.match(restoreDialog, /data-dialog-initial-focus/);
+  assert.match(restoreDialog, /plan\.diff\.map/);
+  assert.doesNotMatch(restoreDialog, /localStorage|setArtifacts|prepareWorkspaceMutation/);
+  assert.match(restorePlanner, /prepareWorkspaceMutation\(artifacts, \[patch\], \[\]\)/);
+  assert.match(restorePlanner, /await preflight\(current\.artifacts, \[prepared\.plan\.patch\]\)/);
+  assert.match(restorePlanner, /persist\(prepared\.plan\.nextArtifacts, currentArtifact\.id, nextCheckpoints\)/);
+  assert.doesNotMatch(restorePlanner, /from "react"|localStorage|setArtifacts/);
   assert.match(styles, /\.source-version-trigger > i\s*\{/);
   assert.match(styles, /\.checkpoint-panel-actions\s*\{/);
 });

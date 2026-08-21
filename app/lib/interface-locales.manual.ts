@@ -2986,3 +2986,82 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
     "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Rune 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Device history · revision-bound": "Historique de l’appareil · lié à cette révision",
+  "Review checkpoint restore": "Vérifier la restauration d’un point de contrôle",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "Vérifiez la modification exacte de la source avant de restaurer ce point de contrôle. Rien n’est écrit avant votre confirmation.",
+  "Checkpoint restore details": "Détails de la restauration du point de contrôle",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune conserve la version actuelle comme point de sécurité récupérable, puis revérifie tout l’espace de travail et l’impact de l’exécution locale.",
+  "One atomic device write · every source stays unchanged on failure":
+    "Une écriture atomique sur l’appareil · toutes les sources restent inchangées en cas d’échec",
+  "Confirm restore": "Confirmer la restauration",
+  "Canonical source diff after restore": "Différence de la source canonique après restauration",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Device history · revision-bound": "Historial del dispositivo · vinculado a esta revisión",
+  "Review checkpoint restore": "Revisar la restauración del punto de control",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "Revisa el cambio exacto de la fuente antes de restaurar este punto de control. No se escribe nada hasta que confirmes.",
+  "Checkpoint restore details": "Detalles de la restauración del punto de control",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune conserva la versión actual como punto de seguridad recuperable y vuelve a comprobar todo el espacio de trabajo y el impacto de la ejecución local.",
+  "One atomic device write · every source stays unchanged on failure":
+    "Una escritura atómica en el dispositivo · todas las fuentes permanecen intactas si falla",
+  "Confirm restore": "Confirmar restauración",
+  "Canonical source diff after restore": "Diferencia de la fuente canónica tras la restauración",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Device history · revision-bound": "История на устройстве · привязана к версии",
+  "Review checkpoint restore": "Проверить восстановление контрольной точки",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "Проверьте точное изменение исходника перед восстановлением контрольной точки. До подтверждения ничего не записывается.",
+  "Checkpoint restore details": "Сведения о восстановлении контрольной точки",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune сохраняет текущую версию как восстанавливаемую страховочную точку и повторно проверяет всю рабочую область и влияние на локальное выполнение.",
+  "One atomic device write · every source stays unchanged on failure":
+    "Одна атомарная запись на устройстве · при сбое все исходники остаются без изменений",
+  "Confirm restore": "Подтвердить восстановление",
+  "Canonical source diff after restore": "Разница канонического исходника после восстановления",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Device history · revision-bound": "سجل الجهاز · مرتبط بهذه المراجعة",
+  "Review checkpoint restore": "مراجعة استعادة نقطة الحفظ",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "راجع التغيير الدقيق في المصدر قبل استعادة نقطة الحفظ هذه. لن يُكتب شيء حتى تؤكد.",
+  "Checkpoint restore details": "تفاصيل استعادة نقطة الحفظ",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "يحتفظ Rune بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
+  "One atomic device write · every source stays unchanged on failure":
+    "كتابة ذرية واحدة على الجهاز · تبقى جميع المصادر دون تغيير عند الفشل",
+  "Confirm restore": "تأكيد الاستعادة",
+  "Canonical source diff after restore": "فرق المصدر الأساسي بعد الاستعادة",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Device history · revision-bound": "デバイス履歴 · 現在のリビジョンに固定",
+  "Review checkpoint restore": "チェックポイントの復元を確認",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "このチェックポイントを復元する前に、ソースの正確な変更を確認してください。確定するまで書き込みません。",
+  "Checkpoint restore details": "チェックポイント復元の詳細",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune は現在のバージョンを復元可能な安全ポイントとして保持し、ワークスペース全体とローカル実行への影響を再検証します。",
+  "One atomic device write · every source stays unchanged on failure":
+    "デバイスへ 1 回だけアトミックに書き込み · 失敗時はすべてのソースを変更しません",
+  "Confirm restore": "復元を確定",
+  "Canonical source diff after restore": "復元後の正規ソース差分",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Device history · revision-bound": "기기 기록 · 현재 리비전에 고정",
+  "Review checkpoint restore": "체크포인트 복원 검토",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "이 체크포인트를 복원하기 전에 정확한 소스 변경을 검토하세요. 확인하기 전에는 아무것도 기록하지 않습니다.",
+  "Checkpoint restore details": "체크포인트 복원 세부 정보",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune은 현재 버전을 복구 가능한 안전 지점으로 보존하고 전체 작업공간과 로컬 실행 영향을 다시 검증합니다.",
+  "One atomic device write · every source stays unchanged on failure":
+    "기기에 한 번만 원자적으로 기록 · 실패하면 모든 소스가 그대로 유지됩니다",
+  "Confirm restore": "복원 확인",
+  "Canonical source diff after restore": "복원 후 정규 소스 차이",
+});

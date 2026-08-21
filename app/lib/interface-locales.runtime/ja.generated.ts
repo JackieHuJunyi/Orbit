@@ -20,6 +20,8 @@ export const INTERFACE_TRANSLATIONS = {
   "- Files stay on this device by default.": "- ファイルはデフォルトでこのデバイスに残ります。",
   "- Import and export disclose omissions instead of pretending to be lossless.":
     "- インポートとエクスポートは、ロスレスであるかのように振る舞うのではなく、欠落を開示します。",
+  "- Restoring history first shows the exact diff; confirmation rechecks the complete workspace and keeps the current version as a safety checkpoint.":
+    "- 履歴を復元すると、最初に正確な差分が表示されます。確認では、ワークスペース全体を再チェックし、現在のバージョンを安全チェックポイントとして保持します。",
   "- The Agent sees only files and ranges you deliberately select.":
     "- Agent は、意図的に選択したファイルと範囲のみを表示します。",
   "# Welcome to Rune": "# Rune へようこそ",
@@ -162,6 +164,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Canonical data compiled live": "ライブでコンパイルされた正規データ",
   "Canonical source": "正規のソース",
   "Canonical source diff": "正規のソースの差分",
+  "Canonical source diff after restore": "復元後の正規ソース差分",
   "Canonical source stays unchanged until Apply": "適用するまで正規ソースは変更されません",
   Capabilities: "機能",
   "Capture a recoverable source version": "回復可能なソース バージョンをキャプチャする",
@@ -180,6 +183,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check these settings first:": "まず次の設定を確認してください。",
   "Checking the model connection…": "モデルの接続を確認しています…",
   "Checkpoint history": "チェックポイント履歴",
+  "Checkpoint restore details": "チェックポイント復元の詳細",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "正規のソースを選択します。クエリ ファイルと Chart ファイルは、最初のリビジョンの正確なアップストリーム アーティファクトとフィールドにバインドされます。",
   "Choose a fetched model": "取得したモデルを選択してください",
@@ -233,6 +237,7 @@ export const INTERFACE_TRANSLATIONS = {
   Configure: "設定する",
   "Confirm outcome": "結果を確定",
   "Confirm real usability after a handoff": "受け渡し後に実際の有用性を確認",
+  "Confirm restore": "復元を確定",
   "confirmed deliverables": "件の確認済み成果物",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "確認するとこのデバイスにのみダウンロードされます。Rune がファイルをアップロードまたは送信することはありません。",
@@ -312,6 +317,7 @@ export const INTERFACE_TRANSLATIONS = {
   "deterministic OOXML ZIP": "決定的な OOXML ZIP",
   "deterministic UTF-8 data": "決定的な UTF-8 データ",
   "Device history": "デバイス履歴",
+  "Device history · revision-bound": "デバイス履歴 · 現在のリビジョンに固定",
   "Device persistence failed": "デバイスの永続化に失敗しました",
   "Device storage is full": "デバイスのストレージがいっぱいです",
   "Device storage is full — checkpoint was not saved":
@@ -610,6 +616,8 @@ export const INTERFACE_TRANSLATIONS = {
   "On-device recognition": "デバイス上で認識",
   "One atomic device write · a checkpoint is created first":
     "1 つのアトミック デバイス書き込み - 最初にチェックポイントが作成されます",
+  "One atomic device write · every source stays unchanged on failure":
+    "デバイスへ 1 回だけアトミックに書き込み · 失敗時はすべてのソースを変更しません",
   "One atomic device write · no upload": "1 つのアトミック デバイス書き込み、アップロードなし",
   "One atomic device write after confirmation": "確認後に 1 つのアトミックデバイスを書き込む",
   "One atomic transaction · compiled locally": "一つのアトミックなトランザクション · ローカルでコンパイル",
@@ -786,12 +794,15 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue by region": "地域別の収益",
   "Review before write": "書く前に見直す",
   "Review canonical source": "正規ソースを確認",
+  "Review checkpoint restore": "チェックポイントの復元を確認",
   "Review focus": "レビューの焦点",
   "Review imported sources": "インポートされたソースを確認する",
   "Review insertion": "レビューの挿入",
   "Review refresh": "更新を確認",
   "Review the anonymous task records before local download":
     "ローカルにダウンロードする前に匿名のタスク記録を確認してください",
+  "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
+    "このチェックポイントを復元する前に、ソースの正確な変更を確認してください。確定するまで書き込みません。",
   "Review the OCR page selection.": "OCR ページの選択を確認してください。",
   "Review the pilot evidence export": "パイロット証拠のエクスポートを確認",
   "Review title": "レビューのタイトル",
@@ -820,6 +831,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune は選択可能なテキストがないページを検出しました。ページと言語を確認してください。プレビューを開くか認識を開始するまで画像内容は読み取りません。",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune はこのデバイスのタスク記録を匿名 JSON にまとめました。実際のパイロット結果の集計に利用できますが、アップロードされることはなく、プロダクトマーケット検証の完了を示すものでもありません。",
+  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Rune は現在のバージョンを復元可能な安全ポイントとして保持し、ワークスペース全体とローカル実行への影響を再検証します。",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune は検証済みのソースをそのまま保持し、ライブ参照をコンパイルしたり書き換えたりしません。",
   "Rune sections": "Rune セクション",
