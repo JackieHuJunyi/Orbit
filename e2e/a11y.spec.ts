@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 test("fresh-user onboarding has no critical accessibility violations", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("dialog", { name: "Every piece of work, with a clear source." })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Choose your Rune language" })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).analyze();
   const critical = results.violations.filter((violation) => violation.impact === "critical");
