@@ -83,9 +83,10 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting).toBeVisible();
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
   await expect(greeting).toHaveAttribute("data-motion-renderer", "calligraphic-mask");
-  await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-sheen");
+  await expect(greeting).toHaveAttribute("data-motion-timeline", "path-length-staggered");
+  await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-path");
   await expect(greeting).toHaveAttribute("data-ink-material", "luminous-spectrum");
-  await expect(greeting).toHaveAttribute("data-ink-motion", "nib-led-line");
+  await expect(greeting).toHaveAttribute("data-ink-motion", "path-front");
   await expect(greeting).toHaveAttribute("data-ink-trace", "progressive");
   await expect(greeting).toHaveAttribute("data-color-system", "apple-six-color");
   await expect(greeting).toHaveAttribute("data-boot-motion", "center-write-dock-unfold");
@@ -96,10 +97,8 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
   await expect(greeting.locator(".welcome-greeting-reveal-stroke")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-color-bloom")).toHaveCount(1);
-  await expect(greeting.locator(".welcome-greeting-ink-trail")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-stroke-head-bloom")).toHaveCount(3);
-  await expect(greeting.locator(".welcome-greeting-stroke-head-light")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
+  await expect(greeting.locator(".welcome-greeting-ink-trail, .welcome-greeting-ink-sheen")).toHaveCount(0);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
   await expect(ambient).toHaveAttribute("data-ambient-renderer", "inline-svg");
   await expect(ambient.locator(".welcome-ambient-ribbon")).toHaveCount(2);
@@ -122,19 +121,17 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   const animationNames = await greeting.evaluate((element) =>
     Array.from(
       element.querySelectorAll(
-        ".welcome-greeting-reveal-stroke, .welcome-greeting-ink-trail, .welcome-greeting-color-bloom, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
+        ".welcome-greeting-reveal-stroke, .welcome-greeting-color-bloom, .welcome-greeting-fill-settled, .welcome-greeting-stroke-head, .welcome-greeting-stroke-head-ink",
       ),
     )
       .flatMap((unit) => unit.getAnimations())
       .map((animation) => ("animationName" in animation ? String(animation.animationName) : "")),
   );
   expect(animationNames).toContain("rune-greeting-write");
-  expect(animationNames).toContain("rune-greeting-ink-trace");
   expect(animationNames).toContain("rune-greeting-color-bloom");
   expect(animationNames).toContain("rune-greeting-ink-settle");
   expect(animationNames).toContain("rune-greeting-stroke-head");
   expect(animationNames).toContain("rune-greeting-pressure");
-  await expect(greeting.locator(".welcome-greeting-ink-sheen")).toHaveCSS("animation-name", "rune-greeting-sheen");
   for (const head of await greeting.locator(".welcome-greeting-stroke-head").all()) {
     await expect(head).toHaveCSS("offset-path", /path\(/);
   }

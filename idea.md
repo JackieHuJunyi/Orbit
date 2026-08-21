@@ -2635,3 +2635,11 @@ v1.41 因此没有复制任何参考路径或视频，也没有把 `motion/react
 v1.42 把 icon family、detail treatment 与 desktop-only 要求放回每项冻结 capability。新的 `WorkbenchExportMenu` 只对这份有序列表做过滤和 map，不读取 Artifact kind，也不拥有 bytes、review、persistence 或 download。点击或 Arrow Down/Up 打开时，它在 paint 前聚焦首项或末项；Arrow 键循环、Home/End 跳转、Tab 自然退出、Escape 返回 trigger。选中文档、数据再回到文档时，旧的六项 ref 会收缩为当前四项，脱离 DOM 的按钮不能继续进入键盘序列。
 
 因此新增格式现在只需在能力定义中明确 target 与 presentation contract，TypeScript、单元门和通用菜单共同消费；不会再出现 converter 已支持、菜单却漏项的半完成状态。Workbench 从 6,102 行减到 5,957 行，真实 Chromium 覆盖四项 → 六项 → 四项的动态菜单和完整焦点路径，首屏仍为 525,719 bytes / 530 KB。
+
+## 145. 手写动效的每一幕必须由同一份路径时间轴决定
+
+Chánh Đại 的 Apple Hello Effect 值得学习的不是现成 `hello` 字形，而是它把每条 SVG path 的 `pathLength`、duration、delay 与最终 completion 写成一份清晰合同。Rune 过去虽然也逐笔显现，但组件内部计算笔画，父级又按字符数估计轮换时间，并用固定 4.15 秒兜底展开；更换长问候或调整速度时，这三只钟存在漂移风险。
+
+v1.43 新增 React-free `greeting-presentation`：locale、问候文字和可选速度一次编译为 direction、script strategy、canvas width 与完整 frozen motion plan。stroke write、settle、completion、5–7 秒 cycle 都只有一个 owner；`HandwrittenGreeting`、`WelcomeExperience` 与背景 crossfade 只消费这份结果。九种语言逐项回归，阿拉伯文仍以完整 RTL shaping run 运动，中日韩仍使用有界有序笔势。
+
+视觉也按参考的克制原则减法：保留彩色 mask、轻微字形 bloom、纹理 settle 和一个小型 path front，移除重复细轨迹、横向扫光及笔尖的独立 bloom/highlight。Rune 不导入参考页的 Motion 依赖，也不复制其 credit 指向的 Apple/SF-Hello 字形路径、字体或资产。首屏从 525,719 降至 524,689 bytes；高级感来自一条清楚、连续、可完成的动作，而不是更多发光节点。

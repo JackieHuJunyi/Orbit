@@ -619,6 +619,7 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 56. v1.40 collapses first run into one exact-center six-color writing act, then docks the completed mark into the stable multilingual setup layout without retaining a persistent decorative ambient loop.
 57. v1.41 adds one props-only, finite inline-SVG ambient field that shares the greeting cycle, crossfades two broad Rune-original spectrum ribbons plus one fine thread, recedes in the ready layout, and imports no reviewed reference media, glyph path, library, network, Canvas, timer, or write authority.
 58. v1.42 makes the export menu a controlled generic projection of capability-owned presentation metadata, with before-paint focus, complete menu-key navigation, dynamic item-ref cleanup, and no byte-preparation, review, persistence, or download authority.
+59. v1.43 gives all nine startup greetings one React-free presentation plan whose frozen path timings, settle completion, and bounded cycle are consumed by the SVG writer, onboarding unfold, and ambient crossfade without copying reference glyph assets or adding an animation runtime.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

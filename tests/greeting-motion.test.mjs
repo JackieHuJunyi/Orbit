@@ -15,6 +15,10 @@ test("plans a bounded cursive greeting as an opening, cross stroke, and one conn
   assert.equal(plan.motionCount, 6);
   assert.equal(plan.writeDurationMs, 2_190);
   assert.equal(plan.settleDelayMs, 2_382);
+  assert.equal(plan.settleDurationMs, 620);
+  assert.equal(plan.completeAfterMs, 3_002);
+  assert.equal(plan.cycleDurationMs, 5_000);
+  assert.equal(plan.durationScale, 1);
   assert.equal(plan.strokes.length, 3);
   assert.match(plan.strokes[0].path, /^M48 174 /);
   assert.match(plan.strokes[2].path, /^M96\.3 148 /);
@@ -81,4 +85,34 @@ test("bounds hostile geometry and visible-symbol counts without mutating input",
   assert.equal(nonfinite.writeDurationMs, 1_240);
   assert.equal(nonfinite.strokes.length, 3);
   assert.ok(nonfinite.strokes.at(-1).delayMs + nonfinite.strokes.at(-1).durationMs < nonfinite.settleDelayMs);
+});
+
+test("scales the complete path timeline while keeping it inside a bounded welcome cycle", () => {
+  const fast = planGreetingMotion({
+    canvasWidth: 592,
+    direction: "ltr",
+    durationScale: 0.2,
+    script: "cursive",
+    unitCount: 5,
+    value: "Hello",
+  });
+  const slow = planGreetingMotion({
+    canvasWidth: 592,
+    direction: "ltr",
+    durationScale: 20,
+    script: "cursive",
+    unitCount: 5,
+    value: "Hello",
+  });
+
+  assert.equal(fast.durationScale, 0.6);
+  assert.equal(fast.writeDurationMs, 1_200);
+  assert.equal(fast.completeAfterMs, 1_687);
+  assert.equal(fast.cycleDurationMs, 5_000);
+  assert.equal(slow.durationScale, 1.6);
+  assert.equal(slow.writeDurationMs, 3_200);
+  assert.equal(slow.completeAfterMs, 4_499);
+  assert.equal(slow.cycleDurationMs, 6_419);
+  assert.ok(fast.strokes.every((stroke, index) => index === 0 || stroke.delayMs > fast.strokes[index - 1].delayMs));
+  assert.ok(slow.strokes.every((stroke, index) => index === 0 || stroke.delayMs > slow.strokes[index - 1].delayMs));
 });

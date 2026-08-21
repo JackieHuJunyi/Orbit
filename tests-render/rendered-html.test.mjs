@@ -819,14 +819,17 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(styles, /@keyframes rune-greeting-write/);
-  assert.match(styles, /@keyframes rune-greeting-ink-trace/);
   assert.match(styles, /@keyframes rune-greeting-color-bloom/);
   assert.match(styles, /@keyframes rune-boot-chroma/);
   assert.match(styles, /@keyframes rune-greeting-dock/);
   assert.match(styles, /@keyframes rune-greeting-stroke-head/);
   assert.match(styles, /@keyframes rune-greeting-pressure/);
   assert.match(styles, /@keyframes rune-greeting-ink-settle/);
-  assert.match(styles, /@keyframes rune-greeting-sheen/);
+  assert.doesNotMatch(styles, /@keyframes rune-greeting-(?:ink-trace|sheen)/);
+  assert.match(
+    styles,
+    /\.welcome-greeting-fill-settled\s*\{[^}]*var\(--greeting-settle-duration\)[^}]*var\(--greeting-settle-delay\)/s,
+  );
   assert.match(styles, /\.welcome-greeting-reveal-stroke\s*\{[^}]*stroke-dasharray:\s*1/s);
   assert.match(styles, /stroke-dasharray:\s*1/);
   assert.match(styles, /grid-template-areas:\s*"greeting greeting"\s*"copy language"/s);
@@ -840,16 +843,17 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(source, /className="tools-material-preview"/);
   assert.match(welcome, /<HandwrittenGreeting/);
   assert.match(welcome, /window\.setTimeout/);
-  assert.match(welcome, /localeDirection\(greetingLocale\) === "rtl"/);
+  assert.match(welcome, /planGreetingPresentation\(\{ locale: greetingLocale, value: greeting \}\)/);
+  assert.match(welcome, /greetingPresentation\.motion\.completeAfterMs \+ 180/);
   assert.match(handwrittenGreeting, /<linearGradient/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-reveal-stroke"/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-ink-trail"/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-fill welcome-greeting-fill-reveal"/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-stroke-head"/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-ink-sheen"/);
+  assert.doesNotMatch(handwrittenGreeting, /welcome-greeting-(?:ink-trail|ink-sheen|stroke-head-(?:bloom|light))/);
   assert.match(handwrittenGreeting, /data-motion-renderer="calligraphic-mask"/);
-  assert.match(handwrittenGreeting, /data-ink-effect="spectrum-sheen"/);
+  assert.match(handwrittenGreeting, /data-motion-timeline="path-length-staggered"/);
+  assert.match(handwrittenGreeting, /data-ink-effect="spectrum-path"/);
   assert.match(handwrittenGreeting, /data-ink-material="luminous-spectrum"/);
   assert.match(handwrittenGreeting, /data-color-system="apple-six-color"/);
   assert.match(handwrittenGreeting, /data-boot-motion="center-write-dock-unfold"/);
@@ -859,11 +863,10 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /data-writing-style="pressure-calligraphy"/);
   assert.match(handwrittenGreeting, /data-motion-script=\{script\}/);
   assert.match(handwrittenGreeting, /motion\.strokes\.map/);
-  assert.match(handwrittenGreeting, /planGreetingMotion/);
   assert.match(handwrittenGreeting, /offsetPath:\s*`path/);
   assert.doesNotMatch(handwrittenGreeting, /motion\.writePath|welcome-greeting-flourish|welcome-greeting-pen/);
   assert.doesNotMatch(handwrittenGreeting, /fetch\(|localStorage|indexedDB|WorkspaceArtifact|ModelProvider/);
-  assert.match(handwrittenGreeting, /localeDirection\(locale\)/);
+  assert.doesNotMatch(handwrittenGreeting, /planGreetingMotion|localeDirection/);
   assert.match(handwrittenGreeting, /--greeting-cycle-duration/);
   assert.match(welcome, /data-intro-phase=\{introPhase\}/);
   assert.match(styles, /\.welcome-window\[data-intro-phase="writing"\][^}]*box-shadow:\s*none/s);

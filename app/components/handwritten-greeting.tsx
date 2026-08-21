@@ -1,8 +1,7 @@
 "use client";
 
-import { useId, useMemo, type AnimationEvent, type CSSProperties, type SVGProps } from "react";
-import { planGreetingMotion, type GreetingWritingScript } from "../lib/greeting-motion";
-import { localeDirection, type RuneLocale } from "../lib/localization";
+import { useId, type AnimationEvent, type CSSProperties, type SVGProps } from "react";
+import type { GreetingPresentationPlan } from "../lib/greeting-presentation";
 
 const SPECTRUM_INK = [
   ["#ff375f", "#ff6482"],
@@ -15,19 +14,6 @@ const SPECTRUM_INK = [
   ["#bf5af2", "#ee68d8"],
   ["#ff375f", "#ff765d"],
 ] as const;
-
-function greetingUnits(value: string, locale: RuneLocale) {
-  if (localeDirection(locale) === "rtl") return [value];
-  return value.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(value);
-}
-
-function greetingScript(locale: RuneLocale): GreetingWritingScript {
-  if (locale === "ar") return "arabic";
-  if (locale === "ja") return "kana";
-  if (locale === "ko") return "hangul";
-  if (locale === "zh-CN" || locale === "zh-TW") return "logographic";
-  return "cursive";
-}
 
 function GreetingText({
   className,
@@ -60,47 +46,33 @@ function GreetingText({
 }
 
 export function HandwrittenGreeting({
-  cycleDuration,
-  locale,
   onWritingComplete,
-  value,
+  presentation,
 }: {
-  cycleDuration: number;
-  locale: RuneLocale;
   onWritingComplete?: () => void;
-  value: string;
+  presentation: GreetingPresentationPlan;
 }) {
-  const direction = localeDirection(locale);
-  const script = greetingScript(locale);
-  const units = useMemo(() => greetingUnits(value, locale), [locale, value]);
+  const { canvasWidth, direction, isLong, locale, motion, script, value } = presentation;
   const identifier = useId().replaceAll(":", "");
   const gradientId = `rune-greeting-spectrum-${identifier}`;
   const auraId = `rune-greeting-aura-${identifier}`;
   const inkTextureId = `rune-greeting-ink-texture-${identifier}`;
   const revealMaskId = `rune-greeting-reveal-${identifier}`;
-  const textClipId = `rune-greeting-text-${identifier}`;
-  const sheenId = `rune-greeting-sheen-${identifier}`;
-  const compactScript = locale === "zh-CN" || locale === "zh-TW" || locale === "ja" || locale === "ko";
-  const canvasWidth =
-    locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
-  const isLong = canvasWidth > 900;
-  const motion = useMemo(
-    () => planGreetingMotion({ canvasWidth, direction, script, unitCount: units.length, value }),
-    [canvasWidth, direction, script, units.length, value],
-  );
 
   return (
     <svg
       aria-label={value}
       className={`welcome-greeting ${isLong ? "long" : ""}`.trim()}
       data-direction={direction}
+      data-duration-scale={motion.durationScale}
       data-greeting-locale={locale}
       data-motion-count={motion.motionCount}
       data-motion-renderer="calligraphic-mask"
+      data-motion-timeline="path-length-staggered"
       data-motion-script={script}
-      data-ink-effect="spectrum-sheen"
+      data-ink-effect="spectrum-path"
       data-ink-material="luminous-spectrum"
-      data-ink-motion="nib-led-line"
+      data-ink-motion="path-front"
       data-ink-trace="progressive"
       data-color-system="apple-six-color"
       data-boot-motion="center-write-dock-unfold"
@@ -112,10 +84,9 @@ export function HandwrittenGreeting({
       role="img"
       style={
         {
-          "--greeting-cycle-duration": `${cycleDuration}ms`,
+          "--greeting-cycle-duration": `${motion.cycleDurationMs}ms`,
           "--greeting-settle-delay": `${motion.settleDelayMs}ms`,
-          "--greeting-sheen-delay": `${motion.settleDelayMs + 120}ms`,
-          "--greeting-sheen-distance": `${Math.round(canvasWidth * 1.48)}px`,
+          "--greeting-settle-duration": `${motion.settleDurationMs}ms`,
           "--greeting-write-duration": `${motion.writeDurationMs}ms`,
         } as CSSProperties
       }
@@ -146,15 +117,8 @@ export function HandwrittenGreeting({
             />
           ))}
         </linearGradient>
-        <linearGradient className="welcome-greeting-sheen-gradient" id={sheenId} x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="white" stopOpacity="0" />
-          <stop offset="0.42" stopColor="white" stopOpacity="0" />
-          <stop offset="0.5" stopColor="white" stopOpacity="0.7" />
-          <stop offset="0.58" stopColor="white" stopOpacity="0" />
-          <stop offset="1" stopColor="white" stopOpacity="0" />
-        </linearGradient>
         <filter colorInterpolationFilters="sRGB" height="190%" id={auraId} width="136%" x="-18%" y="-45%">
-          <feGaussianBlur stdDeviation="10.5" />
+          <feGaussianBlur stdDeviation="8" />
         </filter>
         <filter colorInterpolationFilters="sRGB" height="130%" id={inkTextureId} width="106%" x="-3%" y="-15%">
           <feTurbulence baseFrequency="0.72" numOctaves="2" result="inkGrain" seed="17" type="fractalNoise" />
@@ -181,16 +145,6 @@ export function HandwrittenGreeting({
             />
           ))}
         </mask>
-        <clipPath id={textClipId}>
-          <text
-            direction={direction}
-            textAnchor={direction === "rtl" ? "end" : "start"}
-            x={direction === "rtl" ? canvasWidth - 36 : 36}
-            y="166"
-          >
-            {value}
-          </text>
-        </clipPath>
       </defs>
 
       <g aria-hidden="true" className="welcome-greeting-color-bloom" filter={`url(#${auraId})`}>
@@ -213,27 +167,6 @@ export function HandwrittenGreeting({
           value={value}
         />
       </g>
-      <g aria-hidden="true" className="welcome-greeting-ink-trails" clipPath={`url(#${textClipId})`}>
-        {motion.strokes.map((stroke, index) => (
-          <path
-            className="welcome-greeting-ink-trail"
-            d={stroke.path}
-            fill="none"
-            key={`trail-${index}-${stroke.path}`}
-            pathLength="1"
-            stroke={`url(#${gradientId})`}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={Math.max(2.4, Math.round(stroke.strokeWidth * 0.062 * 10) / 10)}
-            style={
-              {
-                "--greeting-stroke-delay": `${stroke.delayMs}ms`,
-                "--greeting-stroke-duration": `${stroke.durationMs}ms`,
-              } as CSSProperties
-            }
-          />
-        ))}
-      </g>
       <g className="welcome-greeting-ink-texture" filter={`url(#${inkTextureId})`}>
         <GreetingText
           className="welcome-greeting-fill welcome-greeting-fill-settled"
@@ -244,16 +177,6 @@ export function HandwrittenGreeting({
             if (event.animationName === "rune-greeting-ink-settle") onWritingComplete?.();
           }}
           value={value}
-        />
-      </g>
-      <g aria-hidden="true" clipPath={`url(#${textClipId})`} mask={`url(#${revealMaskId})`}>
-        <rect
-          className="welcome-greeting-ink-sheen"
-          fill={`url(#${sheenId})`}
-          height="220"
-          width={Math.round(canvasWidth * 0.42)}
-          x={Math.round(canvasWidth * -0.46)}
-          y="0"
         />
       </g>
       {motion.strokes.map((stroke, index) => (
@@ -271,13 +194,11 @@ export function HandwrittenGreeting({
             } as CSSProperties
           }
         >
-          <circle className="welcome-greeting-stroke-head-bloom" cx="0" cy="0" r="7.5" />
           <path
             className="welcome-greeting-stroke-head-ink"
             d="M -5.8 1.2 C -3.6 -2.4 1.4 -3.1 5.3 -1 C 2.8 2.2 -2.1 3.4 -5.8 1.2 Z"
             fill={`url(#${gradientId})`}
           />
-          <ellipse className="welcome-greeting-stroke-head-light" cx="-.7" cy="-.55" rx="1.45" ry=".48" />
         </g>
       ))}
     </svg>

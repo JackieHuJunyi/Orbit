@@ -16,8 +16,8 @@ import {
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HandwrittenGreeting } from "./handwritten-greeting";
 import { WelcomeAmbientMotion } from "./welcome-ambient-motion";
+import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
-  localeDirection,
   localeDisplayName,
   localeMonogram,
   localizeRuneCopy,
@@ -204,11 +204,11 @@ export function WelcomeExperience({
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
   const greeting = greetings[greetingIndex] ?? greetings[0] ?? "Hello";
   const greetingLocale = RUNE_LOCALE_REGISTRY.find((entry) => entry.greeting === greeting)?.locale ?? locale;
-  const greetingCharacters =
-    localeDirection(greetingLocale) === "rtl"
-      ? [greeting]
-      : (greeting.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(greeting));
-  const greetingCycleDuration = Math.max(5_000, Math.min(7_000, 3_600 + greetingCharacters.length * 200));
+  const greetingPresentation = useMemo(
+    () => planGreetingPresentation({ locale: greetingLocale, value: greeting }),
+    [greeting, greetingLocale],
+  );
+  const greetingCycleDuration = greetingPresentation.motion.cycleDurationMs;
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
   const introPhase = step === "welcome" && !greetingIntroComplete ? "writing" : "ready";
 
@@ -223,9 +223,12 @@ export function WelcomeExperience({
   useEffect(() => {
     if (step !== "welcome" || greetingIntroComplete) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const fallback = window.setTimeout(() => setGreetingIntroComplete(true), reducedMotion ? 0 : 4_150);
+    const fallback = window.setTimeout(
+      () => setGreetingIntroComplete(true),
+      reducedMotion ? 0 : greetingPresentation.motion.completeAfterMs + 180,
+    );
     return () => window.clearTimeout(fallback);
-  }, [greetingIntroComplete, step]);
+  }, [greetingIntroComplete, greetingPresentation.motion.completeAfterMs, step]);
 
   useEffect(() => {
     if (step !== "welcome") return;
@@ -331,10 +334,8 @@ export function WelcomeExperience({
               <div className="welcome-intro-grid" data-intro-phase={introPhase}>
                 <div className="welcome-greeting-stage" aria-hidden="true">
                   <HandwrittenGreeting
-                    cycleDuration={greetingCycleDuration}
-                    locale={greetingLocale}
                     onWritingComplete={() => setGreetingIntroComplete(true)}
-                    value={greeting}
+                    presentation={greetingPresentation}
                     key={`${locale}-${greetingIndex}`}
                   />
                 </div>

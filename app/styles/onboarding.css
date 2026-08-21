@@ -338,8 +338,8 @@ html[data-theme="space-black"] .welcome-ambient-thread {
     radial-gradient(circle at 71% 49%, rgba(10, 132, 255, .28), transparent 28%),
     radial-gradient(circle at 91% 55%, rgba(191, 90, 242, .24), transparent 22%);
   content: "";
-  filter: blur(38px) saturate(1.12);
-  opacity: .18;
+  filter: blur(34px) saturate(1.08);
+  opacity: .12;
   pointer-events: none;
 }
 
@@ -368,47 +368,23 @@ html[data-theme="space-black"] .welcome-ambient-thread {
 .welcome-greeting[data-greeting-locale="ar"] { font-family: "Geeza Pro", "Noto Naskh Arabic", serif; font-weight: 500; letter-spacing: 0; }
 .welcome-greeting-fill { stroke: none; }
 .welcome-greeting-color-bloom { opacity: 0; pointer-events: none; }
-.welcome-greeting-fill-aura { opacity: .7; }
+.welcome-greeting-fill-aura { opacity: .48; }
 .welcome-greeting-fill-reveal {
-  opacity: .98;
+  opacity: .96;
 }
 .welcome-greeting-fill-settled { opacity: 0; }
 .welcome-greeting-reveal-stroke {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
 }
-.welcome-greeting-ink-trails {
-  pointer-events: none;
-}
-.welcome-greeting-ink-trail {
-  opacity: 0;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  vector-effect: non-scaling-stroke;
-  will-change: opacity, stroke-dashoffset;
-}
-.welcome-greeting-ink-sheen {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  will-change: opacity, transform;
-}
 .welcome-greeting-spectrum stop {
   animation: rune-greeting-spectrum-flow var(--greeting-write-duration) ease-in-out var(--greeting-spectrum-delay) 1 both;
   stop-color: var(--greeting-spectrum-color);
 }
 .welcome-greeting-stroke-head { opacity: 0; }
-.welcome-greeting-stroke-head-bloom { fill: rgba(100, 210, 255, .22); filter: blur(3.6px); }
 .welcome-greeting-stroke-head-ink {
-  stroke: rgba(255, 255, 255, .5);
-  stroke-width: .7px;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.welcome-greeting-stroke-head-light {
-  fill: rgba(255, 255, 255, .86);
-  filter: blur(.22px);
-  transform: rotate(-16deg);
+  stroke: rgba(255, 255, 255, .34);
+  stroke-width: .55px;
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -802,10 +778,8 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .welcome-language-card::before,
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before,
-  .welcome-greeting-stroke-head,
   .welcome-greeting-color-bloom,
-  .welcome-greeting-ink-trails,
-  .welcome-greeting-ink-sheen { display: none; }
+  .welcome-greeting-stroke-head { display: none; }
   .welcome-greeting-ink-texture { filter: none; }
   .welcome-greeting-fill { fill: CanvasText; }
   .welcome-greeting-reveal-stroke { animation: none; stroke-dashoffset: 0; }

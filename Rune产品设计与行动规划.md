@@ -2403,3 +2403,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - Artifact 切换导致菜单从六项收缩为四项时必须截断旧 ref，不能让已脱离 DOM 的按钮保留键盘身份；桌面 legacy Office 只由 capability 的 `desktopOnly` 与受隔离 bridge 的运行时支持共同决定。
 - 单元门必须验证所有 Data capability 的冻结 presentation metadata 与菜单无 kind/format 分支；真实 Chromium 必须覆盖 Document 四项 → Data 六项 → Document 四项、首尾焦点、Escape 归还、canonical source review 与 semantic HTML handoff。
 - Workbench 从 6,102 行降到 5,957 行；首屏 minified entry 为 525,719 bytes，继续低于 530 KB，不以扩大预算换取抽象。
+
+### 17.74 v1.43 九语言手写必须共享一份可完成的路径时间轴
+
+- `greeting-motion` 必须同时返回 speed scale、ordered stroke delay/duration、settle delay/duration、completion 与有界 phrase cycle；父组件不得再按字符数维护第二只钟或使用与计划无关的固定完成时间。
+- React-free `greeting-presentation` 必须把每个真实 locale greeting 编译为 direction、writing strategy、canvas geometry 和 frozen motion。简中、繁中、English、Français、Español、Русский、العربية、日本語、한국어必须逐项测试，而不是用英文通过代表全部语言。
+- `HandwrittenGreeting` 只能渲染该计划；每个 reveal path 使用归一化 `pathLength=1` 与确切 delay/duration。`WelcomeExperience`、setup unfold、ambient crossfade 和语言轮换必须消费同一 completion/cycle。
+- 视觉层只保留 spectrum mask、faint glyph bloom、textured settle 与 small path front；重复 trace、clipped sheen 和独立 head bloom/highlight 必须删除，避免把开机仪式重新堆成技术展示。
+- 只学习 Chánh Đại Apple Hello Effect 的显式时间轴和克制，不复制其 credit 指向的 glyph geometry，不加入 Motion、远程字体、Canvas 或外部媒体。Rune 的九语言 shaping、原创 path plan 和炫彩识别度保持独立。
+- duration scale 必须限制在 0.6–1.6，cycle 限制在 5–7 秒；reduced motion 立即显示完整静态字形。SSR 无 JavaScript 首帧、英文真实动画、阿拉伯 RTL、多语言 geometry 与 530 KB 首屏预算继续是发布门禁。

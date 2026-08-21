@@ -81,7 +81,7 @@ test("keeps the navigable Deck canvas inside the content layer and semantic moti
   assert.doesNotMatch(motion, /\.welcome-window\s*\{[^}]*animation:\s*rune-float/s);
 });
 
-test("keeps the startup spectrum inside one restrained textured handwritten performance", async () => {
+test("keeps the startup spectrum inside one restrained path-timed handwritten performance", async () => {
   const [component, ambient, experience, onboarding, motion] = await Promise.all([
     readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-ambient-motion.tsx", import.meta.url), "utf8"),
@@ -91,14 +91,16 @@ test("keeps the startup spectrum inside one restrained textured handwritten perf
   ]);
 
   assert.match(component, /data-motion-sequence="write-settle-reveal"/);
+  assert.match(component, /data-motion-timeline="path-length-staggered"/);
   assert.match(component, /<feTurbulence[^>]+type="fractalNoise"/);
   assert.match(component, /className="welcome-greeting-color-bloom"/);
-  assert.match(component, /className="welcome-greeting-ink-trail"/);
   assert.match(component, /data-color-system="apple-six-color"/);
   assert.doesNotMatch(
     component,
-    /welcome-greeting-ink-ribbon|welcome-greeting-ink-bristle|welcome-greeting-stroke-head-bristle/,
+    /welcome-greeting-ink-trail|welcome-greeting-ink-sheen|welcome-greeting-stroke-head-(?:bloom|light)/,
   );
+  assert.match(experience, /greetingPresentation\.motion\.cycleDurationMs/);
+  assert.match(experience, /greetingPresentation\.motion\.completeAfterMs \+ 180/);
   assert.match(onboarding, /\.welcome-greeting-spectrum stop\s*\{[^}]*animation:[^;]+\s1 both;/s);
   assert.doesNotMatch(onboarding, /\.welcome-greeting-spectrum stop\s*\{[^}]*animation:[^;]*infinite/s);
   assert.match(motion, /@keyframes rune-greeting-spectrum-flow/);

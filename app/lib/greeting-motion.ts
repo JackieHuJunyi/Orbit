@@ -9,7 +9,11 @@ export type GreetingMotionStroke = Readonly<{
 }>;
 
 export type GreetingMotionPlan = Readonly<{
+  completeAfterMs: number;
+  cycleDurationMs: number;
+  durationScale: number;
   motionCount: number;
+  settleDurationMs: number;
   settleDelayMs: number;
   strokes: readonly GreetingMotionStroke[];
   writeDurationMs: number;
@@ -23,6 +27,20 @@ type RawStroke = Readonly<{
 
 const INITIAL_DELAY_MS = 120;
 const STROKE_GAP_MS = 28;
+const SETTLE_GAP_MS = 72;
+const SETTLE_DURATION_MS = 620;
+const MINIMUM_CYCLE_MS = 5_000;
+const MAXIMUM_CYCLE_MS = 7_000;
+const FINISHED_HOLD_MS = 1_200;
+
+function boundedDurationScale(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 1;
+  return Math.max(0.6, Math.min(1.6, value));
+}
+
+function scaledMilliseconds(value: number, durationScale: number) {
+  return Math.round(value * durationScale);
+}
 
 function boundedCount(value: string) {
   const count = Array.from(value.normalize("NFC")).filter((character) =>
@@ -182,11 +200,13 @@ function arabicStrokes(width: number, count: number): RawStroke[] {
   ];
 }
 
-function scheduleStrokes(rawStrokes: readonly RawStroke[], writeDurationMs: number) {
-  const totalGap = STROKE_GAP_MS * Math.max(0, rawStrokes.length - 1);
+function scheduleStrokes(rawStrokes: readonly RawStroke[], writeDurationMs: number, durationScale: number) {
+  const initialDelayMs = scaledMilliseconds(INITIAL_DELAY_MS, durationScale);
+  const strokeGapMs = scaledMilliseconds(STROKE_GAP_MS, durationScale);
+  const totalGap = strokeGapMs * Math.max(0, rawStrokes.length - 1);
   const availableDuration = Math.max(560, writeDurationMs - totalGap);
   const totalWeight = rawStrokes.reduce((total, stroke) => total + stroke.weight, 0);
-  let elapsed = INITIAL_DELAY_MS;
+  let elapsed = initialDelayMs;
 
   return Object.freeze(
     rawStrokes.map((stroke, index) => {
@@ -198,7 +218,7 @@ function scheduleStrokes(rawStrokes: readonly RawStroke[], writeDurationMs: numb
         path: stroke.path,
         strokeWidth: stroke.strokeWidth,
       });
-      elapsed += durationMs + (index < rawStrokes.length - 1 ? STROKE_GAP_MS : 0);
+      elapsed += durationMs + (index < rawStrokes.length - 1 ? strokeGapMs : 0);
       return scheduled;
     }),
   );
@@ -207,31 +227,48 @@ function scheduleStrokes(rawStrokes: readonly RawStroke[], writeDurationMs: numb
 export function planGreetingMotion({
   canvasWidth,
   direction,
+  durationScale,
   script = "cursive",
   unitCount,
   value,
 }: {
   canvasWidth: number;
   direction: GreetingWritingDirection;
+  durationScale?: number;
   script?: GreetingWritingScript;
   unitCount: number;
   value: string;
 }): GreetingMotionPlan {
   const width = Number.isFinite(canvasWidth) ? Math.max(430, Math.min(1040, Math.round(canvasWidth))) : 430;
   const boundedUnitCount = Number.isFinite(unitCount) ? Math.max(1, Math.min(14, Math.round(unitCount))) : 1;
+  const boundedScale = boundedDurationScale(durationScale);
   const motionCount = direction === "rtl" ? boundedCount(value) : boundedUnitCount;
-  const writeDurationMs = Math.min(3_000, 1_050 + motionCount * 190);
+  const writeDurationMs = scaledMilliseconds(Math.min(3_000, 1_050 + motionCount * 190), boundedScale);
   const rawStrokes =
     script === "arabic"
       ? arabicStrokes(width, motionCount)
       : script === "cursive"
         ? cursiveStrokes(width, motionCount, direction)
         : compactScriptStrokes(width, boundedUnitCount, script);
-  const strokes = scheduleStrokes(rawStrokes, writeDurationMs);
+  const strokes = scheduleStrokes(rawStrokes, writeDurationMs, boundedScale);
+  const settleDelayMs =
+    scaledMilliseconds(INITIAL_DELAY_MS, boundedScale) +
+    writeDurationMs +
+    scaledMilliseconds(SETTLE_GAP_MS, boundedScale);
+  const settleDurationMs = scaledMilliseconds(SETTLE_DURATION_MS, boundedScale);
+  const completeAfterMs = settleDelayMs + settleDurationMs;
+  const cycleDurationMs = Math.max(
+    MINIMUM_CYCLE_MS,
+    Math.min(MAXIMUM_CYCLE_MS, completeAfterMs + scaledMilliseconds(FINISHED_HOLD_MS, boundedScale)),
+  );
 
   return Object.freeze({
+    completeAfterMs,
+    cycleDurationMs,
+    durationScale: boundedScale,
     motionCount,
-    settleDelayMs: INITIAL_DELAY_MS + writeDurationMs + 72,
+    settleDurationMs,
+    settleDelayMs,
     strokes,
     writeDurationMs,
   });
