@@ -1,15 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { openWorkbench } from "./helpers/workbench";
 
-type RuneFolderTestWindow = Window & {
-  __runeFolderTest: {
-    clear(): void;
-    seedFromDevice(source: string): void;
-    set(name: string, source: string): void;
-    get(name: string): string | null;
-    writes(): number;
-  };
-};
+declare global {
+  interface Window {
+    __runeFolderTest: {
+      clear(): void;
+      seedFromDevice(source: string): void;
+      set(name: string, source: string): void;
+      get(name: string): string | null;
+      writes(): number;
+    };
+  }
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -101,7 +103,7 @@ test.beforeEach(async ({ page }) => {
 
 test("reviews an empty-folder initialization before writing readable sources", async ({ page }) => {
   await openWorkbench(page);
-  await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.clear());
+  await page.evaluate(() => window.__runeFolderTest.clear());
   const source = await page.locator("textarea.source-editor").inputValue();
   const tools = page.getByRole("button", { name: "More tools" });
 
@@ -111,16 +113,14 @@ test("reviews an empty-folder initialization before writing readable sources", a
   await expect(review).toBeVisible();
   await expect(review.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.writes())).toBe(0);
+  expect(await page.evaluate(() => window.__runeFolderTest.writes())).toBe(0);
 
   await tools.click();
   await page.getByRole("menuitem", { name: /^Open folder\b/u }).click();
   await review.getByRole("button", { name: "Initialize folder", exact: true }).click();
   await expect(review).toBeHidden();
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.get("q2-review.md"))).toBe(source);
-  expect(
-    await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.get("rune.workspace.json")),
-  ).toContain('"version": 1');
+  expect(await page.evaluate(() => window.__runeFolderTest.get("q2-review.md"))).toBe(source);
+  expect(await page.evaluate(() => window.__runeFolderTest.get("rune.workspace.json"))).toContain('"version": 1');
 });
 
 test("reviews folder Pull and Push, preserves recovery, and blocks external drift", async ({ page }) => {
@@ -135,9 +135,7 @@ test("reviews folder Pull and Push, preserves recovery, and blocks external drif
   const folderSource = `${originalSource}\n\nFolder-reviewed revision.`;
   await page.waitForTimeout(520);
   await page.evaluate((source) => {
-    (
-      window as typeof window & { __runeFolderTest: { seedFromDevice(source: string): void } }
-    ).__runeFolderTest.seedFromDevice(source);
+    window.__runeFolderTest.seedFromDevice(source);
   }, folderSource);
 
   const tools = page.getByRole("button", { name: "More tools" });
@@ -150,7 +148,7 @@ test("reviews folder Pull and Push, preserves recovery, and blocks external drif
   await page.keyboard.press("Escape");
   await expect(pullReview).toBeHidden();
   await expect(editor).toHaveValue(originalSource);
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.writes())).toBe(0);
+  expect(await page.evaluate(() => window.__runeFolderTest.writes())).toBe(0);
 
   await tools.click();
   await page.getByRole("menuitem", { name: /^Open folder\b/u }).click();
@@ -170,24 +168,18 @@ test("reviews folder Pull and Push, preserves recovery, and blocks external drif
   await page.getByRole("menuitem", { name: /^Push workspace files\b/u }).click();
   const pushReview = page.getByRole("dialog", { name: "Push these changes to the folder?" });
   await expect(pushReview).toBeVisible();
-  await page.evaluate(() =>
-    (window as RuneFolderTestWindow).__runeFolderTest.set("q2-review.md", "# External folder edit"),
-  );
+  await page.evaluate(() => window.__runeFolderTest.set("q2-review.md", "# External folder edit"));
   await pushReview.getByRole("button", { name: "Confirm push", exact: true }).click();
   await expect(pushReview.getByRole("alert")).toContainText("folder changed after this review opened");
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.writes())).toBe(0);
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.get("q2-review.md"))).toBe(
-    "# External folder edit",
-  );
+  expect(await page.evaluate(() => window.__runeFolderTest.writes())).toBe(0);
+  expect(await page.evaluate(() => window.__runeFolderTest.get("q2-review.md"))).toBe("# External folder edit");
 
   await pushReview.getByRole("button", { name: "Cancel", exact: true }).click();
   await tools.click();
   await page.getByRole("menuitem", { name: /^Push workspace files\b/u }).click();
   await pushReview.getByRole("button", { name: "Confirm push", exact: true }).click();
   await expect(pushReview).toBeHidden();
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.get("q2-review.md"))).toBe(
-    devicePushSource,
-  );
-  expect(await page.evaluate(() => (window as RuneFolderTestWindow).__runeFolderTest.writes())).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.__runeFolderTest.get("q2-review.md"))).toBe(devicePushSource);
+  expect(await page.evaluate(() => window.__runeFolderTest.writes())).toBeGreaterThan(0);
   expect(nativeDialogs).toBe(0);
 });
