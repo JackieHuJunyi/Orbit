@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-21 — Completed the v1.49 first-release handoff audit, proving every repository requirement and separating shipped engineering capability from the still-open real-user evidence gates.
 - 2026-08-21 — Shipped Rune v1.49 with one fail-closed owner for every reviewed Workbench operation, explicit safe handoffs, shared action/shortcut availability, and confirmation-time ownership checks.
 - 2026-08-21 — Shipped Rune v1.48 with licensed pressure-sensitive centerline greetings for all nine interface locales, one apparent pen velocity, Arabic shaping, immediate reduced-motion setup, responsive geometry proof, and explicit exclusion of Apple-owned SF-Hello assets.
 - 2026-08-21 — Shipped Rune v1.47 with nine-language review-before-I/O for folder Pull, Push, and initialization, exact device/folder drift rejection, recoverable Pull, and real Chromium cancellation, initialization, recovery, and external-edit proof.
