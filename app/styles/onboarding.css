@@ -93,6 +93,11 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   -webkit-backdrop-filter: none;
 }
 
+.welcome-window[data-intro-phase="writing"] .welcome-page {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
 .welcome-window::before {
   position: absolute;
   inset: 0;

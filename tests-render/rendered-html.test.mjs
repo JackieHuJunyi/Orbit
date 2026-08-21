@@ -862,6 +862,10 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(styles, /\.welcome-window\[data-intro-phase="writing"\][^}]*box-shadow:\s*none/s);
   assert.match(
     styles,
+    /\.welcome-window\[data-intro-phase="writing"\] \.welcome-page\s*\{[^}]*overflow:\s*hidden;[^}]*scrollbar-gutter:\s*auto;/s,
+  );
+  assert.match(
+    styles,
     /\.welcome-intro-grid\[data-intro-phase="writing"\]\s*\{[^}]*position:\s*absolute;[^}]*place-items:\s*center;/s,
   );
   assert.match(styles, /@keyframes rune-greeting-dock\s*\{[^}]*clamp\(150px,\s*24vh,\s*230px\)/s);
