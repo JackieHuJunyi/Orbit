@@ -59,7 +59,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
     workbench,
     /accept=\{RUNE_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/,
   );
-  assert.match(workbench, /startRuneTaskFromSource\("document-briefing"\)/);
+  assert.match(workbench, /startRuneTaskFromSource\("document-briefing", replacingOwner\)/);
   assert.match(workbench, /bindRuneTaskImportReview\(activeTaskSession, baseArtifacts, prepared\.review\)/);
   assert.match(workbench, /prepareRuneTaskAfterImport\(taskSession, artifacts, pendingImport\)/);
   assert.match(workbench, /preferredDataArtifactId=\{\s*taskSession\?\.phase === "configuring"/);

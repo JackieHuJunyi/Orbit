@@ -245,6 +245,11 @@ import {
   type RuneWorkbenchCommandId,
 } from "../lib/workbench-commands";
 import {
+  prepareWorkbenchOperationGate,
+  workbenchOperationCanReplace,
+  type WorkbenchOperationOwner,
+} from "../lib/workbench-operation-gate";
+import {
   EMPTY_RUNE_TASK_EVIDENCE,
   MAX_RUNE_TASK_DURATION_MS,
   appendRuneTaskRun,
@@ -1343,28 +1348,74 @@ export function RuneWorkbench() {
         : [],
     [selectedPendingStat],
   );
-  const artifactCreationDisabled =
-    !hydrated ||
-    agentState === "planning" ||
-    importState === "reading" ||
-    exportState !== "idle" ||
-    Boolean(pendingChange) ||
-    Boolean(pendingImport) ||
-    Boolean(pendingPdfOcr) ||
-    Boolean(pendingExport) ||
-    Boolean(pendingPilotEvidence) ||
-    Boolean(pendingDeliveryConfirmation) ||
-    Boolean(pendingCheckpointRestore) ||
-    Boolean(pendingWorkspaceReset) ||
-    Boolean(pendingDirectorySync) ||
-    Boolean(pendingDocumentStructure) ||
-    Boolean(pendingLocalImage) ||
-    operatingReviewOpen ||
-    documentBriefingOpen ||
-    operatingReviewState !== "idle" ||
-    documentBriefingState !== "idle" ||
-    visualEditState !== "idle" ||
-    Boolean(activeVisualSourceDraft);
+  const workbenchOperationGate = useMemo(
+    () =>
+      prepareWorkbenchOperationGate({
+        hydrated,
+        owners: {
+          welcome: welcomeOpen,
+          "new-artifact": newArtifactOpen,
+          "operating-review": operatingReviewOpen,
+          "document-briefing": documentBriefingOpen,
+          "agent-proposal": Boolean(pendingChange),
+          "import-review": Boolean(pendingImport),
+          "pdf-ocr": Boolean(pendingPdfOcr),
+          "export-review": Boolean(pendingExport),
+          "pilot-evidence": Boolean(pendingPilotEvidence),
+          "delivery-outcome": Boolean(pendingDeliveryConfirmation),
+          "checkpoint-restore": Boolean(pendingCheckpointRestore),
+          "workspace-reset": Boolean(pendingWorkspaceReset),
+          "directory-sync": Boolean(pendingDirectorySync),
+          "document-structure": Boolean(pendingDocumentStructure),
+          "local-image": Boolean(pendingLocalImage),
+          "visual-draft": Boolean(activeVisualSourceDraft),
+        },
+        busy: {
+          "agent-planning": agentState === "planning",
+          "import-reading": importState === "reading",
+          "export-preparing": exportState !== "idle",
+          "operating-review-checking": operatingReviewState !== "idle",
+          "document-briefing-checking": documentBriefingState !== "idle",
+          "delivery-recording": deliveryOutcomeState !== "idle",
+          "visual-edit-checking": visualEditState !== "idle",
+          "directory-syncing": directoryState === "syncing",
+          "pdf-ocr-processing": pdfOcrProcessing,
+        },
+      }),
+    [
+      activeVisualSourceDraft,
+      agentState,
+      deliveryOutcomeState,
+      directoryState,
+      documentBriefingOpen,
+      documentBriefingState,
+      exportState,
+      hydrated,
+      importState,
+      newArtifactOpen,
+      operatingReviewOpen,
+      operatingReviewState,
+      pdfOcrProcessing,
+      pendingChange,
+      pendingCheckpointRestore,
+      pendingDeliveryConfirmation,
+      pendingDirectorySync,
+      pendingDocumentStructure,
+      pendingExport,
+      pendingImport,
+      pendingLocalImage,
+      pendingPdfOcr,
+      pendingPilotEvidence,
+      pendingWorkspaceReset,
+      visualEditState,
+      welcomeOpen,
+    ],
+  );
+  const operationStartBlocked = !workbenchOperationGate.canStartOperation;
+  const artifactCreationDisabled = operationStartBlocked;
+  const canStartOrReplaceOperation = (owner?: WorkbenchOperationOwner) =>
+    workbenchOperationGate.canStartOperation ||
+    Boolean(owner && workbenchOperationCanReplace(workbenchOperationGate, owner));
   const commandMenuCopy = useMemo(() => runeCommandMenuCopy(locale), [locale]);
   const pilotEvidenceUI = useMemo(() => pilotEvidenceNoticeCopy(locale), [locale]);
   const localImageUI = useMemo(() => localImageActionCopy(locale), [locale]);
@@ -1375,11 +1426,21 @@ export function RuneWorkbench() {
         locale,
         artifactCreationDisabled,
         canCreateBriefing: artifacts.some((artifact) => artifact.kind === "document"),
-        canUseWorkspace: hydrated && !emptyWorkspace,
+        canUseWorkspace: hydrated && !emptyWorkspace && !operationStartBlocked,
         canCheckpoint: Boolean(selectedArtifact && canCheckpointSource(selectedArtifact.source)),
         canOpenFolder: hydrated && directoryState !== "syncing" && supportsDirectoryWorkspace(),
       }),
-    [artifactCreationDisabled, artifacts, directoryState, emptyWorkspace, hydrated, locale, selectedArtifact, ui],
+    [
+      artifactCreationDisabled,
+      artifacts,
+      directoryState,
+      emptyWorkspace,
+      hydrated,
+      locale,
+      operationStartBlocked,
+      selectedArtifact,
+      ui,
+    ],
   );
 
   useEffect(() => {
@@ -1538,27 +1599,7 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (
-        visualEditState !== "idle" ||
-        activeVisualSourceDraft ||
-        commandMenuOpen ||
-        pendingCheckpointRestore ||
-        pendingWorkspaceReset ||
-        pendingDirectorySync ||
-        pendingDocumentStructure ||
-        pendingLocalImage ||
-        operatingReviewOpen ||
-        documentBriefingOpen ||
-        newArtifactOpen ||
-        welcomeOpen ||
-        pendingImport ||
-        pendingPdfOcr ||
-        pendingExport ||
-        pendingPilotEvidence ||
-        pendingDeliveryConfirmation ||
-        pendingChange
-      )
-        return;
+      if (workbenchOperationGate.blocksGlobalShortcuts || commandMenuOpen) return;
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "p") {
         event.preventDefault();
         setExportMenuOpen(false);
@@ -1621,33 +1662,17 @@ export function RuneWorkbench() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [
-    activeVisualSourceDraft,
     artifacts,
     checkpoints,
     commandMenuOpen,
-    documentBriefingOpen,
     emptyWorkspace,
-    newArtifactOpen,
-    operatingReviewOpen,
-    pendingChange,
-    pendingCheckpointRestore,
-    pendingDirectorySync,
-    pendingWorkspaceReset,
-    pendingDeliveryConfirmation,
-    pendingDocumentStructure,
-    pendingExport,
-    pendingImport,
-    pendingLocalImage,
-    pendingPdfOcr,
-    pendingPilotEvidence,
     savedOperatingReviews,
     selectedId,
     setPreferredWorkspaceView,
     ui.showPreviewView,
     ui.showSourceView,
     ui.showSplitView,
-    visualEditState,
-    welcomeOpen,
+    workbenchOperationGate.blocksGlobalShortcuts,
   ]);
 
   if (!selectedArtifact || !presentedArtifact) return null;
@@ -1711,11 +1736,13 @@ export function RuneWorkbench() {
   }
 
   function beginStandardImport() {
+    if (!workbenchOperationGate.canStartOperation) return;
     setTaskSession(null);
     importRef.current?.click();
   }
 
-  function startRuneTaskFromSource(taskId: RuneTaskId) {
+  function startRuneTaskFromSource(taskId: RuneTaskId, replacingOwner?: WorkbenchOperationOwner) {
+    if (!canStartOrReplaceOperation(replacingOwner)) return;
     taskImportIdRef.current = taskId;
     setTaskSession(startRuneTaskSession(taskId, artifactsRef.current));
     setOperatingReviewError("");
@@ -1739,12 +1766,12 @@ export function RuneWorkbench() {
     window.setTimeout(() => taskImportRef.current?.click(), 0);
   }
 
-  function startOperatingReviewFromData() {
-    startRuneTaskFromSource("operating-review");
+  function startOperatingReviewFromData(replacingOwner?: WorkbenchOperationOwner) {
+    startRuneTaskFromSource("operating-review", replacingOwner);
   }
 
-  function startDocumentBriefingFromDocument() {
-    startRuneTaskFromSource("document-briefing");
+  function startDocumentBriefingFromDocument(replacingOwner?: WorkbenchOperationOwner) {
+    startRuneTaskFromSource("document-briefing", replacingOwner);
   }
 
   function finishWelcome(action: WelcomeAction) {
@@ -1766,11 +1793,11 @@ export function RuneWorkbench() {
       return;
     }
     if (action === "review") {
-      startOperatingReviewFromData();
+      startOperatingReviewFromData("welcome");
       return;
     }
     if (action === "briefing") {
-      startDocumentBriefingFromDocument();
+      startDocumentBriefingFromDocument("welcome");
       return;
     }
     setSelectedId(artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? guide.id);
@@ -1779,12 +1806,14 @@ export function RuneWorkbench() {
   }
 
   function openWelcomeGuide() {
+    if (!workbenchOperationGate.canStartOperation) return;
     setWelcomeStartAt("welcome");
     setWelcomeDismissible(true);
     setWelcomeOpen(true);
   }
 
   function openModelSettings() {
+    if (!workbenchOperationGate.canStartOperation) return;
     setWelcomeStartAt("model");
     setWelcomeDismissible(true);
     setWelcomeOpen(true);
@@ -1814,14 +1843,7 @@ export function RuneWorkbench() {
   }
 
   function updateSource(source: string, cursor?: SourceSelection) {
-    if (
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure ||
-      activeVisualSourceDraft
-    )
-      return;
+    if (!workbenchOperationGate.canStartOperation) return;
     setSaveState("saving");
     setArtifacts((current) =>
       current.map((artifact) => (artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact)),
@@ -1844,26 +1866,15 @@ export function RuneWorkbench() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    if (!workbenchOperationGate.canStartOperation) {
+      setNotice("Finish or cancel the current review before inserting an image");
+      return;
+    }
     const targetArtifact = artifactsRef.current.find((artifact) => artifact.id === selectedId);
     const deckArtifact = Boolean(targetArtifact?.kind === "slides" && isDeckMarkdownArtifact(targetArtifact));
     const semanticHtmlArtifact = Boolean(targetArtifact && isSemanticHtmlPresentation(targetArtifact));
     if (!targetArtifact || (targetArtifact.kind !== "document" && !deckArtifact && !semanticHtmlArtifact)) {
       setNotice("Local images can be inserted into Markdown Documents and semantic HTML or Deck presentations");
-      return;
-    }
-    if (
-      pendingChange ||
-      pendingImport ||
-      pendingPdfOcr ||
-      pendingExport ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure ||
-      pendingLocalImage ||
-      activeVisualSourceDraft
-    ) {
-      setNotice("Finish or cancel the current review before inserting an image");
       return;
     }
     const editor = sourceEditorRef.current;
@@ -1933,7 +1944,13 @@ export function RuneWorkbench() {
 
   async function confirmPendingLocalImage() {
     const pending = pendingLocalImage;
-    if (!pending || pending.submitting || localImageInFlightRef.current) return;
+    if (
+      !pending ||
+      pending.submitting ||
+      localImageInFlightRef.current ||
+      !workbenchOperationCanReplace(workbenchOperationGate, "local-image")
+    )
+      return;
     const currentArtifacts = artifactsRef.current;
     const currentArtifact = currentArtifacts.find((artifact) => artifact.id === pending.artifact.id);
     if (!currentArtifact || currentArtifact.source !== pending.artifact.source) {
@@ -2069,17 +2086,13 @@ export function RuneWorkbench() {
     allowDocumentStructureReview?: boolean;
   }): Promise<string | null> {
     if (visualEditInFlightRef.current) return "Another visual edit is still being verified.";
-    if (
-      pendingChange ||
-      pendingImport ||
-      pendingPdfOcr ||
-      pendingExport ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      (pendingDocumentStructure && !allowDocumentStructureReview) ||
-      agentState === "planning"
-    ) {
+    const replacingOwner: WorkbenchOperationOwner | undefined =
+      allowDocumentStructureReview && pendingDocumentStructure
+        ? "document-structure"
+        : activeVisualSourceDraft
+          ? "visual-draft"
+          : undefined;
+    if (!canStartOrReplaceOperation(replacingOwner)) {
       return `Finish or cancel the current review before editing a preview ${targetNoun}.`;
     }
     const baseArtifacts = artifactsRef.current;
@@ -2221,18 +2234,7 @@ export function RuneWorkbench() {
     if (visualEditInFlightRef.current || visualEditState !== "idle") {
       return "Another visual edit is still being verified.";
     }
-    if (
-      pendingChange ||
-      pendingImport ||
-      pendingPdfOcr ||
-      pendingExport ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure ||
-      pendingLocalImage ||
-      agentState === "planning"
-    ) {
+    if (!workbenchOperationGate.canStartOperation) {
       return "Finish or cancel the current review before changing Document structure.";
     }
     const currentArtifact = artifactsRef.current.find((artifact) => artifact.id === targetArtifact.id);
@@ -2257,7 +2259,8 @@ export function RuneWorkbench() {
 
   async function confirmVisualDocumentBlockStructure() {
     const pending = pendingDocumentStructure;
-    if (!pending || pending.submitting) return;
+    if (!pending || pending.submitting || !workbenchOperationCanReplace(workbenchOperationGate, "document-structure"))
+      return;
     setPendingDocumentStructure((current) => (current ? { ...current, error: "", submitting: true } : current));
     const actionLabel =
       pending.input.action === "delete"
@@ -2305,22 +2308,7 @@ export function RuneWorkbench() {
     });
 
   const reviewSemanticHtmlEditableCopy: SemanticHtmlEditableCopyHandler = async (targetArtifact) => {
-    if (
-      importInFlightRef.current ||
-      importState !== "idle" ||
-      visualEditState !== "idle" ||
-      pendingChange ||
-      pendingImport ||
-      pendingPdfOcr ||
-      pendingExport ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure ||
-      pendingLocalImage ||
-      agentState === "planning"
-    )
-      return;
+    if (importInFlightRef.current || !workbenchOperationGate.canStartOperation) return;
     const baseArtifacts = artifactsRef.current;
     const currentArtifact = baseArtifacts.find((artifact) => artifact.id === targetArtifact.id);
     if (!currentArtifact || currentArtifact !== targetArtifact || currentArtifact.source !== targetArtifact.source) {
@@ -2560,6 +2548,7 @@ export function RuneWorkbench() {
   }
 
   function saveManualCheckpoint() {
+    if (!workbenchOperationGate.canStartOperation) return;
     if (!canCheckpointSource(selectedArtifact.source)) {
       setNotice("This source is too large for device checkpoint history");
       return;
@@ -2611,7 +2600,9 @@ export function RuneWorkbench() {
     method: RuneTaskDeliveryMethod,
     target: RuneTaskDeliveryTarget,
     handoffLabel: string,
+    replacingOwner?: WorkbenchOperationOwner,
   ) {
+    if (!canStartOrReplaceOperation(replacingOwner)) return;
     const workflow = savedOperatingReviewsRef.current.find(
       (candidate) => candidate.artifactIds.document === artifact.id || candidate.artifactIds.slides === artifact.id,
     );
@@ -2648,7 +2639,12 @@ export function RuneWorkbench() {
 
   async function confirmDeliveryOutcome(confirmation: RuneTaskDeliveryConfirmation) {
     const pending = pendingDeliveryConfirmation;
-    if (!pending || deliveryOutcomeState !== "idle") return;
+    if (
+      !pending ||
+      deliveryOutcomeState !== "idle" ||
+      !workbenchOperationCanReplace(workbenchOperationGate, "delivery-outcome")
+    )
+      return;
     setDeliveryOutcomeState("recording");
     setDeliveryOutcomeError("");
     try {
@@ -2813,7 +2809,8 @@ export function RuneWorkbench() {
 
   async function confirmDirectorySync() {
     const pending = pendingDirectorySync;
-    if (!pending || pending.submitting) return;
+    if (!pending || pending.submitting || !workbenchOperationCanReplace(workbenchOperationGate, "directory-sync"))
+      return;
     setPendingDirectorySync((current) => (current ? { ...current, error: "", submitting: true } : current));
     setDirectoryState("syncing");
     setSaveState("saving");
@@ -2848,6 +2845,7 @@ export function RuneWorkbench() {
               "folder",
               "folder",
               `${pending.handle.name} · ${ui.push}`,
+              "directory-sync",
             );
           }
         },
@@ -2921,14 +2919,7 @@ export function RuneWorkbench() {
   }
 
   async function reviewCheckpointRestore(checkpoint: WorkspaceCheckpoint) {
-    if (
-      activeVisualSourceDraft ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      checkpointRestoreInFlightRef.current
-    )
-      return;
+    if (!workbenchOperationGate.canStartOperation || checkpointRestoreInFlightRef.current) return;
     checkpointRestoreInFlightRef.current = true;
     try {
       if (checkpoint.artifactId !== selectedArtifact.id) {
@@ -2974,7 +2965,8 @@ export function RuneWorkbench() {
 
   async function confirmCheckpointRestore() {
     const pending = pendingCheckpointRestore;
-    if (!pending || pending.submitting) return;
+    if (!pending || pending.submitting || !workbenchOperationCanReplace(workbenchOperationGate, "checkpoint-restore"))
+      return;
     setPendingCheckpointRestore((current) => (current ? { ...current, error: "", submitting: true } : current));
     setSaveState("saving");
     setNotice(
@@ -3034,17 +3026,7 @@ export function RuneWorkbench() {
 
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
-    if (
-      !instruction ||
-      agentState === "planning" ||
-      visualEditState !== "idle" ||
-      activeVisualSourceDraft ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure
-    )
-      return;
+    if (!instruction || !workbenchOperationGate.canStartOperation) return;
     const scope = agentScope;
     const targetSelection = scope === "selection" ? validSourceSelection : null;
     if (scope === "selection" && !targetSelection) {
@@ -3418,7 +3400,7 @@ export function RuneWorkbench() {
   }
 
   function applyPendingChange() {
-    if (!pendingChange) return;
+    if (!pendingChange || !workbenchOperationCanReplace(workbenchOperationGate, "agent-proposal")) return;
     if (!workspaceMatchesSourceRevision(artifacts, pendingChange.baseRevision)) {
       recordStoppedRuneTask(pendingChange, "stale");
       setAgentError(
@@ -3541,7 +3523,7 @@ export function RuneWorkbench() {
   }
 
   function discardPendingChange() {
-    if (!pendingChange) return;
+    if (!pendingChange || !workbenchOperationCanReplace(workbenchOperationGate, "agent-proposal")) return;
     recordStoppedRuneTask(pendingChange, "cancelled");
     setPendingChange(null);
     setPendingReviewId("");
@@ -3549,6 +3531,7 @@ export function RuneWorkbench() {
   }
 
   function undoLastAgentChange() {
+    if (!workbenchOperationGate.canStartOperation) return;
     const previous = [...selectedCheckpoints]
       .reverse()
       .find((checkpoint) => checkpoint.source !== selectedArtifact.source);
@@ -3614,7 +3597,8 @@ export function RuneWorkbench() {
 
   async function confirmWorkspaceReset() {
     const pending = pendingWorkspaceReset;
-    if (!pending || pending.submitting) return;
+    if (!pending || pending.submitting || !workbenchOperationCanReplace(workbenchOperationGate, "workspace-reset"))
+      return;
     setPendingWorkspaceReset((current) => (current ? { ...current, error: "", submitting: true } : current));
     setSaveState("saving");
     try {
@@ -3684,11 +3668,13 @@ export function RuneWorkbench() {
   }
 
   function openNewArtifact() {
+    if (!workbenchOperationGate.canStartOperation) return;
     setNewArtifactError("");
     setNewArtifactOpen(true);
   }
 
   function openOperatingReview() {
+    if (!workbenchOperationGate.canStartOperation) return;
     setOperatingReviewError("");
     setEditingOperatingReviewId("");
     setTaskSession(null);
@@ -3703,6 +3689,7 @@ export function RuneWorkbench() {
   }
 
   function openDocumentBriefingForArtifact(entryArtifact: WorkspaceArtifact) {
+    if (!workbenchOperationGate.canStartOperation) return;
     const selectedOriginId = documentBriefingSourceIdForPresentation(entryArtifact);
     const source =
       entryArtifact.kind === "document"
@@ -3750,6 +3737,7 @@ export function RuneWorkbench() {
   }
 
   function reviewLinkedPresentationRefresh(artifactId: string) {
+    if (!workbenchOperationGate.canStartOperation) return;
     const target = artifactsRef.current.find((artifact) => artifact.id === artifactId);
     const sourceId = target ? documentBriefingSourceIdForPresentation(target) : null;
     const targetFreshness = sourceId
@@ -3766,6 +3754,7 @@ export function RuneWorkbench() {
   }
 
   function openSavedOperatingReview(workflow: SavedOperatingReview) {
+    if (!workbenchOperationGate.canStartOperation) return;
     setOperatingReviewError("");
     setEditingOperatingReviewId(workflow.id);
     setTaskSession(null);
@@ -3776,7 +3765,7 @@ export function RuneWorkbench() {
   }
 
   async function prepareOperatingReview(input: OperatingReviewInput) {
-    if (operatingReviewState !== "idle" || pendingChange) return;
+    if (!workbenchOperationCanReplace(workbenchOperationGate, "operating-review")) return;
     const taskStartedAt = Date.now();
     setOperatingReviewError("");
     setOperatingReviewState("checking");
@@ -3916,7 +3905,7 @@ export function RuneWorkbench() {
   }
 
   async function prepareDocumentBriefing(input: DocumentBriefingInput) {
-    if (documentBriefingState !== "idle" || pendingChange) return;
+    if (!workbenchOperationCanReplace(workbenchOperationGate, "document-briefing")) return;
     const taskStartedAt = Date.now();
     setDocumentBriefingError("");
     setDocumentBriefingState("checking");
@@ -4025,7 +4014,7 @@ export function RuneWorkbench() {
   }
 
   async function createNewArtifact(input: ArtifactCreationInput, embedArtifactId?: string) {
-    if (pendingCheckpointRestore || pendingWorkspaceReset || pendingDirectorySync || pendingDocumentStructure) return;
+    if (!workbenchOperationCanReplace(workbenchOperationGate, "new-artifact")) return;
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
@@ -4138,15 +4127,9 @@ export function RuneWorkbench() {
   async function prepareFileImport(files: File[], activeTaskSession: RuneTaskSession | null = null) {
     if (
       !files.length ||
+      !workbenchOperationGate.canStartOperation ||
       importInFlightRef.current ||
       exportInFlightRef.current ||
-      pendingImport ||
-      pendingPdfOcr ||
-      pendingExport ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure ||
       exportState !== "idle"
     )
       return;
@@ -4241,7 +4224,13 @@ export function RuneWorkbench() {
 
   async function recognizePendingPdfPages(selections: PdfOcrSelection[]) {
     const pending = pendingPdfOcr;
-    if (!pending || pdfOcrProcessing || importInFlightRef.current) return;
+    if (
+      !pending ||
+      pdfOcrProcessing ||
+      importInFlightRef.current ||
+      !workbenchOperationCanReplace(workbenchOperationGate, "pdf-ocr")
+    )
+      return;
     if (artifacts !== pending.baseArtifacts) {
       setPdfOcrError(
         runeText(
@@ -4342,7 +4331,12 @@ export function RuneWorkbench() {
   }
 
   async function applyPendingImport() {
-    if (!pendingImport || importInFlightRef.current) return;
+    if (
+      !pendingImport ||
+      importInFlightRef.current ||
+      !workbenchOperationCanReplace(workbenchOperationGate, "import-review")
+    )
+      return;
     const taskContinuation = taskSession ? prepareRuneTaskAfterImport(taskSession, artifacts, pendingImport) : null;
     if (taskContinuation?.errors.length || (taskSession && !taskContinuation?.session)) {
       setTaskSession(null);
@@ -4438,15 +4432,7 @@ export function RuneWorkbench() {
     const targetType = capability?.label;
     if (
       !targetType ||
-      exportState !== "idle" ||
-      activeVisualSourceDraft ||
-      pendingExport ||
-      pendingImport ||
-      pendingPdfOcr ||
-      pendingCheckpointRestore ||
-      pendingWorkspaceReset ||
-      pendingDirectorySync ||
-      pendingDocumentStructure ||
+      !workbenchOperationGate.canStartOperation ||
       importInFlightRef.current ||
       exportInFlightRef.current
     )
@@ -4488,7 +4474,7 @@ export function RuneWorkbench() {
   }
 
   function confirmExport() {
-    if (!pendingExport) return;
+    if (!pendingExport || !workbenchOperationCanReplace(workbenchOperationGate, "export-review")) return;
     if (artifacts !== pendingExport.baseArtifacts) {
       setExportError(
         "The workspace changed while this file was being generated. Cancel and export it again to review fresh output.",
@@ -4536,11 +4522,13 @@ export function RuneWorkbench() {
         "download",
         sourceDeliveryTarget,
         `${sourceDeliveryTarget.toUpperCase()} · ${ui.download}`,
+        "export-review",
       );
     }
   }
 
   function reviewPilotEvidenceExport() {
+    if (!workbenchOperationGate.canStartOperation) return;
     setPilotEvidenceError("");
     try {
       const baseEvidence = taskEvidenceRef.current;
@@ -4560,7 +4548,7 @@ export function RuneWorkbench() {
   }
 
   function confirmPilotEvidenceExport() {
-    if (!pendingPilotEvidence) return;
+    if (!pendingPilotEvidence || !workbenchOperationCanReplace(workbenchOperationGate, "pilot-evidence")) return;
     if (taskEvidenceRef.current !== pendingPilotEvidence.baseEvidence) {
       setPilotEvidenceError(pilotEvidenceUI.changedError);
       setNotice(pilotEvidenceUI.changedNotice);
@@ -4589,6 +4577,7 @@ export function RuneWorkbench() {
   }
 
   function changeAgentScope(scope: AgentScope) {
+    if (!workbenchOperationGate.canStartOperation) return;
     setAgentScope(scope);
     setPendingChange(null);
     setPendingReviewId("");
@@ -4647,9 +4636,7 @@ export function RuneWorkbench() {
         openWelcomeGuide();
         return;
       case "open-models":
-        setWelcomeStartAt("model");
-        setWelcomeDismissible(true);
-        setWelcomeOpen(true);
+        openModelSettings();
         return;
     }
   }
@@ -4734,24 +4721,7 @@ export function RuneWorkbench() {
           <button className="button ghost-button" onClick={openNewArtifact} disabled={artifactCreationDisabled}>
             <FilePlus2 aria-hidden="true" /> {ui.newArtifact}
           </button>
-          <button
-            className="button ghost-button"
-            onClick={beginStandardImport}
-            disabled={
-              !hydrated ||
-              importState === "reading" ||
-              exportState !== "idle" ||
-              visualEditState !== "idle" ||
-              Boolean(activeVisualSourceDraft) ||
-              Boolean(pendingImport) ||
-              Boolean(pendingPdfOcr) ||
-              Boolean(pendingExport) ||
-              Boolean(pendingCheckpointRestore) ||
-              Boolean(pendingWorkspaceReset) ||
-              Boolean(pendingDirectorySync) ||
-              Boolean(pendingDocumentStructure)
-            }
-          >
+          <button className="button ghost-button" onClick={beginStandardImport} disabled={operationStartBlocked}>
             {importState === "reading" ? (
               <LoaderCircle className="agent-spinner" aria-hidden="true" />
             ) : (
@@ -4765,20 +4735,7 @@ export function RuneWorkbench() {
               capabilities={selectedExportCapabilities}
               containerRef={exportMenuRef}
               copy={ui}
-              disabled={
-                !hydrated ||
-                exportState !== "idle" ||
-                importState === "reading" ||
-                visualEditState !== "idle" ||
-                Boolean(activeVisualSourceDraft) ||
-                Boolean(pendingImport) ||
-                Boolean(pendingPdfOcr) ||
-                Boolean(pendingExport) ||
-                Boolean(pendingCheckpointRestore) ||
-                Boolean(pendingWorkspaceReset) ||
-                Boolean(pendingDirectorySync) ||
-                Boolean(pendingDocumentStructure)
-              }
+              disabled={operationStartBlocked}
               legacyOfficeAvailable={legacyOfficeExportAvailable}
               open={exportMenuOpen}
               preparing={exportState !== "idle"}
@@ -4802,20 +4759,7 @@ export function RuneWorkbench() {
             aria-label={ui.import}
             accept={WORKSPACE_IMPORT_ACCEPT}
             onChange={importFile}
-            disabled={
-              !hydrated ||
-              importState === "reading" ||
-              exportState !== "idle" ||
-              visualEditState !== "idle" ||
-              Boolean(activeVisualSourceDraft) ||
-              Boolean(pendingImport) ||
-              Boolean(pendingPdfOcr) ||
-              Boolean(pendingExport) ||
-              Boolean(pendingCheckpointRestore) ||
-              Boolean(pendingWorkspaceReset) ||
-              Boolean(pendingDirectorySync) ||
-              Boolean(pendingDocumentStructure)
-            }
+            disabled={operationStartBlocked}
           />
           <input
             ref={taskImportRef}
@@ -4825,20 +4769,7 @@ export function RuneWorkbench() {
             aria-label={ui.import}
             accept={RUNE_TASK_DEFINITIONS[taskSession?.taskId ?? "operating-review"].sourceAccept}
             onChange={importTaskSource}
-            disabled={
-              !hydrated ||
-              importState === "reading" ||
-              exportState !== "idle" ||
-              visualEditState !== "idle" ||
-              Boolean(activeVisualSourceDraft) ||
-              Boolean(pendingImport) ||
-              Boolean(pendingPdfOcr) ||
-              Boolean(pendingExport) ||
-              Boolean(pendingCheckpointRestore) ||
-              Boolean(pendingWorkspaceReset) ||
-              Boolean(pendingDirectorySync) ||
-              Boolean(pendingDocumentStructure)
-            }
+            disabled={operationStartBlocked}
           />
           <input
             ref={imageImportRef}
@@ -4848,22 +4779,11 @@ export function RuneWorkbench() {
             accept={RUNE_IMAGE_ACCEPT}
             onChange={(event) => void prepareLocalImage(event)}
             disabled={
-              !hydrated ||
+              operationStartBlocked ||
               !(
                 selectedArtifact.kind === "document" ||
                 (selectedArtifact.kind === "slides" && isDeckMarkdownArtifact(selectedArtifact))
-              ) ||
-              visualEditState !== "idle" ||
-              Boolean(activeVisualSourceDraft) ||
-              Boolean(pendingChange) ||
-              Boolean(pendingImport) ||
-              Boolean(pendingPdfOcr) ||
-              Boolean(pendingExport) ||
-              Boolean(pendingCheckpointRestore) ||
-              Boolean(pendingWorkspaceReset) ||
-              Boolean(pendingDirectorySync) ||
-              Boolean(pendingDocumentStructure) ||
-              Boolean(pendingLocalImage)
+              )
             }
           />
         </div>
@@ -4942,7 +4862,7 @@ export function RuneWorkbench() {
           >
             <WorkbenchSettingsMenu
               appearanceTheme={appearanceTheme}
-              blocked={Boolean(activeVisualSourceDraft)}
+              blocked={operationStartBlocked}
               containerRef={toolsMenuRef}
               copy={ui}
               directoryBusy={directoryState === "syncing"}
@@ -5367,20 +5287,7 @@ export function RuneWorkbench() {
                         type="button"
                         className="icon-button small insert-local-image-button"
                         onClick={() => imageImportRef.current?.click()}
-                        disabled={
-                          !hydrated ||
-                          visualEditState !== "idle" ||
-                          Boolean(activeVisualSourceDraft) ||
-                          Boolean(pendingChange) ||
-                          Boolean(pendingImport) ||
-                          Boolean(pendingPdfOcr) ||
-                          Boolean(pendingExport) ||
-                          Boolean(pendingCheckpointRestore) ||
-                          Boolean(pendingWorkspaceReset) ||
-                          Boolean(pendingDirectorySync) ||
-                          Boolean(pendingDocumentStructure) ||
-                          Boolean(pendingLocalImage)
-                        }
+                        disabled={operationStartBlocked}
                         aria-label={localImageUI.insertLocal}
                         title={localImageUI.insertLocalAtCursor}
                       >
@@ -5741,7 +5648,7 @@ export function RuneWorkbench() {
                   scope={agentScope}
                   onScopeChange={changeAgentScope}
                   busy={agentState === "planning" || visualEditState !== "idle"}
-                  locked={Boolean(activeVisualSourceDraft)}
+                  locked={operationStartBlocked}
                   selectionUnavailable={!validSourceSelection}
                   mode={agentMode}
                   placeholder={

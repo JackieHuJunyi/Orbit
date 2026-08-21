@@ -633,6 +633,7 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 62. v1.46 turns sample reset into one reviewed current/target device-state swap, persists a complete reversible recovery snapshot atomically, and defers both its dialog and the low-frequency Settings implementation until requested.
 63. v1.47 turns folder Pull, Push, and initialization into one exact device/folder review, blocks all I/O on detected drift, and makes the complete pre-Pull device workspace recoverable without claiming unavailable browser-level multi-file atomicity.
 64. v1.48 replaces the welcome font mask with licensed centerline handwriting, keeps locale/font/shaper loading outside onboarding state, normalizes apparent pen velocity across nine scripts, and explicitly excludes Apple-owned SF-Hello assets from the public repository.
+65. v1.49 compiles every reviewed Workbench owner and asynchronous phase through one immutable fail-closed gate, so competing actions, commands, and shortcuts share one rule while intentional owner-to-owner handoffs remain explicit.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

@@ -345,6 +345,23 @@ test("opens and closes the New artifact dialog from the top bar", async ({ page 
   }
 });
 
+test("keeps one reviewed operation in control until it closes", async ({ page }) => {
+  await openWorkbench(page);
+  const newArtifact = page.getByRole("dialog", { name: "Create a new artifact" });
+  const quickActions = page.getByRole("dialog", { name: "Quick actions" });
+
+  await page.getByRole("button", { name: "New", exact: true }).first().click();
+  await expect(newArtifact).toBeVisible();
+  await page.keyboard.press("Control+Shift+P");
+  await expect(newArtifact).toBeVisible();
+  await expect(quickActions).toBeHidden();
+
+  await page.keyboard.press("Escape");
+  await expect(newArtifact).toBeHidden();
+  await page.keyboard.press("Control+Shift+P");
+  await expect(quickActions).toBeVisible();
+});
+
 test("keeps quick actions scrollable and renders an icon for every command", async ({ page }) => {
   await openWorkbench(page);
   await page.locator(".command-menu-trigger").click();
