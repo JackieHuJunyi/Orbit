@@ -34,6 +34,7 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue" data-rune-onboarding="pending">/);
   assert.match(html, /id="rune-prehydrate-state"/);
   assert.match(html, /data-onboarding-sequence="boot-write-settle-unfold"/);
+  assert.match(html, /data-ambient-motion="crossfade-ribbon-drift"/);
   assert.match(html, /data-motion-renderer="calligraphic-mask"/);
   assert.doesNotMatch(html, /Preparing Rune/);
   assert.match(html, /<title>Rune — Work that traces back to source<\/title>/i);

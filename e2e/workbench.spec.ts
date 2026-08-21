@@ -12,6 +12,7 @@ test("paints the handwritten first-run ritual before client JavaScript", async (
   await expect(firstFrame.locator(".welcome-backdrop")).toHaveCSS("animation-name", "none");
   await expect(welcome).toBeVisible();
   await expect(welcome).toHaveAttribute("data-intro-phase", "writing");
+  await expect(firstFrame.locator('[data-ambient-motion="crossfade-ribbon-drift"]')).toHaveCount(1);
   await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="calligraphic-mask"]')).toContainText(
     "Hello",
   );
@@ -75,6 +76,7 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
 
   const welcomeWindow = page.locator(".welcome-window");
   const greeting = page.locator(".welcome-greeting");
+  const ambient = page.locator('[data-ambient-motion="crossfade-ribbon-drift"]');
   await expect(welcomeWindow).toHaveAttribute("data-onboarding-sequence", "boot-write-settle-unfold");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "writing");
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeHidden();
@@ -99,6 +101,11 @@ test("writes the opening greeting through ordered spectrum-ink strokes", async (
   await expect(greeting.locator(".welcome-greeting-stroke-head-light")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-stroke-head")).toHaveCount(3);
   await expect(greeting.locator(".welcome-greeting-fill-reveal")).toBeVisible();
+  await expect(ambient).toHaveAttribute("data-ambient-renderer", "inline-svg");
+  await expect(ambient.locator(".welcome-ambient-ribbon")).toHaveCount(2);
+  await expect(ambient.locator(".welcome-ambient-thread")).toHaveCount(1);
+  await expect(ambient).toHaveCSS("pointer-events", "none");
+  await expect(ambient).toHaveCSS("animation-name", "rune-welcome-ambient-crossfade");
 
   const openingGeometry = await page.locator(".welcome-greeting-stage").evaluate((stage) => {
     const bounds = stage.getBoundingClientRect();

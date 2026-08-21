@@ -29,13 +29,8 @@
 }
 
 .welcome-backdrop::before {
-  background:
-    radial-gradient(circle at 18% 56%, rgba(255, 45, 85, .34), transparent 23%),
-    radial-gradient(circle at 39% 44%, rgba(255, 159, 10, .28), transparent 24%),
-    radial-gradient(circle at 58% 58%, rgba(48, 209, 88, .28), transparent 25%),
-    radial-gradient(circle at 76% 42%, rgba(10, 132, 255, .34), transparent 25%),
-    radial-gradient(circle at 89% 62%, rgba(191, 90, 242, .3), transparent 22%);
-  filter: blur(88px) saturate(118%);
+  background: radial-gradient(circle at 50% 52%, rgba(var(--theme-rgb), .12), transparent 38%);
+  filter: blur(92px) saturate(106%);
   opacity: 0;
 }
 
@@ -54,6 +49,75 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   background:
     radial-gradient(circle at 50% 47%, rgba(255, 255, 255, .98), rgba(250, 250, 252, .94) 42%, transparent 72%),
     var(--rune-material-canvas);
+}
+
+.welcome-ambient-motion {
+  --welcome-ambient-cycle: 5400ms;
+  --welcome-ambient-peak: .56;
+  --welcome-ambient-tail: .4;
+  position: absolute;
+  z-index: var(--rune-layer-canvas);
+  inset: -12%;
+  contain: strict;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  will-change: opacity, transform;
+}
+
+.welcome-backdrop[data-intro-phase="ready"] .welcome-ambient-motion {
+  --welcome-ambient-peak: .2;
+  --welcome-ambient-tail: .12;
+}
+
+.welcome-ambient-motion svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.welcome-ambient-field {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.welcome-ambient-ribbon,
+.welcome-ambient-thread {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.welcome-ambient-ribbon {
+  filter: blur(28px) saturate(112%);
+  opacity: .22;
+  stroke-width: 176px;
+}
+
+.welcome-ambient-ribbon-cool {
+  filter: blur(34px) saturate(108%);
+  opacity: .18;
+  stroke-width: 138px;
+}
+
+.welcome-ambient-thread {
+  filter: blur(10px);
+  opacity: .13;
+  stroke-width: 24px;
+}
+
+html[data-theme="space-black"] .welcome-ambient-motion {
+  mix-blend-mode: screen;
+}
+
+html[data-theme="space-black"] .welcome-ambient-ribbon,
+html[data-theme="space-black"] .welcome-ambient-thread {
+  opacity: .26;
 }
 
 .welcome-window {
@@ -695,6 +759,7 @@ html[dir="rtl"] .welcome-primary > svg { transform: scaleX(-1); }
 html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translateX(-3px) scaleX(-1); }
 
 @media (prefers-reduced-transparency: reduce) {
+  .welcome-ambient-motion { display: none; }
   .welcome-window,
   .welcome-chrome,
   .welcome-language-card,
@@ -709,6 +774,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
 }
 
 @media (prefers-contrast: more) {
+  .welcome-ambient-motion { display: none; }
   .welcome-window,
   .welcome-language-card,
   .empty-drop-zone,
@@ -731,6 +797,7 @@ html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translat
   .empty-actions > button:not(.welcome-primary) { border: 1px solid ButtonText; }
   .welcome-backdrop::before,
   .welcome-backdrop::after,
+  .welcome-ambient-motion,
   .welcome-window::before,
   .welcome-language-card::before,
   .empty-drop-zone::before { display: none; }

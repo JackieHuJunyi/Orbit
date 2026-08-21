@@ -2384,3 +2384,13 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - reduced motion 必须立即进入正常设置布局并显示完整静态问候；forced colors 必须移除全部色彩、光晕、trace、head 与 sheen 并使用系统颜色。键盘、语言选择和 44px 主动作要求不变。
 - 实现学习 Apple 设备启动的单一焦点、自然缓动与状态连续性，但不得复制 Apple 字体、字形路径、品牌图形或动画资产。首屏仍受 530 KB 上限保护。
 - 发布证据必须读取真实 CSSAnimation，证明 write、bloom、settle、pressure 与 sheen 同时挂载；必须测量 desktop opening mark 中心与 viewport 中心误差，并继续通过九语言 × desktop/compact 零溢出、RTL、首帧、ready unfold、reduced-motion 与 forced-color 合同。
+
+### 17.72 v1.41 欢迎页开源参考只吸收编舞，不继承素材权利
+
+- 每个参考必须分别审查 repository license 与实际视觉素材 provenance。MIT wrapper 不能覆盖上游未授权字形、Apple 视频、logo 或活动动画；`SF-Hello` 路径与 Brooklyn 原始媒体不得进入 Rune。
+- Aerial/Brooklyn 只贡献 full-bleed、aspect-aware、慢速环境层和首尾 fade 的组织原则；AppleCurveAnimation/Chánh Đại 只贡献逐笔 path-length、独立 duration/delay 与完成回调的时间轴原则。
+- `WelcomeAmbientMotion` 必须是 props-only inline SVG，只接收现有 greeting cycle。几何由 Rune 原创的两条宽 spectrum Bézier 和一条细 thread 组成，不得复制参考路径、视频帧、字体、wordmark 或 logo。
+- 环境层必须在 semantic canvas layer、`pointer-events: none`，每个问候只运行一次有限 crossfade 与低幅漂移，`ready` 降低峰值并最终归零；不得新增 interval、timeout、requestAnimationFrame、Canvas loop、network fetch 或 Motion runtime。
+- light/Space Black 只改变 blend mode；reduced motion、reduced transparency、high contrast 与 forced colors 必须完整移除环境层，静态问候、语言选择、键盘和触控合同保持不变。
+- SSR 首帧必须包含本地 SVG，老用户 pre-paint gate 仍直接跳过 onboarding。测试必须证明三条本地 path、无 video/MP4/network/dependency、finite CSS animation、pointer transparency、exact-center greeting 和 ready unfold。
+- 首屏 minified Workbench 继续受 530 KB gate 约束；本阶段实测 525,024 bytes，不能用放宽预算交换环境效果。

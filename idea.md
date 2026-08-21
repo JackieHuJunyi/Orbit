@@ -2619,3 +2619,11 @@ v1.39 把 `source` 加入同一冻结 capability 表。Document → MD，Data �
 v1.40 把 `writing` 变成独立的全画布布局：chrome 行收为 0，copy 与 language card 完全离开布局，问候在当前 viewport 精确居中。一层低透明度六色光场只在第一幕运行一次；字本身只保留 broad mask reveal、glyph-shaped bloom、细彩色 trace、小型 pressure head、settled fill 与一次 clipped sheen。所有可见墨迹继续使用纯 `greeting-motion` 返回的同一 path、delay 和 duration；阿拉伯文不拆 shaping run，中日韩保留各自笔序，拉丁/西里尔保留首字母、横笔和连续主体。
 
 最后一笔稳定后，正常两列 grid 恢复，同一个问候从画布中心沿一条 dock 动画回到顶部，chrome、产品说明和语言选择依次展开。reduced motion 不播放开机布局，直接显示完整设置；forced colors 移除全部色彩层并使用 `CanvasText`。删掉装饰节点后首屏 minified entry 从 525,221 降至 522,675 bytes。这里学习的是 Apple 开机体验的节奏、层级与克制，不复制其字体、字形路径、品牌资产或动画文件。
+
+## 143. 开源参考要拆成“可借鉴的编舞”和“不可带走的素材”
+
+欢迎页继续优化前必须先回答两个不同问题：开源仓库的程序代码是否允许使用，以及它所承载的字形、视频和品牌素材是否同样拥有可再分发授权。`AppleCurveAnimation` 的 MIT README、Vivus 类路径动画和 Chánh Đại 的 React/Motion 组件都证明了逐笔 `pathLength`、独立 duration/delay 与完成回调是正确的动画组织方式；Aerial 与 Brooklyn 则证明全屏承载、低速位移和首尾 crossfade 比零碎粒子更像一个完整环境。但 Chánh Đại 的文档明确 Credits 到 `SF-Hello`，后者又写明 JSON 归 Apple 所有且没有仓库许可证；Brooklyn 也明确说原动画与 logo 属于 Apple。MIT 包装代码不能替底层素材创造授权。
+
+v1.41 因此没有复制任何参考路径或视频，也没有把 `motion/react`、Canvas 或 MP4 加进首屏。新的 `WelcomeAmbientMotion` 只接收现有 greeting cycle，使用 Rune 原创的两条宽 Bézier spectrum ribbon 和一条细 thread，在问候后方完成一次有限 crossfade、轻微漂移和收束；语言轮换通过父级已有 key 重新开始同一幕，它自己没有 timer。进入 ready 后峰值自动降低，最终 opacity 回到 0；semantic canvas layer 与 `pointer-events: none` 保证它既不遮挡也不抢交互。
+
+无障碍降级同样属于效果本身：reduced motion、reduced transparency、high contrast 和 forced colors 都完全移除 ambient field，保留完整静态问候和正常设置布局。这样 Rune 学到的是“一个主体、一个环境、一个时间轴”，而不是把开源页面或 Apple 资产换个颜色继续复制。首屏 minified entry 为 525,024 bytes，仍在 530 KB gate 内。

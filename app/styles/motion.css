@@ -66,6 +66,21 @@
 .welcome-backdrop[data-intro-phase="writing"]::after {
   animation: rune-boot-vignette 3.4s var(--rune-ease-out) both;
 }
+.welcome-ambient-motion {
+  animation: rune-welcome-ambient-crossfade var(--welcome-ambient-cycle) var(--rune-ease-smooth) both;
+}
+.welcome-ambient-field {
+  animation: rune-welcome-ambient-breathe var(--welcome-ambient-cycle) var(--rune-ease-smooth) both;
+}
+.welcome-ambient-ribbon-warm {
+  animation: rune-welcome-ribbon-warm var(--welcome-ambient-cycle) var(--rune-ease-smooth) both;
+}
+.welcome-ambient-ribbon-cool {
+  animation: rune-welcome-ribbon-cool var(--welcome-ambient-cycle) var(--rune-ease-smooth) both;
+}
+.welcome-ambient-thread {
+  animation: rune-welcome-thread-draw var(--welcome-ambient-cycle) var(--rune-ease-out) both;
+}
 .welcome-intro-grid[data-intro-phase="ready"] .welcome-greeting-stage {
   animation: rune-greeting-dock 880ms var(--rune-ease-out) both;
 }
@@ -152,6 +167,33 @@
   100% { opacity: .1; transform: translate3d(2%, -2%, 0) scale(1.04); }
 }
 @keyframes rune-boot-vignette { 0% { opacity: 0; } 16%, 78% { opacity: .82; } 100% { opacity: .42; } }
+@keyframes rune-welcome-ambient-crossfade {
+  0% { opacity: 0; transform: scale(.97); }
+  12% { opacity: var(--welcome-ambient-peak); }
+  68% { opacity: var(--welcome-ambient-tail); }
+  100% { opacity: 0; transform: scale(1.025); }
+}
+@keyframes rune-welcome-ambient-breathe {
+  0% { transform: translate3d(-1.8%, 1.2%, 0) scale(.97); }
+  48% { transform: translate3d(.8%, -.7%, 0) scale(1.015); }
+  100% { transform: translate3d(1.7%, -1.1%, 0) scale(1.035); }
+}
+@keyframes rune-welcome-ribbon-warm {
+  0% { transform: translate3d(-2.4%, 2.2%, 0) rotate(-1.2deg) scale(.97); }
+  52% { transform: translate3d(.4%, -.6%, 0) rotate(.2deg) scale(1.02); }
+  100% { transform: translate3d(2.1%, -1.8%, 0) rotate(1.1deg) scale(1.045); }
+}
+@keyframes rune-welcome-ribbon-cool {
+  0% { transform: translate3d(2.2%, -1.6%, 0) rotate(1deg) scale(1.035); }
+  54% { transform: translate3d(-.5%, .5%, 0) rotate(-.15deg) scale(1); }
+  100% { transform: translate3d(-2%, 1.6%, 0) rotate(-1deg) scale(.97); }
+}
+@keyframes rune-welcome-thread-draw {
+  0% { opacity: 0; stroke-dasharray: .18 1; stroke-dashoffset: 1; }
+  14% { opacity: .08; }
+  62% { opacity: .16; }
+  100% { opacity: 0; stroke-dasharray: .28 1; stroke-dashoffset: 0; }
+}
 @keyframes rune-greeting-dock {
   from { filter: saturate(1.04); transform: translate3d(0, clamp(150px, 24vh, 230px), 0) scale(1.04); }
   to { filter: saturate(1); transform: translate3d(0, 0, 0) scale(1); }
@@ -187,6 +229,7 @@
   *::before,
   *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
   .welcome-greeting-stage::before,
+  .welcome-ambient-motion,
   .welcome-greeting-reveal-stroke,
   .welcome-greeting-ink-trail,
   .welcome-greeting-color-bloom,

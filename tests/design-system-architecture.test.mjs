@@ -82,8 +82,10 @@ test("keeps the navigable Deck canvas inside the content layer and semantic moti
 });
 
 test("keeps the startup spectrum inside one restrained textured handwritten performance", async () => {
-  const [component, onboarding, motion] = await Promise.all([
+  const [component, ambient, experience, onboarding, motion] = await Promise.all([
     readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/welcome-ambient-motion.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/motion.css", import.meta.url), "utf8"),
   ]);
@@ -102,4 +104,16 @@ test("keeps the startup spectrum inside one restrained textured handwritten perf
   assert.match(motion, /@keyframes rune-greeting-spectrum-flow/);
   assert.match(motion, /@keyframes rune-greeting-color-bloom/);
   assert.match(motion, /@keyframes rune-boot-chroma/);
+  assert.match(ambient, /data-ambient-motion="crossfade-ribbon-drift"/);
+  assert.match(ambient, /preserveAspectRatio="xMidYMid slice"/);
+  assert.equal((ambient.match(/<path\s/g) ?? []).length, 3);
+  assert.doesNotMatch(ambient, /<video|\.mp4|fetch\(|motion\/react|SF-Hello|AppleCurveAnimation/);
+  assert.match(experience, /step === "welcome"[\s\S]+<WelcomeAmbientMotion/);
+  assert.match(onboarding, /\.welcome-ambient-motion\s*\{[^}]*pointer-events:\s*none;/s);
+  assert.match(
+    onboarding,
+    /data-intro-phase="ready"\] \.welcome-ambient-motion\s*\{[^}]*--welcome-ambient-peak:\s*\.2;/s,
+  );
+  assert.match(motion, /@keyframes rune-welcome-ambient-crossfade/);
+  assert.doesNotMatch(motion, /\.welcome-ambient-(?:motion|field|ribbon[^\s{]*|thread)\s*\{[^}]*infinite/s);
 });

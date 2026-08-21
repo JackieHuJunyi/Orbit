@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HandwrittenGreeting } from "./handwritten-greeting";
+import { WelcomeAmbientMotion } from "./welcome-ambient-motion";
 import {
   localeDirection,
   localeDisplayName,
@@ -277,6 +278,9 @@ export function WelcomeExperience({
       aria-modal="true"
       aria-labelledby="welcome-title"
     >
+      {step === "welcome" && (
+        <WelcomeAmbientMotion cycleDuration={greetingCycleDuration} key={`ambient-${locale}-${greetingIndex}`} />
+      )}
       <section
         className="welcome-window"
         data-intro-phase={introPhase}
