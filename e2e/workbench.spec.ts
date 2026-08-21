@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { openWorkbench } from "./helpers/workbench";
 
@@ -146,6 +147,40 @@ test("renders the local-first workbench with its sample workspace", async ({ pag
   await expect(page.locator("aside.file-rail").getByText("board-briefing.html")).toBeVisible();
   await expect(page.locator("aside.file-rail").getByText("regional-revenue.csv")).toBeVisible();
   await expect(page.getByRole("button", { name: "More tools" })).toBeVisible();
+});
+
+test("reviews canonical source before downloading its exact UTF-8 bytes", async ({ page }) => {
+  await openWorkbench(page);
+  const editor = page.locator("textarea.source-editor");
+  const canonicalSource = await editor.inputValue();
+  let downloadCount = 0;
+  page.on("download", () => {
+    downloadCount += 1;
+  });
+
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  await page.getByRole("menuitem").filter({ hasText: "Canonical source" }).click();
+  const review = page.getByRole("dialog", { name: "Review canonical source" });
+  await expect(review).toBeVisible();
+  await expect(review.getByText(/exact UTF-8 source/u)).toBeVisible();
+  await expect(review.getByText("q2-review.md", { exact: true }).first()).toBeVisible();
+  await review.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(review).toBeHidden();
+  expect(downloadCount).toBe(0);
+
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  await page.getByRole("menuitem").filter({ hasText: "Canonical source" }).click();
+  await expect(review).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    review.getByRole("button", { name: "Download MD", exact: true }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("q2-review.md");
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  expect(await readFile(downloadPath!, "utf8")).toBe(canonicalSource);
+  await expect(review).toBeHidden();
+  expect(downloadCount).toBe(1);
 });
 
 test("toggles the workspace file rail without losing the workbench", async ({ page }) => {

@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.39 with byte-exact Markdown/CSV/JSON/SQL/Chart JSON/HTML source handoff inside the same local review-before-download transaction as every converted format.
 - 2026-08-21 — Shipped Rune v1.38 with one lazy reviewed-export runtime for every file handoff and a clearer device-startup greeting built from connected spectrum handwriting.
 - 2026-08-21 — Shipped Rune v1.37 with one ordered file-import adapter boundary shared by picker extensions, size policy, ordinary conversion, and OCR continuation while retaining deferred heavy runtimes.
 

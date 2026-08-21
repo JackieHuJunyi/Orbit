@@ -26,17 +26,24 @@ export function ExportReviewDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const target = result.targetType.toUpperCase();
+  const target =
+    result.targetType === "deck-md"
+      ? "DECK.MD"
+      : result.targetType === "chart-json"
+        ? "CHART.JSON"
+        : result.targetType.toUpperCase();
+  const canonicalSource = result.handoffKind === "canonical-source";
   const office = ["doc", "ppt", "docx", "xlsx", "pptx"].includes(result.targetType);
   const odf = ["odt", "ods", "odp"].includes(result.targetType);
   const pdf = result.targetType === "pdf";
   const data = ["csv", "json"].includes(result.targetType);
-  const kind = office ? "office" : odf ? "odf" : pdf ? "pdf" : data ? "data" : "html";
+  const kind = canonicalSource ? "source" : office ? "office" : odf ? "odf" : pdf ? "pdf" : data ? "data" : "html";
   const copy = runeUICopy(locale);
   const reviewTitle = copy.exportReview.title(kind);
   const descriptor = copy.exportReview.descriptors[kind];
-  const outputKind =
-    office || odf
+  const outputKind = canonicalSource
+    ? copy.exportReview.outputKinds.source
+    : office || odf
       ? copy.exportReview.outputKinds.semantic
       : pdf
         ? copy.exportReview.outputKinds.fixed
@@ -120,11 +127,13 @@ export function ExportReviewDialog({
         <div>
           <span>01</span>
           <strong>{copy.exportReview.canonicalTitle}</strong>
-          <p>{copy.exportReview.canonicalBody}</p>
+          <p>{canonicalSource ? copy.exportReview.sourceCanonicalBody : copy.exportReview.canonicalBody}</p>
         </div>
         <div>
           <span>02</span>
-          <strong>{copy.exportReview.packageTitle(office || odf)}</strong>
+          <strong>
+            {canonicalSource ? copy.exportReview.sourceFileTitle : copy.exportReview.packageTitle(office || odf)}
+          </strong>
           <p>{copy.exportReview.packageBody(kind)}</p>
         </div>
         <div>

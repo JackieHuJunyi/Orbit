@@ -372,6 +372,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Evidence completeness": "Полнота доказательств",
   "Exact compiler detail": "Точное сообщение компилятора",
   "Exact scope value": "Точное значение области",
+  "exact UTF-8 source": "точный исходник UTF-8",
   "Excluded rows": "Исключённые строки",
   "Existing exports": "Доступный экспорт",
   "Exists only in this field until you save": "Существует только в этом поле, пока вы не сохраните",
@@ -722,6 +723,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "Вывод запроса",
   "Quick start": "Быстрый старт",
   Quote: "Цитата",
+  "Readable file": "Читаемый файл",
+  "readable source": "читаемый исходник",
   "Readable source": "Читабельный источник",
   "Readable, analyzable table data": "Читаемые и анализируемые табличные данные",
   "Reading model profiles…": "Чтение профилей моделей…",
@@ -783,6 +786,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue analysis": "Анализ доходов",
   "Revenue by region": "Выручка по регионам",
   "Review before write": "Обзор, прежде чем писать",
+  "Review canonical source": "Проверить канонический исходник",
   "Review focus": "Фокус обзора",
   "Review imported sources": "Просмотрите импортированные источники",
   "Review insertion": "Проверить вставку",
@@ -817,6 +821,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune обнаружил страницы без выделяемого текста. Подтвердите страницы и язык; изображения будут прочитаны только после открытия предпросмотра или запуска распознавания.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune собрал записи задач с этого устройства в анонимный JSON. Он может использоваться для сводного анализа реального пилота, но никогда не загружается и не заявляет о подтверждении соответствия продукта рынку.",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune сохраняет этот проверенный исходник без изменений и не компилирует и не переписывает его динамические ссылки.",
   "Rune sections": "Разделы Rune",
   "Rune still works with deterministic local planners. You can revisit this from Help.":
     "Rune по-прежнему работает с детерминированными локальными планировщиками. Вы можете вернуться к этому из справки.",
@@ -960,6 +966,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Набор обнаруженных сканированных страниц изменился. Импортируйте файл снова.",
   "The direction is right and only limited manual changes remain.":
     "Направление верное, остались лишь небольшие ручные правки.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "Загрузка сохраняет читаемый исходник без изменений. Привязки Rune и ссылки на локальные ресурсы остаются выражениями исходника.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "Ключ пересекает HTTPS того же происхождения и шифруется в учетные данные HttpOnly; он никогда не записывается в localStorage, рабочую область, Artifact или Git. Пользовательская конечная точка получает контент, который вы передаете Agent, поэтому используйте только ту службу, которой вы доверяете.",
   "The last block cannot be deleted": "Последний блок не может быть удален",

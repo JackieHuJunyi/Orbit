@@ -30,6 +30,54 @@ type WorkspaceFileExportContext = {
 
 type WorkspaceFileExportConverter = (context: WorkspaceFileExportContext) => Promise<ArtifactExportResult>;
 
+const MAX_SOURCE_EXPORT_BYTES = 12 * 1024 * 1024;
+
+function sourceMimeType(targetType: ArtifactExportResult["targetType"]) {
+  if (targetType === "md" || targetType === "deck-md") return "text/markdown;charset=utf-8";
+  if (targetType === "csv") return "text/csv;charset=utf-8";
+  if (targetType === "json" || targetType === "chart-json") return "application/json;charset=utf-8";
+  if (targetType === "sql") return "application/sql;charset=utf-8";
+  if (targetType === "html") return "text/html;charset=utf-8";
+  throw new Error(`Unsupported canonical source target: ${targetType}`);
+}
+
+async function convertCanonicalSource(context: WorkspaceFileExportContext): Promise<ArtifactExportResult> {
+  const bytes = new TextEncoder().encode(context.artifact.source);
+  if (bytes.length > MAX_SOURCE_EXPORT_BYTES) {
+    throw new Error("Canonical source export is limited to 12 MB.");
+  }
+  const warnings = [
+    "This download preserves Rune's exact readable canonical source; live bindings remain source expressions rather than frozen values.",
+  ];
+  const assetCount = new Set(extractRuneAssetIds(context.artifact.source)).size;
+  if (assetCount) {
+    warnings.push(
+      `${assetCount} local image ${assetCount === 1 ? "reference remains" : "references remain"} as rune-asset identifiers. Use a connected folder or standalone/package export when the receiver also needs the image bytes.`,
+    );
+  }
+  if (context.artifact.kind === "data") {
+    warnings.push(
+      "Exact Data source is not normalized or spreadsheet-formula escaped; choose the separate portable CSV or JSON handoff when preparing data for another application.",
+    );
+  } else if (context.artifact.kind === "query") {
+    warnings.push("SQL source expects Rune's workspace_data relation and is not a self-contained database.");
+  } else if (context.artifact.kind === "chart") {
+    warnings.push("Chart JSON retains its exact source artifact id and fields; it is not a frozen chart image.");
+  } else if (context.artifact.kind === "slides" && context.capability.targetType === "html") {
+    warnings.push(
+      "Canonical presentation HTML may retain Rune bindings and local asset references; choose Standalone HTML for a frozen self-contained handoff.",
+    );
+  }
+  return {
+    bytes,
+    fileName: context.artifact.name,
+    mimeType: sourceMimeType(context.capability.targetType),
+    targetType: context.capability.targetType,
+    handoffKind: "canonical-source",
+    warnings,
+  };
+}
+
 async function convertPortableData(context: WorkspaceFileExportContext) {
   const { exportPortableDataArtifact } = await import("./data-export.ts");
   if (context.capability.targetType !== "csv" && context.capability.targetType !== "json") {
@@ -78,6 +126,7 @@ async function convertPdf(context: WorkspaceFileExportContext) {
 
 const WORKSPACE_FILE_EXPORT_CONVERTERS: Readonly<Record<WorkspaceFileExportDestination, WorkspaceFileExportConverter>> =
   Object.freeze({
+    source: convertCanonicalSource,
     csv: convertPortableData,
     json: convertPortableData,
     office: convertOffice,
@@ -175,10 +224,13 @@ export async function prepareWorkspaceFileExport(
       const { getRuneImageAsset } = await import("./local-assets.ts");
       return getRuneImageAsset(id);
     });
-  const [querySnapshots, imageAssets] = await Promise.all([
-    prepareQuerySnapshots(artifact, artifacts, runQuerySnapshot),
-    prepareImageAssets(artifact, loadImageAsset),
-  ]);
+  const [querySnapshots, imageAssets] =
+    destination === "source"
+      ? [[], []]
+      : await Promise.all([
+          prepareQuerySnapshots(artifact, artifacts, runQuerySnapshot),
+          prepareImageAssets(artifact, loadImageAsset),
+        ]);
   const compileBindings = destination === "office" || destination === "legacy-office" || destination === "odf";
   const exportArtifact = compileBindings
     ? compilePackageArtifact(artifact, artifacts, querySnapshots, destination)

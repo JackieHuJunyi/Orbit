@@ -1,5 +1,20 @@
 export type ArtifactExportKind =
-  "csv" | "json" | "doc" | "ppt" | "docx" | "xlsx" | "pptx" | "odt" | "ods" | "odp" | "html" | "pdf";
+  | "md"
+  | "deck-md"
+  | "csv"
+  | "json"
+  | "sql"
+  | "chart-json"
+  | "html"
+  | "doc"
+  | "ppt"
+  | "docx"
+  | "xlsx"
+  | "pptx"
+  | "odt"
+  | "ods"
+  | "odp"
+  | "pdf";
 
 export type ArtifactExportResult<Target extends ArtifactExportKind = ArtifactExportKind> = {
   bytes: Uint8Array;
@@ -7,6 +22,7 @@ export type ArtifactExportResult<Target extends ArtifactExportKind = ArtifactExp
   mimeType: string;
   warnings: string[];
   targetType: Target;
+  handoffKind?: "canonical-source" | "converted";
 };
 
 export function safeExportBaseName(name: string) {

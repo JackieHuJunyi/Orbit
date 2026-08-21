@@ -2603,3 +2603,11 @@ v1.38 将 CSV/JSON、DOCX/XLSX/PPTX、DOC/PPT、ODT/ODS/ODP、HTML 与 PDF 从 W
 同一版本把首轮开机表演从“分段擦出 Hello”收敛为真正的连续主笔势：拉丁/西里尔首字母与横笔完成后，余下连笔由一个不中断的 path 写成；简中/繁中和日文增加有方向的收锋，中日韩仍保持有界笔势。彩墨减少雾化、提高干净边缘，完成后才展开设置；reduced motion 与 forced colors 继续立即静态显示。这是 Rune 自己的字形遮罩、笔势与光谱，不复制 Apple 资产。
 
 Workbench 降至 6,125 行，首屏 entry 为 525,336 bytes；5 条导出合同与完整 648 unit、27 render、49 Chromium gate 保护这次收敛。下一格式仍必须先定义产品能力、输入上限、保真边界、敌对输入和真实 fixture，不能把 converter registry 扩张成任意第三方插件权限。
+
+## 141. AI-readable 源文件本身也必须先审核再离开 Rune
+
+v1.38 统一了转换成品，却留下了最重要的例外：Export 菜单里的 Canonical source 仍由 Workbench 直接创建 object URL。Markdown、CSV/JSON、SQL、Chart JSON 和 HTML 虽然能下载，却没有统一 capability、12 MB 上限、base-workspace stale check 或 fidelity review；用户也不会在离开 Rune 前看到 live binding、`workspace_data` 与 `rune-asset` 不是自包含内容。这与“可读源是产品核心”相矛盾。
+
+v1.39 把 `source` 加入同一冻结 capability 表。Document → MD，Data 保留 exact CSV/JSON，Query → SQL，Chart → CHART.JSON，semantic HTML → HTML，兼容 Deck → DECK.MD。lazy runtime 只做逐字节 UTF-8 编码与 12 MB 检查，不启动 DuckDB、不读取 image store、不编译 binding、不改 filename；它用明确 warnings 区分 exact source 与 portable/frozen handoff。带图片的源继续保留 `rune-asset` id，并提示接收方需要 connected `.rune-assets` 或选择 standalone/package export。
+
+旧 `downloadArtifact` 与 `downloadSelectedArtifactSource` 被删除。Canonical source 现在和 Office/PDF 一样捕获 exact base workspace、进入九语言 review、Cancel 零下载、stale context 拒绝，只有 Confirm 能创建 object URL。真实 Chromium 先取消并证明没有 download event，再确认并比较实际下载的 `q2-review.md` 与左侧 Source 逐字节相同。Workbench 为 6,102 行、首屏 525,221 bytes，lazy export runtime 7,434 bytes；649 unit、27 render 与 50 Chromium gate 保护这条边界。

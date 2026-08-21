@@ -377,6 +377,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Evidence completeness": "Exhaustivité des preuves",
   "Exact compiler detail": "Détail exact du compilateur",
   "Exact scope value": "Valeur exacte du périmètre",
+  "exact UTF-8 source": "source UTF-8 exacte",
   "Excluded rows": "Lignes exclues",
   "Existing exports": "Exports disponibles",
   "Exists only in this field until you save": "Existe uniquement dans ce champ jusqu'à ce que vous enregistriez",
@@ -731,6 +732,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "Résultat de la requête",
   "Quick start": "Démarrage rapide",
   Quote: "Citation",
+  "Readable file": "Fichier lisible",
+  "readable source": "source lisible",
   "Readable source": "Source lisible",
   "Readable, analyzable table data": "Données de tableau lisibles et analysables",
   "Reading model profiles…": "Lecture des profils de modèles…",
@@ -791,6 +794,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue analysis": "Analyse des revenus",
   "Revenue by region": "Chiffre d'affaires par région",
   "Review before write": "Réviser avant d'écrire",
+  "Review canonical source": "Vérifier la source canonique",
   "Review focus": "Objectif de l'examen",
   "Review imported sources": "Examiner les sources importées",
   "Review insertion": "Insertion d'avis",
@@ -825,6 +829,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune a trouvé des pages sans texte sélectionnable. Confirmez les pages et la langue ; les images ne seront lues qu’après ouverture d’un aperçu ou lancement de la reconnaissance.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune a compilé les enregistrements de tâches de cet appareil dans un JSON anonyme. Il peut servir à agréger un pilote réel, mais n’est jamais téléversé et ne prétend pas valider l’adéquation produit-marché.",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune conserve exactement cette source validée ; il ne compile ni ne réécrit ses références dynamiques.",
   "Rune sections": "Rune rubriques",
   "Rune still works with deterministic local planners. You can revisit this from Help.":
     "Rune travaille toujours avec des planificateurs locaux déterministes. Vous pouvez revoir cela à partir de l'aide.",
@@ -969,6 +975,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Les pages numérisées détectées ont changé. Importez de nouveau le fichier.",
   "The direction is right and only limited manual changes remain.":
     "La direction est bonne et seules quelques modifications manuelles restent à faire.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "Le téléchargement conserve exactement la source lisible. Les liaisons Rune et les références aux ressources locales restent des expressions source.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "La clé traverse le HTTPS de même origine et est cryptée dans un identifiant HttpOnly ; il n'est jamais écrit dans localStorage, dans l'espace de travail, dans un Artifact ou dans Git. Un point de terminaison personnalisé reçoit le contenu que vous donnez au Agent, utilisez donc uniquement un service en qui vous avez confiance.",
   "The last block cannot be deleted": "Le dernier bloc ne peut pas être supprimé",

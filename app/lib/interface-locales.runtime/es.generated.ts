@@ -375,6 +375,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Evidence completeness": "Integridad de las pruebas",
   "Exact compiler detail": "Detalle exacto del compilador",
   "Exact scope value": "Valor exacto del ámbito",
+  "exact UTF-8 source": "fuente UTF-8 exacta",
   "Excluded rows": "Filas excluidas",
   "Existing exports": "Exportaciones disponibles",
   "Exists only in this field until you save": "Sólo existe en este campo hasta que guarde",
@@ -729,6 +730,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "Salida de la consulta",
   "Quick start": "Inicio rápido",
   Quote: "Cotización",
+  "Readable file": "Archivo legible",
+  "readable source": "fuente legible",
   "Readable source": "Fuente legible",
   "Readable, analyzable table data": "Datos de tabla legibles y analizables",
   "Reading model profiles…": "Leyendo perfiles de modelos...",
@@ -789,6 +792,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue analysis": "Análisis de ingresos",
   "Revenue by region": "Ingresos por región",
   "Review before write": "Revisar antes de escribir",
+  "Review canonical source": "Revisar la fuente canónica",
   "Review focus": "Enfoque de revisión",
   "Review imported sources": "Revisar fuentes importadas",
   "Review insertion": "Inserción de reseñas",
@@ -823,6 +827,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune encontró páginas sin texto seleccionable. Confirma las páginas y el idioma; las imágenes solo se leerán al abrir una vista previa o iniciar el reconocimiento.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune ha recopilado los registros de tareas de este dispositivo en un JSON anónimo. Puede apoyar la agregación de un piloto real, pero nunca se sube ni afirma validar el encaje producto-mercado.",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune conserva exactamente esta fuente validada; no compila ni reescribe sus referencias dinámicas.",
   "Rune sections": "Rune secciones",
   "Rune still works with deterministic local planners. You can revisit this from Help.":
     "Rune todavía funciona con planificadores locales deterministas. Puedes volver a visitar esto desde Ayuda.",
@@ -966,6 +972,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Las páginas escaneadas detectadas han cambiado. Vuelve a importar el archivo.",
   "The direction is right and only limited manual changes remain.":
     "La dirección es correcta y solo quedan cambios manuales limitados.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "La descarga conserva exactamente la fuente legible. Los enlaces de Rune y las referencias a recursos locales permanecen como expresiones de fuente.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "La clave cruza HTTPS del mismo origen y se cifra en una credencial HttpOnly. nunca se escribe en localStorage, el espacio de trabajo, un Artifact o Git. Un punto final personalizado recibe el contenido que le proporcionas a Agent, así que utiliza solo un servicio en el que confíes.",
   "The last block cannot be deleted": "El último bloque no se puede eliminar.",

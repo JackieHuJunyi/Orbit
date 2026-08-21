@@ -2365,3 +2365,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - export runtime 只能返回 immutable bytes、filename、MIME、target 与 warnings；不能下载、确认、持久化、创建 checkpoint、读取 credential 或改变 canonical source。pending review 继续唯一拥有 exact base workspace、stale rejection 与 object URL。
 - 开机问候的拉丁/西里尔主体必须是一条连续连笔而不是逐字短曲线；中日韩保留 script-aware brush order 并加入有方向收锋。墨迹必须清晰、有限、在完成后再展开语言设置，且 reduced-motion/forced-color 立即得到完整静态字形。
 - 发布证据必须覆盖每种 Artifact 的 exact capability、portable fast path、Query/package path、truncation/missing-asset rejection、frozen input、两级 lazy manifest，以及九语言桌面/窄屏开机几何和真实动画关键帧。
+
+### 17.70 v1.39 可读规范源内容必须使用同一审核交付边界
+
+- Export 中的 Canonical source 不得直接创建 object URL。MD、exact CSV/JSON、SQL、CHART.JSON、semantic HTML 与兼容 DECK.MD 必须由同一 capability 表声明，并进入既有 pending export review。
+- source converter 只能 UTF-8 编码 exact canonical string、保留 exact filename、执行 12 MB 上限并返回 warnings；不得启动 DuckDB、读取 image store、解析/编译 binding、规范化 Data 或修改任何字节。
+- fidelity review 必须区分 readable source 与 frozen/portable output：live binding 保留表达式，SQL 依赖 `workspace_data`，Chart JSON 保留 source id，canonical HTML 可能非 standalone，`rune-asset` 只携带引用而非图片 bytes。
+- Cancel 必须产生零 download；workspace identity 在准备后变化必须拒绝 Confirm；只有确认才能创建一个本地 object URL。任务 evidence 只把 MD 与兼容 DECK.MD 视为 source deliverable，不能把输入 Data、Query、Chart 或非独立 HTML 下载冒充任务成品。
+- 九种界面语言必须拥有 source review title、output kind、descriptor 与 source-preservation explanation；raw converter warning 保持事实原文，后续只有在 owner 提供稳定 code/parameter 后才能本地化。
+- 发布证据必须逐类证明 target/filename/bytes、frozen input、12 MB 拒绝、image warning、zero Query/asset port，并由 Chromium 证明 Cancel 零下载和 Confirm 后真实文件与 Source 逐字节一致。

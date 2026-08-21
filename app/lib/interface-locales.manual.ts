@@ -2925,3 +2925,64 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
     "현재 리비전에 고정된 시맨틱 HTML 슬라이드 하나 · Source에 실시간 반영 · 저장 전 전체 프레젠테이션 검증",
   "Save HTML slide": "HTML 슬라이드 저장",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Review canonical source": "Vérifier la source canonique",
+  "readable source": "source lisible",
+  "exact UTF-8 source": "source UTF-8 exacte",
+  "Readable file": "Fichier lisible",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune conserve exactement cette source validée ; il ne compile ni ne réécrit ses références dynamiques.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "Le téléchargement conserve exactement la source lisible. Les liaisons Rune et les références aux ressources locales restent des expressions source.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Review canonical source": "Revisar la fuente canónica",
+  "readable source": "fuente legible",
+  "exact UTF-8 source": "fuente UTF-8 exacta",
+  "Readable file": "Archivo legible",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune conserva exactamente esta fuente validada; no compila ni reescribe sus referencias dinámicas.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "La descarga conserva exactamente la fuente legible. Los enlaces de Rune y las referencias a recursos locales permanecen como expresiones de fuente.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Review canonical source": "Проверить канонический исходник",
+  "readable source": "читаемый исходник",
+  "exact UTF-8 source": "точный исходник UTF-8",
+  "Readable file": "Читаемый файл",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune сохраняет этот проверенный исходник без изменений и не компилирует и не переписывает его динамические ссылки.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "Загрузка сохраняет читаемый исходник без изменений. Привязки Rune и ссылки на локальные ресурсы остаются выражениями исходника.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Review canonical source": "مراجعة المصدر الأساسي",
+  "readable source": "مصدر قابل للقراءة",
+  "exact UTF-8 source": "مصدر UTF-8 مطابق",
+  "Readable file": "ملف قابل للقراءة",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "يحافظ Rune على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "يحافظ التنزيل على المصدر المقروء كما هو. وتبقى روابط Rune ومراجع الأصول المحلية تعبيرات داخل المصدر.",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Review canonical source": "正規ソースを確認",
+  "readable source": "読み取り可能なソース",
+  "exact UTF-8 source": "完全一致の UTF-8 ソース",
+  "Readable file": "読み取り可能なファイル",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune は検証済みのソースをそのまま保持し、ライブ参照をコンパイルしたり書き換えたりしません。",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "ダウンロードは読み取り可能なソースをそのまま保持します。Rune のバインディングとローカルアセット参照はソース式のままです。",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Review canonical source": "정규 소스 검토",
+  "readable source": "읽을 수 있는 소스",
+  "exact UTF-8 source": "정확한 UTF-8 소스",
+  "Readable file": "읽을 수 있는 파일",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Rune 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
+});

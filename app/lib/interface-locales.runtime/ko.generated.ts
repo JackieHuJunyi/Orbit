@@ -370,6 +370,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Evidence completeness": "근거 완전성",
   "Exact compiler detail": "정확한 컴파일러 세부 정보",
   "Exact scope value": "정확히 일치하는 범위 값",
+  "exact UTF-8 source": "정확한 UTF-8 소스",
   "Excluded rows": "제외된 행",
   "Existing exports": "사용 가능한 내보내기",
   "Exists only in this field until you save": "저장할 때까지 이 필드에만 존재합니다.",
@@ -708,6 +709,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "쿼리 출력",
   "Quick start": "빠른 시작",
   Quote: "견적",
+  "Readable file": "읽을 수 있는 파일",
+  "readable source": "읽을 수 있는 소스",
   "Readable source": "읽을 수 있는 소스",
   "Readable, analyzable table data": "읽고 분석 가능한 테이블 데이터",
   "Reading model profiles…": "모델 프로필을 읽는 중…",
@@ -768,6 +771,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue analysis": "수익분석",
   "Revenue by region": "지역별 수익",
   "Review before write": "쓰기 전에 검토하세요",
+  "Review canonical source": "정규 소스 검토",
   "Review focus": "검토 초점",
   "Review imported sources": "가져온 소스 검토",
   "Review insertion": "리뷰 삽입",
@@ -801,6 +805,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune이 선택 가능한 텍스트가 없는 페이지를 찾았습니다. 페이지와 언어를 확인하세요. 미리보기를 열거나 인식을 시작하기 전에는 이미지 내용을 읽지 않습니다.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune이 이 기기의 작업 기록을 익명 JSON으로 정리했습니다. 실제 파일럿 결과 집계에 사용할 수 있지만 업로드되지 않으며 제품 시장 검증 완료를 의미하지 않습니다.",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
   "Rune sections": "Rune 섹션",
   "Rune still works with deterministic local planners. You can revisit this from Help.":
     "Rune은 여전히 결정론적 로컬 계획자와 함께 작동합니다. 도움말에서 이 내용을 다시 방문할 수 있습니다.",
@@ -941,6 +947,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The detected scan pages changed. Import the file again.":
     "감지된 스캔 페이지가 변경되었습니다. 파일을 다시 가져오세요.",
   "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Rune 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "키는 동일한 출처의 HTTPS를 통과하며 HttpOnly 자격 증명으로 암호화됩니다. localStorage, 작업공간, Artifact 또는 Git에 기록되지 않습니다. 커스텀 엔드포인트는 귀하가 Agent에 제공한 콘텐츠를 수신하므로 신뢰할 수 있는 서비스만 사용하세요.",
   "The last block cannot be deleted": "마지막 블록은 삭제할 수 없습니다.",

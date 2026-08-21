@@ -586,8 +586,9 @@ test("records user-confirmed deliverable outcomes through the shared exact-revis
   ]);
   assert.match(
     workbench,
-    /openDeliveryConfirmationForArtifact\(\s*exportedArtifact,\s*"download",\s*result\.targetType,/,
+    /openDeliveryConfirmationForArtifact\(\s*exportedArtifact,\s*"download",\s*sourceDeliveryTarget,/,
   );
+  assert.match(workbench, /destination !== "source"\s*\? result\.targetType/);
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(handoffArtifact, "folder", "folder"/);
   assert.match(workbench, /recordRuneTaskDelivery\(\{/);
   assert.match(

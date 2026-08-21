@@ -703,7 +703,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
     },
     exportReview: {
       kicker: zh ? "浏览器本地导出 · 不上传" : "Browser-local export · no upload",
-      title: (kind: "office" | "odf" | "pdf" | "html" | "data") =>
+      title: (kind: "office" | "odf" | "pdf" | "html" | "data" | "source") =>
         zh
           ? {
               office: "审核 Office 导出",
@@ -711,6 +711,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               pdf: "审核 PDF 导出",
               html: "审核 HTML 导出",
               data: "审核数据导出",
+              source: "审核规范源内容",
             }[kind]
           : {
               office: "Review Office export",
@@ -718,6 +719,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               pdf: "Review PDF export",
               html: "Review HTML export",
               data: "Review Data export",
+              source: "Review canonical source",
             }[kind],
       description: (name: string, outputKind: string, target: string) =>
         zh
@@ -728,6 +730,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         fixed: zh ? "固定版式" : "fixed-layout",
         standalone: zh ? "独立" : "standalone",
         portable: zh ? "便携数据" : "portable data",
+        source: zh ? "可读源内容" : "readable source",
       },
       details: (target: string) => (zh ? `${target} 导出详情` : `${target} export details`),
       noChanges: zh ? "不会修改工作区或本机草稿" : "No workspace or device draft changes",
@@ -740,15 +743,20 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         pdf: zh ? "固定版式 PDF" : "fixed-layout PDF",
         html: zh ? "自包含无脚本文件" : "self-contained scriptless file",
         data: zh ? "确定性 UTF-8 数据" : "deterministic UTF-8 data",
+        source: zh ? "原样 UTF-8 源内容" : "exact UTF-8 source",
       },
       fidelityNotes: zh ? "保真说明" : "Fidelity notes",
       canonicalTitle: zh ? "规范源内容" : "Canonical source",
       canonicalBody: zh
         ? "Rune 导出已校验的源内容，以及当前工作区中被引用的数据。"
         : "Rune exports the validated source and any referenced current workspace data.",
+      sourceCanonicalBody: zh
+        ? "Rune 保留这份已校验源内容的每一个字节；不会编译或改写其中的实时引用。"
+        : "Rune preserves this exact validated source; it does not compile or rewrite its live references.",
       packageTitle: (packaged: boolean) =>
         packaged ? (zh ? "标准文件包" : "Standard package") : zh ? "便携成品" : "Portable output",
-      packageBody: (kind: "office" | "odf" | "pdf" | "html" | "data") =>
+      sourceFileTitle: zh ? "可读文件" : "Readable file",
+      packageBody: (kind: "office" | "odf" | "pdf" | "html" | "data" | "source") =>
         zh
           ? {
               office: "下载使用标准 Office Open XML 部件及关系。",
@@ -756,6 +764,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               pdf: "下载在标准 PDF 中嵌入版式、Unicode 字体和当前数据快照。",
               html: "下载包含版式、主题、指标和图表，不依赖外部资源。",
               data: "下载使用确定性的 UTF-8 CSV 或 JSON，不携带隐藏公式或脚本。",
+              source: "下载保留精确的可读源内容；Rune 绑定与本地资源引用仍是源表达式。",
             }[kind]
           : {
               office: "The download uses standard Office Open XML parts and relationships.",
@@ -763,6 +772,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               pdf: "The download embeds its layout, Unicode font, and current data snapshots in a standard PDF.",
               html: "The download contains its layout, theme, metrics, and charts without external assets.",
               data: "The download uses deterministic UTF-8 CSV or JSON without hidden formulas or scripts.",
+              source:
+                "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.",
             }[kind],
       handoffTitle: zh ? "明确交付" : "Explicit handoff",
       handoffBody: zh

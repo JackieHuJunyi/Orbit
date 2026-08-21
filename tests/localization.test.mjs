@@ -125,6 +125,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
   assert.equal(english.preview.saveHtmlSlide, "Save HTML slide");
   assert.equal(chinese.importReview.title, "审核导入后的可读源");
   assert.equal(english.exportReview.title("pdf"), "Review PDF export");
+  assert.equal(chinese.exportReview.title("source"), "审核规范源内容");
+  assert.equal(traditionalChinese.exportReview.title("source"), "稽核規範源內容");
+  assert.equal(english.exportReview.title("source"), "Review canonical source");
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     assert.notEqual(runeUICopy(locale).workbench.livePreview, english.workbench.livePreview);
     assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
@@ -137,6 +140,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
     assert.notEqual(runeUICopy(locale).preview.semanticHtmlEditMode, english.preview.semanticHtmlEditMode);
     assert.notEqual(runeUICopy(locale).preview.slideHtml, english.preview.slideHtml);
     assert.notEqual(runeUICopy(locale).preview.saveHtmlSlide, english.preview.saveHtmlSlide);
+    assert.notEqual(runeUICopy(locale).exportReview.title("source"), english.exportReview.title("source"));
+    assert.notEqual(runeUICopy(locale).exportReview.descriptors.source, english.exportReview.descriptors.source);
+    assert.notEqual(runeUICopy(locale).exportReview.sourceFileTitle, english.exportReview.sourceFileTitle);
     assert.match(runeUICopy(locale).preview.validHtmlSlide, /<section>/u);
     assert.doesNotMatch(runeUICopy(locale).preview.validHtmlSlide, /<(?:sección|قسم|セクション|섹션)>/iu);
     assert.notEqual(runeUICopy(locale).workbench.diagnostics.openSource, english.workbench.diagnostics.openSource);

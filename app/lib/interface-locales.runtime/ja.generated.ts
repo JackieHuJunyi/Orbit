@@ -371,6 +371,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Evidence completeness": "根拠の完全性",
   "Exact compiler detail": "コンパイラの正確な詳細",
   "Exact scope value": "完全一致する範囲値",
+  "exact UTF-8 source": "完全一致の UTF-8 ソース",
   "Excluded rows": "除外行",
   "Existing exports": "利用可能な書き出し",
   "Exists only in this field until you save": "保存するまではこのフィールドにのみ存在します",
@@ -722,6 +723,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "クエリ出力",
   "Quick start": "クイックスタート",
   Quote: "引用",
+  "Readable file": "読み取り可能なファイル",
+  "readable source": "読み取り可能なソース",
   "Readable source": "読みやすいソース",
   "Readable, analyzable table data": "読みやすく分析可能なテーブルデータ",
   "Reading model profiles…": "モデルのプロファイルを読み取り中…",
@@ -782,6 +785,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue analysis": "収益分析",
   "Revenue by region": "地域別の収益",
   "Review before write": "書く前に見直す",
+  "Review canonical source": "正規ソースを確認",
   "Review focus": "レビューの焦点",
   "Review imported sources": "インポートされたソースを確認する",
   "Review insertion": "レビューの挿入",
@@ -816,6 +820,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune は選択可能なテキストがないページを検出しました。ページと言語を確認してください。プレビューを開くか認識を開始するまで画像内容は読み取りません。",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune はこのデバイスのタスク記録を匿名 JSON にまとめました。実際のパイロット結果の集計に利用できますが、アップロードされることはなく、プロダクトマーケット検証の完了を示すものでもありません。",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Rune は検証済みのソースをそのまま保持し、ライブ参照をコンパイルしたり書き換えたりしません。",
   "Rune sections": "Rune セクション",
   "Rune still works with deterministic local planners. You can revisit this from Help.":
     "Rune は、決定論的なローカル プランナーと引き続き連携します。ヘルプからこれに再度アクセスできます。",
@@ -957,6 +963,8 @@ export const INTERFACE_TRANSLATIONS = {
     "検出されたスキャンページが変わりました。ファイルをもう一度読み込んでください。",
   "The direction is right and only limited manual changes remain.":
     "方向性は正しく、残るのは限定的な手作業の修正だけです。",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "ダウンロードは読み取り可能なソースをそのまま保持します。Rune のバインディングとローカルアセット参照はソース式のままです。",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "キーは同じオリジンの HTTPS を通過し、HttpOnly 資格情報に暗号化されます。 localStorage、ワークスペース、Artifact、または Git に書き込まれることはありません。カスタム エンドポイントは、Agent に指定したコンテンツを受信するため、信頼できるサービスのみを使用してください。",
   "The last block cannot be deleted": "最後のブロックは削除できません",

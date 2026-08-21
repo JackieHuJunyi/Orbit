@@ -364,6 +364,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Evidence completeness": "اكتمال الأدلة",
   "Exact compiler detail": "تفاصيل المصرّف الدقيقة",
   "Exact scope value": "قيمة النطاق المطابقة",
+  "exact UTF-8 source": "مصدر UTF-8 مطابق",
   "Excluded rows": "الصفوف المستبعدة",
   "Existing exports": "خيارات التصدير المتاحة",
   "Exists only in this field until you save": "موجود فقط في هذا الحقل حتى تقوم بالحفظ",
@@ -703,6 +704,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "إخراج الاستعلام",
   "Quick start": "بداية سريعة",
   Quote: "اقتباس",
+  "Readable file": "ملف قابل للقراءة",
+  "readable source": "مصدر قابل للقراءة",
   "Readable source": "مصدر قابل للقراءة",
   "Readable, analyzable table data": "بيانات جدول قابلة للقراءة والتحليل",
   "Reading model profiles…": "قراءة ملفات تعريف النماذج...",
@@ -763,6 +766,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Revenue analysis": "تحليل الإيرادات",
   "Revenue by region": "الإيرادات حسب المنطقة",
   "Review before write": "المراجعة قبل الكتابة",
+  "Review canonical source": "مراجعة المصدر الأساسي",
   "Review focus": "مراجعة التركيز",
   "Review imported sources": "مراجعة المصادر المستوردة",
   "Review insertion": "مراجعة الإدراج",
@@ -796,6 +800,8 @@ export const INTERFACE_TRANSLATIONS = {
     "وجد Rune صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "جمع Rune سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
+  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
+    "يحافظ Rune على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
   "Rune sections": "Rune أقسام",
   "Rune still works with deterministic local planners. You can revisit this from Help.":
     "لا يزال Rune يعمل مع المخططين المحليين الحتميين. يمكنك إعادة النظر في هذا من التعليمات.",
@@ -934,6 +940,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The current Chart JSON is invalid.": "Chart JSON الحالي غير صالح.",
   "The detected scan pages changed. Import the file again.": "تغيّرت الصفحات الممسوحة المكتشفة. أعد استيراد الملف.",
   "The direction is right and only limited manual changes remain.": "الاتجاه صحيح ولا يتبقى سوى تعديلات يدوية محدودة.",
+  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
+    "يحافظ التنزيل على المصدر المقروء كما هو. وتبقى روابط Rune ومراجع الأصول المحلية تعبيرات داخل المصدر.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "يتقاطع المفتاح مع HTTPS من نفس المصدر ويتم تشفيره في بيانات اعتماد HttpOnly؛ لم يتم كتابته أبدًا إلى localStorage، أو مساحة العمل، أو Artifact، أو Git. تتلقى نقطة النهاية المخصصة المحتوى الذي تقدمه لـ Agent، لذا استخدم الخدمة التي تثق بها فقط.",
   "The last block cannot be deleted": "لا يمكن حذف الكتلة الأخيرة",

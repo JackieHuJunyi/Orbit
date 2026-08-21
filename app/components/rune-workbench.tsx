@@ -12,7 +12,6 @@ import {
   ClipboardList,
   Code2,
   Database,
-  Download,
   Eye,
   FileArchive,
   FileCode2,
@@ -411,6 +410,7 @@ type PendingPdfOcr = {
 };
 
 type PendingExport = {
+  destination: WorkspaceFileExportDestination;
   sourceArtifactId: string;
   sourceArtifactName: string;
   sourceRevision: string;
@@ -748,27 +748,6 @@ function persistDeviceWorkspace(
     STORAGE_KEY,
     JSON.stringify({ artifacts, selectedId, checkpoints, savedOperatingReviews, taskEvidence }),
   );
-}
-
-function downloadArtifact(artifact: WorkspaceArtifact) {
-  const mime =
-    artifact.kind === "document"
-      ? "text/markdown"
-      : artifact.kind === "query"
-        ? "application/sql"
-        : artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
-          ? "text/markdown"
-          : artifact.name.endsWith(".json")
-            ? "application/json"
-            : artifact.kind === "data"
-              ? "text/csv"
-              : "text/html";
-  const url = URL.createObjectURL(new Blob([artifact.source], { type: `${mime};charset=utf-8` }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = artifact.name;
-  anchor.click();
-  URL.revokeObjectURL(url);
 }
 
 function isSemanticHtmlPresentation(artifact: WorkspaceArtifact) {
@@ -4101,19 +4080,6 @@ export function RuneWorkbench() {
     );
   }
 
-  function downloadSelectedArtifactSource() {
-    const artifact = selectedArtifact;
-    downloadArtifact(artifact);
-    const target: RuneTaskDeliveryTarget | null =
-      artifact.kind === "document"
-        ? "md"
-        : artifact.kind === "slides" && isDeckMarkdownArtifact(artifact)
-          ? "deck-md"
-          : null;
-    if (target)
-      openDeliveryConfirmationForArtifact(artifact, "download", target, `${target.toUpperCase()} · ${ui.download}`);
-  }
-
   async function prepareExport(destination: WorkspaceFileExportDestination) {
     const capability = selectedExportCapability(destination);
     const targetType = capability?.label;
@@ -4141,6 +4107,7 @@ export function RuneWorkbench() {
         loadImageAsset: getRuneImageAsset,
       });
       setPendingExport({
+        destination,
         sourceArtifactId: targetArtifact.id,
         sourceArtifactName: targetArtifact.name,
         sourceRevision: targetArtifact.source,
@@ -4173,7 +4140,7 @@ export function RuneWorkbench() {
       setNotice("Export held for review — workspace context changed");
       return;
     }
-    const { result, sourceArtifactId, sourceRevision } = pendingExport;
+    const { destination, result, sourceArtifactId, sourceRevision } = pendingExport;
     const bytes = new Uint8Array(result.bytes).buffer;
     const url = URL.createObjectURL(new Blob([bytes], { type: result.mimeType }));
     const anchor = document.createElement("a");
@@ -4186,23 +4153,33 @@ export function RuneWorkbench() {
     setPendingExport(null);
     setExportError("");
     const exportLabel =
-      result.targetType === "html"
-        ? "standalone HTML"
-        : result.targetType === "pdf"
-          ? "fixed PDF"
-          : result.targetType === "csv" || result.targetType === "json"
-            ? `portable ${result.targetType.toUpperCase()}`
-            : `semantic ${result.targetType.toUpperCase()}`;
+      destination === "source"
+        ? "canonical source"
+        : result.targetType === "html"
+          ? "standalone HTML"
+          : result.targetType === "pdf"
+            ? "fixed PDF"
+            : result.targetType === "csv" || result.targetType === "json"
+              ? `portable ${result.targetType.toUpperCase()}`
+              : `semantic ${result.targetType.toUpperCase()}`;
     setNotice(`Downloaded ${result.fileName} · ${exportLabel} export`);
     const exportedArtifact = pendingExport.baseArtifacts.find(
       (artifact) => artifact.id === sourceArtifactId && artifact.source === sourceRevision,
     );
-    if (exportedArtifact) {
+    const sourceDeliveryTarget: RuneTaskDeliveryTarget | null =
+      destination !== "source"
+        ? result.targetType
+        : exportedArtifact?.kind === "document"
+          ? "md"
+          : exportedArtifact?.kind === "slides" && isDeckMarkdownArtifact(exportedArtifact)
+            ? "deck-md"
+            : null;
+    if (exportedArtifact && sourceDeliveryTarget) {
       openDeliveryConfirmationForArtifact(
         exportedArtifact,
         "download",
-        result.targetType,
-        `${result.targetType.toUpperCase()} · ${ui.download}`,
+        sourceDeliveryTarget,
+        `${sourceDeliveryTarget.toUpperCase()} · ${ui.download}`,
       );
     }
   }
@@ -4466,10 +4443,10 @@ export function RuneWorkbench() {
                     role="menuitem"
                     onClick={() => {
                       setExportMenuOpen(false);
-                      downloadSelectedArtifactSource();
+                      void prepareExport("source");
                     }}
                   >
-                    <Download aria-hidden="true" />
+                    <FileCode2 aria-hidden="true" />
                     <span>
                       <strong>{ui.canonicalSource}</strong>
                       <small>{selectedArtifact.name}</small>
