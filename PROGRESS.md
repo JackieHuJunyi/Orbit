@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-21 — Shipped Rune v1.47 with nine-language review-before-I/O for folder Pull, Push, and initialization, exact device/folder drift rejection, recoverable Pull, and real Chromium cancellation, initialization, recovery, and external-edit proof.
 - 2026-08-21 — Shipped Rune v1.46 with reviewed full-workspace reset, one atomic current-plus-recovery device write, reversible previous-workspace restore across reloads, and a genuinely deferred More Tools surface.
 - 2026-08-21 — Shipped Rune v1.45 with exact checkpoint-restore review, stale/static/runtime revalidation, one atomic safety-point-plus-workspace write, nine-language copy, zero-write Cancel/failure, and reload-proven recovery.
 - 2026-08-21 — Shipped Rune v1.44 with one shared non-modal menu focus protocol, an extracted capability-free Settings surface, complete keyboard entry/exit, and nine-locale compact/RTL popover geometry.

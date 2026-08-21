@@ -2440,3 +2440,12 @@ Data/Query/metric/Chart 的实时 lineage 不再作为 `preview-body` 常驻条�
 - “恢复上一个工作区”必须把 current 与 recovery 互换，使恢复动作本身仍可撤销并跨 reload 保持；Cancel、Escape、stale current、changed/missing target 与 persistence failure 必须保持全部 caller state 和存储不变。
 - Settings menu 的动态导入必须和 open state 绑定；关闭时不得为了一个返回 `null` 的低频组件下载整个菜单。Manifest gate 必须保护该 boundary，首屏继续受 530 KB 上限约束。
 - 发布证据必须包括 planner normalizing/limit/immutability、application stale/target/persist failure、lazy/presentation authority，以及真实 Chromium Cancel → sample Confirm → reload → previous Confirm → reload 的完整交换链。
+
+### 17.78 v1.47 文件夹同步必须审核实际将要发生的 I/O
+
+- Pull、Push 与空文件夹初始化不得继续使用浏览器原生确认；同一个九语言 ReviewDialog 必须显示方向、源文件/图片数量、有界 add/update/remove/retain 结果，并让 Cancel 先获得焦点。
+- React-free planner 必须绑定完整 device state、exact Artifact source、引用图片 facts 与完整 folder read；文件名在大小写和 Unicode 规范化后冲突时必须拒绝同步。
+- Confirm 必须重新读取本机完整状态、IndexedDB 引用图片和文件夹，并重新生成同一 plan；任一侧漂移都不得打开写入能力。弹窗中的字符串或对象引用不能成为权限。
+- Pull 必须在同一 device persistence 中把 pull 前的文件、选择、checkpoint、保存任务和 evidence 写入 `resetRecovery`；失败时新导入图片必须补偿清理，React 只能在持久化成功后前进。
+- Push/initialize 必须保留无关文件并把 manifest 最后写入；File System Access API 不提供多文件原子事务，因此产品不得把顺序写入虚称为 atomic，写入开始后的外部竞争或系统失败必须如实作为剩余边界记录。
+- planner 与 dialog 必须延迟加载；九语言/RTL/compact geometry、Cancel/初始化、Pull recovery、外部 drift rejection 与重新审核 Push 都进入发布门。实测 669 unit、29 render/architecture、55 Chromium，首屏 529,336 bytes / 530 KB。

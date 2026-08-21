@@ -3226,3 +3226,149 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Review first, preserve the current workspace, then open the sample":
     "먼저 검토하고 현재 작업공간을 보존한 뒤 샘플 열기",
 });
+
+// Human-reviewed critical copy for revision-bound folder Pull, Push, and initialization.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Local folder · revision-bound review": "Dossier local · vérification liée à la révision",
+  "Pull these folder changes?": "Récupérer ces modifications du dossier ?",
+  "Push these changes to the folder?": "Envoyer ces modifications vers le dossier ?",
+  "Initialize the folder with this workspace?": "Initialiser le dossier avec cet espace de travail ?",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune relira le dossier et ne remplacera l’espace de travail local que si les deux côtés correspondent encore exactement à cette vérification.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune relira le dossier et n’écrira les fichiers de même nom et le manifeste que si aucun côté n’a changé.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune confirmera que le dossier est toujours vide, puis écrira les sources lisibles, les images référencées et le manifeste actuels.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "L’espace de travail local complet devient une version récupérable ; un échec de récupération ne modifie aucune source.",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "Les fichiers de même nom peuvent être remplacés ; toute modification d’un côté après la vérification bloque l’écriture.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "Les fichiers sans rapport restent intacts ; seuls les sources, images et le manifeste Rune vérifiés sont écrits.",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "Relecture exacte à la confirmation · aucune écriture en cas de divergence",
+  "Confirm pull": "Confirmer la récupération",
+  "Confirm push": "Confirmer l’envoi",
+  "Initialize folder": "Initialiser le dossier",
+  "Syncing safely…": "Synchronisation sécurisée…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Local folder · revision-bound review": "Carpeta local · revisión vinculada a la versión",
+  "Pull these folder changes?": "¿Traer estos cambios de la carpeta?",
+  "Push these changes to the folder?": "¿Enviar estos cambios a la carpeta?",
+  "Initialize the folder with this workspace?": "¿Inicializar la carpeta con este espacio de trabajo?",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune volverá a leer la carpeta y solo sustituirá el espacio de trabajo local si ambos lados siguen coincidiendo exactamente con esta revisión.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune volverá a leer la carpeta y solo escribirá los archivos con el mismo nombre y el manifiesto si ninguno de los lados ha cambiado.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune confirmará que la carpeta sigue vacía y después escribirá las fuentes legibles, las imágenes referenciadas y el manifiesto actuales.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "El espacio de trabajo local completo se convierte en una versión recuperable; si falla la lectura, ninguna fuente cambia.",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "Los archivos con el mismo nombre pueden sobrescribirse; cualquier cambio posterior en un lado bloquea la escritura.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "Los archivos no relacionados permanecen intactos; solo se escriben las fuentes, imágenes y el manifiesto de Rune revisados.",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "Relectura exacta al confirmar · cero escrituras si algún lado cambia",
+  "Confirm pull": "Confirmar lectura",
+  "Confirm push": "Confirmar escritura",
+  "Initialize folder": "Inicializar carpeta",
+  "Syncing safely…": "Sincronizando de forma segura…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Local folder · revision-bound review": "Локальная папка · проверка с привязкой к версии",
+  "Pull these folder changes?": "Загрузить эти изменения из папки?",
+  "Push these changes to the folder?": "Записать эти изменения в папку?",
+  "Initialize the folder with this workspace?": "Инициализировать папку этой рабочей областью?",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune повторно прочитает папку и заменит локальную рабочую область, только если обе стороны по-прежнему полностью совпадают с этой проверкой.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune повторно прочитает папку и запишет одноимённые файлы и манифест, только если ни одна сторона не изменилась.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune убедится, что папка всё ещё пуста, а затем запишет текущие читаемые исходники, связанные изображения и манифест.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "Вся текущая локальная рабочая область становится восстанавливаемой версией; неудачная загрузка не изменяет исходники.",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "Одноимённые файлы могут быть перезаписаны; любое изменение после проверки блокирует запись.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "Посторонние файлы останутся нетронутыми; будут записаны только проверенные исходники, изображения и манифест Rune.",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "Точное повторное чтение при подтверждении · без записи при расхождении",
+  "Confirm pull": "Подтвердить загрузку",
+  "Confirm push": "Подтвердить запись",
+  "Initialize folder": "Инициализировать папку",
+  "Syncing safely…": "Безопасная синхронизация…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Local folder · revision-bound review": "مجلد محلي · مراجعة مرتبطة بالإصدار",
+  "Pull these folder changes?": "هل تريد سحب تغييرات المجلد هذه؟",
+  "Push these changes to the folder?": "هل تريد دفع هذه التغييرات إلى المجلد؟",
+  "Initialize the folder with this workspace?": "هل تريد تهيئة المجلد بمساحة العمل هذه؟",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "سيعيد Rune قراءة المجلد، ولن يستبدل مساحة العمل المحلية إلا إذا ظل الجانبان مطابقين تمامًا لهذه المراجعة.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "سيعيد Rune قراءة المجلد، ولن يكتب الملفات ذات الأسماء نفسها وبيان مساحة العمل إلا إذا لم يتغير أي من الجانبين.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "سيتأكد Rune من أن المجلد لا يزال فارغًا، ثم يكتب المصادر المقروءة والصور المشار إليها وبيان مساحة العمل الحالية.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "تصبح مساحة العمل المحلية الحالية كاملة إصدارًا قابلاً للاستعادة؛ ولا يغيّر فشل السحب أي مصدر.",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "قد تُستبدل الملفات ذات الأسماء نفسها؛ وأي تغيير في أحد الجانبين بعد المراجعة يمنع الكتابة.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Rune التي تمت مراجعتها.",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "إعادة قراءة دقيقة عند التأكيد · لا كتابة إذا تغيّر أحد الجانبين",
+  "Confirm pull": "تأكيد السحب",
+  "Confirm push": "تأكيد الدفع",
+  "Initialize folder": "تهيئة المجلد",
+  "Syncing safely…": "مزامنة آمنة…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Local folder · revision-bound review": "ローカルフォルダ · リビジョン固定レビュー",
+  "Pull these folder changes?": "このフォルダの変更を取り込みますか？",
+  "Push these changes to the folder?": "この変更をフォルダへ書き出しますか？",
+  "Initialize the folder with this workspace?": "このワークスペースでフォルダを初期化しますか？",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune はフォルダを再読込し、両側がこのレビューと完全に一致する場合にだけデバイスのワークスペースを置き換えます。",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune はフォルダを再読込し、両側に変更がない場合にだけ同名ファイルとワークスペースマニフェストを書き込みます。",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune はフォルダが空のままであることを確認し、現在の読み取り可能なソース、参照画像、マニフェストを書き込みます。",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "現在のデバイスワークスペース全体を復元可能な版として保存します。取り込みに失敗してもソースは変わりません。",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "同名ファイルは上書きされる場合があります。レビュー後にどちらかが変わると書き込みを中止します。",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "無関係なファイルは変更しません。レビューしたソース、画像、Rune マニフェストだけを書き込みます。",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "確定時に完全再読込 · どちらかに差異があれば書き込みなし",
+  "Confirm pull": "取り込みを確定",
+  "Confirm push": "書き出しを確定",
+  "Initialize folder": "フォルダを初期化",
+  "Syncing safely…": "安全に同期中…",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Local folder · revision-bound review": "로컬 폴더 · 리비전 고정 검토",
+  "Pull these folder changes?": "이 폴더 변경 사항을 가져올까요?",
+  "Push these changes to the folder?": "이 변경 사항을 폴더에 내보낼까요?",
+  "Initialize the folder with this workspace?": "이 작업공간으로 폴더를 초기화할까요?",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune은 폴더를 다시 읽고 양쪽이 이 검토와 정확히 일치할 때만 기기 작업공간을 교체합니다.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune은 폴더를 다시 읽고 양쪽 모두 변경되지 않았을 때만 같은 이름의 파일과 작업공간 매니페스트를 씁니다.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune은 폴더가 여전히 비어 있는지 확인한 다음 현재 읽을 수 있는 소스, 참조 이미지, 작업공간 매니페스트를 씁니다.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "현재 기기 작업공간 전체가 복구 가능한 버전으로 저장됩니다. 가져오기에 실패하면 어떤 소스도 바뀌지 않습니다.",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "같은 이름의 파일은 덮어쓸 수 있습니다. 검토 후 어느 한쪽이 바뀌면 쓰기를 차단합니다.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "관련 없는 파일은 그대로 유지됩니다. 검토한 소스, 이미지, Rune 매니페스트만 기록합니다.",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "확인할 때 정확히 다시 읽기 · 어느 한쪽이 달라지면 쓰기 없음",
+  "Confirm pull": "가져오기 확인",
+  "Confirm push": "내보내기 확인",
+  "Initialize folder": "폴더 초기화",
+  "Syncing safely…": "안전하게 동기화 중…",
+});

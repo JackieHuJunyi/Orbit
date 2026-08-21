@@ -145,6 +145,7 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   for (const surface of [
     "checkpoint-restore-dialog",
     "workspace-reset-dialog",
+    "directory-sync-review-dialog",
     "workbench-settings-menu",
     "document-structure-review-dialog",
     "delivery-outcome-dialog",
@@ -188,6 +189,8 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/checkpoint-restore.ts"));
   assert.equal(manifest["app/lib/workspace-reset.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/workspace-reset.ts"));
+  assert.equal(manifest["app/lib/directory-sync.ts"]?.isDynamicEntry, true);
+  assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/directory-sync.ts"));
 });
 
 test("ships one complete-source live mirror boundary for every revision-bound visual draft", async () => {
@@ -643,6 +646,37 @@ test("reviews sample reset as a recoverable atomic workspace switch", async () =
   assert.match(overlays, /@media \(max-width:\s*620px\)[\s\S]*\.workspace-reset-route/);
 });
 
+test("reviews folder Pull, Push, and initialization against exact device and folder revisions", async () => {
+  const [workbench, dialog, planner, resetPlanner, overlays] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/directory-sync-review-dialog.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/directory-sync.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/workspace-reset.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(workbench, /window\.confirm|\bconfirm\(/);
+  assert.match(workbench, /prepareDirectorySync\(\{/);
+  assert.match(workbench, /commitDirectorySync\(\{/);
+  assert.match(workbench, /readCurrentDeviceStateSnapshot:/);
+  assert.match(workbench, /readCurrentAssets: \(\) => collectWorkspaceLocalAssets/);
+  assert.match(workbench, /readDirectory: \(\) => readWorkspaceDirectory\(pending\.handle\)/);
+  assert.match(workbench, /persistDeviceWorkspace\([\s\S]*recovery,/s);
+  assert.match(workbench, /setWorkspaceResetRecovery\(recovery\)/);
+  assert.match(dialog, /ReviewDialog/);
+  assert.match(dialog, /data-dialog-initial-focus/);
+  assert.match(dialog, /plan\.changes/);
+  assert.match(dialog, /change\.entryType === "asset"/);
+  assert.doesNotMatch(dialog, /readWorkspaceDirectory|writeWorkspaceDirectory|localStorage|indexedDB/);
+  assert.match(planner, /readCurrentDeviceStateSnapshot\(\) !== expectedPlan\.baseDeviceStateSnapshot/);
+  assert.match(planner, /serializeDirectoryReadResult\(directory\) !== expectedPlan\.baseDirectorySnapshot/);
+  assert.match(planner, /await apply\(prepared\.plan, directory, currentAssets\)/);
+  assert.doesNotMatch(planner, /from "react"|localStorage|indexedDB|showDirectoryPicker/);
+  assert.match(resetPlanner, /export function workspaceDeviceStateSnapshotError/);
+  assert.match(overlays, /\.directory-sync-route\s*\{[^}]*grid-template-columns:/s);
+  assert.match(overlays, /html\[dir="rtl"\] \.directory-sync-route/);
+  assert.match(overlays, /@media \(max-width:\s*620px\)[\s\S]*\.directory-sync-route/);
+});
+
 test("records user-confirmed deliverable outcomes through the shared exact-revision ledger", async () => {
   const [workbench, dialog, outcomes, overlays] = await Promise.all([
     readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
@@ -655,7 +689,7 @@ test("records user-confirmed deliverable outcomes through the shared exact-revis
     /openDeliveryConfirmationForArtifact\(\s*exportedArtifact,\s*"download",\s*sourceDeliveryTarget,/,
   );
   assert.match(workbench, /destination !== "source"\s*\? result\.targetType/);
-  assert.match(workbench, /openDeliveryConfirmationForArtifact\(handoffArtifact, "folder", "folder"/);
+  assert.match(workbench, /openDeliveryConfirmationForArtifact\(\s*handoffArtifact,\s*"folder",\s*"folder"/);
   assert.match(workbench, /recordRuneTaskDelivery\(\{/);
   assert.match(
     workbench,

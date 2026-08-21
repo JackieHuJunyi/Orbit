@@ -2667,3 +2667,11 @@ Confirm 会从当前 checkpoint map 重新解析同一个 id 和 bytes，重新�
 v1.46 把该动作移入低频“更多工具”，并用一个惰性九语言 review 显示当前与目标文件数、恢复点、任务记录和有界目标文件名。纯 `workspace-reset` planner 捕获完整 current/target snapshot，拒绝 malformed、重复 identity、相同或超过 12 MB 的状态；确认时再次读取并逐字节核对双方。一次 `rune-workspace-v0` 写入同时保存目标和完整 `resetRecovery`，成功后 React 才前进。恢复上一个工作区时两者安全互换，因此恢复本身仍可撤销并跨 reload 保留；Cancel、Escape、stale、target drift 与 storage failure 都是零写入。连接文件夹不参与这笔设备切换，仍只会在用户明确 Push 后改变。
 
 低频 Settings 组件也从“代码动态导入但首屏无条件挂载”改为只有打开时才挂载，首屏从 532,178 降到 527,660 bytes，继续维持 530 KB 预算。发布门为 664 unit、28 render/architecture 与 53 Chromium；真实浏览器覆盖取消、确认、刷新、恢复和再次刷新。
+
+## 149. 文件夹同步的确认必须绑定真实版本，而不是只描述意图
+
+原有 Pull、Push 和空文件夹初始化虽然由用户触发，却只显示英文原生 `confirm`。用户看不到哪些源文件或图片会新增、覆盖、移出工作区或留在文件夹；更重要的是，点击确认时不会证明文件夹仍是刚才读到的版本。设备工作区、引用图片或外部文件在间隙中变化，都可能让提示内容和实际 I/O 分离。
+
+v1.47 用一个惰性九语言 review 统一三种方向。纯 `directory-sync` planner 检查 operation/source mode、完整 workspace、大小写/Unicode filename collision 和 content-hash asset facts，捕获 complete device state、exact Artifact revision 与 exact folder read，并生成有界 add/update/remove/retain 清单。Confirm 重新读取 device state、IndexedDB 图片与文件夹，再生成同一 plan；任何漂移都保持零 I/O并要求重新审核。
+
+Pull 的同一次 device persistence 还会把 pull 前的文件、选择、checkpoint、任务配方和 evidence 保存成完整 `resetRecovery`，因此它不再只能靠零散文件检查点恢复。Push/initialize 保留无关文件并最后写 manifest，但文档明确承认浏览器 File System Access API 没有多文件原子事务：exact reread 可以阻止已知 stale plan 开始，却不能消除 reread 后的外部竞争或中途系统写入失败。真实 Chromium 已证明空文件夹 Cancel/Confirm、Pull Cancel/恢复、外部 drift 拦截和重新审核 Push；门禁为 669 unit、29 render/architecture、55 Chromium，首屏 529,336 bytes / 530 KB。

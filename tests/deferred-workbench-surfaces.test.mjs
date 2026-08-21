@@ -5,6 +5,7 @@ import test from "node:test";
 const surfaceModules = [
   "checkpoint-restore-dialog",
   "workspace-reset-dialog",
+  "directory-sync-review-dialog",
   "workbench-settings-menu",
   "document-structure-review-dialog",
   "delivery-outcome-dialog",

@@ -78,6 +78,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Отчёт для команды о самом значимом изменении и следующем ответственном",
   "Accent color": "Акцентный цвет",
   Active: "Активный",
+  Add: "Добавить",
   "Add a conclusion slide": "Добавьте итоговый слайд",
   "Add a detailed real-task evaluation": "Добавить подробную оценку реальной задачи",
   "Add a margin column": "Добавить столбец полей",
@@ -95,6 +96,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add source content": "Добавьте исходное содержимое",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
     "Скорректируйте этот период и перекомпилируйте существующий анализ, диаграмму и результаты. Идентификаторы файлов остаются стабильными, и каждое изменение остается доступным для проверки.",
+  "After sync": "После синхронизации",
   "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
     "После подтверждения импорта Rune откроет настройку презентации с уже выбранным Document.",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
@@ -240,11 +242,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the summary into three points": "Сократите резюме до трех пунктов",
   Configure: "Настроить",
   "Confirm outcome": "Подтвердить результат",
+  "Confirm pull": "Подтвердить загрузку",
+  "Confirm push": "Подтвердить запись",
   "Confirm real usability after a handoff": "Подтвердите реальную пригодность после передачи",
   "Confirm restore": "Подтвердить восстановление",
   "confirmed deliverables": "подтверждённых материалов",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "После подтверждения файл только скачивается на это устройство; Rune не загружает и не отправляет его.",
+  "Connected folder": "Подключенная папка",
   "Content workspace": "Рабочая область контента",
   Continue: "Продолжить",
   "Continue setup": "Продолжить настройку",
@@ -330,6 +335,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Device storage is full — checkpoint was not saved": "Память устройства заполнена — контрольная точка не сохранилась",
   "Device storage is full — download the source before leaving":
     "Память устройства заполнена — загрузите исходный код перед выходом",
+  "Device workspace": "Рабочая область устройства",
   "Device workspace · recoverable switch": "Локальная рабочая область · обратимое переключение",
   "Did this result become usable in real work?": "Стал ли этот результат пригоден для реальной работы?",
   Discard: "Отбросить",
@@ -383,6 +389,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Every piece of work, with a clear source.": "Каждая часть работы, с ясным источником.",
   "Evidence completeness": "Полнота доказательств",
   "Exact compiler detail": "Точное сообщение компилятора",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "Точное повторное чтение при подтверждении · без записи при расхождении",
   "Exact scope value": "Точное значение области",
   "exact UTF-8 source": "точный исходник UTF-8",
   "Excluded rows": "Исключённые строки",
@@ -409,6 +417,7 @@ export const INTERFACE_TRANSLATIONS = {
   File: "Файл",
   "File names, Artifact IDs, workspace paths, and user identity":
     "Имена файлов, идентификаторы Artifact, пути рабочей области и личность пользователя",
+  "File outcomes in this sync": "Результаты файлов в этой синхронизации",
   "File size": "Размер файла",
   files: "файлы",
   "Files available after the switch": "Файлы, доступные после переключения",
@@ -425,8 +434,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Folder picker cancelled": "Выбор папки отменен",
   "Folder pull cancelled — the device draft is unchanged": "Удаление папки отменено — черновик устройства не изменился",
   "Folder push cancelled": "Передача папки отменена",
+  "Folder sync cancelled — nothing changed": "Синхронизация папок отменена — ничего не изменилось",
+  "Folder sync details": "Подробности синхронизации папок",
+  "Folder sync ready for exact review — nothing has been written":
+    "Синхронизация папок готова для точного просмотра — ничего не записано",
   "Folder workspaces require a browser with the File System Access API":
     "Для рабочих областей папок требуется браузер с API доступа к файловой системе.",
+  "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.":
+    "Файлы, содержащие только папки, останутся нетронутыми, но не будут принадлежать новому манифесту рабочей области Rune.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "Например, 1-3, 5; можно выбрать только обнаруженные сканированные страницы.",
   "For example: July 2026": "Например: июль 2026 г.",
@@ -451,6 +466,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Я проверил состав экспорта и понимаю, что это файл с предварительными доказательствами, а не подтверждение PMF.",
   "Identify the most material change since last week and assign the next decision or owner.":
     "Определите самое значимое изменение с прошлой недели и назначьте следующее решение или ответственного.",
+  Image: "Изображение",
   Import: "Импорт",
   "Import a document, review it, then choose audience, purpose, and length":
     "Импортируйте документ, проверьте его, затем выберите аудиторию, цель и объём",
@@ -472,6 +488,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Импортируйте Word, Markdown или PDF, проверьте и создайте презентацию со связью с источником",
   "Included with required upstream sources.": "Входит в состав необходимых исходных источников.",
   "Information hierarchy is clear and easy to scan.": "Иерархия информации ясна, материал легко просматривать.",
+  "Initialize folder": "Инициализировать папку",
+  "Initialize the folder with this workspace?": "Инициализировать папку этой рабочей областью?",
   "Inline code": "Встроенный код",
   Input: "Ввод",
   "Input budget per task": "Бюджет входных токенов на задачу",
@@ -483,6 +501,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Is one of": "Является одним из",
   Italic: "Курсив",
   "just now": "только что",
+  "Keep in folder": "Хранить в папке",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "Оставьте один запрос SELECT или WITH и проверьте его явно заданный источник Data.",
   "Keep one valid outer <section> slide.": "Сохраните один допустимый внешний слайд <section>.",
@@ -520,6 +539,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local conversion · no upload": "Локальная конверсия · без загрузки",
   "Local deterministic plan": "Локальный детерминированный план",
   "Local first": "Сначала местный",
+  "Local folder · revision-bound review": "Локальная папка · проверка с привязкой к версии",
+  "local images": "местные изображения",
   "Local mode": "Локальный режим",
   "Local or configured-model planning plus input/output token counts when available":
     "Локальное планирование или настроенная модель, а также число входных и выходных токенов при наличии",
@@ -737,6 +758,8 @@ export const INTERFACE_TRANSLATIONS = {
   Provider: "Поставщик",
   "Provider-reported token usage": "Расход токенов по данным поставщика",
   "Pull folder changes": "Извлечь изменения в папке",
+  "Pull these folder changes?": "Загрузить эти изменения из папки?",
+  "Push these changes to the folder?": "Записать эти изменения в папку?",
   "Push workspace files": "Отправить файлы рабочей области",
   Query: "Запрос",
   "Query completed with no rows.": "Запрос завершен, строк нет.",
@@ -776,6 +799,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Related reference": "Связанная ссылка",
   "Release to prepare the import": "Выпуск для подготовки импорта",
   "Remove condition": "Удалить условие",
+  "Remove from workspace": "Удалить из рабочей области",
   "Remove scripts or executable markup; Rune previews only script-free content.":
     "Удалите скрипты и исполняемую разметку: Rune показывает только содержимое без скриптов.",
   "Remove temporary Agent context pin": "Удалить временную булавку контекста Agent",
@@ -863,6 +887,12 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune хранит на этом устройстве только оценку, формат, затраченное время и отпечаток версии исходника — без текста документа и запросов.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune поддерживает личные профили OpenAI Responses, OpenRouter/совместимых Chat Completions, Anthropic Messages, Gemini generateContent и пользовательских протоколов. После сохранения сервер шифрует ключ в учётных данных HttpOnly, недоступных сценариям браузера; ключ никогда не попадает в рабочую область или localStorage. Локальным и развёрнутым веб-серверам нужен отдельный `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop защищает этот главный ключ с помощью Связки ключей macOS. Переключение между поставщиками по умолчанию выключено и работает только после явного разрешения в настройках моделей; детерминированные локальные планировщики доступны и без модели.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune убедится, что папка всё ещё пуста, а затем запишет текущие читаемые исходники, связанные изображения и манифест.",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune повторно прочитает папку и заменит локальную рабочую область, только если обе стороны по-прежнему полностью совпадают с этой проверкой.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune повторно прочитает папку и запишет одноимённые файлы и манифест, только если ни одна сторона не изменилась.",
   "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
     "Rune заменит текущую локальную рабочую область встроенным примером, а её файлы, точки восстановления и историю задач сохранит как предыдущую область.",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
@@ -874,6 +904,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Runtime impact preflight passed": "Предварительная проверка влияния среды выполнения пройдена",
   "Runtime-validated draft": "Черновик, проверенный во время выполнения",
   Sage: "Шалфейный",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "Одноимённые файлы могут быть перезаписаны; любое изменение после проверки блокирует запись.",
   "Sample workspace ready · every result stays linked to readable source":
     "Готовый образец рабочего пространства · каждый результат остается связанным с читаемым исходным кодом",
   "Sample workspace restored": "Пример рабочего пространства восстановлен",
@@ -936,6 +968,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source diff": "Разница в исходном коде",
   "Source draft": "Исходный проект",
   "Source editor": "Редактор исходного кода",
+  "source files": "исходные файлы",
   "Source freshness": "Актуальность источника",
   "Source identity": "Идентификатор источника",
   "Source or output missing": "Отсутствует источник или выход",
@@ -979,6 +1012,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Synced live": "Синхронизировано в прямом эфире",
   "Synchronize the quarterly conclusions across the report and presentation":
     "Синхронизируйте квартальные выводы в отчете и презентации.",
+  "Syncing safely…": "Безопасная синхронизация…",
   "Synthetic Golden Task results and every form of network upload":
     "Синтетические результаты Golden Task и любая сетевая загрузка",
   "System recommendation": "Системная рекомендация",
@@ -1001,6 +1035,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "Не удалось скомпилировать диаграмму.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "Chart JSON хранит точный идентификатор источника и имена полей; отчеты и колоды могут повторно использовать его с одной привязкой к диаграмме.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "Вся текущая локальная рабочая область становится восстанавливаемой версией; неудачная загрузка не изменяет исходники.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Текущая и предыдущая рабочие области безопасно меняются местами, поэтому восстановление можно отменить.",
   "The current Chart JSON is invalid.": "Текущий Chart JSON недействителен.",
@@ -1049,14 +1085,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn one document into a light presentation": "Превратите документ в лёгкую презентацию",
   "Turn the selection into three points": "Превратите выделение в три точки",
   Ultramarine: "Ультрамарин",
+  Unchanged: "Без изменений",
   "Unknown source": "Неизвестный источник",
   Unlinked: "Отключено",
   "Unlinked artifacts": "Несвязанные артефакты",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "Посторонние файлы останутся нетронутыми; будут записаны только проверенные исходники, изображения и манифест Rune.",
   "Unresolved dependencies": "Неразрешенные зависимости",
   "Unsaved · needs attention": "Несохранено · требует внимания",
   "Unsaved · ready to save": "Не сохранено · готово к сохранению",
   "Unsupported structure boundary": "Неподдерживаемая граница конструкции",
   "Untitled chart": "Диаграмма без названия",
+  Update: "Обновить",
   "Update in place · identity preserved": "Обновление на месте · идентичность сохранена",
   "Update this operating-review task": "Обновить эту задачу оперативного анализа",
   "Uppercase the selection": "Выбор заглавными буквами",

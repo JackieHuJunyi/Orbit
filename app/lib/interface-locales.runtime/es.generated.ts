@@ -80,6 +80,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Un informe para el equipo centrado en el mayor cambio y el siguiente responsable",
   "Accent color": "Color de acento",
   Active: "Activo",
+  Add: "Añadir",
   "Add a conclusion slide": "Agregar una diapositiva de conclusión",
   "Add a detailed real-task evaluation": "Añadir una evaluación detallada de la tarea real",
   "Add a margin column": "Agregar una columna de margen",
@@ -97,6 +98,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add source content": "Añadir contenido de origen",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
     "Ajuste este período y vuelva a compilar el análisis, el gráfico y los entregables existentes. Las identidades de los archivos se mantienen estables y cada cambio se puede revisar.",
+  "After sync": "Después de la sincronización",
   "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
     "Después de esta importación revisada, Rune abre la configuración de la presentación con este Document ya seleccionado.",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
@@ -242,11 +244,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the summary into three points": "Condensar el resumen en tres puntos",
   Configure: "Configurar",
   "Confirm outcome": "Confirmar resultado",
+  "Confirm pull": "Confirmar lectura",
+  "Confirm push": "Confirmar escritura",
   "Confirm real usability after a handoff": "Confirma la utilidad real después de una entrega",
   "Confirm restore": "Confirmar restauración",
   "confirmed deliverables": "entregables confirmados",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "Al confirmar, solo se descarga en este dispositivo; Rune no sube ni envía el archivo.",
+  "Connected folder": "Carpeta conectada",
   "Content workspace": "Espacio de trabajo de contenido",
   Continue: "Continuar",
   "Continue setup": "Continuar con la configuración",
@@ -333,6 +338,7 @@ export const INTERFACE_TRANSLATIONS = {
     "El almacenamiento del dispositivo está lleno: el punto de control no se guardó",
   "Device storage is full — download the source before leaving":
     "El almacenamiento del dispositivo está lleno: descarga la fuente antes de salir",
+  "Device workspace": "Espacio de trabajo del dispositivo",
   "Device workspace · recoverable switch": "Espacio de trabajo local · cambio reversible",
   "Did this result become usable in real work?": "¿Este resultado llegó a ser útil en un trabajo real?",
   Discard: "Descartar",
@@ -386,6 +392,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Every piece of work, with a clear source.": "Cada trabajo, con una fuente clara.",
   "Evidence completeness": "Integridad de las pruebas",
   "Exact compiler detail": "Detalle exacto del compilador",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "Relectura exacta al confirmar · cero escrituras si algún lado cambia",
   "Exact scope value": "Valor exacto del ámbito",
   "exact UTF-8 source": "fuente UTF-8 exacta",
   "Excluded rows": "Filas excluidas",
@@ -412,6 +420,7 @@ export const INTERFACE_TRANSLATIONS = {
   File: "Archivo",
   "File names, Artifact IDs, workspace paths, and user identity":
     "Nombres de archivo, identificadores Artifact, rutas del espacio de trabajo e identidad del usuario",
+  "File outcomes in this sync": "Resultados del archivo en esta sincronización",
   "File size": "Tamaño del archivo",
   files: "archivos",
   "Files available after the switch": "Archivos disponibles después del cambio",
@@ -429,8 +438,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Folder pull cancelled — the device draft is unchanged":
     "Extracción de carpeta cancelada: el borrador del dispositivo no cambia",
   "Folder push cancelled": "Inserción de carpeta cancelada",
+  "Folder sync cancelled — nothing changed": "Sincronización de carpetas cancelada: no ha cambiado nada",
+  "Folder sync details": "Detalles de sincronización de carpetas",
+  "Folder sync ready for exact review — nothing has been written":
+    "Sincronización de carpetas lista para una revisión exacta: no se ha escrito nada",
   "Folder workspaces require a browser with the File System Access API":
     "Los espacios de trabajo de carpetas requieren un navegador con la API de acceso al sistema de archivos",
+  "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.":
+    "Los archivos de solo carpetas permanecen intactos, pero no pertenecerán al nuevo manifiesto del espacio de trabajo Rune.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "Por ejemplo 1-3, 5; solo se pueden seleccionar las páginas escaneadas detectadas.",
   "For example: July 2026": "Por ejemplo: julio de 2026",
@@ -455,6 +470,7 @@ export const INTERFACE_TRANSLATIONS = {
     "He revisado el alcance de la exportación y entiendo que es un archivo de evidencia candidata, no una prueba de PMF.",
   "Identify the most material change since last week and assign the next decision or owner.":
     "Identifica el cambio más importante desde la semana pasada y asigna la siguiente decisión o responsable.",
+  Image: "Imagen",
   Import: "Importar",
   "Import a document, review it, then choose audience, purpose, and length":
     "Importa un documento, revísalo y elige el público, el objetivo y la extensión",
@@ -476,6 +492,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Importa Word, Markdown o PDF, revísalo y crea una presentación vinculada a su origen",
   "Included with required upstream sources.": "Incluido con las fuentes ascendentes requeridas.",
   "Information hierarchy is clear and easy to scan.": "La jerarquía de la información es clara y fácil de revisar.",
+  "Initialize folder": "Inicializar carpeta",
+  "Initialize the folder with this workspace?": "¿Inicializar la carpeta con este espacio de trabajo?",
   "Inline code": "código en línea",
   Input: "Entrada",
   "Input budget per task": "Presupuesto de entrada por tarea",
@@ -487,6 +505,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Is one of": "es uno de",
   Italic: "cursiva",
   "just now": "justo ahora",
+  "Keep in folder": "guardar en carpeta",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "Mantén una sola sentencia SELECT o WITH y comprueba su fuente Data explícita.",
   "Keep one valid outer <section> slide.": "Mantén una única diapositiva externa <section> válida.",
@@ -524,6 +543,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local conversion · no upload": "Conversión local · sin carga",
   "Local deterministic plan": "Plan determinista local",
   "Local first": "Local primero",
+  "Local folder · revision-bound review": "Carpeta local · revisión vinculada a la versión",
+  "local images": "imágenes locales",
   "Local mode": "modo local",
   "Local or configured-model planning plus input/output token counts when available":
     "Planificación local o con un modelo configurado y, cuando estén disponibles, recuentos de tokens de entrada y salida",
@@ -744,6 +765,8 @@ export const INTERFACE_TRANSLATIONS = {
   Provider: "Proveedor",
   "Provider-reported token usage": "Uso de tokens informado por el proveedor",
   "Pull folder changes": "Extraer cambios de carpeta",
+  "Pull these folder changes?": "¿Traer estos cambios de la carpeta?",
+  "Push these changes to the folder?": "¿Enviar estos cambios a la carpeta?",
   "Push workspace files": "Enviar archivos del espacio de trabajo",
   Query: "Consulta",
   "Query completed with no rows.": "Consulta completada sin filas.",
@@ -783,6 +806,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Related reference": "Referencia relacionada",
   "Release to prepare the import": "Liberación para preparar la importación.",
   "Remove condition": "Eliminar condición",
+  "Remove from workspace": "Quitar del espacio de trabajo",
   "Remove scripts or executable markup; Rune previews only script-free content.":
     "Elimina scripts o marcado ejecutable; Rune solo previsualiza contenido sin scripts.",
   "Remove temporary Agent context pin": "Eliminar el pin de contexto temporal Agent",
@@ -870,6 +894,12 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune guarda en este dispositivo solo la valoración, el formato, el tiempo transcurrido y la huella de revisión de la fuente; nunca el texto del documento ni las instrucciones.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune admite perfiles personales de OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent y protocolos personalizados. Después de guardar, el servidor cifra la clave en una credencial HttpOnly que los scripts del navegador no pueden leer; nunca entra en el espacio de trabajo ni en localStorage. Los servidores web locales o desplegados necesitan un `RUNE_CREDENTIAL_ENCRYPTION_KEY` independiente; Rune Desktop protege esa clave maestra con el llavero de macOS. La conmutación entre proveedores está desactivada de forma predeterminada y solo funciona después de autorizarla expresamente en los ajustes de modelos; los planificadores locales deterministas siguen disponibles sin un modelo.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune confirmará que la carpeta sigue vacía y después escribirá las fuentes legibles, las imágenes referenciadas y el manifiesto actuales.",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune volverá a leer la carpeta y solo sustituirá el espacio de trabajo local si ambos lados siguen coincidiendo exactamente con esta revisión.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune volverá a leer la carpeta y solo escribirá los archivos con el mismo nombre y el manifiesto si ninguno de los lados ha cambiado.",
   "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
     "Rune sustituirá el espacio de trabajo local por el ejemplo integrado y conservará sus archivos, puntos de restauración y registros de tareas como espacio anterior.",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
@@ -881,6 +911,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Runtime impact preflight passed": "Se pasó la verificación previa del impacto en tiempo de ejecución",
   "Runtime-validated draft": "Borrador validado en tiempo de ejecución",
   Sage: "Salvia",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "Los archivos con el mismo nombre pueden sobrescribirse; cualquier cambio posterior en un lado bloquea la escritura.",
   "Sample workspace ready · every result stays linked to readable source":
     "Espacio de trabajo de muestra listo · cada resultado permanece vinculado a una fuente legible",
   "Sample workspace restored": "Espacio de trabajo de muestra restaurado",
@@ -942,6 +974,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source diff": "Diferencia de fuente",
   "Source draft": "Borrador fuente",
   "Source editor": "editor de código fuente",
+  "source files": "archivos fuente",
   "Source freshness": "Actualidad del origen",
   "Source identity": "Identidad del origen",
   "Source or output missing": "Falta fuente o salida",
@@ -985,6 +1018,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Synced live": "sincronizado en vivo",
   "Synchronize the quarterly conclusions across the report and presentation":
     "Sincronizar las conclusiones trimestrales en el informe y la presentación.",
+  "Syncing safely…": "Sincronizando de forma segura…",
   "Synthetic Golden Task results and every form of network upload":
     "Resultados sintéticos de Golden Task y cualquier tipo de subida a la red",
   "System recommendation": "Recomendación del sistema",
@@ -1008,6 +1042,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "El gráfico no se pudo compilar.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "El Chart JSON almacena la identificación de fuente exacta y los nombres de campo; Los informes y presentaciones pueden reutilizarlo con un enlace de gráfico.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "El espacio de trabajo local completo se convierte en una versión recuperable; si falla la lectura, ninguna fuente cambia.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Los espacios de trabajo actual y anterior se intercambian de forma segura, por lo que esta restauración sigue siendo reversible.",
   "The current Chart JSON is invalid.": "El Chart JSON actual no es válido.",
@@ -1056,14 +1092,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn one document into a light presentation": "Convierte un documento en una presentación ligera",
   "Turn the selection into three points": "Convierte la selección en tres puntos",
   Ultramarine: "Azul ultramar",
+  Unchanged: "Sin cambios",
   "Unknown source": "Fuente desconocida",
   Unlinked: "Desvinculado",
   "Unlinked artifacts": "Artefactos desvinculados",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "Los archivos no relacionados permanecen intactos; solo se escriben las fuentes, imágenes y el manifiesto de Rune revisados.",
   "Unresolved dependencies": "Dependencias no resueltas",
   "Unsaved · needs attention": "No salvo · necesita atención",
   "Unsaved · ready to save": "No guardado · listo para guardar",
   "Unsupported structure boundary": "Límite de estructura sin soporte",
   "Untitled chart": "Gráfico sin título",
+  Update: "Actualizar",
   "Update in place · identity preserved": "Actualización en el mismo archivo · identidad conservada",
   "Update this operating-review task": "Actualizar esta tarea de revisión operativa",
   "Uppercase the selection": "Mayúscula la selección",

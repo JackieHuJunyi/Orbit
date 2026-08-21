@@ -116,7 +116,7 @@ function cloneWorkspaceDeviceState(state: WorkspaceDeviceState): WorkspaceDevice
   });
 }
 
-function snapshotFits(state: WorkspaceDeviceState, label: string) {
+export function workspaceDeviceStateSnapshotError(state: WorkspaceDeviceState, label: string) {
   const bytes = new TextEncoder().encode(serializeWorkspaceDeviceState(state)).byteLength;
   return bytes <= MAX_WORKSPACE_RESET_SNAPSHOT_BYTES
     ? null
@@ -144,9 +144,12 @@ export function prepareWorkspaceReset(
   const target = normalizeWorkspaceDeviceState(targetInput);
   if (!current) return failed("The current device workspace is not safe to preserve.");
   if (!target) return failed("The target device workspace is not a valid Rune workspace snapshot.");
-  const currentSizeError = snapshotFits(current, "The current workspace");
+  const currentSizeError = workspaceDeviceStateSnapshotError(current, "The current workspace");
   if (currentSizeError) return failed(currentSizeError);
-  const targetSizeError = snapshotFits(target, mode === "sample" ? "The sample workspace" : "The recovery workspace");
+  const targetSizeError = workspaceDeviceStateSnapshotError(
+    target,
+    mode === "sample" ? "The sample workspace" : "The recovery workspace",
+  );
   if (targetSizeError) return failed(targetSizeError);
 
   const baseSnapshot = serializeWorkspaceDeviceState(current);

@@ -78,6 +78,7 @@ export const INTERFACE_TRANSLATIONS = {
     "最大の変化と次の担当者に焦点を当てたチーム向けレポート",
   "Accent color": "アクセントカラー",
   Active: "アクティブ",
+  Add: "追加",
   "Add a conclusion slide": "結論スライドを追加する",
   "Add a detailed real-task evaluation": "実タスクの詳細評価を追加",
   "Add a margin column": "余白列を追加する",
@@ -95,6 +96,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add source content": "ソース内容を追加",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
     "この期間を調整し、既存の分析、グラフ、成果物を再コンパイルします。ファイル ID は安定しており、すべての変更はレビュー可能です。",
+  "After sync": "同期後",
   "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
     "確認済みのインポート後、Rune はこの Document を選択した状態でプレゼンテーション設定を開きます。",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
@@ -239,11 +241,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the summary into three points": "要約を3つのポイントにまとめます",
   Configure: "設定する",
   "Confirm outcome": "結果を確定",
+  "Confirm pull": "取り込みを確定",
+  "Confirm push": "書き出しを確定",
   "Confirm real usability after a handoff": "受け渡し後に実際の有用性を確認",
   "Confirm restore": "復元を確定",
   "confirmed deliverables": "件の確認済み成果物",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "確認するとこのデバイスにのみダウンロードされます。Rune がファイルをアップロードまたは送信することはありません。",
+  "Connected folder": "接続されたフォルダー",
   "Content workspace": "コンテンツワークスペース",
   Continue: "続ける",
   "Continue setup": "セットアップを続行する",
@@ -329,6 +334,7 @@ export const INTERFACE_TRANSLATIONS = {
     "デバイスのストレージがいっぱいです — チェックポイントが保存されませんでした",
   "Device storage is full — download the source before leaving":
     "デバイスのストレージがいっぱいです — 終了する前にソースをダウンロードしてください",
+  "Device workspace": "デバイスワークスペース",
   "Device workspace · recoverable switch": "デバイス上のワークスペース · 元に戻せる切り替え",
   "Did this result become usable in real work?": "この結果は実際の業務で使えるものになりましたか？",
   Discard: "廃棄する",
@@ -382,6 +388,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Every piece of work, with a clear source.": "すべての作品には明確な出典が記載されています。",
   "Evidence completeness": "根拠の完全性",
   "Exact compiler detail": "コンパイラの正確な詳細",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "確定時に完全再読込 · どちらかに差異があれば書き込みなし",
   "Exact scope value": "完全一致する範囲値",
   "exact UTF-8 source": "完全一致の UTF-8 ソース",
   "Excluded rows": "除外行",
@@ -408,6 +416,7 @@ export const INTERFACE_TRANSLATIONS = {
   File: "ファイル",
   "File names, Artifact IDs, workspace paths, and user identity":
     "ファイル名、Artifact ID、ワークスペースのパス、ユーザーの識別情報",
+  "File outcomes in this sync": "この同期でのファイルの結果",
   "File size": "ファイルサイズ",
   files: "ファイル",
   "Files available after the switch": "切り替え後に使用できるファイル",
@@ -424,8 +433,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Folder pull cancelled — the device draft is unchanged":
     "フォルダーのプルがキャンセルされました - デバイスのドラフトは変更されません",
   "Folder push cancelled": "フォルダープッシュがキャンセルされました",
+  "Folder sync cancelled — nothing changed": "フォルダーの同期がキャンセルされました - 何も変化しませんでした",
+  "Folder sync details": "フォルダー同期の詳細",
+  "Folder sync ready for exact review — nothing has been written":
+    "フォルダー同期は正確なレビューの準備ができています - 何も書き込まれていません",
   "Folder workspaces require a browser with the File System Access API":
     "フォルダー ワークスペースには、ファイル システム アクセス API を備えたブラウザが必要です",
+  "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.":
+    "フォルダーのみのファイルは変更されませんが、新しい Rune ワークスペース マニフェストには属しません。",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "例：1-3, 5。検出されたスキャンページだけを選択できます。",
   "For example: July 2026": "例: 2026 年 7 月",
@@ -450,6 +465,7 @@ export const INTERFACE_TRANSLATIONS = {
     "エクスポート範囲を確認し、これは候補証拠ファイルであって PMF の証明ではないことを理解しました。",
   "Identify the most material change since last week and assign the next decision or owner.":
     "先週からの最も重要な変化を特定し、次の意思決定または担当者を明確にします。",
+  Image: "画像",
   Import: "インポート",
   "Import a document, review it, then choose audience, purpose, and length":
     "文書をインポートして確認し、対象者、目的、長さを選択します",
@@ -472,6 +488,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Word、Markdown、PDF をインポートして確認し、元文書に紐づくプレゼンを作成します",
   "Included with required upstream sources.": "必要なアップストリーム ソースに含まれています。",
   "Information hierarchy is clear and easy to scan.": "情報の階層が明確で、すばやく把握できます。",
+  "Initialize folder": "フォルダを初期化",
+  "Initialize the folder with this workspace?": "このワークスペースでフォルダを初期化しますか？",
   "Inline code": "インラインコード",
   Input: "入力",
   "Input budget per task": "タスクごとの入力上限",
@@ -483,6 +501,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Is one of": "のいずれかです",
   Italic: "イタリック体",
   "just now": "たった今",
+  "Keep in folder": "フォルダに保管",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "SELECT または WITH 文を 1 つだけ残し、明示的な Data ソースを確認してください。",
   "Keep one valid outer <section> slide.": "有効な外側の <section> スライドを 1 つ維持してください。",
@@ -520,6 +539,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local conversion · no upload": "ローカル変換・アップロードなし",
   "Local deterministic plan": "ローカルの決定的な計画",
   "Local first": "ローカルファースト",
+  "Local folder · revision-bound review": "ローカルフォルダ · リビジョン固定レビュー",
+  "local images": "ローカル画像",
   "Local mode": "ローカルモード",
   "Local or configured-model planning plus input/output token counts when available":
     "ローカルまたは設定済みモデルによる計画と、利用可能な場合の入出力トークン数",
@@ -737,6 +758,8 @@ export const INTERFACE_TRANSLATIONS = {
   Provider: "プロバイダー",
   "Provider-reported token usage": "プロバイダー報告のトークン使用量",
   "Pull folder changes": "フォルダーの変更をプルする",
+  "Pull these folder changes?": "このフォルダの変更を取り込みますか？",
+  "Push these changes to the folder?": "この変更をフォルダへ書き出しますか？",
   "Push workspace files": "ワークスペースファイルをプッシュする",
   Query: "クエリ",
   "Query completed with no rows.": "クエリは行なしで完了しました。",
@@ -775,6 +798,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Related reference": "関連する参照",
   "Release to prepare the import": "リリースしてインポートを準備します",
   "Remove condition": "条件の削除",
+  "Remove from workspace": "ワークスペースから削除",
   "Remove scripts or executable markup; Rune previews only script-free content.":
     "スクリプトや実行可能なマークアップを削除してください。Rune はスクリプトのない内容だけをプレビューします。",
   "Remove temporary Agent context pin": "一時的な Agent コンテキスト ピンを削除します",
@@ -862,6 +886,12 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Rune は、個人用の OpenAI Responses、OpenRouter/互換 Chat Completions、Anthropic Messages、Gemini generateContent、カスタムプロトコルの各プロファイルに対応しています。保存後、サーバーはキーをブラウザスクリプトから読み取れない HttpOnly 認証情報として暗号化し、ワークスペースや localStorage には一切保存しません。ローカルまたはデプロイ済みの Web サーバーには別の `RUNE_CREDENTIAL_ENCRYPTION_KEY` が必要で、Rune Desktop はそのマスターキーを macOS キーチェーンで保護します。プロバイダー間のフェイルオーバーは初期設定ではオフで、モデル設定で明示的に許可した場合にのみ実行されます。モデルがなくても決定論的なローカルプランナーを利用できます。",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Rune はフォルダが空のままであることを確認し、現在の読み取り可能なソース、参照画像、マニフェストを書き込みます。",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Rune はフォルダを再読込し、両側がこのレビューと完全に一致する場合にだけデバイスのワークスペースを置き換えます。",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Rune はフォルダを再読込し、両側に変更がない場合にだけ同名ファイルとワークスペースマニフェストを書き込みます。",
   "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
     "Rune は現在のデバイス上のワークスペースを内蔵サンプルに置き換え、ファイル、復元ポイント、タスク履歴を以前のワークスペースとして完全に保持します。",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
@@ -874,6 +904,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Runtime impact preflight passed": "ランタイム インパクト プリフライトに合格しました",
   "Runtime-validated draft": "実行時に検証されたドラフト",
   Sage: "セージ",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "同名ファイルは上書きされる場合があります。レビュー後にどちらかが変わると書き込みを中止します。",
   "Sample workspace ready · every result stays linked to readable source":
     "サンプル ワークスペースの準備完了 – すべての結果は読み取り可能なソースにリンクされたままになります",
   "Sample workspace restored": "サンプルワークスペースが復元されました",
@@ -933,6 +965,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source diff": "ソースの差分",
   "Source draft": "ソース草案",
   "Source editor": "ソースエディタ",
+  "source files": "ソースファイル",
   "Source freshness": "ソースの更新状態",
   "Source identity": "ソース ID",
   "Source or output missing": "ソースまたは出力がありません",
@@ -976,6 +1009,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Synced live": "ライブで同期されました",
   "Synchronize the quarterly conclusions across the report and presentation":
     "四半期ごとの結論をレポートとプレゼンテーション全体で同期させる",
+  "Syncing safely…": "安全に同期中…",
   "Synthetic Golden Task results and every form of network upload":
     "合成 Golden Task の結果とあらゆるネットワークアップロード",
   "System recommendation": "システムの推奨事項",
@@ -998,6 +1032,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "チャートをコンパイルできませんでした。",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "Chart JSON には、正確なソース ID とフィールド名が保存されます。レポートとデッキでは、1 つのチャート バインディングでそれを再利用できます。",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "現在のデバイスワークスペース全体を復元可能な版として保存します。取り込みに失敗してもソースは変わりません。",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "現在と以前のワークスペースを安全に入れ替えるため、この復元自体も元に戻せます。",
   "The current Chart JSON is invalid.": "現在の Chart JSON は無効です。",
@@ -1046,14 +1082,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn one document into a light presentation": "一つの文書を軽やかなプレゼンに",
   "Turn the selection into three points": "選択範囲を 3 点に変換します",
   Ultramarine: "ウルトラマリン",
+  Unchanged: "変わらない",
   "Unknown source": "出典不明",
   Unlinked: "リンクされていない",
   "Unlinked artifacts": "リンクされていないアーティファクト",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "無関係なファイルは変更しません。レビューしたソース、画像、Rune マニフェストだけを書き込みます。",
   "Unresolved dependencies": "未解決の依存関係",
   "Unsaved · needs attention": "未保存 · 注意が必要です",
   "Unsaved · ready to save": "未保存 · 保存する準備ができています",
   "Unsupported structure boundary": "サポートされていない構造境界",
   "Untitled chart": "無題のグラフ",
+  Update: "アップデート",
   "Update in place · identity preserved": "同じファイルを更新 · ID を保持",
   "Update this operating-review task": "この運用レビュータスクを更新します",
   "Uppercase the selection": "選択範囲を大文字にする",

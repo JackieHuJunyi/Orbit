@@ -76,6 +76,7 @@ export const INTERFACE_TRANSLATIONS = {
   "A team report focused on the largest change and next owner": "تقرير للفريق يركز على أكبر تغيير والمسؤول التالي",
   "Accent color": "لون مميز",
   Active: "نشط",
+  Add: "أضف",
   "Add a conclusion slide": "أضف شريحة استنتاجية",
   "Add a detailed real-task evaluation": "إضافة تقييم مفصل لمهمة حقيقية",
   "Add a margin column": "أضف عمود هامش",
@@ -92,6 +93,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add source content": "أضف محتوى المصدر",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
     "اضبط هذه الفترة وأعد ترجمة التحليل والمخطط والتسليمات الموجودة. تظل هويات الملفات مستقرة ويظل كل تغيير قابلاً للمراجعة.",
+  "After sync": "بعد المزامنة",
   "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
     "بعد تأكيد هذا الاستيراد، يفتح Rune إعداد العرض مع تحديد هذا الـ Document مسبقًا.",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
@@ -235,11 +237,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the summary into three points": "لخص الملخص في ثلاث نقاط",
   Configure: "تكوين",
   "Confirm outcome": "تأكيد النتيجة",
+  "Confirm pull": "تأكيد السحب",
+  "Confirm push": "تأكيد الدفع",
   "Confirm real usability after a handoff": "أكّد قابلية الاستخدام الفعلية بعد التسليم",
   "Confirm restore": "تأكيد الاستعادة",
   "confirmed deliverables": "مخرجات مؤكدة",
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "يؤدي التأكيد إلى التنزيل على هذا الجهاز فقط؛ ولا يرفع Rune الملف أو يرسله.",
+  "Connected folder": "مجلد متصل",
   "Content workspace": "مساحة عمل المحتوى",
   Continue: "متابعة",
   "Continue setup": "متابعة الإعداد",
@@ -324,6 +329,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Device storage is full — checkpoint was not saved": "مساحة تخزين الجهاز ممتلئة - لم يتم حفظ نقطة التفتيش",
   "Device storage is full — download the source before leaving":
     "مساحة تخزين الجهاز ممتلئة - قم بتنزيل المصدر قبل المغادرة",
+  "Device workspace": "مساحة عمل الجهاز",
   "Device workspace · recoverable switch": "مساحة العمل المحلية · تبديل قابل للتراجع",
   "Did this result become usable in real work?": "هل أصبحت هذه النتيجة قابلة للاستخدام في عمل حقيقي؟",
   Discard: "تجاهل",
@@ -375,6 +381,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Every piece of work, with a clear source.": "كل عمل، مع مصدر واضح.",
   "Evidence completeness": "اكتمال الأدلة",
   "Exact compiler detail": "تفاصيل المصرّف الدقيقة",
+  "Exact reread on confirm · zero writes when either side drifts":
+    "إعادة قراءة دقيقة عند التأكيد · لا كتابة إذا تغيّر أحد الجانبين",
   "Exact scope value": "قيمة النطاق المطابقة",
   "exact UTF-8 source": "مصدر UTF-8 مطابق",
   "Excluded rows": "الصفوف المستبعدة",
@@ -400,6 +408,7 @@ export const INTERFACE_TRANSLATIONS = {
   File: "ملف",
   "File names, Artifact IDs, workspace paths, and user identity":
     "أسماء الملفات ومعرفات Artifact ومسارات مساحة العمل وهوية المستخدم",
+  "File outcomes in this sync": "نتائج الملف في هذه المزامنة",
   "File size": "حجم الملف",
   files: "ملفات",
   "Files available after the switch": "الملفات المتاحة بعد التبديل",
@@ -415,8 +424,14 @@ export const INTERFACE_TRANSLATIONS = {
   "Folder picker cancelled": "تم إلغاء منتقي المجلدات",
   "Folder pull cancelled — the device draft is unchanged": "تم إلغاء سحب المجلد - لم تتغير مسودة الجهاز",
   "Folder push cancelled": "تم إلغاء دفع المجلد",
+  "Folder sync cancelled — nothing changed": "تم إلغاء مزامنة المجلد - لم يتغير شيء",
+  "Folder sync details": "تفاصيل مزامنة المجلد",
+  "Folder sync ready for exact review — nothing has been written":
+    "مزامنة المجلد جاهزة للمراجعة الدقيقة - لم تتم كتابة أي شيء",
   "Folder workspaces require a browser with the File System Access API":
     "تتطلب مساحات عمل المجلدات مستعرضًا مزودًا بـ File System Access API",
+  "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.":
+    "تبقى ملفات المجلد فقط دون تغيير ولكنها لن تنتمي إلى بيان مساحة العمل Rune الجديد.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "مثل 1-3، 5؛ لا يمكن اختيار سوى الصفحات الممسوحة المكتشفة.",
   "For example: July 2026": "على سبيل المثال: يوليو 2026",
@@ -441,6 +456,7 @@ export const INTERFACE_TRANSLATIONS = {
     "راجعت نطاق التصدير وأفهم أن هذا ملف أدلة مرشحة وليس إثباتًا لملاءمة المنتج للسوق.",
   "Identify the most material change since last week and assign the next decision or owner.":
     "حدّد أهم تغيير منذ الأسبوع الماضي وعيّن القرار التالي أو المسؤول عنه.",
+  Image: "صورة",
   Import: "استيراد",
   "Import a document, review it, then choose audience, purpose, and length":
     "استورد مستندًا وراجعه، ثم اختر الجمهور والهدف والطول",
@@ -461,6 +477,8 @@ export const INTERFACE_TRANSLATIONS = {
     "استورد Word أو Markdown أو PDF وراجعه، ثم أنشئ عرضًا مرتبطًا بالمصدر",
   "Included with required upstream sources.": "وشملت مع المصادر الأولية المطلوبة.",
   "Information hierarchy is clear and easy to scan.": "التسلسل الهرمي للمعلومات واضح وسهل التصفح.",
+  "Initialize folder": "تهيئة المجلد",
+  "Initialize the folder with this workspace?": "هل تريد تهيئة المجلد بمساحة العمل هذه؟",
   "Inline code": "رمز مضمن",
   Input: "الإدخال",
   "Input budget per task": "ميزانية الإدخال لكل مهمة",
@@ -472,6 +490,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Is one of": "هو واحد من",
   Italic: "مائل",
   "just now": "الآن فقط",
+  "Keep in folder": "احتفظ بها في المجلد",
   "Keep one SELECT or WITH statement and verify its explicit Data source.":
     "احتفظ بعبارة SELECT أو WITH واحدة وتحقق من مصدر Data الصريح لها.",
   "Keep one valid outer <section> slide.": "احتفظ بشريحة خارجية واحدة صالحة من نوع <section>.",
@@ -507,6 +526,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local conversion · no upload": "التحويل المحلي · لا يوجد تحميل",
   "Local deterministic plan": "خطة الحتمية المحلية",
   "Local first": "المحلية أولا",
+  "Local folder · revision-bound review": "مجلد محلي · مراجعة مرتبطة بالإصدار",
+  "local images": "الصور المحلية",
   "Local mode": "الوضع المحلي",
   "Local or configured-model planning plus input/output token counts when available":
     "تخطيط محلي أو بنموذج مُعدّ، مع أعداد رموز الإدخال والإخراج عند توفرها",
@@ -718,6 +739,8 @@ export const INTERFACE_TRANSLATIONS = {
   Provider: "مزود",
   "Provider-reported token usage": "استخدام الرموز المبلغ عنه من المزود",
   "Pull folder changes": "سحب تغييرات المجلد",
+  "Pull these folder changes?": "هل تريد سحب تغييرات المجلد هذه؟",
+  "Push these changes to the folder?": "هل تريد دفع هذه التغييرات إلى المجلد؟",
   "Push workspace files": "دفع ملفات مساحة العمل",
   Query: "الاستعلام",
   "Query completed with no rows.": "اكتمل الاستعلام بدون صفوف.",
@@ -757,6 +780,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Related reference": "المرجع المرتبط",
   "Release to prepare the import": "الافراج عن لإعداد الاستيراد",
   "Remove condition": "إزالة الشرط",
+  "Remove from workspace": "إزالة من مساحة العمل",
   "Remove scripts or executable markup; Rune previews only script-free content.":
     "أزل البرامج النصية أو الترميز القابل للتنفيذ؛ يعاين Rune المحتوى الخالي من البرامج النصية فقط.",
   "Remove temporary Agent context pin": "قم بإزالة دبوس السياق Agent المؤقت",
@@ -843,6 +867,12 @@ export const INTERFACE_TRANSLATIONS = {
     "يخزّن Rune على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "يدعم Rune ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Rune Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
+  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "سيتأكد Rune من أن المجلد لا يزال فارغًا، ثم يكتب المصادر المقروءة والصور المشار إليها وبيان مساحة العمل الحالية.",
+  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "سيعيد Rune قراءة المجلد، ولن يستبدل مساحة العمل المحلية إلا إذا ظل الجانبان مطابقين تمامًا لهذه المراجعة.",
+  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "سيعيد Rune قراءة المجلد، ولن يكتب الملفات ذات الأسماء نفسها وبيان مساحة العمل إلا إذا لم يتغير أي من الجانبين.",
   "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
     "سيستبدل Rune مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
@@ -854,6 +884,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Runtime impact preflight passed": "تم تجاوز الاختبار المبدئي لتأثير وقت التشغيل",
   "Runtime-validated draft": "مسودة تم التحقق من صحتها في وقت التشغيل",
   Sage: "أخضر مريمي",
+  "Same-name files may be overwritten; any change on either side after review blocks the write.":
+    "قد تُستبدل الملفات ذات الأسماء نفسها؛ وأي تغيير في أحد الجانبين بعد المراجعة يمنع الكتابة.",
   "Sample workspace ready · every result stays linked to readable source":
     "عينة من مساحة العمل جاهزة · تظل كل نتيجة مرتبطة بمصدر قابل للقراءة",
   "Sample workspace restored": "تمت استعادة مساحة العمل النموذجية",
@@ -913,6 +945,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Source diff": "اختلاف المصدر",
   "Source draft": "مسودة المصدر",
   "Source editor": "محرر المصدر",
+  "source files": "ملفات المصدر",
   "Source freshness": "حداثة المصدر",
   "Source identity": "هوية المصدر",
   "Source or output missing": "المصدر أو الإخراج مفقود",
@@ -956,6 +989,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Synced live": "تمت مزامنتها مباشرة",
   "Synchronize the quarterly conclusions across the report and presentation":
     "مزامنة الاستنتاجات ربع السنوية عبر التقرير والعرض التقديمي",
+  "Syncing safely…": "مزامنة آمنة…",
   "Synthetic Golden Task results and every form of network upload":
     "نتائج Golden Task الاصطناعية وكل أشكال الرفع عبر الشبكة",
   "System recommendation": "توصية النظام",
@@ -978,6 +1012,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The chart could not compile.": "تعذر تجميع المخطط.",
   "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.":
     "يقوم Chart JSON بتخزين معرف المصدر الدقيق وأسماء الحقول؛ يمكن إعادة استخدام التقارير والطوابق مع مخطط واحد ملزم.",
+  "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
+    "تصبح مساحة العمل المحلية الحالية كاملة إصدارًا قابلاً للاستعادة؛ ولا يغيّر فشل السحب أي مصدر.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "تتبادل مساحتا العمل الحالية والسابقة موضعهما بأمان، لذلك تظل الاستعادة قابلة للتراجع.",
   "The current Chart JSON is invalid.": "Chart JSON الحالي غير صالح.",
@@ -1022,14 +1058,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn one document into a light presentation": "حوّل مستندًا واحدًا إلى عرض خفيف",
   "Turn the selection into three points": "تحويل التحديد إلى ثلاث نقاط",
   Ultramarine: "أزرق ألترا مارين",
+  Unchanged: "دون تغيير",
   "Unknown source": "مصدر غير معروف",
   Unlinked: "غير مرتبط",
   "Unlinked artifacts": "التحف غير المرتبطة",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
+    "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Rune التي تمت مراجعتها.",
   "Unresolved dependencies": "التبعيات التي لم يتم حلها",
   "Unsaved · needs attention": "غير محفوظ · يحتاج إلى اهتمام",
   "Unsaved · ready to save": "غير محفوظ · جاهز للحفظ",
   "Unsupported structure boundary": "حدود البنية غير مدعومة",
   "Untitled chart": "مخطط بدون عنوان",
+  Update: "تحديث",
   "Update in place · identity preserved": "تحديث في المكان · الهوية محفوظة",
   "Update this operating-review task": "قم بتحديث مهمة مراجعة التشغيل هذه",
   "Uppercase the selection": "التحديد بأحرف كبيرة",

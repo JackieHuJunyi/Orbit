@@ -123,6 +123,7 @@ import {
   type DirectoryReadResult,
   type DirectoryWorkspaceHandle,
 } from "../lib/directory-workspace";
+import type { DirectorySyncPlan } from "../lib/directory-sync";
 import { observeWorkspaceDirectory } from "../lib/directory-observer";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import { workspaceFileExportCapabilities, type WorkspaceFileExportDestination } from "../lib/workspace-file-export";
@@ -286,6 +287,9 @@ const CheckpointRestoreDialog = lazy(() =>
 );
 const WorkspaceResetDialog = lazy(() =>
   import("./workspace-reset-dialog").then((module) => ({ default: module.WorkspaceResetDialog })),
+);
+const DirectorySyncReviewDialog = lazy(() =>
+  import("./directory-sync-review-dialog").then((module) => ({ default: module.DirectorySyncReviewDialog })),
 );
 const WorkbenchSettingsMenu = lazy(() =>
   import("./workbench-settings-menu").then((module) => ({ default: module.WorkbenchSettingsMenu })),
@@ -452,6 +456,13 @@ type PendingCheckpointRestore = {
 
 type PendingWorkspaceReset = {
   plan: WorkspaceResetPlan;
+  error: string;
+  submitting: boolean;
+};
+
+type PendingDirectorySync = {
+  handle: DirectoryWorkspaceHandle;
+  plan: DirectorySyncPlan;
   error: string;
   submitting: boolean;
 };
@@ -857,6 +868,7 @@ export function RuneWorkbench() {
   const [pendingDocumentStructure, setPendingDocumentStructure] = useState<PendingDocumentStructure | null>(null);
   const [pendingCheckpointRestore, setPendingCheckpointRestore] = useState<PendingCheckpointRestore | null>(null);
   const [pendingWorkspaceReset, setPendingWorkspaceReset] = useState<PendingWorkspaceReset | null>(null);
+  const [pendingDirectorySync, setPendingDirectorySync] = useState<PendingDirectorySync | null>(null);
   const [workspaceResetRecovery, setWorkspaceResetRecovery] = useState<WorkspaceDeviceState | null>(null);
   const [pendingLocalImage, setPendingLocalImage] = useState<PendingLocalImage | null>(null);
   const [localAssetUrls, setLocalAssetUrls] = useState<Record<string, string>>({});
@@ -1344,6 +1356,7 @@ export function RuneWorkbench() {
     Boolean(pendingDeliveryConfirmation) ||
     Boolean(pendingCheckpointRestore) ||
     Boolean(pendingWorkspaceReset) ||
+    Boolean(pendingDirectorySync) ||
     Boolean(pendingDocumentStructure) ||
     Boolean(pendingLocalImage) ||
     operatingReviewOpen ||
@@ -1531,6 +1544,7 @@ export function RuneWorkbench() {
         commandMenuOpen ||
         pendingCheckpointRestore ||
         pendingWorkspaceReset ||
+        pendingDirectorySync ||
         pendingDocumentStructure ||
         pendingLocalImage ||
         operatingReviewOpen ||
@@ -1617,6 +1631,7 @@ export function RuneWorkbench() {
     operatingReviewOpen,
     pendingChange,
     pendingCheckpointRestore,
+    pendingDirectorySync,
     pendingWorkspaceReset,
     pendingDeliveryConfirmation,
     pendingDocumentStructure,
@@ -1799,7 +1814,13 @@ export function RuneWorkbench() {
   }
 
   function updateSource(source: string, cursor?: SourceSelection) {
-    if (pendingCheckpointRestore || pendingWorkspaceReset || pendingDocumentStructure || activeVisualSourceDraft)
+    if (
+      pendingCheckpointRestore ||
+      pendingWorkspaceReset ||
+      pendingDirectorySync ||
+      pendingDocumentStructure ||
+      activeVisualSourceDraft
+    )
       return;
     setSaveState("saving");
     setArtifacts((current) =>
@@ -1837,6 +1858,7 @@ export function RuneWorkbench() {
       pendingExport ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       activeVisualSourceDraft
@@ -2054,6 +2076,7 @@ export function RuneWorkbench() {
       pendingExport ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       (pendingDocumentStructure && !allowDocumentStructureReview) ||
       agentState === "planning"
     ) {
@@ -2205,6 +2228,7 @@ export function RuneWorkbench() {
       pendingExport ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       agentState === "planning"
@@ -2291,6 +2315,7 @@ export function RuneWorkbench() {
       pendingExport ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       pendingDocumentStructure ||
       pendingLocalImage ||
       agentState === "planning"
@@ -2556,11 +2581,12 @@ export function RuneWorkbench() {
   }
 
   function checkpointWorkspaceBeforeFolderPull() {
-    const oversized = artifacts.find((artifact) => !canCheckpointSource(artifact.source));
+    const currentArtifacts = artifactsRef.current;
+    const oversized = currentArtifacts.find((artifact) => !canCheckpointSource(artifact.source));
     if (oversized) throw new Error(`${oversized.name} is too large for a safe pre-pull checkpoint.`);
-    let next = checkpoints;
+    let next = checkpointsRef.current;
     const timestamp = Date.now();
-    artifacts.forEach((artifact, index) => {
+    currentArtifacts.forEach((artifact, index) => {
       next = appendCheckpoint(
         next,
         createCheckpoint(artifact, "Before folder pull", "manual", new Date(timestamp + index)),
@@ -2669,17 +2695,11 @@ export function RuneWorkbench() {
     }
   }
 
-  async function applyDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
+  async function commitPulledDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
     if (result.errors.length) throw new Error(result.errors[0]);
     if (!result.artifacts.length) throw new Error("The selected folder does not contain a Rune workspace yet.");
-    if (
-      !window.confirm(
-        `Replace this device draft with ${result.artifacts.length} validated source files from “${handle.name}”? A checkpoint of every current file will be kept.`,
-      )
-    ) {
-      setNotice("Folder pull cancelled — the device draft is unchanged");
-      return false;
-    }
+    const recovery = currentWorkspaceDeviceState();
+    const nextCheckpoints = checkpointWorkspaceBeforeFolderPull();
     const importedAssetIds: string[] = [];
     try {
       for (const asset of result.assets) {
@@ -2689,11 +2709,10 @@ export function RuneWorkbench() {
       await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
       throw error;
     }
-    const nextCheckpoints = checkpointWorkspaceBeforeFolderPull();
-    const nextSelectedId = result.artifacts.some((artifact) => artifact.id === selectedId)
-      ? selectedId
+    const nextSelectedId = result.artifacts.some((artifact) => artifact.id === selectedIdRef.current)
+      ? selectedIdRef.current
       : result.artifacts[0].id;
-    const nextSavedReviews = savedOperatingReviews.filter(
+    const nextSavedReviews = savedOperatingReviewsRef.current.filter(
       (workflow) =>
         result.artifacts.some((artifact) => artifact.id === workflow.input.dataArtifactId) &&
         Object.values(workflow.artifactIds).every((artifactId) =>
@@ -2710,7 +2729,14 @@ export function RuneWorkbench() {
       ),
     });
     try {
-      persistDeviceWorkspace(result.artifacts, nextSelectedId, nextCheckpoints, nextSavedReviews, nextTaskEvidence);
+      persistDeviceWorkspace(
+        result.artifacts,
+        nextSelectedId,
+        nextCheckpoints,
+        nextSavedReviews,
+        nextTaskEvidence,
+        recovery,
+      );
     } catch (error) {
       await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
       throw error;
@@ -2724,6 +2750,7 @@ export function RuneWorkbench() {
     setCheckpoints(nextCheckpoints);
     setSavedOperatingReviews(nextSavedReviews);
     setTaskEvidence(nextTaskEvidence);
+    setWorkspaceResetRecovery(recovery);
     setPendingChange(null);
     setHistoryOpen(false);
     setSaveState("saved");
@@ -2733,12 +2760,119 @@ export function RuneWorkbench() {
     setNotice(
       `Pulled ${result.artifacts.length} source files${result.assets.length ? ` and ${result.assets.length} local images` : ""} from ${handle.name} · ${result.source}`,
     );
-    return true;
+  }
+
+  async function reviewDirectorySync(
+    handle: DirectoryWorkspaceHandle,
+    result: DirectoryReadResult,
+    mode: "pull" | "push" | "initialize",
+  ) {
+    const deviceState = currentWorkspaceDeviceState();
+    const [
+      { prepareDirectorySync },
+      { serializeWorkspaceDeviceState, workspaceDeviceStateSnapshotError },
+      localAssets,
+    ] = await Promise.all([
+      import("../lib/directory-sync"),
+      import("../lib/workspace-reset"),
+      collectWorkspaceLocalAssets(deviceState.artifacts),
+    ]);
+    if (mode === "pull") {
+      const recoveryError = workspaceDeviceStateSnapshotError(deviceState, "The current workspace");
+      if (recoveryError) throw new Error(recoveryError);
+    }
+    const prepared = prepareDirectorySync({
+      mode,
+      directoryName: handle.name,
+      deviceStateSnapshot: serializeWorkspaceDeviceState(deviceState),
+      deviceArtifacts: deviceState.artifacts,
+      deviceAssets: localAssets,
+      directory: result,
+    });
+    if (!prepared.plan || prepared.errors.length) {
+      throw new Error(prepared.errors[0] ?? "Rune could not prepare this folder sync.");
+    }
+    setPendingDirectorySync({ handle, plan: prepared.plan, error: "", submitting: false });
+    setToolsMenuOpen(false);
+    setDirectoryState(directoryHandle ? "connected" : "disconnected");
+    setNotice(
+      runeText(
+        locale,
+        "Folder sync ready for exact review — nothing has been written",
+        "文件夹同步已可精确审核 — 尚未写入任何内容",
+      ),
+    );
+  }
+
+  function cancelDirectorySync() {
+    if (!pendingDirectorySync || pendingDirectorySync.submitting) return;
+    setPendingDirectorySync(null);
+    setDirectoryState(directoryHandle ? "connected" : "disconnected");
+    setNotice(runeText(locale, "Folder sync cancelled — nothing changed", "已取消文件夹同步 — 所有内容保持不变"));
+  }
+
+  async function confirmDirectorySync() {
+    const pending = pendingDirectorySync;
+    if (!pending || pending.submitting) return;
+    setPendingDirectorySync((current) => (current ? { ...current, error: "", submitting: true } : current));
+    setDirectoryState("syncing");
+    setSaveState("saving");
+    try {
+      const [{ commitDirectorySync }, { serializeWorkspaceDeviceState }] = await Promise.all([
+        import("../lib/directory-sync"),
+        import("../lib/workspace-reset"),
+      ]);
+      await commitDirectorySync({
+        expectedPlan: pending.plan,
+        readCurrentDeviceStateSnapshot: () => serializeWorkspaceDeviceState(currentWorkspaceDeviceState()),
+        readCurrentArtifacts: () => artifactsRef.current,
+        readCurrentAssets: () => collectWorkspaceLocalAssets(artifactsRef.current),
+        readDirectory: () => readWorkspaceDirectory(pending.handle),
+        apply: async (plan, directory, currentAssets) => {
+          if (plan.mode === "pull") {
+            await commitPulledDirectoryWorkspace(pending.handle, directory);
+            return;
+          }
+          const currentArtifacts = artifactsRef.current;
+          const handoffArtifact = currentArtifacts.find((artifact) => artifact.id === selectedIdRef.current);
+          directoryWriteMuteUntilRef.current = Date.now() + 5_000;
+          await writeWorkspaceDirectory(pending.handle, currentArtifacts, currentAssets);
+          setDirectoryHandle(pending.handle);
+          setDirectoryState("connected");
+          setNotice(
+            `${plan.mode === "initialize" ? "Initialized" : "Pushed"} ${currentArtifacts.length} source files${currentAssets.length ? ` and ${currentAssets.length} local images` : ""} with rune.workspace.json in ${pending.handle.name}`,
+          );
+          if (handoffArtifact) {
+            openDeliveryConfirmationForArtifact(
+              handoffArtifact,
+              "folder",
+              "folder",
+              `${pending.handle.name} · ${ui.push}`,
+            );
+          }
+        },
+      });
+      setPendingDirectorySync(null);
+      setDirectoryState("connected");
+      setSaveState("saved");
+      setSavedAt("");
+    } catch (error) {
+      setPendingDirectorySync((current) =>
+        current
+          ? {
+              ...current,
+              error: error instanceof Error ? error.message : "Rune could not complete this folder sync.",
+              submitting: false,
+            }
+          : current,
+      );
+      setDirectoryState(directoryHandle ? "connected" : "disconnected");
+      setSaveState("saved");
+    }
   }
 
   async function connectWorkspaceFolder() {
-    if (directoryState === "syncing" || pendingCheckpointRestore || pendingWorkspaceReset || pendingDocumentStructure)
-      return;
+    if (artifactCreationDisabled || directoryState === "syncing") return;
     if (!supportsDirectoryWorkspace()) {
       setDirectoryState("error");
       setNotice("Folder workspaces require a browser with the File System Access API");
@@ -2750,27 +2884,7 @@ export function RuneWorkbench() {
       const handle = await chooseWorkspaceDirectory();
       const result = await readWorkspaceDirectory(handle);
       if (result.errors.length) throw new Error(result.errors[0]);
-      if (result.source === "empty") {
-        if (
-          !window.confirm(
-            `“${handle.name}” has no supported source files. Write the current Rune workspace there? Existing unrelated files will stay untouched.`,
-          )
-        ) {
-          setDirectoryState(directoryHandle ? "connected" : "disconnected");
-          setNotice("Folder connection cancelled");
-          return;
-        }
-        const localAssets = await collectWorkspaceLocalAssets(artifacts);
-        directoryWriteMuteUntilRef.current = Date.now() + 5_000;
-        await writeWorkspaceDirectory(handle, artifacts, localAssets);
-        setDirectoryHandle(handle);
-        setDirectoryState("connected");
-        setNotice(`Connected ${handle.name} · wrote ${artifacts.length} readable source files`);
-        openDeliveryConfirmationForArtifact(selectedArtifact, "folder", "folder", `${handle.name} · ${ui.push}`);
-        return;
-      }
-      if (!(await applyDirectoryWorkspace(handle, result)))
-        setDirectoryState(directoryHandle ? "connected" : "disconnected");
+      await reviewDirectorySync(handle, result, result.source === "empty" ? "initialize" : "pull");
     } catch (error) {
       if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "AbortError") {
         setDirectoryState(directoryHandle ? "connected" : "disconnected");
@@ -2783,11 +2897,11 @@ export function RuneWorkbench() {
   }
 
   async function pullWorkspaceFolder() {
-    if (!directoryHandle || directoryState === "syncing") return;
+    if (!directoryHandle || artifactCreationDisabled || directoryState === "syncing") return;
     setDirectoryState("syncing");
     try {
       const result = await readWorkspaceDirectory(directoryHandle);
-      if (!(await applyDirectoryWorkspace(directoryHandle, result))) setDirectoryState("connected");
+      await reviewDirectorySync(directoryHandle, result, "pull");
     } catch (error) {
       setDirectoryState("error");
       setNotice(error instanceof Error ? error.message : "Rune could not pull that folder");
@@ -2795,26 +2909,11 @@ export function RuneWorkbench() {
   }
 
   async function pushWorkspaceFolder() {
-    if (!directoryHandle || directoryState === "syncing") return;
-    if (
-      !window.confirm(
-        `Write ${artifacts.length} current source files to “${directoryHandle.name}”? Files with the same names will be overwritten; unrelated files will stay untouched.`,
-      )
-    ) {
-      setNotice("Folder push cancelled");
-      return;
-    }
+    if (!directoryHandle || artifactCreationDisabled || directoryState === "syncing") return;
     setDirectoryState("syncing");
-    const handoffArtifact = selectedArtifact;
     try {
-      const localAssets = await collectWorkspaceLocalAssets(artifacts);
-      directoryWriteMuteUntilRef.current = Date.now() + 5_000;
-      await writeWorkspaceDirectory(directoryHandle, artifacts, localAssets);
-      setDirectoryState("connected");
-      setNotice(
-        `Pushed ${artifacts.length} source files${localAssets.length ? ` and ${localAssets.length} local images` : ""} with rune.workspace.json to ${directoryHandle.name}`,
-      );
-      openDeliveryConfirmationForArtifact(handoffArtifact, "folder", "folder", `${directoryHandle.name} · ${ui.push}`);
+      const result = await readWorkspaceDirectory(directoryHandle);
+      await reviewDirectorySync(directoryHandle, result, result.source === "empty" ? "initialize" : "push");
     } catch (error) {
       setDirectoryState("error");
       setNotice(error instanceof Error ? error.message : "Rune could not push that folder");
@@ -2826,6 +2925,7 @@ export function RuneWorkbench() {
       activeVisualSourceDraft ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       checkpointRestoreInFlightRef.current
     )
       return;
@@ -2941,6 +3041,7 @@ export function RuneWorkbench() {
       activeVisualSourceDraft ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       pendingDocumentStructure
     )
       return;
@@ -3924,7 +4025,7 @@ export function RuneWorkbench() {
   }
 
   async function createNewArtifact(input: ArtifactCreationInput, embedArtifactId?: string) {
-    if (pendingCheckpointRestore || pendingWorkspaceReset || pendingDocumentStructure) return;
+    if (pendingCheckpointRestore || pendingWorkspaceReset || pendingDirectorySync || pendingDocumentStructure) return;
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
@@ -4044,6 +4145,7 @@ export function RuneWorkbench() {
       pendingExport ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       pendingDocumentStructure ||
       exportState !== "idle"
     )
@@ -4343,6 +4445,7 @@ export function RuneWorkbench() {
       pendingPdfOcr ||
       pendingCheckpointRestore ||
       pendingWorkspaceReset ||
+      pendingDirectorySync ||
       pendingDocumentStructure ||
       importInFlightRef.current ||
       exportInFlightRef.current
@@ -4645,6 +4748,7 @@ export function RuneWorkbench() {
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
               Boolean(pendingWorkspaceReset) ||
+              Boolean(pendingDirectorySync) ||
               Boolean(pendingDocumentStructure)
             }
           >
@@ -4672,6 +4776,7 @@ export function RuneWorkbench() {
                 Boolean(pendingExport) ||
                 Boolean(pendingCheckpointRestore) ||
                 Boolean(pendingWorkspaceReset) ||
+                Boolean(pendingDirectorySync) ||
                 Boolean(pendingDocumentStructure)
               }
               legacyOfficeAvailable={legacyOfficeExportAvailable}
@@ -4708,6 +4813,7 @@ export function RuneWorkbench() {
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
               Boolean(pendingWorkspaceReset) ||
+              Boolean(pendingDirectorySync) ||
               Boolean(pendingDocumentStructure)
             }
           />
@@ -4730,6 +4836,7 @@ export function RuneWorkbench() {
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
               Boolean(pendingWorkspaceReset) ||
+              Boolean(pendingDirectorySync) ||
               Boolean(pendingDocumentStructure)
             }
           />
@@ -4754,6 +4861,7 @@ export function RuneWorkbench() {
               Boolean(pendingExport) ||
               Boolean(pendingCheckpointRestore) ||
               Boolean(pendingWorkspaceReset) ||
+              Boolean(pendingDirectorySync) ||
               Boolean(pendingDocumentStructure) ||
               Boolean(pendingLocalImage)
             }
@@ -5269,6 +5377,7 @@ export function RuneWorkbench() {
                           Boolean(pendingExport) ||
                           Boolean(pendingCheckpointRestore) ||
                           Boolean(pendingWorkspaceReset) ||
+                          Boolean(pendingDirectorySync) ||
                           Boolean(pendingDocumentStructure) ||
                           Boolean(pendingLocalImage)
                         }
@@ -5436,12 +5545,14 @@ export function RuneWorkbench() {
                     visualEditState !== "idle" ||
                     Boolean(pendingCheckpointRestore) ||
                     Boolean(pendingWorkspaceReset) ||
+                    Boolean(pendingDirectorySync) ||
                     Boolean(pendingDocumentStructure)
                   }
                   aria-busy={
                     visualEditState !== "idle" ||
                     Boolean(pendingCheckpointRestore) ||
                     Boolean(pendingWorkspaceReset) ||
+                    Boolean(pendingDirectorySync) ||
                     Boolean(pendingDocumentStructure)
                   }
                   aria-readonly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
@@ -5918,6 +6029,7 @@ export function RuneWorkbench() {
                       visualEditState === "idle" &&
                       !pendingCheckpointRestore &&
                       !pendingWorkspaceReset &&
+                      !pendingDirectorySync &&
                       !pendingDocumentStructure
                         ? reviewVisualDocumentBlockStructure
                         : undefined
@@ -6104,6 +6216,16 @@ export function RuneWorkbench() {
             submitting={pendingWorkspaceReset.submitting}
             onCancel={cancelWorkspaceReset}
             onConfirm={() => void confirmWorkspaceReset()}
+          />
+        )}
+        {pendingDirectorySync && (
+          <DirectorySyncReviewDialog
+            plan={pendingDirectorySync.plan}
+            locale={locale}
+            error={pendingDirectorySync.error}
+            submitting={pendingDirectorySync.submitting}
+            onCancel={cancelDirectorySync}
+            onConfirm={() => void confirmDirectorySync()}
           />
         )}
         {pendingDocumentStructure && (

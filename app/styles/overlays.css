@@ -397,6 +397,70 @@ html[dir="rtl"] .settings-popover {
   .workspace-reset-route > span { justify-self: center; transform: rotate(90deg); }
 }
 
+.directory-sync-dialog { width: min(760px, var(--rune-frame-width)); }
+.directory-sync-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--rune-space-3);
+  margin-bottom: var(--rune-space-4);
+}
+.directory-sync-route > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 2px var(--rune-space-3);
+  align-items: center;
+  padding: var(--rune-space-3);
+  border: 1px solid rgba(var(--theme-rgb), .14);
+  border-radius: var(--rune-radius-card);
+  background: rgba(var(--theme-rgb), .045);
+}
+.directory-sync-route > div > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  grid-row: 1 / 4;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(var(--theme-rgb), .11);
+  color: var(--theme-accent);
+}
+.directory-sync-route svg { width: 17px; height: 17px; }
+.directory-sync-route > svg { color: var(--muted); transform: rotate(-90deg); }
+html[dir="rtl"] .directory-sync-route > svg { transform: rotate(90deg); }
+.directory-sync-route small,
+.directory-sync-route em { overflow: hidden; color: var(--muted); font-size: var(--rune-type-caption); font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.directory-sync-route strong { overflow: hidden; font-size: var(--rune-type-ui); text-overflow: ellipsis; white-space: nowrap; }
+.directory-sync-changes {
+  margin-bottom: var(--rune-space-3);
+  overflow: hidden;
+  border: 1px solid var(--rune-hairline);
+  border-radius: var(--rune-radius-card);
+  background: rgba(255, 255, 255, .58);
+}
+.directory-sync-changes > header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--rune-space-3); padding: 11px 14px; border-bottom: 1px solid var(--rune-hairline); }
+.directory-sync-changes > header strong { font-size: var(--rune-type-ui); }
+.directory-sync-changes > header span { color: var(--muted); font-size: var(--rune-type-caption); }
+.directory-sync-changes ul { max-height: 238px; margin: 0; padding: 5px; overflow-y: auto; list-style: none; }
+.directory-sync-changes li { display: grid; grid-template-columns: minmax(92px, auto) minmax(0, 1fr); align-items: center; gap: var(--rune-space-3); min-height: 38px; padding: 5px 9px; border-radius: 10px; }
+.directory-sync-changes li + li { border-top: 1px solid rgba(118, 118, 128, .07); }
+.directory-sync-changes li > span { justify-self: start; padding: 4px 8px; border-radius: 999px; background: rgba(118, 118, 128, .08); color: var(--muted); font-size: 10px; font-weight: 680; }
+.directory-sync-changes li[data-sync-kind="add"] > span { background: rgba(38, 141, 82, .1); color: #217549; }
+.directory-sync-changes li[data-sync-kind="update"] > span { background: rgba(var(--theme-rgb), .1); color: var(--theme-accent); }
+.directory-sync-changes li[data-sync-kind="remove"] > span { background: rgba(192, 57, 43, .09); color: #a33b31; }
+.directory-sync-changes code { display: grid; min-width: 0; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.directory-sync-changes code small { color: var(--muted); font-family: var(--font-sans); font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.directory-sync-retained { margin: calc(var(--rune-space-2) * -1) 0 var(--rune-space-3); color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.45; }
+.directory-sync-safety { border-color: rgba(var(--theme-rgb), .16); background: rgba(var(--theme-rgb), .055); color: var(--ink); }
+
+@media (max-width: 620px) {
+  .directory-sync-route { grid-template-columns: 1fr; }
+  .directory-sync-route > svg,
+  html[dir="rtl"] .directory-sync-route > svg { justify-self: center; transform: none; }
+  .directory-sync-changes li { grid-template-columns: 1fr; gap: 3px; }
+}
+
 .delivery-outcome-dialog { width: min(720px, calc(100vw - 32px)); }
 .delivery-outcome-context {
   display: grid;

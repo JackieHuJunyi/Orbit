@@ -742,6 +742,54 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         ? "先审核，再保留当前工作区并打开内置示例"
         : "Review first, preserve the current workspace, then open the sample",
     },
+    directorySync: {
+      kicker: zh ? "本地文件夹 · 版本绑定审核" : "Local folder · revision-bound review",
+      pullTitle: zh ? "从文件夹读取这些变化？" : "Pull these folder changes?",
+      pushTitle: zh ? "将这些变化写入文件夹？" : "Push these changes to the folder?",
+      initializeTitle: zh ? "用当前工作区初始化文件夹？" : "Initialize the folder with this workspace?",
+      pullDescription: zh
+        ? "Rune 会再次读取文件夹；只有文件内容与本机工作区仍和本次审核完全一致时，才会替换本机工作区。"
+        : "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.",
+      pushDescription: zh
+        ? "Rune 会再次读取文件夹；只有文件夹与本机工作区都没有变化时，才会写入同名文件和工作区清单。"
+        : "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.",
+      initializeDescription: zh
+        ? "Rune 会确认文件夹仍为空，再写入当前可读源文件、已引用图片与工作区清单。"
+        : "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.",
+      details: zh ? "文件夹同步详情" : "Folder sync details",
+      device: zh ? "本机工作区" : "Device workspace",
+      folder: zh ? "连接文件夹" : "Connected folder",
+      afterSync: zh ? "同步后" : "After sync",
+      filesLabel: zh ? "个源文件" : "source files",
+      assetsLabel: zh ? "个本地图片" : "local images",
+      changes: zh ? "本次同步的文件结果" : "File outcomes in this sync",
+      fileEntry: zh ? "源" : "Source",
+      imageEntry: zh ? "图片" : "Image",
+      add: zh ? "新增" : "Add",
+      update: zh ? "更新" : "Update",
+      remove: zh ? "移出工作区" : "Remove from workspace",
+      retain: zh ? "保留在文件夹" : "Keep in folder",
+      unchanged: zh ? "不变" : "Unchanged",
+      retainedNote: zh
+        ? "仅存在于文件夹的文件会原样保留，但不会进入新的 Rune 工作区清单。"
+        : "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.",
+      pullSafety: zh
+        ? "当前完整本机工作区会保存为一个可恢复版本；读取失败不会改变任何源内容。"
+        : "The complete current device workspace becomes a recoverable version; a failed pull changes no source.",
+      pushSafety: zh
+        ? "同名文件可能被覆盖；审核后任何一侧发生变化都会阻止写入。"
+        : "Same-name files may be overwritten; any change on either side after review blocks the write.",
+      initializeSafety: zh
+        ? "无关文件保持不变；只有审核中列出的源文件、图片和 Rune 清单会写入。"
+        : "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.",
+      exactRecheck: zh
+        ? "确认时再次逐字节读取 · 漂移时保持零写入"
+        : "Exact reread on confirm · zero writes when either side drifts",
+      pull: zh ? "确认读取" : "Confirm pull",
+      push: zh ? "确认写入" : "Confirm push",
+      initialize: zh ? "初始化文件夹" : "Initialize folder",
+      syncing: zh ? "正在安全同步…" : "Syncing safely…",
+    },
     importReview: {
       kicker: zh ? "本地转换 · 不上传" : "Local conversion · no upload",
       title: zh ? "审核导入后的可读源" : "Review imported sources",
@@ -1293,6 +1341,8 @@ const chineseStatusMessages: Record<string, string> = {
   "Folder workspaces require a browser with the File System Access API":
     "文件夹工作区需要支持 File System Access API 的浏览器",
   "Folder connection cancelled": "已取消连接文件夹",
+  "Folder sync ready for exact review — nothing has been written": "文件夹同步已可精确审核 — 尚未写入任何内容",
+  "Folder sync cancelled — nothing changed": "已取消文件夹同步 — 所有内容保持不变",
   "Folder picker cancelled": "已取消选择文件夹",
   "Rune could not connect that folder": "Rune 无法连接该文件夹",
   "Rune could not pull that folder": "Rune 无法读取该文件夹",
