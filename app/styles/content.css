@@ -341,6 +341,10 @@
 .deck-slide-flow .deck-slide-canvas .slides-frame {
   min-height: 0;
 }
+.deck-slide-canvas > .presentation-frame-viewport {
+  width: 100%;
+  height: 100%;
+}
 .deck-slide-canvas .slides-frame {
   height: 100%;
   border: 0;

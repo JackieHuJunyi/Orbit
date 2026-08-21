@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { extractRuneAssetIds, parseRuneMarkdownImage } from "./local-assets.ts";
+import { PRESENTATION_CANVAS_WIDTH, PRESENTATION_PREVIEW_CANVAS_STYLE } from "./presentation-canvas.ts";
 import { PORTABLE_SOURCE_REVISION_PATTERN } from "./source-revision.ts";
 
 const DeckFrontmatterSchema = z
@@ -354,10 +355,10 @@ function deckMetadataAttributes(frontmatter: DeckFrontmatter) {
   return entries.flatMap(([name, value]) => (value ? [`${name}="${escapeHtml(value)}"`] : [])).join(" ");
 }
 
-function deckHtmlDocument(frontmatter: DeckFrontmatter, slides: string) {
+function deckHtmlDocument(frontmatter: DeckFrontmatter, slides: string, preview = false) {
   return `<!doctype html>
 <html lang="${frontmatter.lang}">
-<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style></head>
+<head><meta charset="utf-8" /><meta name="viewport" content="width=${preview ? PRESENTATION_CANVAS_WIDTH : "device-width"},initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style>${preview ? `<style data-rune-preview-canvas="1120x630">${PRESENTATION_PREVIEW_CANVAS_STYLE}</style>` : ""}</head>
 <body class="${frontmatter.theme === "rune-dark" ? "rune-dark" : ""}"><main class="deck" ${deckMetadataAttributes(frontmatter)}>${slides}</main></body>
 </html>`;
 }
@@ -380,7 +381,7 @@ export function compileDeckSource(source: string, options: DeckCompileOptions = 
     html: deckHtmlDocument(frontmatter, slides.join("\n")),
     previewSlides: slides.map((slide, index) => ({
       index,
-      html: deckHtmlDocument(frontmatter, slide),
+      html: deckHtmlDocument(frontmatter, slide, true),
     })),
     slideCount: total,
     errors: [],

@@ -12,6 +12,7 @@ import {
   type VisualSemanticHtmlSlideEditInput,
 } from "../lib/visual-semantic-html-slide-edit";
 import type { WorkspaceArtifact } from "../lib/workspace";
+import { PresentationFrame } from "./presentation-frame";
 import {
   useVisualSourceDraftMirror,
   type VisualSourceDraft,
@@ -126,7 +127,7 @@ export function SemanticHtmlSlideEditor({
         <section className="visual-deck-draft" aria-label={copy.slideDraft(target.label)}>
           <span>{copy.sandboxedSlide}</span>
           {preview.html && !previewError ? (
-            <iframe srcDoc={preview.html} sandbox="" title={copy.slideDraft(target.label)} />
+            <PresentationFrame srcDoc={preview.html} sandbox="" title={copy.slideDraft(target.label)} />
           ) : (
             <div className="visual-deck-draft-error">
               <AlertTriangle aria-hidden="true" />

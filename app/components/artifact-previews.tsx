@@ -133,6 +133,7 @@ import {
   type VisualChartSpecEditInput,
 } from "../lib/visual-chart-edit";
 import { SemanticHtmlSlideEditor } from "./semantic-html-slide-editor";
+import { PresentationFrame } from "./presentation-frame";
 import {
   useVisualSourceDraftMirror,
   type VisualSourceDraft,
@@ -2729,8 +2730,9 @@ function SlidesPreview({
       ? compileArtifactSource(draftCandidate.source, artifacts, readyQuerySnapshots(queryRuntime))
       : null;
   const draftCompilation = draftBindings ? compileDeckSource(draftBindings.source, { resolveLocalAssetUrl }) : null;
-  const draftRenderedSource = draftCompilation?.html
-    ? renderChartReferencesToHtml(draftCompilation.html, (chartArtifactId) => {
+  const draftPreviewSource = draftCompilation?.previewSlides?.[0]?.html ?? draftCompilation?.html;
+  const draftRenderedSource = draftPreviewSource
+    ? renderChartReferencesToHtml(draftPreviewSource, (chartArtifactId) => {
         const chartArtifact = artifacts.find(
           (candidate) => candidate.id === chartArtifactId && candidate.kind === "chart",
         );
@@ -2974,7 +2976,11 @@ function SlidesPreview({
             <section className="visual-deck-draft" aria-label={copy.slideDraft(editingTarget.label)}>
               <span>{copy.sandboxedSlide}</span>
               {draftRenderedSource && !draftPreviewError ? (
-                <iframe srcDoc={draftRenderedSource} sandbox="" title={copy.slideDraft(editingTarget.label)} />
+                <PresentationFrame
+                  srcDoc={draftRenderedSource}
+                  sandbox=""
+                  title={copy.slideDraft(editingTarget.label)}
+                />
               ) : (
                 <div className="visual-deck-draft-error">
                   <AlertTriangle aria-hidden="true" />
@@ -3035,7 +3041,7 @@ function SlidesPreview({
                   data-preview-source-id={target?.id}
                   data-preview-source-primary="true"
                 >
-                  <iframe
+                  <PresentationFrame
                     className="slides-frame"
                     srcDoc={slide.html}
                     sandbox=""
@@ -3069,7 +3075,12 @@ function SlidesPreview({
           })}
         </div>
       ) : (
-        <iframe className="slides-frame" srcDoc={renderedSource} sandbox="" title={copy.renderedPresentation} />
+        <PresentationFrame
+          className="slides-frame"
+          srcDoc={renderedSource}
+          sandbox=""
+          title={copy.renderedPresentation}
+        />
       )}
     </div>
   );
