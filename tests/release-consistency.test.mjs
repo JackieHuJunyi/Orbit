@@ -26,7 +26,10 @@ test("keeps product, package, release notes, progress, and handoff on one curren
 });
 
 test("runs every browser scenario in Chromium, Firefox, and WebKit", async () => {
-  const config = await rootFile("playwright.config.ts");
+  const [config, workflow] = await Promise.all([
+    rootFile("playwright.config.ts"),
+    rootFile(".github/workflows/release-quality.yml"),
+  ]);
   assert.match(config, /command: "npm run start:e2e"/u);
   for (const [name, device] of [
     ["chromium", "Desktop Chrome"],
@@ -35,6 +38,7 @@ test("runs every browser scenario in Chromium, Firefox, and WebKit", async () =>
   ]) {
     assert.match(config, new RegExp(`name: "${name}"[\\s\\S]{0,80}devices\\["${device}"\\]`));
   }
+  assert.match(workflow, /- run: npm run test:e2e[\s\S]{0,180}HOME: \/root/u);
 });
 
 test("filters only the expected DuckDB stream cancellation from the E2E server", () => {

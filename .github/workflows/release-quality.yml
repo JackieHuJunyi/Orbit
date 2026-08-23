@@ -49,6 +49,10 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run test:e2e
+        env:
+          # The Playwright container executes Actions steps as root. Firefox
+          # refuses to launch when HOME belongs to the image's pwuser account.
+          HOME: /root
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
