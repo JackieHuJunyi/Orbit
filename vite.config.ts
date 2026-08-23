@@ -24,6 +24,10 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    // Rune's startup graph has its own strict 530 KB release gate. A separate
+    // 1.3 MB ceiling covers intentionally deferred document/PDF capabilities
+    // so Vite reports real regressions instead of warning on known lazy chunks.
+    build: { chunkSizeWarningLimit: 1_300 },
     server: isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : undefined,
     plugins: [
       vinext(),

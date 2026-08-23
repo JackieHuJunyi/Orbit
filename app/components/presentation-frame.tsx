@@ -5,6 +5,7 @@ import {
   PRESENTATION_CANVAS_HEIGHT,
   PRESENTATION_CANVAS_WIDTH,
   presentationCanvasTransform,
+  presentationSrcDocReplayDelay,
 } from "../lib/presentation-canvas";
 
 type PresentationFrameProps = Omit<ComponentPropsWithoutRef<"iframe">, "height" | "width"> & {
@@ -13,6 +14,7 @@ type PresentationFrameProps = Omit<ComponentPropsWithoutRef<"iframe">, "height" 
 
 export function PresentationFrame({ className = "", viewportClassName = "", ...props }: PresentationFrameProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -36,6 +38,26 @@ export function PresentationFrame({ className = "", viewportClassName = "", ...p
     return () => observer.disconnect();
   }, []);
 
+  useLayoutEffect(() => {
+    const source = props.srcDoc;
+    if (typeof source !== "string") return;
+    const delay = presentationSrcDocReplayDelay(source, navigator.userAgent);
+    if (delay == null) return;
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    // WebKit can abandon one of several simultaneous live srcdoc updates on
+    // an empty document. Replay the same proven bytes once, with a small
+    // content-derived stagger, while keeping the SSR and other engines on the
+    // ordinary native srcdoc path.
+    const timer = window.setTimeout(() => {
+      if (frameRef.current !== frame) return;
+      frame.removeAttribute("srcdoc");
+      frame.setAttribute("srcdoc", source);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [props.srcDoc]);
+
   return (
     <div
       className={`presentation-frame-viewport ${viewportClassName}`.trim()}
@@ -53,6 +75,7 @@ export function PresentationFrame({ className = "", viewportClassName = "", ...p
         {...props}
         className={`presentation-frame ${className}`.trim()}
         height={PRESENTATION_CANVAS_HEIGHT}
+        ref={frameRef}
         width={PRESENTATION_CANVAS_WIDTH}
       />
     </div>

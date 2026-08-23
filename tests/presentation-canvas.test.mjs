@@ -8,6 +8,7 @@ import {
   PRESENTATION_CANVAS_HEIGHT,
   PRESENTATION_CANVAS_WIDTH,
   presentationCanvasTransform,
+  presentationSrcDocReplayDelay,
 } from "../app/lib/presentation-canvas.ts";
 import { deckSourceFixture } from "./deck-fixture.mjs";
 
@@ -38,12 +39,27 @@ test("isolated Deck and semantic HTML previews declare the fixed canvas contract
   assert.match(semantic.slides[0].html, /body>main>section\{width:1120px!important;height:630px!important/u);
 });
 
+test("replays only WebKit srcdoc updates with a deterministic bounded stagger", () => {
+  const safari = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15";
+  const chrome = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36";
+  const source = "<main><section>Stable</section></main>";
+  const first = presentationSrcDocReplayDelay(source, safari);
+
+  assert.equal(first, presentationSrcDocReplayDelay(source, safari));
+  assert.ok(first != null && first >= 48 && first <= 192);
+  assert.equal(presentationSrcDocReplayDelay(source, chrome), null);
+  assert.equal(presentationSrcDocReplayDelay(source, "Mozilla/5.0 Firefox/142.0"), null);
+  assert.equal(presentationSrcDocReplayDelay("", safari), null);
+});
+
 test("the host frame observes its viewport and scales a fixed-size iframe", async () => {
   const component = await readFile(new URL("../app/components/presentation-frame.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(component, /new ResizeObserver\(fitCanvas\)/u);
   assert.match(component, /data-presentation-canvas/u);
+  assert.match(component, /presentationSrcDocReplayDelay\(source, navigator\.userAgent\)/u);
+  assert.match(component, /frame\.removeAttribute\("srcdoc"\)/u);
   assert.match(component, /height=\{PRESENTATION_CANVAS_HEIGHT\}/u);
   assert.match(component, /width=\{PRESENTATION_CANVAS_WIDTH\}/u);
   assert.match(styles, /\.presentation-frame-viewport > iframe\.presentation-frame/u);

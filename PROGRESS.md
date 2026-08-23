@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-08-23 — Shipped Rune v1.51 with consistent release metadata, explicit startup/deferred bundle budgets, and the complete 57-scenario browser gate across Chromium, Firefox, and WebKit while keeping every real-user evidence gate honestly open.
 - 2026-08-21 — Shipped Rune v1.50 with fixed-canvas Presentation scaling plus same-origin, bounded DuckDB worker/Wasm startup for reliable runtime-verified Data edits.
 - 2026-08-21 — Completed the v1.49 first-release handoff audit, proving every repository requirement and separating shipped engineering capability from the still-open real-user evidence gates.
 - 2026-08-21 — Shipped Rune v1.49 with one fail-closed owner for every reviewed Workbench operation, explicit safe handoffs, shared action/shortcut availability, and confirmation-time ownership checks.

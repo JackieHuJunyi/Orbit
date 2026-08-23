@@ -634,6 +634,8 @@ Folder reads are bounded to 50 artifacts, 2 MB per source file, 8 MB source tota
 63. v1.47 turns folder Pull, Push, and initialization into one exact device/folder review, blocks all I/O on detected drift, and makes the complete pre-Pull device workspace recoverable without claiming unavailable browser-level multi-file atomicity.
 64. v1.48 replaces the welcome font mask with licensed centerline handwriting, keeps locale/font/shaper loading outside onboarding state, normalizes apparent pen velocity across nine scripts, and explicitly excludes Apple-owned SF-Hello assets from the public repository.
 65. v1.49 compiles every reviewed Workbench owner and asynchronous phase through one immutable fail-closed gate, so competing actions, commands, and shortcuts share one rule while intentional owner-to-owner handoffs remain explicit.
+66. v1.50 gives every Presentation one fixed internal canvas and prepares DuckDB's exact pinned worker/Wasm as bounded same-origin build assets.
+67. v1.51 binds release metadata, eager/deferred bundle ceilings, and the complete Chromium/Firefox/WebKit interaction matrix to executable gates while leaving human and commercial evidence outside repository authority.
 
 This avoids paying for identity, databases, and sync before they improve the core loop.
 

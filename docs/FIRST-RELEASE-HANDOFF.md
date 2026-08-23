@@ -1,6 +1,6 @@
 # Rune first-release handoff
 
-> Audited 2026-08-21 against Rune v1.49 (`18e84d3`). This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
+> Originally audited 2026-08-21 and refreshed 2026-08-23 against Rune v1.51. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
 
 ## Completion decision
 
@@ -23,9 +23,9 @@ This is an **engineering-complete first release**, not a claim of product-market
 | Export canonical, Office, OpenDocument, HTML, and PDF deliverables | Complete | One capability registry and lazy runtime provide exact source, CSV/JSON, DOCX/XLSX/PPTX, ODT/ODS/ODP, standalone HTML, and fixed PDF; Rune Desktop adds DOC/PPT. Review, stale-context checks, deterministic package tests, round trips, and independent QA protect the boundary.               |
 | Welcome, language, personal model setup, tutorial, and local guide | Complete | Server-first handwriting, all six UN official languages plus Traditional Chinese, Japanese, and Korean, device locale recommendation, secure multi-provider profiles, four real shortcut lessons, and the editable local guide are covered by localization, welcome, route, and Chromium tests. |
 | Empty workspace file drop/open/create                              | Complete | `EmptyWorkspace` exposes outcome-first tasks, drag/drop, file picker, blank creation, sample recovery, and local-guide continuity; localized desktop/compact Chromium geometry covers all nine locales.                                                                                         |
-| Safe concurrent operation ownership                                | Complete | Rune v1.49 compiles all reviewed owners and asynchronous phases through one immutable fail-closed gate; confirmation-time ownership and a Chromium shortcut collision test prevent competing reviews.                                                                                           |
+| Safe concurrent operation ownership                                | Complete | Rune v1.49 compiles all reviewed owners and asynchronous phases through one immutable fail-closed gate; confirmation-time ownership and cross-browser shortcut collision tests prevent competing reviews.                                                                                       |
 | Progress and decision history                                      | Complete | `PROGRESS.md` gives one sentence per shipped milestone; `CHANGELOG.md` and numbered ADRs retain detailed rationale and verification.                                                                                                                                                            |
-| Main branch handoff                                                | Complete | `main` and `origin/main` resolve to v1.49 commit `18e84d3`; GitHub Release quality run `32459000076` passed test, E2E, and quality jobs.                                                                                                                                                        |
+| Main branch handoff                                                | Complete | The Release quality workflow runs test, E2E, and quality jobs for every `main` push and pull request; the current commit and run remain Git/GitHub facts rather than copied moving identifiers in this document.                                                                                |
 
 ## What remains open
 
@@ -45,4 +45,4 @@ Do not add collaboration, cloud sync, a connector, richer charts, more OCR packa
 
 ## Reproduction gate
 
-From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). At the audited commit it passes 676 unit tests, 29 render/architecture tests, 56 Chromium tests, the 20/20 synthetic Golden Task Eval, formatting, lint, typecheck, production build, and the high-severity production dependency audit.
+From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Rune v1.51 passes 685 unit tests, 29 render/architecture tests, 57 scenarios in each of Chromium, Firefox, and WebKit (171 browser executions), the 20/20 synthetic Golden Task Eval, formatting, lint, typecheck, production build, and the high-severity production dependency audit.

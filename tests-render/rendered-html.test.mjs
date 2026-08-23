@@ -181,6 +181,9 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
     assert.equal(manifest[exportModuleEntry]?.isDynamicEntry, true);
     assert.ok(exportRuntimeEntry.dynamicImports?.includes(exportModuleEntry));
   }
+  const pdfExportEntry = manifest["app/lib/pdf-export.ts"];
+  const pdfExportBytes = (await stat(new URL(`../dist/client/${pdfExportEntry.file}`, import.meta.url))).size;
+  assert.ok(pdfExportBytes <= 1_300_000, `Deferred PDF export chunk is ${pdfExportBytes} bytes; budget is 1300000.`);
   assert.equal(manifest["app/lib/agent-evidence.ts"]?.isDynamicEntry, true);
   assert.ok(workbenchEntry.dynamicImports?.includes("app/lib/agent-evidence.ts"));
   assert.equal(manifest["app/lib/query-preflight.ts"]?.isDynamicEntry, true);
