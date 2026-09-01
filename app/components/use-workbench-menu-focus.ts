@@ -19,6 +19,7 @@ export function useWorkbenchMenuFocus({
 }) {
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const ownRequestedFocusRef = useRef<WorkbenchMenuFocusEdge>("first");
+  const restoreFocusFrameRef = useRef(0);
 
   const enabledItems = useCallback(
     () => itemRefs.current.filter((item): item is HTMLButtonElement => Boolean(item && !item.disabled)),
@@ -34,17 +35,32 @@ export function useWorkbenchMenuFocus({
     items[requestedIndex]?.focus({ preventScroll: true });
   }, [enabledItems, itemCount, open, suppliedRequestedFocusRef]);
 
+  useLayoutEffect(
+    () => () => {
+      if (restoreFocusFrameRef.current) window.cancelAnimationFrame(restoreFocusFrameRef.current);
+    },
+    [],
+  );
+
   const setItemRef = useCallback((index: number, element: HTMLButtonElement | null) => {
     itemRefs.current[index] = element;
   }, []);
 
   const closeAndRestoreFocus = useCallback(() => {
     onOpenChange(false);
-    window.requestAnimationFrame(() => restoreFocusRef.current?.focus({ preventScroll: true }));
+    if (restoreFocusFrameRef.current) window.cancelAnimationFrame(restoreFocusFrameRef.current);
+    restoreFocusFrameRef.current = window.requestAnimationFrame(() => {
+      restoreFocusFrameRef.current = 0;
+      restoreFocusRef.current?.focus({ preventScroll: true });
+    });
   }, [onOpenChange, restoreFocusRef]);
 
   const requestOpen = useCallback(
     (edge: WorkbenchMenuFocusEdge) => {
+      if (restoreFocusFrameRef.current) {
+        window.cancelAnimationFrame(restoreFocusFrameRef.current);
+        restoreFocusFrameRef.current = 0;
+      }
       ownRequestedFocusRef.current = edge;
       if (open) {
         const items = enabledItems();

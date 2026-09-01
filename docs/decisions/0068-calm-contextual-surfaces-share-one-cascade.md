@@ -21,6 +21,7 @@ The desired interaction direction is Apple-informed restraint and Prism-like tas
 7. All nine registered interfaces share the same geometry tests at 1440×900 and 390×844. Arabic keeps logical RTL layout with the Rune name isolated LTR; Japanese and Korean receive script-aware line breaking; the selected language aligns to complete rows. Touch controls remain at least 44 px on compact screens.
 8. The release gate adds fresh/reload hydration collection, full-track empty geometry, contextual Agent disclosure, and compact Preview-to-Source centering. The complete 61-scenario suite runs unchanged in Chromium, Firefox, and WebKit.
 9. WebKit presentation `srcdoc` recovery is one global serial queue rather than independent timer retries. Each frame completes an isolated blank navigation, loads the same compiler-proven bytes, exposes readiness only from the final load event, and then releases the next frame. Chromium and Firefox remain on the native path. The queue has no source, persistence, network, provider, credential, or iframe-DOM authority.
+10. Preview-to-Source navigation records one pending compiler-proven plan and applies focus, selection, and centered scroll in the layout commit that reveals the target pane. One animation-frame verification repairs a browser selection or smooth-scroll reset without delaying the ready state. Menu focus restoration owns a cancelable frame; reopening any menu first cancels an obsolete close-frame restore so Tab and arrow behavior cannot be stolen by stale work.
 
 ## Consequences
 

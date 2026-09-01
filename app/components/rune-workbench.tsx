@@ -906,6 +906,7 @@ export function RuneWorkbench() {
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const [workspaceSourcePercent, setWorkspaceSourcePercent] = useState(DEFAULT_WORKSPACE_SOURCE_PERCENT);
   const [workspaceView, setWorkspaceView] = useState<RuneWorkspaceView>("split");
+  const [sourceNavigationEpoch, setSourceNavigationEpoch] = useState(0);
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
   const [visualSourceDraft, setVisualSourceDraft] = useState<VisualSourceDraft | null>(null);
@@ -913,6 +914,7 @@ export function RuneWorkbench() {
   const shellRef = useRef<HTMLElement>(null);
   const gutterRef = useRef<HTMLPreElement>(null);
   const sourceEditorRef = useRef<HTMLTextAreaElement>(null);
+  const pendingSourceNavigationRef = useRef<PreparedSourceNavigation | null>(null);
   const sourceDraftMirrorRef = useRef<HTMLPreElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const checkpointRestoreInFlightRef = useRef(false);
@@ -969,6 +971,55 @@ export function RuneWorkbench() {
     setWelcomeOpen(onboardingPending);
     document.documentElement.removeAttribute("data-rune-onboarding");
   }, []);
+
+  useLayoutEffect(() => {
+    const plan = pendingSourceNavigationRef.current;
+    if (!plan) return;
+    const editor = sourceEditorRef.current;
+    if (!editor || editor.value !== plan.sourceRevision) return;
+    pendingSourceNavigationRef.current = null;
+    inspectSourceNavigationRef.current = !plan.activateSelectionAgent;
+    editor.focus({ preventScroll: true });
+    editor.setSelectionRange(plan.start, plan.end, "forward");
+    const editorStyle = window.getComputedStyle(editor);
+    const rawLineHeight = Number.parseFloat(editorStyle.lineHeight);
+    const fontSize = Number.parseFloat(editorStyle.fontSize);
+    const safeLineHeight =
+      Number.isFinite(rawLineHeight) && rawLineHeight > 0
+        ? rawLineHeight < 5 && Number.isFinite(fontSize)
+          ? rawLineHeight * fontSize
+          : rawLineHeight
+        : Number.isFinite(fontSize)
+          ? fontSize * 1.72
+          : 22;
+    const nextScrollTop = sourceSelectionScrollTop({
+      source: plan.sourceRevision,
+      start: plan.start,
+      end: plan.end,
+      lineHeight: safeLineHeight,
+      viewportHeight: editor.clientHeight,
+      scrollHeight: editor.scrollHeight,
+    });
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    editor.scrollTo({ top: nextScrollTop, behavior: reducedMotion ? "auto" : "smooth" });
+    if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
+    const settleFrame = window.requestAnimationFrame(() => {
+      if (editor.selectionStart !== plan.start || editor.selectionEnd !== plan.end) {
+        editor.setSelectionRange(plan.start, plan.end, "forward");
+      }
+      if (Math.abs(editor.scrollTop - nextScrollTop) < 2) return;
+      editor.scrollTo({ top: nextScrollTop, behavior: "auto" });
+      if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
+    });
+    const releaseInspection = window.setTimeout(() => {
+      inspectSourceNavigationRef.current = false;
+    }, 0);
+    return () => {
+      window.cancelAnimationFrame(settleFrame);
+      window.clearTimeout(releaseInspection);
+      inspectSourceNavigationRef.current = false;
+    };
+  }, [sourceNavigationEpoch]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -2466,51 +2517,8 @@ export function RuneWorkbench() {
       setAgentError("");
     }
     previewSelectionNoticeRef.current = options.previewTarget ?? null;
-    const focusSelection = () => {
-      const editor = sourceEditorRef.current;
-      if (!editor) return;
-      inspectSourceNavigationRef.current = !plan.activateSelectionAgent;
-      editor.focus({ preventScroll: true });
-      editor.setSelectionRange(plan.start, plan.end, "forward");
-      const editorStyle = window.getComputedStyle(editor);
-      const rawLineHeight = Number.parseFloat(editorStyle.lineHeight);
-      const fontSize = Number.parseFloat(editorStyle.fontSize);
-      const safeLineHeight =
-        Number.isFinite(rawLineHeight) && rawLineHeight > 0
-          ? rawLineHeight < 5 && Number.isFinite(fontSize)
-            ? rawLineHeight * fontSize
-            : rawLineHeight
-          : Number.isFinite(fontSize)
-            ? fontSize * 1.72
-            : 22;
-      const nextScrollTop = sourceSelectionScrollTop({
-        source: plan.sourceRevision,
-        start: plan.start,
-        end: plan.end,
-        lineHeight: safeLineHeight,
-        viewportHeight: editor.clientHeight,
-        scrollHeight: editor.scrollHeight,
-      });
-      editor.scrollTo({
-        top: nextScrollTop,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      });
-      if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
-      window.requestAnimationFrame(() => {
-        if (Math.abs(editor.scrollTop - nextScrollTop) < 2) return;
-        editor.scrollTo({ top: nextScrollTop, behavior: "auto" });
-        if (gutterRef.current) gutterRef.current.scrollTop = nextScrollTop;
-      });
-      if (!plan.activateSelectionAgent) {
-        window.setTimeout(() => {
-          inspectSourceNavigationRef.current = false;
-        }, 0);
-      }
-    };
-    window.requestAnimationFrame(() => {
-      if (plan.changesArtifact || plan.revealsSource) window.requestAnimationFrame(focusSelection);
-      else focusSelection();
-    });
+    pendingSourceNavigationRef.current = plan;
+    setSourceNavigationEpoch((value) => value + 1);
   }
 
   function focusPreviewTarget(targetArtifact: WorkspaceArtifact, target: PreviewSourceTarget, viaLabel?: string) {
