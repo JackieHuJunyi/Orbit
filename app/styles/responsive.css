@@ -112,6 +112,15 @@
   .welcome-chrome { padding-inline: var(--rune-space-4); }
   .welcome-chrome-brand strong { display: none; }
   .welcome-page { padding: 20px 18px 28px; }
+  .model-profile-onramps,
+  .model-import-review,
+  .model-editor-grid { grid-template-columns: minmax(0, 1fr); }
+  .model-import-review > div,
+  .model-import-review > div:nth-child(odd) { grid-column: 1; border-inline-end: 0; }
+  .model-profile-card { grid-template-columns: 36px minmax(0, 1fr); }
+  .model-profile-card > .model-profile-actions,
+  .model-profile-card > em { grid-column: 2; justify-self: start; justify-content: flex-start; }
+  .model-profile-editor footer { flex-wrap: wrap; }
   .welcome-greeting-stage { width: 100%; height: 80px; overflow: hidden; }
   .welcome-intro-grid { gap: 10px; }
   .welcome-page > p { font-size: 15px; }

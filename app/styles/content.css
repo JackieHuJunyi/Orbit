@@ -515,6 +515,131 @@
   color: var(--ink);
   font-size: var(--rune-type-caption);
 }
+.model-profile-onramps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--rune-space-2); }
+.model-import-provider {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--rune-material-edge);
+  border-radius: 12px;
+  background: var(--rune-material-solid);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: var(--rune-type-caption);
+  font-weight: 700;
+}
+.model-import-provider:hover,
+.model-import-file-row label:hover,
+.model-import-file-row label:focus-within { border-color: rgba(var(--theme-rgb), .55); color: var(--theme-accent); }
+.model-import-provider svg,
+.model-import-file-row svg { width: 14px; height: 14px; }
+.model-profile-import {
+  display: grid;
+  gap: var(--rune-space-3);
+  padding: var(--rune-space-4);
+  border: 1px solid var(--rune-material-divider);
+  border-radius: var(--rune-radius-card);
+  background: var(--rune-material-raised);
+  box-shadow: inset 0 1px var(--rune-material-highlight);
+}
+.model-profile-import > header {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: var(--rune-space-3);
+}
+.model-profile-import > header > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-soft) 58%, var(--rune-material-solid));
+  color: var(--theme-accent);
+}
+.model-profile-import > header > span svg { width: 18px; height: 18px; }
+.model-profile-import > header > div { display: grid; min-width: 0; gap: 2px; }
+.model-profile-import > header small { color: var(--theme-accent); font-size: 10px; font-weight: 740; letter-spacing: .08em; text-transform: uppercase; }
+.model-profile-import > header strong { color: var(--ink); font-size: 15px; font-weight: 680; }
+.model-profile-import > header > button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.model-profile-import > header > button:hover { background: var(--rune-material-control); color: var(--ink); }
+.model-profile-import > header > button svg { width: 14px; height: 14px; }
+.model-profile-import > p { margin: 0; color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.5; text-wrap: pretty; }
+.model-import-paste { display: grid; gap: 6px; color: var(--muted); font-size: var(--rune-type-caption); font-weight: 650; }
+.model-import-paste textarea {
+  width: 100%;
+  min-height: 118px;
+  padding: 10px 11px;
+  resize: vertical;
+  border: 1px solid var(--rune-material-divider);
+  border-radius: var(--rune-radius-control);
+  outline: 0;
+  background: var(--rune-material-solid);
+  color: var(--ink);
+  font: 11px/1.55 var(--font-mono);
+}
+.model-import-paste textarea:focus { border-color: rgba(var(--theme-rgb), .62); box-shadow: 0 0 0 3px rgba(var(--theme-rgb), .1); }
+.model-import-file-row { display: flex; align-items: center; justify-content: space-between; gap: var(--rune-space-3); }
+.model-import-file-row label {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding-inline: 10px;
+  border: 1px solid var(--rune-material-divider);
+  border-radius: var(--rune-radius-small);
+  background: var(--rune-material-solid);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: var(--rune-type-caption);
+  font-weight: 660;
+}
+.model-import-file-row small { color: var(--subtle); font-size: 10px; }
+.model-import-review { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid var(--rune-material-divider); border-radius: var(--rune-radius-control); }
+.model-import-review > div { display: grid; min-width: 0; gap: 4px; padding: 10px 11px; border-bottom: 1px solid var(--rune-material-divider); }
+.model-import-review > div:nth-child(odd) { border-inline-end: 1px solid var(--rune-material-divider); }
+.model-import-review > div.wide { grid-column: 1 / -1; border-inline-end: 0; }
+.model-import-review dt { color: var(--subtle); font-size: 10px; font-weight: 720; letter-spacing: .05em; text-transform: uppercase; }
+.model-import-review dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--ink); font-size: var(--rune-type-caption); line-height: 1.4; }
+.model-import-review code { color: inherit; font: inherit; }
+.model-import-review .credential-detected { color: #267843; }
+.model-import-review .credential-missing { color: #996516; }
+.model-import-warning,
+.model-import-safety { display: flex; align-items: flex-start; gap: 7px; padding: 9px 10px; border-radius: var(--rune-radius-small); }
+.model-profile-import > .model-import-warning { background: color-mix(in srgb, #ff9500 9%, transparent); color: #805817; }
+.model-profile-import > .model-import-safety { background: color-mix(in srgb, var(--theme-soft) 42%, transparent); color: var(--muted); }
+.model-import-safety svg { width: 14px; min-width: 14px; height: 14px; margin-top: 1px; color: var(--theme-accent); }
+.model-profile-import > footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--rune-space-2); }
+.model-profile-import > footer button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-inline: var(--rune-space-3);
+  border: 1px solid var(--rune-material-divider);
+  border-radius: var(--rune-radius-small);
+  background: var(--rune-material-solid);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: var(--rune-type-caption);
+  font-weight: 680;
+}
+.model-profile-import > footer button:hover { border-color: var(--rune-material-edge); color: var(--ink); }
+.model-profile-import > footer button.primary { border-color: var(--rune-accent-surface); background: var(--rune-accent-surface); color: var(--rune-accent-foreground); }
+.model-profile-import > footer svg { width: 13px; height: 13px; }
 .model-failover-policy,
 .model-profile-editor {
   border-color: var(--rune-material-divider);
@@ -652,4 +777,7 @@ html[data-theme="space-black"] .data-grid td.preview-data-cell.active > .preview
 html[data-theme="space-black"] .model-profile-card .model-profile-health.healthy { color: #91d8a7; }
 html[data-theme="space-black"] .model-profile-card .model-profile-health.unhealthy,
 html[data-theme="space-black"] .model-profile-card em { color: #ff9b90; }
+html[data-theme="space-black"] .model-import-review .credential-detected { color: #91d8a7; }
+html[data-theme="space-black"] .model-import-review .credential-missing,
+html[data-theme="space-black"] .model-profile-import > .model-import-warning { color: #f2bd67; }
 html[data-theme="space-black"] .deck-slide-source-hit > span { background: var(--rune-material-strong); }

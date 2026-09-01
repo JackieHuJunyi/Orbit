@@ -95,6 +95,79 @@ test("loads model setup after the handwritten opening without restarting it", as
   await expect(page.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveCount(0);
 });
 
+test("reviews a CC Switch model import without navigating or persisting its credential", async ({ page }) => {
+  const profileWrites: string[] = [];
+  await page.route("**/api/model-profiles", async (route) => {
+    if (route.request().method() !== "GET") {
+      profileWrites.push(route.request().postData() ?? "");
+      await route.fulfill({ status: 500, contentType: "application/json", body: '{"error":"Unexpected write"}' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        vaultAvailable: true,
+        configured: false,
+        activeProfileId: null,
+        activeSource: null,
+        activeProfile: null,
+        profiles: [],
+        failoverEnabled: false,
+        deployment: {
+          configured: false,
+          provider: null,
+          model: null,
+          budget: null,
+          capabilities: null,
+          health: { status: "unknown", checkedAt: null, retryAt: null },
+        },
+      }),
+    });
+  });
+  await openWorkbench(page);
+  await page.getByRole("button", { name: "More tools" }).click();
+  await page.getByRole("menuitem", { name: /Model settings/u }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Choose how Rune uses a model" });
+  await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Import config", exact: true }).click();
+  await expect(dialog.locator(".model-status-card")).toBeHidden();
+  await expect(dialog.locator(".model-mode-options")).toBeHidden();
+
+  const credential = "secret-import-only-key";
+  const link = `ccswitch://v1/import?resource=provider&app=codex&name=Personal%20OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=${credential}&model=gpt-5.6`;
+  await dialog.getByRole("textbox", { name: "Paste config or CC Switch link" }).fill(link);
+  await dialog.getByRole("button", { name: "Review config", exact: true }).click();
+
+  await expect(dialog.getByText("Confirm imported configuration", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("CC Switch import link", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Detected; never shown in preview", { exact: true })).toBeVisible();
+  await expect(dialog.getByText(credential, { exact: true })).toHaveCount(0);
+  await expect.poll(() => dialog.locator(".welcome-page").evaluate((node) => node.scrollTop)).toBe(0);
+  await expect.poll(() => dialog.locator(".model-profile-manager").evaluate((node) => node.scrollTop)).toBe(0);
+  expect(
+    await dialog.locator(".model-profile-manager").evaluate((node) => node.scrollWidth - node.clientWidth),
+  ).toBe(0);
+  expect(page.url()).not.toContain("ccswitch");
+  expect(profileWrites).toEqual([]);
+
+  await dialog.getByRole("button", { name: "Use this configuration", exact: true }).click();
+  const editor = dialog.locator("form.model-profile-editor");
+  await expect(editor.getByRole("radio", { name: "OpenAI", exact: true })).toHaveAttribute("aria-checked", "true");
+  await expect(editor.getByRole("textbox", { name: "Default model ID" })).toHaveValue("gpt-5.6");
+  const keyInput = editor.getByRole("textbox", { name: /^API Key/u });
+  await expect(keyInput).toHaveAttribute("type", "password");
+  await expect(keyInput).toHaveValue(credential);
+  expect(profileWrites).toEqual([]);
+  expect(
+    await page.evaluate((secret) => Object.values(localStorage).some((value) => value.includes(secret)), credential),
+  ).toBe(false);
+
+  await editor.locator("footer").getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(keyInput).toHaveCount(0);
+});
+
 test("moves backward and forward through every onboarding step without losing the flow", async ({ page }) => {
   await page.goto("/");
 

@@ -98,6 +98,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "結果欄位和聚合行是否仍與當前版本一致"
   ],
   [
+    "配置没有包含可识别的供应商或有效模型",
+    "配置沒有包含可識別的供應商或有效模型"
+  ],
+  [
     "不会把失败请求自动转给另一家供应商",
     "不會把失敗請求自動轉給另一家供應商"
   ],
@@ -252,6 +256,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "图表和演示共享同一套可读源内容",
     "圖表和演示共享同一套可讀源內容"
+  ],
+  [
+    "导入内容只在当前页面内存中检查",
+    "匯入內容只在當前頁面記憶體中檢查"
   ],
   [
     "已按当前范围在本地编译这些结果",
@@ -526,6 +534,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "該恢復點已與當前源內容一致"
   ],
   [
+    "请先粘贴或选择一个模型配置",
+    "請先貼上或選擇一個模型配置"
+  ],
+  [
     "请选择最接近实际情况的一项",
     "請選擇最接近實際情況的一項"
   ],
@@ -572,6 +584,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "会在提交前验证完整工作流",
     "會在提交前驗證完整工作流"
+  ],
+  [
+    "使用配置后请在密码框填写",
+    "使用配置後請在密碼框填寫"
   ],
   [
     "供辅助技术使用的图片说明",
@@ -1022,6 +1038,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "說明受眾需要理解的問題"
   ],
   [
+    "请一次导入一个模型配置",
+    "請一次匯入一個模型配置"
+  ],
+  [
     "请选择汇报字段与交付物",
     "請選擇彙報欄位與交付物"
   ],
@@ -1044,6 +1064,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "部署环境必须设置独立的",
     "部署環境必須設定獨立的"
+  ],
+  [
+    "配置包含重复字段或多个",
+    "配置包含重複欄位或多個"
   ],
   [
     "面向管理层的报告与演示",
@@ -1224,6 +1248,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "无法记录这次交付结果",
     "無法記錄這次交付結果"
+  ],
+  [
+    "无法读取这个配置文件",
+    "無法讀取這個配置檔案"
   ],
   [
     "更新这条经营汇报任务",
@@ -1462,6 +1490,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "已取消試點證據匯出"
   ],
   [
+    "已忽略不支持的字段",
+    "已忽略不支援的欄位"
+  ],
+  [
     "已更新到规范源内容",
     "已更新到規範源內容"
   ],
@@ -1480,6 +1512,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "建议事务中的源内容",
     "建議事務中的源內容"
+  ],
+  [
+    "当前凭据库容量有限",
+    "當前憑據庫容量有限"
   ],
   [
     "或只含标量值的扁平",
@@ -1572,6 +1608,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "点击选择精确源内容",
     "點選選擇精確源內容"
+  ],
+  [
+    "的单供应商导入链接",
+    "的單供應商匯入連結"
   ],
   [
     "确认受众与演示重点",
@@ -1808,6 +1848,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "实时绑定保持固定",
     "即時繫結保持固定"
+  ],
+  [
+    "导入一个模型配置",
+    "匯入一個模型配置"
   ],
   [
     "导入一份真实文件",
@@ -2118,6 +2162,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "證據不會持久儲存"
   ],
   [
+    "请一次只保留一个",
+    "請一次只保留一個"
+  ],
+  [
     "请先检查以下设置",
     "請先檢查以下設定"
   ],
@@ -2214,6 +2262,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "之後可隨時更改"
   ],
   [
+    "也不会在你点击",
+    "也不會在你點選"
+  ],
+  [
     "仅使用本地模式",
     "僅使用本地模式"
   ],
@@ -2244,6 +2296,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "会先在本地读取",
     "會先在本地讀取"
+  ],
+  [
+    "会先检查并预览",
+    "會先檢查並預覽"
   ],
   [
     "但不会进入新的",
@@ -2666,6 +2722,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "版本與任務記錄"
   ],
   [
+    "的单供应商链接",
+    "的單供應商連結"
+  ],
+  [
     "确认前不会写入",
     "確認前不會寫入"
   ],
@@ -2810,6 +2870,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "不會寫入檔案"
   ],
   [
+    "不会直接保存",
+    "不會直接儲存"
+  ],
+  [
+    "不会访问远程",
+    "不會訪問遠端"
+  ],
+  [
     "不改变源文件",
     "不改變原始檔"
   ],
@@ -2910,6 +2978,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "內容塊源內容"
   ],
   [
+    "内嵌配置无效",
+    "內嵌配置無效"
+  ],
+  [
     "再交给你审核",
     "再交給你稽核"
   ],
@@ -2944,6 +3016,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "初始化文件夹",
     "初始化資料夾"
+  ],
+  [
+    "前写入凭据库",
+    "前寫入憑據庫"
   ],
   [
     "单页沙盒预览",
@@ -3096,6 +3172,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "待审核后填写",
     "待稽核後填寫"
+  ],
+  [
+    "必须是公开的",
+    "必須是公開的"
   ],
   [
     "恢复旧版本前",
@@ -3318,6 +3398,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "真實任務評估"
   ],
   [
+    "确认导入内容",
+    "確認匯入內容"
+  ],
+  [
     "视觉可交付性",
     "視覺可交付性"
   ],
@@ -3398,6 +3482,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "選擇完整規範"
   ],
   [
+    "配置文件过大",
+    "配置檔案過大"
+  ],
+  [
     "重新连接缺失",
     "重新連線缺失"
   ],
@@ -3414,6 +3502,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "項已確認成品"
   ],
   [
+    "预览中不显示",
+    "預覽中不顯示"
+  ],
+  [
     "预览最多显示",
     "預覽最多顯示"
   ],
@@ -3428,6 +3520,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "下载源文件",
     "下載原始檔"
+  ],
+  [
+    "不会从远程",
+    "不會從遠端"
   ],
   [
     "与清单部件",
@@ -3460,6 +3556,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "个源文件和",
     "個原始檔和"
+  ],
+  [
+    "为保护凭据",
+    "為保護憑據"
   ],
   [
     "事务关系图",
@@ -3910,6 +4010,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "使用者能理解"
   ],
   [
+    "的单个配置",
+    "的單個配置"
+  ],
+  [
     "的安全边界",
     "的安全邊界"
   ],
@@ -3936,6 +4040,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "移动或删除",
     "移動或刪除"
+  ],
+  [
+    "粘贴配置或",
+    "貼上配置或"
   ],
   [
     "绑定与验证",
@@ -3992,6 +4100,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "请选择受众",
     "請選擇受眾"
+  ],
+  [
+    "请选择小于",
+    "請選擇小於"
   ],
   [
     "请重新导入",
@@ -4076,6 +4188,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "下载匿名",
     "下載匿名"
+  ],
+  [
+    "不会写入",
+    "不會寫入"
   ],
   [
     "与字段名",
@@ -4402,6 +4518,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "匯入詳情"
   ],
   [
+    "导入配置",
+    "匯入配置"
+  ],
+  [
+    "导入链接",
+    "匯入連結"
+  ],
+  [
     "导出内容",
     "匯出內容"
   ],
@@ -4432,6 +4556,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "已从临时",
     "已從臨時"
+  ],
+  [
+    "已检测到",
+    "已檢測到"
   ],
   [
     "平均确认",
@@ -4574,6 +4702,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "檔案補丁"
   ],
   [
+    "文本文件",
+    "文本檔案"
+  ],
+  [
     "文档来源",
     "文件來源"
   ],
@@ -4696,6 +4828,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "来源身份",
     "來源身份"
+  ],
+  [
+    "检查配置",
+    "檢查配置"
   ],
   [
     "模型连接",
@@ -4846,6 +4982,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "範囲全體"
   ],
   [
+    "粘贴一个",
+    "貼上一個"
+  ],
+  [
     "系统推荐",
     "系統推薦"
   ],
@@ -4966,6 +5106,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "重新連線"
   ],
   [
+    "重新选择",
+    "重新選擇"
+  ],
+  [
     "需要处理",
     "需要處理"
   ],
@@ -5044,6 +5188,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "交付链",
     "交付鏈"
+  ],
+  [
+    "仅支持",
+    "僅支援"
   ],
   [
     "代码块",
@@ -5332,6 +5480,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "编辑器",
     "編輯器"
+  ],
+  [
+    "自定义",
+    "自定義"
   ],
   [
     "董事会",
@@ -5644,6 +5796,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "对比",
     "對比"
+  ],
+  [
+    "对象",
+    "物件"
   ],
   [
     "导入",
@@ -5964,6 +6120,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "裏付",
     "裡付"
+  ],
+  [
+    "複数",
+    "複數"
   ],
   [
     "要点",

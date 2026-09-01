@@ -61,6 +61,8 @@ export const INTERFACE_TRANSLATIONS = {
     "6. اطلب من Rune Agent اقتراح تغيير. راجع الفرق والتأثير قبل تطبيقه.",
   "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
     "لا يتغير المجلد المتصل؛ ولا يكتب Rune إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
+  "A custom endpoint must be a public HTTPS API base URL.":
+    "يجب أن تكون نقطة النهاية المخصصة عنوان URL أساسيًا لواجهة برمجة تطبيقات HTTPS العامة.",
   "A leadership report and slides focused on decisions": "تقرير وعرض للقيادة يركزان على القرارات",
   "A material error, omission, or rework still blocks delivery.": "لا يزال خطأ جوهري أو نقص أو عمل إضافي يمنع التسليم.",
   "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.":
@@ -172,6 +174,7 @@ export const INTERFACE_TRANSLATIONS = {
   Capabilities: "الإمكانات",
   "Capture a recoverable source version": "التقط نسخة مصدر قابلة للاسترداد",
   "Category field": "حقل الفئة",
+  "CC Switch import link": "رابط استيراد CC Switch",
   Change: "التغيّر",
   "Change comprehensibility": "وضوح التغييرات",
   "Change the accent to purple": "تغيير اللهجة إلى اللون الأرجواني",
@@ -202,10 +205,12 @@ export const INTERFACE_TRANSLATIONS = {
     "اختر معرّف Chart موجودًا، أو أنشئ ذلك Chart وتحقق منه أولًا.",
   "Choose an existing metric key or an explicit Query output field.":
     "اختر مفتاح مقياس موجودًا أو حقل إخراج صريحًا من Query.",
+  "Choose another": "اختر آخر",
   "Choose Chart accent color": "اختر لون التمييز Chart.",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "اختر CSV أو JSON أو XLSX أو ODS. يعرض Rune الاستيراد أولًا، ثم يرشدك عبر الحقول والمقاييس والمخططات والمخرجات.",
   "Choose how Rune uses a model": "اختر كيفية استخدام Rune للنموذج",
+  "Choose JSON / text file": "اختر JSON / ملف نصي",
   "Choose maximum visible Chart marks": "اختر أقصى Chart من العلامات المرئية",
   "Choose one exact scope value, or return to all Data rows.": "اختر قيمة نطاق مطابقة، أو عُد إلى كل صفوف البيانات.",
   "Choose one or more files — Rune reads them locally before review":
@@ -237,6 +242,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the selection into one sentence": "قم بتكثيف التحديد في جملة واحدة",
   "Condense the summary into three points": "لخص الملخص في ثلاث نقاط",
   Configure: "تكوين",
+  "Confirm imported configuration": "تأكيد التكوين المستورد",
   "Confirm outcome": "تأكيد النتيجة",
   "Confirm pull": "تأكيد السحب",
   "Confirm push": "تأكيد الدفع",
@@ -265,6 +271,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create reusable Chart only": "قم بإنشاء Chart القابل لإعادة الاستخدام فقط",
   "Create review": "إنشاء مراجعة",
   "Create source": "إنشاء مصدر",
+  Credential: "بيانات الاعتماد",
   Currency: "العملة",
   "Currency · USD": "العملة · الدولار الأمريكي",
   Current: "الحالي",
@@ -314,6 +321,7 @@ export const INTERFACE_TRANSLATIONS = {
   Description: "الوصف",
   "Detailed evaluation": "تقييم مفصل",
   "detected scan pages": "الصفحات الممسوحة المكتشفة",
+  "Detected; never shown in preview": "تم الكشف عنه؛ لم تظهر أبدًا في المعاينة",
   "Deterministic local compile · review before write": "تجميع محلي حتمي · مراجعة قبل الكتابة",
   "Deterministic local compiler": "مُصرّف محلي حتمي",
   "Deterministic local operating review prepared; nothing writes until review":
@@ -457,6 +465,7 @@ export const INTERFACE_TRANSLATIONS = {
     "راجعت نطاق التصدير وأفهم أن هذا ملف أدلة مرشحة وليس إثباتًا لملاءمة المنتج للسوق.",
   "Identify the most material change since last week and assign the next decision or owner.":
     "حدّد أهم تغيير منذ الأسبوع الماضي وعيّن القرار التالي أو المسؤول عنه.",
+  "Ignored unsupported fields": "تم تجاهل الحقول غير المدعومة",
   Image: "صورة",
   Import: "استيراد",
   "Import a document, review it, then choose audience, purpose, and length":
@@ -465,10 +474,14 @@ export const INTERFACE_TRANSLATIONS = {
     "قم باستيراد ملف حقيقي أو افتح نموذج مساحة العمل لإكمال بياناتك الأولى → التحليل → Chart → حلقة التقرير/المجموعة.",
   "Import and map review": "استيراد المراجعة وإعدادها",
   "Import and shape presentation": "استيراد العرض وإعداده",
+  "Import config": "استيراد التكوين",
+  "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
+    "تتم مراجعة محتوى الاستيراد فقط في ذاكرة هذه الصفحة. لا يتبع Rune أبدًا عناوين URL للتكوين عن بعد، أو يكتبها إلى localStorage، أو يخزن بيانات الاعتماد قبل اختيار حفظ وتمكين.",
   "Import data, then continue directly to mapping and output setup":
     "استورد البيانات، ثم انتقل مباشرة إلى ربط الحقول وإعداد المخرجات",
   "Import details": "تفاصيل الاستيراد",
   "Import held for review — workspace context changed": "تم تعليق الاستيراد للمراجعة — تم تغيير سياق مساحة العمل",
+  "Import one model profile": "استيراد ملف تعريف نموذج واحد",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "استيراد PDF، DOC، DOCX، Markdown، PPT، HTML، CSV، JSON، XLSX، أو ODS. يقوم Rune بمعاينة التحويل أولاً، ثم يرشدك عبر الحقول والمقاييس والمخططات والتسليمات.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -605,6 +618,8 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable value in this field": "لا توجد قيمة صالحة في هذا الحقل",
   "No workspace or device draft changes": "لا توجد تغييرات في مساحة العمل أو مسودة الجهاز",
   "Not checked yet": "لم يُفحص بعد",
+  "Not included; enter it in the password field after using this config":
+    "غير متضمن؛ أدخله في حقل كلمة المرور بعد استخدام هذا التكوين",
   "Not ready to deliver": "غير جاهز للتسليم",
   "Nothing applied — atomic persistence failed": "لم يتم تطبيق أي شيء، فشل الثبات الذري",
   "Nothing applied — selection boundary verification failed": "لم يتم تطبيق أي شيء — فشل التحقق من حدود التحديد",
@@ -689,6 +704,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Page language": "لغة الصفحة",
   pages: "صفحات",
   "Pages to recognize": "الصفحات المراد التعرّف عليها",
+  "Paste config or CC Switch link": "الصق رابط التكوين أو CC Switch",
+  "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
+    "الصق كائنًا واحدًا JSON، أو ccswitch://v1/import?resource=provider...",
+  "Paste or choose one model profile first.": "قم بلصق أو اختيار ملف تعريف نموذج واحد أولاً.",
   "Patch held for review — every changed file needs a safety checkpoint":
     "يتم الاحتفاظ بالتصحيح للمراجعة - كل ملف تم تغييره يحتاج إلى نقطة تفتيش أمان",
   "Patch held for review — workspace context changed": "تم تعليق التصحيح للمراجعة — تم تغيير سياق مساحة العمل",
@@ -820,6 +839,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "المراجعة قبل الكتابة",
   "Review canonical source": "مراجعة المصدر الأساسي",
   "Review checkpoint restore": "مراجعة استعادة نقطة الحفظ",
+  "Review config": "التكوين Review",
   "Review first, preserve the current workspace, then open the sample":
     "راجع أولاً، ثم احفظ مساحة العمل الحالية وافتح النموذج",
   "Review focus": "مراجعة التركيز",
@@ -846,6 +866,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune could not push that folder": "تعذر على Rune دفع هذا المجلد",
   "Rune could not read model status. You can continue in local mode.":
     "تعذر على Rune قراءة حالة النموذج. يمكنك الاستمرار في الوضع المحلي.",
+  "Rune could not read that configuration file.": "تعذر على Rune قراءة ملف التكوين هذا.",
   "Rune could not record this delivery outcome": "تعذّر على Rune تسجيل نتيجة التسليم",
   "Rune could not render this page preview.": "تعذّر على Rune عرض معاينة هذه الصفحة.",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
@@ -857,6 +878,7 @@ export const INTERFACE_TRANSLATIONS = {
     "وجد Rune صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "جمع Rune سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
+  "Rune JSON": "Rune JSON",
   "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
     "يحتفظ Rune بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
@@ -1007,6 +1029,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Temporary Workspace Agent context pins cleared": "تم مسح دبابيس السياق في مساحة العمل المؤقتة Agent.",
   Text: "نص",
   "That checkpoint already matches the current source": "نقطة التفتيش هذه تتطابق بالفعل مع المصدر الحالي",
+  "That file is too large. Choose one configuration smaller than 20 KB.":
+    "هذا الملف كبير جدًا. اختر تكوينًا واحدًا أصغر من 20 كيلو بايت.",
   "The adapter reported no semantic omissions.": "لم يُبلغ المحول عن أي إغفالات دلالية.",
   "The browser starts one local download only after your confirmation.":
     "يبدأ المتصفح تنزيلًا محليًا واحدًا فقط بعد التأكيد.",
@@ -1015,6 +1039,14 @@ export const INTERFACE_TRANSLATIONS = {
     "يقوم Chart JSON بتخزين معرف المصدر الدقيق وأسماء الحقول؛ يمكن إعادة استخدام التقارير والطوابق مع مخطط واحد ملزم.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "تصبح مساحة العمل المحلية الحالية كاملة إصدارًا قابلاً للاستعادة؛ ولا يغيّر فشل السحب أي مصدر.",
+  "The configuration does not identify a supported provider and valid model ID.":
+    "لا يحدد التكوين موفرًا معتمدًا ومعرف نموذج صالحًا.",
+  "The configuration is not valid JSON, or its embedded CC Switch config is invalid.":
+    "التكوين غير صالح JSON، أو أن تكوين CC Switch المضمن غير صالح.",
+  "The configuration repeats a field or contains multiple endpoints. Keep one endpoint.":
+    "يكرر التكوين حقلاً أو يحتوي على نقاط نهاية متعددة. احتفظ بنقطة نهاية واحدة.",
+  "The credential vault is bounded; import one model profile at a time.":
+    "قبو أوراق الاعتماد محدود؛ استيراد ملف تعريف نموذج واحد في كل مرة.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "تتبادل مساحتا العمل الحالية والسابقة موضعهما بأمان، لذلك تظل الاستعادة قابلة للتراجع.",
   "The current Chart JSON is invalid.": "Chart JSON الحالي غير صالح.",
@@ -1050,6 +1082,8 @@ export const INTERFACE_TRANSLATIONS = {
     "هذا المصدر لم يتغير؛ وتُعرض نتيجته المباشرة استنادًا إلى مساحة العمل المقترحة كاملة.",
   Title: "العنوان",
   To: "ل",
+  "To protect credentials, Rune does not import from remote config URLs.":
+    "لحماية بيانات الاعتماد، لا يتم استيراد Rune من عناوين URL للتكوين عن بعد.",
   tokens: "رمزاً",
   Top: "الأعلى",
   "Transaction map": "خريطة المعاملات",
@@ -1082,6 +1116,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Use local mode only": "استخدم الوضع المحلي فقط",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "استخدم CSV مستطيلاً بعناوين، أو JSON مسطحًا يحتوي قيمًا قياسية.",
+  "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
+    "استخدم Rune JSON أو رابط استيراد موفر واحد لـ CC Switch. يقوم Rune بمراجعته أولاً ولا يحفظه على الفور.",
+  "Use Rune JSON or one ccswitch://v1/import provider link.":
+    "استخدم Rune JSON أو رابط موفر ccswitch://v1/import واحد.",
+  "Use this configuration": "استخدم هذا التكوين",
   Valid: "صالح",
   Validated: "تم التحقق من صحتها",
   "Value field": "حقل القيمة",

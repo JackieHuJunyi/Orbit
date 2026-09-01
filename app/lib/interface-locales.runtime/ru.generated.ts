@@ -61,6 +61,8 @@ export const INTERFACE_TRANSLATIONS = {
     "6. Попросите Rune Agent предложить изменение. Прежде чем применять его, просмотрите разницу и влияние.",
   "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
     "Подключённая папка не изменяется; Rune запишет в неё данные только после явного действия «Записать файлы рабочей области».",
+  "A custom endpoint must be a public HTTPS API base URL.":
+    "Пользовательская конечная точка должна быть общедоступным базовым URL-адресом HTTPS API.",
   "A leadership report and slides focused on decisions": "Отчёт и презентация для руководства с акцентом на решениях",
   "A material error, omission, or rework still blocks delivery.":
     "Существенная ошибка, пропуск или необходимость переработки всё ещё мешают передаче результата.",
@@ -176,6 +178,7 @@ export const INTERFACE_TRANSLATIONS = {
   Capabilities: "Возможности",
   "Capture a recoverable source version": "Захват восстанавливаемой исходной версии",
   "Category field": "Поле категории",
+  "CC Switch import link": "Ссылка для импорта CC Switch",
   Change: "Изменение",
   "Change comprehensibility": "Понятность изменений",
   "Change the accent to purple": "Смените акцент на фиолетовый",
@@ -206,10 +209,12 @@ export const INTERFACE_TRANSLATIONS = {
     "Выберите идентификатор существующего Chart либо сначала создайте и проверьте этот Chart.",
   "Choose an existing metric key or an explicit Query output field.":
     "Выберите существующий ключ метрики или явно заданное выходное поле Query.",
+  "Choose another": "Выбрать другой",
   "Choose Chart accent color": "Выберите Chart акцентный цвет.",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "Выберите CSV, JSON, XLSX или ODS. Rune сначала покажет результат импорта, а затем проведёт по полям, показателям, диаграммам и результатам.",
   "Choose how Rune uses a model": "Выберите, как Rune использует модель.",
+  "Choose JSON / text file": "Выберите JSON / текстовый файл.",
   "Choose maximum visible Chart marks": "Выберите максимально видимые отметки Chart.",
   "Choose one exact scope value, or return to all Data rows.":
     "Выберите точное значение области или вернитесь ко всем строкам данных.",
@@ -242,6 +247,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the selection into one sentence": "Сократите выделенное в одно предложение",
   "Condense the summary into three points": "Сократите резюме до трех пунктов",
   Configure: "Настроить",
+  "Confirm imported configuration": "Подтвердить импортированную конфигурацию",
   "Confirm outcome": "Подтвердить результат",
   "Confirm pull": "Подтвердить загрузку",
   "Confirm push": "Подтвердить запись",
@@ -271,6 +277,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create reusable Chart only": "Создавайте только многоразовые Chart",
   "Create review": "Создать отзыв",
   "Create source": "Создать источник",
+  Credential: "Полномочия",
   Currency: "Валюта",
   "Currency · USD": "Валюта · доллары США",
   Current: "Текущий",
@@ -320,6 +327,7 @@ export const INTERFACE_TRANSLATIONS = {
   Description: "Описание",
   "Detailed evaluation": "Подробная оценка",
   "detected scan pages": "обнаружены сканированные страницы",
+  "Detected; never shown in preview": "Обнаружено; никогда не отображается в предварительном просмотре",
   "Deterministic local compile · review before write": "Детерминированная локальная сборка · проверка до записи",
   "Deterministic local compiler": "Детерминированный локальный компилятор",
   "Deterministic local operating review prepared; nothing writes until review":
@@ -467,6 +475,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Я проверил состав экспорта и понимаю, что это файл с предварительными доказательствами, а не подтверждение PMF.",
   "Identify the most material change since last week and assign the next decision or owner.":
     "Определите самое значимое изменение с прошлой недели и назначьте следующее решение или ответственного.",
+  "Ignored unsupported fields": "Игнорируются неподдерживаемые поля",
   Image: "Изображение",
   Import: "Импорт",
   "Import a document, review it, then choose audience, purpose, and length":
@@ -475,11 +484,15 @@ export const INTERFACE_TRANSLATIONS = {
     "Импортируйте реальный файл или откройте образец рабочей области, чтобы завершить первый цикл данных → анализ → Chart → отчет / колода.",
   "Import and map review": "Импортировать и настроить отчёт",
   "Import and shape presentation": "Импортировать и подготовить презентацию",
+  "Import config": "Импортировать конфигурацию",
+  "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
+    'Импортируемый контент просматривается только в памяти этой страницы. Rune никогда не следует URL-адресам удаленной конфигурации, не записывает их в localStorage и не сохраняет учетные данные до того, как вы выберите "Сохранить и включить".',
   "Import data, then continue directly to mapping and output setup":
     "Импортируйте данные и сразу переходите к сопоставлению полей и настройке результатов",
   "Import details": "Подробности импорта",
   "Import held for review — workspace context changed":
     "Импорт задержан на проверку — контекст рабочей области изменен.",
+  "Import one model profile": "Импортировать один профиль модели",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "Импортировать PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX или ODS. Rune сначала просматривает конверсию, а затем проведет вас по полям, показателям, диаграммам и результатам.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -618,6 +631,8 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable value in this field": "В этом поле нет подходящих значений",
   "No workspace or device draft changes": "Никаких изменений в рабочей области или устройстве.",
   "Not checked yet": "Ещё не проверено",
+  "Not included; enter it in the password field after using this config":
+    "Не включено; введите его в поле пароля после использования этой конфигурации",
   "Not ready to deliver": "Пока не готово",
   "Nothing applied — atomic persistence failed": "Ничего не применялось — атомарное сохранение не удалось",
   "Nothing applied — selection boundary verification failed":
@@ -706,6 +721,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Page language": "Язык страницы",
   pages: "страниц",
   "Pages to recognize": "Страницы для распознавания",
+  "Paste config or CC Switch link": "Вставьте ссылку на конфигурацию или CC Switch.",
+  "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
+    "Вставьте один объект JSON или ccswitch://v1/import?resource=provider…",
+  "Paste or choose one model profile first.": "Сначала вставьте или выберите один профиль модели.",
   "Patch held for review — every changed file needs a safety checkpoint":
     "Исправление отправлено на проверку — каждый измененный файл требует проверки безопасности.",
   "Patch held for review — workspace context changed":
@@ -839,6 +858,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "Обзор, прежде чем писать",
   "Review canonical source": "Проверить канонический исходник",
   "Review checkpoint restore": "Проверить восстановление контрольной точки",
+  "Review config": "Конфигурация Review",
   "Review first, preserve the current workspace, then open the sample":
     "Сначала проверить, сохранить текущую область, затем открыть пример",
   "Review focus": "Фокус обзора",
@@ -866,6 +886,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune could not push that folder": "Rune не удалось отправить эту папку.",
   "Rune could not read model status. You can continue in local mode.":
     "Rune не удалось прочитать статус модели. Вы можете продолжить в локальном режиме.",
+  "Rune could not read that configuration file.": "Rune не удалось прочитать этот файл конфигурации.",
   "Rune could not record this delivery outcome": "Rune не удалось сохранить итог передачи",
   "Rune could not render this page preview.": "Rune не удалось отобразить предпросмотр этой страницы.",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
@@ -877,6 +898,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune обнаружил страницы без выделяемого текста. Подтвердите страницы и язык; изображения будут прочитаны только после открытия предпросмотра или запуска распознавания.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune собрал записи задач с этого устройства в анонимный JSON. Он может использоваться для сводного анализа реального пилота, но никогда не загружается и не заявляет о подтверждении соответствия продукта рынку.",
+  "Rune JSON": "Rune JSON",
   "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
     "Rune сохраняет текущую версию как восстанавливаемую страховочную точку и повторно проверяет всю рабочую область и влияние на локальное выполнение.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
@@ -1030,6 +1052,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Temporary Workspace Agent context pins cleared": "Контекстные метки временной рабочей области Agent удалены.",
   Text: "Текст",
   "That checkpoint already matches the current source": "Эта контрольная точка уже соответствует текущему источнику",
+  "That file is too large. Choose one configuration smaller than 20 KB.":
+    "Этот файл слишком велик. Выберите одну конфигурацию размером менее 20 КБ.",
   "The adapter reported no semantic omissions.": "Адаптер не сообщил об отсутствии семантических упущений.",
   "The browser starts one local download only after your confirmation.":
     "Браузер начнет одну локальную загрузку только после вашего подтверждения.",
@@ -1038,6 +1062,14 @@ export const INTERFACE_TRANSLATIONS = {
     "Chart JSON хранит точный идентификатор источника и имена полей; отчеты и колоды могут повторно использовать его с одной привязкой к диаграмме.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "Вся текущая локальная рабочая область становится восстанавливаемой версией; неудачная загрузка не изменяет исходники.",
+  "The configuration does not identify a supported provider and valid model ID.":
+    "В конфигурации не указан поддерживаемый поставщик и действительный идентификатор модели.",
+  "The configuration is not valid JSON, or its embedded CC Switch config is invalid.":
+    "Конфигурация JSON недействительна, или встроенная конфигурация CC Switch недействительна.",
+  "The configuration repeats a field or contains multiple endpoints. Keep one endpoint.":
+    "Конфигурация повторяет поле или содержит несколько конечных точек. Сохраняйте одну конечную точку.",
+  "The credential vault is bounded; import one model profile at a time.":
+    "Хранилище учетных данных ограничено; импортируйте по одному профилю модели за раз.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Текущая и предыдущая рабочие области безопасно меняются местами, поэтому восстановление можно отменить.",
   "The current Chart JSON is invalid.": "Текущий Chart JSON недействителен.",
@@ -1077,6 +1109,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Этот исходник не изменён; его живой результат построен на основе всего предлагаемого рабочего пространства.",
   Title: "Название",
   To: "Чтобы",
+  "To protect credentials, Rune does not import from remote config URLs.":
+    "Чтобы защитить учетные данные, Rune не импортирует данные из URL-адресов удаленной конфигурации.",
   tokens: "токенов",
   Top: "Сверху",
   "Transaction map": "Карта транзакций",
@@ -1109,6 +1143,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Use local mode only": "Используйте только локальный режим",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "Используйте прямоугольный CSV с заголовками или плоский JSON со скалярными значениями.",
+  "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
+    "Используйте Rune JSON или ссылку для импорта одного поставщика CC Switch. Rune сначала просматривает его и никогда не сохраняет сразу.",
+  "Use Rune JSON or one ccswitch://v1/import provider link.":
+    "Используйте Rune JSON или одну ссылку ccswitch://v1/import поставщика.",
+  "Use this configuration": "Используйте эту конфигурацию",
   Valid: "Действителен",
   Validated: "проверено",
   "Value field": "Поле значения",

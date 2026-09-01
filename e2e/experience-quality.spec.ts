@@ -83,6 +83,23 @@ test("Space Black preserves readable text and distinct workspace surface levels"
   });
   expect(contrastRatio(cssRgb(dataText.color), cssRgb(dataText.background))).toBeGreaterThanOrEqual(7);
   expect(dataText.fontSize).toBeGreaterThanOrEqual(11);
+
+  await page.getByRole("button", { name: "More tools" }).click();
+  await page.getByRole("menuitem", { name: /Model settings/u }).click();
+  const modelStatus = await page.locator(".model-status-card").evaluate((element) => {
+    const card = getComputedStyle(element);
+    const heading = getComputedStyle(element.querySelector("strong")!);
+    const detail = getComputedStyle(element.querySelector("small")!);
+    return {
+      background: card.backgroundColor,
+      heading: heading.color,
+      detail: detail.color,
+      detailSize: Number.parseFloat(detail.fontSize),
+    };
+  });
+  expect(contrastRatio(cssRgb(modelStatus.heading), cssRgb(modelStatus.background))).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(cssRgb(modelStatus.detail), cssRgb(modelStatus.background))).toBeGreaterThanOrEqual(4.5);
+  expect(modelStatus.detailSize).toBeGreaterThanOrEqual(11);
 });
 
 test("compact Preview selection opens and centers its exact Source range", async ({ page }) => {

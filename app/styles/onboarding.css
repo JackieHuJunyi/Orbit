@@ -420,6 +420,13 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .welcome-welcome > .welcome-primary { margin-top: 0; }
 .welcome-icon-disc { width: 72px; height: 72px; flex: 0 0 auto; border-radius: var(--rune-radius-card); }
 .model-setup-panel { width: min(var(--rune-frame-width), 860px); gap: var(--rune-space-3); margin-block: var(--rune-space-6) var(--rune-space-5); }
+.model-status-card strong,
+.model-mode-options strong { font-size: var(--rune-type-ui); }
+.model-status-card small,
+.model-mode-options small,
+.model-status-card > button { font-size: var(--rune-type-caption); }
+.model-setup-panel:has(.model-profile-import, .model-profile-editor) > .model-status-card,
+.model-setup-panel:has(.model-profile-import, .model-profile-editor) > .model-mode-options { display: none; }
 .model-profile-manager.compact { max-height: min(300px, 34dvh); }
 .model-profile-manager.compact .model-profile-card p,
 .model-profile-manager.compact .model-profile-health { display: none; }
@@ -675,6 +682,37 @@ html[data-theme="space-black"] .welcome-window {
   box-shadow: var(--rune-shadow-window);
 }
 html[data-theme="space-black"] .welcome-chrome { border-bottom-color: var(--rune-material-divider); background: rgba(16, 20, 24, .82); }
+html[data-theme="space-black"] .welcome-icon-disc {
+  border-color: var(--rune-material-edge);
+  background: var(--rune-material-raised);
+  box-shadow: var(--rune-shadow-raised);
+}
+html[data-theme="space-black"] .model-status-card {
+  border-color: var(--rune-material-divider);
+  background: var(--rune-material-raised);
+  box-shadow: inset 0 1px var(--rune-material-highlight);
+}
+html[data-theme="space-black"] .model-status-card.connected {
+  border-color: rgba(145, 216, 167, .34);
+  background: color-mix(in srgb, #183b28 58%, var(--rune-material-raised));
+}
+html[data-theme="space-black"] .model-status-card > span {
+  background: var(--rune-material-control);
+  color: var(--muted);
+}
+html[data-theme="space-black"] .model-status-card.connected > span {
+  background: #28744b;
+  color: #fff;
+}
+html[data-theme="space-black"] .model-status-card > button {
+  border-color: var(--rune-material-divider);
+  background: var(--rune-material-solid);
+  color: var(--ink);
+}
+html[data-theme="space-black"] .model-status-card > button:hover {
+  border-color: var(--rune-material-edge);
+  background: var(--rune-material-control);
+}
 html[data-theme="space-black"] .welcome-language-card,
 html[data-theme="space-black"] .language-options,
 html[data-theme="space-black"] .language-options button,

@@ -62,6 +62,8 @@ export const INTERFACE_TRANSLATIONS = {
     "6. Demandez à Rune Agent de proposer un changement. Examinez la différence et l’impact avant de l’appliquer.",
   "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
     "Un dossier connecté reste inchangé ; Rune n’y écrit qu’après l’action explicite « Écrire les fichiers de l’espace de travail ».",
+  "A custom endpoint must be a public HTTPS API base URL.":
+    "Un point de terminaison personnalisé doit être une URL de base d'API HTTPS publique.",
   "A leadership report and slides focused on decisions":
     "Un rapport et une présentation pour la direction, axés sur les décisions",
   "A material error, omission, or rework still blocks delivery.":
@@ -178,6 +180,7 @@ export const INTERFACE_TRANSLATIONS = {
   Capabilities: "Capacités",
   "Capture a recoverable source version": "Capturer une version source récupérable",
   "Category field": "Champ Catégorie",
+  "CC Switch import link": "Lien d'importation de CC Switch",
   Change: "Variation",
   "Change comprehensibility": "Compréhension des modifications",
   "Change the accent to purple": "Changez l'accent en violet",
@@ -208,10 +211,12 @@ export const INTERFACE_TRANSLATIONS = {
     "Choisissez l’identifiant d’un Chart existant, ou créez et validez d’abord ce Chart.",
   "Choose an existing metric key or an explicit Query output field.":
     "Choisissez une clé de métrique existante ou un champ de sortie Query explicite.",
+  "Choose another": "Choisissez-en un autre",
   "Choose Chart accent color": "Choisissez Chart couleur d'accentuation",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "Choisissez CSV, JSON, XLSX ou ODS. Rune affiche d’abord l’import, puis vous guide à travers les champs, les mesures, les graphiques et les livrables.",
   "Choose how Rune uses a model": "Choisissez comment Rune utilise un modèle",
+  "Choose JSON / text file": "Choisissez JSON/fichier texte",
   "Choose maximum visible Chart marks": "Choisissez le nombre maximum de Chart marques visibles.",
   "Choose one exact scope value, or return to all Data rows.":
     "Choisissez une valeur exacte pour le périmètre, ou revenez à toutes les lignes de données.",
@@ -245,6 +250,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the selection into one sentence": "Condenser la sélection en une phrase",
   "Condense the summary into three points": "Condenser le résumé en trois points",
   Configure: "Configurer",
+  "Confirm imported configuration": "Confirmer la configuration importée",
   "Confirm outcome": "Confirmer le résultat",
   "Confirm pull": "Confirmer la récupération",
   "Confirm push": "Confirmer l’envoi",
@@ -274,6 +280,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create reusable Chart only": "Créez uniquement des Chart réutilisables",
   "Create review": "Créer un avis",
   "Create source": "Créer une source",
+  Credential: "Informations d'identification",
   Currency: "Devise",
   "Currency · USD": "Devise · USD",
   Current: "Actuel",
@@ -323,6 +330,7 @@ export const INTERFACE_TRANSLATIONS = {
   Description: "Descriptif",
   "Detailed evaluation": "Évaluation détaillée",
   "detected scan pages": "pages numérisées détectées",
+  "Detected; never shown in preview": "Détecté ; jamais montré en avant-première",
   "Deterministic local compile · review before write": "Compilation locale déterministe · vérification avant écriture",
   "Deterministic local compiler": "Compilateur local déterministe",
   "Deterministic local operating review prepared; nothing writes until review":
@@ -473,6 +481,7 @@ export const INTERFACE_TRANSLATIONS = {
     "J’ai vérifié le périmètre de l’export et je comprends qu’il s’agit d’un fichier de preuves candidates, et non d’une preuve de PMF.",
   "Identify the most material change since last week and assign the next decision or owner.":
     "Identifiez le changement le plus important depuis la semaine dernière et attribuez la prochaine décision ou le prochain responsable.",
+  "Ignored unsupported fields": "Champs non pris en charge ignorés",
   Image: "Images",
   Import: "Importer",
   "Import a document, review it, then choose audience, purpose, and length":
@@ -481,11 +490,15 @@ export const INTERFACE_TRANSLATIONS = {
     "Importez un fichier réel ou ouvrez l'exemple d'espace de travail pour terminer votre première boucle Données → analyse → Chart → rapport/deck.",
   "Import and map review": "Importer et configurer la revue",
   "Import and shape presentation": "Importer et préparer la présentation",
+  "Import config": "Importer la configuration",
+  "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
+    "Le contenu importé est examiné uniquement dans la mémoire de cette page. Rune ne suit jamais les URL de configuration distante, ne les écrit jamais dans localStorage ou ne stocke jamais d'informations d'identification avant de choisir Enregistrer et activer.",
   "Import data, then continue directly to mapping and output setup":
     "Importez les données, puis passez directement à l’association des champs et à la configuration des livrables",
   "Import details": "Détails de l'importation",
   "Import held for review — workspace context changed":
     "Importation en attente de révision : le contexte de l'espace de travail a été modifié",
+  "Import one model profile": "Importer un profil de modèle",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "Importez PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX ou ODS. Rune prévisualise d'abord la conversion, puis vous guide à travers les champs, les mesures, les graphiques et les livrables.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -626,6 +639,8 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable value in this field": "Aucune valeur utilisable dans ce champ",
   "No workspace or device draft changes": "Aucune modification de brouillon d’espace de travail ou d’appareil",
   "Not checked yet": "Pas encore vérifié",
+  "Not included; enter it in the password field after using this config":
+    "Non inclus ; entrez-le dans le champ du mot de passe après avoir utilisé cette configuration",
   "Not ready to deliver": "Pas prêt à livrer",
   "Nothing applied — atomic persistence failed": "Rien ne s'applique - la persistance atomique a échoué",
   "Nothing applied — selection boundary verification failed":
@@ -714,6 +729,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Page language": "Langue de la page",
   pages: "pages",
   "Pages to recognize": "Pages à reconnaître",
+  "Paste config or CC Switch link": "Coller la configuration ou le lien CC Switch",
+  "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
+    "Collez un objet JSON, ou ccswitch://v1/import?resource=provider…",
+  "Paste or choose one model profile first.": "Collez ou choisissez d'abord un profil de modèle.",
   "Patch held for review — every changed file needs a safety checkpoint":
     "Patch conservé pour examen : chaque fichier modifié nécessite un point de contrôle de sécurité.",
   "Patch held for review — workspace context changed":
@@ -848,6 +867,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "Réviser avant d'écrire",
   "Review canonical source": "Vérifier la source canonique",
   "Review checkpoint restore": "Vérifier la restauration d’un point de contrôle",
+  "Review config": "Review configuration",
   "Review first, preserve the current workspace, then open the sample":
     "Vérifier d’abord, conserver l’espace actuel, puis ouvrir l’exemple",
   "Review focus": "Objectif de l'examen",
@@ -875,6 +895,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune could not push that folder": "Rune n'a pas pu transférer ce dossier",
   "Rune could not read model status. You can continue in local mode.":
     "Rune n'a pas pu lire l'état du modèle. Vous pouvez continuer en mode local.",
+  "Rune could not read that configuration file.": "Rune n'a pas pu lire ce fichier de configuration.",
   "Rune could not record this delivery outcome": "Rune n’a pas pu enregistrer ce résultat de livraison",
   "Rune could not render this page preview.": "Rune n’a pas pu afficher l’aperçu de cette page.",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
@@ -886,6 +907,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune a trouvé des pages sans texte sélectionnable. Confirmez les pages et la langue ; les images ne seront lues qu’après ouverture d’un aperçu ou lancement de la reconnaissance.",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune a compilé les enregistrements de tâches de cet appareil dans un JSON anonyme. Il peut servir à agréger un pilote réel, mais n’est jamais téléversé et ne prétend pas valider l’adéquation produit-marché.",
+  "Rune JSON": "Rune JSON",
   "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
     "Rune conserve la version actuelle comme point de sécurité récupérable, puis revérifie tout l’espace de travail et l’impact de l’exécution locale.",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
@@ -1040,6 +1062,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Espace de travail temporaire Agent épingles contextuelles effacées",
   Text: "Texte",
   "That checkpoint already matches the current source": "Ce point de contrôle correspond déjà à la source actuelle",
+  "That file is too large. Choose one configuration smaller than 20 KB.":
+    "Ce fichier est trop volumineux. Choisissez une configuration inférieure à 20 Ko.",
   "The adapter reported no semantic omissions.": "L'adaptateur n'a signalé aucune omission sémantique.",
   "The browser starts one local download only after your confirmation.":
     "Le navigateur démarre un téléchargement local uniquement après votre confirmation.",
@@ -1048,6 +1072,14 @@ export const INTERFACE_TRANSLATIONS = {
     "Le Chart JSON stocke l'identifiant source exact et les noms de champs ; les rapports et les présentations peuvent le réutiliser avec une seule liaison de graphique.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "L’espace de travail local complet devient une version récupérable ; un échec de récupération ne modifie aucune source.",
+  "The configuration does not identify a supported provider and valid model ID.":
+    "La configuration n'identifie pas de fournisseur pris en charge ni d'ID de modèle valide.",
+  "The configuration is not valid JSON, or its embedded CC Switch config is invalid.":
+    "La configuration n'est pas valide JSON, ou sa configuration de commutateur CC intégrée n'est pas valide.",
+  "The configuration repeats a field or contains multiple endpoints. Keep one endpoint.":
+    "La configuration répète un champ ou contient plusieurs points de terminaison. Conservez un point de terminaison.",
+  "The credential vault is bounded; import one model profile at a time.":
+    "Le coffre-fort des informations d'identification est délimité ; importer un profil de modèle à la fois.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Les espaces de travail actuel et précédent sont échangés en toute sécurité ; cette restauration reste donc réversible.",
   "The current Chart JSON is invalid.": "Le Chart JSON actuel n'est pas valide.",
@@ -1090,6 +1122,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Cette source est inchangée ; son résultat en direct est rendu à partir de l’espace de travail proposé complet.",
   Title: "Titre",
   To: "À",
+  "To protect credentials, Rune does not import from remote config URLs.":
+    "Pour protéger les informations d'identification, Rune n'importe pas à partir des URL de configuration distantes.",
   tokens: "jetons",
   Top: "Haut",
   "Transaction map": "Carte des transactions",
@@ -1122,6 +1156,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Use local mode only": "Utiliser uniquement le mode local",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "Utilisez un CSV rectangulaire avec en-têtes, ou un JSON plat contenant des valeurs scalaires.",
+  "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
+    "Utilisez Rune JSON ou un lien d'importation à fournisseur unique CC Switch. Rune l'examine en premier et ne l'enregistre jamais immédiatement.",
+  "Use Rune JSON or one ccswitch://v1/import provider link.":
+    "Utilisez Rune JSON ou un lien de fournisseur ccswitch://v1/import.",
+  "Use this configuration": "Utiliser cette configuration",
   Valid: "Valide",
   Validated: "Validé",
   "Value field": "Champ de valeur",

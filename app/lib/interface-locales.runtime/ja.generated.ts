@@ -61,6 +61,8 @@ export const INTERFACE_TRANSLATIONS = {
     "6. Rune Agent に変更を提案するよう依頼します。適用する前に、差分と影響を確認してください。",
   "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
     "接続済みフォルダは変更されません。明示的に「ワークスペースのファイルを書き込む」を選んだ場合だけ Rune が書き込みます。",
+  "A custom endpoint must be a public HTTPS API base URL.":
+    "カスタム エンドポイントは、パブリック HTTPS API ベース URL である必要があります。",
   "A leadership report and slides focused on decisions": "意思決定に焦点を当てた経営層向けレポートとスライド",
   "A material error, omission, or rework still blocks delivery.":
     "重大な誤り、欠落、または手戻りがあり、まだ納品できません。",
@@ -175,6 +177,7 @@ export const INTERFACE_TRANSLATIONS = {
   Capabilities: "機能",
   "Capture a recoverable source version": "回復可能なソース バージョンをキャプチャする",
   "Category field": "カテゴリフィールド",
+  "CC Switch import link": "CC スイッチのインポート リンク",
   Change: "変化",
   "Change comprehensibility": "変更の分かりやすさ",
   "Change the accent to purple": "アクセントを紫に変更",
@@ -205,10 +208,12 @@ export const INTERFACE_TRANSLATIONS = {
     "既存の Chart ID を選ぶか、先にその Chart を作成して検証してください。",
   "Choose an existing metric key or an explicit Query output field.":
     "既存の指標キー、または明示的な Query 出力フィールドを選択してください。",
+  "Choose another": "別のものを選択してください",
   "Choose Chart accent color": "Chart のアクセントカラーを選択してください",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "CSV、JSON、XLSX、ODS を選択してください。Rune はまずインポート内容を表示し、その後フィールド、指標、グラフ、成果物の設定へ案内します。",
   "Choose how Rune uses a model": "Rune がモデルを使用する方法を選択してください",
+  "Choose JSON / text file": "JSON / テキスト ファイルを選択してください",
   "Choose maximum visible Chart marks": "表示可能な最大の Chart マークを選択してください",
   "Choose one exact scope value, or return to all Data rows.":
     "完全一致する範囲値を選ぶか、すべてのデータ行に戻してください。",
@@ -241,6 +246,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Condense the selection into one sentence": "選択内容を 1 つの文に要約する",
   "Condense the summary into three points": "要約を3つのポイントにまとめます",
   Configure: "設定する",
+  "Confirm imported configuration": "インポートされた構成を確認する",
   "Confirm outcome": "結果を確定",
   "Confirm pull": "取り込みを確定",
   "Confirm push": "書き出しを確定",
@@ -269,6 +275,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create reusable Chart only": "再利用可能な Chart のみを作成します",
   "Create review": "レビューの作成",
   "Create source": "ソースの作成",
+  Credential: "資格情報",
   Currency: "通貨",
   "Currency · USD": "通貨・米ドル",
   Current: "現在",
@@ -318,6 +325,7 @@ export const INTERFACE_TRANSLATIONS = {
   Description: "説明",
   "Detailed evaluation": "詳細評価",
   "detected scan pages": "検出したスキャンページ",
+  "Detected; never shown in preview": "検出されました。プレビューには表示されません",
   "Deterministic local compile · review before write": "決定的なローカルコンパイル · 書き込み前に確認",
   "Deterministic local compiler": "決定的なローカルコンパイラ",
   "Deterministic local operating review prepared; nothing writes until review":
@@ -466,6 +474,7 @@ export const INTERFACE_TRANSLATIONS = {
     "エクスポート範囲を確認し、これは候補証拠ファイルであって PMF の証明ではないことを理解しました。",
   "Identify the most material change since last week and assign the next decision or owner.":
     "先週からの最も重要な変化を特定し、次の意思決定または担当者を明確にします。",
+  "Ignored unsupported fields": "サポートされていないフィールドは無視されます",
   Image: "画像",
   Import: "インポート",
   "Import a document, review it, then choose audience, purpose, and length":
@@ -474,11 +483,15 @@ export const INTERFACE_TRANSLATIONS = {
     "実際のファイルをインポートするか、サンプル ワークスペースを開いて、最初のデータ → 分析 → Chart → レポート / デック ループを完了します。",
   "Import and map review": "インポートしてレビューを設定",
   "Import and shape presentation": "インポートしてプレゼンを構成",
+  "Import config": "構成をインポートする",
+  "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
+    "インポートされたコンテンツは、このページのメモリ内でのみレビューされます。 Rune は、リモート構成 URL をたどったり、localStorage に書き込んだり、[保存して有効にする] を選択する前に認証情報を保存したりすることはありません。",
   "Import data, then continue directly to mapping and output setup":
     "データをインポートし、そのままフィールドの対応付けと成果物の設定に進みます",
   "Import details": "インポートの詳細",
   "Import held for review — workspace context changed":
     "インポートはレビューのために保留されています - ワークスペースのコンテキストが変更されました",
+  "Import one model profile": "1 つのモデル プロファイルをインポートする",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "PDF、DOC、DOCX、Markdown、PPT、HTML、CSV、JSON、XLSX、またはODS。 Rune は、最初にコンバージョンをプレビューし、次にフィールド、メジャー、グラフ、成果物を案内します。",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -620,6 +633,8 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable value in this field": "このフィールドに使用できる値がありません",
   "No workspace or device draft changes": "ワークスペースまたはデバイスのドラフトは変更されません",
   "Not checked yet": "未確認",
+  "Not included; enter it in the password field after using this config":
+    "含まれていません。この設定を使用した後、パスワードフィールドにそれを入力してください",
   "Not ready to deliver": "まだ納品できない",
   "Nothing applied — atomic persistence failed": "何も適用されませんでした - アトミック永続化が失敗しました",
   "Nothing applied — selection boundary verification failed": "何も適用されませんでした - 選択境界の検証に失敗しました",
@@ -705,6 +720,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Page language": "ページの言語",
   pages: "ページ",
   "Pages to recognize": "認識するページ",
+  "Paste config or CC Switch link": "設定または CC スイッチのリンクを貼り付けます",
+  "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
+    "1 つの JSON オブジェクト、または ccswitch://v1/import?resource=provider… を貼り付けます。",
+  "Paste or choose one model profile first.": "最初に 1 つのモデル プロファイルを貼り付けるか選択します。",
   "Patch held for review — every changed file needs a safety checkpoint":
     "パッチはレビューのために保留されています - 変更されたすべてのファイルには安全チェックポイントが必要です",
   "Patch held for review — workspace context changed":
@@ -838,6 +857,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Review before write": "書く前に見直す",
   "Review canonical source": "正規ソースを確認",
   "Review checkpoint restore": "チェックポイントの復元を確認",
+  "Review config": "Review 構成",
   "Review first, preserve the current workspace, then open the sample":
     "先に確認し、現在のワークスペースを保持してからサンプルを開く",
   "Review focus": "レビューの焦点",
@@ -865,6 +885,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune could not push that folder": "Rune はそのフォルダーをプッシュできませんでした",
   "Rune could not read model status. You can continue in local mode.":
     "Rune はモデルのステータスを読み取ることができませんでした。ローカル モードで続行できます。",
+  "Rune could not read that configuration file.": "Rune はその構成ファイルを読み取ることができませんでした。",
   "Rune could not record this delivery outcome": "Rune はこの納品結果を記録できませんでした",
   "Rune could not render this page preview.": "Rune はこのページのプレビューを描画できませんでした。",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
@@ -876,6 +897,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune は選択可能なテキストがないページを検出しました。ページと言語を確認してください。プレビューを開くか認識を開始するまで画像内容は読み取りません。",
   "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
     "Rune はこのデバイスのタスク記録を匿名 JSON にまとめました。実際のパイロット結果の集計に利用できますが、アップロードされることはなく、プロダクトマーケット検証の完了を示すものでもありません。",
+  "Rune JSON": "Rune JSON",
   "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
     "Rune は現在のバージョンを復元可能な安全ポイントとして保持し、ワークスペース全体とローカル実行への影響を再検証します。",
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
@@ -1027,6 +1049,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Temporary Workspace Agent context pins cleared": "一時ワークスペース Agent のコンテキスト ピンがクリアされました",
   Text: "テキスト",
   "That checkpoint already matches the current source": "そのチェックポイントはすでに現在のソースと一致しています",
+  "That file is too large. Choose one configuration smaller than 20 KB.":
+    "そのファイルは大きすぎます。 20 KB 未満の構成を 1 つ選択してください。",
   "The adapter reported no semantic omissions.": "アダプターは意味上の省略を報告しませんでした。",
   "The browser starts one local download only after your confirmation.":
     "ブラウザは、ユーザーの確認後にのみローカル ダウンロードを 1 回開始します。",
@@ -1035,6 +1059,14 @@ export const INTERFACE_TRANSLATIONS = {
     "Chart JSON には、正確なソース ID とフィールド名が保存されます。レポートとデッキでは、1 つのチャート バインディングでそれを再利用できます。",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "現在のデバイスワークスペース全体を復元可能な版として保存します。取り込みに失敗してもソースは変わりません。",
+  "The configuration does not identify a supported provider and valid model ID.":
+    "構成では、サポートされているプロバイダーと有効なモデル ID が識別されません。",
+  "The configuration is not valid JSON, or its embedded CC Switch config is invalid.":
+    "構成が有効でない JSON か、埋め込まれた CC スイッチ構成が無効です。",
+  "The configuration repeats a field or contains multiple endpoints. Keep one endpoint.":
+    "構成にはフィールドが繰り返されるか、複数のエンドポイントが含まれます。エンドポイントを 1 つだけ保持します。",
+  "The credential vault is bounded; import one model profile at a time.":
+    "資格情報ボールトには制限があります。一度に 1 つのモデル プロファイルをインポートします。",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "現在と以前のワークスペースを安全に入れ替えるため、この復元自体も元に戻せます。",
   "The current Chart JSON is invalid.": "現在の Chart JSON は無効です。",
@@ -1074,6 +1106,8 @@ export const INTERFACE_TRANSLATIONS = {
     "このソース自体は変更されていません。ライブ成果物は提案されたワークスペース全体を基に再描画されています。",
   Title: "タイトル",
   To: "に",
+  "To protect credentials, Rune does not import from remote config URLs.":
+    "認証情報を保護するために、Rune はリモート構成 URL からインポートしません。",
   tokens: "トークン",
   Top: "上",
   "Transaction map": "トランザクションマップ",
@@ -1106,6 +1140,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Use local mode only": "ローカルモードのみを使用する",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "ヘッダー付きの矩形 CSV、またはスカラー値を含むフラット JSON を使用してください。",
+  "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
+    "Rune JSON または CC Switch の単一プロバイダーのインポート リンクを使用します。 Rune は最初にそれをレビューし、すぐには保存しません。",
+  "Use Rune JSON or one ccswitch://v1/import provider link.":
+    "Rune JSON または 1 つの ccswitch://v1/import プロバイダー リンクを使用します。",
+  "Use this configuration": "この構成を使用します",
   Valid: "有効",
   Validated: "検証済み",
   "Value field": "値フィールド",

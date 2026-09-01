@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  ArrowLeft,
   Check,
   ChevronDown,
   Eye,
   EyeOff,
+  FileJson2,
+  Import,
   KeyRound,
   LoaderCircle,
   Pencil,
@@ -13,9 +16,10 @@ import {
   Server,
   ShieldCheck,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   MAX_MODEL_PROFILES,
   DEFAULT_MODEL_TOKEN_BUDGET,
@@ -30,6 +34,14 @@ import {
   type ModelTokenBudget,
   type PublicModelProfile,
 } from "../lib/model-profiles";
+import {
+  MAX_MODEL_PROFILE_IMPORT_BYTES,
+  ModelProfileImportError,
+  modelProfileImportReview,
+  parseModelProfileImport,
+  type ModelProfileImportErrorCode,
+  type ModelProfileImportResult,
+} from "../lib/model-profile-import";
 import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
 import type { ModelProviderStatus } from "../lib/model-preference";
 
@@ -39,6 +51,35 @@ export const MODEL_MANAGER_BASE_COPY = {
     unavailable: "当前服务没有启用加密凭据库；仍可使用部署模型或本地模式。",
     empty: "还没有个人模型配置。添加后即可在这里一键切换。",
     add: "添加供应商",
+    import: "导入配置",
+    importTitle: "导入一个模型配置",
+    importBody: "支持 Rune JSON 或 CC Switch 的单供应商导入链接。Rune 会先检查并预览，不会直接保存。",
+    importPaste: "粘贴配置或 CC Switch 链接",
+    importPlaceholder: "粘贴一个 JSON 对象，或 ccswitch://v1/import?resource=provider…",
+    importFile: "选择 JSON / 文本文件",
+    importReview: "检查配置",
+    importReviewTitle: "确认导入内容",
+    importSource: "来源",
+    importRuneJson: "Rune JSON",
+    importCcSwitch: "CC Switch 导入链接",
+    importCredential: "凭据",
+    importCredentialDetected: "已检测到；预览中不显示",
+    importCredentialMissing: "未包含；使用配置后请在密码框填写",
+    importIgnoredFields: "已忽略不支持的字段",
+    importUse: "使用此配置",
+    importChooseAnother: "重新选择",
+    importSafety:
+      "导入内容只在当前页面内存中检查；不会访问远程 config URL，不会写入 localStorage，也不会在你点击“保存并启用”前写入凭据库。",
+    importErrorEmpty: "请先粘贴或选择一个模型配置。",
+    importErrorLarge: "配置文件过大；请选择小于 20 KB 的单个配置。",
+    importErrorJson: "配置不是有效的 JSON，或 CC Switch 内嵌配置无效。",
+    importErrorLink: "仅支持 Rune JSON 或 ccswitch://v1/import 的单供应商链接。",
+    importErrorRemote: "为保护凭据，Rune 不会从远程 config URL 导入配置。",
+    importErrorBatch: "当前凭据库容量有限，请一次导入一个模型配置。",
+    importErrorAmbiguous: "配置包含重复字段或多个 endpoint；请一次只保留一个。",
+    importErrorFields: "配置没有包含可识别的供应商或有效模型 ID。",
+    importErrorEndpoint: "自定义 endpoint 必须是公开的 HTTPS API 基础地址。",
+    importErrorRead: "Rune 无法读取这个配置文件。",
     active: "正在使用",
     enable: "启用",
     edit: "编辑",
@@ -86,6 +127,36 @@ export const MODEL_MANAGER_BASE_COPY = {
       "This server has not enabled the encrypted credential vault. The deployment model and local mode remain available.",
     empty: "No personal model profiles yet. Add one to switch providers here.",
     add: "Add provider",
+    import: "Import config",
+    importTitle: "Import one model profile",
+    importBody:
+      "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.",
+    importPaste: "Paste config or CC Switch link",
+    importPlaceholder: "Paste one JSON object, or ccswitch://v1/import?resource=provider…",
+    importFile: "Choose JSON / text file",
+    importReview: "Review config",
+    importReviewTitle: "Confirm imported configuration",
+    importSource: "Source",
+    importRuneJson: "Rune JSON",
+    importCcSwitch: "CC Switch import link",
+    importCredential: "Credential",
+    importCredentialDetected: "Detected; never shown in preview",
+    importCredentialMissing: "Not included; enter it in the password field after using this config",
+    importIgnoredFields: "Ignored unsupported fields",
+    importUse: "Use this configuration",
+    importChooseAnother: "Choose another",
+    importSafety:
+      "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.",
+    importErrorEmpty: "Paste or choose one model profile first.",
+    importErrorLarge: "That file is too large. Choose one configuration smaller than 20 KB.",
+    importErrorJson: "The configuration is not valid JSON, or its embedded CC Switch config is invalid.",
+    importErrorLink: "Use Rune JSON or one ccswitch://v1/import provider link.",
+    importErrorRemote: "To protect credentials, Rune does not import from remote config URLs.",
+    importErrorBatch: "The credential vault is bounded; import one model profile at a time.",
+    importErrorAmbiguous: "The configuration repeats a field or contains multiple endpoints. Keep one endpoint.",
+    importErrorFields: "The configuration does not identify a supported provider and valid model ID.",
+    importErrorEndpoint: "A custom endpoint must be a public HTTPS API base URL.",
+    importErrorRead: "Rune could not read that configuration file.",
     active: "Active",
     enable: "Enable",
     edit: "Edit",
@@ -203,6 +274,21 @@ function healthLabel(health: ModelProfilesState["deployment"]["health"], text: R
   return text.healthUnknown;
 }
 
+function modelImportErrorMessage(code: ModelProfileImportErrorCode, text: ReturnType<typeof modelManagerCopy>) {
+  const messages: Record<ModelProfileImportErrorCode, string> = {
+    empty: text.importErrorEmpty,
+    "too-large": text.importErrorLarge,
+    "invalid-json": text.importErrorJson,
+    "unsupported-link": text.importErrorLink,
+    "remote-config": text.importErrorRemote,
+    batch: text.importErrorBatch,
+    ambiguous: text.importErrorAmbiguous,
+    "invalid-fields": text.importErrorFields,
+    "invalid-endpoint": text.importErrorEndpoint,
+  };
+  return messages[code];
+}
+
 export function ModelProfileManager({
   compact = false,
   locale,
@@ -222,8 +308,25 @@ export function ModelProfileManager({
   const [showKey, setShowKey] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [pendingDeleteId, setPendingDeleteId] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importResult, setImportResult] = useState<ModelProfileImportResult | null>(null);
+  const [importError, setImportError] = useState("");
+  const managerRef = useRef<HTMLElement>(null);
   const canAdd = Boolean(state?.vaultAvailable && state.profiles.length < MAX_MODEL_PROFILES);
   const preset = useMemo(() => MODEL_PROVIDER_PRESETS.find((item) => item.id === editor?.provider), [editor?.provider]);
+  const importReview = useMemo(() => (importResult ? modelProfileImportReview(importResult) : null), [importResult]);
+  const editorOpen = Boolean(editor);
+  const importReviewOpen = Boolean(importResult);
+
+  useEffect(() => {
+    if (!editorOpen && !importOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      managerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+      managerRef.current?.closest<HTMLElement>(".welcome-page")?.scrollTo({ top: 0, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editorOpen, importOpen, importReviewOpen]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -274,6 +377,10 @@ export function ModelProfileManager({
       setModels([]);
       setShowKey(false);
       setPendingDeleteId("");
+      setImportOpen(false);
+      setImportText("");
+      setImportResult(null);
+      setImportError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Rune could not update that model profile.");
     } finally {
@@ -323,6 +430,57 @@ export function ModelProfileManager({
     setError("");
   }
 
+  function closeImport() {
+    setImportOpen(false);
+    setImportText("");
+    setImportResult(null);
+    setImportError("");
+  }
+
+  function reviewImportedSource(source: string) {
+    try {
+      const result = parseModelProfileImport(source);
+      setImportResult(result);
+      setImportText("");
+      setImportError("");
+    } catch (cause) {
+      setImportResult(null);
+      setImportError(
+        cause instanceof ModelProfileImportError
+          ? modelImportErrorMessage(cause.code, text)
+          : text.importErrorFields,
+      );
+    }
+  }
+
+  async function chooseImportFile(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    try {
+      if (file.size > MAX_MODEL_PROFILE_IMPORT_BYTES) {
+        throw new ModelProfileImportError("too-large", "The model profile import is too large.");
+      }
+      reviewImportedSource(await file.text());
+    } catch (cause) {
+      setImportResult(null);
+      setImportError(
+        cause instanceof ModelProfileImportError ? modelImportErrorMessage(cause.code, text) : text.importErrorRead,
+      );
+    }
+  }
+
+  function useImportedProfile() {
+    if (!importResult) return;
+    setEditor({ ...importResult.draft, budget: { ...importResult.draft.budget } });
+    setModels([]);
+    setShowKey(false);
+    setPendingDeleteId("");
+    setError("");
+    closeImport();
+  }
+
   if (loading)
     return (
       <div className="model-manager-loading">
@@ -335,8 +493,9 @@ export function ModelProfileManager({
     <section
       className={`model-profile-manager ${compact ? "compact" : ""}`.trim()}
       aria-label={runeText(locale, "Personal model profiles", "个人模型配置")}
+      ref={managerRef}
     >
-      {state?.deployment.configured && (
+      {!editor && !importOpen && state?.deployment.configured && (
         <div className={`model-profile-card deployment ${state.activeSource === "deployment" ? "active" : ""}`}>
           <span>
             <Server />
@@ -370,7 +529,7 @@ export function ModelProfileManager({
           )}
         </div>
       )}
-      {state?.profiles.map((profile) => (
+      {!editor && !importOpen && state?.profiles.map((profile) => (
         <div className={`model-profile-card ${state.activeProfileId === profile.id ? "active" : ""}`} key={profile.id}>
           <span>
             <KeyRound />
@@ -407,6 +566,7 @@ export function ModelProfileManager({
               type="button"
               disabled={submitting}
               onClick={() => {
+                closeImport();
                 setEditor(editableProfile(profile));
                 setModels([]);
                 setError("");
@@ -430,7 +590,10 @@ export function ModelProfileManager({
           </div>
         </div>
       ))}
-      {state && (state.profiles.length > 1 || (state.profiles.length > 0 && state.deployment.configured)) && (
+      {!editor &&
+        !importOpen &&
+        state &&
+        (state.profiles.length > 1 || (state.profiles.length > 0 && state.deployment.configured)) && (
         <label className="model-failover-policy">
           <input
             type="checkbox"
@@ -444,22 +607,199 @@ export function ModelProfileManager({
           </span>
         </label>
       )}
-      {!state?.profiles.length && !state?.deployment.configured && <p className="model-manager-empty">{text.empty}</p>}
-      {!state?.vaultAvailable && (
+      {!editor && !importOpen && !state?.profiles.length && !state?.deployment.configured && (
+        <p className="model-manager-empty">{text.empty}</p>
+      )}
+      {!editor && !importOpen && !state?.vaultAvailable && (
         <p className="model-manager-warning">
           <ShieldCheck />
           {text.unavailable}
         </p>
       )}
 
-      {!editor && canAdd && (
-        <button className="model-add-provider" type="button" onClick={() => setEditor(blankProfile())}>
-          <Plus />
-          {text.add}
-          <span>
-            {state?.profiles.length ?? 0}/{MAX_MODEL_PROFILES}
-          </span>
-        </button>
+      {!editor && canAdd && !importOpen && (
+        <div className="model-profile-onramps">
+          <button
+            className="model-add-provider"
+            type="button"
+            onClick={() => {
+              closeImport();
+              setEditor(blankProfile());
+            }}
+          >
+            <Plus />
+            {text.add}
+            <span>
+              {state?.profiles.length ?? 0}/{MAX_MODEL_PROFILES}
+            </span>
+          </button>
+          <button
+            className="model-import-provider"
+            type="button"
+            onClick={() => {
+              setImportOpen(true);
+              setImportText("");
+              setImportResult(null);
+              setImportError("");
+            }}
+          >
+            <Import />
+            {text.import}
+          </button>
+        </div>
+      )}
+
+      {!editor && canAdd && importOpen && (
+        <section className="model-profile-import" aria-label={text.importTitle}>
+          <header>
+            <span>
+              <FileJson2 aria-hidden="true" />
+            </span>
+            <div>
+              <small>{text.import}</small>
+              <strong>{importReview ? text.importReviewTitle : text.importTitle}</strong>
+            </div>
+            <button type="button" onClick={closeImport} aria-label={text.cancel}>
+              <X />
+            </button>
+          </header>
+
+          {importReview ? (
+            <>
+              <dl className="model-import-review">
+                <div>
+                  <dt>{text.importSource}</dt>
+                  <dd>{importReview.source === "rune-json" ? text.importRuneJson : text.importCcSwitch}</dd>
+                </div>
+                <div>
+                  <dt>{text.preset}</dt>
+                  <dd>{MODEL_PROVIDER_PRESETS.find((item) => item.id === importReview.provider)?.label}</dd>
+                </div>
+                <div>
+                  <dt>{text.name}</dt>
+                  <dd>{importReview.name}</dd>
+                </div>
+                <div>
+                  <dt>{text.protocol}</dt>
+                  <dd>{modelProtocolLabel(importReview.protocol)}</dd>
+                </div>
+                <div className="wide">
+                  <dt>{text.endpoint}</dt>
+                  <dd>
+                    <code className="canonical-ltr" dir="ltr">
+                      {importReview.baseURL}
+                    </code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{text.model}</dt>
+                  <dd>
+                    <code className="canonical-ltr" dir="ltr">
+                      {importReview.model}
+                    </code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{text.importCredential}</dt>
+                  <dd className={importReview.credentialDetected ? "credential-detected" : "credential-missing"}>
+                    {importReview.credentialDetected
+                      ? text.importCredentialDetected
+                      : text.importCredentialMissing}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{text.inputBudget}</dt>
+                  <dd>{importReview.budget.maxInputTokens.toLocaleString()} {text.tokenUnit}</dd>
+                </div>
+                <div>
+                  <dt>{text.outputBudget}</dt>
+                  <dd>{importReview.budget.maxOutputTokens.toLocaleString()} {text.tokenUnit}</dd>
+                </div>
+              </dl>
+              {importReview.warnings.some((warning) => warning.code === "unsupported-fields") && (
+                <p className="model-import-warning">
+                  {text.importIgnoredFields}: {importReview.warnings.reduce(
+                    (count, warning) => count + (warning.code === "unsupported-fields" ? warning.count : 0),
+                    0,
+                  )}
+                </p>
+              )}
+              <p className="model-import-safety">
+                <ShieldCheck aria-hidden="true" />
+                {text.importSafety}
+              </p>
+              <footer>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportResult(null);
+                    setImportText("");
+                    setImportError("");
+                  }}
+                >
+                  <ArrowLeft aria-hidden="true" />
+                  {text.importChooseAnother}
+                </button>
+                <button type="button" className="primary" onClick={useImportedProfile}>
+                  <Check aria-hidden="true" />
+                  {text.importUse}
+                </button>
+              </footer>
+            </>
+          ) : (
+            <>
+              <p>{text.importBody}</p>
+              <label className="model-import-paste">
+                <span>{text.importPaste}</span>
+                <textarea
+                  className="canonical-ltr"
+                  dir="ltr"
+                  value={importText}
+                  maxLength={MAX_MODEL_PROFILE_IMPORT_BYTES}
+                  placeholder={text.importPlaceholder}
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={(event) => {
+                    setImportText(event.target.value);
+                    setImportError("");
+                  }}
+                />
+              </label>
+              <div className="model-import-file-row">
+                <label>
+                  <Upload aria-hidden="true" />
+                  {text.importFile}
+                  <input
+                    className="visually-hidden"
+                    type="file"
+                    accept=".json,.txt,application/json,text/plain"
+                    aria-label={text.importFile}
+                    onChange={(event) => void chooseImportFile(event)}
+                  />
+                </label>
+                <small>{Math.ceil(MAX_MODEL_PROFILE_IMPORT_BYTES / 1_000)} KB max</small>
+              </div>
+              {importError && (
+                <p className="model-manager-error" role="alert">
+                  {importError}
+                </p>
+              )}
+              <p className="model-import-safety">
+                <ShieldCheck aria-hidden="true" />
+                {text.importSafety}
+              </p>
+              <footer>
+                <button type="button" onClick={closeImport}>
+                  {text.cancel}
+                </button>
+                <button type="button" className="primary" onClick={() => reviewImportedSource(importText)}>
+                  <FileJson2 aria-hidden="true" />
+                  {text.importReview}
+                </button>
+              </footer>
+            </>
+          )}
+        </section>
       )}
 
       {editor && (
