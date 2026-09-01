@@ -62,6 +62,7 @@
   }
   .welcome-greeting-stage { justify-content: center; }
   .welcome-language-card { width: min(560px, 100%); margin-inline: auto; }
+  .visual-chart-editor-grid { grid-template-columns: minmax(0, 1fr); }
   .empty-workspace-canvas { align-content: start; padding: var(--rune-space-4); }
   .empty-drop-zone {
     width: min(720px, 100%);

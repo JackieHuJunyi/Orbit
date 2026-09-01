@@ -141,6 +141,7 @@ export const INTERFACE_TRANSLATIONS = {
   Auto: "تلقائي",
   "Available after one guided task": "متاح بعد مهمة موجهة واحدة",
   Average: "متوسط",
+  Back: "العودة",
   Bar: "بار",
   "Bar · compare": "شريط · قارن",
   "Baseline not recorded": "لم يُسجّل الإصدار المرجعي",

@@ -144,6 +144,7 @@ export const INTERFACE_TRANSLATIONS = {
   Auto: "Авто",
   "Available after one guided task": "Доступно после одной управляемой задачи",
   Average: "Средний",
+  Back: "Назад",
   Bar: "Бар",
   "Bar · compare": "Бар · сравнить",
   "Baseline not recorded": "Исходная версия не записана",

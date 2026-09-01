@@ -143,6 +143,7 @@ export const INTERFACE_TRANSLATIONS = {
   Auto: "자동",
   "Available after one guided task": "가이드 작업 1회 완료 후 사용 가능",
   Average: "평균",
+  Back: "뒤로",
   Bar: "바",
   "Bar · compare": "막대 · 비교",
   "Baseline not recorded": "기준 버전이 기록되지 않음",

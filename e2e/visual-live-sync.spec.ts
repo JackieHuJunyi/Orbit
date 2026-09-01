@@ -171,9 +171,13 @@ test("mirrors a right-side Chart configuration into complete Source and a live r
   const editor = page.locator("textarea.source-editor");
   const originalSource = await editor.inputValue();
   const configure = page.getByRole("button", { name: "Configure", exact: true });
+  await expect(page.locator(".workspace")).toHaveClass(/view-split/u);
   await configure.click();
+  await expect(page.locator(".workspace")).toHaveClass(/view-preview/u);
 
   const chartEditor = page.locator("form.visual-chart-editor");
+  await expect(page.locator("section.source-pane")).toBeHidden();
+  await expect(chartEditor).toBeVisible();
   const title = chartEditor.getByRole("textbox", { name: "Edit Chart title" });
   await title.fill("Q2 revenue, verified live");
 
@@ -182,7 +186,7 @@ test("mirrors a right-side Chart configuration into complete Source and a live r
   await expect(chartEditor.getByRole("region", { name: "Draft Chart preview" })).toContainText(
     "Q2 revenue, verified live",
   );
-  await expect(page.getByText("Visual edit · complete source draft synced live")).toBeVisible();
+  await expect(page.getByText("Visual edit · complete source draft synced live")).toBeHidden();
 
   await chartEditor.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(chartEditor).toBeHidden();

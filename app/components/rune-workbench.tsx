@@ -6011,6 +6011,7 @@ export function RuneWorkbench() {
                     onEditChartSpec={
                       !proposalReviewActive && visualEditState === "idle" ? commitVisualChartSpecEdit : undefined
                     }
+                    onEnterChartConfiguration={() => setPreferredWorkspaceView("preview")}
                     onVisualSourceDraftChange={proposalReviewActive ? undefined : handleVisualSourceDraftChange}
                     resolveLocalAssetUrl={resolveLocalAssetUrl}
                   />

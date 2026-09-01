@@ -1,6 +1,17 @@
 "use client";
 
-import { ArrowRight, Check, ClipboardList, Command, FileText, Keyboard, Presentation, Sparkles, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ClipboardList,
+  Command,
+  FileText,
+  Keyboard,
+  Presentation,
+  Sparkles,
+  X,
+} from "lucide-react";
 import {
   Fragment,
   lazy,
@@ -34,6 +45,7 @@ type ShortcutId = "open" | "save" | "agent" | "view";
 
 export const WELCOME_BASE_COPY = {
   "zh-CN": {
+    back: "上一步",
     skip: "跳过",
     close: "关闭教程",
     welcomeEyebrow: "欢迎来到 Rune",
@@ -90,6 +102,7 @@ export const WELCOME_BASE_COPY = {
     sampleBody: "查看数据到报告与演示的完整链路",
   },
   en: {
+    back: "Back",
     skip: "Skip",
     close: "Close tutorial",
     welcomeEyebrow: "Welcome to Rune",
@@ -222,7 +235,13 @@ export function WelcomeExperience({
     [greeting, greetingLocale],
   );
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
+  const stepIndex = steps.indexOf(step);
   const introPhase = step === "welcome" && !greetingIntroComplete ? "writing" : "ready";
+
+  function showPreviousStep() {
+    const previousStep = steps[stepIndex - 1];
+    if (previousStep) setStep(previousStep);
+  }
 
   useEffect(() => {
     if (step !== "welcome" || greetingIntroComplete) return;
@@ -327,21 +346,29 @@ export function WelcomeExperience({
               />
             ))}
           </div>
-          {dismissible ? (
-            <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}>
-              <X />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                onModelModeChange("local");
-                setStep("ready");
-              }}
-            >
-              {text.skip}
-            </button>
-          )}
+          <div className="welcome-chrome-actions">
+            {stepIndex > 0 && (
+              <button type="button" className="welcome-back" onClick={showPreviousStep}>
+                <ArrowLeft aria-hidden="true" />
+                {text.back}
+              </button>
+            )}
+            {dismissible ? (
+              <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}>
+                <X />
+              </button>
+            ) : step !== "ready" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onModelModeChange("local");
+                  setStep("ready");
+                }}
+              >
+                {text.skip}
+              </button>
+            ) : null}
+          </div>
         </header>
 
         <div className={"welcome-page welcome-" + step} key={step}>

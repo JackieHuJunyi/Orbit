@@ -71,6 +71,29 @@ test("loads model setup after the handwritten opening without restarting it", as
   await expect(page.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveCount(0);
 });
 
+test("moves backward and forward through every onboarding step without losing the flow", async ({ page }) => {
+  await page.goto("/");
+
+  const welcomeWindow = page.locator(".welcome-window");
+  await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
+  await page.locator(".welcome-language-card > .welcome-primary").click();
+  await expect(page.getByRole("dialog", { name: "Choose how Rune uses a model" })).toBeVisible();
+
+  await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Choose your Rune language" })).toBeVisible();
+  await page.locator(".welcome-language-card > .welcome-primary").click();
+  await welcomeWindow.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Try four shortcuts yourself" })).toBeVisible();
+
+  await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Choose how Rune uses a model" })).toBeVisible();
+  await welcomeWindow.getByRole("button", { name: "Continue", exact: true }).click();
+  await welcomeWindow.getByRole("button", { name: "Learn later", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Your workspace, under your control." })).toBeVisible();
+  await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Try four shortcuts yourself" })).toBeVisible();
+});
+
 test("writes the opening greeting as one restrained spectrum performance", async ({ page }) => {
   await page.goto("/");
 

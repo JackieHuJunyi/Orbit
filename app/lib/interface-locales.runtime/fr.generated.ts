@@ -146,6 +146,7 @@ export const INTERFACE_TRANSLATIONS = {
   Auto: "Automatique",
   "Available after one guided task": "Disponible après une tâche guidée",
   Average: "Moyenne",
+  Back: "Retour",
   Bar: "Barre",
   "Bar · compare": "Barre · comparer",
   "Baseline not recorded": "Version de référence non enregistrée",

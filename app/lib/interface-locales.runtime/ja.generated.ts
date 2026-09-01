@@ -144,6 +144,7 @@ export const INTERFACE_TRANSLATIONS = {
   Auto: "自動",
   "Available after one guided task": "ガイド付きタスクを 1 回完了すると利用できます",
   Average: "平均",
+  Back: "戻る",
   Bar: "バー",
   "Bar · compare": "バー・比較",
   "Baseline not recorded": "基準バージョンは未記録です",

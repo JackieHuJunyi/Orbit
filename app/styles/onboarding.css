@@ -110,10 +110,22 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   transform: translate3d(0, 0, 0);
 }
 
-.welcome-chrome > button {
+.welcome-chrome-actions {
+  display: inline-flex;
+  min-width: 0;
+  justify-self: end;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rune-space-2);
+}
+
+.welcome-chrome-actions > button {
+  display: inline-flex;
   min-width: 32px;
   min-height: 32px;
-  justify-self: end;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding-inline: var(--rune-space-3);
   border: 1px solid transparent;
   border-radius: 999px;
@@ -127,9 +139,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
     transform var(--rune-duration-press) var(--rune-ease-out);
 }
 
-.welcome-chrome > button:hover { color: var(--ink); background: var(--rune-material-solid); }
-.welcome-chrome > button:active { transform: scale(.96); }
-.welcome-chrome > button svg { width: 15px; height: 15px; }
+.welcome-chrome-actions > button:hover { color: var(--ink); background: var(--rune-material-solid); }
+.welcome-chrome-actions > button:active { transform: scale(.96); }
+.welcome-chrome-actions > button svg { width: 15px; height: 15px; }
 
 .welcome-chrome-brand {
   display: inline-flex;

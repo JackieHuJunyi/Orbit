@@ -2326,6 +2326,7 @@ function ChartPreview({
   activeSelection,
   onTargetSource,
   onEditChartSpec,
+  onEnterChartConfiguration,
   onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
@@ -2335,6 +2336,7 @@ function ChartPreview({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditChartSpec?: ChartSpecEditHandler;
+  onEnterChartConfiguration?: () => void;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
@@ -2382,6 +2384,7 @@ function ChartPreview({
     if (!target || !onEditChartSpec || !canVisualEditChartSpec(artifact, target)) return;
     const input = visualChartSpecDraft(artifact);
     if (!input) return;
+    onEnterChartConfiguration?.();
     setEditingChart({
       artifactId: artifact.id,
       sourceRevision: artifact.source,
@@ -3103,6 +3106,7 @@ export function ArtifactPreview({
   onEditSemanticHtmlSlide,
   onCreateEditableDeckCopy,
   onEditChartSpec,
+  onEnterChartConfiguration,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
 }: {
@@ -3119,6 +3123,7 @@ export function ArtifactPreview({
   onEditSemanticHtmlSlide?: SemanticHtmlSlideEditHandler;
   onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onEditChartSpec?: ChartSpecEditHandler;
+  onEnterChartConfiguration?: () => void;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
@@ -3185,6 +3190,7 @@ export function ArtifactPreview({
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
             onEditChartSpec={onEditChartSpec}
+            onEnterChartConfiguration={onEnterChartConfiguration}
             onVisualSourceDraftChange={onVisualSourceDraftChange}
           />
         );
