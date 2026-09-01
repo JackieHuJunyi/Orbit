@@ -174,7 +174,14 @@ test("routes Preview clicks and diagnostic repair through one Workbench effect e
     "utf8",
   );
   assert.equal(source.split("executeSourceNavigation(navigation.plan").length - 1, 2);
-  assert.match(source, /function executeSourceNavigation\([\s\S]*editor\.setSelectionRange\(plan\.start, plan\.end/);
+  assert.match(
+    source,
+    /function executeSourceNavigation\([\s\S]*pendingSourceNavigationRef\.current = plan;[\s\S]*setSourceNavigationEpoch/,
+  );
+  assert.match(
+    source,
+    /useLayoutEffect\(\(\) => \{[\s\S]*pendingSourceNavigationRef\.current[\s\S]*editor\.setSelectionRange\(plan\.start, plan\.end[\s\S]*\}, \[sourceNavigationEpoch\]\)/,
+  );
   assert.match(source, /if \(plan\.activateSelectionAgent\) \{[\s\S]*setAgentScope\("selection"\)/);
   assert.match(source, /inspectSourceNavigationRef\.current = !plan\.activateSelectionAgent/);
   assert.match(source, /if \(inspectSourceNavigationRef\.current\) \{[\s\S]*setSourceSelection[\s\S]*return;/);
