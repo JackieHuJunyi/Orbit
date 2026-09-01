@@ -93,9 +93,9 @@ export const RUNE_APPEARANCE_THEMES = [
     id: "space-black",
     english: "Space Black",
     chinese: "太空黑",
-    color: "#343438",
-    soft: "#ededee",
-    finish: ["#59595f", "#252529"],
+    color: "#91c8e9",
+    soft: "#1b3445",
+    finish: ["#405564", "#0b0e11"],
   },
 ] as const;
 

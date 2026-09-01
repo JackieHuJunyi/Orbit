@@ -37,6 +37,30 @@ test("keeps a returning user on the server-rendered workbench before hydration",
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
 });
 
+test("applies a saved appearance before hydration to prevent a light-theme flash", async ({ browser }) => {
+  const context = await browser.newContext({
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: "http://localhost:3000",
+          localStorage: [
+            { name: "rune-onboarding-v1", value: "complete" },
+            { name: "rune-appearance-theme-v1", value: "space-black" },
+          ],
+        },
+      ],
+    },
+  });
+  const firstFrame = await context.newPage();
+  await firstFrame.route(/\.js(?:\?|$)/u, (route) => route.abort());
+  await firstFrame.goto("/");
+
+  await expect(firstFrame.locator("html")).toHaveAttribute("data-theme", "space-black");
+  await expect(firstFrame.locator("body")).toHaveCSS("background-color", "rgb(0, 0, 0)");
+  await context.close();
+});
+
 test("starts a fresh user with language choice before outcome-first task choices", async ({ page }) => {
   await page.goto("/");
 

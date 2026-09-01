@@ -27,6 +27,9 @@
   --rune-type-ui: 13px;
   --rune-type-caption: 11px;
 
+  --rune-accent-surface: var(--theme-accent);
+  --rune-accent-foreground: #ffffff;
+
   --rune-content-reading: 780px;
   --rune-file-width: 220px;
 
@@ -68,14 +71,36 @@
 
 html[data-theme="space-black"] {
   color-scheme: dark;
-  --rune-material-canvas: #09090a;
-  --rune-material-window: rgba(28, 28, 30, .86);
-  --rune-material-raised: rgba(44, 44, 46, .82);
-  --rune-material-control: rgba(58, 58, 60, .9);
-  --rune-material-solid: #2c2c2e;
-  --rune-material-edge: rgba(255, 255, 255, .12);
-  --rune-material-divider: rgba(255, 255, 255, .11);
-  --rune-material-highlight: rgba(255, 255, 255, .09);
+  --ink: #f7f9fb;
+  --muted: #bbc3cd;
+  --subtle: #98a3af;
+  --paper: #181c21;
+  --canvas: #07090b;
+  --panel: #20262d;
+  --line: #3b444e;
+  --line-strong: #53606c;
+  --forest: #f7f9fb;
+  --forest-soft: #d5dbe2;
+  --theme-accent: #91c8e9;
+  --theme-soft: #1b3445;
+  --theme-rgb: 145, 200, 233;
+  --rune-accent-surface: #2f719d;
+  --rune-accent-foreground: #ffffff;
+  --rune-stage: #0f1215;
+  --rune-material: rgba(22, 26, 31, .86);
+  --rune-material-strong: rgba(25, 30, 36, .95);
+  --rune-glass: rgba(20, 24, 29, .78);
+  --rune-glass-strong: rgba(25, 30, 36, .92);
+  --rune-hairline: rgba(223, 235, 245, .13);
+  --rune-hairline-strong: rgba(223, 235, 245, .22);
+  --rune-material-canvas: #07090b;
+  --rune-material-window: rgba(18, 22, 27, .92);
+  --rune-material-raised: rgba(30, 36, 43, .92);
+  --rune-material-control: rgba(42, 50, 59, .94);
+  --rune-material-solid: #252c34;
+  --rune-material-edge: rgba(223, 235, 245, .17);
+  --rune-material-divider: rgba(223, 235, 245, .14);
+  --rune-material-highlight: rgba(255, 255, 255, .1);
   --rune-shadow-window: 0 28px 88px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .08);
   --rune-shadow-raised: 0 18px 54px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .07);
 }
@@ -83,7 +108,10 @@ html[data-theme="space-black"] {
 html {
   color-scheme: light;
   font-size: 16px;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -95,6 +123,14 @@ button,
 input,
 textarea,
 select { letter-spacing: inherit; }
+
+.primary-button,
+.welcome-primary,
+.run-button,
+.export-menu-trigger {
+  background: var(--rune-accent-surface);
+  color: var(--rune-accent-foreground);
+}
 
 .rune-shell button,
 .welcome-backdrop button,

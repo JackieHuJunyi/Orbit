@@ -157,8 +157,8 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   height: 24px;
   place-items: center;
   border-radius: 8px 8px 8px 3px;
-  background: var(--theme-accent);
-  color: white;
+  background: var(--rune-accent-surface);
+  color: var(--rune-accent-foreground);
   font-family: Georgia, serif;
   font-size: 14px;
 }
@@ -397,17 +397,17 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 }
 .language-options button:hover { background: rgba(29, 29, 31, .045); }
 .language-options button.selected {
-  border-color: var(--theme-accent);
-  background: var(--theme-accent);
+  border-color: var(--rune-accent-surface);
+  background: var(--rune-accent-surface);
   box-shadow: none;
-  color: white;
+  color: var(--rune-accent-foreground);
 }
 .language-options strong { font-size: 13.5px; font-weight: 640; line-height: 1.28; }
 .language-options small { color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.3; }
-.language-options button.selected small { color: rgba(255, 255, 255, .76); }
+.language-options button.selected small { color: color-mix(in srgb, var(--rune-accent-foreground) 82%, transparent); }
 .language-options button > span:first-child { display: grid; gap: 1px; min-width: 0; }
 .language-options button > svg { width: 16px; height: 16px; color: var(--theme-accent); }
-.language-options button.selected > svg { color: white; }
+.language-options button.selected > svg { color: var(--rune-accent-foreground); }
 
 .welcome-language-card > .welcome-primary {
   min-width: 118px;
@@ -578,9 +578,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   padding-inline: var(--rune-space-5);
   border: 0;
   border-radius: 999px;
-  background: var(--theme-accent);
+  background: var(--rune-accent-surface);
   box-shadow: 0 8px 22px rgba(var(--theme-rgb), .17);
-  color: white;
+  color: var(--rune-accent-foreground);
   cursor: pointer;
   font-size: 13px;
   font-weight: 660;
@@ -588,7 +588,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
     background-color var(--rune-duration-micro) ease,
     transform var(--rune-duration-press) var(--rune-ease-out);
 }
-.empty-open-primary:hover { background: color-mix(in srgb, var(--theme-accent) 88%, black); }
+.empty-open-primary:hover { background: color-mix(in srgb, var(--rune-accent-surface) 88%, black); }
 .empty-open-primary:active { transform: scale(.975); }
 .empty-open-primary svg { width: 16px; height: 16px; }
 
@@ -667,6 +667,35 @@ html[dir="rtl"] .empty-task-primary { text-align: end; }
 html[dir="rtl"] .empty-task-primary > svg:last-child,
 html[dir="rtl"] .welcome-primary > svg { transform: scaleX(-1); }
 html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translateX(-3px) scaleX(-1); }
+
+html[data-theme="space-black"] .welcome-backdrop { background: var(--rune-material-canvas); }
+html[data-theme="space-black"] .welcome-window {
+  border-color: var(--rune-material-edge);
+  background: var(--rune-material-window);
+  box-shadow: var(--rune-shadow-window);
+}
+html[data-theme="space-black"] .welcome-chrome { border-bottom-color: var(--rune-material-divider); background: rgba(16, 20, 24, .82); }
+html[data-theme="space-black"] .welcome-language-card,
+html[data-theme="space-black"] .language-options,
+html[data-theme="space-black"] .language-options button,
+html[data-theme="space-black"] .shortcut-lessons > div,
+html[data-theme="space-black"] .welcome-actions button,
+html[data-theme="space-black"] .model-mode-options > button,
+html[data-theme="space-black"] .empty-drop-zone {
+  border-color: var(--rune-material-divider);
+  background: var(--rune-material-raised);
+  box-shadow: inset 0 1px var(--rune-material-highlight);
+}
+html[data-theme="space-black"] .language-options button:hover,
+html[data-theme="space-black"] .language-options button.selected,
+html[data-theme="space-black"] .welcome-actions button:hover { background: var(--rune-material-solid); }
+html[data-theme="space-black"] .language-options button.selected {
+  border-color: rgba(var(--theme-rgb), .52);
+  box-shadow: 0 0 0 3px rgba(var(--theme-rgb), .1);
+  color: var(--ink);
+}
+html[data-theme="space-black"] .language-options button.selected small { color: var(--muted); }
+html[data-theme="space-black"] .language-options button.selected > svg { color: var(--theme-accent); }
 
 @media (prefers-reduced-transparency: reduce) {
   .welcome-window,

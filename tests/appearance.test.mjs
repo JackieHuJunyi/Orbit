@@ -11,6 +11,19 @@ import { loadRuneLocaleCatalog, runeText } from "../app/lib/localization.ts";
 
 await Promise.all(["fr", "es", "ru", "ar", "ja", "ko"].map(loadRuneLocaleCatalog));
 
+function relativeLuminance(hex) {
+  const channels = hex
+    .match(/[0-9a-f]{2}/gi)
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first, second) {
+  const values = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
 test("ships a restrained current-iPhone-inspired material palette with one stable default", () => {
   assert.equal(RUNE_APPEARANCE_STORAGE_KEY, "rune-appearance-theme-v1");
   assert.deepEqual(
@@ -40,6 +53,18 @@ test("ships a restrained current-iPhone-inspired material palette with one stabl
   }
   assert.equal(normalizeRuneAppearanceTheme("black"), null);
   assert.equal(normalizeRuneAppearanceTheme(null), null);
+});
+
+test("keeps the Space Black accent legible and visibly distinct from its deepest surface", async () => {
+  const spaceBlack = RUNE_APPEARANCE_THEMES.find(({ id }) => id === "space-black");
+  assert.ok(spaceBlack);
+  assert.ok(contrastRatio(spaceBlack.color, spaceBlack.finish[1]) >= 7);
+  assert.notEqual(spaceBlack.soft, "#ededee");
+
+  const tokens = await readFile(new URL("../app/styles/tokens.css", import.meta.url), "utf8");
+  assert.match(tokens, /--rune-accent-surface:\s*#2f719d/);
+  assert.match(tokens, /--muted:\s*#bbc3cd/);
+  assert.match(tokens, /--rune-material-solid:\s*#252c34/);
 });
 
 test("keeps Rune vermilion distinct and supplies real RTL/LTR boundaries", async () => {

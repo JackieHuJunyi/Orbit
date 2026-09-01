@@ -1028,8 +1028,8 @@ export function RuneWorkbench() {
   }, [locale]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = appearanceTheme;
     if (!hydrated) return;
+    document.documentElement.dataset.theme = appearanceTheme;
     try {
       localStorage.setItem(RUNE_APPEARANCE_STORAGE_KEY, appearanceTheme);
     } catch {

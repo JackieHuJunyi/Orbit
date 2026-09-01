@@ -116,6 +116,9 @@
 }
 
 .saved-review-card { border-radius: var(--rune-radius-control); background: rgba(255, 255, 255, .58); }
+.workspace-note { border-color: var(--rune-material-divider); }
+.workspace-note strong,
+.workspace-note span { font-size: var(--rune-type-caption); }
 .saved-review-metrics { gap: var(--rune-space-1); padding: 0 10px 10px 42px; font-size: 10px; line-height: 1.35; }
 .saved-review-history summary { min-height: 32px; font-size: 10px; }
 .saved-review-history li > span { font-size: 9px; }
@@ -246,4 +249,64 @@ body.workspace-resizing .workspace { transition: none !important; }
     visibility: visible;
     transition: opacity 160ms ease 40ms;
   }
+}
+
+html[data-theme="space-black"] .rune-shell {
+  background:
+    radial-gradient(circle at 74% -18%, rgba(var(--theme-rgb), .1), transparent 42%),
+    var(--rune-material-canvas);
+}
+html[data-theme="space-black"] .topbar {
+  border-bottom-color: var(--rune-material-divider);
+  background: rgba(13, 16, 20, .88);
+  box-shadow: inset 0 1px var(--rune-material-highlight);
+}
+html[data-theme="space-black"] .topbar .button:not(.export-menu-trigger),
+html[data-theme="space-black"] .topbar .icon-button,
+html[data-theme="space-black"] .workspace-view-switch,
+html[data-theme="space-black"] .workspace-view-switch button.active,
+html[data-theme="space-black"] .history-trigger,
+html[data-theme="space-black"] .tiny-icon-button {
+  border-color: var(--rune-material-divider);
+  background: var(--rune-material-control);
+  color: var(--ink);
+}
+html[data-theme="space-black"] .activity-rail { background: #11151a; color: var(--muted); }
+html[data-theme="space-black"] .file-rail { background: #151a20; }
+html[data-theme="space-black"] .source-pane { background: #171c22; }
+html[data-theme="space-black"] .preview-pane { background: #1b2128; }
+html[data-theme="space-black"] .activity-rail,
+html[data-theme="space-black"] .file-rail,
+html[data-theme="space-black"] .source-pane,
+html[data-theme="space-black"] .preview-pane { border-color: var(--rune-material-divider); }
+html[data-theme="space-black"] .file-rail-header,
+html[data-theme="space-black"] .pane-header {
+  border-bottom-color: var(--rune-material-divider);
+  background: rgba(27, 33, 40, .9);
+  color: var(--ink);
+}
+html[data-theme="space-black"] .pane-title .artifact-icon,
+html[data-theme="space-black"] .preview-mark { border-color: var(--rune-material-divider); background: var(--rune-material-control); }
+html[data-theme="space-black"] .artifact-row:hover,
+html[data-theme="space-black"] .artifact-row-shell:focus-within .artifact-row { background: var(--rune-material-control); }
+html[data-theme="space-black"] .artifact-row.active,
+html[data-theme="space-black"] .artifact-row-shell:focus-within .artifact-row.active {
+  background: var(--theme-soft);
+  box-shadow: inset 2px 0 var(--theme-accent);
+  color: var(--ink);
+}
+html[data-theme="space-black"] .workspace-splitter > span {
+  border-color: var(--rune-material-edge);
+  background: var(--rune-material-control);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .34), inset 0 1px var(--rune-material-highlight);
+}
+html[data-theme="space-black"] .workspace-splitter[data-dragging] > span {
+  border-color: rgba(var(--theme-rgb), .42);
+  background: color-mix(in srgb, var(--theme-soft) 70%, var(--rune-material-solid));
+}
+html[data-theme="space-black"] .saved-review-card { background: var(--rune-material-raised); }
+html[data-theme="space-black"] .workspace-note {
+  border-color: var(--rune-material-divider);
+  background: var(--rune-material-raised);
+  color: var(--ink);
 }

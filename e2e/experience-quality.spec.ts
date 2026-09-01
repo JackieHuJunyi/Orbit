@@ -12,6 +12,25 @@ function collectRuntimeFailures(page: Page) {
   return failures;
 }
 
+function relativeLuminance([red, green, blue]: number[]) {
+  const channels = [red, green, blue]
+    .map((channel) => channel / 255)
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first: number[], second: number[]) {
+  const luminance = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (luminance[0] + 0.05) / (luminance[1] + 0.05);
+}
+
+function cssRgb(value: string) {
+  return value
+    .match(/[\d.]+/gu)!
+    .slice(0, 3)
+    .map(Number);
+}
+
 test("hydrates cleanly and reveals the Agent only when requested", async ({ page }) => {
   const failures = collectRuntimeFailures(page);
   await openWorkbench(page);
@@ -28,6 +47,42 @@ test("hydrates cleanly and reveals the Agent only when requested", async ({ page
   await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(page.locator(".workspace")).toBeVisible();
   expect(failures).toEqual([]);
+});
+
+test("Space Black preserves readable text and distinct workspace surface levels", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => localStorage.setItem("rune-appearance-theme-v1", "space-black"));
+  await openWorkbench(page);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "space-black");
+
+  const colors = await page.evaluate(() => {
+    const style = (selector: string) => getComputedStyle(document.querySelector(selector)!);
+    return {
+      fileRail: style(".file-rail").backgroundColor,
+      sourcePane: style(".source-pane").backgroundColor,
+      previewPane: style(".preview-pane").backgroundColor,
+      sourceText: style(".source-editor").color,
+      secondaryText: style(".artifact-label small").color,
+      headingText: style(".markdown-body h1").color,
+      paper: style(".document-paper").backgroundColor,
+      smallestNavigationText: Number.parseFloat(style(".artifact-label small").fontSize),
+    };
+  });
+
+  expect(new Set([colors.fileRail, colors.sourcePane, colors.previewPane]).size).toBe(3);
+  expect(contrastRatio(cssRgb(colors.sourceText), cssRgb(colors.sourcePane))).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(cssRgb(colors.secondaryText), cssRgb(colors.fileRail))).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(cssRgb(colors.headingText), cssRgb(colors.paper))).toBeGreaterThanOrEqual(7);
+  expect(colors.smallestNavigationText).toBeGreaterThanOrEqual(11);
+
+  await page.locator("aside.file-rail").getByText("regional-revenue.csv", { exact: true }).click();
+  const dataText = await page.locator(".data-grid tbody td").first().evaluate((element) => {
+    const cell = getComputedStyle(element);
+    const table = getComputedStyle(element.closest(".data-grid-wrap")!);
+    return { color: cell.color, background: table.backgroundColor, fontSize: Number.parseFloat(cell.fontSize) };
+  });
+  expect(contrastRatio(cssRgb(dataText.color), cssRgb(dataText.background))).toBeGreaterThanOrEqual(7);
+  expect(dataText.fontSize).toBeGreaterThanOrEqual(11);
 });
 
 test("compact Preview selection opens and centers its exact Source range", async ({ page }) => {

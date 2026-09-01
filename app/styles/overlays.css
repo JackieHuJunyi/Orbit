@@ -306,7 +306,7 @@ html[dir="rtl"] .settings-popover {
 .tools-theme-grid > button.selected { border-color: transparent; background: transparent; box-shadow: 0 0 0 2px rgba(var(--theme-rgb), .22); }
 .tools-theme-grid > button:hover { transform: none; background: rgba(118, 118, 128, .075); }
 .tools-theme-grid > button:active:not(:disabled) { transform: scale(.92); }
-.tools-theme-grid svg { position: absolute; top: -2px; right: -1px; width: 11px; height: 11px; padding: 2px; border-radius: 50%; background: var(--theme-accent); color: #fff; }
+.tools-theme-grid svg { position: absolute; top: -2px; right: -1px; width: 11px; height: 11px; padding: 2px; border-radius: 50%; background: var(--rune-accent-surface); color: var(--rune-accent-foreground); }
 .tools-theme-name { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; white-space: nowrap !important; border: 0 !important; }
 .tools-version,
 .tools-version strong { font-size: 10px; }
@@ -554,7 +554,7 @@ html[dir="rtl"] .directory-sync-route > svg { transform: rotate(90deg); }
 .delivery-score-options { display: grid; grid-template-columns: repeat(5, 30px); gap: 4px; }
 .delivery-score-options label { position: relative; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: var(--muted); cursor: pointer; transition: background var(--rune-duration-micro) var(--rune-ease-smooth), color var(--rune-duration-micro) var(--rune-ease-smooth); }
 .delivery-score-options label:hover { background: rgba(var(--theme-rgb), .075); color: var(--ink); }
-.delivery-score-options label.selected { background: var(--theme-accent); color: #fff; }
+.delivery-score-options label.selected { background: var(--rune-accent-surface); color: var(--rune-accent-foreground); }
 .delivery-score-options input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .delivery-score-options label:focus-within { outline: 3px solid rgba(var(--theme-rgb), .16); outline-offset: 1px; }
 .delivery-score-options span { font-size: 11px; font-weight: 680; }
@@ -598,3 +598,22 @@ html[dir="rtl"] .tools-popover { transform-origin: top left; text-align: right; 
 html[dir="rtl"] .tools-menu-actions > button,
 html[dir="rtl"] .tools-material-preview { text-align: right; }
 html[dir="rtl"] .tools-theme-grid svg { right: auto; left: -1px; }
+
+html[data-theme="space-black"] .command-menu-backdrop { background: rgba(3, 5, 7, .72); }
+html[data-theme="space-black"] .command-menu,
+html[data-theme="space-black"] .tools-popover,
+html[data-theme="space-black"] .export-popover,
+html[data-theme="space-black"] .import-review-dialog {
+  border-color: var(--rune-material-edge);
+  background: var(--rune-material-window);
+  color: var(--ink);
+}
+html[data-theme="space-black"] .tools-material-preview {
+  border-color: rgba(var(--theme-rgb), .2);
+  background: linear-gradient(135deg, rgba(var(--theme-rgb), .14), var(--rune-material-raised));
+}
+html[data-theme="space-black"] .delivery-evaluation,
+html[data-theme="space-black"] .delivery-rubric-row,
+html[data-theme="space-black"] .pilot-evidence-file,
+html[data-theme="space-black"] .pilot-evidence-metrics > div,
+html[data-theme="space-black"] .pilot-evidence-scope section { background: var(--rune-material-raised); }

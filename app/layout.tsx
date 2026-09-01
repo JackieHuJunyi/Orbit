@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { RUNE_APPEARANCE_STORAGE_KEY, RUNE_APPEARANCE_THEMES } from "./lib/appearance";
 import "./styles/index.css";
 
-const RUNE_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.runeOnboarding=localStorage.getItem("rune-onboarding-v1")==="complete"?"complete":"pending"}catch{root.dataset.runeOnboarding="pending"}})();`;
+const RUNE_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.runeOnboarding=localStorage.getItem("rune-onboarding-v1")==="complete"?"complete":"pending";const theme=localStorage.getItem(${JSON.stringify(RUNE_APPEARANCE_STORAGE_KEY)});if(${JSON.stringify(RUNE_APPEARANCE_THEMES.map(({ id }) => id))}.includes(theme))root.dataset.theme=theme}catch{root.dataset.runeOnboarding="pending"}})();`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
