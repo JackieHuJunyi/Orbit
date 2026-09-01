@@ -446,9 +446,7 @@ export function ModelProfileManager({
     } catch (cause) {
       setImportResult(null);
       setImportError(
-        cause instanceof ModelProfileImportError
-          ? modelImportErrorMessage(cause.code, text)
-          : text.importErrorFields,
+        cause instanceof ModelProfileImportError ? modelImportErrorMessage(cause.code, text) : text.importErrorFields,
       );
     }
   }
@@ -529,84 +527,89 @@ export function ModelProfileManager({
           )}
         </div>
       )}
-      {!editor && !importOpen && state?.profiles.map((profile) => (
-        <div className={`model-profile-card ${state.activeProfileId === profile.id ? "active" : ""}`} key={profile.id}>
-          <span>
-            <KeyRound />
-          </span>
-          <div>
-            <strong>{profile.name}</strong>
-            <small>
-              {MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}
-            </small>
-            <p>
-              {modelProtocolLabel(profile.protocol)} · {profile.baseURL}
-            </p>
-            <small className={`model-profile-health ${profile.health.status}`}>
-              {healthLabel(profile.health, text)}
-            </small>
-            <p>
-              {text.capability} · {profile.capabilities.structuredOutput} · {text.usageReported} ·{" "}
-              {profile.budget.maxInputTokens}/{profile.budget.maxOutputTokens} {text.tokenUnit}
-            </p>
-          </div>
-          <div className="model-profile-actions">
-            {state.activeProfileId === profile.id ? (
-              <em>
-                <Check />
-                {text.active}
-              </em>
-            ) : (
-              <button type="button" disabled={submitting} onClick={() => void mutate("activate", profile.id)}>
-                <Check />
-                {text.enable}
+      {!editor &&
+        !importOpen &&
+        state?.profiles.map((profile) => (
+          <div
+            className={`model-profile-card ${state.activeProfileId === profile.id ? "active" : ""}`}
+            key={profile.id}
+          >
+            <span>
+              <KeyRound />
+            </span>
+            <div>
+              <strong>{profile.name}</strong>
+              <small>
+                {MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}
+              </small>
+              <p>
+                {modelProtocolLabel(profile.protocol)} · {profile.baseURL}
+              </p>
+              <small className={`model-profile-health ${profile.health.status}`}>
+                {healthLabel(profile.health, text)}
+              </small>
+              <p>
+                {text.capability} · {profile.capabilities.structuredOutput} · {text.usageReported} ·{" "}
+                {profile.budget.maxInputTokens}/{profile.budget.maxOutputTokens} {text.tokenUnit}
+              </p>
+            </div>
+            <div className="model-profile-actions">
+              {state.activeProfileId === profile.id ? (
+                <em>
+                  <Check />
+                  {text.active}
+                </em>
+              ) : (
+                <button type="button" disabled={submitting} onClick={() => void mutate("activate", profile.id)}>
+                  <Check />
+                  {text.enable}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  closeImport();
+                  setEditor(editableProfile(profile));
+                  setModels([]);
+                  setError("");
+                }}
+              >
+                <Pencil />
+                {text.edit}
               </button>
-            )}
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => {
-                closeImport();
-                setEditor(editableProfile(profile));
-                setModels([]);
-                setError("");
-              }}
-            >
-              <Pencil />
-              {text.edit}
-            </button>
-            <button
-              type="button"
-              className={pendingDeleteId === profile.id ? "danger" : ""}
-              disabled={submitting}
-              onClick={() => {
-                if (pendingDeleteId === profile.id) void mutate("delete", profile.id);
-                else setPendingDeleteId(profile.id);
-              }}
-            >
-              <Trash2 />
-              {pendingDeleteId === profile.id ? text.confirmRemove : text.remove}
-            </button>
+              <button
+                type="button"
+                className={pendingDeleteId === profile.id ? "danger" : ""}
+                disabled={submitting}
+                onClick={() => {
+                  if (pendingDeleteId === profile.id) void mutate("delete", profile.id);
+                  else setPendingDeleteId(profile.id);
+                }}
+              >
+                <Trash2 />
+                {pendingDeleteId === profile.id ? text.confirmRemove : text.remove}
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
       {!editor &&
         !importOpen &&
         state &&
         (state.profiles.length > 1 || (state.profiles.length > 0 && state.deployment.configured)) && (
-        <label className="model-failover-policy">
-          <input
-            type="checkbox"
-            checked={state.failoverEnabled}
-            disabled={submitting}
-            onChange={(event) => void mutate("failover", undefined, event.target.checked)}
-          />
-          <span>
-            <strong>{text.failover}</strong>
-            <small>{text.failoverHint}</small>
-          </span>
-        </label>
-      )}
+          <label className="model-failover-policy">
+            <input
+              type="checkbox"
+              checked={state.failoverEnabled}
+              disabled={submitting}
+              onChange={(event) => void mutate("failover", undefined, event.target.checked)}
+            />
+            <span>
+              <strong>{text.failover}</strong>
+              <small>{text.failoverHint}</small>
+            </span>
+          </label>
+        )}
       {!editor && !importOpen && !state?.profiles.length && !state?.deployment.configured && (
         <p className="model-manager-empty">{text.empty}</p>
       )}
@@ -702,23 +705,26 @@ export function ModelProfileManager({
                 <div>
                   <dt>{text.importCredential}</dt>
                   <dd className={importReview.credentialDetected ? "credential-detected" : "credential-missing"}>
-                    {importReview.credentialDetected
-                      ? text.importCredentialDetected
-                      : text.importCredentialMissing}
+                    {importReview.credentialDetected ? text.importCredentialDetected : text.importCredentialMissing}
                   </dd>
                 </div>
                 <div>
                   <dt>{text.inputBudget}</dt>
-                  <dd>{importReview.budget.maxInputTokens.toLocaleString()} {text.tokenUnit}</dd>
+                  <dd>
+                    {importReview.budget.maxInputTokens.toLocaleString()} {text.tokenUnit}
+                  </dd>
                 </div>
                 <div>
                   <dt>{text.outputBudget}</dt>
-                  <dd>{importReview.budget.maxOutputTokens.toLocaleString()} {text.tokenUnit}</dd>
+                  <dd>
+                    {importReview.budget.maxOutputTokens.toLocaleString()} {text.tokenUnit}
+                  </dd>
                 </div>
               </dl>
               {importReview.warnings.some((warning) => warning.code === "unsupported-fields") && (
                 <p className="model-import-warning">
-                  {text.importIgnoredFields}: {importReview.warnings.reduce(
+                  {text.importIgnoredFields}:{" "}
+                  {importReview.warnings.reduce(
                     (count, warning) => count + (warning.code === "unsupported-fields" ? warning.count : 0),
                     0,
                   )}

@@ -76,11 +76,14 @@ test("Space Black preserves readable text and distinct workspace surface levels"
   expect(colors.smallestNavigationText).toBeGreaterThanOrEqual(11);
 
   await page.locator("aside.file-rail").getByText("regional-revenue.csv", { exact: true }).click();
-  const dataText = await page.locator(".data-grid tbody td").first().evaluate((element) => {
-    const cell = getComputedStyle(element);
-    const table = getComputedStyle(element.closest(".data-grid-wrap")!);
-    return { color: cell.color, background: table.backgroundColor, fontSize: Number.parseFloat(cell.fontSize) };
-  });
+  const dataText = await page
+    .locator(".data-grid tbody td")
+    .first()
+    .evaluate((element) => {
+      const cell = getComputedStyle(element);
+      const table = getComputedStyle(element.closest(".data-grid-wrap")!);
+      return { color: cell.color, background: table.backgroundColor, fontSize: Number.parseFloat(cell.fontSize) };
+    });
   expect(contrastRatio(cssRgb(dataText.color), cssRgb(dataText.background))).toBeGreaterThanOrEqual(7);
   expect(dataText.fontSize).toBeGreaterThanOrEqual(11);
 

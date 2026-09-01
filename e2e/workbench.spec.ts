@@ -146,9 +146,9 @@ test("reviews a CC Switch model import without navigating or persisting its cred
   await expect(dialog.getByText(credential, { exact: true })).toHaveCount(0);
   await expect.poll(() => dialog.locator(".welcome-page").evaluate((node) => node.scrollTop)).toBe(0);
   await expect.poll(() => dialog.locator(".model-profile-manager").evaluate((node) => node.scrollTop)).toBe(0);
-  expect(
-    await dialog.locator(".model-profile-manager").evaluate((node) => node.scrollWidth - node.clientWidth),
-  ).toBe(0);
+  expect(await dialog.locator(".model-profile-manager").evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(
+    0,
+  );
   expect(page.url()).not.toContain("ccswitch");
   expect(profileWrites).toEqual([]);
 

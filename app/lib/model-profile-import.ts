@@ -41,9 +41,7 @@ export type ImportedModelProfileDraft = {
   apiKey: string;
 };
 
-export type ModelProfileImportWarning =
-  | { code: "credential-missing" }
-  | { code: "unsupported-fields"; count: number };
+export type ModelProfileImportWarning = { code: "credential-missing" } | { code: "unsupported-fields"; count: number };
 
 export type ModelProfileImportResult = {
   source: "rune-json" | "cc-switch-deeplink";
@@ -77,18 +75,19 @@ const ENV_API_KEYS = [
   "gemini_api_key",
   "google_api_key",
 ] as const;
-const ENV_ENDPOINTS = [
-  "openai_base_url",
-  "anthropic_base_url",
-  "gemini_base_url",
-  "google_gemini_base_url",
-] as const;
+const ENV_ENDPOINTS = ["openai_base_url", "anthropic_base_url", "gemini_base_url", "google_gemini_base_url"] as const;
 const ENV_MODELS = ["openai_model", "anthropic_model", "gemini_model"] as const;
 const REMOTE_CONFIG_FIELDS = new Set(["configurl", "config_url", "remoteconfig", "remote_config"]);
 const KNOWN_FIELDS = new Set(
-  [...Object.values(FIELD_ALIASES).flat(), "env", "config", "resource", ...ENV_API_KEYS, ...ENV_ENDPOINTS, ...ENV_MODELS].map(
-    (field) => field.toLowerCase(),
-  ),
+  [
+    ...Object.values(FIELD_ALIASES).flat(),
+    "env",
+    "config",
+    "resource",
+    ...ENV_API_KEYS,
+    ...ENV_ENDPOINTS,
+    ...ENV_MODELS,
+  ].map((field) => field.toLowerCase()),
 );
 
 function fail(code: ModelProfileImportErrorCode, message: string): never {
@@ -132,11 +131,7 @@ function cleanText(value: unknown, maximum: number) {
 function importedProtocol(value: unknown): ModelProtocol | null {
   const normalized = cleanText(value, 80).toLowerCase();
   if (normalized === "responses" || normalized === "openai-responses") return "responses";
-  if (
-    normalized === "chat-completions" ||
-    normalized === "chat_completions" ||
-    normalized === "openai-compatible"
-  )
+  if (normalized === "chat-completions" || normalized === "chat_completions" || normalized === "openai-compatible")
     return "chat-completions";
   if (normalized === "anthropic-messages" || normalized === "anthropic_messages" || normalized === "messages")
     return "anthropic-messages";
@@ -288,14 +283,17 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
   if (providerSignals.size > 1) fail("ambiguous", "The import identifies conflicting providers.");
   const requestedProvider = explicitProvider ?? appProvider ?? environmentProvider ?? officialProvider ?? null;
   if (!requestedProvider) fail("invalid-fields", "The import does not identify a supported provider.");
-  const provider: ModelProviderKind = endpoint && !officialProvider ? "custom" : (officialProvider ?? requestedProvider);
+  const provider: ModelProviderKind =
+    endpoint && !officialProvider ? "custom" : (officialProvider ?? requestedProvider);
   const protocolValue = aliasedValue(record, FIELD_ALIASES.protocol);
   const protocolSource = importedProtocol(protocolValue);
   if (protocolValue !== undefined && !protocolSource) {
     fail("invalid-fields", "The imported API protocol is not supported.");
   }
   const protocolProvider =
-    requestedProvider === "custom" ? (appProvider ?? environmentProvider ?? officialProvider ?? "openai") : requestedProvider;
+    requestedProvider === "custom"
+      ? (appProvider ?? environmentProvider ?? officialProvider ?? "openai")
+      : requestedProvider;
   const protocol =
     protocolSource ?? MODEL_PROVIDER_PRESETS.find((preset) => preset.id === protocolProvider)?.protocol ?? "responses";
   const preset = MODEL_PROVIDER_PRESETS.find((item) => item.id === provider)!;
@@ -331,7 +329,9 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
   const name = cleanText(aliasedValue(record, FIELD_ALIASES.name), 60) || fallbackPreset.label;
   const ignoredFieldCount = Object.keys(parsed.record).filter(
     (field) =>
-      !KNOWN_FIELDS.has(field.toLowerCase()) && field.toLowerCase() !== "profiles" && field.toLowerCase() !== "providers",
+      !KNOWN_FIELDS.has(field.toLowerCase()) &&
+      field.toLowerCase() !== "profiles" &&
+      field.toLowerCase() !== "providers",
   ).length;
   const warnings: ModelProfileImportWarning[] = [];
   if (!apiKey) warnings.push({ code: "credential-missing" });

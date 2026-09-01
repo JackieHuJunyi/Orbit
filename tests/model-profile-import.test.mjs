@@ -88,7 +88,10 @@ test("rejects remote, batch, conflicting, local, and oversized imports with stab
   const cases = [
     ['{"provider":"openai","configUrl":"https://example.com/profile.json"}', "remote-config"],
     ['{"profiles":[{"provider":"openai"}]}', "batch"],
-    ["ccswitch://v1/import?resource=provider&app=codex&endpoint=https://one.example/v1,https://two.example/v1", "ambiguous"],
+    [
+      "ccswitch://v1/import?resource=provider&app=codex&endpoint=https://one.example/v1,https://two.example/v1",
+      "ambiguous",
+    ],
     ['{"provider":"openai","endpoint":"https://api.anthropic.com/v1"}', "ambiguous"],
     ['{"provider":"openai","baseURL":"https://api.openai.com/v1","endpoint":"https://example.com/v1"}', "ambiguous"],
     ['{"env":{"OPENAI_MODEL":"gpt-5.6","ANTHROPIC_MODEL":"claude-sonnet-4"}}', "ambiguous"],
