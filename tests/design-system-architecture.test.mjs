@@ -9,11 +9,43 @@ test("loads the modular design system in one explicit responsibility order", asy
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/index.css", import.meta.url), "utf8"),
   ]);
-  assert.match(layout, /import "\.\/globals\.css";\s*import "\.\/styles\/index\.css";/);
+  assert.doesNotMatch(layout, /import "\.\/globals\.css";/);
+  assert.match(layout, /import "\.\/styles\/index\.css";/);
+  assert.match(entry, /@layer legacy, tokens, shell, content, overlays, onboarding, motion, responsive;/);
+  assert.match(entry, /@import "\.\.\/globals\.css" layer\(legacy\);/);
   assert.deepEqual(
-    [...entry.matchAll(/@import "\.\/(.+?)\.css";/g)].map((match) => match[1]),
+    [...entry.matchAll(/@import "\.\/(.+?)\.css" layer\((.+?)\);/g)].map((match) => match[1]),
     modules,
   );
+  assert.deepEqual(
+    [...entry.matchAll(/@import "\.\/(.+?)\.css" layer\((.+?)\);/g)].map((match) => match[2]),
+    modules,
+  );
+});
+
+test("keeps empty, compact, and contextual surfaces inside the maintained cascade", async () => {
+  const [shell, content, responsive, onboarding, workbench, modelManager] = await Promise.all([
+    readFile(new URL("../app/styles/shell.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/responsive.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/model-profile-manager.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(workbench, /emptyWorkspace \? "is-empty" : ""/);
+  assert.match(shell, /\.workspace\.is-empty\.with-file-rail[^{]*\{[^}]*grid-template-columns:/s);
+  assert.match(
+    shell,
+    /\.workspace\.is-empty\.with-file-rail > \.empty-workspace-canvas\s*\{\s*grid-column:\s*3 \/ -1;/,
+  );
+  assert.match(responsive, /@media \(max-width:\s*960px\)[\s\S]*grid-template-rows:\s*minmax\(0, 1fr\)/);
+  assert.match(responsive, /workspace-view-option="split"/);
+  assert.match(content, /\.agent-dock\.collapsed/);
+  assert.match(workbench, /agentComposerOpen/);
+  assert.match(workbench, /data-rune-hydrated=\{hydrated \? "true" : "false"\}/);
+  assert.match(shell, /\.workspace-view-switch button\s*\{[^}]*border:\s*0;[^}]*cursor:\s*pointer;/s);
+  assert.match(onboarding, /\.model-profile-manager\.compact/);
+  assert.match(modelManager, /state\.profiles\.length > 0 && state\.deployment\.configured/);
 });
 
 test("keeps the authoritative layer scale in tokens and consumes semantic layers elsewhere", async () => {

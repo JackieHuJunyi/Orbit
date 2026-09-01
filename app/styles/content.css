@@ -4,6 +4,68 @@
 .line-gutter { font-size: var(--rune-type-caption); line-height: 1.72; }
 .agent-composer { border-radius: 22px; }
 .agent-composer textarea { font-size: var(--rune-type-ui); line-height: 1.5; }
+.agent-dock {
+  position: relative;
+  transition:
+    padding var(--rune-duration-layout) var(--rune-ease-smooth),
+    background-color var(--rune-duration-micro) ease;
+}
+.agent-dock.collapsed {
+  display: flex;
+  justify-content: center;
+  padding-block: 9px;
+  background: color-mix(in srgb, var(--rune-material-solid) 88%, transparent);
+}
+.agent-dock-trigger {
+  display: inline-flex;
+  min-width: min(320px, 100%);
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rune-space-2);
+  padding-inline: var(--rune-space-4);
+  border: 1px solid var(--rune-material-divider);
+  border-radius: 999px;
+  background: var(--rune-material-solid);
+  box-shadow: 0 5px 16px rgba(24, 24, 28, .055), inset 0 1px var(--rune-material-highlight);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: var(--rune-type-ui);
+  font-weight: 640;
+}
+.agent-dock-trigger:hover { border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--rune-material-divider)); }
+.agent-dock-trigger svg { width: 15px; height: 15px; color: var(--theme-accent); }
+.agent-dock-trigger kbd { margin-inline-start: auto; color: var(--subtle); font-size: 10px; font-weight: 560; }
+.agent-dock-close {
+  position: absolute;
+  z-index: var(--rune-layer-local-float);
+  top: 8px;
+  right: 10px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.agent-dock-close:hover { background: var(--rune-material-control); color: var(--ink); }
+.agent-dock-close svg { width: 14px; height: 14px; }
+.agent-dock.collapsed > :not(.agent-dock-trigger) { display: none; }
+.agent-dock-composer { min-width: 0; }
+
+[data-preview-source-id],
+[data-preview-section-id] { scroll-margin-block: min(20vh, 128px); }
+.markdown-body .document-source-block.active,
+.markdown-body .document-source-fragment.active,
+.document-target.active,
+.preview-data-target.active,
+.preview-data-cell.active,
+.deck-slide-canvas.active {
+  animation: rune-source-pair-confirm 820ms var(--rune-ease-out);
+}
 .agent-scope-switch button,
 .local-planner-badge { font-size: 11px; }
 .validation-badge,
@@ -142,6 +204,11 @@
   .preview-evidence-popover.has-issues { width: min(390px, calc(100vw - 20px)); }
   .preview-diagnostics-heading { grid-template-columns: 28px minmax(0, 1fr); }
   .preview-diagnostics-heading button { grid-column: 2; width: fit-content; }
+}
+
+@keyframes rune-source-pair-confirm {
+  0%, 100% { outline-color: transparent; }
+  28% { outline: 3px solid rgba(var(--theme-rgb), .22); outline-offset: 3px; }
 }
 
 .proposal-preview-badge {

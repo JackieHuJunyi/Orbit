@@ -155,7 +155,7 @@ export function WelcomeModelStep({
             {modelMode === "local" ? <Check /> : null}
           </button>
         </div>
-        {!checkingModel && <ModelProfileManager locale={locale} onStatusChange={handleProfileStatus} />}
+        {!checkingModel && <ModelProfileManager compact locale={locale} onStatusChange={handleProfileStatus} />}
         <p className="model-safety-note">
           <ShieldCheck />
           {copy.modelSafety}

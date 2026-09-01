@@ -189,6 +189,7 @@ test("reviews, cancels, and atomically persists a checkpoint restore", async ({ 
   ).toBe(true);
 
   await page.reload();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(editor).toHaveValue(originalSource);
 });
 
@@ -228,6 +229,7 @@ test("reviews a sample reset, preserves the full workspace, and restores it afte
   );
 
   await page.reload();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(editor).toHaveValue(originalSource);
   await tools.click();
   await page.getByRole("menuitem", { name: /Restore previous workspace/u }).click();
@@ -244,6 +246,7 @@ test("reviews a sample reset, preserves the full workspace, and restores it afte
   );
 
   await page.reload();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(editor).toHaveValue(changedSource);
 });
 

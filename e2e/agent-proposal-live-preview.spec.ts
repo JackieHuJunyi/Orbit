@@ -8,11 +8,15 @@ async function openLocalAgentWorkbench(page: Page) {
   });
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
 }
 
 async function prepareSummaryProposal(page: Page) {
+  const trigger = page.locator(".agent-dock-trigger");
+  if (await trigger.isVisible()) await trigger.click();
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
+  await expect(composer).toBeVisible();
   await composer.fill("Rewrite the executive summary as three points");
   await page.getByRole("button", { name: "Prepare change" }).click();
   await expect(page.locator(".patch-card")).toBeVisible();
@@ -65,6 +69,7 @@ test("renders a local Agent proposal in complete Source and Preview before Disca
 
   await page.reload();
   await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
   await expect(editor).toHaveValue(reviewedSource);
   await expect(page.locator(".document-paper .markdown-body")).toContainText(proposedText);
@@ -80,6 +85,7 @@ test("switches one multi-artifact Agent proposal between a coherent report and p
 
   const editor = page.locator("textarea.source-editor");
   const originalReport = await editor.inputValue();
+  await page.locator(".agent-dock-trigger").click();
   const scope = page.getByRole("group", { name: "Agent change scope" });
   await scope.getByRole("button", { name: "Workspace", exact: true }).click();
   await page

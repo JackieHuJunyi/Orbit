@@ -12,8 +12,22 @@
 .tools-theme-grid > button { transition: color var(--rune-duration-micro) ease, background-color var(--rune-duration-micro) ease, border-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-surface) var(--rune-ease-out), transform var(--rune-duration-micro) var(--rune-ease-out); }
 .command-menu-group > button { transition: background-color var(--rune-duration-micro) var(--rune-ease-smooth), opacity var(--rune-duration-micro) ease; }
 
-/* Content floats: cards and papers lift on hover with a spring, and their
-   shadow deepens toward --rune-shadow-float-hover. */
+.rune-shell > .statusbar.is-visible {
+  animation: rune-statusbar-notice 4.2s var(--rune-ease-out) both;
+}
+
+@keyframes rune-statusbar-notice {
+  0% { opacity: 0; transform: translate3d(-50%, 8px, 0) scale(.98); }
+  7%, 88% { opacity: 1; transform: translate3d(-50%, 0, 0) scale(1); }
+  100% { opacity: 0; transform: translate3d(-50%, 3px, 0) scale(.99); }
+}
+
+@keyframes rune-statusbar-notice-reduced {
+  0%, 99% { opacity: 1; transform: translate3d(-50%, 0, 0); }
+  100% { opacity: 0; transform: translate3d(-50%, 0, 0); }
+}
+
+/* Content is stable. Motion is reserved for state changes, not decoration. */
 .document-paper,
 .chart-card,
 .deck-slide,
@@ -28,12 +42,7 @@
 .workspace > .file-rail,
 .workspace > .source-pane,
 .workspace > .workspace-splitter,
-.workspace > .preview-pane { animation: rune-surface-enter 620ms var(--rune-ease-out) backwards; }
-.workspace > .file-rail { animation-delay: 35ms; }
-.workspace > .source-pane { animation-delay: 70ms; }
-.workspace > .workspace-splitter { animation-delay: 95ms; }
-.workspace > .preview-pane { animation-delay: 120ms; }
-.preview-scroll > * { animation: rune-preview-settle var(--rune-duration-surface) var(--rune-ease-out) backwards; }
+.workspace > .preview-pane { animation: rune-surface-enter 240ms ease-out backwards; }
 .tools-popover,
 .export-popover { animation: rune-popover-material 280ms var(--rune-ease-out) backwards; }
 .import-review-backdrop { animation: rune-review-backdrop-in 260ms ease backwards; }
@@ -80,8 +89,7 @@
   .run-button:hover:not(:disabled),
   .welcome-primary:hover:not(:disabled) { transform: translateY(-1px); }
   .artifact-row:hover,
-  .welcome-actions button:hover,
-  .shortcut-lessons > div:hover { transform: translateY(-2px); }
+  .welcome-actions button:hover { transform: translateY(-1px); }
   .artifact-row:hover { box-shadow: var(--rune-shadow-card-hover); }
   .ghost-button:hover:not(:disabled) { box-shadow: var(--rune-shadow-card); }
   .document-paper:hover,
@@ -89,7 +97,7 @@
   .deck-slide:hover,
   .data-grid-wrap:hover,
   .saved-review-card:hover,
-  .patch-card:hover { transform: translateY(-4px); box-shadow: var(--rune-shadow-float-hover); }
+  .patch-card:hover { box-shadow: var(--rune-shadow-card); }
 }
 .button:active:not(:disabled),
 .icon-button:active:not(:disabled),
@@ -103,7 +111,7 @@
 }
 
 @keyframes rune-preview-settle { from { opacity: .45; transform: translate3d(0, 8px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-surface-enter { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes rune-surface-enter { from { opacity: .72; } to { opacity: 1; } }
 @keyframes rune-popover-material { from { opacity: 0; filter: blur(5px); transform: translate3d(0, -5px, 0) scale(.965); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); } }
 @keyframes rune-backdrop-in { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; } }
 @keyframes rune-review-backdrop-in { from { background-color: transparent; backdrop-filter: blur(0) saturate(100%); } }
@@ -161,6 +169,9 @@
     transform: none;
   }
   .rune-shell::before { display: none; }
+  .rune-shell > .statusbar.is-visible {
+    animation: rune-statusbar-notice-reduced 4.2s step-end both !important;
+  }
   .workspace > .activity-rail,
   .workspace > .file-rail,
   .workspace > .source-pane,

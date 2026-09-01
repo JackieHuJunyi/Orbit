@@ -11,7 +11,6 @@ import {
   Upload,
 } from "lucide-react";
 import { useState, type DragEvent } from "react";
-import { resetFluidSurface, trackFluidSurface } from "../lib/fluid-surface";
 import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
 
 export const EMPTY_WORKSPACE_BASE_COPY = {
@@ -97,8 +96,6 @@ export function EmptyWorkspace({
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
         }}
         onDrop={acceptDrop}
-        onPointerMove={trackFluidSurface}
-        onPointerLeave={resetFluidSurface}
       >
         <div className="empty-hero">
           <div className="empty-file-stack" aria-hidden="true">
@@ -115,6 +112,10 @@ export function EmptyWorkspace({
           <span className="empty-eyebrow">{dragging ? text.drop : text.eyebrow}</span>
           <h1>{text.title}</h1>
           <p>{text.body}</p>
+          <button type="button" className="empty-open-primary" onClick={onChooseFiles}>
+            <FolderOpen aria-hidden="true" />
+            {text.choose}
+          </button>
           <small className="empty-support">{text.support}</small>
         </div>
         <div className="empty-start-panel">
@@ -144,10 +145,6 @@ export function EmptyWorkspace({
             <span>{text.orOpen}</span>
           </div>
           <div className="empty-actions">
-            <button type="button" onClick={onChooseFiles}>
-              <FolderOpen />
-              {text.choose}
-            </button>
             <button type="button" onClick={onCreate}>
               <FilePlus2 />
               {text.create}

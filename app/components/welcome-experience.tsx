@@ -1,7 +1,17 @@
 "use client";
 
 import { ArrowRight, Check, ClipboardList, Command, FileText, Keyboard, Presentation, Sparkles, X } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { HandwrittenGreeting } from "./handwritten-greeting";
 import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
@@ -148,6 +158,30 @@ function ShortcutKey({ children }: { children: ReactNode }) {
   return <kbd>{children}</kbd>;
 }
 
+function IsolatedRuneName({ children }: { children: string }) {
+  const pieces = children.split("Rune");
+  return (
+    <>
+      {pieces.map((piece, index) => (
+        <Fragment key={`${piece}-${index}`}>
+          {index > 0 && (
+            <bdi className="rune-name" dir="ltr">
+              Rune
+            </bdi>
+          )}
+          {piece}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+const subscribeToPlatform = () => () => undefined;
+
+function usesMacPlatformControls() {
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+}
+
 export function WelcomeExperience({
   detectedLocale,
   locale,
@@ -174,16 +208,11 @@ export function WelcomeExperience({
   const [greetingIntroComplete, setGreetingIntroComplete] = useState(false);
   const languageOptionsRef = useRef<HTMLDivElement>(null);
   const selectedLanguageOptionRef = useRef<HTMLButtonElement>(null);
-  const [modifier] = useState(() =>
-    typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
-      ? "Ctrl"
-      : "⌘",
-  );
-  const [optionModifier] = useState(() =>
-    typeof navigator !== "undefined" && !/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent)
-      ? "Alt"
-      : "⌥",
-  );
+  // Keep the server and first client render identical. The external-store
+  // server snapshot owns hydration; the browser snapshot updates afterward.
+  const usesMacControls = useSyncExternalStore(subscribeToPlatform, usesMacPlatformControls, () => true);
+  const modifier = usesMacControls ? "⌘" : "Ctrl";
+  const optionModifier = usesMacControls ? "⌥" : "Alt";
   const text = welcomeCopy(locale);
   const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
   const greeting = greetings[0] ?? "Hello";
@@ -207,16 +236,33 @@ export function WelcomeExperience({
 
   useEffect(() => {
     if (step !== "welcome") return;
-    const frame = window.requestAnimationFrame(() => {
+    const revealSelectedOption = () => {
       const options = languageOptionsRef.current;
       const selected = selectedLanguageOptionRef.current;
       if (!options || !selected) return;
-      const centeredTop = selected.offsetTop - (options.clientHeight - selected.offsetHeight) / 2;
+      const buttons = [...options.querySelectorAll<HTMLButtonElement>("button")];
+      const selectedIndex = buttons.indexOf(selected);
+      const firstTop = buttons[0]?.offsetTop ?? 0;
+      const rowHeight = Math.max(
+        selected.offsetHeight,
+        buttons.length > 1 ? buttons[1].offsetTop - buttons[0].offsetTop : selected.offsetHeight,
+      );
+      const visibleRows = Math.max(1, Math.floor((options.clientHeight - firstTop * 2) / rowHeight));
+      const firstVisibleIndex = Math.min(
+        Math.max(0, buttons.length - visibleRows),
+        Math.max(0, selectedIndex - Math.floor(visibleRows / 2)),
+      );
+      const centeredTop = (buttons[firstVisibleIndex]?.offsetTop ?? selected.offsetTop) - firstTop;
       const maximumTop = Math.max(0, options.scrollHeight - options.clientHeight);
       options.scrollTop = Math.min(maximumTop, Math.max(0, centeredTop));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [locale, step]);
+    };
+    const frame = window.requestAnimationFrame(revealSelectedOption);
+    const settled = window.setTimeout(revealSelectedOption, 360);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(settled);
+    };
+  }, [introPhase, locale, step]);
 
   useEffect(() => {
     if (step !== "shortcuts") return;
@@ -298,7 +344,7 @@ export function WelcomeExperience({
           )}
         </header>
 
-        <div className={"welcome-page welcome-" + step}>
+        <div className={"welcome-page welcome-" + step} key={step}>
           {step === "welcome" && (
             <>
               <div className="welcome-intro-grid" data-intro-phase={introPhase}>
@@ -312,7 +358,9 @@ export function WelcomeExperience({
                 <section className="welcome-language-card" aria-labelledby="welcome-title">
                   <div className="welcome-language-heading">
                     <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
-                    <h1 id="welcome-title">{text.languageTitle}</h1>
+                    <h1 id="welcome-title">
+                      <IsolatedRuneName>{text.languageTitle}</IsolatedRuneName>
+                    </h1>
                     <p>{text.languageBody}</p>
                   </div>
                   <div

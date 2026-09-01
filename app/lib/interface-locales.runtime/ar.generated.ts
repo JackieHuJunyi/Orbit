@@ -215,7 +215,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose the language actually used on the page to reduce errors.":
     "اختر اللغة المستخدمة فعليًا في الصفحة لتقليل الأخطاء.",
   "Choose valid Chart properties.": "اختر خصائص Chart صالحة.",
-  "Choose your Rune language": "اختر لغتك Rune.",
+  "Choose your Rune language": "اختر لغة Rune",
   Clear: "واضح",
   "Clear pins": "دبابيس واضحة",
   "Click again to delete": "انقر مرة أخرى للحذف",

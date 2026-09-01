@@ -6,6 +6,7 @@ export async function openWorkbench(page: Page) {
   });
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
 }
 

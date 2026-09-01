@@ -12,7 +12,97 @@ type PresentationFrameProps = Omit<ComponentPropsWithoutRef<"iframe">, "height" 
   viewportClassName?: string;
 };
 
-export function PresentationFrame({ className = "", viewportClassName = "", ...props }: PresentationFrameProps) {
+type WebKitSrcDocReplayTask = {
+  cancelled: boolean;
+  delay: number;
+  frame: HTMLIFrameElement;
+  loadListener: (() => void) | null;
+  phaseTimer: number | null;
+  source: string;
+};
+
+const webKitSrcDocReplayQueue: WebKitSrcDocReplayTask[] = [];
+let activeWebKitSrcDocReplay: WebKitSrcDocReplayTask | null = null;
+let webKitSrcDocReplayIdentity = 0;
+
+function clearWebKitSrcDocReplayTask(task: WebKitSrcDocReplayTask) {
+  if (task.phaseTimer != null) window.clearTimeout(task.phaseTimer);
+  if (task.loadListener) task.frame.removeEventListener("load", task.loadListener);
+  task.phaseTimer = null;
+  task.loadListener = null;
+}
+
+function finishWebKitSrcDocReplay(task: WebKitSrcDocReplayTask, ready = false) {
+  if (ready && task.frame.getAttribute("srcdoc") === task.source) task.frame.dataset.srcdocReady = "true";
+  clearWebKitSrcDocReplayTask(task);
+  if (activeWebKitSrcDocReplay === task) activeWebKitSrcDocReplay = null;
+  const queuedIndex = webKitSrcDocReplayQueue.indexOf(task);
+  if (queuedIndex >= 0) webKitSrcDocReplayQueue.splice(queuedIndex, 1);
+  window.queueMicrotask(runNextWebKitSrcDocReplay);
+}
+
+function loadWebKitSrcDocReplaySource(task: WebKitSrcDocReplayTask) {
+  if (task.cancelled || !task.frame.isConnected) {
+    finishWebKitSrcDocReplay(task);
+    return;
+  }
+  clearWebKitSrcDocReplayTask(task);
+  task.loadListener = () => finishWebKitSrcDocReplay(task, true);
+  task.frame.addEventListener("load", task.loadListener, { once: true });
+  task.frame.setAttribute("srcdoc", task.source);
+  task.phaseTimer = window.setTimeout(() => finishWebKitSrcDocReplay(task), 2_500);
+}
+
+function runNextWebKitSrcDocReplay() {
+  if (activeWebKitSrcDocReplay) return;
+  const task = webKitSrcDocReplayQueue.shift();
+  if (!task) return;
+  if (task.cancelled || !task.frame.isConnected) {
+    window.queueMicrotask(runNextWebKitSrcDocReplay);
+    return;
+  }
+  activeWebKitSrcDocReplay = task;
+  task.phaseTimer = window.setTimeout(() => {
+    if (task.cancelled || !task.frame.isConnected) {
+      finishWebKitSrcDocReplay(task);
+      return;
+    }
+    task.frame.removeAttribute("srcdoc");
+    task.loadListener = () => loadWebKitSrcDocReplaySource(task);
+    task.frame.addEventListener("load", task.loadListener, { once: true });
+    task.frame.setAttribute("src", `about:blank#rune-srcdoc-replay-${++webKitSrcDocReplayIdentity}`);
+    task.phaseTimer = window.setTimeout(() => loadWebKitSrcDocReplaySource(task), 320);
+  }, task.delay);
+}
+
+function enqueueWebKitSrcDocReplay(frame: HTMLIFrameElement, source: string, delay: number) {
+  const task: WebKitSrcDocReplayTask = {
+    cancelled: false,
+    delay,
+    frame,
+    loadListener: null,
+    phaseTimer: null,
+    source,
+  };
+  frame.dataset.srcdocReady = "false";
+  webKitSrcDocReplayQueue.push(task);
+  runNextWebKitSrcDocReplay();
+  return () => {
+    task.cancelled = true;
+    if (activeWebKitSrcDocReplay === task) finishWebKitSrcDocReplay(task);
+    else {
+      const queuedIndex = webKitSrcDocReplayQueue.indexOf(task);
+      if (queuedIndex >= 0) webKitSrcDocReplayQueue.splice(queuedIndex, 1);
+    }
+  };
+}
+
+export function PresentationFrame({
+  className = "",
+  onLoad,
+  viewportClassName = "",
+  ...props
+}: PresentationFrameProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -46,17 +136,23 @@ export function PresentationFrame({ className = "", viewportClassName = "", ...p
     const frame = frameRef.current;
     if (!frame) return;
 
-    // WebKit can abandon one of several simultaneous live srcdoc updates on
-    // an empty document. Replay the same proven bytes once, with a small
-    // content-derived stagger, while keeping the SSR and other engines on the
-    // ordinary native srcdoc path.
-    const timer = window.setTimeout(() => {
-      if (frameRef.current !== frame) return;
-      frame.removeAttribute("srcdoc");
-      frame.setAttribute("srcdoc", source);
-    }, delay);
-    return () => window.clearTimeout(timer);
+    // WebKit can abandon simultaneous live srcdoc updates on empty documents.
+    // Serialize a blank navigation and the same proven bytes for each frame;
+    // SSR and other engines retain the ordinary native srcdoc path.
+    return enqueueWebKitSrcDocReplay(frame, source, delay);
   }, [props.srcDoc]);
+
+  const handleFrameLoad: NonNullable<ComponentPropsWithoutRef<"iframe">["onLoad"]> = (event) => {
+    const source = props.srcDoc;
+    if (
+      typeof source === "string" &&
+      presentationSrcDocReplayDelay(source, navigator.userAgent) == null &&
+      event.currentTarget.getAttribute("srcdoc") === source
+    ) {
+      event.currentTarget.dataset.srcdocReady = "true";
+    }
+    onLoad?.(event);
+  };
 
   return (
     <div
@@ -74,7 +170,9 @@ export function PresentationFrame({ className = "", viewportClassName = "", ...p
       <iframe
         {...props}
         className={`presentation-frame ${className}`.trim()}
+        data-srcdoc-ready="false"
         height={PRESENTATION_CANVAS_HEIGHT}
+        onLoad={handleFrameLoad}
         ref={frameRef}
         width={PRESENTATION_CANVAS_WIDTH}
       />

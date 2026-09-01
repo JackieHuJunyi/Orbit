@@ -184,6 +184,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 }
 
 .welcome-welcome { justify-content: flex-start; }
+.welcome-model,
+.welcome-shortcuts,
+.welcome-ready { justify-content: flex-start; padding-top: 34px; }
 
 .welcome-intro-grid[data-intro-phase="ready"] {
   align-content: start;
@@ -349,7 +352,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .language-options {
   position: relative;
   display: grid;
-  max-height: min(38dvh, 328px);
+  height: min(38dvh, 318px);
   gap: 0;
   margin-top: 14px;
   overflow-y: auto;
@@ -361,6 +364,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   box-shadow: 0 1px 2px rgba(0, 0, 0, .025);
   scrollbar-color: var(--rune-material-divider) transparent;
   scrollbar-width: thin;
+  scroll-snap-type: y proximity;
 }
 
 .language-options button {
@@ -377,6 +381,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   color: var(--ink);
   cursor: pointer;
   text-align: start;
+  scroll-snap-align: start;
 }
 .language-options button:hover { background: rgba(29, 29, 31, .045); }
 .language-options button.selected {
@@ -401,8 +406,15 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   font-size: 13px;
 }
 .welcome-welcome > .welcome-primary { margin-top: 0; }
-.welcome-icon-disc { width: 72px; height: 72px; border-radius: var(--rune-radius-card); }
+.welcome-icon-disc { width: 72px; height: 72px; flex: 0 0 auto; border-radius: var(--rune-radius-card); }
 .model-setup-panel { width: min(var(--rune-frame-width), 860px); gap: var(--rune-space-3); margin-block: var(--rune-space-6) var(--rune-space-5); }
+.model-profile-manager.compact { max-height: min(300px, 34dvh); }
+.model-profile-manager.compact .model-profile-card p,
+.model-profile-manager.compact .model-profile-health { display: none; }
+.model-profile-manager.compact .model-profile-card { min-height: 58px; }
+.model-profile-manager.compact .model-manager-warning,
+.model-profile-manager.compact .model-manager-empty { font-size: 11px; }
+.model-profile-manager.compact .model-add-provider > span { display: none; }
 .shortcut-lessons { width: min(var(--rune-frame-width), 860px); gap: 10px; margin-top: var(--rune-space-6); }
 .shortcut-lessons > div { min-height: 68px; padding: var(--rune-space-3) var(--rune-space-4); border-radius: var(--rune-radius-control); }
 .shortcut-lessons strong,
@@ -467,7 +479,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
     rgba(var(--theme-rgb), .1),
     transparent 70%
   );
-  opacity: .8;
+  opacity: 0;
   pointer-events: none;
   content: "";
 }
@@ -490,10 +502,8 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   width: 116px;
   height: 82px;
   margin-bottom: var(--rune-space-8);
-  transform: translate3d(var(--rune-pointer-shift-x), var(--rune-pointer-shift-y), 0);
-  transition: transform var(--rune-duration-surface) var(--rune-ease-spring);
+  transform: none;
 }
-.empty-drop-zone[data-pointer-active="true"] .empty-file-stack { transition-duration: 0ms; }
 .empty-file-stack span {
   position: absolute;
   display: grid;
@@ -511,9 +521,6 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .empty-file-stack span:nth-child(2) { right: 0; transform: rotate(8deg); }
 .empty-file-stack span:last-child { left: 27px; color: var(--theme-accent); transform: rotate(-1deg) translateY(-3px); }
 .empty-file-stack svg { width: 20px; height: 20px; }
-.empty-drop-zone:hover .empty-file-stack span:first-child { transform: rotate(-10deg) translate3d(-2px, -2px, 0); }
-.empty-drop-zone:hover .empty-file-stack span:nth-child(2) { transform: rotate(11deg) translate3d(2px, -2px, 0); }
-.empty-drop-zone:hover .empty-file-stack span:last-child { transform: rotate(0) translate3d(0, -6px, 0); }
 
 .empty-eyebrow {
   color: var(--theme-accent);
@@ -550,6 +557,28 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   font-size: var(--rune-type-caption);
   line-height: 1.5;
 }
+.empty-open-primary {
+  display: inline-flex;
+  min-height: var(--rune-control-large);
+  align-items: center;
+  gap: var(--rune-space-2);
+  margin-top: var(--rune-space-6);
+  padding-inline: var(--rune-space-5);
+  border: 0;
+  border-radius: 999px;
+  background: var(--theme-accent);
+  box-shadow: 0 8px 22px rgba(var(--theme-rgb), .17);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 660;
+  transition:
+    background-color var(--rune-duration-micro) ease,
+    transform var(--rune-duration-press) var(--rune-ease-out);
+}
+.empty-open-primary:hover { background: color-mix(in srgb, var(--theme-accent) 88%, black); }
+.empty-open-primary:active { transform: scale(.975); }
+.empty-open-primary svg { width: 16px; height: 16px; }
 
 .empty-task-list { width: 100%; gap: var(--rune-space-3); margin-top: 0; }
 .empty-choice-divider { width: 100%; margin-top: var(--rune-space-5); }
@@ -597,6 +626,12 @@ html[data-locale="zh-CN"] .empty-hero h1,
 html[data-locale="zh-TW"] .empty-hero h1,
 html[data-locale="ko"] .empty-hero h1 { font-size: clamp(34px, 3.8vw, 50px); letter-spacing: -.03em; line-height: 1.1; }
 html[data-locale="ar"] body { letter-spacing: 0; }
+html[data-locale="ja"] .welcome-language-heading h1,
+html[data-locale="ko"] .welcome-language-heading h1 {
+  word-break: keep-all;
+  line-break: strict;
+  text-wrap: balance;
+}
 html[data-locale="ar"] .welcome-page h1 { max-width: 800px; font-size: clamp(42px, 4.6vw, 64px); letter-spacing: 0; line-height: 1.2; }
 html[data-locale="ar"] .welcome-page > p,
 html[data-locale="ar"] .empty-hero > p { line-height: 1.8; }
@@ -609,6 +644,10 @@ html[data-locale="ar"] .welcome-language-heading h1 {
   font-size: clamp(30px, 3.4vw, 40px);
   line-height: 1.18;
 }
+.welcome-language-heading .rune-name { unicode-bidi: isolate; font: inherit; }
+html[data-locale="ar"] .welcome-language-heading h1 { unicode-bidi: plaintext; }
+.language-options { scroll-padding-block: 8px; }
+.language-options button { scroll-margin-block: 8px; }
 html[dir="rtl"] .welcome-intro-grid,
 html[dir="rtl"] .language-options button,
 html[dir="rtl"] .empty-hero,

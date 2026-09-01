@@ -1,1 +1,1 @@
-export const RUNE_PRODUCT_VERSION = "1.51";
+export const RUNE_PRODUCT_VERSION = "1.52";

@@ -155,6 +155,7 @@ test("keeps typed JSON canonical while Source and Data Preview edit the same sca
   await cellEditor.getByRole("button", { name: "Save Row 2 · Active" }).click();
 
   await page.reload();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.locator("textarea.source-editor")).toHaveValue(finalSource);
   await expect(page.locator("td.preview-data-cell").filter({ hasText: "275" })).toBeVisible();

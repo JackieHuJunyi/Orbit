@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import "./globals.css";
 import "./styles/index.css";
 
 const RUNE_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.runeOnboarding=localStorage.getItem("rune-onboarding-v1")==="complete"?"complete":"pending"}catch{root.dataset.runeOnboarding="pending"}})();`;

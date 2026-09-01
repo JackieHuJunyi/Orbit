@@ -83,6 +83,8 @@ test("server-renders the Rune artifact workbench", async () => {
   assert.match(html, /aria-valuemax="65"/);
   assert.match(html, /Resize source and preview/);
   assert.match(html, /class="workspace with-file-rail view-split"/);
+  assert.match(html, /data-rune-hydrated="false"/);
+  assert.doesNotMatch(html, /style=""/);
   assert.match(html, /role="group" aria-label="Workspace view"/);
   assert.match(html, /aria-label="Show source and preview"/);
   assert.match(html, /aria-label="Show source only"/);
@@ -537,7 +539,10 @@ test("ships persistent presentation-only workspace focus modes without unmountin
   assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
   assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
   assert.match(html, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
-  assert.match(source, /if \(plan\.revealsSource\) setPreferredWorkspaceView\("split"\)/);
+  assert.match(
+    source,
+    /if \(plan\.revealsSource\)[\s\S]*setPreferredWorkspaceView\(window\.matchMedia\("\(max-width: 960px\)"\)\.matches \? "source" : "split"\)/,
+  );
   assert.match(source, /useSourcePreviewScroll\(\{[\s\S]*target: activePreviewTarget/);
   assert.match(previewScroll, /cursorEnd,[\s\S]*cursorStart,[\s\S]*block: repeatedTarget \? "nearest" : "center"/);
   assert.doesNotMatch(previewScroll, /setArtifacts|persistDeviceWorkspace|fetch\(|localStorage|indexedDB/);
@@ -564,7 +569,10 @@ test("turns compiler failures into bounded actionable Preview diagnostics", asyn
   assert.match(workbench, /prepareArtifactDiagnostics\(selectedArtifact/);
   assert.match(workbench, /className="preview-diagnostics"/);
   assert.match(workbench, /onClick=\{openValidationIssueSource\}/);
-  assert.match(workbench, /if \(plan\.revealsSource\) setPreferredWorkspaceView\("split"\)/);
+  assert.match(
+    workbench,
+    /if \(plan\.revealsSource\)[\s\S]*setPreferredWorkspaceView\(window\.matchMedia\("\(max-width: 960px\)"\)\.matches \? "source" : "split"\)/,
+  );
   assert.match(workbench, /sourceSelectionScrollTop\(\{/);
   assert.match(workbench, /ui\.diagnostics\.technicalDetail/);
   assert.match(diagnostics, /MAX_ARTIFACT_DIAGNOSTICS = 12/);

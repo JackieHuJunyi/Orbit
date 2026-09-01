@@ -168,6 +168,7 @@ function PdfOcrRegionSelector({
   const [dragRegion, setDragRegion] = useState<PdfOcrRegion | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const dragBoundsRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const activePageNumber = selectedPages.includes(pageNumber) ? pageNumber : (selectedPages[0] ?? pageNumber);
   const activeRegion = regions[activePageNumber];
   const displayRegion = dragRegion ?? activeRegion;
@@ -195,7 +196,7 @@ function PdfOcrRegionSelector({
   }, [activePageNumber, candidate.file, candidate.fileName, previewEnabled]);
 
   function pointFromEvent(event: ReactPointerEvent<HTMLDivElement>) {
-    const bounds = event.currentTarget.getBoundingClientRect();
+    const bounds = dragBoundsRef.current ?? event.currentTarget.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(1, (event.clientX - bounds.left) / Math.max(1, bounds.width))),
       y: Math.max(0, Math.min(1, (event.clientY - bounds.top) / Math.max(1, bounds.height))),
@@ -218,6 +219,7 @@ function PdfOcrRegionSelector({
     const region = regionFromDrag(event);
     if (!region) return;
     dragStartRef.current = null;
+    dragBoundsRef.current = null;
     setDragRegion(null);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -276,6 +278,7 @@ function PdfOcrRegionSelector({
                 aria-label={`${copy.dragRegion}, ${copy.previewPage} ${activePageNumber}`}
                 onPointerDown={(event) => {
                   if (disabled) return;
+                  dragBoundsRef.current = event.currentTarget.getBoundingClientRect();
                   dragStartRef.current = pointFromEvent(event);
                   setDragRegion(null);
                   event.currentTarget.setPointerCapture(event.pointerId);
@@ -287,6 +290,7 @@ function PdfOcrRegionSelector({
                 onPointerUp={finishDrag}
                 onPointerCancel={() => {
                   dragStartRef.current = null;
+                  dragBoundsRef.current = null;
                   setDragRegion(null);
                 }}
               >

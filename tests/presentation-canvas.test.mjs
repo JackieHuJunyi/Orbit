@@ -59,7 +59,13 @@ test("the host frame observes its viewport and scales a fixed-size iframe", asyn
   assert.match(component, /new ResizeObserver\(fitCanvas\)/u);
   assert.match(component, /data-presentation-canvas/u);
   assert.match(component, /presentationSrcDocReplayDelay\(source, navigator\.userAgent\)/u);
+  assert.match(component, /webKitSrcDocReplayQueue/u);
+  assert.match(component, /activeWebKitSrcDocReplay/u);
   assert.match(component, /frame\.removeAttribute\("srcdoc"\)/u);
+  assert.match(component, /about:blank#rune-srcdoc-replay-/u);
+  assert.match(component, /task\.frame\.setAttribute\("srcdoc", task\.source\)/u);
+  assert.match(component, /task\.frame\.dataset\.srcdocReady = "true"/u);
+  assert.match(component, /data-srcdoc-ready="false"/u);
   assert.match(component, /height=\{PRESENTATION_CANVAS_HEIGHT\}/u);
   assert.match(component, /width=\{PRESENTATION_CANVAS_WIDTH\}/u);
   assert.match(styles, /\.presentation-frame-viewport > iframe\.presentation-frame/u);

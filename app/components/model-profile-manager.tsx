@@ -204,9 +204,11 @@ function healthLabel(health: ModelProfilesState["deployment"]["health"], text: R
 }
 
 export function ModelProfileManager({
+  compact = false,
   locale,
   onStatusChange,
 }: {
+  compact?: boolean;
   locale: RuneLocale;
   onStatusChange: (status: ModelProviderStatus) => void;
 }) {
@@ -330,7 +332,10 @@ export function ModelProfileManager({
     );
 
   return (
-    <section className="model-profile-manager" aria-label={runeText(locale, "Personal model profiles", "个人模型配置")}>
+    <section
+      className={`model-profile-manager ${compact ? "compact" : ""}`.trim()}
+      aria-label={runeText(locale, "Personal model profiles", "个人模型配置")}
+    >
       {state?.deployment.configured && (
         <div className={`model-profile-card deployment ${state.activeSource === "deployment" ? "active" : ""}`}>
           <span>
@@ -425,7 +430,7 @@ export function ModelProfileManager({
           </div>
         </div>
       ))}
-      {state && (state.profiles.length > 1 || (state.profiles.length && state.deployment.configured)) && (
+      {state && (state.profiles.length > 1 || (state.profiles.length > 0 && state.deployment.configured)) && (
         <label className="model-failover-policy">
           <input
             type="checkbox"
@@ -646,10 +651,12 @@ export function ModelProfileManager({
           {error}
         </p>
       )}
-      <p className="model-manager-safety">
-        <ShieldCheck />
-        {text.safety}
-      </p>
+      {!compact && (
+        <p className="model-manager-safety">
+          <ShieldCheck />
+          {text.safety}
+        </p>
+      )}
     </section>
   );
 }

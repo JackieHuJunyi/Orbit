@@ -27,6 +27,7 @@ import {
   Presentation,
   RefreshCw,
   Search,
+  Sparkles,
   TableProperties,
   Undo2,
   Upload,
@@ -884,6 +885,7 @@ export function RuneWorkbench() {
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
   const [agentScope, setAgentScope] = useState<AgentScope>("artifact");
+  const [agentComposerOpen, setAgentComposerOpen] = useState(false);
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [directoryHandle, setDirectoryHandle] = useState<DirectoryWorkspaceHandle | null>(null);
@@ -1572,6 +1574,20 @@ export function RuneWorkbench() {
       // The presentation-only view remains usable in memory.
     }
   }, []);
+
+  useEffect(() => {
+    const compact = window.matchMedia("(max-width: 960px)");
+    const ensureSinglePane = () => {
+      if (compact.matches && workspaceView === "split") setPreferredWorkspaceView("preview");
+    };
+    ensureSinglePane();
+    compact.addEventListener("change", ensureSinglePane);
+    return () => compact.removeEventListener("change", ensureSinglePane);
+  }, [setPreferredWorkspaceView, workspaceView]);
+
+  useEffect(() => {
+    if (pendingChange || agentError || agentState === "planning") setAgentComposerOpen(true);
+  }, [agentError, agentState, pendingChange]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -2437,7 +2453,9 @@ export function RuneWorkbench() {
       end: plan.end,
     };
     if (plan.changesArtifact) setSelectedId(plan.artifactId);
-    if (plan.revealsSource) setPreferredWorkspaceView("split");
+    if (plan.revealsSource) {
+      setPreferredWorkspaceView(window.matchMedia("(max-width: 960px)").matches ? "source" : "split");
+    }
     setSourceSelection(plan.start < plan.end ? selection : null);
     setSourceCursor(selection);
     setHistoryOpen(false);
@@ -4579,6 +4597,7 @@ export function RuneWorkbench() {
   function changeAgentScope(scope: AgentScope) {
     if (!workbenchOperationGate.canStartOperation) return;
     setAgentScope(scope);
+    if (scope === "selection") setAgentComposerOpen(true);
     setPendingChange(null);
     setPendingReviewId("");
     setAgentError("");
@@ -4612,6 +4631,7 @@ export function RuneWorkbench() {
         openDocumentBriefing();
         return;
       case "focus-agent":
+        setAgentComposerOpen(true);
         window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
         setNotice(ui.focusAgent);
         return;
@@ -4664,7 +4684,7 @@ export function RuneWorkbench() {
   const saveStatusDetail = saveState === "error" ? ui.deviceStorageFull : ui.lastSaved(savedAt || ui.justNow);
 
   return (
-    <main className="rune-shell" ref={shellRef}>
+    <main className="rune-shell" data-rune-hydrated={hydrated ? "true" : "false"} ref={shellRef}>
       <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} />}>
         {commandMenuOpen && (
           <WorkbenchCommandMenu
@@ -4696,6 +4716,7 @@ export function RuneWorkbench() {
           <div className="project-name">{directoryHandle?.name ?? ui.localWorkspace}</div>
         </div>
         <div className="topbar-actions">
+          {!emptyWorkspace && <WorkspaceViewSwitch ui={ui} view={workspaceView} onChange={setPreferredWorkspaceView} />}
           <div
             className={`save-indicator ${saveState}`}
             role="status"
@@ -4791,7 +4812,7 @@ export function RuneWorkbench() {
 
       <div
         ref={workspaceRef}
-        className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"} view-${workspaceView}`}
+        className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"} view-${workspaceView} ${emptyWorkspace ? "is-empty" : ""}`.trim()}
         style={
           {
             "--workspace-source-track": workspaceSplitTracks(workspaceSourcePercent).source,
@@ -4832,7 +4853,8 @@ export function RuneWorkbench() {
           onOperatingReview={openOperatingReview}
           onDocumentBriefing={openDocumentBriefing}
           onFocusAgent={() => {
-            promptRef.current?.focus();
+            setAgentComposerOpen(true);
+            window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
             setNotice(ui.focusAgent);
           }}
           onToggleSettings={() => {
@@ -5294,7 +5316,6 @@ export function RuneWorkbench() {
                         <ImagePlus aria-hidden="true" />
                       </button>
                     )}
-                  <WorkspaceViewSwitch ui={ui} view={workspaceView} onChange={setPreferredWorkspaceView} />
                   {proposalReviewActive ? (
                     <span
                       className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`}
@@ -5482,7 +5503,33 @@ export function RuneWorkbench() {
                 )}
               </div>
 
-              <div className="agent-dock">
+              <div className={`agent-dock ${agentComposerOpen ? "open" : "collapsed"}`}>
+                {!agentComposerOpen && (
+                  <button
+                    type="button"
+                    className="agent-dock-trigger"
+                    onClick={() => {
+                      setAgentComposerOpen(true);
+                      window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
+                    }}
+                    aria-expanded="false"
+                  >
+                    <Sparkles aria-hidden="true" />
+                    <span>{ui.focusAgent}</span>
+                    <kbd>⌘ ↵</kbd>
+                  </button>
+                )}
+                {agentComposerOpen && (
+                  <button
+                    type="button"
+                    className="agent-dock-close"
+                    onClick={() => setAgentComposerOpen(false)}
+                    aria-label={runeText(locale, "Close Agent", "收起 Agent")}
+                    title={runeText(locale, "Close Agent", "收起 Agent")}
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                )}
                 {pendingChange && (
                   <div className="patch-card">
                     <div className="patch-icon">
@@ -5638,48 +5685,50 @@ export function RuneWorkbench() {
                   </div>
                 )}
 
-                <AgentComposer
-                  ref={promptRef}
-                  prompt={prompt}
-                  onPromptChange={setPrompt}
-                  onPromptKeyDown={onPromptKeyDown}
-                  onRun={() => void runAgent()}
-                  onQuickCommand={(command) => void runAgent(command)}
-                  scope={agentScope}
-                  onScopeChange={changeAgentScope}
-                  busy={agentState === "planning" || visualEditState !== "idle"}
-                  locked={operationStartBlocked}
-                  selectionUnavailable={!validSourceSelection}
-                  mode={agentMode}
-                  placeholder={
-                    agentScope === "workspace"
-                      ? ui.askWorkspace
-                      : agentScope === "selection"
-                        ? ui.askSelection
-                        : ui.askFile
-                  }
-                  ariaLabel={
-                    agentScope === "workspace"
-                      ? ui.describeWorkspaceChange
-                      : agentScope === "selection"
-                        ? ui.describeSelectionChange
-                        : ui.describeArtifactChange
-                  }
-                  scopeLabels={{ selection: ui.selection, artifact: ui.file, workspace: ui.workspaceScope }}
-                  scopeGroupLabel={ui.agentScope}
-                  suggestedActionsLabel={ui.suggestedActions}
-                  sendLabel={ui.planChange}
-                  sendTitle={`${ui.planChange} (⌘ Enter)`}
-                  modelConnectedLabel={ui.modelConnected}
-                  localFallbackLabel={ui.localFallback}
-                  planHint={ui.planHint}
-                  queryEvidenceText={
-                    agentScope === "workspace" && workspaceAgentQueryCount > 0
-                      ? ui.queryEvidence(workspaceAgentQueryCount)
-                      : ""
-                  }
-                  quickCommands={runeQuickCommands(locale, agentScope, selectedArtifact.kind)}
-                />
+                <div className="agent-dock-composer" inert={!agentComposerOpen ? true : undefined}>
+                  <AgentComposer
+                    ref={promptRef}
+                    prompt={prompt}
+                    onPromptChange={setPrompt}
+                    onPromptKeyDown={onPromptKeyDown}
+                    onRun={() => void runAgent()}
+                    onQuickCommand={(command) => void runAgent(command)}
+                    scope={agentScope}
+                    onScopeChange={changeAgentScope}
+                    busy={agentState === "planning" || visualEditState !== "idle"}
+                    locked={operationStartBlocked}
+                    selectionUnavailable={!validSourceSelection}
+                    mode={agentMode}
+                    placeholder={
+                      agentScope === "workspace"
+                        ? ui.askWorkspace
+                        : agentScope === "selection"
+                          ? ui.askSelection
+                          : ui.askFile
+                    }
+                    ariaLabel={
+                      agentScope === "workspace"
+                        ? ui.describeWorkspaceChange
+                        : agentScope === "selection"
+                          ? ui.describeSelectionChange
+                          : ui.describeArtifactChange
+                    }
+                    scopeLabels={{ selection: ui.selection, artifact: ui.file, workspace: ui.workspaceScope }}
+                    scopeGroupLabel={ui.agentScope}
+                    suggestedActionsLabel={ui.suggestedActions}
+                    sendLabel={ui.planChange}
+                    sendTitle={`${ui.planChange} (⌘ Enter)`}
+                    modelConnectedLabel={ui.modelConnected}
+                    localFallbackLabel={ui.localFallback}
+                    planHint={ui.planHint}
+                    queryEvidenceText={
+                      agentScope === "workspace" && workspaceAgentQueryCount > 0
+                        ? ui.queryEvidence(workspaceAgentQueryCount)
+                        : ""
+                    }
+                    quickCommands={runeQuickCommands(locale, agentScope, selectedArtifact.kind)}
+                  />
+                </div>
               </div>
             </section>
 
@@ -5711,7 +5760,6 @@ export function RuneWorkbench() {
                   </div>
                 </div>
                 <div className="preview-actions">
-                  <WorkspaceViewSwitch ui={ui} view={workspaceView} onChange={setPreferredWorkspaceView} />
                   {proposalReviewActive ? (
                     <span
                       className={`proposal-preview-badge ${proposalPreviewActive ? "valid" : "error"}`}

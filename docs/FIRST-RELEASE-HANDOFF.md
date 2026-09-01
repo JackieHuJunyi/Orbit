@@ -1,6 +1,6 @@
 # Rune first-release handoff
 
-> Originally audited 2026-08-21 and refreshed 2026-08-23 against Rune v1.51. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
+> Originally audited 2026-08-21 and refreshed 2026-09-01 against Rune v1.52. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
 
 ## Completion decision
 
@@ -45,4 +45,4 @@ Do not add collaboration, cloud sync, a connector, richer charts, more OCR packa
 
 ## Reproduction gate
 
-From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Rune v1.51 passes 685 unit tests, 29 render/architecture tests, 57 scenarios in each of Chromium, Firefox, and WebKit (171 browser executions), the 20/20 synthetic Golden Task Eval, formatting, lint, typecheck, production build, and the high-severity production dependency audit.
+From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Rune v1.52 passes 686 unit tests, 29 render/architecture tests, 61 scenarios in each of Chromium, Firefox, and WebKit (183 browser executions), the 20/20 synthetic Golden Task Eval, formatting, lint, typecheck, production build, and the high-severity production dependency audit.

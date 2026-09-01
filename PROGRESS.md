@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-09-01 — Shipped Rune v1.52 with one layered design authority, full-track empty state, contextual Agent/status chrome, true compact single-pane work, stable nine-language onboarding, hydration-safe reload interaction, and exact paired Source/Preview positioning across the 61-scenario three-browser gate.
 - 2026-08-23 — Shipped Rune v1.51 with consistent release metadata, explicit startup/deferred bundle budgets, and the complete 57-scenario browser gate across Chromium, Firefox, and WebKit while keeping every real-user evidence gate honestly open.
 - 2026-08-21 — Shipped Rune v1.50 with fixed-canvas Presentation scaling plus same-origin, bounded DuckDB worker/Wasm startup for reliable runtime-verified Data edits.
 - 2026-08-21 — Completed the v1.49 first-release handoff audit, proving every repository requirement and separating shipped engineering capability from the still-open real-user evidence gates.

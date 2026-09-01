@@ -11,6 +11,7 @@ test("keeps Q2 Board Briefing on a fixed canvas while the preview pane shrinks",
   await expect(firstFrame).toHaveAttribute("width", "1120");
   await expect(firstFrame).toHaveAttribute("height", "630");
   await expect(firstFrame).toHaveAttribute("srcdoc", /data-rune-preview-canvas="1120x630"/u);
+  await expect(firstFrame).toHaveAttribute("data-srcdoc-ready", "true");
   await expect(firstSlide).toHaveCSS("width", "1120px");
   await expect(firstSlide).toHaveCSS("height", "630px");
 

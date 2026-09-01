@@ -1,7 +1,15 @@
-@import "./tokens.css";
-@import "./shell.css";
-@import "./content.css";
-@import "./overlays.css";
-@import "./onboarding.css";
-@import "./motion.css";
-@import "./responsive.css";
+/*
+ * Rune has one CSS entry point and one explicit cascade. `globals.css` still
+ * contains the pre-component styles while they are migrated, but it can no
+ * longer win by accident: every maintained surface owns a later layer.
+ */
+@layer legacy, tokens, shell, content, overlays, onboarding, motion, responsive;
+
+@import "../globals.css" layer(legacy);
+@import "./tokens.css" layer(tokens);
+@import "./shell.css" layer(shell);
+@import "./content.css" layer(content);
+@import "./overlays.css" layer(overlays);
+@import "./onboarding.css" layer(onboarding);
+@import "./motion.css" layer(motion);
+@import "./responsive.css" layer(responsive);
