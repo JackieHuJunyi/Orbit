@@ -38,7 +38,9 @@ test("runs every browser scenario in Chromium, Firefox, and WebKit", async () =>
   ]) {
     assert.match(config, new RegExp(`name: "${name}"[\\s\\S]{0,80}devices\\["${device}"\\]`));
   }
-  assert.match(workflow, /- run: npm run test:e2e[\s\S]{0,180}HOME: \/root/u);
+  assert.match(workflow, /matrix:[\s\S]{0,100}project: \[chromium, firefox, webkit\]/u);
+  assert.match(workflow, /- run: npm run test:e2e -- --project=\$\{\{ matrix\.project \}\}[\s\S]{0,180}HOME: \/root/u);
+  assert.match(workflow, /name: playwright-report-\$\{\{ matrix\.project \}\}/u);
 });
 
 test("filters only the expected DuckDB stream cancellation from the E2E server", () => {

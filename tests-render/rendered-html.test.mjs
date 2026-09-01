@@ -616,7 +616,10 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(menuFocus, /event\.key === "End"/);
   assert.match(menuFocus, /event\.key === "Tab"/);
   assert.match(menuFocus, /event\.key === "Escape"/);
-  assert.match(menuFocus, /restoreFocusRef\.current\?\.focus/);
+  assert.match(menuFocus, /window\.requestAnimationFrame/);
+  assert.match(menuFocus, /const trigger = restoreFocusRef\.current/);
+  assert.match(menuFocus, /trigger\?\.getAttribute\("aria-expanded"\) === "false"/);
+  assert.match(menuFocus, /trigger\.focus\(\{ preventScroll: true \}\)/);
   assert.match(styles, /\.tools-theme-grid\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit, minmax\(34px, 1fr\)\)/s);
   assert.match(styles, /html\[dir="rtl"\] \.tools-popover/);
   assert.match(styles, /\.settings-popover\s*\{[^}]*bottom:\s*14px;/s);

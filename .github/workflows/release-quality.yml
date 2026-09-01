@@ -37,9 +37,14 @@ jobs:
       - run: npm run audit:production
 
   e2e:
+    name: e2e (${{ matrix.project }})
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.62.1-noble
-    timeout-minutes: 25
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -48,7 +53,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --project=${{ matrix.project }}
         env:
           # The Playwright container executes Actions steps as root. Firefox
           # refuses to launch when HOME belongs to the image's pwuser account.
@@ -56,6 +61,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: playwright-report/
           retention-days: 7
