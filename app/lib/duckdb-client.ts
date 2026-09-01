@@ -22,33 +22,83 @@ export type { QueryCell, WorkspaceQueryResult, WorkspaceQuerySnapshot } from "./
 const DUCKDB_VERSION = "1.32.0";
 const DUCKDB_INIT_TIMEOUT_MS = 30_000;
 const DUCKDB_MAX_WASM_BYTES = 45 * 1024 * 1024;
+const DUCKDB_MAX_WASM_PART_BYTES = 20 * 1024 * 1024;
 
-function sameOriginMvpBundle(): duckdb.DuckDBBundle {
+interface DuckDbWasmManifest {
+  schemaVersion: 1;
+  totalBytes: number;
+  parts: Array<{ name: string; bytes: number }>;
+}
+
+function sameOriginMvpBundle() {
   const assetUrl = (name: string) => new URL(`/duckdb/${name}`, window.location.origin).href;
   return {
-    mainModule: assetUrl("duckdb-mvp.wasm"),
+    mainModuleManifest: assetUrl("duckdb-mvp.wasm.manifest.json"),
     mainWorker: assetUrl("duckdb-browser-mvp.worker.js"),
     pthreadWorker: null,
   };
 }
 
-async function instantiateDatabase(database: duckdb.AsyncDuckDB, mainModule: string, pthreadWorker?: string) {
+function isDuckDbWasmManifest(value: unknown): value is DuckDbWasmManifest {
+  if (!value || typeof value !== "object") return false;
+  const manifest = value as Partial<DuckDbWasmManifest>;
+  return (
+    manifest.schemaVersion === 1 &&
+    Number.isSafeInteger(manifest.totalBytes) &&
+    Number(manifest.totalBytes) > 0 &&
+    Number(manifest.totalBytes) <= DUCKDB_MAX_WASM_BYTES &&
+    Array.isArray(manifest.parts) &&
+    manifest.parts.length > 0 &&
+    manifest.parts.length <= 8 &&
+    manifest.parts.every(
+      (part, index) =>
+        Boolean(part) &&
+        part.name === `duckdb-mvp.wasm.part-${index}` &&
+        Number.isSafeInteger(part.bytes) &&
+        part.bytes > 0 &&
+        part.bytes <= DUCKDB_MAX_WASM_PART_BYTES,
+    ) &&
+    manifest.parts.reduce((sum, part) => sum + part.bytes, 0) === manifest.totalBytes
+  );
+}
+
+async function fetchDuckDbWasm(manifestUrl: string, signal: AbortSignal) {
+  const manifestResponse = await fetch(manifestUrl, { credentials: "same-origin", signal });
+  if (!manifestResponse.ok) {
+    throw new Error(`DuckDB's same-origin Wasm manifest returned HTTP ${manifestResponse.status}.`);
+  }
+  const manifestValue: unknown = await manifestResponse.json();
+  if (!isDuckDbWasmManifest(manifestValue)) throw new Error("DuckDB's same-origin Wasm manifest is invalid.");
+
+  const manifestDirectory = new URL(".", manifestResponse.url);
+  const blobs = await Promise.all(
+    manifestValue.parts.map(async (part) => {
+      const partUrl = new URL(part.name, manifestDirectory);
+      if (partUrl.origin !== window.location.origin) throw new Error("DuckDB's Wasm part is not same-origin.");
+      const response = await fetch(partUrl, { credentials: "same-origin", signal });
+      if (!response.ok) throw new Error(`DuckDB's same-origin Wasm part returned HTTP ${response.status}.`);
+      const declaredSize = Number(response.headers.get("content-length"));
+      if (Number.isFinite(declaredSize) && declaredSize !== part.bytes) {
+        throw new Error("DuckDB's same-origin Wasm part has an unexpected size.");
+      }
+      const blob = await response.blob();
+      if (blob.size !== part.bytes) throw new Error("DuckDB's same-origin Wasm part is incomplete.");
+      return blob;
+    }),
+  );
+  const totalBytes = blobs.reduce((sum, blob) => sum + blob.size, 0);
+  if (totalBytes !== manifestValue.totalBytes) throw new Error("DuckDB's same-origin Wasm is incomplete.");
+  return new Blob(blobs, { type: "application/wasm" });
+}
+
+async function instantiateDatabase(database: duckdb.AsyncDuckDB, manifestUrl: string, pthreadWorker?: string) {
   let timer = 0;
   let wasmModuleUrl: string | null = null;
   const abortController = new AbortController();
   try {
     await Promise.race([
       (async () => {
-        const response = await fetch(mainModule, { credentials: "same-origin", signal: abortController.signal });
-        if (!response.ok) throw new Error(`DuckDB's same-origin Wasm returned HTTP ${response.status}.`);
-        const declaredSize = Number(response.headers.get("content-length"));
-        if (Number.isFinite(declaredSize) && declaredSize > DUCKDB_MAX_WASM_BYTES) {
-          throw new Error("DuckDB's same-origin Wasm exceeds Rune's 45 MB runtime limit.");
-        }
-        const wasmBlob = await response.blob();
-        if (!wasmBlob.size || wasmBlob.size > DUCKDB_MAX_WASM_BYTES) {
-          throw new Error("DuckDB's same-origin Wasm is empty or exceeds Rune's 45 MB runtime limit.");
-        }
+        const wasmBlob = await fetchDuckDbWasm(manifestUrl, abortController.signal);
         wasmModuleUrl = URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" }));
         await database.instantiate(wasmModuleUrl, pthreadWorker);
       })(),
@@ -77,7 +127,7 @@ function getDatabase(): Promise<duckdb.AsyncDuckDB> {
       const worker = new Worker(bundle.mainWorker);
       const database = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING), worker);
       try {
-        await instantiateDatabase(database, bundle.mainModule, bundle.pthreadWorker ?? undefined);
+        await instantiateDatabase(database, bundle.mainModuleManifest, bundle.pthreadWorker ?? undefined);
         return database;
       } catch (error) {
         worker.terminate();
