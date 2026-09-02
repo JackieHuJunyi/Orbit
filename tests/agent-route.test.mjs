@@ -77,7 +77,7 @@ test("uses the active personal provider endpoint without exposing its credential
   assert.doesNotMatch(JSON.stringify(payload), /personal-agent-secret/);
 });
 
-test("routes an Anthropic profile through Messages and the unchanged Rune operation compiler", async () => {
+test("routes an Anthropic profile through Messages and the unchanged Orbit operation compiler", async () => {
   process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-anthropic-vault-key-1234567";
   delete process.env.OPENAI_API_KEY;
   const profile = normalizeModelProfileDraft(
@@ -136,7 +136,7 @@ test("routes an Anthropic profile through Messages and the unchanged Rune operat
   assert.doesNotMatch(JSON.stringify(payload), /anthropic-agent-secret/);
 });
 
-test("routes a Gemini profile through generateContent and the unchanged Rune operation compiler", async () => {
+test("routes a Gemini profile through generateContent and the unchanged Orbit operation compiler", async () => {
   process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-gemini-vault-key-123456789";
   delete process.env.OPENAI_API_KEY;
   const profile = normalizeModelProfileDraft(
@@ -963,7 +963,7 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
   assert.deepEqual(payload.plan.creations, []);
 });
 
-test("creates a new semantic HTML presentation through Rune-owned identity, template compilation, and review output", async () => {
+test("creates a new semantic HTML presentation through Orbit-owned identity, template compilation, and review output", async () => {
   process.env.OPENAI_API_KEY = "test-key";
   const workspaceArtifacts = [
     requestBody().artifact,
@@ -1068,7 +1068,7 @@ test("creates a new semantic HTML presentation through Rune-owned identity, temp
     const keys = Object.keys(schema.properties);
     ["artifactId", "nextSource", "id", "name", "language"].forEach((key) => assert.equal(keys.includes(key), false));
   });
-  assert.match(providerRequest.input[0].content, /Rune owns its identity and initial source/);
+  assert.match(providerRequest.input[0].content, /Orbit owns its identity and initial source/);
 });
 
 test("creates typed Query and Chart sources from exact visible Agent bindings", async () => {
@@ -1078,7 +1078,7 @@ test("creates typed Query and Chart sources from exact visible Agent bindings", 
       JSON.stringify(
         providerResponse({
           summary: "Create two source-first analysis artifacts",
-          detail: "Both files use Rune-owned identities and exact visible bindings.",
+          detail: "Both files use Orbit-owned identities and exact visible bindings.",
           actions: [
             {
               type: "create_artifact",
@@ -1260,7 +1260,7 @@ test("rejects model-authored creation metadata and unsafe created sources", asyn
     new Response(
       JSON.stringify(
         providerResponse({
-          summary: "Bypass Rune identity",
+          summary: "Bypass Orbit identity",
           detail: "The strict provider contract must reject extra metadata.",
           actions: [{ ...baseCreation, id: "model-id", name: "model.deck.md", source: "# bypass" }],
         }),

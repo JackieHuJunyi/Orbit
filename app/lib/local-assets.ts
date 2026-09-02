@@ -109,7 +109,7 @@ function validUtf16Boundary(value: string, offset: number) {
 }
 
 export function createRuneAssetReference(id: string) {
-  if (!SHA256_ID.test(id)) throw new Error("Rune asset identity must be one lowercase SHA-256 digest.");
+  if (!SHA256_ID.test(id)) throw new Error("Orbit asset identity must be one lowercase SHA-256 digest.");
   return `${RUNE_ASSET_SCHEME}${id}`;
 }
 
@@ -275,8 +275,8 @@ export function runeImageDimensions(
 export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) {
   const byId = new Map<string, RuneExportImageAsset>();
   for (const asset of assets) {
-    if (!SHA256_ID.test(asset.id)) throw new Error("Rune export image identity must be one lowercase SHA-256 digest.");
-    if (byId.has(asset.id)) throw new Error(`Rune export image is duplicated: ${asset.id}`);
+    if (!SHA256_ID.test(asset.id)) throw new Error("Orbit export image identity must be one lowercase SHA-256 digest.");
+    if (byId.has(asset.id)) throw new Error(`Orbit export image is duplicated: ${asset.id}`);
     const detected = detectRuneImageMimeType(asset.bytes);
     if (
       !detected ||
@@ -286,7 +286,7 @@ export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) 
       !asset.bytes.length ||
       asset.bytes.length > MAX_RUNE_IMAGE_BYTES
     ) {
-      throw new Error(`Rune export image is invalid: ${asset.id}`);
+      throw new Error(`Orbit export image is invalid: ${asset.id}`);
     }
     byId.set(asset.id, asset);
   }
@@ -365,8 +365,8 @@ function openAssetDatabase() {
         request.result.createObjectStore(IMAGE_STORE, { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Rune could not open its local image store."));
-    request.onblocked = () => reject(new Error("Close other Rune tabs before updating the local image store."));
+    request.onerror = () => reject(request.error ?? new Error("Orbit could not open its local image store."));
+    request.onblocked = () => reject(new Error("Close other Orbit tabs before updating the local image store."));
   });
 }
 
@@ -385,7 +385,7 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
         all.onsuccess = () => {
           const records = Array.isArray(all.result) ? (all.result as RuneLocalAssetRecord[]) : [];
           if (records.length >= MAX_RUNE_LOCAL_IMAGES) {
-            policyError = new Error(`Rune stores at most ${MAX_RUNE_LOCAL_IMAGES} local images on one device.`);
+            policyError = new Error(`Orbit stores at most ${MAX_RUNE_LOCAL_IMAGES} local images on one device.`);
             transaction.abort();
             return;
           }
@@ -395,7 +395,7 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
           );
           if (currentBytes + asset.size > MAX_RUNE_LOCAL_IMAGE_BYTES) {
             policyError = new Error(
-              `Rune local images are limited to ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB on one device.`,
+              `Orbit local images are limited to ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB on one device.`,
             );
             transaction.abort();
             return;
@@ -414,8 +414,8 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
       };
       transaction.oncomplete = () => resolve(created);
       transaction.onabort = () =>
-        reject(policyError ?? transaction.error ?? new Error("Rune could not store this image locally."));
-      transaction.onerror = () => reject(transaction.error ?? new Error("Rune could not store this image locally."));
+        reject(policyError ?? transaction.error ?? new Error("Orbit could not store this image locally."));
+      transaction.onerror = () => reject(transaction.error ?? new Error("Orbit could not store this image locally."));
     });
   } finally {
     database.close();
@@ -430,7 +430,7 @@ export async function getRuneImageAsset(id: string): Promise<PreparedRuneImageAs
       const request = database.transaction(IMAGE_STORE, "readonly").objectStore(IMAGE_STORE).get(id);
       request.onsuccess = () =>
         resolve(request.result?.blob instanceof Blob ? (request.result as RuneLocalAssetRecord) : null);
-      request.onerror = () => reject(request.error ?? new Error("Rune could not read this local image."));
+      request.onerror = () => reject(request.error ?? new Error("Orbit could not read this local image."));
     });
     if (!record || !record.blob.size || record.blob.size > MAX_RUNE_IMAGE_BYTES) return null;
     const bytes = new Uint8Array(await record.blob.arrayBuffer());
@@ -458,8 +458,8 @@ export async function deleteRuneImageAsset(id: string) {
       const transaction = database.transaction(IMAGE_STORE, "readwrite");
       transaction.objectStore(IMAGE_STORE).delete(id);
       transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(transaction.error ?? new Error("Rune could not remove the local image."));
-      transaction.onerror = () => reject(transaction.error ?? new Error("Rune could not remove the local image."));
+      transaction.onabort = () => reject(transaction.error ?? new Error("Orbit could not remove the local image."));
+      transaction.onerror = () => reject(transaction.error ?? new Error("Orbit could not remove the local image."));
     });
   } finally {
     database.close();

@@ -156,7 +156,7 @@ export function visualSemanticHtmlSlidePreview(
         html: "",
         errors: compilation.errors.length
           ? [...compilation.errors]
-          : ["Rune could not compile this draft as one semantic HTML slide."],
+          : ["Orbit could not compile this draft as one semantic HTML slide."],
       };
 }
 
@@ -218,7 +218,7 @@ export function prepareVisualSemanticHtmlSlideEdit(
         target.end === candidate.target.start + candidate.replacement.length,
     ) ?? null;
   if (!nextTarget) {
-    return emptyResult(artifact.source, "Rune could not prove the edited semantic HTML slide's new source range.");
+    return emptyResult(artifact.source, "Orbit could not prove the edited semantic HTML slide's new source range.");
   }
   return { errors: [], nextSource: candidate.nextSource, nextTarget };
 }

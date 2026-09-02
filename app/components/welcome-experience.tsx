@@ -33,6 +33,7 @@ import {
   type RuneLocale,
 } from "../lib/localization";
 import { type RuneModelMode } from "../lib/model-preference";
+import { ORBIT_PRODUCT_LOCKUP, ORBIT_PRODUCT_NAME } from "../lib/product-meta";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
 const WelcomeModelStep = lazy(() =>
@@ -48,22 +49,22 @@ export const WELCOME_BASE_COPY = {
     back: "上一步",
     skip: "跳过",
     close: "关闭教程",
-    welcomeEyebrow: "欢迎来到 Rune",
+    welcomeEyebrow: "欢迎来到 Orbit · 引力",
     welcomeTitle: "让每一份工作，都有清晰的来处。",
-    welcomeBody: "文档、数据、图表和演示共享同一套可读源内容。你专注判断，Rune 负责把变化实时连接起来。",
+    welcomeBody: "文档、数据、图表和演示共享同一套可读源内容。你专注判断，Orbit 负责把变化实时连接起来。",
     begin: "继续设置",
     local: "本地优先",
     reviewFirst: "先审后写",
     live: "实时编译",
     languageEyebrow: "语言",
-    languageTitle: "选择 Rune 使用的语言",
+    languageTitle: "选择 Orbit 使用的语言",
     languageBody: "已根据这台设备做出推荐，之后可随时更改。",
     recommended: "系统推荐",
     continue: "继续",
     modelEyebrow: "智能设置",
-    modelTitle: "让 Rune 找到你已有的模型",
+    modelTitle: "让 Orbit 找到你已有的模型",
     modelBody: "桌面版会在明确范围内查找已有配置与本地模型；发现阶段不显示、复制或验证任何密钥。",
-    checkingModel: "正在检查 Rune 中已有的连接…",
+    checkingModel: "正在检查 Orbit 中已有的连接…",
     connectedModel: "已经准备好",
     connectedModelBody: "当前默认连接可用于先审后写的模型辅助。",
     noModel: "还没有选择模型",
@@ -79,7 +80,7 @@ export const WELCOME_BASE_COPY = {
     discoveryEmpty: "未找到可直接复用的模型连接",
     discoveryEmptyBody: "你仍可以手动添加供应商或导入一份配置。",
     discoveryUnavailable: "网页版不能读取电脑上的应用配置；仍可手动连接模型。",
-    discoveryError: "Rune 无法完成设备扫描；没有读取或保存任何配置。",
+    discoveryError: "Orbit 无法完成设备扫描；没有读取或保存任何配置。",
     deviceModel: "在此设备上运行",
     cloudModel: "云端 API",
     sourceLabel: "来源",
@@ -90,18 +91,18 @@ export const WELCOME_BASE_COPY = {
     credentialNotRequired: "无需 API Key",
     reviewConnection: "查看",
     reviewTitle: "使用这个模型连接？",
-    connectionReviewBody: "Rune 将在你确认后读取这一项凭据，先验证模型目录，成功后才加密保存并设为默认。",
+    connectionReviewBody: "Orbit 将在你确认后读取这一项凭据，先验证模型目录，成功后才加密保存并设为默认。",
     connectAndVerify: "验证并使用",
     connecting: "正在验证…",
     chooseAnother: "返回连接列表",
-    connectionFailed: "这个连接暂时无法验证；Rune 没有保存它。",
+    connectionFailed: "这个连接暂时无法验证；Orbit 没有保存它。",
     scanPrivacy: "扫描只读取已知配置位置与本机模型端口；不会执行 shell 配置、上传文件或展示密钥。",
     modelSafety:
-      "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Rune 也不会把它写进工作区、localStorage、Artifact 或 Git。",
+      "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Orbit 也不会把它写进工作区、localStorage、Artifact 或 Git。",
     modelUnavailable: "无法读取模型状态；你可以选择不使用模型继续。",
     shortcutEyebrow: "快速上手",
     shortcutTitle: "亲手试试四个快捷键",
-    shortcutBody: "按下对应按键，Rune 会在这里确认。你也可以稍后从本地指南重新学习。",
+    shortcutBody: "按下对应按键，Orbit 会在这里确认。你也可以稍后从本地指南重新学习。",
     openTitle: "打开文件",
     openBody: "选择一个本地文件开始工作",
     saveTitle: "保存恢复点",
@@ -128,24 +129,24 @@ export const WELCOME_BASE_COPY = {
     back: "Back",
     skip: "Skip",
     close: "Close tutorial",
-    welcomeEyebrow: "Welcome to Rune",
+    welcomeEyebrow: "Welcome to Orbit · 引力",
     welcomeTitle: "Every piece of work, with a clear source.",
     welcomeBody:
-      "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.",
+      "Documents, data, charts, and presentations share one readable source system. You make the judgment; Orbit keeps every change connected.",
     begin: "Continue setup",
     local: "Local first",
     reviewFirst: "Review before write",
     live: "Live compilation",
     languageEyebrow: "Language",
-    languageTitle: "Choose your Rune language",
+    languageTitle: "Choose your Orbit language",
     languageBody: "Recommended from this device. You can change it whenever you like.",
     recommended: "System recommendation",
     continue: "Continue",
     modelEyebrow: "Intelligence",
-    modelTitle: "Let Rune find the models you already use",
+    modelTitle: "Let Orbit find the models you already use",
     modelBody:
       "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.",
-    checkingModel: "Checking connections already saved in Rune…",
+    checkingModel: "Checking connections already saved in Orbit…",
     connectedModel: "Ready",
     connectedModelBody: "The current default can provide review-before-write model assistance.",
     noModel: "No model selected yet",
@@ -158,12 +159,12 @@ export const WELCOME_BASE_COPY = {
     discoveryScanning: "Looking for models on this device…",
     discoveryTitle: "Connections available on this device",
     discoveryBody:
-      "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.",
+      "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.",
     discoveryEmpty: "No reusable model connection was found",
     discoveryEmptyBody: "You can still add a provider yourself or import a configuration.",
     discoveryUnavailable:
       "The web app cannot read application settings on your computer. You can still connect a model manually.",
-    discoveryError: "Rune could not complete the device scan. No configuration was read or saved.",
+    discoveryError: "Orbit could not complete the device scan. No configuration was read or saved.",
     deviceModel: "Runs on this device",
     cloudModel: "Cloud API",
     sourceLabel: "Source",
@@ -175,20 +176,20 @@ export const WELCOME_BASE_COPY = {
     reviewConnection: "Review",
     reviewTitle: "Use this model connection?",
     connectionReviewBody:
-      "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.",
+      "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.",
     connectAndVerify: "Verify & use",
     connecting: "Verifying…",
     chooseAnother: "Back to connections",
-    connectionFailed: "Rune could not verify this connection and did not save it.",
+    connectionFailed: "Orbit could not verify this connection and did not save it.",
     scanPrivacy:
       "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.",
     modelSafety:
-      "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.",
-    modelUnavailable: "Rune could not read model status. You can continue without a model.",
+      "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Orbit never writes it to the workspace, localStorage, an Artifact, or Git.",
+    modelUnavailable: "Orbit could not read model status. You can continue without a model.",
     shortcutEyebrow: "Quick start",
     shortcutTitle: "Try four shortcuts yourself",
     shortcutBody:
-      "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.",
+      "Press each shortcut and Orbit will confirm it here. You can revisit these lessons in the local guide.",
     openTitle: "Open a file",
     openBody: "Choose a local file to begin",
     saveTitle: "Save a checkpoint",
@@ -221,18 +222,19 @@ function ShortcutKey({ children }: { children: ReactNode }) {
   return <kbd>{children}</kbd>;
 }
 
-function IsolatedRuneName({ children }: { children: string }) {
-  const pieces = children.split("Rune");
+function IsolatedProductName({ children }: { children: string }) {
+  const pieces = children.split(/(Orbit(?: · 引力)?)/u).filter(Boolean);
   return (
     <>
       {pieces.map((piece, index) => (
         <Fragment key={`${piece}-${index}`}>
-          {index > 0 && (
+          {piece.startsWith(ORBIT_PRODUCT_NAME) ? (
             <bdi className="rune-name" dir="ltr">
-              Rune
+              {piece}
             </bdi>
+          ) : (
+            piece
           )}
-          {piece}
         </Fragment>
       ))}
     </>
@@ -378,8 +380,8 @@ export function WelcomeExperience({
       >
         <header className="welcome-chrome">
           <div className="welcome-chrome-brand" aria-hidden="true">
-            <span>R</span>
-            <strong>Rune</strong>
+            <span>O</span>
+            <strong dir="ltr">{ORBIT_PRODUCT_LOCKUP}</strong>
           </div>
           <div
             className="welcome-progress"
@@ -428,9 +430,11 @@ export function WelcomeExperience({
                 </div>
                 <section className="welcome-language-card" aria-labelledby="welcome-title">
                   <div className="welcome-language-heading">
-                    <span className="welcome-eyebrow">{text.welcomeEyebrow}</span>
+                    <span className="welcome-eyebrow">
+                      <IsolatedProductName>{text.welcomeEyebrow}</IsolatedProductName>
+                    </span>
                     <h1 id="welcome-title">
-                      <IsolatedRuneName>{text.languageTitle}</IsolatedRuneName>
+                      <IsolatedProductName>{text.languageTitle}</IsolatedProductName>
                     </h1>
                     <p>{text.languageBody}</p>
                   </div>

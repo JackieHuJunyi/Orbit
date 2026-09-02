@@ -474,7 +474,7 @@ ${
   comparisonScope
     ? `以下视图按 **${category}** 对比 **${value}** 的${aggregation}，图表显示主范围减去对比范围的变化。只有两个范围都存在的分类才进入结果。`
     : `以下视图仅在 **${scopeText}** 范围内按 **${category}** 汇总 **${value}** 的${aggregation}。`
-}Rune 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
+}Orbit 没有在没有证据时自动补写经营结论；图表中的每个可证明数据点仍可回到原始来源。
 
 ${chartBinding}
 
@@ -516,7 +516,7 @@ ${
   comparisonScope
     ? `This view compares the ${aggregation} of **${value}** by **${category}** and charts primary minus comparison. Only categories present in both exact scopes enter the result.`
     : `Within **${scopeText}**, this view uses the ${aggregation} of **${value}** grouped by **${category}**.`
-} Rune has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
+} Orbit has not invented a business conclusion without evidence; every provable chart datum can still return to canonical source.
 
 ${chartBinding}
 
@@ -604,7 +604,7 @@ ${
 
 ## ${zh ? "证据已连接，结论等待审核。" : "Evidence is connected; the conclusion awaits review."}
 
-${zh ? "所有应用动作仍需在 Rune 的事务审核中明确确认。" : "Every apply remains subject to an explicit Rune transaction review."}
+${zh ? "所有应用动作仍需在 Orbit 的事务审核中明确确认。" : "Every apply remains subject to an explicit Orbit transaction review."}
 `;
   return zh
     ? runeText(input.locale, source, source, [
@@ -694,7 +694,7 @@ export function prepareOperatingReviewWorkflow(
   });
   if (!queryPrepared.artifact || queryPrepared.errors.length) {
     return {
-      errors: queryPrepared.errors.length ? queryPrepared.errors : ["Rune could not prepare the mapped analysis."],
+      errors: queryPrepared.errors.length ? queryPrepared.errors : ["Orbit could not prepare the mapped analysis."],
     };
   }
   const metricField = operatingReviewMetricField({ ...input, comparisonScope });
@@ -712,7 +712,7 @@ export function prepareOperatingReviewWorkflow(
   });
   if (!chartPrepared.artifact || chartPrepared.errors.length) {
     return {
-      errors: chartPrepared.errors.length ? chartPrepared.errors : ["Rune could not prepare the mapped chart."],
+      errors: chartPrepared.errors.length ? chartPrepared.errors : ["Orbit could not prepare the mapped chart."],
     };
   }
   const chart = {
@@ -760,7 +760,7 @@ export function prepareOperatingReviewWorkflow(
     });
     if (!prepared.artifact || prepared.errors.length) {
       return {
-        errors: prepared.errors.length ? prepared.errors : [`Rune could not prepare the ${deliverable} deliverable.`],
+        errors: prepared.errors.length ? prepared.errors : [`Orbit could not prepare the ${deliverable} deliverable.`],
       };
     }
     let deliverableSource: string;
@@ -774,7 +774,7 @@ export function prepareOperatingReviewWorkflow(
         return {
           errors: semanticHtml.errors.length
             ? [...semanticHtml.errors]
-            : ["Rune could not compile the operating-review presentation as semantic HTML."],
+            : ["Orbit could not compile the operating-review presentation as semantic HTML."],
         };
       }
       deliverableSource = semanticHtml.source;
@@ -795,7 +795,7 @@ export function prepareOperatingReviewWorkflow(
   if (mutation.errors.length) return { errors: mutation.errors };
   const zh = isChineseRuneLocale(input.locale);
   const chineseSummary = `为「${title}」创建一条可核验经营汇报链`;
-  const chineseDetail = `Rune 将 ${data.name}、字段映射、SQL、图表和 ${deliverables.length} 份成品编译成一次原子审核事务。`;
+  const chineseDetail = `Orbit 将 ${data.name}、字段映射、SQL、图表和 ${deliverables.length} 份成品编译成一次原子审核事务。`;
   return {
     errors: [],
     plan: {
@@ -804,7 +804,7 @@ export function prepareOperatingReviewWorkflow(
         : `Create a verifiable operating-review chain for “${title}”`,
       detail: zh
         ? runeText(input.locale, chineseDetail, chineseDetail, [data.name])
-        : `Rune compiled ${data.name}, explicit field mappings, SQL, a live Chart, and ${deliverables.length} deliverable${deliverables.length === 1 ? "" : "s"} into one atomic review transaction.`,
+        : `Orbit compiled ${data.name}, explicit field mappings, SQL, a live Chart, and ${deliverables.length} deliverable${deliverables.length === 1 ? "" : "s"} into one atomic review transaction.`,
       patches: [],
       creations,
     },
@@ -1136,12 +1136,12 @@ export function prepareSavedOperatingReviewRerun(
   const actualQuery = targetArtifacts.find((artifact) => artifact.kind === "query");
   const actualChart = targetArtifacts.find((artifact) => artifact.kind === "chart");
   if (!generatedQuery || !generatedChart || !actualQuery || !actualChart) {
-    return { errors: ["Rune could not rebuild the saved evidence chain."] };
+    return { errors: ["Orbit could not rebuild the saved evidence chain."] };
   }
   const patches: ArtifactSourcePatch[] = [];
   for (const target of targetArtifacts) {
     const generated = generatedByKind.get(target.kind);
-    if (!generated) return { errors: [`Rune could not rebuild the saved ${target.kind} output.`] };
+    if (!generated) return { errors: [`Orbit could not rebuild the saved ${target.kind} output.`] };
     let nextSource = generated.artifact.source;
     if (target.kind === "chart") {
       const chartSource = JSON.parse(nextSource) as { source: string };
@@ -1165,7 +1165,7 @@ export function prepareSavedOperatingReviewRerun(
   if (mutation.errors.length) return { errors: mutation.errors };
   const zh = isChineseRuneLocale(input.locale);
   const chineseSummary = `更新已保存的「${normalizeTaskText(input.title)}」`;
-  const chineseDetail = `Rune 将重新编译 ${patches.length} 个既有文件；文件身份不变，所有变化仍需一次事务审核。`;
+  const chineseDetail = `Orbit 将重新编译 ${patches.length} 个既有文件；文件身份不变，所有变化仍需一次事务审核。`;
   return {
     errors: [],
     plan: {
@@ -1174,7 +1174,7 @@ export function prepareSavedOperatingReviewRerun(
         : `Update saved review “${normalizeTaskText(input.title)}”`,
       detail: zh
         ? runeText(input.locale, chineseDetail, chineseDetail)
-        : `Rune will recompile ${patches.length} existing files without changing their identities; every change still requires one transaction review.`,
+        : `Orbit will recompile ${patches.length} existing files without changing their identities; every change still requires one transaction review.`,
       patches,
       creations: [],
     },

@@ -207,6 +207,6 @@ export function prepareVisualChartSpecEdit(
         candidate.start === 0 &&
         candidate.end === nextSource.length,
     ) ?? null;
-  if (!nextTarget) return emptyResult(artifact.source, "Rune could not prove the edited Chart JSON source range.");
+  if (!nextTarget) return emptyResult(artifact.source, "Orbit could not prove the edited Chart JSON source range.");
   return { nextSource, nextTarget, errors: [] };
 }

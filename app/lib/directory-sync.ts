@@ -206,7 +206,7 @@ export function prepareDirectorySync(input: {
     return failed("That folder is no longer empty. Review its current files before writing.");
   }
   if (input.mode === "pull" && input.directory.source === "empty") {
-    return failed("That folder does not contain a Rune workspace to pull.");
+    return failed("That folder does not contain a Orbit workspace to pull.");
   }
   if (input.mode === "push" && input.directory.source === "empty") {
     return failed("Use the empty-folder initialization review for this folder.");
@@ -304,7 +304,7 @@ export async function commitDirectorySync({
     directory,
   });
   if (!prepared.plan || prepared.errors.length) {
-    throw new Error(prepared.errors[0] ?? "Rune could not validate this folder sync.");
+    throw new Error(prepared.errors[0] ?? "Orbit could not validate this folder sync.");
   }
   if (planIdentity(prepared.plan) !== planIdentity(expectedPlan)) {
     throw new Error("The folder sync plan changed after review. Review the current files again.");

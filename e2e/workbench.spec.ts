@@ -17,7 +17,7 @@ test("paints the handwritten first-run ritual before client JavaScript", async (
     "aria-label",
     "Hello",
   );
-  await expect(firstFrame.getByText("Preparing Rune…")).toHaveCount(0);
+  await expect(firstFrame.getByText("Preparing Orbit…")).toHaveCount(0);
   expect(
     await firstFrame.evaluate(() =>
       Boolean(document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)?.closest(".welcome-backdrop")),
@@ -64,7 +64,7 @@ test("applies a saved appearance before hydration to prevent a light-theme flash
 test("starts a fresh user with language choice before outcome-first task choices", async ({ page }) => {
   await page.goto("/");
 
-  const onboarding = page.getByRole("dialog", { name: "Choose your Rune language" });
+  const onboarding = page.getByRole("dialog", { name: "Choose your Orbit language" });
   await expect(onboarding).toBeVisible();
   await expect(onboarding.getByRole("radio")).toHaveCount(9);
 
@@ -88,7 +88,7 @@ test("loads model setup after the handwritten opening without restarting it", as
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  const modelStep = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
   await expect(modelStep).toBeVisible();
   await expect(modelStep.getByText(/The web app cannot read application settings/u)).toBeVisible();
   await expect(modelStep.getByRole("button", { name: /Continue without a model/u })).toBeVisible();
@@ -167,7 +167,7 @@ test("makes model-assisted and model-free continuation visibly distinct", async 
   await page.goto("/");
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  const modelStep = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
   const assisted = modelStep.getByRole("button", { name: /Continue with model assistance/u });
   const withoutModel = modelStep.getByRole("button", { name: /Continue without a model/u });
   await expect(assisted).toContainText("confirm every change");
@@ -273,7 +273,7 @@ test("reveals a discovered credential only after review and saves only after ver
 
   await page.goto("/");
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  const modelStep = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
   await expect(modelStep.getByText("DeepSeek", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Claude Code", { exact: false })).toBeVisible();
   await expect(modelStep).not.toContainText("discovery-test-secret");
@@ -327,7 +327,7 @@ test("reviews a CC Switch model import without navigating or persisting its cred
   await page.getByRole("button", { name: "More tools" }).click();
   await page.getByRole("menuitem", { name: /Model settings/u }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  const dialog = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
   await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Import config", exact: true }).click();
   await expect(dialog.locator(".model-status-card")).toBeHidden();
@@ -372,16 +372,16 @@ test("moves backward and forward through every onboarding step without losing th
   const welcomeWindow = page.locator(".welcome-window");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  await expect(page.getByRole("dialog", { name: "Let Rune find the models you already use" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Let Orbit find the models you already use" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Choose your Rune language" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Choose your Orbit language" })).toBeVisible();
   await page.locator(".welcome-language-card > .welcome-primary").click();
   await welcomeWindow.getByRole("button", { name: /Continue without a model/u }).click();
   await expect(page.getByRole("dialog", { name: "Try four shortcuts yourself" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Let Rune find the models you already use" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Let Orbit find the models you already use" })).toBeVisible();
   await welcomeWindow.getByRole("button", { name: /Continue without a model/u }).click();
   await welcomeWindow.getByRole("button", { name: "Learn later", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Your workspace, under your control." })).toBeVisible();
@@ -462,7 +462,7 @@ test("reveals the Arabic writing path right to left without splitting its shapin
 
 test("renders the local-first workbench with its sample workspace", async ({ page }) => {
   await openWorkbench(page);
-  await expect(page.getByRole("main")).toContainText("Rune");
+  await expect(page.getByRole("main")).toContainText("Orbit");
   await expect(page.locator("aside.file-rail").getByText("q2-review.md")).toBeVisible();
   await expect(page.locator("aside.file-rail").getByText("board-briefing.html")).toBeVisible();
   await expect(page.locator("aside.file-rail").getByText("regional-revenue.csv")).toBeVisible();

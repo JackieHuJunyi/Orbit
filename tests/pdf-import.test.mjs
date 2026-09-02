@@ -36,7 +36,7 @@ test("converts positioned PDF text into bounded source-safe Markdown with page p
       page(
         1,
         [
-          item("Rune Confidential", 72, 775, 9),
+          item("Orbit Confidential", 72, 775, 9),
           item("Quarterly Review", 72, 720, 24),
           item("Revenue grew across", 72, 680, 12),
           item("all operating regions.", 72, 665, 12),
@@ -48,7 +48,7 @@ test("converts positioned PDF text into bounded source-safe Markdown with page p
         2,
       ),
       page(2, [
-        item("Rune Confidential", 72, 775, 9),
+        item("Orbit Confidential", 72, 775, 9),
         item("Next action", 72, 700, 18),
         item("Fund the verified plan.", 72, 665, 12),
         item("2", 304, 28, 9),
@@ -68,7 +68,7 @@ test("converts positioned PDF text into bounded source-safe Markdown with page p
   assert.match(artifact.source, /^### Decision$/mu);
   assert.match(artifact.source, /&#123;&#123; metric\("fabricated"\) &#125;&#125; stays literal\./u);
   assert.doesNotMatch(artifact.source, /\{\{\s*metric/iu);
-  assert.doesNotMatch(artifact.source, /Rune Confidential/u);
+  assert.doesNotMatch(artifact.source, /Orbit Confidential/u);
   assert.doesNotMatch(artifact.source, /^\d$/mu);
   assert.match(artifact.source, /PDF page 3[\s\S]*OCR was not performed/u);
   assert.match(result.warnings.join(" "), /selectable text.*approximate reading order/iu);

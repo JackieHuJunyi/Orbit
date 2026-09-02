@@ -121,7 +121,7 @@ export const WorkspaceManifestSchema = z
       assetBytes += asset.size;
     });
     if (assetBytes > MAX_RUNE_LOCAL_IMAGE_BYTES)
-      context.addIssue({ code: "custom", path: ["assets"], message: "Asset bytes exceed Rune's 64 MB folder limit." });
+      context.addIssue({ code: "custom", path: ["assets"], message: "Asset bytes exceed Orbit's 64 MB folder limit." });
   });
 
 export type WorkspaceManifest = z.infer<typeof WorkspaceManifestSchema>;
@@ -211,7 +211,7 @@ async function readBoundedFile(handle: DirectoryFileHandle, budget: { total: num
   const file = await handle.getFile();
   if (file.size > MAX_DIRECTORY_FILE_BYTES) throw new Error(`${handle.name} exceeds the 2 MB per-file limit.`);
   budget.total += file.size;
-  if (budget.total > MAX_DIRECTORY_TOTAL_BYTES) throw new Error("The folder exceeds Rune's 8 MB source limit.");
+  if (budget.total > MAX_DIRECTORY_TOTAL_BYTES) throw new Error("The folder exceeds Orbit's 8 MB source limit.");
   return file.text();
 }
 
@@ -326,7 +326,7 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
   }
   const errors = validateWorkspaceArtifacts(artifacts);
   if (artifacts.some((artifact) => extractRuneAssetIds(artifact.source).length))
-    errors.push("A manifest-free folder cannot resolve Rune local image references.");
+    errors.push("A manifest-free folder cannot resolve Orbit local image references.");
   return { artifacts: errors.length ? [] : artifacts, assets: [], errors, source: "scan" };
 }
 
@@ -348,7 +348,7 @@ export async function writeWorkspaceDirectory(
     if (size > MAX_DIRECTORY_FILE_BYTES) throw new Error(`${artifact.name} exceeds the 2 MB per-file limit.`);
     return total + size;
   }, 0);
-  if (totalBytes > MAX_DIRECTORY_TOTAL_BYTES) throw new Error("The workspace exceeds Rune's 8 MB source limit.");
+  if (totalBytes > MAX_DIRECTORY_TOTAL_BYTES) throw new Error("The workspace exceeds Orbit's 8 MB source limit.");
 
   if (assets.length) {
     const assetDirectory = await directory.getDirectoryHandle(WORKSPACE_ASSET_DIRECTORY_NAME, { create: true });

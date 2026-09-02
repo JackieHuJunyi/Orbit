@@ -35,12 +35,12 @@ async function observationEntries(handle: DirectoryWorkspaceHandle) {
           Number.isFinite(file.lastModified) ? (file.lastModified as number) : null,
         ]);
         if (entries.length > MAX_OBSERVED_DIRECTORY_ENTRIES) {
-          throw new Error("The connected folder has too many Rune files to monitor safely.");
+          throw new Error("The connected folder has too many Orbit files to monitor safely.");
         }
       }
     }
     if (entries.length > MAX_OBSERVED_DIRECTORY_ENTRIES) {
-      throw new Error("The connected folder has too many Rune files to monitor safely.");
+      throw new Error("The connected folder has too many Orbit files to monitor safely.");
     }
   }
   return entries.sort(([left], [right]) => left.localeCompare(right));

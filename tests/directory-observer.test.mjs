@@ -89,7 +89,7 @@ function directory(entries) {
   };
 }
 
-test("fingerprints only bounded Rune source and asset metadata in stable order", async () => {
+test("fingerprints only bounded Orbit source and asset metadata in stable order", async () => {
   const assets = directory([file("b.png", 20, 2), file("a.png", 10, 1)]);
   assets.name = ".rune-assets";
   const fingerprint = await directoryObservationFingerprint(

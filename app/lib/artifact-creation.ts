@@ -82,7 +82,7 @@ function artifactSlug(title: string) {
     .toLocaleLowerCase("en-US")
     .match(/[\p{L}\p{N}]+/gu);
   let slug = words ? [...words.join("-")].slice(0, 64).join("") : "untitled";
-  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(slug)) slug = `rune-${slug}`;
+  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(slug)) slug = `orbit-${slug}`;
   return slug;
 }
 
@@ -201,7 +201,7 @@ export function prepareArtifactCreation(
   if (existing.length >= MAX_WORKSPACE_ARTIFACTS) {
     return {
       nextArtifacts: existing,
-      errors: [`Rune workspaces are limited to ${MAX_WORKSPACE_ARTIFACTS} artifacts.`],
+      errors: [`Orbit workspaces are limited to ${MAX_WORKSPACE_ARTIFACTS} artifacts.`],
     };
   }
   if (!creatableArtifactTypes.some((type) => type.kind === input.kind)) {
@@ -223,12 +223,12 @@ export function commitPreparedArtifactCreation(
   persist: (artifacts: WorkspaceArtifact[], selectedId: string) => void,
 ): ArtifactCreationCommit {
   if (!prepared.artifact || prepared.errors.length) {
-    return { committed: false, error: prepared.errors[0] ?? "Rune could not create that artifact." };
+    return { committed: false, error: prepared.errors[0] ?? "Orbit could not create that artifact." };
   }
   try {
     persist(prepared.nextArtifacts, prepared.artifact.id);
     return { committed: true, error: "" };
   } catch {
-    return { committed: false, error: "Device storage is full, so Rune kept the workspace unchanged." };
+    return { committed: false, error: "Device storage is full, so Orbit kept the workspace unchanged." };
   }
 }

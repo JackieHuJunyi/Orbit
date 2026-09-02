@@ -178,7 +178,7 @@ export function parsePdfPageSelection(value: string, allowedPageNumbers: readonl
     const start = Number(match[1]);
     const end = Number(match[2] ?? match[1]);
     if (start > end) throw new Error(`Invalid descending page range “${part}”.`);
-    if (end - start > MAX_PDF_IMPORT_PAGES) throw new Error("A page range cannot exceed Rune's 200-page PDF limit.");
+    if (end - start > MAX_PDF_IMPORT_PAGES) throw new Error("A page range cannot exceed Orbit's 200-page PDF limit.");
     for (let page = start; page <= end; page += 1) {
       if (!allowed.has(page)) throw new Error(`Page ${page} already has selectable text or is outside this PDF.`);
       selected.add(page);
@@ -505,7 +505,7 @@ export function convertPdfSemanticSnapshot(
   }
   const allLines = filteredByPage.flat();
   if (!allLines.length && !ocrPages.some((page) => cleanText(page.text))) {
-    throw new Error("This PDF has no selectable text. Choose its detected scan pages in Rune's OCR setup first.");
+    throw new Error("This PDF has no selectable text. Choose its detected scan pages in Orbit's OCR setup first.");
   }
   const bodyFontSize = allLines.length ? weightedMedianFont(allLines) : 12;
   const pageSections = filteredByPage.map((lines, index) => {
@@ -528,7 +528,7 @@ export function convertPdfSemanticSnapshot(
   });
   const source = `# ${escapeMarkdown(title)}\n\n${pageSections.join("\n\n")}\n`;
   if (source.length > MAX_PDF_OUTPUT_CHARS) {
-    throw new Error("The extracted PDF text exceeds Rune's 200,000-character Document limit.");
+    throw new Error("The extracted PDF text exceeds Orbit's 200,000-character Document limit.");
   }
 
   const emptyPages = filteredByPage.filter(

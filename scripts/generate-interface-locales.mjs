@@ -24,7 +24,7 @@ const componentCatalogs = [
   ["app/lib/workbench-surface-copy.ts", "PILOT_EVIDENCE_NOTICE_BASE_COPY"],
 ];
 const protectedTerms = [
-  "Rune",
+  "Orbit",
   "Markdown",
   "CSV",
   "JSON",

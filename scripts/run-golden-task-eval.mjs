@@ -13,7 +13,7 @@ export function renderRuneGoldenTaskReport(result) {
     (entry) =>
       `| \`${tableCell(entry.id)}\` | ${entry.expected} | ${entry.result} | ${tableCell(entry.coverage.join(" · "))} |`,
   );
-  return `# Rune synthetic Golden Task baseline
+  return `# Orbit synthetic Golden Task baseline
 
 > Evidence grade E1: deterministic regression evidence from synthetic fixtures. This is not user-demand, delivery, retention, or paid validation.
 

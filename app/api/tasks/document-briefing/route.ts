@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           input: modelInput,
           schema: DocumentBriefingModelOutlineSchema,
           schemaName: "document_briefing_outline",
-          responseDescription: "Return Rune's evidence-bound presentation outline for local validation.",
+          responseDescription: "Return Orbit's evidence-bound presentation outline for local validation.",
           signal: providerController.signal,
         });
         const validated = validateDocumentBriefingModelOutline(response.output, evidence.evidenceUnits);
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     }
     return Response.json(
       {
-        error: "The model provider could not shape this presentation. Rune kept the source unchanged.",
+        error: "The model provider could not shape this presentation. Orbit kept the source unchanged.",
         code: "MODEL_OUTLINE_UNAVAILABLE",
       },
       { status: 502 },

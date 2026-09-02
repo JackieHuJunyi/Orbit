@@ -26,7 +26,11 @@ const STATIC_CONTENT_TYPES = Object.freeze({
   ".woff2": "font/woff2",
 });
 
-app.setName("Rune");
+// Keep the established on-device vault and Electron profile after the public
+// rename. A later directory migration would need dual-read and rollback.
+const legacyRuneUserDataDirectory = path.join(app.getPath("appData"), "Rune");
+app.setName("Orbit");
+app.setPath("userData", legacyRuneUserDataDirectory);
 process.env.RUNE_DESKTOP_RUNTIME = "1";
 
 async function initializeDesktopCredentialVault() {
@@ -102,7 +106,7 @@ async function startRuneServer() {
       response.end();
     } catch (error) {
       response.writeHead(500, { "content-type": "text/plain;charset=utf-8" });
-      response.end(error instanceof Error ? error.message : "Rune Desktop server error");
+      response.end(error instanceof Error ? error.message : "Orbit Desktop server error");
     }
   });
   await new Promise((resolve, reject) => {
@@ -111,7 +115,7 @@ async function startRuneServer() {
   });
   const address = server.address();
   if (!address || typeof address === "string")
-    throw new Error("Rune Desktop could not start its local workspace server.");
+    throw new Error("Orbit Desktop could not start its local workspace server.");
   return { server, url: `http://127.0.0.1:${address.port}` };
 }
 

@@ -126,7 +126,7 @@ export function createAgentQueryReadyEvidence(snapshot: WorkspaceQuerySnapshot):
     evidenceTruncated = true;
   }
   if (JSON.stringify(evidence).length > MAX_AGENT_QUERY_EVIDENCE_JSON_CHARS) {
-    throw new Error("Query evidence metadata exceeds Rune's model context limit.");
+    throw new Error("Query evidence metadata exceeds Orbit's model context limit.");
   }
   if (evidence.status === "ready") evidence.evidenceTruncated = evidenceTruncated;
   return AgentQueryEvidenceSchema.parse(evidence);
@@ -193,7 +193,7 @@ export function validateAgentQueryEvidenceContext(
 ): string[] {
   const errors: string[] = [];
   const parsed = AgentQueryEvidenceListSchema.safeParse(evidence);
-  if (!parsed.success) return ["Query evidence does not match Rune's bounded evidence contract."];
+  if (!parsed.success) return ["Query evidence does not match Orbit's bounded evidence contract."];
   const queries = artifacts.filter((artifact) => artifact.kind === "query");
   if (queries.length !== evidence.length) {
     errors.push("Query evidence must contain exactly one result for every Query in workspace order.");

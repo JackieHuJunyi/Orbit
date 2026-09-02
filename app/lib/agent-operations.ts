@@ -604,7 +604,7 @@ export function applyAgentSourceOperations(source: string, edits: ExactTextOpera
     if (nextSource.length > MAX_COMPILED_AGENT_SOURCE_CHARS) {
       return {
         nextSource: source,
-        errors: [`Operation ${index + 1} would exceed Rune's 120,000-character Agent output limit.`],
+        errors: [`Operation ${index + 1} would exceed Orbit's 120,000-character Agent output limit.`],
       };
     }
   }
@@ -632,7 +632,7 @@ export function applyAgentArtifactOperations(
     if (nextSource.length > MAX_COMPILED_AGENT_SOURCE_CHARS) {
       return {
         nextSource: artifact.source,
-        errors: [`Operation ${index + 1} would exceed Rune's 120,000-character Agent output limit.`],
+        errors: [`Operation ${index + 1} would exceed Orbit's 120,000-character Agent output limit.`],
       };
     }
   }
@@ -659,7 +659,7 @@ export function compileAgentOperationPatch(
   });
   return plan.success
     ? { plan: plan.data, errors: [] }
-    : { errors: ["The compiled Agent patch exceeds Rune's bounded review contract."] };
+    : { errors: ["The compiled Agent patch exceeds Orbit's bounded review contract."] };
 }
 
 export function validateCompiledSelectionPatch(
@@ -864,5 +864,5 @@ export function compileAgentWorkspaceOperations(
   });
   return plan.success
     ? { plan: plan.data, errors: [] }
-    : { errors: ["The compiled workspace patch exceeds Rune's bounded review contract."] };
+    : { errors: ["The compiled workspace patch exceeds Orbit's bounded review contract."] };
 }

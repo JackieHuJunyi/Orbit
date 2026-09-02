@@ -1,10 +1,10 @@
-# Rune P4 paid-pilot guide
+# Orbit P4 paid-pilot guide
 
 > This protocol operationalizes a real commercial test. A price preference is E1 evidence. Only an authorized payment or signed commercial commitment in the approved commercial system counts as E4.
 
 ## Entry and buyer
 
-Make an offer only after the team has a qualified recurring operating-review task, a buyer or budget owner, an authorized/redacted data path, and a supervised Rune result that the team judged usable or fixable. Do not count friends, employees, grants, investor support, coupons with no consideration, or a research honorarium as customer payment.
+Make an offer only after the team has a qualified recurring operating-review task, a buyer or budget owner, an authorized/redacted data path, and a supervised Orbit result that the team judged usable or fixable. Do not count friends, employees, grants, investor support, coupons with no consideration, or a research honorarium as customer payment.
 
 Before quoting, identify separately:
 
@@ -24,7 +24,7 @@ Present the three real choices without inventing a personalized hidden price:
 | B     |   ¥999/team/month | Four operating-review tasks, included bounded token budget, basic support | Default paid pilot          |
 | C     | ¥1,999/team/month | Higher bounded budget, workflow configuration, priority support           | Reliability/service premium |
 
-State that this is a four-week price experiment, not a permanent production price. No offer includes unlimited tokens or unbounded implementation work. If Rune cannot complete the agreed core outcome, apply the disclosed extension or refund policy rather than redefining success after the sale.
+State that this is a four-week price experiment, not a permanent production price. No offer includes unlimited tokens or unbounded implementation work. If Orbit cannot complete the agreed core outcome, apply the disclosed extension or refund policy rather than redefining success after the sale.
 
 ## Offer and evidence procedure
 
@@ -33,10 +33,10 @@ State that this is a four-week price experiment, not a permanent production pric
 3. Count one **explicit quote** only when a buyer sees a concrete price and terms. Count one **qualified pilot** in the conversion denominator once the entry conditions above are met and a real offer is delivered.
 4. Count one **paying team** only after cleared non-refunded funds exist, or after an authorized signed commercial commitment with price and payment terms exists. A forced choice, verbal intent, checkout click, draft invoice, unsigned order, or free extension is not E4.
 5. Record direct revenue and refund separately. Allocate provider/token, infrastructure, human support, payment, and other variable costs to the same four-week window.
-6. At the end, record whether the team completed the promised tasks, reused Rune on another date, requested continuation, renewed, refunded, or stopped—and the buyer's reason.
+6. At the end, record whether the team completed the promised tasks, reused Orbit on another date, requested continuation, renewed, refunded, or stopped—and the buyer's reason.
 7. Have a second authorized reviewer reconcile the commercial summary against the source system before a P4 decision is reported.
 
-Do not implement or simulate payments inside Rune for this experiment. Use an organization-approved invoicing, contract, or payment system with its normal security, tax, refund, and access controls.
+Do not implement or simulate payments inside Orbit for this experiment. Use an organization-approved invoicing, contract, or payment system with its normal security, tax, refund, and access controls.
 
 ## Decision record
 

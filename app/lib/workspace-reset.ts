@@ -106,7 +106,7 @@ export function serializeWorkspaceDeviceState(state: WorkspaceDeviceState) {
 
 function cloneWorkspaceDeviceState(state: WorkspaceDeviceState): WorkspaceDeviceState {
   const cloned = normalizeWorkspaceDeviceState(JSON.parse(serializeWorkspaceDeviceState(state)));
-  if (!cloned) throw new Error("Rune could not preserve this device workspace exactly.");
+  if (!cloned) throw new Error("Orbit could not preserve this device workspace exactly.");
   return Object.freeze({
     ...cloned,
     artifacts: Object.freeze(cloned.artifacts.map((artifact) => Object.freeze(artifact))) as WorkspaceArtifact[],
@@ -143,7 +143,7 @@ export function prepareWorkspaceReset(
   const current = normalizeWorkspaceDeviceState(currentInput);
   const target = normalizeWorkspaceDeviceState(targetInput);
   if (!current) return failed("The current device workspace is not safe to preserve.");
-  if (!target) return failed("The target device workspace is not a valid Rune workspace snapshot.");
+  if (!target) return failed("The target device workspace is not a valid Orbit workspace snapshot.");
   const currentSizeError = workspaceDeviceStateSnapshotError(current, "The current workspace");
   if (currentSizeError) return failed(currentSizeError);
   const targetSizeError = workspaceDeviceStateSnapshotError(
@@ -194,12 +194,12 @@ export async function commitWorkspaceReset({
   }
   const prepared = prepareWorkspaceReset(current, target, expectedPlan.mode);
   if (!prepared.plan || prepared.errors.length) {
-    throw new Error(prepared.errors[0] ?? "Rune could not validate this workspace transition.");
+    throw new Error(prepared.errors[0] ?? "Orbit could not validate this workspace transition.");
   }
   try {
     persist(prepared.plan.nextState, prepared.plan.nextRecovery);
   } catch {
-    throw new Error("Device persistence failed, so Rune kept the current workspace unchanged.");
+    throw new Error("Device persistence failed, so Orbit kept the current workspace unchanged.");
   }
   return Object.freeze({
     mode: expectedPlan.mode,

@@ -318,7 +318,7 @@ ${contentSlides}
 
 ${focus}
 
-${runeText(input.locale, "Source identity stays attached to this presentation; review the transaction before Rune writes it.", "这份演示始终保留来源身份；Rune 只会在你审核事务后写入。")}
+${runeText(input.locale, "Source identity stays attached to this presentation; review the transaction before Orbit writes it.", "这份演示始终保留来源身份；Orbit 只会在你审核事务后写入。")}
 `;
 }
 
@@ -369,7 +369,9 @@ export function prepareDocumentBriefingWorkflow(
   const nextSemanticHtml =
     targetFacts?.format === "deck" ? null : semanticHtmlPresentationFromDeckSource(nextDeckSource);
   if (nextSemanticHtml?.errors.length || (targetFacts?.format !== "deck" && !nextSemanticHtml?.source)) {
-    return { errors: [...(nextSemanticHtml?.errors ?? ["Rune could not compile the presentation as semantic HTML."])] };
+    return {
+      errors: [...(nextSemanticHtml?.errors ?? ["Orbit could not compile the presentation as semantic HTML."])],
+    };
   }
   const nextSource = targetFacts?.format === "deck" ? nextDeckSource : (nextSemanticHtml?.source as string);
   let patches: ArtifactSourcePatch[] = [];

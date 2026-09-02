@@ -239,7 +239,7 @@ function mark(value: boolean) {
 }
 
 export function renderPilotProblemGateMarkdown(report: PilotProblemReport) {
-  return `# Rune P1 problem gate
+  return `# Orbit P1 problem gate
 
 > ${report.gates.passed ? "PASS" : "OPEN"}. This report summarizes asserted, externally evidenced interviews. Synthetic personas and missing interviews never count.
 

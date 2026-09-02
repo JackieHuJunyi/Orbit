@@ -3,8 +3,8 @@
 export const INTERFACE_TRANSLATIONS = {
   "- **Charts:** Chart JSON binds to Data or Query so reports and decks share one fact.":
     "- **Charts:** Chart JSON يرتبط بالبيانات أو الاستعلام، لذا تشترك التقارير والمجموعات في حقيقة واحدة.",
-  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Rune Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.":
-    "- **التوافق:** واردات PDF وDOCX وXLSX وPPTX وODT وODS وODP تكشف عن حدود التحويل الدلالي قبل الكتابة؛ يمكن لـ Rune لسطح المكتب أيضًا تحويل DOC/PPT القديم من خلال Word/PowerPoint المحلي إلى نفس المراجعة؛ تتطلب PDF الممسوحة ضوئيًا صفحة واضحة واختيارات OCR الإنجليزية/الصينية المبسطة، ثم تكشف الثقة على مستوى الصفحة.",
+  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Orbit Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.":
+    "- **التوافق:** واردات PDF وDOCX وXLSX وPPTX وODT وODS وODP تكشف عن حدود التحويل الدلالي قبل الكتابة؛ يمكن لـ Orbit لسطح المكتب أيضًا تحويل DOC/PPT القديم من خلال Word/PowerPoint المحلي إلى نفس المراجعة؛ تتطلب PDF الممسوحة ضوئيًا صفحة واضحة واختيارات OCR الإنجليزية/الصينية المبسطة، ثم تكشف الثقة على مستوى الصفحة.",
   "- **Data:** readable CSV / JSON can be analyzed with local DuckDB SQL.":
     "- **البيانات:** يمكن تحليل CSV / JSON القابلة للقراءة باستخدام DuckDB SQL المحلي.",
   "- **Documents:** readable Markdown compiles into a document.":
@@ -24,16 +24,16 @@ export const INTERFACE_TRANSLATIONS = {
     "- استعادة التاريخ يظهر أولاً الفرق الدقيق؛ يؤدي التأكيد إلى إعادة فحص مساحة العمل الكاملة والاحتفاظ بالإصدار الحالي كنقطة تفتيش للسلامة.",
   "- The Agent sees only files and ranges you deliberately select.":
     "- يرى Agent فقط الملفات والنطاقات التي تحددها عمدًا.",
-  "# Welcome to Rune": "# مرحبًا بك في Rune",
+  "# Welcome to Orbit": "# مرحبًا بك في Orbit",
   "## Connect a model": "## قم بتوصيل النموذج",
-  "## How Rune works": "## كيف يعمل Rune.",
+  "## How Orbit works": "## كيف يعمل Orbit.",
   "## Keyboard shortcuts": "## اختصارات لوحة المفاتيح",
   "## Next": "## التالي",
-  "## Rune's trust boundary": "## حدود الثقة لـ Rune",
+  "## Orbit's trust boundary": "## حدود الثقة لـ Orbit",
   "## Start here": "## ابدأ هنا",
   "%": "%",
-  "> Rune is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.":
-    "> Rune هي مساحة عمل ذكاء اصطناعي محلية أولاً ويمكن التحقق منها. مصدرك المقروء هو الحقيقة ويتم تجميع المعاينة مباشرة. لا يكتب Agent أبدًا قبل الموافقة.",
+  "> Orbit is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.":
+    "> Orbit هي مساحة عمل ذكاء اصطناعي محلية أولاً ويمكن التحقق منها. مصدرك المقروء هو الحقيقة ويتم تجميع المعاينة مباشرة. لا يكتب Agent أبدًا قبل الموافقة.",
   "| --- | --- | --- |": "| --- | --- | --- |",
   "| Action | macOS | Windows / Linux |": "| العمل | macOS | Windows / Linux |",
   "| Add a Document draft link | ⌘ K | Ctrl K |": "| إضافة رابط مسودة الوثيقة | ⌘ K | Ctrl K |",
@@ -58,22 +58,22 @@ export const INTERFACE_TRANSLATIONS = {
     "4. اختر عنوان مستند، أو فقرة، أو عنصر قائمة فردي، أو خلية جدول، أو نص غامق/مائل/مشطب، أو رمز مضمّن، أو رابط، أو صورة - أو خلية بيانات، أو مرجع مرجعي للمخطط، أو شريحة - لتحديد مصدرها الدقيق وإبرازه. يؤدي أيضًا تحريك علامة الإقحام المصدر أو تحديد نطاق مثبت إلى تمييز هدف المعاينة المطابق وتمريره. يؤدي النقر العادي على الرابط إلى تحديد المصدر؛ لا يزال النقر على الأمر/التحكم يفتحه.",
   "5. Use the pencil beside a Document section or body block, Data cell, Chart properties, or Deck slide to edit a proven range on the right. The left side mirrors and highlights the complete source draft live; Cancel writes nothing and Save verifies before synchronizing one revision. F2 also edits, while the block's left controls insert, move, or delete only after an exact source-diff review.":
     "5. استخدم القلم الرصاص بجوار قسم المستند أو كتلة النص، أو خلية البيانات، أو خصائص Chart، أو شريحة Deck لتحرير نطاق مثبت على اليمين. يعكس الجانب الأيسر مسودة المصدر الكاملة ويسلط الضوء عليها مباشرة؛ لا يؤدي الإلغاء إلى كتابة أي شيء ويتم التحقق من الحفظ قبل مزامنة مراجعة واحدة. يقوم F2 أيضًا بالتحرير، بينما يتم إدراج عناصر التحكم اليسرى للكتلة أو نقلها أو حذفها فقط بعد مراجعة دقيقة لاختلاف المصدر.",
-  "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
-    "6. اطلب من Rune Agent اقتراح تغيير. راجع الفرق والتأثير قبل تطبيقه.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "لا يتغير المجلد المتصل؛ ولا يكتب Rune إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
+  "6. Ask Orbit Agent to propose a change. Review the diff and impact before applying it.":
+    "6. اطلب من Orbit Agent اقتراح تغيير. راجع الفرق والتأثير قبل تطبيقه.",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "لا يتغير المجلد المتصل؛ ولا يكتب Orbit إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
   "A custom endpoint must be a public HTTPS API base URL.":
     "يجب أن تكون نقطة النهاية المخصصة عنوان URL أساسيًا لواجهة برمجة تطبيقات HTTPS العامة.",
   "A leadership report and slides focused on decisions": "تقرير وعرض للقيادة يركزان على القرارات",
   "A material error, omission, or rework still blocks delivery.": "لا يزال خطأ جوهري أو نقص أو عمل إضافي يمنع التسليم.",
   "A paragraph, heading, list, quote, code block, table, or divider…":
     "فقرة، عنوان، قائمة، اقتباس، كتلة التعليمات البرمجية، جدول، أو مقسم...",
-  "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.":
-    "يتم تشفير المفتاح الشخصي في بيانات اعتماد HttpOnly التي لا تستطيع البرامج النصية للمتصفح قراءتها مرة أخرى؛ Rune لا يكتبها أبدًا في مساحة العمل، localStorage، أو Artifact، أو Git.",
+  "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Orbit never writes it to the workspace, localStorage, an Artifact, or Git.":
+    "يتم تشفير المفتاح الشخصي في بيانات اعتماد HttpOnly التي لا تستطيع البرامج النصية للمتصفح قراءتها مرة أخرى؛ Orbit لا يكتبها أبدًا في مساحة العمل، localStorage، أو Artifact، أو Git.",
   "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.":
     "لا تُحتسب العينة إلا بعد اكتمال جميع الدرجات والتأكيد بأن المحتوى مصرح به للتقييم أو منقح. الدرجة 1 تعني أنه يحتاج إلى تحسين، و5 تعني ممتاز.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "لا يثبت نجاح التنزيل أو الكتابة إلى المجلد أن النتيجة مفيدة. اختر النتيجة الأقرب كي يميّز Rune بين النجاح التقني والمخرج الحقيقي القابل للتسليم.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "لا يثبت نجاح التنزيل أو الكتابة إلى المجلد أن النتيجة مفيدة. اختر النتيجة الأقرب كي يميّز Orbit بين النجاح التقني والمخرج الحقيقي القابل للتسليم.",
   "A team report focused on the largest change and next owner": "تقرير للفريق يركز على أكبر تغيير والمسؤول التالي",
   "Accent color": "لون مميز",
   Active: "نشط",
@@ -95,12 +95,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
     "اضبط هذه الفترة وأعد ترجمة التحليل والمخطط والتسليمات الموجودة. تظل هويات الملفات مستقرة ويظل كل تغيير قابلاً للمراجعة.",
   "After sync": "بعد المزامنة",
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "بعد تأكيد هذا الاستيراد، يفتح Rune إعداد العرض مع تحديد هذا الـ Document مسبقًا.",
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "بعد تأكيد هذا الاستيراد، يفتح Rune إعداد المراجعة التشغيلية مع تحديد مصدر Data هذا مسبقًا.",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "بعد تأكيدك، يقرأ Rune بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "بعد تأكيد هذا الاستيراد، يفتح Orbit إعداد العرض مع تحديد هذا الـ Document مسبقًا.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "بعد تأكيد هذا الاستيراد، يفتح Orbit إعداد المراجعة التشغيلية مع تحديد مصدر Data هذا مسبقًا.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
   Agent: "Agent",
   "Agent change scope": "Agent تغيير النطاق",
   "Agent composer focused": "تم التركيز على الملحن Agent.",
@@ -188,7 +188,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "تحقق من صياغة الربط واختر مقياسًا موجودًا في مساحة العمل هذه.",
   "Check these settings first:": "تحقق من هذه الإعدادات أولاً:",
-  "Checking connections already saved in Rune…": "جارٍ التحقق من الاتصالات المحفوظة في Rune…",
+  "Checking connections already saved in Orbit…": "جارٍ التحقق من الاتصالات المحفوظة في Orbit…",
   "Checkpoint history": "تاريخ نقطة التفتيش",
   "Checkpoint restore details": "تفاصيل استعادة نقطة الحفظ",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
@@ -198,30 +198,30 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose a local file to begin": "اختر ملفًا محليًا للبدء",
   "Choose a page, then drag over the preview to recognize only that area. Whole page remains the default.":
     "اختر صفحة ثم اسحب فوق المعاينة للتعرّف على تلك المنطقة فقط. تبقى الصفحة كاملة هي الخيار الافتراضي.",
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Rune إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "اختر مستندًا تمت مراجعته والجمهور والهدف. ينشئ Rune ملف Deck Markdown قابلًا للتحرير ويحافظ على علاقة صريحة بالمستند المصدر.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Orbit إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "اختر مستندًا تمت مراجعته والجمهور والهدف. ينشئ Orbit ملف Deck Markdown قابلًا للتحرير ويحافظ على علاقة صريحة بالمستند المصدر.",
   "Choose an existing Chart id or create and validate that Chart first.":
     "اختر معرّف Chart موجودًا، أو أنشئ ذلك Chart وتحقق منه أولًا.",
   "Choose an existing metric key or an explicit Query output field.":
     "اختر مفتاح مقياس موجودًا أو حقل إخراج صريحًا من Query.",
   "Choose another": "اختر آخر",
   "Choose Chart accent color": "اختر لون التمييز Chart.",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "اختر CSV أو JSON أو XLSX أو ODS. يعرض Rune الاستيراد أولًا، ثم يرشدك عبر الحقول والمقاييس والمخططات والمخرجات.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "اختر CSV أو JSON أو XLSX أو ODS. يعرض Orbit الاستيراد أولًا، ثم يرشدك عبر الحقول والمقاييس والمخططات والمخرجات.",
   "Choose JSON / text file": "اختر JSON / ملف نصي",
   "Choose maximum visible Chart marks": "اختر أقصى Chart من العلامات المرئية",
   "Choose one exact scope value, or return to all Data rows.": "اختر قيمة نطاق مطابقة، أو عُد إلى كل صفوف البيانات.",
-  "Choose one or more files — Rune reads them locally before review":
-    "اختر ملفًا واحدًا أو أكثر — يقرأها Rune محليًا قبل المراجعة",
+  "Choose one or more files — Orbit reads them locally before review":
+    "اختر ملفًا واحدًا أو أكثر — يقرأها Orbit محليًا قبل المراجعة",
   "Choose one value": "اختر قيمة واحدة",
+  "Choose Orbit's character color": "اختر لون طابع Orbit",
   "Choose pages for OCR": "اختر الصفحات للتعرّف الضوئي",
-  "Choose Rune's character color": "اختر لون طابع Rune",
   "Choose the language actually used on the page to reduce errors.":
     "اختر اللغة المستخدمة فعليًا في الصفحة لتقليل الأخطاء.",
   "Choose valid Chart properties.": "اختر خصائص Chart صالحة.",
-  "Choose your Rune language": "اختر لغة Rune",
+  "Choose your Orbit language": "اختر لغة Orbit",
   Clear: "واضح",
   "Clear pins": "دبابيس واضحة",
   "Click again to delete": "انقر مرة أخرى للحذف",
@@ -236,8 +236,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Comparison rows": "صفوف المقارنة",
   "Compiled artifact preview": "معاينة قطعة أثرية مجمعة",
   "Compiler-guided repair passed": "تم اجتياز الإصلاح الموجه بواسطة المترجم",
-  "Complete the required fields and Rune will validate the whole workflow before review.":
-    "أكمل الحقول المطلوبة وسيقوم Rune بالتحقق من صحة سير العمل بالكامل قبل المراجعة.",
+  "Complete the required fields and Orbit will validate the whole workflow before review.":
+    "أكمل الحقول المطلوبة وسيقوم Orbit بالتحقق من صحة سير العمل بالكامل قبل المراجعة.",
   "Conclusion usefulness": "فائدة الاستنتاجات",
   "Conclusions trace to sufficient supporting evidence.": "تستند الاستنتاجات إلى أدلة داعمة كافية.",
   "Condense the selection into one sentence": "قم بتكثيف التحديد في جملة واحدة",
@@ -250,8 +250,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Confirm real usability after a handoff": "أكّد قابلية الاستخدام الفعلية بعد التسليم",
   "Confirm restore": "تأكيد الاستعادة",
   "confirmed deliverables": "مخرجات مؤكدة",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "يؤدي التأكيد إلى التنزيل على هذا الجهاز فقط؛ ولا يرفع Rune الملف أو يرسله.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "يؤدي التأكيد إلى التنزيل على هذا الجهاز فقط؛ ولا يرفع Orbit الملف أو يرسله.",
   "Connected folder": "مجلد متصل",
   "Connections available on this device": "الاتصالات المتاحة على هذا الجهاز",
   "Content workspace": "مساحة عمل المحتوى",
@@ -300,8 +300,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Deck Markdown": "Deck Markdown",
   "Deep Blue": "أزرق داكن",
   "Default model ID": "معرف النموذج الافتراضي",
-  "Define the evidence, metric, and audience first. Rune compiles the analysis, chart, report, and slides into one review transaction.":
-    "حدد الأدلة والمقياس والجمهور أولاً. يقوم Rune بتجميع التحليل والمخطط والتقرير والشرائح في معاملة مراجعة واحدة.",
+  "Define the evidence, metric, and audience first. Orbit compiles the analysis, chart, report, and slides into one review transaction.":
+    "حدد الأدلة والمقياس والجمهور أولاً. يقوم Orbit بتجميع التحليل والمخطط والتقرير والشرائح في معاملة مراجعة واحدة.",
   Delete: "حذف",
   "Delete block": "حذف الكتلة",
   Deliverable: "المخرج",
@@ -363,8 +363,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Document to presentation": "من مستند إلى عرض تقديمي",
   "Document to presentation · source linked": "من مستند إلى عرض · المصدر مرتبط",
   "Document-presentation task settings": "إعدادات مهمة المستند إلى عرض",
-  "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.":
-    "تشترك المستندات والبيانات والمخططات والعروض التقديمية في نظام مصدر واحد قابل للقراءة. أنت من يصدر الحكم؛ Rune يبقي كل تغيير مرتبطًا.",
+  "Documents, data, charts, and presentations share one readable source system. You make the judgment; Orbit keeps every change connected.":
+    "تشترك المستندات والبيانات والمخططات والعروض التقديمية في نظام مصدر واحد قابل للقراءة. أنت من يصدر الحكم؛ Orbit يبقي كل تغيير مرتبطًا.",
   Done: "تم",
   "Download anonymous JSON": "تنزيل JSON مجهول الهوية",
   "Download source": "تحميل المصدر",
@@ -435,7 +435,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "بقي الاقتراح الأول دون تطبيق",
   "fixed-layout": "تخطيط ثابت",
   "fixed-layout PDF": "تخطيط ثابت PDF",
-  "Focus Rune Agent": "التركيز Rune Agent",
+  "Focus Orbit Agent": "التركيز Orbit Agent",
   "Folder changes detected · review with Pull": "تم اكتشاف تغييرات في المجلد · راجعها باستخدام Pull",
   "Folder connection cancelled": "تم إلغاء اتصال المجلد",
   "Folder monitoring stopped · reconnect to resume": "توقفت مراقبة المجلد · أعد الاتصال لاستئنافها",
@@ -448,8 +448,8 @@ export const INTERFACE_TRANSLATIONS = {
     "مزامنة المجلد جاهزة للمراجعة الدقيقة - لم تتم كتابة أي شيء",
   "Folder workspaces require a browser with the File System Access API":
     "تتطلب مساحات عمل المجلدات مستعرضًا مزودًا بـ File System Access API",
-  "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.":
-    "تبقى ملفات المجلد فقط دون تغيير ولكنها لن تنتمي إلى بيان مساحة العمل Rune الجديد.",
+  "Folder-only files stay untouched but will not belong to the new Orbit workspace manifest.":
+    "تبقى ملفات المجلد فقط دون تغيير ولكنها لن تنتمي إلى بيان مساحة العمل Orbit الجديد.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "مثل 1-3، 5؛ لا يمكن اختيار سوى الصفحات الممسوحة المكتشفة.",
   "For example: July 2026": "على سبيل المثال: يوليو 2026",
@@ -482,15 +482,15 @@ export const INTERFACE_TRANSLATIONS = {
   "Import and map review": "استيراد المراجعة وإعدادها",
   "Import and shape presentation": "استيراد العرض وإعداده",
   "Import config": "استيراد التكوين",
-  "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
-    "تتم مراجعة محتوى الاستيراد فقط في ذاكرة هذه الصفحة. لا يتبع Rune أبدًا عناوين URL للتكوين عن بعد، أو يكتبها إلى localStorage، أو يخزن بيانات الاعتماد قبل اختيار حفظ وتمكين.",
+  "Import content is reviewed only in this page's memory. Orbit never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
+    "تتم مراجعة محتوى الاستيراد فقط في ذاكرة هذه الصفحة. لا يتبع Orbit أبدًا عناوين URL للتكوين عن بعد، أو يكتبها إلى localStorage، أو يخزن بيانات الاعتماد قبل اختيار حفظ وتمكين.",
   "Import data, then continue directly to mapping and output setup":
     "استورد البيانات، ثم انتقل مباشرة إلى ربط الحقول وإعداد المخرجات",
   "Import details": "تفاصيل الاستيراد",
   "Import held for review — workspace context changed": "تم تعليق الاستيراد للمراجعة — تم تغيير سياق مساحة العمل",
   "Import one model profile": "استيراد ملف تعريف نموذج واحد",
-  "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
-    "استيراد PDF، DOC، DOCX، Markdown، PPT، HTML، CSV، JSON، XLSX، أو ODS. يقوم Rune بمعاينة التحويل أولاً، ثم يرشدك عبر الحقول والمقاييس والمخططات والتسليمات.",
+  "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
+    "استيراد PDF، DOC، DOCX، Markdown، PPT، HTML، CSV، JSON، XLSX، أو ODS. يقوم Orbit بمعاينة التحويل أولاً، ثم يرشدك عبر الحقول والمقاييس والمخططات والتسليمات.",
   "Import real data, review it, then map fields, measures, and deliverables":
     "استورد بيانات حقيقية وراجعها ثم اربط الحقول والمقاييس والمخرجات",
   "Import up to 20 files in one review transaction": "استيراد ما يصل إلى 20 ملفًا في معاملة مراجعة واحدة",
@@ -532,7 +532,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Leave empty to keep the encrypted credential": "اتركه فارغًا للاحتفاظ ببيانات الاعتماد المشفرة",
   Left: "اليسار",
   "Legacy first-Data binding": "ربط البيانات القديمة القديمة",
-  "Let Rune find the models you already use": "اعثر على النماذج التي تستخدمها بالفعل",
+  "Let Orbit find the models you already use": "اعثر على النماذج التي تستخدمها بالفعل",
   "Light Gold": "ذهبي فاتح",
   Line: "الخط",
   "Line · sequence": "الخط · التسلسل",
@@ -562,8 +562,8 @@ export const INTERFACE_TRANSLATIONS = {
   locally: "على الجهاز",
   "Long-form writing in Markdown": "الكتابة الطويلة باللغة Markdown",
   "Looking for models on this device…": "جارٍ البحث عن نماذج على هذا الجهاز…",
-  "Managed by the Rune server; only non-secret status is shown.":
-    "تتم إدارته بواسطة خادم Rune؛ يتم عرض الحالة غير السرية فقط.",
+  "Managed by the Orbit server; only non-secret status is shown.":
+    "تتم إدارته بواسطة خادم Orbit؛ يتم عرض الحالة غير السرية فقط.",
   Manual: "دليل",
   "Manual checkpoint saved on this device": "تم حفظ نقطة التفتيش اليدوية على هذا الجهاز",
   Mark: "مارك",
@@ -583,8 +583,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Model-assisted evidence questions": "أسئلة أدلة بمساعدة النموذج",
   "Model-assisted operating review prepared with live-bound numbers; nothing writes until review":
     "أُعدت مراجعة تشغيلية بمساعدة النموذج بأرقام مرتبطة مباشرة؛ لن يُكتب شيء قبل المراجعة",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "مخطط بمساعدة النموذج عند توفره · تجميع Rune · مراجعة قبل الكتابة",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "مخطط بمساعدة النموذج عند توفره · تجميع Orbit · مراجعة قبل الكتابة",
   "Model-assisted source outline": "مخطط مصدر بمساعدة النموذج",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "أُعد عرض مرتبط بالمصدر بمساعدة النموذج؛ لن يُكتب شيء قبل المراجعة",
@@ -600,8 +600,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Narrative planner": "مخطط السرد",
   "Needs attention": "يحتاج إلى معالجة",
   New: "جديد",
-  "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Rune compiled them to prove the complete proposed workspace.":
-    "العقد الجديدة والمعدلة هي فروق قابلة للمراجعة. تبقى العقد المدخلة والتحقق من صحتها دون تغيير؛ قام Rune بتجميعها لإثبات اكتمال مساحة العمل المقترحة.",
+  "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Orbit compiled them to prove the complete proposed workspace.":
+    "العقد الجديدة والمعدلة هي فروق قابلة للمراجعة. تبقى العقد المدخلة والتحقق من صحتها دون تغيير؛ قام Orbit بتجميعها لإثبات اكتمال مساحة العمل المقترحة.",
   "New artifact cancelled — the workspace is unchanged": "تم إلغاء القطعة الأثرية الجديدة — ولم تتغير مساحة العمل",
   "New artifact details": "تفاصيل قطعة أثرية جديدة",
   "New block after": "كتلة جديدة بعد",
@@ -677,12 +677,12 @@ export const INTERFACE_TRANSLATIONS = {
   "One source workspace": "مساحة عمل مصدر واحد",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "مواصفات صارمة واحدة · تم التحقق من تأثير وقت التشغيل · حفظ يعيد كتابة القانون الأساسي Chart JSON",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "لا يجوز لـ Rune إرسال المحتوى المحدود نفسه إلى مزود آخر مُعدّ إلا بعد فشل النموذج الأساسي. هذا الخيار متوقف افتراضياً.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "لا يجوز لـ Orbit إرسال المحتوى المحدود نفسه إلى مزود آخر مُعدّ إلا بعد فشل النموذج الأساسي. هذا الخيار متوقف افتراضياً.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "تظهر فقط الحقول الرقمية في كامل نطاق البيانات الحالي.",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "تظهر جهة التزويد والمصدر ونقطة الاتصال والنموذج فقط. ولا يقرأ Rune بيانات الاعتماد إلا بعد اختيارك.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "تظهر جهة التزويد والمصدر ونقطة الاتصال والنموذج فقط. ولا يقرأ Orbit بيانات الاعتماد إلا بعد اختيارك.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "تظهر أول 100 قيمة مختلفة فقط؛ اختر حقل فترة بعدد قيم أقل عند الحاجة.",
   "Open a file": "افتح ملفًا",
@@ -691,8 +691,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Open local guide": "افتح الدليل المحلي",
   "Open sample": "فتح العينة",
   "Open Source to fix": "افتح المصدر للإصلاح",
-  "Opened the editable Rune guide stored in this workspace":
-    "تم فتح دليل Rune القابل للتحرير والمخزن في مساحة العمل هذه",
+  "Opened the editable Orbit guide stored in this workspace":
+    "تم فتح دليل Orbit القابل للتحرير والمخزن في مساحة العمل هذه",
   "Opened the source that needs attention": "فُتح المصدر الذي يحتاج إلى معالجة",
   "Operating metrics": "مقاييس التشغيل",
   "Operating review": "مراجعة التشغيل",
@@ -711,6 +711,60 @@ export const INTERFACE_TRANSLATIONS = {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.":
     "اختياري. عند التحديد، تستخدم الأدلة المحلية وSQL والرسوم البيانية وسياق النموذج الصفوف المطابقة تمامًا فقط.",
   "Or open something else": "أو افتح محتوى آخر",
+  Orbit: "Orbit",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "جمّع Orbit هذه النتائج محليًا من نطاق البيانات الحالي قبل إرسال أي طلب إلى النموذج.",
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
+    "تعذر على Orbit تطبيق هذا التغيير. لم تتغير إعداداتك الحالية.",
+  "Orbit could not complete the device scan. No configuration was read or saved.":
+    "تعذر على Orbit إكمال البحث على الجهاز. لم تُقرأ أي إعدادات أو تُحفظ.",
+  "Orbit could not connect that folder": "تعذر على Orbit الاتصال بهذا المجلد",
+  "Orbit could not import those files": "تعذر على Orbit استيراد هذه الملفات",
+  "Orbit could not prepare pilot evidence.": "تعذر على Orbit إعداد أدلة التجربة.",
+  "Orbit could not prepare that export": "تعذر على Orbit إعداد هذا التصدير",
+  "Orbit could not pull that folder": "تعذر على Orbit سحب هذا المجلد",
+  "Orbit could not push that folder": "تعذر على Orbit دفع هذا المجلد",
+  "Orbit could not read model configurations. Try again in a moment.":
+    "تعذر على Orbit قراءة إعدادات النماذج. حاول مرة أخرى بعد قليل.",
+  "Orbit could not read model status. You can continue without a model.":
+    "تعذر على Orbit قراءة حالة النماذج. يمكنك المتابعة من دون نموذج.",
+  "Orbit could not read that configuration file.": "تعذر على Orbit قراءة ملف التكوين هذا.",
+  "Orbit could not record this delivery outcome": "تعذّر على Orbit تسجيل نتيجة التسليم",
+  "Orbit could not render this page preview.": "تعذّر على Orbit عرض معاينة هذه الصفحة.",
+  "Orbit could not verify that model catalog. The configuration was not saved.":
+    "تعذر على Orbit التحقق من قائمة النماذج. لم تُحفظ الإعدادات.",
+  "Orbit could not verify this connection and did not save it.": "تعذر على Orbit التحقق من هذا الاتصال، لذلك لم يحفظه.",
+  "Orbit derives a portable filename and stable workspace id. You can edit the source immediately.":
+    "يشتق Orbit اسم ملف محمول ومعرف مساحة عمل ثابت. يمكنك تعديل المصدر على الفور.",
+  "Orbit document": "مستند Orbit.",
+  "Orbit exports the validated source and any referenced current workspace data.":
+    "يقوم Orbit بتصدير المصدر الذي تم التحقق من صحته وأي بيانات مساحة عمل حالية مرجعية.",
+  "Orbit found pages without selectable text. Confirm pages and language; image content is not read until you open a preview or recognize.":
+    "وجد Orbit صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "جمع Orbit سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
+  "Orbit JSON": "Orbit JSON",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "يحتفظ Orbit بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "يحافظ Orbit على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
+  "Orbit sections": "Orbit أقسام",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "يخزّن Orbit على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
+  "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
+    "يدعم Orbit ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Orbit Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "سيتأكد Orbit من أن المجلد لا يزال فارغًا، ثم يكتب المصادر المقروءة والصور المشار إليها وبيان مساحة العمل الحالية.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "سيعيد Orbit قراءة المجلد، ولن يستبدل مساحة العمل المحلية إلا إذا ظل الجانبان مطابقين تمامًا لهذه المراجعة.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "سيعيد Orbit قراءة المجلد، ولن يكتب الملفات ذات الأسماء نفسها وبيان مساحة العمل إلا إذا لم يتغير أي من الجانبين.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "سيستبدل Orbit مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "سيستعيد Orbit مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
+  "Orbit writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
+    "يكتب Orbit توجيهًا صريحًا -- rune:data، لذا لا تتغير بيانات مساحة العمل أبدًا عند إعادة ترتيب الملفات.",
   "Output budget per task": "ميزانية الإخراج لكل مهمة",
   "Overall time saved": "إجمالي الوقت الموفر",
   page: "صفحة",
@@ -727,8 +781,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Patch held for review — workspace context changed": "تم تعليق التصحيح للمراجعة — تم تغيير سياق مساحة العمل",
   "Patch held for review — workspace source revision changed":
     "تم تعليق التصحيح للمراجعة - تم تغيير مراجعة مصدر مساحة العمل",
-  "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
-    "تُعرض صفحات PDF داخل هذا المتصفح فقط. يحمّل Rune مشغّل التعرّف الضوئي المضمّن وبيانات اللغة من هذا الموقع ويخزّنهما المتصفح مؤقتًا؛ ولا تُرسل صور الصفحات أو النصوص المتعرّف عليها.",
+  "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
+    "تُعرض صفحات PDF داخل هذا المتصفح فقط. يحمّل Orbit مشغّل التعرّف الضوئي المضمّن وبيانات اللغة من هذا الموقع ويخزّنهما المتصفح مؤقتًا؛ ولا تُرسل صور الصفحات أو النصوص المتعرّف عليها.",
   Percent: "نسبة مئوية",
   "Period and audience": "الفترة والجمهور",
   "Pilot Evidence · on device": "أدلة التجربة · على الجهاز",
@@ -750,8 +804,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Presentation title": "عنوان العرض",
   "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
     "تملأ الإعدادات المسبقة إطار المهمة والجمهور والمخرجات فقط. وما زال عليك تأكيد نطاق Data دقيق وفترة التقرير.",
-  "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.":
-    "اضغط على كل اختصار وسيقوم Rune بتأكيده هنا. يمكنك إعادة النظر في هذه الدروس في الدليل المحلي.",
+  "Press each shortcut and Orbit will confirm it here. You can revisit these lessons in the local guide.":
+    "اضغط على كل اختصار وسيقوم Orbit بتأكيده هنا. يمكنك إعادة النظر في هذه الدروس في الدليل المحلي.",
   Preview: "المعاينة",
   "Preview and choose region": "معاينة واختيار المنطقة",
   "Preview capped · the complete validated source will be imported.":
@@ -815,8 +869,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Release to prepare the import": "الافراج عن لإعداد الاستيراد",
   "Remove condition": "إزالة الشرط",
   "Remove from workspace": "إزالة من مساحة العمل",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "أزل البرامج النصية أو الترميز القابل للتنفيذ؛ يعاين Rune المحتوى الخالي من البرامج النصية فقط.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "أزل البرامج النصية أو الترميز القابل للتنفيذ؛ يعاين Orbit المحتوى الخالي من البرامج النصية فقط.",
   "Remove temporary Agent context pin": "قم بإزالة دبوس السياق Agent المؤقت",
   "Remove unsafe content": "أزل المحتوى غير الآمن",
   "Rendered presentation preview": "معاينة العرض التقديمي",
@@ -870,60 +924,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Review-question planner": "مخطط أسئلة المراجعة",
   "Rose Pearl": "لؤلؤي وردي",
   "Run history": "تشغيل التاريخ",
-  Rune: "Rune",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "جمّع Rune هذه النتائج محليًا من نطاق البيانات الحالي قبل إرسال أي طلب إلى النموذج.",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
-    "تعذر على Rune تطبيق هذا التغيير. لم تتغير إعداداتك الحالية.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
-    "تعذر على Rune إكمال البحث على الجهاز. لم تُقرأ أي إعدادات أو تُحفظ.",
-  "Rune could not connect that folder": "تعذر على Rune الاتصال بهذا المجلد",
-  "Rune could not import those files": "تعذر على Rune استيراد هذه الملفات",
-  "Rune could not prepare pilot evidence.": "تعذر على Rune إعداد أدلة التجربة.",
-  "Rune could not prepare that export": "تعذر على Rune إعداد هذا التصدير",
-  "Rune could not pull that folder": "تعذر على Rune سحب هذا المجلد",
-  "Rune could not push that folder": "تعذر على Rune دفع هذا المجلد",
-  "Rune could not read model configurations. Try again in a moment.":
-    "تعذر على Rune قراءة إعدادات النماذج. حاول مرة أخرى بعد قليل.",
-  "Rune could not read model status. You can continue without a model.":
-    "تعذر على Rune قراءة حالة النماذج. يمكنك المتابعة من دون نموذج.",
-  "Rune could not read that configuration file.": "تعذر على Rune قراءة ملف التكوين هذا.",
-  "Rune could not record this delivery outcome": "تعذّر على Rune تسجيل نتيجة التسليم",
-  "Rune could not render this page preview.": "تعذّر على Rune عرض معاينة هذه الصفحة.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
-    "تعذر على Rune التحقق من قائمة النماذج. لم تُحفظ الإعدادات.",
-  "Rune could not verify this connection and did not save it.": "تعذر على Rune التحقق من هذا الاتصال، لذلك لم يحفظه.",
-  "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
-    "يشتق Rune اسم ملف محمول ومعرف مساحة عمل ثابت. يمكنك تعديل المصدر على الفور.",
-  "Rune document": "مستند Rune.",
-  "Rune exports the validated source and any referenced current workspace data.":
-    "يقوم Rune بتصدير المصدر الذي تم التحقق من صحته وأي بيانات مساحة عمل حالية مرجعية.",
-  "Rune found pages without selectable text. Confirm pages and language; image content is not read until you open a preview or recognize.":
-    "وجد Rune صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "جمع Rune سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
-  "Rune JSON": "Rune JSON",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "يحتفظ Rune بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "يحافظ Rune على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
-  "Rune sections": "Rune أقسام",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "يخزّن Rune على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
-  "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
-    "يدعم Rune ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Rune Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "سيتأكد Rune من أن المجلد لا يزال فارغًا، ثم يكتب المصادر المقروءة والصور المشار إليها وبيان مساحة العمل الحالية.",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "سيعيد Rune قراءة المجلد، ولن يستبدل مساحة العمل المحلية إلا إذا ظل الجانبان مطابقين تمامًا لهذه المراجعة.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "سيعيد Rune قراءة المجلد، ولن يكتب الملفات ذات الأسماء نفسها وبيان مساحة العمل إلا إذا لم يتغير أي من الجانبين.",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "سيستبدل Rune مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "سيستعيد Rune مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
-  "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
-    "يكتب Rune توجيهًا صريحًا -- rune:data، لذا لا تتغير بيانات مساحة العمل أبدًا عند إعادة ترتيب الملفات.",
   "Running locally": "تشغيل محليا",
   "Runs on this device": "يعمل على هذا الجهاز",
   "Runtime impact preflight passed": "تم تجاوز الاختبار المبدئي لتأثير وقت التشغيل",
@@ -1079,8 +1079,8 @@ export const INTERFACE_TRANSLATIONS = {
     "يفحص تطبيق سطح المكتب مجموعة محددة من الإعدادات الحالية ومشغّلات النماذج المحلية. ولا يعرض البحث أي مفتاح أو ينسخه أو يتحقق منه.",
   "The detected scan pages changed. Import the file again.": "تغيّرت الصفحات الممسوحة المكتشفة. أعد استيراد الملف.",
   "The direction is right and only limited manual changes remain.": "الاتجاه صحيح ولا يتبقى سوى تعديلات يدوية محدودة.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "يحافظ التنزيل على المصدر المقروء كما هو. وتبقى روابط Rune ومراجع الأصول المحلية تعبيرات داخل المصدر.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "يحافظ التنزيل على المصدر المقروء كما هو. وتبقى روابط Orbit ومراجع الأصول المحلية تعبيرات داخل المصدر.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "يتقاطع المفتاح مع HTTPS من نفس المصدر ويتم تشفيره في بيانات اعتماد HttpOnly؛ لم يتم كتابته أبدًا إلى localStorage، أو مساحة العمل، أو Artifact، أو Git. تتلقى نقطة النهاية المخصصة المحتوى الذي تقدمه لـ Agent، لذا استخدم الخدمة التي تثق بها فقط.",
   "The last block cannot be deleted": "لا يمكن حذف الكتلة الأخيرة",
@@ -1093,7 +1093,7 @@ export const INTERFACE_TRANSLATIONS = {
   "The original detail was too long and is truncated in this view.":
     "كانت التفاصيل الأصلية طويلة جدًا وقد اختُصرت في هذا العرض.",
   "The result saves meaningful time over manual work.": "توفر النتيجة وقتًا ملحوظًا مقارنة بالعمل اليدوي.",
-  "The user can understand what Rune changed and why.": "يستطيع المستخدم فهم ما غيّره Rune ولماذا.",
+  "The user can understand what Orbit changed and why.": "يستطيع المستخدم فهم ما غيّره Orbit ولماذا.",
   "The web app cannot read application settings on your computer. You can still connect a model manually.":
     "لا يستطيع تطبيق الويب قراءة إعدادات التطبيقات على جهازك. وما زال بإمكانك ربط نموذج يدويًا.",
   "This block cannot be empty.": "لا يمكن أن تكون هذه الكتلة فارغة.",
@@ -1109,8 +1109,8 @@ export const INTERFACE_TRANSLATIONS = {
     "هذا المصدر لم يتغير؛ وتُعرض نتيجته المباشرة استنادًا إلى مساحة العمل المقترحة كاملة.",
   Title: "العنوان",
   To: "ل",
-  "To protect credentials, Rune does not import from remote config URLs.":
-    "لحماية بيانات الاعتماد، لا يتم استيراد Rune من عناوين URL للتكوين عن بعد.",
+  "To protect credentials, Orbit does not import from remote config URLs.":
+    "لحماية بيانات الاعتماد، لا يتم استيراد Orbit من عناوين URL للتكوين عن بعد.",
   tokens: "رمزاً",
   Top: "الأعلى",
   "Transaction map": "خريطة المعاملات",
@@ -1124,8 +1124,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "مصدر غير معروف",
   Unlinked: "غير مرتبط",
   "Unlinked artifacts": "التحف غير المرتبطة",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Rune التي تمت مراجعتها.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Orbit التي تمت مراجعتها.",
   "Unresolved dependencies": "التبعيات التي لم يتم حلها",
   "Unsaved · needs attention": "غير محفوظ · يحتاج إلى اهتمام",
   "Unsaved · ready to save": "غير محفوظ · جاهز للحفظ",
@@ -1143,12 +1143,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Use all Data rows": "استخدم جميع الصفوف Data.",
   "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
     "استخدام أدوات التحليل والتحويل والحتمية على الجهاز فقط؛ من دون إرسال أي محتوى إلى خدمة نماذج",
+  "Use Orbit JSON or a CC Switch single-provider import link. Orbit reviews it first and never saves it immediately.":
+    "استخدم Orbit JSON أو رابط استيراد موفر واحد لـ CC Switch. يقوم Orbit بمراجعته أولاً ولا يحفظه على الفور.",
+  "Use Orbit JSON or one ccswitch://v1/import provider link.":
+    "استخدم Orbit JSON أو رابط موفر ccswitch://v1/import واحد.",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "استخدم CSV مستطيلاً بعناوين، أو JSON مسطحًا يحتوي قيمًا قياسية.",
-  "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
-    "استخدم Rune JSON أو رابط استيراد موفر واحد لـ CC Switch. يقوم Rune بمراجعته أولاً ولا يحفظه على الفور.",
-  "Use Rune JSON or one ccswitch://v1/import provider link.":
-    "استخدم Rune JSON أو رابط موفر ccswitch://v1/import واحد.",
   "Use the selected cloud or device model; you still confirm every change":
     "استخدام النموذج السحابي أو المحلي المحدد؛ وتبقى أنت من يؤكد كل تغيير",
   "Use this configuration": "استخدم هذا التكوين",
@@ -1174,7 +1174,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Weekly operating review": "مراجعة تشغيلية أسبوعية",
   "Weekly review": "مراجعة أسبوعية",
   "Welcome & local guide": "الترحيب والدليل المحلي",
-  "Welcome to Rune": "مرحبًا بك في Rune",
+  "Welcome to Orbit": "مرحبًا بك في Orbit",
+  "Welcome to Orbit · 引力": "مرحبًا بك في Orbit · 引力",
   "What should this presentation move forward?": "ما الذي يجب أن يدفعه هذا العرض إلى الأمام؟",
   "Whole page": "الصفحة كاملة",
   Width: "العرض",

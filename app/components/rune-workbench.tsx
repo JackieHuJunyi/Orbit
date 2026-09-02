@@ -177,6 +177,7 @@ import {
 } from "../lib/localization";
 import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode } from "../lib/model-preference";
 import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
+import { ORBIT_PRODUCT_LOCKUP } from "../lib/product-meta";
 import {
   deferredSurfaceCopy,
   documentBriefingNoticeCopy,
@@ -819,7 +820,8 @@ function buildLocalImageSourceInsertion(
     throw new Error("A semantic HTML slide supports one primary local image. Choose another slide or remove it first.");
   }
   const closing = artifact.source.slice(target.start, target.end).match(/<\/section\s*>\s*$/iu);
-  if (!closing || closing.index == null) throw new Error("Rune could not prove this slide's closing section boundary.");
+  if (!closing || closing.index == null)
+    throw new Error("Orbit could not prove this slide's closing section boundary.");
   const offset = target.start + closing.index;
   const insertion = buildRuneHtmlImageInsertion(artifact.source, offset, alt, assetId);
   const candidate = { ...artifact, source: insertion.nextSource };
@@ -1775,7 +1777,7 @@ export function RuneWorkbench() {
     try {
       await loadRuneLocaleCatalog(nextLocale);
     } catch {
-      if (request === localeRequestRef.current) setNotice("Rune could not load that local interface language");
+      if (request === localeRequestRef.current) setNotice("Orbit could not load that local interface language");
       return;
     }
     if (request !== localeRequestRef.current) return;
@@ -1821,13 +1823,13 @@ export function RuneWorkbench() {
       taskId === "document-briefing"
         ? runeText(
             locale,
-            "Choose Word, Markdown, ODT, or PDF — Rune will review the import before shaping the presentation",
-            "请选择 Word、Markdown、ODT 或 PDF — Rune 会先审核导入，再设置演示",
+            "Choose Word, Markdown, ODT, or PDF — Orbit will review the import before shaping the presentation",
+            "请选择 Word、Markdown、ODT 或 PDF — Orbit 会先审核导入，再设置演示",
           )
         : runeText(
             locale,
-            "Choose CSV, JSON, XLSX, or ODS — Rune will review the import before mapping the task",
-            "请选择 CSV、JSON、XLSX 或 ODS — Rune 会先审核导入，再进入任务映射",
+            "Choose CSV, JSON, XLSX, or ODS — Orbit will review the import before mapping the task",
+            "请选择 CSV、JSON、XLSX 或 ODS — Orbit 会先审核导入，再进入任务映射",
           ),
     );
     window.setTimeout(() => taskImportRef.current?.click(), 0);
@@ -1856,7 +1858,7 @@ export function RuneWorkbench() {
     if (action === "guide") {
       setSelectedId(guide.id);
       setEmptyWorkspace(false);
-      setNotice("Opened the editable Rune guide stored in this workspace");
+      setNotice("Opened the editable Orbit guide stored in this workspace");
       return;
     }
     if (action === "review") {
@@ -1979,7 +1981,7 @@ export function RuneWorkbench() {
       setNotice("Local image ready for source review");
     } catch (error) {
       setSaveState("saved");
-      setNotice(error instanceof Error ? error.message : "Rune could not verify this image");
+      setNotice(error instanceof Error ? error.message : "Orbit could not verify this image");
     }
   }
 
@@ -2084,7 +2086,7 @@ export function RuneWorkbench() {
         setSaveState("error");
         setPendingLocalImage((value) =>
           value
-            ? { ...value, error: "Device storage is full, so Rune kept the source unchanged.", submitting: false }
+            ? { ...value, error: "Device storage is full, so Orbit kept the source unchanged.", submitting: false }
             : value,
         );
         return;
@@ -2119,7 +2121,7 @@ export function RuneWorkbench() {
         value
           ? {
               ...value,
-              error: error instanceof Error ? error.message : "Rune could not store this image locally.",
+              error: error instanceof Error ? error.message : "Orbit could not store this image locally.",
               submitting: false,
             }
           : value,
@@ -2172,7 +2174,7 @@ export function RuneWorkbench() {
     }
     const compiled = compile(currentArtifact);
     if (compiled.errors.length || !compiled.nextTarget) {
-      return compiled.errors[0] ?? "Rune could not compile this visual edit.";
+      return compiled.errors[0] ?? "Orbit could not compile this visual edit.";
     }
     if (expectedNextSource != null && compiled.nextSource !== expectedNextSource) {
       return `The reviewed ${targetNoun} change no longer matches the current compiler result.`;
@@ -2206,7 +2208,7 @@ export function RuneWorkbench() {
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
         setSaveState("saved");
         setNotice("Visual edit held — the workspace changed during verification");
-        return `The workspace changed while Rune was verifying this ${targetNoun}. Try again from the current source.`;
+        return `The workspace changed while Orbit was verifying this ${targetNoun}. Try again from the current source.`;
       }
 
       const checkpoint = createCheckpoint(currentArtifact, `Before visual edit · ${targetLabel}`, "manual");
@@ -2222,7 +2224,7 @@ export function RuneWorkbench() {
       } catch {
         setSaveState("error");
         setNotice("Visual edit rejected — device persistence failed");
-        return "Device storage is full, so Rune kept every source unchanged.";
+        return "Device storage is full, so Orbit kept every source unchanged.";
       }
 
       const selection: ActiveSourceSelection = {
@@ -2256,7 +2258,7 @@ export function RuneWorkbench() {
     } catch (error) {
       setSaveState("saved");
       setNotice("Visual edit rejected — every source stayed unchanged");
-      return error instanceof Error ? error.message : "Rune could not finish this visual edit.";
+      return error instanceof Error ? error.message : "Orbit could not finish this visual edit.";
     } finally {
       visualEditInFlightRef.current = false;
       setVisualEditState("idle");
@@ -2310,7 +2312,7 @@ export function RuneWorkbench() {
     }
     const prepared = prepareVisualDocumentBlockStructure(currentArtifact, target, input);
     if (prepared.errors.length || !prepared.nextTarget) {
-      return prepared.errors[0] ?? "Rune could not compile this Document structure change.";
+      return prepared.errors[0] ?? "Orbit could not compile this Document structure change.";
     }
     setPendingDocumentStructure({
       targetArtifact: currentArtifact,
@@ -2379,7 +2381,7 @@ export function RuneWorkbench() {
     const baseArtifacts = artifactsRef.current;
     const currentArtifact = baseArtifacts.find((artifact) => artifact.id === targetArtifact.id);
     if (!currentArtifact || currentArtifact !== targetArtifact || currentArtifact.source !== targetArtifact.source) {
-      setNotice("The semantic HTML source changed before Rune could prepare an editable copy");
+      setNotice("The semantic HTML source changed before Orbit could prepare an editable copy");
       return;
     }
     importInFlightRef.current = true;
@@ -2390,13 +2392,13 @@ export function RuneWorkbench() {
       const { prepareSemanticHtmlEditableCopy } = await import("../lib/semantic-html-editable-copy");
       const prepared = prepareSemanticHtmlEditableCopy(baseArtifacts, currentArtifact);
       if (prepared.errors.length || !prepared.review) {
-        throw new Error(prepared.errors[0] ?? "Rune could not prepare an editable presentation copy.");
+        throw new Error(prepared.errors[0] ?? "Orbit could not prepare an editable presentation copy.");
       }
       setPendingImport(prepared.review);
       setTaskSession(null);
       setNotice(runeText(locale, "Create an editable Deck Markdown presentation", "创建可编辑的 Deck Markdown 演示"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Rune could not prepare an editable presentation copy.";
+      const message = error instanceof Error ? error.message : "Orbit could not prepare an editable presentation copy.";
       setImportError(message);
       setNotice(message);
     } finally {
@@ -2719,7 +2721,7 @@ export function RuneWorkbench() {
 
   async function commitPulledDirectoryWorkspace(handle: DirectoryWorkspaceHandle, result: DirectoryReadResult) {
     if (result.errors.length) throw new Error(result.errors[0]);
-    if (!result.artifacts.length) throw new Error("The selected folder does not contain a Rune workspace yet.");
+    if (!result.artifacts.length) throw new Error("The selected folder does not contain an Orbit workspace yet.");
     const recovery = currentWorkspaceDeviceState();
     const nextCheckpoints = checkpointWorkspaceBeforeFolderPull();
     const importedAssetIds: string[] = [];
@@ -2812,7 +2814,7 @@ export function RuneWorkbench() {
       directory: result,
     });
     if (!prepared.plan || prepared.errors.length) {
-      throw new Error(prepared.errors[0] ?? "Rune could not prepare this folder sync.");
+      throw new Error(prepared.errors[0] ?? "Orbit could not prepare this folder sync.");
     }
     setPendingDirectorySync({ handle, plan: prepared.plan, error: "", submitting: false });
     setToolsMenuOpen(false);
@@ -2885,7 +2887,7 @@ export function RuneWorkbench() {
         current
           ? {
               ...current,
-              error: error instanceof Error ? error.message : "Rune could not complete this folder sync.",
+              error: error instanceof Error ? error.message : "Orbit could not complete this folder sync.",
               submitting: false,
             }
           : current,
@@ -2916,7 +2918,7 @@ export function RuneWorkbench() {
         return;
       }
       setDirectoryState("error");
-      setNotice(error instanceof Error ? error.message : "Rune could not connect that folder");
+      setNotice(error instanceof Error ? error.message : "Orbit could not connect that folder");
     }
   }
 
@@ -2928,7 +2930,7 @@ export function RuneWorkbench() {
       await reviewDirectorySync(directoryHandle, result, "pull");
     } catch (error) {
       setDirectoryState("error");
-      setNotice(error instanceof Error ? error.message : "Rune could not pull that folder");
+      setNotice(error instanceof Error ? error.message : "Orbit could not pull that folder");
     }
   }
 
@@ -2940,7 +2942,7 @@ export function RuneWorkbench() {
       await reviewDirectorySync(directoryHandle, result, result.source === "empty" ? "initialize" : "push");
     } catch (error) {
       setDirectoryState("error");
-      setNotice(error instanceof Error ? error.message : "Rune could not push that folder");
+      setNotice(error instanceof Error ? error.message : "Orbit could not push that folder");
     }
   }
 
@@ -2966,7 +2968,7 @@ export function RuneWorkbench() {
       }
       const prepared = prepareCheckpointRestore(artifactsRef.current, checkpoint);
       if (!prepared.plan || prepared.errors.length) {
-        setNotice(prepared.errors[0] ?? "Rune could not prepare that checkpoint restore");
+        setNotice(prepared.errors[0] ?? "Orbit could not prepare that checkpoint restore");
         return;
       }
       setPendingCheckpointRestore({ plan: prepared.plan, error: "", submitting: false });
@@ -3035,7 +3037,7 @@ export function RuneWorkbench() {
         ),
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Rune could not restore this checkpoint.";
+      const message = error instanceof Error ? error.message : "Orbit could not restore this checkpoint.";
       setSaveState(message.startsWith("Device persistence failed") ? "error" : "saved");
       setPendingCheckpointRestore((current) =>
         current
@@ -3227,7 +3229,7 @@ export function RuneWorkbench() {
               const message =
                 feedbackError instanceof Error
                   ? feedbackError.message
-                  : "Rune could not safely bound the compiler feedback.";
+                  : "Orbit could not safely bound the compiler feedback.";
               stopRemoteRepair(`Automatic repair could not start · ${message}`);
               return;
             }
@@ -3247,7 +3249,7 @@ export function RuneWorkbench() {
               const reason =
                 repairPayload.error ??
                 (repairPayload.repairAttempt !== 1
-                  ? "The replacement response did not match Rune's repair request."
+                  ? "The replacement response did not match Orbit's repair request."
                   : "The model did not return a valid replacement plan.");
               stopRemoteRepair(`Automatic repair stopped after one attempt · ${reason}`);
               return;
@@ -3347,7 +3349,7 @@ export function RuneWorkbench() {
       setPrompt("");
     } catch (error) {
       setPendingChange(null);
-      const message = error instanceof Error ? error.message : "Rune could not plan that change.";
+      const message = error instanceof Error ? error.message : "Orbit could not plan that change.";
       setAgentError(message);
       setNotice(
         message.startsWith("Runtime impact preflight failed")
@@ -3520,7 +3522,7 @@ export function RuneWorkbench() {
       );
     } catch {
       setSaveState("error");
-      setAgentError("Device storage is full, so Rune kept every source unchanged.");
+      setAgentError("Device storage is full, so Orbit kept every source unchanged.");
       setNotice("Nothing applied — atomic persistence failed");
       recordStoppedRuneTask(pendingChange, "persistence");
       return;
@@ -3598,7 +3600,7 @@ export function RuneWorkbench() {
       const { prepareWorkspaceReset } = await import("../lib/workspace-reset");
       const prepared = prepareWorkspaceReset(currentWorkspaceDeviceState(), target, mode);
       if (!prepared.plan || prepared.errors.length) {
-        setNotice(prepared.errors[0] ?? "Rune could not prepare this workspace switch");
+        setNotice(prepared.errors[0] ?? "Orbit could not prepare this workspace switch");
         return;
       }
       setPendingWorkspaceReset({ plan: prepared.plan, error: "", submitting: false });
@@ -3686,7 +3688,7 @@ export function RuneWorkbench() {
             ),
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Rune could not switch this workspace.";
+      const message = error instanceof Error ? error.message : "Orbit could not switch this workspace.";
       setSaveState(message.startsWith("Device persistence failed") ? "error" : "saved");
       setPendingWorkspaceReset((current) => (current ? { ...current, error: message, submitting: false } : current));
       setNotice(runeText(locale, "Workspace switch held — nothing changed", "工作区切换已暂停 — 所有内容保持不变"));
@@ -3708,7 +3710,7 @@ export function RuneWorkbench() {
     setNotice(
       runeText(
         locale,
-        "Choose the evidence, measure, and deliverables before Rune prepares the full review chain",
+        "Choose the evidence, measure, and deliverables before Orbit prepares the full review chain",
         "先选择数据、口径和交付物，再生成整条汇报链",
       ),
     );
@@ -3735,7 +3737,7 @@ export function RuneWorkbench() {
     }
     const prepared = startRuneTaskFromArtifact("document-briefing", artifactsRef.current, source.id);
     if (!prepared.session || prepared.errors.length) {
-      setNotice(prepared.errors[0] ?? "Rune could not start this presentation task.");
+      setNotice(prepared.errors[0] ?? "Orbit could not start this presentation task.");
       return;
     }
     setTaskSession(prepared.session);
@@ -3812,7 +3814,7 @@ export function RuneWorkbench() {
             });
       let prepared = compileReview();
       if (!prepared.plan || prepared.errors.length) {
-        setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
+        setOperatingReviewError(prepared.errors[0] ?? "Orbit could not prepare this operating review.");
         return;
       }
       let narrative: OperatingReviewNarrative | undefined;
@@ -3841,7 +3843,7 @@ export function RuneWorkbench() {
         }
       }
       if (!prepared.plan || prepared.errors.length) {
-        setOperatingReviewError(prepared.errors[0] ?? "Rune could not prepare this operating review.");
+        setOperatingReviewError(prepared.errors[0] ?? "Orbit could not prepare this operating review.");
         return;
       }
       const reviewPlan = prepared.plan;
@@ -3849,7 +3851,7 @@ export function RuneWorkbench() {
         ? { ...savedWorkflow, input: { ...input, deliverables: [...input.deliverables] } }
         : createSavedOperatingReview(input, reviewPlan);
       if (!savedOperatingReviewAfterApply) {
-        setOperatingReviewError("Rune could not resolve the exact outputs for this operating review.");
+        setOperatingReviewError("Orbit could not resolve the exact outputs for this operating review.");
         return;
       }
       const pendingTaskChange: PendingChange = {
@@ -3922,7 +3924,7 @@ export function RuneWorkbench() {
             : fallbackNotice,
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Rune could not validate this operating review.";
+      const message = error instanceof Error ? error.message : "Orbit could not validate this operating review.";
       setOperatingReviewError(message);
       setNotice(runeText(locale, "Review not prepared — runtime validation failed", "汇报未生成 — 运行验证未通过"));
     } finally {
@@ -3961,12 +3963,12 @@ export function RuneWorkbench() {
         ...(outline ? { outline } : {}),
       });
       if (!prepared.plan || prepared.errors.length) {
-        setDocumentBriefingError(prepared.errors[0] ?? "Rune could not prepare this presentation.");
+        setDocumentBriefingError(prepared.errors[0] ?? "Orbit could not prepare this presentation.");
         return;
       }
       const outputArtifactId = prepared.plan.patches[0]?.artifactId ?? prepared.plan.creations[0]?.artifact.id;
       if (!outputArtifactId) {
-        setDocumentBriefingError("Rune could not resolve the presentation output.");
+        setDocumentBriefingError("Orbit could not resolve the presentation output.");
         return;
       }
       const pendingTaskChange: PendingChange = {
@@ -4030,7 +4032,7 @@ export function RuneWorkbench() {
         outline && modelLabel ? `${copy.modelPrepared} · ${modelLabel}` : outline ? copy.modelPrepared : fallbackNotice,
       );
     } catch (error) {
-      setDocumentBriefingError(error instanceof Error ? error.message : "Rune could not validate this presentation.");
+      setDocumentBriefingError(error instanceof Error ? error.message : "Orbit could not validate this presentation.");
       setNotice(
         runeText(locale, "Presentation not prepared — runtime validation failed", "演示未生成 — 运行验证未通过"),
       );
@@ -4044,7 +4046,7 @@ export function RuneWorkbench() {
     setNewArtifactError("");
     const prepared = prepareArtifactCreation(artifacts, input);
     if (!prepared.artifact || prepared.errors.length) {
-      setNewArtifactError(prepared.errors[0] ?? "Rune could not create that artifact.");
+      setNewArtifactError(prepared.errors[0] ?? "Orbit could not create that artifact.");
       return;
     }
     let nextArtifacts = prepared.nextArtifacts;
@@ -4059,7 +4061,7 @@ export function RuneWorkbench() {
     if (input.kind === "chart" && embedArtifactId) {
       const embedding = prepareChartEmbedding(prepared.nextArtifacts, prepared.artifact.id, embedArtifactId);
       if (!embedding.artifactId || embedding.nextSource == null || embedding.errors.length) {
-        setNewArtifactError(embedding.errors[0] ?? "Rune could not prepare that Chart embedding.");
+        setNewArtifactError(embedding.errors[0] ?? "Orbit could not prepare that Chart embedding.");
         return;
       }
       const target = artifacts.find((artifact) => artifact.id === embedding.artifactId);
@@ -4222,11 +4224,11 @@ export function RuneWorkbench() {
         converted.assets,
       );
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
-      if (!prepared.review) throw new Error("Rune could not prepare an import review.");
+      if (!prepared.review) throw new Error("Orbit could not prepare an import review.");
       if (activeTaskSession) {
         const boundTask = bindRuneTaskImportReview(activeTaskSession, baseArtifacts, prepared.review);
         if (!boundTask.session || boundTask.errors.length) {
-          throw new Error(boundTask.errors[0] ?? "Rune could not bind this import to the task.");
+          throw new Error(boundTask.errors[0] ?? "Orbit could not bind this import to the task.");
         }
         setTaskSession(boundTask.session);
       }
@@ -4241,7 +4243,7 @@ export function RuneWorkbench() {
       );
     } catch (error) {
       if (activeTaskSession) setTaskSession(null);
-      setNotice(error instanceof Error ? error.message : "Rune could not import those files");
+      setNotice(error instanceof Error ? error.message : "Orbit could not import those files");
     } finally {
       importInFlightRef.current = false;
       setImportState("idle");
@@ -4295,11 +4297,11 @@ export function RuneWorkbench() {
         converted.assets,
       );
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
-      if (!prepared.review) throw new Error("Rune could not prepare an import review.");
+      if (!prepared.review) throw new Error("Orbit could not prepare an import review.");
       if (pending.taskSession) {
         const boundTask = bindRuneTaskImportReview(pending.taskSession, pending.baseArtifacts, prepared.review);
         if (!boundTask.session || boundTask.errors.length) {
-          throw new Error(boundTask.errors[0] ?? "Rune could not bind this OCR import to the task.");
+          throw new Error(boundTask.errors[0] ?? "Orbit could not bind this OCR import to the task.");
         }
         setTaskSession(boundTask.session);
       }
@@ -4321,7 +4323,7 @@ export function RuneWorkbench() {
         setPdfOcrError(
           error instanceof Error
             ? error.message
-            : runeText(locale, "Rune could not recognize those scanned pages.", "Rune 无法识别这些扫描页。"),
+            : runeText(locale, "Orbit could not recognize those scanned pages.", "Orbit 无法识别这些扫描页。"),
         );
       }
     } finally {
@@ -4366,7 +4368,7 @@ export function RuneWorkbench() {
     const taskContinuation = taskSession ? prepareRuneTaskAfterImport(taskSession, artifacts, pendingImport) : null;
     if (taskContinuation?.errors.length || (taskSession && !taskContinuation?.session)) {
       setTaskSession(null);
-      setImportError(taskContinuation?.errors[0] ?? "Rune could not continue this task from the reviewed import.");
+      setImportError(taskContinuation?.errors[0] ?? "Orbit could not continue this task from the reviewed import.");
       setNotice(
         runeText(locale, "Import held for review — task context changed", "导入仍在等待审核 — 任务上下文已变化"),
       );
@@ -4398,8 +4400,8 @@ export function RuneWorkbench() {
       setSaveState("error");
       setImportError(
         error instanceof Error
-          ? `${error.message} Rune removed every image created by this attempt and kept all sources unchanged.`
-          : "Device storage failed. Rune removed every image created by this attempt and kept all sources unchanged.",
+          ? `${error.message} Orbit removed every image created by this attempt and kept all sources unchanged.`
+          : "Device storage failed. Orbit removed every image created by this attempt and kept all sources unchanged.",
       );
       setNotice("Nothing imported — atomic source and image persistence failed");
       importInFlightRef.current = false;
@@ -4484,7 +4486,7 @@ export function RuneWorkbench() {
       });
       setNotice(`Review ${result.targetType.toUpperCase()} fidelity notes before downloading ${result.fileName}`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Rune could not prepare that export");
+      setNotice(error instanceof Error ? error.message : "Orbit could not prepare that export");
     } finally {
       exportInFlightRef.current = false;
       setExportState("idle");
@@ -4715,10 +4717,10 @@ export function RuneWorkbench() {
             {fileRailOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
           </button>
           <div className="brand-mark" aria-hidden="true">
-            <span>R</span>
+            <span>O</span>
           </div>
           <div className="brand-copy">
-            <strong>Rune</strong>
+            <strong dir="ltr">{ORBIT_PRODUCT_LOCKUP}</strong>
           </div>
           <span className="project-separator" aria-hidden="true" />
           <div className="project-name">{directoryHandle?.name ?? ui.localWorkspace}</div>

@@ -161,11 +161,11 @@ function localImageMarkdown(root: XmlElement, warnings: Set<string>) {
     const source = image.getAttribute("src") ?? "";
     const id = parseRuneAssetReference(source);
     if (!id) {
-      warnings.add("Images not backed by verified Rune local assets are omitted from presentation handoff.");
+      warnings.add("Images not backed by verified Orbit local assets are omitted from presentation handoff.");
       return;
     }
-    const alt = markdownImageAlt(image.getAttribute("alt") || "Rune image");
-    localImages.push(`![${alt || "Rune image"}](${source})`);
+    const alt = markdownImageAlt(image.getAttribute("alt") || "Orbit image");
+    localImages.push(`![${alt || "Orbit image"}](${source})`);
   });
   if (localImages.length > 1) {
     throw new Error("Semantic HTML handoff supports one verified local image per slide.");
@@ -258,7 +258,7 @@ function parseSection(source: string, index: number, fallbackLabel: string, warn
   const requestedLayout = section.getAttribute("data-layout")?.trim().toLowerCase() ?? "";
   const layout = SUPPORTED_DECK_LAYOUTS.has(requestedLayout) ? requestedLayout : index === 0 ? "cover" : "content";
   if (requestedLayout && requestedLayout !== layout) {
-    warnings.add("Unsupported semantic HTML data-layout values use Rune's cover/content handoff layouts.");
+    warnings.add("Unsupported semantic HTML data-layout values use Orbit's cover/content handoff layouts.");
   }
   const eyebrow = escapeDeckText(section.getAttribute("data-eyebrow") ?? "").slice(0, 100);
   const blocks = collectBlocks(section, heading, warnings);
@@ -274,7 +274,7 @@ export function convertSemanticHtmlPresentationToDeck(artifact: WorkspaceArtifac
   const compilation = compileLegacyHtmlSlides(artifact.source);
   if (compilation.errors.length) throw new Error(compilation.errors[0]);
   const warnings = new Set<string>([
-    "Semantic HTML is converted to Rune's controlled slide model for this export; CSS, exact positioning, animation, forms, links, and unsupported elements are not retained.",
+    "Semantic HTML is converted to Orbit's controlled slide model for this export; CSS, exact positioning, animation, forms, links, and unsupported elements are not retained.",
   ]);
   if (/<(?:picture|video)\b/iu.test(artifact.source))
     warnings.add("Picture and video elements are omitted from semantic presentation handoff.");
@@ -301,7 +301,7 @@ lang: ${lang}${lineage.length ? `\n${lineage.join("\n")}` : ""}
 ${slides.join("\n\n---\n\n")}`;
   const parsed = parseDeckSource(source);
   if (!parsed.deck) {
-    throw new Error(parsed.errors[0] ?? "The semantic HTML presentation could not enter Rune's controlled handoff.");
+    throw new Error(parsed.errors[0] ?? "The semantic HTML presentation could not enter Orbit's controlled handoff.");
   }
   return Object.freeze({
     artifact: Object.freeze({

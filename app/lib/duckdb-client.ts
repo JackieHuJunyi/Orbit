@@ -104,7 +104,7 @@ async function instantiateDatabase(database: duckdb.AsyncDuckDB, manifestUrl: st
       })(),
       new Promise<never>((_, reject) => {
         timer = window.setTimeout(
-          () => reject(new Error("DuckDB could not start from Rune's same-origin runtime within 30 seconds.")),
+          () => reject(new Error("DuckDB could not start from Orbit's same-origin runtime within 30 seconds.")),
           DUCKDB_INIT_TIMEOUT_MS,
         );
       }),

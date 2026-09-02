@@ -148,12 +148,12 @@ export function prepareRunePilotEvidenceExport(
   };
   const bytes = new TextEncoder().encode(`${JSON.stringify(evidencePackage, null, 2)}\n`);
   if (bytes.byteLength > MAX_RUNE_PILOT_EVIDENCE_BYTES) {
-    throw new Error("Pilot evidence is larger than Rune's local review limit.");
+    throw new Error("Pilot evidence is larger than Orbit's local review limit.");
   }
   return {
     package: evidencePackage,
     bytes,
-    fileName: `rune-pilot-evidence-${exportedOn}.json`,
+    fileName: `orbit-pilot-evidence-${exportedOn}.json`,
     mimeType: "application/json",
   };
 }

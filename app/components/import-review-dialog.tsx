@@ -24,21 +24,21 @@ export const IMPORT_REVIEW_TASK_BASE_COPY = {
     confirm: "导入并设置汇报",
     nextStep: "下一步",
     nextTitle: "下一步：确认字段与交付物",
-    nextBody: "确认这次导入后，Rune 会自动打开经营汇报设置，并预先选择这份数据。",
+    nextBody: "确认这次导入后，Orbit 会自动打开经营汇报设置，并预先选择这份数据。",
     briefingConfirm: "导入并设置演示",
     briefingTitle: "下一步：确认受众与演示重点",
-    briefingBody: "确认这次导入后，Rune 会自动打开文档演示设置，并预先选择这份文档。",
+    briefingBody: "确认这次导入后，Orbit 会自动打开文档演示设置，并预先选择这份文档。",
   },
   en: {
     confirm: "Import and map review",
     nextStep: "Next step",
     nextTitle: "Next: choose fields and deliverables",
     nextBody:
-      "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.",
+      "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.",
     briefingConfirm: "Import and shape presentation",
     briefingTitle: "Next: choose audience and presentation purpose",
     briefingBody:
-      "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.",
+      "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.",
   },
 } as const;
 

@@ -13,13 +13,13 @@ const POWERPOINT_PATH = "/Applications/Microsoft PowerPoint.app";
 export function exactLegacyKind(fileName) {
   if (/^[^/\\\0]+\.doc$/i.test(fileName)) return "doc";
   if (/^[^/\\\0]+\.ppt$/i.test(fileName)) return "ppt";
-  throw new Error("Rune Desktop converts .doc and .ppt files only.");
+  throw new Error("Orbit Desktop converts .doc and .ppt files only.");
 }
 
 export function exactModernKind(fileName) {
   if (/^[^/\\\0]+\.docx$/i.test(fileName)) return "doc";
   if (/^[^/\\\0]+\.pptx$/i.test(fileName)) return "ppt";
-  throw new Error("Rune Desktop exports DOCX and PPTX packages to legacy Office only.");
+  throw new Error("Orbit Desktop exports DOCX and PPTX packages to legacy Office only.");
 }
 
 function coerceBytes(value) {
@@ -147,7 +147,7 @@ async function runConversion(source) {
     });
   } catch (error) {
     if (error?.killed || error?.signal)
-      throw new Error("The local Office conversion exceeded Rune's 30 second limit and was stopped.");
+      throw new Error("The local Office conversion exceeded Orbit's 30 second limit and was stopped.");
     throw error;
   }
 }
@@ -169,12 +169,14 @@ export async function convertLegacyOffice(_event, input) {
     return {
       fileName: outputName,
       bytes: new Uint8Array(converted),
-      warning: `Rune Desktop converted ${input.fileName} to ${outputName} locally with Office macros force-disabled. Legacy layout, embedded objects, media, comments, and animation may change; review the generated canonical source before import.`,
+      warning: `Orbit Desktop converted ${input.fileName} to ${outputName} locally with Office macros force-disabled. Legacy layout, embedded objects, media, comments, and animation may change; review the generated canonical source before import.`,
     };
   } catch (error) {
     if (error?.killed || error?.signal)
-      throw new Error("The local Office conversion exceeded Rune's 30 second limit and was stopped.");
-    throw new Error(error instanceof Error ? error.message : "Rune Desktop could not convert that legacy Office file.");
+      throw new Error("The local Office conversion exceeded Orbit's 30 second limit and was stopped.");
+    throw new Error(
+      error instanceof Error ? error.message : "Orbit Desktop could not convert that legacy Office file.",
+    );
   } finally {
     await rm(privateDirectory, { recursive: true, force: true });
   }
@@ -199,10 +201,10 @@ export async function exportLegacyOffice(_event, input) {
     return {
       fileName: outputName,
       bytes: new Uint8Array(converted),
-      warning: `Rune Desktop converted ${input.fileName} to ${outputName} locally with Office macros force-disabled. The legacy binary may change typography, layout, vector charts, tables, media, and accessibility; open the downloaded result in Office and verify it before delivery.`,
+      warning: `Orbit Desktop converted ${input.fileName} to ${outputName} locally with Office macros force-disabled. The legacy binary may change typography, layout, vector charts, tables, media, and accessibility; open the downloaded result in Office and verify it before delivery.`,
     };
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "Rune Desktop could not create that legacy Office file.");
+    throw new Error(error instanceof Error ? error.message : "Orbit Desktop could not create that legacy Office file.");
   } finally {
     await rm(privateDirectory, { recursive: true, force: true });
   }

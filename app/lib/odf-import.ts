@@ -123,7 +123,7 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
         seenPaths.add(path);
         paths.push(path);
         if (requiredEntries.has(path) && file.originalSize > MAX_XML_PART_BYTES) {
-          throw new Error(`${path} exceeds Rune's 6 MB required-part limit.`);
+          throw new Error(`${path} exceeds Orbit's 6 MB required-part limit.`);
         }
         const imagePart = importImages && /^Pictures\//u.test(path);
         const relevant =
@@ -148,21 +148,21 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
           return true;
         }
         if (path.endsWith(".xml")) {
-          if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
+          if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Orbit's 6 MB XML-part limit.`);
           expandedXmlBytes += file.originalSize;
           if (expandedXmlBytes > MAX_XML_TOTAL_BYTES)
-            throw new Error("The OpenDocument package expands beyond Rune's 24 MB XML limit.");
+            throw new Error("The OpenDocument package expands beyond Orbit's 24 MB XML limit.");
         }
         return true;
       },
     });
     const actualXmlBytes = Object.entries(files).reduce((total, [path, data]) => {
       if (!path.endsWith(".xml")) return total;
-      if (data.length > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
+      if (data.length > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Orbit's 6 MB XML-part limit.`);
       return total + data.length;
     }, 0);
     if (actualXmlBytes > MAX_XML_TOTAL_BYTES)
-      throw new Error("The OpenDocument package expands beyond Rune's 24 MB XML limit.");
+      throw new Error("The OpenDocument package expands beyond Orbit's 24 MB XML limit.");
     requiredEntries.forEach((path) => {
       if (!seenPaths.has(path)) throw new Error(`Required OpenDocument part is missing: ${path}`);
     });
@@ -176,7 +176,7 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
       paths,
       warnings: imageLimitWarning
         ? [
-            `Embedded OpenDocument images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
+            `Embedded OpenDocument images beyond Orbit's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
           ]
         : [],
       importImages,
@@ -359,7 +359,7 @@ function odfImageToken(context: PackageContext, artifactId: string, image: XmlEl
   const bytes = context.files[path];
   if (!bytes) {
     context.warnings.push(
-      `Embedded OpenDocument image “${path.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`,
+      `Embedded OpenDocument image “${path.split("/").pop() || "image"}” was unavailable or outside Orbit's image limits.`,
     );
     return "";
   }
@@ -988,7 +988,7 @@ function convertOdpToDeck(fileName: string, context: PackageContext, content: Xm
   }
   if (objects)
     context.warnings.push(
-      `${objects} embedded ODP ${objects === 1 ? "object was" : "objects were"} omitted; import its source data to rebuild a live Rune artifact.`,
+      `${objects} embedded ODP ${objects === 1 ? "object was" : "objects were"} omitted; import its source data to rebuild a live Orbit artifact.`,
     );
   if (notes) context.warnings.push("ODP speaker notes were not imported into semantic HTML.");
   context.warnings.push(

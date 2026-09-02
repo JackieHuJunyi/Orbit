@@ -148,9 +148,9 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
     (line) => /!\[[^\]\n]*\]\([^)\n]+\)/u.test(line) && !parseRuneMarkdownImage(line),
   );
   if (unsupportedImage)
-    return { errors: [`Slide ${index + 1} images must use one standalone Rune local-image reference.`] };
+    return { errors: [`Slide ${index + 1} images must use one standalone Orbit local-image reference.`] };
   if (runeReferences.some((id) => !images.some((image) => image.id === id))) {
-    return { errors: [`Slide ${index + 1} must place each Rune local-image reference on its own line.`] };
+    return { errors: [`Slide ${index + 1} must place each Orbit local-image reference on its own line.`] };
   }
   if (images.length > 1) return { errors: [`Slide ${index + 1} supports one primary image.`] };
   if (images.length && layout === "metrics")
@@ -271,7 +271,7 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
       const url =
         safeDeckImageUrl(options.resolveLocalAssetUrl?.(reference) ?? null) ??
         (options.preserveLocalAssetReferences ? reference : null);
-      const alt = escapeHtml(image.alt || "Rune image");
+      const alt = escapeHtml(image.alt || "Orbit image");
       blocks.push(
         url
           ? `<figure class="deck-image"><img src="${escapeHtml(url)}" alt="${alt}" decoding="async" /></figure>`

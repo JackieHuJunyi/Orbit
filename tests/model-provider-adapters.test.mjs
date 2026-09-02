@@ -222,7 +222,7 @@ test("does not echo a provider error body that may contain sensitive evidence", 
           signal: new AbortController().signal,
         }),
       (error) => {
-        assert.match(error.message, /rejected Rune's request \(401\)/i);
+        assert.match(error.message, /rejected Orbit's request \(401\)/i);
         assert.doesNotMatch(error.message, /workspace-secret-fragment/);
         return true;
       },

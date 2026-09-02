@@ -270,7 +270,7 @@ test("keeps Unicode titles readable while producing portable source identity", (
   assert.equal(prepared.artifact.source, "# Q3 增长 计划\n\n");
 
   const reserved = prepareArtifactCreation([], { kind: "document", title: "CON" });
-  assert.equal(reserved.artifact.name, "rune-con.md");
+  assert.equal(reserved.artifact.name, "orbit-con.md");
 });
 
 test("rejects unsafe titles and an overfull workspace without partial artifacts", () => {

@@ -8,7 +8,7 @@ import {
   parseModelProfileImport,
 } from "../app/lib/model-profile-import.ts";
 
-test("imports one Rune JSON profile with aliases and a custom compatible endpoint", () => {
+test("imports one Orbit JSON profile with aliases and a custom compatible endpoint", () => {
   const result = parseModelProfileImport(
     JSON.stringify({
       profile_name: "Team gateway",
@@ -48,7 +48,7 @@ test("imports a CC Switch Codex provider without navigating to the secret-bearin
   assert.equal(result.draft.apiKey, "secret-link-key");
 });
 
-test("maps a CC Switch Claude gateway to Rune's custom Anthropic protocol", () => {
+test("maps a CC Switch Claude gateway to Orbit's custom Anthropic protocol", () => {
   const result = parseModelProfileImport(
     "ccswitch://v1/import?resource=provider&app=claude&endpoint=https%3A%2F%2Fclaude.example.com%2Fv1&model=claude-team&apiKey=secret",
   );

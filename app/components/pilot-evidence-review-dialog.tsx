@@ -13,7 +13,7 @@ export const PILOT_EVIDENCE_BASE_COPY = {
     kicker: "Pilot Evidence · 设备本地",
     title: "审阅即将导出的试点证据",
     description:
-      "Rune 已把本机任务记录整理成匿名 JSON。它可用于汇总真实试点结果，但不会上传，也不代表已经完成产品市场验证。",
+      "Orbit 已把本机任务记录整理成匿名 JSON。它可用于汇总真实试点结果，但不会上传，也不代表已经完成产品市场验证。",
     details: "Pilot Evidence 导出内容",
     taskRuns: "任务运行",
     deliveryOutcomes: "交付结果",
@@ -36,7 +36,7 @@ export const PILOT_EVIDENCE_BASE_COPY = {
     evidenceWarning:
       "这是设备本地的候选人工结果证据。只有完整、已授权或已脱敏的评分才计入真实任务数量；它不能单独证明 PMF 或达到试点门槛。",
     reviewConfirmation: "我已审阅导出范围，并理解这是一份候选证据文件，而不是 PMF 证明。",
-    privacy: "确认后只下载到本机；Rune 不会上传或发送此文件。",
+    privacy: "确认后只下载到本机；Orbit 不会上传或发送此文件。",
     cancel: "取消",
     download: "下载匿名 JSON",
   },
@@ -45,7 +45,7 @@ export const PILOT_EVIDENCE_BASE_COPY = {
     kicker: "Pilot Evidence · on device",
     title: "Review the pilot evidence export",
     description:
-      "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.",
+      "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.",
     details: "Pilot Evidence export contents",
     taskRuns: "Task runs",
     deliveryOutcomes: "Delivery outcomes",
@@ -69,7 +69,7 @@ export const PILOT_EVIDENCE_BASE_COPY = {
       "This is device-local candidate human-outcome evidence. Only complete, authorized or redacted ratings count as reviewed real tasks; the file alone cannot prove PMF or a completed pilot threshold.",
     reviewConfirmation:
       "I reviewed the export scope and understand this is a candidate evidence file, not proof of PMF.",
-    privacy: "Confirming only downloads to this device; Rune does not upload or send the file.",
+    privacy: "Confirming only downloads to this device; Orbit does not upload or send the file.",
     cancel: "Cancel",
     download: "Download anonymous JSON",
   },

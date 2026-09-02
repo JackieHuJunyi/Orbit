@@ -11,7 +11,7 @@ let traditionalChineseBySource: ReadonlyMap<string, string> | null = null;
 
 function requireRuneLocaleCatalog(locale: RuneLocale) {
   if (!isRuneLocaleCatalogLoaded(locale)) {
-    throw new Error(`Rune interface locale “${locale}” must be loaded before synchronous localization.`);
+    throw new Error(`Orbit interface locale “${locale}” must be loaded before synchronous localization.`);
   }
 }
 
@@ -281,7 +281,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       workspaceTools: zh ? "工作区工具" : "Workspace tools",
       workspaceToolsBody: zh ? "帮助、模型、文件夹与外观" : "Help, models, folder, and appearance",
       version: zh ? "版本" : "Version",
-      appearanceBody: zh ? "选择 Rune 的气质色" : "Choose Rune's character color",
+      appearanceBody: zh ? "选择 Orbit 的气质色" : "Choose Orbit's character color",
       activeTheme: zh ? "当前主题" : "Current theme",
       resizeWorkspace: zh ? "调整源内容与预览宽度" : "Resize source and preview",
       resetWorkspaceSplit: zh ? "恢复默认左右宽度" : "Reset source and preview widths",
@@ -314,7 +314,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       output: zh ? "实时成品" : "Live output",
       livePreview: zh ? "实时预览" : "Live preview",
       valid: zh ? "有效" : "Valid",
-      assistant: "Rune",
+      assistant: "Orbit",
       assistantBody: zh ? "先准备修改，再由你确认写入" : "Prepares a change before you approve the write",
       selection: zh ? "选区" : "Selection",
       file: zh ? "当前文件" : "File",
@@ -334,7 +334,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       hideFiles: zh ? "隐藏工作区文件" : "Hide workspace files",
       showFiles: zh ? "显示工作区文件" : "Show workspace files",
       workspaceFiles: zh ? "工作区文件" : "Workspace files",
-      runeSections: zh ? "Rune 功能区" : "Rune sections",
+      runeSections: zh ? "Orbit 功能区" : "Orbit sections",
       createOperatingReview: zh ? "创建经营汇报" : "Create operating review",
       savedReviews: zh ? "已保存任务" : "Saved tasks",
       recentTaskRuns: zh ? "最近任务记录" : "Recent task runs",
@@ -380,7 +380,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       numberScore: zh ? "数字正确性" : "Number correctness",
       noDeliveryOutcomes: zh ? "交付后可确认真实可用性" : "Confirm real usability after a handoff",
       deliveryOutcomeRecorded: zh ? "交付结果已记录在本机" : "Delivery outcome recorded on this device",
-      deliveryOutcomeFailed: zh ? "无法记录这次交付结果" : "Rune could not record this delivery outcome",
+      deliveryOutcomeFailed: zh ? "无法记录这次交付结果" : "Orbit could not record this delivery outcome",
       deliveryRatings: {
         ready: zh ? "可以直接交付" : "Ready to deliver",
         "minor-edits": zh ? "少量修改后可交付" : "Deliverable after minor edits",
@@ -397,7 +397,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         persistence: zh ? "本机持久化失败" : "Device persistence failed",
         cancelled: zh ? "审核时取消" : "Cancelled during review",
       },
-      focusAgent: zh ? "聚焦 Rune Agent" : "Focus Rune Agent",
+      focusAgent: zh ? "聚焦 Orbit Agent" : "Focus Orbit Agent",
       dataGraph: zh ? "数据关系图" : "Data graph",
       resetSample: zh ? "恢复示例工作区" : "Restore sample workspace",
       checkpoints: zh ? "恢复点历史" : "Checkpoint history",
@@ -431,8 +431,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
           "source-unsafe": {
             title: zh ? "移除不安全内容" : "Remove unsafe content",
             action: zh
-              ? "删除脚本或可执行标记；Rune 的成品预览只接受无脚本内容。"
-              : "Remove scripts or executable markup; Rune previews only script-free content.",
+              ? "删除脚本或可执行标记；Orbit 的成品预览只接受无脚本内容。"
+              : "Remove scripts or executable markup; Orbit previews only script-free content.",
           },
           "document-source-invalid": {
             title: zh ? "修正文档源内容" : "Repair the Document source",
@@ -689,8 +689,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         : "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.",
       details: zh ? "版本恢复详情" : "Checkpoint restore details",
       safety: zh
-        ? "Rune 会保留当前版本作为可恢复保护点，并再次核验完整工作区与本地运行影响。"
-        : "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.",
+        ? "Orbit 会保留当前版本作为可恢复保护点，并再次核验完整工作区与本地运行影响。"
+        : "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.",
       atomic: zh
         ? "一次原子本机写入 · 失败时所有源内容保持不变"
         : "One atomic device write · every source stays unchanged on failure",
@@ -702,12 +702,12 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       kicker: zh ? "本机工作区 · 可恢复切换" : "Device workspace · recoverable switch",
       sampleTitle: zh ? "恢复示例工作区？" : "Restore the sample workspace?",
       sampleDescription: zh
-        ? "Rune 会用内置示例替换当前本机工作区，并把当前文件、恢复点和任务记录完整保留为上一个工作区。"
-        : "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.",
+        ? "Orbit 会用内置示例替换当前本机工作区，并把当前文件、恢复点和任务记录完整保留为上一个工作区。"
+        : "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.",
       recoveryTitle: zh ? "恢复上一个工作区？" : "Restore the previous workspace?",
       recoveryDescription: zh
-        ? "Rune 会恢复重置前的完整本机工作区，并把当前工作区保留为下一次可恢复版本。"
-        : "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.",
+        ? "Orbit 会恢复重置前的完整本机工作区，并把当前工作区保留为下一次可恢复版本。"
+        : "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.",
       details: zh ? "工作区切换详情" : "Workspace switch details",
       transition: zh ? "当前与目标工作区" : "Current and target workspaces",
       current: zh ? "当前工作区" : "Current workspace",
@@ -727,7 +727,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         : "The current and previous workspaces swap safely, so this recovery remains reversible.",
       folderSafety: zh
         ? "已连接文件夹不会自动更改；只有之后明确选择“写回工作区文件”才会写入。"
-        : "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.",
+        : "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.",
       atomic: zh
         ? "一次原子本机写入 · 存储失败时当前工作区保持不变"
         : "One atomic device write · the current workspace stays unchanged if storage fails",
@@ -748,14 +748,14 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       pushTitle: zh ? "将这些变化写入文件夹？" : "Push these changes to the folder?",
       initializeTitle: zh ? "用当前工作区初始化文件夹？" : "Initialize the folder with this workspace?",
       pullDescription: zh
-        ? "Rune 会再次读取文件夹；只有文件内容与本机工作区仍和本次审核完全一致时，才会替换本机工作区。"
-        : "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.",
+        ? "Orbit 会再次读取文件夹；只有文件内容与本机工作区仍和本次审核完全一致时，才会替换本机工作区。"
+        : "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.",
       pushDescription: zh
-        ? "Rune 会再次读取文件夹；只有文件夹与本机工作区都没有变化时，才会写入同名文件和工作区清单。"
-        : "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.",
+        ? "Orbit 会再次读取文件夹；只有文件夹与本机工作区都没有变化时，才会写入同名文件和工作区清单。"
+        : "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.",
       initializeDescription: zh
-        ? "Rune 会确认文件夹仍为空，再写入当前可读源文件、已引用图片与工作区清单。"
-        : "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.",
+        ? "Orbit 会确认文件夹仍为空，再写入当前可读源文件、已引用图片与工作区清单。"
+        : "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.",
       details: zh ? "文件夹同步详情" : "Folder sync details",
       device: zh ? "本机工作区" : "Device workspace",
       folder: zh ? "连接文件夹" : "Connected folder",
@@ -771,8 +771,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       retain: zh ? "保留在文件夹" : "Keep in folder",
       unchanged: zh ? "不变" : "Unchanged",
       retainedNote: zh
-        ? "仅存在于文件夹的文件会原样保留，但不会进入新的 Rune 工作区清单。"
-        : "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.",
+        ? "仅存在于文件夹的文件会原样保留，但不会进入新的 Orbit 工作区清单。"
+        : "Folder-only files stay untouched but will not belong to the new Orbit workspace manifest.",
       pullSafety: zh
         ? "当前完整本机工作区会保存为一个可恢复版本；读取失败不会改变任何源内容。"
         : "The complete current device workspace becomes a recoverable version; a failed pull changes no source.",
@@ -780,8 +780,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
         ? "同名文件可能被覆盖；审核后任何一侧发生变化都会阻止写入。"
         : "Same-name files may be overwritten; any change on either side after review blocks the write.",
       initializeSafety: zh
-        ? "无关文件保持不变；只有审核中列出的源文件、图片和 Rune 清单会写入。"
-        : "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.",
+        ? "无关文件保持不变；只有审核中列出的源文件、图片和 Orbit 清单会写入。"
+        : "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.",
       exactRecheck: zh
         ? "确认时再次逐字节读取 · 漂移时保持零写入"
         : "Exact reread on confirm · zero writes when either side drifts",
@@ -857,11 +857,11 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       fidelityNotes: zh ? "保真说明" : "Fidelity notes",
       canonicalTitle: zh ? "规范源内容" : "Canonical source",
       canonicalBody: zh
-        ? "Rune 导出已校验的源内容，以及当前工作区中被引用的数据。"
-        : "Rune exports the validated source and any referenced current workspace data.",
+        ? "Orbit 导出已校验的源内容，以及当前工作区中被引用的数据。"
+        : "Orbit exports the validated source and any referenced current workspace data.",
       sourceCanonicalBody: zh
-        ? "Rune 保留这份已校验源内容的每一个字节；不会编译或改写其中的实时引用。"
-        : "Rune preserves this exact validated source; it does not compile or rewrite its live references.",
+        ? "Orbit 保留这份已校验源内容的每一个字节；不会编译或改写其中的实时引用。"
+        : "Orbit preserves this exact validated source; it does not compile or rewrite its live references.",
       packageTitle: (packaged: boolean) =>
         packaged ? (zh ? "标准文件包" : "Standard package") : zh ? "便携成品" : "Portable output",
       sourceFileTitle: zh ? "可读文件" : "Readable file",
@@ -873,7 +873,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               pdf: "下载在标准 PDF 中嵌入版式、Unicode 字体和当前数据快照。",
               html: "下载包含版式、主题、指标和图表，不依赖外部资源。",
               data: "下载使用确定性的 UTF-8 CSV 或 JSON，不携带隐藏公式或脚本。",
-              source: "下载保留精确的可读源内容；Rune 绑定与本地资源引用仍是源表达式。",
+              source: "下载保留精确的可读源内容；Orbit 绑定与本地资源引用仍是源表达式。",
             }[kind]
           : {
               office: "The download uses standard Office Open XML parts and relationships.",
@@ -882,7 +882,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
               html: "The download contains its layout, theme, metrics, and charts without external assets.",
               data: "The download uses deterministic UTF-8 CSV or JSON without hidden formulas or scripts.",
               source:
-                "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.",
+                "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.",
             }[kind],
       handoffTitle: zh ? "明确交付" : "Explicit handoff",
       handoffBody: zh
@@ -902,8 +902,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       type: zh ? "内容类型" : "Artifact type",
       titleLabel: zh ? "标题" : "Title",
       titleHelp: zh
-        ? "Rune 会生成便携文件名和稳定工作区 ID；创建后可立即编辑源内容。"
-        : "Rune derives a portable filename and stable workspace id. You can edit the source immediately.",
+        ? "Orbit 会生成便携文件名和稳定工作区 ID；创建后可立即编辑源内容。"
+        : "Orbit derives a portable filename and stable workspace id. You can edit the source immediately.",
       sourceBinding: zh ? "来源绑定" : "Source binding",
       dataSource: zh ? "数据来源" : "Data source",
       dataOrQuerySource: zh ? "Data 或 Query 来源" : "Data or Query source",
@@ -924,8 +924,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       document: zh ? "文档" : "Document",
       presentation: zh ? "演示" : "Presentation",
       queryBindingHelp: zh
-        ? "Rune 会写入明确的 -- rune:data 指令，因此文件排序变化不会改变 workspace_data。"
-        : "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.",
+        ? "Orbit 会写入明确的 -- rune:data 指令，因此文件排序变化不会改变 workspace_data。"
+        : "Orbit writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.",
       chartBindingHelp: zh
         ? "Chart JSON 保存精确来源 ID 与字段名；报告和演示可通过同一图表绑定复用。"
         : "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.",
@@ -976,8 +976,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       dependencies: zh ? "建议的源内容依赖变化" : "Proposed source dependency changes",
       noBindings: zh ? "此事务不会改变跨文件绑定。" : "No cross-file bindings change in this transaction.",
       note: zh
-        ? "可审核新建与编辑节点的差异。输入和已校验节点保持不变；Rune 会编译完整建议工作区以证明结果。"
-        : "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Rune compiled them to prove the complete proposed workspace.",
+        ? "可审核新建与编辑节点的差异。输入和已校验节点保持不变；Orbit 会编译完整建议工作区以证明结果。"
+        : "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Orbit compiled them to prove the complete proposed workspace.",
       reviewNode: (name: string, status: string) =>
         zh ? `审核 ${name}，${status}` : `Review ${name}, ${status.toLowerCase()}`,
       nodeLabel: (name: string, status: string) => (zh ? `${name}，${status}` : `${name}, ${status.toLowerCase()}`),
@@ -1032,7 +1032,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       alreadyFirst: zh ? "已经是第一个" : "Already first",
       alreadyLast: zh ? "已经是最后一个" : "Already last",
       lastCannotDelete: zh ? "不能删除最后一个内容块" : "The last block cannot be deleted",
-      runeDocument: zh ? "Rune 文档" : "Rune document",
+      runeDocument: zh ? "Orbit 文档" : "Orbit document",
       documentMode: (mode: "block" | "section" | "select" | "live") =>
         zh
           ? {
@@ -1326,9 +1326,9 @@ const chineseStatusMessages: Record<string, string> = {
   "Manual checkpoint saved on this device": "已在此设备保存手动恢复点",
   "Device storage is full — checkpoint was not saved": "本机存储空间不足 — 未保存恢复点",
   "Switched artifact context": "已切换内容上下文",
-  "Opened the editable Rune guide stored in this workspace": "已打开工作区中的可编辑 Rune 指南",
-  "Choose one or more files — Rune reads them locally before review":
-    "请选择一个或多个文件 — Rune 会先在本地读取，再交给你审核",
+  "Opened the editable Orbit guide stored in this workspace": "已打开工作区中的可编辑 Orbit 指南",
+  "Choose one or more files — Orbit reads them locally before review":
+    "请选择一个或多个文件 — Orbit 会先在本地读取，再交给你审核",
   "Sample workspace ready · every result stays linked to readable source":
     "示例工作区已就绪 · 每个结果都保持链接到可读源内容",
   "Temporary Workspace Agent context pins cleared": "已清除临时工作区 Agent 上下文固定项",
@@ -1344,10 +1344,10 @@ const chineseStatusMessages: Record<string, string> = {
   "Folder sync ready for exact review — nothing has been written": "文件夹同步已可精确审核 — 尚未写入任何内容",
   "Folder sync cancelled — nothing changed": "已取消文件夹同步 — 所有内容保持不变",
   "Folder picker cancelled": "已取消选择文件夹",
-  "Rune could not connect that folder": "Rune 无法连接该文件夹",
-  "Rune could not pull that folder": "Rune 无法读取该文件夹",
+  "Orbit could not connect that folder": "Orbit 无法连接该文件夹",
+  "Orbit could not pull that folder": "Orbit 无法读取该文件夹",
   "Folder push cancelled": "已取消写回文件夹",
-  "Rune could not push that folder": "Rune 无法写回该文件夹",
+  "Orbit could not push that folder": "Orbit 无法写回该文件夹",
   "That checkpoint already matches the current source": "该恢复点已与当前源内容一致",
   "Download this large source before restoring an older checkpoint": "恢复旧版本前，请先下载此大型源文件",
   "Selection Agent needs a current non-empty source selection": "选区 Agent 需要当前且非空的源内容选区",
@@ -1366,11 +1366,11 @@ const chineseStatusMessages: Record<string, string> = {
   "Nothing created — live source verification failed": "未创建任何内容 — 实时源内容核验失败",
   "Nothing created — atomic device persistence failed": "未创建任何内容 — 本机原子持久化失败",
   "Import up to 20 files in one review transaction": "一次审核事务最多导入 20 个文件",
-  "Rune could not import those files": "Rune 无法导入这些文件",
+  "Orbit could not import those files": "Orbit 无法导入这些文件",
   "Import held for review — workspace context changed": "导入已暂停审核 — 工作区上下文发生变化",
   "Nothing imported — atomic persistence failed": "未导入任何内容 — 原子持久化失败",
   "Export held for review — workspace context changed": "导出已暂停审核 — 工作区上下文发生变化",
-  "Rune could not prepare that export": "Rune 无法准备该导出",
+  "Orbit could not prepare that export": "Orbit 无法准备该导出",
   "Agent composer focused": "已聚焦 Agent 输入框",
 };
 
@@ -1430,18 +1430,18 @@ export function localizeRuneStatus(locale: RuneLocale, message: string) {
 }
 
 export const CHINESE_RUNE_GUIDE = [
-  "# 欢迎使用 Rune",
+  "# 欢迎使用 Orbit",
   "",
-  "> Rune 是一个本地优先、可核验的 AI 工作台。你的源文件是事实，预览是实时编译结果；你批准前，Agent 不会写入文件。",
+  "> Orbit 是一个本地优先、可核验的 AI 工作台。你的源文件是事实，预览是实时编译结果；你批准前，Agent 不会写入文件。",
   "",
   "## 从这里开始",
   "",
   "1. 点击顶部的 **导入**，或关闭当前文件后把文件拖入中央区域。",
   "2. 在左侧修改 Markdown、CSV/JSON、SQL、Chart JSON 或语义 HTML；已有 Deck Markdown 仍可继续编辑。",
   "3. 在右侧立即检查编译结果。",
-  "4. 点击右侧文档的标题、段落、单个列表项、表格单元格、粗体、斜体、删除线、行内代码、链接或图片，以及数据单元格、图表数据或演示页，Rune 会定位并高亮对应源内容；在左侧移动光标或选择同一可证明范围时，右侧也会高亮并滚动到对应成品。普通点击链接定位源内容，⌘/Ctrl 点击仍可打开链接。",
+  "4. 点击右侧文档的标题、段落、单个列表项、表格单元格、粗体、斜体、删除线、行内代码、链接或图片，以及数据单元格、图表数据或演示页，Orbit 会定位并高亮对应源内容；在左侧移动光标或选择同一可证明范围时，右侧也会高亮并滚动到对应成品。普通点击链接定位源内容，⌘/Ctrl 点击仍可打开链接。",
   "5. 使用文档 section 或正文块、数据单元格、图表属性或演示页旁的铅笔，在右侧编辑可证明的范围；输入时左侧会实时显示并高亮完整 source 草稿，取消不写入，保存才经过核验并同步到同一 revision；正文定位按钮按 F2 也可编辑，块左侧还能新增、移动或删除，并先审核精确 source diff。",
-  "6. 让 Rune Agent 提出修改；检查差异和影响后，再决定是否应用。",
+  "6. 让 Orbit Agent 提出修改；检查差异和影响后，再决定是否应用。",
   "",
   "## 常用快捷键",
   "",
@@ -1462,9 +1462,9 @@ export const CHINESE_RUNE_GUIDE = [
   "- **数据：** CSV / JSON 是可读源，可用本地 DuckDB SQL 分析。",
   "- **图表：** Chart JSON 绑定数据或 Query，报告和演示共享同一份事实。",
   "- **演示：** 语义 HTML 是默认可读源内容，可交付为 PPTX、ODP、HTML 或 PDF；已有 Deck Markdown 继续兼容。",
-  "- **兼容：** PDF、DOCX、XLSX、PPTX、ODT、ODS、ODP 会在导入前说明语义转换限制；Rune Desktop 还可通过本机 Word/PowerPoint 将旧 DOC/PPT 转换后进入同一审核；扫描 PDF 会先让你明确选择页码和英文/简中 OCR，再显示逐页置信度。",
+  "- **兼容：** PDF、DOCX、XLSX、PPTX、ODT、ODS、ODP 会在导入前说明语义转换限制；Orbit Desktop 还可通过本机 Word/PowerPoint 将旧 DOC/PPT 转换后进入同一审核；扫描 PDF 会先让你明确选择页码和英文/简中 OCR，再显示逐页置信度。",
   "",
-  "## Rune 的安全边界",
+  "## Orbit 的安全边界",
   "",
   "- 文件默认保存在当前设备。",
   "- Agent 只能看到你选择的文件和范围。",
@@ -1476,7 +1476,7 @@ export const CHINESE_RUNE_GUIDE = [
   "",
   "## 设置模型",
   "",
-  "Rune 支持 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages、Gemini generateContent 和自定义协议的个人模型配置。密钥保存后会被服务端加密成浏览器脚本不可读的 HttpOnly 凭据，不进入工作区或 localStorage；Web 本地/部署环境必须设置独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY`，Rune Desktop 则用 macOS 钥匙串保护该主密钥。Rune 不会把失败请求自动转给另一家供应商；没有配置模型时，确定性本地规划器仍然可用。",
+  "Orbit 支持 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages、Gemini generateContent 和自定义协议的个人模型配置。密钥保存后会被服务端加密成浏览器脚本不可读的 HttpOnly 凭据，不进入工作区或 localStorage；Web 本地/部署环境必须设置独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY`，Orbit Desktop 则用 macOS 钥匙串保护该主密钥。Orbit 不会把失败请求自动转给另一家供应商；没有配置模型时，确定性本地规划器仍然可用。",
   "",
   "## 下一步",
   "",
@@ -1485,9 +1485,9 @@ export const CHINESE_RUNE_GUIDE = [
 ].join("\n");
 
 export const ENGLISH_RUNE_GUIDE = [
-  "# Welcome to Rune",
+  "# Welcome to Orbit",
   "",
-  "> Rune is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.",
+  "> Orbit is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.",
   "",
   "## Start here",
   "",
@@ -1496,7 +1496,7 @@ export const ENGLISH_RUNE_GUIDE = [
   "3. Inspect the compiled result immediately on the right.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.",
   "5. Use the pencil beside a Document section or body block, Data cell, Chart properties, or Deck slide to edit a proven range on the right. The left side mirrors and highlights the complete source draft live; Cancel writes nothing and Save verifies before synchronizing one revision. F2 also edits, while the block's left controls insert, move, or delete only after an exact source-diff review.",
-  "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.",
+  "6. Ask Orbit Agent to propose a change. Review the diff and impact before applying it.",
   "",
   "## Keyboard shortcuts",
   "",
@@ -1511,15 +1511,15 @@ export const ENGLISH_RUNE_GUIDE = [
   "| Italicize a Document draft | ⌘ I | Ctrl I |",
   "| Add a Document draft link | ⌘ K | Ctrl K |",
   "",
-  "## How Rune works",
+  "## How Orbit works",
   "",
   "- **Documents:** readable Markdown compiles into a document.",
   "- **Data:** readable CSV / JSON can be analyzed with local DuckDB SQL.",
   "- **Charts:** Chart JSON binds to Data or Query so reports and decks share one fact.",
   "- **Presentations:** Semantic HTML is the readable default source and can hand off as PPTX, ODP, HTML, or PDF. Existing Deck Markdown remains supported.",
-  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Rune Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.",
+  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Orbit Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.",
   "",
-  "## Rune's trust boundary",
+  "## Orbit's trust boundary",
   "",
   "- Files stay on this device by default.",
   "- The Agent sees only files and ranges you deliberately select.",
@@ -1531,7 +1531,7 @@ export const ENGLISH_RUNE_GUIDE = [
   "",
   "## Connect a model",
   "",
-  "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.",
+  "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.",
   "",
   "## Next",
   "",
@@ -1543,7 +1543,7 @@ export function createRuneGuideArtifact(locale: RuneLocale): WorkspaceArtifact {
   const source = localizeRuneMultiline(locale, ENGLISH_RUNE_GUIDE, CHINESE_RUNE_GUIDE);
   return {
     id: RUNE_GUIDE_ID,
-    name: "rune-guide.md",
+    name: "orbit-guide.md",
     kind: "document",
     language: `Markdown · ${localeDisplayName(locale)}`,
     source,

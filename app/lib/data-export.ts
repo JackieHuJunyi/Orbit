@@ -50,7 +50,7 @@ export function exportPortableDataArtifact(
       : `${Papa.unparse({ fields: parsed.columns, data: csvRows?.safeRows ?? rows }, { newline: "\n" })}\n`;
   const bytes = encoder.encode(source);
   if (bytes.length > MAX_PORTABLE_DATA_EXPORT_BYTES) {
-    throw new Error(`The generated ${targetType.toUpperCase()} file exceeds Rune's 12 MB export limit.`);
+    throw new Error(`The generated ${targetType.toUpperCase()} file exceeds Orbit's 12 MB export limit.`);
   }
 
   const warnings =

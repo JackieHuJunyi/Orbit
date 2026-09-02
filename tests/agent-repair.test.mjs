@@ -42,7 +42,7 @@ test("builds exact bounded feedback from an unapplied runtime proposal", () => {
   ]);
 });
 
-test("includes Rune-owned creation identity and refuses non-runtime or unknown feedback", () => {
+test("includes Orbit-owned creation identity and refuses non-runtime or unknown feedback", () => {
   const creation = {
     artifact: {
       id: "forecast-data",

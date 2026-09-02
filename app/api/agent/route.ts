@@ -125,7 +125,7 @@ export async function POST(request: Request) {
             input: buildAgentInput(parsed.data),
             schema,
             schemaName: workspaceScope ? "workspace_operations" : "artifact_operations",
-            responseDescription: "Return Rune's proposed typed source-operation plan for local validation.",
+            responseDescription: "Return Orbit's proposed typed source-operation plan for local validation.",
             signal: providerController.signal,
           });
           if (!schema.safeParse(response.output).success)
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
       if (prepared.errors.length) {
         return Response.json(
           {
-            error: "The compiled model operations did not pass Rune's workspace safety gate.",
+            error: "The compiled model operations did not pass Orbit's workspace safety gate.",
             details: prepared.errors.slice(0, 3),
           },
           { status: 502 },
@@ -263,7 +263,7 @@ export async function POST(request: Request) {
     if (validationErrors.length) {
       return Response.json(
         {
-          error: "The compiled model operations did not pass Rune's artifact safety gate.",
+          error: "The compiled model operations did not pass Orbit's artifact safety gate.",
           details: validationErrors.slice(0, 3),
         },
         { status: 502 },
@@ -280,7 +280,7 @@ export async function POST(request: Request) {
     });
   } catch {
     return Response.json(
-      { error: "The model provider could not prepare a patch. Rune kept the source unchanged." },
+      { error: "The model provider could not prepare a patch. Orbit kept the source unchanged." },
       { status: 502 },
     );
   }

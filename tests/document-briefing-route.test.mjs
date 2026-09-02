@@ -109,7 +109,7 @@ test("shapes a bounded source-evidenced outline through the active personal mode
   assert.equal(providerRequest.url, "https://models.example.com/v1/responses");
   assert.equal(providerRequest.headers.get("authorization"), "Bearer document-briefing-secret");
   assert.equal(providerRequest.body.text.format.name, "document_briefing_outline");
-  assert.match(providerRequest.body.input[0].content, /Rune owns the cover, conclusion, file identity/u);
+  assert.match(providerRequest.body.input[0].content, /Orbit owns the cover, conclusion, file identity/u);
   assert.match(providerRequest.body.input[1].content, /"sourceUnitId": "source-1"/u);
   assert.doesNotMatch(JSON.stringify(payload), /document-briefing-secret/u);
 });

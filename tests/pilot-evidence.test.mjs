@@ -85,7 +85,7 @@ test("builds deterministic, bounded and reviewable pilot evidence", () => {
   const first = prepareRunePilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
   const second = prepareRunePilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
   assert.deepEqual(first, second);
-  assert.equal(first.fileName, "rune-pilot-evidence-2026-08-14.json");
+  assert.equal(first.fileName, "orbit-pilot-evidence-2026-08-14.json");
   assert.equal(first.mimeType, "application/json");
   assert.equal(first.package.runs[0].id, "run-001");
   assert.equal(first.package.runs[0].planner, "configured-model");

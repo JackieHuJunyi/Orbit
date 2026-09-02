@@ -1,6 +1,6 @@
 # Third-party notices
 
-Rune's welcome handwriting uses only redistributable code and font-derived data. The Apple-owned glyph JSON and font files published in `JaceThings/SF-Hello` are **not included** in this repository. Product and project names are used only to identify references; Apple does not sponsor or endorse Rune.
+Orbit's welcome handwriting uses only redistributable code and font-derived data. The Apple-owned glyph JSON and font files published in `JaceThings/SF-Hello` are **not included** in this repository. Product and project names are used only to identify references; Apple does not sponsor or endorse Orbit.
 
 ## MIT-licensed software and geometry
 

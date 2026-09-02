@@ -103,18 +103,18 @@ function zipPackage(parts: Record<string, string | Uint8Array>) {
     mtime: new Date(Date.UTC(1980, 0, 1)),
   });
   if (bytes.length > MAX_OFFICE_EXPORT_BYTES)
-    throw new Error("The generated Office package exceeds Rune's 12 MB export limit.");
+    throw new Error("The generated Office package exceeds Orbit's 12 MB export limit.");
   return bytes;
 }
 
 function coreProperties(title: string) {
   return `${XML_DECLARATION}
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlText(title)}</dc:title><dc:creator>Rune</dc:creator><cp:lastModifiedBy>Rune</cp:lastModifiedBy><cp:revision>1</cp:revision></cp:coreProperties>`;
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlText(title)}</dc:title><dc:creator>Orbit</dc:creator><cp:lastModifiedBy>Orbit</cp:lastModifiedBy><cp:revision>1</cp:revision></cp:coreProperties>`;
 }
 
 function appProperties(kind: string, count = 1) {
   return `${XML_DECLARATION}
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Rune</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company>Rune</Company><AppVersion>1.0</AppVersion><${kind}>${count}</${kind}></Properties>`;
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Orbit</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><Company>Orbit</Company><AppVersion>1.0</AppVersion><${kind}>${count}</${kind}></Properties>`;
 }
 
 function rootRelationships(target: string) {
@@ -129,7 +129,7 @@ function unescapeMarkdown(value: string) {
 function sanitizeInlineSource(source: string, warnings: Set<string>) {
   let result = source.replace(CHART_TOKEN, (_token, id: string) => {
     warnings.add(
-      "Inline Rune chart references use an omission marker in Office export; put a chart on its own line to export a current-data snapshot.",
+      "Inline Orbit chart references use an omission marker in Office export; put a chart on its own line to export a current-data snapshot.",
     );
     return `[Chart omitted: ${id}]`;
   });
@@ -362,9 +362,9 @@ function docxImage(reference: { id: string; alt: string }, context: DocxContext)
     context.usedImages.set(reference.id, used);
     context.relationships.push({ id: relationshipId, target: `media/${fileName}`, kind: "image" });
   }
-  const description = reference.alt || asset.name || "Rune image";
+  const description = reference.alt || asset.name || "Orbit image";
   const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
-  if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${asset.id}`);
+  if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${asset.id}`);
   const maxWidth = 5_486_400;
   const maxHeight = 7_086_600;
   const naturalWidth = dimensions.width * 9_525;
@@ -375,7 +375,7 @@ function docxImage(reference: { id: string; alt: string }, context: DocxContext)
   context.drawingId += 1;
   const drawingId = context.drawingId;
   context.warnings.add(
-    "Rune local images are embedded as portable, static DOCX media; the content-hash source reference remains only in canonical Markdown.",
+    "Orbit local images are embedded as portable, static DOCX media; the content-hash source reference remains only in canonical Markdown.",
   );
   return `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="160"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${xmlAttribute(description)}" descr="${xmlAttribute(description)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${xmlAttribute(used.fileName)}" descr="${xmlAttribute(description)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${used.relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
@@ -436,7 +436,7 @@ function docxChart(model: ChartModel, context: DocxContext) {
     })
     .join("");
   context.warnings.add(
-    `Live Rune charts are exported as static current-data snapshots from ${model.sourceArtifactName}; Office files do not retain the live data binding.`,
+    `Live Orbit charts are exported as static current-data snapshots from ${model.sourceArtifactName}; Office files do not retain the live data binding.`,
   );
   context.warnings.add(
     sequenceMark
@@ -497,9 +497,9 @@ function exportDocx(
       : [],
   );
   const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
-  if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before DOCX export.");
+  if (inlineImage) throw new Error("Place each Orbit local image on its own Markdown line before DOCX export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Document: ${unexpectedImage.id}`);
   if (blocks.length > MAX_DOCX_EXPORT_BLOCKS) throw new Error("DOCX export is limited to 10,000 semantic blocks.");
   const body =
     blocks
@@ -612,7 +612,7 @@ function exportXlsx(artifact: WorkspaceArtifact): OfficeExportResult {
     title
       .replace(/[:\\/?*\[\]]/g, "-")
       .replace(/^'+|'+$/g, "")
-      .slice(0, 31) || "Rune data";
+      .slice(0, 31) || "Orbit data";
   const allRows: DataCell[][] = [
     parsed.columns,
     ...parsed.rows.map((row) => parsed.columns.map((column) => row[column] ?? null)),
@@ -975,7 +975,7 @@ function pptTable(id: number, rows: string[][], y: number) {
 
 function fitPptImage(asset: RuneExportImageAsset, box: { x: number; y: number; cx: number; cy: number }) {
   const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
-  if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${asset.id}`);
+  if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${asset.id}`);
   const scale = Math.min(box.cx / dimensions.width, box.cy / dimensions.height);
   const cx = Math.max(1, Math.round(dimensions.width * scale));
   const cy = Math.max(1, Math.round(dimensions.height * scale));
@@ -989,7 +989,7 @@ function pptImage(
   box: { x: number; y: number; cx: number; cy: number },
 ) {
   const geometry = fitPptImage(image.asset, box);
-  const description = image.reference.alt || image.asset.name || "Rune image";
+  const description = image.reference.alt || image.asset.name || "Orbit image";
   return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${xmlAttribute(description)}" descr="${xmlAttribute(description)}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${geometry.x}" y="${geometry.y}"/><a:ext cx="${geometry.cx}" cy="${geometry.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:ln><a:noFill/></a:ln></p:spPr></p:pic>`;
 }
 
@@ -1070,15 +1070,15 @@ function pptSlideXml(model: PptSlideModel, imageRelationshipId?: string) {
 function pptTheme() {
   const line = (width: number) =>
     `<a:ln w="${width}" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>`;
-  return `${XML_DECLARATION}<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Rune"><a:themeElements><a:clrScheme name="Rune"><a:dk1><a:srgbClr val="17211B"/></a:dk1><a:lt1><a:srgbClr val="FBFAF6"/></a:lt1><a:dk2><a:srgbClr val="233128"/></a:dk2><a:lt2><a:srgbClr val="E9E7DF"/></a:lt2><a:accent1><a:srgbClr val="FF5C35"/></a:accent1><a:accent2><a:srgbClr val="2A8C69"/></a:accent2><a:accent3><a:srgbClr val="3676D1"/></a:accent3><a:accent4><a:srgbClr val="8267CE"/></a:accent4><a:accent5><a:srgbClr val="C77B2C"/></a:accent5><a:accent6><a:srgbClr val="6E776F"/></a:accent6><a:hlink><a:srgbClr val="3676D1"/></a:hlink><a:folHlink><a:srgbClr val="8267CE"/></a:folHlink></a:clrScheme><a:fontScheme name="Rune"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface="PingFang SC"/><a:cs typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/><a:ea typeface="PingFang SC"/><a:cs typeface="Arial"/></a:minorFont></a:fontScheme><a:fmtScheme name="Rune"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:solidFill><a:schemeClr val="accent2"/></a:solidFill></a:fillStyleLst><a:lnStyleLst>${line(6350)}${line(12700)}${line(19050)}</a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill><a:solidFill><a:schemeClr val="lt2"/></a:solidFill><a:solidFill><a:schemeClr val="dk1"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`;
+  return `${XML_DECLARATION}<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Orbit"><a:themeElements><a:clrScheme name="Orbit"><a:dk1><a:srgbClr val="17211B"/></a:dk1><a:lt1><a:srgbClr val="FBFAF6"/></a:lt1><a:dk2><a:srgbClr val="233128"/></a:dk2><a:lt2><a:srgbClr val="E9E7DF"/></a:lt2><a:accent1><a:srgbClr val="FF5C35"/></a:accent1><a:accent2><a:srgbClr val="2A8C69"/></a:accent2><a:accent3><a:srgbClr val="3676D1"/></a:accent3><a:accent4><a:srgbClr val="8267CE"/></a:accent4><a:accent5><a:srgbClr val="C77B2C"/></a:accent5><a:accent6><a:srgbClr val="6E776F"/></a:accent6><a:hlink><a:srgbClr val="3676D1"/></a:hlink><a:folHlink><a:srgbClr val="8267CE"/></a:folHlink></a:clrScheme><a:fontScheme name="Orbit"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface="PingFang SC"/><a:cs typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/><a:ea typeface="PingFang SC"/><a:cs typeface="Arial"/></a:minorFont></a:fontScheme><a:fmtScheme name="Orbit"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:solidFill><a:schemeClr val="accent2"/></a:solidFill></a:fillStyleLst><a:lnStyleLst>${line(6350)}${line(12700)}${line(19050)}</a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill><a:solidFill><a:schemeClr val="lt2"/></a:solidFill><a:solidFill><a:schemeClr val="dk1"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`;
 }
 
 function pptSlideMaster() {
-  return `${XML_DECLARATION}<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="Rune"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" bg1="lt1" bg2="lt2" folHlink="folHlink" hlink="hlink" tx1="dk1" tx2="dk2"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`;
+  return `${XML_DECLARATION}<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="Orbit"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" bg1="lt1" bg2="lt2" folHlink="folHlink" hlink="hlink" tx1="dk1" tx2="dk2"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`;
 }
 
 function pptSlideLayout() {
-  return `${XML_DECLARATION}<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Rune Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+  return `${XML_DECLARATION}<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${OFFICE_RELATIONSHIPS}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Orbit Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 }
 
 function exportPptx(
@@ -1095,7 +1095,7 @@ function exportPptx(
   const missingImage = referencedImageIds.find((id) => !images.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Deck: ${unexpectedImage.id}`);
   const models = parsed.deck.slides.map((slide) => deckSlideModel(slide, warnings, workspace, querySnapshots, images));
   if (models.some((model) => model.tables.length > 2))
     warnings.add("Only the first two tables on each slide are included in semantic PPTX export.");
@@ -1107,12 +1107,12 @@ function exportPptx(
     );
   if (models.some((model) => model.charts.length)) {
     warnings.add(
-      "Live Rune charts are exported as editable native PowerPoint text and vector shapes using the current workspace data; the live data binding is not retained.",
+      "Live Orbit charts are exported as editable native PowerPoint text and vector shapes using the current workspace data; the live data binding is not retained.",
     );
   }
   if (models.some((model) => model.image))
     warnings.add(
-      "Rune local images are embedded as portable, static PowerPoint media; content-hash references remain only in canonical Deck Markdown.",
+      "Orbit local images are embedded as portable, static PowerPoint media; content-hash references remain only in canonical Deck Markdown.",
     );
   warnings.add(
     "PPTX export preserves slide order, text, bullets, tables, local images, and current-data chart snapshots; animation, speaker notes, and exact master styling are not generated.",

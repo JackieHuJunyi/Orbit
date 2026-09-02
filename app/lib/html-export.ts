@@ -17,7 +17,7 @@ import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_STANDALONE_HTML_BYTES = 12 * 1024 * 1024;
 
-const PORTABLE_EXPORT_HEAD = `<meta name="generator" content="Rune" />
+const PORTABLE_EXPORT_HEAD = `<meta name="generator" content="Orbit" />
 <meta name="rune-export" content="standalone-deck-v1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:" />
 <style id="rune-portable-export">
@@ -122,7 +122,7 @@ export function exportDeckHtml(
   const missingImage = referencedImageIds.find((id) => !images.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Deck: ${unexpectedImage.id}`);
   const approvedDataUrls = new Set<string>();
   const resolveLocalAssetUrl = (reference: string) => {
     const id = parseRuneAssetReference(reference);
@@ -151,17 +151,17 @@ export function exportDeckHtml(
   if (/\{\{\s*(?:metric|chart)\(/i.test(rendered))
     throw new Error("The standalone HTML still contains an unresolved workspace binding.");
   if (hasUnsafePortableBoundary(rendered, approvedDataUrls)) {
-    throw new Error("Rune refused to export HTML containing an executable or external resource boundary.");
+    throw new Error("Orbit refused to export HTML containing an executable or external resource boundary.");
   }
   const bytes = new TextEncoder().encode(rendered);
   if (bytes.length > MAX_STANDALONE_HTML_BYTES)
-    throw new Error("The standalone HTML exceeds Rune's 12 MB export limit.");
+    throw new Error("The standalone HTML exceeds Orbit's 12 MB export limit.");
   return {
     bytes,
     fileName: `${safeExportBaseName(artifact.name)}.html`,
     mimeType: "text/html;charset=utf-8",
     warnings: [
-      `Standalone HTML preserves the current ${deckArtifact ? "Rune theme" : "semantic presentation source"}, local images, compiled metrics, and current-data charts in one scriptless file.`,
+      `Standalone HTML preserves the current ${deckArtifact ? "Orbit theme" : "semantic presentation source"}, local images, compiled metrics, and current-data charts in one scriptless file.`,
       "Live workspace bindings, Agent controls, checkpoints, and editing UI are not included in the exported HTML.",
       "Print styles create one 16:9 page per slide when a browser prints or saves the file as PDF.",
     ],

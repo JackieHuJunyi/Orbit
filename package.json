@@ -1,8 +1,8 @@
 {
-  "name": "rune",
-  "version": "1.54.0",
+  "name": "orbit-office",
+  "version": "1.55.0",
   "private": true,
-  "description": "An AI-native workspace for documents, data, and presentations.",
+  "description": "Orbit · 引力 — a source-native workspace for people and AI to create documents, data, and presentations together.",
   "engines": {
     "node": ">=22.13.0"
   },

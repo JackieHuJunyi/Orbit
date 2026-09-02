@@ -35,7 +35,7 @@ test("parses the bounded Deck Markdown grammar", () => {
   assert.equal(detectArtifact("briefing.deck.md", deckArtifact().source)?.language, "Deck Markdown");
 });
 
-test("accepts every registered Rune interface language as explicit Deck document metadata", () => {
+test("accepts every registered Orbit interface language as explicit Deck document metadata", () => {
   for (const locale of ["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]) {
     const source = deckArtifact().source.replace("lang: en", `lang: ${locale}`);
     const parsed = parseDeckSource(source);
@@ -161,7 +161,7 @@ Readable context stays editable.
     parseDeckSource(
       source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, "![Remote](https://example.com/a.png)"),
     ).errors.join(" "),
-    /standalone Rune local-image reference/u,
+    /standalone Orbit local-image reference/u,
   );
   assert.match(
     parseDeckSource(source.replace("<!-- layout: split -->", "<!-- layout: metrics -->")).errors.join(" "),

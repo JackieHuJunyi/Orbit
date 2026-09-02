@@ -889,7 +889,7 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
     title: "Board Briefing",
     handle: "briefing",
     summary: "Create the briefing",
-    detail: "The new deck starts from Rune's deterministic template.",
+    detail: "The new deck starts from Orbit's deterministic template.",
     edits: [{ type: "replace_deck_slide", title: "Board Briefing", slide: "# Board Briefing\n\nReview." }],
   };
   assert.equal(
@@ -1004,7 +1004,7 @@ test("requires one to four bounded patch-or-create workspace actions", () => {
   assert.equal(
     AgentWorkspaceOperationPlanSchema.safeParse({
       summary: "Reject model-owned identity",
-      detail: "Rune must own generated metadata.",
+      detail: "Orbit must own generated metadata.",
       actions: [{ ...creation, id: "model-id", name: "model.deck.md", source: "# bypass" }],
     }).success,
     false,

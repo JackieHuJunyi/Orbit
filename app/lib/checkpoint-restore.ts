@@ -119,7 +119,7 @@ export async function commitCheckpointRestore({
   }
   const prepared = prepareCheckpointRestore(current.artifacts, checkpoint);
   if (!prepared.plan || prepared.errors.length) {
-    throw new Error(prepared.errors[0] ?? "Rune could not validate this checkpoint restore.");
+    throw new Error(prepared.errors[0] ?? "Orbit could not validate this checkpoint restore.");
   }
 
   try {
@@ -131,7 +131,7 @@ export async function commitCheckpointRestore({
 
   const verified = readWorkspace();
   if (!workspaceMatchesSourceRevision(verified.artifacts, expectedPlan.baseRevision)) {
-    throw new Error("The workspace changed while Rune was verifying this restore. Review the current version again.");
+    throw new Error("The workspace changed while Orbit was verifying this restore. Review the current version again.");
   }
   const verifiedCheckpoint = (verified.checkpoints[expectedPlan.artifactId] ?? []).find(
     (candidate) => candidate.id === expectedPlan.checkpointId && candidate.source === expectedPlan.nextSource,
@@ -150,7 +150,7 @@ export async function commitCheckpointRestore({
   try {
     persist(prepared.plan.nextArtifacts, currentArtifact.id, nextCheckpoints);
   } catch {
-    throw new Error("Device persistence failed, so Rune kept every source unchanged.");
+    throw new Error("Device persistence failed, so Orbit kept every source unchanged.");
   }
 
   return Object.freeze({

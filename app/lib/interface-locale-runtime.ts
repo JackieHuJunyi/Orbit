@@ -25,7 +25,7 @@ export function isRuneLocaleCatalogLoaded(locale: string) {
 export async function loadRuneLocaleCatalog(locale: string) {
   if (isRuneLocaleCatalogLoaded(locale)) return;
   if (!(locale === "zh-TW" || Object.hasOwn(interfaceCatalogLoaders, locale))) {
-    throw new Error(`Rune cannot load unsupported interface locale “${locale}”.`);
+    throw new Error(`Orbit cannot load unsupported interface locale “${locale}”.`);
   }
   const deferredLocale = locale as DeferredRuneLocale;
   localeLoads[deferredLocale] ??=

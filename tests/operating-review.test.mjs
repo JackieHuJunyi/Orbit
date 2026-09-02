@@ -114,7 +114,7 @@ test("creates an English Document + Slides review chain with exact evidence bind
   assert.equal(created.document.source.split(exactChartBinding).length - 1, 1);
   assert.equal(created.slides.source.split(exactChartBinding).length - 1, 1);
   assert.match(created.document.source, /## Verifiable view/);
-  assert.match(created.document.source, /Rune has not invented a business conclusion without evidence/);
+  assert.match(created.document.source, /Orbit has not invented a business conclusion without evidence/);
   assert.equal(created.slides.language, "Semantic HTML");
   assert.equal(semanticHtmlPresentationMetadata(created.slides.source)?.lang, "en");
   assert.deepEqual(compileLegacyHtmlSlides(created.slides.source).errors, []);

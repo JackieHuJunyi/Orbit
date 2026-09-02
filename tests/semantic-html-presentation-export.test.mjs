@@ -52,7 +52,7 @@ test("converts bounded semantic HTML into immutable valid Deck handoff source", 
   assert.match(first.artifact.source, /\| 区域 \| 收入 \|\n\| --- \| --- \|\n\| APAC \| 42 \|/u);
   assert.doesNotMatch(first.artifact.source, /style|example\.com|<img/iu);
   assert.match(first.warnings.join(" "), /CSS, exact positioning, animation/iu);
-  assert.match(first.warnings.join(" "), /not backed by verified Rune local assets/iu);
+  assert.match(first.warnings.join(" "), /not backed by verified Orbit local assets/iu);
 
   const parsed = parseDeckSource(first.artifact.source);
   assert.deepEqual(parsed.errors, []);
@@ -97,7 +97,7 @@ test("falls back visibly for unsupported layouts and irregular tables", () => {
   assert.deepEqual(parseDeckSource(result.artifact.source).errors, []);
 });
 
-test("round-trips Rune semantic metadata, metrics, and bindings without exporting presentation chrome", () => {
+test("round-trips Orbit semantic metadata, metrics, and bindings without exporting presentation chrome", () => {
   const canonical = semanticHtmlPresentationFromDeckSource(`---
 version: 1
 title: Current board review

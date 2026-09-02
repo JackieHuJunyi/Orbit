@@ -1155,13 +1155,13 @@ Deck DSL → Design Compiler → HTML/PPTX/PDF
 
 ---
 
-# 二十一、Rune 的第一阶段实施决策
+# 二十一、Orbit 的第一阶段实施决策
 
 前面的分析定义了长期方向；下面把它收敛成现在就能执行、以后不必推倒重来的工程边界。
 
 ## 1. 第一阶段只证明一个核心循环
 
-Rune v0 不承诺替代 Word、Excel 或 PowerPoint，而是证明同一个工作台里可以完成：
+Orbit v0 不承诺替代 Word、Excel 或 PowerPoint，而是证明同一个工作台里可以完成：
 
 ```text
 自然语言意图
@@ -1187,7 +1187,7 @@ Slides 已从任意 `.html` 源迁移到 Deck Markdown：严格 frontmatter、`-
 
 ColaMD 最值得复用的不是 Electron 或 Milkdown 本身，而是三个产品原则：文件仍然是用户拥有的 source of truth；外部 Agent 改文件后界面立即更新；AI 的活动和修改需要被用户看见。
 
-Rune 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint、安全 restore 与 File System Access storage port；v1.12 又在同一 session handle 上增加只提示不写入的目录变化监控：runtime 有 `FileSystemObserver` 就递归观察，否则每三秒比较有界 metadata。浏览器与桌面仍使用显式 Pull/Push，变化事件不能自行读取或覆盖 canonical source，因此文件系统能力没有变成 renderer 的第二个 writer。
+Orbit 会保留这些原则，同时把范围从单个 Markdown 文件扩成 workspace。当前工作台已经加入 patch 预览、accept/reject、持久 checkpoint、安全 restore 与 File System Access storage port；v1.12 又在同一 session handle 上增加只提示不写入的目录变化监控：runtime 有 `FileSystemObserver` 就递归观察，否则每三秒比较有界 metadata。浏览器与桌面仍使用显式 Pull/Push，变化事件不能自行读取或覆盖 canonical source，因此文件系统能力没有变成 renderer 的第二个 writer。
 
 ## 3. 基础设施决策
 
@@ -1243,7 +1243,7 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 
 浏览器版本刻意采用显式同步。Pull 先读取最多 50 个文件，并执行单文件 2 MB、总计 8 MB、文件名安全、唯一 ID/name、adapter parse、metric/chart dependency 等完整验证；只有用户确认后，才为当前每个 artifact 建 pre-pull checkpoint，并用一次 localStorage 写入替换设备 workspace。Push 同样需要确认，只覆盖同名 artifact 文件，不删除无关文件，最后写 manifest。由于浏览器文件 API 没有跨文件 transaction，中断的 Push 会报告停在哪个文件，而不会伪装成原子成功。
 
-这个选择比首版直接引入云盘、账号或 Git server 更符合低成本原则，也比静默 auto-save 更尊重本地文件。目录 handle 只在当前 session 保留，刷新后需要重新授权；这既符合浏览器权限模型，也让产品先验证“用户是否真的希望外部 Agent 与 Rune 共享目录”。v1.12 已复用同一 handle 补上有界 watching 提示，但 Pull 仍需审核；桌面临时文件 + atomic rename 和 Git commit 仍是独立 storage-port 能力，renderer、Agent patch 与 dependency compiler 无需为此改变。
+这个选择比首版直接引入云盘、账号或 Git server 更符合低成本原则，也比静默 auto-save 更尊重本地文件。目录 handle 只在当前 session 保留，刷新后需要重新授权；这既符合浏览器权限模型，也让产品先验证“用户是否真的希望外部 Agent 与 Orbit 共享目录”。v1.12 已复用同一 handle 补上有界 watching 提示，但 Pull 仍需审核；桌面临时文件 + atomic rename 和 Git commit 仍是独立 storage-port 能力，renderer、Agent patch 与 dependency compiler 无需为此改变。
 
 ## 9. Deck Markdown 与安全演示编译器
 
@@ -1255,13 +1255,13 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 
 ## 10. Office Open XML semantic import
 
-2026-08-11 的下一轮实现第一次接通了旧 Office 世界与 Rune canonical source。现代 DOCX、XLSX、PPTX 本质上都是由关系和 XML parts 组成的 ZIP package；WordprocessingML 把正文组织成 paragraph/run/text 和 table，SpreadsheetML 用 workbook/sheet/shared strings 表达工作簿，PresentationML 则把每一页拆成独立 slide part。([ECMA-376][14])([WordprocessingML 结构][15])([SpreadsheetML 结构][16])([PresentationML 结构][17]) 因此首版不需要上传文件或运行 LibreOffice server，只在用户点击 Import 后 lazy-load ZIP/XML adapter，就能在浏览器里完成 semantic extraction。
+2026-08-11 的下一轮实现第一次接通了旧 Office 世界与 Orbit canonical source。现代 DOCX、XLSX、PPTX 本质上都是由关系和 XML parts 组成的 ZIP package；WordprocessingML 把正文组织成 paragraph/run/text 和 table，SpreadsheetML 用 workbook/sheet/shared strings 表达工作簿，PresentationML 则把每一页拆成独立 slide part。([ECMA-376][14])([WordprocessingML 结构][15])([SpreadsheetML 结构][16])([PresentationML 结构][17]) 因此首版不需要上传文件或运行 LibreOffice server，只在用户点击 Import 后 lazy-load ZIP/XML adapter，就能在浏览器里完成 semantic extraction。
 
 具体合同是：DOCX 的 paragraph、heading style、bold/italic/strike run、外链、编号和 table 转成 Markdown；XLSX 的每个可见 worksheet 分别转成 CSV，并处理 shared/inline string、boolean、number、常见日期格式与 formula cached value，以 `= + - @` 开头的文本会加 apostrophe 并提示，避免下载 CSV 后触发公式解释；PPTX 按 presentation relationship 顺序提取 title/body placeholder、bullet 和 table，生成经过验证的 Deck Markdown，再走现有 compiler 变成 HTML。导入多个 worksheet 时是一笔 workspace transaction：先解决 ID/name 冲突，再验证所有 adapter 与依赖图，最后只写一次 localStorage；任一 sheet、deck 或存储步骤失败，当前 workspace 保持不变。
 
 这里必须明确“semantic fidelity”的边界。DOCX 图片/评论、XLSX hidden sheet/实时公式、PPTX 图片/图表/动画/master styling 都不会被伪装成已成功转换；界面会给出 omission warning。旧二进制 `.doc/.xls/.ppt`、宏格式和像素级 round trip 也不在首版合同里。安全上，压缩文件限制 12 MB，并限制 entry 数、单 XML part、总展开 XML、输出字符、Word block、worksheet/row/column/cell 与 slide 数；path traversal、DTD/entity 和无效 adapter 输出会在写入前拒绝。
 
-这个实现新增的生产成本仍为零：原文件和解析结果都留在浏览器，转换依赖单独成为约 100 KB 的动态 chunk，普通用户不会为兼容层支付首屏下载成本。下一步如果真实 12 MB 文件产生 UI 卡顿，可以把相同的 package port 搬到 Web Worker；如果用户需要更高 fidelity，再按格式引入专门 converter，而不改变 `Office input → canonical source → Rune renderer` 的产品模型。
+这个实现新增的生产成本仍为零：原文件和解析结果都留在浏览器，转换依赖单独成为约 100 KB 的动态 chunk，普通用户不会为兼容层支付首屏下载成本。下一步如果真实 12 MB 文件产生 UI 卡顿，可以把相同的 package port 搬到 Web Worker；如果用户需要更高 fidelity，再按格式引入专门 converter，而不改变 `Office input → canonical source → Orbit renderer` 的产品模型。
 
 [14]: https://ecma-international.org/publications-and-standards/standards/ecma-376/ "ECMA-376 Office Open XML"
 [15]: https://learn.microsoft.com/en-us/office/open-xml/word/structure-of-a-wordprocessingml-document "Structure of a WordprocessingML document"
@@ -1270,7 +1270,7 @@ Checkpoint 也从内存撤销栈升级成设备持久日志：Agent patch 应用
 
 ## 11. Import review as a trust boundary
 
-v0.6 证明了 Office 文件可以低成本转成 Rune canonical source，但“adapter 验证通过后立即写入”仍然不符合产品最重要的承诺：所有有损或 Agent-like transformation 都应该先可见、再应用。v0.7 因此把 import 拆成两个明确阶段。第一阶段只在内存中建立 pending transaction，保存原文件名、导入开始时的 workspace 引用、冲突解决后的 artifact batch、完整 fidelity warning 和验证后的 next workspace；第二阶段必须由用户点击确认才执行唯一一次设备写入。
+v0.6 证明了 Office 文件可以低成本转成 Orbit canonical source，但“adapter 验证通过后立即写入”仍然不符合产品最重要的承诺：所有有损或 Agent-like transformation 都应该先可见、再应用。v0.7 因此把 import 拆成两个明确阶段。第一阶段只在内存中建立 pending transaction，保存原文件名、导入开始时的 workspace 引用、冲突解决后的 artifact batch、完整 fidelity warning 和验证后的 next workspace；第二阶段必须由用户点击确认才执行唯一一次设备写入。
 
 Review surface 会列出每个生成文件的最终名称、canonical language、行数和字符数，并显示最多 12 行/1,600 字符的 source preview。这个上限只约束 DOM 渲染，不截断真正待导入的 source；即使 XLSX 生成十个 worksheet，也能快速判断 sheet 是否正确拆分、CSV header 是否合理、PPTX 是否形成预期的 Deck Markdown。所有 omission warning 都直接展开，而不是只把第一条塞进短暂状态栏。弹层使用 `role="dialog"`、modal semantics、初始 focus、Tab 循环和 Escape 取消，让 review gate 不依赖鼠标。
 
@@ -1280,13 +1280,13 @@ Review surface 会列出每个生成文件的最终名称、canonical language�
 
 ## 12. Deterministic semantic Office export
 
-v0.8 把 Rune 的兼容边界从“旧 Office 文件可以进来”推进成“canonical source 也可以交付给仍在 Office 生态里的同事”。这里没有引入 Pandoc、LibreOffice server、SheetJS 或 PPTX SaaS；现有 `fflate` 足以把确定性的 XML parts 组装成标准 OOXML ZIP。Microsoft 的一手文档确认了最小图：DOCX 以 main document part 和 `document/body/paragraph/run/text` 为核心；XLSX 至少需要 workbook 和一个 worksheet；PPTX 则必须具备 presentation、slide、slide layout、slide master 与 theme。([创建 Word 文档][18])([创建 Spreadsheet][19])([创建 Presentation][20]) 这使三种导出可以继续遵循 `canonical source → isolated adapter → disposable binary`，而不是让二进制格式重新成为 source of truth。
+v0.8 把 Orbit 的兼容边界从“旧 Office 文件可以进来”推进成“canonical source 也可以交付给仍在 Office 生态里的同事”。这里没有引入 Pandoc、LibreOffice server、SheetJS 或 PPTX SaaS；现有 `fflate` 足以把确定性的 XML parts 组装成标准 OOXML ZIP。Microsoft 的一手文档确认了最小图：DOCX 以 main document part 和 `document/body/paragraph/run/text` 为核心；XLSX 至少需要 workbook 和一个 worksheet；PPTX 则必须具备 presentation、slide、slide layout、slide master 与 theme。([创建 Word 文档][18])([创建 Spreadsheet][19])([创建 Presentation][20]) 这使三种导出可以继续遵循 `canonical source → isolated adapter → disposable binary`，而不是让二进制格式重新成为 source of truth。
 
-具体实现是：Markdown 的 heading、paragraph、quote、bold/italic/strike、code、HTTP/mailto link、ordered/bullet list 和 table 生成 DOCX 的 styles、numbering、relationship 与 main document parts；CSV/JSON 先经过现有 canonical parser，再把 column 和 typed value 写成带 frozen header、autofilter 与基础 Rune style 的单 worksheet XLSX；Deck Markdown 先验证 AST 并解析 slide order、eyebrow、title、body、bullet 和 table，再生成 16:9 slide parts，以及 PowerPoint 要求的 layout/master/theme relationship graph。文档和演示里的 workspace metric 在导出前编译成当前值，所以接收者不会看到 `{{ metric(...) }}` template token；live chart 因没有稳定的可编辑 OOXML 对应物，会被明确列为 fidelity note 而不是偷偷栅格化或伪造成数据图表。
+具体实现是：Markdown 的 heading、paragraph、quote、bold/italic/strike、code、HTTP/mailto link、ordered/bullet list 和 table 生成 DOCX 的 styles、numbering、relationship 与 main document parts；CSV/JSON 先经过现有 canonical parser，再把 column 和 typed value 写成带 frozen header、autofilter 与基础 Orbit style 的单 worksheet XLSX；Deck Markdown 先验证 AST 并解析 slide order、eyebrow、title、body、bullet 和 table，再生成 16:9 slide parts，以及 PowerPoint 要求的 layout/master/theme relationship graph。文档和演示里的 workspace metric 在导出前编译成当前值，所以接收者不会看到 `{{ metric(...) }}` template token；live chart 因没有稳定的可编辑 OOXML 对应物，会被明确列为 fidelity note 而不是偷偷栅格化或伪造成数据图表。
 
 安全与可复现性也是 export contract 的一部分。XML 1.0 非法字符会被替换，文本统一 entity escape，Word hyperlink 只允许 HTTP、HTTPS 和 mailto；XLSX 所有字符串都写成 `inlineStr`，即使以 `= + - @` 开头也不会生成 formula node。ZIP entry 名由实现固定、输出文件名经过跨平台清洗、ZIP timestamp 固定到同一 epoch，因此相同 source 会得到逐字节相同的 package。DOCX 限 200,000 字符/10,000 blocks，XLSX 限 2,000,000 source 字符/10,000 rows/256 columns/50,000 cells，PPTX 继承 120,000 字符/40 slides，最终三种 ZIP 都限制 12 MB。
 
-下载也沿用 v0.7 的信任模型。浏览器先 lazy-load exporter，在内存里生成 bytes、MIME、最终文件名和完整 fidelity notes，然后展示可键盘操作的 review；用户确认才创建一次 object URL，取消不触发下载，也不改 workspace、checkpoint 或 localStorage。若生成期间 workspace 引用发生变化，旧 package 不能确认。Importer 和 exporter 互相独立又能 round-trip：测试会把每个生成包重新送入 Rune importer，检查语义、XML well-formed 与 deterministic bytes；本轮还使用这台机器已安装的 Microsoft Office/Quick Look handler 成功渲染了 DOCX、XLSX 和 PPTX，避免只用自己的 parser 自证正确。
+下载也沿用 v0.7 的信任模型。浏览器先 lazy-load exporter，在内存里生成 bytes、MIME、最终文件名和完整 fidelity notes，然后展示可键盘操作的 review；用户确认才创建一次 object URL，取消不触发下载，也不改 workspace、checkpoint 或 localStorage。若生成期间 workspace 引用发生变化，旧 package 不能确认。Importer 和 exporter 互相独立又能 round-trip：测试会把每个生成包重新送入 Orbit importer，检查语义、XML well-formed 与 deterministic bytes；本轮还使用这台机器已安装的 Microsoft Office/Quick Look handler 成功渲染了 DOCX、XLSX 和 PPTX，避免只用自己的 parser 自证正确。
 
 首版明确不是像素级 round-trip。Word comments/media/page design、Excel formulas/charts/source formatting、PowerPoint animation/notes/live chart/master 精确复刻都仍是 fidelity note。下一步应根据真实分享场景决定先补 PDF、图表静态图片嵌入，还是把大文件 generation 搬进 Worker；三者都不会改变 canonical source 与 review-before-download 合同。
 
@@ -1296,24 +1296,24 @@ v0.8 把 Rune 的兼容边界从“旧 Office 文件可以进来”推进成“c
 
 ## 13. Shared chart snapshots across the Office boundary
 
-v0.9 解决 v0.8 最明显的交付断点：报告与演示虽然都能引用同一份 `.chart.json`，导出 Office 时却只能显示 omission note。直接生成 Office 原生 chart part 看似更“正统”，实际上会额外复制 chart cache、embedded workbook、style/color parts 和 relationship graph，并制造一个看似仍与 Rune 数据相连、实则已经脱离 canonical CSV/JSON 的第二份模型。首版更诚实的合同是 **current-data snapshot**：导出开始时用现有严格 Chart schema 解析当前 workspace data，保留 title、description、排序后的 label、formatted value、ratio 和 color，但明确告诉接收者这个 Office 副本不再 live。
+v0.9 解决 v0.8 最明显的交付断点：报告与演示虽然都能引用同一份 `.chart.json`，导出 Office 时却只能显示 omission note。直接生成 Office 原生 chart part 看似更“正统”，实际上会额外复制 chart cache、embedded workbook、style/color parts 和 relationship graph，并制造一个看似仍与 Orbit 数据相连、实则已经脱离 canonical CSV/JSON 的第二份模型。首版更诚实的合同是 **current-data snapshot**：导出开始时用现有严格 Chart schema 解析当前 workspace data，保留 title、description、排序后的 label、formatted value、ratio 和 color，但明确告诉接收者这个 Office 副本不再 live。
 
-DOCX 采用语义优先的三列表：category、relative bar、formatted value。bar 由带 Rune accent 的可选中文字和浅色 cell shading 构成，因此无需字体栅格化、图片 relationship 或 Canvas，也能在 Word 中直接复制标签和值；重新导入 Rune 时仍会成为可读 Markdown table。PPTX 则采用视觉优先的原生 shape tree：chart title/description、每行 label/value 是 text shape，track 与 bar 是带 `xfrm`、preset geometry 和 solid fill 的 rectangle shape。Microsoft 的 PresentationML 结构文档明确允许 slide shape tree 包含 shape、picture 和 table，Shape Properties 也把 transform、preset geometry、solid fill 与 outline 定义为标准子元素。([PresentationML structure][21])([Shape Properties][22]) 这意味着图表可以缩放和编辑，而不需要 PNG、SVG fallback 或第三方渲染服务。
+DOCX 采用语义优先的三列表：category、relative bar、formatted value。bar 由带 Orbit accent 的可选中文字和浅色 cell shading 构成，因此无需字体栅格化、图片 relationship 或 Canvas，也能在 Word 中直接复制标签和值；重新导入 Orbit 时仍会成为可读 Markdown table。PPTX 则采用视觉优先的原生 shape tree：chart title/description、每行 label/value 是 text shape，track 与 bar 是带 `xfrm`、preset geometry 和 solid fill 的 rectangle shape。Microsoft 的 PresentationML 结构文档明确允许 slide shape tree 包含 shape、picture 和 table，Shape Properties 也把 transform、preset geometry、solid fill 与 outline 定义为标准子元素。([PresentationML structure][21])([Shape Properties][22]) 这意味着图表可以缩放和编辑，而不需要 PNG、SVG fallback 或第三方渲染服务。
 
 布局合同同样受限而明确。单独一行的 chart directive 才会生成 snapshot；inline directive 保留 omission marker，提醒作者把图表独占一行。DOCX 可以顺序容纳多个 chart table；PPTX 每页只放第一个 chart，并在 chart 与 table 同页时优先 chart，全部通过 fidelity notes 暴露。split layout 把正文放左半、图表放右半，其他 layout 把图表放在正文下方。最多 20 个 marks 沿用 Chart schema；所有 shape 的 `x/y/cx/cy` 都在测试中验证不越过 16:9 canvas。
 
-这个增强没有增加依赖、服务器、上传或持久化状态。相同 source 与 workspace context 仍生成逐字节相同的 OOXML；workspace 在 review 期间变化仍会拒绝旧 package。自动测试检查 DOCX/PPTX 中的 title、label、formatted value、bar geometry、XML well-formed、Rune import round-trip 和 slide bounds；独立 QA 又用本机 Microsoft Office Quick Look 实际渲染了 Word bar table 与 chart-first PowerPoint，确认 track、bar、label 和 value 都可见且没有越界。下一步如果真实用户要求在 Office 中继续编辑数据，应设计显式的 embedded-workbook export mode，而不是悄悄把静态快照伪装成 live chart。
+这个增强没有增加依赖、服务器、上传或持久化状态。相同 source 与 workspace context 仍生成逐字节相同的 OOXML；workspace 在 review 期间变化仍会拒绝旧 package。自动测试检查 DOCX/PPTX 中的 title、label、formatted value、bar geometry、XML well-formed、Orbit import round-trip 和 slide bounds；独立 QA 又用本机 Microsoft Office Quick Look 实际渲染了 Word bar table 与 chart-first PowerPoint，确认 track、bar、label 和 value 都可见且没有越界。下一步如果真实用户要求在 Office 中继续编辑数据，应设计显式的 embedded-workbook export mode，而不是悄悄把静态快照伪装成 live chart。
 
 [21]: https://learn.microsoft.com/en-us/office/open-xml/presentation/structure-of-a-presentationml-document "Structure of a PresentationML document"
 [22]: https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.presentation.shapeproperties?view=openxml-3.0.1 "ShapeProperties class"
 
 ## 14. Portable scriptless HTML handoff
 
-v0.10 直接补上目标链条里 `PPTX → Deck Markdown → standalone HTML` 的最后一段。Rune 早已把 Deck Markdown 编译成 iframe 内的 HTML 预览，但预览仍依附 workbench：离开应用就没有完整文档，也不适合发给没有 Rune 的人。为这个问题先建分享服务、账号、数据库和静态资源托管，会把一个“交付文件”的需求错误地升级成协作基础设施。更小且更可逆的答案是把当前已验证的 Deck、metric 和 Chart model 冻结成一个普通浏览器就能打开的单文件 `.html`。
+v0.10 直接补上目标链条里 `PPTX → Deck Markdown → standalone HTML` 的最后一段。Orbit 早已把 Deck Markdown 编译成 iframe 内的 HTML 预览，但预览仍依附 workbench：离开应用就没有完整文档，也不适合发给没有 Orbit 的人。为这个问题先建分享服务、账号、数据库和静态资源托管，会把一个“交付文件”的需求错误地升级成协作基础设施。更小且更可逆的答案是把当前已验证的 Deck、metric 和 Chart model 冻结成一个普通浏览器就能打开的单文件 `.html`。
 
-导出流水线保持单向且可解释：从确认时的 canonical workspace 编译所有 `metric(...)`，验证 Deck AST，再用相同的严格 Chart JSON schema 从当前 CSV/JSON 构建 model，最后复用预览 compiler 和静态 chart renderer。最终文件内联 Rune theme、布局、页码与图表样式，并加入 print CSS，让每张 16:9 slide 在打印或“另存为 PDF”时独占一页。模板和图表引用只在交付副本中变成当前值，原 `.deck.md`、数据文件和 Chart artifact 均不改写；因此 Git diff、Agent patch、checkpoint 与目录同步仍只面对可读 source，而接收者拿到的是明确标注为 frozen snapshot 的成品。
+导出流水线保持单向且可解释：从确认时的 canonical workspace 编译所有 `metric(...)`，验证 Deck AST，再用相同的严格 Chart JSON schema 从当前 CSV/JSON 构建 model，最后复用预览 compiler 和静态 chart renderer。最终文件内联 Orbit theme、布局、页码与图表样式，并加入 print CSS，让每张 16:9 slide 在打印或“另存为 PDF”时独占一页。模板和图表引用只在交付副本中变成当前值，原 `.deck.md`、数据文件和 Chart artifact 均不改写；因此 Git diff、Agent patch、checkpoint 与目录同步仍只面对可读 source，而接收者拿到的是明确标注为 frozen snapshot 的成品。
 
-“standalone”在这里是安全合同，不只是把 CSS 放进同一文件。输出不得含 script、iframe、object、embed、外链 stylesheet，也不得残留任何 `src` 或 `href` 外部资源属性；Deck 用户文本仍在 compiler 层统一 escape，最终边界再扫描完整文档，任一未解析 metric/chart token 或可执行/外部内容都会中止导出。文件在 UTF-8 编码后限制 2 MB，避免大量图表标签或未来 renderer 变化绕过 source 上限。相同 workspace context 产生逐字节相同的输出，测试覆盖恶意 metadata、缺失依赖、超限结果和 determinism，并由系统 Quick Look 的独立 HTML handler 实际渲染默认 deck 与 chart-first deck，避免只用 Rune 自己的 preview 自证。
+“standalone”在这里是安全合同，不只是把 CSS 放进同一文件。输出不得含 script、iframe、object、embed、外链 stylesheet，也不得残留任何 `src` 或 `href` 外部资源属性；Deck 用户文本仍在 compiler 层统一 escape，最终边界再扫描完整文档，任一未解析 metric/chart token 或可执行/外部内容都会中止导出。文件在 UTF-8 编码后限制 2 MB，避免大量图表标签或未来 renderer 变化绕过 source 上限。相同 workspace context 产生逐字节相同的输出，测试覆盖恶意 metadata、缺失依赖、超限结果和 determinism，并由系统 Quick Look 的独立 HTML handler 实际渲染默认 deck 与 chart-first deck，避免只用 Orbit 自己的 preview 自证。
 
 交互上，HTML 与 Office 共用一份 export result 和 review dialog，而不是再造一条隐蔽下载路径。prepare 阶段只 lazy-load 对应 adapter，在内存里保存 bytes、文件名、MIME、fidelity notes 和开始时的 workspace 对象；review 明确说明文件没有 live binding、Agent、checkpoint 或 editor controls。用户确认才建立一次 object URL，取消不写设备；若期间 editing、Pull、reset 等替换 workspace，旧结果会被拒绝并要求重新生成。这既把 v0.7/v0.8 建立的“先审查、后产生副作用”原则扩展到开放 Web 格式，也为后续 PDF adapter 留出清晰路径：近期可以零服务地使用浏览器 print-to-PDF，只有真实需求证明跨浏览器排版不够稳定时，才考虑专门 PDF renderer。
 
@@ -1339,21 +1339,21 @@ v0.12 因此在同一份严格 discriminated union 中加入三组语义操作�
 
 ## 17. Blank artifact creation as the beginning of a real workspace
 
-到 v0.12，Rune 已经可以编辑、导入、导出、同步和让 Agent 修改五类 artifact，但一个最基础的产品动作仍然缺失：用户不能直接从空白开始。文件栏里的 `+` 实际打开 Import，意味着创建一份新报告仍要先去 Finder 或其他编辑器写 `.md`；创建新表格或演示更依赖用户记住 CSV header 与 Deck frontmatter。这会让产品停留在“优秀的示例 workspace viewer”，而不是能够替代 Word、Excel、PowerPoint 起点的编辑器。继续增加 Agent operation 而不补这个入口，会把内部智能建立在不完整的人工工作流上。
+到 v0.12，Orbit 已经可以编辑、导入、导出、同步和让 Agent 修改五类 artifact，但一个最基础的产品动作仍然缺失：用户不能直接从空白开始。文件栏里的 `+` 实际打开 Import，意味着创建一份新报告仍要先去 Finder 或其他编辑器写 `.md`；创建新表格或演示更依赖用户记住 CSV header 与 Deck frontmatter。这会让产品停留在“优秀的示例 workspace viewer”，而不是能够替代 Word、Excel、PowerPoint 起点的编辑器。继续增加 Agent operation 而不补这个入口，会把内部智能建立在不完整的人工工作流上。
 
 v0.13 把 New 定义为 canonical-source transaction，而不是文档对象向导。用户选择 Document、Data table 或 Presentation，输入一个最多 80 字符的单行标题；界面立即展示最终 filename、language 和完整初始 source。Document 只有一个 Markdown heading，Data 只有 `Item,Value` 两列且零行，Presentation 只有严格 version/theme/ratio/lang frontmatter 和一张 cover slide。没有隐藏 block tree、sheet model 或 slide JSON，创建结果从第一字节起就能直接交给 Agent、Git、folder sync、preview 和 Office export。
 
 Identity 也必须在创建时稳定。标题保留 Unicode 可读性，filename/id 则经过 NFKC/NFKD 规范化、portable slug、Windows reserved-name 防护和长度限制；同名比较不区分大小写，冲突通过确定性 `-2`、`-3` 后缀解决。Import 与 New 现在共用同一个 conflict resolver，避免两条入口逐渐产生不同命名规则。完整 next workspace 会重新跑 artifact validation、metric/chart binding 和 Chart source resolution；最多 50 个 artifact，与真实目录 port 的上限一致。
 
-交互继续沿用 Rune 的信任模型。New dialog 有 radio semantics、初始输入焦点、Tab focus trap、Escape cancel、source preview 和明确的本地写入说明。确认时先把完整 next workspace、selected id 与 checkpoint map 一次写入 localStorage，成功后才更新 React；quota 或 validation 失败时 dialog 保持可见，当前 workspace 对象不变。若已经连接真实目录，新文件只进入 device workspace，必须由用户明确 Push 才写到目录，从而不把“New”偷偷升级成外部文件副作用。
+交互继续沿用 Orbit 的信任模型。New dialog 有 radio semantics、初始输入焦点、Tab focus trap、Escape cancel、source preview 和明确的本地写入说明。确认时先把完整 next workspace、selected id 与 checkpoint map 一次写入 localStorage，成功后才更新 React；quota 或 validation 失败时 dialog 保持可见，当前 workspace 对象不变。若已经连接真实目录，新文件只进入 device workspace，必须由用户明确 Push 才写到目录，从而不把“New”偷偷升级成外部文件副作用。
 
-这一步同时为真正 AI Native 的下一阶段建立创建边界。未来 workspace Agent 可以返回受限的 `create_artifact` plan，但模型不应自行决定任意 id、扩展名、隐藏 metadata 或直接写状态；它只需要给出 kind、title 与受限初始内容，Rune 仍复用同一 identity factory、full-workspace validation、concrete preview 和 atomic persistence。下一步应让 Agent 能从现有报告或数据创建一份新的 Deck/Document，而不是要求 workspace 预先存在所有目标文件。
+这一步同时为真正 AI Native 的下一阶段建立创建边界。未来 workspace Agent 可以返回受限的 `create_artifact` plan，但模型不应自行决定任意 id、扩展名、隐藏 metadata 或直接写状态；它只需要给出 kind、title 与受限初始内容，Orbit 仍复用同一 identity factory、full-workspace validation、concrete preview 和 atomic persistence。下一步应让 Agent 能从现有报告或数据创建一份新的 Deck/Document，而不是要求 workspace 预先存在所有目标文件。
 
 ## 18. Workspace Agent 创建文件：意图不是写权限
 
 v0.14 把上一节留下的边界真正闭合了。此前 Workspace Agent 最多只能修改已经存在的 4 个文件，所以“根据当前报告做一份董事会演示”必须先由用户手工 New 一个空 Deck，再要求 Agent 填充。这不是 AI Native workflow：用户仍在替 Agent 准备目标容器。反过来，让模型直接返回一个带任意 `id`、文件名、扩展名、language 和完整 source 的对象虽然省代码，却等于重新引入 v0.11 已经移除的整文件生成问题，还会让模型绕过 v0.13 的命名、模板和持久化合同。
 
-新的 workspace provider contract 因此不是“允许模型创建文件”，而是允许模型提出两类受限动作：`patch_artifact` 指向请求中已有且唯一的 artifact；`create_artifact` 只包含 `document | data | slides`、最多 80 字符的 title、说明和 1–8 个 typed edits。两者合计最多 4 个动作。创建动作没有 `artifactId`、name、extension、language、source 或 `nextSource` 字段；Structured Outputs 在 provider 边界就排除它们。System instruction 同时把三个精确初始模板告诉模型：`# {title}` Markdown、`Item,Value` CSV、严格 frontmatter 加同名 cover slide 的 Deck Markdown。模型只需要针对这些可见锚点表达 section、row、slide 或 exact-text operation，不需要猜 Rune 的内部身份规则。
+新的 workspace provider contract 因此不是“允许模型创建文件”，而是允许模型提出两类受限动作：`patch_artifact` 指向请求中已有且唯一的 artifact；`create_artifact` 只包含 `document | data | slides`、最多 80 字符的 title、说明和 1–8 个 typed edits。两者合计最多 4 个动作。创建动作没有 `artifactId`、name、extension、language、source 或 `nextSource` 字段；Structured Outputs 在 provider 边界就排除它们。System instruction 同时把三个精确初始模板告诉模型：`# {title}` Markdown、`Item,Value` CSV、严格 frontmatter 加同名 cover slide 的 Deck Markdown。模型只需要针对这些可见锚点表达 section、row、slide 或 exact-text operation，不需要猜 Orbit 的内部身份规则。
 
 服务端编译时先把 kind/title 送进 v0.13 的同一 identity/template factory，再把 typed edits 顺序应用到生成的 canonical source。重复标题会在真实 evolving identity set 上得到确定性的 `-2`、`-3`，而不是由模型协调；创建后的完整 artifact 才进入响应。一个计划可以同时修改旧报告并创建新演示，但确认前它们只是内存中的 concrete mutation。最终 safety gate 把 patched originals 与 creations 合成完整 next workspace，统一检查 adapter、只读 SQL、Deck raw HTML、metric/chart dependency、重复 id/name 和动作上限；任一 created file 不合法，已有文件的有效 patch 也不会泄漏成部分结果。
 
@@ -1381,7 +1381,7 @@ v0.15 补的是 File 与 Workspace 两种 scope 之间最常见、也最接近�
 
 v0.15 让用户在左侧源码中选一段并把 Agent 权限限制在其中，但真实的 Word、Excel、PowerPoint 工作方式通常从右侧成品开始：人先看到一段结论、一行数据或某张 slide，再决定“改这里”。如果必须先回到源码里寻找对应字符，左源右预览就仍然是两个并排窗口，而不是一个 AI Native 编辑器。更危险的捷径是把点击到的 DOM 文本或 iframe 坐标直接塞进 prompt；编译后的 metric、chart、Markdown 标签和 layout 已经改变了文本与层级，它们没有资格代表 canonical source offset。
 
-v0.16 因此把 preview target 定义为一种本地、短生命周期的 source map。它只有 `kind + index + label + [start,end)`，从当前 artifact revision 重新推导，不写进 Markdown、CSV/JSON 或 Deck，也不进入 localStorage。点击 target 后，Rune 只做一件有权威性的事：把原生 textarea 设到这段 UTF-16 range，并启用 v0.15 的 Selection scope。后续 provider input、operation compile、prefix/suffix 证明、diff review、checkpoint 和 atomic apply 完全不变。右侧预览负责帮助人指向，左侧 canonical source 仍负责定义权限。
+v0.16 因此把 preview target 定义为一种本地、短生命周期的 source map。它只有 `kind + index + label + [start,end)`，从当前 artifact revision 重新推导，不写进 Markdown、CSV/JSON 或 Deck，也不进入 localStorage。点击 target 后，Orbit 只做一件有权威性的事：把原生 textarea 设到这段 UTF-16 range，并启用 v0.15 的 Selection scope。后续 provider input、operation compile、prefix/suffix 证明、diff review、checkpoint 和 atomic apply 完全不变。右侧预览负责帮助人指向，左侧 canonical source 仍负责定义权限。
 
 三类 source map 不能共用一个草率的“按行切割”。Markdown 以 fenced-code-aware heading scanner 找到可见 section；每个 heading 到下一个可见 heading 是一个不重叠 target，因此 code fence 里的 `##` 不会制造假段落。CSV scanner 维护 quote 状态，允许一个 record 跨多行、处理 `""` 转义和 CRLF，并与 parser 的 greedy-empty row 行为对齐。JSON scanner 从顶层 array 逐个读取完整 value，跟踪 string escape 与嵌套 `{}`/`[]`，所以字符串里的括号不会提前截断。Deck 则先通过严格 parser，再从 frontmatter closing delimiter 之后切出 slide，target 保留 layout/eyebrow metadata，却不包含 `---` separator。
 
@@ -1397,11 +1397,11 @@ v0.16 有意不让 Chart mark 变成 target，因为柱形是派生结果，不�
 
 最容易犯的错误是用 bar label 反查 category column。分类值可以重复，图表还可能排序、截断、格式化；两个 `Shared` label 没有任何理由被猜成同一行。v0.17 在 chart compiler 读取每行时就记录零基 `sourceRowIndex`，然后把它与 label/value 一起经过 sort 和 `maxItems`。显示顺序可以从 `[0,1,2]` 变成 `[1,2,0]`，但每个 datum 的 provenance 不变。重复 label 因而完全不影响定位，也不需要给 CSV 注入隐藏 id。
 
-点击时，Rune 使用 chart model 的 `sourceArtifactId + sourceRowIndex`，在当前 workspace 中重新取得引用的数据 artifact，再运行 v0.16 的 CSV/JSON target compiler。只有对应 index 仍然产生一个 exact `data-row` range 时，这根柱形才获得交互；data source 缺失、parser error、row mapping 数量不一致或 index 越界都会让它保持普通只读 mark。HTML 上的 `data-chart-source-row` 只用于可观察性和测试，不是权限来源；label、排序位置、bar 宽度更不会参与 source resolution。
+点击时，Orbit 使用 chart model 的 `sourceArtifactId + sourceRowIndex`，在当前 workspace 中重新取得引用的数据 artifact，再运行 v0.16 的 CSV/JSON target compiler。只有对应 index 仍然产生一个 exact `data-row` range 时，这根柱形才获得交互；data source 缺失、parser error、row mapping 数量不一致或 index 越界都会让它保持普通只读 mark。HTML 上的 `data-chart-source-row` 只用于可观察性和测试，不是权限来源；label、排序位置、bar 宽度更不会参与 source resolution。
 
 成功激活后是一次显式的跨 artifact 导航：workbench 切到真实 CSV/JSON 文件，等待 textarea 呈现新 revision，再选择精确 row range，并启用 Selection Agent。报告中的 embedded React chart 与独立 Chart preview 都支持 click、Enter 和 Space，footer 明确提示可以打开 canonical row。之后的 prompt 只看这行 selection，provider operations 仍要通过服务端与客户端 prefix/suffix proof、完整 data parser、chart dependency recompile、diff review、checkpoint 和 atomic persistence。因此“从图表改数据”没有变成图表直接写数据。
 
-Deck iframe、standalone HTML、DOCX 和 PPTX 中的 chart 仍是静态交付副本。为了让演示里的柱形可点而给 `sandbox=""` 注入脚本，会破坏此前建立的无脚本边界；Office 文件也没有 Rune runtime。当前更诚实的体验是在编辑 workbench 的 React chart 上提供 provenance，导出物保持 frozen snapshot。未来若需要交互式分享，应单独定义带可信 runtime 与只读 provenance payload 的发布格式，而不是悄悄改变现有 standalone 合同。
+Deck iframe、standalone HTML、DOCX 和 PPTX 中的 chart 仍是静态交付副本。为了让演示里的柱形可点而给 `sandbox=""` 注入脚本，会破坏此前建立的无脚本边界；Office 文件也没有 Orbit runtime。当前更诚实的体验是在编辑 workbench 的 React chart 上提供 provenance，导出物保持 frozen snapshot。未来若需要交互式分享，应单独定义带可信 runtime 与只读 provenance payload 的发布格式，而不是悄悄改变现有 standalone 合同。
 
 这轮也没有声称解决 SQL result provenance。Query 可能聚合、join、filter，一行结果可能来自多行甚至多个 source，单个 `sourceRowIndex` 不够表达。下一步可以让 DuckDB query adapter返回 bounded provenance set，或先实现 column/cell-level data target，让 Chart mark 精确到 category/value cells；只有能够证明 lineage 时才扩展 target。这个原则比“所有东西都能点”更重要：视觉对象可以帮助用户指向，但写入权限必须始终落在可验证的 canonical source 上。
 
@@ -1417,43 +1417,43 @@ cell target 仍然只在可以证明时存在。空 CSV 字段没有非空 range
 
 图表血缘也从 row-level 收紧到 field-level。chart compiler 已经保存排序与 `maxItems` 之前的 `sourceRowIndex`；v0.18 再把它与严格 spec 中的 `category`、`value` column 组合。点击 APAC label 会选择 Region cell，点击 bar 或格式化金额会选择 Q2 Revenue cell，即使两个 label 都叫 `Shared`，也由原始 row index 区分。DOM 的 label、宽度、格式化金额和 `data-chart-source-row` 继续只是展示与测试信号，真正 target 只能由当前 data artifact 的 cell compiler 产生。独立 Chart 与报告内 React chart 使用相同原生按钮，Deck/HTML/DOCX/PPTX frozen snapshot 仍不获得脚本权限。
 
-这一步让“我看到的这个值”成为可证明的最小 Agent capability，但还没有把表格变成隐藏 spreadsheet model，也没有声称每个空格都可编辑。下一步可以增加 schema-aware column operation、显式的空 cell insertion target，或让 selection review 显示 `artifact → row → column` breadcrumb；更大的未解问题仍是 SQL provenance，因为 aggregate/join result cell 可能对应一个 source set 而不是单个 token。Rune 应先让 DuckDB adapter产出有界、可验证的 lineage set，再决定是否允许 query result 反向导航，不能把本轮的一对一 cell contract错误套到多对一计算结果上。
+这一步让“我看到的这个值”成为可证明的最小 Agent capability，但还没有把表格变成隐藏 spreadsheet model，也没有声称每个空格都可编辑。下一步可以增加 schema-aware column operation、显式的空 cell insertion target，或让 selection review 显示 `artifact → row → column` breadcrumb；更大的未解问题仍是 SQL provenance，因为 aggregate/join result cell 可能对应一个 source set 而不是单个 token。Orbit 应先让 DuckDB adapter产出有界、可验证的 lineage set，再决定是否允许 query result 反向导航，不能把本轮的一对一 cell contract错误套到多对一计算结果上。
 
 ## 23. Proof-safe SQL result lineage：只在能证明一对一时允许回写上下文
 
 v0.18 已经让原始表格和图表精确到 cell，但 Query 仍是断开的派生视图。最诱人的实现是拿结果值或列名回到 CSV/JSON 中搜索；这在重复金额、别名、排序、格式化、过滤和空值存在时都会产生假血缘。更危险的是 aggregate、join 或 window result：一个可见单元格可能来自多行、多列甚至多个 relation，硬塞一个 `sourceRowIndex` 会把“看起来像来源”伪装成 Agent 的真实写入权限。v0.19 因此不追求让所有查询都可点，而是先定义一条可机械证明的窄通道；任何证明失败都只影响导航能力，不影响 SQL 本身的只读执行。
 
-第一条证明发生在数据进入 DuckDB 之前。Rune 先用现有 `parseDataSource` 得到 canonical columns 与 rows，再给每一条解析成功的记录附加一个碰撞安全的临时 import-order 字段，以 JSON 形式装载并按该字段建立 `workspace_data`。这样 DuckDB 的 `rowid` 与 Rune cell compiler 使用的 parser row index 完全一致，即使 CSV 原文里存在会被 greedy parser 跳过的空记录，也不会把结果误指到下一行。临时字段不会出现在用户表、query result 或持久化 source 中。没有列的 source 会先要求用户定义 schema；大小写不唯一的列 identity、用户声明的 `rowid` 或保留 provenance 名称则关闭血缘能力，但查询仍照常运行。
+第一条证明发生在数据进入 DuckDB 之前。Orbit 先用现有 `parseDataSource` 得到 canonical columns 与 rows，再给每一条解析成功的记录附加一个碰撞安全的临时 import-order 字段，以 JSON 形式装载并按该字段建立 `workspace_data`。这样 DuckDB 的 `rowid` 与 Orbit cell compiler 使用的 parser row index 完全一致，即使 CSV 原文里存在会被 greedy parser 跳过的空记录，也不会把结果误指到下一行。临时字段不会出现在用户表、query result 或持久化 source 中。没有列的 source 会先要求用户定义 schema；大小写不唯一的列 identity、用户声明的 `rowid` 或保留 provenance 名称则关闭血缘能力，但查询仍照常运行。
 
-第二条证明由一个保守、quote-aware、parenthesis-depth-aware 的 SELECT compiler 完成。它只接受以单个 `workspace_data` 为 relation、保持逐行语义的顶层 SELECT，并在查询的第一列注入带 relation qualifier 的隐藏 `rowid AS __rune_source_row_index__`。WHERE、ORDER BY、LIMIT/OFFSET 和确定性的 scalar expression 可以保留，因为它们不会把一个输出行扩成多个来源；CTE、DISTINCT、GROUP BY/HAVING、aggregate、JOIN 或逗号 relation、set operation、pivot/unpivot、sample、window/QUALIFY、subquery 与未知 row-expanding function 都停留在 read-only。这里采用有限白名单是刻意的：DuckDB 新增函数不应该自动扩大 Rune 的写入能力。
+第二条证明由一个保守、quote-aware、parenthesis-depth-aware 的 SELECT compiler 完成。它只接受以单个 `workspace_data` 为 relation、保持逐行语义的顶层 SELECT，并在查询的第一列注入带 relation qualifier 的隐藏 `rowid AS __rune_source_row_index__`。WHERE、ORDER BY、LIMIT/OFFSET 和确定性的 scalar expression 可以保留，因为它们不会把一个输出行扩成多个来源；CTE、DISTINCT、GROUP BY/HAVING、aggregate、JOIN 或逗号 relation、set operation、pivot/unpivot、sample、window/QUALIFY、subquery 与未知 row-expanding function 都停留在 read-only。这里采用有限白名单是刻意的：DuckDB 新增函数不应该自动扩大 Orbit 的写入能力。
 
 第三条证明落在 projection，而不是显示值。compiler 按 SELECT projection 顺序区分直接字段、qualified/unqualified star 与 derived expression；运行后再检查可见结果列数是否与展开后的投影严格一致。直接字段映射到同一 source row 的精确 column cell，别名不改变它的身份；算术、CASE、CAST、ROUND 等计算列即使逐行执行，也只显示结果，不获得 target。结果行号只有在隐藏 rowid 合法、范围内且整套 projection arity 证明通过时才可以打开 canonical record。这样 `Revenue AS amount` 能回到 Revenue cell，而 `Revenue * 1.1 AS forecast` 永远不会把计算值冒充原始事实。
 
-Query preview 还必须绑定完整 revision。ready/error state 同时保存 query source、data artifact id 与 data source；任一侧编辑后，旧结果立即变回 loading，并由新执行重新建立血缘，不能把旧 rowid 套到新数据上。点击可证明的 result cell 或 row number 后，Rune 通过当前数据 artifact 的 lexical target map 导航到真实 CSV/JSON token，再复用 Selection Agent 的 prefix/suffix proof、review、checkpoint 与 atomic write。所有未证明形状仍然可以得到 DuckDB 结果，但 footer 会明确说明 read-only，而不是让不可点击看起来像故障。
+Query preview 还必须绑定完整 revision。ready/error state 同时保存 query source、data artifact id 与 data source；任一侧编辑后，旧结果立即变回 loading，并由新执行重新建立血缘，不能把旧 rowid 套到新数据上。点击可证明的 result cell 或 row number 后，Orbit 通过当前数据 artifact 的 lexical target map 导航到真实 CSV/JSON token，再复用 Selection Agent 的 prefix/suffix proof、review、checkpoint 与 atomic write。所有未证明形状仍然可以得到 DuckDB 结果，但 footer 会明确说明 read-only，而不是让不可点击看起来像故障。
 
 这轮没有把 aggregate 或 join 粗暴降格成“永远不能有血缘”，只是拒绝在缺少集合语义时假装完成。未来可以为聚合单元格返回有界 provenance set，并把它呈现为“查看 8 个来源”而不是单一写入 target；join 则需要 relation-qualified artifact/row/column identity、cardinality 上限和明确的歧义 UI。只有这些集合在 query revision、data revisions 和 parser identity 上都可验证后，才应该扩大 Agent capability。v0.19 选择的窄边界让 SQL result 第一次接入视觉到事实的完整链路，同时保持最重要的不变量：派生视图可以帮助人指向，但永远不能自行发明 canonical source。
 
 ## 24. Workspace context graph：让模型看到关系，而不是吞下整个目录
 
-v0.19 之前，Rune 已经分别知道 metric 来自第一份 Data、Query 读取 `workspace_data`、Chart JSON 指向某个 Data id、文档和 Deck 又嵌入哪些 Chart，但这些关系只散落在 preview badge、validation 和各自 compiler 里。左侧 activity rail 的 Data graph 甚至还是一个没有行为的按钮。更实质的问题在 Agent 边界：Workspace scope 直接把全部 artifact 交给 provider，所以第七个文件出现后，整条模型路径只能退回本地规则。把上限简单提高到 20 或 50 既增加 token 成本，也会把与当前意图无关的文件扩大成模型权限；这不是可扩展的 AI Native workspace。
+v0.19 之前，Orbit 已经分别知道 metric 来自第一份 Data、Query 读取 `workspace_data`、Chart JSON 指向某个 Data id、文档和 Deck 又嵌入哪些 Chart，但这些关系只散落在 preview badge、validation 和各自 compiler 里。左侧 activity rail 的 Data graph 甚至还是一个没有行为的按钮。更实质的问题在 Agent 边界：Workspace scope 直接把全部 artifact 交给 provider，所以第七个文件出现后，整条模型路径只能退回本地规则。把上限简单提高到 20 或 50 既增加 token 成本，也会把与当前意图无关的文件扩大成模型权限；这不是可扩展的 AI Native workspace。
 
-v0.20 把已有事实收敛成一个纯函数图谱，而不是新建数据库或把 graph metadata 写进 manifest。每次 source revision 都重新编译四类有向边：canonical Data → metric consumer、canonical Data → Query、Chart 指定的 Data → Chart、Chart → 使用 `{{ chart(...) }}` 的 consumer。edge 只包含 artifact identity、kind 和已经存在于 source 的 reference names，不复制数据值。无效 Chart JSON、缺失 Data、未解析 metric/chart id 会成为显式 issue；Rune 不为一个拼错的 id 制造 ghost node。用户打开 Data graph 后可以用原生 button 从边的 source 或 consumer 进入真实 artifact，当前文件和 Agent context 都有可见状态。
+v0.20 把已有事实收敛成一个纯函数图谱，而不是新建数据库或把 graph metadata 写进 manifest。每次 source revision 都重新编译四类有向边：canonical Data → metric consumer、canonical Data → Query、Chart 指定的 Data → Chart、Chart → 使用 `{{ chart(...) }}` 的 consumer。edge 只包含 artifact identity、kind 和已经存在于 source 的 reference names，不复制数据值。无效 Chart JSON、缺失 Data、未解析 metric/chart id 会成为显式 issue；Orbit 不为一个拼错的 id 制造 ghost node。用户打开 Data graph 后可以用原生 button 从边的 source 或 consumer 进入真实 artifact，当前文件和 Agent context 都有可见状态。
 
-图谱同时解决大 workspace 的模型上下文，但“相关”不能只用无向距离粗略截断。Rune 从当前 artifact 探索其 connected component，却按有向依赖执行 **upstream closure**：一个 report、deck、chart 或 query 只有在它已知的上游 source 全部能进入包时才可发送。没有关系的文件不会为了凑够数量被塞进去；selected artifact 的依赖闭包若装不下，也不会偷偷丢掉一个 source 后继续调用模型。包最多 6 个 artifact，非 selected 单文件最多 100,000 字符，总计最多 180,000 字符，并最终恢复原 workspace 顺序，确保“第一份 Data”在 metric compiler 与 `workspace_data` 中的语义不会因 context packing 改变。
+图谱同时解决大 workspace 的模型上下文，但“相关”不能只用无向距离粗略截断。Orbit 从当前 artifact 探索其 connected component，却按有向依赖执行 **upstream closure**：一个 report、deck、chart 或 query 只有在它已知的上游 source 全部能进入包时才可发送。没有关系的文件不会为了凑够数量被塞进去；selected artifact 的依赖闭包若装不下，也不会偷偷丢掉一个 source 后继续调用模型。包最多 6 个 artifact，非 selected 单文件最多 100,000 字符，总计最多 180,000 字符，并最终恢复原 workspace 顺序，确保“第一份 Data”在 metric compiler 与 `workspace_data` 中的语义不会因 context packing 改变。
 
 图谱不是客户端可以任意声称的 prompt hint。请求只携带 context 内部的边；compiled metric values 也只有在其 canonical Data 已进入包时才能同行。API 会从随请求发送的 canonical sources 独立重编译，拒绝 unresolved upstream，并逐边精确比较；省略、伪造、过期、端点不属于 context 或重复 edge 都会在 provider 调用前失败。即使图谱和模型 plan 都合法，服务端只能编译这几个文件的 typed operations，不能直接写状态。浏览器 Apply 仍绑定规划开始时的完整 50-file workspace revision，并在真实全量 workspace 上重跑 adapter、metric、Chart 和 identity validation；因此被 context cap 省略的 downstream consumer 仍然可以否决一个破坏它的 Data patch。
 
 这个边界把 Data graph 从装饰升级为成本与权限控制面：小 workspace 的行为不变，大 workspace 不再因为总文件数超过 6 就必然失去模型能力，而 provider 只支付与当前关系相符的 source token。没有新增 D1、R2、账号、embedding、向量库或后台索引；刷新和编辑后图谱由同一份可读文件立即重建。它也刻意不声称理解自然语言中的隐式关系：两个没有 metric/chart/query binding 的 Markdown 文件仍是 unlinked，不能仅凭相似标题自动连边。
 
-下一步可以在不改变安全合同的前提下增加用户显式 pin/context set，让一次跨越无绑定文件的任务也可审查；更重要的是把 user-defined metric 与 Query output 变成正式 dependency source，这样 `CSV → SQL → Chart → Report/Deck` 会进入同一张图。目前图谱不是持久评论系统、稳定 node identity 或协作 CRDT，也不会用 embedding 猜测依赖。Rune 先证明显式 source relationship 足以同时改善可解释性、token 成本和模型权限，再决定哪些隐式关系值得引入。
+下一步可以在不改变安全合同的前提下增加用户显式 pin/context set，让一次跨越无绑定文件的任务也可审查；更重要的是把 user-defined metric 与 Query output 变成正式 dependency source，这样 `CSV → SQL → Chart → Report/Deck` 会进入同一张图。目前图谱不是持久评论系统、稳定 node identity 或协作 CRDT，也不会用 embedding 猜测依赖。Orbit 先证明显式 source relationship 足以同时改善可解释性、token 成本和模型权限，再决定哪些隐式关系值得引入。
 
 ## 25. Explicit context pins：让用户补充意图，但不让模型自行扩大视野
 
-v0.20 的 dependency graph 解决了“已经写进 source 的关系如何进入 Agent context”，却故意不猜自然语言里的隐式关系。这个保守选择会产生一个真实断点：两份独立 Markdown 简报可能没有 metric、query 或 chart binding，但用户仍然会提出“把这两份文档合并成一个董事会版本”；一份 CSV 和一份没有显式 binding 的新 Deck 也可能需要共同参与一次创建任务。如果 Rune 因为图上没有边就只能使用单文件模型，用户会被迫往正文里添加虚假 token；如果 Rune 自动用标题相似度、embedding 或最近打开记录补齐，又会把概率相关性伪装成权限。
+v0.20 的 dependency graph 解决了“已经写进 source 的关系如何进入 Agent context”，却故意不猜自然语言里的隐式关系。这个保守选择会产生一个真实断点：两份独立 Markdown 简报可能没有 metric、query 或 chart binding，但用户仍然会提出“把这两份文档合并成一个董事会版本”；一份 CSV 和一份没有显式 binding 的新 Deck 也可能需要共同参与一次创建任务。如果 Orbit 因为图上没有边就只能使用单文件模型，用户会被迫往正文里添加虚假 token；如果 Orbit 自动用标题相似度、embedding 或最近打开记录补齐，又会把概率相关性伪装成权限。
 
 v0.21 因此把 **pin** 定义成一次由用户明确授予的短生命周期 context capability。Workspace 文件列表中的每个 artifact 都有独立的原生 pin button；按下后，该文件成为 selected artifact 之外的 required root。最多允许五个 pin，加上当前文件后仍受六文件模型包上限约束。Data graph 的 context card 会同时显示自动纳入与手动 pin 的文件，并允许一次清空；文件列表、Agent identity、planning notice 和模型完成提示都显示 pin 数量，用户不必从不可见请求中猜模型究竟看到了什么。
 
-pin 不是一条新的 dependency edge。真实 edge 继续只能从 metric、`workspace_data`、Chart source 和 chart embed 的可读 source 编译；pin 只说明“这次任务也需要看这个 root”。选包算法对 selected 与所有 pin 求 upstream closure 的并集，再从这些 root 的 connected components 中按确定性顺序补足相关文件，最后恢复原 workspace 顺序。一个被 pin 的 report 如果依赖 Data 和 Chart，这些 source 必须整体进入；若闭包超过六文件、单文件 100,000 字符或总计 180,000 字符，Rune 会保留 required roots 的可见性并关闭 provider path，而不是悄悄丢掉某个 pin 后声称模型拥有完整上下文。
+pin 不是一条新的 dependency edge。真实 edge 继续只能从 metric、`workspace_data`、Chart source 和 chart embed 的可读 source 编译；pin 只说明“这次任务也需要看这个 root”。选包算法对 selected 与所有 pin 求 upstream closure 的并集，再从这些 root 的 connected components 中按确定性顺序补足相关文件，最后恢复原 workspace 顺序。一个被 pin 的 report 如果依赖 Data 和 Chart，这些 source 必须整体进入；若闭包超过六文件、单文件 100,000 字符或总计 180,000 字符，Orbit 会保留 required roots 的可见性并关闭 provider path，而不是悄悄丢掉某个 pin 后声称模型拥有完整上下文。
 
 服务端不能只相信一个任意的六文件数组。请求现在必须显式携带 `workspacePinnedArtifactIds` 和内部 dependency edges；API 从收到的 canonical sources 重新编图、拒绝 unresolved upstream、逐边比较，然后以 selected id 与 pin ids 重新运行同一个 context selector。任何既不在 selected component、也不能从某个 pin root 到达的 disconnected artifact 都会在 provider 调用前失败。这样显式 pin 可以跨图，但不能被客户端借来给无解释的 padding 打掩护。provider instructions 同时说明 pin 是 intentional context，不等于必须修改每个 pinned file。
 
@@ -1463,9 +1463,9 @@ pin 不是一条新的 dependency edge。真实 edge 继续只能从 metric、`w
 
 ## 26. Query-backed Chart：让 SQL 成为可复用视图，而不是隐藏的数据副本
 
-v0.21 的图谱已经能说明 Data 如何进入 Query、Data 如何进入 Chart、Chart 又如何进入报告和演示，但这仍是两条并行支线：SQL 结果只能在 Query preview 里看，Chart 只能直接读取原始 CSV/JSON。真实分析工作却常常先计算利润率、同比或分组结果，再把这个派生视图画成图。如果用户必须手工复制 SQL 结果到另一份 CSV，Rune 不仅打断了 live loop，还制造了一个没有来源证明、很快会过期的第二事实表。v0.22 因此让 Chart 的 `source` 可以直接指向 Query，第一次把 `Data → SQL → Chart → Markdown/Deck` 编译成一条完整且可导航的链。
+v0.21 的图谱已经能说明 Data 如何进入 Query、Data 如何进入 Chart、Chart 又如何进入报告和演示，但这仍是两条并行支线：SQL 结果只能在 Query preview 里看，Chart 只能直接读取原始 CSV/JSON。真实分析工作却常常先计算利润率、同比或分组结果，再把这个派生视图画成图。如果用户必须手工复制 SQL 结果到另一份 CSV，Orbit 不仅打断了 live loop，还制造了一个没有来源证明、很快会过期的第二事实表。v0.22 因此让 Chart 的 `source` 可以直接指向 Query，第一次把 `Data → SQL → Chart → Markdown/Deck` 编译成一条完整且可导航的链。
 
-最关键的设计不是“如何把二维数组传给图表”，而是 Query result 到底是不是 artifact。当前答案是否定的：`.sql`、Data source 和 `.chart.json` 才是可读、可 diff、可同步的 canonical files；执行结果只是绑定这些 source revision 的运行时证据。Rune 创建的 `WorkspaceQuerySnapshot` 同时记录 Query id/source、canonical Data id/source、结果、截断状态和 cell lineage，只留在组件内存中。任一 SQL 或 Data 字符变化都会使旧 snapshot 失效，consumer 回到 loading 并重新执行；结果不会进入 localStorage、folder manifest、checkpoint 或 Git。这样既避免重复事实，也不用引入数据库、后台 job 或缓存失效服务。
+最关键的设计不是“如何把二维数组传给图表”，而是 Query result 到底是不是 artifact。当前答案是否定的：`.sql`、Data source 和 `.chart.json` 才是可读、可 diff、可同步的 canonical files；执行结果只是绑定这些 source revision 的运行时证据。Orbit 创建的 `WorkspaceQuerySnapshot` 同时记录 Query id/source、canonical Data id/source、结果、截断状态和 cell lineage，只留在组件内存中。任一 SQL 或 Data 字符变化都会使旧 snapshot 失效，consumer 回到 loading 并重新执行；结果不会进入 localStorage、folder manifest、checkpoint 或 Git。这样既避免重复事实，也不用引入数据库、后台 job 或缓存失效服务。
 
 workspace safety gate 又不能在每次键入 Chart JSON 或应用 Agent patch 时都启动 DuckDB。为此 v0.22 增加一个刻意保守的静态 Query output contract：只分析一个顶层 SELECT 的 projection；直接字段沿用字段名，直接读取 `workspace_data` 时可以展开 `*`，计算表达式必须写显式 `AS` alias。重复且大小写不唯一的输出名、隐式派生列名、无法判断 relation 的 star、set query 或超过 256 列都会拒绝成为 Chart source。这里的静态 compiler 只证明“这个名字会存在”，绝不伪造运行值或血缘；不支持的 SQL 仍可在 Query preview 中只读执行，只是不能被下游 Chart 当成稳定 schema。
 
@@ -1473,15 +1473,15 @@ workspace safety gate 又不能在每次键入 Chart JSON 或应用 Agent patch 
 
 血缘能力没有因为中间多了一层 SQL 就被放宽。Query snapshot 中的每个 direct cell 仍携带原始 Data row/column；Chart datum 分别保存 category 和 value provenance。若 `Region` 是直接 projection，点击 Query-backed Chart 的 label 可以跳到 canonical CSV 中准确的 Region token；若 `margin_pct` 来自除法和 rounding，它保持可见但没有写入 target，bar/value 只读。Chart 的排序、格式化和 `maxItems` 不会改变这个判断，重复 label 也不会触发 fuzzy lookup。派生结果帮助用户理解和定位，但不能冒充 canonical fact，这继续遵守 v0.19 的 proof-safe 原则。
 
-导出不能依赖某个 preview 恰好已经打开。准备 DOCX、PPTX 或 standalone HTML 时，Rune 会从目标的 chart references 收集 Query source，使用同一 DuckDB path 对当前 revision 重新执行，拒绝截断，再把这些 snapshot 显式传给 Office/HTML chart compiler。最终包中的表格或 vector bars 是确定性的 frozen handoff，不包含 worker、脚本或 live binding；导出 review 仍绑定完整 workspace reference，编辑后不能下载旧文件。这样线上 preview 和离线交付共享同一计算语义，却不会把 ephemeral execution state 偷渡进 source。
+导出不能依赖某个 preview 恰好已经打开。准备 DOCX、PPTX 或 standalone HTML 时，Orbit 会从目标的 chart references 收集 Query source，使用同一 DuckDB path 对当前 revision 重新执行，拒绝截断，再把这些 snapshot 显式传给 Office/HTML chart compiler。最终包中的表格或 vector bars 是确定性的 frozen handoff，不包含 worker、脚本或 live binding；导出 review 仍绑定完整 workspace reference，编辑后不能下载旧文件。这样线上 preview 和离线交付共享同一计算语义，却不会把 ephemeral execution state 偷渡进 source。
 
-这一轮没有增加 hosted compute、数据库或新的 production service，DuckDB 仍只在需要 Query consumer 时 lazy-load。长期可以把 user-defined metric 也建模为显式 Query output binding，或为多 Data/JOIN 引入 relation-qualified provenance set；但那需要先定义 cardinality、集合导航和多 source revision 合同。现在的窄实现先证明了一件更重要的事：SQL 可以成为 Rune 的可复用视图层，同时保持 canonical files、运行时证据、Agent 权限和导出快照四者边界清楚。
+这一轮没有增加 hosted compute、数据库或新的 production service，DuckDB 仍只在需要 Query consumer 时 lazy-load。长期可以把 user-defined metric 也建模为显式 Query output binding，或为多 Data/JOIN 引入 relation-qualified provenance set；但那需要先定义 cardinality、集合导航和多 source revision 合同。现在的窄实现先证明了一件更重要的事：SQL 可以成为 Orbit 的可复用视图层，同时保持 canonical files、运行时证据、Agent 权限和导出快照四者边界清楚。
 
 ## 27. Explicit Query Data binding：文件顺序不应该决定分析事实
 
 v0.22 完成了 `Data → SQL → Chart → Document/Deck`，却继承了最早 demo 的一个隐藏前提：`workspace_data` 永远由 workspace 中第一份 Data artifact 构建。只有一份 CSV 时这很方便；一旦用户导入第二个 worksheet、Folder Pull 按 manifest 重排，或 Workspace Agent 创建另一张表，同一段没有变化的 SQL 就可能改读另一份数据。preview、Query-backed Chart、导出和 Agent graph 甚至可能一起“自洽地出错”，因为它们都遵守同一个错误的顺序假设。可读文件如果不能说明自己的输入是谁，就还不是真正的 artifact-as-code。
 
-最直接的方案是把每个 Data 都注册成 SQL table name，但 artifact id 可能包含 Unicode、标点和未来的重命名语义，DuckDB identifier quoting 又会和 Rune identity 混在一起；更复杂的 `JOIN` 还需要多 source lineage。v0.23 先选择更窄的 source header：Query 第一条非空行可以写 `-- rune:data "regional-revenue"`，正文继续只读稳定的 `workspace_data`。artifact id 使用 JSON quoted string，因此 Unicode 和转义有确定语法；directive 仍是普通 SQL comment，文件离开 Rune 后可以直接交给 DuckDB。它只声明“装载哪份 Data”，不发明新的查询语言。
+最直接的方案是把每个 Data 都注册成 SQL table name，但 artifact id 可能包含 Unicode、标点和未来的重命名语义，DuckDB identifier quoting 又会和 Orbit identity 混在一起；更复杂的 `JOIN` 还需要多 source lineage。v0.23 先选择更窄的 source header：Query 第一条非空行可以写 `-- rune:data "regional-revenue"`，正文继续只读稳定的 `workspace_data`。artifact id 使用 JSON quoted string，因此 Unicode 和转义有确定语法；directive 仍是普通 SQL comment，文件离开 Orbit 后可以直接交给 DuckDB。它只声明“装载哪份 Data”，不发明新的查询语言。
 
 parser 对这行采取 fail-closed 合同。directive 必须是第一条非空行、只能出现一次、id 必须是 1–120 个可见字符的 quoted string；未加引号、放在普通注释之后、重复、控制字符、找不到目标或目标不是 Data 都产生明确错误。`validateArtifact` 负责语法，whole-workspace safety gate 负责 identity resolution。Agent instruction 要求保留已有 directive；只有 Workspace scope 能从可见 context 中选择另一个真实 Data id。模型不能因为看到一个相似文件名就发明 binding，任何无效修改仍在 concrete review 应用前被完整 workspace 否决。
 
@@ -1497,7 +1497,7 @@ dependency graph 也从顺序推断升级成 identity edge。显式 Query 产生
 
 v0.23 已让 Query 明确绑定 Data，但报告和 Deck 中的数字仍大多来自最早 demo 的一参数 `metric("name")`。这些 legacy metrics 由 workspace 中第一份 Data 直接计算，只有一张表时足够简洁；当用户导入多个 worksheet、重排 manifest 或需要用 SQL 聚合时，它们既无法说明选择了哪份 Data，也无法表达筛选、分组和业务公式。更危险的是，展示出来的 KPI 可能继续“看起来正确”，却没有一条可导航、可审查的计算链。v0.24 的目标因此不是增加更多硬编码 metric 名，而是让数字直接引用一份可读 Query 的一个输出列。
 
-新的 source 形式刻意保持窄而明确：`{{ metric("query-id", "column", "currency|number|percent") }}`。三个参数都必须是 quoted string；Query id 和 output column 使用精确 identity，format 只能从三个展示枚举中选择。这个语法没有嵌入 SQL、公式表达式或任意 formatter，因此正文仍适合阅读和 diff，计算逻辑只存在于 `.sql`，格式只影响呈现。原有一参数 `metric("top_region")` 继续兼容，Rune 不静默改写旧文件，也不把两种语义伪装成同一种 binding。
+新的 source 形式刻意保持窄而明确：`{{ metric("query-id", "column", "currency|number|percent") }}`。三个参数都必须是 quoted string；Query id 和 output column 使用精确 identity，format 只能从三个展示枚举中选择。这个语法没有嵌入 SQL、公式表达式或任意 formatter，因此正文仍适合阅读和 diff，计算逻辑只存在于 `.sql`，格式只影响呈现。原有一参数 `metric("top_region")` 继续兼容，Orbit 不静默改写旧文件，也不把两种语义伪装成同一种 binding。
 
 scalar 必须同时通过静态合同和运行时证据。静态阶段不启动 DuckDB，只解析 Query 的显式 Data source 和保守 output schema；缺失 Query/Data、无显式 alias、重复列名、字段改名或错误 format 会在 workspace mutation review 前否决整笔事务。运行阶段只接受绑定当前 Query source 与当前 resolved Data id/source 的 snapshot，并要求结果未截断、恰好一行、目标列唯一且值是 finite number。零行、多行、字符串、`NaN`、无穷值、旧 revision 或尚未完成的执行都 fail closed，preview 显示 pending/error，而不会沿用旧数字。
 
@@ -1507,17 +1507,17 @@ dependency graph 为每组 scalar reference 增加 `Query → consumer` 的 `que
 
 默认 workspace 新增 `regional-summary.sql`，用一行聚合输出总收入、环比、毛利率、APAC 收入和客户数；报告与 Deck 的数值 KPI 已迁移到这份 Query，`top_region` 则故意保留为 legacy compatibility 示例。完整默认闭包因此多了一个真实上游文件。为了仍允许用户在默认六文件链之外 pin 一份独立材料，Workspace Agent 文件上限从 6 提到 7、pin 上限从 5 提到 6，总字符上限仍保持 180,000；这是一项显式 capability 调整，而不是放宽 provider 可见性的通用理由。
 
-这一轮仍没有引入 hosted compute、多表 JOIN、文本 scalar 或用户自定义脚本 formatter。numeric-only 与 exactly-one-row 是为了先把 cardinality、revision 和失败语义做实；文本标签仍可暂时使用兼容 metric，集合结果应继续用 Chart 或表格。下一步若支持 text scalar，应先定义空值、locale 与 escaping 合同；若支持多 Data Query，则必须先把 relation-qualified revision/provenance set 纳入 snapshot 和 graph。Rune 先保证每个可见数字都能回答“来自哪份 SQL、哪一列、哪一版 Data”，再扩大表达能力。
+这一轮仍没有引入 hosted compute、多表 JOIN、文本 scalar 或用户自定义脚本 formatter。numeric-only 与 exactly-one-row 是为了先把 cardinality、revision 和失败语义做实；文本标签仍可暂时使用兼容 metric，集合结果应继续用 Chart 或表格。下一步若支持 text scalar，应先定义空值、locale 与 escaping 合同；若支持多 Data Query，则必须先把 relation-qualified revision/provenance set 纳入 snapshot 和 graph。Orbit 先保证每个可见数字都能回答“来自哪份 SQL、哪一列、哪一版 Data”，再扩大表达能力。
 
 ## 29. Direct PDF：把“可预览”推进到可确定交付
 
-v0.10 的 standalone HTML 已经能让 Deck 离开 Rune，并通过浏览器打印成 PDF，但“先导出 HTML、再打开、再选择打印机和边距”仍不是一条确定的产品交付链。不同浏览器、字体和打印设置会改变分页，Document 甚至没有对应路径。对报告和董事会演示来说，PDF 不是另一个可编辑 source，而是最常见的冻结交付物；如果 Rune 只能把最后一步交给用户手工拼接，三件套闭环就仍缺一环。v0.25 因此让 Markdown Document 和 Deck Markdown 都能直接生成 PDF，并复用现有 fidelity review，而不是增加一个 hosted conversion service。
+v0.10 的 standalone HTML 已经能让 Deck 离开 Orbit，并通过浏览器打印成 PDF，但“先导出 HTML、再打开、再选择打印机和边距”仍不是一条确定的产品交付链。不同浏览器、字体和打印设置会改变分页，Document 甚至没有对应路径。对报告和董事会演示来说，PDF 不是另一个可编辑 source，而是最常见的冻结交付物；如果 Orbit 只能把最后一步交给用户手工拼接，三件套闭环就仍缺一环。v0.25 因此让 Markdown Document 和 Deck Markdown 都能直接生成 PDF，并复用现有 fidelity review，而不是增加一个 hosted conversion service。
 
-两种 artifact 需要两个不同且明确的页面合同。Document 使用 A4，编译 headings、paragraphs、quotes、lists、code、bounded tables、header/footer 和 page number，并在空间不足时创建新页。Deck 不尝试重新分页正文，而是严格保持一张 source slide 对应一张 960×540 的 16:9 PDF page，继续使用 cover、metrics、split、content 和 conclusion 的 Rune 视觉语义。Data 没有被勉强塞进分页 PDF：可编辑、可计算的表格交付仍由 values-only XLSX 承担，直到我们能定义一套真正可审查的 print-area、重复表头和宽表分页合同。
+两种 artifact 需要两个不同且明确的页面合同。Document 使用 A4，编译 headings、paragraphs、quotes、lists、code、bounded tables、header/footer 和 page number，并在空间不足时创建新页。Deck 不尝试重新分页正文，而是严格保持一张 source slide 对应一张 960×540 的 16:9 PDF page，继续使用 cover、metrics、split、content 和 conclusion 的 Orbit 视觉语义。Data 没有被勉强塞进分页 PDF：可编辑、可计算的表格交付仍由 values-only XLSX 承担，直到我们能定义一套真正可审查的 print-area、重复表头和宽表分页合同。
 
 PDF 也必须遵守同一份事实证据。准备导出时，workbench 收集目标中 Query scalar 和 Query-backed Chart 所需 Query 的并集，用当前 Query source 与显式 Data source 重新执行并生成 revision-bound snapshot；missing、pending、stale、truncated、multi-row 或 nonnumeric scalar 都 fail closed。Chart resolver 只接受这些确切 snapshot，并把 bar、track、label 和 formatted value 画成本地 vector geometry。最终文件没有 DuckDB worker、live binding 或第二份数据表，但它能说明自己冻结的是哪一次当前 workspace 编译结果。
 
-字体是浏览器 PDF 中不能假装不存在的兼容边界。只使用 PDF 内建字体会让中文报表报错或出现方框，只依赖系统字体又会让接收方结果不确定。Rune 因此随应用分发 OFL 1.1 的 Unifont WOFF2：普通 Latin 文本使用标准 PDF 字体，包含中文或其他非 WinAnsi 字符的 text run 使用内嵌 Unicode font；接收方不需要联网，也不需要安装字体。字体文件先验证 WOFF2 header 并限制为 4 MB，不支持的字符被替换成可见问号并进入 fidelity warning，绝不悄悄输出黑框。这个选择优先保证可读与可携带，未来可以在不改变 export contract 的前提下换成更精细的 CJK typography 或更小的 subset pipeline。
+字体是浏览器 PDF 中不能假装不存在的兼容边界。只使用 PDF 内建字体会让中文报表报错或出现方框，只依赖系统字体又会让接收方结果不确定。Orbit 因此随应用分发 OFL 1.1 的 Unifont WOFF2：普通 Latin 文本使用标准 PDF 字体，包含中文或其他非 WinAnsi 字符的 text run 使用内嵌 Unicode font；接收方不需要联网，也不需要安装字体。字体文件先验证 WOFF2 header 并限制为 4 MB，不支持的字符被替换成可见问号并进入 fidelity warning，绝不悄悄输出黑框。这个选择优先保证可读与可携带，未来可以在不改变 export contract 的前提下换成更精细的 CJK typography 或更小的 subset pipeline。
 
 确定性不是一句“本地生成”就自动成立。PDF metadata 的 creation/modification date 被固定，writer 输入只来自 canonical source、明确的 workspace artifacts、snapshot bytes 和版本化字体；相同输入必须生成相同 bytes。最终文件限制为 12 MB，source 限制 200,000 字符。导出结果继续绑定准备时的完整 artifacts object：用户在 review 打开后编辑、Pull、Reset 或替换 workspace，确认下载会被拒绝，必须重新生成。Cancel 不写 source、localStorage、checkpoint 或 folder；Confirm 只创建一次浏览器 object URL。
 
@@ -1529,7 +1529,7 @@ PDF 也必须遵守同一份事实证据。准备导出时，workbench 收集目
 
 ## 30. Runtime-verified Agent：模型既要看见结果，也必须证明提议能运行
 
-v0.25 让 Query 的结果进入 preview 和导出，却没有真正进入 Workspace Agent 的推理回路。模型能看到 Data、SQL、Chart 和消费它们的 Markdown/Deck source，也能看到旧的 compiled metric 字符串，但看不到 DuckDB 对当前 Query/Data revision 实际返回的行、列或错误。它可能正确理解 SQL 文本，也可能错过运行时 cardinality、类型、空值和引擎 binder error；更糟的是，模型改写 SQL 后，Rune 只做 read-only 与静态 output schema 校验，仍可能把一条运行即失败的 Query 放进 diff review。用户看到“可审阅”不等于系统已经证明“可执行”。AI Native 的 Generate → Render → Inspect → Fix 闭环因此缺少最关键的 Inspect 端口。
+v0.25 让 Query 的结果进入 preview 和导出，却没有真正进入 Workspace Agent 的推理回路。模型能看到 Data、SQL、Chart 和消费它们的 Markdown/Deck source，也能看到旧的 compiled metric 字符串，但看不到 DuckDB 对当前 Query/Data revision 实际返回的行、列或错误。它可能正确理解 SQL 文本，也可能错过运行时 cardinality、类型、空值和引擎 binder error；更糟的是，模型改写 SQL 后，Orbit 只做 read-only 与静态 output schema 校验，仍可能把一条运行即失败的 Query 放进 diff review。用户看到“可审阅”不等于系统已经证明“可执行”。AI Native 的 Generate → Render → Inspect → Fix 闭环因此缺少最关键的 Inspect 端口。
 
 审查还发现一处由 capability 演进造成的真实回归：v0.24 把默认 workspace 扩展为七份闭合文件，并把共享常量 `MAX_WORKSPACE_AGENT_ARTIFACTS` 提到 7；workbench 的 provider eligibility 却仍保留旧的 `length <= 6` literal。结果是最完整、最有价值的默认 `Data → two Queries → two Charts → Document/Deck` context 永远不会到达已配置模型，只会静默落到 local planner。v0.26 删除这处平行常量，客户端和请求 schema 统一使用七文件合同，并用 fixture 明确证明默认七文件可以、八文件不可以。容量边界必须只有一个来源，否则“安全限制”会在版本演进中变成隐蔽功能开关。
 
@@ -1537,27 +1537,27 @@ v0.25 让 Query 的结果进入 preview 和导出，却没有真正进入 Worksp
 
 证据边界刻意比 Query preview 更窄。每个 Query 必须恰好对应一条 record，并携带 Query id 与 resolved Data id；成功结果最多 20 行、32 列、400 个 cell、每个 string cell 500 字符，整包 JSON 最多 20,000 字符，同时说明当前可见结果总行数、总列数、Query 自身是否超过 500 行以及 evidence 是否再次截断。执行失败不会被包装成空表，而是成为最多 500 字符的 error evidence，让模型知道应修 SQL。服务端再次检查 schema、顺序、唯一性和 Query/Data identity；missing、extra、reordered 或 fabricated identity 都不能调用 provider。Workspace scope 之外完全不接受 evidence，因为 File/Selection 并没有获得跨文件 Data capability。
 
-这里必须诚实区分“revision-bound”与“attested”。证据由请求浏览器根据同一份 Query/Data source 计算，服务端可以验证 identity 和边界，却无法在没有 hosted DuckDB 的前提下密码学证明这些 cell 真由 SQL 产生；而客户端本来就是用户控制的输入端。因此 evidence 是给模型的 advisory observation，不是授权、事实数据库或写入依据。模型 instruction 明确要求：截断或 error 不能被当成完整结果，不要把 snapshot 数值粘进正文替代 live metric/Chart binding，不要编辑 evidence 本身，只能提出 canonical source operation。Data、SQL、binding source 和 Rune deterministic compiler 仍是 authority；evidence 不进入 localStorage、checkpoint、folder manifest、Git 或任何新数据库。
+这里必须诚实区分“revision-bound”与“attested”。证据由请求浏览器根据同一份 Query/Data source 计算，服务端可以验证 identity 和边界，却无法在没有 hosted DuckDB 的前提下密码学证明这些 cell 真由 SQL 产生；而客户端本来就是用户控制的输入端。因此 evidence 是给模型的 advisory observation，不是授权、事实数据库或写入依据。模型 instruction 明确要求：截断或 error 不能被当成完整结果，不要把 snapshot 数值粘进正文替代 live metric/Chart binding，不要编辑 evidence 本身，只能提出 canonical source operation。Data、SQL、binding source 和 Orbit deterministic compiler 仍是 authority；evidence 不进入 localStorage、checkpoint、folder manifest、Git 或任何新数据库。
 
-第二条边界发生在模型或 local planner 已经提出具体 source 之后。只要 plan 改动一份 Query，不论它来自 Selection、File 还是 Workspace scope，Rune 先用已有 `prepareWorkspaceMutation` 在内存构造完整 proposed workspace，确保静态 adapter、identity、binding 与 dependency 合同都通过；然后根据 proposed Query directive 解析 exact proposed Data，调用 browser-local DuckDB 生成新的 `WorkspaceQuerySnapshot`。任意 binder、parser 或 execution error 都直接终止，不创建 `pendingChange`，因此用户不会被要求审阅一个系统自己已经知道跑不起来的 diff。
+第二条边界发生在模型或 local planner 已经提出具体 source 之后。只要 plan 改动一份 Query，不论它来自 Selection、File 还是 Workspace scope，Orbit 先用已有 `prepareWorkspaceMutation` 在内存构造完整 proposed workspace，确保静态 adapter、identity、binding 与 dependency 合同都通过；然后根据 proposed Query directive 解析 exact proposed Data，调用 browser-local DuckDB 生成新的 `WorkspaceQuerySnapshot`。任意 binder、parser 或 execution error 都直接终止，不创建 `pendingChange`，因此用户不会被要求审阅一个系统自己已经知道跑不起来的 diff。
 
 “SQL 能跑”仍不是完整成功。一条聚合 Query 改成按 Region 分组后会返回合法多行，但引用它的 `metric("query-id", "column", ...)` 需要 exactly one row；一条计算列变成字符串也可能继续被 DuckDB 接受，却无法成为 numeric Chart value。preflight 因此继续扫描完整 proposed workspace：对 changed Query 的每个 scalar consumer，用同一组 current proposed snapshot 运行 `compileArtifactSource` 并检查 runtime error；对每个直接以 changed Query 为 source 的 Chart，运行真实 `resolveChartModel` 并检查 truncation、column、row label 与 finite numeric value。与 changed Query 无关、尚未运行的其他 Query 只保持 pending，不能错误阻止这次提议。通过后 review 显示执行过的 Query 名、scalar consumer 数和 Chart 数；失败时 source、checkpoint、device storage、folder 和 React workspace state 全部不变。
 
-这次实现没有声称已经完成自动 self-repair。模型收到的是“修改前”的 current evidence；如果它提出的 SQL preflight 失败，Rune 会给用户具体错误并拒绝进入 review，但不会在后台把错误和 proposed source 再发给模型进行第二轮无界循环。视觉输出也还没有截图或 layout critic。v0.26 做的是更基础、也更可验证的一步：把当前结果作为受限 inspection port，把 proposed SQL 的真实 runtime 和 downstream compiler 作为 review 前的硬 gate。后续若增加一次或多次自动修复，必须复用同一 revision、预算、次数、privacy 与 review 合同，而不是绕开它。
+这次实现没有声称已经完成自动 self-repair。模型收到的是“修改前”的 current evidence；如果它提出的 SQL preflight 失败，Orbit 会给用户具体错误并拒绝进入 review，但不会在后台把错误和 proposed source 再发给模型进行第二轮无界循环。视觉输出也还没有截图或 layout critic。v0.26 做的是更基础、也更可验证的一步：把当前结果作为受限 inspection port，把 proposed SQL 的真实 runtime 和 downstream compiler 作为 review 前的硬 gate。后续若增加一次或多次自动修复，必须复用同一 revision、预算、次数、privacy 与 review 合同，而不是绕开它。
 
-成本边界保持不变：没有 hosted compute、数据库、队列、结果缓存服务或新的 production secret；DuckDB 仍按需 dynamic import，并用既有串行 queue 避免 worker race。默认无 key 的 owner-only Sites 部署继续秒级进入 local fallback。新增复杂度集中在两个可单测模块：`agent-evidence` 负责 bounded observation 与 context identity，`query-preflight` 负责 proposed workspace runtime/downstream proof。Rune 由此第一次让 Agent 不只“读 artifact source”，还要在 diff 出现前面对 artifact compiler 的实际反馈；这是从聊天式生成器走向可验证创作系统的一小步，但也是后续自动 inspect/fix loop 必须站稳的地基。
+成本边界保持不变：没有 hosted compute、数据库、队列、结果缓存服务或新的 production secret；DuckDB 仍按需 dynamic import，并用既有串行 queue 避免 worker race。默认无 key 的 owner-only Sites 部署继续秒级进入 local fallback。新增复杂度集中在两个可单测模块：`agent-evidence` 负责 bounded observation 与 context identity，`query-preflight` 负责 proposed workspace runtime/downstream proof。Orbit 由此第一次让 Agent 不只“读 artifact source”，还要在 diff 出现前面对 artifact compiler 的实际反馈；这是从聊天式生成器走向可验证创作系统的一小步，但也是后续自动 inspect/fix loop 必须站稳的地基。
 
 ## 31. Runtime impact graph：Data 改动也必须证明整个下游仍然成立
 
 v0.26 解决了“模型改 SQL，但 SQL 其实跑不起来”的直接问题，却把 runtime gate 触发条件绑定在 Query source 是否变化。对三件套来说，这仍然不是完整的数据闭环：Agent 只把 CSV 中一个数值改成文本、增加一列、调整行顺序或创建另一份 Data 时，SQL source 可以一个字节都不变，DuckDB 的类型推断、aggregate cardinality、scalar metric 和 Chart value 却可能全部改变。原有 whole-workspace validation 能证明列名和引用 identity 仍存在，但不执行 SQL，无法证明当前数据值真的满足运行语义。一个 Data diff 若能进入 review、Apply 后才让报告和 Deck 显示错误，用户仍然承担了本该由编译器先发现的影响。
 
-v0.27 因此把 `Query mutation preflight` 提升为 `runtime impact preflight`。根节点不再只有 changed Query，也包括每一份 proposed Data。Rune 先用普通 `prepareWorkspaceMutation` 构造完整 proposed workspace，验证 CSV/JSON parser、artifact identity、read-only SQL、metric syntax、Chart schema 和所有静态 dependency；只有这一步成功才计算运行集合。这样直接 Data Chart 已经因为 nonnumeric value 失效时，会在下载 DuckDB 之前被完整 workspace gate 拒绝，不用启动 worker 来重复证明一个更早就知道的失败。
+v0.27 因此把 `Query mutation preflight` 提升为 `runtime impact preflight`。根节点不再只有 changed Query，也包括每一份 proposed Data。Orbit 先用普通 `prepareWorkspaceMutation` 构造完整 proposed workspace，验证 CSV/JSON parser、artifact identity、read-only SQL、metric syntax、Chart schema 和所有静态 dependency；只有这一步成功才计算运行集合。这样直接 Data Chart 已经因为 nonnumeric value 失效时，会在下载 DuckDB 之前被完整 workspace gate 拒绝，不用启动 worker 来重复证明一个更早就知道的失败。
 
-运行集合必须来自 source identity，而不能粗暴执行目录里所有 `.sql`。每一份 directly changed Query 一定进入集合；除此之外，Rune 对 proposed workspace 中每个 Query 重新运行 `resolveQueryDataArtifact`，只有 resolved Data id 属于 changed Data 集合时才加入。显式 `-- rune:data "artifact-id"` 因此保持顺序无关；旧的 directive-free Query 继续按 proposed workspace 的第一份 Data 兼容解析。新建但尚未被任何 Query/Chart/legacy metric 引用的 Data 只需要完成 parser 和 whole-workspace validation，不会借“安全检查”扩大本地 SQL 执行范围。
+运行集合必须来自 source identity，而不能粗暴执行目录里所有 `.sql`。每一份 directly changed Query 一定进入集合；除此之外，Orbit 对 proposed workspace 中每个 Query 重新运行 `resolveQueryDataArtifact`，只有 resolved Data id 属于 changed Data 集合时才加入。显式 `-- rune:data "artifact-id"` 因此保持顺序无关；旧的 directive-free Query 继续按 proposed workspace 的第一份 Data 兼容解析。新建但尚未被任何 Query/Chart/legacy metric 引用的 Data 只需要完成 parser 和 whole-workspace validation，不会借“安全检查”扩大本地 SQL 执行范围。
 
 每个 impacted Query 都必须用 proposed Query source 和 proposed resolved Data source 生成 snapshot，随后再用 `workspaceQuerySnapshotIsCurrent` 做双 revision proof。runner 报错、返回旧 Query source、接错 Data 或执行期间 revision 漂移都会让整条 impact graph 失败。Query 本身超过 preview 的 500 行仍可以作为独立只读结果存在；但只要下游 scalar 或 Chart 需要完整集合，既有 consumer compiler 会按自己的更强合同拒绝 truncation，而不是让 preflight 另造一套不一致规则。
 
-下游验证现在覆盖四类消费者。若 changed Data 是 proposed workspace 的 canonical first Data，Rune 会重新编译每个一参数 legacy metric consumer，并记录精确 artifact/metric 数；所有引用 impacted Query 的三参数 scalar 都用同一 snapshot 验证 exactly-one-row、unique column 与 finite number；以 changed Data 为 source 的直接 Chart 用 proposed rows 验证 category/value；以 impacted Query 为 source 的 Chart 则验证 snapshot current、truncation、schema、label 和 numeric value。Document/Deck 中的 chart embed 继续通过其 Chart artifact 间接受保护，不需要为同一 visual 重复运行 SQL。
+下游验证现在覆盖四类消费者。若 changed Data 是 proposed workspace 的 canonical first Data，Orbit 会重新编译每个一参数 legacy metric consumer，并记录精确 artifact/metric 数；所有引用 impacted Query 的三参数 scalar 都用同一 snapshot 验证 exactly-one-row、unique column 与 finite number；以 changed Data 为 source 的直接 Chart 用 proposed rows 验证 category/value；以 impacted Query 为 source 的 Chart 则验证 snapshot current、truncation、schema、label 和 numeric value。Document/Deck 中的 chart embed 继续通过其 Chart artifact 间接受保护，不需要为同一 visual 重复运行 SQL。
 
 审阅界面不再只说“某条 SQL 运行成功”。`Runtime impact preflight passed` 会显示 proposed Data 数、实际执行的 impacted Query 数、legacy metric、SQL scalar 和 Chart consumer 数，以及涉及的 Data/Query 文件名。默认 `regional-revenue.csv` 的本地“增加利润率列”动作在无 provider key 的 Sites 上也会触发完整闭环：一份 Data change → 两份 Query execution → 七个 SQL scalar binding → 两张 direct/Query Chart → report/deck 依赖继续成立，之后 diff 才出现。失败则没有 `pendingChange`，也不会创建 checkpoint、写 localStorage、写 folder 或替换 React state。
 
@@ -1567,33 +1567,33 @@ v0.27 没有引入多 Data JOIN、hosted compute、结果缓存或新的持久 g
 
 ## 32. Hydration 也是编译合同：显示文本不能由运行环境决定
 
-v0.27 的真实浏览器运行暴露了一个单元测试很容易漏掉、但对 source-first 编辑器非常关键的问题：同一份 `970000`，Cloudflare/服务端的 compact `Intl.NumberFormat` 输出 `$970K`，本地浏览器却输出 `$970.00K`。两边都符合各自的 ICU 实现，数据、Chart schema 和 React 组件也都没有错，但 SSR HTML 与客户端首次 render 的文本不同，React 只能抛出 hydration mismatch 并重建整棵预览树。对普通营销页这也许只是闪烁；对 Rune 来说，重建会让 source target、选择范围和运行证据的首屏身份失去可信的共同基线。
+v0.27 的真实浏览器运行暴露了一个单元测试很容易漏掉、但对 source-first 编辑器非常关键的问题：同一份 `970000`，Cloudflare/服务端的 compact `Intl.NumberFormat` 输出 `$970K`，本地浏览器却输出 `$970.00K`。两边都符合各自的 ICU 实现，数据、Chart schema 和 React 组件也都没有错，但 SSR HTML 与客户端首次 render 的文本不同，React 只能抛出 hydration mismatch 并重建整棵预览树。对普通营销页这也许只是闪烁；对 Orbit 来说，重建会让 source target、选择范围和运行证据的首屏身份失去可信的共同基线。
 
 问题的本质不是“指定 `en-US` 就够了”。locale 固定了语言规则，却没有固定不同 JS/ICU 版本对 compact notation、significant digits、minimum fraction digits 和 trailing zeros 的组合解释。只要服务端、浏览器、sandboxed HTML 和导出器各自调用环境 formatter，所谓 deterministic compiler 就仍留着一个不可审查的 ambient input。把服务端结果塞进 hydration snapshot 只能掩盖首屏，Deck HTML、DOCX/PPTX/PDF 和后续客户端重编仍可能产生不同文案。
 
-v0.27.1 因此增加一个很小但明确的 Rune-owned display compiler。普通数字由十进制 `toFixed` 后去尾零并按三位分组；compact 值显式选择 K/M/B/T、最多两位小数，并在四舍五入跨过 1000 时提升单位；货币符号与负号位置固定；百分比固定保留一位。它不读取 `navigator.language`、服务器 locale、时区或 ICU 数据。`$970K`、`$1.84M`、`-$1.2K`、`10K` 和 `30.0%` 因而是源值与版本化 formatter 的纯函数，而不是部署环境的意见。
+v0.27.1 因此增加一个很小但明确的 Orbit-owned display compiler。普通数字由十进制 `toFixed` 后去尾零并按三位分组；compact 值显式选择 K/M/B/T、最多两位小数，并在四舍五入跨过 1000 时提升单位；货币符号与负号位置固定；百分比固定保留一位。它不读取 `navigator.language`、服务器 locale、时区或 ICU 数据。`$970K`、`$1.84M`、`-$1.2K`、`10K` 和 `30.0%` 因而是源值与版本化 formatter 的纯函数，而不是部署环境的意见。
 
 这条 formatter 同时服务 legacy metric、Query scalar、Data/Query Chart、React preview、Deck static HTML、Office/PDF snapshot、文件大小和字符计数。最后两项看似无关，却同样可能出现在 SSR 首屏；去掉无参数 `toLocaleString()` 是为了不留下下一处同类 hydration 断点。格式字符串仍然只是 projection，不进入 CSV、JSON、SQL 或 Markdown canonical source，也不参与 provenance 和数值比较。
 
 回归不能只断言“Node 输出了什么”。新增 fixture 明确规定边界值、负数、单位提升、尾零和非有限值；默认 golden workspace 同时断言服务端 HTML 包含 `$970K` 且不含 `$970.00K`。客户端 bundle 与服务端都导入同一份无 `Intl.NumberFormat` 的实现，因此跨运行时一致性来自代码共享与算法确定性，而不是测试机恰好和生产浏览器使用同一 ICU。
 
-未来若需要人民币、欧元、中文万/亿、会计负数或用户 locale，应该把 format/locale 变成 Chart 或 workspace 中可读、可 diff、可迁移的显式 source contract，再由 Rune compiler 实现和版本化；不能重新退回 ambient browser locale。AI Native 编辑器要求模型、预览和交付看到同一份事实，而“这个事实最后显示成什么文字”也是编译结果的一部分。
+未来若需要人民币、欧元、中文万/亿、会计负数或用户 locale，应该把 format/locale 变成 Chart 或 workspace 中可读、可 diff、可迁移的显式 source contract，再由 Orbit compiler 实现和版本化；不能重新退回 ambient browser locale。AI Native 编辑器要求模型、预览和交付看到同一份事实，而“这个事实最后显示成什么文字”也是编译结果的一部分。
 
-## 33. 一次有界自修复：让编译器反馈回到模型，但不把 Rune 变成失控 Agent
+## 33. 一次有界自修复：让编译器反馈回到模型，但不把 Orbit 变成失控 Agent
 
-v0.26 和 v0.27 已经完成 Generate → Render/Execute → Inspect 的硬边界：模型可以看见当前 Query evidence，Data/SQL 提议则必须跑过 proposed workspace 的完整 runtime impact graph。但闭环在失败处仍然中断。模型第一次把列名写错、误判 aggregate cardinality，或让 Chart 的 value 变成字符串时，Rune 明明已经拥有非常具体的 binder、scalar 或 Chart compiler error，却只把它展示给用户。用户必须复制错误、重新描述目标、再次等待模型规划；这不是 AI Native，而是把一个本可机器消费的诊断端口重新变成人工聊天中转站。
+v0.26 和 v0.27 已经完成 Generate → Render/Execute → Inspect 的硬边界：模型可以看见当前 Query evidence，Data/SQL 提议则必须跑过 proposed workspace 的完整 runtime impact graph。但闭环在失败处仍然中断。模型第一次把列名写错、误判 aggregate cardinality，或让 Chart 的 value 变成字符串时，Orbit 明明已经拥有非常具体的 binder、scalar 或 Chart compiler error，却只把它展示给用户。用户必须复制错误、重新描述目标、再次等待模型规划；这不是 AI Native，而是把一个本可机器消费的诊断端口重新变成人工聊天中转站。
 
-最直接的反应是“让 Agent 一直改到通过”，但这会破坏 Rune 当前最重要的成本与信任模型。无界循环无法预估 token、延迟和本地 DuckDB 执行次数；后续尝试可能越来越偏离原始 source；错误字符串和失败 proposal 也可能被当成新指令，形成间接 prompt injection。更重要的是，只要系统在后台连续替用户改写，就很容易把“编译通过”偷换成“意图正确”，最后让 review 退化成对一长串不可复现历史的追认。Rune 需要的是一次明确的 compiler-guided retry，而不是 autonomous coding agent。
+最直接的反应是“让 Agent 一直改到通过”，但这会破坏 Orbit 当前最重要的成本与信任模型。无界循环无法预估 token、延迟和本地 DuckDB 执行次数；后续尝试可能越来越偏离原始 source；错误字符串和失败 proposal 也可能被当成新指令，形成间接 prompt injection。更重要的是，只要系统在后台连续替用户改写，就很容易把“编译通过”偷换成“意图正确”，最后让 review 退化成对一长串不可复现历史的追认。Orbit 需要的是一次明确的 compiler-guided retry，而不是 autonomous coding agent。
 
 v0.28 因此把自动预算固定为字面量 `attempt: 1`。触发条件也很窄：只有已配置 provider 返回了合法、经服务端编译的具体 Data/Query proposal，而浏览器对完整 device workspace 的 runtime impact preflight 失败时才触发。文档-only、Deck-only、Chart-only 计划没有运行失败就不会触发；确定性 local planner 失败也直接停止，不会为了“更聪明”突然扩大到外部模型。第一次 proposal 始终保持 unapplied，不创建 pending review、checkpoint、localStorage 写入、folder 写入或 React workspace mutation。
 
-修复反馈不是完整对话 transcript。它只包含本轮第一次 proposal 中 1–4 份 Rune 已编译的候选 source、Rune-owned 文件身份与一条清洗后最多 1,000 字符的失败信息。每份 source 最多 100,000 字符，Workspace 总计仍不超过 180,000；已有文件必须精确匹配当前 context 的 id/name/kind/language，新建文件必须使用 Rune 已生成且不碰撞的 Office-core identity；id 与 name 都不能重复，并且至少包含一份 Data 或 Query。Selection scope 还要证明第一次 proposal 的 prefix/suffix 没越界。这样 repair 不能借错误通道偷偷塞入更多文件、另一份 revision 或第二种写能力。
+修复反馈不是完整对话 transcript。它只包含本轮第一次 proposal 中 1–4 份 Orbit 已编译的候选 source、Orbit-owned 文件身份与一条清洗后最多 1,000 字符的失败信息。每份 source 最多 100,000 字符，Workspace 总计仍不超过 180,000；已有文件必须精确匹配当前 context 的 id/name/kind/language，新建文件必须使用 Orbit 已生成且不碰撞的 Office-core identity；id 与 name 都不能重复，并且至少包含一份 Data 或 Query。Selection scope 还要证明第一次 proposal 的 prefix/suffix 没越界。这样 repair 不能借错误通道偷偷塞入更多文件、另一份 revision 或第二种写能力。
 
 同一份反馈同时具有 prompt-injection 风险，所以 provider instruction 明确把 `failure` 和 `proposedSource` 定义为 untrusted advisory data。模型必须拿它们和仍然存在的 canonical current source 对比，返回一份完整 replacement typed-operation plan；不能“编辑错误对象”、不能假设第一次 proposal 已经 Apply，也不能声称 replacement 已通过 compiler。原始 prompt、scope、selection、workspace graph、pins、metrics 和已经通过身份验证的 Query evidence 原样保留。模型由此得到足够的局部反例，却没有获得比第一次请求更大的 source capability。
 
 修复响应不是客户端可以凭形状猜测的普通成功。服务端仍从原始 canonical revision 编译 typed operations，重新执行 artifact/workspace safety gate，并只对修复请求回传 `repairAttempt: 1`。浏览器要求 marker 与 plan 同时成立，再对 replacement 从头运行同一条完整 impact graph：构造 proposed workspace、解析 changed Data、执行全部 identity-bound impacted Query、验证 legacy metric、Query scalar、direct Data Chart 与 Query Chart。只有第二轮全部成立才生成 diff，审阅卡明确显示 `Recovered after one compiler-guided repair`，保留第一次 bounded failure，并说明第一次 proposal 从未应用。
 
-任何中间问题都 fail closed：反馈无法在预算内构造、provider 网络失败、API 返回错误、marker 缺失、replacement shape 不合法、服务端 operation compiler 拒绝，或第二次 runtime preflight 再失败，都会显示“一次自动修复已停止”，没有 pending change，也不会静默切换成 local planner。这里拒绝 fallback 很重要：一旦用户的 configured model 已经生成具体计划并收到 compiler feedback，再用另一套 deterministic heuristic 伪装成同一条修复结果，会丢失 provenance，也让错误看起来被处理了。用户可以修改 prompt 后主动发起下一次独立动作，但 Rune 不会把它算作当前动作的第二次后台 retry。
+任何中间问题都 fail closed：反馈无法在预算内构造、provider 网络失败、API 返回错误、marker 缺失、replacement shape 不合法、服务端 operation compiler 拒绝，或第二次 runtime preflight 再失败，都会显示“一次自动修复已停止”，没有 pending change，也不会静默切换成 local planner。这里拒绝 fallback 很重要：一旦用户的 configured model 已经生成具体计划并收到 compiler feedback，再用另一套 deterministic heuristic 伪装成同一条修复结果，会丢失 provenance，也让错误看起来被处理了。用户可以修改 prompt 后主动发起下一次独立动作，但 Orbit 不会把它算作当前动作的第二次后台 retry。
 
 这一设计把一次动作的最坏外部成本从一次 provider call 提高到最多两次，把 runtime gate 从最多一次提高到最多两次，但仍是可解释的常数。Workspace Query evidence 的 428 握手不会重复计算：repair request 复用同一份 exact current evidence 和同一 canonical revision；第二轮只重新执行 replacement 的 proposed impact。没有 provider key 的 owner-only Sites 路径继续不为模型 evidence 启动 DuckDB，非 runtime source 的计划继续不加载 preflight chunk，`agent-evidence` 与 `query-preflight` 也保持 dynamic import，避免为了少数失败拖慢首屏。
 
@@ -1601,9 +1601,9 @@ v0.28 仍不声称可以自动评价叙事质量、版式美感或事实正确�
 
 ## 34. 列是 AI 表格的一等操作：用可验证键替代整份 CSV 重写
 
-Rune 已经能让 Agent 通过 `upsert_data_row` 修改或插入一条 CSV/扁平 JSON 记录，但很多真实 Excel 意图天然是按列表达的：“给每个地区增加毛利率”“把状态列中的两项更新为 approved”“把 Revenue 改名为 Net revenue”。此前模型只能对这类任务使用 `replace_text`，要么复制整段 header/多行 source，要么发出多个逐行操作。前者把一个结构化意图退化成脆弱的大字符串匹配，后者浪费 operation/token 预算，也更容易漏行、重复 key 或在中间步骤产生暂时不合法的表。
+Orbit 已经能让 Agent 通过 `upsert_data_row` 修改或插入一条 CSV/扁平 JSON 记录，但很多真实 Excel 意图天然是按列表达的：“给每个地区增加毛利率”“把状态列中的两项更新为 approved”“把 Revenue 改名为 Net revenue”。此前模型只能对这类任务使用 `replace_text`，要么复制整段 header/多行 source，要么发出多个逐行操作。前者把一个结构化意图退化成脆弱的大字符串匹配，后者浪费 operation/token 预算，也更容易漏行、重复 key 或在中间步骤产生暂时不合法的表。
 
-v0.29 把 Data 列提升为 provider contract 中的一等语义对象，但没有引入隐藏 spreadsheet model。`upsert_data_column` 仍只引用 canonical source 中一个现有 `keyColumn`、一个目标 `column` 和最多 200 对 `{ keyValue, value }`。key 必须在当前 CSV/JSON 中全局唯一且非空，类型也必须精确匹配；Rune 不按可见行号、排序位置或字符串化值猜测记录。模型看到和返回的仍是普通 JSON operation，compiler 才负责把它投影为完整可审阅 source。
+v0.29 把 Data 列提升为 provider contract 中的一等语义对象，但没有引入隐藏 spreadsheet model。`upsert_data_column` 仍只引用 canonical source 中一个现有 `keyColumn`、一个目标 `column` 和最多 200 对 `{ keyValue, value }`。key 必须在当前 CSV/JSON 中全局唯一且非空，类型也必须精确匹配；Orbit 不按可见行号、排序位置或字符串化值猜测记录。模型看到和返回的仍是普通 JSON operation，compiler 才负责把它投影为完整可审阅 source。
 
 “新增列”和“更新列”故意采用不同完整性约束。目标列不存在时，每一条当前记录必须恰好收到一个值；少一行就拒绝，而不是把遗漏静默写成空值。这样“增加利润率”不会因模型漏掉 LATAM 而制造一个看似成功的半成品。空 CSV 模板是唯一自然例外：它可以用空 values 新增一个 header，因为当前确实没有任何 row 需要覆盖。目标列已经存在时，operation 可以只携带需要改变的 keyed subset，但空 update、全部 no-op、重复 key 或不存在的 key 都失败；列操作永远不能插入记录，也不能修改用于定位记录的 key column。
 
@@ -1613,63 +1613,63 @@ v0.29 把 Data 列提升为 provider contract 中的一等语义对象，但没�
 
 Selection scope 也不获得例外权限。CSV header rename 如果 serializer 能证明 header 外的 bytes 完全不变，就可以落在一个精确 header selection 内；更新整列值必须把每个受影响 row 包含在 selection 中。JSON pretty-print 或 property rename 通常会重写更大范围，原有 prefix/suffix proof 会自然拒绝过窄 selection。换言之，semantic operation 描述“想改什么”，Selection revision proof 仍决定“这次是否被授权改这些 bytes”，二者不能互相替代。
 
-这一能力还让新建 Data 的模型路径更 source-native。Rune 的空表模板仍是 `Item,Value`；模型可以先精确 rename 两个 starter columns，再按 row 或 column operation 填入数据，而不必用一段完整 CSV replacement 夺回文件作者权。所有结果继续经过同一个 `parseDataSource`、flat JSON gate、120,000 字符输出上限、concrete diff、revision check、checkpoint 和 atomic persistence transaction。没有新增 npm dependency、数据库、后台 worker 或服务器状态，复杂度集中在已有 `agent-operations` compiler 和 Structured Output schema。
+这一能力还让新建 Data 的模型路径更 source-native。Orbit 的空表模板仍是 `Item,Value`；模型可以先精确 rename 两个 starter columns，再按 row 或 column operation 填入数据，而不必用一段完整 CSV replacement 夺回文件作者权。所有结果继续经过同一个 `parseDataSource`、flat JSON gate、120,000 字符输出上限、concrete diff、revision check、checkpoint 和 atomic persistence transaction。没有新增 npm dependency、数据库、后台 worker 或服务器状态，复杂度集中在已有 `agent-operations` compiler 和 Structured Output schema。
 
-v0.29 仍不是 Excel formula engine。列值由模型作为有界、显式 scalar 提议，Rune 可以证明它们与每个当前 key 一一对应、类型可序列化、下游仍可运行，却不能证明 `0.34` 真的是 source 中 Revenue 与 Cost 的正确商。当前 instruction 要求 derived value 只能来自可见 source；真正可重算的公式应继续写进 DuckDB SQL，并通过 Query/Chart/metric binding消费。未来若需要公式列，可以定义可读的 Data transform artifact 或受限 expression AST，让公式成为 canonical source，而不是把 Excel 式隐藏公式塞回 CSV cell。先把列级结构操作做成可验证原语，才能在不牺牲 source-first 原则的前提下逐步接近 AI Native spreadsheet。
+v0.29 仍不是 Excel formula engine。列值由模型作为有界、显式 scalar 提议，Orbit 可以证明它们与每个当前 key 一一对应、类型可序列化、下游仍可运行，却不能证明 `0.34` 真的是 source 中 Revenue 与 Cost 的正确商。当前 instruction 要求 derived value 只能来自可见 source；真正可重算的公式应继续写进 DuckDB SQL，并通过 Query/Chart/metric binding消费。未来若需要公式列，可以定义可读的 Data transform artifact 或受限 expression AST，让公式成为 canonical source，而不是把 Excel 式隐藏公式塞回 CSV cell。先把列级结构操作做成可验证原语，才能在不牺牲 source-first 原则的前提下逐步接近 AI Native spreadsheet。
 
 ## 35. 折线图不是另一个组件：它必须共享同一条 source、血缘和交付链
 
-到 v0.29 为止，Rune 的 Chart artifact 已经证明一份可读 `.chart.json` 能跨越 Data、SQL、Markdown、Deck、Office 和 PDF，但视觉语法仍只有 `bar`。柱状图适合地区、产品或渠道之间的离散比较，却无法诚实表达月份、版本或实验轮次的有序变化。如果 AI 为“展示最近六个月趋势”生成一串柱子，文件虽然合法，意图却被降格；如果允许模型直接写 SVG/HTML，又会重新打开任意代码、不可审查布局和多运行时不一致的问题。v0.30 因此不是在 React 页面里临时加一条 polyline，而是把 `line` 纳入原有严格 Chart compiler 的完整边界。
+到 v0.29 为止，Orbit 的 Chart artifact 已经证明一份可读 `.chart.json` 能跨越 Data、SQL、Markdown、Deck、Office 和 PDF，但视觉语法仍只有 `bar`。柱状图适合地区、产品或渠道之间的离散比较，却无法诚实表达月份、版本或实验轮次的有序变化。如果 AI 为“展示最近六个月趋势”生成一串柱子，文件虽然合法，意图却被降格；如果允许模型直接写 SVG/HTML，又会重新打开任意代码、不可审查布局和多运行时不一致的问题。v0.30 因此不是在 React 页面里临时加一条 polyline，而是把 `line` 纳入原有严格 Chart compiler 的完整边界。
 
-source 合同只扩大一个枚举：`mark` 从字面量 `bar` 变成 `bar | line`，其余 source identity、category/value column、sort、format、color 和 1–20 mark 上限全部不变。折线顺序明确来自 Chart 的 post-sort rows：`sort: source` 保留 canonical Data 或 Query result 的顺序，ascending/descending 则是作者显式选择的 value order。Rune 不尝试把 `Jan`、`2026-Q2` 或任意字符串偷偷解析成日期，也不按标签相似度重排；Agent instruction 要求只有在 source 顺序或显式 sort 具有序列意义时才使用 line。这样顺序仍是 source 中可读、可 diff 的决定，而不是 renderer 的猜测。
+source 合同只扩大一个枚举：`mark` 从字面量 `bar` 变成 `bar | line`，其余 source identity、category/value column、sort、format、color 和 1–20 mark 上限全部不变。折线顺序明确来自 Chart 的 post-sort rows：`sort: source` 保留 canonical Data 或 Query result 的顺序，ascending/descending 则是作者显式选择的 value order。Orbit 不尝试把 `Jan`、`2026-Q2` 或任意字符串偷偷解析成日期，也不按标签相似度重排；Agent instruction 要求只有在 source 顺序或显式 sort 具有序列意义时才使用 line。这样顺序仍是 source 中可读、可 diff 的决定，而不是 renderer 的猜测。
 
 折线几何也需要确定的失败与退化语义。compiler 继续先拒绝空 category、非数值或非 finite value，再对 maxItems 截断后的可见序列计算 minimum/maximum。每个 point 的横坐标按序列均匀分布，纵坐标按 `(value - min) / (max - min)` 归一化；负数、零和正数可以出现在同一范围内。全部值相等时所有点稳定放在中线，单点放在水平与垂直中心，而不是除以零、制造虚假的斜率或依赖 SVG 的异常行为。bar 继续使用绝对值相对最大值的旧 ratio，两个 mark 共享数据与格式化模型，但不偷换彼此的几何语义。
 
 血缘能力没有因为 SVG 出现而改变。每个 line datum 和 bar datum 一样，在 sort 与 truncation 之前记录 canonical source row，并分别携带 category/value cell provenance。React 折线只把 compiler 给出的 normalized position 投影成只读 SVG path；覆盖在 point 上的原生 button 仍解析到确切 value token，下面的 label button 解析到确切 category token。Query 派生值没有 cell lineage 时 point 仍可见但只读。DOM/SVG 坐标、可见 label、格式化数字和 point index 都不是写权限，点击后仍进入同一个 Selection revision、server/client confinement、review、checkpoint 和 atomic Apply 边界。
 
-Deck 与 standalone HTML 复用同一组 point geometry，生成 inline、scriptless SVG。title、description、label 和 value 继续 escape；颜色只能来自六位 hex schema；最终 standalone boundary 仍拒绝 script、iframe、外链资源以及 `src`/`href`。这使折线可以在 sandboxed slide、下载的单文件 HTML 和浏览器打印中保持相同形状，却不会加入事件桥、第三方 chart runtime 或网络字体。SSR 的 React 视图与静态 SVG 都读取 Rune-owned deterministic number strings，所以此前修复的 hydration 合同不会因新 mark 回退到 ambient locale。
+Deck 与 standalone HTML 复用同一组 point geometry，生成 inline、scriptless SVG。title、description、label 和 value 继续 escape；颜色只能来自六位 hex schema；最终 standalone boundary 仍拒绝 script、iframe、外链资源以及 `src`/`href`。这使折线可以在 sandboxed slide、下载的单文件 HTML 和浏览器打印中保持相同形状，却不会加入事件桥、第三方 chart runtime 或网络字体。SSR 的 React 视图与静态 SVG 都读取 Orbit-owned deterministic number strings，所以此前修复的 hydration 合同不会因新 mark 回退到 ambient locale。
 
 Office 需要按目标格式承认自己的语义边界。DOCX 不适合用大量 drawing shape 模拟一个难以编辑的图，因此 line snapshot 变成可选择的 semantic trend table：每行保留 category、精确 formatted value，并相对前一行写出 Start、Increase、Decrease 或 No change；fidelity review 明确它是当前数据的静态趋势表。PPTX 则真正生成 native DrawingML line segments、point circles、category labels 和 values，所有 shape 仍经过 16:9 canvas bounds 验证，接收者可以在 PowerPoint 中继续移动或改色。bar 的 semantic table 与 track/rectangle path 保持原样，两种 mark 不互相伪装。
 
 PDF 同样使用本地 vector line 和 circles，不截图、不启动 headless browser。Document 的 A4 chart box 与 Deck 的固定 16:9 frame 都从同一 normalized points 生成；密集序列最多显示一组有界标签，但全部 1–20 个 point 仍进入 vector path。相同 source、Data/Query snapshot 和 bundled font 继续产生逐字节相同的文件，Query-backed line chart 也必须先重跑并绑定 exact Query/Data revisions。预览是否曾经打开，不影响 frozen handoff 的正确性。
 
-v0.30 仍故意只有单 series、单 category、单 numeric value、单 color，没有连续时间轴、双 Y 轴、堆叠、面积、散点、missing-value interpolation 或图例布局。多 series 不是简单增加一个数组：它需要定义列组 identity、颜色序列、point-level provenance、空值连接策略、Office legend 和窄屏可读性。scatter 还需要独立 numeric X contract，而不能把 category position 冒充连续尺度。Rune 先证明第二种 mark 能在不分叉 source、运行时、Agent 权限和六种交付面之间语义的情况下落地，再用真实需求决定下一种图表；这比引入一个功能很多但边界不可控的通用 chart library 更符合 AI Native 编辑器的长期成本结构。
+v0.30 仍故意只有单 series、单 category、单 numeric value、单 color，没有连续时间轴、双 Y 轴、堆叠、面积、散点、missing-value interpolation 或图例布局。多 series 不是简单增加一个数组：它需要定义列组 identity、颜色序列、point-level provenance、空值连接策略、Office legend 和窄屏可读性。scatter 还需要独立 numeric X contract，而不能把 category position 冒充连续尺度。Orbit 先证明第二种 mark 能在不分叉 source、运行时、Agent 权限和六种交付面之间语义的情况下落地，再用真实需求决定下一种图表；这比引入一个功能很多但边界不可控的通用 chart library 更符合 AI Native 编辑器的长期成本结构。
 
 ## 36. 创建也是依赖编译：补齐 Data → SQL → Chart → Report/Deck 的入口
 
-v0.30 已经能编辑、执行、追踪和导出完整的 `Data → SQL → Chart → Document/Deck` 链，却有一个会直接阻断新用户的产品矛盾：默认 workspace 里有 Query 和 Chart，所以能力看起来完整；但 **New** 和 Workspace Agent 实际只能创建 Document、Data、Presentation。用户从一张刚导入的 CSV 开始时，必须先在 Rune 外部手写 `.sql` 或 `.chart.json` 再导入，AI 也只能修改已有分析文件。这不是少两个按钮，而是把最重要的 source-first 分析入口留成了 demo fixture。v0.31 因而把“创建”从三种空白模板提升为五类 artifact 的依赖编译器。
+v0.30 已经能编辑、执行、追踪和导出完整的 `Data → SQL → Chart → Document/Deck` 链，却有一个会直接阻断新用户的产品矛盾：默认 workspace 里有 Query 和 Chart，所以能力看起来完整；但 **New** 和 Workspace Agent 实际只能创建 Document、Data、Presentation。用户从一张刚导入的 CSV 开始时，必须先在 Orbit 外部手写 `.sql` 或 `.chart.json` 再导入，AI 也只能修改已有分析文件。这不是少两个按钮，而是把最重要的 source-first 分析入口留成了 demo fixture。v0.31 因而把“创建”从三种空白模板提升为五类 artifact 的依赖编译器。
 
-Query 创建不接受一个含糊的“使用当前数据”开关。用户必须从当前 workspace 选择一份精确 Data artifact，Rune 随即生成 collision-safe `.sql` identity、第一行 JSON-quoted `-- rune:data "artifact-id"` 和最小的 `SELECT * FROM workspace_data;`。文件顺序改变不会改读另一份表，Unicode source id 也有确定转义。Chart 创建同样要求一份精确 Data 或 Query、一个 category、一个 value、`bar | line` 与 `number | currency | percent`；Rune 再生成完整 strict `.chart.json`。Data source 的全部字段和能够从当前行证明为 numeric 的字段会在 UI 中显示，Query source 则只暴露保守静态 output compiler 能证明的列。默认值可以帮助开始，但最终 source id 与列名始终由用户可见、由 schema 精确保存，而不是由 UI 猜测后隐藏。
+Query 创建不接受一个含糊的“使用当前数据”开关。用户必须从当前 workspace 选择一份精确 Data artifact，Orbit 随即生成 collision-safe `.sql` identity、第一行 JSON-quoted `-- rune:data "artifact-id"` 和最小的 `SELECT * FROM workspace_data;`。文件顺序改变不会改读另一份表，Unicode source id 也有确定转义。Chart 创建同样要求一份精确 Data 或 Query、一个 category、一个 value、`bar | line` 与 `number | currency | percent`；Orbit 再生成完整 strict `.chart.json`。Data source 的全部字段和能够从当前行证明为 numeric 的字段会在 UI 中显示，Query source 则只暴露保守静态 output compiler 能证明的列。默认值可以帮助开始，但最终 source id 与列名始终由用户可见、由 schema 精确保存，而不是由 UI 猜测后隐藏。
 
 这五类创建继续共用一个 identity/template factory。Document、Data 和 Deck 保留既有最小 source；Query 与 Chart 的输入被建模为 discriminated creation contract，缺失 source、错误 kind、invented id、unknown/ambiguous field、非法 mark/format 都在 artifact 出现前失败。factory 生成的 source 仍要经过完整 `validateWorkspaceArtifacts`，所以一个静态字段存在但 direct Data value 非数值的 Chart 不能被创建成“稍后再说”的坏文件。对 Query-backed Chart，静态阶段只证明 schema；真正的值仍属于 runtime evidence，不能被解析器伪造。
 
-人类创建 Chart 时可以选择暂不消费它，也可以在同一个确认动作里选择一份 Markdown Document 或 Deck Markdown。后一种路径不是把图表画面复制进正文：Rune 先创建可复用 `.chart.json`，再向目标 source 追加一个普通 `{{ chart("id") }}`。Document 得到一个可读二级标题，Deck 得到一个受限 `layout: split` slide；两者随后与 Chart creation 一起进入同一个 full-workspace mutation。目标已有相同绑定、目标不是 canonical Markdown/Deck、Chart 无效或任何 downstream compiler 报错时，整个操作都不写入。成功前先为被修改的 consumer 建立 manual checkpoint，然后只调用一次 device persistence；连接文件夹仍需用户显式 Push。这样“创建并嵌入”是一个可撤销的 source transaction，而不是两个可能中途失败的 UI side effect。
+人类创建 Chart 时可以选择暂不消费它，也可以在同一个确认动作里选择一份 Markdown Document 或 Deck Markdown。后一种路径不是把图表画面复制进正文：Orbit 先创建可复用 `.chart.json`，再向目标 source 追加一个普通 `{{ chart("id") }}`。Document 得到一个可读二级标题，Deck 得到一个受限 `layout: split` slide；两者随后与 Chart creation 一起进入同一个 full-workspace mutation。目标已有相同绑定、目标不是 canonical Markdown/Deck、Chart 无效或任何 downstream compiler 报错时，整个操作都不写入。成功前先为被修改的 consumer 建立 manual checkpoint，然后只调用一次 device persistence；连接文件夹仍需用户显式 Push。这样“创建并嵌入”是一个可撤销的 source transaction，而不是两个可能中途失败的 UI side effect。
 
 Chart reference grammar 同时从 ASCII-only id 扩展为 Unicode letter/number 加 `._-`，并由一个 formatter 生成 JSON-quoted binding。此前中文标题可以产生中文 artifact id，却无法被旧正则识别为 chart reference；这会让看似成功的创建在嵌入后变成 unresolved text。v0.31 用同一条 id grammar 服务 formatter、parser、dependency graph 和 compiler，并保留对现有 ASCII binding 的完全兼容。控制字符、空白和任意括号/引号仍不能进入 id，因此扩大语言支持没有扩大模板注入面。
 
-Workspace Agent 的 Structured Output 也不再只有一个宽泛 `kind` 枚举。Document/Data/Deck creation 只携带 title；Query 必须额外携带一个可见 Data id；Chart 必须携带可见 Data/Query id 与精确字段、mark、format。Rune 仍独占 id、filename、extension、language 和完整 initial source。若 typed template 已经满足“新建一份读取这张表的 Query”或“按这两个字段画柱状图”，creation 可以有 0 个 edit；模型不需要制造一次无意义 replace 来证明自己参与过。若需要改 SQL projection、Chart description 或颜色，0–8 个 typed edits 仍在 Rune-owned template 上顺序编译。模型不能引用同一计划中刚创建的文件，因为碰撞后的真实 id 尚未暴露；新的依赖链必须跨一次已审阅创建再继续，这比允许模型猜 slug 更诚实。
+Workspace Agent 的 Structured Output 也不再只有一个宽泛 `kind` 枚举。Document/Data/Deck creation 只携带 title；Query 必须额外携带一个可见 Data id；Chart 必须携带可见 Data/Query id 与精确字段、mark、format。Orbit 仍独占 id、filename、extension、language 和完整 initial source。若 typed template 已经满足“新建一份读取这张表的 Query”或“按这两个字段画柱状图”，creation 可以有 0 个 edit；模型不需要制造一次无意义 replace 来证明自己参与过。若需要改 SQL projection、Chart description 或颜色，0–8 个 typed edits 仍在 Orbit-owned template 上顺序编译。模型不能引用同一计划中刚创建的文件，因为碰撞后的真实 id 尚未暴露；新的依赖链必须跨一次已审阅创建再继续，这比允许模型猜 slug 更诚实。
 
 运行时安全门也随创建能力扩大。此前 preflight 只由 changed Data/Query 触发，因此单独新建或修改一个 Query-backed Chart 可能通过静态 schema，却在 Review 后才发现选择的列实际包含字符串。现在 changed/new Chart 本身也是 impact root：direct Data Chart 直接用 proposed workspace 的 canonical rows 验证，不启动 DuckDB；Query-backed Chart 将其精确 Query 加入 execution set，取得绑定当前 Query/Data revisions 的 snapshot，再验证所有受影响 Chart consumer。失败的 Chart creation 可以进入既有的一次 bounded repair feedback，但仍必须用完整 replacement plan 重新通过 server compiler 和第二次本地 preflight。没有 preview、pending review、checkpoint 或 device write 能绕过这条证据边界。
 
 无密钥路径也使用同一合同。本地 Workspace Agent 能从显式 context pack 选择 Data 创建 Query，或选择 Data/Query 的静态字段创建 Chart；收入、比例和趋势等窄关键词只决定可见的 format/mark starter，不扩大 context，也不读隐藏结果。创建 identity 仍对完整 workspace 做碰撞解析，最终 transaction 仍让完整 workspace 的 downstream consumer 保留否决权。v0.31 没有增加数据库、服务端执行器、通用可视化库或后台 Agent；它只是终于让已经存在的五种 canonical source 能从零进入同一条低基础设施编译链。
 
-这还不是完整的“数据建模向导”。Query 仍绑定一份 Data，Chart 仍是单 series，用户仍需在创建后的 SQL source 中表达聚合、筛选与 alias；Agent 也不能在一个未审阅计划里创建 Data、Query、Chart 和报告并猜测所有生成 id。下一步若要缩短多步分析，应设计一种 Rune-owned transaction reference（例如 action-local symbolic handle），让后续 creation/patch 能引用同一计划中尚未分配的 identity，并在编译时统一解析、在 review 中完整展开。那应是一套显式、可证明的依赖规划协议，而不是放开模型直接写 id。
+这还不是完整的“数据建模向导”。Query 仍绑定一份 Data，Chart 仍是单 series，用户仍需在创建后的 SQL source 中表达聚合、筛选与 alias；Agent 也不能在一个未审阅计划里创建 Data、Query、Chart 和报告并猜测所有生成 id。下一步若要缩短多步分析，应设计一种 Orbit-owned transaction reference（例如 action-local symbolic handle），让后续 creation/patch 能引用同一计划中尚未分配的 identity，并在编译时统一解析、在 review 中完整展开。那应是一套显式、可证明的依赖规划协议，而不是放开模型直接写 id。
 
 ## 37. 事务内引用不是临时 ID：让 Agent 一次规划完整的数据到成品链
 
-v0.31 补齐了五类创建，却仍把最重要的工作流切成多轮：先创建 Data，审查后模型才能看见真实 id；再创建 Query；再创建 Chart；最后才把 Chart 放进报告或演示。每一轮都安全，但用户必须反复描述同一个目标，模型也会在轮次之间丢失“这是一个整体交付物”的结构意图。最危险的捷径是让模型按标题猜 `forecast-data`、`forecast-query` 之类的 slug：只要 workspace 已有同名文件，Rune 实际分配 `-2` 后缀，猜测就会指向旧文件、变成 unresolved binding，或偶然连到错误事实。v0.32 因而实现的不是“允许临时 id”，而是一种由编译器独占解释权的事务内引用语言。
+v0.31 补齐了五类创建，却仍把最重要的工作流切成多轮：先创建 Data，审查后模型才能看见真实 id；再创建 Query；再创建 Chart；最后才把 Chart 放进报告或演示。每一轮都安全，但用户必须反复描述同一个目标，模型也会在轮次之间丢失“这是一个整体交付物”的结构意图。最危险的捷径是让模型按标题猜 `forecast-data`、`forecast-query` 之类的 slug：只要 workspace 已有同名文件，Orbit 实际分配 `-2` 后缀，猜测就会指向旧文件、变成 unresolved binding，或偶然连到错误事实。v0.32 因而实现的不是“允许临时 id”，而是一种由编译器独占解释权的事务内引用语言。
 
 每个 `create_artifact` 现在必须声明一个 1–40 字符、以小写字母开头的 action-local `handle`。它只在这次 provider response 内存在，不是 artifact id、filename、manifest metadata 或 source token。Query/Chart 的 `source` 也不再是一个容易混淆的字符串，而是严格 discriminated reference：`{ kind: "artifact", artifactId }` 只能指向请求中原本可见的 canonical file；`{ kind: "creation", handle }` 只能指向同一计划里更早、并且已经成功编译的创建。Chart embedding 使用完全相同的 reference 结构。重复 handle、前向引用、缺失 handle、错误 artifact kind、非法字符或把生成 slug 填进 `artifactId` 都会拒绝完整 operation plan。
 
-“只能引用更早 action”是有意的拓扑约束。一个四步计划可以按 `Data → Query → Chart → Document/Deck` 排列，Rune 每完成一步才把 handle 记录到内存 map；某一步的 template、typed edits 或 workspace validation 失败时，该 handle 从未获得能力，后续动作也不能继续。这样不需要实现任意 DAG 排序、循环检测或模型自定义 dependency solver，Structured Output 的数组顺序就是可读的执行顺序。真实 id 仍由原有 collision resolver 对当时 evolving workspace 分配，所以两个同标题创建可以得到 `brief` 与 `brief-2`，后续 handle 都会准确解析到各自结果，而模型从未看到或控制这个命名决定。
+“只能引用更早 action”是有意的拓扑约束。一个四步计划可以按 `Data → Query → Chart → Document/Deck` 排列，Orbit 每完成一步才把 handle 记录到内存 map；某一步的 template、typed edits 或 workspace validation 失败时，该 handle 从未获得能力，后续动作也不能继续。这样不需要实现任意 DAG 排序、循环检测或模型自定义 dependency solver，Structured Output 的数组顺序就是可读的执行顺序。真实 id 仍由原有 collision resolver 对当时 evolving workspace 分配，所以两个同标题创建可以得到 `brief` 与 `brief-2`，后续 handle 都会准确解析到各自结果，而模型从未看到或控制这个命名决定。
 
-把新 Chart 接入成品不能依赖在任意 `replace_text` 中塞占位符，否则 placeholder grammar 会渗进 Markdown、Deck、SQL 和 JSON 的每个字符串位置，也很难证明模型究竟授权了哪条依赖。v0.32 新增的 `append_chart` 因而是 Workspace-only typed operation：它接收一个现有 Chart 或更早的 Chart handle，再接收一行纯文本 heading。对 Markdown，它追加二级标题和一个由 Rune formatter 生成的 JSON-quoted `{{ chart(...) }}`；对 Deck Markdown，它追加受限 `layout: split` slide。File/Selection provider schema 不暴露这个 operation，legacy HTML、Data、Query、Chart 自身和重复 embedding 都明确失败。模型仍不能 patch 一份刚创建的文件；若要让新 Document/Deck 使用新 Chart，就把 `append_chart` 直接放进该 consumer 的 creation edits。
+把新 Chart 接入成品不能依赖在任意 `replace_text` 中塞占位符，否则 placeholder grammar 会渗进 Markdown、Deck、SQL 和 JSON 的每个字符串位置，也很难证明模型究竟授权了哪条依赖。v0.32 新增的 `append_chart` 因而是 Workspace-only typed operation：它接收一个现有 Chart 或更早的 Chart handle，再接收一行纯文本 heading。对 Markdown，它追加二级标题和一个由 Orbit formatter 生成的 JSON-quoted `{{ chart(...) }}`；对 Deck Markdown，它追加受限 `layout: split` slide。File/Selection provider schema 不暴露这个 operation，legacy HTML、Data、Query、Chart 自身和重复 embedding 都明确失败。模型仍不能 patch 一份刚创建的文件；若要让新 Document/Deck 使用新 Chart，就把 `append_chart` 直接放进该 consumer 的 creation edits。
 
-编译器还会在 source 完成后重建一次完整 dependency graph。所有 `created artifact → touched consumer` 边必须能对应某个已经解析的 creation handle；如果模型在普通 `replace_text` 中碰巧猜中了 Rune 最终生成的 slug，图上虽然会出现一条“可解析”边，但没有 handle authorization，整个计划仍被拒绝。这个二次证明把“引用结果合法”和“模型有权建立这条同事务依赖”分开：whole-workspace validator负责 artifact/schema 正确性，handle ledger 负责能力来源。编译结果只包含真实 source、真实 id 和 operation count；handle 与授权 ledger 在 response、review、localStorage、folder、Git 和 export 中都不存在。
+编译器还会在 source 完成后重建一次完整 dependency graph。所有 `created artifact → touched consumer` 边必须能对应某个已经解析的 creation handle；如果模型在普通 `replace_text` 中碰巧猜中了 Orbit 最终生成的 slug，图上虽然会出现一条“可解析”边，但没有 handle authorization，整个计划仍被拒绝。这个二次证明把“引用结果合法”和“模型有权建立这条同事务依赖”分开：whole-workspace validator负责 artifact/schema 正确性，handle ledger 负责能力来源。编译结果只包含真实 source、真实 id 和 operation count；handle 与授权 ledger 在 response、review、localStorage、folder、Git 和 export 中都不存在。
 
 运行时证明没有因为多文件创建而缩短。若计划新建 Data、绑定它的 Query 和绑定 Query 的 Chart，client preflight 会先构造完整 proposed workspace，把新 Data 计入 changed set、只执行精确绑定的新 Query，再用同一个 revision-bound snapshot 验证新 Chart 的 category/value 和 finite numeric rows。最后的 Document/Deck 只消费已经验证的 Chart。任一 SQL runtime、字段、数值、Chart 或 downstream binding 错误都会在 review 出现前拒绝整笔事务；一次 bounded repair 仍必须返回完整 replacement plan。测试同时覆盖 provider route 的四文件 concrete output、编译器 handle stripping、猜测/前向/错误 kind 失败，以及新 Data → Query → Chart impact graph 的实际执行集合。
 
-无密钥模式不能只展示协议而无法完成同样的用户任务。新的 Workspace 快捷指令“根据收入数据创建分析、图表和报告”会从显式 context pack 选择一份有效 Data，由 Rune 自己顺序创建并绑定 Query、Chart 与 Markdown report；若指令同时要求演示，第四个 creation 会加入 Deck，并复用同一 Chart。这个 deterministic planner 不伪造 provider handles，因为所有 identity 本来就由本地 Rune 代码持有，但它产生与远端编译器同形的 concrete creation batch，进入相同的 runtime preflight、review、revision check 和单次 device persistence。由此，默认没有 API key 的产品也能直接演示“一句话产生可继续编辑的完整 source chain”，而不是退回单文件 demo。
+无密钥模式不能只展示协议而无法完成同样的用户任务。新的 Workspace 快捷指令“根据收入数据创建分析、图表和报告”会从显式 context pack 选择一份有效 Data，由 Orbit 自己顺序创建并绑定 Query、Chart 与 Markdown report；若指令同时要求演示，第四个 creation 会加入 Deck，并复用同一 Chart。这个 deterministic planner 不伪造 provider handles，因为所有 identity 本来就由本地 Orbit 代码持有，但它产生与远端编译器同形的 concrete creation batch，进入相同的 runtime preflight、review、revision check 和单次 device persistence。由此，默认没有 API key 的产品也能直接演示“一句话产生可继续编辑的完整 source chain”，而不是退回单文件 demo。
 
 v0.32 仍保持明确上限：一次最多四个 action，只支持向 Document/Deck 追加整个 Chart，不支持在同一计划 patch 刚创建的 artifact、前向 handle、任意位置插入、Query scalar handle、多个 Data relation、任意 DAG 或后台自动 Apply。若真实使用证明“同时创建两份数据、三份查询、多个成品”是高频需求，下一步应先把 review 从平面文件列表升级为可折叠 transaction graph，并定义 action budget 与分阶段 commit 语义；不能只把上限从 4 改成 40。当前版本选择最小但完整的核心链，新增的复杂度只在 Zod contract、顺序 compiler 和 deterministic local planner，不增加数据库、队列、常驻 worker、production secret 或第三方 workflow engine。
 
@@ -1677,11 +1677,11 @@ v0.32 仍保持明确上限：一次最多四个 action，只支持向 Document/
 
 v0.32 让一句话第一次可以产生 `Data → Query → Chart → Report/Deck` 的完整 source chain，但原有审核卡仍按文件逐行排列。用户能看到四份 diff，却必须自己打开 SQL、Chart JSON 和 Markdown 才能回答三个最重要的问题：这张图到底读取哪份数据、报告新增了哪条 live binding、改动一份 Data 会让哪些未修改文件重新面对运行时验证。平面列表能证明“改了什么文本”，不能直接表达“这些改动为何必须作为一个原子事务被一起批准”。v0.33 因而没有增加模型权限，而是把已经存在的 source relationship 变成审核本身的一部分。
 
-事务图不能复用 provider 的 action-local handle、summary 或自然语言 rationale。handle 在服务端编译后已经完成使命，rationale 也只是未经证明的解释；若 UI 直接画模型声称的依赖，就可能展示一张与最终 canonical source 不一致的漂亮假图。Rune 现在分别对 current workspace 和完整 proposed workspace 运行同一个 dependency compiler，只读取 Query directive、metric binding、Chart source 和 chart embed。审核图是 canonical source 的另一份编译产物，和左侧长期 Data graph 共用六类 edge grammar，却没有持久化第二份图状态。
+事务图不能复用 provider 的 action-local handle、summary 或自然语言 rationale。handle 在服务端编译后已经完成使命，rationale 也只是未经证明的解释；若 UI 直接画模型声称的依赖，就可能展示一张与最终 canonical source 不一致的漂亮假图。Orbit 现在分别对 current workspace 和完整 proposed workspace 运行同一个 dependency compiler，只读取 Query directive、metric binding、Chart source 和 chart embed。审核图是 canonical source 的另一份编译产物，和左侧长期 Data graph 共用六类 edge grammar，却没有持久化第二份图状态。
 
 仅把 proposed graph 画出来仍然不够。删除 `{{ chart(...) }}` 后，那条边已经不在 proposed source 中；若审核只看未来图，“解除关系”反而会完全消失。v0.33 因此对 current/proposed edge 取 union，以 source id、consumer id 和 dependency kind 作为稳定关系 identity：只在 proposed 出现的是 `added`，只在 current 出现的是 `removed`，两边 identity 相同但字段/引用合同变化的是 `updated`，完全相同的是 `retained`。例如 Chart 从 `Revenue` 改读 `Cost` 不会伪装成无变化；旧 `Region → Revenue` 与新 `Region → Cost` 会同时出现在一条 updated relation 上。
 
-聚焦范围也必须有方向。若新 Query 读取默认 `regional-revenue.csv`，对整张图做无向连通遍历会把这份 Data 已有的两条 Query、两张 Chart、报告和 Deck 全部拉进来，看起来像十几份文件都被新建事务影响。实际上 Data 没变，那些兄弟消费者没有风险。Rune 只从 changed roots 向上遍历其精确输入，再独立向下遍历其消费者：新建 Query 的共享 Data 只是 `Input`，不会以它为新 root 扩散到无关兄弟；若 Data 本身被修改，它就是 root，所有 Query、Chart、scalar、Document/Deck 下游才会进入 `Validated` 集合。这个有向闭包同时避免漏报真实影响和制造虚假爆炸。
+聚焦范围也必须有方向。若新 Query 读取默认 `regional-revenue.csv`，对整张图做无向连通遍历会把这份 Data 已有的两条 Query、两张 Chart、报告和 Deck 全部拉进来，看起来像十几份文件都被新建事务影响。实际上 Data 没变，那些兄弟消费者没有风险。Orbit 只从 changed roots 向上遍历其精确输入，再独立向下遍历其消费者：新建 Query 的共享 Data 只是 `Input`，不会以它为新 root 扩散到无关兄弟；若 Data 本身被修改，它就是 root，所有 Query、Chart、scalar、Document/Deck 下游才会进入 `Validated` 集合。这个有向闭包同时避免漏报真实影响和制造虚假爆炸。
 
 节点只有四种状态。`New` 与 `Edited` 是本次会写入的 canonical source，点击仍然只切换现有 bounded concrete diff；`Input` 是保持 byte-for-byte 不变但解释 changed source 所必需的上游；`Validated` 是未被写入、却因 changed root 而进入完整 proposed workspace 或 runtime downstream proof 的消费者。图不会把 Input/Validated 变成可编辑 target，也不会改变 revision、checkpoint 或 Apply 权限。无跨文件 binding 的单文件 patch 仍诚实显示为一个节点和零条边，而不是为“看起来像 Agent”发明依赖。
 
@@ -1693,49 +1693,49 @@ v0.33 仍不支持文件删除、部分 Apply、跨阶段回滚、多人 approva
 
 ## 39. 从工作台直接出现，转向被欢迎、被教会、再进入任务
 
-v0.33 以前的 Rune 一打开就是完整工作台：文件列表、source editor、preview、Agent、graph、导入导出和同步控件同时出现。这对已经理解 artifact-as-code 的开发者有效，却要求新用户先理解 Rune 的内部架构，才能知道第一步做什么。它也让产品看起来像常见的深色侧栏 AI 工具，而不是有自身秩序和气质的内容产品。v0.34 因而没有扩张 Agent 权限，而是第一次把“用户如何进入 Rune”作为完整产品路径。
+v0.33 以前的 Orbit 一打开就是完整工作台：文件列表、source editor、preview、Agent、graph、导入导出和同步控件同时出现。这对已经理解 artifact-as-code 的开发者有效，却要求新用户先理解 Orbit 的内部架构，才能知道第一步做什么。它也让产品看起来像常见的深色侧栏 AI 工具，而不是有自身秩序和气质的内容产品。v0.34 因而没有扩张 Agent 权限，而是第一次把“用户如何进入 Orbit”作为完整产品路径。
 
-视觉上借鉴 Apple 的克制、留白、材料层级、系统语言建议和 setup assistant 节奏，但不复制系统控件或品牌。Rune 选择朱砂红作为自己的主色：它既像编辑批注和确认印记，也能与雾白画布、石墨侧栏和 Artifact 语义色形成稳定识别。原来占主导的森林绿退出品牌主色，只保留 Data 的含义；通用 AI 星云渐变不再承担产品身份。顶部材料使用轻模糊和细边框，动效只解释页面进入、快捷键完成和拖放状态，并服从 reduced-motion。
+视觉上借鉴 Apple 的克制、留白、材料层级、系统语言建议和 setup assistant 节奏，但不复制系统控件或品牌。Orbit 选择朱砂红作为自己的主色：它既像编辑批注和确认印记，也能与雾白画布、石墨侧栏和 Artifact 语义色形成稳定识别。原来占主导的森林绿退出品牌主色，只保留 Data 的含义；通用 AI 星云渐变不再承担产品身份。顶部材料使用轻模糊和细边框，动效只解释页面进入、快捷键完成和拖放状态，并服从 reduced-motion。
 
 首次启动先从 navigator languages 中保守推荐简体中文或 English，再由人确认，选择只作为设备偏好保存在独立 localStorage key。v0.34 最初让 SSR 输出不带 welcome 的稳定英文壳，hydration 后才读取设备信息，以避免 locale 文本分叉；v1.36 在不改变 locale 合同的前提下进一步让服务器直接输出确定性的英文起笔问候，并用只读取完成标记的 pre-paint gate 决定是否显示，既没有 hydration 文本差异，也不再闪过工作区。欢迎流程依次解释本地优先、先审后写和实时编译；快捷键页不是静态说明，而是在 capture phase 监听用户实际按下打开、checkpoint 和 Agent plan 组合键并逐项确认。完成后可打开指南、导入自己的文件或探索示例，帮助按钮可以重新进入，不把教程变成一次性不可找回的弹层。
 
-说明文档不是外部 help center。Rune 生成一份普通 rune-guide.md Artifact，跟其他 source 一样可编辑、可预览、可下载、可同步到用户目录，也能演示右侧 heading 到左侧精确 source selection。更改界面语言时，只在指南仍等于 Rune 原始模板时切换内容；用户改过的指南不会被偏好更新覆盖。这让 onboarding 本身遵守 source ownership，而不是引入另一套隐藏内容系统。
+说明文档不是外部 help center。Orbit 生成一份普通 rune-guide.md Artifact，跟其他 source 一样可编辑、可预览、可下载、可同步到用户目录，也能演示右侧 heading 到左侧精确 source selection。更改界面语言时，只在指南仍等于 Orbit 原始模板时切换内容；用户改过的指南不会被偏好更新覆盖。这让 onboarding 本身遵守 source ownership，而不是引入另一套隐藏内容系统。
 
 “工作区存在文件”和“当前打开文件”也被拆开。按 Cmd/Ctrl-W 或 source header 的关闭按钮只关闭当前视图，不删除任何 Artifact；中央出现系统式 drop zone，同时保留 Sources rail。点击或拖放最多二十个文件会进入一次 import transaction：每个文件独立通过大小、格式和本地转换边界，Office warning 带来源文件名，所有生成 Artifact 合并后经过一次完整 workspace validation 和同一个 review dialog，确认前零写入。Cmd/Ctrl-O 与中央按钮共享同一 file input，所以快捷键、点击和拖放不会形成三条不一致的导入路径。
 
-Gemini Notebook 类产品值得借鉴的是 Sources 作为所有回答和产物的证据基础、基于来源的提问、可回到原文的引用与引导式产物入口，而不是复制聊天加笔记布局。Rune 的长期信息流仍是 Sources → Analysis → Deliverables → Review → Apply。任何引用或右侧交互都必须由 source range、SQL lineage 或 Chart provenance 证明，不能信任模型编造的页码和文件名。
+Gemini Notebook 类产品值得借鉴的是 Sources 作为所有回答和产物的证据基础、基于来源的提问、可回到原文的引用与引导式产物入口，而不是复制聊天加笔记布局。Orbit 的长期信息流仍是 Sources → Analysis → Deliverables → Review → Apply。任何引用或右侧交互都必须由 source range、SQL lineage 或 Chart provenance 证明，不能信任模型编造的页码和文件名。
 
 v0.34 只建立中英文 welcome/tutorial/empty state 与指南，并不假装整个旧工作台已完成国际化。它也不因为用户希望打开 DOC、PPT、PDF、ODF 就把扩展名加入 accept 列表：DOC/PPT 是旧二进制格式，需要未来桌面壳或受控 conversion service；PDF 到 Markdown 是语义提取/OCR，不是原版式 round-trip；ODF 要分别实现 ODT、ODS、ODP。每一种格式仍必须有 parser limit、review、fidelity warning、fixture 和独立 handler QA。
 
-双向编辑同样保持 source-first。当前左侧修改已经实时重编译右侧，右侧 heading、cell、row、Query direct field、Chart datum 和 Deck slide 已能定位精确 source；Data cell、Document section/block、Deck slide 与 Chart spec 也已通过 typed visual editor 编译回同一 source。v0.51 进一步让这些右侧草稿在保存前就把完整 source candidate 实时镜像并高亮到左侧，但镜像不获得持久化权。Rune 不会把整个 preview 设成 contenteditable 后猜测如何还原 Markdown，因为那会制造第二份状态、格式漂移和不可证明的写入范围。所谓双向同步，是两个受控投影修改同一个 canonical source。
+双向编辑同样保持 source-first。当前左侧修改已经实时重编译右侧，右侧 heading、cell、row、Query direct field、Chart datum 和 Deck slide 已能定位精确 source；Data cell、Document section/block、Deck slide 与 Chart spec 也已通过 typed visual editor 编译回同一 source。v0.51 进一步让这些右侧草稿在保存前就把完整 source candidate 实时镜像并高亮到左侧，但镜像不获得持久化权。Orbit 不会把整个 preview 设成 contenteditable 后猜测如何还原 Markdown，因为那会制造第二份状态、格式漂移和不可证明的写入范围。所谓双向同步，是两个受控投影修改同一个 canonical source。
 
 ## 40. 语言之后先决定模型边界，并让第一种右侧编辑回到 source
 
-语言确认后立即进入模型设置，比把 API 配置藏进后续 Preferences 更符合首次启动的心理顺序：语言回答“Rune 怎样和我说话”，模型回答“Rune 会把什么交给谁处理”。如果先教快捷键、最后才解释可能发生的远端请求，用户在第一次触发 Agent 时才发现数据边界，信任已经被透支。因此 v0.35 把 setup assistant 固定为欢迎、语言、模型、快捷键、开始五步；帮助入口允许以后重新进入模型页，首次跳过也只代表选择本地模式，不代表默许远端传输。
+语言确认后立即进入模型设置，比把 API 配置藏进后续 Preferences 更符合首次启动的心理顺序：语言回答“Orbit 怎样和我说话”，模型回答“Orbit 会把什么交给谁处理”。如果先教快捷键、最后才解释可能发生的远端请求，用户在第一次触发 Agent 时才发现数据边界，信任已经被透支。因此 v0.35 把 setup assistant 固定为欢迎、语言、模型、快捷键、开始五步；帮助入口允许以后重新进入模型页，首次跳过也只代表选择本地模式，不代表默许远端传输。
 
 模型设置必须把“个人 API”和“把 key 交给浏览器可读持久层”分开。OpenAI 的官方认证说明要求 API Key 作为秘密保存在服务端环境或密钥管理系统中，不能嵌入客户端代码。v0.35 因而最初只向 `GET /api/model-status` 读取 `configured`、`provider`、`model` 三个非秘密字段，展示部署模型或本地规划器；v0.46 在不改变该边界的前提下允许用户在 password draft 中短暂输入 key，立刻通过同源 HTTPS 交给服务端加密为浏览器脚本不可读的 HttpOnly credential。用户偏好仍只在 localStorage 保存 `auto` / `local`，密钥不能进入 workspace、Artifact、localStorage、checkpoint、文件夹 manifest、Git、URL、日志、分析事件或模型输入。
 
 这也解释了 Web、部署和桌面版的三种产品路径。本地开发可以在未提交的 `.env.local` 放部署 key，也可以配置独立加密主密钥后使用个人 profile；托管 Web 把每位用户的 credential 保存在同源、可撤销的加密 HttpOnly cookie 中；v0.53 的桌面 BYOK 已由 main process 通过 Electron `safeStorage` 保护 vault 主密钥，React/preload 仍只拿脱敏状态。当前版本没有假装 Web cookie 已经是跨设备账号 vault，也不对尚未验证的 Windows/Linux 系统存储扩大承诺。无模型时 deterministic planner 仍能完成核心任务，是隐私选择和可用降级，不是错误页。
 
-模型状态与模型权限仍是两件事。连接成功只让 Rune 可以调用 provider；provider 依旧只能返回有界 typed operation，不能接触 localStorage、文件系统 handle 或写入 API。请求仍由 graph-bounded context 决定，Data/Query/Chart 改动仍要通过本地 runtime preflight，所有结果仍需 review、revision check、checkpoint 与原子写入。用户选“仅本地”后，client 不发送 Agent 请求到远端 route，而是明确运行内置规划器；刷新后只恢复这个非秘密选择。
+模型状态与模型权限仍是两件事。连接成功只让 Orbit 可以调用 provider；provider 依旧只能返回有界 typed operation，不能接触 localStorage、文件系统 handle 或写入 API。请求仍由 graph-bounded context 决定，Data/Query/Chart 改动仍要通过本地 runtime preflight，所有结果仍需 review、revision check、checkpoint 与原子写入。用户选“仅本地”后，client 不发送 Agent 请求到远端 route，而是明确运行内置规划器；刷新后只恢复这个非秘密选择。
 
 同一版本实现了右侧到左侧的第一种真实写入：Data scalar cell。此前点击 cell 已能通过 parser-derived source target 选中左侧精确 token；现在 Enter 或显式铅笔按钮可以打开 typed editor。这个入口不使用双击，因为单击定位会在下一个 animation frame 聚焦 textarea，容易与双击产生的 editor autofocus 冲突；独立按钮把“定位”和“修改”变成两个可理解、键盘可达的动作。
 
-视觉编辑没有直接改 React table rows。提交时 Rune 用 row index、column index、column name、start/end 与当前 source revision 重新证明 target；CSV 通过现有 parser 做自动 scalar typing，JSON 要求用户显式选择 string、number、boolean 或 null。嵌套 object/array、重复 JSON key、missing property、非有限数字、相同值、超过 10,000 字符、旧 offset 和跨出 token 边界的修改全部拒绝。序列化后还要重新 parse 完整 source，证明目标值 round-trip，并重新生成新 source range。
+视觉编辑没有直接改 React table rows。提交时 Orbit 用 row index、column index、column name、start/end 与当前 source revision 重新证明 target；CSV 通过现有 parser 做自动 scalar typing，JSON 要求用户显式选择 string、number、boolean 或 null。嵌套 object/array、重复 JSON key、missing property、非有限数字、相同值、超过 10,000 字符、旧 offset 和跨出 token 边界的修改全部拒绝。序列化后还要重新 parse 完整 source，证明目标值 round-trip，并重新生成新 source range。
 
-单个 cell 看起来是局部写入，但它可能改变 Query、metric、Chart 和成品，所以不能在 editor blur 时立刻落盘。Rune 先基于 captured workspace revision 构造完整 proposed workspace，运行静态 adapter/dependency validation，再执行受影响 Query 并验证所有相关 Chart；过程中 source editor、Import、Export 和 Agent 暂停新的写入。只有全部通过，才为旧 Data source 建 checkpoint、执行一次 device persistence，并同时更新 source、preview、精确选择和 Selection Agent context。任何错误都把信息留在 cell editor 内，canonical source 保持 byte-for-byte 不变。
+单个 cell 看起来是局部写入，但它可能改变 Query、metric、Chart 和成品，所以不能在 editor blur 时立刻落盘。Orbit 先基于 captured workspace revision 构造完整 proposed workspace，运行静态 adapter/dependency validation，再执行受影响 Query 并验证所有相关 Chart；过程中 source editor、Import、Export 和 Agent 暂停新的写入。只有全部通过，才为旧 Data source 建 checkpoint、执行一次 device persistence，并同时更新 source、preview、精确选择和 Selection Agent context。任何错误都把信息留在 cell editor 内，canonical source 保持 byte-for-byte 不变。
 
-v0.35 的限制是有意的：Query result 和 Chart datum 即使具有跨 Artifact provenance，也只导航到 Data，不直接写；嵌套 JSON 只定位不编辑；Document、Deck 和 Chart 视觉写入还未开放。下一阶段先设计 Markdown heading/block operation 与 preview block identity，沿用相同的 stale-range、outside-boundary、whole-workspace、checkpoint 和 atomic persistence 合同，而不是把 document preview 设为 contenteditable。这样每扩展一种右侧交互，Rune 增加的是一个可测试 compiler operation，而不是一套新的隐藏文档模型。
+v0.35 的限制是有意的：Query result 和 Chart datum 即使具有跨 Artifact provenance，也只导航到 Data，不直接写；嵌套 JSON 只定位不编辑；Document、Deck 和 Chart 视觉写入还未开放。下一阶段先设计 Markdown heading/block operation 与 preview block identity，沿用相同的 stale-range、outside-boundary、whole-workspace、checkpoint 和 atomic persistence 合同，而不是把 document preview 设为 contenteditable。这样每扩展一种右侧交互，Orbit 增加的是一个可测试 compiler operation，而不是一套新的隐藏文档模型。
 
 ## 41. Document 双向编辑不是富文本反向猜测，而是 section capability
 
-Data cell 能依靠 CSV/JSON lexer 找到一个 scalar token，Document 却没有天然的“一个可见段落等于一个连续 Markdown range”保证。ReactMarkdown 可能把引用、列表、表格、链接定义和 fenced code 组合成不同 DOM；compiled metric 与 Chart 又会把 source token 投影成运行结果。如果直接监听右侧 DOM 或使用 contenteditable，Rune 必须从浏览器重写后的 HTML 反推 Markdown，空白、列表编号、引用层级和 binding 很快会漂移。v0.36 因而没有承诺任意 WYSIWYG，而是先把已经可证明的 `document-section` target 提升成一种有界写 capability。
+Data cell 能依靠 CSV/JSON lexer 找到一个 scalar token，Document 却没有天然的“一个可见段落等于一个连续 Markdown range”保证。ReactMarkdown 可能把引用、列表、表格、链接定义和 fenced code 组合成不同 DOM；compiled metric 与 Chart 又会把 source token 投影成运行结果。如果直接监听右侧 DOM 或使用 contenteditable，Orbit 必须从浏览器重写后的 HTML 反推 Markdown，空白、列表编号、引用层级和 binding 很快会漂移。v0.36 因而没有承诺任意 WYSIWYG，而是先把已经可证明的 `document-section` target 提升成一种有界写 capability。
 
 一个 section target 来自当前 canonical revision 的 fence-aware heading scanner。preamble 是第一个可见标题之前的连续内容；每个标题 section 从该 ATX heading 开始，到下一个可见标题之前结束；没有标题时全文是一个 body。代码围栏中的 `#` 永远不创建 section。target 包含 artifact、id、index、label 和 UTF-16 start/end，但仍只在当前渲染中存在。为了不把四空格 code block 的缩进当成“可清理空白”，Document target 只移除边界上的完整空白行，不再逐字符 trim 内容。
 
-右侧交互保持两个动作：点击 section 名称仍然执行精确 source 定位并进入 Selection Agent；旁边的铅笔打开 section editor。编辑器左侧是最多 16,000 字符的 Markdown 草稿，右侧通过 Rune 现有安全 compiler 即时展示 draft preview。草稿只是组件内的临时输入，不进 localStorage、checkpoint、folder 或 workspace graph；取消立即丢弃。这里仍展示 Markdown，是有意的过渡：它让用户在成品侧工作并获得实时反馈，却不伪装已经解决所有富文本 round-trip。
+右侧交互保持两个动作：点击 section 名称仍然执行精确 source 定位并进入 Selection Agent；旁边的铅笔打开 section editor。编辑器左侧是最多 16,000 字符的 Markdown 草稿，右侧通过 Orbit 现有安全 compiler 即时展示 draft preview。草稿只是组件内的临时输入，不进 localStorage、checkpoint、folder 或 workspace graph；取消立即丢弃。这里仍展示 Markdown，是有意的过渡：它让用户在成品侧工作并获得实时反馈，却不伪装已经解决所有富文本 round-trip。
 
-Save 会从零重做授权证明，而不信任打开 editor 时缓存的 fragment。Rune 要求当前 artifact source 与 UI revision 相同，再用 target id、index、label、start/end 找到完全一致的 section。标题型 section 的 draft 必须仍只有一个位于 offset 0 的可见标题，标题层级必须不变；标题文字和正文可以修改。preamble 或无标题全文必须继续无标题。这样 section rename 是局部内容操作，而增加/删除 section、改变 hierarchy 仍是显式结构操作。空 draft、no-op、超限、stale target、额外标题、缺失标题和越界替换全部失败关闭。
+Save 会从零重做授权证明，而不信任打开 editor 时缓存的 fragment。Orbit 要求当前 artifact source 与 UI revision 相同，再用 target id、index、label、start/end 找到完全一致的 section。标题型 section 的 draft 必须仍只有一个位于 offset 0 的可见标题，标题层级必须不变；标题文字和正文可以修改。preamble 或无标题全文必须继续无标题。这样 section rename 是局部内容操作，而增加/删除 section、改变 hierarchy 仍是显式结构操作。空 draft、no-op、超限、stale target、额外标题、缺失标题和越界替换全部失败关闭。
 
 live binding 需要更严格的权限。视觉 editor 中出现的每个 `{{ ... }}` token 必须与原 section 按顺序 byte-for-byte 相同；用户可以改它周围的论述，却不能在一个看似文本编辑器里悄悄新增、删除或重定向 metric/Chart dependency。依赖变更继续通过 canonical source 或 Agent review，让 transaction map 和运行时证据有清楚入口。这也避免 Document-only patch 因为临时换到另一张 Query-backed Chart 而需要隐藏启动 DuckDB。
 
@@ -1745,15 +1745,15 @@ v0.36 仍没有 paragraph-level DOM selection、拖拽重排 section、可视化
 
 ## 42. Deck 双向编辑从受限 slide grammar 开始，而不是做一块缩水版 PowerPoint
 
-演示预览运行在无脚本 sandbox iframe 中，它天然不能像 React 文档或表格一样把 click 事件直接带回 workbench；更重要的是，iframe 中的 HTML 是 Deck Markdown、metric 和 Chart snapshot 的编译结果，不是可逆编辑模型。让用户直接拖动编译后的标题或图形，再尝试从 CSS/DOM 反推 Deck Markdown，会立刻制造第三份 layout state，并破坏 Rune “source 是事实”的核心。因此 v0.37 继续使用 iframe 外、由 canonical source 派生的 `deck-slide` target strip：主按钮只定位 source，独立铅笔才授予该页的受控写权限。
+演示预览运行在无脚本 sandbox iframe 中，它天然不能像 React 文档或表格一样把 click 事件直接带回 workbench；更重要的是，iframe 中的 HTML 是 Deck Markdown、metric 和 Chart snapshot 的编译结果，不是可逆编辑模型。让用户直接拖动编译后的标题或图形，再尝试从 CSS/DOM 反推 Deck Markdown，会立刻制造第三份 layout state，并破坏 Orbit “source 是事实”的核心。因此 v0.37 继续使用 iframe 外、由 canonical source 派生的 `deck-slide` target strip：主按钮只定位 source，独立铅笔才授予该页的受控写权限。
 
-单页 editor 不复制完整 PowerPoint 功能，只呈现 strict Deck grammar 已经拥有的三个旋钮：五种 layout enum、最多 100 字符的单行 eyebrow、最多 16,000 字符的 Markdown body。打开时 parser 从当前 source revision 读出语义字段，而不是把 metadata comment 当普通正文交给用户；输入过程只保存在 React state。草稿预览也不复用整份 source：Rune 从当前已验证 frontmatter 合成一份临时单页 Deck，先解析、编译 live binding，再用相同 escaped static HTML 进入一个新的空 sandbox iframe。这样用户看到真实主题与布局，同时临时草稿不污染 workspace、checkpoint、folder、localStorage 或 dependency graph。
+单页 editor 不复制完整 PowerPoint 功能，只呈现 strict Deck grammar 已经拥有的三个旋钮：五种 layout enum、最多 100 字符的单行 eyebrow、最多 16,000 字符的 Markdown body。打开时 parser 从当前 source revision 读出语义字段，而不是把 metadata comment 当普通正文交给用户；输入过程只保存在 React state。草稿预览也不复用整份 source：Orbit 从当前已验证 frontmatter 合成一份临时单页 Deck，先解析、编译 live binding，再用相同 escaped static HTML 进入一个新的空 sandbox iframe。这样用户看到真实主题与布局，同时临时草稿不污染 workspace、checkpoint、folder、localStorage 或 dependency graph。
 
-Save 不信任打开时的解析结果。compiler 用 artifact kind/language、target id/index/label/start/end 再次证明当前页；拒绝空白、no-op、过长 body、未知 layout、换行或 `<>`/`--` eyebrow、独立 `---` 和 raw HTML。每个 `{{ ... }}` binding 必须与原页按顺序 byte-for-byte 相同，所以改文案/版式不会顺手换掉数据来源。replacement 使用源文件的 CRLF/LF 约定和 Rune-owned metadata 顺序，只覆盖 exact slide range；随后重解析整份 Deck，证明页数不变、目标新 range 可派生、prefix/suffix 完全不动。
+Save 不信任打开时的解析结果。compiler 用 artifact kind/language、target id/index/label/start/end 再次证明当前页；拒绝空白、no-op、过长 body、未知 layout、换行或 `<>`/`--` eyebrow、独立 `---` 和 raw HTML。每个 `{{ ... }}` binding 必须与原页按顺序 byte-for-byte 相同，所以改文案/版式不会顺手换掉数据来源。replacement 使用源文件的 CRLF/LF 约定和 Orbit-owned metadata 顺序，只覆盖 exact slide range；随后重解析整份 Deck，证明页数不变、目标新 range 可派生、prefix/suffix 完全不动。
 
 通过上述局部证明后，Deck 写入不走快捷路径，而是复用 Data/Document 已有的共享 transaction：验证完整 proposed workspace、捕获并复核全工作区 revision、为旧 Deck 建立 manual checkpoint、单次 device persistence，成功后将左侧 textarea 选到新 slide 并让右侧 target 同步 active。任何错误都留在 editor 内，源、恢复历史和 folder 都零写入。frontmatter/theme、增删/重排页、binding 修改、旧 Semantic HTML 仍属于 canonical source 或 Agent review；这是刻意的 capability boundary，不是遗漏。
 
-这一阶段真正验证的问题不是“Rune 能否像 PowerPoint 一样拖框”，而是用户能否在一个 page-sized preview 旁快速完成大多数叙事修改，并理解 layout 是受控选择而非任意画布。如果高频需求集中在改标题、要点、eyebrow 和 layout，这个小 grammar 会比自由画布更可靠；如果真实用户持续需要图片、演讲者备注、母版和坐标布局，再用数据决定扩展 AST，而不是预先背负完整演示引擎。
+这一阶段真正验证的问题不是“Orbit 能否像 PowerPoint 一样拖框”，而是用户能否在一个 page-sized preview 旁快速完成大多数叙事修改，并理解 layout 是受控选择而非任意画布。如果高频需求集中在改标题、要点、eyebrow 和 layout，这个小 grammar 会比自由画布更可靠；如果真实用户持续需要图片、演讲者备注、母版和坐标布局，再用数据决定扩展 AST，而不是预先背负完整演示引擎。
 
 ## 43. Chart 编辑要分开“数据点来源”和“图表规格权限”
 
@@ -1763,35 +1763,35 @@ Chart spec 很适合受控表单，因为它本来就是一个 strict JSON schem
 
 `source` identity 被刻意锁定。换 source 会改变 graph edge、需要的 Query 证据、Workspace Agent context、嵌入报告/Deck 的语义以及运行权限，这不是普通外观设置。如果把它藏进一个下拉框，用户可能只想换配色，却无意中把整份报告改到另一组数据。现阶段 dependency identity 变化继续通过左侧 canonical JSON 或 Agent transaction map；将来若用户测试证明直接切换是高频任务，也应设计一个明确显示旧/新 edge 与影响消费者的独立 binding flow，而不是静默扩展 Configure。
 
-保存时 `prepareVisualChartSpecEdit` 从当前 source 重新派生完整 target，要求 artifact kind/language、id/index/label、0..source.length range 全部一致。输入先通过同一 `ChartSpecSchema`，Rune 再以固定字段顺序和两空格缩进重写完整 JSON；source identity 始终来自 current spec 而非浏览器草稿。no-op、stale、超限或 invalid schema 立即失败。之后共享 visual transaction 会验证完整 workspace，执行 changed Chart 所需的 Query 和 Chart runtime impact，创建 checkpoint 并单次持久化。成功后左侧选中完整新 JSON，右侧用同一 revision 重绘；失败时图表、source、历史和 folder 都不动。
+保存时 `prepareVisualChartSpecEdit` 从当前 source 重新派生完整 target，要求 artifact kind/language、id/index/label、0..source.length range 全部一致。输入先通过同一 `ChartSpecSchema`，Orbit 再以固定字段顺序和两空格缩进重写完整 JSON；source identity 始终来自 current spec 而非浏览器草稿。no-op、stale、超限或 invalid schema 立即失败。之后共享 visual transaction 会验证完整 workspace，执行 changed Chart 所需的 Query 和 Chart runtime impact，创建 checkpoint 并单次持久化。成功后左侧选中完整新 JSON，右侧用同一 revision 重绘；失败时图表、source、历史和 folder 都不动。
 
 这个设计把两种“实时”区分清楚：输入过程中的 draft preview 是可丢弃的预测，Save 后的 live preview 才是 canonical projection。它也完成了 Data cell、Document section、Deck slide、Chart spec 四类右侧写入的共同架构验证：每一类都先获得窄 capability，再由确定性 compiler 生成 source patch，最后进入相同 revision/checkpoint/validation/persistence 边界。下一步应优先补真实文件格式覆盖和普通用户格式工具，而不是为每种 preview 再造一套状态机。
 
 ## 44. PDF 导入不是“打开一个 PDF”，而是一次有损、可证明的语义迁移
 
-PDF 的内部目标是固定呈现，不是可逆的段落模型。即使页面看起来像一篇文章，文件里也可能只是许多带坐标的字形：列顺序、表格单元格、标题层级、页眉页脚和段落边界并没有统一语义。若产品把 `.pdf` 加进文件选择器后直接宣称“支持编辑”，用户会自然期待原排版、图片和表格都被保留，而 Rune 实际只能猜测。这一轮因此把承诺明确写成 **selectable text → reviewable Markdown**，并让每一类无法恢复的信息在 Apply 前可见。
+PDF 的内部目标是固定呈现，不是可逆的段落模型。即使页面看起来像一篇文章，文件里也可能只是许多带坐标的字形：列顺序、表格单元格、标题层级、页眉页脚和段落边界并没有统一语义。若产品把 `.pdf` 加进文件选择器后直接宣称“支持编辑”，用户会自然期待原排版、图片和表格都被保留，而 Orbit 实际只能猜测。这一轮因此把承诺明确写成 **selectable text → reviewable Markdown**，并让每一类无法恢复的信息在 Apply 前可见。
 
 解析使用按需加载的 PDF.js display layer 和本地 worker。它只在用户选择 PDF 后进入浏览器，不上传 bytes，也不进入首屏包。输入先检查扩展名、12 MB 上限与前 1,024 bytes 内的 PDF signature；运行时关闭 eval、stream、range 和 auto-fetch，遇到错误停止。加密文件明确要求用户先导出无密码副本，页面不新增一个短命的 secret 输入面。文档 JavaScript只被检测并写成 warning，绝不执行。页数、文字片段和 Markdown 输出分别限制为 200、100,000 和 200,000，避免一份敌意或异常 PDF 把 UI 和 localStorage 拖垮。
 
-语义转换只使用可以审查的有界 heuristic。坐标接近的 fragment 合成一行，dominant RTL 决定行内排序，CJK 相邻字符不强行插入空格；跨行根据垂直间距、缩进和断词规则组成段落。字体高度相对正文中位数只推断二到四级标题，常见 bullet/number 变成 Markdown list。至少半数页面顶部或底部重复的标准化文本视为页眉页脚；每个页面仍写入 `<!-- PDF page N -->`，让用户和未来 OCR 能回到来源。所有原文花括号先编码，因此 PDF 中看似 `{{ metric(...) }}` 的文字不能获得 Rune binding 权限。
+语义转换只使用可以审查的有界 heuristic。坐标接近的 fragment 合成一行，dominant RTL 决定行内排序，CJK 相邻字符不强行插入空格；跨行根据垂直间距、缩进和断词规则组成段落。字体高度相对正文中位数只推断二到四级标题，常见 bullet/number 变成 Markdown list。至少半数页面顶部或底部重复的标准化文本视为页眉页脚；每个页面仍写入 `<!-- PDF page N -->`，让用户和未来 OCR 能回到来源。所有原文花括号先编码，因此 PDF 中看似 `{{ metric(...) }}` 的文字不能获得 Orbit binding 权限。
 
 这些规则的价值不在“猜得像人”，而在错误模式清楚：大水平间距提示可能存在列或表格；空页在没有授权时保留 OCR 未执行标记；annotation、bookmark、JavaScript、重复页眉页脚都有独立 warning。v0.50 以后，完全没有可选择文本会进入单独的 OCR 授权面，而不是自动读取像素或生成一篇空文档。图片、字体、精确版式、链接、评论、表单、列和表格结构仍不保留；OCR 只输出用户明确选择页的转录，并携带页码、平均置信度与原 PDF 对照提示，再进入同一 import review transaction。v1.13 随后补上显式本地预览后的逐页单矩形区域来源，并把 crop 写入 provenance 与审核 warning；多区域、自动版面理解和原样重建仍不伪装完成。
 
-验证同时包含合成 snapshot、由独立 PDF writer 生成后再经真实 PDF.js 读取的双页文件、密码/伪 header/超大/超页数/纯扫描失败路径，以及 Poppler 逐页渲染和系统文本提取对照。只有 converter 输出通过 canonical artifact 验证、完整 workspace 验证和 stale-context 检查，用户确认才产生一次设备写入。这样 PDF 是一个诚实的兼容 port，不会变成新的 source of truth，也不削弱 Rune“先看见，再接受”的信任边界。
+验证同时包含合成 snapshot、由独立 PDF writer 生成后再经真实 PDF.js 读取的双页文件、密码/伪 header/超大/超页数/纯扫描失败路径，以及 Poppler 逐页渲染和系统文本提取对照。只有 converter 输出通过 canonical artifact 验证、完整 workspace 验证和 stale-context 检查，用户确认才产生一次设备写入。这样 PDF 是一个诚实的兼容 port，不会变成新的 source of truth，也不削弱 Orbit“先看见，再接受”的信任边界。
 
 ## 45. OpenDocument 支持不是加一个 `.odf`，而是三个有界语义端口
 
 用户说“支持 ODF”时，实际期待的是 Writer 的 ODT、Calc 的 ODS 和 Impress 的 ODP，而不是一个可互换的通用文件。三者虽然共用 ZIP、XML namespace、manifest 和 `mimetype` 包装，但内容模型分别对应文档流、稀疏二维表和页面/绘图树。若只根据 ZIP 内出现的标签猜格式，错误扩展名、伪装包和混合内容会在 UI 中被当成另一类 capability。v0.40 因此把扩展名、首个未压缩 `mimetype`、manifest root MIME 与目标 parser 四者绑定，并以 OASIS ODF 1.3 package/schema 作为机器可验证合同。([ODF 1.3 Packages][23])([ODF 1.3 Schema][24])
 
-导入继续服从 `compatibility bytes → canonical readable source → Rune renderer`。ODT 只提取标题、段落、继承文字样式、安全外链、列表和表格；ODS 把每个可见 table 变成独立 CSV，保留 typed cached value；ODP 按 page 顺序提取 title/body/list/table，再交给现有 Deck parser。图片、comments、tracked changes、hidden sheet、live formula、notes、animation、embedded object 和 master fidelity 不是“以后再说”的静默丢失，而是 Apply 前必须看见的 warning。原文件不上传、不持久化，也不进入 canonical graph。
+导入继续服从 `compatibility bytes → canonical readable source → Orbit renderer`。ODT 只提取标题、段落、继承文字样式、安全外链、列表和表格；ODS 把每个可见 table 变成独立 CSV，保留 typed cached value；ODP 按 page 顺序提取 title/body/list/table，再交给现有 Deck parser。图片、comments、tracked changes、hidden sheet、live formula、notes、animation、embedded object 和 master fidelity 不是“以后再说”的静默丢失，而是 Apply 前必须看见的 warning。原文件不上传、不持久化，也不进入 canonical graph。
 
 ODS 暴露了一个不能只靠普通 fixture 发现的资源问题：标准办公软件常用 `table:number-rows-repeated="1048574"` 或 `table:number-columns-repeated="16380"` 压缩尾部空白。如果 parser 看到 repeat 就 `Array.from`，一份很小的合法文件也会制造巨大内存分配。正确实现是维护 row/column cursor，只为非空 cell 建稀疏值，空 repeat 只推进坐标；一旦非空值越过 10,000×256 或总体 50,000 cells 才拒绝。这个规则同时说明为什么 package 压缩大小、expanded XML 大小和 semantic output budget 必须分别限制。
 
-安全处理不止 XML entity。加密声明直接失败；Basic/Scripts 和 document script 元素只记 warning、永不执行；数字公式只拿 `office:value` 的缓存结果，不把 formula 带进 CSV；用户字符串若以 `= + - @` 开头会加 apostrophe；内容中的 `{}` 编码，不能伪造 Rune metric/chart binding。ZIP 路径穿越、重复 part、2,000-entry、6 MB 单 XML、24 MB 总 XML、12 MB 输入、200,000 字符单 artifact 和 500,000 字符 workbook budget 都在 adapter 内失败关闭，而不是寄希望于后续 localStorage 报错。
+安全处理不止 XML entity。加密声明直接失败；Basic/Scripts 和 document script 元素只记 warning、永不执行；数字公式只拿 `office:value` 的缓存结果，不把 formula 带进 CSV；用户字符串若以 `= + - @` 开头会加 apostrophe；内容中的 `{}` 编码，不能伪造 Orbit metric/chart binding。ZIP 路径穿越、重复 part、2,000-entry、6 MB 单 XML、24 MB 总 XML、12 MB 输入、200,000 字符单 artifact 和 500,000 字符 workbook budget 都在 adapter 内失败关闭，而不是寄希望于后续 localStorage 报错。
 
 导出则是新的 deterministic compiler，不复用“把 OOXML 标签换名字”的错觉。ODT 从 Markdown semantic block 生成段落、heading、span、list 与 table；ODS 生成 typed values-only cells，绝不输出 OpenFormula；ODP 从已验证 Deck 生成 16:9 page、原生文字、列表和表格。Query scalar 与 Chart 先沿现有 revision-bound snapshot pipeline 编译，Chart 在 ODT/ODP 中成为可选择的 current-data table，并明确失去 live binding。固定 XML 次序与 1980 ZIP 时间，同一 context 得到逐字节相同输出；首个 `mimetype` 不压缩，manifest、content、styles、meta 都显式存在。
 
-产品上不能把“能打开”写成“原样保真”。当前 ODT 不承诺分页、图片、批注或修订；ODS 不承诺公式、过滤器、图表或格式；ODP 不承诺动画、notes、图片或复杂母版。导出前 review 列出这些边界，workspace revision 变化会使旧二进制失效。验证也不让 Rune 自己证明自己：独立 fixture 覆盖三类输入与敌意 package，Rune 导出后重新导入验证语义 round-trip，十二个 XML/manifest 部件全部通过 OASIS Relax NG，系统 handler 均确认 MIME；ODT/ODS 另由 Word/Excel 独立打开。若 PowerPoint automation 不可用，ODP 明确停在 schema、系统类型和 Rune 往返证据，不把它写成已做过视觉打开。这个阶段增加零 hosted service 和零首屏依赖，却完成了开放标准的双向迁移通道。
+产品上不能把“能打开”写成“原样保真”。当前 ODT 不承诺分页、图片、批注或修订；ODS 不承诺公式、过滤器、图表或格式；ODP 不承诺动画、notes、图片或复杂母版。导出前 review 列出这些边界，workspace revision 变化会使旧二进制失效。验证也不让 Orbit 自己证明自己：独立 fixture 覆盖三类输入与敌意 package，Orbit 导出后重新导入验证语义 round-trip，十二个 XML/manifest 部件全部通过 OASIS Relax NG，系统 handler 均确认 MIME；ODT/ODS 另由 Word/Excel 独立打开。若 PowerPoint automation 不可用，ODP 明确停在 schema、系统类型和 Orbit 往返证据，不把它写成已做过视觉打开。这个阶段增加零 hosted service 和零首屏依赖，却完成了开放标准的双向迁移通道。
 
 [23]: https://docs.oasis-open.org/office/OpenDocument/v1.3/OpenDocument-v1.3-part2-packages.html "OpenDocument v1.3 Part 2: Packages"
 [24]: https://docs.oasis-open.org/office/OpenDocument/v1.3/os/part3-schema/OpenDocument-v1.3-os-part3-schema.html "OpenDocument v1.3 Part 3: Schema"
@@ -1806,13 +1806,13 @@ v0.36 留下的关键产品假设是：用户愿意在右侧 section editor 工�
 
 live sync 仍需分清预测与事实。每次格式命令会立即更新 Source draft 和安全 Markdown preview，这是同一临时字符串的双投影；草稿不写入 localStorage、folder、checkpoint 或 workspace graph。只有 Save 才进入已有的 revision-bound section compiler，继续拒绝超长、空白、no-op、结构变化、binding 变化和越界，再走完整 workspace validation、checkpoint 与单次 persistence。工具栏不会因此获得改 heading hierarchy、表格结构、图片或 dependency identity 的权限。
 
-这轮刻意不实现 active-format 状态、富文本光标、DOM 段落选择、拖拽 block、复杂嵌套 list 或 undo stack。Markdown 标记可能来自不同等价写法，伪造一个“粗体按钮已激活”反而要求完整 AST/source-position 合同。下一阶段应先采集三个事实：用户使用 button 与 shortcut 的比例、格式操作后的取消/保存率、以及表格/标题/图片需求是否明显高于普通 inline/list 操作。只有 block 级需求被真实使用证明，才为 Markdown AST 建稳定 identity 和 inspector；否则这组薄 compiler controls 已经能覆盖高频编辑，又保留 Rune 最重要的可核验 source。
+这轮刻意不实现 active-format 状态、富文本光标、DOM 段落选择、拖拽 block、复杂嵌套 list 或 undo stack。Markdown 标记可能来自不同等价写法，伪造一个“粗体按钮已激活”反而要求完整 AST/source-position 合同。下一阶段应先采集三个事实：用户使用 button 与 shortcut 的比例、格式操作后的取消/保存率、以及表格/标题/图片需求是否明显高于普通 inline/list 操作。只有 block 级需求被真实使用证明，才为 Markdown AST 建稳定 identity 和 inspector；否则这组薄 compiler controls 已经能覆盖高频编辑，又保留 Orbit 最重要的可核验 source。
 
 ## 47. Overleaf 式同步的关键不是滚动，而是 compiler provenance
 
 此前 Document 的右→左只有 section outline，用户点击右侧正文里的某句话并不会定位左侧对应段落。这离用户设想的 Overleaf 体验仍有明显距离：section 能回答“在哪一章”，不能回答“这一个可见块来自哪段 source”。v0.42 把 heading、paragraph、list、blockquote、fenced code、GFM table 和 thematic break 提升为 `document-block` capability；它们来自与 ReactMarkdown 相同的 CommonMark/GFM AST top-level node position，不是另一套正则或浏览器 DOM 文本搜索。
 
-真正困难的不是 Markdown AST，而是编译改变了字符串坐标。一个 67 字符的 Query metric token 可能显示成 6 字符，后面的 paragraph offset 全部左移；如果直接把 rendered AST offset 写进 textarea selection，看似正确的点击会悄悄选到另一段。Rune 现在让 metric compiler 同时输出长度为 `compiledSource.length + 1` 的 canonical boundary map。未替换字符每个边界一一前进；replacement 内部的边界保守地指向 token 开头，最后一个边界才指向 token 末尾。preview AST range 先通过这个 map 回到 canonical range，再要求它与 canonical AST target 的 start/end 完全相同。映射不能证明就没有按钮权限。
+真正困难的不是 Markdown AST，而是编译改变了字符串坐标。一个 67 字符的 Query metric token 可能显示成 6 字符，后面的 paragraph offset 全部左移；如果直接把 rendered AST offset 写进 textarea selection，看似正确的点击会悄悄选到另一段。Orbit 现在让 metric compiler 同时输出长度为 `compiledSource.length + 1` 的 canonical boundary map。未替换字符每个边界一一前进；replacement 内部的边界保守地指向 token 开头，最后一个边界才指向 token 末尾。preview AST range 先通过这个 map 回到 canonical range，再要求它与 canonical AST target 的 start/end 完全相同。映射不能证明就没有按钮权限。
 
 这种设计保留了两层交互。顶部 section chips 适合文档大纲、section 编辑与结构感；正文 block 本身适合“我看到这段结论，带我去它的源码”，点击后激活同一个 Selection Agent capability。hover 只有轻微朱红底色，active 更明确；所有 block 使用原生 focus、Enter/Space 和可读 label。并没有监听用户在 DOM 中划出的任意 Range，因为跨 inline markup、metric replacement 和嵌套结构时，那仍需要更精确的 source-map 合同。
 
@@ -1844,15 +1844,15 @@ v0.44 因此先把结构操作做成显式 command。每个 AST-proven 顶层块
 
 Overleaf 式体验经常被概括成“两边一起滚动”，但滚动百分比只是视觉近似：Markdown 一个段落可能渲染成多行，GFM table、列表、代码、Chart 和 Deck iframe 的高度也完全不同。若拿两个 scrollTop 做比例换算，长表格后面的 source 会定位到错误正文；若在右侧搜同样文字，重复句子、格式标记与 metric replacement 又会产生歧义。v0.45 因此把反向同步定义成 `current source offsets → proven preview target → DOM destination`，而不是两个像素坐标之间的联动。
 
-用户每次移动 canonical textarea 的 caret 或改变 selection，Rune 都在该时刻的 artifact source 上复用现有 parser target。Document 同时拥有 block 与 section 范围，Data 同时拥有 scalar cell 与 row 范围，所以 resolver 按“完全包含当前选区、范围最小、粒度最细”的规则选择；共享边界优先刚开始的目标。跨多个块或 cell 时只能降级到完整包含它的 section 或 row。Deck 只在 slide body 内定位，Chart 因完整 JSON 都映射到一个 spec 而整份可定位。Query source、CSV header、Deck frontmatter、跨 section/row selection 都返回 null；Chart-binding paragraph、unsupported Markdown node 和 block 间空白本身没有细粒度 capability，最多得到它们所在 section 的导航。没有证据时安静地不联动，比把错误对象涂红更可信。
+用户每次移动 canonical textarea 的 caret 或改变 selection，Orbit 都在该时刻的 artifact source 上复用现有 parser target。Document 同时拥有 block 与 section 范围，Data 同时拥有 scalar cell 与 row 范围，所以 resolver 按“完全包含当前选区、范围最小、粒度最细”的规则选择；共享边界优先刚开始的目标。跨多个块或 cell 时只能降级到完整包含它的 section 或 row。Deck 只在 slide body 内定位，Chart 因完整 JSON 都映射到一个 spec 而整份可定位。Query source、CSV header、Deck frontmatter、跨 section/row selection 都返回 null；Chart-binding paragraph、unsupported Markdown node 和 block 间空白本身没有细粒度 capability，最多得到它们所在 section 的导航。没有证据时安静地不联动，比把错误对象涂红更可信。
 
 解析结果的 id 被放到对应 React 元素的 data attribute，唯一用途是让右侧容器找到目标并滚动到中部。DOM 自己不参与推断，也不能授予编辑权限；section 没有额外包裹时，可以通过起始 block 上的独立 section id 滚到该节。高亮、顶部 badge 与滚动共享同一个 target object，系统减少动态效果时关闭平滑动画。用户只是放置 caret 时，Selection Agent 仍保持 File scope；只有非空且通过 revision、UTF-16 和长度验证的 selection 才获得原来的窄 Agent capability。
 
-这完成的是身份同步，不是滚动锁定。连续按像素同步容易和用户主动浏览冲突，也会在 iframe、表格和折叠 UI 中漂移；v0.45 当时尚无嵌套 list item、table cell 与 inline span source map，v0.48 已沿同一 compiler-provenance 原则补齐这些可证明对象。派生 Query 结果仍只有现有 direct lineage 能定位。Rune 以后可以观察用户是否需要 source-scroll 驱动的“当前可见块”同步，但任何扩展都必须继续从 compiler provenance 出发。
+这完成的是身份同步，不是滚动锁定。连续按像素同步容易和用户主动浏览冲突，也会在 iframe、表格和折叠 UI 中漂移；v0.45 当时尚无嵌套 list item、table cell 与 inline span source map，v0.48 已沿同一 compiler-provenance 原则补齐这些可证明对象。派生 Query 结果仍只有现有 direct lineage 能定位。Orbit 以后可以观察用户是否需要 source-scroll 驱动的“当前可见块”同步，但任何扩展都必须继续从 compiler provenance 出发。
 
 ## 51. 模型配置不是一个 Key 输入框，而是一套可切换的信任边界
 
-CC Switch 最值得借鉴的不是界面形状，而是把供应商当作可命名、可编辑、可启用、可删除的配置对象：预设自动填端点，自定义配置显式填写地址，模型列表可以从供应商读取，当前配置可以一键切换。Rune v0.46 把这套心智模型放进语言之后的 onboarding，也在工作台顶部提供独立设置入口；个人配置与部署者提供的 OpenAI 配置并存，最多保存三份个人 profile，任一时刻只有一份 active。删除 active profile 后回退到下一份个人配置；没有个人配置时才回退到部署模型或确定性本地模式。
+CC Switch 最值得借鉴的不是界面形状，而是把供应商当作可命名、可编辑、可启用、可删除的配置对象：预设自动填端点，自定义配置显式填写地址，模型列表可以从供应商读取，当前配置可以一键切换。Orbit v0.46 把这套心智模型放进语言之后的 onboarding，也在工作台顶部提供独立设置入口；个人配置与部署者提供的 OpenAI 配置并存，最多保存三份个人 profile，任一时刻只有一份 active。删除 active profile 后回退到下一份个人配置；没有个人配置时才回退到部署模型或确定性本地模式。
 
 Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中的 key 只存在于当前 React draft，保存时通过同源 HTTPS 发到 `/api/model-profiles`，服务端以 `RUNE_CREDENTIAL_ENCRYPTION_KEY` 派生 AES-GCM key，把 profile metadata 与 credential 一起加密、认证后写入 `HttpOnly; SameSite=Strict; Path=/api` cookie。浏览器脚本、localStorage、workspace、Artifact、checkpoint、folder manifest、Git、URL、日志与模型 prompt 都无法读回或持久化明文。服务器主密钥缺失时，生产环境直接关闭个人凭据库；密文被改动或主密钥轮换后按空 vault 处理。当前三份/30 天上限是 cookie-backed 单设备阶段的明确产品限制，不是假装已有账号云同步。
 
@@ -1866,15 +1866,15 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 | 产品层 | 功能与状态 | 必须依赖 | 可发布验收 |
 | --- | --- | --- | --- |
-| 进入 Rune | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放，以及 v0.49 主要工作面统一中英文：已交付 | hydration 稳定壳、本地偏好、typed copy contract | 首次/再次打开都可进入；SSR/CSR 文本一致；语言切换覆盖专业操作；指南是普通可编辑 Artifact |
+| 进入 Orbit | 设备语言推荐、欢迎、快捷键实操、本地指南、空态拖放，以及 v0.49 主要工作面统一中英文：已交付 | hydration 稳定壳、本地偏好、typed copy contract | 首次/再次打开都可进入；SSR/CSR 文本一致；语言切换覆盖专业操作；指南是普通可编辑 Artifact |
 | 模型 | 多 profile BYOK、OpenAI Responses、OpenRouter/兼容 Chat、Anthropic Messages、Gemini generateContent、自定义协议、读取模型、启用/编辑/删除：已交付 | 同源 API、AES-GCM vault、显式 protocol、端点验证、local fallback | UI/route 实测；四协议 adapter；响应与 cookie 不出现明文；篡改失败关闭；旧部署模型兼容 |
 | Artifact 核心 | Document/Data/Query/Chart/Deck 可读 source、实时 preview、依赖图：已交付 | strict adapters、revision identity | 完整 workspace 每次变化都可重新编译；无隐藏 graph state |
 | 双向同步 | source → preview 与 preview → source 定位；v0.48 已细化到 Markdown list item/table cell/inline semantics；Data cell、Document section/block/structure、Deck slide、Chart spec 受控写入：已交付 | parser-derived ranges、outside-range proof | fragment→block→section 最小范围；stale/no-op/越界零写入；成功先 checkpoint 再一次持久化 |
 | Agent | Selection/File/Workspace typed operation、创建完整 Data→Query→Chart→成品链、review、一次修复：已交付 | bounded context、query evidence、runtime impact | provider 不能直接写；所有 concrete diff 可解释且 Apply 原子化 |
 | 导入 | `.md/.csv/.json/.sql/.html`、DOCX/XLSX/PPTX、ODT/ODS/ODP、selectable PDF 与显式扫描页 OCR：已交付 | 本地 parser、大小/像素上限、fidelity review | 多文件单事务；脚本/OCR/丢失项明确；取消零写入 |
-| 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Data/Deck PDF，以及 Rune Desktop 的 DOC/PPT 兼容交付：已交付 | deterministic compiler、当前 Query snapshot、窄 desktop bridge | review 后一次下载；byte/结构 fixture；旧格式真实 Office 往返；canonical source 不变 |
+| 导出 | source、DOCX/XLSX/PPTX、ODT/ODS/ODP、Deck HTML、Document/Data/Deck PDF，以及 Orbit Desktop 的 DOC/PPT 兼容交付：已交付 | deterministic compiler、当前 Query snapshot、窄 desktop bridge | review 后一次下载；byte/结构 fixture；旧格式真实 Office 往返；canonical source 不变 |
 | 通用经营汇报向导 | Data→Query→Chart→报告/演示的任务式入口：v0.47 已交付 | 明确字段映射、周期/对象/重点、workflow review | 用户确认源、严格数值字段与产物；整链 runtime preflight；一次 transaction Apply；错误字段和中途版本变化零写入 |
-| 原生 `.doc/.ppt` | Rune Desktop 已支持受限本地导入与经审核导出；Web 明确不支持 | 本机 Word/PowerPoint、宏禁用、私有临时目录、12 MB/30 秒边界 | 真实 Office 双向往返 QA；导入/导出均有 fidelity review；`.xls` 不支持 |
+| 原生 `.doc/.ppt` | Orbit Desktop 已支持受限本地导入与经审核导出；Web 明确不支持 | 本机 Word/PowerPoint、宏禁用、私有临时目录、12 MB/30 秒边界 | 真实 Office 双向往返 QA；导入/导出均有 fidelity review；`.xls` 不支持 |
 | 扫描 PDF OCR | v0.50 已交付英文/简中本地端口；v1.13 已交付显式预览后的逐页单矩形框选；更多语言/多区域待真实需求 | 同源 Tesseract worker/WASM/语言数据、明确页码/预览授权与数据披露 | 页面图像不上传；页级 provenance 含 crop；置信度与遗漏可见；停止零写入 |
 | 富媒体 | Document/Deck 图片、文件夹与 Office/ODF/PDF 嵌入闭环：已交付；通用附件与来源摘录等待明确引用/许可合同 | asset store、hash identity、引用许可 | 图片不把 base64 混入 source；导入/导出/删除/同步可追踪 |
 | 多人协作 | 下一阶段且晚于单人价值验证 | account、ACL、operation log/CRDT、presence | 冲突可复现；角色与审计成立；不会削弱本地所有权 |
@@ -1884,13 +1884,13 @@ Web BYOK 不能照搬桌面程序把明文 key 写进配置文件。输入框中
 
 实现顺序被冻结为四条串行主线。第一，先用真实经营汇报任务验证“来源到成品”的时间节省，而不是继续横向加格式；第二，补桌面安全存储、旧 Office 转换和 OCR，使目标用户的现实输入可进入同一 canonical model；第三，在重复使用成立后做资产、模板、连接器与自动刷新；第四，只有多人重复协作和付费证据同时出现，才引入账号、云同步、CRDT 与组织治理。停止条件同样明确：不能建立 source provenance 的入口不做可视化回写，不能安全持有 credential 的平台不开放 BYOK，不能在 compiler fixture 中 round-trip 的格式不标“支持”，没有实际用户复用证据不建设 marketplace 或企业后台。
 
-## 53. v0.47 从“AI 功能工作台”转向 Rune 自己的任务与视觉语言
+## 53. v0.47 从“AI 功能工作台”转向 Orbit 自己的任务与视觉语言
 
-[ColaMD](https://github.com/marswaveai/ColaMD) 值得学习的是 content-first：默认界面安静、永久控件少、内容宽度受控、文件与编辑模式按需出现；[MarkText](https://github.com/marktext/marktext) 和 [Moraya](https://github.com/zouwei/moraya) 证明 Source/Visual/Split 模式必须让用户理解当前编辑对象；[Slidev](https://github.com/slidevjs/slidev) 证明演示的长期优势来自 Markdown、主题、预览和导出共享一份 source。Rune 不复制它们的窗口、图标或排版，而采用自己的朱砂印记、雾白材料、石墨文字和 Artifact 语义浅色。v0.47 因而移除仿 macOS 三色窗钮和黑色 AI 活动栏，降低渐变、彩色实心块、机器人头像与胶囊标签的视觉权重；工作区名称不再硬编码成 Q2 demo，模型入口也退回工具位置。AI 仍是能力层，但产品第一眼是一个人的内容工作区。
+[ColaMD](https://github.com/marswaveai/ColaMD) 值得学习的是 content-first：默认界面安静、永久控件少、内容宽度受控、文件与编辑模式按需出现；[MarkText](https://github.com/marktext/marktext) 和 [Moraya](https://github.com/zouwei/moraya) 证明 Source/Visual/Split 模式必须让用户理解当前编辑对象；[Slidev](https://github.com/slidevjs/slidev) 证明演示的长期优势来自 Markdown、主题、预览和导出共享一份 source。Orbit 不复制它们的窗口、图标或排版，而采用自己的朱砂印记、雾白材料、石墨文字和 Artifact 语义浅色。v0.47 因而移除仿 macOS 三色窗钮和黑色 AI 活动栏，降低渐变、彩色实心块、机器人头像与胶囊标签的视觉权重；工作区名称不再硬编码成 Q2 demo，模型入口也退回工具位置。AI 仍是能力层，但产品第一眼是一个人的内容工作区。
 
 首次启动把“欢迎”和“语言”合并为同一决策页。Hello、你好、Bonjour、Hola、こんにちは、안녕하세요与 Halo 在本地按固定节奏轮换，设备语言只决定首次推荐，不替用户确认；reduced-motion 用户不轮换。首屏不读取时间、随机数或运行时 locale formatter，平台快捷键只在 onboarding 客户端挂载后确定，因此不会再次制造 SSR hydration 文本分叉。语言之后仍先设置模型 profile，再亲手完成快捷键，最后进入可编辑本地指南、导入或示例。
 
-真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Rune 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
+真正的产品推进不是再加一个 Agent prompt，而是新增“创建经营汇报”任务。用户必须显式选择一份当前 Data、一个原样 category 字段、一个全行 finite numeric value 字段、sum/average、bar/line、数字格式、周期、对象、任务重点以及 Document/Slides 交付物。Orbit 用这些选择确定性编译 Query、Chart 与成品的 collision-safe id 和 readable source，Query 保留 exact Data directive，Chart 保留 exact Query/field contract，成品只写审核问题和待填写结论，不伪造业务洞察。整条链先通过完整 workspace mutation 与本地 DuckDB/downstream impact preflight，再作为一个带 transaction map 和逐文件 source diff 的 pending review 出现；用户确认才一次写入，并优先打开最终报告。取消、字段大小写不一致、格式化数值、重复产物、运行失败或验证期间 revision 改变都保持所有输入不变。
 
 v0.47 当时也明确没有完成的边界。`.doc/.ppt` 是旧二进制容器，不能通过在 file picker 增加后缀来伪装支持；这项等待桌面壳或隔离转换服务的工作后来由 v0.53 的受限本地导入与 v0.57 的经审核本地导出完成，Web 仍不伪装支持。v0.50 已交付带明确页面范围、英文/简中语言选择、置信度和 provenance 的浏览器本地扫描 PDF OCR，v1.13 再补上不自动读像素的显式页面预览与逐页单矩形框选；任意语言、多区域、版式重建或确定事实仍不宣称。v0.49 已把主工作区、专业 review 与可视化编辑器纳入统一中英文合同；parser、模型、SQL 和格式转换器的原始技术证据仍等待稳定错误码后再完整本地化。连续像素 scroll-lock 仍不做；v0.48 已把现有 source-identity 双向同步扩展到可证明的 inline/list/table fragments。
 
@@ -1922,7 +1922,7 @@ projection 不是 canonical source。右侧仍是这次草稿的唯一 writer，
 
 过去 DOCX/XLSX/PPTX、ODF、HTML、PDF 和原始 source 各占一个顶部按钮，格式能力越完整，界面越像开发工具栏。v0.52 把它们收进一个 contextual Export 菜单：第一项始终是 canonical source，其余只显示当前 artifact 的真实 adapter。Data 因而明确拥有 CSV、JSON、XLSX、ODS 与 PDF 五条交付路径，而不是要求用户通过改扩展名猜测转换。菜单只改变入口，不放松原有 review、revision 和零写入边界。
 
-CSV/JSON 不是复制原字符串。适配器先用 Rune 当前 parser 得到 typed rows 与 stable column order，再构造矩形输出；JSON 缺失字段成为可见 `null`，CSV 通过标准 quoting 生成 UTF-8 文本并明确不包含 schema。相同输入逐 byte 确定，invalid/empty/oversized source fail closed，生成文件仍需人确认 fidelity notes。原 source 下载保持 byte-preserving，因此“保留原貌”和“格式转换”是两个不同动作。
+CSV/JSON 不是复制原字符串。适配器先用 Orbit 当前 parser 得到 typed rows 与 stable column order，再构造矩形输出；JSON 缺失字段成为可见 `null`，CSV 通过标准 quoting 生成 UTF-8 文本并明确不包含 schema。相同输入逐 byte 确定，invalid/empty/oversized source fail closed，生成文件仍需人确认 fidelity notes。原 source 下载保持 byte-preserving，因此“保留原貌”和“格式转换”是两个不同动作。
 
 Data PDF 则补齐此前明确等待的打印合同：landscape A4、每页重复 header、最多 12 列与 5,000 行、固定 row/column geometry、两行 cell wrapping、visible ellipsis warning、footer page count。它不声称是一张可编辑表格，也不携带公式、筛选、类型或 binding。默认 fixture 已由独立 PDF parser 验证页面尺寸与 byte determinism，再由 Poppler 以 144 DPI 渲染并检查表格边线、留白、表头和 footer；这才把状态矩阵中的“计划：表格 PDF”改为已交付。
 
@@ -1930,15 +1930,15 @@ Data PDF 则补齐此前明确等待的打印合同：landscape A4、每页重�
 
 浏览器不能诚实解析旧二进制 `.doc/.ppt`。v0.53 因此增加首个 macOS Electron 壳，但 renderer 仍没有 Node 权限：`contextIsolation` 与 sandbox 开启，preload 只暴露一个 `convertLegacyOffice` 请求，导航锁定临时 `127.0.0.1` 同源，本地静态文件路径防穿越并带 CSP。桌面首次运行在 main process 生成 32-byte 随机模型 vault 主密钥，用 Electron `safeStorage` 交给 macOS Keychain 保护，再以 0600 原子文件持久化密文；renderer、preload、workspace 和日志都不能读到它，现有 onboarding 的个人 API profile 因而可在桌面真实使用。转换输入限 12 MB、执行限 30 秒；文件写入 0600 的独立临时目录，只以参数数组调用系统 `osascript`，通过已安装 Word/PowerPoint 将旧格式保存成 DOCX/PPTX，强制禁用 Office 自动化宏，并在成功或失败后递归清理临时目录。转换结果没有直接写工作区，而是进入现有 OOXML parser、fidelity warning、完整 workspace validation 与一次 import review。
 
-这条链不能靠 mock 声称完成。QA 先用 Rune 自己的 deterministic exporter 生成 DOCX/PPTX，再让本机 Word/PowerPoint 真实降级成 OLE `.doc/.ppt`，随后调用与 desktop IPC 相同的转换函数恢复 OOXML，最后用 Rune importer 验证 `Q2 Business Review` 和 `Q2 Board Briefing` 语义仍能成为有效 Markdown/Deck Markdown。两条链均在宏禁用和临时清理条件下通过。Web 端虽然允许用户选择后缀，但没有窄 desktop bridge 时明确拒绝，不上传、不猜测、不假装支持；`.xls` 仍未交付，因为当前产品只授权了用户提出的旧 Word/PPT 路径。
+这条链不能靠 mock 声称完成。QA 先用 Orbit 自己的 deterministic exporter 生成 DOCX/PPTX，再让本机 Word/PowerPoint 真实降级成 OLE `.doc/.ppt`，随后调用与 desktop IPC 相同的转换函数恢复 OOXML，最后用 Orbit importer 验证 `Q2 Business Review` 和 `Q2 Board Briefing` 语义仍能成为有效 Markdown/Deck Markdown。两条链均在宏禁用和临时清理条件下通过。Web 端虽然允许用户选择后缀，但没有窄 desktop bridge 时明确拒绝，不上传、不猜测、不假装支持；`.xls` 仍未交付，因为当前产品只授权了用户提出的旧 Word/PPT 路径。
 
 欢迎页此前轮播七种问候、却只提供中英文界面，是视觉承诺与产品事实不一致。v0.53 将 BCP 47 前缀、设备偏好顺序、native name、monogram 和 greeting 合并到唯一 `RUNE_LOCALE_REGISTRY`，欢迎轮播与语言选择都由它派生。自动测试要求每个问候恰好对应一个真实可选择 locale，同时该 locale 必须拥有完整 typed UI contract 和本地指南；因此当前只轮播已完整交付的“你好 / Hello”。Français、日本語、한국어、Español、Bahasa Indonesia 只有在教程、菜单、空态、review、错误、导出提示和指南全部完成后，才能同时加入 registry 与动画。Apple 式欢迎由此不是多语言装饰，而是一项可验证的界面承诺。
 
-Apple 的学习方向也在这一版进一步成为工程规则：尊重系统语言的有序 preference，不自行覆盖用户选择；使用原生 macOS 隐私授权而不申请无关的辅助功能/全盘权限；用最小 capability bridge 和渐进披露代替万能 renderer；尊重 reduced motion、键盘操作、同源安全与清晰反馈。Rune 学习的是层级、节奏、材料、原生平台行为与可访问性，不复制 Apple 商标、资产或某一代外观。
+Apple 的学习方向也在这一版进一步成为工程规则：尊重系统语言的有序 preference，不自行覆盖用户选择；使用原生 macOS 隐私授权而不申请无关的辅助功能/全盘权限；用最小 capability bridge 和渐进披露代替万能 renderer；尊重 reduced motion、键盘操作、同源安全与清晰反馈。Orbit 学习的是层级、节奏、材料、原生平台行为与可访问性，不复制 Apple 商标、资产或某一代外观。
 
 ## 59. v0.54 经营汇报只有可重复运行，才从生成器变成工作系统
 
-一次性生成 Data → Query → Chart → 报告/演示只证明格式链能工作，不能证明 Rune 能进入周报/月报。v0.54 因此在首次事务真正 Apply 后保存一份有界 workflow definition：用户选择的来源、精确字段、聚合、图表、周期、受众、重点和交付物，以及 Rune 首次创建的 Query、Chart、Document、Deck 稳定 ID。它与设备工作区一同保存，最多八条，不包含 API key、Query 结果或隐藏模型状态；损坏、重复、过量或交付物映射不一致的记录在恢复时丢弃。
+一次性生成 Data → Query → Chart → 报告/演示只证明格式链能工作，不能证明 Orbit 能进入周报/月报。v0.54 因此在首次事务真正 Apply 后保存一份有界 workflow definition：用户选择的来源、精确字段、聚合、图表、周期、受众、重点和交付物，以及 Orbit 首次创建的 Query、Chart、Document、Deck 稳定 ID。它与设备工作区一同保存，最多八条，不包含 API key、Query 结果或隐藏模型状态；损坏、重复、过量或交付物映射不一致的记录在恢复时丢弃。
 
 侧栏的“已保存任务”不是后台自动化。重新运行会打开同一任务表单，允许调整本期周期、重点、受众、口径和图表，但锁定既有 Document/Slides 集合；编译器在完整当前工作区中生成一条 collision-safe 候选链，再把新 Query/Chart/成品 source 映射回原 ID。Chart 的 source 与成品的 chart binding 会显式重写到原稳定身份，绝不引用临时生成 ID。最终计划只有既有文件 patch，没有重复 creation；仍需 runtime preflight、逐文件 diff、dependency transaction map、显式 Apply、每个旧文件 checkpoint 与一次设备持久化。
 
@@ -1946,7 +1946,7 @@ Apple 的学习方向也在这一版进一步成为工程规则：尊重系统�
 
 ## 60. v0.55 指标必须对应一次可验证结果，而不是一次点击
 
-Rune 不能只记录“用户打开过几次”或“Agent 调用过几次”。v0.55 因此把 outcome 绑定到 saved operating review：只有任务准备后被明确 Apply，才记录一次 applied；审核取消、旧 revision、完整 workspace validation 或本机持久化失败记录 stopped，并携带有界原因。每条记录包含周期、确认完成时间、从准备到结果的本地耗时、变更文件数、runtime preflight 实际覆盖的 Query/Chart 数与 local/model planner。模型端只把 provider response 自带的 input/output token 数作为脱敏 usage 返回；本地规则明确记为无模型调用，不估算、不伪造 token。
+Orbit 不能只记录“用户打开过几次”或“Agent 调用过几次”。v0.55 因此把 outcome 绑定到 saved operating review：只有任务准备后被明确 Apply，才记录一次 applied；审核取消、旧 revision、完整 workspace validation 或本机持久化失败记录 stopped，并携带有界原因。每条记录包含周期、确认完成时间、从准备到结果的本地耗时、变更文件数、runtime preflight 实际覆盖的 Query/Chart 数与 local/model planner。模型端只把 provider response 自带的 input/output token 数作为脱敏 usage 返回；本地规则明确记为无模型调用，不估算、不伪造 token。
 
 运行历史与任务一同留在设备，单任务最多十二条；恢复时拒绝非法时间、负数、越界计数、状态/停止原因矛盾和重复 ID。记录不包含 source、CSV 行、Query 结果、prompt、provider 响应正文、API key、用户身份或文件路径。侧栏可以展示最近状态、成功率、平均确认耗时、运行影响和 token，但这些只是当前设备的产品证据。它不能证明 PMF、节省时间或愿意付费；真实价值仍需在真实任务中对比原工作流并由用户确认结果。
 
@@ -1954,13 +1954,13 @@ Rune 不能只记录“用户打开过几次”或“Agent 调用过几次”。
 
 “多语言欢迎”不能只是一段全球化装饰。v0.56 在同一个 `RUNE_LOCALE_REGISTRY` 中加入 `zh-TW`：设备偏好按最长 BCP 47 前缀优先匹配，因此 `zh-Hant`、`zh-TW`、`zh-HK` 和 `zh-MO` 不会被宽泛的 `zh` 抢先归入简体。欢迎轮播、语言选择、根节点 `lang`、动态工作台文案、快捷建议、本地指南、模型配置、空态、专业 review 和经营汇报编译器都读取这一个 locale 身份；Deck frontmatter 也正式接受 `zh-TW`。
 
-繁体不是在 DOM 渲染后做字符串替换。Rune 用固定版本、纯本地的 OpenCC 台湾短语转换从完整简体 typed catalog 生成第三套同形契约，函数返回的数量、文件名和错误建议也在调用后转换；源文件 ID、CSV/JSON 字段、SQL identifier、Chart binding 和用户输入永不经过翻译。繁体经营汇报测试同时证明 `lang: zh-TW`、繁体成品和精确字段 identity 可以共存。以后新增日语、韩语、西语或印尼语时，也必须交付完整 catalog、指南和任务链测试后才能把对应问候放入动画。
+繁体不是在 DOM 渲染后做字符串替换。Orbit 用固定版本、纯本地的 OpenCC 台湾短语转换从完整简体 typed catalog 生成第三套同形契约，函数返回的数量、文件名和错误建议也在调用后转换；源文件 ID、CSV/JSON 字段、SQL identifier、Chart binding 和用户输入永不经过翻译。繁体经营汇报测试同时证明 `lang: zh-TW`、繁体成品和精确字段 identity 可以共存。以后新增日语、韩语、西语或印尼语时，也必须交付完整 catalog、指南和任务链测试后才能把对应问候放入动画。
 
-视觉上继续学习 Apple 的原则而不是复制外观：首屏只保留一个主决策，原来的三块“本地优先 / 先审后写 / 实时编译”功能徽章被收成一句低噪音信任说明；移除装饰渐变，降低阴影，语言列表使用可滚动的标准选择行。动效仍短、可取消且服从 `prefers-reduced-motion`。这遵循 Apple 对 onboarding 的“短、可选、通过实际操作学习”和对 motion 的“有目的、精确、可减少”原则，同时保留 Rune 的朱砂品牌与 source-first 心智，而不是把界面伪装成 macOS。
+视觉上继续学习 Apple 的原则而不是复制外观：首屏只保留一个主决策，原来的三块“本地优先 / 先审后写 / 实时编译”功能徽章被收成一句低噪音信任说明；移除装饰渐变，降低阴影，语言列表使用可滚动的标准选择行。动效仍短、可取消且服从 `prefers-reduced-motion`。这遵循 Apple 对 onboarding 的“短、可选、通过实际操作学习”和对 motion 的“有目的、精确、可减少”原则，同时保留 Orbit 的朱砂品牌与 source-first 心智，而不是把界面伪装成 macOS。
 
 ## 62. v0.57 旧格式导出必须建立在现代包和真实 Office 之上
 
-Rune 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改后缀制造 DOC/PPT。Document 和 Deck 导出继续先走既有 `canonical source → compiled metrics/charts → deterministic DOCX/PPTX` 端口，冻结当前 Query snapshot 并保留现代包的全部 fidelity warnings；只有在 hydration 后检测到 Rune Desktop 的窄 `exportLegacyOffice` capability，导出菜单才增加 DOC 或 PPT。用户确认的仍是一份完整 `ArtifactExportResult`，旧格式只是一次兼容 handoff，不反向成为 workspace source of truth。
+Orbit 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改后缀制造 DOC/PPT。Document 和 Deck 导出继续先走既有 `canonical source → compiled metrics/charts → deterministic DOCX/PPTX` 端口，冻结当前 Query snapshot 并保留现代包的全部 fidelity warnings；只有在 hydration 后检测到 Orbit Desktop 的窄 `exportLegacyOffice` capability，导出菜单才增加 DOC 或 PPT。用户确认的仍是一份完整 `ArtifactExportResult`，旧格式只是一次兼容 handoff，不反向成为 workspace source of truth。
 
 桌面 main process 把现代包写入 0600 的独立临时目录，通过参数数组调用 `/usr/bin/osascript`，让本机 Word 使用 `format document97`、PowerPoint 使用 legacy presentation 格式保存。两条自动化链均强制 `msoAutomationSecurityForceDisable`，输入输出各限 12 MB、转换限 30 秒，成功与失败都递归清理临时目录。renderer 没有 Node 权限；preload 只暴露一次请求/一次结果，没有任意路径、命令或文件系统能力。Web 既不显示旧格式菜单，也不上传或伪造输出；Data 的 `.xls` 没有被顺手扩大进合同。
 
@@ -1970,15 +1970,15 @@ Rune 不直接把 Markdown 拼成不可验证的 OLE 二进制，也不通过改
 
 同一个“API Key + Base URL + Model”表单不能证明供应商兼容。[OpenAI Responses](https://platform.openai.com/docs/api-reference/responses) 把 JSON Schema 放在 `text.format`；[OpenAI-compatible Chat Completions](https://platform.openai.com/docs/api-reference/chat) 使用 `response_format.json_schema`；[Anthropic Messages](https://docs.anthropic.com/en/api/messages) 使用 `x-api-key` 与版本头，并可把 schema 作为一个被强制选择的 tool input；[Gemini generateContent](https://ai.google.dev/api/generate-content) 使用 `x-goog-api-key` 与 `generationConfig.responseJsonSchema`。v0.58 因而把 `protocol` 作为每个加密 profile 的显式字段，内置 OpenAI、OpenRouter、Anthropic、Gemini 预设固定到官方协议，自定义端点则要求用户明确选择。既有 profile 在 vault normalization 时按 provider 迁移到固定默认协议，不根据 model 字符串猜测。
 
-四个 adapter 的输出都必须成为同一个 Rune-owned operation schema，而不是各自获得写权限。Responses/Chat/Gemini 的文本先作为 JSON 解析，再由既有 Zod schema验证；Anthropic 只接受名字精确匹配的强制 tool input。之后仍由相同 operation compiler 生成 concrete source、证明 selection/workspace 边界、执行完整 artifact/dependency/runtime gate，并停在 Review。真实 provider token usage 映射为统一 input/output 字段；无法提供时写 null，不估算。
+四个 adapter 的输出都必须成为同一个 Orbit-owned operation schema，而不是各自获得写权限。Responses/Chat/Gemini 的文本先作为 JSON 解析，再由既有 Zod schema验证；Anthropic 只接受名字精确匹配的强制 tool input。之后仍由相同 operation compiler 生成 concrete source、证明 selection/workspace 边界、执行完整 artifact/dependency/runtime gate，并停在 Review。真实 provider token usage 映射为统一 input/output 字段；无法提供时写 null，不估算。
 
 安全边界也跟协议显式化一起收紧：模型目录和生成请求都拒绝 redirect，目录响应限 1 MB、Agent 响应限 2 MB、调用限 60 秒，供应商错误只向前端返回状态而不回显可能含敏感信息的正文。认证头按协议隔离，密钥仍只存在加密 HttpOnly vault 或桌面 Keychain。v1.11 的跨供应商故障转移默认关闭，只有用户在至少两个明确连接存在时另行授权，才会按可见顺序把同一份有界内容交给下一供应商；abort 永不重试，授权可随时关闭。隔离测试与完整 Agent route 测试证明四条 transport 都落回相同 Markdown typed operation 和安全编译器。
 
-## 64. v0.59 视觉转向不是复制 Apple，而是建立 Rune 自己的材料、节奏与颜色层级
+## 64. v0.59 视觉转向不是复制 Apple，而是建立 Orbit 自己的材料、节奏与颜色层级
 
-Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分区和克制动效建立层级；Rune 学习这些方法，但不复制 Apple 的商标、图片、系统控件或具体页面。工作台从连续灰色工具栏改成云白画布上的四个轻材质区域，弱化分割线与“AI 面板”感；首启页把动图问候、语言决定和模型配置作为依次展开的真实任务。所有过渡都短、可中断，并继续服从 `prefers-reduced-motion`。
+Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分区和克制动效建立层级；Orbit 学习这些方法，但不复制 Apple 的商标、图片、系统控件或具体页面。工作台从连续灰色工具栏改成云白画布上的四个轻材质区域，弱化分割线与“AI 面板”感；首启页把动图问候、语言决定和模型配置作为依次展开的真实任务。所有过渡都短、可中断，并继续服从 `prefers-reduced-motion`。
 
-颜色分成两种不同职责。朱砂 `#dc4b36` 是 Rune mark，只用于品牌身份和少量 source 信号；用户外观色负责按钮、焦点、选择与环境氛围。首批雾蓝、鼠尾草绿、薰衣草、深蓝、宇宙橙参考当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的低饱和蓝绿紫和高辨识橙蓝方向，再重新校准为 Rune 自己可访问、适合长时间工作的界面 token。主题只保存枚举 id 到本机，不修改 Artifact、导出文件或工作区事实。
+颜色分成两种不同职责。朱砂 `#dc4b36` 是 Orbit mark，只用于品牌身份和少量 source 信号；用户外观色负责按钮、焦点、选择与环境氛围。首批雾蓝、鼠尾草绿、薰衣草、深蓝、宇宙橙参考当前 iPhone 17、iPhone Air 与 iPhone 17 Pro 的低饱和蓝绿紫和高辨识橙蓝方向，再重新校准为 Orbit 自己可访问、适合长时间工作的界面 token。主题只保存枚举 id 到本机，不修改 Artifact、导出文件或工作区事实。
 
 语言注册表现在包含 `zh-CN / zh-TW / en / fr / es / ru / ar / ja / ko`，覆盖联合国六种官方语言并增加日语、韩语。问候动画严格从这个注册表生成，所以每个问候都有真实的语言选择、完整同形 UI contract 和本地指南。简繁转换与六种新增静态目录均在开发期生成并提交，运行时不请求翻译服务；关键 OCR 流程另有人工校对目录。阿拉伯语会把界面切成 RTL，但 Markdown/CSV/JSON/SQL 源、代码、URL、model id 和 API key 始终保持 LTR。机器生成目录仍需母语审校，不把“测试有文本”误报为语言质量已经终结。
 
@@ -1990,7 +1990,7 @@ Apple 当前产品页仍用大留白、少量清晰动作、内容主导的分�
 
 用户写长文、核对成品和做逐段对照时需要不同的画布，但“隐藏一边”不能让同步模型分叉。v0.61 增加 Split、Source、Preview 三种本机持久化视图：Split 保留可调比例，Source 和 Preview 让所选 pane 占满内容区域；窄屏下 Split 仍上下排列，单 pane 模式只保留一层画布。切换只改变 CSS presentation state，源码编辑器、成品编译器、草稿 projection、selection 和 revision 都保持同一棵已挂载的 React 工作区，因此重新显示时不需要复制、恢复或重新解释内容。
 
-定位仍比视觉模式优先。source caret 在 Source 模式产生的精确目标会保留，用户切回 Split/Preview 后成品自动滚到当前 target；在 Preview-only 中点击 section、block、cell、slide 或 Chart provenance 时，Rune 自动切回 Split，再选择、滚动并聚焦精确 canonical range。三态控件使用原生 button、`aria-pressed` 和完整 9-locale label；选择存入独立的 device preference，不进入 artifact、checkpoint、folder manifest、Agent context 或 export。视图是用户注意力偏好，不是事实，也不会扩大任何写能力。
+定位仍比视觉模式优先。source caret 在 Source 模式产生的精确目标会保留，用户切回 Split/Preview 后成品自动滚到当前 target；在 Preview-only 中点击 section、block、cell、slide 或 Chart provenance 时，Orbit 自动切回 Split，再选择、滚动并聚焦精确 canonical range。三态控件使用原生 button、`aria-pressed` 和完整 9-locale label；选择存入独立的 device preference，不进入 artifact、checkpoint、folder manifest、Agent context 或 export。视图是用户注意力偏好，不是事实，也不会扩大任何写能力。
 
 ## 67. v0.62 高频注意力切换必须被教会，而不是藏在 tooltip
 
@@ -2000,7 +2000,7 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 ## 68. v0.63 可信证据不等于把所有证据永久铺在标题栏
 
-成品 header 曾同时显示当前 source target、Data/Query source、legacy/query metric、Chart binding 与 validation 结果。这些状态都是真实的，但同时常驻会把 Rune 拉回工程仪表盘的气质，也让 artifact 名称和成品本身失去主次。v0.63 只保留一个始终可见的 Valid 或 issue count；点击后用原生 `details/summary` 展开完整来源、binding 和 validation badges，键盘与辅助技术无需自定义事件即可访问。
+成品 header 曾同时显示当前 source target、Data/Query source、legacy/query metric、Chart binding 与 validation 结果。这些状态都是真实的，但同时常驻会把 Orbit 拉回工程仪表盘的气质，也让 artifact 名称和成品本身失去主次。v0.63 只保留一个始终可见的 Valid 或 issue count；点击后用原生 `details/summary` 展开完整来源、binding 和 validation badges，键盘与辅助技术无需自定义事件即可访问。
 
 证据只是渐进披露，没有被降级或重新计算。popover 读取的仍是当前 artifact revision、binding compiler 与 validation result；没有新缓存，也不影响 source linking、Agent scope 或写入。Split 模式下三态视图切换缩成可辨识图标，Source/Preview 专注模式仍显示文字，形成“日常对照更轻、单项任务更明确”的层级。RTL、窄屏固定定位和 reduced-motion 都沿用同一视觉合同。
 
@@ -2026,7 +2026,7 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 状态栏以前同时重复显示 legacy/query/chart binding 数、UTF-8、制品统计和产品版本；其中来源与 binding 已经能在成品证据面板按需查看，编码也不是当前工作区可切换的用户任务。v0.67 因此只保留当前保存、导入或 Agent 操作提示，以及当前制品的字数、行数、行列数或幻灯片数。没有操作时，它安静地承担一条低噪音环境边界，而不是持续展示实现细节。
 
-产品版本仍然可发现，但移动到 More Tools 的底部，并使用九语言 `Version` 标签与固定 `Rune 0.67` 值。该调整没有新增或复制任何状态：操作提示继续来自现有 `visibleNotice`，制品统计继续由当前 source 派生，完整来源与 validation 继续属于 Preview 证据面板。状态栏因此更接近 Apple 式“按任务显露”的层级，同时保持 Rune 对真实来源、错误与当前结果的可验证性。
+产品版本仍然可发现，但移动到 More Tools 的底部，并使用九语言 `Version` 标签与固定 `Orbit 0.67` 值。该调整没有新增或复制任何状态：操作提示继续来自现有 `visibleNotice`，制品统计继续由当前 source 派生，完整来源与 validation 继续属于 Preview 证据面板。状态栏因此更接近 Apple 式“按任务显露”的层级，同时保持 Orbit 对真实来源、错误与当前结果的可验证性。
 
 ## 73. v0.68 智能能力应该融入编辑动作，而不是占据一张“机器人卡片”
 
@@ -2036,7 +2036,7 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 ## 74. v0.69 文件栏首先解释工作流，而不是罗列内部类型
 
-把 Markdown、CSV、SQL、Chart JSON 和 Deck Markdown 全部放在一个 Artifacts 清单中，虽然忠实于实现，却要求用户先理解 Rune 的内部抽象。v0.69 使用同一份 artifact 数组按产品角色派生三个有序分组：Data 是 Sources，Query 与 Chart 是 Analysis，Document 与 Slides 是 Deliverables。它让用户直接看到“来源 → 分析 → 成品”的工作流，又不伪造目录、移动文件或改变 dependency graph。
+把 Markdown、CSV、SQL、Chart JSON 和 Deck Markdown 全部放在一个 Artifacts 清单中，虽然忠实于实现，却要求用户先理解 Orbit 的内部抽象。v0.69 使用同一份 artifact 数组按产品角色派生三个有序分组：Data 是 Sources，Query 与 Chart 是 Analysis，Document 与 Slides 是 Deliverables。它让用户直接看到“来源 → 分析 → 成品”的工作流，又不伪造目录、移动文件或改变 dependency graph。
 
 三层标题拥有九语言完整目录和原生 section/heading 结构；每个文件仍显示 canonical 名称、language 与 live binding 数，选择、pin、Agent context 和 saved workflow 仍按原 artifact id 工作。选中态从漂浮白卡加独立 notch 收敛成低饱和主题底色和一条内嵌气质色边线，pin 在未固定且未 hover/focus 时完全隐藏。信息没有丢失，只让默认画面优先表达当前文件和工作流。
 
@@ -2044,11 +2044,11 @@ Split、Source、Preview 如果只能用鼠标点击，就仍然像临时加在�
 
 顶部同时显示品牌副标题、绿色工作区状态点、工作区名称、保存文字、更多工具、创建汇报、新建、导入和导出时，用户无法快速区分全局动作与任务入口。创建汇报已经在 activity rail 有稳定且可访问的同一 handler，v0.70 删除顶部重复按钮；它没有删除经营汇报编译器、saved task 或任何运行证据。顶部常驻顺序变成 New、Import、Export、More Tools，符合从创建到交付再到低频设置的节奏。
 
-左侧路径收敛为 Rune、一道轻分隔和当前本机/目录工作区名称；营销式副标题和状态装饰不再占用工具栏。保存状态改成一个 30px 无障碍状态点：图标表达正常/保存中/失败，完整本地化状态和最近保存时间通过 `role=status`、`aria-label` 与 title 保留。窄屏隐藏路径但不隐藏状态语义。顶栏减少的是重复视觉，不是行为或错误信息。
+左侧路径收敛为 Orbit、一道轻分隔和当前本机/目录工作区名称；营销式副标题和状态装饰不再占用工具栏。保存状态改成一个 30px 无障碍状态点：图标表达正常/保存中/失败，完整本地化状态和最近保存时间通过 `role=status`、`aria-label` 与 title 保留。窄屏隐藏路径但不隐藏状态语义。顶栏减少的是重复视觉，不是行为或错误信息。
 
 ## 76. v0.71 首启应该是一段设备设置过程，不是一张网页弹窗
 
-用户第一次打开 Rune 时，需要连续决定语言、模型使用方式、快捷键学习和进入哪种工作区；把它们放在一张居中圆角卡片中，会让这段关键流程看起来像可随手关闭的营销 modal。v0.71 让 Setup Assistant 占满整个 viewport，外层不再有卡片边框、圆角或漂浮阴影；顶部品牌、四步进度与 Skip/Close 固定在轻薄材料中，内容在其下独立滚动。大屏获得完整留白，窄屏继续自然单列。
+用户第一次打开 Orbit 时，需要连续决定语言、模型使用方式、快捷键学习和进入哪种工作区；把它们放在一张居中圆角卡片中，会让这段关键流程看起来像可随手关闭的营销 modal。v0.71 让 Setup Assistant 占满整个 viewport，外层不再有卡片边框、圆角或漂浮阴影；顶部品牌、四步进度与 Skip/Close 固定在轻薄材料中，内容在其下独立滚动。大屏获得完整留白，窄屏继续自然单列。
 
 四步没有合并或伪装：欢迎页仍从九语言注册表轮播真实问候并同时选择语言；模型页仍配置个人 profile 和 local fallback；教程仍要求真实按键；完成页仍提供本地指南、导入和示例。步骤指示新增原生 `progressbar` 语义与 min/max/now，RTL 和 `prefers-reduced-motion` 合同不变。视觉上的“系统级”不能以减少选择或隐去安全边界为代价。
 
@@ -2060,13 +2060,13 @@ Preview header 已经拥有可展开的来源、binding 与 validation 证据，
 
 ## 78. v0.73 主题色应该像设备材质，而不是生成式 AI 渐变
 
-用户提出从 Apple 当季新产品配色建立 Rune 的主题语言。官方当前 iPhone 17 提供雾蓝、鼠尾草绿、薰衣草、黑与白，iPhone Air 提供天蓝、浅金、云白与太空黑，iPhone 17 Pro 提供深蓝、宇宙橙与银色。Rune 不复制产品照片，也不把硬件色值生硬地覆盖在界面上，而是从中选出九种有辨识度的材质主题：雾蓝、鼠尾草绿、薰衣草、天蓝、浅金、深蓝、宇宙橙、银色、太空黑。
+用户提出从 Apple 当季新产品配色建立 Orbit 的主题语言。官方当前 iPhone 17 提供雾蓝、鼠尾草绿、薰衣草、黑与白，iPhone Air 提供天蓝、浅金、云白与太空黑，iPhone 17 Pro 提供深蓝、宇宙橙与银色。Orbit 不复制产品照片，也不把硬件色值生硬地覆盖在界面上，而是从中选出九种有辨识度的材质主题：雾蓝、鼠尾草绿、薰衣草、天蓝、浅金、深蓝、宇宙橙、银色、太空黑。
 
-每种主题拆成两层：圆形 swatch 表达接近设备表面高光与阴影的 `finish`，实际按钮、焦点框和选中态使用经过对比度收敛的 `color` 与 `soft`。因此浅金和银色仍能保留轻巧气质，却不会让白底文字失去可读性。外观入口从五个无名色点升级为九个具名的 `menuitemradio`；选择即时生效、继续写入原有设备偏好，并在九种界面语言下显示明确名称。Rune 的朱红品牌符号不随主题变化，避免视觉身份被主题吞没。
+每种主题拆成两层：圆形 swatch 表达接近设备表面高光与阴影的 `finish`，实际按钮、焦点框和选中态使用经过对比度收敛的 `color` 与 `soft`。因此浅金和银色仍能保留轻巧气质，却不会让白底文字失去可读性。外观入口从五个无名色点升级为九个具名的 `menuitemradio`；选择即时生效、继续写入原有设备偏好，并在九种界面语言下显示明确名称。Orbit 的朱红品牌符号不随主题变化，避免视觉身份被主题吞没。
 
 ## 79. v0.74 图片先成为可追踪的本机资源，再进入文档
 
-富媒体不能把 `data:image/...;base64` 塞进 canonical source，否则文档不可读、diff 无意义、模型上下文被二进制占满，也无法独立删除、同步或导出资源。v0.74 为 Markdown Document 建立第一条本机图片链路：用户在源内容光标处选择 PNG/JPEG/WebP/GIF，Rune 读取真实 magic bytes、限制单图 8 MB，并以 SHA-256 内容摘要生成 `rune-asset:sha256:<hash>` identity。相同内容天然去重，文件名只作为可读元数据。
+富媒体不能把 `data:image/...;base64` 塞进 canonical source，否则文档不可读、diff 无意义、模型上下文被二进制占满，也无法独立删除、同步或导出资源。v0.74 为 Markdown Document 建立第一条本机图片链路：用户在源内容光标处选择 PNG/JPEG/WebP/GIF，Orbit 读取真实 magic bytes、限制单图 8 MB，并以 SHA-256 内容摘要生成 `rune-asset:sha256:<hash>` identity。相同内容天然去重，文件名只作为可读元数据。
 
 写入前必须经过九语言审核面：图片预览、真实格式与大小、可编辑且必填的 alt text，以及精确 Markdown 新增都同时可见。确认后图片 bytes 写入 IndexedDB，Markdown 只写 stable reference；source 持久化失败时，如果该资源是本次新建，就补偿删除 IndexedDB 记录，避免半次事务。每台设备最多 40 张、总计 64 MB；读取时重新检查大小、格式、hash，损坏或缺失资源只显示明确的 missing 状态，不把错误 bytes 交给浏览器。
 
@@ -2076,9 +2076,9 @@ Preview header 已经拥有可展开的来源、binding 与 validation 证据，
 
 v0.74 的 `rune-asset:` identity 已经让 source 保持可读，但仅存在当前浏览器 IndexedDB 的 bytes 仍无法跟随用户自己的工作区。v0.75 将现有 `rune.workspace.json` 做向后兼容升级：没有图片继续写 version 1；存在图片时写 version 2，并只增加 asset 的 id、原文件名、真实 MIME 和大小。binary 不进入 manifest，而是按 `.rune-assets/<sha256>.<ext>` 存放；source 仍不进入 manifest，Markdown identity 也不改变。
 
-Pull 必须证明三件事才会替换设备工作区：每个 source 引用恰好出现在 manifest assets 中；每个 manifest asset 在隐藏目录有对应文件；每个文件的大小、magic bytes 和重新计算的 SHA-256 都与声明一致。通过用户确认后，Rune 先把 bytes 去重写入本机 asset store，再 checkpoint 旧 source 和单次持久化新 workspace；后一步失败只补偿删除本次真正新建的 assets。无 manifest 的 loose folder 若含 `rune-asset:` 直接拒绝，避免看起来成功却得到 broken preview。
+Pull 必须证明三件事才会替换设备工作区：每个 source 引用恰好出现在 manifest assets 中；每个 manifest asset 在隐藏目录有对应文件；每个文件的大小、magic bytes 和重新计算的 SHA-256 都与声明一致。通过用户确认后，Orbit 先把 bytes 去重写入本机 asset store，再 checkpoint 旧 source 和单次持久化新 workspace；后一步失败只补偿删除本次真正新建的 assets。无 manifest 的 loose folder 若含 `rune-asset:` 直接拒绝，避免看起来成功却得到 broken preview。
 
-Push 反向执行同一证明：先收集所有 source reference，从 IndexedDB 重新读取并校验 bytes；缺失或损坏时不写任何文件。资源通过后先写 `.rune-assets`，再写普通 source，最后写 manifest；由于 File System Access 没有跨文件事务，Rune 仍诚实报告中断位置，不宣称整个目录写入是原子的，也不删除不再引用或非 Rune 文件。到这里图片可以随用户文件夹跨浏览器/设备搬运，但 Office/ODF/PDF embed 仍留给下一里程碑。
+Push 反向执行同一证明：先收集所有 source reference，从 IndexedDB 重新读取并校验 bytes；缺失或损坏时不写任何文件。资源通过后先写 `.rune-assets`，再写普通 source，最后写 manifest；由于 File System Access 没有跨文件事务，Orbit 仍诚实报告中断位置，不宣称整个目录写入是原子的，也不删除不再引用或非 Orbit 文件。到这里图片可以随用户文件夹跨浏览器/设备搬运，但 Office/ODF/PDF embed 仍留给下一里程碑。
 
 ## 81. v0.76 导出必须携带资源，而不是携带本机地址
 
@@ -2090,7 +2090,7 @@ DOCX 将图片写入 `word/media`，生成内部 image relationship、content ty
 
 ## 82. v0.77 先建立比例系统，再讨论“像 Apple”
 
-对 Apple 官网的学习不能退化成复制玻璃、渐变或某个按钮。真正可迁移的是约束：主体内容使用 87.5% 的响应式宽度并在大屏停止无边扩张；标题、正文和辅助信息建立明显而克制的字号层级；一个界面只保留少量半径等级；操作区、内容区与留白有稳定比例；材质只说明层级，不抢内容。Rune 因此把欢迎页主体限制在 1260px，使用 28px 大容器、20px 内容卡、12px 控件和胶囊主操作四级形态，并把控制高度收敛到 36/44/52px 三档。
+对 Apple 官网的学习不能退化成复制玻璃、渐变或某个按钮。真正可迁移的是约束：主体内容使用 87.5% 的响应式宽度并在大屏停止无边扩张；标题、正文和辅助信息建立明显而克制的字号层级；一个界面只保留少量半径等级；操作区、内容区与留白有稳定比例；材质只说明层级，不抢内容。Orbit 因此把欢迎页主体限制在 1260px，使用 28px 大容器、20px 内容卡、12px 控件和胶囊主操作四级形态，并把控制高度收敛到 36/44/52px 三档。
 
 工作台不是营销网页，不能照搬官网的单列 Hero。它需要长期编辑密度，所以采用 52px activity rail、232px file rail 与 44:56 source/preview 默认分配；外部是一个 22px 连续窗口，内部靠细分隔线而不是多层卡片区分职责。Document、Data、Chart 和 Slides 共用安静的 `#f5f5f7` 舞台、白色成品面板和同一阴影尺度；源码区与 Agent composer 则保留更高信息密度。这样视觉转向来自可重复的空间语法，而不是“AI 产品常见的彩色卡片 + 渐变背景”。
 
@@ -2104,11 +2104,11 @@ DOCX 将图片写入 `word/media`，生成内部 image relationship、content ty
 
 字体不再由零散的 8px/9px 值决定。展示标题、页面标题、正文、界面文字与辅助文字建立可复用层级，主要交互文字保持至少 11px；成品正文维持舒适阅读宽度与 16.5px/1.72 行距。欢迎问候使用设备本机的艺术字回退：拉丁使用书写体，中日韩分别使用楷体、教科书体和明朝体，西里尔使用斜体衬线，阿拉伯文使用 Naskh 回退。LTR 问候按 Unicode 组合字符逐字显现；阿拉伯文保留完整连写，只从右向左逐步揭示，避免为了动画破坏字形。长法文、西文、俄文和阿拉伯标题有独立宽度/行高，CJK 不继承拉丁负字距；所有九语言、RTL 和手机尺寸共享同一视觉重心。
 
-外观功能从九个孤立色点升级为“当前材质 + 具名主题矩阵”：用户能先看见当前主题的设备表面高光，再在本地化名称下选择并即时应用；状态仍只写入设备偏好。更重要的是，双向同步不再停在高亮语义：右侧 Document/Data/Chart/Deck 的可证明目标被点击后，Rune 继续用 canonical UTF-16 range 选择左侧源码，并按真实 computed line-height、textarea viewport 与 scrollHeight 计算居中位置，同时同步行号 gutter；关闭换行保证行号和像素位置不发生歧义。若用户请求减少动态，滚动与全部装饰动画都会立即退化为无动画的准确定位。
+外观功能从九个孤立色点升级为“当前材质 + 具名主题矩阵”：用户能先看见当前主题的设备表面高光，再在本地化名称下选择并即时应用；状态仍只写入设备偏好。更重要的是，双向同步不再停在高亮语义：右侧 Document/Data/Chart/Deck 的可证明目标被点击后，Orbit 继续用 canonical UTF-16 range 选择左侧源码，并按真实 computed line-height、textarea viewport 与 scrollHeight 计算居中位置，同时同步行号 gutter；关闭换行保证行号和像素位置不发生歧义。若用户请求减少动态，滚动与全部装饰动画都会立即退化为无动画的准确定位。
 
 ## 84. v0.79 视觉迭代必须拥有架构边界，不能继续堆叠覆盖层
 
-ColaMD 最值得学习的并不是某个按钮或颜色，而是它对编辑器本体的克制：内容先于装饰，正文保持约 780px 的稳定阅读宽度、16px 左右字号和约 1.75 行高；文件区约 220px；微型控件使用轻边界、短 hover 和有限半径。Rune 采用这些比例作为校准基线，但不会照搬单栏产品形态，因为我们必须长期同时容纳 canonical source、编译预览、依赖证据和双向定位。学习的对象是空间约束与职责分离，不是像素复制。
+ColaMD 最值得学习的并不是某个按钮或颜色，而是它对编辑器本体的克制：内容先于装饰，正文保持约 780px 的稳定阅读宽度、16px 左右字号和约 1.75 行高；文件区约 220px；微型控件使用轻边界、短 hover 和有限半径。Orbit 采用这些比例作为校准基线，但不会照搬单栏产品形态，因为我们必须长期同时容纳 canonical source、编译预览、依赖证据和双向定位。学习的对象是空间约束与职责分离，不是像素复制。
 
 此前每轮在 `globals.css` 尾部追加版本化 override，虽然能快速修正局部外观，却会让同一个组件同时受多代规则控制。更严重的是，shell 的 `isolation`、父容器 `overflow` 和带 `forwards` 的结构动画会各自产生新的 stacking context；子菜单即使拥有更大的数字，也无法越过父层级，于是出现遮挡、前后关系错误和短屏碰撞。v0.79 将旧文件冻结为兼容层，新视觉权威按 tokens、shell、content、overlays、onboarding、motion、responsive 七个模块单向加载。以后每个改动都必须进入自己的职责模块，不能再追加“最终覆盖”。
 
@@ -2138,7 +2138,7 @@ projection 不是真实状态。两个 pane 都在审核期间只读，preview c
 
 当前经营汇报的能力已经完整，却需要用户先导入、确认、再找任务、再选择同一份 Data。这个断点不是缺少转换器，而是能力没有被编排成用户结果。v0.82 把欢迎页和空态的首要入口改成“从数据创建经营汇报”：专用 picker 只接受 CSV/JSON/XLSX/ODS，仍复用原有 import converter 与原子审核；确认后自动打开字段/口径/交付物设置，并预选本次审核得到的精确 Data id。普通 Import 和手动汇报入口仍保留，不共享隐形最近状态。
 
-Cordis 的 Context/Fiber/Registry 与 DeepSeek Harness 的 session facts、capability seams、typed UI slots、纯 column solver 和 dependency verifier 指向同一个可迁移原则：生命周期、依赖和写入动作必须可声明、可验证、可回收。但把这两套开发者预览中的动态 plugin/session runtime 直接装进 Rune，会先引入配置树、包边界和迁移成本，再寻找产品用途；它们的聊天/Agent shell 也不应替代 Rune 的 source-linked Office workspace 心智。
+Cordis 的 Context/Fiber/Registry 与 DeepSeek Harness 的 session facts、capability seams、typed UI slots、纯 column solver 和 dependency verifier 指向同一个可迁移原则：生命周期、依赖和写入动作必须可声明、可验证、可回收。但把这两套开发者预览中的动态 plugin/session runtime 直接装进 Orbit，会先引入配置树、包边界和迁移成本，再寻找产品用途；它们的聊天/Agent shell 也不应替代 Orbit 的 source-linked Office workspace 心智。
 
 因此这一版只抽出最小静态 seam。`task-runtime.ts` 不读取 React、浏览器、网络或存储，只定义 task capability 与 `awaiting-source → reviewing-source → configuring` 三个事实阶段，并在每一步验证 workspace revision、review identity、imported id 顺序和 accepted Artifact kind。workbench 只是 assembly：打开 picker、调用 converter、展示审核、执行既有 persistence，再把下一阶段交给聚焦 dialog。preferred Data 不另存一份 UI state，而是由 session 本身提供，避免“双份真相”。
 
@@ -2158,9 +2158,9 @@ Deck frontmatter 新增可选 `origin`。任务生成的 Deck 必须把原 Docum
 
 ## 89. v0.84 AI Native 任务必须能更新同一个成果，而不是不断生成副本
 
-Document → Presentation 的第一次创建已经证明 canonical source 可以跨格式编译，但真实周报、月报和项目简报要求用户下次仍然更新同一份演示。如果每轮只生成 `briefing-2`、`briefing-3`，Rune 仍然只是一次性生成器，文件夹交付、链接、版本和用户心智都会逐渐失去稳定身份。
+Document → Presentation 的第一次创建已经证明 canonical source 可以跨格式编译，但真实周报、月报和项目简报要求用户下次仍然更新同一份演示。如果每轮只生成 `briefing-2`、`briefing-3`，Orbit 仍然只是一次性生成器，文件夹交付、链接、版本和用户心智都会逐渐失去稳定身份。
 
-因此演示设置新增明确 destination：创建 collision-safe 新 Deck，或只列出 `origin` 精确指向当前 Document 的有效 Deck。刷新请求携带 exact target id；pure compiler 重读并验证当前 Deck Markdown 和 origin，随后产生一个 patch 而不是 creation。目标 id、文件名、Rune light/dark theme 与 origin 保持不变，title、language、audience、focus 和 4/6/8 页内容按本次输入重新编译。用户从一个已关联 Deck 启动任务时，Rune 由可读 origin 反向找到 exact Document 并预选原位刷新，不靠标题或最近记录猜测。
+因此演示设置新增明确 destination：创建 collision-safe 新 Deck，或只列出 `origin` 精确指向当前 Document 的有效 Deck。刷新请求携带 exact target id；pure compiler 重读并验证当前 Deck Markdown 和 origin，随后产生一个 patch 而不是 creation。目标 id、文件名、Orbit light/dark theme 与 origin 保持不变，title、language、audience、focus 和 4/6/8 页内容按本次输入重新编译。用户从一个已关联 Deck 启动任务时，Orbit 由可读 origin 反向找到 exact Document 并预选原位刷新，不靠标题或最近记录猜测。
 
 刷新仍然不是自动同步。Document 改动不会暗中重写 Deck；用户发起、看见完整 candidate、检查 Document input → edited Deck 与 retained origin edge，再 Apply。missing、wrong-kind、malformed、unrelated、unchanged、stale 或下游验证失败都不产生 checkpoint、device write 或文件变化。这样“重复使用”建立在显式意图和稳定身份上，而不是后台双写。
 
@@ -2180,15 +2180,15 @@ v0.85 因而把最小可移植配方放回 Deck Markdown。严格 frontmatter �
 
 可重复配方解决了“上次怎么生成”，却仍要求用户自己记住 Document 是否在那之后改过。把所有关联 Deck 都标成可能过期没有价值；监听编辑并自动覆盖则破坏 review-before-write。正确的中间层是一条可移植、可即时派生、没有写权限的新鲜度事实。
 
-Rune 因此在任务生成的 Deck frontmatter 中加入 `origin_revision`：一个带版本前缀、包含 UTF-8 byte length 的有界 FNV-1a 64-bit 变化标记。当前 workspace 每次从 exact origin Document 的 canonical source 重算标记，目标解析器只返回三态：相同为 current，不同为 changed，旧 Deck 缺少字段为 unknown。文件栏只在 changed 时露出一个克制的琥珀色“可以刷新”；目标下拉框和任务摘要保留完整语义，避免红色错误态或全局通知制造焦虑。
+Orbit 因此在任务生成的 Deck frontmatter 中加入 `origin_revision`：一个带版本前缀、包含 UTF-8 byte length 的有界 FNV-1a 64-bit 变化标记。当前 workspace 每次从 exact origin Document 的 canonical source 重算标记，目标解析器只返回三态：相同为 current，不同为 changed，旧 Deck 缺少字段为 unknown。文件栏只在 changed 时露出一个克制的琥珀色“可以刷新”；目标下拉框和任务摘要保留完整语义，避免红色错误态或全局通知制造焦虑。
 
-这个标记刻意不承担安全含义。它不是密码学 hash，不替代 Artifact id，也不能授权刷新；极端碰撞只会影响一条提示，不会影响写入正确性。真正的刷新仍捕获完整 workspace source revision，重读 Document/Deck，验证 origin 和全部依赖，展示 candidate 与事务关系，最后在 Apply 时再次比较完整源码。这样 Rune 获得接近原生应用的实时轻反馈，同时不引入轮询、数据库记录或第二个 writer。
+这个标记刻意不承担安全含义。它不是密码学 hash，不替代 Artifact id，也不能授权刷新；极端碰撞只会影响一条提示，不会影响写入正确性。真正的刷新仍捕获完整 workspace source revision，重读 Document/Deck，验证 origin 和全部依赖，展示 candidate 与事务关系，最后在 Apply 时再次比较完整源码。这样 Orbit 获得接近原生应用的实时轻反馈，同时不引入轮询、数据库记录或第二个 writer。
 
-旧 Deck 不会因为缺少新字段而失效：unknown 是诚实的兼容状态，用户完成一次审核刷新后，compiler 自动补上当前基准。这个迁移方式与 Rune 的 source-first 原则一致——升级发生在用户明确写入的 canonical source 中，而不是启动时静默改文件。
+旧 Deck 不会因为缺少新字段而失效：unknown 是诚实的兼容状态，用户完成一次审核刷新后，compiler 自动补上当前基准。这个迁移方式与 Orbit 的 source-first 原则一致——升级发生在用户明确写入的 canonical source 中，而不是启动时静默改文件。
 
 ## 92. v0.87 每一个状态都应在原位通向下一步，而不是让用户重新找入口
 
-“可以刷新”如果只是标签，用户仍要先打开 Deck、理解活动栏图标、再确认弹窗是否选中了同一个文件。这种导航摩擦尤其伤害高频周报流程，也让轻量 UI 变成视觉上安静、操作上迟钝。Rune 需要的是 action locality：状态出现在哪里，安全的下一步就在哪里。
+“可以刷新”如果只是标签，用户仍要先打开 Deck、理解活动栏图标、再确认弹窗是否选中了同一个文件。这种导航摩擦尤其伤害高频周报流程，也让轻量 UI 变成视觉上安静、操作上迟钝。Orbit 需要的是 action locality：状态出现在哪里，安全的下一步就在哪里。
 
 文件栏的 changed Deck 因而获得一个与普通打开按钮并列的小型刷新动作。它不把整个文件行改成刷新，因为用户仍可能只想检查当前成品；也不在顶部增加 selected-file 专属按钮，避免破坏全局动作层级。刷新控件始终显示，context pin 仍在 hover/focus/active 时出现；两者在同一行的 inline-end 上下排列，以 20px 微控件保持 48px 行高与文件名空间。Arabic 下定位和 padding 使用 logical property 一起镜像。
 
@@ -2200,35 +2200,35 @@ Rune 因此在任务生成的 Deck frontmatter 中加入 `origin_revision`：一
 
 Document → Presentation 已经能确定性地产生可编辑、可刷新、保留来源的 Deck，但如果用户配置的模型只存在于通用 Agent 输入框，这条核心任务仍然没有利用模型对叙事、受众和信息层级的判断。反过来，如果直接让模型输出整份 Deck Markdown，它就会同时控制 frontmatter、文件关系、分隔符、binding 与完整正文；这既扩大攻击面，也让同一任务出现第二套文件作者和写入逻辑。
 
-v0.88 在两者之间建立一条 task-specific model planning seam。Rune 先从当前已审核 Document 中确定性提取 `slideCount - 2` 个有界来源单元，每个单元得到只在本次请求中有效的 `source-N` capability id。模型只能为每个 exact id 返回一个纯文本标题和一到四条纯文本要点，并且必须把所有单元各使用一次；不能返回 Artifact id、文件名、frontmatter、来源修订、patch、creation 或写入动作。cover、conclusion、`origin`、`origin_revision`、受众/目标配方、目标 identity、冲突命名和 theme 仍全部由 Rune compiler 决定。
+v0.88 在两者之间建立一条 task-specific model planning seam。Orbit 先从当前已审核 Document 中确定性提取 `slideCount - 2` 个有界来源单元，每个单元得到只在本次请求中有效的 `source-N` capability id。模型只能为每个 exact id 返回一个纯文本标题和一到四条纯文本要点，并且必须把所有单元各使用一次；不能返回 Artifact id、文件名、frontmatter、来源修订、patch、creation 或写入动作。cover、conclusion、`origin`、`origin_revision`、受众/目标配方、目标 identity、冲突命名和 theme 仍全部由 Orbit compiler 决定。
 
 验证不是只相信 provider 的 JSON schema。服务端在结构化输出之后检查动态页数和来源集合；客户端用捕获的 workspace 再验一次；pure compiler 在生成完整 candidate Deck 前第三次验证。换言之，`source-N` 是能力而不是提示：缺失、重复、外来 id、换行、HTML、binding braces 或控制字符都会失败。模型得到的是有界 excerpt，不是整个 workspace，也不会收到目标 Deck 内容或凭据；所有 provider 继续沿用用户显式选择的协议，失败时绝不偷偷切换另一家。
 
-模型不可用不应让任务消失。local-only、未配置、网络失败、无效输出或 Document 超过 100,000 字符安全上限时，Rune 透明回到原有确定性 compiler，继续生成相同身份与来源合同的候选事务。设置摘要会提前说明“模型可用时辅助 + 本地确定性回退”，准备期间和审核卡则显示实际 planner；Responses、Chat Completions、Anthropic、Gemini 和 custom profile 都按非本地模型正确标记，不再把非 OpenAI provider 误写成 local plan。
+模型不可用不应让任务消失。local-only、未配置、网络失败、无效输出或 Document 超过 100,000 字符安全上限时，Orbit 透明回到原有确定性 compiler，继续生成相同身份与来源合同的候选事务。设置摘要会提前说明“模型可用时辅助 + 本地确定性回退”，准备期间和审核卡则显示实际 planner；Responses、Chat Completions、Anthropic、Gemini 和 custom profile 都按非本地模型正确标记，不再把非 OpenAI provider 误写成 local plan。
 
-这条架构也为低成本扩展给出明确模板：以后“文档→网页”“文档→报告”“数据→叙事”若需要模型判断，应新增一个窄的 task output schema，再交给 Rune-owned compiler，而不是复制 provider 协议或授予完整 Artifact 写入。共享 model adapter 现在接受任务自己的 structured-response description，因此各协议只实现一次；React 仍只负责 assembly，task provider 仍是纯函数，workspace mutation、candidate preview、checkpoint、persistence 与 Apply 仍是唯一写入边界。模型能力可以增长，但 writer 数量保持为一。
+这条架构也为低成本扩展给出明确模板：以后“文档→网页”“文档→报告”“数据→叙事”若需要模型判断，应新增一个窄的 task output schema，再交给 Orbit-owned compiler，而不是复制 provider 协议或授予完整 Artifact 写入。共享 model adapter 现在接受任务自己的 structured-response description，因此各协议只实现一次；React 仍只负责 assembly，task provider 仍是纯函数，workspace mutation、candidate preview、checkpoint、persistence 与 Apply 仍是唯一写入边界。模型能力可以增长，但 writer 数量保持为一。
 
 ## 94. v0.89 经营汇报里的模型可以选择问题，但数字必须永远属于编译器
 
-第一条经营汇报任务已经拥有真实的 Data → Query → Chart → Document/Slides 结果，却仍然使用固定审核问题。若直接让模型生成整份报告，它不仅会成为第二个文件作者，还会把当时看到的数字复制进 Markdown；源数据下一次变化后，图表更新而叙事数字不更新，恰好破坏 Rune 最重要的实时同步承诺。
+第一条经营汇报任务已经拥有真实的 Data → Query → Chart → Document/Slides 结果，却仍然使用固定审核问题。若直接让模型生成整份报告，它不仅会成为第二个文件作者，还会把当时看到的数字复制进 Markdown；源数据下一次变化后，图表更新而叙事数字不更新，恰好破坏 Orbit 最重要的实时同步承诺。
 
-v0.89 因而把模型能力压缩成“审核问题规划器”。Rune 先按用户明确选择的 category、value、sum/average 与 bar/line 顺序，在本地确定性地产生最多二十条聚合证据，并给它们分配仅在本次请求有效的 `result-N`。模型最多返回两个问题：每个问题只能选择一个独立 primary evidence id，并可选择另一个 comparison id；title、question 和 decision prompt 不得复制分类标签、数字、金额、百分比、日期、Markdown、HTML 或 binding。模型不能返回 SQL、Chart、Artifact id、文件名、patch、creation、结论或写入动作。
+v0.89 因而把模型能力压缩成“审核问题规划器”。Orbit 先按用户明确选择的 category、value、sum/average 与 bar/line 顺序，在本地确定性地产生最多二十条聚合证据，并给它们分配仅在本次请求有效的 `result-N`。模型最多返回两个问题：每个问题只能选择一个独立 primary evidence id，并可选择另一个 comparison id；title、question 和 decision prompt 不得复制分类标签、数字、金额、百分比、日期、Markdown、HTML 或 binding。模型不能返回 SQL、Chart、Artifact id、文件名、patch、creation、结论或写入动作。
 
-数值由 Rune 在完整成品中重新接回。Query metric 新增可选的第四个字符串参数作为零基 result row index，例如 `{{ metric("review-analysis", "Net Revenue", "currency", "0") }}`。缺少第四参数时仍必须严格返回一行，保持旧 scalar 合同；存在第四参数时仍要验证当前 Query/Data revision、非 truncated result、精确列、现存行与有限数值。这样模型只决定“看哪一条证据、问什么问题”，显示值始终来自当前 Query snapshot，数据变化后不会留下复制的旧数字。
+数值由 Orbit 在完整成品中重新接回。Query metric 新增可选的第四个字符串参数作为零基 result row index，例如 `{{ metric("review-analysis", "Net Revenue", "currency", "0") }}`。缺少第四参数时仍必须严格返回一行，保持旧 scalar 合同；存在第四参数时仍要验证当前 Query/Data revision、非 truncated result、精确列、现存行与有限数值。这样模型只决定“看哪一条证据、问什么问题”，显示值始终来自当前 Query snapshot，数据变化后不会留下复制的旧数字。
 
 验证继续是三层的：API 对 provider structured output 做动态证据集合检查；浏览器用捕获的 workspace 重算 aggregates 再检查；pure operating-review compiler 在生成完整 candidate 前第三次验证。任何 unconfigured、local-only、网络失败、schema 失败、证据不匹配或超过 100,000 字符的输入都回到确定性 workflow，而不是切换 provider 或放弃任务。保存任务重跑时，临时生成的 Query/Chart 引用会被重写回原 exact identities，避免启用模型后产生副本或失去 lineage。
 
-对 DeepSeek Harness 的代码与文档审查进一步确认了 Rune 的架构方向：可以学习它的 capability seam、显式生命周期事实、稳定挂载面板、keyed snapshot 渲染、渐进 disclosure 和 animation-frame 节流，但不应该把聊天产品的 plugin tree、agent session log 与动态 UI slot host 整套搬进 Office workspace。Rune 当前保留三层静态合同——task definition/session、optional bounded model contract、pure task compiler——并让 workbench 只负责 assembly。只有三个以上真实任务证明需要运行时注册、第三方替换或独立卸载 UI 时，才引入动态 registry；低成本扩展来自边界清楚，而不是抽象数量更多。
+对 DeepSeek Harness 的代码与文档审查进一步确认了 Orbit 的架构方向：可以学习它的 capability seam、显式生命周期事实、稳定挂载面板、keyed snapshot 渲染、渐进 disclosure 和 animation-frame 节流，但不应该把聊天产品的 plugin tree、agent session log 与动态 UI slot host 整套搬进 Office workspace。Orbit 当前保留三层静态合同——task definition/session、optional bounded model contract、pure task compiler——并让 workbench 只负责 assembly。只有三个以上真实任务证明需要运行时注册、第三方替换或独立卸载 UI 时，才引入动态 registry；低成本扩展来自边界清楚，而不是抽象数量更多。
 
 ## 95. v0.90 周期名称不是数据范围，可信汇报必须把 eligible rows 写成合同
 
 此前经营汇报同时要求“报告周期”和 Data 字段，但这两者没有执行关系。用户输入“七月经营复盘”只能改变标题；若 CSV 同时包含六月与七月，Query 仍会聚合全表。这是一种比明显报错更危险的失败：成品看起来合理，数据、图表、报告和演示却在同一条错误范围上保持一致。
 
-Rune 不应猜测哪个字段是日期，也不应把任意字符串解析成月份。CSV/JSON 里的周期可能是 `July`、`FY26 Q3`、数值年份或业务布尔标记。v0.90 因而增加一个可选 exact Data scope：用户选择一个 visible field，再选择一个保留 string/number/boolean 类型的 exact value；“全部数据行”也是明确选项。UI 最多展示源顺序中的一百个 distinct 值，避免把高基数字段变成无界菜单。字段不存在、值消失、类型改变、非有限数值或控制字符都会在联系 provider 和 workspace mutation 之前失败。
+Orbit 不应猜测哪个字段是日期，也不应把任意字符串解析成月份。CSV/JSON 里的周期可能是 `July`、`FY26 Q3`、数值年份或业务布尔标记。v0.90 因而增加一个可选 exact Data scope：用户选择一个 visible field，再选择一个保留 string/number/boolean 类型的 exact value；“全部数据行”也是明确选项。UI 最多展示源顺序中的一百个 distinct 值，避免把高基数字段变成无界菜单。字段不存在、值消失、类型改变、非有限数值或控制字符都会在联系 provider 和 workspace mutation 之前失败。
 
 这个范围不是 React 里的筛选状态。纯 `operating-review-scope.ts` 负责 typed equality、bounded option、DuckDB identifier/literal escaping 和可读标签；evidence compiler 先过滤再聚合，生成的 SQL 写入同义 predicate，Chart description、Markdown、Deck 与模型输入同时声明相同范围。真实 DuckDB fixture 证明六月的高值不会泄漏到七月结果；模型只收到过滤后的 aggregates 与 scope 描述，永远看不到被排除的 raw rows。
 
-保存任务继续保留 exact output identities，并把 scope 作为 typed recipe 一部分。下一周期可从 July 改为 June，重新生成同一 Query/Chart/report/Deck 的审核 patch；若旧 scope 已经不再匹配，任务零写入停止。`period` 仍是面向人的展示标签，Rune 不假装它与 scope 等价。未来的日期区间、多选和复合条件必须升级成 typed filter expression 与可审核 UI，不能退回自由 SQL 字符串或隐式推断。
+保存任务继续保留 exact output identities，并把 scope 作为 typed recipe 一部分。下一周期可从 July 改为 June，重新生成同一 Query/Chart/report/Deck 的审核 patch；若旧 scope 已经不再匹配，任务零写入停止。`period` 仍是面向人的展示标签，Orbit 不假装它与 scope 等价。未来的日期区间、多选和复合条件必须升级成 typed filter expression 与可审核 UI，不能退回自由 SQL 字符串或隐式推断。
 
 ## 96. v0.91 eligible rows 必须同时决定“哪些字段可用”与“算哪些值”
 
@@ -2260,7 +2260,7 @@ Golden Task Set 里的周环比、月环比和目标差异不能靠 `period = "J
 
 Evidence compiler 分别聚合两边，只保留两个范围都真正存在的分类，并把唯一变化口径定义为 `primary − comparison`。这个字段同时进入本地预览、conditional aggregate SQL、Chart、发送给模型的有界 aggregate evidence、报告与 Deck 的 live Query metric binding，以及保存任务的重跑 recipe。缺一侧的分类不会被偷偷当作零；任一侧范围内存在格式化文本或非有限数值都会在 provider 与写入之前失败。真实 DuckDB-Wasm fixture 证明 SQL 返回当前值、对比值和变化，单边分类被 `HAVING` 排除。
 
-本轮也重新审阅了 DeepSeek Harness 的实际源码与架构文档。Rune 采用它最适合 Office workspace 的原则：入口薄、能力有 owner、持久事实可重建、折叠面板保持 mounted、布局切换短而克制。桌面 Source/Preview focus mode 不再 `display:none` 跳切，而是在 240ms 内收放 grid tracks；隐藏侧同时 `inert`、`aria-hidden`、零宽并不可交互，滚动、选择与 preview runtime 仍保留。我们不引入 Harness 的动态 plugin/session host：它仍处于 developer preview，而 Rune 目前只有两个 focused tasks，静态 typed composition 的审计和迁移成本更低。只有至少三个任务证明运行时注册、替换或第三方分发需求后，才重新评估 plugin host。
+本轮也重新审阅了 DeepSeek Harness 的实际源码与架构文档。Orbit 采用它最适合 Office workspace 的原则：入口薄、能力有 owner、持久事实可重建、折叠面板保持 mounted、布局切换短而克制。桌面 Source/Preview focus mode 不再 `display:none` 跳切，而是在 240ms 内收放 grid tracks；隐藏侧同时 `inert`、`aria-hidden`、零宽并不可交互，滚动、选择与 preview runtime 仍保留。我们不引入 Harness 的动态 plugin/session host：它仍处于 developer preview，而 Orbit 目前只有两个 focused tasks，静态 typed composition 的审计和迁移成本更低。只有至少三个任务证明运行时注册、替换或第三方分发需求后，才重新评估 plugin host。
 
 ## 100. v0.95 任务扩展不能复制结果证据，也不能把旧版本冒充成交付
 
@@ -2268,7 +2268,7 @@ Evidence compiler 分别聚合两边，只保留两个范围都真正存在的�
 
 v0.95 增加静态 typed `RuneTaskEvidence` ledger。Document briefing 的成功 Apply 与 workspace/checkpoint 在同一次设备持久化中写入 task id、实际 provider、input/output token、耗时、运行影响、精确 Document/Deck id 和两侧 portable revision；取消、stale、validation 或 persistence 失败可以记录 stopped，但记录失败永远不能反向获得 source 写权限。侧栏只展示设备内最近任务事实，不把它包装成用户留存或市场需求。
 
-交付评价必须比 Artifact id 更严格。Rune 只有在当前 Document 与 Deck 都仍匹配那次 applied run 的版本时，才在 Deck Markdown、PPTX、ODP、HTML、PDF 下载或 folder Push 后询问可用性；任一侧后来被编辑，旧 run 不再获得评价入口。确认记录再以 SHA-256 绑定当时输出，reconfirm 覆盖同一 run/output，避免虚增数量。账本最多保留 24 次运行和 24 次交付，不保存正文、文件名内容、prompt、模型 response、Query 行、credential、用户 identity 或后台 telemetry。
+交付评价必须比 Artifact id 更严格。Orbit 只有在当前 Document 与 Deck 都仍匹配那次 applied run 的版本时，才在 Deck Markdown、PPTX、ODP、HTML、PDF 下载或 folder Push 后询问可用性；任一侧后来被编辑，旧 run 不再获得评价入口。确认记录再以 SHA-256 绑定当时输出，reconfirm 覆盖同一 run/output，避免虚增数量。账本最多保留 24 次运行和 24 次交付，不保存正文、文件名内容、prompt、模型 response、Query 行、credential、用户 identity 或后台 telemetry。
 
 这次复用的是 DeepSeek Harness 值得借鉴的 owner/capability 思路，而不是它的 session shell：task recipe 仍属于 readable Artifact，短期 phase 属于纯 runtime，网络属于 injected model port，运行证据属于 device ledger，writer 仍只有既有 Apply transaction。Operating Review 的旧 schema 为兼容当前设备暂不迁移；未来只能通过显式 storage version 与测试完成一次性迁移，不能长期双写同一个 run。
 
@@ -2276,7 +2276,7 @@ v0.95 增加静态 typed `RuneTaskEvidence` ledger。Document briefing 的成功
 
 v0.95 已经证明第二条任务可以复用 shared ledger，但经营汇报仍在保存对象里追加自己的 run 和 delivery。继续维持两条路径，会迫使第三条任务选择一套复制，也会让 UI、隐私上限、停止原因和交付校验逐渐分叉。真正低成本的扩展不是再抽象一个接口包住两份真相，而是让新证据只拥有一个 owner。
 
-Rune 因此把 `RuneTaskEvidence` 前向升级为 storage v2。原 v1 里已经有 exact source/output revision 的 Document briefing 记录可以无损规范化；Operating Review 的旧记录没有这些字段，不能把今天的 Data、Query 或成品版本写回过去，假装当时已经证明。它们继续以只读“早期本机记录”出现，但不再被生产路径追加，不计入当前 applied/usable 指标，也不能触发新的 delivery confirmation。用户重新运行一次，新的精确证据自然进入 shared ledger。
+Orbit 因此把 `RuneTaskEvidence` 前向升级为 storage v2。原 v1 里已经有 exact source/output revision 的 Document briefing 记录可以无损规范化；Operating Review 的旧记录没有这些字段，不能把今天的 Data、Query 或成品版本写回过去，假装当时已经证明。它们继续以只读“早期本机记录”出现，但不再被生产路径追加，不计入当前 applied/usable 指标，也不能触发新的 delivery confirmation。用户重新运行一次，新的精确证据自然进入 shared ledger。
 
 经营汇报现在和文档转演示一样，在候选事务形成时声明 exact source 与全部 outputs；成功 Apply 将 source、checkpoint、recipe 和 run 一次持久化，失败与取消走同一个 bounded stopped path。交付检查也从“下载的报告源码没变”升级为“Data 与 Query、Chart、报告、演示全部没变”。这是必要的，因为 Query 或 Chart 可以改变最终渲染数字，而 Markdown 字节保持相同。任何一环变化，旧 run 都不能被计为这次真实交付。
 
@@ -2284,23 +2284,23 @@ Rune 因此把 `RuneTaskEvidence` 前向升级为 storage v2。原 v1 里已经�
 
 ## 102. v0.97 统一命令面不等于把产品改造成聊天或插件外壳
 
-DeepSeek Harness 最值得 Rune 学习的不是聊天布局，而是人类命令的目录、选择界面和执行服务互不冒充。Rune 之前已经有清晰的 New、Import、Task、View、Checkpoint、Guide 和 Model handlers，但发现入口分散在顶栏、活动栏、菜单与快捷键里；继续在 Workbench 里手写更多入口，会让文案、可用状态和快捷键逐渐分叉。
+DeepSeek Harness 最值得 Orbit 学习的不是聊天布局，而是人类命令的目录、选择界面和执行服务互不冒充。Orbit 之前已经有清晰的 New、Import、Task、View、Checkpoint、Guide 和 Model handlers，但发现入口分散在顶栏、活动栏、菜单与快捷键里；继续在 Workbench 里手写更多入口，会让文案、可用状态和快捷键逐渐分叉。
 
 v0.97 增加静态 `workbench-commands` definition。它只描述十四个稳定 id、分组、九语言 copy、关键词、shortcut 和 capability-derived disabled state，并提供确定性搜索排序。`WorkbenchCommandMenu` 只持有 query、active row 和 focus；它不能写 Artifact、持久化、访问凭据或发起网络。Workbench 仍是 composition root，把选择分发回已经存在的业务 owner。因此用户获得 `⌘⇧P` 的轻量、键盘优先统一入口，代码却没有第二套执行逻辑。
 
-这里刻意没有采用 Cordis runtime、dynamic slot、plugin unload 或 profile patch tree。Rune 还没有第三方 command owner 与运行时装卸需求；静态 discriminated union 更容易 tree-shake、审计、翻译和做 exhaustive dispatch。未来若真实扩展证明需要插件，现有 definition/consumer/executor 三层会成为迁移基础，而不是提前支付生命周期复杂度。
+这里刻意没有采用 Cordis runtime、dynamic slot、plugin unload 或 profile patch tree。Orbit 还没有第三方 command owner 与运行时装卸需求；静态 discriminated union 更容易 tree-shake、审计、翻译和做 exhaustive dispatch。未来若真实扩展证明需要插件，现有 definition/consumer/executor 三层会成为迁移基础，而不是提前支付生命周期复杂度。
 
 ## 103. v0.97 测试通过不能冒充产品被真实用户需要
 
 大量单元测试可以证明 parser、compiler 和 transaction 没有回退，却不能回答成品是否有用、是否节时、是否能直接交付。反过来，等待真实 pilot 数据才建立 task-level regression，又会让两条 focused workflow 缺少一个贯穿编译、运行和成品的发布门禁。正确做法不是二选一，而是把证据等级写进系统。
 
-首个 Rune Golden Task Set 因而使用二十个明确 synthetic fixtures，并把 provenance 固定为 synthetic。十四条成功任务走真实 task provider 与 transaction，其中十条 Operating Review 实际执行生成的 DuckDB-Wasm SQL，再核对 evidence、Chart 和 live deliverables；六条失败任务必须在零输出时给出预期原因。Document briefing 同时检查 exact origin/revision、页数、source-unit coverage 和 refresh identity/theme。输入在成功与失败路径都深冻结，避免 compiler 静默修改测试事实。
+首个 Orbit Golden Task Set 因而使用二十个明确 synthetic fixtures，并把 provenance 固定为 synthetic。十四条成功任务走真实 task provider 与 transaction，其中十条 Operating Review 实际执行生成的 DuckDB-Wasm SQL，再核对 evidence、Chart 和 live deliverables；六条失败任务必须在零输出时给出预期原因。Document briefing 同时检查 exact origin/revision、页数、source-unit coverage 和 refresh identity/theme。输入在成功与失败路径都深冻结，避免 compiler 静默修改测试事实。
 
 baseline 标记为 E1，只证明 deterministic regression。真实任务仍是 0/20，human ratings 仍是 0；没有任何代码可以把 synthetic pass 自动升级成需求、可用性、留存或付费证据。拿到授权或脱敏任务后，仍要逐项进行七维人工评分，且 number correctness 低于 4 不得靠其他平均分隐藏。这样发布门禁会更强，产品结论反而更诚实。
 
 ## 104. v0.98 采集真实结果不应把每次交付变成问卷
 
-合成 Golden Tasks 解决的是回归，不是产品价值。Rune 需要真实任务的七维人工评分，但若每次下载或 Push 都弹出完整量表，用户会为了继续工作随手点击，得到的不是更强证据，而是更高噪声。因此交付后的默认路径仍是一项快速可用性判断；详细评估被放进一个安静的渐进 disclosure，用户明确选择时才展开七行紧凑评分。
+合成 Golden Tasks 解决的是回归，不是产品价值。Orbit 需要真实任务的七维人工评分，但若每次下载或 Push 都弹出完整量表，用户会为了继续工作随手点击，得到的不是更强证据，而是更高噪声。因此交付后的默认路径仍是一项快速可用性判断；详细评估被放进一个安静的渐进 disclosure，用户明确选择时才展开七行紧凑评分。
 
 详细路径没有默认分。七项必须全部完成，并由评审者明确确认任务已获准用于评估或已经脱敏，才形成一个 human evaluation。许可不是从文件、账号或模型推断出来的能力；不满足条件的数据只能保留为 quick outcome。设备 ledger 的前向迁移同样不补历史分数，坏数据降为 null，现有 0/20 基线不会因为功能上线自动增长。
 
@@ -2330,7 +2330,7 @@ v1.01 不为此复制一个 React slide renderer，也不向 iframe 增加 scrip
 
 ## 108. v1.02 产品证据可以携带，但不能把工作内容和内部身份一起带走
 
-真实 pilot 的下一步不是继续横向增加 Office 功能，而是把已经发生的任务、交付判断和授权/脱敏人工评分交给研究汇总。直接导出 localStorage 会泄露 Artifact id、文件名片段、精确版本 token、交付 SHA-256、provider label 与时间戳；自动上传则会把 Rune 从 local-first workspace 变成没有明确授权的遥测系统。两者都不符合产品边界。
+真实 pilot 的下一步不是继续横向增加 Office 功能，而是把已经发生的任务、交付判断和授权/脱敏人工评分交给研究汇总。直接导出 localStorage 会泄露 Artifact id、文件名片段、精确版本 token、交付 SHA-256、provider label 与时间戳；自动上传则会把 Orbit 从 local-first workspace 变成没有明确授权的遥测系统。两者都不符合产品边界。
 
 v1.02 新增纯 `pilot-evidence` compiler，只消费规范化后的 v3 ledger。它对 run 与 output 使用包内匿名编号，把时间降低到日期，把 planner 折叠成 local/configured-model，只留下任务状态、有限影响数量、耗时、可用时的 token、交付格式/判断和完整的 authorized-or-redacted 七维评分。正文、数据、prompt、model response、Query 行、文件名、Artifact id、路径、版本指纹、SHA-256、credential、用户身份和准确时间全部不能进入 JSON；输出固定小于 128 KB，给定账本和时间必须字节确定，深冻结输入保持不变。
 
@@ -2338,7 +2338,7 @@ v1.02 新增纯 `pilot-evidence` compiler，只消费规范化后的 v3 ledger�
 
 ## 109. v1.03 多人试点汇总不能靠相加不可信 JSON，也不能为判重重新创造身份
 
-单设备匿名包解决了交接，但研究者如果直接把多个 JSON 的 `summary` 相加，任何手工编辑、重复导出或错误 manifest 都可能把 2 个任务变成 20 个。用长期 participant/run hash 可以判重，却会重新引入跨导出可关联身份，破坏 v1.02 的隐私边界。Rune 选择更窄的研究合同：每个 `participant-NNN` 只提交一个研究窗口结束时的最终包；新导出替换旧文件，不做增量合并。
+单设备匿名包解决了交接，但研究者如果直接把多个 JSON 的 `summary` 相加，任何手工编辑、重复导出或错误 manifest 都可能把 2 个任务变成 20 个。用长期 participant/run hash 可以判重，却会重新引入跨导出可关联身份，破坏 v1.02 的隐私边界。Orbit 选择更窄的研究合同：每个 `participant-NNN` 只提交一个研究窗口结束时的最终包；新导出替换旧文件，不做增量合并。
 
 纯 cohort compiler 把每个包当作非可信输入，重新验证 provenance、alias、日期、状态、数值上限、task/output link、method/format、完整 rubric 与顺序，重新计算 summary 后才允许聚合。内容相同但导出日期不同的重复包也拒绝。输出只保留群组 counts、weighted averages、任务类型、独立 number gate，以及同一匿名包内跨不同日期且不超过 28 天的复用信号；participant id、run/output record 和任务日期都不会进入结果。
 
@@ -2346,7 +2346,7 @@ CLI 只读 manifest 目录内的显式相对常规文件，拒绝 symlink、越�
 
 ## 110. v1.04 学习 Harness 应先抽出可撤销界面边界，而不是移植完整插件运行时
 
-DeepSeek Harness 的 UI 真正轻盈之处，不只是配色，而是布局 owner、功能 contribution 与业务能力互不冒充：主框架只决定面板几何，功能通过有序 slot 出现，面板缩到零也不销毁内容树，拖动只在浏览器准备绘制时更新。Rune 已经有 source-first、review-before-write 与 mounted Source/Preview，但视图按钮仍复制两份，分栏 gesture 仍塞在 Workbench 并以 window listener 驱动每个 pointer event。
+DeepSeek Harness 的 UI 真正轻盈之处，不只是配色，而是布局 owner、功能 contribution 与业务能力互不冒充：主框架只决定面板几何，功能通过有序 slot 出现，面板缩到零也不销毁内容树，拖动只在浏览器准备绘制时更新。Orbit 已经有 source-first、review-before-write 与 mounted Source/Preview，但视图按钮仍复制两份，分栏 gesture 仍塞在 Workbench 并以 window listener 驱动每个 pointer event。
 
 v1.04 增加最小 React-free `surface-registry`。Owner 声明 `single/list`，feature 注册 stable id、有限 order 与纯 value；unknown、duplicate、非法 id/order 和 single 冲突都 fail loud，disposer 幂等撤销，consumer 只拿有序 immutable snapshot。Workspace views 与 Quick Actions 是首批使用者。它没有 React、fetch、credential、persistence 或 Artifact mutation，因此建立低成本扩展 seam，却没有提前引入 Cordis profile、dynamic loader、session scope 或第三方代码安全面。
 
@@ -2362,15 +2362,15 @@ React preview 不注册进这份 domain authority，而是使用 compile-time ex
 
 ## 112. v1.06 错误提示不能只是红色数字，必须成为可执行但无写权限的修复导航
 
-Preview 过去能准确统计 validation error，却把真实错误留在组件内部；用户看到“3 个问题”后仍不知道先修什么、去哪一行修。直接把英文 compiler 文本平铺到弹层会让九语言体验失真，也会让 parser 的实现措辞变成产品合同。更危险的方案是让错误卡直接触发自动 AI 修复：一个提示组件因此获得模型与写入权，破坏 Rune 的 review-before-write 边界。
+Preview 过去能准确统计 validation error，却把真实错误留在组件内部；用户看到“3 个问题”后仍不知道先修什么、去哪一行修。直接把英文 compiler 文本平铺到弹层会让九语言体验失真，也会让 parser 的实现措辞变成产品合同。更危险的方案是让错误卡直接触发自动 AI 修复：一个提示组件因此获得模型与写入权，破坏 Orbit 的 review-before-write 边界。
 
 v1.06 引入 React-free `artifact-diagnostics`。它只接收 source、metric、Query、Chart 各 owner 已产生的事实，映射为十三个稳定 code，保留原始 detail，并对最多 12 项、2,000 字符 detail、200 字符 reference 做严格边界和去重；返回值及每一项都冻结。它不翻译、不猜 repair、不访问 DOM、不持久化、不 fetch，也不修改 Artifact。
 
-Preview 用 code 映射九语言的简明标题与下一步，把原始 compiler detail 放在原生 details 内按需展开。唯一动作“打开 Source 修复”属于 Workbench：若当前只看 Preview，先恢复 Split；若 reference 仍存在，选择其精确 UTF-16 范围并居中，否则选首行。这个动作只导航，不修复、不调用模型、不产生 checkpoint。这里学习 DeepSeek Harness 纯状态机的 `facts/events in, effects out`，但继续保持 Rune 是 artifact-first workspace，而不是 agent chat shell。
+Preview 用 code 映射九语言的简明标题与下一步，把原始 compiler detail 放在原生 details 内按需展开。唯一动作“打开 Source 修复”属于 Workbench：若当前只看 Preview，先恢复 Split；若 reference 仍存在，选择其精确 UTF-16 范围并居中，否则选首行。这个动作只导航，不修复、不调用模型、不产生 checkpoint。这里学习 DeepSeek Harness 纯状态机的 `facts/events in, effects out`，但继续保持 Orbit 是 artifact-first workspace，而不是 agent chat shell。
 
 ## 113. v1.07 演示编辑预览应该是一条连续叙事，而不是逐页播放器
 
-v1.01 的单页画布解决了 iframe 内页面无法与源码精确对应的问题，却把编辑工作变成反复切换页签。播放器适合放映，不适合快速浏览结构、比较前后页和连续修改。Rune 的右侧首先是编辑 Preview，因此默认交互应该和文档一样自然向下滚动，同时保留每一页清晰的 16:9 边界。
+v1.01 的单页画布解决了 iframe 内页面无法与源码精确对应的问题，却把编辑工作变成反复切换页签。播放器适合放映，不适合快速浏览结构、比较前后页和连续修改。Orbit 的右侧首先是编辑 Preview，因此默认交互应该和文档一样自然向下滚动，同时保留每一页清晰的 16:9 边界。
 
 v1.07 继续让 `compileDeckSource` 成为唯一语义 owner，不复制 React slide renderer，也不给 iframe script 或 same-origin 权限。编译器产生的每个独立页面按源码顺序进入同一纵向流，并使用浏览器 lazy loading；页码和标题只是安静的身份标记，顶部索引变成跳转/编辑入口而非控制当前唯一页面。完整 HTML、PPTX、ODP 和 PDF 导出合同不变，legacy HTML 因没有可证明的逐页源码身份仍保持单个兼容 iframe。
 
@@ -2378,7 +2378,7 @@ v1.07 继续让 `compileDeckSource` 成为唯一语义 owner，不复制 React s
 
 ## 114. v1.15 轻盈不能依赖英文样机，必须成为九语言几何合同
 
-Apple 式轻盈不是加更多模糊、渐变和无限漂浮，而是层级、尺寸、留白与反馈在内容变化后仍然稳定。Rune 的欢迎页和空白页因此复用一套更克制的 material token：问候语用适合不同文字系统的书写字体，炫彩墨迹随笔画逐段显现并在收笔后停止；指针只改变当前表面的局部光位，触摸设备与 reduced motion 直接关闭，reduced transparency、high contrast 与 forced colors 恢复实色边界。装饰动画不拥有布局尺寸，空白页把任务说明和打开/拖放动作合成一个清楚的响应式首屏。
+Apple 式轻盈不是加更多模糊、渐变和无限漂浮，而是层级、尺寸、留白与反馈在内容变化后仍然稳定。Orbit 的欢迎页和空白页因此复用一套更克制的 material token：问候语用适合不同文字系统的书写字体，炫彩墨迹随笔画逐段显现并在收笔后停止；指针只改变当前表面的局部光位，触摸设备与 reduced motion 直接关闭，reduced transparency、high contrast 与 forced colors 恢复实色边界。装饰动画不拥有布局尺寸，空白页把任务说明和打开/拖放动作合成一个清楚的响应式首屏。
 
 “九种语言都存在”不等于九种语言下都可用。日文默认选择曾在窄屏语言列表的可视区之外，法语、西班牙语和俄语的长状态文案还会扩大隐式 grid track，使顶部栏与空白页出现 22–83px 横向溢出。v1.15 让所选语言在布局完成后进入自己的 scroll container，并把 statusbar 明确限制在 shell track 内；外观增加超凡蓝、星光白和玫瑰珍珠后，十二个主题名称必须在法、西、俄、阿、日、韩语中逐项验证，不能静默回退英文。
 
@@ -2406,7 +2406,7 @@ v1.16 的柔边 mask 已经消除了硬矩形裁切，但字形本质上仍是�
 
 v1.17 把这项视觉表达收进 props-only `HandwrittenGreeting`。每个 LTR grapheme 在同一个 inline SVG 中先以 round cap / round join 的 spectrum stroke 和 dash offset 写出轮廓，再延迟让完整彩墨落定；最后一字完成后，一条有界低透明度曲线完成收笔。欢迎状态机仍唯一拥有当前语言、轮播顺序和时长，SVG 子组件没有 timer、storage、provider、credential、Artifact 或 mutation 权限。
 
-多文字系统不能靠一个英文 viewBox 伸缩。组件按 CJK、阿拉伯文、长西里尔文和拉丁字符估算独立画布宽度，让短中文和长俄文都以接近的光学高度进入同一个固定舞台；阿拉伯文保持完整 shaping run、right anchor 和 RTL 方向，不按字符拆断。渐变与路径全部由 Rune 原生代码生成，不复制 Apple 字形或动画资产，也不引入远端字体、Canvas 状态和额外下载。
+多文字系统不能靠一个英文 viewBox 伸缩。组件按 CJK、阿拉伯文、长西里尔文和拉丁字符估算独立画布宽度，让短中文和长俄文都以接近的光学高度进入同一个固定舞台；阿拉伯文保持完整 shaping run、right anchor 和 RTL 方向，不按字符拆断。渐变与路径全部由 Orbit 原生代码生成，不复制 Apple 字形或动画资产，也不引入远端字体、Canvas 状态和额外下载。
 
 可访问性仍是动画合同的一部分：reduced motion 直接移除 trace、pen 与 flourish，只显示最终完整文字；forced colors 使用 `CanvasText`。E2E 除原有九语言 × 桌面/390px 零溢出外，额外读取运行时 CSSAnimation，证明 `rune-greeting-write`、`rune-greeting-ink-settle` 和 `rune-greeting-flourish` 确实存在，而不是只检查源码字符串。
 
@@ -2474,7 +2474,7 @@ v1.23 不伪装任意 HTML 可被安全结构化编辑，而是在有效 HTML Pr
 
 v1.22 把空心轮廓修正成了彩色实心墨迹，也把问候提升到了首屏中心，但它仍用一条宽达 176 个 SVG 单位的曲线扫过整词。笔尖从左到右或从右到左移动了，用户看到的却依旧是“一块渐变逐渐打开”：没有字母起笔、字符内转折、提笔后补横，也没有中日韩文字逐笔落下的节奏。这正是它仍不像设备开机手写的根因。
 
-v1.24 保留系统字体负责最终字形与 shaping，让纯 `greeting-motion` 负责另一件事：为书写系统产生有序的 original Rune mask strokes。拉丁/西里尔分为首字起笔、短横和连续主体；中文每字三笔；日文、韩文按字符给出水平/垂直/收尾组合并限制总数；阿拉伯文始终只渲染一个 RTL text run，主连笔完成后再补附加符号。每笔都有自己的宽度、delay 和 duration，数组与其中每个对象都冻结。
+v1.24 保留系统字体负责最终字形与 shaping，让纯 `greeting-motion` 负责另一件事：为书写系统产生有序的 original Orbit mask strokes。拉丁/西里尔分为首字起笔、短横和连续主体；中文每字三笔；日文、韩文按字符给出水平/垂直/收尾组合并限制总数；阿拉伯文始终只渲染一个 RTL text run，主连笔完成后再补附加符号。每笔都有自己的宽度、delay 和 duration，数组与其中每个对象都冻结。
 
 SVG 不再保留独立的下划线 flourish 和白色装饰 cursor。每个 active stroke 只有一个很小的 spectrum ink head，它与 mask 使用完全相同的 path 和 clock；笔压只改变墨点椭圆形变。最后一笔结束后，完整九色 system-font fill 才沉淀进来，补全不同设备字体与原创近似轨迹之间无法完全重合的细节。因此开场能看到真实书写秩序，静止时仍得到准确、完整且本地 shaping 的文字。
 
@@ -2486,13 +2486,13 @@ SVG 不再保留独立的下划线 flourish 和白色装饰 cursor。每个 acti
 
 v1.25 把“直接编辑 HTML”缩成一个可证明的 capability，而不是放开 DOM。只有 `compileLegacyHtmlSlides` 已确定的当前 outer section 能打开编辑器；textarea 中的 exact section source 是唯一 draft，完整候选由纯 compiler 替换该区间得到。iframe 只消费重新编译后的 scriptless `srcdoc`，从不提供 innerHTML、节点或选择状态。左侧收到的是完整 proposed source mirror，因此用户每次右侧输入都能看到真实 HTML 会变成什么，而不是只看渲染结果。
 
-保存边界与 Document/Data/Chart/Deck 相同：重查 exact revision 和 range，证明区间外完全不变、页数不变、live binding token 不变，再做 whole-workspace validation、runtime preflight、checkpoint 和一次 persistence。独立 Deck copy 仍有价值，但它服务“进入 Rune typed Deck model”，不再服务“获得任意编辑能力”。这次修正使架构重新对齐最初的 PPT → HTML 目标；仍未完成的下一层是让“新建 Presentation”的默认 canonical format 从 Deck Markdown 与 HTML 之间形成清楚的产品决策，当前版本不假装这项选择已经解决。
+保存边界与 Document/Data/Chart/Deck 相同：重查 exact revision 和 range，证明区间外完全不变、页数不变、live binding token 不变，再做 whole-workspace validation、runtime preflight、checkpoint 和一次 persistence。独立 Deck copy 仍有价值，但它服务“进入 Orbit typed Deck model”，不再服务“获得任意编辑能力”。这次修正使架构重新对齐最初的 PPT → HTML 目标；仍未完成的下一层是让“新建 Presentation”的默认 canonical format 从 Deck Markdown 与 HTML 之间形成清楚的产品决策，当前版本不假装这项选择已经解决。
 
 ## 126. v1.26 开机式彩色手写的高级感出现在收笔后安静下来
 
 v1.24 已经按五类文字系统安排落笔顺序，但“有多条 stroke”只是必要条件。若写完时从动态 mask 突然切到完整 font fill，视觉仍可能像一个实现细节；若用持续 hue rotation、粒子、长尾光或循环闪烁补救，又会回到用户不喜欢的 AI 产品特效语言。设备开机问候真正有价值的不是效果数量，而是一段完整的仪式：写出、停稳、让界面重新安静。
 
-v1.26 不改 planner，也不改任何 locale 时序。每个 active spectrum head 只增加一个极小的笔锋反光，让椭圆压力变化更像柔软墨点；settle 之后只有一条窄高光穿过一次，并同时被完整字形 clip 与已完成 stroke mask 限制。它不会跑出文字，不会循环，也没有 pointer 或业务状态。九色仍来自 Rune 自己的 palette，轨迹仍是原创近似手势，最终 glyph 仍由设备本地字体完成，因此学习的是 Apple 启动体验的节奏而不是复制其素材。
+v1.26 不改 planner，也不改任何 locale 时序。每个 active spectrum head 只增加一个极小的笔锋反光，让椭圆压力变化更像柔软墨点；settle 之后只有一条窄高光穿过一次，并同时被完整字形 clip 与已完成 stroke mask 限制。它不会跑出文字，不会循环，也没有 pointer 或业务状态。九色仍来自 Orbit 自己的 palette，轨迹仍是原创近似手势，最终 glyph 仍由设备本地字体完成，因此学习的是 Apple 启动体验的节奏而不是复制其素材。
 
 reduced motion 和 forced colors 直接跳过笔锋与高光，只保留完整静态问候；语言卡和继续按钮从第一帧起就能使用。验证同时检查源码中没有 storage、network、model、workspace、remote font、Canvas 或第二个 timer，真实浏览器检查 `write / pressure / settle / sheen` 确实挂载，九语言几何门槛继续防止视觉调整破坏长文本、RTL 和窄屏比例。
 
@@ -2516,9 +2516,9 @@ v1.27 让每条已有的 immutable motion stroke 同时绘制两层被最终 gly
 
 ## 129. 默认演示源必须回到 HTML，兼容层不能反过来定义产品
 
-Deck Markdown 曾经是把导入、编辑、预览和 Office 导出快速闭环的合理受控模型，但它不应因为实现较早就永久成为 Rune 自己创建演示的默认语言。产品最初的可读源承诺是 PPT → HTML：页面结构、样式、文本和绑定应该留在普通工具可理解的语义源码中，而不是要求用户先学习一套只属于 Rune 的幻灯片方言。
+Deck Markdown 曾经是把导入、编辑、预览和 Office 导出快速闭环的合理受控模型，但它不应因为实现较早就永久成为 Orbit 自己创建演示的默认语言。产品最初的可读源承诺是 PPT → HTML：页面结构、样式、文本和绑定应该留在普通工具可理解的语义源码中，而不是要求用户先学习一套只属于 Orbit 的幻灯片方言。
 
-v1.28 因此让 sample、New、Operating Review、Document-to-Presentation、local Agent 和 configured Agent 统一从 `semantic-html-presentation` 工厂创建 `.html`。一个显式 `data-rune-format="presentation-v1"` 的 `<main>` 保存 title/theme/lang/origin/origin revision/audience/purpose，最外层 section 是唯一页面身份；替换、插入和 Chart append 都绑定 compiler-proven index，并只为 Rune-owned 文件重排 `data-slide-index` 与 `NN / TT`。右侧 section 编辑、左侧完整候选镜像、Preview↔Source 精确滚动继续复用同一身份。
+v1.28 因此让 sample、New、Operating Review、Document-to-Presentation、local Agent 和 configured Agent 统一从 `semantic-html-presentation` 工厂创建 `.html`。一个显式 `data-rune-format="presentation-v1"` 的 `<main>` 保存 title/theme/lang/origin/origin revision/audience/purpose，最外层 section 是唯一页面身份；替换、插入和 Chart append 都绑定 compiler-proven index，并只为 Orbit-owned 文件重排 `data-slide-index` 与 `NN / TT`。右侧 section 编辑、左侧完整候选镜像、Preview↔Source 精确滚动继续复用同一身份。
 
 兼容不等于静默迁移。现有 `.deck.md` 继续完整可编辑，Document 刷新保持目标当前 HTML-or-Deck 格式；PPTX/ODP 导入仍产生 Deck，因为本地图片的 content-hash 位置合同尚未在语义 HTML 中得到同等证明。PPTX、ODP、legacy PPT 与固定 PDF 导出可以在一次审核事务内部把已证明 HTML 投影为不可变临时 Deck，但不能回写 canonical HTML。这样默认方向被纠正，旧文件和真实 Office 交付也没有被假装完成的格式转换破坏。
 
@@ -2528,11 +2528,11 @@ v1.28 因此让 sample、New、Operating Review、Document-to-Presentation、loc
 
 欢迎状态机现在派生一个不持久化的 `writing | ready` presentation phase。`writing` 阶段把 setup chrome 设为不可见、不可点击且不可键盘聚焦，让问候在现有稳定网格上通过可逆 transform 到达光学中心；背景保持接近纸白，彩色只集中在逐笔形成的 spectrum ink、轻微湿边、干笔纤维和 pressure nib。final fill 的 settle event 触发 `ready` 后，问候平滑回到正式位置，chrome、价值说明和语言选择再按层级展开，不建立第二个业务状态或 layout owner。
 
-这仍是 Rune 原创的 Apple-informed choreography，不复制 Apple 字体、字形路径、动画文件、插画或商标。正常模式只有一个由现有 planner 控制的有界写入周期；4.15 秒 timeout 只是 animation event 的失效保护。`prefers-reduced-motion` 立即进入完整静态文字与可操作设置，forced colors 使用系统色；阿拉伯 RTL shaping、中日韩与长俄文继续使用各自的本地字体、画布和笔画计划。
+这仍是 Orbit 原创的 Apple-informed choreography，不复制 Apple 字体、字形路径、动画文件、插画或商标。正常模式只有一个由现有 planner 控制的有界写入周期；4.15 秒 timeout 只是 animation event 的失效保护。`prefers-reduced-motion` 立即进入完整静态文字与可操作设置，forced colors 使用系统色；阿拉伯 RTL shaping、中日韩与长俄文继续使用各自的本地字体、画布和笔画计划。
 
-## 131. PPT → HTML 必须覆盖真实包导入，不能只覆盖 Rune 自己创建的新文件
+## 131. PPT → HTML 必须覆盖真实包导入，不能只覆盖 Orbit 自己创建的新文件
 
-v1.28 让 Rune-authored Presentation 回到 HTML，但 PPTX/ODP 仍因为图片合同暂留 Deck，原始产品承诺因此只完成了一半。真正的缺口不是再写一个 PPT parser，而是让语义 HTML 能引用既有本机内容哈希图片，并让 Preview、目录、独立 HTML 与 Office/ODF/PDF 消费同一份事实。
+v1.28 让 Orbit-authored Presentation 回到 HTML，但 PPTX/ODP 仍因为图片合同暂留 Deck，原始产品承诺因此只完成了一半。真正的缺口不是再写一个 PPT parser，而是让语义 HTML 能引用既有本机内容哈希图片，并让 Preview、目录、独立 HTML 与 Office/ODF/PDF 消费同一份事实。
 
 v1.29 保留当前成熟的 package parser 和临时 strict Deck proof：PPTX/ODP 的 title、paragraph、bullet、table、picture、页序、数量上限与 hostile-package 检查仍只实现一次；图片候选经共享 finalizer 验证字节、尺寸、哈希、去重和唯一位置后，完整临时 Deck 再编译成最终 `.html`。临时 Deck 不进入 workspace。HTML 中只保存普通 `<img src="rune-asset:sha256:…" alt="…">`，不保存 base64；浏览器 Preview 只解析成临时 `blob:`，连接目录继续使用 `.rune-assets`，经审核的 standalone HTML 才把同一 bytes 内嵌成 `data:`。
 
@@ -2580,7 +2580,7 @@ v1.35 因此把共享 `ReviewDialog` 的 initial focus、body scroll lock、focu
 
 ## 138. 开机问候必须拥有第一像素，而不是 hydration 之后才盖住工作区
 
-逐帧截图揭示了测试未覆盖的违和感：SSR 先输出示例工作区，客户端读完 localStorage 后才挂载 deferred welcome；中间还会出现 Preparing Rune fallback。旧 `.welcome-backdrop` 又从透明开始淡入，于是 80ms 能看见工作区轮廓，350ms 后才像启动页。这不是“动画细节”，而是首屏所有权错误——用户首先看到了一个应用网页，随后才看到模拟开机的覆盖层。
+逐帧截图揭示了测试未覆盖的违和感：SSR 先输出示例工作区，客户端读完 localStorage 后才挂载 deferred welcome；中间还会出现 Preparing Orbit fallback。旧 `.welcome-backdrop` 又从透明开始淡入，于是 80ms 能看见工作区轮廓，350ms 后才像启动页。这不是“动画细节”，而是首屏所有权错误——用户首先看到了一个应用网页，随后才看到模拟开机的覆盖层。
 
 v1.36 让服务器和初始客户端图直接包含完整问候 SVG。`<head>` 中的固定脚本只读取非敏感的 `rune-onboarding-v1 === complete` 标记，在 body 绘制前把根节点标为 pending 或 complete：新用户从第一像素看到不透明启动画布；老用户在 hydration 前直接看到 SSR 工作区，不闪回教程。layout effect 随后用同一标记同步 React state 并删除临时属性。遮罩不再做透明度淡入，只有字迹和内容层运动。模型状态、profile 管理器及其图标移入点击“继续设置”后才加载的 `WelcomeModelStep`，因此把问候改为 eager 后首包仍为 527,797 bytes，没有突破 530 KB 上限。
 
@@ -2588,7 +2588,7 @@ v1.36 让服务器和初始客户端图直接包含完整问候 SVG。`<head>` �
 
 ## 139. 新格式必须进入一条导入适配器，而不是复制一轮 Workbench 分支
 
-Rune 已经支持 readable source、桌面端 legacy Office、OOXML、OpenDocument、PDF 和显式 OCR，但格式能力此前仍有一个低成本扩展隐患：文件名 pattern、体积限制、普通导入转换和 OCR 选择后的继续转换都直接写在 Workbench，后两者甚至有两套几乎相同的循环。新增格式若漏改任何一处，就可能出现文件选择器能选却无法转换、普通路径与 OCR 路径告警不同，或本机图片只在一条路径保留下来的漂移。
+Orbit 已经支持 readable source、桌面端 legacy Office、OOXML、OpenDocument、PDF 和显式 OCR，但格式能力此前仍有一个低成本扩展隐患：文件名 pattern、体积限制、普通导入转换和 OCR 选择后的继续转换都直接写在 Workbench，后两者甚至有两套几乎相同的循环。新增格式若漏改任何一处，就可能出现文件选择器能选却无法转换、普通路径与 OCR 路径告警不同，或本机图片只在一条路径保留下来的漂移。
 
 v1.37 新增轻量 `workspace-file-import` 边界。一个有序、冻结的 adapter 列表为 legacy Office、OOXML、ODF、PDF 和 readable source 分别声明 extensions、case-insensitive matcher、byte limit/label 与 async converter；最后的 source fallback 仍必须经过 canonical Artifact detector，不能为未知字节猜类型。文件选择器的 `accept`、读取前体积拒绝、PDF 扫描页分析、普通批量转换和 OCR 后续批量转换都消费这组事实。OCR 路径只额外提供按原始 file index 绑定的选择、abort signal 和 progress callback。
 
@@ -2600,13 +2600,13 @@ v1.38 将 CSV/JSON、DOCX/XLSX/PPTX、DOC/PPT、ODT/ODS/ODP、HTML 与 PDF 从 W
 
 `workspace-file-export-runtime` 只在用户选择目标后加载。它一次收集 metric/Chart 引用的 Query，重跑 exact Data revision，拒绝 truncated evidence，校验本地 content-hash 图片闭包，并在 Office/ODF 类交付前编译 binding；随后由 exhaustive destination record 懒加载对应 writer。CSV/JSON 不启动 DuckDB 或图片存储。运行时只能返回 bytes、filename、MIME、target 与 fidelity notes，不能下载、审批、持久化或写 source；原 pending review 继续拥有 base-workspace capture、stale rejection 与唯一确认下载能力。
 
-同一版本把首轮开机表演从“分段擦出 Hello”收敛为真正的连续主笔势：拉丁/西里尔首字母与横笔完成后，余下连笔由一个不中断的 path 写成；简中/繁中和日文增加有方向的收锋，中日韩仍保持有界笔势。彩墨减少雾化、提高干净边缘，完成后才展开设置；reduced motion 与 forced colors 继续立即静态显示。这是 Rune 自己的字形遮罩、笔势与光谱，不复制 Apple 资产。
+同一版本把首轮开机表演从“分段擦出 Hello”收敛为真正的连续主笔势：拉丁/西里尔首字母与横笔完成后，余下连笔由一个不中断的 path 写成；简中/繁中和日文增加有方向的收锋，中日韩仍保持有界笔势。彩墨减少雾化、提高干净边缘，完成后才展开设置；reduced motion 与 forced colors 继续立即静态显示。这是 Orbit 自己的字形遮罩、笔势与光谱，不复制 Apple 资产。
 
 Workbench 降至 6,125 行，首屏 entry 为 525,336 bytes；5 条导出合同与完整 648 unit、27 render、49 Chromium gate 保护这次收敛。下一格式仍必须先定义产品能力、输入上限、保真边界、敌对输入和真实 fixture，不能把 converter registry 扩张成任意第三方插件权限。
 
-## 141. AI-readable 源文件本身也必须先审核再离开 Rune
+## 141. AI-readable 源文件本身也必须先审核再离开 Orbit
 
-v1.38 统一了转换成品，却留下了最重要的例外：Export 菜单里的 Canonical source 仍由 Workbench 直接创建 object URL。Markdown、CSV/JSON、SQL、Chart JSON 和 HTML 虽然能下载，却没有统一 capability、12 MB 上限、base-workspace stale check 或 fidelity review；用户也不会在离开 Rune 前看到 live binding、`workspace_data` 与 `rune-asset` 不是自包含内容。这与“可读源是产品核心”相矛盾。
+v1.38 统一了转换成品，却留下了最重要的例外：Export 菜单里的 Canonical source 仍由 Workbench 直接创建 object URL。Markdown、CSV/JSON、SQL、Chart JSON 和 HTML 虽然能下载，却没有统一 capability、12 MB 上限、base-workspace stale check 或 fidelity review；用户也不会在离开 Orbit 前看到 live binding、`workspace_data` 与 `rune-asset` 不是自包含内容。这与“可读源是产品核心”相矛盾。
 
 v1.39 把 `source` 加入同一冻结 capability 表。Document → MD，Data 保留 exact CSV/JSON，Query → SQL，Chart → CHART.JSON，semantic HTML → HTML，兼容 Deck → DECK.MD。lazy runtime 只做逐字节 UTF-8 编码与 12 MB 检查，不启动 DuckDB、不读取 image store、不编译 binding、不改 filename；它用明确 warnings 区分 exact source 与 portable/frozen handoff。带图片的源继续保留 `rune-asset` id，并提示接收方需要 connected `.rune-assets` 或选择 standalone/package export。
 
@@ -2624,9 +2624,9 @@ v1.40 把 `writing` 变成独立的全画布布局：chrome 行收为 0，copy �
 
 欢迎页继续优化前必须先回答两个不同问题：开源仓库的程序代码是否允许使用，以及它所承载的字形、视频和品牌素材是否同样拥有可再分发授权。`AppleCurveAnimation` 的 MIT README、Vivus 类路径动画和 Chánh Đại 的 React/Motion 组件都证明了逐笔 `pathLength`、独立 duration/delay 与完成回调是正确的动画组织方式；Aerial 与 Brooklyn 则证明全屏承载、低速位移和首尾 crossfade 比零碎粒子更像一个完整环境。但 Chánh Đại 的文档明确 Credits 到 `SF-Hello`，后者又写明 JSON 归 Apple 所有且没有仓库许可证；Brooklyn 也明确说原动画与 logo 属于 Apple。MIT 包装代码不能替底层素材创造授权。
 
-v1.41 因此没有复制任何参考路径或视频，也没有把 `motion/react`、Canvas 或 MP4 加进首屏。新的 `WelcomeAmbientMotion` 只接收现有 greeting cycle，使用 Rune 原创的两条宽 Bézier spectrum ribbon 和一条细 thread，在问候后方完成一次有限 crossfade、轻微漂移和收束；语言轮换通过父级已有 key 重新开始同一幕，它自己没有 timer。进入 ready 后峰值自动降低，最终 opacity 回到 0；semantic canvas layer 与 `pointer-events: none` 保证它既不遮挡也不抢交互。
+v1.41 因此没有复制任何参考路径或视频，也没有把 `motion/react`、Canvas 或 MP4 加进首屏。新的 `WelcomeAmbientMotion` 只接收现有 greeting cycle，使用 Orbit 原创的两条宽 Bézier spectrum ribbon 和一条细 thread，在问候后方完成一次有限 crossfade、轻微漂移和收束；语言轮换通过父级已有 key 重新开始同一幕，它自己没有 timer。进入 ready 后峰值自动降低，最终 opacity 回到 0；semantic canvas layer 与 `pointer-events: none` 保证它既不遮挡也不抢交互。
 
-无障碍降级同样属于效果本身：reduced motion、reduced transparency、high contrast 和 forced colors 都完全移除 ambient field，保留完整静态问候和正常设置布局。这样 Rune 学到的是“一个主体、一个环境、一个时间轴”，而不是把开源页面或 Apple 资产换个颜色继续复制。首屏 minified entry 为 525,024 bytes，仍在 530 KB gate 内。
+无障碍降级同样属于效果本身：reduced motion、reduced transparency、high contrast 和 forced colors 都完全移除 ambient field，保留完整静态问候和正常设置布局。这样 Orbit 学到的是“一个主体、一个环境、一个时间轴”，而不是把开源页面或 Apple 资产换个颜色继续复制。首屏 minified entry 为 525,024 bytes，仍在 530 KB gate 内。
 
 ## 144. 文件能力扩展不能在菜单里重新发明一次格式表
 
@@ -2638,11 +2638,11 @@ v1.42 把 icon family、detail treatment 与 desktop-only 要求放回每项冻�
 
 ## 145. 手写动效的每一幕必须由同一份路径时间轴决定
 
-Chánh Đại 的 Apple Hello Effect 值得学习的不是现成 `hello` 字形，而是它把每条 SVG path 的 `pathLength`、duration、delay 与最终 completion 写成一份清晰合同。Rune 过去虽然也逐笔显现，但组件内部计算笔画，父级又按字符数估计轮换时间，并用固定 4.15 秒兜底展开；更换长问候或调整速度时，这三只钟存在漂移风险。
+Chánh Đại 的 Apple Hello Effect 值得学习的不是现成 `hello` 字形，而是它把每条 SVG path 的 `pathLength`、duration、delay 与最终 completion 写成一份清晰合同。Orbit 过去虽然也逐笔显现，但组件内部计算笔画，父级又按字符数估计轮换时间，并用固定 4.15 秒兜底展开；更换长问候或调整速度时，这三只钟存在漂移风险。
 
 v1.43 新增 React-free `greeting-presentation`：locale、问候文字和可选速度一次编译为 direction、script strategy、canvas width 与完整 frozen motion plan。stroke write、settle、completion、5–7 秒 cycle 都只有一个 owner；`HandwrittenGreeting`、`WelcomeExperience` 与背景 crossfade 只消费这份结果。九种语言逐项回归，阿拉伯文仍以完整 RTL shaping run 运动，中日韩仍使用有界有序笔势。
 
-视觉也按参考的克制原则减法：保留彩色 mask、轻微字形 bloom、纹理 settle 和一个小型 path front，移除重复细轨迹、横向扫光及笔尖的独立 bloom/highlight。Rune 不导入参考页的 Motion 依赖，也不复制其 credit 指向的 Apple/SF-Hello 字形路径、字体或资产。首屏从 525,719 降至 524,689 bytes；高级感来自一条清楚、连续、可完成的动作，而不是更多发光节点。
+视觉也按参考的克制原则减法：保留彩色 mask、轻微字形 bloom、纹理 settle 和一个小型 path front，移除重复细轨迹、横向扫光及笔尖的独立 bloom/highlight。Orbit 不导入参考页的 Motion 依赖，也不复制其 credit 指向的 Apple/SF-Hello 字形路径、字体或资产。首屏从 525,719 降至 524,689 bytes；高级感来自一条清楚、连续、可完成的动作，而不是更多发光节点。
 
 ## 146. 相同形状的菜单应该共享交互效果，而不是共享业务状态
 
@@ -2654,7 +2654,7 @@ v1.44 抽出受控 `WorkbenchSettingsMenu`，再用一个窄 `useWorkbenchMenuFo
 
 ## 147. 恢复不是“回到过去”的按钮，而是一笔新的可信写入
 
-过去的 checkpoint 数据模型已经可逆，但 Restore 的交互仍是一个例外：点击后先在 React state 追加保护点，再调用普通 Source 更新，等待 debounced persistence 才把两者送进 localStorage。用户看不到精确差异，旧 Data/Query 是否会让当前 Chart、报告或演示失效也没有进入同一审核。这不是丢失历史的问题，而是恢复动作本身没有遵守 Rune 的产品原则。
+过去的 checkpoint 数据模型已经可逆，但 Restore 的交互仍是一个例外：点击后先在 React state 追加保护点，再调用普通 Source 更新，等待 debounced persistence 才把两者送进 localStorage。用户看不到精确差异，旧 Data/Query 是否会让当前 Chart、报告或演示失效也没有进入同一审核。这不是丢失历史的问题，而是恢复动作本身没有遵守 Orbit 的产品原则。
 
 v1.45 把任意 Restore 和顶部 Undo 都变成显式 review。纯 planner 只接收当前完整 workspace 与 exact checkpoint，生成一项标准 source patch、完整 revision 和最多 24 条变化行；普通 whole-workspace compiler 先拒绝未知、相同、超限或 dependency-breaking 的旧版本。延迟加载的 dialog 显示 exact source diff、安全保护说明和零写入取消，且九语言关键文案经过人工校订。
 
@@ -2662,7 +2662,7 @@ Confirm 会从当前 checkpoint map 重新解析同一个 id 和 bytes，重新�
 
 ## 148. 完整工作区重置必须是可逆交换，而不是删除
 
-示例工作区恢复原本是 Activity rail 上的高频图标：一次原生确认后立即替换内存状态，再删除设备存储。它既没有产品级审核，也无法在误操作后找回文件、恢复点、保存任务和运行证据。这和 Rune 已建立的 review-before-write、零部分写入及恢复承诺冲突。
+示例工作区恢复原本是 Activity rail 上的高频图标：一次原生确认后立即替换内存状态，再删除设备存储。它既没有产品级审核，也无法在误操作后找回文件、恢复点、保存任务和运行证据。这和 Orbit 已建立的 review-before-write、零部分写入及恢复承诺冲突。
 
 v1.46 把该动作移入低频“更多工具”，并用一个惰性九语言 review 显示当前与目标文件数、恢复点、任务记录和有界目标文件名。纯 `workspace-reset` planner 捕获完整 current/target snapshot，拒绝 malformed、重复 identity、相同或超过 12 MB 的状态；确认时再次读取并逐字节核对双方。一次 `rune-workspace-v0` 写入同时保存目标和完整 `resetRecovery`，成功后 React 才前进。恢复上一个工作区时两者安全互换，因此恢复本身仍可撤销并跨 reload 保留；Cancel、Escape、stale、target drift 与 storage failure 都是零写入。连接文件夹不参与这笔设备切换，仍只会在用户明确 Push 后改变。
 

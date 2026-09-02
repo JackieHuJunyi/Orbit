@@ -183,7 +183,7 @@ export function prepareVisualDocumentSectionEdit(
         candidate.end === target.start + replacement.length,
     ) ?? null;
   if (!nextTarget) {
-    return emptyResult(artifact.source, "Rune could not prove the edited section's new source range.");
+    return emptyResult(artifact.source, "Orbit could not prove the edited section's new source range.");
   }
   return { nextSource, nextTarget, errors: [] };
 }

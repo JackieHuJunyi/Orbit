@@ -36,7 +36,7 @@ test("uses the first supported language in the device's ordered preferences", ()
   assert.equal(detectPreferredLocale([]), "en");
 });
 
-test("normalizes only supported Rune interface locales", () => {
+test("normalizes only supported Orbit interface locales", () => {
   assert.equal(normalizeRuneLocale("zh-CN"), "zh-CN");
   assert.equal(normalizeRuneLocale("en"), "en");
   assert.equal(normalizeRuneLocale("zh-TW"), "zh-TW");
@@ -79,11 +79,11 @@ test("creates a valid editable local guide in the selected language", () => {
   const english = createRuneGuideArtifact("en");
   assert.equal(chinese.id, RUNE_GUIDE_ID);
   assert.equal(english.id, RUNE_GUIDE_ID);
-  assert.match(chinese.source, /欢迎使用 Rune/);
-  assert.match(traditionalChinese.source, /歡迎使用 Rune/);
+  assert.match(chinese.source, /欢迎使用 Orbit/);
+  assert.match(traditionalChinese.source, /歡迎使用 Orbit/);
   assert.match(traditionalChinese.source, /文件/);
   assert.match(chinese.source, /文档草稿加粗/);
-  assert.match(english.source, /Welcome to Rune/);
+  assert.match(english.source, /Welcome to Orbit/);
   assert.match(english.source, /Bold a Document draft/);
   assert.match(chinese.source, /⌘ Enter/);
   assert.deepEqual(validateArtifact(chinese), []);
@@ -92,7 +92,7 @@ test("creates a valid editable local guide in the selected language", () => {
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
     const guide = createRuneGuideArtifact(locale);
     assert.notEqual(guide.source, english.source);
-    assert.match(guide.source, /Rune/);
+    assert.match(guide.source, /Orbit/);
     assert.match(guide.source, /⌘ Enter/);
     assert.deepEqual(validateArtifact(guide), []);
   }

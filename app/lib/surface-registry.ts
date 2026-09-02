@@ -36,7 +36,7 @@ export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
 
   definitions.forEach((definition) => {
     if (surfaceKinds.has(definition.id)) {
-      throw new Error(`Rune surface "${definition.id}" is declared more than once.`);
+      throw new Error(`Orbit surface "${definition.id}" is declared more than once.`);
     }
     surfaceKinds.set(definition.id, definition.kind);
     records.set(definition.id, []);
@@ -44,22 +44,22 @@ export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
 
   function register(contribution: RuneSurfaceContribution<SurfaceId, Value>) {
     const kind = surfaceKinds.get(contribution.surface);
-    if (!kind) throw new Error(`Rune surface "${contribution.surface}" is not declared.`);
+    if (!kind) throw new Error(`Orbit surface "${contribution.surface}" is not declared.`);
     if (!CONTRIBUTION_ID_PATTERN.test(contribution.id)) {
-      throw new Error(`Rune surface contribution "${contribution.id}" must use lowercase kebab-case.`);
+      throw new Error(`Orbit surface contribution "${contribution.id}" must use lowercase kebab-case.`);
     }
     const order = contribution.order ?? 0;
     if (!Number.isFinite(order)) {
-      throw new Error(`Rune surface contribution "${contribution.id}" has an invalid order.`);
+      throw new Error(`Orbit surface contribution "${contribution.id}" has an invalid order.`);
     }
     const surfaceRecords = records.get(contribution.surface)!;
     if (surfaceRecords.some((entry) => entry.id === contribution.id)) {
       throw new Error(
-        `Rune surface contribution "${contribution.id}" is already registered on "${contribution.surface}".`,
+        `Orbit surface contribution "${contribution.id}" is already registered on "${contribution.surface}".`,
       );
     }
     if (kind === "single" && surfaceRecords.length > 0) {
-      throw new Error(`Rune single surface "${contribution.surface}" already has an occupant.`);
+      throw new Error(`Orbit single surface "${contribution.surface}" already has an occupant.`);
     }
 
     const entry = Object.freeze({
@@ -79,7 +79,7 @@ export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
   }
 
   function entries(surface: SurfaceId): readonly RuneSurfaceEntry<Value>[] {
-    if (!surfaceKinds.has(surface)) throw new Error(`Rune surface "${surface}" is not declared.`);
+    if (!surfaceKinds.has(surface)) throw new Error(`Orbit surface "${surface}" is not declared.`);
     return Object.freeze(
       [...records.get(surface)!]
         .sort((left, right) => left.order - right.order || left.sequence - right.sequence)

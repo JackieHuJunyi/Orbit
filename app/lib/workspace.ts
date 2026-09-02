@@ -193,7 +193,7 @@ This chart is computed from readable DuckDB SQL, not copied into the deck.
 
 const compiledDefaultSlides = semanticHtmlPresentationFromDeckSource(slidesSource);
 if (!compiledDefaultSlides.source) {
-  throw new Error(compiledDefaultSlides.errors[0] ?? "Rune could not compile its default semantic HTML presentation.");
+  throw new Error(compiledDefaultSlides.errors[0] ?? "Orbit could not compile its default semantic HTML presentation.");
 }
 
 export const defaultArtifacts: WorkspaceArtifact[] = [
@@ -487,7 +487,7 @@ export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
     },
     starterSource({ title }) {
       const prepared = semanticHtmlPresentationStarter(title);
-      if (!prepared.source) throw new Error(prepared.errors[0] ?? "Rune could not create semantic HTML.");
+      if (!prepared.source) throw new Error(prepared.errors[0] ?? "Orbit could not create semantic HTML.");
       return prepared.source;
     },
     validate(artifact) {
@@ -599,7 +599,7 @@ function planDeckSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan 
   if (/深色|dark|night/i.test(prompt)) {
     return {
       nextSource: source.replace(/^theme:\s*(?:rune|rune-dark)\s*$/m, "theme: rune-dark"),
-      summary: "Switch the deck compiler to the Rune night theme",
+      summary: "Switch the deck compiler to the Orbit night theme",
       detail: "Only the validated frontmatter theme changes; slide content stays untouched.",
     };
   }
@@ -630,7 +630,7 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
       .replace(/background:\s*#dad7cf/i, "background: #0d120f");
     return {
       nextSource: themed,
-      summary: "Switch the deck to the Rune night theme",
+      summary: "Switch the deck to the Orbit night theme",
       detail: "Only shared design tokens and the stage background change.",
     };
   }
@@ -651,7 +651,7 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
     </section>`;
     const appended = existingConclusion ? null : appendSemanticHtmlPresentationSlide(source, conclusion);
     if (appended?.errors.length || (!existingConclusion && !appended?.source)) {
-      throw new Error(appended?.errors[0] ?? "Rune could not append the semantic HTML conclusion.");
+      throw new Error(appended?.errors[0] ?? "Orbit could not append the semantic HTML conclusion.");
     }
     const withConclusion = existingConclusion
       ? `${source.slice(0, existingConclusion.start)}${conclusion}${source.slice(existingConclusion.end)}`
@@ -727,7 +727,7 @@ function planChart(source: string, prompt: string): LocalPlan {
 }
 
 export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
-  if (!prompt.trim()) throw new Error("Describe the change you want Rune to make.");
+  if (!prompt.trim()) throw new Error("Describe the change you want Orbit to make.");
   if (artifact.kind === "document") return planDocument(artifact.source, prompt);
   if (artifact.kind === "data") return planData(artifact.source, prompt);
   if (artifact.kind === "query") return planQuery(artifact.source, prompt);
@@ -737,7 +737,7 @@ export function planLocalChange(artifact: WorkspaceArtifact, prompt: string): Lo
 
 export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt: string): LocalWorkspacePlan {
   const instruction = prompt.trim();
-  if (!instruction) throw new Error("Describe the workspace outcome you want Rune to coordinate.");
+  if (!instruction) throw new Error("Describe the workspace outcome you want Orbit to coordinate.");
   if (!/同步|一致|workspace|all artifacts|所有|全局|报告|演示/i.test(instruction)) {
     throw new Error("Try synchronizing the quarterly conclusion across the report and presentation.");
   }
@@ -761,7 +761,7 @@ export function planLocalWorkspaceChange(artifacts: WorkspaceArtifact[], prompt:
   }
 
   if (patches.length < 2)
-    throw new Error("Rune needs at least a report and presentation to coordinate this workspace action.");
+    throw new Error("Orbit needs at least a report and presentation to coordinate this workspace action.");
   return {
     summary: `Synchronize the quarterly narrative across ${patches.length} artifacts`,
     detail:

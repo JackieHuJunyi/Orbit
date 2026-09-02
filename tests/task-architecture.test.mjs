@@ -117,7 +117,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(briefingCompiler, /Refresh/);
   assert.doesNotMatch(briefingCompiler, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
   assert.match(briefingContract, /Every bounded source unit must support exactly one content slide/);
-  assert.match(briefingContract, /Rune owns the cover, conclusion, file identity, source metadata, and every write/);
+  assert.match(briefingContract, /Orbit owns the cover, conclusion, file identity, source metadata, and every write/);
   assert.match(briefingRoute, /resolveModelRouting/);
   assert.match(briefingRoute, /executeModelRoute/);
   assert.match(briefingRoute, /validateDocumentBriefingModelOutline/);

@@ -124,7 +124,7 @@ test("sends only bounded aggregate evidence to the active personal model and ret
   assert.equal(providerRequest.body.text.format.name, "operating_review_questions");
   assert.match(
     providerRequest.body.input[0].content,
-    /Rune will insert live category context and every numeric value deterministically/u,
+    /Orbit will insert live category context and every numeric value deterministically/u,
   );
   const modelInput = JSON.parse(providerRequest.body.input[1].content);
   assert.deepEqual(modelInput.aggregateEvidence, [

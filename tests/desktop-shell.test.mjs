@@ -54,7 +54,7 @@ test("legacy Office conversion is bounded, macro-disabled, temporary, and review
   assert.match(workspaceFileExportRuntime, /Legacy Office output is a compatibility handoff/);
 });
 
-test("desktop navigation remains pinned to Rune's ephemeral loopback origin", () => {
+test("desktop navigation remains pinned to Orbit's ephemeral loopback origin", () => {
   assert.match(main, /server\.listen\(0, "127\.0\.0\.1"/);
   assert.match(main, /serveStaticAsset\(request, response, url\)/);
   assert.match(main, /assetPath\.startsWith\(`\$\{clientDirectory\}\$\{path\.sep\}`\)/);

@@ -36,10 +36,10 @@ function tokenOccurrences(source: string, token: string) {
 }
 
 function normalizedWarningDetail(error: unknown) {
-  const detail = error instanceof Error ? error.message : "the embedded bytes are not a supported Rune image";
+  const detail = error instanceof Error ? error.message : "the embedded bytes are not a supported Orbit image";
   return detail
     .replace(/^The selected image/iu, "The embedded image")
-    .replace(/^Choose/iu, "Rune requires")
+    .replace(/^Choose/iu, "Orbit requires")
     .replace(/[.!?]+$/u, "");
 }
 
@@ -67,7 +67,7 @@ export async function finalizeImportedImages(
       0,
     );
     if (targetCount !== 1)
-      throw new Error("Imported image placement changed during conversion; Rune refused an ambiguous result.");
+      throw new Error("Imported image placement changed during conversion; Orbit refused an ambiguous result.");
   }
 
   const replacements = new Map<string, string>();
@@ -106,7 +106,7 @@ export async function finalizeImportedImages(
         source = source.replace(candidate.token, replacements.get(candidate.token) ?? "");
       });
     if (source.includes(IMPORT_IMAGE_TOKEN_PREFIX)) {
-      throw new Error("An imported image placeholder escaped finalization; Rune kept the workspace unchanged.");
+      throw new Error("An imported image placeholder escaped finalization; Orbit kept the workspace unchanged.");
     }
     return source === artifact.source ? artifact : { ...artifact, source: source.replace(/\n{3,}/gu, "\n\n") };
   });

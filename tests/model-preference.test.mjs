@@ -22,7 +22,7 @@ import {
 } from "../app/lib/model-credential-vault.ts";
 import { GET as getModelProfiles, POST as postModelProfiles } from "../app/api/model-profiles/route.ts";
 
-test("normalizes only non-secret Rune model preferences", () => {
+test("normalizes only non-secret Orbit model preferences", () => {
   assert.equal(normalizeRuneModelMode("model-assisted"), "model-assisted");
   assert.equal(normalizeRuneModelMode("device-tools-only"), "device-tools-only");
   assert.equal(normalizeRuneModelMode("auto"), "model-assisted");

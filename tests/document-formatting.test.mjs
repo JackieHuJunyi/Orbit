@@ -39,14 +39,15 @@ test("uses a collision-safe backtick delimiter and toggles code spans", () => {
 });
 
 test("creates editable links, removes complete links, and rejects multiline labels", () => {
-  const linked = applyDocumentFormatting("Read Rune", "link", 5, 9);
-  assert.equal(linked.draft, "Read [Rune](https://)");
+  const source = "Read Orbit";
+  const linked = applyDocumentFormatting(source, "link", 5, source.length);
+  assert.equal(linked.draft, "Read [Orbit](https://)");
   assert.equal(linked.draft.slice(linked.selectionStart, linked.selectionEnd), "https://");
   assert.equal(linked.error, null);
 
   const unlinked = applyDocumentFormatting(linked.draft, "link", 5, linked.draft.length);
-  assert.equal(unlinked.draft, "Read Rune");
-  assert.deepEqual([unlinked.selectionStart, unlinked.selectionEnd], [5, 9]);
+  assert.equal(unlinked.draft, source);
+  assert.deepEqual([unlinked.selectionStart, unlinked.selectionEnd], [5, source.length]);
 
   const invalid = applyDocumentFormatting("first\nsecond", "link", 0, 12);
   assert.equal(invalid.draft, "first\nsecond");
@@ -88,7 +89,7 @@ test("formats the current empty line and maps a collapsed caret after its marker
 });
 
 test("normalizes reversed and out-of-range textarea selections", () => {
-  const formatted = applyDocumentFormatting("Rune", "strikethrough", 99, -4);
-  assert.equal(formatted.draft, "~~Rune~~");
-  assert.deepEqual([formatted.selectionStart, formatted.selectionEnd], [2, 6]);
+  const formatted = applyDocumentFormatting("Orbit", "strikethrough", 99, -4);
+  assert.equal(formatted.draft, "~~Orbit~~");
+  assert.deepEqual([formatted.selectionStart, formatted.selectionEnd], [2, 7]);
 });

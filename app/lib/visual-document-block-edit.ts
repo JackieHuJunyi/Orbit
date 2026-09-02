@@ -214,7 +214,7 @@ export function prepareVisualDocumentBlockEdit(
         candidate.headingLevel === target.headingLevel,
     ) ?? null;
   if (!nextTarget) {
-    return emptyResult(artifact.source, "Rune could not prove the edited block's new source range.");
+    return emptyResult(artifact.source, "Orbit could not prove the edited block's new source range.");
   }
   return { nextSource, nextTarget, errors: [] };
 }

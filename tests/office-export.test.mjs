@@ -73,7 +73,7 @@ const runeImageAsset = {
   bytes: onePixelPng,
 };
 
-test("embeds and reimports verified Rune local images through portable DOCX media", async () => {
+test("embeds and reimports verified Orbit local images through portable DOCX media", async () => {
   const artifact = {
     id: "image-report",
     name: "image-report.md",
@@ -95,7 +95,7 @@ test("embeds and reimports verified Rune local images through portable DOCX medi
   assert.match(imported.warnings.join(" "), /verified local image.*preserved/iu);
 });
 
-test("fails DOCX export closed when a referenced Rune image is missing", () => {
+test("fails DOCX export closed when a referenced Orbit image is missing", () => {
   const artifact = {
     id: "missing",
     name: "missing.md",
@@ -282,7 +282,7 @@ test("exports semantic HTML slides through an explicit deterministic PPTX fideli
   assert.equal(first.fileName, "semantic-brief.pptx");
   assert.equal(first.targetType, "pptx");
   assert.deepEqual(first.bytes, second.bytes);
-  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Rune's controlled slide model/iu);
+  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Orbit's controlled slide model/iu);
   const parts = packageParts(first.bytes);
   assertPptSlideBounds(parts);
   const slides = Object.entries(parts)
@@ -371,7 +371,7 @@ test("sanitizes cross-platform Office filenames", () => {
     language: "Markdown",
     source: "# Safe filename\n",
   };
-  assert.equal(exportOfficeArtifact(document).fileName, "rune-CON.docx");
+  assert.equal(exportOfficeArtifact(document).fileName, "orbit-CON.docx");
   assert.equal(exportOfficeArtifact({ ...document, name: "quarter:review?.md" }).fileName, "quarter-review-.docx");
 });
 

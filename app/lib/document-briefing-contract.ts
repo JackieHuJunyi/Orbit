@@ -100,7 +100,7 @@ export function validateDocumentBriefingModelOutline(
 }
 
 export function buildDocumentBriefingModelInstructions(contentSlideCount: number) {
-  return `You are Rune's bounded presentation narrative planner. Return exactly ${contentSlideCount} content slides; Rune owns the cover, conclusion, file identity, source metadata, and every write. Use each supplied sourceUnitId exactly once. Keep every claim supported by that unit's excerpt. Titles and bullets must be concise plain text with no Markdown, HTML, binding braces, or line breaks. Do not invent numbers, people, dates, decisions, or outcomes. Shape the narrative for the requested audience, purpose, and language. Return only the required structured outline.`;
+  return `You are Orbit's bounded presentation narrative planner. Return exactly ${contentSlideCount} content slides; Orbit owns the cover, conclusion, file identity, source metadata, and every write. Use each supplied sourceUnitId exactly once. Keep every claim supported by that unit's excerpt. Titles and bullets must be concise plain text with no Markdown, HTML, binding braces, or line breaks. Do not invent numbers, people, dates, decisions, or outcomes. Shape the narrative for the requested audience, purpose, and language. Return only the required structured outline.`;
 }
 
 export function buildDocumentBriefingModelInput({

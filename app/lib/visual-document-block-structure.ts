@@ -244,7 +244,7 @@ export function prepareVisualDocumentBlockStructure(
   if (!target) return emptyResult(artifact.source, "The block no longer matches the current source revision.");
   const nodes = parseMarkdownBlocks(artifact.source);
   const current = positionedTarget(artifact.source, target);
-  if (!current) return emptyResult(artifact.source, "Rune could not prove this block's current Markdown structure.");
+  if (!current) return emptyResult(artifact.source, "Orbit could not prove this block's current Markdown structure.");
   const warnings = structureWarnings(artifact.source, target, input.action);
 
   if (input.action === "insert-before" || input.action === "insert-after") {
@@ -287,7 +287,10 @@ export function prepareVisualDocumentBlockStructure(
     if (input.action === "insert-before" && previous) {
       const gap = whitespaceGap(artifact.source, previous, current);
       if (!previous.blockType || gap == null) {
-        return emptyResult(artifact.source, "Rune will not insert across unsupported or ambiguous Markdown structure.");
+        return emptyResult(
+          artifact.source,
+          "Orbit will not insert across unsupported or ambiguous Markdown structure.",
+        );
       }
       changeStart = previous.end;
       changeEnd = current.start;
@@ -296,7 +299,10 @@ export function prepareVisualDocumentBlockStructure(
     } else if (input.action === "insert-after" && next) {
       const gap = whitespaceGap(artifact.source, current, next);
       if (!next.blockType || gap == null) {
-        return emptyResult(artifact.source, "Rune will not insert across unsupported or ambiguous Markdown structure.");
+        return emptyResult(
+          artifact.source,
+          "Orbit will not insert across unsupported or ambiguous Markdown structure.",
+        );
       }
       changeStart = current.end;
       changeEnd = next.start;
@@ -331,7 +337,7 @@ export function prepareVisualDocumentBlockStructure(
           candidate.headingLevel === inserted.headingLevel,
       ) ?? null;
     if (!nextTarget) {
-      return emptyResult(artifact.source, "Rune could not prove the inserted block's new source range.");
+      return emptyResult(artifact.source, "Orbit could not prove the inserted block's new source range.");
     }
     return { nextSource, nextTarget, errors: [], warnings };
   }
@@ -349,7 +355,7 @@ export function prepareVisualDocumentBlockStructure(
     if (!neighbor.blockType) {
       return emptyResult(
         artifact.source,
-        "Rune will not move this block across unsupported Markdown structure.",
+        "Orbit will not move this block across unsupported Markdown structure.",
         warnings,
       );
     }
@@ -362,7 +368,7 @@ export function prepareVisualDocumentBlockStructure(
     if (gap == null) {
       return emptyResult(
         artifact.source,
-        "Rune will not move this block across unsupported or ambiguous Markdown structure.",
+        "Orbit will not move this block across unsupported or ambiguous Markdown structure.",
         warnings,
       );
     }
@@ -396,7 +402,7 @@ export function prepareVisualDocumentBlockStructure(
           candidate.headingLevel === target.headingLevel,
       ) ?? null;
     if (!nextTarget) {
-      return emptyResult(artifact.source, "Rune could not prove the moved block's new source range.", warnings);
+      return emptyResult(artifact.source, "Orbit could not prove the moved block's new source range.", warnings);
     }
     return { nextSource, nextTarget, errors: [], warnings };
   }
@@ -405,7 +411,7 @@ export function prepareVisualDocumentBlockStructure(
     if (nodes.filter((node) => node.blockType).length <= 1) {
       return emptyResult(
         artifact.source,
-        "Rune will not delete the last Document block. Delete the artifact or replace its source instead.",
+        "Orbit will not delete the last Document block. Delete the artifact or replace its source instead.",
         warnings,
       );
     }
@@ -420,7 +426,7 @@ export function prepareVisualDocumentBlockStructure(
     if (!range) {
       return emptyResult(
         artifact.source,
-        "Rune will not delete this block across unsupported or ambiguous Markdown structure.",
+        "Orbit will not delete this block across unsupported or ambiguous Markdown structure.",
         warnings,
       );
     }
@@ -433,7 +439,7 @@ export function prepareVisualDocumentBlockStructure(
     }
     const nextSource = `${artifact.source.slice(0, range.start)}${artifact.source.slice(range.end)}`;
     if (!nextSource.trim()) {
-      return emptyResult(artifact.source, "Rune will not leave a Document with empty source.", warnings);
+      return emptyResult(artifact.source, "Orbit will not leave a Document with empty source.", warnings);
     }
     if (!sourceOutsideSelectionIsUnchanged(artifact.source, nextSource, range)) {
       return emptyResult(artifact.source, "The deletion crossed its exact block-and-separator boundary.", warnings);
@@ -441,7 +447,7 @@ export function prepareVisualDocumentBlockStructure(
     const nextArtifact = { ...artifact, source: nextSource };
     const nextTarget = nearestSurvivingTarget(nextArtifact, range.start);
     if (!nextTarget) {
-      return emptyResult(artifact.source, "Rune could not prove a surviving source target after deletion.", warnings);
+      return emptyResult(artifact.source, "Orbit could not prove a surviving source target after deletion.", warnings);
     }
     return { nextSource, nextTarget, errors: [], warnings };
   }

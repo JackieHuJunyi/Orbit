@@ -30,27 +30,27 @@ export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact,
   requiredKinds: readonly Kind[],
   definitions: readonly RuneArtifactAdapter<Kind, Artifact, StarterRequest>[],
 ) {
-  if (!requiredKinds.length) throw new Error("Rune requires at least one artifact kind.");
+  if (!requiredKinds.length) throw new Error("Orbit requires at least one artifact kind.");
 
   const required = new Set<Kind>();
   requiredKinds.forEach((kind) => {
-    if (required.has(kind)) throw new Error(`Rune artifact kind "${kind}" is required more than once.`);
+    if (required.has(kind)) throw new Error(`Orbit artifact kind "${kind}" is required more than once.`);
     required.add(kind);
   });
 
   const adapters = new Map<Kind, RuneArtifactAdapter<Kind, Artifact, StarterRequest>>();
   const ordered = definitions.map((definition, sequence) => {
     if (!required.has(definition.kind)) {
-      throw new Error(`Rune artifact adapter "${definition.kind}" is not a declared kind.`);
+      throw new Error(`Orbit artifact adapter "${definition.kind}" is not a declared kind.`);
     }
     if (adapters.has(definition.kind)) {
-      throw new Error(`Rune artifact adapter "${definition.kind}" is registered more than once.`);
+      throw new Error(`Orbit artifact adapter "${definition.kind}" is registered more than once.`);
     }
     if (!Number.isFinite(definition.order)) {
-      throw new Error(`Rune artifact adapter "${definition.kind}" has an invalid order.`);
+      throw new Error(`Orbit artifact adapter "${definition.kind}" has an invalid order.`);
     }
     if (!definition.creation.extension.startsWith(".")) {
-      throw new Error(`Rune artifact adapter "${definition.kind}" needs a dotted extension.`);
+      throw new Error(`Orbit artifact adapter "${definition.kind}" needs a dotted extension.`);
     }
     const adapter = Object.freeze({
       ...definition,
@@ -62,7 +62,7 @@ export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact,
   });
 
   requiredKinds.forEach((kind) => {
-    if (!adapters.has(kind)) throw new Error(`Rune artifact adapter "${kind}" is missing.`);
+    if (!adapters.has(kind)) throw new Error(`Orbit artifact adapter "${kind}" is missing.`);
   });
 
   const snapshot = Object.freeze(
@@ -73,7 +73,7 @@ export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact,
 
   function forKind(kind: Kind) {
     const adapter = adapters.get(kind);
-    if (!adapter) throw new Error(`Rune artifact adapter "${kind}" is not registered.`);
+    if (!adapter) throw new Error(`Orbit artifact adapter "${kind}" is not registered.`);
     return adapter;
   }
 

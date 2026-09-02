@@ -77,7 +77,7 @@ export async function POST(request: Request) {
           input: modelInput,
           schema: OperatingReviewNarrativeSchema,
           schemaName: "operating_review_questions",
-          responseDescription: "Return Rune's evidence-bound operating-review questions for local validation.",
+          responseDescription: "Return Orbit's evidence-bound operating-review questions for local validation.",
           signal: providerController.signal,
         });
         const validated = validateOperatingReviewNarrative(response.output, evidenceRows);
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     }
     return Response.json(
       {
-        error: "The model provider could not shape this review. Rune kept the source unchanged.",
+        error: "The model provider could not shape this review. Orbit kept the source unchanged.",
         code: "MODEL_NARRATIVE_UNAVAILABLE",
       },
       { status: 502 },

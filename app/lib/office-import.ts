@@ -113,26 +113,26 @@ function openPackage(input: ArrayBuffer | Uint8Array, importImages = false): Pac
           expandedImageBytes += file.originalSize;
           return true;
         }
-        if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
+        if (file.originalSize > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Orbit's 6 MB XML-part limit.`);
         expandedXmlBytes += file.originalSize;
         if (expandedXmlBytes > MAX_XML_TOTAL_BYTES)
-          throw new Error("The Office package expands beyond Rune's 24 MB XML limit.");
+          throw new Error("The Office package expands beyond Orbit's 24 MB XML limit.");
         return true;
       },
     });
     const extractedEntries = Object.entries(files);
     const actualXmlBytes = extractedEntries.reduce((total, [path, data]) => {
       if (!path.endsWith(".xml") && !path.endsWith(".rels")) return total;
-      if (data.length > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Rune's 6 MB XML-part limit.`);
+      if (data.length > MAX_XML_PART_BYTES) throw new Error(`${path} exceeds Orbit's 6 MB XML-part limit.`);
       return total + data.length;
     }, 0);
     if (actualXmlBytes > MAX_XML_TOTAL_BYTES)
-      throw new Error("The Office package expands beyond Rune's 24 MB XML limit.");
+      throw new Error("The Office package expands beyond Orbit's 24 MB XML limit.");
     return {
       files,
       warnings: imageLimitWarning
         ? [
-            `Embedded Office images beyond Rune's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
+            `Embedded Office images beyond Orbit's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
           ]
         : [],
       importImages,
@@ -288,7 +288,7 @@ function officeImageToken(
   }
   if (relation.targetMode === "External") {
     context.warnings.push(
-      "An externally linked Office image was not fetched; Rune imports only embedded local images.",
+      "An externally linked Office image was not fetched; Orbit imports only embedded local images.",
     );
     return "";
   }
@@ -300,7 +300,7 @@ function officeImageToken(
   const bytes = context.files[partPath];
   if (!bytes) {
     context.warnings.push(
-      `Embedded Office image “${partPath.split("/").pop() || "image"}” was unavailable or outside Rune's image limits.`,
+      `Embedded Office image “${partPath.split("/").pop() || "image"}” was unavailable or outside Orbit's image limits.`,
     );
     return "";
   }
@@ -952,7 +952,7 @@ function convertPptxToDeck(fileName: string, context: PackageContext): OfficeImp
   }
   if (omittedCharts)
     context.warnings.push(
-      `${omittedCharts} embedded chart${omittedCharts === 1 ? " was" : "s were"} omitted; import its source data as CSV to rebuild a live Rune chart.`,
+      `${omittedCharts} embedded chart${omittedCharts === 1 ? " was" : "s were"} omitted; import its source data as CSV to rebuild a live Orbit chart.`,
     );
   const title = presentationTitle(context, fileName);
   const language = /[\u3400-\u9fff]/.test(`${title} ${slideSources.join(" ")}`) ? "zh-CN" : "en";

@@ -324,7 +324,7 @@ function formatCny(fen: number) {
 }
 
 export function renderPilotCommercialGateMarkdown(report: PilotCommercialReport) {
-  return `# Rune P4 commercial gate
+  return `# Orbit P4 commercial gate
 
 > ${report.gates.passed ? "PASS" : "OPEN"} on ${report.decisionOn}. This aggregate must be reconciled against the approved commercial system. Preferences, checkout clicks, draft invoices, and refunded teams are not payment.
 

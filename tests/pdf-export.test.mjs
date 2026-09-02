@@ -54,7 +54,7 @@ test("exports a deterministic A4 PDF from the default Markdown Document", async 
   });
 });
 
-test("embeds verified Rune local images into fixed Document PDF", async () => {
+test("embeds verified Orbit local images into fixed Document PDF", async () => {
   const artifact = {
     id: "image",
     name: "image.md",
@@ -70,7 +70,7 @@ test("embeds verified Rune local images into fixed Document PDF", async () => {
   assert.match(first.warnings.join(" "), /embedded as portable, static PDF image snapshots/iu);
 });
 
-test("fails PDF export closed when a referenced Rune image is missing", async () => {
+test("fails PDF export closed when a referenced Orbit image is missing", async () => {
   const artifact = {
     id: "missing",
     name: "missing.md",
@@ -117,7 +117,7 @@ test("exports semantic HTML slides as deterministic fixed 16:9 PDF pages", async
   assert.equal(isPdfExportArtifact(artifact), true);
   assert.equal(first.fileName, "semantic-brief.pdf");
   assert.deepEqual(first.bytes, second.bytes);
-  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Rune's controlled slide model/iu);
+  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Orbit's controlled slide model/iu);
   const document = await PDFDocument.load(first.bytes);
   assert.equal(document.getPageCount(), 2);
   document.getPages().forEach((page) => assert.deepEqual(page.getSize(), { width: 960, height: 540 }));

@@ -65,7 +65,7 @@ function parseCsvAutoValue(draft: string): DataCell {
   );
   const parsed = parseDataSource(singleCellSource);
   if (parsed.errors.length || parsed.rows.length !== 1) {
-    throw new Error(parsed.errors[0] ?? "Rune could not parse this CSV value.");
+    throw new Error(parsed.errors[0] ?? "Orbit could not parse this CSV value.");
   }
   return parsed.rows[0].value ?? null;
 }
@@ -176,7 +176,7 @@ export function prepareVisualDataCellEdit(
   try {
     value = parseDraft(input.draft, input.valueType, parsed.format);
   } catch (error) {
-    return emptyResult(artifact.source, error instanceof Error ? error.message : "Rune could not parse this value.");
+    return emptyResult(artifact.source, error instanceof Error ? error.message : "Orbit could not parse this value.");
   }
 
   const currentValue = parsed.rows[target.rowIndex]?.[target.column];
@@ -203,7 +203,7 @@ export function prepareVisualDataCellEdit(
         candidate.column === target.column,
     ) ?? null;
   if (!nextTarget) {
-    return emptyResult(artifact.source, "Rune could not prove the edited cell's new source range.");
+    return emptyResult(artifact.source, "Orbit could not prove the edited cell's new source range.");
   }
   return { nextSource, nextTarget, value, errors: [] };
 }

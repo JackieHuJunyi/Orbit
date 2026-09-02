@@ -1,12 +1,12 @@
-# Rune P1 recent-task interview guide
+# Orbit P1 recent-task interview guide
 
 > Use this guide for the first 15 problem interviews. It collects evidence about completed behavior; it is not a product pitch or a willingness-to-pay survey.
 
 ## Data boundary
 
 - Record consent, identity, contact information, company, interview notes, and any identity-to-alias mapping only in the approved research system.
-- Do not commit completed interview records, source files, screenshots, deliverables, consent records, or payment records to Rune or `pilot-private/`.
-- Do not ask a participant to show protected material until authorization or redaction is confirmed outside Rune.
+- Do not commit completed interview records, source files, screenshots, deliverables, consent records, or payment records to Orbit or `pilot-private/`.
+- Do not ask a participant to show protected material until authorization or redaction is confirmed outside Orbit.
 - The repository may receive only aggregate, non-identifying conclusions after the research owner has reviewed them.
 
 ## Recruit and screen
@@ -27,7 +27,7 @@ Include a participant only when questions 1–3 describe one concrete completed 
 - Duration: 45 minutes.
 - Anchor every answer to the most recent completed task.
 - Ask for sequence and evidence before opinions.
-- Do not demo Rune until the recent-task timeline is complete.
+- Do not demo Orbit until the recent-task timeline is complete.
 - Do not describe local-first, traceability, review, or speed as benefits before asking about current trust and file-sharing behavior.
 
 Suggested opening:
@@ -69,7 +69,7 @@ Ask in this order and follow each answer with “what happened next?” or “sh
 11. Which files or fields could not be sent to a cloud service, and what rule or concern caused that boundary?
 12. How did reviewers decide the numbers and conclusions were current and correct?
 13. In the last three cycles, how often did this task happen and how similar were the inputs and outputs?
-14. Could the same completed task be repeated in a supervised Rune trial using authorized or redacted material?
+14. Could the same completed task be repeated in a supervised Orbit trial using authorized or redacted material?
 15. Who would have authority to approve that trial and, later, approve a paid pilot?
 
 After the behavioral interview is complete, show the three concrete pilot packages from the product plan (¥499, ¥999, ¥1,999) and require a forced choice plus rationale. This is E1 preference evidence only. Count payment as E4 only after an authorized payment or signed commercial commitment exists in the approved commercial system.

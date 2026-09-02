@@ -34,5 +34,5 @@ export function safeExportBaseName(name: string) {
       .replace(/^\.+|\.+$/g, "")
       .trim()
       .slice(0, 96) || "rune-export";
-  return /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(cleaned) ? `rune-${cleaned}` : cleaned;
+  return /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(cleaned) ? `orbit-${cleaned}` : cleaned;
 }

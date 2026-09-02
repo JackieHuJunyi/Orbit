@@ -3,7 +3,7 @@ import { convertSemanticHtmlPresentationToDeck } from "./semantic-html-presentat
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 const EDITABLE_COPY_WARNING =
-  "Rune will add an independent editable Deck Markdown copy. The original semantic HTML remains unchanged; later edits do not synchronize between the two artifacts.";
+  "Orbit will add an independent editable Deck Markdown copy. The original semantic HTML remains unchanged; later edits do not synchronize between the two artifacts.";
 
 export function prepareSemanticHtmlEditableCopy(
   workspace: WorkspaceArtifact[],
@@ -20,7 +20,7 @@ export function prepareSemanticHtmlEditableCopy(
   ) {
     return {
       review: null,
-      errors: ["The semantic HTML source changed before Rune could prepare an editable copy."],
+      errors: ["The semantic HTML source changed before Orbit could prepare an editable copy."],
     };
   }
   try {
@@ -36,7 +36,7 @@ export function prepareSemanticHtmlEditableCopy(
   } catch (error) {
     return {
       review: null,
-      errors: [error instanceof Error ? error.message : "Rune could not prepare an editable presentation copy."],
+      errors: [error instanceof Error ? error.message : "Orbit could not prepare an editable presentation copy."],
     };
   }
 }

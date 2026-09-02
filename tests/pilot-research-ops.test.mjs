@@ -64,7 +64,7 @@ test("keeps P4 tied to authorized commercial evidence and the fixed denominator"
   assert.match(guide, /¥1,999\/team\/month/);
   assert.match(guide, /paying teams \/ qualified pilots offered/i);
   assert.match(guide, /checkout click.*is not E4/i);
-  assert.match(guide, /Do not implement or simulate payments inside Rune/i);
+  assert.match(guide, /Do not implement or simulate payments inside Orbit/i);
   assert.match(guide, /at least 5 paying teams/i);
   assert.match(guide, /Omitting refusals changes the denominator/i);
   assert.match(guide, /refunded.*never counts as a paying team/i);

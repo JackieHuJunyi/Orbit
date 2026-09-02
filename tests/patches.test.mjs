@@ -96,7 +96,7 @@ test("prepares existing patches and new artifacts as one atomic workspace mutati
       source: "# New brief\n\nVisible workspace context.\n",
     },
     summary: "Create a brief",
-    detail: "Add one Rune-owned source.",
+    detail: "Add one Orbit-owned source.",
   };
   const result = prepareWorkspaceMutation(
     defaultArtifacts,

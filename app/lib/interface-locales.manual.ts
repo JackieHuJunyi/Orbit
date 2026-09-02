@@ -11,7 +11,7 @@ const OCR_ENGLISH = {
   kicker: "Scanned PDF · explicit selection",
   title: "Choose pages for OCR",
   description:
-    "Rune found pages without selectable text. Confirm pages and language; image content is not read until you open a preview or recognize.",
+    "Orbit found pages without selectable text. Confirm pages and language; image content is not read until you open a preview or recognize.",
   settings: "OCR settings",
   privacyFooter: "Page images stay on device · results remain reviewable",
   stop: "Stop",
@@ -22,7 +22,7 @@ const OCR_ENGLISH = {
   pages: "pages",
   onDevice: "On-device recognition",
   privacy:
-    "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.",
+    "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.",
   detectedScanPages: "detected scan pages",
   pagesToRecognize: "Pages to recognize",
   ocrPagesFor: "OCR pages for",
@@ -38,7 +38,7 @@ const OCR_ENGLISH = {
   wholePage: "Whole page",
   resetRegion: "Reset to whole page",
   loadingPreview: "Rendering a private on-device preview…",
-  previewError: "Rune could not render this page preview.",
+  previewError: "Orbit could not render this page preview.",
   dragRegion: "Drag to select the OCR region",
   regionLeft: "Left",
   regionTop: "Top",
@@ -65,7 +65,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     kicker: "PDF numérisé · sélection explicite",
     title: "Choisissez les pages à reconnaître",
     description:
-      "Rune a trouvé des pages sans texte sélectionnable. Confirmez les pages et la langue ; les images ne seront lues qu’après ouverture d’un aperçu ou lancement de la reconnaissance.",
+      "Orbit a trouvé des pages sans texte sélectionnable. Confirmez les pages et la langue ; les images ne seront lues qu’après ouverture d’un aperçu ou lancement de la reconnaissance.",
     settings: "Réglages OCR",
     privacyFooter: "Les images restent sur l’appareil · les résultats restent vérifiables",
     stop: "Arrêter",
@@ -76,7 +76,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     pages: "pages",
     onDevice: "Reconnaissance sur l’appareil",
     privacy:
-      "Les pages PDF sont rendues uniquement dans ce navigateur. Rune charge son moteur OCR intégré et les données linguistiques depuis ce site, puis le navigateur les met en cache ; les images et le texte reconnu ne sont jamais envoyés.",
+      "Les pages PDF sont rendues uniquement dans ce navigateur. Orbit charge son moteur OCR intégré et les données linguistiques depuis ce site, puis le navigateur les met en cache ; les images et le texte reconnu ne sont jamais envoyés.",
     detectedScanPages: "pages numérisées détectées",
     pagesToRecognize: "Pages à reconnaître",
     ocrPagesFor: "Pages OCR pour",
@@ -92,7 +92,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     wholePage: "Page entière",
     resetRegion: "Rétablir la page entière",
     loadingPreview: "Rendu d’un aperçu privé sur l’appareil…",
-    previewError: "Rune n’a pas pu afficher l’aperçu de cette page.",
+    previewError: "Orbit n’a pas pu afficher l’aperçu de cette page.",
     dragRegion: "Faites glisser pour sélectionner la zone OCR",
     regionLeft: "Gauche",
     regionTop: "Haut",
@@ -111,7 +111,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     kicker: "PDF escaneado · selección explícita",
     title: "Elige las páginas para OCR",
     description:
-      "Rune encontró páginas sin texto seleccionable. Confirma las páginas y el idioma; las imágenes solo se leerán al abrir una vista previa o iniciar el reconocimiento.",
+      "Orbit encontró páginas sin texto seleccionable. Confirma las páginas y el idioma; las imágenes solo se leerán al abrir una vista previa o iniciar el reconocimiento.",
     settings: "Ajustes de OCR",
     privacyFooter: "Las imágenes permanecen en el dispositivo · los resultados se pueden revisar",
     stop: "Detener",
@@ -122,7 +122,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     pages: "páginas",
     onDevice: "Reconocimiento en el dispositivo",
     privacy:
-      "Las páginas PDF se renderizan solo en este navegador. Rune carga su motor OCR integrado y los datos de idioma desde este sitio, y el navegador los almacena en caché; las imágenes y el texto reconocido nunca se envían.",
+      "Las páginas PDF se renderizan solo en este navegador. Orbit carga su motor OCR integrado y los datos de idioma desde este sitio, y el navegador los almacena en caché; las imágenes y el texto reconocido nunca se envían.",
     detectedScanPages: "páginas escaneadas detectadas",
     pagesToRecognize: "Páginas para reconocer",
     ocrPagesFor: "Páginas OCR de",
@@ -138,7 +138,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     wholePage: "Página completa",
     resetRegion: "Restablecer página completa",
     loadingPreview: "Renderizando una vista previa privada en el dispositivo…",
-    previewError: "Rune no pudo renderizar la vista previa de esta página.",
+    previewError: "Orbit no pudo renderizar la vista previa de esta página.",
     dragRegion: "Arrastra para seleccionar la región de OCR",
     regionLeft: "Izquierda",
     regionTop: "Arriba",
@@ -157,7 +157,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     kicker: "Сканированный PDF · явный выбор",
     title: "Выберите страницы для OCR",
     description:
-      "Rune обнаружил страницы без выделяемого текста. Подтвердите страницы и язык; изображения будут прочитаны только после открытия предпросмотра или запуска распознавания.",
+      "Orbit обнаружил страницы без выделяемого текста. Подтвердите страницы и язык; изображения будут прочитаны только после открытия предпросмотра или запуска распознавания.",
     settings: "Настройки OCR",
     privacyFooter: "Изображения остаются на устройстве · результаты можно проверить",
     stop: "Остановить",
@@ -168,7 +168,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     pages: "страниц",
     onDevice: "Распознавание на устройстве",
     privacy:
-      "Страницы PDF отрисовываются только в этом браузере. Rune загружает встроенный модуль OCR и языковые данные с этого сайта, а браузер кэширует их; изображения и распознанный текст никогда не отправляются.",
+      "Страницы PDF отрисовываются только в этом браузере. Orbit загружает встроенный модуль OCR и языковые данные с этого сайта, а браузер кэширует их; изображения и распознанный текст никогда не отправляются.",
     detectedScanPages: "обнаружены сканированные страницы",
     pagesToRecognize: "Страницы для распознавания",
     ocrPagesFor: "Страницы OCR для",
@@ -184,7 +184,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     wholePage: "Вся страница",
     resetRegion: "Вернуть всю страницу",
     loadingPreview: "Локальная отрисовка приватного предпросмотра…",
-    previewError: "Rune не удалось отобразить предпросмотр этой страницы.",
+    previewError: "Orbit не удалось отобразить предпросмотр этой страницы.",
     dragRegion: "Перетащите, чтобы выбрать область OCR",
     regionLeft: "Слева",
     regionTop: "Сверху",
@@ -203,7 +203,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     kicker: "PDF ممسوح ضوئيًا · اختيار صريح",
     title: "اختر الصفحات للتعرّف الضوئي",
     description:
-      "وجد Rune صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
+      "وجد Orbit صفحات بلا نص قابل للتحديد. أكّد الصفحات واللغة؛ لن تُقرأ الصور إلا عند فتح المعاينة أو بدء التعرّف.",
     settings: "إعدادات التعرّف الضوئي",
     privacyFooter: "تبقى صور الصفحات على الجهاز · تظل النتائج قابلة للمراجعة",
     stop: "إيقاف",
@@ -214,7 +214,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     pages: "صفحات",
     onDevice: "تعرّف على الجهاز",
     privacy:
-      "تُعرض صفحات PDF داخل هذا المتصفح فقط. يحمّل Rune مشغّل التعرّف الضوئي المضمّن وبيانات اللغة من هذا الموقع ويخزّنهما المتصفح مؤقتًا؛ ولا تُرسل صور الصفحات أو النصوص المتعرّف عليها.",
+      "تُعرض صفحات PDF داخل هذا المتصفح فقط. يحمّل Orbit مشغّل التعرّف الضوئي المضمّن وبيانات اللغة من هذا الموقع ويخزّنهما المتصفح مؤقتًا؛ ولا تُرسل صور الصفحات أو النصوص المتعرّف عليها.",
     detectedScanPages: "الصفحات الممسوحة المكتشفة",
     pagesToRecognize: "الصفحات المراد التعرّف عليها",
     ocrPagesFor: "صفحات التعرّف الضوئي لـ",
@@ -230,7 +230,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     wholePage: "الصفحة كاملة",
     resetRegion: "إعادة الضبط إلى الصفحة كاملة",
     loadingPreview: "جارٍ عرض معاينة خاصة على الجهاز…",
-    previewError: "تعذّر على Rune عرض معاينة هذه الصفحة.",
+    previewError: "تعذّر على Orbit عرض معاينة هذه الصفحة.",
     dragRegion: "اسحب لتحديد منطقة التعرّف الضوئي",
     regionLeft: "اليسار",
     regionTop: "الأعلى",
@@ -249,7 +249,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     kicker: "スキャン PDF · 明示的な選択",
     title: "OCR するページを選択",
     description:
-      "Rune は選択可能なテキストがないページを検出しました。ページと言語を確認してください。プレビューを開くか認識を開始するまで画像内容は読み取りません。",
+      "Orbit は選択可能なテキストがないページを検出しました。ページと言語を確認してください。プレビューを開くか認識を開始するまで画像内容は読み取りません。",
     settings: "OCR 設定",
     privacyFooter: "ページ画像はデバイス内に保持 · 結果は確認可能",
     stop: "停止",
@@ -260,7 +260,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     pages: "ページ",
     onDevice: "デバイス上で認識",
     privacy:
-      "PDF ページはこのブラウザ内だけでレンダリングされます。Rune は内蔵 OCR ランタイムと言語データをこのサイトから読み込み、ブラウザがキャッシュします。ページ画像や認識されたテキストは送信されません。",
+      "PDF ページはこのブラウザ内だけでレンダリングされます。Orbit は内蔵 OCR ランタイムと言語データをこのサイトから読み込み、ブラウザがキャッシュします。ページ画像や認識されたテキストは送信されません。",
     detectedScanPages: "検出したスキャンページ",
     pagesToRecognize: "認識するページ",
     ocrPagesFor: "OCR ページ：",
@@ -276,7 +276,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     wholePage: "ページ全体",
     resetRegion: "ページ全体に戻す",
     loadingPreview: "デバイス上で非公開プレビューを描画しています…",
-    previewError: "Rune はこのページのプレビューを描画できませんでした。",
+    previewError: "Orbit はこのページのプレビューを描画できませんでした。",
     dragRegion: "ドラッグして OCR 領域を選択",
     regionLeft: "左",
     regionTop: "上",
@@ -295,7 +295,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     kicker: "스캔 PDF · 명시적 선택",
     title: "OCR 페이지 선택",
     description:
-      "Rune이 선택 가능한 텍스트가 없는 페이지를 찾았습니다. 페이지와 언어를 확인하세요. 미리보기를 열거나 인식을 시작하기 전에는 이미지 내용을 읽지 않습니다.",
+      "Orbit이 선택 가능한 텍스트가 없는 페이지를 찾았습니다. 페이지와 언어를 확인하세요. 미리보기를 열거나 인식을 시작하기 전에는 이미지 내용을 읽지 않습니다.",
     settings: "OCR 설정",
     privacyFooter: "페이지 이미지는 기기에 유지 · 결과는 검토 가능",
     stop: "중지",
@@ -306,7 +306,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     pages: "페이지",
     onDevice: "기기 내 인식",
     privacy:
-      "PDF 페이지는 이 브라우저에서만 렌더링됩니다. Rune은 이 사이트에서 내장 OCR 런타임과 언어 데이터를 불러오고 브라우저가 이를 캐시합니다. 페이지 이미지와 인식된 텍스트는 전송되지 않습니다.",
+      "PDF 페이지는 이 브라우저에서만 렌더링됩니다. Orbit은 이 사이트에서 내장 OCR 런타임과 언어 데이터를 불러오고 브라우저가 이를 캐시합니다. 페이지 이미지와 인식된 텍스트는 전송되지 않습니다.",
     detectedScanPages: "감지된 스캔 페이지",
     pagesToRecognize: "인식할 페이지",
     ocrPagesFor: "OCR 페이지:",
@@ -321,7 +321,7 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
     wholePage: "전체 페이지",
     resetRegion: "전체 페이지로 재설정",
     loadingPreview: "기기에서 비공개 미리보기를 렌더링하는 중…",
-    previewError: "Rune이 이 페이지의 미리보기를 렌더링하지 못했습니다.",
+    previewError: "Orbit이 이 페이지의 미리보기를 렌더링하지 못했습니다.",
     dragRegion: "드래그하여 OCR 영역 선택",
     regionLeft: "왼쪽",
     regionTop: "위",
@@ -338,7 +338,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Task time": "Durée de la tâche",
   "Earlier device records (read only)": "Anciens enregistrements de l’appareil (lecture seule)",
   Appearance: "Apparence",
-  "Choose Rune's character color": "Choisissez la couleur de caractère de Rune",
+  "Choose Orbit's character color": "Choisissez la couleur de caractère de Orbit",
   "Current theme": "Thème actuel",
   "More tools": "Plus d’outils",
   "Workspace tools": "Outils de l’espace de travail",
@@ -387,7 +387,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Task time": "Duración de la tarea",
   "Earlier device records (read only)": "Registros anteriores del dispositivo (solo lectura)",
   Appearance: "Apariencia",
-  "Choose Rune's character color": "Elige el color de carácter de Rune",
+  "Choose Orbit's character color": "Elige el color de carácter de Orbit",
   "Current theme": "Tema actual",
   "More tools": "Más herramientas",
   "Workspace tools": "Herramientas del espacio de trabajo",
@@ -436,7 +436,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Task time": "Время задачи",
   "Earlier device records (read only)": "Ранние записи на устройстве (только чтение)",
   Appearance: "Оформление",
-  "Choose Rune's character color": "Выберите характерный цвет Rune",
+  "Choose Orbit's character color": "Выберите характерный цвет Orbit",
   "Current theme": "Текущая тема",
   "More tools": "Другие инструменты",
   "Workspace tools": "Инструменты рабочей области",
@@ -485,7 +485,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Task time": "مدة المهمة",
   "Earlier device records (read only)": "سجلات سابقة على الجهاز (للقراءة فقط)",
   Appearance: "المظهر",
-  "Choose Rune's character color": "اختر لون طابع Rune",
+  "Choose Orbit's character color": "اختر لون طابع Orbit",
   "Current theme": "السمة الحالية",
   "More tools": "المزيد من الأدوات",
   "Workspace tools": "أدوات مساحة العمل",
@@ -534,7 +534,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Task time": "タスク時間",
   "Earlier device records (read only)": "以前のデバイス記録（読み取り専用）",
   Appearance: "外観",
-  "Choose Rune's character color": "Rune のテーマカラーを選択",
+  "Choose Orbit's character color": "Orbit のテーマカラーを選択",
   "Current theme": "現在のテーマ",
   "More tools": "その他のツール",
   "Workspace tools": "ワークスペースツール",
@@ -583,7 +583,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Task time": "작업 시간",
   "Earlier device records (read only)": "이전 기기 기록(읽기 전용)",
   Appearance: "화면 스타일",
-  "Choose Rune's character color": "Rune의 테마 색상 선택",
+  "Choose Orbit's character color": "Orbit의 테마 색상 선택",
   "Current theme": "현재 테마",
   "More tools": "도구 더 보기",
   "Workspace tools": "작업 공간 도구",
@@ -627,11 +627,11 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 });
 
 const MODEL_GUIDE_WITH_EXPLICIT_FAILOVER =
-  "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.";
+  "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.";
 
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
-    "Rune prend en charge les profils personnels OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent et les protocoles personnalisés. Après l’enregistrement, le serveur chiffre la clé dans un identifiant HttpOnly illisible par les scripts du navigateur ; elle n’entre jamais dans l’espace de travail ni dans localStorage. Les serveurs Web locaux ou déployés nécessitent un `RUNE_CREDENTIAL_ENCRYPTION_KEY` distinct ; Rune Desktop protège cette clé principale avec le trousseau macOS. Le basculement entre fournisseurs est désactivé par défaut et ne fonctionne qu’après votre autorisation explicite dans les réglages des modèles ; les planificateurs locaux déterministes restent disponibles sans modèle.",
+    "Orbit prend en charge les profils personnels OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent et les protocoles personnalisés. Après l’enregistrement, le serveur chiffre la clé dans un identifiant HttpOnly illisible par les scripts du navigateur ; elle n’entre jamais dans l’espace de travail ni dans localStorage. Les serveurs Web locaux ou déployés nécessitent un `RUNE_CREDENTIAL_ENCRYPTION_KEY` distinct ; Orbit Desktop protège cette clé principale avec le trousseau macOS. Le basculement entre fournisseurs est désactivé par défaut et ne fonctionne qu’après votre autorisation explicite dans les réglages des modèles ; les planificateurs locaux déterministes restent disponibles sans modèle.",
   "Folder changes detected · review with Pull": "Modifications du dossier détectées · vérifiez-les avec Pull",
   "Folder monitoring stopped · reconnect to resume":
     "La surveillance du dossier s’est arrêtée · reconnectez-le pour reprendre",
@@ -639,7 +639,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
-    "Rune admite perfiles personales de OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent y protocolos personalizados. Después de guardar, el servidor cifra la clave en una credencial HttpOnly que los scripts del navegador no pueden leer; nunca entra en el espacio de trabajo ni en localStorage. Los servidores web locales o desplegados necesitan un `RUNE_CREDENTIAL_ENCRYPTION_KEY` independiente; Rune Desktop protege esa clave maestra con el llavero de macOS. La conmutación entre proveedores está desactivada de forma predeterminada y solo funciona después de autorizarla expresamente en los ajustes de modelos; los planificadores locales deterministas siguen disponibles sin un modelo.",
+    "Orbit admite perfiles personales de OpenAI Responses, OpenRouter/Chat Completions compatibles, Anthropic Messages, Gemini generateContent y protocolos personalizados. Después de guardar, el servidor cifra la clave en una credencial HttpOnly que los scripts del navegador no pueden leer; nunca entra en el espacio de trabajo ni en localStorage. Los servidores web locales o desplegados necesitan un `RUNE_CREDENTIAL_ENCRYPTION_KEY` independiente; Orbit Desktop protege esa clave maestra con el llavero de macOS. La conmutación entre proveedores está desactivada de forma predeterminada y solo funciona después de autorizarla expresamente en los ajustes de modelos; los planificadores locales deterministas siguen disponibles sin un modelo.",
   "Folder changes detected · review with Pull": "Se detectaron cambios en la carpeta · revísalos con Pull",
   "Folder monitoring stopped · reconnect to resume":
     "La supervisión de la carpeta se detuvo · vuelve a conectarla para continuar",
@@ -647,7 +647,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
-    "Rune поддерживает личные профили OpenAI Responses, OpenRouter/совместимых Chat Completions, Anthropic Messages, Gemini generateContent и пользовательских протоколов. После сохранения сервер шифрует ключ в учётных данных HttpOnly, недоступных сценариям браузера; ключ никогда не попадает в рабочую область или localStorage. Локальным и развёрнутым веб-серверам нужен отдельный `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop защищает этот главный ключ с помощью Связки ключей macOS. Переключение между поставщиками по умолчанию выключено и работает только после явного разрешения в настройках моделей; детерминированные локальные планировщики доступны и без модели.",
+    "Orbit поддерживает личные профили OpenAI Responses, OpenRouter/совместимых Chat Completions, Anthropic Messages, Gemini generateContent и пользовательских протоколов. После сохранения сервер шифрует ключ в учётных данных HttpOnly, недоступных сценариям браузера; ключ никогда не попадает в рабочую область или localStorage. Локальным и развёрнутым веб-серверам нужен отдельный `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop защищает этот главный ключ с помощью Связки ключей macOS. Переключение между поставщиками по умолчанию выключено и работает только после явного разрешения в настройках моделей; детерминированные локальные планировщики доступны и без модели.",
   "Folder changes detected · review with Pull": "Обнаружены изменения в папке · проверьте их с помощью Pull",
   "Folder monitoring stopped · reconnect to resume":
     "Наблюдение за папкой остановлено · подключите её снова для продолжения",
@@ -655,21 +655,21 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
-    "يدعم Rune ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Rune Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
+    "يدعم Orbit ملفات OpenAI Responses الشخصية وOpenRouter/Chat Completions المتوافقة وAnthropic Messages وGemini generateContent وملفات البروتوكول المخصصة. بعد الحفظ يشفّر الخادم المفتاح في بيانات اعتماد HttpOnly لا تستطيع نصوص المتصفح قراءتها؛ ولا يدخل المفتاح إلى مساحة العمل أو localStorage. تحتاج خوادم الويب المحلية أو المنشورة إلى `RUNE_CREDENTIAL_ENCRYPTION_KEY` منفصل، ويحمي Orbit Desktop هذا المفتاح الرئيسي عبر سلسلة مفاتيح macOS. يظل التبديل بين المزودين متوقفاً افتراضياً ولا يعمل إلا بعد السماح به صراحةً في إعدادات النماذج؛ وتبقى المخططات المحلية الحتمية متاحة من دون نموذج.",
   "Folder changes detected · review with Pull": "تم اكتشاف تغييرات في المجلد · راجعها باستخدام Pull",
   "Folder monitoring stopped · reconnect to resume": "توقفت مراقبة المجلد · أعد الاتصال لاستئنافها",
   "Changes detected": "تم اكتشاف تغييرات",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
-    "Rune は、個人用の OpenAI Responses、OpenRouter/互換 Chat Completions、Anthropic Messages、Gemini generateContent、カスタムプロトコルの各プロファイルに対応しています。保存後、サーバーはキーをブラウザスクリプトから読み取れない HttpOnly 認証情報として暗号化し、ワークスペースや localStorage には一切保存しません。ローカルまたはデプロイ済みの Web サーバーには別の `RUNE_CREDENTIAL_ENCRYPTION_KEY` が必要で、Rune Desktop はそのマスターキーを macOS キーチェーンで保護します。プロバイダー間のフェイルオーバーは初期設定ではオフで、モデル設定で明示的に許可した場合にのみ実行されます。モデルがなくても決定論的なローカルプランナーを利用できます。",
+    "Orbit は、個人用の OpenAI Responses、OpenRouter/互換 Chat Completions、Anthropic Messages、Gemini generateContent、カスタムプロトコルの各プロファイルに対応しています。保存後、サーバーはキーをブラウザスクリプトから読み取れない HttpOnly 認証情報として暗号化し、ワークスペースや localStorage には一切保存しません。ローカルまたはデプロイ済みの Web サーバーには別の `RUNE_CREDENTIAL_ENCRYPTION_KEY` が必要で、Orbit Desktop はそのマスターキーを macOS キーチェーンで保護します。プロバイダー間のフェイルオーバーは初期設定ではオフで、モデル設定で明示的に許可した場合にのみ実行されます。モデルがなくても決定論的なローカルプランナーを利用できます。",
   "Folder changes detected · review with Pull": "フォルダーの変更を検出しました · Pull で確認してください",
   "Folder monitoring stopped · reconnect to resume": "フォルダーの監視が停止しました · 再接続すると再開します",
   "Changes detected": "変更を検出",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   [MODEL_GUIDE_WITH_EXPLICIT_FAILOVER]:
-    "Rune은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `RUNE_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Rune Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
+    "Orbit은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `RUNE_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Orbit Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
   "Folder changes detected · review with Pull": "폴더 변경 감지 · Pull로 검토하세요",
   "Folder monitoring stopped · reconnect to resume": "폴더 모니터링 중지 · 다시 연결하면 재개됩니다",
   "Changes detected": "변경 감지됨",
@@ -680,8 +680,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   Capabilities: "Capacités",
   "Input budget per task": "Budget d’entrée par tâche",
   "Not checked yet": "Pas encore vérifié",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "Ce n’est qu’après l’échec du modèle principal que Rune peut envoyer le même contenu limité à un autre fournisseur configuré. Désactivé par défaut.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "Ce n’est qu’après l’échec du modèle principal que Orbit peut envoyer le même contenu limité à un autre fournisseur configuré. Désactivé par défaut.",
   "Output budget per task": "Budget de sortie par tâche",
   "Provider-reported token usage": "Utilisation des jetons déclarée par le fournisseur",
   "Recent call succeeded": "Dernier appel réussi",
@@ -694,8 +694,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   Capabilities: "Capacidades",
   "Input budget per task": "Presupuesto de entrada por tarea",
   "Not checked yet": "Aún no comprobado",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "Solo si falla el modelo principal, Rune puede enviar el mismo contenido acotado a otro proveedor configurado. Desactivado de forma predeterminada.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "Solo si falla el modelo principal, Orbit puede enviar el mismo contenido acotado a otro proveedor configurado. Desactivado de forma predeterminada.",
   "Output budget per task": "Presupuesto de salida por tarea",
   "Provider-reported token usage": "Uso de tokens informado por el proveedor",
   "Recent call succeeded": "La llamada reciente se completó correctamente",
@@ -708,8 +708,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   Capabilities: "Возможности",
   "Input budget per task": "Бюджет входных токенов на задачу",
   "Not checked yet": "Ещё не проверено",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "Только после сбоя основной модели Rune может отправить тот же ограниченный контент другому настроенному поставщику. По умолчанию выключено.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "Только после сбоя основной модели Orbit может отправить тот же ограниченный контент другому настроенному поставщику. По умолчанию выключено.",
   "Output budget per task": "Бюджет выходных токенов на задачу",
   "Provider-reported token usage": "Расход токенов по данным поставщика",
   "Recent call succeeded": "Последний вызов выполнен успешно",
@@ -722,8 +722,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   Capabilities: "الإمكانات",
   "Input budget per task": "ميزانية الإدخال لكل مهمة",
   "Not checked yet": "لم يُفحص بعد",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "لا يجوز لـ Rune إرسال المحتوى المحدود نفسه إلى مزود آخر مُعدّ إلا بعد فشل النموذج الأساسي. هذا الخيار متوقف افتراضياً.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "لا يجوز لـ Orbit إرسال المحتوى المحدود نفسه إلى مزود آخر مُعدّ إلا بعد فشل النموذج الأساسي. هذا الخيار متوقف افتراضياً.",
   "Output budget per task": "ميزانية الإخراج لكل مهمة",
   "Provider-reported token usage": "استخدام الرموز المبلغ عنه من المزود",
   "Recent call succeeded": "نجح آخر استدعاء",
@@ -736,8 +736,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   Capabilities: "機能",
   "Input budget per task": "タスクごとの入力上限",
   "Not checked yet": "未確認",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "プライマリモデルが失敗した場合に限り、Rune は同じ制限済みコンテンツを別の設定済みプロバイダーへ送信できます。初期設定ではオフです。",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "プライマリモデルが失敗した場合に限り、Orbit は同じ制限済みコンテンツを別の設定済みプロバイダーへ送信できます。初期設定ではオフです。",
   "Output budget per task": "タスクごとの出力上限",
   "Provider-reported token usage": "プロバイダー報告のトークン使用量",
   "Recent call succeeded": "直近の呼び出しは成功しました",
@@ -750,8 +750,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   Capabilities: "기능",
   "Input budget per task": "작업당 입력 예산",
   "Not checked yet": "아직 확인하지 않음",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "기본 모델이 실패한 경우에만 Rune이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "기본 모델이 실패한 경우에만 Orbit이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
   "Output budget per task": "작업당 출력 예산",
   "Provider-reported token usage": "공급자가 보고한 토큰 사용량",
   "Recent call succeeded": "최근 호출 성공",
@@ -794,8 +794,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "Clés API, noms des fournisseurs de modèles, révisions des sources et empreintes de livraison",
   "Available after one guided task": "Disponible après une tâche guidée",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "La confirmation télécharge uniquement sur cet appareil ; Rune ne téléverse ni n’envoie le fichier.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "La confirmation télécharge uniquement sur cet appareil ; Orbit ne téléverse ni n’envoie le fichier.",
   "Delivery format, usability judgment, and complete authorized/redacted seven-dimension ratings":
     "Format de livraison, jugement d’utilisabilité et évaluations complètes en sept dimensions sur du contenu autorisé ou anonymisé",
   "Delivery outcomes": "Résultats de livraison",
@@ -814,8 +814,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Pilot Evidence · on device": "Preuves du pilote · sur l’appareil",
   "Pilot Evidence export contents": "Contenu de l’export des preuves du pilote",
   "Review the pilot evidence export": "Vérifier l’export des preuves du pilote",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "Rune a compilé les enregistrements de tâches de cet appareil dans un JSON anonyme. Il peut servir à agréger un pilote réel, mais n’est jamais téléversé et ne prétend pas valider l’adéquation produit-marché.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "Orbit a compilé les enregistrements de tâches de cet appareil dans un JSON anonyme. Il peut servir à agréger un pilote réel, mais n’est jamais téléversé et ne prétend pas valider l’adéquation produit-marché.",
   "Synthetic Golden Task results and every form of network upload":
     "Résultats synthétiques Golden Task et toute forme de téléversement réseau",
   "Task runs": "Exécutions de tâches",
@@ -833,8 +833,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "Claves API, nombres de proveedores de modelos, revisiones de origen y huellas de entrega",
   "Available after one guided task": "Disponible después de una tarea guiada",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "Al confirmar, solo se descarga en este dispositivo; Rune no sube ni envía el archivo.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "Al confirmar, solo se descarga en este dispositivo; Orbit no sube ni envía el archivo.",
   "Delivery format, usability judgment, and complete authorized/redacted seven-dimension ratings":
     "Formato de entrega, valoración de utilidad y puntuaciones completas de siete dimensiones sobre contenido autorizado o anonimizado",
   "Delivery outcomes": "Resultados de entrega",
@@ -853,8 +853,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Pilot Evidence · on device": "Evidencia piloto · en el dispositivo",
   "Pilot Evidence export contents": "Contenido de la exportación de evidencia piloto",
   "Review the pilot evidence export": "Revisar la exportación de evidencia piloto",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "Rune ha recopilado los registros de tareas de este dispositivo en un JSON anónimo. Puede apoyar la agregación de un piloto real, pero nunca se sube ni afirma validar el encaje producto-mercado.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "Orbit ha recopilado los registros de tareas de este dispositivo en un JSON anónimo. Puede apoyar la agregación de un piloto real, pero nunca se sube ni afirma validar el encaje producto-mercado.",
   "Synthetic Golden Task results and every form of network upload":
     "Resultados sintéticos de Golden Task y cualquier tipo de subida a la red",
   "Task runs": "Ejecuciones de tareas",
@@ -872,8 +872,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "API-ключи, названия поставщиков моделей, версии источников и отпечатки передачи",
   "Available after one guided task": "Доступно после одной управляемой задачи",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "После подтверждения файл только скачивается на это устройство; Rune не загружает и не отправляет его.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "После подтверждения файл только скачивается на это устройство; Orbit не загружает и не отправляет его.",
   "Delivery format, usability judgment, and complete authorized/redacted seven-dimension ratings":
     "Формат передачи, оценка пригодности и полные оценки по семи критериям для разрешённого или обезличенного содержимого",
   "Delivery outcomes": "Результаты передачи",
@@ -892,8 +892,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Pilot Evidence · on device": "Данные пилота · на устройстве",
   "Pilot Evidence export contents": "Состав экспорта данных пилота",
   "Review the pilot evidence export": "Проверьте экспорт данных пилота",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "Rune собрал записи задач с этого устройства в анонимный JSON. Он может использоваться для сводного анализа реального пилота, но никогда не загружается и не заявляет о подтверждении соответствия продукта рынку.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "Orbit собрал записи задач с этого устройства в анонимный JSON. Он может использоваться для сводного анализа реального пилота, но никогда не загружается и не заявляет о подтверждении соответствия продукта рынку.",
   "Synthetic Golden Task results and every form of network upload":
     "Синтетические результаты Golden Task и любая сетевая загрузка",
   "Task runs": "Запуски задач",
@@ -911,8 +911,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "مفاتيح API وأسماء مزودي النماذج ومراجعات المصدر وبصمات التسليم",
   "Available after one guided task": "متاح بعد مهمة موجهة واحدة",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "يؤدي التأكيد إلى التنزيل على هذا الجهاز فقط؛ ولا يرفع Rune الملف أو يرسله.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "يؤدي التأكيد إلى التنزيل على هذا الجهاز فقط؛ ولا يرفع Orbit الملف أو يرسله.",
   "Delivery format, usability judgment, and complete authorized/redacted seven-dimension ratings":
     "تنسيق التسليم وحكم القابلية للاستخدام وتقييمات الأبعاد السبعة الكاملة للمحتوى المصرح به أو المنقح",
   "Delivery outcomes": "نتائج التسليم",
@@ -931,8 +931,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Pilot Evidence · on device": "أدلة التجربة · على الجهاز",
   "Pilot Evidence export contents": "محتويات تصدير أدلة التجربة",
   "Review the pilot evidence export": "راجع تصدير أدلة التجربة",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "جمع Rune سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "جمع Orbit سجلات مهام هذا الجهاز في JSON مجهول الهوية. ويمكن أن يدعم تجميع نتائج تجربة حقيقية، لكنه لا يُرفع أبدًا ولا يدّعي إثبات ملاءمة المنتج للسوق.",
   "Synthetic Golden Task results and every form of network upload":
     "نتائج Golden Task الاصطناعية وكل أشكال الرفع عبر الشبكة",
   "Task runs": "تشغيلات المهام",
@@ -950,8 +950,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "API キー、モデル提供元名、ソースのリビジョン、納品フィンガープリント",
   "Available after one guided task": "ガイド付きタスクを 1 回完了すると利用できます",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "確認するとこのデバイスにのみダウンロードされます。Rune がファイルをアップロードまたは送信することはありません。",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "確認するとこのデバイスにのみダウンロードされます。Orbit がファイルをアップロードまたは送信することはありません。",
   "Delivery format, usability judgment, and complete authorized/redacted seven-dimension ratings":
     "納品形式、利用可否の判断、許可済みまたは匿名化済み内容の完全な 7 項目評価",
   "Delivery outcomes": "納品結果",
@@ -970,8 +970,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Pilot Evidence · on device": "パイロット証拠 · デバイス内",
   "Pilot Evidence export contents": "パイロット証拠のエクスポート内容",
   "Review the pilot evidence export": "パイロット証拠のエクスポートを確認",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "Rune はこのデバイスのタスク記録を匿名 JSON にまとめました。実際のパイロット結果の集計に利用できますが、アップロードされることはなく、プロダクトマーケット検証の完了を示すものでもありません。",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "Orbit はこのデバイスのタスク記録を匿名 JSON にまとめました。実際のパイロット結果の集計に利用できますが、アップロードされることはなく、プロダクトマーケット検証の完了を示すものでもありません。",
   "Synthetic Golden Task results and every form of network upload":
     "合成 Golden Task の結果とあらゆるネットワークアップロード",
   "Task runs": "タスク実行",
@@ -989,8 +989,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "API 키, 모델 공급자 이름, 소스 리비전, 전달 지문",
   "Available after one guided task": "가이드 작업 1회 완료 후 사용 가능",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "확인하면 이 기기에만 다운로드됩니다. Rune은 파일을 업로드하거나 전송하지 않습니다.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "확인하면 이 기기에만 다운로드됩니다. Orbit은 파일을 업로드하거나 전송하지 않습니다.",
   "Delivery format, usability judgment, and complete authorized/redacted seven-dimension ratings":
     "전달 형식, 사용 가능성 판단, 승인되었거나 비식별 처리된 콘텐츠의 완전한 7개 항목 평가",
   "Delivery outcomes": "전달 결과",
@@ -1009,8 +1009,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Pilot Evidence · on device": "파일럿 증거 · 기기 내",
   "Pilot Evidence export contents": "파일럿 증거 내보내기 내용",
   "Review the pilot evidence export": "파일럿 증거 내보내기 검토",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "Rune이 이 기기의 작업 기록을 익명 JSON으로 정리했습니다. 실제 파일럿 결과 집계에 사용할 수 있지만 업로드되지 않으며 제품 시장 검증 완료를 의미하지 않습니다.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "Orbit이 이 기기의 작업 기록을 익명 JSON으로 정리했습니다. 실제 파일럿 결과 집계에 사용할 수 있지만 업로드되지 않으며 제품 시장 검증 완료를 의미하지 않습니다.",
   "Synthetic Golden Task results and every form of network upload":
     "합성 Golden Task 결과와 모든 형태의 네트워크 업로드",
   "Task runs": "작업 실행",
@@ -1024,7 +1024,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Review the anonymous task records before local download":
     "Vérifiez les enregistrements de tâches anonymes avant le téléchargement local",
-  "Rune could not prepare pilot evidence.": "Rune n’a pas pu préparer les preuves du pilote.",
+  "Orbit could not prepare pilot evidence.": "Orbit n’a pas pu préparer les preuves du pilote.",
   "Pilot evidence export cancelled — nothing was downloaded":
     "Export des preuves du pilote annulé — aucun fichier n’a été téléchargé",
   "Task evidence changed while this file was under review. Cancel and prepare a fresh export.":
@@ -1037,7 +1037,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Review the anonymous task records before local download":
     "Revisa los registros de tareas anónimos antes de descargarlos localmente",
-  "Rune could not prepare pilot evidence.": "Rune no pudo preparar la evidencia piloto.",
+  "Orbit could not prepare pilot evidence.": "Orbit no pudo preparar la evidencia piloto.",
   "Pilot evidence export cancelled — nothing was downloaded":
     "Exportación de evidencia piloto cancelada — no se descargó nada",
   "Task evidence changed while this file was under review. Cancel and prepare a fresh export.":
@@ -1050,7 +1050,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Review the anonymous task records before local download":
     "Проверьте анонимные записи задач перед локальным скачиванием",
-  "Rune could not prepare pilot evidence.": "Rune не смог подготовить данные пилота.",
+  "Orbit could not prepare pilot evidence.": "Orbit не смог подготовить данные пилота.",
   "Pilot evidence export cancelled — nothing was downloaded": "Экспорт данных пилота отменён — ничего не скачано",
   "Task evidence changed while this file was under review. Cancel and prepare a fresh export.":
     "Данные задач изменились во время проверки файла. Отмените и подготовьте новый экспорт.",
@@ -1061,7 +1061,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Review the anonymous task records before local download": "راجع سجلات المهام مجهولة الهوية قبل التنزيل المحلي",
-  "Rune could not prepare pilot evidence.": "تعذر على Rune إعداد أدلة التجربة.",
+  "Orbit could not prepare pilot evidence.": "تعذر على Orbit إعداد أدلة التجربة.",
   "Pilot evidence export cancelled — nothing was downloaded": "أُلغي تصدير أدلة التجربة — لم يُنزّل أي ملف",
   "Task evidence changed while this file was under review. Cancel and prepare a fresh export.":
     "تغيّرت أدلة المهام أثناء مراجعة الملف. ألغِ العملية وأعد تصدير ملف جديد.",
@@ -1072,7 +1072,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Review the anonymous task records before local download":
     "ローカルにダウンロードする前に匿名のタスク記録を確認してください",
-  "Rune could not prepare pilot evidence.": "Rune はパイロット証拠を準備できませんでした。",
+  "Orbit could not prepare pilot evidence.": "Orbit はパイロット証拠を準備できませんでした。",
   "Pilot evidence export cancelled — nothing was downloaded":
     "パイロット証拠のエクスポートをキャンセルしました — ダウンロードはありません",
   "Task evidence changed while this file was under review. Cancel and prepare a fresh export.":
@@ -1084,7 +1084,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Review the anonymous task records before local download": "로컬 다운로드 전에 익명 작업 기록을 검토하세요",
-  "Rune could not prepare pilot evidence.": "Rune이 파일럿 증거를 준비하지 못했습니다.",
+  "Orbit could not prepare pilot evidence.": "Orbit이 파일럿 증거를 준비하지 못했습니다.",
   "Pilot evidence export cancelled — nothing was downloaded": "파일럿 증거 내보내기 취소됨 — 다운로드된 파일 없음",
   "Task evidence changed while this file was under review. Cancel and prepare a fresh export.":
     "파일 검토 중 작업 증거가 변경되었습니다. 취소하고 새 내보내기를 준비하세요.",
@@ -1096,8 +1096,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "A material error, omission, or rework still blocks delivery.":
     "Une erreur importante, une omission ou une reprise empêche encore la livraison.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "Un téléchargement ou une écriture dans un dossier réussis ne prouvent pas que le résultat est utile. Choisissez l’issue la plus proche afin que Rune distingue la réussite technique d’un livrable réel.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "Un téléchargement ou une écriture dans un dossier réussis ne prouvent pas que le résultat est utile. Choisissez l’issue la plus proche afin que Orbit distingue la réussite technique d’un livrable réel.",
   "Confirm outcome": "Confirmer le résultat",
   "Confirm real usability after a handoff": "Confirmez l’utilité réelle après une remise",
   "confirmed deliverables": "livrables confirmés",
@@ -1112,9 +1112,9 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Not ready to deliver": "Pas prêt à livrer",
   "Ready to deliver": "Prêt à livrer",
   "Recording…": "Enregistrement…",
-  "Rune could not record this delivery outcome": "Rune n’a pas pu enregistrer ce résultat de livraison",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "Rune conserve uniquement le jugement, le format, le temps écoulé et l’empreinte de révision de la source sur cet appareil, jamais le texte du document ni les invites.",
+  "Orbit could not record this delivery outcome": "Orbit n’a pas pu enregistrer ce résultat de livraison",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "Orbit conserve uniquement le jugement, le format, le temps écoulé et l’empreinte de révision de la source sur cet appareil, jamais le texte du document ni les invites.",
   Task: "Tâche",
   "The direction is right and only limited manual changes remain.":
     "La direction est bonne et seules quelques modifications manuelles restent à faire.",
@@ -1125,8 +1125,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "A material error, omission, or rework still blocks delivery.":
     "Un error importante, una omisión o una reelaboración todavía impide la entrega.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "Una descarga o escritura en carpeta correcta no demuestra que el resultado sea útil. Elige el resultado más cercano para que Rune distinga el éxito técnico de un entregable real.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "Una descarga o escritura en carpeta correcta no demuestra que el resultado sea útil. Elige el resultado más cercano para que Orbit distinga el éxito técnico de un entregable real.",
   "Confirm outcome": "Confirmar resultado",
   "Confirm real usability after a handoff": "Confirma la utilidad real después de una entrega",
   "confirmed deliverables": "entregables confirmados",
@@ -1141,9 +1141,9 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Not ready to deliver": "Aún no se puede entregar",
   "Ready to deliver": "Listo para entregar",
   "Recording…": "Guardando…",
-  "Rune could not record this delivery outcome": "Rune no pudo guardar este resultado de entrega",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "Rune guarda en este dispositivo solo la valoración, el formato, el tiempo transcurrido y la huella de revisión de la fuente; nunca el texto del documento ni las instrucciones.",
+  "Orbit could not record this delivery outcome": "Orbit no pudo guardar este resultado de entrega",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "Orbit guarda en este dispositivo solo la valoración, el formato, el tiempo transcurrido y la huella de revisión de la fuente; nunca el texto del documento ni las instrucciones.",
   Task: "Tarea",
   "The direction is right and only limited manual changes remain.":
     "La dirección es correcta y solo quedan cambios manuales limitados.",
@@ -1153,8 +1153,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "A material error, omission, or rework still blocks delivery.":
     "Существенная ошибка, пропуск или необходимость переработки всё ещё мешают передаче результата.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "Успешное скачивание или запись в папку не доказывают полезность результата. Выберите наиболее близкий исход, чтобы Rune отличал технический успех от реального готового материала.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "Успешное скачивание или запись в папку не доказывают полезность результата. Выберите наиболее близкий исход, чтобы Orbit отличал технический успех от реального готового материала.",
   "Confirm outcome": "Подтвердить результат",
   "Confirm real usability after a handoff": "Подтвердите реальную пригодность после передачи",
   "confirmed deliverables": "подтверждённых материалов",
@@ -1169,9 +1169,9 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Not ready to deliver": "Пока не готово",
   "Ready to deliver": "Готово к передаче",
   "Recording…": "Сохранение…",
-  "Rune could not record this delivery outcome": "Rune не удалось сохранить итог передачи",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "Rune хранит на этом устройстве только оценку, формат, затраченное время и отпечаток версии исходника — без текста документа и запросов.",
+  "Orbit could not record this delivery outcome": "Orbit не удалось сохранить итог передачи",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "Orbit хранит на этом устройстве только оценку, формат, затраченное время и отпечаток версии исходника — без текста документа и запросов.",
   Task: "Задача",
   "The direction is right and only limited manual changes remain.":
     "Направление верное, остались лишь небольшие ручные правки.",
@@ -1180,8 +1180,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "A material error, omission, or rework still blocks delivery.": "لا يزال خطأ جوهري أو نقص أو عمل إضافي يمنع التسليم.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "لا يثبت نجاح التنزيل أو الكتابة إلى المجلد أن النتيجة مفيدة. اختر النتيجة الأقرب كي يميّز Rune بين النجاح التقني والمخرج الحقيقي القابل للتسليم.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "لا يثبت نجاح التنزيل أو الكتابة إلى المجلد أن النتيجة مفيدة. اختر النتيجة الأقرب كي يميّز Orbit بين النجاح التقني والمخرج الحقيقي القابل للتسليم.",
   "Confirm outcome": "تأكيد النتيجة",
   "Confirm real usability after a handoff": "أكّد قابلية الاستخدام الفعلية بعد التسليم",
   "confirmed deliverables": "مخرجات مؤكدة",
@@ -1196,9 +1196,9 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Not ready to deliver": "غير جاهز للتسليم",
   "Ready to deliver": "جاهز للتسليم",
   "Recording…": "جارٍ التسجيل…",
-  "Rune could not record this delivery outcome": "تعذّر على Rune تسجيل نتيجة التسليم",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "يخزّن Rune على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
+  "Orbit could not record this delivery outcome": "تعذّر على Orbit تسجيل نتيجة التسليم",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "يخزّن Orbit على هذا الجهاز التقييم والتنسيق والوقت المنقضي وبصمة إصدار المصدر فقط، ولا يخزّن نص المستند أو المطالبات.",
   Task: "المهمة",
   "The direction is right and only limited manual changes remain.": "الاتجاه صحيح ولا يتبقى سوى تعديلات يدوية محدودة.",
   "The numbers, structure, and language meet this task.": "الأرقام والبنية واللغة مناسبة لهذه المهمة.",
@@ -1207,8 +1207,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "A material error, omission, or rework still blocks delivery.":
     "重大な誤り、欠落、または手戻りがあり、まだ納品できません。",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "ダウンロードやフォルダへの書き込みが成功しても、結果が有用だったとは限りません。Rune が技術的な成功と実際の成果物を区別できるよう、最も近い結果を選んでください。",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "ダウンロードやフォルダへの書き込みが成功しても、結果が有用だったとは限りません。Orbit が技術的な成功と実際の成果物を区別できるよう、最も近い結果を選んでください。",
   "Confirm outcome": "結果を確定",
   "Confirm real usability after a handoff": "受け渡し後に実際の有用性を確認",
   "confirmed deliverables": "件の確認済み成果物",
@@ -1223,9 +1223,9 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Not ready to deliver": "まだ納品できない",
   "Ready to deliver": "そのまま納品できる",
   "Recording…": "記録中…",
-  "Rune could not record this delivery outcome": "Rune はこの納品結果を記録できませんでした",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "Rune がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
+  "Orbit could not record this delivery outcome": "Orbit はこの納品結果を記録できませんでした",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "Orbit がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
   Task: "タスク",
   "The direction is right and only limited manual changes remain.":
     "方向性は正しく、残るのは限定的な手作業の修正だけです。",
@@ -1235,8 +1235,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "A material error, omission, or rework still blocks delivery.":
     "중대한 오류, 누락 또는 재작업이 남아 있어 아직 전달할 수 없습니다.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "다운로드나 폴더 쓰기가 성공했다고 결과가 유용했다는 뜻은 아닙니다. Rune이 기술적 성공과 실제 결과물을 구분할 수 있도록 가장 가까운 결과를 선택하세요.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "다운로드나 폴더 쓰기가 성공했다고 결과가 유용했다는 뜻은 아닙니다. Orbit이 기술적 성공과 실제 결과물을 구분할 수 있도록 가장 가까운 결과를 선택하세요.",
   "Confirm outcome": "결과 확인",
   "Confirm real usability after a handoff": "전달 후 실제 사용 가능 여부 확인",
   "confirmed deliverables": "개 확인된 결과물",
@@ -1251,9 +1251,9 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Not ready to deliver": "아직 전달할 수 없음",
   "Ready to deliver": "바로 전달 가능",
   "Recording…": "기록 중…",
-  "Rune could not record this delivery outcome": "Rune이 전달 결과를 기록하지 못했습니다",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "Rune은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
+  "Orbit could not record this delivery outcome": "Orbit이 전달 결과를 기록하지 못했습니다",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "Orbit은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
   Task: "작업",
   "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.",
   "The numbers, structure, and language meet this task.": "수치, 구조, 표현이 이 작업의 요구를 충족합니다.",
@@ -1323,10 +1323,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 
 // Human-reviewed copy for the task-first onboarding and import continuation.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "Après cet import vérifié, Rune ouvre la configuration de la revue opérationnelle avec cette source Data déjà sélectionnée.",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "Choisissez CSV, JSON, XLSX ou ODS. Rune affiche d’abord l’import, puis vous guide à travers les champs, les mesures, les graphiques et les livrables.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "Après cet import vérifié, Orbit ouvre la configuration de la revue opérationnelle avec cette source Data déjà sélectionnée.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "Choisissez CSV, JSON, XLSX ou ODS. Orbit affiche d’abord l’import, puis vous guide à travers les champs, les mesures, les graphiques et les livrables.",
   "Create a review from data": "Créer une revue à partir des données",
   "Import and map review": "Importer et configurer la revue",
   "Import data, then continue directly to mapping and output setup":
@@ -1345,10 +1345,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
     "Vous pouvez aussi déposer ici tout fichier pris en charge. Chaque conversion de compatibilité est vérifiée avant l’écriture.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "Después de esta importación revisada, Rune abre la configuración de la revisión operativa con esta fuente Data ya seleccionada.",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "Elige CSV, JSON, XLSX u ODS. Rune muestra primero la importación y después te guía por los campos, las medidas, los gráficos y los entregables.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "Después de esta importación revisada, Orbit abre la configuración de la revisión operativa con esta fuente Data ya seleccionada.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "Elige CSV, JSON, XLSX u ODS. Orbit muestra primero la importación y después te guía por los campos, las medidas, los gráficos y los entregables.",
   "Create a review from data": "Crear una revisión a partir de datos",
   "Import and map review": "Importar y configurar la revisión",
   "Import data, then continue directly to mapping and output setup":
@@ -1367,10 +1367,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
     "También puedes arrastrar aquí cualquier archivo compatible. Cada conversión de compatibilidad se revisa antes de escribir.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "После подтверждения импорта Rune откроет настройку управленческого отчёта с уже выбранным источником Data.",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "Выберите CSV, JSON, XLSX или ODS. Rune сначала покажет результат импорта, а затем проведёт по полям, показателям, диаграммам и результатам.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "После подтверждения импорта Orbit откроет настройку управленческого отчёта с уже выбранным источником Data.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "Выберите CSV, JSON, XLSX или ODS. Orbit сначала покажет результат импорта, а затем проведёт по полям, показателям, диаграммам и результатам.",
   "Create a review from data": "Создать отчёт на основе данных",
   "Import and map review": "Импортировать и настроить отчёт",
   "Import data, then continue directly to mapping and output setup":
@@ -1389,10 +1389,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
     "Сюда также можно перетащить любой поддерживаемый файл. Каждое преобразование совместимости проверяется до записи.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "بعد تأكيد هذا الاستيراد، يفتح Rune إعداد المراجعة التشغيلية مع تحديد مصدر Data هذا مسبقًا.",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "اختر CSV أو JSON أو XLSX أو ODS. يعرض Rune الاستيراد أولًا، ثم يرشدك عبر الحقول والمقاييس والمخططات والمخرجات.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "بعد تأكيد هذا الاستيراد، يفتح Orbit إعداد المراجعة التشغيلية مع تحديد مصدر Data هذا مسبقًا.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "اختر CSV أو JSON أو XLSX أو ODS. يعرض Orbit الاستيراد أولًا، ثم يرشدك عبر الحقول والمقاييس والمخططات والمخرجات.",
   "Create a review from data": "إنشاء مراجعة من البيانات",
   "Import and map review": "استيراد المراجعة وإعدادها",
   "Import data, then continue directly to mapping and output setup":
@@ -1411,10 +1411,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
     "يمكنك أيضًا إسقاط أي ملف مدعوم هنا. ستُراجع كل عملية تحويل توافقية قبل الكتابة.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "確認済みのインポート後、Rune はこの Data ソースを選択した状態で経営レビュー設定を開きます。",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "CSV、JSON、XLSX、ODS を選択してください。Rune はまずインポート内容を表示し、その後フィールド、指標、グラフ、成果物の設定へ案内します。",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "確認済みのインポート後、Orbit はこの Data ソースを選択した状態で経営レビュー設定を開きます。",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "CSV、JSON、XLSX、ODS を選択してください。Orbit はまずインポート内容を表示し、その後フィールド、指標、グラフ、成果物の設定へ案内します。",
   "Create a review from data": "データから経営レビューを作成",
   "Import and map review": "インポートしてレビューを設定",
   "Import data, then continue directly to mapping and output setup":
@@ -1433,10 +1433,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
     "対応ファイルをここにドロップすることもできます。互換変換は書き込み前に必ず確認できます。",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "검토된 가져오기를 확인하면 Rune이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "CSV, JSON, XLSX 또는 ODS를 선택하세요. Rune이 먼저 가져오기 결과를 보여 준 다음 필드, 지표, 차트와 결과물 설정을 안내합니다.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "검토된 가져오기를 확인하면 Orbit이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "CSV, JSON, XLSX 또는 ODS를 선택하세요. Orbit이 먼저 가져오기 결과를 보여 준 다음 필드, 지표, 차트와 결과물 설정을 안내합니다.",
   "Create a review from data": "데이터로 운영 리뷰 만들기",
   "Import and map review": "가져와서 리뷰 설정",
   "Import data, then continue directly to mapping and output setup":
@@ -1458,10 +1458,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 // Human-reviewed copy for the Document-to-Presentation task. These strings stay
 // curated because they describe source identity and the review-before-write contract.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "Après cet import vérifié, Rune ouvre la configuration de la présentation avec ce Document déjà sélectionné.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "Choisissez un document vérifié, un public et un objectif. Rune crée un Deck Markdown modifiable et conserve un lien explicite avec le document source.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "Après cet import vérifié, Orbit ouvre la configuration de la présentation avec ce Document déjà sélectionné.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "Choisissez un document vérifié, un public et un objectif. Orbit crée un Deck Markdown modifiable et conserve un lien explicite avec le document source.",
   "Create presentation from document": "Créer une présentation à partir d’un document",
   Customer: "Client",
   "Deck Markdown": "Deck Markdown",
@@ -1492,10 +1492,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "What should this presentation move forward?": "Que doit faire avancer cette présentation ?",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "Después de esta importación revisada, Rune abre la configuración de la presentación con este Document ya seleccionado.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "Elige un documento revisado, el público y el objetivo. Rune crea un Deck Markdown editable y mantiene una relación explícita con el documento de origen.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "Después de esta importación revisada, Orbit abre la configuración de la presentación con este Document ya seleccionado.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "Elige un documento revisado, el público y el objetivo. Orbit crea un Deck Markdown editable y mantiene una relación explícita con el documento de origen.",
   "Create presentation from document": "Crear una presentación a partir de un documento",
   Customer: "Cliente",
   "Deck Markdown": "Deck Markdown",
@@ -1526,10 +1526,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "What should this presentation move forward?": "¿Qué debe impulsar esta presentación?",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "После подтверждения импорта Rune откроет настройку презентации с уже выбранным Document.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "Выберите проверенный документ, аудиторию и цель. Rune создаст редактируемый Deck Markdown и сохранит явную связь с исходным документом.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "После подтверждения импорта Orbit откроет настройку презентации с уже выбранным Document.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "Выберите проверенный документ, аудиторию и цель. Orbit создаст редактируемый Deck Markdown и сохранит явную связь с исходным документом.",
   "Create presentation from document": "Создать презентацию из документа",
   Customer: "Клиенты",
   "Deck Markdown": "Deck Markdown",
@@ -1560,10 +1560,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "What should this presentation move forward?": "Какое решение должна продвинуть эта презентация?",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "بعد تأكيد هذا الاستيراد، يفتح Rune إعداد العرض مع تحديد هذا الـ Document مسبقًا.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "اختر مستندًا تمت مراجعته والجمهور والهدف. ينشئ Rune ملف Deck Markdown قابلًا للتحرير ويحافظ على علاقة صريحة بالمستند المصدر.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "بعد تأكيد هذا الاستيراد، يفتح Orbit إعداد العرض مع تحديد هذا الـ Document مسبقًا.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "اختر مستندًا تمت مراجعته والجمهور والهدف. ينشئ Orbit ملف Deck Markdown قابلًا للتحرير ويحافظ على علاقة صريحة بالمستند المصدر.",
   "Create presentation from document": "إنشاء عرض من مستند",
   Customer: "العميل",
   "Deck Markdown": "Deck Markdown",
@@ -1594,10 +1594,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "What should this presentation move forward?": "ما الذي يجب أن يدفعه هذا العرض إلى الأمام؟",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "確認済みのインポート後、Rune はこの Document を選択した状態でプレゼンテーション設定を開きます。",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "確認済みの文書、対象者、目的を選択してください。Rune は編集可能な Deck Markdown を作成し、元文書との明示的な関係を保持します。",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "確認済みのインポート後、Orbit はこの Document を選択した状態でプレゼンテーション設定を開きます。",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "確認済みの文書、対象者、目的を選択してください。Orbit は編集可能な Deck Markdown を作成し、元文書との明示的な関係を保持します。",
   "Create presentation from document": "文書からプレゼンテーションを作成",
   Customer: "顧客",
   "Deck Markdown": "Deck Markdown",
@@ -1628,10 +1628,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "What should this presentation move forward?": "このプレゼンで何を前に進めますか？",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "검토된 가져오기를 확인하면 Rune이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "검토된 문서, 대상, 목적을 선택하세요. Rune이 편집 가능한 Deck Markdown을 만들고 원본 문서와의 명시적 관계를 유지합니다.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "검토된 가져오기를 확인하면 Orbit이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "검토된 문서, 대상, 목적을 선택하세요. Orbit이 편집 가능한 Deck Markdown을 만들고 원본 문서와의 명시적 관계를 유지합니다.",
   "Create presentation from document": "문서에서 프레젠테이션 만들기",
   Customer: "고객",
   "Deck Markdown": "Deck Markdown",
@@ -1664,8 +1664,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 
 // Human-reviewed refresh copy for repeatable source-linked presentations.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "Choisissez un document vérifié, un public et un objectif. Rune peut créer une présentation ou actualiser une présentation liée tout en conservant l’identité du fichier et sa relation avec la source.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "Choisissez un document vérifié, un public et un objectif. Orbit peut créer une présentation ou actualiser une présentation liée tout en conservant l’identité du fichier et sa relation avec la source.",
   "Create a new presentation": "Créer une nouvelle présentation",
   "Create or refresh a light presentation": "Créer ou actualiser une présentation légère",
   "New semantic HTML": "Nouveau HTML sémantique",
@@ -1674,8 +1674,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Update in place · identity preserved": "Mise à jour sur place · identité préservée",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "Elige un documento revisado, el público y el objetivo. Rune puede crear una presentación nueva o actualizar una vinculada conservando la identidad del archivo y su relación con el origen.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "Elige un documento revisado, el público y el objetivo. Orbit puede crear una presentación nueva o actualizar una vinculada conservando la identidad del archivo y su relación con el origen.",
   "Create a new presentation": "Crear una presentación nueva",
   "Create or refresh a light presentation": "Crear o actualizar una presentación ligera",
   "New semantic HTML": "Nuevo HTML semántico",
@@ -1684,8 +1684,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Update in place · identity preserved": "Actualización en el mismo archivo · identidad conservada",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "Выберите проверенный документ, аудиторию и цель. Rune может создать новую презентацию или обновить связанную, сохранив идентичность файла и связь с источником.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "Выберите проверенный документ, аудиторию и цель. Orbit может создать новую презентацию или обновить связанную, сохранив идентичность файла и связь с источником.",
   "Create a new presentation": "Создать новую презентацию",
   "Create or refresh a light presentation": "Создайте или обновите лёгкую презентацию",
   "New semantic HTML": "Новый семантический HTML",
@@ -1694,8 +1694,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Update in place · identity preserved": "Обновление на месте · идентичность сохранена",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Rune إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Orbit إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
   "Create a new presentation": "إنشاء عرض جديد",
   "Create or refresh a light presentation": "أنشئ عرضًا خفيفًا أو حدّثه",
   "New semantic HTML": "HTML دلالي جديد",
@@ -1704,8 +1704,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Update in place · identity preserved": "تحديث في المكان · الهوية محفوظة",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "確認済みの文書、対象者、目的を選択してください。Rune は新しいプレゼンテーションを作成することも、ファイル ID と元文書との関係を保ったまま既存の連携プレゼンテーションを更新することもできます。",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "確認済みの文書、対象者、目的を選択してください。Orbit は新しいプレゼンテーションを作成することも、ファイル ID と元文書との関係を保ったまま既存の連携プレゼンテーションを更新することもできます。",
   "Create a new presentation": "新しいプレゼンテーションを作成",
   "Create or refresh a light presentation": "軽やかなプレゼンテーションを作成・更新",
   "New semantic HTML": "新しいセマンティック HTML",
@@ -1714,8 +1714,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Update in place · identity preserved": "同じファイルを更新 · ID を保持",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "검토된 문서, 대상, 목적을 선택하세요. Rune은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "검토된 문서, 대상, 목적을 선택하세요. Orbit은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
   "Create a new presentation": "새 프레젠테이션 만들기",
   "Create or refresh a light presentation": "가벼운 프레젠테이션 만들기 또는 갱신",
   "New semantic HTML": "새 시맨틱 HTML",
@@ -1843,8 +1843,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
     "Modèle indisponible ; une présentation locale déterministe est prête à être vérifiée",
   "Model when available · bounded source evidence · deterministic local fallback":
     "Modèle si disponible · preuves sources limitées · repli local déterministe",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "Plan assisté par modèle si disponible · compilation Rune · vérification avant écriture",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "Plan assisté par modèle si disponible · compilation Orbit · vérification avant écriture",
   "Model-assisted source outline": "Plan source assisté par modèle",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "Présentation liée à la source et assistée par modèle préparée ; aucune écriture avant vérification",
@@ -1863,8 +1863,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
     "Modelo no disponible; se ha preparado una presentación local determinista para revisión",
   "Model when available · bounded source evidence · deterministic local fallback":
     "Modelo cuando esté disponible · evidencia de origen acotada · alternativa local determinista",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "Esquema asistido por modelo cuando esté disponible · compilación de Rune · revisión antes de escribir",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "Esquema asistido por modelo cuando esté disponible · compilación de Orbit · revisión antes de escribir",
   "Model-assisted source outline": "Esquema de origen asistido por modelo",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "Presentación vinculada al origen y asistida por modelo preparada; no se escribe nada antes de revisarla",
@@ -1883,8 +1883,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
     "Модель недоступна; для проверки подготовлена локальная детерминированная презентация",
   "Model when available · bounded source evidence · deterministic local fallback":
     "Модель при наличии · ограниченные свидетельства источника · детерминированный локальный резерв",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "План с помощью модели при наличии · компиляция Rune · проверка до записи",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "План с помощью модели при наличии · компиляция Orbit · проверка до записи",
   "Model-assisted source outline": "План источника с помощью модели",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "Связанная с источником презентация с помощью модели подготовлена; до проверки ничего не записывается",
@@ -1903,8 +1903,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
     "النموذج غير متاح؛ أُعد عرض محلي حتمي للمراجعة",
   "Model when available · bounded source evidence · deterministic local fallback":
     "النموذج عند توفره · أدلة مصدر محدودة · رجوع محلي حتمي",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "مخطط بمساعدة النموذج عند توفره · تجميع Rune · مراجعة قبل الكتابة",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "مخطط بمساعدة النموذج عند توفره · تجميع Orbit · مراجعة قبل الكتابة",
   "Model-assisted source outline": "مخطط مصدر بمساعدة النموذج",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "أُعد عرض مرتبط بالمصدر بمساعدة النموذج؛ لن يُكتب شيء قبل المراجعة",
@@ -1923,8 +1923,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
     "モデルを利用できません。確認用に決定的なローカルプレゼンテーションを準備しました",
   "Model when available · bounded source evidence · deterministic local fallback":
     "利用可能な場合はモデル · 範囲を限定したソース根拠 · 決定的なローカル代替",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "利用可能な場合はモデル支援アウトライン · Rune がコンパイル · 書き込み前に確認",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "利用可能な場合はモデル支援アウトライン · Orbit がコンパイル · 書き込み前に確認",
   "Model-assisted source outline": "モデル支援のソースアウトライン",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "モデル支援のソース連携プレゼンテーションを準備しました。確認するまで書き込みません",
@@ -1943,8 +1943,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
     "모델을 사용할 수 없습니다. 검토할 결정적 로컬 프레젠테이션을 준비했습니다",
   "Model when available · bounded source evidence · deterministic local fallback":
     "사용 가능할 때 모델 · 범위가 제한된 원본 근거 · 결정적 로컬 대체",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "사용 가능할 때 모델 보조 개요 · Rune 컴파일 · 쓰기 전 검토",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "사용 가능할 때 모델 보조 개요 · Orbit 컴파일 · 쓰기 전 검토",
   "Model-assisted source outline": "모델 보조 원본 개요",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "모델 보조 원본 연결 프레젠테이션을 준비했습니다. 검토 전에는 쓰지 않습니다",
@@ -2161,8 +2161,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 // Human-reviewed copy for the compiler-derived pre-model evidence preview.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Aggregate evidence preview": "Aperçu des preuves agrégées",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "Rune a compilé ces résultats localement à partir du périmètre actuel, avant toute requête au modèle.",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "Orbit a compilé ces résultats localement à partir du périmètre actuel, avant toute requête au modèle.",
   "Eligible rows": "Lignes retenues",
   "Excluded rows": "Lignes exclues",
   "Source rows": "Lignes source",
@@ -2172,8 +2172,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Aggregate evidence preview": "Vista previa de evidencia agregada",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "Rune compiló estos resultados localmente a partir del ámbito actual, antes de cualquier solicitud al modelo.",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "Orbit compiló estos resultados localmente a partir del ámbito actual, antes de cualquier solicitud al modelo.",
   "Eligible rows": "Filas incluidas",
   "Excluded rows": "Filas excluidas",
   "Source rows": "Filas de origen",
@@ -2183,8 +2183,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Aggregate evidence preview": "Предпросмотр агрегированных доказательств",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "Rune локально скомпилировал эти результаты для текущей области до любого запроса к модели.",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "Orbit локально скомпилировал эти результаты для текущей области до любого запроса к модели.",
   "Eligible rows": "Учтённые строки",
   "Excluded rows": "Исключённые строки",
   "Source rows": "Строки источника",
@@ -2194,8 +2194,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Aggregate evidence preview": "معاينة الأدلة المجمّعة",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "جمّع Rune هذه النتائج محليًا من نطاق البيانات الحالي قبل إرسال أي طلب إلى النموذج.",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "جمّع Orbit هذه النتائج محليًا من نطاق البيانات الحالي قبل إرسال أي طلب إلى النموذج.",
   "Eligible rows": "الصفوف المشمولة",
   "Excluded rows": "الصفوف المستبعدة",
   "Source rows": "صفوف المصدر",
@@ -2205,8 +2205,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Aggregate evidence preview": "集計根拠のプレビュー",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "Rune はモデルへリクエストする前に、現在のデータ範囲からこの結果をローカルで集計しました。",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "Orbit はモデルへリクエストする前に、現在のデータ範囲からこの結果をローカルで集計しました。",
   "Eligible rows": "対象行",
   "Excluded rows": "除外行",
   "Source rows": "元の行数",
@@ -2216,8 +2216,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Aggregate evidence preview": "집계 근거 미리보기",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "Rune이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "Orbit이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
   "Eligible rows": "포함된 행",
   "Excluded rows": "제외된 행",
   "Source rows": "원본 행",
@@ -2304,8 +2304,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "The layout is usable without material rework.": "La mise en page est utilisable sans reprise importante.",
   "The result saves meaningful time over manual work.":
     "Le résultat fait gagner un temps notable par rapport au travail manuel.",
-  "The user can understand what Rune changed and why.":
-    "L’utilisateur peut comprendre ce que Rune a modifié et pourquoi.",
+  "The user can understand what Orbit changed and why.":
+    "L’utilisateur peut comprendre ce que Orbit a modifié et pourquoi.",
   "Values, definitions, and calculations are accurate.": "Les valeurs, les définitions et les calculs sont exacts.",
   "Visual deliverability": "Qualité visuelle livrable",
 });
@@ -2334,7 +2334,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "The layout is usable without material rework.": "El diseño puede usarse sin una reelaboración importante.",
   "The result saves meaningful time over manual work.":
     "El resultado ahorra un tiempo significativo frente al trabajo manual.",
-  "The user can understand what Rune changed and why.": "El usuario puede entender qué cambió Rune y por qué.",
+  "The user can understand what Orbit changed and why.": "El usuario puede entender qué cambió Orbit y por qué.",
   "Values, definitions, and calculations are accurate.": "Los valores, las definiciones y los cálculos son correctos.",
   "Visual deliverability": "Calidad visual entregable",
 });
@@ -2363,7 +2363,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "The layout is usable without material rework.": "Макет пригоден без существенной переработки.",
   "The result saves meaningful time over manual work.":
     "Результат заметно экономит время по сравнению с ручной работой.",
-  "The user can understand what Rune changed and why.": "Пользователь понимает, что и почему изменил Rune.",
+  "The user can understand what Orbit changed and why.": "Пользователь понимает, что и почему изменил Orbit.",
   "Values, definitions, and calculations are accurate.": "Значения, определения и расчёты точны.",
   "Visual deliverability": "Визуальная готовность к передаче",
 });
@@ -2391,7 +2391,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Structure clarity": "وضوح البنية",
   "The layout is usable without material rework.": "التخطيط قابل للاستخدام دون إعادة عمل جوهرية.",
   "The result saves meaningful time over manual work.": "توفر النتيجة وقتًا ملحوظًا مقارنة بالعمل اليدوي.",
-  "The user can understand what Rune changed and why.": "يستطيع المستخدم فهم ما غيّره Rune ولماذا.",
+  "The user can understand what Orbit changed and why.": "يستطيع المستخدم فهم ما غيّره Orbit ولماذا.",
   "Values, definitions, and calculations are accurate.": "القيم والتعريفات والحسابات دقيقة.",
   "Visual deliverability": "الجاهزية البصرية للتسليم",
 });
@@ -2419,7 +2419,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Structure clarity": "構成の明確さ",
   "The layout is usable without material rework.": "大幅な手直しなしでレイアウトを使用できます。",
   "The result saves meaningful time over manual work.": "手作業と比べて有意に時間を短縮できます。",
-  "The user can understand what Rune changed and why.": "Rune が何をなぜ変更したかをユーザーが理解できます。",
+  "The user can understand what Orbit changed and why.": "Orbit が何をなぜ変更したかをユーザーが理解できます。",
   "Values, definitions, and calculations are accurate.": "値、定義、計算が正確です。",
   "Visual deliverability": "視覚的な納品可能性",
 });
@@ -2447,7 +2447,7 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Structure clarity": "구조 명확성",
   "The layout is usable without material rework.": "큰 재작업 없이 레이아웃을 사용할 수 있습니다.",
   "The result saves meaningful time over manual work.": "수작업보다 의미 있는 시간을 절약합니다.",
-  "The user can understand what Rune changed and why.": "사용자가 Rune이 무엇을 왜 변경했는지 이해할 수 있습니다.",
+  "The user can understand what Orbit changed and why.": "사용자가 Orbit이 무엇을 왜 변경했는지 이해할 수 있습니다.",
   "Values, definitions, and calculations are accurate.": "값, 정의, 계산이 정확합니다.",
   "Visual deliverability": "시각적 전달 완성도",
 });
@@ -2479,8 +2479,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Reconnect the missing metric": "Reconnecter la métrique manquante",
   "Reconnect the Query Data source": "Reconnecter la source Data de la Query",
   "Related reference": "Référence concernée",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "Supprimez les scripts ou le balisage exécutable ; Rune ne prévisualise que du contenu sans script.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "Supprimez les scripts ou le balisage exécutable ; Orbit ne prévisualise que du contenu sans script.",
   "Remove unsafe content": "Supprimer le contenu non sûr",
   "Repair the Chart definition": "Corriger la définition du Chart",
   "Repair the Chart source": "Corriger la source du Chart",
@@ -2529,8 +2529,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Reconnect the missing metric": "Volver a conectar la métrica ausente",
   "Reconnect the Query Data source": "Volver a conectar la fuente Data de Query",
   "Related reference": "Referencia relacionada",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "Elimina scripts o marcado ejecutable; Rune solo previsualiza contenido sin scripts.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "Elimina scripts o marcado ejecutable; Orbit solo previsualiza contenido sin scripts.",
   "Remove unsafe content": "Eliminar contenido no seguro",
   "Repair the Chart definition": "Corregir la definición del Chart",
   "Repair the Chart source": "Corregir la fuente del Chart",
@@ -2579,8 +2579,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Reconnect the missing metric": "Подключить отсутствующую метрику",
   "Reconnect the Query Data source": "Подключить источник Data для Query",
   "Related reference": "Связанная ссылка",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "Удалите скрипты и исполняемую разметку: Rune показывает только содержимое без скриптов.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "Удалите скрипты и исполняемую разметку: Orbit показывает только содержимое без скриптов.",
   "Remove unsafe content": "Удалить небезопасное содержимое",
   "Repair the Chart definition": "Исправить определение Chart",
   "Repair the Chart source": "Исправить источник Chart",
@@ -2629,8 +2629,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Reconnect the missing metric": "أعد ربط المقياس المفقود",
   "Reconnect the Query Data source": "أعد ربط مصدر Data الخاص بـ Query",
   "Related reference": "المرجع المرتبط",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "أزل البرامج النصية أو الترميز القابل للتنفيذ؛ يعاين Rune المحتوى الخالي من البرامج النصية فقط.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "أزل البرامج النصية أو الترميز القابل للتنفيذ؛ يعاين Orbit المحتوى الخالي من البرامج النصية فقط.",
   "Remove unsafe content": "أزل المحتوى غير الآمن",
   "Repair the Chart definition": "أصلح تعريف Chart",
   "Repair the Chart source": "أصلح مصدر Chart",
@@ -2679,8 +2679,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Reconnect the missing metric": "見つからない指標を再接続",
   "Reconnect the Query Data source": "Query の Data ソースを再接続",
   "Related reference": "関連する参照",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "スクリプトや実行可能なマークアップを削除してください。Rune はスクリプトのない内容だけをプレビューします。",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "スクリプトや実行可能なマークアップを削除してください。Orbit はスクリプトのない内容だけをプレビューします。",
   "Remove unsafe content": "安全でない内容を削除",
   "Repair the Chart definition": "Chart 定義を修正",
   "Repair the Chart source": "Chart ソースを修正",
@@ -2729,8 +2729,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Reconnect the missing metric": "누락된 지표 다시 연결",
   "Reconnect the Query Data source": "Query Data 소스 다시 연결",
   "Related reference": "관련 참조",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "스크립트나 실행 가능한 마크업을 제거하세요. Rune은 스크립트 없는 콘텐츠만 미리 봅니다.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "스크립트나 실행 가능한 마크업을 제거하세요. Orbit은 스크립트 없는 콘텐츠만 미리 봅니다.",
   "Remove unsafe content": "안전하지 않은 콘텐츠 제거",
   "Repair the Chart definition": "Chart 정의 수정",
   "Repair the Chart source": "Chart 소스 수정",
@@ -2931,60 +2931,60 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "readable source": "source lisible",
   "exact UTF-8 source": "source UTF-8 exacte",
   "Readable file": "Fichier lisible",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "Rune conserve exactement cette source validée ; il ne compile ni ne réécrit ses références dynamiques.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "Le téléchargement conserve exactement la source lisible. Les liaisons Rune et les références aux ressources locales restent des expressions source.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Orbit conserve exactement cette source validée ; il ne compile ni ne réécrit ses références dynamiques.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "Le téléchargement conserve exactement la source lisible. Les liaisons Orbit et les références aux ressources locales restent des expressions source.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Review canonical source": "Revisar la fuente canónica",
   "readable source": "fuente legible",
   "exact UTF-8 source": "fuente UTF-8 exacta",
   "Readable file": "Archivo legible",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "Rune conserva exactamente esta fuente validada; no compila ni reescribe sus referencias dinámicas.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "La descarga conserva exactamente la fuente legible. Los enlaces de Rune y las referencias a recursos locales permanecen como expresiones de fuente.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Orbit conserva exactamente esta fuente validada; no compila ni reescribe sus referencias dinámicas.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "La descarga conserva exactamente la fuente legible. Los enlaces de Orbit y las referencias a recursos locales permanecen como expresiones de fuente.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Review canonical source": "Проверить канонический исходник",
   "readable source": "читаемый исходник",
   "exact UTF-8 source": "точный исходник UTF-8",
   "Readable file": "Читаемый файл",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "Rune сохраняет этот проверенный исходник без изменений и не компилирует и не переписывает его динамические ссылки.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "Загрузка сохраняет читаемый исходник без изменений. Привязки Rune и ссылки на локальные ресурсы остаются выражениями исходника.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Orbit сохраняет этот проверенный исходник без изменений и не компилирует и не переписывает его динамические ссылки.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "Загрузка сохраняет читаемый исходник без изменений. Привязки Orbit и ссылки на локальные ресурсы остаются выражениями исходника.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Review canonical source": "مراجعة المصدر الأساسي",
   "readable source": "مصدر قابل للقراءة",
   "exact UTF-8 source": "مصدر UTF-8 مطابق",
   "Readable file": "ملف قابل للقراءة",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "يحافظ Rune على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "يحافظ التنزيل على المصدر المقروء كما هو. وتبقى روابط Rune ومراجع الأصول المحلية تعبيرات داخل المصدر.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "يحافظ Orbit على هذا المصدر المتحقق منه كما هو، ولا يجمّع مراجعه الحية أو يعيد كتابتها.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "يحافظ التنزيل على المصدر المقروء كما هو. وتبقى روابط Orbit ومراجع الأصول المحلية تعبيرات داخل المصدر.",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Review canonical source": "正規ソースを確認",
   "readable source": "読み取り可能なソース",
   "exact UTF-8 source": "完全一致の UTF-8 ソース",
   "Readable file": "読み取り可能なファイル",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "Rune は検証済みのソースをそのまま保持し、ライブ参照をコンパイルしたり書き換えたりしません。",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "ダウンロードは読み取り可能なソースをそのまま保持します。Rune のバインディングとローカルアセット参照はソース式のままです。",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Orbit は検証済みのソースをそのまま保持し、ライブ参照をコンパイルしたり書き換えたりしません。",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "ダウンロードは読み取り可能なソースをそのまま保持します。Orbit のバインディングとローカルアセット参照はソース式のままです。",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Review canonical source": "정규 소스 검토",
   "readable source": "읽을 수 있는 소스",
   "exact UTF-8 source": "정확한 UTF-8 소스",
   "Readable file": "읽을 수 있는 파일",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "Rune은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Rune 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Orbit은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Orbit 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
 });
 
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
@@ -2993,8 +2993,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
     "Vérifiez la modification exacte de la source avant de restaurer ce point de contrôle. Rien n’est écrit avant votre confirmation.",
   "Checkpoint restore details": "Détails de la restauration du point de contrôle",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "Rune conserve la version actuelle comme point de sécurité récupérable, puis revérifie tout l’espace de travail et l’impact de l’exécution locale.",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Orbit conserve la version actuelle comme point de sécurité récupérable, puis revérifie tout l’espace de travail et l’impact de l’exécution locale.",
   "One atomic device write · every source stays unchanged on failure":
     "Une écriture atomique sur l’appareil · toutes les sources restent inchangées en cas d’échec",
   "Confirm restore": "Confirmer la restauration",
@@ -3006,8 +3006,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
     "Revisa el cambio exacto de la fuente antes de restaurar este punto de control. No se escribe nada hasta que confirmes.",
   "Checkpoint restore details": "Detalles de la restauración del punto de control",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "Rune conserva la versión actual como punto de seguridad recuperable y vuelve a comprobar todo el espacio de trabajo y el impacto de la ejecución local.",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Orbit conserva la versión actual como punto de seguridad recuperable y vuelve a comprobar todo el espacio de trabajo y el impacto de la ejecución local.",
   "One atomic device write · every source stays unchanged on failure":
     "Una escritura atómica en el dispositivo · todas las fuentes permanecen intactas si falla",
   "Confirm restore": "Confirmar restauración",
@@ -3019,8 +3019,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
     "Проверьте точное изменение исходника перед восстановлением контрольной точки. До подтверждения ничего не записывается.",
   "Checkpoint restore details": "Сведения о восстановлении контрольной точки",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "Rune сохраняет текущую версию как восстанавливаемую страховочную точку и повторно проверяет всю рабочую область и влияние на локальное выполнение.",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Orbit сохраняет текущую версию как восстанавливаемую страховочную точку и повторно проверяет всю рабочую область и влияние на локальное выполнение.",
   "One atomic device write · every source stays unchanged on failure":
     "Одна атомарная запись на устройстве · при сбое все исходники остаются без изменений",
   "Confirm restore": "Подтвердить восстановление",
@@ -3032,8 +3032,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
     "راجع التغيير الدقيق في المصدر قبل استعادة نقطة الحفظ هذه. لن يُكتب شيء حتى تؤكد.",
   "Checkpoint restore details": "تفاصيل استعادة نقطة الحفظ",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "يحتفظ Rune بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "يحتفظ Orbit بالإصدار الحالي كنقطة أمان قابلة للاستعادة، ثم يعيد التحقق من مساحة العمل كاملة وتأثير التنفيذ المحلي.",
   "One atomic device write · every source stays unchanged on failure":
     "كتابة ذرية واحدة على الجهاز · تبقى جميع المصادر دون تغيير عند الفشل",
   "Confirm restore": "تأكيد الاستعادة",
@@ -3045,8 +3045,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
     "このチェックポイントを復元する前に、ソースの正確な変更を確認してください。確定するまで書き込みません。",
   "Checkpoint restore details": "チェックポイント復元の詳細",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "Rune は現在のバージョンを復元可能な安全ポイントとして保持し、ワークスペース全体とローカル実行への影響を再検証します。",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Orbit は現在のバージョンを復元可能な安全ポイントとして保持し、ワークスペース全体とローカル実行への影響を再検証します。",
   "One atomic device write · every source stays unchanged on failure":
     "デバイスへ 1 回だけアトミックに書き込み · 失敗時はすべてのソースを変更しません",
   "Confirm restore": "復元を確定",
@@ -3058,8 +3058,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Review the exact source change before restoring this checkpoint. Nothing is written until you confirm.":
     "이 체크포인트를 복원하기 전에 정확한 소스 변경을 검토하세요. 확인하기 전에는 아무것도 기록하지 않습니다.",
   "Checkpoint restore details": "체크포인트 복원 세부 정보",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "Rune은 현재 버전을 복구 가능한 안전 지점으로 보존하고 전체 작업공간과 로컬 실행 영향을 다시 검증합니다.",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Orbit은 현재 버전을 복구 가능한 안전 지점으로 보존하고 전체 작업공간과 로컬 실행 영향을 다시 검증합니다.",
   "One atomic device write · every source stays unchanged on failure":
     "기기에 한 번만 원자적으로 기록 · 실패하면 모든 소스가 그대로 유지됩니다",
   "Confirm restore": "복원 확인",
@@ -3071,19 +3071,19 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Device workspace · recoverable switch": "Espace de travail local · changement réversible",
   "Restore sample workspace": "Restaurer l’espace de travail d’exemple",
   "Restore the sample workspace?": "Restaurer l’espace de travail d’exemple ?",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "Rune remplacera l’espace de travail local par l’exemple intégré et conservera ses fichiers, points de restauration et historiques de tâches comme espace de travail précédent.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Orbit remplacera l’espace de travail local par l’exemple intégré et conservera ses fichiers, points de restauration et historiques de tâches comme espace de travail précédent.",
   "Restore the previous workspace?": "Restaurer l’espace de travail précédent ?",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "Rune restaurera l’espace de travail local complet d’avant la réinitialisation et conservera l’espace actuel comme prochaine version récupérable.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Orbit restaurera l’espace de travail local complet d’avant la réinitialisation et conservera l’espace actuel comme prochaine version récupérable.",
   "Workspace switch details": "Détails du changement d’espace de travail",
   "Current and target workspaces": "Espaces de travail actuel et cible",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "L’espace de travail actuel devient une version de récupération locale complète dans la même écriture que l’espace d’exemple.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Les espaces de travail actuel et précédent sont échangés en toute sécurité ; cette restauration reste donc réversible.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "Un dossier connecté reste inchangé ; Rune n’y écrit qu’après l’action explicite « Écrire les fichiers de l’espace de travail ».",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "Un dossier connecté reste inchangé ; Orbit n’y écrit qu’après l’action explicite « Écrire les fichiers de l’espace de travail ».",
   "One atomic device write · the current workspace stays unchanged if storage fails":
     "Une écriture atomique locale · l’espace de travail actuel reste inchangé si le stockage échoue",
   "Restore sample": "Restaurer l’exemple",
@@ -3098,19 +3098,19 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Device workspace · recoverable switch": "Espacio de trabajo local · cambio reversible",
   "Restore sample workspace": "Restaurar el espacio de trabajo de ejemplo",
   "Restore the sample workspace?": "¿Restaurar el espacio de trabajo de ejemplo?",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "Rune sustituirá el espacio de trabajo local por el ejemplo integrado y conservará sus archivos, puntos de restauración y registros de tareas como espacio anterior.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Orbit sustituirá el espacio de trabajo local por el ejemplo integrado y conservará sus archivos, puntos de restauración y registros de tareas como espacio anterior.",
   "Restore the previous workspace?": "¿Restaurar el espacio de trabajo anterior?",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "Rune restaurará el espacio de trabajo local completo anterior al restablecimiento y conservará el actual como la siguiente versión recuperable.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Orbit restaurará el espacio de trabajo local completo anterior al restablecimiento y conservará el actual como la siguiente versión recuperable.",
   "Workspace switch details": "Detalles del cambio de espacio de trabajo",
   "Current and target workspaces": "Espacios de trabajo actual y de destino",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "El espacio de trabajo actual se convierte en una versión de recuperación local completa en la misma escritura que el espacio de ejemplo.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Los espacios de trabajo actual y anterior se intercambian de forma segura, por lo que esta restauración sigue siendo reversible.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "Las carpetas conectadas no cambian; Rune solo escribe en ellas después de elegir explícitamente «Escribir archivos del espacio de trabajo».",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "Las carpetas conectadas no cambian; Orbit solo escribe en ellas después de elegir explícitamente «Escribir archivos del espacio de trabajo».",
   "One atomic device write · the current workspace stays unchanged if storage fails":
     "Una escritura atómica local · el espacio actual permanece intacto si falla el almacenamiento",
   "Restore sample": "Restaurar ejemplo",
@@ -3125,19 +3125,19 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Device workspace · recoverable switch": "Локальная рабочая область · обратимое переключение",
   "Restore sample workspace": "Восстановить пример рабочей области",
   "Restore the sample workspace?": "Восстановить пример рабочей области?",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "Rune заменит текущую локальную рабочую область встроенным примером, а её файлы, точки восстановления и историю задач сохранит как предыдущую область.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Orbit заменит текущую локальную рабочую область встроенным примером, а её файлы, точки восстановления и историю задач сохранит как предыдущую область.",
   "Restore the previous workspace?": "Восстановить предыдущую рабочую область?",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "Rune восстановит всю локальную рабочую область до сброса, а текущую сохранит как следующую восстанавливаемую версию.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Orbit восстановит всю локальную рабочую область до сброса, а текущую сохранит как следующую восстанавливаемую версию.",
   "Workspace switch details": "Сведения о переключении рабочей области",
   "Current and target workspaces": "Текущая и целевая рабочие области",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "Текущая рабочая область сохраняется как полная локальная версия восстановления в одной записи с примером.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Текущая и предыдущая рабочие области безопасно меняются местами, поэтому восстановление можно отменить.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "Подключённая папка не изменяется; Rune запишет в неё данные только после явного действия «Записать файлы рабочей области».",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "Подключённая папка не изменяется; Orbit запишет в неё данные только после явного действия «Записать файлы рабочей области».",
   "One atomic device write · the current workspace stays unchanged if storage fails":
     "Одна атомарная локальная запись · при сбое хранилища текущая область не изменяется",
   "Restore sample": "Восстановить пример",
@@ -3151,19 +3151,19 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Device workspace · recoverable switch": "مساحة العمل المحلية · تبديل قابل للتراجع",
   "Restore sample workspace": "استعادة مساحة العمل النموذجية",
   "Restore the sample workspace?": "هل تريد استعادة مساحة العمل النموذجية؟",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "سيستبدل Rune مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "سيستبدل Orbit مساحة العمل المحلية الحالية بالنموذج المدمج، ويحفظ ملفاتها ونقاط استعادتها وسجلات مهامها بوصفها مساحة العمل السابقة.",
   "Restore the previous workspace?": "هل تريد استعادة مساحة العمل السابقة؟",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "سيستعيد Rune مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "سيستعيد Orbit مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
   "Workspace switch details": "تفاصيل تبديل مساحة العمل",
   "Current and target workspaces": "مساحتا العمل الحالية والمستهدفة",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "تُحفظ مساحة العمل الحالية كإصدار استعادة محلي كامل في عملية الكتابة نفسها مع مساحة العمل النموذجية.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "تتبادل مساحتا العمل الحالية والسابقة موضعهما بأمان، لذلك تظل الاستعادة قابلة للتراجع.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "لا يتغير المجلد المتصل؛ ولا يكتب Rune إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "لا يتغير المجلد المتصل؛ ولا يكتب Orbit إليه إلا بعد اختيار «كتابة ملفات مساحة العمل» صراحةً.",
   "One atomic device write · the current workspace stays unchanged if storage fails":
     "كتابة ذرية محلية واحدة · تبقى مساحة العمل الحالية دون تغيير إذا فشل التخزين",
   "Restore sample": "استعادة النموذج",
@@ -3178,19 +3178,19 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Device workspace · recoverable switch": "デバイス上のワークスペース · 元に戻せる切り替え",
   "Restore sample workspace": "サンプルワークスペースを復元",
   "Restore the sample workspace?": "サンプルワークスペースを復元しますか？",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "Rune は現在のデバイス上のワークスペースを内蔵サンプルに置き換え、ファイル、復元ポイント、タスク履歴を以前のワークスペースとして完全に保持します。",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Orbit は現在のデバイス上のワークスペースを内蔵サンプルに置き換え、ファイル、復元ポイント、タスク履歴を以前のワークスペースとして完全に保持します。",
   "Restore the previous workspace?": "以前のワークスペースを復元しますか？",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "Rune はリセット前のワークスペース全体を復元し、現在のワークスペースを次に復元できるバージョンとして保持します。",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Orbit はリセット前のワークスペース全体を復元し、現在のワークスペースを次に復元できるバージョンとして保持します。",
   "Workspace switch details": "ワークスペース切り替えの詳細",
   "Current and target workspaces": "現在と切り替え先のワークスペース",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "現在のワークスペースは、サンプルと同じ 1 回の書き込みで完全なデバイス復元版として保存されます。",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "現在と以前のワークスペースを安全に入れ替えるため、この復元自体も元に戻せます。",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "接続済みフォルダは変更されません。明示的に「ワークスペースのファイルを書き込む」を選んだ場合だけ Rune が書き込みます。",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "接続済みフォルダは変更されません。明示的に「ワークスペースのファイルを書き込む」を選んだ場合だけ Orbit が書き込みます。",
   "One atomic device write · the current workspace stays unchanged if storage fails":
     "デバイスへ 1 回だけアトミックに書き込み · 保存に失敗しても現在のワークスペースは変わりません",
   "Restore sample": "サンプルを復元",
@@ -3204,19 +3204,19 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Device workspace · recoverable switch": "기기 작업공간 · 되돌릴 수 있는 전환",
   "Restore sample workspace": "샘플 작업공간 복원",
   "Restore the sample workspace?": "샘플 작업공간을 복원할까요?",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "Rune은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Orbit은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
   "Restore the previous workspace?": "이전 작업공간을 복원할까요?",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "Rune은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Orbit은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
   "Workspace switch details": "작업공간 전환 세부 정보",
   "Current and target workspaces": "현재 및 대상 작업공간",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "현재 작업공간은 샘플 작업공간과 같은 한 번의 쓰기에서 완전한 기기 복원 버전으로 저장됩니다.",
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "현재 작업공간과 이전 작업공간을 안전하게 맞바꾸므로 이 복원도 다시 되돌릴 수 있습니다.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "연결된 폴더는 바뀌지 않습니다. ‘작업공간 파일 쓰기’를 명시적으로 선택한 경우에만 Rune이 기록합니다.",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "연결된 폴더는 바뀌지 않습니다. ‘작업공간 파일 쓰기’를 명시적으로 선택한 경우에만 Orbit이 기록합니다.",
   "One atomic device write · the current workspace stays unchanged if storage fails":
     "기기에 한 번만 원자적으로 기록 · 저장에 실패하면 현재 작업공간은 바뀌지 않습니다",
   "Restore sample": "샘플 복원",
@@ -3233,18 +3233,18 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Pull these folder changes?": "Récupérer ces modifications du dossier ?",
   "Push these changes to the folder?": "Envoyer ces modifications vers le dossier ?",
   "Initialize the folder with this workspace?": "Initialiser le dossier avec cet espace de travail ?",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "Rune relira le dossier et ne remplacera l’espace de travail local que si les deux côtés correspondent encore exactement à cette vérification.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "Rune relira le dossier et n’écrira les fichiers de même nom et le manifeste que si aucun côté n’a changé.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "Rune confirmera que le dossier est toujours vide, puis écrira les sources lisibles, les images référencées et le manifeste actuels.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Orbit relira le dossier et ne remplacera l’espace de travail local que si les deux côtés correspondent encore exactement à cette vérification.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Orbit relira le dossier et n’écrira les fichiers de même nom et le manifeste que si aucun côté n’a changé.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Orbit confirmera que le dossier est toujours vide, puis écrira les sources lisibles, les images référencées et le manifeste actuels.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "L’espace de travail local complet devient une version récupérable ; un échec de récupération ne modifie aucune source.",
   "Same-name files may be overwritten; any change on either side after review blocks the write.":
     "Les fichiers de même nom peuvent être remplacés ; toute modification d’un côté après la vérification bloque l’écriture.",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "Les fichiers sans rapport restent intacts ; seuls les sources, images et le manifeste Rune vérifiés sont écrits.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "Les fichiers sans rapport restent intacts ; seuls les sources, images et le manifeste Orbit vérifiés sont écrits.",
   "Exact reread on confirm · zero writes when either side drifts":
     "Relecture exacte à la confirmation · aucune écriture en cas de divergence",
   "Confirm pull": "Confirmer la récupération",
@@ -3257,18 +3257,18 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Pull these folder changes?": "¿Traer estos cambios de la carpeta?",
   "Push these changes to the folder?": "¿Enviar estos cambios a la carpeta?",
   "Initialize the folder with this workspace?": "¿Inicializar la carpeta con este espacio de trabajo?",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "Rune volverá a leer la carpeta y solo sustituirá el espacio de trabajo local si ambos lados siguen coincidiendo exactamente con esta revisión.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "Rune volverá a leer la carpeta y solo escribirá los archivos con el mismo nombre y el manifiesto si ninguno de los lados ha cambiado.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "Rune confirmará que la carpeta sigue vacía y después escribirá las fuentes legibles, las imágenes referenciadas y el manifiesto actuales.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Orbit volverá a leer la carpeta y solo sustituirá el espacio de trabajo local si ambos lados siguen coincidiendo exactamente con esta revisión.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Orbit volverá a leer la carpeta y solo escribirá los archivos con el mismo nombre y el manifiesto si ninguno de los lados ha cambiado.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Orbit confirmará que la carpeta sigue vacía y después escribirá las fuentes legibles, las imágenes referenciadas y el manifiesto actuales.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "El espacio de trabajo local completo se convierte en una versión recuperable; si falla la lectura, ninguna fuente cambia.",
   "Same-name files may be overwritten; any change on either side after review blocks the write.":
     "Los archivos con el mismo nombre pueden sobrescribirse; cualquier cambio posterior en un lado bloquea la escritura.",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "Los archivos no relacionados permanecen intactos; solo se escriben las fuentes, imágenes y el manifiesto de Rune revisados.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "Los archivos no relacionados permanecen intactos; solo se escriben las fuentes, imágenes y el manifiesto de Orbit revisados.",
   "Exact reread on confirm · zero writes when either side drifts":
     "Relectura exacta al confirmar · cero escrituras si algún lado cambia",
   "Confirm pull": "Confirmar lectura",
@@ -3281,18 +3281,18 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Pull these folder changes?": "Загрузить эти изменения из папки?",
   "Push these changes to the folder?": "Записать эти изменения в папку?",
   "Initialize the folder with this workspace?": "Инициализировать папку этой рабочей областью?",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "Rune повторно прочитает папку и заменит локальную рабочую область, только если обе стороны по-прежнему полностью совпадают с этой проверкой.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "Rune повторно прочитает папку и запишет одноимённые файлы и манифест, только если ни одна сторона не изменилась.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "Rune убедится, что папка всё ещё пуста, а затем запишет текущие читаемые исходники, связанные изображения и манифест.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Orbit повторно прочитает папку и заменит локальную рабочую область, только если обе стороны по-прежнему полностью совпадают с этой проверкой.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Orbit повторно прочитает папку и запишет одноимённые файлы и манифест, только если ни одна сторона не изменилась.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Orbit убедится, что папка всё ещё пуста, а затем запишет текущие читаемые исходники, связанные изображения и манифест.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "Вся текущая локальная рабочая область становится восстанавливаемой версией; неудачная загрузка не изменяет исходники.",
   "Same-name files may be overwritten; any change on either side after review blocks the write.":
     "Одноимённые файлы могут быть перезаписаны; любое изменение после проверки блокирует запись.",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "Посторонние файлы останутся нетронутыми; будут записаны только проверенные исходники, изображения и манифест Rune.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "Посторонние файлы останутся нетронутыми; будут записаны только проверенные исходники, изображения и манифест Orbit.",
   "Exact reread on confirm · zero writes when either side drifts":
     "Точное повторное чтение при подтверждении · без записи при расхождении",
   "Confirm pull": "Подтвердить загрузку",
@@ -3305,18 +3305,18 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Pull these folder changes?": "هل تريد سحب تغييرات المجلد هذه؟",
   "Push these changes to the folder?": "هل تريد دفع هذه التغييرات إلى المجلد؟",
   "Initialize the folder with this workspace?": "هل تريد تهيئة المجلد بمساحة العمل هذه؟",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "سيعيد Rune قراءة المجلد، ولن يستبدل مساحة العمل المحلية إلا إذا ظل الجانبان مطابقين تمامًا لهذه المراجعة.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "سيعيد Rune قراءة المجلد، ولن يكتب الملفات ذات الأسماء نفسها وبيان مساحة العمل إلا إذا لم يتغير أي من الجانبين.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "سيتأكد Rune من أن المجلد لا يزال فارغًا، ثم يكتب المصادر المقروءة والصور المشار إليها وبيان مساحة العمل الحالية.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "سيعيد Orbit قراءة المجلد، ولن يستبدل مساحة العمل المحلية إلا إذا ظل الجانبان مطابقين تمامًا لهذه المراجعة.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "سيعيد Orbit قراءة المجلد، ولن يكتب الملفات ذات الأسماء نفسها وبيان مساحة العمل إلا إذا لم يتغير أي من الجانبين.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "سيتأكد Orbit من أن المجلد لا يزال فارغًا، ثم يكتب المصادر المقروءة والصور المشار إليها وبيان مساحة العمل الحالية.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "تصبح مساحة العمل المحلية الحالية كاملة إصدارًا قابلاً للاستعادة؛ ولا يغيّر فشل السحب أي مصدر.",
   "Same-name files may be overwritten; any change on either side after review blocks the write.":
     "قد تُستبدل الملفات ذات الأسماء نفسها؛ وأي تغيير في أحد الجانبين بعد المراجعة يمنع الكتابة.",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Rune التي تمت مراجعتها.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Orbit التي تمت مراجعتها.",
   "Exact reread on confirm · zero writes when either side drifts":
     "إعادة قراءة دقيقة عند التأكيد · لا كتابة إذا تغيّر أحد الجانبين",
   "Confirm pull": "تأكيد السحب",
@@ -3329,18 +3329,18 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Pull these folder changes?": "このフォルダの変更を取り込みますか？",
   "Push these changes to the folder?": "この変更をフォルダへ書き出しますか？",
   "Initialize the folder with this workspace?": "このワークスペースでフォルダを初期化しますか？",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "Rune はフォルダを再読込し、両側がこのレビューと完全に一致する場合にだけデバイスのワークスペースを置き換えます。",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "Rune はフォルダを再読込し、両側に変更がない場合にだけ同名ファイルとワークスペースマニフェストを書き込みます。",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "Rune はフォルダが空のままであることを確認し、現在の読み取り可能なソース、参照画像、マニフェストを書き込みます。",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Orbit はフォルダを再読込し、両側がこのレビューと完全に一致する場合にだけデバイスのワークスペースを置き換えます。",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Orbit はフォルダを再読込し、両側に変更がない場合にだけ同名ファイルとワークスペースマニフェストを書き込みます。",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Orbit はフォルダが空のままであることを確認し、現在の読み取り可能なソース、参照画像、マニフェストを書き込みます。",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "現在のデバイスワークスペース全体を復元可能な版として保存します。取り込みに失敗してもソースは変わりません。",
   "Same-name files may be overwritten; any change on either side after review blocks the write.":
     "同名ファイルは上書きされる場合があります。レビュー後にどちらかが変わると書き込みを中止します。",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "無関係なファイルは変更しません。レビューしたソース、画像、Rune マニフェストだけを書き込みます。",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "無関係なファイルは変更しません。レビューしたソース、画像、Orbit マニフェストだけを書き込みます。",
   "Exact reread on confirm · zero writes when either side drifts":
     "確定時に完全再読込 · どちらかに差異があれば書き込みなし",
   "Confirm pull": "取り込みを確定",
@@ -3353,18 +3353,18 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Pull these folder changes?": "이 폴더 변경 사항을 가져올까요?",
   "Push these changes to the folder?": "이 변경 사항을 폴더에 내보낼까요?",
   "Initialize the folder with this workspace?": "이 작업공간으로 폴더를 초기화할까요?",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "Rune은 폴더를 다시 읽고 양쪽이 이 검토와 정확히 일치할 때만 기기 작업공간을 교체합니다.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "Rune은 폴더를 다시 읽고 양쪽 모두 변경되지 않았을 때만 같은 이름의 파일과 작업공간 매니페스트를 씁니다.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "Rune은 폴더가 여전히 비어 있는지 확인한 다음 현재 읽을 수 있는 소스, 참조 이미지, 작업공간 매니페스트를 씁니다.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Orbit은 폴더를 다시 읽고 양쪽이 이 검토와 정확히 일치할 때만 기기 작업공간을 교체합니다.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Orbit은 폴더를 다시 읽고 양쪽 모두 변경되지 않았을 때만 같은 이름의 파일과 작업공간 매니페스트를 씁니다.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Orbit은 폴더가 여전히 비어 있는지 확인한 다음 현재 읽을 수 있는 소스, 참조 이미지, 작업공간 매니페스트를 씁니다.",
   "The complete current device workspace becomes a recoverable version; a failed pull changes no source.":
     "현재 기기 작업공간 전체가 복구 가능한 버전으로 저장됩니다. 가져오기에 실패하면 어떤 소스도 바뀌지 않습니다.",
   "Same-name files may be overwritten; any change on either side after review blocks the write.":
     "같은 이름의 파일은 덮어쓸 수 있습니다. 검토 후 어느 한쪽이 바뀌면 쓰기를 차단합니다.",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "관련 없는 파일은 그대로 유지됩니다. 검토한 소스, 이미지, Rune 매니페스트만 기록합니다.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "관련 없는 파일은 그대로 유지됩니다. 검토한 소스, 이미지, Orbit 매니페스트만 기록합니다.",
   "Exact reread on confirm · zero writes when either side drifts":
     "확인할 때 정확히 다시 읽기 · 어느 한쪽이 달라지면 쓰기 없음",
   "Confirm pull": "가져오기 확인",
@@ -3378,10 +3378,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 // natural instead of relying on machine translation.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "20 KB maximum": "20 Ko maximum",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "Après confirmation, Rune lit uniquement cet identifiant, vérifie le catalogue de modèles, puis le chiffre et l’enregistre comme connexion par défaut si la vérification réussit.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "Après confirmation, Orbit lit uniquement cet identifiant, vérifie le catalogue de modèles, puis le chiffre et l’enregistre comme connexion par défaut si la vérification réussit.",
   "Back to connections": "Retour aux connexions",
-  "Checking connections already saved in Rune…": "Vérification des connexions déjà enregistrées dans Rune…",
+  "Checking connections already saved in Orbit…": "Vérification des connexions déjà enregistrées dans Orbit…",
   "Cloud API": "API dans le cloud",
   "Connections available on this device": "Connexions disponibles sur cet appareil",
   "Continue with model assistance": "Continuer avec le modèle",
@@ -3390,26 +3390,26 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "La recherche consulte uniquement les emplacements de configuration connus et les ports des modèles locaux. Elle n’exécute aucun profil shell, ne téléverse aucun fichier et n’affiche aucune clé.",
   Intelligence: "Intelligence",
-  "Let Rune find the models you already use": "Retrouvez les modèles que vous utilisez déjà",
+  "Let Orbit find the models you already use": "Retrouvez les modèles que vous utilisez déjà",
   "Looking for models on this device…": "Recherche de modèles sur cet appareil…",
   "No API key required": "Aucune clé API requise",
   "No model selected yet": "Aucun modèle sélectionné",
   "No reusable model connection was found": "Aucune connexion réutilisable trouvée",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "Seuls le fournisseur, la source, le point de terminaison et le modèle sont affichés. Rune ne lit l’identifiant qu’après votre choix.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "Seuls le fournisseur, la source, le point de terminaison et le modèle sont affichés. Orbit ne lit l’identifiant qu’après votre choix.",
   Review: "Examiner",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
-    "Rune n’a pas pu appliquer cette modification. Votre configuration actuelle reste inchangée.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
-    "Rune n’a pas pu terminer la recherche sur l’appareil. Aucune configuration n’a été lue ni enregistrée.",
-  "Rune could not read model configurations. Try again in a moment.":
-    "Rune n’a pas pu lire les configurations de modèles. Réessayez dans un instant.",
-  "Rune could not read model status. You can continue without a model.":
-    "Rune n’a pas pu lire l’état des modèles. Vous pouvez continuer sans modèle.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
-    "Rune n’a pas pu vérifier ce catalogue de modèles. La configuration n’a pas été enregistrée.",
-  "Rune could not verify this connection and did not save it.":
-    "Rune n’a pas pu vérifier cette connexion et ne l’a pas enregistrée.",
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
+    "Orbit n’a pas pu appliquer cette modification. Votre configuration actuelle reste inchangée.",
+  "Orbit could not complete the device scan. No configuration was read or saved.":
+    "Orbit n’a pas pu terminer la recherche sur l’appareil. Aucune configuration n’a été lue ni enregistrée.",
+  "Orbit could not read model configurations. Try again in a moment.":
+    "Orbit n’a pas pu lire les configurations de modèles. Réessayez dans un instant.",
+  "Orbit could not read model status. You can continue without a model.":
+    "Orbit n’a pas pu lire l’état des modèles. Vous pouvez continuer sans modèle.",
+  "Orbit could not verify that model catalog. The configuration was not saved.":
+    "Orbit n’a pas pu vérifier ce catalogue de modèles. La configuration n’a pas été enregistrée.",
+  "Orbit could not verify this connection and did not save it.":
+    "Orbit n’a pas pu vérifier cette connexion et ne l’a pas enregistrée.",
   "Runs on this device": "S’exécute sur cet appareil",
   "Scan again": "Rechercher à nouveau",
   "The current default can provide review-before-write model assistance.":
@@ -3434,10 +3434,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "20 KB maximum": "20 KB como máximo",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "Tras tu confirmación, Rune lee solo esta credencial, verifica el catálogo de modelos y, únicamente si funciona, la cifra y guarda como conexión predeterminada.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "Tras tu confirmación, Orbit lee solo esta credencial, verifica el catálogo de modelos y, únicamente si funciona, la cifra y guarda como conexión predeterminada.",
   "Back to connections": "Volver a las conexiones",
-  "Checking connections already saved in Rune…": "Comprobando las conexiones guardadas en Rune…",
+  "Checking connections already saved in Orbit…": "Comprobando las conexiones guardadas en Orbit…",
   "Cloud API": "API en la nube",
   "Connections available on this device": "Conexiones disponibles en este dispositivo",
   "Continue with model assistance": "Continuar con el modelo",
@@ -3446,25 +3446,26 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "La búsqueda solo consulta ubicaciones de configuración conocidas y puertos de modelos locales. Nunca ejecuta perfiles de shell, sube archivos ni muestra claves.",
   Intelligence: "Inteligencia",
-  "Let Rune find the models you already use": "Encuentra los modelos que ya utilizas",
+  "Let Orbit find the models you already use": "Encuentra los modelos que ya utilizas",
   "Looking for models on this device…": "Buscando modelos en este dispositivo…",
   "No API key required": "No requiere clave API",
   "No model selected yet": "Aún no has elegido un modelo",
   "No reusable model connection was found": "No se encontró ninguna conexión reutilizable",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "Solo se muestran el proveedor, el origen, el endpoint y el modelo. Rune lee la credencial después de que elijas una conexión.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "Solo se muestran el proveedor, el origen, el endpoint y el modelo. Orbit lee la credencial después de que elijas una conexión.",
   Review: "Revisar",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
-    "Rune no pudo completar el cambio. Tu configuración actual no se modificó.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
-    "Rune no pudo terminar la búsqueda en el dispositivo. No se leyó ni guardó ninguna configuración.",
-  "Rune could not read model configurations. Try again in a moment.":
-    "Rune no pudo leer las configuraciones de modelos. Inténtalo de nuevo en unos instantes.",
-  "Rune could not read model status. You can continue without a model.":
-    "Rune no pudo leer el estado de los modelos. Puedes continuar sin modelo.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
-    "Rune no pudo verificar ese catálogo de modelos. La configuración no se guardó.",
-  "Rune could not verify this connection and did not save it.": "Rune no pudo verificar esta conexión y no la guardó.",
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
+    "Orbit no pudo completar el cambio. Tu configuración actual no se modificó.",
+  "Orbit could not complete the device scan. No configuration was read or saved.":
+    "Orbit no pudo terminar la búsqueda en el dispositivo. No se leyó ni guardó ninguna configuración.",
+  "Orbit could not read model configurations. Try again in a moment.":
+    "Orbit no pudo leer las configuraciones de modelos. Inténtalo de nuevo en unos instantes.",
+  "Orbit could not read model status. You can continue without a model.":
+    "Orbit no pudo leer el estado de los modelos. Puedes continuar sin modelo.",
+  "Orbit could not verify that model catalog. The configuration was not saved.":
+    "Orbit no pudo verificar ese catálogo de modelos. La configuración no se guardó.",
+  "Orbit could not verify this connection and did not save it.":
+    "Orbit no pudo verificar esta conexión y no la guardó.",
   "Runs on this device": "Se ejecuta en este dispositivo",
   "Scan again": "Buscar de nuevo",
   "The current default can provide review-before-write model assistance.":
@@ -3489,10 +3490,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "20 KB maximum": "Не более 20 КБ",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "После подтверждения Rune прочитает только эти учётные данные, проверит каталог моделей и лишь при успешной проверке зашифрует и сохранит подключение по умолчанию.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и лишь при успешной проверке зашифрует и сохранит подключение по умолчанию.",
   "Back to connections": "Назад к подключениям",
-  "Checking connections already saved in Rune…": "Проверка подключений, сохранённых в Rune…",
+  "Checking connections already saved in Orbit…": "Проверка подключений, сохранённых в Orbit…",
   "Cloud API": "Облачный API",
   "Connections available on this device": "Подключения на этом устройстве",
   "Continue with model assistance": "Продолжить с моделью",
@@ -3501,26 +3502,26 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "Поиск обращается только к известным файлам конфигурации и портам локальных моделей. Он не выполняет профили shell, не загружает файлы и не показывает ключи.",
   Intelligence: "Интеллект",
-  "Let Rune find the models you already use": "Найдите модели, которыми вы уже пользуетесь",
+  "Let Orbit find the models you already use": "Найдите модели, которыми вы уже пользуетесь",
   "Looking for models on this device…": "Поиск моделей на этом устройстве…",
   "No API key required": "Ключ API не требуется",
   "No model selected yet": "Модель ещё не выбрана",
   "No reusable model connection was found": "Подходящих подключений не найдено",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "Показаны только поставщик, источник, адрес и модель. Rune прочитает учётные данные лишь после вашего выбора.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "Показаны только поставщик, источник, адрес и модель. Orbit прочитает учётные данные лишь после вашего выбора.",
   Review: "Проверить",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
-    "Rune не удалось применить изменение. Текущая конфигурация не изменена.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
-    "Rune не удалось завершить поиск на устройстве. Конфигурации не были прочитаны или сохранены.",
-  "Rune could not read model configurations. Try again in a moment.":
-    "Rune не удалось прочитать конфигурации моделей. Повторите попытку чуть позже.",
-  "Rune could not read model status. You can continue without a model.":
-    "Rune не удалось прочитать состояние моделей. Можно продолжить без модели.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
-    "Rune не удалось проверить каталог моделей. Конфигурация не сохранена.",
-  "Rune could not verify this connection and did not save it.":
-    "Rune не удалось проверить подключение, поэтому оно не сохранено.",
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
+    "Orbit не удалось применить изменение. Текущая конфигурация не изменена.",
+  "Orbit could not complete the device scan. No configuration was read or saved.":
+    "Orbit не удалось завершить поиск на устройстве. Конфигурации не были прочитаны или сохранены.",
+  "Orbit could not read model configurations. Try again in a moment.":
+    "Orbit не удалось прочитать конфигурации моделей. Повторите попытку чуть позже.",
+  "Orbit could not read model status. You can continue without a model.":
+    "Orbit не удалось прочитать состояние моделей. Можно продолжить без модели.",
+  "Orbit could not verify that model catalog. The configuration was not saved.":
+    "Orbit не удалось проверить каталог моделей. Конфигурация не сохранена.",
+  "Orbit could not verify this connection and did not save it.":
+    "Orbit не удалось проверить подключение, поэтому оно не сохранено.",
   "Runs on this device": "Работает на этом устройстве",
   "Scan again": "Найти снова",
   "The current default can provide review-before-write model assistance.":
@@ -3545,10 +3546,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "20 KB maximum": "20 كيلوبايت كحد أقصى",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "بعد تأكيدك، يقرأ Rune بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
   "Back to connections": "العودة إلى الاتصالات",
-  "Checking connections already saved in Rune…": "جارٍ التحقق من الاتصالات المحفوظة في Rune…",
+  "Checking connections already saved in Orbit…": "جارٍ التحقق من الاتصالات المحفوظة في Orbit…",
   "Cloud API": "واجهة API سحابية",
   "Connections available on this device": "الاتصالات المتاحة على هذا الجهاز",
   "Continue with model assistance": "المتابعة باستخدام نموذج",
@@ -3557,25 +3558,25 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "يفحص البحث مواقع الإعداد المعروفة ومنافذ النماذج المحلية فقط. ولا يشغّل ملفات shell أو يرفع ملفات أو يعرض أي مفتاح.",
   Intelligence: "الإعداد الذكي",
-  "Let Rune find the models you already use": "اعثر على النماذج التي تستخدمها بالفعل",
+  "Let Orbit find the models you already use": "اعثر على النماذج التي تستخدمها بالفعل",
   "Looking for models on this device…": "جارٍ البحث عن نماذج على هذا الجهاز…",
   "No API key required": "لا يتطلب مفتاح API",
   "No model selected yet": "لم تختر نموذجًا بعد",
   "No reusable model connection was found": "لم يُعثر على اتصال قابل لإعادة الاستخدام",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "تظهر جهة التزويد والمصدر ونقطة الاتصال والنموذج فقط. ولا يقرأ Rune بيانات الاعتماد إلا بعد اختيارك.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "تظهر جهة التزويد والمصدر ونقطة الاتصال والنموذج فقط. ولا يقرأ Orbit بيانات الاعتماد إلا بعد اختيارك.",
   Review: "مراجعة",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
-    "تعذر على Rune تطبيق هذا التغيير. لم تتغير إعداداتك الحالية.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
-    "تعذر على Rune إكمال البحث على الجهاز. لم تُقرأ أي إعدادات أو تُحفظ.",
-  "Rune could not read model configurations. Try again in a moment.":
-    "تعذر على Rune قراءة إعدادات النماذج. حاول مرة أخرى بعد قليل.",
-  "Rune could not read model status. You can continue without a model.":
-    "تعذر على Rune قراءة حالة النماذج. يمكنك المتابعة من دون نموذج.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
-    "تعذر على Rune التحقق من قائمة النماذج. لم تُحفظ الإعدادات.",
-  "Rune could not verify this connection and did not save it.": "تعذر على Rune التحقق من هذا الاتصال، لذلك لم يحفظه.",
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
+    "تعذر على Orbit تطبيق هذا التغيير. لم تتغير إعداداتك الحالية.",
+  "Orbit could not complete the device scan. No configuration was read or saved.":
+    "تعذر على Orbit إكمال البحث على الجهاز. لم تُقرأ أي إعدادات أو تُحفظ.",
+  "Orbit could not read model configurations. Try again in a moment.":
+    "تعذر على Orbit قراءة إعدادات النماذج. حاول مرة أخرى بعد قليل.",
+  "Orbit could not read model status. You can continue without a model.":
+    "تعذر على Orbit قراءة حالة النماذج. يمكنك المتابعة من دون نموذج.",
+  "Orbit could not verify that model catalog. The configuration was not saved.":
+    "تعذر على Orbit التحقق من قائمة النماذج. لم تُحفظ الإعدادات.",
+  "Orbit could not verify this connection and did not save it.": "تعذر على Orbit التحقق من هذا الاتصال، لذلك لم يحفظه.",
   "Runs on this device": "يعمل على هذا الجهاز",
   "Scan again": "البحث مجددًا",
   "The current default can provide review-before-write model assistance.":
@@ -3599,10 +3600,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "20 KB maximum": "最大 20 KB",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "確認後、Rune はこの接続の認証情報だけを読み取り、モデル一覧を検証します。成功した場合に限り暗号化し、既定の接続として保存します。",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧を検証します。成功した場合に限り暗号化し、既定の接続として保存します。",
   "Back to connections": "接続一覧に戻る",
-  "Checking connections already saved in Rune…": "Rune に保存済みの接続を確認中…",
+  "Checking connections already saved in Orbit…": "Orbit に保存済みの接続を確認中…",
   "Cloud API": "クラウド API",
   "Connections available on this device": "このデバイスで利用できる接続",
   "Continue with model assistance": "モデルを使って続ける",
@@ -3611,25 +3612,25 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "検索対象は既知の設定場所とローカルモデルのポートだけです。シェル設定の実行、ファイルのアップロード、キーの表示は行いません。",
   Intelligence: "インテリジェンス",
-  "Let Rune find the models you already use": "利用中のモデルを Rune で見つける",
+  "Let Orbit find the models you already use": "利用中のモデルを Orbit で見つける",
   "Looking for models on this device…": "このデバイスのモデルを検索中…",
   "No API key required": "API キーは不要",
   "No model selected yet": "モデルはまだ選択されていません",
   "No reusable model connection was found": "再利用できる接続が見つかりませんでした",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
     "表示するのはプロバイダー、参照元、エンドポイント、モデルだけです。認証情報は接続を選んだ後に読み取ります。",
   Review: "確認",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
     "モデル設定を変更できませんでした。現在の設定は変更されていません。",
-  "Rune could not complete the device scan. No configuration was read or saved.":
+  "Orbit could not complete the device scan. No configuration was read or saved.":
     "デバイスの検索を完了できませんでした。設定の読み取りや保存は行っていません。",
-  "Rune could not read model configurations. Try again in a moment.":
+  "Orbit could not read model configurations. Try again in a moment.":
     "モデル設定を読み取れませんでした。しばらくしてからもう一度お試しください。",
-  "Rune could not read model status. You can continue without a model.":
+  "Orbit could not read model status. You can continue without a model.":
     "モデルの状態を確認できませんでした。モデルなしで続けることもできます。",
-  "Rune could not verify that model catalog. The configuration was not saved.":
+  "Orbit could not verify that model catalog. The configuration was not saved.":
     "モデル一覧を検証できませんでした。設定は保存されていません。",
-  "Rune could not verify this connection and did not save it.": "この接続を検証できなかったため、保存しませんでした。",
+  "Orbit could not verify this connection and did not save it.": "この接続を検証できなかったため、保存しませんでした。",
   "Runs on this device": "このデバイスで実行",
   "Scan again": "もう一度検索",
   "The current default can provide review-before-write model assistance.":
@@ -3653,10 +3654,10 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "20 KB maximum": "최대 20KB",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "확인하면 Rune은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
   "Back to connections": "연결 목록으로 돌아가기",
-  "Checking connections already saved in Rune…": "Rune에 저장된 연결 확인 중…",
+  "Checking connections already saved in Orbit…": "Orbit에 저장된 연결 확인 중…",
   "Cloud API": "클라우드 API",
   "Connections available on this device": "이 기기에서 사용할 수 있는 연결",
   "Continue with model assistance": "모델을 사용해 계속",
@@ -3665,25 +3666,25 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "검색은 알려진 설정 위치와 로컬 모델 포트만 확인합니다. 셸 설정을 실행하거나 파일을 업로드하거나 키를 표시하지 않습니다.",
   Intelligence: "지능형 설정",
-  "Let Rune find the models you already use": "이미 사용 중인 모델 찾기",
+  "Let Orbit find the models you already use": "이미 사용 중인 모델 찾기",
   "Looking for models on this device…": "이 기기에서 모델 검색 중…",
   "No API key required": "API 키 필요 없음",
   "No model selected yet": "아직 모델을 선택하지 않았습니다",
   "No reusable model connection was found": "재사용할 수 있는 연결을 찾지 못했습니다",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "제공자, 출처, 엔드포인트, 모델만 표시합니다. Rune은 연결을 선택한 후에만 인증 정보를 읽습니다.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "제공자, 출처, 엔드포인트, 모델만 표시합니다. Orbit은 연결을 선택한 후에만 인증 정보를 읽습니다.",
   Review: "검토",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
     "모델 설정을 변경하지 못했습니다. 기존 설정은 그대로 유지됩니다.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
+  "Orbit could not complete the device scan. No configuration was read or saved.":
     "기기 검색을 완료하지 못했습니다. 어떤 설정도 읽거나 저장하지 않았습니다.",
-  "Rune could not read model configurations. Try again in a moment.":
+  "Orbit could not read model configurations. Try again in a moment.":
     "모델 설정을 읽지 못했습니다. 잠시 후 다시 시도하세요.",
-  "Rune could not read model status. You can continue without a model.":
+  "Orbit could not read model status. You can continue without a model.":
     "모델 상태를 확인하지 못했습니다. 모델 없이 계속할 수 있습니다.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
+  "Orbit could not verify that model catalog. The configuration was not saved.":
     "모델 목록을 검증하지 못했습니다. 설정은 저장되지 않았습니다.",
-  "Rune could not verify this connection and did not save it.": "이 연결을 검증하지 못해 저장하지 않았습니다.",
+  "Orbit could not verify this connection and did not save it.": "이 연결을 검증하지 못해 저장하지 않았습니다.",
   "Runs on this device": "이 기기에서 실행",
   "Scan again": "다시 검색",
   "The current default can provide review-before-write model assistance.":
@@ -3705,4 +3706,23 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   Model: "모델",
   Endpoint: "엔드포인트",
   "Deployment connection": "배포 연결",
+});
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Welcome to Orbit · 引力": "Bienvenue sur Orbit · 引力",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Welcome to Orbit · 引力": "Bienvenido a Orbit · 引力",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Welcome to Orbit · 引力": "Добро пожаловать в Orbit · 引力",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Welcome to Orbit · 引力": "مرحبًا بك في Orbit · 引力",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Welcome to Orbit · 引力": "Orbit · 引力 へようこそ",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Welcome to Orbit · 引力": "Orbit · 引力에 오신 것을 환영합니다",
 });

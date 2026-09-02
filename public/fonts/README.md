@@ -1,4 +1,4 @@
-# Rune PDF font
+# Orbit PDF font
 
 `rune-unifont.woff2` is the regular Unifont webfont distributed by
 `@fontsource/unifont` 5.3.0. It is bundled only for browser-local PDF export

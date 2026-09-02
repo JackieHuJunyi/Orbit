@@ -62,15 +62,15 @@ function unique(values: Iterable<string>) {
 }
 
 function validateFontBytes(bytes: Uint8Array) {
-  if (!bytes.length) throw new Error("Rune's PDF font asset is empty.");
-  if (bytes.length > MAX_PDF_FONT_BYTES) throw new Error("Rune's PDF font asset exceeds the 4 MB safety limit.");
+  if (!bytes.length) throw new Error("Orbit's PDF font asset is empty.");
+  if (bytes.length > MAX_PDF_FONT_BYTES) throw new Error("Orbit's PDF font asset exceeds the 4 MB safety limit.");
   if (String.fromCharCode(...bytes.slice(0, 4)) !== "wOF2")
-    throw new Error("Rune's PDF font asset is not a valid WOFF2 file.");
+    throw new Error("Orbit's PDF font asset is not a valid WOFF2 file.");
 }
 
 export async function loadRunePdfFont() {
   const response = await fetch(RUNE_PDF_FONT_PATH, { cache: "force-cache" });
-  if (!response.ok) throw new Error(`Rune could not load its local PDF font (${response.status}).`);
+  if (!response.ok) throw new Error(`Orbit could not load its local PDF font (${response.status}).`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   validateFontBytes(bytes);
   return bytes;
@@ -118,7 +118,7 @@ async function pdfCompatibleImage(asset: RuneExportImageAsset) {
     if (typeof OffscreenCanvas !== "undefined") {
       const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
       const context = canvas.getContext("2d");
-      if (!context) throw new Error("Rune could not prepare the image canvas for PDF export.");
+      if (!context) throw new Error("Orbit could not prepare the image canvas for PDF export.");
       context.drawImage(bitmap, 0, 0);
       blob = await canvas.convertToBlob({ type: "image/png" });
     } else if (typeof document !== "undefined") {
@@ -126,11 +126,11 @@ async function pdfCompatibleImage(asset: RuneExportImageAsset) {
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
       const context = canvas.getContext("2d");
-      if (!context) throw new Error("Rune could not prepare the image canvas for PDF export.");
+      if (!context) throw new Error("Orbit could not prepare the image canvas for PDF export.");
       context.drawImage(bitmap, 0, 0);
       blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(
-          (value) => (value ? resolve(value) : reject(new Error("Rune could not convert the image for PDF export."))),
+          (value) => (value ? resolve(value) : reject(new Error("Orbit could not convert the image for PDF export."))),
           "image/png",
         ),
       );
@@ -157,7 +157,7 @@ function safeText(value: string, supported: Set<number>, warnings: Set<string>) 
     }
   }
   if (replaced)
-    warnings.add("Characters unavailable in Rune's embedded Unicode font were replaced with visible question marks.");
+    warnings.add("Characters unavailable in Orbit's embedded Unicode font were replaced with visible question marks.");
   return output;
 }
 
@@ -254,9 +254,9 @@ async function createPdf(title: string, fontBytes: Uint8Array) {
     document.embedFont(fontBytes, { subset: true }),
   ]);
   document.setTitle(title);
-  document.setAuthor("Rune");
-  document.setCreator("Rune");
-  document.setProducer("Rune browser-local PDF export");
+  document.setAuthor("Orbit");
+  document.setCreator("Orbit");
+  document.setProducer("Orbit browser-local PDF export");
   document.setCreationDate(FIXED_PDF_DATE);
   document.setModificationDate(FIXED_PDF_DATE);
   return { document, font, unicodeFont, supported: new Set(unicodeFont.getCharacterSet()) };
@@ -357,7 +357,7 @@ function drawDocumentImage(context: DocumentContext, reference: { id: string; al
         COLORS.muted,
       ) - 7;
   context.warnings.add(
-    "Rune local images are embedded as portable, static PDF image snapshots; the content-hash source reference remains only in canonical Markdown.",
+    "Orbit local images are embedded as portable, static PDF image snapshots; the content-hash source reference remains only in canonical Markdown.",
   );
 }
 
@@ -599,9 +599,9 @@ async function renderDocumentPdf(
       : [],
   );
   const inlineImage = extractRuneAssetIds(source).find((id) => !referencedImageIds.includes(id));
-  if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before PDF export.");
+  if (inlineImage) throw new Error("Place each Orbit local image on its own Markdown line before PDF export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Document: ${unexpectedImage.id}`);
   const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
   for (const [id, asset] of verifiedImages) {
     const compatible = await pdfCompatibleImage(asset);
@@ -721,7 +721,7 @@ async function renderDocumentPdf(
   pages.forEach((page, index) => {
     const label = `${index + 1} / ${pages.length}`;
     page.drawLine({ start: { x: 48, y: 42 }, end: { x: A4_WIDTH - 48, y: 42 }, thickness: 0.5, color: COLORS.line });
-    page.drawText("Generated locally by Rune", { x: 48, y: 27, size: 6.5, font, color: COLORS.muted });
+    page.drawText("Generated locally by Orbit", { x: 48, y: 27, size: 6.5, font, color: COLORS.muted });
     page.drawText(label, {
       x: A4_WIDTH - 48 - font.widthOfTextAtSize(label, 6.5),
       y: 27,
@@ -1049,7 +1049,7 @@ function drawDeckImage(
     height,
   });
   context.warnings.add(
-    "Rune local images are embedded as portable, static PDF media; content-hash references remain only in canonical Deck Markdown.",
+    "Orbit local images are embedded as portable, static PDF media; content-hash references remain only in canonical Deck Markdown.",
   );
 }
 
@@ -1174,7 +1174,7 @@ async function renderDeckPdf(
   const missingImage = referencedImageIds.find((id) => !verifiedImages.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Deck: ${unexpectedImage.id}`);
   const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
   for (const [id, asset] of verifiedImages) {
     const compatible = await pdfCompatibleImage(asset);
@@ -1223,7 +1223,7 @@ export async function exportPdfArtifact(
         ? await renderDataPdf(artifact, fontBytes)
         : await renderDeckPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets);
   if (rendered.bytes.length > MAX_PDF_EXPORT_BYTES)
-    throw new Error("The generated PDF exceeds Rune's 12 MB export limit.");
+    throw new Error("The generated PDF exceeds Orbit's 12 MB export limit.");
   return {
     bytes: rendered.bytes,
     fileName: `${safeExportBaseName(artifact.name)}.pdf`,

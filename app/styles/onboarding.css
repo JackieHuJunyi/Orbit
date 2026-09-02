@@ -203,7 +203,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   font-size: 14px;
 }
 
-.welcome-chrome-brand strong { font-size: 12px; font-weight: 650; letter-spacing: -.01em; }
+.welcome-chrome-brand strong { overflow: hidden; font-size: 12px; font-weight: 650; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
 .welcome-progress { display: inline-flex; align-items: center; gap: 6px; }
 .welcome-progress span { width: 24px; height: 3px; border-radius: 999px; }
 

@@ -1,4 +1,4 @@
-# Rune interface architecture
+# Orbit interface architecture
 
 `app/globals.css` is the frozen compatibility layer for the existing component inventory. New interface work belongs in this directory and is loaded once by `index.css` after the compatibility layer.
 

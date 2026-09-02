@@ -43,7 +43,7 @@ function capabilityDetail(
     case "canonical-source":
       return artifactName;
     case "desktop-compatibility":
-      return `${copy.exportAs(capability.label)} · Rune Desktop`;
+      return `${copy.exportAs(capability.label)} · Orbit Desktop`;
     case "open-document":
       return copy.exportAsOpenDocument(capability.label);
     case "standalone-html":

@@ -112,7 +112,7 @@ function manifest(kind: OdfExportKind, images: Iterable<{ path: string; asset: R
 }
 
 function metaXml(title: string) {
-  return `${XML_DECLARATION}<office:document-meta ${namespaces()} office:version="${ODF_VERSION}"><office:meta><meta:generator>Rune</meta:generator><dc:title>${xmlText(title)}</dc:title><dc:creator>Rune</dc:creator></office:meta></office:document-meta>`;
+  return `${XML_DECLARATION}<office:document-meta ${namespaces()} office:version="${ODF_VERSION}"><office:meta><meta:generator>Orbit</meta:generator><dc:title>${xmlText(title)}</dc:title><dc:creator>Orbit</dc:creator></office:meta></office:document-meta>`;
 }
 
 function packageOdf(
@@ -139,7 +139,7 @@ function packageOdf(
   });
   const bytes = zipSync(files, { level: 6, mtime: timestamp });
   if (bytes.length > MAX_ODF_EXPORT_BYTES)
-    throw new Error("The generated OpenDocument package exceeds Rune's 12 MB export limit.");
+    throw new Error("The generated OpenDocument package exceeds Orbit's 12 MB export limit.");
   return bytes;
 }
 
@@ -161,7 +161,7 @@ function isSafeLink(target: string) {
 function sanitizeInlineSource(source: string, warnings: Set<string>) {
   let result = source.replace(CHART_TOKEN, (_token, id: string) => {
     warnings.add(
-      "Inline Rune chart references use an omission marker in OpenDocument export; put a chart on its own line to export a current-data snapshot.",
+      "Inline Orbit chart references use an omission marker in OpenDocument export; put a chart on its own line to export a current-data snapshot.",
     );
     return `[Chart omitted: ${id}]`;
   });
@@ -215,10 +215,10 @@ function odfInline(source: string, warnings: Set<string>) {
     .map((segment) => {
       let text = xmlText(segment.text).replaceAll("\n", "<text:line-break/>").replaceAll("\t", "<text:tab/>");
       const styles = [
-        segment.bold ? "RuneBold" : "",
-        segment.italic ? "RuneItalic" : "",
-        segment.strike ? "RuneStrike" : "",
-        segment.code ? "RuneCode" : "",
+        segment.bold ? "OrbitBold" : "",
+        segment.italic ? "OrbitItalic" : "",
+        segment.strike ? "OrbitStrike" : "",
+        segment.code ? "OrbitCode" : "",
       ].filter(Boolean);
       if (styles.length > 1) {
         styles.forEach((style) => {
@@ -244,7 +244,7 @@ function plainMarkdownInline(source: string, warnings: Set<string>) {
 
 function semanticTable(rows: string[][], warnings: Set<string>, name: string) {
   const width = Math.max(1, ...rows.map((row) => row.length));
-  return `<table:table table:name="${xmlAttribute(name)}" table:style-name="RuneTable"><table:table-column table:style-name="RuneColumn" table:number-columns-repeated="${width}"/>${rows.map((row, rowIndex) => `<table:table-row>${Array.from({ length: width }, (_, index) => `<table:table-cell table:style-name="${rowIndex === 0 ? "RuneHeaderCell" : "RuneCell"}" office:value-type="string"><text:p>${odfInline(row[index] ?? "", warnings)}</text:p></table:table-cell>`).join("")}</table:table-row>`).join("")}</table:table>`;
+  return `<table:table table:name="${xmlAttribute(name)}" table:style-name="OrbitTable"><table:table-column table:style-name="OrbitColumn" table:number-columns-repeated="${width}"/>${rows.map((row, rowIndex) => `<table:table-row>${Array.from({ length: width }, (_, index) => `<table:table-cell table:style-name="${rowIndex === 0 ? "OrbitHeaderCell" : "OrbitCell"}" office:value-type="string"><text:p>${odfInline(row[index] ?? "", warnings)}</text:p></table:table-cell>`).join("")}</table:table-row>`).join("")}</table:table>`;
 }
 
 function resolveOdfChart(
@@ -293,13 +293,13 @@ function chartRows(model: ChartModel) {
 
 function odfChart(model: ChartModel, warnings: Set<string>, tableName: string) {
   warnings.add(
-    `Live Rune charts are exported as static semantic current-data tables from ${model.sourceArtifactName}; OpenDocument files do not retain the live data binding.`,
+    `Live Orbit charts are exported as static semantic current-data tables from ${model.sourceArtifactName}; OpenDocument files do not retain the live data binding.`,
   );
-  return `<text:h text:outline-level="3">${odfInline(model.spec.title, warnings)}</text:h>${model.spec.description ? `<text:p text:style-name="RuneQuote">${odfInline(model.spec.description, warnings)}</text:p>` : ""}${semanticTable(chartRows(model), warnings, tableName)}`;
+  return `<text:h text:outline-level="3">${odfInline(model.spec.title, warnings)}</text:h>${model.spec.description ? `<text:p text:style-name="OrbitQuote">${odfInline(model.spec.description, warnings)}</text:p>` : ""}${semanticTable(chartRows(model), warnings, tableName)}`;
 }
 
 function commonStyles() {
-  return `<style:default-style style:family="paragraph"><style:paragraph-properties fo:margin-bottom="0.08in"/><style:text-properties style:font-name="Arial" fo:font-size="11pt" fo:color="#17211b"/></style:default-style><style:style style:name="RuneTitle" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.2in" fo:margin-bottom="0.16in"/><style:text-properties fo:font-size="24pt" fo:font-weight="bold" fo:color="#17211b"/></style:style>${Array.from({ length: 6 }, (_, index) => `<style:style style:name="RuneHeading${index + 1}" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.16in" fo:margin-bottom="0.08in"/><style:text-properties fo:font-size="${Math.max(13, 22 - index * 2)}pt" fo:font-weight="bold" fo:color="#17211b"/></style:style>`).join("")}<style:style style:name="RuneQuote" style:family="paragraph"><style:paragraph-properties fo:margin-left="0.25in" fo:border-left="0.03in solid #ff5c35" fo:padding-left="0.12in"/><style:text-properties fo:font-style="italic" fo:color="#627068"/></style:style><style:style style:name="RuneCodeBlock" style:family="paragraph"><style:paragraph-properties fo:background-color="#f1f3ef" fo:padding="0.08in"/><style:text-properties style:font-name="Courier New" fo:font-size="9.5pt"/></style:style><style:style style:name="RuneBold" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style><style:style style:name="RuneItalic" style:family="text"><style:text-properties fo:font-style="italic"/></style:style><style:style style:name="RuneStrike" style:family="text"><style:text-properties style:text-line-through-style="solid"/></style:style><style:style style:name="RuneCode" style:family="text"><style:text-properties style:font-name="Courier New" fo:background-color="#f1f3ef"/></style:style><style:style style:name="RuneTable" style:family="table"><style:table-properties style:width="7.2in" table:align="margins" fo:margin-top="0.08in" fo:margin-bottom="0.14in"/></style:style><style:style style:name="RuneColumn" style:family="table-column"><style:table-column-properties style:column-width="2.3in"/></style:style><style:style style:name="RuneCell" style:family="table-cell"><style:table-cell-properties fo:border="0.01in solid #d9d7cf" fo:padding="0.05in"/></style:style><style:style style:name="RuneHeaderCell" style:family="table-cell"><style:table-cell-properties fo:border="0.01in solid #d9d7cf" fo:padding="0.05in" fo:background-color="#2a8c69"/><style:text-properties fo:font-weight="bold" fo:color="#ffffff"/></style:style>`;
+  return `<style:default-style style:family="paragraph"><style:paragraph-properties fo:margin-bottom="0.08in"/><style:text-properties style:font-name="Arial" fo:font-size="11pt" fo:color="#17211b"/></style:default-style><style:style style:name="OrbitTitle" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.2in" fo:margin-bottom="0.16in"/><style:text-properties fo:font-size="24pt" fo:font-weight="bold" fo:color="#17211b"/></style:style>${Array.from({ length: 6 }, (_, index) => `<style:style style:name="OrbitHeading${index + 1}" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.16in" fo:margin-bottom="0.08in"/><style:text-properties fo:font-size="${Math.max(13, 22 - index * 2)}pt" fo:font-weight="bold" fo:color="#17211b"/></style:style>`).join("")}<style:style style:name="OrbitQuote" style:family="paragraph"><style:paragraph-properties fo:margin-left="0.25in" fo:border-left="0.03in solid #ff5c35" fo:padding-left="0.12in"/><style:text-properties fo:font-style="italic" fo:color="#627068"/></style:style><style:style style:name="OrbitCodeBlock" style:family="paragraph"><style:paragraph-properties fo:background-color="#f1f3ef" fo:padding="0.08in"/><style:text-properties style:font-name="Courier New" fo:font-size="9.5pt"/></style:style><style:style style:name="OrbitBold" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style><style:style style:name="OrbitItalic" style:family="text"><style:text-properties fo:font-style="italic"/></style:style><style:style style:name="OrbitStrike" style:family="text"><style:text-properties style:text-line-through-style="solid"/></style:style><style:style style:name="OrbitCode" style:family="text"><style:text-properties style:font-name="Courier New" fo:background-color="#f1f3ef"/></style:style><style:style style:name="OrbitTable" style:family="table"><style:table-properties style:width="7.2in" table:align="margins" fo:margin-top="0.08in" fo:margin-bottom="0.14in"/></style:style><style:style style:name="OrbitColumn" style:family="table-column"><style:table-column-properties style:column-width="2.3in"/></style:style><style:style style:name="OrbitCell" style:family="table-cell"><style:table-cell-properties fo:border="0.01in solid #d9d7cf" fo:padding="0.05in"/></style:style><style:style style:name="OrbitHeaderCell" style:family="table-cell"><style:table-cell-properties fo:border="0.01in solid #d9d7cf" fo:padding="0.05in" fo:background-color="#2a8c69"/><style:text-properties fo:font-weight="bold" fo:color="#ffffff"/></style:style>`;
 }
 
 function listStyles() {
@@ -313,11 +313,11 @@ function listStyles() {
     (_, index) =>
       `<text:list-level-style-number text:level="${index + 1}" style:num-format="1" style:num-suffix="."><style:list-level-properties text:space-before="${0.25 + index * 0.2}in" text:min-label-width="0.28in"/></text:list-level-style-number>`,
   ).join("");
-  return `<text:list-style style:name="RuneBullet">${bullets}</text:list-style><text:list-style style:name="RuneNumber">${numbers}</text:list-style>`;
+  return `<text:list-style style:name="OrbitBullet">${bullets}</text:list-style><text:list-style style:name="OrbitNumber">${numbers}</text:list-style>`;
 }
 
 function textStylesXml() {
-  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="RuneImage" style:family="graphic"><style:graphic-properties style:horizontal-pos="center" style:horizontal-rel="paragraph" style:vertical-pos="top" style:vertical-rel="paragraph" style:wrap="none"/></style:style><style:style style:name="RuneImageCaption" style:family="paragraph"><style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.12in"/><style:text-properties fo:font-size="9pt" fo:font-style="italic" fo:color="#627068"/></style:style></office:styles><office:automatic-styles><style:page-layout style:name="RunePage"><style:page-layout-properties fo:page-width="8.27in" fo:page-height="11.69in" style:print-orientation="portrait" fo:margin="0.7in"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RunePage"/></office:master-styles></office:document-styles>`;
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="OrbitImage" style:family="graphic"><style:graphic-properties style:horizontal-pos="center" style:horizontal-rel="paragraph" style:vertical-pos="top" style:vertical-rel="paragraph" style:wrap="none"/></style:style><style:style style:name="OrbitImageCaption" style:family="paragraph"><style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.12in"/><style:text-properties fo:font-size="9pt" fo:font-style="italic" fo:color="#627068"/></style:style></office:styles><office:automatic-styles><style:page-layout style:name="OrbitPage"><style:page-layout-properties fo:page-width="8.27in" fo:page-height="11.69in" style:print-orientation="portrait" fo:margin="0.7in"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Orbit" style:page-layout-name="OrbitPage"/></office:master-styles></office:document-styles>`;
 }
 
 function blockToOdt(
@@ -329,38 +329,38 @@ function blockToOdt(
   images: Map<string, RuneExportImageAsset>,
 ) {
   if (block.type === "heading")
-    return `<text:h text:style-name="${block.level === 1 ? "RuneTitle" : `RuneHeading${Math.min(6, block.level)}`}" text:outline-level="${Math.min(6, block.level)}">${odfInline(block.source, warnings)}</text:h>`;
+    return `<text:h text:style-name="${block.level === 1 ? "OrbitTitle" : `OrbitHeading${Math.min(6, block.level)}`}" text:outline-level="${Math.min(6, block.level)}">${odfInline(block.source, warnings)}</text:h>`;
   if (block.type === "quote")
-    return `<text:p text:style-name="RuneQuote">${odfInline(block.source, warnings)}</text:p>`;
+    return `<text:p text:style-name="OrbitQuote">${odfInline(block.source, warnings)}</text:p>`;
   if (block.type === "list")
-    return `<text:list text:style-name="${block.ordered ? "RuneNumber" : "RuneBullet"}"><text:list-item><text:p>${odfInline(block.source, warnings)}</text:p></text:list-item></text:list>`;
-  if (block.type === "table") return semanticTable(block.rows, warnings, `RuneTable${index + 1}`);
+    return `<text:list text:style-name="${block.ordered ? "OrbitNumber" : "OrbitBullet"}"><text:list-item><text:p>${odfInline(block.source, warnings)}</text:p></text:list-item></text:list>`;
+  if (block.type === "table") return semanticTable(block.rows, warnings, `OrbitTable${index + 1}`);
   if (block.type === "code") {
     warnings.add("Fenced Markdown code was exported as preformatted OpenDocument text.");
-    return `<text:p text:style-name="RuneCodeBlock">${xmlText(block.source).replaceAll("\n", "<text:line-break/>") || " "}</text:p>`;
+    return `<text:p text:style-name="OrbitCodeBlock">${xmlText(block.source).replaceAll("\n", "<text:line-break/>") || " "}</text:p>`;
   }
   const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
   if (imageReference) {
     const asset = images.get(imageReference.id);
     if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
     const path = `Pictures/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`;
-    const alt = imageReference.alt || asset.name || "Rune image";
+    const alt = imageReference.alt || asset.name || "Orbit image";
     const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
-    if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${asset.id}`);
+    if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${asset.id}`);
     const naturalWidth = dimensions.width / 96;
     const naturalHeight = dimensions.height / 96;
     const scale = Math.min(6.2 / naturalWidth, 9 / naturalHeight, 1);
     const width = Math.max(0.01, naturalWidth * scale);
     const height = Math.max(0.01, naturalHeight * scale);
     warnings.add(
-      "Rune local images are embedded as portable, static ODT pictures; the content-hash source reference remains only in canonical Markdown.",
+      "Orbit local images are embedded as portable, static ODT pictures; the content-hash source reference remains only in canonical Markdown.",
     );
-    return `<draw:frame draw:style-name="RuneImage" draw:name="${xmlAttribute(alt)}" text:anchor-type="paragraph" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="${asset.mimeType}"/><svg:title>${xmlText(alt)}</svg:title></draw:frame><text:p text:style-name="RuneImageCaption">${xmlText(alt)}</text:p>`;
+    return `<draw:frame draw:style-name="OrbitImage" draw:name="${xmlAttribute(alt)}" text:anchor-type="paragraph" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="${asset.mimeType}"/><svg:title>${xmlText(alt)}</svg:title></draw:frame><text:p text:style-name="OrbitImageCaption">${xmlText(alt)}</text:p>`;
   }
   const chartId = block.source.match(EXACT_CHART_TOKEN)?.[1];
   if (chartId) {
     const chart = resolveOdfChart(chartId, workspace, snapshots, warnings);
-    if (chart) return odfChart(chart, warnings, `RuneChart${index + 1}`);
+    if (chart) return odfChart(chart, warnings, `OrbitChart${index + 1}`);
   }
   return `<text:p>${odfInline(block.source, warnings)}</text:p>`;
 }
@@ -382,9 +382,9 @@ function exportOdt(
       : [],
   );
   const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
-  if (inlineImage) throw new Error("Place each Rune local image on its own Markdown line before ODT export.");
+  if (inlineImage) throw new Error("Place each Orbit local image on its own Markdown line before ODT export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Document: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Document: ${unexpectedImage.id}`);
   if (blocks.length > MAX_ODT_BLOCKS) throw new Error("ODT export is limited to 10,000 semantic blocks.");
   const body =
     blocks.map((block, index) => blockToOdt(block, index, warnings, workspace, snapshots, images)).join("") ||
@@ -425,7 +425,7 @@ function exportOds(artifact: WorkspaceArtifact): OdfExportResult {
   if ((parsed.rows.length + 1) * parsed.columns.length > 50_000)
     throw new Error("ODS export is limited to 50,000 cells.");
   const title = safeExportBaseName(artifact.name);
-  const sheetName = title.replace(/[:\\/?*\[\]]/gu, "-").slice(0, 80) || "Rune data";
+  const sheetName = title.replace(/[:\\/?*\[\]]/gu, "-").slice(0, 80) || "Orbit data";
   const rows: DataCell[][] = [
     parsed.columns,
     ...parsed.rows.map((row) => parsed.columns.map((column) => row[column] ?? null)),
@@ -433,10 +433,10 @@ function exportOds(artifact: WorkspaceArtifact): OdfExportResult {
   const rowsXml = rows
     .map(
       (row, rowIndex) =>
-        `<table:table-row>${row.map((value) => odsCell(value, rowIndex === 0 ? "RuneHeaderCell" : "RuneCell")).join("")}</table:table-row>`,
+        `<table:table-row>${row.map((value) => odsCell(value, rowIndex === 0 ? "OrbitHeaderCell" : "OrbitCell")).join("")}</table:table-row>`,
     )
     .join("");
-  const columnsXml = `<table:table-column table:style-name="RuneColumn" table:number-columns-repeated="${parsed.columns.length}"/>`;
+  const columnsXml = `<table:table-column table:style-name="OrbitColumn" table:number-columns-repeated="${parsed.columns.length}"/>`;
   const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="${xmlAttribute(sheetName)}">${columnsXml}${rowsXml}</table:table></office:spreadsheet></office:body></office:document-content>`;
   const warnings = [
     "ODS export contains typed values only; formulas, charts, comments, filters, and source formatting are not generated.",
@@ -508,11 +508,11 @@ function deckSlideModel(
 function odpTextFrame(model: OdpSlideModel) {
   const paragraphs: string[] = [];
   if (model.eyebrow)
-    paragraphs.push(`<text:p text:style-name="RuneEyebrow">${xmlText(model.eyebrow.toUpperCase())}</text:p>`);
+    paragraphs.push(`<text:p text:style-name="OrbitEyebrow">${xmlText(model.eyebrow.toUpperCase())}</text:p>`);
   let listOpen = false;
   model.paragraphs.forEach((paragraph) => {
     if (paragraph.bullet && !listOpen) {
-      paragraphs.push('<text:list text:style-name="RuneBullet">');
+      paragraphs.push('<text:list text:style-name="OrbitBullet">');
       listOpen = true;
     } else if (!paragraph.bullet && listOpen) {
       paragraphs.push("</text:list>");
@@ -524,7 +524,7 @@ function odpTextFrame(model: OdpSlideModel) {
       );
     else
       paragraphs.push(
-        `<text:p${paragraph.strong ? ' text:style-name="RuneSlideHeading"' : ""}>${xmlText(paragraph.text)}</text:p>`,
+        `<text:p${paragraph.strong ? ' text:style-name="OrbitSlideHeading"' : ""}>${xmlText(paragraph.text)}</text:p>`,
       );
   });
   if (listOpen) paragraphs.push("</text:list>");
@@ -533,15 +533,15 @@ function odpTextFrame(model: OdpSlideModel) {
   );
   model.charts.forEach((chart, index) =>
     paragraphs.push(
-      `<text:h text:outline-level="3">${xmlText(chart.spec.title)}</text:h>${chart.spec.description ? `<text:p text:style-name="RuneQuote">${xmlText(chart.spec.description)}</text:p>` : ""}${semanticTable(chartRows(chart), new Set<string>(), `SlideChart${index + 1}`)}`,
+      `<text:h text:outline-level="3">${xmlText(chart.spec.title)}</text:h>${chart.spec.description ? `<text:p text:style-name="OrbitQuote">${xmlText(chart.spec.description)}</text:p>` : ""}${semanticTable(chartRows(chart), new Set<string>(), `SlideChart${index + 1}`)}`,
     ),
   );
-  return `<draw:frame draw:style-name="RuneContentFrame" presentation:class="outline" svg:x="0.8in" svg:y="1.75in" svg:width="${model.image ? "5.25in" : "11.73in"}" svg:height="5.2in"><draw:text-box>${paragraphs.join("") || "<text:p/>"}</draw:text-box></draw:frame>`;
+  return `<draw:frame draw:style-name="OrbitContentFrame" presentation:class="outline" svg:x="0.8in" svg:y="1.75in" svg:width="${model.image ? "5.25in" : "11.73in"}" svg:height="5.2in"><draw:text-box>${paragraphs.join("") || "<text:p/>"}</draw:text-box></draw:frame>`;
 }
 
 function odpImageFrame(image: OdpSlideImage) {
   const dimensions = runeImageDimensions(image.asset.bytes, image.asset.mimeType);
-  if (!dimensions) throw new Error(`Rune export image dimensions are invalid: ${image.asset.id}`);
+  if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${image.asset.id}`);
   const box = { x: 6.55, y: 1.55, width: 5.95, height: 4.95 };
   const scale = Math.min(box.width / dimensions.width, box.height / dimensions.height);
   const width = dimensions.width * scale;
@@ -549,11 +549,11 @@ function odpImageFrame(image: OdpSlideImage) {
   const x = box.x + (box.width - width) / 2;
   const y = box.y + (box.height - height) / 2;
   const path = `Pictures/rune-${image.asset.id}.${runeImageExtension(image.asset.mimeType)}`;
-  return `<draw:frame draw:style-name="RuneImageFrame" draw:name="${xmlAttribute(image.reference.alt || image.asset.name || "Rune image")}" svg:x="${x.toFixed(4)}in" svg:y="${y.toFixed(4)}in" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame>`;
+  return `<draw:frame draw:style-name="OrbitImageFrame" draw:name="${xmlAttribute(image.reference.alt || image.asset.name || "Orbit image")}" svg:x="${x.toFixed(4)}in" svg:y="${y.toFixed(4)}in" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame>`;
 }
 
 function presentationStylesXml() {
-  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="RuneSlideTitle" style:family="paragraph"><style:text-properties fo:font-size="26pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneSlideHeading" style:family="paragraph"><style:text-properties fo:font-size="16pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="RuneEyebrow" style:family="paragraph"><style:text-properties fo:font-size="10pt" fo:font-weight="bold" fo:color="#ff5c35"/></style:style><style:presentation-page-layout style:name="RuneSlide"><presentation:placeholder presentation:object="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"/><presentation:placeholder presentation:object="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"/></style:presentation-page-layout></office:styles><office:automatic-styles><style:page-layout style:name="RuneSlideLayout"><style:page-layout-properties fo:page-width="13.333in" fo:page-height="7.5in" style:print-orientation="landscape" fo:margin="0in"/></style:page-layout><style:style style:name="RunePage" style:family="drawing-page"><style:drawing-page-properties draw:fill="solid" draw:fill-color="#fbfaf6" presentation:background-visible="true"/></style:style><style:style style:name="RuneTitleFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style><style:style style:name="RuneContentFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none" fo:padding="0.04in"/></style:style><style:style style:name="RuneImageFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style></office:automatic-styles><office:master-styles><style:master-page style:name="Rune" style:page-layout-name="RuneSlideLayout" draw:style-name="RunePage"/></office:master-styles></office:document-styles>`;
+  return `${XML_DECLARATION}<office:document-styles ${namespaces()} office:version="${ODF_VERSION}"><office:styles>${commonStyles()}${listStyles()}<style:style style:name="OrbitSlideTitle" style:family="paragraph"><style:text-properties fo:font-size="26pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="OrbitSlideHeading" style:family="paragraph"><style:text-properties fo:font-size="16pt" fo:font-weight="bold" fo:color="#17211b"/></style:style><style:style style:name="OrbitEyebrow" style:family="paragraph"><style:text-properties fo:font-size="10pt" fo:font-weight="bold" fo:color="#ff5c35"/></style:style><style:presentation-page-layout style:name="OrbitSlide"><presentation:placeholder presentation:object="title" svg:x="0.8in" svg:y="0.55in" svg:width="11.73in" svg:height="1.05in"/><presentation:placeholder presentation:object="outline" svg:x="0.8in" svg:y="1.75in" svg:width="11.73in" svg:height="5.2in"/></style:presentation-page-layout></office:styles><office:automatic-styles><style:page-layout style:name="OrbitSlideLayout"><style:page-layout-properties fo:page-width="13.333in" fo:page-height="7.5in" style:print-orientation="landscape" fo:margin="0in"/></style:page-layout><style:style style:name="OrbitPage" style:family="drawing-page"><style:drawing-page-properties draw:fill="solid" draw:fill-color="#fbfaf6" presentation:background-visible="true"/></style:style><style:style style:name="OrbitTitleFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style><style:style style:name="OrbitContentFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none" fo:padding="0.04in"/></style:style><style:style style:name="OrbitImageFrame" style:family="graphic"><style:graphic-properties draw:stroke="none" draw:fill="none"/></style:style></office:automatic-styles><office:master-styles><style:master-page style:name="Orbit" style:page-layout-name="OrbitSlideLayout" draw:style-name="OrbitPage"/></office:master-styles></office:document-styles>`;
 }
 
 function exportOdp(
@@ -570,7 +570,7 @@ function exportOdp(
   const missingImage = referencedImageIds.find((id) => !images.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
-  if (unexpectedImage) throw new Error(`Rune export image is not referenced by this Deck: ${unexpectedImage.id}`);
+  if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Deck: ${unexpectedImage.id}`);
   const models = parsed.deck.slides.map((slide, index) =>
     deckSlideModel(slide, warnings, workspace, snapshots, index, images),
   );
@@ -580,11 +580,11 @@ function exportOdp(
     );
   if (models.some((model) => model.charts.length))
     warnings.add(
-      "Live Rune charts are exported as selectable current-data tables in ODP; the live binding and chart geometry are not retained.",
+      "Live Orbit charts are exported as selectable current-data tables in ODP; the live binding and chart geometry are not retained.",
     );
   if (models.some((model) => model.image))
     warnings.add(
-      "Rune local images are embedded as portable, static ODP media; content-hash references remain only in canonical Deck Markdown.",
+      "Orbit local images are embedded as portable, static ODP media; content-hash references remain only in canonical Deck Markdown.",
     );
   warnings.add(
     "ODP export preserves slide order, text, bullets, tables, local images, and current chart values; animation, speaker notes, and exact master styling are not generated.",
@@ -592,7 +592,7 @@ function exportOdp(
   const pages = models
     .map(
       (model, index) =>
-        `<draw:page draw:name="Slide ${index + 1}" draw:style-name="RunePage" draw:master-page-name="Rune" presentation:presentation-page-layout-name="RuneSlide"><draw:frame draw:style-name="RuneTitleFrame" presentation:class="title" svg:x="0.8in" svg:y="0.55in" svg:width="${model.image ? "5.25in" : "11.73in"}" svg:height="1.05in"><draw:text-box><text:p text:style-name="RuneSlideTitle">${xmlText(model.title)}</text:p></draw:text-box></draw:frame>${odpTextFrame(model)}${model.image ? odpImageFrame(model.image) : ""}</draw:page>`,
+        `<draw:page draw:name="Slide ${index + 1}" draw:style-name="OrbitPage" draw:master-page-name="Orbit" presentation:presentation-page-layout-name="OrbitSlide"><draw:frame draw:style-name="OrbitTitleFrame" presentation:class="title" svg:x="0.8in" svg:y="0.55in" svg:width="${model.image ? "5.25in" : "11.73in"}" svg:height="1.05in"><draw:text-box><text:p text:style-name="OrbitSlideTitle">${xmlText(model.title)}</text:p></draw:text-box></draw:frame>${odpTextFrame(model)}${model.image ? odpImageFrame(model.image) : ""}</draw:page>`,
     )
     .join("");
   const content = `${XML_DECLARATION}<office:document-content ${namespaces()} office:version="${ODF_VERSION}"><office:automatic-styles/><office:body><office:presentation>${pages}</office:presentation></office:body></office:document-content>`;

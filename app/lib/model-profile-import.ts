@@ -264,7 +264,7 @@ function parseCcSwitchLink(input: string) {
   try {
     url = new URL(input);
   } catch {
-    fail("unsupported-link", "Use a Rune JSON object or a ccswitch://v1/import provider link.");
+    fail("unsupported-link", "Use a Orbit JSON object or a ccswitch://v1/import provider link.");
   }
   if (url.protocol !== "ccswitch:" || url.hostname !== "v1" || url.pathname !== "/import") {
     fail("unsupported-link", "Only ccswitch://v1/import provider links are supported.");

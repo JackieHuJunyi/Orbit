@@ -87,7 +87,7 @@ test("converts a mixed readable-source batch in input order through the shared p
 
 test("fails closed for an unsupported source instead of inventing a canonical artifact", async () => {
   await assert.rejects(
-    () => convertWorkspaceImportFiles([sourceFile("archive.bin", "not a readable Rune source")]),
+    () => convertWorkspaceImportFiles([sourceFile("archive.bin", "not a readable Orbit source")]),
     /choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP/i,
   );
 });

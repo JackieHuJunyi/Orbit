@@ -338,7 +338,7 @@ export function normalizeModelProfileDraft(
   }
   const apiKey = suppliedKey || existing?.apiKey || "";
   if (!apiKey && preset.requiresCredential) {
-    throw new Error("Enter an API key. Rune will clear the field after saving it.");
+    throw new Error("Enter an API key. Orbit will clear the field after saving it.");
   }
   const requestedId = cleanText(draft.id, 80);
   if (requestedId && requestedId !== existing?.id) throw new Error("The model profile identity is stale.");

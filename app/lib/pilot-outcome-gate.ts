@@ -224,7 +224,7 @@ function mark(value: boolean) {
 }
 
 export function renderPilotOutcomeGateMarkdown(report: PilotOutcomeReport) {
-  return `# Rune P2 outcome gate
+  return `# Orbit P2 outcome gate
 
 > ${report.gates.passed ? "PASS" : "OPEN"}. This report summarizes asserted, externally evidenced real-task records. It does not turn synthetic fixtures into user evidence.
 

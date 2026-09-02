@@ -449,7 +449,7 @@ export async function recordRuneTaskDelivery(input: {
     evidence.runs,
   );
   const recorded = deliveries.find((delivery) => delivery.id === outcome.id);
-  if (!recorded) throw new Error("The delivery confirmation is outside Rune's bounded device record.");
+  if (!recorded) throw new Error("The delivery confirmation is outside Orbit's bounded device record.");
   return { ...evidence, deliveries };
 }
 

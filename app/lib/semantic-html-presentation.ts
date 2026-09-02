@@ -83,7 +83,7 @@ export function semanticHtmlPresentationFromDeckSource(deckSource: string): Sema
       errors: Object.freeze(
         compilation.errors.length
           ? [...compilation.errors]
-          : ["Rune could not compile the presentation as semantic HTML."],
+          : ["Orbit could not compile the presentation as semantic HTML."],
       ),
     });
   }
@@ -91,7 +91,7 @@ export function semanticHtmlPresentationFromDeckSource(deckSource: string): Sema
   if (html.errors.length || !semanticHtmlPresentationMetadata(compilation.html)) {
     return Object.freeze({
       errors: Object.freeze(
-        html.errors.length ? [...html.errors] : ["Rune could not prove the generated semantic HTML presentation."],
+        html.errors.length ? [...html.errors] : ["Orbit could not prove the generated semantic HTML presentation."],
       ),
     });
   }
@@ -188,7 +188,7 @@ function validateSemanticSlideMutation(source: string, expectedSlideCount: numbe
   if (next.errors.length || next.slides.length !== expectedSlideCount) {
     return Object.freeze({
       errors: Object.freeze(
-        next.errors.length ? [...next.errors] : ["Rune could not prove the changed semantic HTML presentation."],
+        next.errors.length ? [...next.errors] : ["Orbit could not prove the changed semantic HTML presentation."],
       ),
     });
   }
@@ -198,7 +198,7 @@ function validateSemanticSlideMutation(source: string, expectedSlideCount: numbe
 function semanticSlideIndex(source: string, index: number) {
   const current = rootAttributes(source);
   if (!current?.compilation.root) {
-    return { errors: ["Rune could not prove the semantic HTML presentation root."] };
+    return { errors: ["Orbit could not prove the semantic HTML presentation root."] };
   }
   if (!Number.isInteger(index) || index < 0 || index >= current.compilation.slides.length) {
     return { errors: [`Semantic HTML slide index is outside the current presentation: ${index}`] };
@@ -244,7 +244,7 @@ export function insertSemanticHtmlPresentationSlideAfter(
 export function appendSemanticHtmlPresentationSlide(source: string, section: string): SemanticHtmlSourceResult {
   const current = rootAttributes(source);
   if (!current?.compilation.root) {
-    return Object.freeze({ errors: Object.freeze(["Rune could not prove the semantic HTML presentation root."]) });
+    return Object.freeze({ errors: Object.freeze(["Orbit could not prove the semantic HTML presentation root."]) });
   }
   const candidate = validSemanticSection(section);
   if (!candidate.section) return Object.freeze({ errors: Object.freeze(candidate.errors) });

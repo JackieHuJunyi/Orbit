@@ -35,10 +35,10 @@ function generatedBundle(
 ): TegakiBundle {
   return {
     version: base.version,
-    family: `Rune ${input.family}`,
+    family: `Orbit ${input.family}`,
     lineCap: "round",
     fontUrl: base.fontUrl,
-    fontFaceCSS: `@font-face { font-family: 'Rune ${input.family}'; src: url(${base.fontUrl}); }`,
+    fontFaceCSS: `@font-face { font-family: 'Orbit ${input.family}'; src: url(${base.fontUrl}); }`,
     unitsPerEm: 1_000,
     ascender: input.ascender,
     descender: input.descender,

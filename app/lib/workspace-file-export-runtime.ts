@@ -47,7 +47,7 @@ async function convertCanonicalSource(context: WorkspaceFileExportContext): Prom
     throw new Error("Canonical source export is limited to 12 MB.");
   }
   const warnings = [
-    "This download preserves Rune's exact readable canonical source; live bindings remain source expressions rather than frozen values.",
+    "This download preserves Orbit's exact readable canonical source; live bindings remain source expressions rather than frozen values.",
   ];
   const assetCount = new Set(extractRuneAssetIds(context.artifact.source)).size;
   if (assetCount) {
@@ -60,12 +60,12 @@ async function convertCanonicalSource(context: WorkspaceFileExportContext): Prom
       "Exact Data source is not normalized or spreadsheet-formula escaped; choose the separate portable CSV or JSON handoff when preparing data for another application.",
     );
   } else if (context.artifact.kind === "query") {
-    warnings.push("SQL source expects Rune's workspace_data relation and is not a self-contained database.");
+    warnings.push("SQL source expects Orbit's workspace_data relation and is not a self-contained database.");
   } else if (context.artifact.kind === "chart") {
     warnings.push("Chart JSON retains its exact source artifact id and fields; it is not a frozen chart image.");
   } else if (context.artifact.kind === "slides" && context.capability.targetType === "html") {
     warnings.push(
-      "Canonical presentation HTML may retain Rune bindings and local asset references; choose Standalone HTML for a frozen self-contained handoff.",
+      "Canonical presentation HTML may retain Orbit bindings and local asset references; choose Standalone HTML for a frozen self-contained handoff.",
     );
   }
   return {
@@ -104,7 +104,7 @@ async function convertLegacyOffice(context: WorkspaceFileExportContext) {
     warnings: [
       ...modernResult.warnings,
       legacy.warning,
-      "Legacy Office output is a compatibility handoff, not Rune's canonical source. Verify the downloaded file in Microsoft Office before delivery.",
+      "Legacy Office output is a compatibility handoff, not Orbit's canonical source. Verify the downloaded file in Microsoft Office before delivery.",
     ],
   };
 }

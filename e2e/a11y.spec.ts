@@ -8,7 +8,7 @@ async function settleDefaultWorkspaceRuntime(page: Page) {
 
 test("fresh-user onboarding has no critical accessibility violations", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("dialog", { name: "Choose your Rune language" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Choose your Orbit language" })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).analyze();
   const critical = results.violations.filter((violation) => violation.impact === "critical");

@@ -38,7 +38,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "Image description for assistive technology",
     altHint: "Used as alternative text and required for accessible content.",
     sourceAddition: "Canonical source addition",
-    sourceContract: "Rune stores a content-hash reference in canonical source, never base64 image data.",
+    sourceContract: "Orbit stores a content-hash reference in canonical source, never base64 image data.",
   },
   "zh-CN": {
     kicker: "本机资源",
@@ -53,7 +53,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "供辅助技术使用的图片说明",
     altHint: "将用作替代文本，是无障碍内容的必需信息。",
     sourceAddition: "规范源内容新增",
-    sourceContract: "Rune 只在规范源内容中保存内容哈希引用，不保存 base64 图片数据。",
+    sourceContract: "Orbit 只在规范源内容中保存内容哈希引用，不保存 base64 图片数据。",
   },
   "zh-TW": {
     kicker: "本機資源",
@@ -68,7 +68,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "供輔助技術使用的圖片說明",
     altHint: "將用作替代文字，是無障礙內容的必要資訊。",
     sourceAddition: "規範來源內容新增",
-    sourceContract: "Rune 只在規範來源中儲存內容雜湊參照，不儲存 base64 圖片資料。",
+    sourceContract: "Orbit 只在規範來源中儲存內容雜湊參照，不儲存 base64 圖片資料。",
   },
   fr: {
     kicker: "Ressource sur l’appareil",
@@ -84,7 +84,7 @@ const LOCAL_IMAGE_COPY: Record<
     altHint: "Utilisée comme texte alternatif, requis pour un contenu accessible.",
     sourceAddition: "Ajout à la source canonique",
     sourceContract:
-      "Rune stocke dans la source canonique une référence par empreinte de contenu, jamais les données de l’image en base64.",
+      "Orbit stocke dans la source canonique une référence par empreinte de contenu, jamais les données de l’image en base64.",
   },
   es: {
     kicker: "Recurso del dispositivo",
@@ -100,7 +100,7 @@ const LOCAL_IMAGE_COPY: Record<
     altHint: "Se usa como texto alternativo y es obligatorio para contenido accesible.",
     sourceAddition: "Adición a la fuente canónica",
     sourceContract:
-      "Rune guarda en la fuente canónica una referencia por hash de contenido, nunca los datos de imagen en base64.",
+      "Orbit guarda en la fuente canónica una referencia por hash de contenido, nunca los datos de imagen en base64.",
   },
   ru: {
     kicker: "Ресурс на устройстве",
@@ -115,7 +115,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "Описание изображения для вспомогательных технологий",
     altHint: "Используется как альтернативный текст и обязательно для доступного содержимого.",
     sourceAddition: "Добавление в канонический исходник",
-    sourceContract: "Rune хранит в каноническом исходнике ссылку по хэшу, а не данные изображения в base64.",
+    sourceContract: "Orbit хранит в каноническом исходнике ссылку по хэшу, а не данные изображения в base64.",
   },
   ar: {
     kicker: "مورد على الجهاز",
@@ -130,7 +130,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "وصف الصورة للتقنيات المساعدة",
     altHint: "يُستخدم كنص بديل وهو مطلوب لإتاحة المحتوى.",
     sourceAddition: "إضافة إلى المصدر المعياري",
-    sourceContract: "يخزّن Rune في المصدر المعياري مرجعًا ببصمة المحتوى، ولا يخزّن بيانات الصورة بصيغة base64.",
+    sourceContract: "يخزّن Orbit في المصدر المعياري مرجعًا ببصمة المحتوى، ولا يخزّن بيانات الصورة بصيغة base64.",
   },
   ja: {
     kicker: "デバイス内アセット",
@@ -145,7 +145,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "支援技術向けの画像説明",
     altHint: "代替テキストとして使用され、アクセシブルなコンテンツに必須です。",
     sourceAddition: "正規ソースへの追加",
-    sourceContract: "Rune は正規ソースにコンテンツハッシュ参照だけを保存し、base64 画像データは保存しません。",
+    sourceContract: "Orbit は正規ソースにコンテンツハッシュ参照だけを保存し、base64 画像データは保存しません。",
   },
   ko: {
     kicker: "기기 내 자산",
@@ -160,7 +160,7 @@ const LOCAL_IMAGE_COPY: Record<
     imageDescriptionAria: "보조 기술용 이미지 설명",
     altHint: "대체 텍스트로 사용되며 접근 가능한 콘텐츠에 필수입니다.",
     sourceAddition: "정규 소스 추가",
-    sourceContract: "Rune은 정규 소스에 콘텐츠 해시 참조만 저장하며 base64 이미지 데이터는 저장하지 않습니다.",
+    sourceContract: "Orbit은 정규 소스에 콘텐츠 해시 참조만 저장하며 base64 이미지 데이터는 저장하지 않습니다.",
   },
 };
 

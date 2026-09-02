@@ -46,7 +46,7 @@ test("loads low-frequency Workbench surfaces through typed lazy boundaries", asy
   assert.doesNotMatch(welcome, /from "\.\/model-profile-manager"/);
 });
 
-test("keeps deferred-surface copy pure, local, and complete for every Rune locale", async () => {
+test("keeps deferred-surface copy pure, local, and complete for every Orbit locale", async () => {
   const source = await readFile(new URL("../app/lib/workbench-surface-copy.ts", import.meta.url), "utf8");
 
   assert.doesNotMatch(source, /from\s+"react"|\.\.\/components|localStorage|indexedDB|fetch\(|WorkspaceArtifact/);

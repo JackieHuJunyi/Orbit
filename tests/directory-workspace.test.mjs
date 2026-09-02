@@ -51,7 +51,7 @@ class MemoryFileHandle {
 class MemoryDirectory {
   kind = "directory";
 
-  constructor(name = "Rune workspace", initial = {}) {
+  constructor(name = "Orbit workspace", initial = {}) {
     this.name = name;
     this.files = new Map(Object.entries(initial));
     this.directories = new Map();

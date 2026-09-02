@@ -42,7 +42,7 @@ export const PILOT_EVIDENCE_NOTICE_BASE_COPY = {
     menuBody: "匿名 JSON · 审核后下载 · 零上传",
     menuEmpty: "完成一次引导任务后可用",
     reviewNotice: "请在下载到本机前审核匿名任务记录",
-    prepareError: "Rune 无法准备试点证据。",
+    prepareError: "Orbit 无法准备试点证据。",
     cancelNotice: "已取消试点证据导出 — 未下载任何文件",
     changedError: "审核期间任务证据已变化。请取消并重新准备导出。",
     changedNotice: "试点证据仍在等待审核 — 本机记录已变化",
@@ -53,7 +53,7 @@ export const PILOT_EVIDENCE_NOTICE_BASE_COPY = {
     menuBody: "Anonymous JSON · review first · zero upload",
     menuEmpty: "Available after one guided task",
     reviewNotice: "Review the anonymous task records before local download",
-    prepareError: "Rune could not prepare pilot evidence.",
+    prepareError: "Orbit could not prepare pilot evidence.",
     cancelNotice: "Pilot evidence export cancelled — nothing was downloaded",
     changedError: "Task evidence changed while this file was under review. Cancel and prepare a fresh export.",
     changedNotice: "Pilot evidence held for review — device records changed",
@@ -83,15 +83,15 @@ const LOCAL_IMAGE_ACTION_COPY: Record<RuneLocale, { insertLocal: string; insertL
 };
 
 const DEFERRED_SURFACE_COPY: Record<RuneLocale, { preparing: string }> = {
-  en: { preparing: "Preparing Rune…" },
-  "zh-CN": { preparing: "Rune 正在准备…" },
-  "zh-TW": { preparing: "Rune 正在準備…" },
-  fr: { preparing: "Préparation de Rune…" },
-  es: { preparing: "Preparando Rune…" },
-  ru: { preparing: "Rune готовится…" },
-  ar: { preparing: "جارٍ تجهيز Rune…" },
-  ja: { preparing: "Rune を準備しています…" },
-  ko: { preparing: "Rune 준비 중…" },
+  en: { preparing: "Preparing Orbit…" },
+  "zh-CN": { preparing: "Orbit 正在准备…" },
+  "zh-TW": { preparing: "Orbit 正在準備…" },
+  fr: { preparing: "Préparation de Orbit…" },
+  es: { preparing: "Preparando Orbit…" },
+  ru: { preparing: "Orbit готовится…" },
+  ar: { preparing: "جارٍ تجهيز Orbit…" },
+  ja: { preparing: "Orbit を準備しています…" },
+  ko: { preparing: "Orbit 준비 중…" },
 };
 
 export function operatingReviewNoticeCopy(locale: RuneLocale) {

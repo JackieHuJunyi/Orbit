@@ -17,7 +17,7 @@ export const EMPTY_WORKSPACE_BASE_COPY = {
   "zh-CN": {
     eyebrow: "从真实结果开始",
     title: "把数据变成可核验的汇报。",
-    body: "导入 PDF、DOC、DOCX、MD、PPT、HTML、CSV、JSON、XLSX，或 ODS。Rune 会先审核可追溯转换结果，再带你确认字段、口径、图表和交付物。",
+    body: "导入 PDF、DOC、DOCX、MD、PPT、HTML、CSV、JSON、XLSX，或 ODS。Orbit 会先审核可追溯转换结果，再带你确认字段、口径、图表和交付物。",
     startReview: "创建经营汇报",
     startReviewBody: "导入数据后，直接进入字段映射和成品设置",
     startBriefing: "从文档创建演示",
@@ -33,7 +33,7 @@ export const EMPTY_WORKSPACE_BASE_COPY = {
   en: {
     eyebrow: "Start with a real outcome",
     title: "Turn data into a verifiable review.",
-    body: "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.",
+    body: "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.",
     startReview: "Create operating review",
     startReviewBody: "Import data, then continue directly to mapping and output setup",
     startBriefing: "Create presentation from document",

@@ -106,7 +106,7 @@ async function convertSource(file: File): Promise<WorkspaceFileConversion> {
   const artifact = detectArtifact(file.name, await file.text());
   if (!artifact) {
     throw new Error(
-      `${file.name}: choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP. Legacy DOC/PPT requires Rune Desktop.`,
+      `${file.name}: choose Markdown, CSV, JSON, SQL, Deck Markdown, HTML, PDF, DOCX, XLSX, PPTX, ODT, ODS, or ODP. Legacy DOC/PPT requires Orbit Desktop.`,
     );
   }
   return { artifacts: [artifact], assets: [], warnings: [] };

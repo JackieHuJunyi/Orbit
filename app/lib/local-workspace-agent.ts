@@ -71,14 +71,14 @@ function contextualSource(artifact: WorkspaceArtifact, existing: WorkspaceArtifa
         <p class="eyebrow">Workspace context</p><div class="slide-body"><h2>Canonical source map</h2><ul>${items}</ul></div>
       </section>`,
     );
-    if (!context.source) throw new Error(context.errors[0] ?? "Rune could not append semantic HTML context.");
+    if (!context.source) throw new Error(context.errors[0] ?? "Orbit could not append semantic HTML context.");
     const next = appendSemanticHtmlPresentationSlide(
       context.source,
       `<section class="slide conclusion" data-layout="conclusion" data-eyebrow="Next step">
         <p class="eyebrow">Next step</p><div class="slide-body"><h2>Review-ready starting point</h2><p>Use the canonical files above to refine this narrative without copying hidden state.</p></div>
       </section>`,
     );
-    if (!next.source) throw new Error(next.errors[0] ?? "Rune could not append the semantic HTML next step.");
+    if (!next.source) throw new Error(next.errors[0] ?? "Orbit could not append the semantic HTML next step.");
     return next.source;
   }
   return `${artifact.source.trimEnd()}
@@ -165,7 +165,7 @@ function planLocalAnalysisWorkflow(
     sourceArtifactId: dataSource.artifactId,
   });
   if (!queryPrepared.artifact || queryPrepared.errors.length) {
-    throw new Error(queryPrepared.errors[0] ?? "Rune could not prepare the workflow Query.");
+    throw new Error(queryPrepared.errors[0] ?? "Orbit could not prepare the workflow Query.");
   }
   const query = queryPrepared.artifact;
   let workingArtifacts = [...artifacts, query];
@@ -181,7 +181,7 @@ function planLocalAnalysisWorkflow(
     ...fields,
   });
   if (!chartPrepared.artifact || chartPrepared.errors.length) {
-    throw new Error(chartPrepared.errors[0] ?? "Rune could not prepare the workflow Chart.");
+    throw new Error(chartPrepared.errors[0] ?? "Orbit could not prepare the workflow Chart.");
   }
   const chart = chartPrepared.artifact;
   workingArtifacts = [...workingArtifacts, chart];
@@ -189,7 +189,7 @@ function planLocalAnalysisWorkflow(
     {
       artifact: query,
       summary: `Create ${query.name} from ${dataSource.name}`,
-      detail: "The Query uses an exact Rune-owned Data binding and remains readable DuckDB SQL.",
+      detail: "The Query uses an exact Orbit-owned Data binding and remains readable DuckDB SQL.",
     },
     {
       artifact: chart,
@@ -202,7 +202,7 @@ function planLocalAnalysisWorkflow(
     const title = kind === "slides" ? "Workspace Briefing" : "Workspace Report";
     const prepared = prepareArtifactCreation(workingArtifacts, { kind, title });
     if (!prepared.artifact || prepared.errors.length) {
-      throw new Error(prepared.errors[0] ?? `Rune could not prepare the workflow ${kind}.`);
+      throw new Error(prepared.errors[0] ?? `Orbit could not prepare the workflow ${kind}.`);
     }
     const contextual = {
       ...prepared.artifact,
@@ -211,7 +211,7 @@ function planLocalAnalysisWorkflow(
     const candidateArtifacts = [...workingArtifacts, contextual];
     const embedding = prepareChartEmbedding(candidateArtifacts, chart.id, contextual.id);
     if (!embedding.nextSource || embedding.errors.length) {
-      throw new Error(embedding.errors[0] ?? `Rune could not embed the Chart in ${contextual.name}.`);
+      throw new Error(embedding.errors[0] ?? `Orbit could not embed the Chart in ${contextual.name}.`);
     }
     const consumer = { ...contextual, source: embedding.nextSource };
     creations.push({
@@ -227,7 +227,7 @@ function planLocalAnalysisWorkflow(
   return {
     summary: `Create one source-bound analysis workflow across ${creations.length} files`,
     detail:
-      "Rune resolves every generated identity first, validates the complete dependency chain, and holds one atomic workspace transaction for review.",
+      "Orbit resolves every generated identity first, validates the complete dependency chain, and holds one atomic workspace transaction for review.",
     patches: [],
     creations,
   };
@@ -252,7 +252,7 @@ function planLocalCreation(
   const input = localCreationInput(kind, title, contextArtifacts, prompt);
   const prepared = prepareArtifactCreation(artifacts, input);
   if (!prepared.artifact || prepared.errors.length) {
-    throw new Error(prepared.errors[0] ?? "Rune could not prepare that artifact.");
+    throw new Error(prepared.errors[0] ?? "Orbit could not prepare that artifact.");
   }
   const artifact = {
     ...prepared.artifact,
@@ -261,7 +261,7 @@ function planLocalCreation(
   const creation: ArtifactCreationChange = {
     artifact,
     summary: `Create ${artifact.name} from workspace context`,
-    detail: "Rune generated the file identity and a deterministic starter source from visible canonical artifacts.",
+    detail: "Orbit generated the file identity and a deterministic starter source from visible canonical artifacts.",
   };
   const mutation = prepareWorkspaceMutation(artifacts, [], [creation]);
   if (mutation.errors.length) throw new Error(mutation.errors[0]);

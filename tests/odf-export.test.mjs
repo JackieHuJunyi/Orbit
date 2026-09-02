@@ -55,7 +55,7 @@ const runeImageAsset = {
   bytes: onePixelPng,
 };
 
-test("embeds and reimports verified Rune local images through portable ODT pictures", async () => {
+test("embeds and reimports verified Orbit local images through portable ODT pictures", async () => {
   const artifact = {
     id: "image",
     name: "image.md",
@@ -76,7 +76,7 @@ test("embeds and reimports verified Rune local images through portable ODT pictu
   assert.match(imported.warnings.join(" "), /verified local image.*preserved/iu);
 });
 
-test("fails ODT export closed when a referenced Rune image is missing", () => {
+test("fails ODT export closed when a referenced Orbit image is missing", () => {
   const artifact = {
     id: "missing",
     name: "missing.md",
@@ -245,7 +245,7 @@ test("exports semantic HTML slides through an explicit deterministic ODP fidelit
   assert.equal(first.fileName, "semantic-brief.odp");
   assert.equal(first.targetType, "odp");
   assert.deepEqual(first.bytes, second.bytes);
-  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Rune's controlled slide model/iu);
+  assert.match(first.warnings.join(" "), /Semantic HTML is converted to Orbit's controlled slide model/iu);
   const content = strFromU8(packageParts(first.bytes)["content.xml"]);
   assert.match(content, /Opening/u);
   assert.match(content, /Start here/u);

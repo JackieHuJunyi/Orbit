@@ -78,7 +78,7 @@ export function normalizeRuneTaskModelUsage(value: RemoteTaskModelPayload["usage
 }
 
 async function readBoundedTaskModelJson(response: Response): Promise<RemoteTaskModelPayload> {
-  if (!response.body) throw new Error("Rune received an empty task-model response.");
+  if (!response.body) throw new Error("Orbit received an empty task-model response.");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let received = 0;
@@ -88,7 +88,7 @@ async function readBoundedTaskModelJson(response: Response): Promise<RemoteTaskM
     received += value.byteLength;
     if (received > MAX_RUNE_TASK_MODEL_RESPONSE_BYTES) {
       await reader.cancel();
-      throw new Error("Rune received an oversized task-model response.");
+      throw new Error("Orbit received an oversized task-model response.");
     }
     chunks.push(value);
   }
@@ -100,7 +100,7 @@ async function readBoundedTaskModelJson(response: Response): Promise<RemoteTaskM
   }
   const parsed = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Rune received an invalid task-model response.");
+    throw new Error("Orbit received an invalid task-model response.");
   }
   return parsed as RemoteTaskModelPayload;
 }

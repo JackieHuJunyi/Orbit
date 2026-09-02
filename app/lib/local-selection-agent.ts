@@ -80,7 +80,7 @@ export function planLocalSelectionChange(
   const selectionError = sourceSelectionError(artifact.source, selection);
   if (selectionError) throw new Error(selectionError);
   const instruction = prompt.trim();
-  if (!instruction) throw new Error("Describe how Rune should change the selected source.");
+  if (!instruction) throw new Error("Describe how Orbit should change the selected source.");
   const parts = selectedParts(artifact.source, selection);
   if (!parts.core) throw new Error("Select visible source text before using Selection Agent.");
 

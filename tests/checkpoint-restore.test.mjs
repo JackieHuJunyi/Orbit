@@ -150,7 +150,7 @@ test("keeps runtime, drift, and persistence failures outside caller-owned worksp
         persistCalls += 1;
       },
     }),
-    /changed while Rune was verifying/u,
+    /changed while Orbit was verifying/u,
   );
   assert.equal(persistCalls, 0);
   assert.equal(document.source.endsWith("Current revision."), true);

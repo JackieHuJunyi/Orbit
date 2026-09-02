@@ -82,7 +82,7 @@ export async function serializeModelProfileVaultCookie(
   environment: Record<string, string | undefined> = process.env,
 ) {
   const secret = vaultSecret(environment);
-  if (!secret) throw new Error("Rune's encrypted credential vault is not configured on this server.");
+  if (!secret) throw new Error("Orbit's encrypted credential vault is not configured on this server.");
   if (!vault.profiles.length) {
     return `${MODEL_PROFILE_COOKIE}=; Path=/api; HttpOnly; SameSite=Strict; Max-Age=0`;
   }

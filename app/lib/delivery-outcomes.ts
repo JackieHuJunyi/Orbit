@@ -170,7 +170,7 @@ export async function createOperatingReviewDeliveryOutcome(input: {
       deliverableArtifactIds: [input.artifactId],
     },
   );
-  if (!outcome) throw new Error("The delivery confirmation is outside Rune's bounded device record.");
+  if (!outcome) throw new Error("The delivery confirmation is outside Orbit's bounded device record.");
   return outcome;
 }
 

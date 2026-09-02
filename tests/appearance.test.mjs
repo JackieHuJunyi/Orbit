@@ -67,7 +67,7 @@ test("keeps the Space Black accent legible and visibly distinct from its deepest
   assert.match(tokens, /--rune-material-solid:\s*#252c34/);
 });
 
-test("keeps Rune vermilion distinct and supplies real RTL/LTR boundaries", async () => {
+test("keeps Orbit vermilion distinct and supplies real RTL/LTR boundaries", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /--rune-mark:\s*#dc4b36/);
   for (const { id } of RUNE_APPEARANCE_THEMES) assert.match(css, new RegExp(`html\\[data-theme="${id}"\\]`));

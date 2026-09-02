@@ -96,7 +96,7 @@ if (!args[1]) {
   const outputStats = await lstat(outputDirectory);
   if (!outputStats.isDirectory() || outputStats.isSymbolicLink())
     throw new Error("Pilot output must be a regular local directory.");
-  const baseName = `rune-pilot-cohort-${report.compiledOn}`;
+  const baseName = `orbit-pilot-cohort-${report.compiledOn}`;
   const jsonPath = path.join(outputDirectory, `${baseName}.json`);
   const markdownPath = path.join(outputDirectory, `${baseName}.md`);
   const jsonTemporary = `${jsonPath}.tmp-${process.pid}`;

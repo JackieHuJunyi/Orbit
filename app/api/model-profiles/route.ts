@@ -108,7 +108,7 @@ export async function POST(request: Request) {
       if (requestedId && !existing) throw new Error("That model profile no longer exists. Refresh and try again.");
       const profile = normalizeModelProfileDraft(input.profile, existing);
       if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
-        throw new Error("Device model runtimes are available only in the Rune desktop app.");
+        throw new Error("Device model runtimes are available only in the Orbit desktop app.");
       }
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8_000);
@@ -142,11 +142,11 @@ export async function POST(request: Request) {
       const existing = requestedId ? vault.profiles.find((profile) => profile.id === requestedId) : undefined;
       if (requestedId && !existing) throw new Error("That model profile no longer exists. Refresh and try again.");
       if (!existing && vault.profiles.length >= MAX_MODEL_PROFILES) {
-        throw new Error(`Rune supports up to ${MAX_MODEL_PROFILES} personal model profiles in this release.`);
+        throw new Error(`Orbit supports up to ${MAX_MODEL_PROFILES} personal model profiles in this release.`);
       }
       const profile = normalizeModelProfileDraft(input.profile, existing);
       if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
-        throw new Error("Device model runtimes are available only in the Rune desktop app.");
+        throw new Error("Device model runtimes are available only in the Orbit desktop app.");
       }
       const profiles = existing
         ? vault.profiles.map((item) => (item.id === existing.id ? profile : item))
@@ -195,7 +195,7 @@ export async function POST(request: Request) {
     return jsonState(next, await serializeModelProfileVaultCookie(request, next));
   } catch (error) {
     return Response.json(
-      { error: error instanceof Error ? error.message : "Rune could not update that model profile." },
+      { error: error instanceof Error ? error.message : "Orbit could not update that model profile." },
       { status: 400 },
     );
   }

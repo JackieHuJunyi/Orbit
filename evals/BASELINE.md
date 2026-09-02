@@ -1,4 +1,4 @@
-# Rune synthetic Golden Task baseline
+# Orbit synthetic Golden Task baseline
 
 > Evidence grade E1: deterministic regression evidence from synthetic fixtures. This is not user-demand, delivery, retention, or paid validation.
 

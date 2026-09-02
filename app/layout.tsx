@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { RUNE_APPEARANCE_STORAGE_KEY, RUNE_APPEARANCE_THEMES } from "./lib/appearance";
+import { ORBIT_PRODUCT_LOCKUP } from "./lib/product-meta";
 import "./styles/index.css";
 
 const RUNE_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.runeOnboarding=localStorage.getItem("rune-onboarding-v1")==="complete"?"complete":"pending";const theme=localStorage.getItem(${JSON.stringify(RUNE_APPEARANCE_STORAGE_KEY)});if(${JSON.stringify(RUNE_APPEARANCE_THEMES.map(({ id }) => id))}.includes(theme))root.dataset.theme=theme}catch{root.dataset.runeOnboarding="pending"}})();`;
@@ -10,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Rune — Work that traces back to source";
+  const title = `${ORBIT_PRODUCT_LOCKUP} — Work that traces back to source`;
   const description = "Turn business data into traceable reports and decks. Review every AI change before it writes.";
 
   return {
@@ -23,10 +24,10 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: `${origin}/og-v2.jpg`,
+          url: `${origin}/og-orbit.png`,
           width: 1727,
           height: 911,
-          alt: "Rune turns readable sources into traceable work",
+          alt: `${ORBIT_PRODUCT_LOCKUP} turns readable sources into traceable work`,
         },
       ],
     },
@@ -34,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: [`${origin}/og-v2.jpg`],
+      images: [`${origin}/og-orbit.png`],
     },
   };
 }

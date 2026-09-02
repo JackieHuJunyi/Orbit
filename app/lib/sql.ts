@@ -533,7 +533,7 @@ export function validateReadQuery(source: string): string[] {
   const query = normalizeReadQuery(source);
   if (!query) return ["Add a SELECT query to create a live result."];
   if (!/^(select|with)\b/i.test(query)) {
-    return ["Rune runs read-only SELECT or WITH queries in the live preview."];
+    return ["Orbit runs read-only SELECT or WITH queries in the live preview."];
   }
   if (hasStatementSeparator(query)) {
     return ["Run one SQL statement at a time in the live preview."];

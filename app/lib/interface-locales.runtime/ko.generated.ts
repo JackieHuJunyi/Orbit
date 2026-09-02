@@ -3,8 +3,8 @@
 export const INTERFACE_TRANSLATIONS = {
   "- **Charts:** Chart JSON binds to Data or Query so reports and decks share one fact.":
     "- **Charts:** Chart JSON는 데이터 또는 쿼리에 바인딩되므로 보고서와 데크는 하나의 사실을 공유합니다.",
-  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Rune Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.":
-    "- **호환성:** PDF, DOCX, XLSX, PPTX, ODT, ODS 및 ODP 가져오기는 쓰기 전에 의미 변환 제한을 공개합니다. Rune Desktop은 로컬 Word/PowerPoint를 통해 기존 DOC/PPT을(를) 동일한 리뷰로 변환할 수도 있습니다. 스캔된 PDF에는 명시적인 페이지와 영어/중국어 간체 OCR 선택이 필요하며 페이지 수준 신뢰도를 노출합니다.",
+  "- **Compatibility:** PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP imports disclose semantic conversion limits before writing; Orbit Desktop can also convert legacy DOC/PPT through local Word/PowerPoint into the same review; scanned PDFs require explicit page and English/Simplified-Chinese OCR choices, then expose page-level confidence.":
+    "- **호환성:** PDF, DOCX, XLSX, PPTX, ODT, ODS 및 ODP 가져오기는 쓰기 전에 의미 변환 제한을 공개합니다. Orbit Desktop은 로컬 Word/PowerPoint를 통해 기존 DOC/PPT을(를) 동일한 리뷰로 변환할 수도 있습니다. 스캔된 PDF에는 명시적인 페이지와 영어/중국어 간체 OCR 선택이 필요하며 페이지 수준 신뢰도를 노출합니다.",
   "- **Data:** readable CSV / JSON can be analyzed with local DuckDB SQL.":
     "- **데이터:** 읽기 가능한 CSV / JSON은 로컬 DuckDB SQL을(를) 사용하여 분석할 수 있습니다.",
   "- **Documents:** readable Markdown compiles into a document.":
@@ -24,16 +24,16 @@ export const INTERFACE_TRANSLATIONS = {
     "- 기록을 복원하면 먼저 정확한 차이점이 표시됩니다. 확인은 전체 작업 공간을 다시 확인하고 현재 버전을 안전 체크포인트로 유지합니다.",
   "- The Agent sees only files and ranges you deliberately select.":
     "- Agent에는 의도적으로 선택한 파일과 범위만 표시됩니다.",
-  "# Welcome to Rune": "# Rune에 오신 것을 환영합니다.",
+  "# Welcome to Orbit": "# Orbit에 오신 것을 환영합니다.",
   "## Connect a model": "## 모델 연결",
-  "## How Rune works": "## Rune 작동 방식",
+  "## How Orbit works": "## Orbit 작동 방식",
   "## Keyboard shortcuts": "## 키보드 단축키",
   "## Next": "## 다음",
-  "## Rune's trust boundary": "## Rune의 신뢰 경계",
+  "## Orbit's trust boundary": "## Orbit의 신뢰 경계",
   "## Start here": "## 여기서 시작하세요",
   "%": "%",
-  "> Rune is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.":
-    "> Rune은 로컬 우선, 검증 가능한 AI 작업공간입니다. 읽을 수 있는 소스는 진실이며 미리보기는 실시간으로 컴파일됩니다. 승인하기 전에는 Agent에 글을 쓰지 않습니다.",
+  "> Orbit is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.":
+    "> Orbit은 로컬 우선, 검증 가능한 AI 작업공간입니다. 읽을 수 있는 소스는 진실이며 미리보기는 실시간으로 컴파일됩니다. 승인하기 전에는 Agent에 글을 쓰지 않습니다.",
   "| --- | --- | --- |": "| --- | --- | --- |",
   "| Action | macOS | Windows / Linux |": "| 액션 | macOS | Windows / Linux |",
   "| Add a Document draft link | ⌘ K | Ctrl K |": "| 문서 초안 링크 추가 | ⌘ K | Ctrl K |",
@@ -58,10 +58,10 @@ export const INTERFACE_TRANSLATIONS = {
     "4. 문서 제목, 단락, 개별 목록 항목, 표 셀, 굵게/기울임꼴/줄바꿈 텍스트, 인라인 코드, 링크 또는 이미지 또는 데이터 셀, 차트 데이텀 또는 슬라이드를 선택하여 정확한 소스를 찾아 강조 표시합니다. 소스 캐럿을 이동하거나 검증된 범위를 선택하면 일치하는 미리보기 대상이 강조 표시되고 스크롤됩니다. 일반적인 링크 클릭은 소스를 찾습니다. Command/Control을 누른 채 클릭하면 여전히 열립니다.",
   "5. Use the pencil beside a Document section or body block, Data cell, Chart properties, or Deck slide to edit a proven range on the right. The left side mirrors and highlights the complete source draft live; Cancel writes nothing and Save verifies before synchronizing one revision. F2 also edits, while the block's left controls insert, move, or delete only after an exact source-diff review.":
     "5. 문서 섹션이나 본문 블록, 데이터 셀, Chart 속성 또는 Deck 슬라이드 옆에 있는 연필을 사용하여 오른쪽의 검증된 범위를 편집합니다. 왼쪽은 전체 소스 초안을 실시간으로 미러링하고 강조 표시합니다. 취소는 아무것도 쓰지 않으며 저장은 하나의 개정판을 동기화하기 전에 확인합니다. F2는 또한 편집하는 반면 블록의 왼쪽 컨트롤은 정확한 소스 차이 검토 후에만 삽입, 이동 또는 삭제를 제어합니다.",
-  "6. Ask Rune Agent to propose a change. Review the diff and impact before applying it.":
-    "6. 변경을 제안하려면 Rune Agent에 문의하세요. 적용하기 전에 차이점과 영향을 검토하세요.",
-  "A connected folder stays unchanged; Rune writes to it only after an explicit Push workspace files action.":
-    "연결된 폴더는 바뀌지 않습니다. ‘작업공간 파일 쓰기’를 명시적으로 선택한 경우에만 Rune이 기록합니다.",
+  "6. Ask Orbit Agent to propose a change. Review the diff and impact before applying it.":
+    "6. 변경을 제안하려면 Orbit Agent에 문의하세요. 적용하기 전에 차이점과 영향을 검토하세요.",
+  "A connected folder stays unchanged; Orbit writes to it only after an explicit Push workspace files action.":
+    "연결된 폴더는 바뀌지 않습니다. ‘작업공간 파일 쓰기’를 명시적으로 선택한 경우에만 Orbit이 기록합니다.",
   "A custom endpoint must be a public HTTPS API base URL.":
     "사용자 정의 엔드포인트는 공개 HTTPS API 기본 URL이어야 합니다.",
   "A leadership report and slides focused on decisions": "의사결정에 초점을 둔 리더십 보고서와 슬라이드",
@@ -69,12 +69,12 @@ export const INTERFACE_TRANSLATIONS = {
     "중대한 오류, 누락 또는 재작업이 남아 있어 아직 전달할 수 없습니다.",
   "A paragraph, heading, list, quote, code block, table, or divider…":
     "단락, 제목, 목록, 인용문, 코드 블록, 표 또는 구분선…",
-  "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.":
-    "개인 키는 브라우저 스크립트가 다시 읽을 수 없는 HttpOnly 자격 증명으로 암호화됩니다. Rune은 작업공간, localStorage, Artifact 또는 Git에 이를 쓰지 않습니다.",
+  "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Orbit never writes it to the workspace, localStorage, an Artifact, or Git.":
+    "개인 키는 브라우저 스크립트가 다시 읽을 수 없는 HttpOnly 자격 증명으로 암호화됩니다. Orbit은 작업공간, localStorage, Artifact 또는 Git에 이를 쓰지 않습니다.",
   "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.":
     "모든 점수를 입력하고 콘텐츠가 평가용으로 승인되었거나 비식별 처리되었음을 확인해야 표본으로 집계됩니다. 1점은 개선 필요, 5점은 매우 우수함을 뜻합니다.",
-  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Rune can separate technical success from a real deliverable.":
-    "다운로드나 폴더 쓰기가 성공했다고 결과가 유용했다는 뜻은 아닙니다. Rune이 기술적 성공과 실제 결과물을 구분할 수 있도록 가장 가까운 결과를 선택하세요.",
+  "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
+    "다운로드나 폴더 쓰기가 성공했다고 결과가 유용했다는 뜻은 아닙니다. Orbit이 기술적 성공과 실제 결과물을 구분할 수 있도록 가장 가까운 결과를 선택하세요.",
   "A team report focused on the largest change and next owner": "가장 큰 변화와 다음 담당자에 초점을 둔 팀 보고서",
   "Accent color": "악센트 색상",
   Active: "활성",
@@ -97,12 +97,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
     "이 기간을 조정하고 기존 분석, 차트 및 결과물을 다시 컴파일하십시오. 파일 ID는 안정적으로 유지되며 모든 변경 사항을 계속 검토할 수 있습니다.",
   "After sync": "동기화 후",
-  "After this reviewed import, Rune opens the document-presentation setup with this Document already selected.":
-    "검토된 가져오기를 확인하면 Rune이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
-  "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
-    "검토된 가져오기를 확인하면 Rune이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
-  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "확인하면 Rune은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
+  "After this reviewed import, Orbit opens the document-presentation setup with this Document already selected.":
+    "검토된 가져오기를 확인하면 Orbit이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
+  "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
+    "검토된 가져오기를 확인하면 Orbit이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
   Agent: "Agent",
   "Agent change scope": "Agent 변경 범위",
   "Agent composer focused": "Agent 작곡가 중심",
@@ -190,7 +190,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "바인딩 구문을 확인하고 이 작업 공간에 존재하는 지표를 선택하세요.",
   "Check these settings first:": "먼저 다음 설정을 확인하세요.",
-  "Checking connections already saved in Rune…": "Rune에 저장된 연결 확인 중…",
+  "Checking connections already saved in Orbit…": "Orbit에 저장된 연결 확인 중…",
   "Checkpoint history": "체크포인트 내역",
   "Checkpoint restore details": "체크포인트 복원 세부 정보",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
@@ -200,31 +200,31 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose a local file to begin": "시작하려면 로컬 파일을 선택하세요.",
   "Choose a page, then drag over the preview to recognize only that area. Whole page remains the default.":
     "페이지를 고른 뒤 미리보기에서 드래그하면 해당 영역만 인식합니다. 기본값은 전체 페이지입니다.",
-  "Choose a reviewed document, audience, and purpose. Rune can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
-    "검토된 문서, 대상, 목적을 선택하세요. Rune은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
-  "Choose a reviewed document, audience, and purpose. Rune creates editable Deck Markdown and keeps an explicit relationship to the source document.":
-    "검토된 문서, 대상, 목적을 선택하세요. Rune이 편집 가능한 Deck Markdown을 만들고 원본 문서와의 명시적 관계를 유지합니다.",
+  "Choose a reviewed document, audience, and purpose. Orbit can create a new presentation or refresh a linked one while preserving its file identity and source relationship.":
+    "검토된 문서, 대상, 목적을 선택하세요. Orbit은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
+  "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
+    "검토된 문서, 대상, 목적을 선택하세요. Orbit이 편집 가능한 Deck Markdown을 만들고 원본 문서와의 명시적 관계를 유지합니다.",
   "Choose an existing Chart id or create and validate that Chart first.":
     "기존 Chart ID를 선택하거나 먼저 해당 Chart를 만들고 검증하세요.",
   "Choose an existing metric key or an explicit Query output field.":
     "기존 지표 키 또는 명시적인 Query 출력 필드를 선택하세요.",
   "Choose another": "다른 것을 선택하세요",
   "Choose Chart accent color": "Chart 강조 색상을 선택하세요",
-  "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
-    "CSV, JSON, XLSX 또는 ODS를 선택하세요. Rune이 먼저 가져오기 결과를 보여 준 다음 필드, 지표, 차트와 결과물 설정을 안내합니다.",
+  "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
+    "CSV, JSON, XLSX 또는 ODS를 선택하세요. Orbit이 먼저 가져오기 결과를 보여 준 다음 필드, 지표, 차트와 결과물 설정을 안내합니다.",
   "Choose JSON / text file": "JSON / 텍스트 파일 선택",
   "Choose maximum visible Chart marks": "표시되는 최대 Chart 마크를 선택하세요.",
   "Choose one exact scope value, or return to all Data rows.":
     "정확히 일치하는 범위 값을 선택하거나 모든 데이터 행으로 돌아가세요.",
-  "Choose one or more files — Rune reads them locally before review":
-    "하나 이상의 파일을 선택하세요. Rune은(는) 검토하기 전에 로컬에서 파일을 읽습니다.",
+  "Choose one or more files — Orbit reads them locally before review":
+    "하나 이상의 파일을 선택하세요. Orbit은(는) 검토하기 전에 로컬에서 파일을 읽습니다.",
   "Choose one value": "값 선택",
+  "Choose Orbit's character color": "Orbit의 테마 색상 선택",
   "Choose pages for OCR": "OCR 페이지 선택",
-  "Choose Rune's character color": "Rune의 테마 색상 선택",
   "Choose the language actually used on the page to reduce errors.":
     "오류를 줄이려면 페이지에서 실제 사용하는 언어를 선택하세요.",
   "Choose valid Chart properties.": "유효한 Chart 속성을 선택하세요.",
-  "Choose your Rune language": "Rune 언어를 선택하세요",
+  "Choose your Orbit language": "Orbit 언어를 선택하세요",
   Clear: "지우기",
   "Clear pins": "클리어 핀",
   "Click again to delete": "삭제하려면 다시 클릭하세요.",
@@ -239,8 +239,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Comparison rows": "비교 행",
   "Compiled artifact preview": "컴파일된 아티팩트 미리보기",
   "Compiler-guided repair passed": "컴파일러 기반 복구 통과",
-  "Complete the required fields and Rune will validate the whole workflow before review.":
-    "필수 필드를 작성하면 Rune이(가) 검토 전에 전체 워크플로를 검증합니다.",
+  "Complete the required fields and Orbit will validate the whole workflow before review.":
+    "필수 필드를 작성하면 Orbit이(가) 검토 전에 전체 워크플로를 검증합니다.",
   "Conclusion usefulness": "결론의 유용성",
   "Conclusions trace to sufficient supporting evidence.": "결론을 충분한 근거까지 추적할 수 있습니다.",
   "Condense the selection into one sentence": "선택 항목을 한 문장으로 압축합니다.",
@@ -253,8 +253,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Confirm real usability after a handoff": "전달 후 실제 사용 가능 여부 확인",
   "Confirm restore": "복원 확인",
   "confirmed deliverables": "개 확인된 결과물",
-  "Confirming only downloads to this device; Rune does not upload or send the file.":
-    "확인하면 이 기기에만 다운로드됩니다. Rune은 파일을 업로드하거나 전송하지 않습니다.",
+  "Confirming only downloads to this device; Orbit does not upload or send the file.":
+    "확인하면 이 기기에만 다운로드됩니다. Orbit은 파일을 업로드하거나 전송하지 않습니다.",
   "Connected folder": "연결된 폴더",
   "Connections available on this device": "이 기기에서 사용할 수 있는 연결",
   "Content workspace": "콘텐츠 작업공간",
@@ -303,8 +303,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Deck Markdown": "Deck Markdown",
   "Deep Blue": "딥 블루",
   "Default model ID": "기본 모델 ID",
-  "Define the evidence, metric, and audience first. Rune compiles the analysis, chart, report, and slides into one review transaction.":
-    "증거, 측정항목, 대상을 먼저 정의하세요. Rune은 분석, 차트, 보고서 및 슬라이드를 하나의 검토 트랜잭션으로 컴파일합니다.",
+  "Define the evidence, metric, and audience first. Orbit compiles the analysis, chart, report, and slides into one review transaction.":
+    "증거, 측정항목, 대상을 먼저 정의하세요. Orbit은 분석, 차트, 보고서 및 슬라이드를 하나의 검토 트랜잭션으로 컴파일합니다.",
   Delete: "삭제",
   "Delete block": "블록 삭제",
   Deliverable: "결과물",
@@ -368,8 +368,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Document to presentation": "문서에서 프레젠테이션으로",
   "Document to presentation · source linked": "문서에서 프레젠테이션으로 · 소스 연결",
   "Document-presentation task settings": "문서 프레젠테이션 작업 설정",
-  "Documents, data, charts, and presentations share one readable source system. You make the judgment; Rune keeps every change connected.":
-    "문서, 데이터, 차트 및 프리젠테이션은 읽을 수 있는 하나의 소스 시스템을 공유합니다. 판단은 당신이 합니다. Rune은 모든 변경 사항을 연결된 상태로 유지합니다.",
+  "Documents, data, charts, and presentations share one readable source system. You make the judgment; Orbit keeps every change connected.":
+    "문서, 데이터, 차트 및 프리젠테이션은 읽을 수 있는 하나의 소스 시스템을 공유합니다. 판단은 당신이 합니다. Orbit은 모든 변경 사항을 연결된 상태로 유지합니다.",
   Done: "완료",
   "Download anonymous JSON": "익명 JSON 다운로드",
   "Download source": "소스 다운로드",
@@ -441,7 +441,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "첫 번째 제안이 적용되지 않은 상태로 유지됨",
   "fixed-layout": "고정 레이아웃",
   "fixed-layout PDF": "고정 레이아웃 PDF",
-  "Focus Rune Agent": "집중 Rune Agent",
+  "Focus Orbit Agent": "집중 Orbit Agent",
   "Folder changes detected · review with Pull": "폴더 변경 감지 · Pull로 검토하세요",
   "Folder connection cancelled": "폴더 연결이 취소되었습니다.",
   "Folder monitoring stopped · reconnect to resume": "폴더 모니터링 중지 · 다시 연결하면 재개됩니다",
@@ -454,8 +454,8 @@ export const INTERFACE_TRANSLATIONS = {
     "정확한 검토를 위해 폴더 동기화 준비 완료 - 작성된 내용이 없습니다.",
   "Folder workspaces require a browser with the File System Access API":
     "폴더 작업 영역에는 파일 시스템 액세스 API가 있는 브라우저가 필요합니다.",
-  "Folder-only files stay untouched but will not belong to the new Rune workspace manifest.":
-    "폴더 전용 파일은 그대로 유지되지만 새로운 Rune 작업공간 매니페스트에 속하지 않습니다.",
+  "Folder-only files stay untouched but will not belong to the new Orbit workspace manifest.":
+    "폴더 전용 파일은 그대로 유지되지만 새로운 Orbit 작업공간 매니페스트에 속하지 않습니다.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "예: 1-3, 5. 감지된 스캔 페이지만 선택할 수 있습니다.",
   "For example: July 2026": "예: 2026년 7월",
@@ -488,15 +488,15 @@ export const INTERFACE_TRANSLATIONS = {
   "Import and map review": "가져와서 리뷰 설정",
   "Import and shape presentation": "가져와서 프레젠테이션 구성",
   "Import config": "구성 가져오기",
-  "Import content is reviewed only in this page's memory. Rune never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
-    "가져온 콘텐츠는 이 페이지의 메모리에서만 검토됩니다. Rune은(는) 원격 구성 URL을 따르거나, 이를 localStorage에 쓰거나, 저장 및 활성화를 선택하기 전에 자격 증명을 저장하지 않습니다.",
+  "Import content is reviewed only in this page's memory. Orbit never follows remote config URLs, writes it to localStorage, or stores a credential before you choose Save & enable.":
+    "가져온 콘텐츠는 이 페이지의 메모리에서만 검토됩니다. Orbit은(는) 원격 구성 URL을 따르거나, 이를 localStorage에 쓰거나, 저장 및 활성화를 선택하기 전에 자격 증명을 저장하지 않습니다.",
   "Import data, then continue directly to mapping and output setup":
     "데이터를 가져온 뒤 바로 필드 연결과 결과물 설정으로 이동합니다",
   "Import details": "가져오기 세부정보",
   "Import held for review — workspace context changed": "검토를 위해 가져오기 보류 — 작업공간 컨텍스트가 변경됨",
   "Import one model profile": "하나의 모델 프로필 가져오기",
-  "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Rune previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
-    "PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON 가져오기, XLSX 또는 ODS. Rune은 먼저 변환을 미리 본 다음 필드, 측정값, 차트 및 결과물을 안내합니다.",
+  "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
+    "PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON 가져오기, XLSX 또는 ODS. Orbit은 먼저 변환을 미리 본 다음 필드, 측정값, 차트 및 결과물을 안내합니다.",
   "Import real data, review it, then map fields, measures, and deliverables":
     "실제 데이터를 가져와 검토한 뒤 필드, 지표와 결과물을 연결합니다",
   "Import up to 20 files in one review transaction": "한 번의 검토 거래로 최대 20개의 파일을 가져옵니다.",
@@ -538,7 +538,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Leave empty to keep the encrypted credential": "암호화된 자격 증명을 유지하려면 비워 두세요.",
   Left: "왼쪽",
   "Legacy first-Data binding": "레거시 우선 데이터 바인딩",
-  "Let Rune find the models you already use": "이미 사용 중인 모델 찾기",
+  "Let Orbit find the models you already use": "이미 사용 중인 모델 찾기",
   "Light Gold": "라이트 골드",
   Line: "라인",
   "Line · sequence": "라인 · 시퀀스",
@@ -568,8 +568,8 @@ export const INTERFACE_TRANSLATIONS = {
   locally: "(로컬)",
   "Long-form writing in Markdown": "Markdown로 장문 쓰기",
   "Looking for models on this device…": "이 기기에서 모델 검색 중…",
-  "Managed by the Rune server; only non-secret status is shown.":
-    "Rune 서버에서 관리됩니다. 비밀이 아닌 상태만 표시됩니다.",
+  "Managed by the Orbit server; only non-secret status is shown.":
+    "Orbit 서버에서 관리됩니다. 비밀이 아닌 상태만 표시됩니다.",
   Manual: "매뉴얼",
   "Manual checkpoint saved on this device": "이 기기에 수동 체크포인트가 저장되었습니다.",
   Mark: "마크",
@@ -589,8 +589,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Model-assisted evidence questions": "모델 보조 근거 검토 질문",
   "Model-assisted operating review prepared with live-bound numbers; nothing writes until review":
     "실시간 연결 수치를 사용하는 모델 보조 운영 리뷰를 준비했습니다. 검토 전에는 쓰지 않습니다",
-  "Model-assisted outline when available · Rune compile · review before write":
-    "사용 가능할 때 모델 보조 개요 · Rune 컴파일 · 쓰기 전 검토",
+  "Model-assisted outline when available · Orbit compile · review before write":
+    "사용 가능할 때 모델 보조 개요 · Orbit 컴파일 · 쓰기 전 검토",
   "Model-assisted source outline": "모델 보조 원본 개요",
   "Model-assisted source-linked presentation prepared; nothing writes until review":
     "모델 보조 원본 연결 프레젠테이션을 준비했습니다. 검토 전에는 쓰지 않습니다",
@@ -606,8 +606,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Narrative planner": "내러티브 플래너",
   "Needs attention": "확인이 필요합니다",
   New: "새로운",
-  "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Rune compiled them to prove the complete proposed workspace.":
-    "새로운 노드와 편집된 노드는 검토 가능한 diff입니다. 입력 및 검증된 노드는 변경되지 않고 그대로 유지됩니다. Rune이 이를 컴파일하여 제안된 완전한 작업 공간을 증명했습니다.",
+  "New and edited nodes are reviewable diffs. Input and validated nodes remain unchanged; Orbit compiled them to prove the complete proposed workspace.":
+    "새로운 노드와 편집된 노드는 검토 가능한 diff입니다. 입력 및 검증된 노드는 변경되지 않고 그대로 유지됩니다. Orbit이 이를 컴파일하여 제안된 완전한 작업 공간을 증명했습니다.",
   "New artifact cancelled — the workspace is unchanged": "새 아티팩트가 취소됨 - 작업공간은 변경되지 않습니다.",
   "New artifact details": "새로운 아티팩트 세부정보",
   "New block after": "이후 새 블록",
@@ -684,12 +684,12 @@ export const INTERFACE_TRANSLATIONS = {
   "One source workspace": "단일 소스 작업 공간",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "엄격한 사양 1개 · 런타임 영향 확인 · 저장 시 정식 Chart JSON 재작성",
-  "Only after the primary model fails may Rune send the same bounded content to another configured provider. Off by default.":
-    "기본 모델이 실패한 경우에만 Rune이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
+  "Only after the primary model fails may Orbit send the same bounded content to another configured provider. Off by default.":
+    "기본 모델이 실패한 경우에만 Orbit이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "현재 데이터 범위 전체에서 숫자인 필드만 표시합니다.",
-  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
-    "제공자, 출처, 엔드포인트, 모델만 표시합니다. Rune은 연결을 선택한 후에만 인증 정보를 읽습니다.",
+  "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
+    "제공자, 출처, 엔드포인트, 모델만 표시합니다. Orbit은 연결을 선택한 후에만 인증 정보를 읽습니다.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "서로 다른 값은 처음 100개만 표시합니다. 필요하면 값 종류가 더 적은 기간 필드를 선택하세요.",
   "Open a file": "파일 열기",
@@ -698,8 +698,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Open local guide": "지역 가이드 열기",
   "Open sample": "샘플 공개",
   "Open Source to fix": "소스를 열어 수정",
-  "Opened the editable Rune guide stored in this workspace":
-    "이 작업공간에 저장된 편집 가능한 Rune 가이드를 열었습니다.",
+  "Opened the editable Orbit guide stored in this workspace":
+    "이 작업공간에 저장된 편집 가능한 Orbit 가이드를 열었습니다.",
   "Opened the source that needs attention": "확인이 필요한 소스를 열었습니다",
   "Operating metrics": "운영 지표",
   "Operating review": "운영 검토",
@@ -718,6 +718,60 @@ export const INTERFACE_TRANSLATIONS = {
   "Optional. When selected, local evidence, SQL, charts, and model context use only exact matching rows.":
     "선택 사항입니다. 선택하면 로컬 근거, SQL, 차트, 모델 컨텍스트는 정확히 일치하는 행만 사용합니다.",
   "Or open something else": "또는 다른 콘텐츠 열기",
+  Orbit: "Orbit",
+  "Orbit compiled these results locally from the current scope before any model request.":
+    "Orbit이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
+  "Orbit could not complete that model change. Your existing configuration is unchanged.":
+    "모델 설정을 변경하지 못했습니다. 기존 설정은 그대로 유지됩니다.",
+  "Orbit could not complete the device scan. No configuration was read or saved.":
+    "기기 검색을 완료하지 못했습니다. 어떤 설정도 읽거나 저장하지 않았습니다.",
+  "Orbit could not connect that folder": "Orbit이(가) 해당 폴더에 연결할 수 없습니다.",
+  "Orbit could not import those files": "Orbit에서 해당 파일을 가져올 수 없습니다.",
+  "Orbit could not prepare pilot evidence.": "Orbit이 파일럿 증거를 준비하지 못했습니다.",
+  "Orbit could not prepare that export": "Orbit에서 내보내기를 준비할 수 없습니다.",
+  "Orbit could not pull that folder": "Orbit이(가) 해당 폴더를 가져올 수 없습니다.",
+  "Orbit could not push that folder": "Orbit이(가) 해당 폴더를 푸시할 수 없습니다.",
+  "Orbit could not read model configurations. Try again in a moment.":
+    "모델 설정을 읽지 못했습니다. 잠시 후 다시 시도하세요.",
+  "Orbit could not read model status. You can continue without a model.":
+    "모델 상태를 확인하지 못했습니다. 모델 없이 계속할 수 있습니다.",
+  "Orbit could not read that configuration file.": "Orbit에서 해당 구성 파일을 읽을 수 없습니다.",
+  "Orbit could not record this delivery outcome": "Orbit이 전달 결과를 기록하지 못했습니다",
+  "Orbit could not render this page preview.": "Orbit이 이 페이지의 미리보기를 렌더링하지 못했습니다.",
+  "Orbit could not verify that model catalog. The configuration was not saved.":
+    "모델 목록을 검증하지 못했습니다. 설정은 저장되지 않았습니다.",
+  "Orbit could not verify this connection and did not save it.": "이 연결을 검증하지 못해 저장하지 않았습니다.",
+  "Orbit derives a portable filename and stable workspace id. You can edit the source immediately.":
+    "Orbit은 이식 가능한 파일 이름과 안정적인 작업 공간 ID를 파생합니다. 즉시 소스를 편집할 수 있습니다.",
+  "Orbit document": "Orbit 문서",
+  "Orbit exports the validated source and any referenced current workspace data.":
+    "Orbit은 검증된 소스와 참조된 현재 작업공간 데이터를 내보냅니다.",
+  "Orbit found pages without selectable text. Confirm pages and language; image content is not read until you open a preview or recognize.":
+    "Orbit이 선택 가능한 텍스트가 없는 페이지를 찾았습니다. 페이지와 언어를 확인하세요. 미리보기를 열거나 인식을 시작하기 전에는 이미지 내용을 읽지 않습니다.",
+  "Orbit has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
+    "Orbit이 이 기기의 작업 기록을 익명 JSON으로 정리했습니다. 실제 파일럿 결과 집계에 사용할 수 있지만 업로드되지 않으며 제품 시장 검증 완료를 의미하지 않습니다.",
+  "Orbit JSON": "Orbit JSON",
+  "Orbit keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
+    "Orbit은 현재 버전을 복구 가능한 안전 지점으로 보존하고 전체 작업공간과 로컬 실행 영향을 다시 검증합니다.",
+  "Orbit preserves this exact validated source; it does not compile or rewrite its live references.":
+    "Orbit은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
+  "Orbit sections": "Orbit 섹션",
+  "Orbit stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
+    "Orbit은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
+  "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
+    "Orbit은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `RUNE_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Orbit Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
+  "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
+    "Orbit은 폴더가 여전히 비어 있는지 확인한 다음 현재 읽을 수 있는 소스, 참조 이미지, 작업공간 매니페스트를 씁니다.",
+  "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
+    "Orbit은 폴더를 다시 읽고 양쪽이 이 검토와 정확히 일치할 때만 기기 작업공간을 교체합니다.",
+  "Orbit will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
+    "Orbit은 폴더를 다시 읽고 양쪽 모두 변경되지 않았을 때만 같은 이름의 파일과 작업공간 매니페스트를 씁니다.",
+  "Orbit will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
+    "Orbit은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
+  "Orbit will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
+    "Orbit은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
+  "Orbit writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
+    "Orbit은 명시적인 --rune:data 지시문을 작성하므로 파일이 다시 정렬될 때 작업 공간_데이터가 변경되지 않습니다.",
   "Output budget per task": "작업당 출력 예산",
   "Overall time saved": "전체 시간 절감",
   page: "페이지",
@@ -733,8 +787,8 @@ export const INTERFACE_TRANSLATIONS = {
     "검토를 위해 패치 보류 - 변경된 모든 파일에는 안전 체크포인트가 필요합니다.",
   "Patch held for review — workspace context changed": "검토를 위해 패치 보류 — 작업공간 컨텍스트가 변경됨",
   "Patch held for review — workspace source revision changed": "검토를 위해 패치 보류 — 작업공간 소스 개정이 변경됨",
-  "PDF pages render only in this browser. Rune loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
-    "PDF 페이지는 이 브라우저에서만 렌더링됩니다. Rune은 이 사이트에서 내장 OCR 런타임과 언어 데이터를 불러오고 브라우저가 이를 캐시합니다. 페이지 이미지와 인식된 텍스트는 전송되지 않습니다.",
+  "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
+    "PDF 페이지는 이 브라우저에서만 렌더링됩니다. Orbit은 이 사이트에서 내장 OCR 런타임과 언어 데이터를 불러오고 브라우저가 이를 캐시합니다. 페이지 이미지와 인식된 텍스트는 전송되지 않습니다.",
   Percent: "퍼센트",
   "Period and audience": "기간 및 대상",
   "Pilot Evidence · on device": "파일럿 증거 · 기기 내",
@@ -756,8 +810,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Presentation title": "프레젠테이션 제목",
   "Presets only fill task framing, audience, and deliverables. You still confirm an exact Data scope and reporting period.":
     "프리셋은 작업 목적, 대상, 결과물만 채웁니다. 정확한 Data 범위와 보고 기간은 직접 확인해야 합니다.",
-  "Press each shortcut and Rune will confirm it here. You can revisit these lessons in the local guide.":
-    "각 단축키를 누르면 Rune이 여기에서 이를 확인합니다. 지역 가이드에서 이러한 강의를 다시 방문할 수 있습니다.",
+  "Press each shortcut and Orbit will confirm it here. You can revisit these lessons in the local guide.":
+    "각 단축키를 누르면 Orbit이 여기에서 이를 확인합니다. 지역 가이드에서 이러한 강의를 다시 방문할 수 있습니다.",
   Preview: "미리보기",
   "Preview and choose region": "미리보고 영역 선택",
   "Preview capped · the complete validated source will be imported.": "미리보기 제한 · 검증된 전체 소스를 가져옵니다.",
@@ -819,8 +873,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Release to prepare the import": "가져오기 준비를 위한 릴리스",
   "Remove condition": "조건 제거",
   "Remove from workspace": "작업공간에서 제거",
-  "Remove scripts or executable markup; Rune previews only script-free content.":
-    "스크립트나 실행 가능한 마크업을 제거하세요. Rune은 스크립트 없는 콘텐츠만 미리 봅니다.",
+  "Remove scripts or executable markup; Orbit previews only script-free content.":
+    "스크립트나 실행 가능한 마크업을 제거하세요. Orbit은 스크립트 없는 콘텐츠만 미리 봅니다.",
   "Remove temporary Agent context pin": "임시 Agent 컨텍스트 핀 제거",
   "Remove unsafe content": "안전하지 않은 콘텐츠 제거",
   "Rendered presentation preview": "렌더링된 프레젠테이션 미리보기",
@@ -874,60 +928,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Review-question planner": "리뷰 질문 플래너",
   "Rose Pearl": "로즈 펄",
   "Run history": "실행 기록",
-  Rune: "Rune",
-  "Rune compiled these results locally from the current scope before any model request.":
-    "Rune이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
-  "Rune could not complete that model change. Your existing configuration is unchanged.":
-    "모델 설정을 변경하지 못했습니다. 기존 설정은 그대로 유지됩니다.",
-  "Rune could not complete the device scan. No configuration was read or saved.":
-    "기기 검색을 완료하지 못했습니다. 어떤 설정도 읽거나 저장하지 않았습니다.",
-  "Rune could not connect that folder": "Rune이(가) 해당 폴더에 연결할 수 없습니다.",
-  "Rune could not import those files": "Rune에서 해당 파일을 가져올 수 없습니다.",
-  "Rune could not prepare pilot evidence.": "Rune이 파일럿 증거를 준비하지 못했습니다.",
-  "Rune could not prepare that export": "Rune에서 내보내기를 준비할 수 없습니다.",
-  "Rune could not pull that folder": "Rune이(가) 해당 폴더를 가져올 수 없습니다.",
-  "Rune could not push that folder": "Rune이(가) 해당 폴더를 푸시할 수 없습니다.",
-  "Rune could not read model configurations. Try again in a moment.":
-    "모델 설정을 읽지 못했습니다. 잠시 후 다시 시도하세요.",
-  "Rune could not read model status. You can continue without a model.":
-    "모델 상태를 확인하지 못했습니다. 모델 없이 계속할 수 있습니다.",
-  "Rune could not read that configuration file.": "Rune에서 해당 구성 파일을 읽을 수 없습니다.",
-  "Rune could not record this delivery outcome": "Rune이 전달 결과를 기록하지 못했습니다",
-  "Rune could not render this page preview.": "Rune이 이 페이지의 미리보기를 렌더링하지 못했습니다.",
-  "Rune could not verify that model catalog. The configuration was not saved.":
-    "모델 목록을 검증하지 못했습니다. 설정은 저장되지 않았습니다.",
-  "Rune could not verify this connection and did not save it.": "이 연결을 검증하지 못해 저장하지 않았습니다.",
-  "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
-    "Rune은 이식 가능한 파일 이름과 안정적인 작업 공간 ID를 파생합니다. 즉시 소스를 편집할 수 있습니다.",
-  "Rune document": "Rune 문서",
-  "Rune exports the validated source and any referenced current workspace data.":
-    "Rune은 검증된 소스와 참조된 현재 작업공간 데이터를 내보냅니다.",
-  "Rune found pages without selectable text. Confirm pages and language; image content is not read until you open a preview or recognize.":
-    "Rune이 선택 가능한 텍스트가 없는 페이지를 찾았습니다. 페이지와 언어를 확인하세요. 미리보기를 열거나 인식을 시작하기 전에는 이미지 내용을 읽지 않습니다.",
-  "Rune has compiled this device's task records into anonymous JSON. It can support real-pilot aggregation, but is never uploaded and does not claim product-market validation.":
-    "Rune이 이 기기의 작업 기록을 익명 JSON으로 정리했습니다. 실제 파일럿 결과 집계에 사용할 수 있지만 업로드되지 않으며 제품 시장 검증 완료를 의미하지 않습니다.",
-  "Rune JSON": "Rune JSON",
-  "Rune keeps the current version as a recoverable safety point and rechecks the complete workspace and local runtime impact.":
-    "Rune은 현재 버전을 복구 가능한 안전 지점으로 보존하고 전체 작업공간과 로컬 실행 영향을 다시 검증합니다.",
-  "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
-    "Rune은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
-  "Rune sections": "Rune 섹션",
-  "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
-    "Rune은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
-  "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
-    "Rune은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `RUNE_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Rune Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
-  "Rune will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
-    "Rune은 폴더가 여전히 비어 있는지 확인한 다음 현재 읽을 수 있는 소스, 참조 이미지, 작업공간 매니페스트를 씁니다.",
-  "Rune will read the folder again and replace the device workspace only if both sides still exactly match this review.":
-    "Rune은 폴더를 다시 읽고 양쪽이 이 검토와 정확히 일치할 때만 기기 작업공간을 교체합니다.",
-  "Rune will read the folder again and write same-name files plus the workspace manifest only if both sides are unchanged.":
-    "Rune은 폴더를 다시 읽고 양쪽 모두 변경되지 않았을 때만 같은 이름의 파일과 작업공간 매니페스트를 씁니다.",
-  "Rune will replace the current device workspace with the built-in sample and preserve its files, checkpoints, and task records as the previous workspace.":
-    "Rune은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
-  "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
-    "Rune은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
-  "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
-    "Rune은 명시적인 --rune:data 지시문을 작성하므로 파일이 다시 정렬될 때 작업 공간_데이터가 변경되지 않습니다.",
   "Running locally": "로컬에서 실행",
   "Runs on this device": "이 기기에서 실행",
   "Runtime impact preflight passed": "런타임 영향 프리플라이트 통과",
@@ -1085,8 +1085,8 @@ export const INTERFACE_TRANSLATIONS = {
   "The detected scan pages changed. Import the file again.":
     "감지된 스캔 페이지가 변경되었습니다. 파일을 다시 가져오세요.",
   "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.",
-  "The download preserves the exact readable source. Rune bindings and local asset references stay source expressions.":
-    "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Rune 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
+  "The download preserves the exact readable source. Orbit bindings and local asset references stay source expressions.":
+    "다운로드는 읽을 수 있는 소스를 그대로 보존합니다. Orbit 바인딩과 로컬 에셋 참조는 소스 표현식으로 유지됩니다.",
   "The key crosses same-origin HTTPS and is encrypted into an HttpOnly credential; it is never written to localStorage, the workspace, an Artifact, or Git. A custom endpoint receives the content you give the Agent, so use only a service you trust.":
     "키는 동일한 출처의 HTTPS를 통과하며 HttpOnly 자격 증명으로 암호화됩니다. localStorage, 작업공간, Artifact 또는 Git에 기록되지 않습니다. 커스텀 엔드포인트는 귀하가 Agent에 제공한 콘텐츠를 수신하므로 신뢰할 수 있는 서비스만 사용하세요.",
   "The last block cannot be deleted": "마지막 블록은 삭제할 수 없습니다.",
@@ -1099,7 +1099,7 @@ export const INTERFACE_TRANSLATIONS = {
   "The original detail was too long and is truncated in this view.":
     "원본 세부 정보가 너무 길어 이 보기에서 잘렸습니다.",
   "The result saves meaningful time over manual work.": "수작업보다 의미 있는 시간을 절약합니다.",
-  "The user can understand what Rune changed and why.": "사용자가 Rune이 무엇을 왜 변경했는지 이해할 수 있습니다.",
+  "The user can understand what Orbit changed and why.": "사용자가 Orbit이 무엇을 왜 변경했는지 이해할 수 있습니다.",
   "The web app cannot read application settings on your computer. You can still connect a model manually.":
     "웹 앱은 컴퓨터의 다른 앱 설정을 읽을 수 없습니다. 모델을 직접 연결할 수 있습니다.",
   "This block cannot be empty.": "이 블록은 비워둘 수 없습니다.",
@@ -1115,8 +1115,8 @@ export const INTERFACE_TRANSLATIONS = {
     "이 소스 자체는 변경되지 않았으며, 실시간 결과물은 제안된 전체 작업 공간을 기준으로 렌더링됩니다.",
   Title: "제목",
   To: "받는 사람",
-  "To protect credentials, Rune does not import from remote config URLs.":
-    "자격 증명을 보호하기 위해 Rune은(는) 원격 구성 URL에서 가져오지 않습니다.",
+  "To protect credentials, Orbit does not import from remote config URLs.":
+    "자격 증명을 보호하기 위해 Orbit은(는) 원격 구성 URL에서 가져오지 않습니다.",
   tokens: "토큰",
   Top: "위",
   "Transaction map": "거래 지도",
@@ -1130,8 +1130,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "알 수 없는 출처",
   Unlinked: "연결 해제됨",
   "Unlinked artifacts": "연결 해제된 아티팩트",
-  "Unrelated files stay untouched; only the reviewed sources, images, and Rune manifest are written.":
-    "관련 없는 파일은 그대로 유지됩니다. 검토한 소스, 이미지, Rune 매니페스트만 기록합니다.",
+  "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
+    "관련 없는 파일은 그대로 유지됩니다. 검토한 소스, 이미지, Orbit 매니페스트만 기록합니다.",
   "Unresolved dependencies": "해결되지 않은 종속성",
   "Unsaved · needs attention": "저장되지 않음 · 주의가 필요함",
   "Unsaved · ready to save": "저장되지 않음 · 저장할 준비가 됨",
@@ -1149,12 +1149,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Use all Data rows": "모든 Data 행 사용",
   "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
     "기기 내 분석, 변환, 결정적 도구만 사용하고 모델 서비스에는 아무것도 보내지 않음",
+  "Use Orbit JSON or a CC Switch single-provider import link. Orbit reviews it first and never saves it immediately.":
+    "Orbit JSON 또는 CC 스위치 단일 공급자 가져오기 링크를 사용하세요. Orbit이(가) 먼저 검토하고 즉시 저장하지 않습니다.",
+  "Use Orbit JSON or one ccswitch://v1/import provider link.":
+    "Orbit JSON 또는 ccswitch://v1/import 공급자 링크 하나를 사용하세요.",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "헤더가 있는 직사각형 CSV 또는 스칼라 값을 포함한 플랫 JSON을 사용하세요.",
-  "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
-    "Rune JSON 또는 CC 스위치 단일 공급자 가져오기 링크를 사용하세요. Rune이(가) 먼저 검토하고 즉시 저장하지 않습니다.",
-  "Use Rune JSON or one ccswitch://v1/import provider link.":
-    "Rune JSON 또는 ccswitch://v1/import 공급자 링크 하나를 사용하세요.",
   "Use the selected cloud or device model; you still confirm every change":
     "선택한 클라우드 또는 로컬 모델을 사용하며 모든 변경은 직접 확인",
   "Use this configuration": "이 구성을 사용하세요",
@@ -1181,7 +1181,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Weekly operating review": "주간 운영 리뷰",
   "Weekly review": "주간 리뷰",
   "Welcome & local guide": "환영 및 현지 가이드",
-  "Welcome to Rune": "Rune에 오신 것을 환영합니다.",
+  "Welcome to Orbit": "Orbit에 오신 것을 환영합니다.",
+  "Welcome to Orbit · 引力": "Orbit · 引力에 오신 것을 환영합니다",
   "What should this presentation move forward?": "이 프레젠테이션으로 무엇을 진전시킬까요?",
   "Whole page": "전체 페이지",
   Width: "너비",

@@ -70,7 +70,7 @@ async function readBoundedJson(response: Response, maximumBytes: number, subject
 
 function providerError(payload: unknown, status: number) {
   void payload;
-  return new Error(`The model provider rejected Rune's request (${status}).`);
+  return new Error(`The model provider rejected Orbit's request (${status}).`);
 }
 
 function bearerAuthorization(apiKey: string): Record<string, string> {
@@ -140,7 +140,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
   input,
   schema,
   schemaName,
-  responseDescription = "Return Rune's required structured plan for local validation.",
+  responseDescription = "Return Orbit's required structured plan for local validation.",
   signal,
 }: {
   connection: ActiveModelConnection;
@@ -256,7 +256,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
       usage?: { input_tokens?: unknown; output_tokens?: unknown };
     };
     const tool = payload.content?.find((part) => part.type === "tool_use" && part.name === toolName);
-    if (!tool) throw new Error("Anthropic did not return the required Rune plan tool input.");
+    if (!tool) throw new Error("Anthropic did not return the required Orbit plan tool input.");
     return enforceReportedBudget(
       {
         output: tool.input,

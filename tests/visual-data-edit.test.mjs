@@ -61,7 +61,7 @@ test("edits flat JSON with explicit scalar types without reformatting the docume
 });
 
 test("rejects stale, unchanged, invalid numeric, and nested JSON cell edits", () => {
-  const sourceArtifact = artifact("data.json", '[{"Value": 2, "Meta": {"owner":"Rune"}}]');
+  const sourceArtifact = artifact("data.json", '[{"Value": 2, "Meta": {"owner":"Orbit"}}]');
   const value = targetFor(sourceArtifact, 0, "Value");
   assert.match(
     prepareVisualDataCellEdit(sourceArtifact, value, { draft: "2", valueType: "number" }).errors[0],

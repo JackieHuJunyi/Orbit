@@ -1,4 +1,4 @@
-# Rune P2 paired-task comparison guide
+# Orbit P2 paired-task comparison guide
 
 > Use this protocol for at least 10 authorized or redacted real tasks. Automated tests, demos, synthetic data, and staff-authored scores never count toward P2.
 
@@ -7,9 +7,9 @@
 One comparison is the same participant completing the same decision task from the same bounded input scope twice:
 
 - **A — current workflow:** the participant's normal tools and handoffs;
-- **B — Rune workflow:** reviewed import, exact mapping, proposal, Apply, verification, and real-format handoff.
+- **B — Orbit workflow:** reviewed import, exact mapping, proposal, Apply, verification, and real-format handoff.
 
-Use the participant's most recently completed task when repeating A would be wasteful. Mark that manual timing as `estimated`, preserve the stage-by-stage basis in the approved research system, and report the estimated count. Do not silently combine a remembered broad monthly process with a narrowly scoped Rune run.
+Use the participant's most recently completed task when repeating A would be wasteful. Mark that manual timing as `estimated`, preserve the stage-by-stage basis in the approved research system, and report the estimated count. Do not silently combine a remembered broad monthly process with a narrowly scoped Orbit run.
 
 A record is comparable only when all three statements are true: the material is authorized or redacted, A and B use the same source scope, and A and B serve the same decision goal. Do not tune B against A's finished narrative, reuse an answer the participant could not have known at the original task time, or let the research team perform the participant's critical steps.
 
@@ -17,13 +17,13 @@ A record is comparable only when all three statements are true: the material is 
 
 1. Freeze the exact input scope and decision question before timing either path.
 2. For A, start when all frozen inputs are available and stop when the normal handoff is ready. Record active minutes separately from waiting time; only active minutes enter the gate.
-3. Reset to the frozen inputs. For B, start before Rune import/setup and stop after the participant obtains the real handoff file. Rune's bounded duration is supporting evidence; the supervised stopwatch owns the paired boundary.
+3. Reset to the frozen inputs. For B, start before Orbit import/setup and stop after the participant obtains the real handoff file. Orbit's bounded duration is supporting evidence; the supervised stopwatch owns the paired boundary.
 4. Count a delivery as `ready`, `minor_edits`, or `not_usable` using the recipient/reviewer's judgment, not the researcher's taste.
 5. Count every generated key number in the handed-off result and verify whether each resolves to current Data/Query evidence. One untraceable generated key number fails the 100% traceability gate.
-6. Mark `applied` only if the participant reviewed and applied at least one Rune proposal in the task. Preview-only demonstrations do not count.
+6. Mark `applied` only if the participant reviewed and applied at least one Orbit proposal in the task. Preview-only demonstrations do not count.
 7. Record every safety redline: unauthorized data movement, an unreviewed write, an unrecoverable overwrite, or a materially incorrect key number presented as verified.
 8. Keep tool switches, manual copies, help requests, rejected proposals and reasons, final correction effort, and willingness to retry in the approved research record. These diagnose the result but do not replace the fixed P2 gate.
-9. Export and review the participant's final Rune evidence package according to the main runbook. Store the comparison's approved-system reference, not names, notes, files, or content, in the local gate input.
+9. Export and review the participant's final Orbit evidence package according to the main runbook. Store the comparison's approved-system reference, not names, notes, files, or content, in the local gate input.
 
 Counterbalance A/B order when a genuine fresh equivalent cycle exists. Otherwise use the already completed A path and run B second, then explicitly retain `manualTiming: "estimated"`; never describe that design as a randomized experiment.
 

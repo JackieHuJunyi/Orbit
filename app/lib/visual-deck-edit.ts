@@ -68,7 +68,7 @@ function runeBindingTokens(source: string) {
 }
 
 function validateInput(input: VisualDeckSlideEditInput) {
-  if (!VISUAL_DECK_LAYOUTS.includes(input.layout)) return "Choose a supported Rune slide layout.";
+  if (!VISUAL_DECK_LAYOUTS.includes(input.layout)) return "Choose a supported Orbit slide layout.";
   if (input.eyebrow.length > 100) return "A slide eyebrow is limited to 100 characters.";
   if (/[\r\n]/u.test(input.eyebrow) || input.eyebrow.includes("--") || /[<>]/u.test(input.eyebrow)) {
     return "Keep the slide eyebrow on one plain-text line without HTML comment syntax.";
@@ -162,7 +162,7 @@ export function visualDeckSlidePreviewSource(
     ? { source, errors: [] }
     : {
         source: "",
-        errors: parsed.errors.length ? parsed.errors : ["Rune could not compile this draft as one slide."],
+        errors: parsed.errors.length ? parsed.errors : ["Orbit could not compile this draft as one slide."],
       };
 }
 
@@ -187,7 +187,7 @@ export function prepareVisualDeckSlideEdit(
 
   const parsed = parseDeckSource(artifact.source);
   const currentSlide = parsed.deck?.slides[target.index];
-  if (!currentSlide) return emptyResult(artifact.source, "Rune could not resolve this slide in the current Deck.");
+  if (!currentSlide) return emptyResult(artifact.source, "Orbit could not resolve this slide in the current Deck.");
   const eyebrow = input.eyebrow.trim();
   const semanticBody = normalizedSemanticBody(input.draft);
   if (
@@ -230,7 +230,7 @@ export function prepareVisualDeckSlideEdit(
         candidate.end === target.start + replacement.length,
     ) ?? null;
   if (!nextTarget) {
-    return emptyResult(artifact.source, "Rune could not prove the edited slide's new source range.");
+    return emptyResult(artifact.source, "Orbit could not prove the edited slide's new source range.");
   }
   return { nextSource, nextTarget, errors: [] };
 }

@@ -13,8 +13,8 @@ const scannedPdfPath = new URL("rune-scanned-pdf-ocr-qa.pdf", outputDirectory);
 const scannedImagePath = new URL("rune-scanned-pdf-ocr-source.png", outputDirectory);
 const scannedMarkdownPath = new URL("rune-scanned-pdf-ocr-qa.md", outputDirectory);
 const document = await PDFDocument.create();
-document.setTitle("Rune PDF Import QA");
-document.setAuthor("Rune deterministic QA fixture");
+document.setTitle("Orbit PDF Import QA");
+document.setAuthor("Orbit deterministic QA fixture");
 const regular = await document.embedFont(StandardFonts.Helvetica);
 const bold = await document.embedFont(StandardFonts.HelveticaBold);
 const accent = rgb(0.86, 0.2, 0.12);
@@ -26,7 +26,7 @@ function drawChrome(page, pageNumber) {
 
 const first = document.addPage([612, 792]);
 drawChrome(first, 1);
-first.drawText("Rune PDF Import QA", { x: 72, y: 720, size: 24, font: bold, color: accent });
+first.drawText("Orbit PDF Import QA", { x: 72, y: 720, size: 24, font: bold, color: accent });
 first.drawText("Operating context", { x: 72, y: 674, size: 18, font: bold });
 first.drawText("Revenue grew across all operating regions.", { x: 72, y: 642, size: 12, font: regular });
 first.drawText("- APAC led the verified plan", { x: 88, y: 614, size: 12, font: regular });
@@ -59,7 +59,7 @@ scanContext.fillStyle = "#fdfcf8";
 scanContext.fillRect(0, 0, scanCanvas.width, scanCanvas.height);
 scanContext.fillStyle = "#121916";
 scanContext.font = "bold 76px sans-serif";
-scanContext.fillText("Rune Scanned PDF OCR QA", 130, 250);
+scanContext.fillText("Orbit Scanned PDF OCR QA", 130, 250);
 scanContext.fillStyle = "#277553";
 scanContext.fillRect(130, 310, 220, 10);
 scanContext.fillStyle = "#303934";
@@ -72,7 +72,7 @@ scanContext.fillStyle = "#6f7772";
 scanContext.fillText("This page is one raster image with no selectable PDF text.", 130, 1_760);
 const scanPng = scanCanvas.toBuffer("image/png");
 const scannedDocument = await PDFDocument.create();
-scannedDocument.setTitle("Rune Scanned PDF OCR QA");
+scannedDocument.setTitle("Orbit Scanned PDF OCR QA");
 const scannedPage = scannedDocument.addPage([612, 792]);
 const embeddedScan = await scannedDocument.embedPng(scanPng);
 scannedPage.drawImage(embeddedScan, { x: 0, y: 0, width: 612, height: 792 });
@@ -80,7 +80,7 @@ const scannedBytes = await scannedDocument.save({ useObjectStreams: false });
 const scannedMarkdown = convertPdfSemanticSnapshot(
   "rune-scanned-pdf-ocr-qa.pdf",
   {
-    title: "Rune Scanned PDF OCR QA",
+    title: "Orbit Scanned PDF OCR QA",
     outlineCount: 0,
     hasJavaScript: false,
     pages: [{ pageNumber: 1, width: 612, height: 792, items: [], annotationCount: 0 }],
@@ -88,7 +88,7 @@ const scannedMarkdown = convertPdfSemanticSnapshot(
   [
     {
       pageNumber: 1,
-      text: "Rune Scanned PDF OCR QA\nDecision: fund the verified channel.\nOwner: Finance\nCheckpoint: 2026-08-20",
+      text: "Orbit Scanned PDF OCR QA\nDecision: fund the verified channel.\nOwner: Finance\nCheckpoint: 2026-08-20",
       confidence: 96,
     },
   ],

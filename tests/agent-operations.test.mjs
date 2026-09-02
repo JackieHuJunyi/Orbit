@@ -846,10 +846,10 @@ test("compiles one document-data-Deck plan atomically behind the workspace safet
   assert.match(prepared.nextArtifacts.find((artifact) => artifact.id === "briefing").source, /Shared result/);
 });
 
-test("compiles document, data, and semantic HTML Presentation creations from Rune-owned templates", () => {
+test("compiles document, data, and semantic HTML Presentation creations from Orbit-owned templates", () => {
   const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
     summary: "Create three Office-core artifacts",
-    detail: "Every new file starts from a deterministic Rune template and bounded typed edits.",
+    detail: "Every new file starts from a deterministic Orbit template and bounded typed edits.",
     actions: [
       {
         type: "create_artifact",
@@ -925,7 +925,7 @@ test("compiles document, data, and semantic HTML Presentation creations from Run
 test("compiles zero-edit Query and Chart creations from exact visible bindings", () => {
   const operationPlan = AgentWorkspaceOperationPlanSchema.parse({
     summary: "Create source-first analysis artifacts",
-    detail: "Rune owns both file identities and complete typed starter sources.",
+    detail: "Orbit owns both file identities and complete typed starter sources.",
     actions: [
       {
         type: "create_artifact",
@@ -1024,7 +1024,7 @@ test("rejects invented or same-plan creation sources before identity guessing", 
 
   const samePlan = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Guess a generated identity",
-    detail: "A dependent creation must wait until Rune exposes the generated id.",
+    detail: "A dependent creation must wait until Orbit exposes the generated id.",
     actions: [
       {
         type: "create_artifact",
@@ -1052,7 +1052,7 @@ test("rejects invented or same-plan creation sources before identity guessing", 
 
   const samePlanEmbed = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Guess a generated Chart identity",
-    detail: "A patch must not bind to a Chart before Rune has exposed its actual id.",
+    detail: "A patch must not bind to a Chart before Orbit has exposed its actual id.",
     actions: [
       {
         type: "patch_artifact",
@@ -1175,7 +1175,7 @@ test("resolves repeated creation titles and rejects incompatible creation operat
   };
   const repeated = compileAgentWorkspaceOperations(defaultArtifacts, {
     summary: "Create two briefs",
-    detail: "Rune must resolve both identities without model-authored ids.",
+    detail: "Orbit must resolve both identities without model-authored ids.",
     actions: [creation, { ...creation, handle: "shared_brief_copy" }],
   });
   assert.deepEqual(repeated.errors, []);
@@ -1211,7 +1211,7 @@ test("keeps mixed patch-and-create plans atomic at the full-workspace safety gat
     defaultArtifacts,
     AgentWorkspaceOperationPlanSchema.parse({
       summary: "Update the report and create a deck",
-      detail: "One existing source and one Rune-owned new source form a single transaction.",
+      detail: "One existing source and one Orbit-owned new source form a single transaction.",
       actions: [
         {
           type: "patch_artifact",

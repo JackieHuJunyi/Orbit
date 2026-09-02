@@ -43,7 +43,7 @@ test("exports a deterministic self-contained Deck HTML handoff", () => {
 
   const html = new TextDecoder().decode(first.bytes);
   assert.match(html, /^<!doctype html>/);
-  assert.match(html, /<meta name="generator" content="Rune" \/>/);
+  assert.match(html, /<meta name="generator" content="Orbit" \/>/);
   assert.match(html, /data-rune-title="Q2 Board Briefing"/);
   assert.match(html, /\$4\.82M/);
   assert.match(html, /Q2 revenue by region/);
@@ -153,7 +153,7 @@ test("sanitizes portable HTML filenames and hostile deck metadata", () => {
       .replace(/\{\{ chart\("regional-revenue-chart"\) \}\}/g, "Chart intentionally removed"),
   };
   const result = exportDeckHtml(deck, defaultArtifacts, defaultRuntimeSnapshots());
-  assert.equal(result.fileName, "rune-CON.html");
+  assert.equal(result.fileName, "orbit-CON.html");
   const html = new TextDecoder().decode(result.bytes);
   assert.doesNotMatch(html, /<script>|<img/i);
   assert.match(html, /&lt;script&gt;alert &amp; review&lt;\/script&gt;/);
@@ -197,7 +197,7 @@ lang: en
 ![Two](rune-asset:sha256:${secondId})
 `,
   };
-  assert.throws(() => exportDeckHtml(deck, [deck], [], assets), /exceeds Rune's 12 MB export limit/i);
+  assert.throws(() => exportDeckHtml(deck, [deck], [], assets), /exceeds Orbit's 12 MB export limit/i);
 });
 
 test("exports a scriptless line chart with deterministic SVG geometry", () => {

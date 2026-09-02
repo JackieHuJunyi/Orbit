@@ -70,7 +70,7 @@
 .topbar-actions > .workspace-view-switch { flex: 0 0 auto; }
 .project-separator { margin-inline: var(--rune-space-1); }
 .project-name { max-width: min(22vw, 260px); font-size: 12px; line-height: 1.3; }
-.brand-copy strong { font-size: 18px; }
+.brand-copy strong { font-size: 18px; white-space: nowrap; }
 
 .button { padding-inline: 13px; font-size: var(--rune-type-ui); }
 .button,

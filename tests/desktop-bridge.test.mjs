@@ -28,12 +28,12 @@ test("recognizes only legacy Word and PowerPoint binary names", () => {
   assert.equal(legacyOfficeFileName("sheet.xls"), false);
 });
 
-test("fails closed when the browser has no narrow Rune desktop bridge", async () => {
+test("fails closed when the browser has no narrow Orbit desktop bridge", async () => {
   globalThis.window = {};
   assert.equal(supportsLegacyOfficeDesktopConversion(), false);
   await assert.rejects(
     () => convertLegacyOfficeFile(fakeFile("brief.doc", [1, 2, 3])),
-    /requires the Rune desktop app/i,
+    /requires the Orbit desktop app/i,
   );
   delete globalThis.window;
 });
@@ -79,7 +79,7 @@ test("keeps legacy export unavailable on the web and rejects mismatched bridge o
   assert.equal(supportsLegacyOfficeDesktopExport(), false);
   await assert.rejects(
     () => exportLegacyOfficeFile({ fileName: "brief.docx", bytes: new Uint8Array([1]) }),
-    /requires the Rune desktop app/i,
+    /requires the Orbit desktop app/i,
   );
   globalThis.window = {
     runeDesktop: {
