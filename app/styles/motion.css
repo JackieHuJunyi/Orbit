@@ -138,6 +138,8 @@
   *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
   .welcome-greeting-vector-stroke,
   .deferred-surface-status > i::after { animation: none !important; }
+  .agent-dock.open.floating,
+  .agent-context-trigger { animation: none !important; }
   .welcome-greeting-spectrum stop { animation: none !important; }
   .welcome-greeting-vector-stroke { stroke-dashoffset: 0; }
   .welcome-backdrop[data-intro-phase="writing"] { background: #f5f5f7; }
