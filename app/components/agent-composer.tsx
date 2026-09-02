@@ -5,6 +5,11 @@ import { useEffect, useImperativeHandle, useRef, type ChangeEvent, type Keyboard
 
 export type AgentScope = "selection" | "artifact" | "workspace";
 
+export type AgentModelOption = Readonly<{
+  value: string;
+  label: string;
+}>;
+
 const AGENT_SCOPE_ORDER = ["selection", "artifact", "workspace"] as const;
 const MAX_COMPOSER_TEXT_HEIGHT = 132;
 
@@ -24,6 +29,7 @@ export type AgentComposerProps = Readonly<{
   scope: AgentScope;
   onScopeChange: (scope: AgentScope) => void;
   busy: boolean;
+  modelSwitching: boolean;
   locked: boolean;
   selectionUnavailable: boolean;
   mode: "openai" | "local";
@@ -36,17 +42,20 @@ export type AgentComposerProps = Readonly<{
   sendTitle: string;
   modelConnectedLabel: string;
   localFallbackLabel: string;
+  modelSelectLabel: string;
+  modelOptions: readonly AgentModelOption[];
+  selectedModel: string;
+  onModelChange: (value: string) => void;
   planHint: string;
   queryEvidenceText: string;
   quickCommands: readonly string[];
 }>;
 
 /**
- * Presentation-only Agent composer. Renders the DSH-informed floating capsule
- * (auto-growing borderless draft, chip-style scope selector, circular send
- * control, collapsible suggested actions) and forwards every action to the
- * Workbench, which remains the sole owner of scope state, planning, review,
- * and persistence.
+ * Presentation-only Agent composer. Free text is the primary surface; scope,
+ * active model, send, and optional suggestions stay secondary. Every action
+ * is forwarded to the Workbench, which remains the sole owner of model
+ * activation, planning, review, and persistence.
  */
 export function AgentComposer({
   ref,
@@ -58,6 +67,7 @@ export function AgentComposer({
   scope,
   onScopeChange,
   busy,
+  modelSwitching,
   locked,
   selectionUnavailable,
   mode,
@@ -70,6 +80,10 @@ export function AgentComposer({
   sendTitle,
   modelConnectedLabel,
   localFallbackLabel,
+  modelSelectLabel,
+  modelOptions,
+  selectedModel,
+  onModelChange,
   planHint,
   queryEvidenceText,
   quickCommands,
@@ -94,6 +108,25 @@ export function AgentComposer({
   return (
     <>
       <div className="agent-composer">
+        <div className="agent-composer-body">
+          <span className="agent-composer-label">{ariaLabel}</span>
+          <textarea
+            ref={(element) => {
+              localTextareaRef.current = element;
+            }}
+            value={prompt}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
+              resizeComposerTextarea(event.currentTarget);
+              onPromptChange(event.currentTarget.value);
+            }}
+            onKeyDown={onPromptKeyDown}
+            placeholder={placeholder}
+            rows={2}
+            maxLength={2_000}
+            aria-label={ariaLabel}
+            data-agent-free-text="true"
+          />
+        </div>
         <details className="agent-suggestions">
           <summary>
             <Sparkles className="composer-spark" aria-hidden="true" />
@@ -109,22 +142,6 @@ export function AgentComposer({
           </div>
           {queryEvidenceText && <p className="agent-evidence-hint">{queryEvidenceText}</p>}
         </details>
-        <div className="agent-composer-body">
-          <textarea
-            ref={(element) => {
-              localTextareaRef.current = element;
-            }}
-            value={prompt}
-            onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
-              resizeComposerTextarea(event.currentTarget);
-              onPromptChange(event.currentTarget.value);
-            }}
-            onKeyDown={onPromptKeyDown}
-            placeholder={placeholder}
-            rows={1}
-            aria-label={ariaLabel}
-          />
-        </div>
         <div className="agent-composer-row">
           <div className="agent-scope-switch" role="group" aria-label={scopeGroupLabel}>
             {AGENT_SCOPE_ORDER.map((candidate) => (
@@ -140,13 +157,30 @@ export function AgentComposer({
             ))}
           </div>
           <div className="agent-composer-trailing">
-            <span className={`local-planner-badge ${mode}`}>
-              {mode === "openai" ? modelConnectedLabel : localFallbackLabel}
-            </span>
+            <label className={`agent-model-picker ${mode}`}>
+              <span className="visually-hidden">{modelSelectLabel}</span>
+              <select
+                value={selectedModel}
+                onChange={(event) => onModelChange(event.currentTarget.value)}
+                disabled={busy || locked || modelSwitching}
+                aria-label={modelSelectLabel}
+              >
+                {modelOptions.length ? (
+                  modelOptions.map((option) => (
+                    <option value={option.value} key={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                ) : (
+                  <option value={selectedModel}>{mode === "openai" ? modelConnectedLabel : localFallbackLabel}</option>
+                )}
+              </select>
+              <ChevronDown aria-hidden="true" />
+            </label>
             <button
               className="run-button"
               onClick={onRun}
-              disabled={sendDisabled}
+              disabled={sendDisabled || modelSwitching}
               aria-label={sendLabel}
               title={sendTitle}
             >

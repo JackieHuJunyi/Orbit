@@ -112,6 +112,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent context": "Agent contexte",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent utilise l'échec du compilateur local pour préparer un plan de remplacement",
+  "Agent will use local tools": "L’Agent utilisera les outils locaux",
   "Aggregate evidence preview": "Aperçu des preuves agrégées",
   Aggregation: "Agrégation",
   "AI proposal · read-only until Apply": "Proposition de l’IA · lecture seule jusqu’à l’application",
@@ -591,6 +592,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Mist Blue": "Bleu brume",
   Model: "Modèle",
   "Model connected": "Modèle connecté",
+  "Model for this message": "Modèle pour ce message",
   "Model settings": "Paramètres du modèle",
   "Model unavailable; deterministic local operating review prepared for review":
     "Modèle indisponible ; une revue opérationnelle locale déterministe est prête à être vérifiée",

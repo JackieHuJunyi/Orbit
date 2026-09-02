@@ -109,6 +109,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent context": "Agent 컨텍스트",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent은(는) 하나의 교체 계획을 준비하기 위해 로컬 컴파일러 오류를 사용하고 있습니다.",
+  "Agent will use local tools": "Agent가 로컬 도구를 사용합니다",
   "Aggregate evidence preview": "집계 근거 미리보기",
   Aggregation: "집계",
   "AI proposal · read-only until Apply": "AI 제안 · 적용 전까지 읽기 전용",
@@ -577,6 +578,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Mist Blue": "미스트 블루",
   Model: "모델",
   "Model connected": "연결된 모델",
+  "Model for this message": "이 메시지에 사용할 모델",
   "Model settings": "모델 설정",
   "Model unavailable; deterministic local operating review prepared for review":
     "모델을 사용할 수 없습니다. 검토할 결정적 로컬 운영 리뷰를 준비했습니다",

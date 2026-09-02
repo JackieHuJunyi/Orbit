@@ -45,4 +45,4 @@ Do not add collaboration, cloud sync, a connector, richer charts, more OCR packa
 
 ## Reproduction gate
 
-From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Orbit v1.56 passes 711 unit tests, 29 render/architecture tests, 68 scenarios in each of Chromium, Firefox, and WebKit (204 browser executions), the 20/20 synthetic Golden Task Eval, formatting, lint, typecheck, production build, and the high-severity production dependency audit.
+From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Orbit v1.56 passes 711 unit tests, 29 render/architecture tests, 69 scenarios in each of Chromium, Firefox, and WebKit (207 browser executions), the 20/20 synthetic Golden Task Eval, formatting, lint, typecheck, production build, and the high-severity production dependency audit.

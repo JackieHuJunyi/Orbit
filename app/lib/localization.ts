@@ -321,6 +321,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       workspaceScope: zh ? "工作区" : "Workspace",
       modelConnected: zh ? "模型已连接" : "Model connected",
       localFallback: zh ? "本地模式" : "Local mode",
+      agentModel: zh ? "本次使用的模型" : "Model for this message",
       suggestedActions: zh ? "建议操作" : "Suggested actions",
       askWorkspace: zh ? "描述一个需要多份内容共同完成的结果…" : "Describe an outcome across the connected workspace…",
       askSelection: zh ? "描述只针对当前选区的修改…" : "Describe a change confined to this selection…",

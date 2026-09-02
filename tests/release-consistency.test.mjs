@@ -86,7 +86,9 @@ test("ships one shared, scalable two-planet Orbit mark", async () => {
   assert.equal(icon.match(/<circle\b/gu)?.length, 2);
   assert.equal(master.match(/<ellipse\b/gu)?.length, 2);
   assert.equal(master.match(/<circle\b/gu)?.length, 2);
-  assert.match(icon, /<path id="bg"[\s\S]{0,1600}fill="#2A2A2E"/u);
+  assert.match(icon, /<path id="bg"[\s\S]{0,1600}fill="#1D2834"/u);
+  assert.match(icon, /stroke="#F4F2ED"/u);
+  assert.equal(icon.match(/fill="#9EBBCB"/gu)?.length, 2);
   assert.equal(icon.match(/<g id="glyph"[\s\S]*<\/g>/u)?.[0], master.match(/<g id="glyph"[\s\S]*<\/g>/u)?.[0]);
   assert.deepEqual([...dockIcon.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
   assert.match(desktop, /icon: orbitAppIconPath/u);
@@ -94,7 +96,7 @@ test("ships one shared, scalable two-planet Orbit mark", async () => {
   assert.match(welcome, /<OrbitMark className="orbit-mark" \/>/u);
   assert.match(workbench, /<OrbitMark className="orbit-mark" \/>/u);
   assert.doesNotMatch(`${welcome}\n${workbench}`, /<span>O<\/span>/u);
-  assert.match(shellStyles, /\.orbit-mark__planet \{ fill: var\(--theme-accent\); \}/u);
+  assert.match(shellStyles, /\.orbit-mark__planet \{ fill: #7e9fb2; \}/u);
   assert.match(onboardingStyles, /\.welcome-chrome-brand \.orbit-mark/u);
 });
 

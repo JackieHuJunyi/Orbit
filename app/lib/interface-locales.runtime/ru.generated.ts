@@ -110,6 +110,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent context": "Контекст Agent",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent использует сбой локального компилятора для подготовки одного плана замены.",
+  "Agent will use local tools": "Агент будет использовать локальные инструменты",
   "Aggregate evidence preview": "Предпросмотр агрегированных доказательств",
   Aggregation: "Агрегация",
   "AI proposal · read-only until Apply": "Предложение ИИ · только чтение до применения",
@@ -584,6 +585,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Mist Blue": "Туманно-синий",
   Model: "Модель",
   "Model connected": "Модель подключена",
+  "Model for this message": "Модель для этого сообщения",
   "Model settings": "Настройки модели",
   "Model unavailable; deterministic local operating review prepared for review":
     "Модель недоступна; для проверки подготовлен локальный детерминированный операционный обзор",

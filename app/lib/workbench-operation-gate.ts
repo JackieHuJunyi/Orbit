@@ -21,6 +21,7 @@ export type WorkbenchOperationOwner = (typeof WORKBENCH_OPERATION_OWNERS)[number
 
 export const WORKBENCH_BUSY_OPERATIONS = [
   "agent-planning",
+  "model-switching",
   "import-reading",
   "export-preparing",
   "operating-review-checking",

@@ -297,6 +297,121 @@ test("reveals a discovered credential only after review and saves only after ver
   await expect(modelStep).not.toContainText("discovery-test-secret");
 });
 
+test("keeps free-text Agent drafts and switches the active model inside the composer", async ({ page }) => {
+  const profile = (id: string, name: string, model: string) => ({
+    id,
+    name,
+    provider: "deepseek",
+    protocol: "anthropic-messages",
+    baseURL: "https://api.deepseek.com/anthropic",
+    model,
+    budget: { maxInputTokens: 50_000, maxOutputTokens: 4_000 },
+    credentialConfigured: true,
+    capabilities: {
+      protocol: "anthropic-messages",
+      structuredOutput: "forced-tool",
+      modelCatalog: true,
+      tokenUsage: "provider-reported",
+      maximumOutputTokens: 8_000,
+    },
+    health: { status: "healthy", checkedAt: "2026-09-02T00:00:00.000Z", retryAt: null },
+    createdAt: "2026-09-02T00:00:00.000Z",
+    updatedAt: "2026-09-02T00:00:00.000Z",
+  });
+  const profiles = [
+    profile("flash", "DeepSeek Flash", "deepseek-v4-flash"),
+    profile("pro", "DeepSeek Pro", "deepseek-v4-pro"),
+  ];
+  let activeProfileId = "flash";
+  const writes: Array<{ action?: string; profileId?: string }> = [];
+  const currentState = () => ({
+    vaultAvailable: true,
+    configured: true,
+    activeProfileId,
+    activeSource: "personal",
+    activeProfile: profiles.find((item) => item.id === activeProfileId),
+    profiles,
+    failoverEnabled: false,
+    deployment: {
+      configured: false,
+      provider: null,
+      model: null,
+      budget: null,
+      capabilities: null,
+      health: { status: "unknown", checkedAt: null, retryAt: null },
+    },
+  });
+  await page.route("**/api/model-profiles", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(currentState()) });
+      return;
+    }
+    const input = route.request().postDataJSON() as { action?: string; profileId?: string };
+    writes.push(input);
+    if (input.action === "activate" && profiles.some((item) => item.id === input.profileId)) {
+      activeProfileId = input.profileId!;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(currentState()) });
+      return;
+    }
+    await route.fulfill({ status: 400, contentType: "application/json", body: '{"error":"Unexpected action"}' });
+  });
+  await page.route("**/api/agent", async (route) => {
+    const input = route.request().postDataJSON() as { artifact: { source: string } };
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        provider: "deepseek",
+        profileName: "DeepSeek Pro",
+        model: "deepseek-v4-pro",
+        usage: { inputTokens: 20, outputTokens: 8 },
+        routing: { attempts: 1, failoverUsed: false },
+        plan: {
+          summary: "Preserve a free-text follow-up",
+          detail: "One harmless source comment proves that the submitted draft and next draft are independent.",
+          nextSource: `${input.artifact.source}\n\n<!-- free-text-agent-test -->`,
+          operationCount: 1,
+        },
+      }),
+    });
+  });
+
+  await openWorkbench(page);
+  await page.locator(".agent-dock-trigger").click();
+  const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
+  await expect(composer).toBeEditable();
+  await composer.fill("Explain the source assumptions");
+  await composer.press("Shift+Enter");
+  await composer.type("and keep my draft.");
+  await expect(composer).toHaveValue("Explain the source assumptions\nand keep my draft.");
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("rune-agent-draft-v1")))
+    .toBe("Explain the source assumptions\nand keep my draft.");
+
+  const modelPicker = page.getByLabel("Model for this message");
+  await expect(modelPicker).toHaveValue("profile:flash");
+  await modelPicker.selectOption("profile:pro");
+  await expect.poll(() => writes).toEqual([{ action: "activate", profileId: "pro" }]);
+  await expect(modelPicker).toHaveValue("profile:pro");
+
+  await composer.press("Enter");
+  await composer.fill("A follow-up written while the model is working.");
+  await expect(page.locator(".patch-card")).toBeVisible();
+  await expect(composer).toHaveValue("A follow-up written while the model is working.");
+  await page.getByRole("button", { name: "Discard proposed patch" }).click();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("rune-agent-draft-v1")))
+    .toBe("A follow-up written while the model is working.");
+
+  await page.reload();
+  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await page.locator(".agent-dock-trigger").click();
+  await expect(page.getByRole("textbox", { name: "Describe an artifact change" })).toHaveValue(
+    "A follow-up written while the model is working.",
+  );
+});
+
 test("reviews a CC Switch model import without navigating or persisting its credential", async ({ page }) => {
   const profileWrites: string[] = [];
   await page.route("**/api/model-profiles", async (route) => {

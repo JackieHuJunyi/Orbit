@@ -786,11 +786,16 @@ test("integrates assistance into the source surface and progressively discloses 
   const response = await render();
   const html = await response.text();
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const contentStyles = await readFile(new URL("../app/styles/content.css", import.meta.url), "utf8");
+  const composer = await readFile(new URL("../app/components/agent-composer.tsx", import.meta.url), "utf8");
+  const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
   assert.match(
     html,
     /class="agent-composer"[\s\S]*class="agent-suggestions"[\s\S]*class="agent-scope-switch"[\s\S]*class="run-button"/,
   );
   assert.match(html, /<details class="agent-suggestions"><summary>/);
+  assert.match(html, /data-agent-free-text="true"/);
+  assert.match(html, /aria-label="Model for this message"/);
   assert.match(html, /role="group" aria-label="Agent change scope"/);
   assert.match(html, /class="agent-hint"/);
   assert.doesNotMatch(html, /class="agent-title-row"/);
@@ -799,6 +804,12 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.match(styles, /\.agent-dock\s*\{[^}]*margin:\s*0;[^}]*border:\s*0;[^}]*border-top:/s);
   assert.match(styles, /\.agent-composer:focus-within\s*\{/);
   assert.match(styles, /\.run-button\s*\{[^}]*border-radius:\s*999px;/s);
+  assert.ok(composer.indexOf('className="agent-composer-body"') < composer.indexOf('className="agent-suggestions"'));
+  assert.match(composer, /rows=\{2\}[\s\S]{0,80}maxLength=\{2_000\}/u);
+  assert.match(contentStyles, /\.agent-model-picker select\s*\{/u);
+  assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1"/u);
+  assert.match(workbench, /event\.key !== "Enter" \|\| event\.shiftKey \|\| event\.nativeEvent\.isComposing/u);
+  assert.match(workbench, /setPrompt\(\(current\) => \(current === submittedComposerDraft \? "" : current\)\)/u);
 });
 
 test("organizes workspace files by product workflow rather than internal artifact inventory", async () => {

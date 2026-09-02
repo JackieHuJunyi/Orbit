@@ -110,6 +110,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent context": "Agent コンテキスト",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent は、ローカル コンパイラの障害を使用して 1 つの代替プランを準備しています",
+  "Agent will use local tools": "Agent はローカルツールを使用します",
   "Aggregate evidence preview": "集計根拠のプレビュー",
   Aggregation: "集計",
   "AI proposal · read-only until Apply": "AI の提案 · 適用するまで読み取り専用",
@@ -584,6 +585,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Mist Blue": "ミストブルー",
   Model: "モデル",
   "Model connected": "接続されているモデル",
+  "Model for this message": "このメッセージで使うモデル",
   "Model settings": "モデル設定",
   "Model unavailable; deterministic local operating review prepared for review":
     "モデルを利用できません。確認用に決定的なローカル業務レビューを準備しました",

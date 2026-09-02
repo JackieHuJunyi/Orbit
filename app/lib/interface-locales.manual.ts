@@ -3726,3 +3726,28 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Welcome to Orbit": "Orbit에 오신 것을 환영합니다",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "Model for this message": "Modèle pour ce message",
+  "Agent will use local tools": "L’Agent utilisera les outils locaux",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "Model for this message": "Modelo para este mensaje",
+  "Agent will use local tools": "El Agent usará herramientas locales",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "Model for this message": "Модель для этого сообщения",
+  "Agent will use local tools": "Агент будет использовать локальные инструменты",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "Model for this message": "النموذج المستخدم لهذه الرسالة",
+  "Agent will use local tools": "سيستخدم الوكيل الأدوات المحلية",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "Model for this message": "このメッセージで使うモデル",
+  "Agent will use local tools": "Agent はローカルツールを使用します",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "Model for this message": "이 메시지에 사용할 모델",
+  "Agent will use local tools": "Agent가 로컬 도구를 사용합니다",
+});

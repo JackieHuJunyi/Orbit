@@ -107,6 +107,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent context": "سياق Agent.",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "يستخدم Agent فشل المترجم المحلي لإعداد خطة بديلة واحدة",
+  "Agent will use local tools": "سيستخدم الوكيل الأدوات المحلية",
   "Aggregate evidence preview": "معاينة الأدلة المجمّعة",
   Aggregation: "التجميع",
   "AI proposal · read-only until Apply": "اقتراح الذكاء الاصطناعي · للقراءة فقط حتى التطبيق",
@@ -571,6 +572,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Mist Blue": "أزرق ضبابي",
   Model: "النموذج",
   "Model connected": "النموذج متصل",
+  "Model for this message": "النموذج المستخدم لهذه الرسالة",
   "Model settings": "إعدادات النموذج",
   "Model unavailable; deterministic local operating review prepared for review":
     "النموذج غير متاح؛ أُعدت مراجعة تشغيلية محلية حتمية للمراجعة",

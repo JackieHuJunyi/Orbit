@@ -74,10 +74,24 @@ Distinct from: It uses two equal parallel ellipses rather than the radial spokes
 
 Not a UI glyph: Checked against link, refresh, share, sync, and infinity controls; the two coral planetary nodes make its purpose specific.
 
+### 6. Parallel orbits, product finish (axis: none)
+
+Depicts: parallel orbits
+
+Metaphor: The selected geometry receives one restrained product finish: Deep Space for depth, Starlight for the shared paths, and one Mist Blue for both equal peers.
+
+Gestalt device: continuity
+
+16px risk: The lower-saturation planets must remain distinct from the dark field.
+
+Distinct from: The cool material palette removes the alert-like coral association while retaining the non-radial dual-path silhouette.
+
+Not a UI glyph: Checked against link, refresh, share, sync, and infinity controls; the two equal planetary nodes remain the identifying break.
+
 ## Palette
 
-Background `#2A2A2E` · Glyph `#E8E8EA` · Accent none
+Selected background `#1D2834` · Path `#F4F2ED` · Planets `#9EBBCB`
 
 ## Recommendation
 
-Compare Orbital knot with planetary nodes against Parallel orbits at 16px. The knot has the stronger silhouette; Parallel orbits follows the requested metaphor more literally and should win if its crossings remain clean.
+Use Parallel orbits, product finish. It follows the requested metaphor literally, keeps the crossings clean, and replaces warning-like coral with a calmer Deep Space, Starlight, and Mist Blue system inspired by current Apple product finishes.

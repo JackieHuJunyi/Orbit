@@ -3,7 +3,59 @@
 .source-editor { scroll-padding-block: 45%; }
 .line-gutter { font-size: var(--rune-type-caption); line-height: 1.72; }
 .agent-composer { border-radius: 22px; }
-.agent-composer textarea { font-size: var(--rune-type-ui); line-height: 1.5; }
+.agent-composer-body { display: grid; min-width: 0; gap: 4px; padding: 3px 4px 0; }
+.agent-composer-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .015em;
+}
+.agent-composer textarea {
+  min-height: 46px;
+  padding: 0;
+  font-size: var(--rune-type-ui);
+  line-height: 1.5;
+}
+.agent-suggestions { padding-top: 7px; border-top: 1px solid var(--rune-material-divider); }
+.agent-composer-row { flex-wrap: wrap; }
+.agent-composer-trailing { min-width: 0; }
+.agent-model-picker {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+}
+.agent-model-picker select {
+  width: auto;
+  min-width: 116px;
+  max-width: min(220px, 28vw);
+  height: 30px;
+  padding-block: 0;
+  padding-inline: 10px 28px;
+  overflow: hidden;
+  border: 1px solid var(--rune-material-divider);
+  border-radius: 999px;
+  appearance: none;
+  background: var(--rune-material-control);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-model-picker select:hover:not(:disabled) { border-color: var(--rune-material-edge); }
+.agent-model-picker select:focus-visible { outline: 2px solid rgba(var(--theme-rgb), .24); outline-offset: 2px; }
+.agent-model-picker select:disabled { cursor: not-allowed; opacity: .55; }
+.agent-model-picker > svg {
+  position: absolute;
+  inset-inline-end: 9px;
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+  pointer-events: none;
+}
 .agent-dock {
   position: relative;
   transition:

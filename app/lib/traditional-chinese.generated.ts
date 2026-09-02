@@ -2566,6 +2566,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "匯出已暫停稽核"
   ],
   [
+    "将使用本地工具",
+    "將使用本地工具"
+  ],
+  [
     "将用作替代文本",
     "將用作替代文本"
   ],
@@ -3936,6 +3940,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "已修复一次",
     "已修復一次"
+  ],
+  [
+    "已切换模型",
+    "已切換模型"
   ],
   [
     "已原子应用",

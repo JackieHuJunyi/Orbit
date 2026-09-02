@@ -91,7 +91,11 @@
   stroke-width: 2.25;
 }
 
-.orbit-mark__planet { fill: var(--theme-accent); }
+.orbit-mark__planet { fill: #7e9fb2; }
+
+@media (forced-colors: active) {
+  .orbit-mark__planet { fill: CanvasText; }
+}
 
 .brand-mark {
   width: 30px;

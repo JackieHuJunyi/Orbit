@@ -58,7 +58,7 @@ import {
   type SemanticHtmlEditableCopyHandler,
   type SemanticHtmlSlideEditHandler,
 } from "./artifact-previews";
-import { AgentComposer, type AgentScope } from "./agent-composer";
+import { AgentComposer, type AgentModelOption, type AgentScope } from "./agent-composer";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchExportMenu } from "./workbench-export-menu";
 import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
@@ -177,6 +177,7 @@ import {
   type RuneUICopy,
 } from "../lib/localization";
 import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode } from "../lib/model-preference";
+import type { ModelProfilesState } from "../lib/model-profiles";
 import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
 import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
 import {
@@ -358,6 +359,7 @@ function DeferredWorkbenchSurfaceFallback({
 }
 
 const STORAGE_KEY = "rune-workspace-v0";
+const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1";
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
   patches: ArtifactSourcePatch[],
@@ -886,7 +888,6 @@ export function RuneWorkbench() {
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [agentError, setAgentError] = useState("");
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
-  const [agentMode, setAgentMode] = useState<"openai" | "local">("local");
   const [agentScope, setAgentScope] = useState<AgentScope>("artifact");
   const [agentComposerOpen, setAgentComposerOpen] = useState(false);
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
@@ -901,6 +902,8 @@ export function RuneWorkbench() {
   const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
   const localeRequestRef = useRef(0);
   const [modelMode, setModelMode] = useState<RuneModelMode>("model-assisted");
+  const [modelProfilesState, setModelProfilesState] = useState<ModelProfilesState | null>(null);
+  const [agentModelSwitching, setAgentModelSwitching] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(true);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
@@ -952,6 +955,28 @@ export function RuneWorkbench() {
   selectedIdRef.current = selectedId;
   workspaceResetRecoveryRef.current = workspaceResetRecovery;
   const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
+  const agentModelOptions = useMemo<AgentModelOption[]>(() => {
+    const options: AgentModelOption[] = [];
+    for (const profile of modelProfilesState?.profiles ?? []) {
+      options.push({ value: `profile:${profile.id}`, label: `${profile.name} · ${profile.model}` });
+    }
+    if (modelProfilesState?.deployment.configured) {
+      options.push({
+        value: "deployment",
+        label: `${modelProfilesState.deployment.provider ?? ui.modelConnected} · ${modelProfilesState.deployment.model ?? ui.modelConnected}`,
+      });
+    }
+    options.push({ value: "local", label: ui.localFallback });
+    return options;
+  }, [modelProfilesState, ui.localFallback, ui.modelConnected]);
+  const selectedAgentModel =
+    modelMode === "device-tools-only"
+      ? "local"
+      : modelProfilesState?.activeSource === "personal" && modelProfilesState.activeProfileId
+        ? `profile:${modelProfilesState.activeProfileId}`
+        : modelProfilesState?.activeSource === "deployment"
+          ? "deployment"
+          : "local";
   const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
     () =>
@@ -1178,6 +1203,35 @@ export function RuneWorkbench() {
       // This preference contains no credential; in-memory mode remains available.
     }
   }, []);
+
+  const refreshAgentModels = useCallback(async () => {
+    try {
+      const response = await fetch("/api/model-profiles", { cache: "no-store", credentials: "same-origin" });
+      const payload = (await response.json()) as ModelProfilesState;
+      if (!response.ok || !Array.isArray(payload.profiles) || typeof payload.configured !== "boolean") return;
+      setModelProfilesState(payload);
+    } catch {
+      // The free-text composer and deterministic local planner stay available.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || welcomeOpen) return;
+    void refreshAgentModels();
+  }, [agentComposerOpen, hydrated, refreshAgentModels, welcomeOpen]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = window.setTimeout(() => {
+      try {
+        if (prompt) localStorage.setItem(AGENT_DRAFT_STORAGE_KEY, prompt.slice(0, 2_000));
+        else localStorage.removeItem(AGENT_DRAFT_STORAGE_KEY);
+      } catch {
+        // A draft remains editable in memory when device storage is unavailable.
+      }
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [hydrated, prompt]);
 
   const handleVisualSourceDraftChange = useCallback((draft: VisualSourceDraft | null) => {
     setVisualSourceDraft((current) => {
@@ -1428,6 +1482,7 @@ export function RuneWorkbench() {
         },
         busy: {
           "agent-planning": agentState === "planning",
+          "model-switching": agentModelSwitching,
           "import-reading": importState === "reading",
           "export-preparing": exportState !== "idle",
           "operating-review-checking": operatingReviewState !== "idle",
@@ -1440,6 +1495,7 @@ export function RuneWorkbench() {
       }),
     [
       activeVisualSourceDraft,
+      agentModelSwitching,
       agentState,
       deliveryOutcomeState,
       directoryState,
@@ -1469,6 +1525,40 @@ export function RuneWorkbench() {
   );
   const operationStartBlocked = !workbenchOperationGate.canStartOperation;
   const artifactCreationDisabled = operationStartBlocked;
+  async function changeAgentModel(value: string) {
+    if (agentModelSwitching || operationStartBlocked) return;
+    setAgentModelSwitching(true);
+    setAgentError("");
+    try {
+      if (value === "local") {
+        setPreferredModelMode("device-tools-only");
+        setNotice(runeText(locale, "Agent will use local tools", "Agent 将使用本地工具"));
+        return;
+      }
+      const requestBody =
+        value === "deployment" ? { action: "deployment" } : { action: "activate", profileId: value.slice(8) };
+      const response = await fetch("/api/model-profiles", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+      const payload = (await response.json()) as ModelProfilesState & { error?: unknown };
+      if (!response.ok || !payload.configured) {
+        throw new Error(
+          typeof payload.error === "string" ? payload.error : "Orbit could not activate that model connection.",
+        );
+      }
+      setModelProfilesState(payload);
+      setPreferredModelMode("model-assisted");
+      const label = agentModelOptions.find((option) => option.value === value)?.label ?? ui.modelConnected;
+      setNotice(runeText(locale, `Model switched · ${label}`, `已切换模型 · ${label}`));
+    } catch (error) {
+      setAgentError(error instanceof Error ? error.message : "Orbit could not switch models.");
+    } finally {
+      setAgentModelSwitching(false);
+    }
+  }
   const canStartOrReplaceOperation = (owner?: WorkbenchOperationOwner) =>
     workbenchOperationGate.canStartOperation ||
     Boolean(owner && workbenchOperationCanReplace(workbenchOperationGate, owner));
@@ -1540,12 +1630,14 @@ export function RuneWorkbench() {
             localStorage.getItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY),
           );
           const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
+          const storedAgentDraft = localStorage.getItem(AGENT_DRAFT_STORAGE_KEY) ?? "";
           setDetectedLocale(detected);
           setLocale(nextLocale);
           setModelMode(storedModelMode ?? "model-assisted");
           setAppearanceTheme(storedAppearance ?? "mist-blue");
           setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
           setWorkspaceView(storedWorkspaceView ?? "split");
+          setPrompt(storedAgentDraft.slice(0, 2_000));
           setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
@@ -3056,6 +3148,11 @@ export function RuneWorkbench() {
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
     if (!instruction || !workbenchOperationGate.canStartOperation) return;
+    const submittedComposerDraft = nextPrompt === prompt ? prompt : null;
+    const clearSubmittedComposerDraft = () => {
+      if (submittedComposerDraft == null) return;
+      setPrompt((current) => (current === submittedComposerDraft ? "" : current));
+    };
     const scope = agentScope;
     const targetSelection = scope === "selection" ? validSourceSelection : null;
     if (scope === "selection" && !targetSelection) {
@@ -3280,8 +3377,7 @@ export function RuneWorkbench() {
             runtimeRepair,
             runtimePreflight,
           });
-          setAgentMode("openai");
-          setPrompt("");
+          clearSubmittedComposerDraft();
           const repairSuffix = runtimeRepair ? " · repaired once from local compiler feedback" : "";
           if (scope === "workspace") {
             const changeCount = remotePlan.patches.length + remotePlan.creations.length;
@@ -3346,8 +3442,7 @@ export function RuneWorkbench() {
         });
         setNotice(fallbackNotice);
       }
-      setAgentMode("local");
-      setPrompt("");
+      clearSubmittedComposerDraft();
     } catch (error) {
       setPendingChange(null);
       const message = error instanceof Error ? error.message : "Orbit could not plan that change.";
@@ -3912,7 +4007,6 @@ export function RuneWorkbench() {
         runtimePreflight,
       });
       setPendingReviewId(reviewPlan.creations[0]?.artifact.id ?? reviewPlan.patches[0]?.artifactId ?? "");
-      setAgentMode(narrative ? "openai" : "local");
       setOperatingReviewOpen(false);
       setEditingOperatingReviewId("");
       setTaskSession(null);
@@ -4024,7 +4118,6 @@ export function RuneWorkbench() {
         runtimePreflight,
       });
       setPendingReviewId(outputArtifactId);
-      setAgentMode(outline ? "openai" : "local");
       setDocumentBriefingOpen(false);
       setPreferredDocumentBriefingTargetId("");
       setTaskSession(null);
@@ -4599,10 +4692,9 @@ export function RuneWorkbench() {
   }
 
   function onPromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-      event.preventDefault();
-      void runAgent();
-    }
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    void runAgent();
   }
 
   function changeAgentScope(scope: AgentScope) {
@@ -5707,9 +5799,10 @@ export function RuneWorkbench() {
                     scope={agentScope}
                     onScopeChange={changeAgentScope}
                     busy={agentState === "planning" || visualEditState !== "idle"}
+                    modelSwitching={agentModelSwitching}
                     locked={operationStartBlocked}
                     selectionUnavailable={!validSourceSelection}
-                    mode={agentMode}
+                    mode={selectedAgentModel === "local" ? "local" : "openai"}
                     placeholder={
                       agentScope === "workspace"
                         ? ui.askWorkspace
@@ -5728,9 +5821,13 @@ export function RuneWorkbench() {
                     scopeGroupLabel={ui.agentScope}
                     suggestedActionsLabel={ui.suggestedActions}
                     sendLabel={ui.planChange}
-                    sendTitle={`${ui.planChange} (⌘ Enter)`}
+                    sendTitle={`${ui.planChange} (Enter)`}
                     modelConnectedLabel={ui.modelConnected}
                     localFallbackLabel={ui.localFallback}
+                    modelSelectLabel={ui.agentModel}
+                    modelOptions={agentModelOptions}
+                    selectedModel={selectedAgentModel}
+                    onModelChange={(value) => void changeAgentModel(value)}
                     planHint={ui.planHint}
                     queryEvidenceText={
                       agentScope === "workspace" && workspaceAgentQueryCount > 0
