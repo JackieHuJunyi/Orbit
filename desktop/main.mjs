@@ -10,6 +10,7 @@ import { createDesktopModelDiscovery } from "./model-discovery.mjs";
 const desktopDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(desktopDirectory, "..");
 const clientDirectory = path.join(projectDirectory, "dist/client");
+const orbitAppIconPath = path.join(desktopDirectory, "orbit-app-icon.png");
 const STATIC_CONTENT_TYPES = Object.freeze({
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -137,6 +138,7 @@ async function createRuneWindow() {
     minHeight: 640,
     titleBarStyle: "hiddenInset",
     backgroundColor: "#f6f5f1",
+    icon: orbitAppIconPath,
     webPreferences: {
       preload: path.join(desktopDirectory, "preload.cjs"),
       contextIsolation: true,
@@ -156,6 +158,7 @@ async function createRuneWindow() {
 }
 
 app.whenReady().then(async () => {
+  if (process.platform === "darwin") app.dock.setIcon(orbitAppIconPath);
   await initializeDesktopCredentialVault();
   desktopModelDiscovery = createDesktopModelDiscovery({ homeDirectory: app.getPath("home") });
   ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);

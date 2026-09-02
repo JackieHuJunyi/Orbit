@@ -88,12 +88,11 @@
 
 .orbit-mark__path {
   stroke: currentColor;
-  stroke-width: 1.55;
-  opacity: .24;
+  stroke-width: 1.35;
+  opacity: .32;
 }
 
-.orbit-mark__planet--primary { fill: currentColor; }
-.orbit-mark__planet--companion { fill: var(--theme-accent); }
+.orbit-mark__planet { fill: currentColor; }
 
 .brand-mark {
   width: 30px;

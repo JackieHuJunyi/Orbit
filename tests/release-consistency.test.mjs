@@ -62,9 +62,11 @@ test("presents Orbit while preserving the legacy Rune compatibility namespace", 
 });
 
 test("ships one shared, scalable two-planet Orbit mark", async () => {
-  const [mark, icon, welcome, workbench, shellStyles, onboardingStyles] = await Promise.all([
+  const [mark, icon, dockIcon, desktop, welcome, workbench, shellStyles, onboardingStyles] = await Promise.all([
     rootFile("app/components/orbit-mark.tsx"),
     rootFile("app/icon.svg"),
+    readFile(new URL("../desktop/orbit-app-icon.png", import.meta.url)),
+    rootFile("desktop/main.mjs"),
     rootFile("app/components/welcome-experience.tsx"),
     rootFile("app/components/rune-workbench.tsx"),
     rootFile("app/styles/shell.css"),
@@ -72,14 +74,19 @@ test("ships one shared, scalable two-planet Orbit mark", async () => {
   ]);
 
   assert.equal(mark.match(/<circle\b/gu)?.length, 2);
-  assert.match(mark, /<ellipse[\s\S]{0,220}className="orbit-mark__path"/u);
+  assert.equal(mark.match(/<ellipse\b/gu)?.length, 2);
+  assert.match(mark, /orbit-mark__path--first/u);
+  assert.match(mark, /orbit-mark__path--second/u);
   assert.match(mark, /aria-hidden="true"[\s\S]{0,80}focusable="false"/u);
-  assert.match(icon, /<ellipse\b/u);
+  assert.equal(icon.match(/<ellipse\b/gu)?.length, 2);
   assert.equal(icon.match(/<circle\b/gu)?.length, 2);
+  assert.deepEqual([...dockIcon.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.match(desktop, /icon: orbitAppIconPath/u);
+  assert.match(desktop, /app\.dock\.setIcon\(orbitAppIconPath\)/u);
   assert.match(welcome, /<OrbitMark className="orbit-mark" \/>/u);
   assert.match(workbench, /<OrbitMark className="orbit-mark" \/>/u);
   assert.doesNotMatch(`${welcome}\n${workbench}`, /<span>O<\/span>/u);
-  assert.match(shellStyles, /\.orbit-mark__planet--companion \{ fill: var\(--theme-accent\); \}/u);
+  assert.match(shellStyles, /\.orbit-mark__planet \{ fill: currentColor; \}/u);
   assert.match(onboardingStyles, /\.welcome-chrome-brand \.orbit-mark/u);
 });
 
