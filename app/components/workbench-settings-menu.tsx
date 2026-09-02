@@ -16,7 +16,7 @@ import type { RefObject } from "react";
 import { useWorkbenchMenuFocus, type WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 import { RUNE_APPEARANCE_THEMES, type RuneAppearanceTheme } from "../lib/appearance";
 import { runeText, runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
-import { ORBIT_PRODUCT_LOCKUP, ORBIT_PRODUCT_VERSION } from "../lib/product-meta";
+import { ORBIT_PRODUCT_NAME, ORBIT_PRODUCT_VERSION } from "../lib/product-meta";
 
 type WorkbenchSettingsMenuProps = {
   appearanceTheme: RuneAppearanceTheme;
@@ -246,7 +246,7 @@ export function WorkbenchSettingsMenu({
       <footer className="tools-version" role="presentation">
         <span>{copy.version}</span>
         <strong dir="ltr">
-          {ORBIT_PRODUCT_LOCKUP} {ORBIT_PRODUCT_VERSION}
+          {ORBIT_PRODUCT_NAME} {ORBIT_PRODUCT_VERSION}
         </strong>
       </footer>
     </div>

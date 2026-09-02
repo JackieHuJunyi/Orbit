@@ -1219,7 +1219,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Weekly review": "Revue hebdomadaire",
   "Welcome & local guide": "Accueil & guide local",
   "Welcome to Orbit": "Bienvenue sur Orbit",
-  "Welcome to Orbit · 引力": "Bienvenue sur Orbit · 引力",
   "What should this presentation move forward?": "Que doit faire avancer cette présentation ?",
   "Whole page": "Page entière",
   Width: "Largeur",

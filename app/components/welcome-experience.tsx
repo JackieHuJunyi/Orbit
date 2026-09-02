@@ -24,6 +24,7 @@ import {
   type ReactNode,
 } from "react";
 import { HandwrittenGreeting } from "./handwritten-greeting";
+import { OrbitMark } from "./orbit-mark";
 import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
   localeDisplayName,
@@ -33,7 +34,7 @@ import {
   type RuneLocale,
 } from "../lib/localization";
 import { type RuneModelMode } from "../lib/model-preference";
-import { ORBIT_PRODUCT_LOCKUP, ORBIT_PRODUCT_NAME } from "../lib/product-meta";
+import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
 const WelcomeModelStep = lazy(() =>
@@ -49,7 +50,7 @@ export const WELCOME_BASE_COPY = {
     back: "上一步",
     skip: "跳过",
     close: "关闭教程",
-    welcomeEyebrow: "欢迎来到 Orbit · 引力",
+    welcomeEyebrow: "欢迎来到 Orbit",
     welcomeTitle: "让每一份工作，都有清晰的来处。",
     welcomeBody: "文档、数据、图表和演示共享同一套可读源内容。你专注判断，Orbit 负责把变化实时连接起来。",
     begin: "继续设置",
@@ -129,7 +130,7 @@ export const WELCOME_BASE_COPY = {
     back: "Back",
     skip: "Skip",
     close: "Close tutorial",
-    welcomeEyebrow: "Welcome to Orbit · 引力",
+    welcomeEyebrow: "Welcome to Orbit",
     welcomeTitle: "Every piece of work, with a clear source.",
     welcomeBody:
       "Documents, data, charts, and presentations share one readable source system. You make the judgment; Orbit keeps every change connected.",
@@ -223,7 +224,7 @@ function ShortcutKey({ children }: { children: ReactNode }) {
 }
 
 function IsolatedProductName({ children }: { children: string }) {
-  const pieces = children.split(/(Orbit(?: · 引力)?)/u).filter(Boolean);
+  const pieces = children.split(/(Orbit)/u).filter(Boolean);
   return (
     <>
       {pieces.map((piece, index) => (
@@ -380,8 +381,8 @@ export function WelcomeExperience({
       >
         <header className="welcome-chrome">
           <div className="welcome-chrome-brand" aria-hidden="true">
-            <span>O</span>
-            <strong dir="ltr">{ORBIT_PRODUCT_LOCKUP}</strong>
+            <OrbitMark className="orbit-mark" />
+            <strong dir="ltr">{ORBIT_PRODUCT_NAME}</strong>
           </div>
           <div
             className="welcome-progress"

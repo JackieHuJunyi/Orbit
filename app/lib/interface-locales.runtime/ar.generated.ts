@@ -1175,7 +1175,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Weekly review": "مراجعة أسبوعية",
   "Welcome & local guide": "الترحيب والدليل المحلي",
   "Welcome to Orbit": "مرحبًا بك في Orbit",
-  "Welcome to Orbit · 引力": "مرحبًا بك في Orbit · 引力",
   "What should this presentation move forward?": "ما الذي يجب أن يدفعه هذا العرض إلى الأمام؟",
   "Whole page": "الصفحة كاملة",
   Width: "العرض",

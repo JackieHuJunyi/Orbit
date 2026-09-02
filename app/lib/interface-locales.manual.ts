@@ -3709,20 +3709,20 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 });
 
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
-  "Welcome to Orbit · 引力": "Bienvenue sur Orbit · 引力",
+  "Welcome to Orbit": "Bienvenue sur Orbit",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
-  "Welcome to Orbit · 引力": "Bienvenido a Orbit · 引力",
+  "Welcome to Orbit": "Bienvenido a Orbit",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
-  "Welcome to Orbit · 引力": "Добро пожаловать в Orbit · 引力",
+  "Welcome to Orbit": "Добро пожаловать в Orbit",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
-  "Welcome to Orbit · 引力": "مرحبًا بك في Orbit · 引力",
+  "Welcome to Orbit": "مرحبًا بك في Orbit",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
-  "Welcome to Orbit · 引力": "Orbit · 引力 へようこそ",
+  "Welcome to Orbit": "Orbit へようこそ",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
-  "Welcome to Orbit · 引力": "Orbit · 引力에 오신 것을 환영합니다",
+  "Welcome to Orbit": "Orbit에 오신 것을 환영합니다",
 });

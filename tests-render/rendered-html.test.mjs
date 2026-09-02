@@ -37,7 +37,7 @@ test("server-renders the Orbit artifact workbench", async () => {
   assert.doesNotMatch(html, /data-ambient-motion/);
   assert.match(html, /data-motion-renderer="vector-centerline"/);
   assert.doesNotMatch(html, /Preparing Orbit/);
-  assert.match(html, /<title>Orbit · 引力 — Work that traces back to source<\/title>/i);
+  assert.match(html, /<title>Orbit — Work that traces back to source<\/title>/i);
   assert.match(html, /Local workspace/);
   assert.match(html, /q2-review\.md/);
   assert.match(html, /Create operating review/);
@@ -774,7 +774,7 @@ test("keeps the status bar task-focused and moves product version into More Tool
   );
   assert.match(
     settingsMenu,
-    /className="tools-version"[\s\S]{0,180}<strong dir="ltr">[\s\S]{0,80}\{ORBIT_PRODUCT_LOCKUP\} \{ORBIT_PRODUCT_VERSION\}[\s\S]{0,20}<\/strong>/,
+    /className="tools-version"[\s\S]{0,180}<strong dir="ltr">[\s\S]{0,80}\{ORBIT_PRODUCT_NAME\} \{ORBIT_PRODUCT_VERSION\}[\s\S]{0,20}<\/strong>/,
   );
   assert.match(ORBIT_PRODUCT_VERSION, /^\d+\.\d+$/);
   assert.match(html, /class="statusbar-right"><span>160 words · 34 lines<\/span><\/div>/);
@@ -846,10 +846,7 @@ test("keeps the top bar global and moves duplicate task creation into the activi
     source.indexOf("</header>", source.indexOf('<header className="topbar">')),
   );
   assert.doesNotMatch(topbarSource, /openOperatingReview|review-task-button|ClipboardList/);
-  assert.match(
-    html,
-    /class="brand-copy"><strong dir="ltr">Orbit · 引力<\/strong><\/div><span class="project-separator"/,
-  );
+  assert.match(html, /class="brand-copy"><strong dir="ltr">Orbit<\/strong><\/div><span class="project-separator"/);
   assert.match(html, /class="save-indicator saved" role="status" aria-label="Saved on device · Last saved/);
   assert.match(html, /class="visually-hidden">Saved on device<\/span>/);
   assert.match(activityRailSource, /className="activity-button"[\s\S]{0,420}onClick=\{onOperatingReview\}/);

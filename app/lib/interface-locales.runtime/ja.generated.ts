@@ -1199,7 +1199,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Weekly review": "週次レビュー",
   "Welcome & local guide": "ようこそ＆地元ガイド",
   "Welcome to Orbit": "Orbit へようこそ",
-  "Welcome to Orbit · 引力": "Orbit · 引力 へようこそ",
   "What should this presentation move forward?": "このプレゼンで何を前に進めますか？",
   "Whole page": "ページ全体",
   Width: "幅",

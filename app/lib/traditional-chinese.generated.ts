@@ -4670,6 +4670,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "匯出路徑"
   ],
   [
+    "導入接続",
+    "匯入接続"
+  ],
+  [
     "尚无结果",
     "尚無結果"
   ],

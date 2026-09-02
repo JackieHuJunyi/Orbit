@@ -4,6 +4,7 @@ dist/
 .vinext/
 .wrangler/
 public/ocr/
+app/icon.svg
 coverage/
 package-lock.json
 *.tsbuildinfo

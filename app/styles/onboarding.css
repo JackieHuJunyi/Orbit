@@ -187,23 +187,20 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: var(--rune-space-2);
+  gap: 7px;
   color: var(--ink);
 }
 
-.welcome-chrome-brand span {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 8px 8px 8px 3px;
-  background: var(--rune-accent-surface);
-  color: var(--rune-accent-foreground);
-  font-family: Georgia, serif;
-  font-size: 14px;
-}
+.welcome-chrome-brand .orbit-mark { width: 27px; height: 27px; flex: 0 0 27px; }
 
-.welcome-chrome-brand strong { overflow: hidden; font-size: 12px; font-weight: 650; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
+.welcome-chrome-brand strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .welcome-progress { display: inline-flex; align-items: center; gap: 6px; }
 .welcome-progress span { width: 24px; height: 3px; border-radius: 999px; }
 

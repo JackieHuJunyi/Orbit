@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-09-02 — Shipped Orbit v1.56 with the single English **Orbit** wordmark, a reusable two-planet SVG for first-run and Workbench chrome, a matching browser icon, English-only social artwork, and nine-locale rules that translate the surrounding interface without modifying the product name.
 - 2026-09-02 — Shipped Orbit v1.55 with the **Orbit · 引力** public identity across web, desktop, nine-language UI, local guide, generated deliverables, package metadata, and active documentation while preserving every legacy `rune-*` device-data, asset, IPC, environment, theme, and implementation compatibility contract.
 - 2026-09-02 — Shipped Rune v1.54 with first-class DeepSeek discovery and verification, credential-safe duplicate collapse across known desktop sources, and bottom-baseline setup navigation that remains readable and aligned across all nine interfaces.
 - 2026-09-02 — Shipped Rune v1.53 with redacted desktop discovery for known cloud configurations and Ollama/LM Studio, explicit review → credential read → verification → encrypted-save ordering, unambiguous model-assisted/device-model/model-free language, fail-closed JSON imports, human-reviewed nine-language setup copy, 44 px compact controls, and a denser but bounded Markdown reading measure.

@@ -1,12 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import {
-  ORBIT_PRODUCT_LOCKUP,
-  ORBIT_PRODUCT_NAME,
-  ORBIT_PRODUCT_NAME_ZH,
-  ORBIT_PRODUCT_VERSION,
-} from "../app/lib/product-meta.ts";
+import { ORBIT_PRODUCT_NAME, ORBIT_PRODUCT_VERSION } from "../app/lib/product-meta.ts";
 import { isExpectedE2EStreamCancellation } from "../scripts/start-e2e.mjs";
 
 const rootFile = (name) => readFile(new URL(`../${name}`, import.meta.url), "utf8");
@@ -45,27 +40,47 @@ test("presents Orbit while preserving the legacy Rune compatibility namespace", 
   const packageJson = JSON.parse(packageSource);
 
   assert.equal(ORBIT_PRODUCT_NAME, "Orbit");
-  assert.equal(ORBIT_PRODUCT_NAME_ZH, "引力");
-  assert.equal(ORBIT_PRODUCT_LOCKUP, "Orbit · 引力");
   assert.equal(packageJson.name, "orbit-office");
-  assert.match(packageJson.description, /Orbit · 引力/u);
-  assert.match(layout, /ORBIT_PRODUCT_LOCKUP/);
-  assert.match(welcome, /欢迎来到 Orbit · 引力/u);
-  assert.match(welcome, /Welcome to Orbit · 引力/u);
-  assert.match(workbench, /<strong dir="ltr">\{ORBIT_PRODUCT_LOCKUP\}<\/strong>/u);
-  assert.match(settings, /\{ORBIT_PRODUCT_LOCKUP\} \{ORBIT_PRODUCT_VERSION\}/u);
+  assert.match(packageJson.description, /^Orbit —/u);
+  assert.match(layout, /ORBIT_PRODUCT_NAME/);
+  assert.match(welcome, /欢迎来到 Orbit/u);
+  assert.match(welcome, /Welcome to Orbit/u);
+  assert.match(workbench, /<strong dir="ltr">\{ORBIT_PRODUCT_NAME\}<\/strong>/u);
+  assert.match(settings, /\{ORBIT_PRODUCT_NAME\} \{ORBIT_PRODUCT_VERSION\}/u);
   assert.match(desktop, /app\.setName\("Orbit"\)/u);
   assert.match(desktop, /path\.join\(app\.getPath\("appData"\), "Rune"\)/u);
   assert.match(desktop, /app\.setPath\("userData", legacyRuneUserDataDirectory\)/u);
   assert.doesNotMatch(
     `${layout}\n${welcome}\n${workbench}\n${settings}\n${desktop}`,
-    /Welcome to Rune|<strong>Rune|setName\("Rune"\)/u,
+    /Orbit · 引力|Welcome to Rune|<strong>Rune|setName\("Rune"\)/u,
   );
 
   assert.match(layout, /rune-onboarding-v1/u);
   assert.match(desktop, /RUNE_CREDENTIAL_ENCRYPTION_KEY/u);
   assert.match(directoryWorkspace, /\.rune-assets/u);
   assert.match(localAssets, /rune-asset:sha256:/u);
+});
+
+test("ships one shared, scalable two-planet Orbit mark", async () => {
+  const [mark, icon, welcome, workbench, shellStyles, onboardingStyles] = await Promise.all([
+    rootFile("app/components/orbit-mark.tsx"),
+    rootFile("app/icon.svg"),
+    rootFile("app/components/welcome-experience.tsx"),
+    rootFile("app/components/rune-workbench.tsx"),
+    rootFile("app/styles/shell.css"),
+    rootFile("app/styles/onboarding.css"),
+  ]);
+
+  assert.equal(mark.match(/<circle\b/gu)?.length, 2);
+  assert.match(mark, /<ellipse[\s\S]{0,220}className="orbit-mark__path"/u);
+  assert.match(mark, /aria-hidden="true"[\s\S]{0,80}focusable="false"/u);
+  assert.match(icon, /<ellipse\b/u);
+  assert.equal(icon.match(/<circle\b/gu)?.length, 2);
+  assert.match(welcome, /<OrbitMark className="orbit-mark" \/>/u);
+  assert.match(workbench, /<OrbitMark className="orbit-mark" \/>/u);
+  assert.doesNotMatch(`${welcome}\n${workbench}`, /<span>O<\/span>/u);
+  assert.match(shellStyles, /\.orbit-mark__planet--companion \{ fill: var\(--theme-accent\); \}/u);
+  assert.match(onboardingStyles, /\.welcome-chrome-brand \.orbit-mark/u);
 });
 
 test("runs every browser scenario in Chromium, Firefox, and WebKit", async () => {

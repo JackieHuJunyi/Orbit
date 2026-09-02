@@ -69,6 +69,7 @@ import { useSourcePreviewScroll } from "./use-source-preview-scroll";
 import type { VisualSourceDraft } from "./use-visual-source-draft";
 import type { PdfOcrSelection } from "./pdf-ocr-setup-dialog";
 import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
+import { OrbitMark } from "./orbit-mark";
 import {
   commitPreparedArtifactCreation,
   prepareArtifactCreation,
@@ -177,7 +178,7 @@ import {
 } from "../lib/localization";
 import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode } from "../lib/model-preference";
 import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
-import { ORBIT_PRODUCT_LOCKUP } from "../lib/product-meta";
+import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
 import {
   deferredSurfaceCopy,
   documentBriefingNoticeCopy,
@@ -4717,10 +4718,10 @@ export function RuneWorkbench() {
             {fileRailOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
           </button>
           <div className="brand-mark" aria-hidden="true">
-            <span>O</span>
+            <OrbitMark className="orbit-mark" />
           </div>
           <div className="brand-copy">
-            <strong dir="ltr">{ORBIT_PRODUCT_LOCKUP}</strong>
+            <strong dir="ltr">{ORBIT_PRODUCT_NAME}</strong>
           </div>
           <span className="project-separator" aria-hidden="true" />
           <div className="project-name">{directoryHandle?.name ?? ui.localWorkspace}</div>
