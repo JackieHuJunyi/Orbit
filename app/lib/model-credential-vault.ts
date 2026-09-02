@@ -3,6 +3,7 @@ import {
   MODEL_PROFILE_COOKIE,
   MODEL_PROFILE_COOKIE_MAX_AGE,
   modelCapabilityManifest,
+  modelProviderAvailableInEnvironment,
   normalizeModelTokenBudget,
   normalizeModelProfileVault,
   type ModelCapabilityManifest,
@@ -156,7 +157,9 @@ export async function resolveModelRouting(
   environment: Record<string, string | undefined> = process.env,
 ) {
   const vault = await readModelProfileVault(request, environment);
-  const personal = vault.profiles.map(storedProfileConnection);
+  const personal = vault.profiles
+    .filter((profile) => modelProviderAvailableInEnvironment(profile.provider, environment))
+    .map(storedProfileConnection);
   const deployment = deploymentModelConnection(environment);
   const activeIndex = personal.findIndex((connection) => connection.profileId === vault.activeProfileId);
   const primary = activeIndex >= 0 ? personal[activeIndex] : deployment;

@@ -3,7 +3,9 @@ import test from "node:test";
 import {
   MAX_LEGACY_OFFICE_IMPORT_BYTES,
   convertLegacyOfficeFile,
+  discoverDesktopModelConnections,
   exportLegacyOfficeFile,
+  importDesktopModelConnection,
   legacyOfficeFileName,
   supportsLegacyOfficeDesktopConversion,
   supportsLegacyOfficeDesktopExport,
@@ -117,5 +119,81 @@ test("rejects unsupported input, invalid bridge output, and oversized legacy fil
       }),
     /12 MB/i,
   );
+  delete globalThis.window;
+});
+
+test("normalizes desktop model discovery without exposing credentials in scan results", async () => {
+  globalThis.window = {
+    runeDesktop: {
+      async discoverModels() {
+        return {
+          supported: true,
+          candidates: [
+            {
+              id: "candidate-1",
+              sourceKind: "cc-switch",
+              sourceLabel: "CC Switch · Codex",
+              locality: "cloud",
+              provider: "custom",
+              protocol: "responses",
+              name: "Team",
+              baseURL: "https://models.example.com/v1",
+              model: "gpt-team",
+              models: ["gpt-team"],
+              credentialState: "detected",
+            },
+          ],
+        };
+      },
+      async importDiscoveredModel(id) {
+        assert.equal(id, "candidate-1");
+        return {
+          provider: "custom",
+          protocol: "responses",
+          name: "Team",
+          baseURL: "https://models.example.com/v1",
+          model: "gpt-team",
+          apiKey: "secret-only-after-confirm",
+        };
+      },
+    },
+  };
+  const discovery = await discoverDesktopModelConnections();
+  assert.equal(discovery.candidates.length, 1);
+  assert.doesNotMatch(JSON.stringify(discovery), /secret/u);
+  assert.equal((await importDesktopModelConnection("candidate-1")).apiKey, "secret-only-after-confirm");
+  delete globalThis.window;
+});
+
+test("rejects a desktop discovery result that attempts to expose a credential", async () => {
+  globalThis.window = {
+    runeDesktop: {
+      async discoverModels() {
+        return {
+          supported: true,
+          candidates: [
+            {
+              id: "unsafe",
+              sourceKind: "environment",
+              sourceLabel: "Environment",
+              locality: "cloud",
+              provider: "openai",
+              protocol: "responses",
+              name: "OpenAI",
+              baseURL: "https://api.openai.com/v1",
+              model: "gpt-5.6",
+              models: [],
+              credentialState: "detected",
+              apiKey: "must-not-cross",
+            },
+          ],
+        };
+      },
+      async importDiscoveredModel() {
+        throw new Error("not used");
+      },
+    },
+  };
+  assert.deepEqual((await discoverDesktopModelConnections()).candidates, []);
   delete globalThis.window;
 });

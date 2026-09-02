@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { convertLegacyOffice, exportLegacyOffice } from "./legacy-office.mjs";
+import { createDesktopModelDiscovery } from "./model-discovery.mjs";
 
 const desktopDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(desktopDirectory, "..");
@@ -26,6 +27,7 @@ const STATIC_CONTENT_TYPES = Object.freeze({
 });
 
 app.setName("Rune");
+process.env.RUNE_DESKTOP_RUNTIME = "1";
 
 async function initializeDesktopCredentialVault() {
   if (!safeStorage.isEncryptionAvailable()) return false;
@@ -115,6 +117,7 @@ async function startRuneServer() {
 
 let runeServer;
 let mainWindow;
+let desktopModelDiscovery;
 
 async function createRuneWindow() {
   if (!runeServer) runeServer = await startRuneServer();
@@ -150,8 +153,11 @@ async function createRuneWindow() {
 
 app.whenReady().then(async () => {
   await initializeDesktopCredentialVault();
+  desktopModelDiscovery = createDesktopModelDiscovery({ homeDirectory: app.getPath("home") });
   ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);
   ipcMain.handle("rune:export-legacy-office", exportLegacyOffice);
+  ipcMain.handle("rune:discover-models", () => desktopModelDiscovery.scan());
+  ipcMain.handle("rune:import-discovered-model", (_event, id) => desktopModelDiscovery.importCandidate(id));
   await createRuneWindow();
   app.on("activate", () => {
     void createRuneWindow();

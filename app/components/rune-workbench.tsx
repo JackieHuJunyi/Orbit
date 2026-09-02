@@ -897,7 +897,7 @@ export function RuneWorkbench() {
   const [locale, setLocale] = useState<RuneLocale>("en");
   const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
   const localeRequestRef = useRef(0);
-  const [modelMode, setModelMode] = useState<RuneModelMode>("auto");
+  const [modelMode, setModelMode] = useState<RuneModelMode>("model-assisted");
   const [welcomeOpen, setWelcomeOpen] = useState(true);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
@@ -1539,7 +1539,7 @@ export function RuneWorkbench() {
           const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
           setDetectedLocale(detected);
           setLocale(nextLocale);
-          setModelMode(storedModelMode ?? "auto");
+          setModelMode(storedModelMode ?? "model-assisted");
           setAppearanceTheme(storedAppearance ?? "mist-blue");
           setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
           setWorkspaceView(storedWorkspaceView ?? "split");
@@ -3135,7 +3135,7 @@ export function RuneWorkbench() {
       }
     }
 
-    if (remoteEligible && modelMode === "auto") {
+    if (remoteEligible && modelMode === "model-assisted") {
       try {
         const remoteRequest = {
           scope,
@@ -3302,7 +3302,7 @@ export function RuneWorkbench() {
       }
     }
 
-    if (modelMode === "local") fallbackNotice = "Local patch ready · local-only mode selected";
+    if (modelMode === "device-tools-only") fallbackNotice = "Local patch ready · continuing without a model";
 
     try {
       if (scope === "workspace") {
@@ -5976,6 +5976,7 @@ export function RuneWorkbench() {
                     artifact={presentedArtifact}
                     artifacts={presentedArtifacts}
                     locale={locale}
+                    queryRuntimeEnabled={hydrated && !welcomeOpen}
                     activeSelection={proposalReviewActive ? null : activePreviewTarget}
                     onTargetSource={proposalReviewActive ? undefined : focusPreviewTarget}
                     onEditDataCell={

@@ -52,6 +52,7 @@ export const INTERFACE_TRANSLATIONS = {
     "1. 툴바에서 **가져오기**를 선택하거나 현재 파일을 닫고 파일을 가운데에 놓습니다.",
   "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
     "2. 왼쪽에서 Markdown, CSV/JSON, SQL, Chart JSON 또는 시맨틱 HTML을 편집하세요. 기존 Deck Markdown도 계속 편집할 수 있습니다.",
+  "20 KB maximum": "최대 20KB",
   "3. Inspect the compiled result immediately on the right.": "3. 컴파일된 결과를 오른쪽에서 바로 확인해보세요.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
     "4. 문서 제목, 단락, 개별 목록 항목, 표 셀, 굵게/기울임꼴/줄바꿈 텍스트, 인라인 코드, 링크 또는 이미지 또는 데이터 셀, 차트 데이텀 또는 슬라이드를 선택하여 정확한 소스를 찾아 강조 표시합니다. 소스 캐럿을 이동하거나 검증된 범위를 선택하면 일치하는 미리보기 대상이 강조 표시되고 스크롤됩니다. 일반적인 링크 클릭은 소스를 찾습니다. Command/Control을 누른 채 클릭하면 여전히 열립니다.",
@@ -66,8 +67,6 @@ export const INTERFACE_TRANSLATIONS = {
   "A leadership report and slides focused on decisions": "의사결정에 초점을 둔 리더십 보고서와 슬라이드",
   "A material error, omission, or rework still blocks delivery.":
     "중대한 오류, 누락 또는 재작업이 남아 있어 아직 전달할 수 없습니다.",
-  "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.":
-    "모델은 제한된 변경만을 제안합니다. 소스, 검증 및 최종 쓰기는 Rune 및 귀하의 통제하에 유지됩니다.",
   "A paragraph, heading, list, quote, code block, table, or divider…":
     "단락, 제목, 목록, 인용문, 코드 블록, 표 또는 구분선…",
   "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.":
@@ -102,6 +101,8 @@ export const INTERFACE_TRANSLATIONS = {
     "검토된 가져오기를 확인하면 Rune이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
     "검토된 가져오기를 확인하면 Rune이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "확인하면 Rune은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
   Agent: "Agent",
   "Agent change scope": "Agent 변경 범위",
   "Agent composer focused": "Agent 작곡가 중심",
@@ -146,6 +147,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Available after one guided task": "가이드 작업 1회 완료 후 사용 가능",
   Average: "평균",
   Back: "뒤로",
+  "Back to connections": "연결 목록으로 돌아가기",
   Bar: "바",
   "Bar · compare": "막대 · 비교",
   "Baseline not recorded": "기준 버전이 기록되지 않음",
@@ -185,11 +187,10 @@ export const INTERFACE_TRANSLATIONS = {
   Chart: "Chart",
   "Chart bound to Data or Query": "데이터 또는 쿼리에 바인딩된 Chart",
   "Chart form": "Chart 양식",
-  "Check again": "다시 확인하세요",
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "바인딩 구문을 확인하고 이 작업 공간에 존재하는 지표를 선택하세요.",
   "Check these settings first:": "먼저 다음 설정을 확인하세요.",
-  "Checking the model connection…": "모델 연결 확인 중…",
+  "Checking connections already saved in Rune…": "Rune에 저장된 연결 확인 중…",
   "Checkpoint history": "체크포인트 내역",
   "Checkpoint restore details": "체크포인트 복원 세부 정보",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
@@ -211,7 +212,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Chart 강조 색상을 선택하세요",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "CSV, JSON, XLSX 또는 ODS를 선택하세요. Rune이 먼저 가져오기 결과를 보여 준 다음 필드, 지표, 차트와 결과물 설정을 안내합니다.",
-  "Choose how Rune uses a model": "Rune이 모델을 사용하는 방법을 선택하세요.",
   "Choose JSON / text file": "JSON / 텍스트 파일 선택",
   "Choose maximum visible Chart marks": "표시되는 최대 Chart 마크를 선택하세요.",
   "Choose one exact scope value, or return to all Data rows.":
@@ -234,6 +234,7 @@ export const INTERFACE_TRANSLATIONS = {
     "현재 파일을 닫았습니다. 모든 소스는 작업 공간에 남아 있습니다.",
   "Closed the current file — every source remains safely in the workspace":
     "현재 파일을 닫았습니다. 모든 소스는 작업 공간에 안전하게 남아 있습니다.",
+  "Cloud API": "클라우드 API",
   "Compare with": "비교 대상",
   "Comparison rows": "비교 행",
   "Compiled artifact preview": "컴파일된 아티팩트 미리보기",
@@ -255,9 +256,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "확인하면 이 기기에만 다운로드됩니다. Rune은 파일을 업로드하거나 전송하지 않습니다.",
   "Connected folder": "연결된 폴더",
+  "Connections available on this device": "이 기기에서 사용할 수 있는 연결",
   "Content workspace": "콘텐츠 작업공간",
   Continue: "계속",
   "Continue setup": "계속 설정",
+  "Continue with model assistance": "모델을 사용해 계속",
+  "Continue without a model": "모델 없이 계속",
   "Cosmic Orange": "코스믹 오렌지",
   "Create a new artifact": "새 아티팩트 만들기",
   "Create a new presentation": "새 프레젠테이션 만들기",
@@ -275,6 +279,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create review": "리뷰 작성",
   "Create source": "소스 생성",
   Credential: "자격 증명",
+  "Credential found; not read yet": "인증 정보 감지 · 아직 읽지 않음",
   Currency: "통화",
   "Currency · USD": "통화 · USD",
   Current: "현재",
@@ -313,6 +318,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Delivery outcome recorded on this device": "전달 결과를 이 기기에 기록했습니다",
   "Delivery outcomes": "전달 결과",
   "Dependency graph": "종속성 그래프",
+  "Deployment connection": "배포 연결",
   "Deployment model": "배포 모델",
   Descending: "내림차순",
   "Describe a change confined to this selection…": "이 선택 항목에 국한된 변경 사항을 설명하세요...",
@@ -347,6 +353,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "이 결과를 실제 업무에 사용할 수 있었나요?",
   Discard: "폐기",
   "Discard proposed patch": "제안된 패치 폐기",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "검색은 알려진 설정 위치와 로컬 모델 포트만 확인합니다. 셸 설정을 실행하거나 파일을 업로드하거나 키를 표시하지 않습니다.",
   Document: "문서",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "문서가 모델 컨텍스트 안전 한도를 초과했습니다. 검토할 결정적 로컬 프레젠테이션을 준비했습니다",
@@ -389,6 +397,7 @@ export const INTERFACE_TRANSLATIONS = {
   "en-US": "en-US",
   Enable: "활성화",
   "Encrypting…": "암호화 중…",
+  Endpoint: "엔드포인트",
   "Enter a focus view": "집중 보기로 전환",
   Equals: "같음",
   "Every artifact stays readable to people and models.":
@@ -454,8 +463,6 @@ export const INTERFACE_TRANSLATIONS = {
   "For example: Product launch briefing": "예: 제품 출시 브리핑",
   "Format Document section": "문서 형식 섹션",
   From: "에서",
-  "Generate review-before-write changes through Rune's server adapter":
-    "Rune의 서버 어댑터를 통해 쓰기 전 검토 변경 사항 생성",
   "Generated source previews": "생성된 소스 미리보기",
   groups: "개 그룹",
   Handoff: "전달",
@@ -507,6 +514,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Insert block after": "뒤에 블록 삽입",
   "Insert block before": "앞에 블록 삽입",
   "Insights support a useful next decision.": "인사이트가 유용한 다음 결정을 뒷받침합니다.",
+  Intelligence: "지능형 설정",
   "Is one of": "다음 중 하나임",
   Italic: "이탤릭체",
   "just now": "지금 막",
@@ -530,6 +538,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Leave empty to keep the encrypted credential": "암호화된 자격 증명을 유지하려면 비워 두세요.",
   Left: "왼쪽",
   "Legacy first-Data binding": "레거시 우선 데이터 바인딩",
+  "Let Rune find the models you already use": "이미 사용 중인 모델 찾기",
   "Light Gold": "라이트 골드",
   Line: "라인",
   "Line · sequence": "라인 · 시퀀스",
@@ -558,6 +567,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Local workspace ready": "로컬 작업공간 준비됨",
   locally: "(로컬)",
   "Long-form writing in Markdown": "Markdown로 장문 쓰기",
+  "Looking for models on this device…": "이 기기에서 모델 검색 중…",
   "Managed by the Rune server; only non-secret status is shown.":
     "Rune 서버에서 관리됩니다. 비밀이 아닌 상태만 표시됩니다.",
   Manual: "매뉴얼",
@@ -565,8 +575,8 @@ export const INTERFACE_TRANSLATIONS = {
   Mark: "마크",
   "Match all conditions": "모든 조건 일치",
   "Mist Blue": "미스트 블루",
+  Model: "모델",
   "Model connected": "연결된 모델",
-  "Model connection": "모델 연결",
   "Model settings": "모델 설정",
   "Model unavailable; deterministic local operating review prepared for review":
     "모델을 사용할 수 없습니다. 검토할 결정적 로컬 운영 리뷰를 준비했습니다",
@@ -609,14 +619,16 @@ export const INTERFACE_TRANSLATIONS = {
   "Next step": "다음 단계",
   "Next: choose audience and presentation purpose": "다음: 대상과 프레젠테이션 목적 선택",
   "Next: choose fields and deliverables": "다음: 필드와 결과물 선택",
+  "No API key required": "API 키 필요 없음",
   "No available field": "사용 가능한 필드가 없습니다.",
   "No comparison": "비교 안 함",
   "No compatible source": "호환되는 소스가 없습니다.",
   "No cross-file bindings change in this transaction.": "이 트랜잭션에서는 파일 간 바인딩이 변경되지 않습니다.",
   "No hidden graph state": "숨겨진 그래프 상태 없음",
-  "No model connected": "연결된 모델 없음",
+  "No model selected yet": "아직 모델을 선택하지 않았습니다",
   "No personal model profiles yet. Add one to switch providers here.":
     "아직 개인 모델 프로필이 없습니다. 여기에 공급자를 전환하려면 하나를 추가하세요.",
+  "No reusable model connection was found": "재사용할 수 있는 연결을 찾지 못했습니다",
   "No strictly numeric field": "엄격한 숫자 필드 없음",
   "No unsaved change": "저장되지 않은 변경사항 없음",
   "No usable Data artifact in this workspace": "이 작업공간에는 사용 가능한 데이터 아티팩트가 없습니다.",
@@ -676,6 +688,8 @@ export const INTERFACE_TRANSLATIONS = {
     "기본 모델이 실패한 경우에만 Rune이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "현재 데이터 범위 전체에서 숫자인 필드만 표시합니다.",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "제공자, 출처, 엔드포인트, 모델만 표시합니다. Rune은 연결을 선택한 후에만 인증 정보를 읽습니다.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "서로 다른 값은 처음 100개만 표시합니다. 필요하면 값 종류가 더 적은 기간 필드를 선택하세요.",
   "Open a file": "파일 열기",
@@ -840,6 +854,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Result summary": "결과 요약",
   "Revenue analysis": "수익분석",
   "Revenue by region": "지역별 수익",
+  Review: "검토",
   "Review before write": "쓰기 전에 검토하세요",
   "Review canonical source": "정규 소스 검토",
   "Review checkpoint restore": "체크포인트 복원 검토",
@@ -862,17 +877,26 @@ export const INTERFACE_TRANSLATIONS = {
   Rune: "Rune",
   "Rune compiled these results locally from the current scope before any model request.":
     "Rune이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "모델 설정을 변경하지 못했습니다. 기존 설정은 그대로 유지됩니다.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "기기 검색을 완료하지 못했습니다. 어떤 설정도 읽거나 저장하지 않았습니다.",
   "Rune could not connect that folder": "Rune이(가) 해당 폴더에 연결할 수 없습니다.",
   "Rune could not import those files": "Rune에서 해당 파일을 가져올 수 없습니다.",
   "Rune could not prepare pilot evidence.": "Rune이 파일럿 증거를 준비하지 못했습니다.",
   "Rune could not prepare that export": "Rune에서 내보내기를 준비할 수 없습니다.",
   "Rune could not pull that folder": "Rune이(가) 해당 폴더를 가져올 수 없습니다.",
   "Rune could not push that folder": "Rune이(가) 해당 폴더를 푸시할 수 없습니다.",
-  "Rune could not read model status. You can continue in local mode.":
-    "Rune에서 모델 상태를 읽을 수 없습니다. 로컬 모드에서 계속할 수 있습니다.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "모델 설정을 읽지 못했습니다. 잠시 후 다시 시도하세요.",
+  "Rune could not read model status. You can continue without a model.":
+    "모델 상태를 확인하지 못했습니다. 모델 없이 계속할 수 있습니다.",
   "Rune could not read that configuration file.": "Rune에서 해당 구성 파일을 읽을 수 없습니다.",
   "Rune could not record this delivery outcome": "Rune이 전달 결과를 기록하지 못했습니다",
   "Rune could not render this page preview.": "Rune이 이 페이지의 미리보기를 렌더링하지 못했습니다.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "모델 목록을 검증하지 못했습니다. 설정은 저장되지 않았습니다.",
+  "Rune could not verify this connection and did not save it.": "이 연결을 검증하지 못해 저장하지 않았습니다.",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
     "Rune은 이식 가능한 파일 이름과 안정적인 작업 공간 ID를 파생합니다. 즉시 소스를 편집할 수 있습니다.",
   "Rune document": "Rune 문서",
@@ -888,8 +912,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune은 검증된 소스를 그대로 보존하며 실시간 참조를 컴파일하거나 다시 쓰지 않습니다.",
   "Rune sections": "Rune 섹션",
-  "Rune still works with deterministic local planners. You can revisit this from Help.":
-    "Rune은 여전히 결정론적 로컬 계획자와 함께 작동합니다. 도움말에서 이 내용을 다시 방문할 수 있습니다.",
   "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
     "Rune은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
@@ -904,10 +926,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune은 현재 기기 작업공간을 내장 샘플로 바꾸고 파일, 복원 지점, 작업 기록을 이전 작업공간으로 온전히 보존합니다.",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
     "Rune은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
-  "Rune will use the currently enabled secure profile.": "Rune은(는) 현재 활성화된 보안 프로필을 사용합니다.",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "Rune은 명시적인 --rune:data 지시문을 작성하므로 파일이 다시 정렬될 때 작업 공간_데이터가 변경되지 않습니다.",
   "Running locally": "로컬에서 실행",
+  "Runs on this device": "이 기기에서 실행",
   "Runtime impact preflight passed": "런타임 영향 프리플라이트 통과",
   "Runtime-validated draft": "런타임 검증 초안",
   Sage: "세이지",
@@ -932,6 +954,7 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "저장된 작업",
   "Saved tasks": "저장된 작업",
   Saving: "저장 중",
+  "Scan again": "다시 검색",
   "Scanned PDF · explicit selection": "스캔 PDF · 명시적 선택",
   "Scope filters": "범위 필터",
   "See the full data-to-report-and-deck chain": "전체 데이터-보고 및 자료 체인 보기",
@@ -946,8 +969,6 @@ export const INTERFACE_TRANSLATIONS = {
   "self-contained scriptless file": "자체 포함된 스크립트 없는 파일",
   semantic: "의미론적",
   "Semantic HTML → select or edit one exact slide": "시맨틱 HTML → 정확한 슬라이드 하나 선택 또는 편집",
-  "Send nothing to a model service and use built-in deterministic planners":
-    "모델 서비스에 아무 것도 보내지 않고 내장된 결정론적 플래너를 사용합니다.",
   "Shaping and verifying…": "구성하고 확인하는 중…",
   "Show API key": "API 키 표시",
   "Show preview only": "미리보기만 표시",
@@ -1055,8 +1076,12 @@ export const INTERFACE_TRANSLATIONS = {
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "현재 작업공간과 이전 작업공간을 안전하게 맞바꾸므로 이 복원도 다시 되돌릴 수 있습니다.",
   "The current Chart JSON is invalid.": "현재 Chart JSON이(가) 잘못되었습니다.",
+  "The current default can provide review-before-write model assistance.":
+    "현재 기본 연결로 쓰기 전에 검토하는 모델 지원을 사용할 수 있습니다.",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "현재 작업공간은 샘플 작업공간과 같은 한 번의 쓰기에서 완전한 기기 복원 버전으로 저장됩니다.",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "데스크톱 앱은 정해진 범위의 기존 설정과 로컬 모델 런타임만 확인합니다. 검색 중에는 키를 표시하거나 복사하거나 검증하지 않습니다.",
   "The detected scan pages changed. Import the file again.":
     "감지된 스캔 페이지가 변경되었습니다. 파일을 다시 가져오세요.",
   "The direction is right and only limited manual changes remain.": "방향은 맞으며 제한적인 수동 수정만 남았습니다.",
@@ -1075,6 +1100,8 @@ export const INTERFACE_TRANSLATIONS = {
     "원본 세부 정보가 너무 길어 이 보기에서 잘렸습니다.",
   "The result saves meaningful time over manual work.": "수작업보다 의미 있는 시간을 절약합니다.",
   "The user can understand what Rune changed and why.": "사용자가 Rune이 무엇을 왜 변경했는지 이해할 수 있습니다.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "웹 앱은 컴퓨터의 다른 앱 설정을 읽을 수 없습니다. 모델을 직접 연결할 수 있습니다.",
   "This block cannot be empty.": "이 블록은 비워둘 수 없습니다.",
   "This file includes": "이 파일에 포함되는 항목",
   "This is device-local candidate human-outcome evidence. Only complete, authorized or redacted ratings count as reviewed real tasks; the file alone cannot prove PMF or a completed pilot threshold.":
@@ -1115,22 +1142,28 @@ export const INTERFACE_TRANSLATIONS = {
   "Update this operating-review task": "이 운영 검토 작업 업데이트",
   "Uppercase the selection": "선택 항목을 대문자로 표시",
   "usable or minor edits": "사용 가능 또는 가벼운 수정 필요",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "찾은 연결을 사용하거나 직접 추가하거나 모델 없이 계속하세요.",
   "Use a supported mark, fields, format, and one existing Data or Query source.":
     "지원되는 마크, 필드, 형식과 기존 Data 또는 Query 소스를 사용하세요.",
   "Use all Data rows": "모든 Data 행 사용",
-  "Use connected model": "연결된 모델 사용",
-  "Use local mode only": "로컬 모드만 사용",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "기기 내 분석, 변환, 결정적 도구만 사용하고 모델 서비스에는 아무것도 보내지 않음",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "헤더가 있는 직사각형 CSV 또는 스칼라 값을 포함한 플랫 JSON을 사용하세요.",
   "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
     "Rune JSON 또는 CC 스위치 단일 공급자 가져오기 링크를 사용하세요. Rune이(가) 먼저 검토하고 즉시 저장하지 않습니다.",
   "Use Rune JSON or one ccswitch://v1/import provider link.":
     "Rune JSON 또는 ccswitch://v1/import 공급자 링크 하나를 사용하세요.",
+  "Use the selected cloud or device model; you still confirm every change":
+    "선택한 클라우드 또는 로컬 모델을 사용하며 모든 변경은 직접 확인",
   "Use this configuration": "이 구성을 사용하세요",
+  "Use this model connection?": "이 모델 연결을 사용할까요?",
   Valid: "유효",
   Validated: "검증됨",
   "Value field": "값 필드",
   "Values, definitions, and calculations are accurate.": "값, 정의, 계산이 정확합니다.",
+  "Verify & use": "검증 후 사용",
   "Verify that the Query, result field, and aggregate row still match this revision.":
     "Query, 결과 필드, 집계 행이 이 리비전과 계속 일치하는지 확인하세요.",
   "Verifying live source…": "라이브 소스 확인 중…",
@@ -1165,6 +1198,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Source에 입력하면 라이브 출력이 즉시 다시 컴파일됩니다.",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "지원되는 파일을 여기에 놓을 수도 있습니다. 모든 호환 변환은 쓰기 전에 검토할 수 있습니다.",
+  "You can still add a provider yourself or import a configuration.":
+    "제공자를 직접 추가하거나 설정을 가져올 수도 있습니다.",
   "Your local guide remains in the workspace rail": "귀하의 지역 가이드는 작업 공간 레일에 남아 있습니다",
   "Your workspace, under your control.": "귀하의 작업 공간을 귀하가 통제할 수 있습니다.",
 } as const;

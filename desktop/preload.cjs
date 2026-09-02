@@ -11,5 +11,11 @@ contextBridge.exposeInMainWorld(
     exportLegacyOffice(input) {
       return ipcRenderer.invoke("rune:export-legacy-office", input);
     },
+    discoverModels() {
+      return ipcRenderer.invoke("rune:discover-models");
+    },
+    importDiscoveredModel(id) {
+      return ipcRenderer.invoke("rune:import-discovered-model", id);
+    },
   }),
 );

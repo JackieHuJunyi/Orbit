@@ -7,6 +7,30 @@ export type LegacyOfficeConversion = {
   warning: string;
 };
 
+export type DiscoveredModelConnection = {
+  id: string;
+  sourceKind: "environment" | "app-config" | "cc-switch" | "local-runtime";
+  sourceLabel: string;
+  locality: "cloud" | "device";
+  provider: "openai" | "openrouter" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
+  protocol: "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
+  name: string;
+  baseURL: string;
+  model: string;
+  models: string[];
+  credentialState: "detected" | "not-required";
+};
+
+export type DesktopModelDiscovery = {
+  supported: true;
+  candidates: DiscoveredModelConnection[];
+};
+
+export type DiscoveredModelProfile = Pick<
+  DiscoveredModelConnection,
+  "provider" | "protocol" | "name" | "baseURL" | "model"
+> & { apiKey: string };
+
 type RuneDesktopApi = {
   convertLegacyOffice(input: { bytes: Uint8Array; fileName: string }): Promise<{
     bytes: Uint8Array | ArrayBuffer | number[];
@@ -18,6 +42,8 @@ type RuneDesktopApi = {
     fileName: string;
     warning: string;
   }>;
+  discoverModels(): Promise<unknown>;
+  importDiscoveredModel(id: string): Promise<unknown>;
 };
 
 declare global {
@@ -36,6 +62,131 @@ export function supportsLegacyOfficeDesktopConversion() {
 
 export function supportsLegacyOfficeDesktopExport() {
   return typeof window !== "undefined" && typeof window.runeDesktop?.exportLegacyOffice === "function";
+}
+
+export function supportsDesktopModelDiscovery() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.runeDesktop?.discoverModels === "function" &&
+    typeof window.runeDesktop?.importDiscoveredModel === "function"
+  );
+}
+
+function modelProvider(value: unknown): DiscoveredModelConnection["provider"] | null {
+  return value === "openai" ||
+    value === "openrouter" ||
+    value === "anthropic" ||
+    value === "gemini" ||
+    value === "ollama" ||
+    value === "lmstudio" ||
+    value === "custom"
+    ? value
+    : null;
+}
+
+function modelProtocol(value: unknown): DiscoveredModelConnection["protocol"] | null {
+  return value === "responses" ||
+    value === "chat-completions" ||
+    value === "anthropic-messages" ||
+    value === "gemini-generate-content"
+    ? value
+    : null;
+}
+
+function boundedBridgeText(value: unknown, maximum: number) {
+  return typeof value === "string" && value.trim() && value.length <= maximum && !/[\u0000-\u001f\u007f]/u.test(value)
+    ? value.trim()
+    : "";
+}
+
+export async function discoverDesktopModelConnections(): Promise<DesktopModelDiscovery> {
+  if (!supportsDesktopModelDiscovery()) return { supported: true, candidates: [] };
+  const result = await window.runeDesktop!.discoverModels();
+  if (!result || typeof result !== "object" || (result as { supported?: unknown }).supported !== true) {
+    throw new Error("The Rune desktop bridge returned an invalid model discovery result.");
+  }
+  const rawCandidates = (result as { candidates?: unknown }).candidates;
+  if (!Array.isArray(rawCandidates) || rawCandidates.length > 32) {
+    throw new Error("The Rune desktop bridge returned too many model discovery results.");
+  }
+  const candidates = rawCandidates.flatMap((value) => {
+    if (!value || typeof value !== "object" || "apiKey" in value || "credential" in value) return [];
+    const item = value as Record<string, unknown>;
+    const provider = modelProvider(item.provider);
+    const protocol = modelProtocol(item.protocol);
+    const id = boundedBridgeText(item.id, 80);
+    const sourceLabel = boundedBridgeText(item.sourceLabel, 80);
+    const name = boundedBridgeText(item.name, 60);
+    const baseURL = boundedBridgeText(item.baseURL, 300);
+    const model = boundedBridgeText(item.model, 120);
+    const sourceKind = item.sourceKind;
+    const locality = item.locality;
+    const credentialState = item.credentialState;
+    if (
+      !id ||
+      !sourceLabel ||
+      !name ||
+      !baseURL ||
+      !model ||
+      !provider ||
+      !protocol ||
+      (sourceKind !== "environment" &&
+        sourceKind !== "app-config" &&
+        sourceKind !== "cc-switch" &&
+        sourceKind !== "local-runtime") ||
+      (locality !== "cloud" && locality !== "device") ||
+      (credentialState !== "detected" && credentialState !== "not-required")
+    )
+      return [];
+    const models = Array.isArray(item.models)
+      ? item.models
+          .map((entry) => boundedBridgeText(entry, 120))
+          .filter(Boolean)
+          .slice(0, 80)
+      : [];
+    return [
+      {
+        id,
+        sourceKind,
+        sourceLabel,
+        locality,
+        provider,
+        protocol,
+        name,
+        baseURL,
+        model,
+        models,
+        credentialState,
+      } as DiscoveredModelConnection,
+    ];
+  });
+  return { supported: true, candidates };
+}
+
+export async function importDesktopModelConnection(id: string): Promise<DiscoveredModelProfile> {
+  if (!supportsDesktopModelDiscovery()) throw new Error("Model discovery is available only in the Rune desktop app.");
+  const result = await window.runeDesktop!.importDiscoveredModel(id);
+  if (!result || typeof result !== "object") {
+    throw new Error("The discovered model connection is invalid.");
+  }
+  const item = result as Record<string, unknown>;
+  const provider = modelProvider(item.provider);
+  const protocol = modelProtocol(item.protocol);
+  const name = boundedBridgeText(item.name, 60);
+  const baseURL = boundedBridgeText(item.baseURL, 300);
+  const model = boundedBridgeText(item.model, 120);
+  const apiKey = typeof item.apiKey === "string" && item.apiKey.length <= 512 ? item.apiKey.trim() : "";
+  if (
+    !provider ||
+    !protocol ||
+    !name ||
+    !baseURL ||
+    !model ||
+    (provider !== "ollama" && provider !== "lmstudio" && !apiKey)
+  ) {
+    throw new Error("The discovered model connection is incomplete.");
+  }
+  return { provider, protocol, name, baseURL, model, apiKey };
 }
 
 function resultBytes(value: Uint8Array | ArrayBuffer | number[]) {

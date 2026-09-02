@@ -91,7 +91,7 @@ test("keeps focused content geometry and places the compact primary action with 
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(tokens, /--rune-content-reading:\s*780px;/);
+  assert.match(tokens, /--rune-content-reading:\s*920px;/);
   assert.match(tokens, /--rune-file-width:\s*220px;/);
   assert.match(
     onboarding,

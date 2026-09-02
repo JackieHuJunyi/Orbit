@@ -52,6 +52,7 @@ export const INTERFACE_TRANSLATIONS = {
     "1. ツールバーで **インポート** を選択するか、現在のファイルを閉じてファイルを中央にドロップします。",
   "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
     "2. 左側で Markdown、CSV/JSON、SQL、Chart JSON、またはセマンティック HTML を編集します。既存の Deck Markdown も引き続き編集できます。",
+  "20 KB maximum": "最大 20 KB",
   "3. Inspect the compiled result immediately on the right.": "3. すぐ右側でコンパイル結果を確認します。",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
     "4. ドキュメントの見出し、段落、個々のリスト項目、表のセル、太字/斜体/点線付きテキスト、インライン コード、リンク、画像、またはデータ セル、グラフ データム、スライドを選択して、正確なソースを見つけて強調表示します。ソース キャレットを移動するか、実績のある範囲を選択すると、一致するプレビュー ターゲットがハイライト表示され、スクロールします。通常のリンクをクリックするとソースが見つかります。 Command/Control キーを押しながらクリックしても開きます。",
@@ -66,8 +67,6 @@ export const INTERFACE_TRANSLATIONS = {
   "A leadership report and slides focused on decisions": "意思決定に焦点を当てた経営層向けレポートとスライド",
   "A material error, omission, or rework still blocks delivery.":
     "重大な誤り、欠落、または手戻りがあり、まだ納品できません。",
-  "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.":
-    "モデルは、限定された変更のみを提案します。ソース、検証、最終的な書き込みは、Rune とあなたの管理下に残ります。",
   "A paragraph, heading, list, quote, code block, table, or divider…":
     "段落、見出し、リスト、引用、コードブロック、表、または区切り線…",
   "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.":
@@ -103,6 +102,8 @@ export const INTERFACE_TRANSLATIONS = {
     "確認済みのインポート後、Rune はこの Document を選択した状態でプレゼンテーション設定を開きます。",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
     "確認済みのインポート後、Rune はこの Data ソースを選択した状態で経営レビュー設定を開きます。",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "確認後、Rune はこの接続の認証情報だけを読み取り、モデル一覧を検証します。成功した場合に限り暗号化し、既定の接続として保存します。",
   Agent: "Agent",
   "Agent change scope": "Agent のスコープ変更",
   "Agent composer focused": "Agent 作曲家に焦点を当てた",
@@ -147,6 +148,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Available after one guided task": "ガイド付きタスクを 1 回完了すると利用できます",
   Average: "平均",
   Back: "戻る",
+  "Back to connections": "接続一覧に戻る",
   Bar: "バー",
   "Bar · compare": "バー・比較",
   "Baseline not recorded": "基準バージョンは未記録です",
@@ -186,11 +188,10 @@ export const INTERFACE_TRANSLATIONS = {
   Chart: "Chart",
   "Chart bound to Data or Query": "データまたはクエリにバインドされた Chart",
   "Chart form": "Chart フォーム",
-  "Check again": "もう一度確認してください",
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "バインディング構文を確認し、このワークスペースに存在する指標を選択してください。",
   "Check these settings first:": "まず次の設定を確認してください。",
-  "Checking the model connection…": "モデルの接続を確認しています…",
+  "Checking connections already saved in Rune…": "Rune に保存済みの接続を確認中…",
   "Checkpoint history": "チェックポイント履歴",
   "Checkpoint restore details": "チェックポイント復元の詳細",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
@@ -212,7 +213,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Chart のアクセントカラーを選択してください",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "CSV、JSON、XLSX、ODS を選択してください。Rune はまずインポート内容を表示し、その後フィールド、指標、グラフ、成果物の設定へ案内します。",
-  "Choose how Rune uses a model": "Rune がモデルを使用する方法を選択してください",
   "Choose JSON / text file": "JSON / テキスト ファイルを選択してください",
   "Choose maximum visible Chart marks": "表示可能な最大の Chart マークを選択してください",
   "Choose one exact scope value, or return to all Data rows.":
@@ -235,6 +235,7 @@ export const INTERFACE_TRANSLATIONS = {
     "現在のファイルを閉じました - すべてのソースはワークスペースに残ります",
   "Closed the current file — every source remains safely in the workspace":
     "現在のファイルを閉じました - すべてのソースはワークスペースに安全に残ります",
+  "Cloud API": "クラウド API",
   "Compare with": "比較対象",
   "Comparison rows": "比較対象の行",
   "Compiled artifact preview": "コンパイルされたアーティファクトのプレビュー",
@@ -256,9 +257,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "確認するとこのデバイスにのみダウンロードされます。Rune がファイルをアップロードまたは送信することはありません。",
   "Connected folder": "接続されたフォルダー",
+  "Connections available on this device": "このデバイスで利用できる接続",
   "Content workspace": "コンテンツワークスペース",
   Continue: "続ける",
   "Continue setup": "セットアップを続行する",
+  "Continue with model assistance": "モデルを使って続ける",
+  "Continue without a model": "モデルなしで続ける",
   "Cosmic Orange": "コズミックオレンジ",
   "Create a new artifact": "新しいアーティファクトを作成する",
   "Create a new presentation": "新しいプレゼンテーションを作成",
@@ -276,6 +280,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create review": "レビューの作成",
   "Create source": "ソースの作成",
   Credential: "資格情報",
+  "Credential found; not read yet": "認証情報を検出 · まだ未読",
   Currency: "通貨",
   "Currency · USD": "通貨・米ドル",
   Current: "現在",
@@ -314,6 +319,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Delivery outcome recorded on this device": "納品結果をこのデバイスに記録しました",
   "Delivery outcomes": "納品結果",
   "Dependency graph": "依存関係グラフ",
+  "Deployment connection": "デプロイ接続",
   "Deployment model": "導入モデル",
   Descending: "降順",
   "Describe a change confined to this selection…": "この選択範囲に限定された変更について説明してください...",
@@ -348,6 +354,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "この結果は実際の業務で使えるものになりましたか？",
   Discard: "廃棄する",
   "Discard proposed patch": "提案されたパッチを破棄する",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "検索対象は既知の設定場所とローカルモデルのポートだけです。シェル設定の実行、ファイルのアップロード、キーの表示は行いません。",
   Document: "文書",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "文書がモデルの安全なコンテキスト上限を超えています。確認用に決定的なローカルプレゼンテーションを準備しました",
@@ -390,6 +398,7 @@ export const INTERFACE_TRANSLATIONS = {
   "en-US": "en-US",
   Enable: "有効にする",
   "Encrypting…": "暗号化中…",
+  Endpoint: "エンドポイント",
   "Enter a focus view": "フォーカス表示に切り替える",
   Equals: "等しい",
   "Every artifact stays readable to people and models.":
@@ -457,8 +466,6 @@ export const INTERFACE_TRANSLATIONS = {
   "For example: Product launch briefing": "例：製品ローンチ説明会",
   "Format Document section": "「ドキュメントのフォーマット」セクション",
   From: "から",
-  "Generate review-before-write changes through Rune's server adapter":
-    "Rune のサーバー アダプターを通じて書き込み前レビューの変更を生成します",
   "Generated source previews": "生成されたソースのプレビュー",
   groups: "件",
   Handoff: "受け渡し",
@@ -512,6 +519,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Insert block after": "後にブロックを挿入",
   "Insert block before": "前にブロックを挿入",
   "Insights support a useful next decision.": "洞察が次の有用な意思決定を支えます。",
+  Intelligence: "インテリジェンス",
   "Is one of": "のいずれかです",
   Italic: "イタリック体",
   "just now": "たった今",
@@ -536,6 +544,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Leave empty to keep the encrypted credential": "暗号化された資格情報を保持するには、空のままにしておきます",
   Left: "左",
   "Legacy first-Data binding": "従来の最初のデータ バインディング",
+  "Let Rune find the models you already use": "利用中のモデルを Rune で見つける",
   "Light Gold": "ライトゴールド",
   Line: "ライン",
   "Line · sequence": "ライン・シーケンス",
@@ -565,6 +574,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Local workspace ready": "ローカルワークスペースの準備完了",
   locally: "（ローカル）",
   "Long-form writing in Markdown": "Markdown での長文の書き込み",
+  "Looking for models on this device…": "このデバイスのモデルを検索中…",
   "Managed by the Rune server; only non-secret status is shown.":
     "Rune サーバーによって管理されます。非シークレットステータスのみが表示されます。",
   Manual: "マニュアル",
@@ -572,8 +582,8 @@ export const INTERFACE_TRANSLATIONS = {
   Mark: "マーク",
   "Match all conditions": "すべての条件に一致する",
   "Mist Blue": "ミストブルー",
+  Model: "モデル",
   "Model connected": "接続されているモデル",
-  "Model connection": "モデル接続",
   "Model settings": "モデル設定",
   "Model unavailable; deterministic local operating review prepared for review":
     "モデルを利用できません。確認用に決定的なローカル業務レビューを準備しました",
@@ -617,15 +627,17 @@ export const INTERFACE_TRANSLATIONS = {
   "Next step": "次のステップ",
   "Next: choose audience and presentation purpose": "次へ：対象者とプレゼンの目的を選択",
   "Next: choose fields and deliverables": "次へ：フィールドと成果物を選択",
+  "No API key required": "API キーは不要",
   "No available field": "使用可能なフィールドがありません",
   "No comparison": "比較しない",
   "No compatible source": "互換性のあるソースがありません",
   "No cross-file bindings change in this transaction.":
     "このトランザクションではファイル間のバインディングは変更されません。",
   "No hidden graph state": "非表示のグラフ状態なし",
-  "No model connected": "モデルが接続されていません",
+  "No model selected yet": "モデルはまだ選択されていません",
   "No personal model profiles yet. Add one to switch providers here.":
     "個人的なモデルのプロフィールはまだありません。ここにプロバイダーを切り替えるために追加します。",
+  "No reusable model connection was found": "再利用できる接続が見つかりませんでした",
   "No strictly numeric field": "厳密な数値フィールドはありません",
   "No unsaved change": "未保存の変更はありません",
   "No usable Data artifact in this workspace": "このワークスペースには使用可能なデータ アーティファクトがありません",
@@ -685,6 +697,8 @@ export const INTERFACE_TRANSLATIONS = {
     "プライマリモデルが失敗した場合に限り、Rune は同じ制限済みコンテンツを別の設定済みプロバイダーへ送信できます。初期設定ではオフです。",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "現在のデータ範囲全体で数値になっているフィールドだけを表示します。",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "表示するのはプロバイダー、参照元、エンドポイント、モデルだけです。認証情報は接続を選んだ後に読み取ります。",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "異なる値は先頭100件だけ表示します。必要に応じて、値の種類が少ない期間フィールドを選択してください。",
   "Open a file": "ファイルを開く",
@@ -854,6 +868,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Result summary": "結果の概要",
   "Revenue analysis": "収益分析",
   "Revenue by region": "地域別の収益",
+  Review: "確認",
   "Review before write": "書く前に見直す",
   "Review canonical source": "正規ソースを確認",
   "Review checkpoint restore": "チェックポイントの復元を確認",
@@ -877,17 +892,26 @@ export const INTERFACE_TRANSLATIONS = {
   Rune: "Rune",
   "Rune compiled these results locally from the current scope before any model request.":
     "Rune はモデルへリクエストする前に、現在のデータ範囲からこの結果をローカルで集計しました。",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "モデル設定を変更できませんでした。現在の設定は変更されていません。",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "デバイスの検索を完了できませんでした。設定の読み取りや保存は行っていません。",
   "Rune could not connect that folder": "Rune はそのフォルダーに接続できませんでした",
   "Rune could not import those files": "Rune はこれらのファイルをインポートできませんでした",
   "Rune could not prepare pilot evidence.": "Rune はパイロット証拠を準備できませんでした。",
   "Rune could not prepare that export": "Rune はエクスポートを準備できませんでした",
   "Rune could not pull that folder": "Rune はそのフォルダーをプルできませんでした",
   "Rune could not push that folder": "Rune はそのフォルダーをプッシュできませんでした",
-  "Rune could not read model status. You can continue in local mode.":
-    "Rune はモデルのステータスを読み取ることができませんでした。ローカル モードで続行できます。",
+  "Rune could not read model configurations. Try again in a moment.":
+    "モデル設定を読み取れませんでした。しばらくしてからもう一度お試しください。",
+  "Rune could not read model status. You can continue without a model.":
+    "モデルの状態を確認できませんでした。モデルなしで続けることもできます。",
   "Rune could not read that configuration file.": "Rune はその構成ファイルを読み取ることができませんでした。",
   "Rune could not record this delivery outcome": "Rune はこの納品結果を記録できませんでした",
   "Rune could not render this page preview.": "Rune はこのページのプレビューを描画できませんでした。",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "モデル一覧を検証できませんでした。設定は保存されていません。",
+  "Rune could not verify this connection and did not save it.": "この接続を検証できなかったため、保存しませんでした。",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
     "Rune は、移植可能なファイル名と安定したワークスペース ID を取得します。ソースをすぐに編集できます。",
   "Rune document": "Rune ドキュメント",
@@ -903,8 +927,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune は検証済みのソースをそのまま保持し、ライブ参照をコンパイルしたり書き換えたりしません。",
   "Rune sections": "Rune セクション",
-  "Rune still works with deterministic local planners. You can revisit this from Help.":
-    "Rune は、決定論的なローカル プランナーと引き続き連携します。ヘルプからこれに再度アクセスできます。",
   "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
     "Rune がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
@@ -919,11 +941,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune は現在のデバイス上のワークスペースを内蔵サンプルに置き換え、ファイル、復元ポイント、タスク履歴を以前のワークスペースとして完全に保持します。",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
     "Rune はリセット前のワークスペース全体を復元し、現在のワークスペースを次に復元できるバージョンとして保持します。",
-  "Rune will use the currently enabled secure profile.":
-    "Rune は、現在有効になっている安全なプロファイルを使用します。",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "Rune は明示的な -- rune:data ディレクティブを書き込むため、ファイルの順序が変更されても workspace_data が変更されることはありません。",
   "Running locally": "ローカルで実行する",
+  "Runs on this device": "このデバイスで実行",
   "Runtime impact preflight passed": "ランタイム インパクト プリフライトに合格しました",
   "Runtime-validated draft": "実行時に検証されたドラフト",
   Sage: "セージ",
@@ -948,6 +969,7 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "保存されたタスク",
   "Saved tasks": "保存されたタスク",
   Saving: "保存",
+  "Scan again": "もう一度検索",
   "Scanned PDF · explicit selection": "スキャン PDF · 明示的な選択",
   "Scope filters": "スコープフィルター",
   "See the full data-to-report-and-deck chain": "データからレポート、デッキまでの完全なチェーンをご覧ください",
@@ -961,8 +983,6 @@ export const INTERFACE_TRANSLATIONS = {
   "self-contained scriptless file": "自己完結型のスクリプトレス ファイル",
   semantic: "意味論的な",
   "Semantic HTML → select or edit one exact slide": "セマンティック HTML → 1 枚の正確なスライドを選択または編集",
-  "Send nothing to a model service and use built-in deterministic planners":
-    "モデル サービスには何も送信せず、組み込みの決定論的プランナーを使用します",
   "Shaping and verifying…": "構成して検証中…",
   "Show API key": "API キーを表示",
   "Show preview only": "プレビューだけを表示",
@@ -1070,8 +1090,12 @@ export const INTERFACE_TRANSLATIONS = {
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "現在と以前のワークスペースを安全に入れ替えるため、この復元自体も元に戻せます。",
   "The current Chart JSON is invalid.": "現在の Chart JSON は無効です。",
+  "The current default can provide review-before-write model assistance.":
+    "現在の既定の接続で、書き込み前に確認できるモデル支援を利用できます。",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "現在のワークスペースは、サンプルと同じ 1 回の書き込みで完全なデバイス復元版として保存されます。",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "デスクトップ版は、既存設定とローカルモデルのうち定められた範囲だけを確認します。検索中にキーを表示、コピー、検証することはありません。",
   "The detected scan pages changed. Import the file again.":
     "検出されたスキャンページが変わりました。ファイルをもう一度読み込んでください。",
   "The direction is right and only limited manual changes remain.":
@@ -1091,6 +1115,8 @@ export const INTERFACE_TRANSLATIONS = {
     "元の詳細が長すぎるため、この表示では省略されています。",
   "The result saves meaningful time over manual work.": "手作業と比べて有意に時間を短縮できます。",
   "The user can understand what Rune changed and why.": "Rune が何をなぜ変更したかをユーザーが理解できます。",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "Web 版はコンピュータ上のアプリ設定を読み取れません。モデルは手動で接続できます。",
   "This block cannot be empty.": "このブロックを空にすることはできません。",
   "This file includes": "このファイルに含まれるもの",
   "This is device-local candidate human-outcome evidence. Only complete, authorized or redacted ratings count as reviewed real tasks; the file alone cannot prove PMF or a completed pilot threshold.":
@@ -1133,22 +1159,28 @@ export const INTERFACE_TRANSLATIONS = {
   "Update this operating-review task": "この運用レビュータスクを更新します",
   "Uppercase the selection": "選択範囲を大文字にする",
   "usable or minor edits": "利用可能または軽微な修正のみ",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "見つかった接続を使うか、自分で追加するか、モデルなしで続けてください。",
   "Use a supported mark, fields, format, and one existing Data or Query source.":
     "対応するマーク、フィールド、形式と、既存の Data または Query ソースを使用してください。",
   "Use all Data rows": "すべての Data 行を使用する",
-  "Use connected model": "接続モデルを使用する",
-  "Use local mode only": "ローカルモードのみを使用する",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "デバイス上の解析、変換、決定的ツールだけを使用し、モデルサービスには何も送信しない",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "ヘッダー付きの矩形 CSV、またはスカラー値を含むフラット JSON を使用してください。",
   "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
     "Rune JSON または CC Switch の単一プロバイダーのインポート リンクを使用します。 Rune は最初にそれをレビューし、すぐには保存しません。",
   "Use Rune JSON or one ccswitch://v1/import provider link.":
     "Rune JSON または 1 つの ccswitch://v1/import プロバイダー リンクを使用します。",
+  "Use the selected cloud or device model; you still confirm every change":
+    "選択したクラウドまたはローカルモデルを使用し、変更は引き続き自分で確認する",
   "Use this configuration": "この構成を使用します",
+  "Use this model connection?": "このモデル接続を使いますか？",
   Valid: "有効",
   Validated: "検証済み",
   "Value field": "値フィールド",
   "Values, definitions, and calculations are accurate.": "値、定義、計算が正確です。",
+  "Verify & use": "検証して使用",
   "Verify that the Query, result field, and aggregate row still match this revision.":
     "Query、結果フィールド、集計行がこのリビジョンと引き続き一致することを確認してください。",
   "Verifying live source…": "ライブソースを確認中…",
@@ -1183,6 +1215,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Source に入力すると、ライブ出力がすぐに再コンパイルされます。",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "対応ファイルをここにドロップすることもできます。互換変換は書き込み前に必ず確認できます。",
+  "You can still add a provider yourself or import a configuration.": "プロバイダーの追加や設定の読み込みもできます。",
   "Your local guide remains in the workspace rail": "ローカルガイドはワークスペースレールに残ります",
   "Your workspace, under your control.": "あなたのワークスペースをあなたのコントロール下に。",
 } as const;

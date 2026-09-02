@@ -3372,3 +3372,337 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Initialize folder": "폴더 초기화",
   "Syncing safely…": "안전하게 동기화 중…",
 });
+
+// Human-reviewed model discovery and first-run intelligence copy. These
+// strings describe a security boundary, so they must remain precise and
+// natural instead of relying on machine translation.
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  "20 KB maximum": "20 Ko maximum",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "Après confirmation, Rune lit uniquement cet identifiant, vérifie le catalogue de modèles, puis le chiffre et l’enregistre comme connexion par défaut si la vérification réussit.",
+  "Back to connections": "Retour aux connexions",
+  "Checking connections already saved in Rune…": "Vérification des connexions déjà enregistrées dans Rune…",
+  "Cloud API": "API dans le cloud",
+  "Connections available on this device": "Connexions disponibles sur cet appareil",
+  "Continue with model assistance": "Continuer avec le modèle",
+  "Continue without a model": "Continuer sans modèle",
+  "Credential found; not read yet": "Identifiant détecté · pas encore lu",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "La recherche consulte uniquement les emplacements de configuration connus et les ports des modèles locaux. Elle n’exécute aucun profil shell, ne téléverse aucun fichier et n’affiche aucune clé.",
+  Intelligence: "Intelligence",
+  "Let Rune find the models you already use": "Retrouvez les modèles que vous utilisez déjà",
+  "Looking for models on this device…": "Recherche de modèles sur cet appareil…",
+  "No API key required": "Aucune clé API requise",
+  "No model selected yet": "Aucun modèle sélectionné",
+  "No reusable model connection was found": "Aucune connexion réutilisable trouvée",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "Seuls le fournisseur, la source, le point de terminaison et le modèle sont affichés. Rune ne lit l’identifiant qu’après votre choix.",
+  Review: "Examiner",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "Rune n’a pas pu appliquer cette modification. Votre configuration actuelle reste inchangée.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "Rune n’a pas pu terminer la recherche sur l’appareil. Aucune configuration n’a été lue ni enregistrée.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "Rune n’a pas pu lire les configurations de modèles. Réessayez dans un instant.",
+  "Rune could not read model status. You can continue without a model.":
+    "Rune n’a pas pu lire l’état des modèles. Vous pouvez continuer sans modèle.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "Rune n’a pas pu vérifier ce catalogue de modèles. La configuration n’a pas été enregistrée.",
+  "Rune could not verify this connection and did not save it.":
+    "Rune n’a pas pu vérifier cette connexion et ne l’a pas enregistrée.",
+  "Runs on this device": "S’exécute sur cet appareil",
+  "Scan again": "Rechercher à nouveau",
+  "The current default can provide review-before-write model assistance.":
+    "La connexion par défaut peut assister le travail selon le principe « vérifier avant d’écrire ».",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "L’app de bureau examine un ensemble défini de configurations existantes et de moteurs locaux. La recherche n’affiche, ne copie et ne vérifie aucune clé.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "L’app web ne peut pas lire les réglages des applications sur votre ordinateur. Vous pouvez toujours connecter un modèle manuellement.",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "Utilisez une connexion trouvée, ajoutez-en une ou continuez sans modèle.",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "Utiliser uniquement l’analyse, la conversion et les outils déterministes sur l’appareil ; ne rien envoyer à un service de modèles",
+  "Use the selected cloud or device model; you still confirm every change":
+    "Utiliser le modèle cloud ou local sélectionné ; chaque modification reste soumise à votre confirmation",
+  "Use this model connection?": "Utiliser cette connexion ?",
+  "Verify & use": "Vérifier et utiliser",
+  "You can still add a provider yourself or import a configuration.":
+    "Vous pouvez toujours ajouter un fournisseur ou importer une configuration.",
+  Model: "Modèle",
+  Endpoint: "Point de terminaison",
+  "Deployment connection": "Connexion de déploiement",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  "20 KB maximum": "20 KB como máximo",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "Tras tu confirmación, Rune lee solo esta credencial, verifica el catálogo de modelos y, únicamente si funciona, la cifra y guarda como conexión predeterminada.",
+  "Back to connections": "Volver a las conexiones",
+  "Checking connections already saved in Rune…": "Comprobando las conexiones guardadas en Rune…",
+  "Cloud API": "API en la nube",
+  "Connections available on this device": "Conexiones disponibles en este dispositivo",
+  "Continue with model assistance": "Continuar con el modelo",
+  "Continue without a model": "Continuar sin modelo",
+  "Credential found; not read yet": "Credencial detectada · aún no leída",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "La búsqueda solo consulta ubicaciones de configuración conocidas y puertos de modelos locales. Nunca ejecuta perfiles de shell, sube archivos ni muestra claves.",
+  Intelligence: "Inteligencia",
+  "Let Rune find the models you already use": "Encuentra los modelos que ya utilizas",
+  "Looking for models on this device…": "Buscando modelos en este dispositivo…",
+  "No API key required": "No requiere clave API",
+  "No model selected yet": "Aún no has elegido un modelo",
+  "No reusable model connection was found": "No se encontró ninguna conexión reutilizable",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "Solo se muestran el proveedor, el origen, el endpoint y el modelo. Rune lee la credencial después de que elijas una conexión.",
+  Review: "Revisar",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "Rune no pudo completar el cambio. Tu configuración actual no se modificó.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "Rune no pudo terminar la búsqueda en el dispositivo. No se leyó ni guardó ninguna configuración.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "Rune no pudo leer las configuraciones de modelos. Inténtalo de nuevo en unos instantes.",
+  "Rune could not read model status. You can continue without a model.":
+    "Rune no pudo leer el estado de los modelos. Puedes continuar sin modelo.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "Rune no pudo verificar ese catálogo de modelos. La configuración no se guardó.",
+  "Rune could not verify this connection and did not save it.": "Rune no pudo verificar esta conexión y no la guardó.",
+  "Runs on this device": "Se ejecuta en este dispositivo",
+  "Scan again": "Buscar de nuevo",
+  "The current default can provide review-before-write model assistance.":
+    "La conexión predeterminada puede ayudarte siguiendo el principio de revisar antes de escribir.",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "La app de escritorio revisa un conjunto definido de configuraciones existentes y motores locales. La búsqueda nunca muestra, copia ni verifica una clave.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "La app web no puede leer la configuración de otras aplicaciones de tu ordenador. Puedes conectar un modelo manualmente.",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "Usa una conexión encontrada, añade una o continúa sin modelo.",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "Usar solo el análisis, la conversión y las herramientas deterministas del dispositivo; no enviar nada a un servicio de modelos",
+  "Use the selected cloud or device model; you still confirm every change":
+    "Usar el modelo local o en la nube seleccionado; tú sigues confirmando cada cambio",
+  "Use this model connection?": "¿Usar esta conexión?",
+  "Verify & use": "Verificar y usar",
+  "You can still add a provider yourself or import a configuration.":
+    "También puedes añadir un proveedor o importar una configuración.",
+  Model: "Modelo",
+  Endpoint: "Endpoint",
+  "Deployment connection": "Conexión del despliegue",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  "20 KB maximum": "Не более 20 КБ",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "После подтверждения Rune прочитает только эти учётные данные, проверит каталог моделей и лишь при успешной проверке зашифрует и сохранит подключение по умолчанию.",
+  "Back to connections": "Назад к подключениям",
+  "Checking connections already saved in Rune…": "Проверка подключений, сохранённых в Rune…",
+  "Cloud API": "Облачный API",
+  "Connections available on this device": "Подключения на этом устройстве",
+  "Continue with model assistance": "Продолжить с моделью",
+  "Continue without a model": "Продолжить без модели",
+  "Credential found; not read yet": "Учётные данные найдены · ещё не прочитаны",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "Поиск обращается только к известным файлам конфигурации и портам локальных моделей. Он не выполняет профили shell, не загружает файлы и не показывает ключи.",
+  Intelligence: "Интеллект",
+  "Let Rune find the models you already use": "Найдите модели, которыми вы уже пользуетесь",
+  "Looking for models on this device…": "Поиск моделей на этом устройстве…",
+  "No API key required": "Ключ API не требуется",
+  "No model selected yet": "Модель ещё не выбрана",
+  "No reusable model connection was found": "Подходящих подключений не найдено",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "Показаны только поставщик, источник, адрес и модель. Rune прочитает учётные данные лишь после вашего выбора.",
+  Review: "Проверить",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "Rune не удалось применить изменение. Текущая конфигурация не изменена.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "Rune не удалось завершить поиск на устройстве. Конфигурации не были прочитаны или сохранены.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "Rune не удалось прочитать конфигурации моделей. Повторите попытку чуть позже.",
+  "Rune could not read model status. You can continue without a model.":
+    "Rune не удалось прочитать состояние моделей. Можно продолжить без модели.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "Rune не удалось проверить каталог моделей. Конфигурация не сохранена.",
+  "Rune could not verify this connection and did not save it.":
+    "Rune не удалось проверить подключение, поэтому оно не сохранено.",
+  "Runs on this device": "Работает на этом устройстве",
+  "Scan again": "Найти снова",
+  "The current default can provide review-before-write model assistance.":
+    "Текущее подключение по умолчанию может помогать по принципу «сначала проверка, потом запись».",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "Настольное приложение проверяет определённый набор конфигураций и локальных сред моделей. Во время поиска ключи не показываются, не копируются и не проверяются.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "Веб-приложение не может читать настройки других приложений на компьютере. Модель можно подключить вручную.",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "Выберите найденное подключение, добавьте своё или продолжите без модели.",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "Использовать только локальный разбор, преобразование и детерминированные инструменты; ничего не отправлять сервисам моделей",
+  "Use the selected cloud or device model; you still confirm every change":
+    "Использовать выбранную облачную или локальную модель; каждое изменение по-прежнему подтверждаете вы",
+  "Use this model connection?": "Использовать это подключение?",
+  "Verify & use": "Проверить и использовать",
+  "You can still add a provider yourself or import a configuration.":
+    "Можно добавить поставщика вручную или импортировать конфигурацию.",
+  Model: "Модель",
+  Endpoint: "Адрес API",
+  "Deployment connection": "Подключение развёртывания",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  "20 KB maximum": "20 كيلوبايت كحد أقصى",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "بعد تأكيدك، يقرأ Rune بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
+  "Back to connections": "العودة إلى الاتصالات",
+  "Checking connections already saved in Rune…": "جارٍ التحقق من الاتصالات المحفوظة في Rune…",
+  "Cloud API": "واجهة API سحابية",
+  "Connections available on this device": "الاتصالات المتاحة على هذا الجهاز",
+  "Continue with model assistance": "المتابعة باستخدام نموذج",
+  "Continue without a model": "المتابعة من دون نموذج",
+  "Credential found; not read yet": "تم العثور على بيانات اعتماد · لم تُقرأ بعد",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "يفحص البحث مواقع الإعداد المعروفة ومنافذ النماذج المحلية فقط. ولا يشغّل ملفات shell أو يرفع ملفات أو يعرض أي مفتاح.",
+  Intelligence: "الإعداد الذكي",
+  "Let Rune find the models you already use": "اعثر على النماذج التي تستخدمها بالفعل",
+  "Looking for models on this device…": "جارٍ البحث عن نماذج على هذا الجهاز…",
+  "No API key required": "لا يتطلب مفتاح API",
+  "No model selected yet": "لم تختر نموذجًا بعد",
+  "No reusable model connection was found": "لم يُعثر على اتصال قابل لإعادة الاستخدام",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "تظهر جهة التزويد والمصدر ونقطة الاتصال والنموذج فقط. ولا يقرأ Rune بيانات الاعتماد إلا بعد اختيارك.",
+  Review: "مراجعة",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "تعذر على Rune تطبيق هذا التغيير. لم تتغير إعداداتك الحالية.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "تعذر على Rune إكمال البحث على الجهاز. لم تُقرأ أي إعدادات أو تُحفظ.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "تعذر على Rune قراءة إعدادات النماذج. حاول مرة أخرى بعد قليل.",
+  "Rune could not read model status. You can continue without a model.":
+    "تعذر على Rune قراءة حالة النماذج. يمكنك المتابعة من دون نموذج.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "تعذر على Rune التحقق من قائمة النماذج. لم تُحفظ الإعدادات.",
+  "Rune could not verify this connection and did not save it.": "تعذر على Rune التحقق من هذا الاتصال، لذلك لم يحفظه.",
+  "Runs on this device": "يعمل على هذا الجهاز",
+  "Scan again": "البحث مجددًا",
+  "The current default can provide review-before-write model assistance.":
+    "يمكن للاتصال الافتراضي الحالي تقديم مساعدة نموذجية مع المراجعة قبل الكتابة.",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "يفحص تطبيق سطح المكتب مجموعة محددة من الإعدادات الحالية ومشغّلات النماذج المحلية. ولا يعرض البحث أي مفتاح أو ينسخه أو يتحقق منه.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "لا يستطيع تطبيق الويب قراءة إعدادات التطبيقات على جهازك. وما زال بإمكانك ربط نموذج يدويًا.",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "استخدم اتصالًا تم العثور عليه، أو أضف اتصالًا، أو تابع من دون نموذج.",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "استخدام أدوات التحليل والتحويل والحتمية على الجهاز فقط؛ من دون إرسال أي محتوى إلى خدمة نماذج",
+  "Use the selected cloud or device model; you still confirm every change":
+    "استخدام النموذج السحابي أو المحلي المحدد؛ وتبقى أنت من يؤكد كل تغيير",
+  "Use this model connection?": "هل تريد استخدام هذا الاتصال؟",
+  "Verify & use": "التحقق والاستخدام",
+  "You can still add a provider yourself or import a configuration.": "يمكنك أيضًا إضافة جهة تزويد أو استيراد إعداد.",
+  Model: "النموذج",
+  Endpoint: "نقطة الاتصال",
+  "Deployment connection": "اتصال النشر",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  "20 KB maximum": "最大 20 KB",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "確認後、Rune はこの接続の認証情報だけを読み取り、モデル一覧を検証します。成功した場合に限り暗号化し、既定の接続として保存します。",
+  "Back to connections": "接続一覧に戻る",
+  "Checking connections already saved in Rune…": "Rune に保存済みの接続を確認中…",
+  "Cloud API": "クラウド API",
+  "Connections available on this device": "このデバイスで利用できる接続",
+  "Continue with model assistance": "モデルを使って続ける",
+  "Continue without a model": "モデルなしで続ける",
+  "Credential found; not read yet": "認証情報を検出 · まだ未読",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "検索対象は既知の設定場所とローカルモデルのポートだけです。シェル設定の実行、ファイルのアップロード、キーの表示は行いません。",
+  Intelligence: "インテリジェンス",
+  "Let Rune find the models you already use": "利用中のモデルを Rune で見つける",
+  "Looking for models on this device…": "このデバイスのモデルを検索中…",
+  "No API key required": "API キーは不要",
+  "No model selected yet": "モデルはまだ選択されていません",
+  "No reusable model connection was found": "再利用できる接続が見つかりませんでした",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "表示するのはプロバイダー、参照元、エンドポイント、モデルだけです。認証情報は接続を選んだ後に読み取ります。",
+  Review: "確認",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "モデル設定を変更できませんでした。現在の設定は変更されていません。",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "デバイスの検索を完了できませんでした。設定の読み取りや保存は行っていません。",
+  "Rune could not read model configurations. Try again in a moment.":
+    "モデル設定を読み取れませんでした。しばらくしてからもう一度お試しください。",
+  "Rune could not read model status. You can continue without a model.":
+    "モデルの状態を確認できませんでした。モデルなしで続けることもできます。",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "モデル一覧を検証できませんでした。設定は保存されていません。",
+  "Rune could not verify this connection and did not save it.": "この接続を検証できなかったため、保存しませんでした。",
+  "Runs on this device": "このデバイスで実行",
+  "Scan again": "もう一度検索",
+  "The current default can provide review-before-write model assistance.":
+    "現在の既定の接続で、書き込み前に確認できるモデル支援を利用できます。",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "デスクトップ版は、既存設定とローカルモデルのうち定められた範囲だけを確認します。検索中にキーを表示、コピー、検証することはありません。",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "Web 版はコンピュータ上のアプリ設定を読み取れません。モデルは手動で接続できます。",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "見つかった接続を使うか、自分で追加するか、モデルなしで続けてください。",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "デバイス上の解析、変換、決定的ツールだけを使用し、モデルサービスには何も送信しない",
+  "Use the selected cloud or device model; you still confirm every change":
+    "選択したクラウドまたはローカルモデルを使用し、変更は引き続き自分で確認する",
+  "Use this model connection?": "このモデル接続を使いますか？",
+  "Verify & use": "検証して使用",
+  "You can still add a provider yourself or import a configuration.": "プロバイダーの追加や設定の読み込みもできます。",
+  Model: "モデル",
+  Endpoint: "エンドポイント",
+  "Deployment connection": "デプロイ接続",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  "20 KB maximum": "최대 20KB",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "확인하면 Rune은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
+  "Back to connections": "연결 목록으로 돌아가기",
+  "Checking connections already saved in Rune…": "Rune에 저장된 연결 확인 중…",
+  "Cloud API": "클라우드 API",
+  "Connections available on this device": "이 기기에서 사용할 수 있는 연결",
+  "Continue with model assistance": "모델을 사용해 계속",
+  "Continue without a model": "모델 없이 계속",
+  "Credential found; not read yet": "인증 정보 감지 · 아직 읽지 않음",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "검색은 알려진 설정 위치와 로컬 모델 포트만 확인합니다. 셸 설정을 실행하거나 파일을 업로드하거나 키를 표시하지 않습니다.",
+  Intelligence: "지능형 설정",
+  "Let Rune find the models you already use": "이미 사용 중인 모델 찾기",
+  "Looking for models on this device…": "이 기기에서 모델 검색 중…",
+  "No API key required": "API 키 필요 없음",
+  "No model selected yet": "아직 모델을 선택하지 않았습니다",
+  "No reusable model connection was found": "재사용할 수 있는 연결을 찾지 못했습니다",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "제공자, 출처, 엔드포인트, 모델만 표시합니다. Rune은 연결을 선택한 후에만 인증 정보를 읽습니다.",
+  Review: "검토",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "모델 설정을 변경하지 못했습니다. 기존 설정은 그대로 유지됩니다.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "기기 검색을 완료하지 못했습니다. 어떤 설정도 읽거나 저장하지 않았습니다.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "모델 설정을 읽지 못했습니다. 잠시 후 다시 시도하세요.",
+  "Rune could not read model status. You can continue without a model.":
+    "모델 상태를 확인하지 못했습니다. 모델 없이 계속할 수 있습니다.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "모델 목록을 검증하지 못했습니다. 설정은 저장되지 않았습니다.",
+  "Rune could not verify this connection and did not save it.": "이 연결을 검증하지 못해 저장하지 않았습니다.",
+  "Runs on this device": "이 기기에서 실행",
+  "Scan again": "다시 검색",
+  "The current default can provide review-before-write model assistance.":
+    "현재 기본 연결로 쓰기 전에 검토하는 모델 지원을 사용할 수 있습니다.",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "데스크톱 앱은 정해진 범위의 기존 설정과 로컬 모델 런타임만 확인합니다. 검색 중에는 키를 표시하거나 복사하거나 검증하지 않습니다.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "웹 앱은 컴퓨터의 다른 앱 설정을 읽을 수 없습니다. 모델을 직접 연결할 수 있습니다.",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "찾은 연결을 사용하거나 직접 추가하거나 모델 없이 계속하세요.",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "기기 내 분석, 변환, 결정적 도구만 사용하고 모델 서비스에는 아무것도 보내지 않음",
+  "Use the selected cloud or device model; you still confirm every change":
+    "선택한 클라우드 또는 로컬 모델을 사용하며 모든 변경은 직접 확인",
+  "Use this model connection?": "이 모델 연결을 사용할까요?",
+  "Verify & use": "검증 후 사용",
+  "You can still add a provider yourself or import a configuration.":
+    "제공자를 직접 추가하거나 설정을 가져올 수도 있습니다.",
+  Model: "모델",
+  Endpoint: "엔드포인트",
+  "Deployment connection": "배포 연결",
+});

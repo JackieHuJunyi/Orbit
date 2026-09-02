@@ -335,16 +335,40 @@
 .import-task-continuation strong { font-size: var(--rune-type-caption); line-height: 1.3; }
 .import-task-continuation p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; text-wrap: pretty; }
 
-.document-paper { width: min(var(--rune-content-reading), 100%); border-radius: 8px; }
-.markdown-body { font-size: 16.5px; line-height: 1.72; letter-spacing: -.008em; }
-.markdown-body h1 { font-size: clamp(40px, 4.4vw, 56px); letter-spacing: -.045em; text-wrap: balance; }
-.markdown-body h2 { font-size: 27px; letter-spacing: -.035em; }
-.markdown-body h3 { font-size: 20px; letter-spacing: -.025em; }
+.document-stage {
+  container-type: inline-size;
+  padding: clamp(10px, 2.2cqi, 22px);
+}
+.document-paper {
+  width: min(var(--rune-content-reading), 100%);
+  min-height: calc(100dvh - 176px);
+  padding: clamp(28px, 6.2cqi, 60px);
+  border-color: color-mix(in srgb, var(--rune-material-divider) 72%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(24, 24, 28, .065), 0 1px 3px rgba(24, 24, 28, .025);
+}
+.markdown-body { font-size: clamp(16.5px, 2.15cqi, 17px); line-height: 1.72; letter-spacing: -.008em; }
+.markdown-body h1 { font-size: clamp(32px, 6.4cqi, 52px); letter-spacing: -.045em; text-wrap: balance; }
+.markdown-body h2 { font-size: clamp(23px, 3.6cqi, 28px); letter-spacing: -.035em; }
+.markdown-body h3 { font-size: clamp(18px, 2.7cqi, 21px); letter-spacing: -.025em; }
 .markdown-body p,
 .markdown-body li { text-wrap: pretty; }
 .markdown-body blockquote { border-radius: 0 15px 15px 0; }
 .markdown-body pre { border-radius: 16px; }
 .markdown-body img.rune-local-image { border-radius: var(--rune-radius-card); }
+
+@container (max-width: 620px) {
+  .document-paper { padding: clamp(22px, 6.5cqi, 36px); border-radius: 10px; }
+  .paper-meta { margin-bottom: 30px; }
+  .markdown-body h1 { margin-bottom: 28px; }
+  .markdown-body h2 { margin-top: 38px; }
+}
+
+html[data-locale="zh-CN"] .markdown-body,
+html[data-locale="zh-TW"] .markdown-body,
+html[data-locale="ja"] .markdown-body,
+html[data-locale="ko"] .markdown-body { line-height: 1.78; letter-spacing: 0; }
+html[data-locale="ar"] .markdown-body { line-height: 1.82; letter-spacing: 0; }
 .chart-card,
 .deck-slide,
 .data-grid-wrap,

@@ -57,6 +57,7 @@ export const MODEL_MANAGER_BASE_COPY = {
     importPaste: "粘贴配置或 CC Switch 链接",
     importPlaceholder: "粘贴一个 JSON 对象，或 ccswitch://v1/import?resource=provider…",
     importFile: "选择 JSON / 文本文件",
+    importLimit: "最大 20 KB",
     importReview: "检查配置",
     importReviewTitle: "确认导入内容",
     importSource: "来源",
@@ -120,6 +121,9 @@ export const MODEL_MANAGER_BASE_COPY = {
     healthUnknown: "尚未检查",
     healthHealthy: "最近调用正常",
     healthUnhealthy: "暂时避开",
+    readError: "Rune 暂时无法读取模型配置；你可以稍后重试。",
+    updateError: "Rune 暂时无法完成模型配置；你的原配置没有改变。",
+    modelsError: "Rune 暂时无法验证模型目录；配置尚未保存。",
   },
   en: {
     loading: "Reading model profiles…",
@@ -134,6 +138,7 @@ export const MODEL_MANAGER_BASE_COPY = {
     importPaste: "Paste config or CC Switch link",
     importPlaceholder: "Paste one JSON object, or ccswitch://v1/import?resource=provider…",
     importFile: "Choose JSON / text file",
+    importLimit: "20 KB maximum",
     importReview: "Review config",
     importReviewTitle: "Confirm imported configuration",
     importSource: "Source",
@@ -198,6 +203,9 @@ export const MODEL_MANAGER_BASE_COPY = {
     healthUnknown: "Not checked yet",
     healthHealthy: "Recent call succeeded",
     healthUnhealthy: "Temporarily avoided",
+    readError: "Rune could not read model configurations. Try again in a moment.",
+    updateError: "Rune could not complete that model change. Your existing configuration is unchanged.",
+    modelsError: "Rune could not verify that model catalog. The configuration was not saved.",
   },
 } as const;
 
@@ -313,6 +321,9 @@ export function ModelProfileManager({
   const [importResult, setImportResult] = useState<ModelProfileImportResult | null>(null);
   const [importError, setImportError] = useState("");
   const managerRef = useRef<HTMLElement>(null);
+  const activeSurfaceRef = useRef<HTMLElement>(null);
+  const returnFocusRef = useRef<HTMLButtonElement>(null);
+  const surfaceWasOpenRef = useRef(false);
   const canAdd = Boolean(state?.vaultAvailable && state.profiles.length < MAX_MODEL_PROFILES);
   const preset = useMemo(() => MODEL_PROVIDER_PRESETS.find((item) => item.id === editor?.provider), [editor?.provider]);
   const importReview = useMemo(() => (importResult ? modelProfileImportReview(importResult) : null), [importResult]);
@@ -320,10 +331,14 @@ export function ModelProfileManager({
   const importReviewOpen = Boolean(importResult);
 
   useEffect(() => {
-    if (!editorOpen && !importOpen) return;
+    const surfaceOpen = editorOpen || importOpen;
     const frame = window.requestAnimationFrame(() => {
-      managerRef.current?.scrollTo({ top: 0, behavior: "auto" });
-      managerRef.current?.closest<HTMLElement>(".welcome-page")?.scrollTo({ top: 0, behavior: "auto" });
+      if (surfaceOpen) {
+        managerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+        managerRef.current?.closest<HTMLElement>(".welcome-page")?.scrollTo({ top: 0, behavior: "auto" });
+        activeSurfaceRef.current?.focus({ preventScroll: true });
+      } else if (surfaceWasOpenRef.current) returnFocusRef.current?.focus({ preventScroll: true });
+      surfaceWasOpenRef.current = surfaceOpen;
     });
     return () => window.cancelAnimationFrame(frame);
   }, [editorOpen, importOpen, importReviewOpen]);
@@ -333,20 +348,20 @@ export function ModelProfileManager({
     void fetch("/api/model-profiles", { cache: "no-store", credentials: "same-origin", signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as ModelProfilesState & { error?: string };
-        if (!response.ok) throw new Error(payload.error || "Rune could not read model profiles.");
+        if (!response.ok) throw new Error(text.readError);
         setState(payload);
         onStatusChange(statusFromState(payload));
         setError("");
       })
       .catch((cause: unknown) => {
         if (cause instanceof DOMException && cause.name === "AbortError") return;
-        setError(cause instanceof Error ? cause.message : "Rune could not read model profiles.");
+        setError(cause instanceof Error ? cause.message : text.readError);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [onStatusChange]);
+  }, [onStatusChange, text.readError]);
 
   async function mutate(
     action: "upsert" | "activate" | "delete" | "deployment" | "failover",
@@ -370,7 +385,7 @@ export function ModelProfileManager({
         body: JSON.stringify(body),
       });
       const payload = (await response.json()) as ModelProfilesState & { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Rune could not update that model profile.");
+      if (!response.ok) throw new Error(text.updateError);
       setState(payload);
       onStatusChange(statusFromState(payload));
       setEditor(null);
@@ -382,7 +397,7 @@ export function ModelProfileManager({
       setImportResult(null);
       setImportError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Rune could not update that model profile.");
+      setError(cause instanceof Error ? cause.message : text.updateError);
     } finally {
       setSubmitting(false);
       setSubmittingAction(null);
@@ -403,12 +418,11 @@ export function ModelProfileManager({
         body: JSON.stringify({ action: "models", profile: editor }),
       });
       const payload = (await response.json()) as { models?: string[]; error?: string };
-      if (!response.ok || !Array.isArray(payload.models))
-        throw new Error(payload.error || "Rune could not read that provider's models.");
+      if (!response.ok || !Array.isArray(payload.models)) throw new Error(text.modelsError);
       setModels(payload.models);
       if (!editor.model && payload.models[0]) setEditor({ ...editor, model: payload.models[0] });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Rune could not read that provider's models.");
+      setError(cause instanceof Error ? cause.message : text.modelsError);
     } finally {
       setSubmitting(false);
       setSubmittingAction(null);
@@ -568,7 +582,8 @@ export function ModelProfileManager({
               <button
                 type="button"
                 disabled={submitting}
-                onClick={() => {
+                onClick={(event) => {
+                  returnFocusRef.current = event.currentTarget;
                   closeImport();
                   setEditor(editableProfile(profile));
                   setModels([]);
@@ -625,7 +640,8 @@ export function ModelProfileManager({
           <button
             className="model-add-provider"
             type="button"
-            onClick={() => {
+            onClick={(event) => {
+              returnFocusRef.current = event.currentTarget;
               closeImport();
               setEditor(blankProfile());
             }}
@@ -639,7 +655,8 @@ export function ModelProfileManager({
           <button
             className="model-import-provider"
             type="button"
-            onClick={() => {
+            onClick={(event) => {
+              returnFocusRef.current = event.currentTarget;
               setImportOpen(true);
               setImportText("");
               setImportResult(null);
@@ -653,7 +670,14 @@ export function ModelProfileManager({
       )}
 
       {!editor && canAdd && importOpen && (
-        <section className="model-profile-import" aria-label={text.importTitle}>
+        <section
+          className="model-profile-import"
+          aria-label={text.importTitle}
+          ref={(node) => {
+            activeSurfaceRef.current = node;
+          }}
+          tabIndex={-1}
+        >
           <header>
             <span>
               <FileJson2 aria-hidden="true" />
@@ -711,13 +735,13 @@ export function ModelProfileManager({
                 <div>
                   <dt>{text.inputBudget}</dt>
                   <dd>
-                    {importReview.budget.maxInputTokens.toLocaleString()} {text.tokenUnit}
+                    {importReview.budget.maxInputTokens.toLocaleString(locale)} {text.tokenUnit}
                   </dd>
                 </div>
                 <div>
                   <dt>{text.outputBudget}</dt>
                   <dd>
-                    {importReview.budget.maxOutputTokens.toLocaleString()} {text.tokenUnit}
+                    {importReview.budget.maxOutputTokens.toLocaleString(locale)} {text.tokenUnit}
                   </dd>
                 </div>
               </dl>
@@ -783,7 +807,7 @@ export function ModelProfileManager({
                     onChange={(event) => void chooseImportFile(event)}
                   />
                 </label>
-                <small>{Math.ceil(MAX_MODEL_PROFILE_IMPORT_BYTES / 1_000)} KB max</small>
+                <small>{text.importLimit}</small>
               </div>
               {importError && (
                 <p className="model-manager-error" role="alert">
@@ -811,6 +835,10 @@ export function ModelProfileManager({
       {editor && (
         <form
           className="model-profile-editor"
+          ref={(node) => {
+            activeSurfaceRef.current = node;
+          }}
+          tabIndex={-1}
           onSubmit={(event) => {
             event.preventDefault();
             void mutate("upsert");
@@ -834,7 +862,7 @@ export function ModelProfileManager({
             </button>
           </header>
           <div className="model-provider-tabs" role="radiogroup" aria-label={text.preset}>
-            {MODEL_PROVIDER_PRESETS.map((item) => (
+            {MODEL_PROVIDER_PRESETS.filter((item) => item.locality === "cloud").map((item) => (
               <button
                 type="button"
                 role="radio"

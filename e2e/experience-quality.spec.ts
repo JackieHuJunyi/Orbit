@@ -89,7 +89,7 @@ test("Space Black preserves readable text and distinct workspace surface levels"
 
   await page.getByRole("button", { name: "More tools" }).click();
   await page.getByRole("menuitem", { name: /Model settings/u }).click();
-  const modelStatus = await page.locator(".model-status-card").evaluate((element) => {
+  const modelStatus = await page.locator(".model-discovery").evaluate((element) => {
     const card = getComputedStyle(element);
     const heading = getComputedStyle(element.querySelector("strong")!);
     const detail = getComputedStyle(element.querySelector("small")!);
@@ -127,6 +127,59 @@ test("compact Preview selection opens and centers its exact Source range", async
   expect(selection.end).toBeGreaterThan(selection.start);
   expect(selection.scrollTop).toBeGreaterThan(0);
   expect(selection.scrollTop).toBeLessThanOrEqual(selection.scrollHeight - selection.viewportHeight + 1);
+});
+
+test("Markdown preview keeps compact gutters and a readable optical measure in split and focus views", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openWorkbench(page);
+
+  async function previewGeometry() {
+    return page.locator(".document-stage").evaluate((stage) => {
+      const paper = stage.querySelector<HTMLElement>(".document-paper")!;
+      const body = paper.querySelector<HTMLElement>(".markdown-body")!;
+      const stageBounds = stage.getBoundingClientRect();
+      const paperBounds = paper.getBoundingClientRect();
+      const paperStyle = getComputedStyle(paper);
+      const bodyStyle = getComputedStyle(body);
+      return {
+        stageWidth: stageBounds.width,
+        paperWidth: paperBounds.width,
+        outerStart: paperBounds.left - stageBounds.left,
+        outerEnd: stageBounds.right - paperBounds.right,
+        paddingStart: Number.parseFloat(paperStyle.paddingInlineStart),
+        paddingEnd: Number.parseFloat(paperStyle.paddingInlineEnd),
+        bodyFontSize: Number.parseFloat(bodyStyle.fontSize),
+        bodyLineHeight: Number.parseFloat(bodyStyle.lineHeight),
+        bodyWidth: body.getBoundingClientRect().width,
+      };
+    });
+  }
+
+  const split = await previewGeometry();
+  expect(Math.abs(split.outerStart - split.outerEnd)).toBeLessThanOrEqual(2);
+  expect(split.outerStart).toBeGreaterThanOrEqual(9);
+  expect(split.outerStart).toBeLessThanOrEqual(24);
+  expect(split.paddingStart).toBeGreaterThanOrEqual(28);
+  expect(split.paddingStart).toBeLessThanOrEqual(60);
+  expect(Math.abs(split.paddingStart - split.paddingEnd)).toBeLessThanOrEqual(1);
+  expect(split.bodyWidth / split.paperWidth).toBeGreaterThanOrEqual(0.78);
+  expect(split.bodyFontSize).toBeGreaterThanOrEqual(15.5);
+  expect(split.bodyFontSize).toBeLessThanOrEqual(17);
+  expect(split.bodyLineHeight / split.bodyFontSize).toBeGreaterThanOrEqual(1.68);
+
+  await page.locator('[data-workspace-view-option="preview"]').click();
+  await expect(page.locator(".workspace")).toHaveClass(/view-preview/);
+  await expect.poll(async () => (await previewGeometry()).paperWidth).toBeGreaterThanOrEqual(820);
+  const focused = await previewGeometry();
+  expect(Math.abs(focused.outerStart - focused.outerEnd)).toBeLessThanOrEqual(2);
+  expect(focused.paperWidth).toBeGreaterThanOrEqual(880);
+  expect(focused.paperWidth).toBeLessThanOrEqual(922);
+  expect(focused.bodyWidth).toBeGreaterThanOrEqual(758);
+  expect(focused.bodyWidth).toBeLessThanOrEqual(802);
+  expect(focused.bodyFontSize).toBeGreaterThanOrEqual(16.5);
 });
 
 for (const viewport of [

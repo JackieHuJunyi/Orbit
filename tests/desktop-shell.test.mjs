@@ -13,12 +13,14 @@ const [main, legacyOffice, preload, packageJson, workbench, workspaceFileImport,
     readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
   ]);
 
-test("ships one context-isolated desktop conversion capability without renderer Node access", () => {
+test("ships narrow context-isolated desktop capabilities without renderer Node access", () => {
   assert.match(main, /contextIsolation:\s*true/);
   assert.match(main, /nodeIntegration:\s*false/);
   assert.match(main, /sandbox:\s*true/);
   assert.match(preload, /rune:convert-legacy-office/);
   assert.match(preload, /rune:export-legacy-office/);
+  assert.match(preload, /rune:discover-models/);
+  assert.match(preload, /rune:import-discovered-model/);
   assert.match(preload, /require\("electron"\)/);
   assert.doesNotMatch(preload, /ipcRenderer\.(?:send|on)|require\("node:/);
   assert.match(packageJson, /"desktop:dev"/);
@@ -32,6 +34,7 @@ test("protects the desktop model-vault master key with Electron safeStorage", ()
   assert.match(main, /writeFile\(temporaryPath,[\s\S]*mode: 0o600, flag: "wx"/);
   assert.match(main, /process\.env\.RUNE_CREDENTIAL_ENCRYPTION_KEY = key/);
   assert.doesNotMatch(preload, /credential|safeStorage|RUNE_CREDENTIAL/);
+  assert.match(main, /RUNE_DESKTOP_RUNTIME = "1"/);
 });
 
 test("legacy Office conversion is bounded, macro-disabled, temporary, and review-first", () => {

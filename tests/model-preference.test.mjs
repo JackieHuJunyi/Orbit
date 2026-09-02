@@ -8,6 +8,7 @@ import {
   MAX_MODEL_PROFILES,
   UNKNOWN_MODEL_CONNECTION_HEALTH,
   modelCapabilityManifest,
+  modelProviderAvailableInEnvironment,
   normalizeCustomModelBaseURL,
   normalizeModelProfileDraft,
   normalizeModelProfileVault,
@@ -22,8 +23,10 @@ import {
 import { GET as getModelProfiles, POST as postModelProfiles } from "../app/api/model-profiles/route.ts";
 
 test("normalizes only non-secret Rune model preferences", () => {
-  assert.equal(normalizeRuneModelMode("auto"), "auto");
-  assert.equal(normalizeRuneModelMode("local"), "local");
+  assert.equal(normalizeRuneModelMode("model-assisted"), "model-assisted");
+  assert.equal(normalizeRuneModelMode("device-tools-only"), "device-tools-only");
+  assert.equal(normalizeRuneModelMode("auto"), "model-assisted");
+  assert.equal(normalizeRuneModelMode("local"), "device-tools-only");
   assert.equal(normalizeRuneModelMode("openai"), null);
   assert.equal(normalizeRuneModelMode(null), null);
 });
@@ -170,6 +173,13 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
   });
   assert.equal(chat.protocol, "chat-completions");
   assert.deepEqual(chat.budget, { maxInputTokens: 2_048, maxOutputTokens: 512 });
+  const ollama = normalizeModelProfileDraft({ provider: "ollama", model: "qwen3:8b", apiKey: "" });
+  assert.equal(ollama.baseURL, "http://127.0.0.1:11434/v1");
+  assert.equal(ollama.protocol, "chat-completions");
+  assert.equal(ollama.apiKey, "");
+  assert.equal(modelProviderAvailableInEnvironment("ollama", {}), false);
+  assert.equal(modelProviderAvailableInEnvironment("ollama", { RUNE_DESKTOP_RUNTIME: "1" }), true);
+  assert.equal(modelProviderAvailableInEnvironment("openai", {}), true);
   assert.throws(
     () =>
       normalizeModelProfileDraft(
@@ -373,6 +383,85 @@ test("fetches a bounded model catalog without following redirects or returning t
     globalThis.fetch = previousFetch;
     if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
     else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+  }
+});
+
+test("keeps loopback model runtimes desktop-only and never invents an authorization header", async () => {
+  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousDesktopRuntime = process.env.RUNE_DESKTOP_RUNTIME;
+  const previousFetch = globalThis.fetch;
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "desktop-vault-key-0123456789abcdef";
+  delete process.env.RUNE_DESKTOP_RUNTIME;
+  const profile = { provider: "ollama", name: "Ollama", model: "qwen3:8b", apiKey: "" };
+  try {
+    const webSave = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        body: JSON.stringify({ action: "upsert", profile }),
+      }),
+    );
+    assert.equal(webSave.status, 400);
+    assert.match((await webSave.json()).error, /desktop app/i);
+
+    process.env.RUNE_DESKTOP_RUNTIME = "1";
+    let providerRequest;
+    globalThis.fetch = async (input, init) => {
+      providerRequest = { input: String(input), init };
+      return new Response(JSON.stringify({ data: [{ id: "qwen3:8b" }] }), {
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const catalog = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        body: JSON.stringify({ action: "models", profile }),
+      }),
+    );
+    assert.equal(catalog.status, 200);
+    assert.deepEqual(await catalog.json(), { models: ["qwen3:8b"] });
+    assert.equal(providerRequest.input, "http://127.0.0.1:11434/v1/models");
+    assert.equal(new Headers(providerRequest.init.headers).has("authorization"), false);
+
+    const save = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        body: JSON.stringify({ action: "upsert", profile }),
+      }),
+    );
+    assert.equal(save.status, 200);
+    const saved = await save.json();
+    assert.equal(saved.activeProfile.provider, "ollama");
+    const cookie = save.headers.get("set-cookie").split(";", 1)[0];
+    delete process.env.RUNE_DESKTOP_RUNTIME;
+    const refusedActivation = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        body: JSON.stringify({ action: "activate", profileId: saved.activeProfileId }),
+      }),
+    );
+    assert.equal(refusedActivation.status, 400);
+    assert.deepEqual(
+      (await resolveModelRouting(new Request("https://rune.example/api/agent", { headers: { cookie } }), process.env))
+        .connections,
+      [],
+    );
+    process.env.RUNE_DESKTOP_RUNTIME = "1";
+    const desktopRouting = await resolveModelRouting(
+      new Request("https://rune.example/api/agent", { headers: { cookie } }),
+      process.env,
+    );
+    assert.equal(desktopRouting.connections[0]?.provider, "ollama");
+    assert.equal(desktopRouting.connections[0]?.apiKey, "");
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousDesktopRuntime === undefined) delete process.env.RUNE_DESKTOP_RUNTIME;
+    else process.env.RUNE_DESKTOP_RUNTIME = previousDesktopRuntime;
   }
 });
 

@@ -11,11 +11,11 @@ import {
 export const DEFAULT_OPENAI_MODEL = "gpt-5.6";
 export const RUNE_MODEL_MODE_STORAGE_KEY = "rune-model-mode-v1";
 
-export type RuneModelMode = "auto" | "local";
+export type RuneModelMode = "model-assisted" | "device-tools-only";
 
 export type ModelProviderStatus = {
   configured: boolean;
-  provider: "openai" | "openrouter" | "anthropic" | "gemini" | "custom" | null;
+  provider: "openai" | "openrouter" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom" | null;
   model: string | null;
   source?: "personal" | "deployment" | null;
   profileName?: string | null;
@@ -30,7 +30,8 @@ function safeModelName(value: string | undefined) {
 }
 
 export function normalizeRuneModelMode(value: unknown): RuneModelMode | null {
-  if (value === "auto" || value === "local") return value;
+  if (value === "model-assisted" || value === "auto") return "model-assisted";
+  if (value === "device-tools-only" || value === "local") return "device-tools-only";
   return null;
 }
 

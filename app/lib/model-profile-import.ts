@@ -108,6 +108,45 @@ function caseInsensitiveRecord(value: Record<string, unknown>) {
   return record;
 }
 
+function rejectDuplicateJsonObjectKeys(input: string) {
+  const objectKeys: Array<Set<string> | null> = [];
+  let index = 0;
+  while (index < input.length) {
+    const character = input[index];
+    if (character === '"') {
+      const start = index;
+      index += 1;
+      let escaped = false;
+      while (index < input.length) {
+        const next = input[index];
+        if (!escaped && next === '"') break;
+        if (!escaped && next === "\\") escaped = true;
+        else escaped = false;
+        index += 1;
+      }
+      if (index >= input.length) return;
+      const raw = input.slice(start, index + 1);
+      let lookahead = index + 1;
+      while (/\s/u.test(input[lookahead] ?? "")) lookahead += 1;
+      const keys = objectKeys.at(-1);
+      if (keys && input[lookahead] === ":") {
+        let key: unknown;
+        try {
+          key = JSON.parse(raw);
+        } catch {
+          return;
+        }
+        const normalized = String(key).toLowerCase();
+        if (keys.has(normalized)) fail("ambiguous", "The import repeats a configuration field.");
+        keys.add(normalized);
+      }
+    } else if (character === "{") objectKeys.push(new Set());
+    else if (character === "[") objectKeys.push(null);
+    else if (character === "}" || character === "]") objectKeys.pop();
+    index += 1;
+  }
+}
+
 function aliasedValue(record: Map<string, unknown>, aliases: readonly string[]) {
   let found = false;
   let result: unknown;
@@ -224,9 +263,11 @@ function parseCcSwitchLink(input: string) {
   const config = cleanText(record.config, MAX_MODEL_PROFILE_IMPORT_BYTES);
   if (config.startsWith("{")) {
     try {
+      rejectDuplicateJsonObjectKeys(config);
       const parsed = objectRecord(JSON.parse(config));
       if (parsed) Object.assign(record, parsed, { ...record });
-    } catch {
+    } catch (error) {
+      if (error instanceof ModelProfileImportError) throw error;
       fail("invalid-json", "The embedded CC Switch configuration is not valid JSON.");
     }
   }
@@ -236,8 +277,10 @@ function parseCcSwitchLink(input: string) {
 function parseJsonImport(input: string) {
   let parsed: unknown;
   try {
+    rejectDuplicateJsonObjectKeys(input);
     parsed = JSON.parse(input);
-  } catch {
+  } catch (error) {
+    if (error instanceof ModelProfileImportError) throw error;
     fail("invalid-json", "The model profile import is not valid JSON.");
   }
   if (Array.isArray(parsed)) fail("batch", "Import one model profile at a time.");
@@ -297,6 +340,9 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
   const protocol =
     protocolSource ?? MODEL_PROVIDER_PRESETS.find((preset) => preset.id === protocolProvider)?.protocol ?? "responses";
   const preset = MODEL_PROVIDER_PRESETS.find((item) => item.id === provider)!;
+  if (!preset.editableProtocol && protocol !== preset.protocol) {
+    fail("ambiguous", "The imported protocol conflicts with the provider's supported protocol.");
+  }
   let baseURL = preset.baseURL;
   if (provider === "custom") {
     if (!endpoint) fail("invalid-endpoint", "A custom provider import needs one HTTPS API base URL.");
@@ -327,12 +373,13 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
   );
   const apiKey = cleanText(aliasedValue(record, FIELD_ALIASES.apiKey) ?? aliasedValue(environment, ENV_API_KEYS), 512);
   const name = cleanText(aliasedValue(record, FIELD_ALIASES.name), 60) || fallbackPreset.label;
-  const ignoredFieldCount = Object.keys(parsed.record).filter(
-    (field) =>
-      !KNOWN_FIELDS.has(field.toLowerCase()) &&
-      field.toLowerCase() !== "profiles" &&
-      field.toLowerCase() !== "providers",
-  ).length;
+  const ignoredFieldCount =
+    Object.keys(parsed.record).filter(
+      (field) =>
+        !KNOWN_FIELDS.has(field.toLowerCase()) &&
+        field.toLowerCase() !== "profiles" &&
+        field.toLowerCase() !== "providers",
+    ).length + Object.keys(environmentRecord ?? {}).filter((field) => !KNOWN_FIELDS.has(field.toLowerCase())).length;
   const warnings: ModelProfileImportWarning[] = [];
   if (!apiKey) warnings.push({ code: "credential-missing" });
   if (ignoredFieldCount) warnings.push({ code: "unsupported-fields", count: ignoredFieldCount });

@@ -1,0 +1,153 @@
+import assert from "node:assert/strict";
+import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import test from "node:test";
+import { DatabaseSync } from "node:sqlite";
+
+import { createDesktopModelDiscovery, DESKTOP_MODEL_DISCOVERY_LIMITS } from "../desktop/model-discovery.mjs";
+
+function missingFiles(files = new Map()) {
+  return {
+    async stat(filePath) {
+      const value = files.get(filePath);
+      if (value === undefined) throw Object.assign(new Error("missing"), { code: "ENOENT" });
+      return { isFile: () => true, size: Buffer.byteLength(value) };
+    },
+    async readFile(filePath) {
+      const value = files.get(filePath);
+      if (value === undefined) throw Object.assign(new Error("missing"), { code: "ENOENT" });
+      return value;
+    },
+    async fetch() {
+      throw new Error("no local runtime");
+    },
+  };
+}
+
+test("discovers process credentials without returning a secret before explicit import", async () => {
+  const discovery = createDesktopModelDiscovery({
+    homeDirectory: "/missing",
+    environment: { OPENAI_API_KEY: "process-secret", OPENAI_MODEL: "gpt-5.6-sol" },
+    capabilities: missingFiles(),
+  });
+  const result = await discovery.scan();
+  assert.equal(result.supported, true);
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0].sourceKind, "environment");
+  assert.equal(result.candidates[0].model, "gpt-5.6-sol");
+  assert.doesNotMatch(JSON.stringify(result), /process-secret/u);
+  assert.equal("profile" in result.candidates[0], false);
+
+  const imported = await discovery.importCandidate(result.candidates[0].id);
+  assert.equal(imported.apiKey, "process-secret");
+  await assert.rejects(() => discovery.importCandidate("unknown"), /no longer available/i);
+});
+
+test("discovers bounded Claude, Codex, and Gemini live configurations without executing them", async () => {
+  const home = "/Users/rune";
+  const files = new Map([
+    [
+      path.join(home, ".claude", "settings.json"),
+      JSON.stringify({
+        env: {
+          ANTHROPIC_AUTH_TOKEN: "claude-secret",
+          ANTHROPIC_BASE_URL: "https://claude.example.com/v1",
+          ANTHROPIC_MODEL: "claude-team",
+        },
+      }),
+    ],
+    [path.join(home, ".codex", "auth.json"), JSON.stringify({ OPENAI_API_KEY: "codex-secret" })],
+    [
+      path.join(home, ".codex", "config.toml"),
+      'model = "gpt-team"\n[model_providers.team]\nbase_url = "https://codex.example.com/v1"\nwire_api = "responses"',
+    ],
+    [
+      path.join(home, ".gemini", ".env"),
+      "GEMINI_API_KEY='gemini-secret'\nGEMINI_MODEL=gemini-team\nIGNORED=$(touch /tmp/never-run)",
+    ],
+  ]);
+  const discovery = createDesktopModelDiscovery({
+    homeDirectory: home,
+    environment: {},
+    capabilities: missingFiles(files),
+  });
+  const result = await discovery.scan();
+  assert.deepEqual(result.candidates.map((candidate) => candidate.sourceLabel).sort(), [
+    "Claude Code",
+    "Codex",
+    "Gemini CLI",
+  ]);
+  assert.doesNotMatch(JSON.stringify(result), /claude-secret|codex-secret|gemini-secret/u);
+  const claude = result.candidates.find((candidate) => candidate.sourceLabel === "Claude Code");
+  assert.equal(claude.provider, "custom");
+  assert.equal(claude.protocol, "anthropic-messages");
+});
+
+test("discovers running Ollama and LM Studio catalogs as credential-free device models", async () => {
+  const capabilities = missingFiles();
+  capabilities.fetch = async (url) => {
+    if (url.endsWith("/api/tags")) {
+      return new Response(JSON.stringify({ models: [{ name: "qwen3:8b" }, { name: "llama3.2" }] }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ data: [{ id: "local/phi-4" }] }), {
+      headers: { "content-type": "application/json" },
+    });
+  };
+  const discovery = createDesktopModelDiscovery({ homeDirectory: "/missing", environment: {}, capabilities });
+  const result = await discovery.scan();
+  assert.deepEqual(
+    result.candidates.map(({ provider, locality, credentialState }) => ({ provider, locality, credentialState })),
+    [
+      { provider: "ollama", locality: "device", credentialState: "not-required" },
+      { provider: "lmstudio", locality: "device", credentialState: "not-required" },
+    ],
+  );
+  const imported = await discovery.importCandidate(result.candidates[0].id);
+  assert.equal(imported.apiKey, "");
+  assert.equal(imported.baseURL, "http://127.0.0.1:11434/v1");
+});
+
+test("reads CC Switch through a read-only bounded provider query", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "rune-discovery-"));
+  const directory = path.join(home, ".cc-switch");
+  await mkdir(directory);
+  const database = new DatabaseSync(path.join(directory, "cc-switch.db"));
+  database.exec(
+    "CREATE TABLE providers (id TEXT, app_type TEXT, name TEXT, settings_config TEXT, is_current INTEGER, sort_index INTEGER)",
+  );
+  database.prepare("INSERT INTO providers VALUES (?, ?, ?, ?, ?, ?)").run(
+    "team",
+    "codex",
+    "Team gateway",
+    JSON.stringify({
+      auth: { OPENAI_API_KEY: "cc-switch-secret" },
+      config:
+        'model = "gpt-team"\n[model_providers.team]\nbase_url = "https://models.example.com/v1"\nwire_api = "responses"',
+    }),
+    1,
+    0,
+  );
+  database.close();
+  try {
+    const discovery = createDesktopModelDiscovery({ homeDirectory: home, environment: {} });
+    const result = await discovery.scan();
+    assert.equal(result.candidates.length, 1);
+    assert.equal(result.candidates[0].sourceLabel, "CC Switch · Codex");
+    assert.equal(result.candidates[0].provider, "custom");
+    assert.doesNotMatch(JSON.stringify(result), /cc-switch-secret/u);
+    assert.equal((await discovery.importCandidate(result.candidates[0].id)).apiKey, "cc-switch-secret");
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});
+
+test("publishes fixed discovery bounds", () => {
+  assert.deepEqual(DESKTOP_MODEL_DISCOVERY_LIMITS, {
+    maximumCandidates: 32,
+    maximumFileBytes: 256 * 1024,
+    localProbeTimeoutMs: 650,
+  });
+});

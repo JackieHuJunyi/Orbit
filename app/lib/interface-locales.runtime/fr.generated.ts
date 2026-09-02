@@ -52,6 +52,7 @@ export const INTERFACE_TRANSLATIONS = {
     "1. Choisissez **Importer** dans la barre d'outils ou fermez le fichier actuel et déposez-en un au centre.",
   "2. Edit Markdown, CSV/JSON, SQL, Chart JSON, or semantic HTML on the left. Existing Deck Markdown remains editable.":
     "2. Modifiez Markdown, CSV/JSON, SQL, Chart JSON ou le HTML sémantique à gauche. Le Deck Markdown existant reste modifiable.",
+  "20 KB maximum": "20 Ko maximum",
   "3. Inspect the compiled result immediately on the right.":
     "3. Inspectez le résultat compilé immédiatement à droite.",
   "4. Choose a Document heading, paragraph, individual list item, table cell, bold/italic/struck text, inline code, link, or image — or a data cell, chart datum, or slide — to locate and highlight its exact source. Moving the source caret or selecting a proven range also highlights and scrolls the matching preview target. A normal link click locates source; Command/Control-click still opens it.":
@@ -68,8 +69,6 @@ export const INTERFACE_TRANSLATIONS = {
     "Un rapport et une présentation pour la direction, axés sur les décisions",
   "A material error, omission, or rework still blocks delivery.":
     "Une erreur importante, une omission ou une reprise empêche encore la livraison.",
-  "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.":
-    "Un modèle ne propose que des changements limités. La source, la validation et l'écriture finale restent sous Rune et sous votre contrôle.",
   "A paragraph, heading, list, quote, code block, table, or divider…":
     "Un paragraphe, un titre, une liste, une citation, un bloc de code, un tableau ou un séparateur…",
   "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.":
@@ -105,6 +104,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Après cet import vérifié, Rune ouvre la configuration de la présentation avec ce Document déjà sélectionné.",
   "After this reviewed import, Rune opens the operating-review setup with this Data source already selected.":
     "Après cet import vérifié, Rune ouvre la configuration de la revue opérationnelle avec cette source Data déjà sélectionnée.",
+  "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
+    "Après confirmation, Rune lit uniquement cet identifiant, vérifie le catalogue de modèles, puis le chiffre et l’enregistre comme connexion par défaut si la vérification réussit.",
   Agent: "Agent",
   "Agent change scope": "Agent modifier la portée",
   "Agent composer focused": "Agent compositeur concentré",
@@ -149,6 +150,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Available after one guided task": "Disponible après une tâche guidée",
   Average: "Moyenne",
   Back: "Retour",
+  "Back to connections": "Retour aux connexions",
   Bar: "Barre",
   "Bar · compare": "Barre · comparer",
   "Baseline not recorded": "Version de référence non enregistrée",
@@ -189,11 +191,10 @@ export const INTERFACE_TRANSLATIONS = {
   Chart: "Chart",
   "Chart bound to Data or Query": "Chart lié aux données ou à la requête",
   "Chart form": "Formulaire Chart",
-  "Check again": "Vérifiez à nouveau",
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "Vérifiez la syntaxe de la liaison et choisissez une métrique présente dans cet espace de travail.",
   "Check these settings first:": "Vérifiez d'abord ces paramètres :",
-  "Checking the model connection…": "Vérification de la connexion du modèle…",
+  "Checking connections already saved in Rune…": "Vérification des connexions déjà enregistrées dans Rune…",
   "Checkpoint history": "Historique des points de contrôle",
   "Checkpoint restore details": "Détails de la restauration du point de contrôle",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
@@ -215,7 +216,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Choisissez Chart couleur d'accentuation",
   "Choose CSV, JSON, XLSX, or ODS. Rune shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "Choisissez CSV, JSON, XLSX ou ODS. Rune affiche d’abord l’import, puis vous guide à travers les champs, les mesures, les graphiques et les livrables.",
-  "Choose how Rune uses a model": "Choisissez comment Rune utilise un modèle",
   "Choose JSON / text file": "Choisissez JSON/fichier texte",
   "Choose maximum visible Chart marks": "Choisissez le nombre maximum de Chart marques visibles.",
   "Choose one exact scope value, or return to all Data rows.":
@@ -238,6 +238,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Fermeture du fichier actuel : chaque source reste dans l'espace de travail",
   "Closed the current file — every source remains safely in the workspace":
     "Fermeture du fichier actuel : chaque source reste en sécurité dans l'espace de travail",
+  "Cloud API": "API dans le cloud",
   "Compare with": "Comparer avec",
   "Comparison rows": "Lignes de comparaison",
   "Compiled artifact preview": "Aperçu de l'artefact compilé",
@@ -260,9 +261,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Confirming only downloads to this device; Rune does not upload or send the file.":
     "La confirmation télécharge uniquement sur cet appareil ; Rune ne téléverse ni n’envoie le fichier.",
   "Connected folder": "Dossier connecté",
+  "Connections available on this device": "Connexions disponibles sur cet appareil",
   "Content workspace": "Espace de travail de contenu",
   Continue: "Continuer",
   "Continue setup": "Continuer la configuration",
+  "Continue with model assistance": "Continuer avec le modèle",
+  "Continue without a model": "Continuer sans modèle",
   "Cosmic Orange": "Orange cosmique",
   "Create a new artifact": "Créer un nouvel artefact",
   "Create a new presentation": "Créer une nouvelle présentation",
@@ -281,6 +285,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Create review": "Créer un avis",
   "Create source": "Créer une source",
   Credential: "Informations d'identification",
+  "Credential found; not read yet": "Identifiant détecté · pas encore lu",
   Currency: "Devise",
   "Currency · USD": "Devise · USD",
   Current: "Actuel",
@@ -319,6 +324,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Delivery outcome recorded on this device": "Résultat de livraison enregistré sur cet appareil",
   "Delivery outcomes": "Résultats de livraison",
   "Dependency graph": "Graphique de dépendance",
+  "Deployment connection": "Connexion de déploiement",
   "Deployment model": "Modèle de déploiement",
   Descending: "Décroissant",
   "Describe a change confined to this selection…": "Décrivez un changement limité à cette sélection…",
@@ -353,6 +359,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "Ce résultat est-il devenu utilisable dans un travail réel ?",
   Discard: "Jeter",
   "Discard proposed patch": "Supprimer le correctif proposé",
+  "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
+    "La recherche consulte uniquement les emplacements de configuration connus et les ports des modèles locaux. Elle n’exécute aucun profil shell, ne téléverse aucun fichier et n’affiche aucune clé.",
   Document: "Documenter",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "Le document dépasse la limite de sécurité du contexte du modèle ; une présentation locale déterministe est prête à être vérifiée",
@@ -396,6 +404,7 @@ export const INTERFACE_TRANSLATIONS = {
   "en-US": "fr-US",
   Enable: "Activer",
   "Encrypting…": "Chiffrement…",
+  Endpoint: "Point de terminaison",
   "Enter a focus view": "Passer à une vue ciblée",
   Equals: "Égal",
   "Every artifact stays readable to people and models.":
@@ -464,8 +473,6 @@ export const INTERFACE_TRANSLATIONS = {
   "For example: Product launch briefing": "Par exemple : présentation de lancement produit",
   "Format Document section": "Section Formater le document",
   From: "De",
-  "Generate review-before-write changes through Rune's server adapter":
-    "Générez des modifications de révision avant écriture via l'adaptateur serveur de Rune",
   "Generated source previews": "Aperçus des sources générés",
   groups: "groupes",
   Handoff: "Remise",
@@ -520,6 +527,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Insert block after": "Insérer un bloc après",
   "Insert block before": "Insérer un bloc avant",
   "Insights support a useful next decision.": "Les enseignements facilitent la prochaine décision.",
+  Intelligence: "Intelligence",
   "Is one of": "Est l'un des",
   Italic: "Italique",
   "just now": "juste maintenant",
@@ -544,6 +552,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Leave empty to keep the encrypted credential": "Laissez vide pour conserver les identifiants chiffrés",
   Left: "Gauche",
   "Legacy first-Data binding": "Liaison héritée des premières données",
+  "Let Rune find the models you already use": "Retrouvez les modèles que vous utilisez déjà",
   "Light Gold": "Or clair",
   Line: "Ligne",
   "Line · sequence": "Ligne · séquence",
@@ -572,6 +581,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Local workspace ready": "Espace de travail local prêt",
   locally: "en local",
   "Long-form writing in Markdown": "Écriture longue dans Markdown",
+  "Looking for models on this device…": "Recherche de modèles sur cet appareil…",
   "Managed by the Rune server; only non-secret status is shown.":
     "Géré par le serveur Rune ; seul le statut non secret est affiché.",
   Manual: "Manuel",
@@ -579,8 +589,8 @@ export const INTERFACE_TRANSLATIONS = {
   Mark: "Marque",
   "Match all conditions": "Répond à toutes les conditions",
   "Mist Blue": "Bleu brume",
+  Model: "Modèle",
   "Model connected": "Modèle connecté",
-  "Model connection": "Connexion du modèle",
   "Model settings": "Paramètres du modèle",
   "Model unavailable; deterministic local operating review prepared for review":
     "Modèle indisponible ; une revue opérationnelle locale déterministe est prête à être vérifiée",
@@ -623,15 +633,17 @@ export const INTERFACE_TRANSLATIONS = {
   "Next step": "Étape suivante",
   "Next: choose audience and presentation purpose": "Ensuite : choisissez le public et l’objectif de la présentation",
   "Next: choose fields and deliverables": "Ensuite : choisissez les champs et les livrables",
+  "No API key required": "Aucune clé API requise",
   "No available field": "Aucun champ disponible",
   "No comparison": "Aucune comparaison",
   "No compatible source": "Aucune source compatible",
   "No cross-file bindings change in this transaction.":
     "Aucune liaison entre fichiers ne change dans cette transaction.",
   "No hidden graph state": "Aucun état de graphique caché",
-  "No model connected": "Aucun modèle connecté",
+  "No model selected yet": "Aucun modèle sélectionné",
   "No personal model profiles yet. Add one to switch providers here.":
     "Aucun profil de modèle personnel pour l'instant. Ajoutez-en un pour changer de fournisseur ici.",
+  "No reusable model connection was found": "Aucune connexion réutilisable trouvée",
   "No strictly numeric field": "Pas de champ strictement numérique",
   "No unsaved change": "Aucune modification non enregistrée",
   "No usable Data artifact in this workspace": "Aucun artefact de données utilisable dans cet espace de travail",
@@ -693,6 +705,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Ce n’est qu’après l’échec du modèle principal que Rune peut envoyer le même contenu limité à un autre fournisseur configuré. Désactivé par défaut.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "Seuls les champs numériques dans tout le périmètre de données actuel sont affichés.",
+  "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.":
+    "Seuls le fournisseur, la source, le point de terminaison et le modèle sont affichés. Rune ne lit l’identifiant qu’après votre choix.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "Seules les 100 premières valeurs distinctes sont affichées ; choisissez si nécessaire un champ de période avec moins de valeurs distinctes.",
   "Open a file": "Ouvrir un fichier",
@@ -864,6 +878,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Result summary": "Résumé des résultats",
   "Revenue analysis": "Analyse des revenus",
   "Revenue by region": "Chiffre d'affaires par région",
+  Review: "Examiner",
   "Review before write": "Réviser avant d'écrire",
   "Review canonical source": "Vérifier la source canonique",
   "Review checkpoint restore": "Vérifier la restauration d’un point de contrôle",
@@ -887,17 +902,27 @@ export const INTERFACE_TRANSLATIONS = {
   Rune: "Rune",
   "Rune compiled these results locally from the current scope before any model request.":
     "Rune a compilé ces résultats localement à partir du périmètre actuel, avant toute requête au modèle.",
+  "Rune could not complete that model change. Your existing configuration is unchanged.":
+    "Rune n’a pas pu appliquer cette modification. Votre configuration actuelle reste inchangée.",
+  "Rune could not complete the device scan. No configuration was read or saved.":
+    "Rune n’a pas pu terminer la recherche sur l’appareil. Aucune configuration n’a été lue ni enregistrée.",
   "Rune could not connect that folder": "Rune n'a pas pu connecter ce dossier",
   "Rune could not import those files": "Rune n'a pas pu importer ces fichiers",
   "Rune could not prepare pilot evidence.": "Rune n’a pas pu préparer les preuves du pilote.",
   "Rune could not prepare that export": "Rune n'a pas pu préparer cette exportation",
   "Rune could not pull that folder": "Rune n'a pas pu extraire ce dossier",
   "Rune could not push that folder": "Rune n'a pas pu transférer ce dossier",
-  "Rune could not read model status. You can continue in local mode.":
-    "Rune n'a pas pu lire l'état du modèle. Vous pouvez continuer en mode local.",
+  "Rune could not read model configurations. Try again in a moment.":
+    "Rune n’a pas pu lire les configurations de modèles. Réessayez dans un instant.",
+  "Rune could not read model status. You can continue without a model.":
+    "Rune n’a pas pu lire l’état des modèles. Vous pouvez continuer sans modèle.",
   "Rune could not read that configuration file.": "Rune n'a pas pu lire ce fichier de configuration.",
   "Rune could not record this delivery outcome": "Rune n’a pas pu enregistrer ce résultat de livraison",
   "Rune could not render this page preview.": "Rune n’a pas pu afficher l’aperçu de cette page.",
+  "Rune could not verify that model catalog. The configuration was not saved.":
+    "Rune n’a pas pu vérifier ce catalogue de modèles. La configuration n’a pas été enregistrée.",
+  "Rune could not verify this connection and did not save it.":
+    "Rune n’a pas pu vérifier cette connexion et ne l’a pas enregistrée.",
   "Rune derives a portable filename and stable workspace id. You can edit the source immediately.":
     "Rune dérive un nom de fichier portable et un identifiant d'espace de travail stable. Vous pouvez modifier la source immédiatement.",
   "Rune document": "Runedocument",
@@ -913,8 +938,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Rune preserves this exact validated source; it does not compile or rewrite its live references.":
     "Rune conserve exactement cette source validée ; il ne compile ni ne réécrit ses références dynamiques.",
   "Rune sections": "Rune rubriques",
-  "Rune still works with deterministic local planners. You can revisit this from Help.":
-    "Rune travaille toujours avec des planificateurs locaux déterministes. Vous pouvez revoir cela à partir de l'aide.",
   "Rune stores only the judgment, format, elapsed time, and source revision fingerprint on this device—never document text or prompts.":
     "Rune conserve uniquement le jugement, le format, le temps écoulé et l’empreinte de révision de la source sur cet appareil, jamais le texte du document ni les invites.",
   "Rune supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Rune Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
@@ -929,10 +952,10 @@ export const INTERFACE_TRANSLATIONS = {
     "Rune remplacera l’espace de travail local par l’exemple intégré et conservera ses fichiers, points de restauration et historiques de tâches comme espace de travail précédent.",
   "Rune will restore the complete pre-reset device workspace and preserve the current workspace as the next recoverable version.":
     "Rune restaurera l’espace de travail local complet d’avant la réinitialisation et conservera l’espace actuel comme prochaine version récupérable.",
-  "Rune will use the currently enabled secure profile.": "Rune utilisera le profil sécurisé actuellement activé.",
   "Rune writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.":
     "Rune écrit une directive -- rune:data explicite, donc workspace_data ne change jamais lorsque les fichiers sont réorganisés.",
   "Running locally": "Exécution locale",
+  "Runs on this device": "S’exécute sur cet appareil",
   "Runtime impact preflight passed": "Le contrôle en amont de l'impact sur l'exécution a réussi",
   "Runtime-validated draft": "Brouillon validé à l'exécution",
   Sage: "Sauge",
@@ -957,6 +980,7 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "tâches enregistrées",
   "Saved tasks": "Tâches enregistrées",
   Saving: "Économiser",
+  "Scan again": "Rechercher à nouveau",
   "Scanned PDF · explicit selection": "PDF numérisé · sélection explicite",
   "Scope filters": "Filtres de portée",
   "See the full data-to-report-and-deck chain": "Voir la chaîne complète des données au rapport et au deck",
@@ -973,8 +997,6 @@ export const INTERFACE_TRANSLATIONS = {
   semantic: "sémantique",
   "Semantic HTML → select or edit one exact slide":
     "HTML sémantique → sélectionner ou modifier une diapositive précise",
-  "Send nothing to a model service and use built-in deterministic planners":
-    "N'envoyez rien à un service modèle et utilisez des planificateurs déterministes intégrés",
   "Shaping and verifying…": "Structuration et vérification…",
   "Show API key": "Afficher la clé API",
   "Show preview only": "Afficher uniquement l’aperçu",
@@ -1083,8 +1105,12 @@ export const INTERFACE_TRANSLATIONS = {
   "The current and previous workspaces swap safely, so this recovery remains reversible.":
     "Les espaces de travail actuel et précédent sont échangés en toute sécurité ; cette restauration reste donc réversible.",
   "The current Chart JSON is invalid.": "Le Chart JSON actuel n'est pas valide.",
+  "The current default can provide review-before-write model assistance.":
+    "La connexion par défaut peut assister le travail selon le principe « vérifier avant d’écrire ».",
   "The current workspace becomes one complete device recovery version in the same write as the sample workspace.":
     "L’espace de travail actuel devient une version de récupération locale complète dans la même écriture que l’espace d’exemple.",
+  "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.":
+    "L’app de bureau examine un ensemble défini de configurations existantes et de moteurs locaux. La recherche n’affiche, ne copie et ne vérifie aucune clé.",
   "The detected scan pages changed. Import the file again.":
     "Les pages numérisées détectées ont changé. Importez de nouveau le fichier.",
   "The direction is right and only limited manual changes remain.":
@@ -1107,6 +1133,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Le résultat fait gagner un temps notable par rapport au travail manuel.",
   "The user can understand what Rune changed and why.":
     "L’utilisateur peut comprendre ce que Rune a modifié et pourquoi.",
+  "The web app cannot read application settings on your computer. You can still connect a model manually.":
+    "L’app web ne peut pas lire les réglages des applications sur votre ordinateur. Vous pouvez toujours connecter un modèle manuellement.",
   "This block cannot be empty.": "Ce bloc ne peut pas être vide.",
   "This file includes": "Ce fichier contient",
   "This is device-local candidate human-outcome evidence. Only complete, authorized or redacted ratings count as reviewed real tasks; the file alone cannot prove PMF or a completed pilot threshold.":
@@ -1149,22 +1177,28 @@ export const INTERFACE_TRANSLATIONS = {
   "Update this operating-review task": "Mettre à jour cette tâche de revue opérationnelle",
   "Uppercase the selection": "Mettre la sélection en majuscule",
   "usable or minor edits": "utilisables ou avec retouches mineures",
+  "Use a discovered connection, add one yourself, or continue without a model.":
+    "Utilisez une connexion trouvée, ajoutez-en une ou continuez sans modèle.",
   "Use a supported mark, fields, format, and one existing Data or Query source.":
     "Utilisez un type de tracé, des champs et un format pris en charge, ainsi qu’une source Data ou Query existante.",
   "Use all Data rows": "Utiliser toutes les Data lignes",
-  "Use connected model": "Utiliser le modèle connecté",
-  "Use local mode only": "Utiliser uniquement le mode local",
+  "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service":
+    "Utiliser uniquement l’analyse, la conversion et les outils déterministes sur l’appareil ; ne rien envoyer à un service de modèles",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "Utilisez un CSV rectangulaire avec en-têtes, ou un JSON plat contenant des valeurs scalaires.",
   "Use Rune JSON or a CC Switch single-provider import link. Rune reviews it first and never saves it immediately.":
     "Utilisez Rune JSON ou un lien d'importation à fournisseur unique CC Switch. Rune l'examine en premier et ne l'enregistre jamais immédiatement.",
   "Use Rune JSON or one ccswitch://v1/import provider link.":
     "Utilisez Rune JSON ou un lien de fournisseur ccswitch://v1/import.",
+  "Use the selected cloud or device model; you still confirm every change":
+    "Utiliser le modèle cloud ou local sélectionné ; chaque modification reste soumise à votre confirmation",
   "Use this configuration": "Utiliser cette configuration",
+  "Use this model connection?": "Utiliser cette connexion ?",
   Valid: "Valide",
   Validated: "Validé",
   "Value field": "Champ de valeur",
   "Values, definitions, and calculations are accurate.": "Les valeurs, les définitions et les calculs sont exacts.",
+  "Verify & use": "Vérifier et utiliser",
   "Verify that the Query, result field, and aggregate row still match this revision.":
     "Vérifiez que la Query, le champ de résultat et la ligne agrégée correspondent toujours à cette révision.",
   "Verifying live source…": "Vérification de la source en direct…",
@@ -1201,6 +1235,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Écrivez dans Source ; le résultat en direct sera immédiatement recompilé.",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "Vous pouvez aussi déposer ici tout fichier pris en charge. Chaque conversion de compatibilité est vérifiée avant l’écriture.",
+  "You can still add a provider yourself or import a configuration.":
+    "Vous pouvez toujours ajouter un fournisseur ou importer une configuration.",
   "Your local guide remains in the workspace rail": "Votre guide local reste dans le rail de l'espace de travail",
   "Your workspace, under your control.": "Votre espace de travail, sous votre contrôle.",
 } as const;

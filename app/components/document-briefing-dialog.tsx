@@ -203,7 +203,7 @@ export function DocumentBriefingDialog({
       footer={
         <>
           <div>
-            <ShieldCheck aria-hidden="true" /> {modelMode === "auto" ? copy.modelFooter : copy.localFooter}
+            <ShieldCheck aria-hidden="true" /> {modelMode === "model-assisted" ? copy.modelFooter : copy.localFooter}
           </div>
           <span>
             <button className="button ghost-button" type="button" onClick={cancel} disabled={preparing}>
@@ -390,7 +390,7 @@ export function DocumentBriefingDialog({
             </div>
             <div>
               <dt>{copy.planner}</dt>
-              <dd>{modelMode === "auto" ? copy.modelPlanner : copy.localPlanner}</dd>
+              <dd>{modelMode === "model-assisted" ? copy.modelPlanner : copy.localPlanner}</dd>
             </div>
             <div>
               <dt>{copy.export}</dt>

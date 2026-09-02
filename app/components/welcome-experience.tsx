@@ -60,22 +60,45 @@ export const WELCOME_BASE_COPY = {
     languageBody: "已根据这台设备做出推荐，之后可随时更改。",
     recommended: "系统推荐",
     continue: "继续",
-    modelEyebrow: "模型连接",
-    modelTitle: "选择 Rune 如何使用模型",
-    modelBody: "模型只负责提出受约束的修改；源文件、验证与是否写入仍由 Rune 和你决定。",
-    checkingModel: "正在检查模型连接…",
-    connectedModel: "模型已连接",
-    connectedModelBody: "Rune 会使用当前启用的安全配置。",
-    noModel: "尚未连接模型",
-    noModelBody: "当前仍可使用确定性的本地规划器，之后可从帮助重新设置。",
-    useConnected: "使用已连接模型",
-    useConnectedBody: "通过 Rune 的服务端适配器生成先审后写的修改",
-    useLocal: "仅使用本地模式",
-    useLocalBody: "不向模型服务发送内容，使用内置确定性规划器",
-    recheck: "重新检查",
+    modelEyebrow: "智能设置",
+    modelTitle: "让 Rune 找到你已有的模型",
+    modelBody: "桌面版会在明确范围内查找已有配置与本地模型；发现阶段不显示、复制或验证任何密钥。",
+    checkingModel: "正在检查 Rune 中已有的连接…",
+    connectedModel: "已经准备好",
+    connectedModelBody: "当前默认连接可用于先审后写的模型辅助。",
+    noModel: "还没有选择模型",
+    noModelBody: "可以使用发现的连接、手动添加，或不使用模型继续。",
+    useConnected: "使用模型辅助",
+    useConnectedBody: "使用所选云端或本地模型；每次修改仍由你确认",
+    useLocal: "不使用模型继续",
+    useLocalBody: "只使用设备端解析、转换和确定性工具，不向模型服务发送内容",
+    recheck: "重新扫描",
+    discoveryScanning: "正在查找这台设备上的模型…",
+    discoveryTitle: "此设备上的可用连接",
+    discoveryBody: "仅显示供应商、来源、endpoint 和模型；选择后才读取凭据并验证连接。",
+    discoveryEmpty: "未找到可直接复用的模型连接",
+    discoveryEmptyBody: "你仍可以手动添加供应商或导入一份配置。",
+    discoveryUnavailable: "网页版不能读取电脑上的应用配置；仍可手动连接模型。",
+    discoveryError: "Rune 无法完成设备扫描；没有读取或保存任何配置。",
+    deviceModel: "在此设备上运行",
+    cloudModel: "云端 API",
+    sourceLabel: "来源",
+    modelLabel: "模型",
+    endpointLabel: "端点",
+    deploymentConnection: "部署连接",
+    credentialDetected: "发现凭据；尚未读取",
+    credentialNotRequired: "无需 API Key",
+    reviewConnection: "查看",
+    reviewTitle: "使用这个模型连接？",
+    connectionReviewBody: "Rune 将在你确认后读取这一项凭据，先验证模型目录，成功后才加密保存并设为默认。",
+    connectAndVerify: "验证并使用",
+    connecting: "正在验证…",
+    chooseAnother: "返回连接列表",
+    connectionFailed: "这个连接暂时无法验证；Rune 没有保存它。",
+    scanPrivacy: "扫描只读取已知配置位置与本机模型端口；不会执行 shell 配置、上传文件或展示密钥。",
     modelSafety:
       "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Rune 也不会把它写进工作区、localStorage、Artifact 或 Git。",
-    modelUnavailable: "无法读取模型状态；你可以先使用本地模式。",
+    modelUnavailable: "无法读取模型状态；你可以选择不使用模型继续。",
     shortcutEyebrow: "快速上手",
     shortcutTitle: "亲手试试四个快捷键",
     shortcutBody: "按下对应按键，Rune 会在这里确认。你也可以稍后从本地指南重新学习。",
@@ -118,23 +141,50 @@ export const WELCOME_BASE_COPY = {
     languageBody: "Recommended from this device. You can change it whenever you like.",
     recommended: "System recommendation",
     continue: "Continue",
-    modelEyebrow: "Model connection",
-    modelTitle: "Choose how Rune uses a model",
+    modelEyebrow: "Intelligence",
+    modelTitle: "Let Rune find the models you already use",
     modelBody:
-      "A model only proposes bounded changes. Source, validation, and the final write remain under Rune and your control.",
-    checkingModel: "Checking the model connection…",
-    connectedModel: "Model connected",
-    connectedModelBody: "Rune will use the currently enabled secure profile.",
-    noModel: "No model connected",
-    noModelBody: "Rune still works with deterministic local planners. You can revisit this from Help.",
-    useConnected: "Use connected model",
-    useConnectedBody: "Generate review-before-write changes through Rune's server adapter",
-    useLocal: "Use local mode only",
-    useLocalBody: "Send nothing to a model service and use built-in deterministic planners",
-    recheck: "Check again",
+      "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.",
+    checkingModel: "Checking connections already saved in Rune…",
+    connectedModel: "Ready",
+    connectedModelBody: "The current default can provide review-before-write model assistance.",
+    noModel: "No model selected yet",
+    noModelBody: "Use a discovered connection, add one yourself, or continue without a model.",
+    useConnected: "Continue with model assistance",
+    useConnectedBody: "Use the selected cloud or device model; you still confirm every change",
+    useLocal: "Continue without a model",
+    useLocalBody: "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service",
+    recheck: "Scan again",
+    discoveryScanning: "Looking for models on this device…",
+    discoveryTitle: "Connections available on this device",
+    discoveryBody:
+      "Only provider, source, endpoint, and model are shown. Rune reads a credential only after you choose one.",
+    discoveryEmpty: "No reusable model connection was found",
+    discoveryEmptyBody: "You can still add a provider yourself or import a configuration.",
+    discoveryUnavailable:
+      "The web app cannot read application settings on your computer. You can still connect a model manually.",
+    discoveryError: "Rune could not complete the device scan. No configuration was read or saved.",
+    deviceModel: "Runs on this device",
+    cloudModel: "Cloud API",
+    sourceLabel: "Source",
+    modelLabel: "Model",
+    endpointLabel: "Endpoint",
+    deploymentConnection: "Deployment connection",
+    credentialDetected: "Credential found; not read yet",
+    credentialNotRequired: "No API key required",
+    reviewConnection: "Review",
+    reviewTitle: "Use this model connection?",
+    connectionReviewBody:
+      "After you confirm, Rune reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.",
+    connectAndVerify: "Verify & use",
+    connecting: "Verifying…",
+    chooseAnother: "Back to connections",
+    connectionFailed: "Rune could not verify this connection and did not save it.",
+    scanPrivacy:
+      "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.",
     modelSafety:
       "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Rune never writes it to the workspace, localStorage, an Artifact, or Git.",
-    modelUnavailable: "Rune could not read model status. You can continue in local mode.",
+    modelUnavailable: "Rune could not read model status. You can continue without a model.",
     shortcutEyebrow: "Quick start",
     shortcutTitle: "Try four shortcuts yourself",
     shortcutBody:
@@ -361,7 +411,7 @@ export function WelcomeExperience({
               <button
                 type="button"
                 onClick={() => {
-                  onModelModeChange("local");
+                  onModelModeChange("device-tools-only");
                   setStep("ready");
                 }}
               >
@@ -438,8 +488,8 @@ export function WelcomeExperience({
                 locale={locale}
                 modelMode={modelMode}
                 onModelModeChange={onModelModeChange}
-                onContinue={(configured) => {
-                  if (!configured) onModelModeChange("local");
+                onContinue={(mode) => {
+                  onModelModeChange(mode);
                   setStep("shortcuts");
                 }}
               />

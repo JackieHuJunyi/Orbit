@@ -226,8 +226,13 @@ function documentBlockFormattingControls(blockType: DocumentBlockPreviewSourceTa
   );
 }
 
-function usePreviewQueryRuntime(artifact: WorkspaceArtifact, artifacts: WorkspaceArtifact[]): QueryRuntime {
+function usePreviewQueryRuntime(
+  artifact: WorkspaceArtifact,
+  artifacts: WorkspaceArtifact[],
+  runtimeEnabled: boolean,
+): QueryRuntime {
   const requiredQueryIds = useMemo(() => {
+    if (!runtimeEnabled) return [];
     if (artifact.kind === "query") return [artifact.id];
     const ids = new Set([
       ...chartQuerySourceIdsForArtifact(artifact, artifacts),
@@ -236,7 +241,7 @@ function usePreviewQueryRuntime(artifact: WorkspaceArtifact, artifacts: Workspac
     return artifacts
       .filter((candidate) => candidate.kind === "query" && ids.has(candidate.id))
       .map((candidate) => candidate.id);
-  }, [artifact, artifacts]);
+  }, [artifact, artifacts, runtimeEnabled]);
   const queryArtifacts = useMemo(
     () =>
       requiredQueryIds.flatMap((queryId) => {
@@ -3109,6 +3114,7 @@ export function ArtifactPreview({
   onEnterChartConfiguration,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
+  queryRuntimeEnabled = true,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
@@ -3126,8 +3132,9 @@ export function ArtifactPreview({
   onEnterChartConfiguration?: () => void;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
+  queryRuntimeEnabled?: boolean;
 }) {
-  const queryRuntime = usePreviewQueryRuntime(artifact, artifacts);
+  const queryRuntime = usePreviewQueryRuntime(artifact, artifacts, queryRuntimeEnabled);
   const copy = useMemo(() => runeUICopy(locale).preview, [locale]);
   let content: ReactNode;
   if (!artifact.source.trim()) {

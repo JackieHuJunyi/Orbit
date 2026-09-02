@@ -16,7 +16,7 @@ export const DEFAULT_MODEL_TOKEN_BUDGET: Readonly<ModelTokenBudget> = Object.fre
   maxOutputTokens: 4_000,
 });
 
-export type ModelProviderKind = "openai" | "openrouter" | "anthropic" | "gemini" | "custom";
+export type ModelProviderKind = "openai" | "openrouter" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
 export type ModelProtocol = "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
 
 export type ModelCapabilityManifest = {
@@ -57,6 +57,8 @@ export type ModelProviderPreset = {
   protocol: ModelProtocol;
   editableEndpoint: boolean;
   editableProtocol: boolean;
+  locality: "cloud" | "device";
+  requiresCredential: boolean;
 };
 
 export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
@@ -68,6 +70,8 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     protocol: "responses",
     editableEndpoint: false,
     editableProtocol: false,
+    locality: "cloud",
+    requiresCredential: true,
   },
   {
     id: "openrouter",
@@ -77,6 +81,8 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     protocol: "chat-completions",
     editableEndpoint: false,
     editableProtocol: false,
+    locality: "cloud",
+    requiresCredential: true,
   },
   {
     id: "anthropic",
@@ -86,6 +92,8 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     protocol: "anthropic-messages",
     editableEndpoint: false,
     editableProtocol: false,
+    locality: "cloud",
+    requiresCredential: true,
   },
   {
     id: "gemini",
@@ -95,6 +103,30 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     protocol: "gemini-generate-content",
     editableEndpoint: false,
     editableProtocol: false,
+    locality: "cloud",
+    requiresCredential: true,
+  },
+  {
+    id: "ollama",
+    label: "Ollama",
+    baseURL: "http://127.0.0.1:11434/v1",
+    defaultModel: "llama3.2",
+    protocol: "chat-completions",
+    editableEndpoint: false,
+    editableProtocol: false,
+    locality: "device",
+    requiresCredential: false,
+  },
+  {
+    id: "lmstudio",
+    label: "LM Studio",
+    baseURL: "http://127.0.0.1:1234/v1",
+    defaultModel: "local-model",
+    protocol: "chat-completions",
+    editableEndpoint: false,
+    editableProtocol: false,
+    locality: "device",
+    requiresCredential: false,
   },
   {
     id: "custom",
@@ -104,6 +136,8 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     protocol: "responses",
     editableEndpoint: true,
     editableProtocol: true,
+    locality: "cloud",
+    requiresCredential: true,
   },
 ] as const;
 
@@ -168,6 +202,17 @@ export const EMPTY_MODEL_PROFILE_VAULT: ModelProfileVault = {
   failoverEnabled: false,
   profiles: [],
 };
+
+export function isDeviceModelProvider(provider: ModelProviderKind) {
+  return provider === "ollama" || provider === "lmstudio";
+}
+
+export function modelProviderAvailableInEnvironment(
+  provider: ModelProviderKind,
+  environment: Record<string, string | undefined> = process.env,
+) {
+  return !isDeviceModelProvider(provider) || environment.RUNE_DESKTOP_RUNTIME === "1";
+}
 
 function boundedInteger(value: unknown, minimum: number, maximum: number) {
   return typeof value === "number" && Number.isInteger(value) && value >= minimum && value <= maximum
@@ -247,6 +292,8 @@ export function normalizeModelProfileDraft(
     provider !== "openrouter" &&
     provider !== "anthropic" &&
     provider !== "gemini" &&
+    provider !== "ollama" &&
+    provider !== "lmstudio" &&
     provider !== "custom"
   ) {
     throw new Error("Choose a supported model provider.");
@@ -277,7 +324,9 @@ export function normalizeModelProfileDraft(
     throw new Error("Enter a new API key when changing the provider, protocol, or endpoint.");
   }
   const apiKey = suppliedKey || existing?.apiKey || "";
-  if (!apiKey) throw new Error("Enter an API key. Rune will clear the field after saving it.");
+  if (!apiKey && preset.requiresCredential) {
+    throw new Error("Enter an API key. Rune will clear the field after saving it.");
+  }
   const requestedId = cleanText(draft.id, 80);
   if (requestedId && requestedId !== existing?.id) throw new Error("The model profile identity is stale.");
   return {

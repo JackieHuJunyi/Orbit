@@ -73,6 +73,10 @@ function providerError(payload: unknown, status: number) {
   return new Error(`The model provider rejected Rune's request (${status}).`);
 }
 
+function bearerAuthorization(apiKey: string): Record<string, string> {
+  return apiKey ? { authorization: `Bearer ${apiKey}` } : {};
+}
+
 async function providerJson(url: string, init: RequestInit, signal: AbortSignal) {
   const response = await fetch(url, { ...init, redirect: "error", signal });
   const declaredLength = Number(response.headers.get("content-length") ?? "0");
@@ -166,7 +170,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
       `${connection.baseURL}/responses`,
       {
         method: "POST",
-        headers: { authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
+        headers: { ...bearerAuthorization(connection.apiKey), "content-type": "application/json" },
         body: JSON.stringify({
           model: connection.model,
           store: false,
@@ -197,7 +201,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
       `${connection.baseURL}/chat/completions`,
       {
         method: "POST",
-        headers: { authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
+        headers: { ...bearerAuthorization(connection.apiKey), "content-type": "application/json" },
         body: JSON.stringify({
           model: connection.model,
           messages: [
@@ -318,7 +322,7 @@ export async function listProviderModels(connection: ActiveModelConnection, sign
     headers.set("anthropic-version", ANTHROPIC_VERSION);
   } else if (connection.protocol === "gemini-generate-content") {
     headers.set("x-goog-api-key", connection.apiKey);
-  } else {
+  } else if (connection.apiKey) {
     headers.set("authorization", `Bearer ${connection.apiKey}`);
   }
   const response = await fetch(url, { headers, redirect: "error", signal });

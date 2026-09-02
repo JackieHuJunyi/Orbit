@@ -96,6 +96,9 @@ test("rejects remote, batch, conflicting, local, and oversized imports with stab
     ['{"provider":"openai","baseURL":"https://api.openai.com/v1","endpoint":"https://example.com/v1"}', "ambiguous"],
     ['{"env":{"OPENAI_MODEL":"gpt-5.6","ANTHROPIC_MODEL":"claude-sonnet-4"}}', "ambiguous"],
     ['{"provider":"openai","Provider":"anthropic"}', "ambiguous"],
+    ['{"provider":"openai","provider":"anthropic","model":"claude-sonnet-5"}', "ambiguous"],
+    ['{"provider":"openai","env":{"OPENAI_MODEL":"gpt-5.6","OPENAI_MODEL":"gpt-4.1"}}', "ambiguous"],
+    ['{"provider":"openai","protocol":"anthropic-messages","model":"gpt-5.6"}', "ambiguous"],
     ['{"provider":"openai","protocol":"unsupported"}', "invalid-fields"],
     ['{"provider":"custom","endpoint":"http://localhost:11434/v1","model":"local"}', "invalid-endpoint"],
     ["x".repeat(MAX_MODEL_PROFILE_IMPORT_BYTES + 1), "too-large"],
@@ -107,4 +110,9 @@ test("rejects remote, batch, conflicting, local, and oversized imports with stab
       String(code),
     );
   }
+});
+
+test("warns about unsupported fields inside an imported environment block", () => {
+  const result = parseModelProfileImport('{"provider":"openai","model":"gpt-5.6","env":{"UNSUPPORTED_FEATURE":"on"}}');
+  assert.deepEqual(result.warnings, [{ code: "credential-missing" }, { code: "unsupported-fields", count: 1 }]);
 });

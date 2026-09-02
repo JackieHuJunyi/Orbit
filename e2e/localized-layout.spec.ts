@@ -130,6 +130,38 @@ for (const viewport of VIEWPORTS) {
         const actionHeight = await primaryAction.evaluate((element) => element.getBoundingClientRect().height);
         expect(actionHeight).toBeGreaterThanOrEqual(44);
 
+        await primaryAction.click();
+        const modelPage = dialog.locator(".welcome-model");
+        const modelTitle = modelPage.locator("h1");
+        const modelPanel = modelPage.locator(".model-setup-panel");
+        const modelActions = modelPage.locator(".welcome-model-actions");
+        await expect(modelPage).toBeVisible();
+        await expect(modelPanel).toBeVisible();
+        await modelActions.scrollIntoViewIfNeeded();
+        await expect(modelActions).toBeInViewport();
+        await expectInsideViewport(page, welcomeWindow);
+        await expectNoDocumentOverflow(page);
+        const titleMetrics = await modelTitle.evaluate((element) => {
+          const style = getComputedStyle(element);
+          const bounds = element.getBoundingClientRect();
+          return {
+            fontSize: Number.parseFloat(style.fontSize),
+            lineHeight: Number.parseFloat(style.lineHeight),
+            width: bounds.width,
+          };
+        });
+        expect(titleMetrics.fontSize).toBeGreaterThanOrEqual(28);
+        expect(titleMetrics.fontSize).toBeLessThanOrEqual(44);
+        expect(titleMetrics.lineHeight / titleMetrics.fontSize).toBeGreaterThanOrEqual(1.05);
+        expect(titleMetrics.width).toBeLessThanOrEqual(viewport.width - (viewport.width <= 680 ? 32 : 80));
+        if (viewport.width <= 680) {
+          const controlHeights = await modelPage
+            .locator(".model-setup-panel button:visible, .welcome-model-actions button:visible")
+            .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
+          expect(controlHeights.length).toBeGreaterThan(0);
+          expect(Math.min(...controlHeights)).toBeGreaterThanOrEqual(44);
+        }
+
         await page.evaluate(() => localStorage.setItem("rune-onboarding-v1", "complete"));
         await page.reload();
         await expect(root).toHaveAttribute("data-locale", locale.id);

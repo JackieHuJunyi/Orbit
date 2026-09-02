@@ -89,7 +89,7 @@ test("keeps local-only tasks away from the injected network capability", async (
   let fetchCount = 0;
 
   const result = await prepareRuneTaskModelAssistance(artifacts, request, {
-    mode: "local",
+    mode: "device-tools-only",
     fetcher: async () => {
       fetchCount += 1;
       throw new Error("Local mode must not contact a model endpoint.");
@@ -114,7 +114,7 @@ test("fails over locally before fetch when the exact source is missing or oversi
       taskId: "operating-review",
       input: operatingInput(),
     },
-    { mode: "auto", fetcher },
+    { mode: "model-assisted", fetcher },
   );
   const oversized = await prepareRuneTaskModelAssistance(
     [documentArtifact({ source: "x".repeat(100_001) })],
@@ -122,7 +122,7 @@ test("fails over locally before fetch when the exact source is missing or oversi
       taskId: "document-briefing",
       input: documentInput(),
     },
-    { mode: "auto", fetcher },
+    { mode: "model-assisted", fetcher },
   );
 
   assert.equal(missing.outcome, "unavailable");
@@ -142,7 +142,7 @@ test("validates an operating-review response against locally recompiled evidence
       input,
     },
     {
-      mode: "auto",
+      mode: "model-assisted",
       onModelRequest: () => {
         requested += 1;
       },
@@ -180,7 +180,7 @@ test("rejects malformed or oversized task-model output into deterministic fallba
       input: operatingInput(),
     },
     {
-      mode: "auto",
+      mode: "model-assisted",
       fetcher: async () => response({ narrative: { insights: [] } }),
     },
   );
@@ -191,7 +191,7 @@ test("rejects malformed or oversized task-model output into deterministic fallba
       input: operatingInput(),
     },
     {
-      mode: "auto",
+      mode: "model-assisted",
       fetcher: async () =>
         response({ padding: "x".repeat(MAX_RUNE_TASK_MODEL_RESPONSE_BYTES), narrative: validNarrative() }),
     },
@@ -218,7 +218,7 @@ test("routes Document briefing through the same injected and evidence-bound clie
       input,
     },
     {
-      mode: "auto",
+      mode: "model-assisted",
       fetcher: async (url, init) => {
         assert.equal(url, "/api/tasks/document-briefing");
         assert.deepEqual(JSON.parse(String(init?.body)), { artifact: document, input });

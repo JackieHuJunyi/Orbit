@@ -1,5 +1,6 @@
 import {
   MAX_MODEL_PROFILES,
+  modelProviderAvailableInEnvironment,
   normalizeModelProfileDraft,
   publicModelProfile,
   type ModelProfileVault,
@@ -48,8 +49,11 @@ function state(vault: ModelProfileVault): ModelProfilesState {
     ...baseDeployment,
     health: deploymentConnection ? modelConnectionHealth(deploymentConnection) : baseDeployment.health,
   };
-  const active = activeStoredProfile(vault);
-  const profiles = vault.profiles.map((profile) =>
+  const availableProfiles = vault.profiles.filter((profile) =>
+    modelProviderAvailableInEnvironment(profile.provider, process.env),
+  );
+  const active = activeStoredProfile({ ...vault, profiles: availableProfiles });
+  const profiles = availableProfiles.map((profile) =>
     publicModelProfile(profile, modelConnectionHealth(personalConnection(profile))),
   );
   return {
@@ -103,6 +107,9 @@ export async function POST(request: Request) {
       const existing = requestedId ? vault.profiles.find((profile) => profile.id === requestedId) : undefined;
       if (requestedId && !existing) throw new Error("That model profile no longer exists. Refresh and try again.");
       const profile = normalizeModelProfileDraft(input.profile, existing);
+      if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
+        throw new Error("Device model runtimes are available only in the Rune desktop app.");
+      }
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8_000);
       try {
@@ -138,6 +145,9 @@ export async function POST(request: Request) {
         throw new Error(`Rune supports up to ${MAX_MODEL_PROFILES} personal model profiles in this release.`);
       }
       const profile = normalizeModelProfileDraft(input.profile, existing);
+      if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
+        throw new Error("Device model runtimes are available only in the Rune desktop app.");
+      }
       const profiles = existing
         ? vault.profiles.map((item) => (item.id === existing.id ? profile : item))
         : [...vault.profiles, profile];
@@ -146,13 +156,22 @@ export async function POST(request: Request) {
       if (!modelProviderStatus(process.env).configured) throw new Error("No deployment model is configured.");
       next = { ...vault, activeProfileId: null };
     } else if (input.action === "activate") {
-      if (typeof input.profileId !== "string" || !vault.profiles.some((profile) => profile.id === input.profileId)) {
+      if (
+        typeof input.profileId !== "string" ||
+        !vault.profiles.some(
+          (profile) =>
+            profile.id === input.profileId && modelProviderAvailableInEnvironment(profile.provider, process.env),
+        )
+      ) {
         throw new Error("That model profile no longer exists.");
       }
       next = { ...vault, activeProfileId: input.profileId };
     } else if (input.action === "failover") {
       if (typeof input.enabled !== "boolean") throw new Error("Choose whether provider failover is allowed.");
-      if (input.enabled && vault.profiles.length + Number(modelProviderStatus(process.env).configured) < 2) {
+      const availableProfileCount = vault.profiles.filter((profile) =>
+        modelProviderAvailableInEnvironment(profile.provider, process.env),
+      ).length;
+      if (input.enabled && availableProfileCount + Number(modelProviderStatus(process.env).configured) < 2) {
         throw new Error("Configure at least two model connections before allowing provider failover.");
       }
       next = { ...vault, failoverEnabled: input.enabled };
@@ -166,7 +185,9 @@ export async function POST(request: Request) {
         profiles,
         activeProfileId: vault.activeProfileId === input.profileId ? (profiles[0]?.id ?? null) : vault.activeProfileId,
         failoverEnabled:
-          profiles.length + Number(modelProviderStatus(process.env).configured) >= 2 && vault.failoverEnabled,
+          profiles.filter((profile) => modelProviderAvailableInEnvironment(profile.provider, process.env)).length +
+            Number(modelProviderStatus(process.env).configured) >=
+            2 && vault.failoverEnabled,
       };
     } else {
       throw new Error("Choose a supported model profile action.");

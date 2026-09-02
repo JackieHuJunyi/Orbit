@@ -111,7 +111,12 @@
   .welcome-window { width: 100%; height: 100dvh; max-height: 100dvh; border-width: 0; border-radius: 0; }
   .welcome-chrome { padding-inline: var(--rune-space-4); }
   .welcome-chrome-brand strong { display: none; }
+  .welcome-chrome-actions > .welcome-back { width: 44px; min-width: 44px; padding-inline: 0; font-size: 0; }
   .welcome-page { padding: 20px 18px 28px; }
+  .welcome-page.welcome-model { padding-top: 18px; }
+  .welcome-model .welcome-icon-disc { width: 60px; height: 60px; border-radius: 18px; }
+  .welcome-model .model-setup-panel { gap: 8px; margin-block: 16px 14px; }
+  .welcome-model .welcome-model-actions { margin-bottom: 0; }
   .model-profile-onramps,
   .model-import-review,
   .model-editor-grid { grid-template-columns: minmax(0, 1fr); }
@@ -121,6 +126,35 @@
   .model-profile-card > .model-profile-actions,
   .model-profile-card > em { grid-column: 2; justify-self: start; justify-content: flex-start; }
   .model-profile-editor footer { flex-wrap: wrap; }
+  .model-discovery > header { grid-template-columns: 34px minmax(0, 1fr); }
+  .model-discovery > header > button { grid-column: 2; justify-self: start; }
+  .model-discovery-results > article { grid-template-columns: 34px minmax(0, 1fr); }
+  .model-discovery-results > article > button { grid-column: 2; justify-self: start; }
+  .model-discovery-review dl { grid-template-columns: minmax(0, 1fr); }
+  .model-discovery-review dl > div:nth-child(odd) { border-inline-end: 0; }
+  .model-discovery-review dl > div + div { border-top: 1px solid var(--rune-material-divider); }
+  .welcome-model-actions { flex-direction: column; }
+  .welcome-model-actions > button { width: 100%; min-height: 48px; }
+  .model-profile-onramps > button,
+  .model-discovery > header > button,
+  .model-discovery-results > article > button,
+  .model-discovery-back,
+  .model-discovery-review > .welcome-primary { min-height: 44px; }
+  .model-discovery > header > button,
+  .model-discovery-results > article > button,
+  .model-discovery-back,
+  .model-discovery-review > .welcome-primary { min-height: 44px; }
+  .welcome-page.welcome-model h1,
+  html[data-locale="fr"] .welcome-page.welcome-model h1,
+  html[data-locale="es"] .welcome-page.welcome-model h1,
+  html[data-locale="ru"] .welcome-page.welcome-model h1 { font-size: clamp(29px, 8.8vw, 36px); }
+  html[data-locale="ar"] .welcome-page.welcome-model h1 { font-size: clamp(28px, 8.3vw, 34px); line-height: 1.24; }
+  .welcome-page.welcome-model > p { font-size: 13px; }
+  .model-profile-import > header > button,
+  .model-import-file-row label,
+  .model-profile-import > footer button,
+  .model-profile-editor > header button,
+  .model-profile-editor footer button { min-width: 44px; min-height: 44px; }
   .welcome-greeting-stage { width: 100%; height: 80px; overflow: hidden; }
   .welcome-intro-grid { gap: 10px; }
   .welcome-page > p { font-size: 15px; }

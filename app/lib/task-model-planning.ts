@@ -136,7 +136,7 @@ export async function prepareRuneTaskModelAssistance(
   request: RuneTaskModelRequest,
   options: RuneTaskModelOptions,
 ): Promise<OperatingReviewModelAssistance | DocumentBriefingModelAssistance> {
-  if (options.mode === "local") return localAssistance(request.taskId, "local");
+  if (options.mode === "device-tools-only") return localAssistance(request.taskId, "local");
 
   const sourceId =
     request.taskId === "operating-review" ? request.input.dataArtifactId : request.input.sourceArtifactId;

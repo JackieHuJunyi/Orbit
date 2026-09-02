@@ -4,7 +4,7 @@ async function openLocalAgentWorkbench(page: Page) {
   await page.addInitScript(() => {
     if (window !== window.top) return;
     localStorage.setItem("rune-onboarding-v1", "complete");
-    localStorage.setItem("rune-model-mode-v1", "local");
+    localStorage.setItem("rune-model-mode-v1", "device-tools-only");
   });
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();

@@ -30,7 +30,7 @@
   --rune-accent-surface: var(--theme-accent);
   --rune-accent-foreground: #ffffff;
 
-  --rune-content-reading: 780px;
+  --rune-content-reading: 920px;
   --rune-file-width: 220px;
 
   /* Functional materials. Large surfaces are quieter and thicker; controls

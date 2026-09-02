@@ -88,11 +88,191 @@ test("loads model setup after the handwritten opening without restarting it", as
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Choose how Rune uses a model" });
+  const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
   await expect(modelStep).toBeVisible();
-  await expect(modelStep.getByText(/No model connected|Model connected/u)).toBeVisible();
-  await expect(modelStep.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
+  await expect(modelStep.getByText(/The web app cannot read application settings/u)).toBeVisible();
+  await expect(modelStep.getByRole("button", { name: /Continue without a model/u })).toBeVisible();
+  await expect(modelStep.getByText("No model connected", { exact: true })).toHaveCount(0);
+  await expect(modelStep.getByText("Use connected model", { exact: true })).toHaveCount(0);
+  await expect(modelStep.getByText("Use local mode only", { exact: true })).toHaveCount(0);
   await expect(page.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveCount(0);
+});
+
+test("makes model-assisted and model-free continuation visibly distinct", async ({ page }) => {
+  const connectedState = {
+    vaultAvailable: true,
+    configured: true,
+    activeProfileId: null,
+    activeSource: "deployment",
+    activeProfile: null,
+    profiles: [],
+    failoverEnabled: false,
+    deployment: {
+      configured: true,
+      provider: "openai",
+      model: "gpt-5.6",
+      budget: { maxInputTokens: 50_000, maxOutputTokens: 4_000 },
+      capabilities: {
+        protocol: "responses",
+        structuredOutput: "json-schema",
+        modelCatalog: true,
+        tokenUsage: "provider-reported",
+        maximumOutputTokens: 8_000,
+      },
+      health: { status: "unknown", checkedAt: null, retryAt: null },
+    },
+  };
+  await page.route("**/api/model-status", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        configured: true,
+        provider: "openai",
+        model: "gpt-5.6",
+        source: "deployment",
+        profileName: "Deployment OpenAI",
+        budget: { maxInputTokens: 50_000, maxOutputTokens: 4_000 },
+        capabilities: {
+          protocol: "responses",
+          structuredOutput: "json-schema",
+          modelCatalog: true,
+          tokenUsage: "provider-reported",
+          maximumOutputTokens: 8_000,
+        },
+        health: { status: "unknown", checkedAt: null, retryAt: null },
+      }),
+    }),
+  );
+  await page.route("**/api/model-profiles", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(connectedState) }),
+  );
+  await page.goto("/");
+  await page.locator(".welcome-language-card > .welcome-primary").click();
+
+  const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  const assisted = modelStep.getByRole("button", { name: /Continue with model assistance/u });
+  const withoutModel = modelStep.getByRole("button", { name: /Continue without a model/u });
+  await expect(assisted).toContainText("confirm every change");
+  await expect(withoutModel).toContainText("send nothing to a model service");
+  await expect(modelStep.getByText("Deployment connection", { exact: false })).toBeVisible();
+  await expect(assisted).toBeVisible();
+  await expect(withoutModel).toBeVisible();
+});
+
+test("reveals a discovered credential only after review and saves only after verification", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "runeDesktop", {
+      configurable: false,
+      value: {
+        discoverModels: async () => ({
+          supported: true,
+          candidates: [
+            {
+              id: "candidate-1",
+              sourceKind: "app-config",
+              sourceLabel: "Claude Code",
+              locality: "cloud",
+              provider: "anthropic",
+              protocol: "anthropic-messages",
+              name: "Anthropic",
+              baseURL: "https://api.anthropic.com/v1",
+              model: "claude-sonnet-5",
+              models: [],
+              credentialState: "detected",
+            },
+          ],
+        }),
+        importDiscoveredModel: async () => {
+          window.sessionStorage.setItem("rune-test-credential-read", "yes");
+          return {
+            provider: "anthropic",
+            protocol: "anthropic-messages",
+            name: "Anthropic",
+            baseURL: "https://api.anthropic.com/v1",
+            model: "claude-sonnet-5",
+            apiKey: "discovery-test-secret",
+          };
+        },
+      },
+    });
+  });
+  const writes: Array<{ action?: string; apiKey?: string }> = [];
+  const emptyState = {
+    vaultAvailable: true,
+    configured: false,
+    activeProfileId: null,
+    activeSource: null,
+    activeProfile: null,
+    profiles: [],
+    failoverEnabled: false,
+    deployment: {
+      configured: false,
+      provider: null,
+      model: null,
+      budget: null,
+      capabilities: null,
+      health: { status: "unknown", checkedAt: null, retryAt: null },
+    },
+  };
+  await page.route("**/api/model-status", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ configured: false }) }),
+  );
+  let profileState: Record<string, unknown> = emptyState;
+  await page.route("**/api/model-profiles", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(profileState) });
+      return;
+    }
+    const input = route.request().postDataJSON() as { action?: string; profile?: { apiKey?: string } };
+    writes.push({ action: input.action, apiKey: input.profile?.apiKey });
+    if (input.action === "models") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ models: ["claude-sonnet-5"] }),
+      });
+      return;
+    }
+    profileState = {
+      ...emptyState,
+      configured: true,
+      activeProfileId: "saved",
+      activeSource: "personal",
+      activeProfile: {
+        id: "saved",
+        provider: "anthropic",
+        name: "Anthropic",
+        model: "claude-sonnet-5",
+        credentialConfigured: true,
+      },
+    };
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(profileState),
+    });
+  });
+
+  await page.goto("/");
+  await page.locator(".welcome-language-card > .welcome-primary").click();
+  const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  await expect(modelStep.getByText("Claude Code", { exact: false })).toBeVisible();
+  await expect(modelStep).not.toContainText("discovery-test-secret");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("rune-test-credential-read"))).toBeNull();
+
+  await modelStep.getByRole("button", { name: "Review", exact: true }).click();
+  await expect(modelStep.getByRole("heading", { name: "Use this model connection?" })).toBeFocused();
+  await expect(modelStep.getByText("Model", { exact: true })).toBeVisible();
+  await expect(modelStep.getByText("Endpoint", { exact: true })).toBeVisible();
+  await expect(modelStep).not.toContainText("discovery-test-secret");
+
+  await modelStep.getByRole("button", { name: "Verify & use" }).click();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("rune-test-credential-read"))).toBe("yes");
+  await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "upsert"]);
+  expect(writes.every((item) => item.apiKey === "discovery-test-secret")).toBe(true);
+  await expect(modelStep.getByRole("button", { name: /Continue with model assistance/u })).toBeVisible();
+  await expect(modelStep).not.toContainText("discovery-test-secret");
 });
 
 test("reviews a CC Switch model import without navigating or persisting its credential", async ({ page }) => {
@@ -129,7 +309,7 @@ test("reviews a CC Switch model import without navigating or persisting its cred
   await page.getByRole("button", { name: "More tools" }).click();
   await page.getByRole("menuitem", { name: /Model settings/u }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Choose how Rune uses a model" });
+  const dialog = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
   await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Import config", exact: true }).click();
   await expect(dialog.locator(".model-status-card")).toBeHidden();
@@ -174,17 +354,17 @@ test("moves backward and forward through every onboarding step without losing th
   const welcomeWindow = page.locator(".welcome-window");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  await expect(page.getByRole("dialog", { name: "Choose how Rune uses a model" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Let Rune find the models you already use" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Choose your Rune language" })).toBeVisible();
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  await welcomeWindow.getByRole("button", { name: "Continue", exact: true }).click();
+  await welcomeWindow.getByRole("button", { name: /Continue without a model/u }).click();
   await expect(page.getByRole("dialog", { name: "Try four shortcuts yourself" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Choose how Rune uses a model" })).toBeVisible();
-  await welcomeWindow.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Let Rune find the models you already use" })).toBeVisible();
+  await welcomeWindow.getByRole("button", { name: /Continue without a model/u }).click();
   await welcomeWindow.getByRole("button", { name: "Learn later", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Your workspace, under your control." })).toBeVisible();
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
