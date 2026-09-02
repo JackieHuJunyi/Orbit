@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-09-02 — Shipped Rune v1.54 with first-class DeepSeek discovery and verification, credential-safe duplicate collapse across known desktop sources, and bottom-baseline setup navigation that remains readable and aligned across all nine interfaces.
 - 2026-09-02 — Shipped Rune v1.53 with redacted desktop discovery for known cloud configurations and Ollama/LM Studio, explicit review → credential read → verification → encrypted-save ordering, unambiguous model-assisted/device-model/model-free language, fail-closed JSON imports, human-reviewed nine-language setup copy, 44 px compact controls, and a denser but bounded Markdown reading measure.
 - 2026-09-01 — Shipped Rune v1.52 with one layered design authority, full-track empty state, contextual Agent/status chrome, true compact single-pane work, stable nine-language onboarding, hydration-safe reload interaction, exact paired Source/Preview positioning across the 61-scenario three-browser gate, and deployable same-origin DuckDB Wasm parts below hosted-file limits.
 - 2026-08-23 — Shipped Rune v1.51 with consistent release metadata, explicit startup/deferred bundle budgets, and the complete 57-scenario browser gate across Chromium, Firefox, and WebKit while keeping every real-user evidence gate honestly open.

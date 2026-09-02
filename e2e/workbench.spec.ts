@@ -95,6 +95,23 @@ test("loads model setup after the handwritten opening without restarting it", as
   await expect(modelStep.getByText("No model connected", { exact: true })).toHaveCount(0);
   await expect(modelStep.getByText("Use connected model", { exact: true })).toHaveCount(0);
   await expect(modelStep.getByText("Use local mode only", { exact: true })).toHaveCount(0);
+  await expect(modelStep.locator(".welcome-chrome").getByRole("button", { name: "Back", exact: true })).toHaveCount(0);
+  const back = modelStep.getByRole("button", { name: "Back", exact: true });
+  await expect(back).toHaveClass(/welcome-step-back/u);
+  const navigationGeometry = await modelStep.locator(".welcome-model-navigation").evaluate((navigation) => {
+    const backButton = navigation.querySelector<HTMLElement>(".welcome-step-back")!;
+    const actions = navigation.querySelector<HTMLElement>(".welcome-model-actions")!;
+    const backBounds = backButton.getBoundingClientRect();
+    const actionBounds = actions.getBoundingClientRect();
+    return {
+      backTop: backBounds.top,
+      actionTop: actionBounds.top,
+      backBottom: backBounds.bottom,
+      actionBottom: actionBounds.bottom,
+    };
+  });
+  expect(navigationGeometry.backTop).toBeGreaterThan(0);
+  expect(Math.abs(navigationGeometry.backBottom - navigationGeometry.actionBottom)).toBeLessThanOrEqual(2);
   await expect(page.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveCount(0);
 });
 
@@ -173,11 +190,11 @@ test("reveals a discovered credential only after review and saves only after ver
               sourceKind: "app-config",
               sourceLabel: "Claude Code",
               locality: "cloud",
-              provider: "anthropic",
+              provider: "deepseek",
               protocol: "anthropic-messages",
-              name: "Anthropic",
-              baseURL: "https://api.anthropic.com/v1",
-              model: "claude-sonnet-5",
+              name: "DeepSeek",
+              baseURL: "https://api.deepseek.com/anthropic",
+              model: "deepseek-v4-flash",
               models: [],
               credentialState: "detected",
             },
@@ -186,11 +203,11 @@ test("reveals a discovered credential only after review and saves only after ver
         importDiscoveredModel: async () => {
           window.sessionStorage.setItem("rune-test-credential-read", "yes");
           return {
-            provider: "anthropic",
+            provider: "deepseek",
             protocol: "anthropic-messages",
-            name: "Anthropic",
-            baseURL: "https://api.anthropic.com/v1",
-            model: "claude-sonnet-5",
+            name: "DeepSeek",
+            baseURL: "https://api.deepseek.com/anthropic",
+            model: "deepseek-v4-flash",
             apiKey: "discovery-test-secret",
           };
         },
@@ -230,7 +247,7 @@ test("reveals a discovered credential only after review and saves only after ver
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ models: ["claude-sonnet-5"] }),
+        body: JSON.stringify({ models: ["deepseek-v4-flash"] }),
       });
       return;
     }
@@ -241,9 +258,9 @@ test("reveals a discovered credential only after review and saves only after ver
       activeSource: "personal",
       activeProfile: {
         id: "saved",
-        provider: "anthropic",
-        name: "Anthropic",
-        model: "claude-sonnet-5",
+        provider: "deepseek",
+        name: "DeepSeek",
+        model: "deepseek-v4-flash",
         credentialConfigured: true,
       },
     };
@@ -257,6 +274,7 @@ test("reveals a discovered credential only after review and saves only after ver
   await page.goto("/");
   await page.locator(".welcome-language-card > .welcome-primary").click();
   const modelStep = page.getByRole("dialog", { name: "Let Rune find the models you already use" });
+  await expect(modelStep.getByText("DeepSeek", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Claude Code", { exact: false })).toBeVisible();
   await expect(modelStep).not.toContainText("discovery-test-secret");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("rune-test-credential-read"))).toBeNull();

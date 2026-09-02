@@ -15,7 +15,7 @@ export type RuneModelMode = "model-assisted" | "device-tools-only";
 
 export type ModelProviderStatus = {
   configured: boolean;
-  provider: "openai" | "openrouter" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom" | null;
+  provider: "openai" | "openrouter" | "deepseek" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom" | null;
   model: string | null;
   source?: "personal" | "deployment" | null;
   profileName?: string | null;

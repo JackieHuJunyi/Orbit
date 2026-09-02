@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -42,6 +42,31 @@ test("discovers process credentials without returning a secret before explicit i
   const imported = await discovery.importCandidate(result.candidates[0].id);
   assert.equal(imported.apiKey, "process-secret");
   await assert.rejects(() => discovery.importCandidate("unknown"), /no longer available/i);
+});
+
+test("recognizes a direct DeepSeek environment without exposing its credential", async () => {
+  const discovery = createDesktopModelDiscovery({
+    homeDirectory: "/missing",
+    environment: {
+      DEEPSEEK_API_KEY: "deepseek-process-secret",
+      DEEPSEEK_MODEL: "deepseek-v4-pro",
+    },
+    capabilities: missingFiles(),
+  });
+  const result = await discovery.scan();
+  assert.deepEqual(
+    result.candidates.map(({ provider, name, baseURL, model }) => ({ provider, name, baseURL, model })),
+    [
+      {
+        provider: "deepseek",
+        name: "DeepSeek",
+        baseURL: "https://api.deepseek.com",
+        model: "deepseek-v4-pro",
+      },
+    ],
+  );
+  assert.doesNotMatch(JSON.stringify(result), /deepseek-process-secret/u);
+  assert.equal((await discovery.importCandidate(result.candidates[0].id)).apiKey, "deepseek-process-secret");
 });
 
 test("discovers bounded Claude, Codex, and Gemini live configurations without executing them", async () => {
@@ -139,6 +164,59 @@ test("reads CC Switch through a read-only bounded provider query", async () => {
     assert.equal(result.candidates[0].provider, "custom");
     assert.doesNotMatch(JSON.stringify(result), /cc-switch-secret/u);
     assert.equal((await discovery.importCandidate(result.candidates[0].id)).apiKey, "cc-switch-secret");
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});
+
+test("recognizes and deduplicates one DeepSeek connection shared by CC Switch and Claude Code", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "rune-deepseek-discovery-"));
+  const ccSwitchDirectory = path.join(home, ".cc-switch");
+  const claudeDirectory = path.join(home, ".claude");
+  await Promise.all([mkdir(ccSwitchDirectory), mkdir(claudeDirectory)]);
+  const settings = {
+    env: {
+      ANTHROPIC_API_KEY: "shared-deepseek-secret",
+      ANTHROPIC_BASE_URL: "https://api.deepseek.com/anthropic",
+      ANTHROPIC_MODEL: "deepseek-v4-flash",
+    },
+  };
+  await writeFile(path.join(claudeDirectory, "settings.json"), JSON.stringify(settings));
+  const database = new DatabaseSync(path.join(ccSwitchDirectory, "cc-switch.db"));
+  database.exec(
+    "CREATE TABLE providers (id TEXT, app_type TEXT, name TEXT, settings_config TEXT, is_current INTEGER, sort_index INTEGER)",
+  );
+  database
+    .prepare("INSERT INTO providers VALUES (?, ?, ?, ?, ?, ?)")
+    .run("deepseek", "claude", "DeepSeek", JSON.stringify(settings), 1, 0);
+  database.close();
+  try {
+    const discovery = createDesktopModelDiscovery({
+      homeDirectory: home,
+      environment: {},
+      capabilities: {
+        async fetch() {
+          throw new Error("no local runtime");
+        },
+      },
+    });
+    const result = await discovery.scan();
+    assert.equal(result.candidates.length, 1);
+    assert.deepEqual(
+      {
+        provider: result.candidates[0].provider,
+        protocol: result.candidates[0].protocol,
+        sourceLabel: result.candidates[0].sourceLabel,
+        baseURL: result.candidates[0].baseURL,
+      },
+      {
+        provider: "deepseek",
+        protocol: "anthropic-messages",
+        sourceLabel: "CC Switch · DeepSeek",
+        baseURL: "https://api.deepseek.com/anthropic",
+      },
+    );
+    assert.doesNotMatch(JSON.stringify(result), /shared-deepseek-secret/u);
   } finally {
     await rm(home, { recursive: true, force: true });
   }

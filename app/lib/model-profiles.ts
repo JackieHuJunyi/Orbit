@@ -16,7 +16,8 @@ export const DEFAULT_MODEL_TOKEN_BUDGET: Readonly<ModelTokenBudget> = Object.fre
   maxOutputTokens: 4_000,
 });
 
-export type ModelProviderKind = "openai" | "openrouter" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
+export type ModelProviderKind =
+  "openai" | "openrouter" | "deepseek" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
 export type ModelProtocol = "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
 
 export type ModelCapabilityManifest = {
@@ -81,6 +82,17 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     protocol: "chat-completions",
     editableEndpoint: false,
     editableProtocol: false,
+    locality: "cloud",
+    requiresCredential: true,
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    baseURL: "https://api.deepseek.com",
+    defaultModel: "deepseek-v4-flash",
+    protocol: "chat-completions",
+    editableEndpoint: true,
+    editableProtocol: true,
     locality: "cloud",
     requiresCredential: true,
   },
@@ -290,6 +302,7 @@ export function normalizeModelProfileDraft(
   if (
     provider !== "openai" &&
     provider !== "openrouter" &&
+    provider !== "deepseek" &&
     provider !== "anthropic" &&
     provider !== "gemini" &&
     provider !== "ollama" &&

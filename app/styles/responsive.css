@@ -111,7 +111,6 @@
   .welcome-window { width: 100%; height: 100dvh; max-height: 100dvh; border-width: 0; border-radius: 0; }
   .welcome-chrome { padding-inline: var(--rune-space-4); }
   .welcome-chrome-brand strong { display: none; }
-  .welcome-chrome-actions > .welcome-back { width: 44px; min-width: 44px; padding-inline: 0; font-size: 0; }
   .welcome-page { padding: 20px 18px 28px; }
   .welcome-page.welcome-model { padding-top: 18px; }
   .welcome-model .welcome-icon-disc { width: 60px; height: 60px; border-radius: 18px; }
@@ -133,7 +132,10 @@
   .model-discovery-review dl { grid-template-columns: minmax(0, 1fr); }
   .model-discovery-review dl > div:nth-child(odd) { border-inline-end: 0; }
   .model-discovery-review dl > div + div { border-top: 1px solid var(--rune-material-divider); }
-  .welcome-model-actions { flex-direction: column; }
+  .welcome-step-navigation { width: 100%; gap: 8px; margin-top: 14px; }
+  .welcome-step-back { min-width: 82px; min-height: 48px; padding-inline: 12px 14px; }
+  .welcome-model-navigation { align-items: end; }
+  .welcome-model-actions { width: 100%; flex-direction: column; }
   .welcome-model-actions > button { width: 100%; min-height: 48px; }
   .model-profile-onramps > button,
   .model-discovery > header > button,

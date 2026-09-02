@@ -12,7 +12,7 @@ export type DiscoveredModelConnection = {
   sourceKind: "environment" | "app-config" | "cc-switch" | "local-runtime";
   sourceLabel: string;
   locality: "cloud" | "device";
-  provider: "openai" | "openrouter" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
+  provider: "openai" | "openrouter" | "deepseek" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
   protocol: "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
   name: string;
   baseURL: string;
@@ -75,6 +75,7 @@ export function supportsDesktopModelDiscovery() {
 function modelProvider(value: unknown): DiscoveredModelConnection["provider"] | null {
   return value === "openai" ||
     value === "openrouter" ||
+    value === "deepseek" ||
     value === "anthropic" ||
     value === "gemini" ||
     value === "ollama" ||

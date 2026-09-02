@@ -26,6 +26,7 @@ import type { ModelProfilesState } from "../lib/model-profiles";
 import type { ModelProviderStatus, RuneModelMode } from "../lib/model-preference";
 
 export type WelcomeModelCopy = Readonly<{
+  back: string;
   modelEyebrow: string;
   modelTitle: string;
   modelBody: string;
@@ -99,12 +100,14 @@ export function WelcomeModelStep({
   copy,
   locale,
   modelMode,
+  onBack,
   onContinue,
   onModelModeChange,
 }: {
   copy: WelcomeModelCopy;
   locale: RuneLocale;
   modelMode: RuneModelMode;
+  onBack: () => void;
   onContinue: (mode: RuneModelMode) => void;
   onModelModeChange: (mode: RuneModelMode) => void;
 }) {
@@ -254,7 +257,11 @@ export function WelcomeModelStep({
           </div>
         )}
 
-        <section className="model-discovery" aria-labelledby="model-discovery-title">
+        <section
+          className="model-discovery"
+          data-discovery-state={discoveryState}
+          aria-labelledby="model-discovery-title"
+        >
           <header>
             <span>{discoveryState === "scanning" ? <Search className="agent-spinner" /> : <Laptop />}</span>
             <div>
@@ -371,33 +378,39 @@ export function WelcomeModelStep({
           {discoveryState === "unavailable" ? copy.modelSafety : copy.scanPrivacy}
         </p>
       </div>
-      <div className="welcome-model-actions">
-        {configured && (
-          <button
-            className="welcome-primary welcome-model-primary"
-            type="button"
-            onClick={() => onContinue("model-assisted")}
-          >
-            <Cloud />
-            <span>
-              <strong>{copy.useConnected}</strong>
-              <small>{copy.useConnectedBody}</small>
-            </span>
-            <ArrowRight />
-          </button>
-        )}
-        <button
-          className="welcome-secondary"
-          type="button"
-          aria-pressed={modelMode === "device-tools-only"}
-          onClick={() => onContinue("device-tools-only")}
-        >
-          <Laptop />
-          <span>
-            <strong>{copy.useLocal}</strong>
-            <small>{copy.useLocalBody}</small>
-          </span>
+      <div className="welcome-step-navigation welcome-model-navigation">
+        <button type="button" className="welcome-step-back" onClick={onBack}>
+          <ArrowLeft aria-hidden="true" />
+          {copy.back}
         </button>
+        <div className="welcome-model-actions">
+          {configured && (
+            <button
+              className="welcome-primary welcome-model-primary"
+              type="button"
+              onClick={() => onContinue("model-assisted")}
+            >
+              <Cloud />
+              <span>
+                <strong>{copy.useConnected}</strong>
+                <small>{copy.useConnectedBody}</small>
+              </span>
+              <ArrowRight />
+            </button>
+          )}
+          <button
+            className="welcome-secondary"
+            type="button"
+            aria-pressed={modelMode === "device-tools-only"}
+            onClick={() => onContinue("device-tools-only")}
+          >
+            <Laptop />
+            <span>
+              <strong>{copy.useLocal}</strong>
+              <small>{copy.useLocalBody}</small>
+            </span>
+          </button>
+        </div>
       </div>
     </>
   );

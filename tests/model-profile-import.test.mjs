@@ -57,6 +57,31 @@ test("maps a CC Switch Claude gateway to Rune's custom Anthropic protocol", () =
   assert.equal(result.draft.baseURL, "https://claude.example.com/v1");
 });
 
+test("recognizes DeepSeek behind its OpenAI and Anthropic compatible configurations", () => {
+  const anthropic = parseModelProfileImport(
+    JSON.stringify({
+      app: "claude",
+      name: "DeepSeek",
+      env: {
+        ANTHROPIC_BASE_URL: "https://api.deepseek.com/anthropic",
+        ANTHROPIC_MODEL: "deepseek-v4-flash",
+        ANTHROPIC_API_KEY: "deepseek-anthropic-secret",
+      },
+    }),
+  );
+  assert.equal(anthropic.draft.provider, "deepseek");
+  assert.equal(anthropic.draft.protocol, "anthropic-messages");
+  assert.equal(anthropic.draft.baseURL, "https://api.deepseek.com/anthropic");
+
+  const direct = parseModelProfileImport(
+    '{"env":{"DEEPSEEK_API_KEY":"deepseek-direct-secret","DEEPSEEK_MODEL":"deepseek-v4-pro"}}',
+  );
+  assert.equal(direct.draft.provider, "deepseek");
+  assert.equal(direct.draft.protocol, "chat-completions");
+  assert.equal(direct.draft.baseURL, "https://api.deepseek.com");
+  assert.equal(direct.draft.model, "deepseek-v4-pro");
+});
+
 test("imports common CC Switch environment JSON without requiring a credential in the file", () => {
   const result = parseModelProfileImport(
     JSON.stringify({

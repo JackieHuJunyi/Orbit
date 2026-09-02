@@ -70,13 +70,21 @@ const FIELD_ALIASES = {
 
 const ENV_API_KEYS = [
   "openai_api_key",
+  "deepseek_api_key",
+  "deepseek_auth_token",
   "anthropic_api_key",
   "anthropic_auth_token",
   "gemini_api_key",
   "google_api_key",
 ] as const;
-const ENV_ENDPOINTS = ["openai_base_url", "anthropic_base_url", "gemini_base_url", "google_gemini_base_url"] as const;
-const ENV_MODELS = ["openai_model", "anthropic_model", "gemini_model"] as const;
+const ENV_ENDPOINTS = [
+  "openai_base_url",
+  "deepseek_base_url",
+  "anthropic_base_url",
+  "gemini_base_url",
+  "google_gemini_base_url",
+] as const;
+const ENV_MODELS = ["openai_model", "deepseek_model", "anthropic_model", "gemini_model"] as const;
 const REMOTE_CONFIG_FIELDS = new Set(["configurl", "config_url", "remoteconfig", "remote_config"]);
 const KNOWN_FIELDS = new Set(
   [
@@ -187,6 +195,7 @@ function importedProvider(value: unknown): ModelProviderKind | null {
   const normalized = cleanText(value, 80).toLowerCase();
   if (normalized === "openai" || normalized === "codex") return "openai";
   if (normalized === "openrouter") return "openrouter";
+  if (normalized === "deepseek" || normalized === "deep-seek") return "deepseek";
   if (normalized === "anthropic" || normalized === "claude") return "anthropic";
   if (normalized === "gemini" || normalized === "google" || normalized === "google-gemini") return "gemini";
   if (normalized === "custom" || normalized === "compatible") return "custom";
@@ -196,6 +205,7 @@ function importedProvider(value: unknown): ModelProviderKind | null {
 function providerFromApp(value: unknown): ModelProviderKind | null {
   const app = cleanText(value, 80).toLowerCase();
   if (app === "codex" || app === "openai") return "openai";
+  if (app === "deepseek" || app === "deepseek-harness") return "deepseek";
   if (app === "claude" || app === "claude-code" || app === "claude-desktop") return "anthropic";
   if (app === "gemini" || app === "gemini-cli") return "gemini";
   return null;
@@ -207,13 +217,27 @@ function normalizedEndpoint(value: string) {
 
 function officialProviderForEndpoint(endpoint: string) {
   const normalized = normalizedEndpoint(endpoint);
-  return MODEL_PROVIDER_PRESETS.find(
+  const exact = MODEL_PROVIDER_PRESETS.find(
     (preset) => preset.id !== "custom" && normalizedEndpoint(preset.baseURL) === normalized,
   )?.id;
+  if (exact) return exact;
+  try {
+    if (new URL(normalized).hostname.toLowerCase() === "api.deepseek.com") return "deepseek";
+  } catch {
+    // Endpoint validation and its localized error are handled below.
+  }
+  return undefined;
 }
 
 function inferProviderFromEnvironment(environment: Map<string, unknown>) {
   const providers = new Set<ModelProviderKind>();
+  if (
+    environment.has("deepseek_api_key") ||
+    environment.has("deepseek_auth_token") ||
+    environment.has("deepseek_base_url") ||
+    environment.has("deepseek_model")
+  )
+    providers.add("deepseek");
   if (
     environment.has("anthropic_api_key") ||
     environment.has("anthropic_auth_token") ||
@@ -318,13 +342,21 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
   );
   if (endpoint.includes(",")) fail("ambiguous", "Import one provider endpoint at a time.");
   const officialProvider = endpoint ? officialProviderForEndpoint(endpoint) : undefined;
+  const compatibilityProviders = [appProvider, environmentProvider].filter(
+    (provider) =>
+      provider &&
+      !(
+        officialProvider === "deepseek" &&
+        (provider === "openai" || provider === "anthropic" || provider === "deepseek")
+      ),
+  );
   const providerSignals = new Set(
-    [explicitProvider, appProvider, environmentProvider, officialProvider].filter(
+    [explicitProvider, officialProvider, ...compatibilityProviders].filter(
       (provider): provider is Exclude<ModelProviderKind, "custom"> => Boolean(provider && provider !== "custom"),
     ),
   );
   if (providerSignals.size > 1) fail("ambiguous", "The import identifies conflicting providers.");
-  const requestedProvider = explicitProvider ?? appProvider ?? environmentProvider ?? officialProvider ?? null;
+  const requestedProvider = officialProvider ?? explicitProvider ?? appProvider ?? environmentProvider ?? null;
   if (!requestedProvider) fail("invalid-fields", "The import does not identify a supported provider.");
   const provider: ModelProviderKind =
     endpoint && !officialProvider ? "custom" : (officialProvider ?? requestedProvider);
@@ -334,7 +366,7 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
     fail("invalid-fields", "The imported API protocol is not supported.");
   }
   const protocolProvider =
-    requestedProvider === "custom"
+    requestedProvider === "custom" || requestedProvider === "deepseek"
       ? (appProvider ?? environmentProvider ?? officialProvider ?? "openai")
       : requestedProvider;
   const protocol =
@@ -346,13 +378,16 @@ export function parseModelProfileImport(raw: string): ModelProfileImportResult {
   let baseURL = preset.baseURL;
   if (provider === "custom") {
     if (!endpoint) fail("invalid-endpoint", "A custom provider import needs one HTTPS API base URL.");
+  }
+  if (endpoint && preset.editableEndpoint) {
     try {
       baseURL = normalizeCustomModelBaseURL(endpoint);
     } catch {
       fail("invalid-endpoint", "The imported endpoint must be a public HTTPS API base URL.");
     }
   }
-  const fallbackPreset = MODEL_PROVIDER_PRESETS.find((item) => item.id === protocolProvider) ?? preset;
+  const fallbackPreset =
+    provider === "deepseek" ? preset : (MODEL_PROVIDER_PRESETS.find((item) => item.id === protocolProvider) ?? preset);
   const requestedModel =
     aliasedValue(record, FIELD_ALIASES.model) ?? aliasedValue(environment, ENV_MODELS) ?? fallbackPreset.defaultModel;
   const model = cleanText(requestedModel, 120);

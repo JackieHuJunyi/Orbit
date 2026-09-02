@@ -315,9 +315,14 @@ function modelId(item: unknown, protocol: ActiveModelConnection["protocol"]) {
 }
 
 export async function listProviderModels(connection: ActiveModelConnection, signal: AbortSignal) {
-  const url = `${connection.baseURL}/models`;
+  const url =
+    connection.provider === "deepseek"
+      ? new URL("/models", `${connection.baseURL}/`).href
+      : `${connection.baseURL}/models`;
   const headers = new Headers({ accept: "application/json" });
-  if (connection.protocol === "anthropic-messages") {
+  if (connection.provider === "deepseek") {
+    headers.set("authorization", `Bearer ${connection.apiKey}`);
+  } else if (connection.protocol === "anthropic-messages") {
     headers.set("x-api-key", connection.apiKey);
     headers.set("anthropic-version", ANTHROPIC_VERSION);
   } else if (connection.protocol === "gemini-generate-content") {

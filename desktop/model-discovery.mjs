@@ -19,6 +19,12 @@ const PROVIDERS = Object.freeze({
     baseURL: "https://openrouter.ai/api/v1",
     model: "openai/gpt-5.6",
   },
+  deepseek: {
+    label: "DeepSeek",
+    protocol: "chat-completions",
+    baseURL: "https://api.deepseek.com",
+    model: "deepseek-v4-flash",
+  },
   anthropic: {
     label: "Anthropic",
     protocol: "anthropic-messages",
@@ -42,6 +48,18 @@ function cleanText(value, maximum = 300) {
 function cleanModel(value, fallback) {
   const model = cleanText(value, 120);
   return /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model) ? model : fallback;
+}
+
+function providerForEndpoint(endpoint) {
+  const normalized = endpoint.replace(/\/+$/u, "");
+  const exact = Object.entries(PROVIDERS).find(([, item]) => item.baseURL === normalized)?.[0];
+  if (exact) return exact;
+  try {
+    if (new URL(normalized).hostname.toLowerCase() === "api.deepseek.com") return "deepseek";
+  } catch {
+    // Endpoint validation remains owned by the model-profile normalizer.
+  }
+  return null;
 }
 
 function candidateId(sourceKind, sourceIdentity) {
@@ -73,7 +91,7 @@ function profileCandidate({
   const local = locality === "device";
   if (!local && !key) return null;
   const resolvedProtocol = protocol || preset.protocol;
-  const official = Object.entries(PROVIDERS).find(([, item]) => item.baseURL === endpoint)?.[0];
+  const official = providerForEndpoint(endpoint);
   const resolvedProvider = local ? provider : official || (endpoint === preset.baseURL ? provider : "custom");
   const resolvedModel = cleanModel(model, cleanModel(models[0], preset.model));
   if (!resolvedModel) return null;
@@ -171,6 +189,17 @@ function candidatesFromEnvironment(environment, sourceKind, sourceLabel, sourceI
     profileCandidate({
       sourceKind,
       sourceLabel,
+      sourceIdentity: `${sourceIdentity}:deepseek`,
+      provider: "deepseek",
+      name: "DeepSeek",
+      baseURL: values.DEEPSEEK_BASE_URL,
+      model: values.DEEPSEEK_MODEL,
+      apiKey: values.DEEPSEEK_API_KEY || values.DEEPSEEK_AUTH_TOKEN,
+      protocol: "chat-completions",
+    }),
+    profileCandidate({
+      sourceKind,
+      sourceLabel,
       sourceIdentity: `${sourceIdentity}:anthropic`,
       provider: "anthropic",
       name: "Anthropic",
@@ -226,13 +255,20 @@ function ccSwitchCandidate(row) {
   const environment = settings?.env && typeof settings.env === "object" ? settings.env : {};
   const provider = row.app_type === "claude" ? "anthropic" : row.app_type === "gemini" ? "gemini" : null;
   if (!provider) return null;
+  const endpoint = provider === "anthropic" ? environment.ANTHROPIC_BASE_URL : environment.GEMINI_BASE_URL;
+  const sourceProvider =
+    providerForEndpoint(cleanText(endpoint, 300)) === "deepseek"
+      ? "DeepSeek"
+      : row.app_type === "claude"
+        ? "Claude"
+        : "Gemini";
   return profileCandidate({
     sourceKind: "cc-switch",
-    sourceLabel: `CC Switch · ${row.app_type === "claude" ? "Claude" : "Gemini"}`,
+    sourceLabel: `CC Switch · ${sourceProvider}`,
     sourceIdentity: source,
     provider,
     name: row.name,
-    baseURL: provider === "anthropic" ? environment.ANTHROPIC_BASE_URL : environment.GEMINI_BASE_URL,
+    baseURL: endpoint,
     model: provider === "anthropic" ? environment.ANTHROPIC_MODEL : environment.GEMINI_MODEL,
     apiKey:
       provider === "anthropic"
@@ -337,6 +373,8 @@ export function createDesktopModelDiscovery({
     privateCandidates.clear();
     const discovered = [...candidatesFromEnvironment(environment, "environment", "Environment", "process")];
     if (home) {
+      discovered.push(...(await ccSwitchCandidates(path.join(home, ".cc-switch", "cc-switch.db"))));
+
       const claudeSettings = await boundedJson(path.join(home, ".claude", "settings.json"), capabilities);
       discovered.push(
         ...candidatesFromEnvironment(claudeSettings?.env, "app-config", "Claude Code", "claude-settings"),
@@ -344,7 +382,8 @@ export function createDesktopModelDiscovery({
 
       const codexAuth = await boundedJson(path.join(home, ".codex", "auth.json"), capabilities);
       const codexConfig = await boundedText(path.join(home, ".codex", "config.toml"), capabilities);
-      const codexKey = cleanText(codexAuth?.OPENAI_API_KEY, 512);
+      const codexKey =
+        cleanText(codexAuth?.OPENAI_API_KEY, 512) || tomlString(codexConfig, "experimental_bearer_token");
       if (codexKey) {
         discovered.push(
           profileCandidate({
@@ -365,7 +404,6 @@ export function createDesktopModelDiscovery({
         await boundedText(path.join(home, ".gemini", ".env"), capabilities),
       );
       discovered.push(...candidatesFromEnvironment(geminiEnvironment, "app-config", "Gemini CLI", "gemini-env"));
-      discovered.push(...(await ccSwitchCandidates(path.join(home, ".cc-switch", "cc-switch.db"))));
     }
     discovered.push(...(await localRuntimeCandidates(capabilities)));
 
@@ -376,9 +414,10 @@ export function createDesktopModelDiscovery({
           all.findIndex(
             (item) =>
               item.provider === candidate.provider &&
+              item.protocol === candidate.protocol &&
               item.baseURL === candidate.baseURL &&
               item.model === candidate.model &&
-              item.sourceLabel === candidate.sourceLabel,
+              item.profile.apiKey === candidate.profile.apiKey,
           ) === index,
       )
       .slice(0, MAX_DISCOVERED_CONNECTIONS);

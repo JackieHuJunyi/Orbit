@@ -397,12 +397,6 @@ export function WelcomeExperience({
             ))}
           </div>
           <div className="welcome-chrome-actions">
-            {stepIndex > 0 && (
-              <button type="button" className="welcome-back" onClick={showPreviousStep}>
-                <ArrowLeft aria-hidden="true" />
-                {text.back}
-              </button>
-            )}
             {dismissible ? (
               <button type="button" onClick={onDismiss} aria-label={text.close} title={text.close}>
                 <X />
@@ -488,6 +482,7 @@ export function WelcomeExperience({
                 locale={locale}
                 modelMode={modelMode}
                 onModelModeChange={onModelModeChange}
+                onBack={showPreviousStep}
                 onContinue={(mode) => {
                   onModelModeChange(mode);
                   setStep("shortcuts");
@@ -523,10 +518,16 @@ export function WelcomeExperience({
                   );
                 })}
               </div>
-              <button className="welcome-primary" type="button" onClick={() => setStep("ready")}>
-                {completedShortcuts.length === shortcutRows.length ? text.continue : text.skipTutorial}
-                <ArrowRight />
-              </button>
+              <div className="welcome-step-navigation">
+                <button type="button" className="welcome-step-back" onClick={showPreviousStep}>
+                  <ArrowLeft aria-hidden="true" />
+                  {text.back}
+                </button>
+                <button className="welcome-primary" type="button" onClick={() => setStep("ready")}>
+                  {completedShortcuts.length === shortcutRows.length ? text.continue : text.skipTutorial}
+                  <ArrowRight />
+                </button>
+              </div>
             </>
           )}
 
@@ -578,6 +579,12 @@ export function WelcomeExperience({
                     <small>{text.sampleBody}</small>
                   </span>
                   <ArrowRight />
+                </button>
+              </div>
+              <div className="welcome-step-navigation welcome-ready-navigation">
+                <button type="button" className="welcome-step-back" onClick={showPreviousStep}>
+                  <ArrowLeft aria-hidden="true" />
+                  {text.back}
                 </button>
               </div>
             </>

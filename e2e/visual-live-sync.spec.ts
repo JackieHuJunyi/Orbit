@@ -153,6 +153,8 @@ test("keeps typed JSON canonical while Source and Data Preview edit the same sca
   const finalSource = revenueDraftSource.replace('"Active": false', '"Active": true');
   await expect(editor).toHaveValue(finalSource);
   await cellEditor.getByRole("button", { name: "Save Row 2 · Active" }).click();
+  await expect(cellEditor).toBeHidden();
+  await expect(editor).toHaveValue(finalSource);
 
   await page.reload();
   await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();

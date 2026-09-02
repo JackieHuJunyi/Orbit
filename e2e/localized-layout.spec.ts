@@ -135,10 +135,13 @@ for (const viewport of VIEWPORTS) {
         const modelTitle = modelPage.locator("h1");
         const modelPanel = modelPage.locator(".model-setup-panel");
         const modelActions = modelPage.locator(".welcome-model-actions");
+        const modelBack = modelPage.locator(".welcome-step-back");
         await expect(modelPage).toBeVisible();
         await expect(modelPanel).toBeVisible();
         await modelActions.scrollIntoViewIfNeeded();
         await expect(modelActions).toBeInViewport();
+        await expect(modelBack).toBeInViewport();
+        await expect(modelPage.locator(".welcome-chrome .welcome-step-back")).toHaveCount(0);
         await expectInsideViewport(page, welcomeWindow);
         await expectNoDocumentOverflow(page);
         const titleMetrics = await modelTitle.evaluate((element) => {
@@ -156,7 +159,7 @@ for (const viewport of VIEWPORTS) {
         expect(titleMetrics.width).toBeLessThanOrEqual(viewport.width - (viewport.width <= 680 ? 32 : 80));
         if (viewport.width <= 680) {
           const controlHeights = await modelPage
-            .locator(".model-setup-panel button:visible, .welcome-model-actions button:visible")
+            .locator(".model-setup-panel button:visible, .welcome-step-navigation button:visible")
             .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
           expect(controlHeights.length).toBeGreaterThan(0);
           expect(Math.min(...controlHeights)).toBeGreaterThanOrEqual(44);

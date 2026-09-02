@@ -157,6 +157,15 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
   });
   assert.equal(anthropic.baseURL, "https://api.anthropic.com/v1");
   assert.equal(anthropic.protocol, "anthropic-messages");
+  const deepseek = normalizeModelProfileDraft({
+    provider: "deepseek",
+    protocol: "anthropic-messages",
+    baseURL: "https://api.deepseek.com/anthropic",
+    model: "deepseek-v4-flash",
+    apiKey: "deepseek-secret",
+  });
+  assert.equal(deepseek.baseURL, "https://api.deepseek.com/anthropic");
+  assert.equal(deepseek.protocol, "anthropic-messages");
   const gemini = normalizeModelProfileDraft({
     provider: "gemini",
     model: "gemini-2.5-pro",
@@ -379,6 +388,47 @@ test("fetches a bounded model catalog without following redirects or returning t
     assert.equal(providerRequest.init.redirect, "error");
     assert.equal(new Headers(providerRequest.init.headers).get("authorization"), "Bearer catalog-secret");
     assert.doesNotMatch(JSON.stringify(payload), /catalog-secret/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+  }
+});
+
+test("verifies DeepSeek through its canonical model catalog even when generation uses Anthropic Messages", async () => {
+  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "deepseek-vault-key-0123456789abcdef";
+  let providerRequest;
+  globalThis.fetch = async (input, init) => {
+    providerRequest = { input: String(input), init };
+    return new Response(JSON.stringify({ data: [{ id: "deepseek-v4-flash" }, { id: "deepseek-v4-pro" }] }), {
+      headers: { "content-type": "application/json" },
+    });
+  };
+  try {
+    const response = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "models",
+          profile: {
+            provider: "deepseek",
+            protocol: "anthropic-messages",
+            baseURL: "https://api.deepseek.com/anthropic",
+            model: "deepseek-v4-flash",
+            apiKey: "deepseek-catalog-secret",
+          },
+        }),
+      }),
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { models: ["deepseek-v4-flash", "deepseek-v4-pro"] });
+    assert.equal(providerRequest.input, "https://api.deepseek.com/models");
+    const headers = new Headers(providerRequest.init.headers);
+    assert.equal(headers.get("authorization"), "Bearer deepseek-catalog-secret");
+    assert.equal(headers.has("x-api-key"), false);
   } finally {
     globalThis.fetch = previousFetch;
     if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
