@@ -28,9 +28,11 @@ const STATIC_CONTENT_TYPES = Object.freeze({
 });
 
 // Keep the established on-device vault and Electron profile after the public
-// rename. A later directory migration would need dual-read and rollback.
+// rename. `safeStorage` is keyed to the application identity on macOS, so the
+// legacy name must remain active until its encrypted master key is loaded.
+// No window is created until the public Orbit identity is restored below.
 const legacyRuneUserDataDirectory = path.join(app.getPath("appData"), "Rune");
-app.setName("Orbit");
+app.setName("Rune");
 app.setPath("userData", legacyRuneUserDataDirectory);
 process.env.RUNE_DESKTOP_RUNTIME = "1";
 
@@ -158,8 +160,9 @@ async function createRuneWindow() {
 }
 
 app.whenReady().then(async () => {
-  if (process.platform === "darwin") app.dock.setIcon(orbitAppIconPath);
   await initializeDesktopCredentialVault();
+  app.setName("Orbit");
+  if (process.platform === "darwin") app.dock.setIcon(orbitAppIconPath);
   desktopModelDiscovery = createDesktopModelDiscovery({ homeDirectory: app.getPath("home") });
   ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);
   ipcMain.handle("rune:export-legacy-office", exportLegacyOffice);

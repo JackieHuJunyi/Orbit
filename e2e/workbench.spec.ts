@@ -251,6 +251,10 @@ test("reveals a discovered credential only after review and saves only after ver
       });
       return;
     }
+    if (input.action === "probe") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ready: true }) });
+      return;
+    }
     profileState = {
       ...emptyState,
       configured: true,
@@ -287,7 +291,7 @@ test("reveals a discovered credential only after review and saves only after ver
 
   await modelStep.getByRole("button", { name: "Verify & use" }).click();
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("rune-test-credential-read"))).toBe("yes");
-  await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "upsert"]);
+  await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "probe", "upsert"]);
   expect(writes.every((item) => item.apiKey === "discovery-test-secret")).toBe(true);
   await expect(modelStep.getByRole("button", { name: /Continue with model assistance/u })).toBeVisible();
   await expect(modelStep).not.toContainText("discovery-test-secret");

@@ -101,8 +101,8 @@ export const INTERFACE_TRANSLATIONS = {
     "검토된 가져오기를 확인하면 Orbit이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
   "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
     "검토된 가져오기를 확인하면 Orbit이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록과 최소 구조화 응답을 검증합니다. 두 검증에 모두 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
   Agent: "Agent",
   "Agent change scope": "Agent 변경 범위",
   "Agent composer focused": "Agent 작곡가 중심",

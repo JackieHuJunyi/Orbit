@@ -102,8 +102,8 @@ export const INTERFACE_TRANSLATIONS = {
     "確認済みのインポート後、Orbit はこの Document を選択した状態でプレゼンテーション設定を開きます。",
   "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
     "確認済みのインポート後、Orbit はこの Data ソースを選択した状態で経営レビュー設定を開きます。",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧を検証します。成功した場合に限り暗号化し、既定の接続として保存します。",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧と最小限の構造化レスポンスを検証します。両方に成功した場合に限り暗号化し、既定の接続として保存します。",
   Agent: "Agent",
   "Agent change scope": "Agent のスコープ変更",
   "Agent composer focused": "Agent 作曲家に焦点を当てた",

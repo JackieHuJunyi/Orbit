@@ -92,7 +92,8 @@ export const WELCOME_BASE_COPY = {
     credentialNotRequired: "无需 API Key",
     reviewConnection: "查看",
     reviewTitle: "使用这个模型连接？",
-    connectionReviewBody: "Orbit 将在你确认后读取这一项凭据，先验证模型目录，成功后才加密保存并设为默认。",
+    connectionReviewBody:
+      "确认后，Orbit 只读取这一项凭据，验证模型目录和一次最小结构化响应；两项都成功后才加密保存并设为默认。",
     connectAndVerify: "验证并使用",
     connecting: "正在验证…",
     chooseAnother: "返回连接列表",
@@ -177,7 +178,7 @@ export const WELCOME_BASE_COPY = {
     reviewConnection: "Review",
     reviewTitle: "Use this model connection?",
     connectionReviewBody:
-      "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.",
+      "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.",
     connectAndVerify: "Verify & use",
     connecting: "Verifying…",
     chooseAnother: "Back to connections",

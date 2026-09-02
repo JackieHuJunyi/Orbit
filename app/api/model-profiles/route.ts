@@ -14,8 +14,11 @@ import {
   serializeModelProfileVaultCookie,
 } from "../../lib/model-credential-vault.ts";
 import { modelProviderStatus } from "../../lib/model-preference.ts";
-import { listProviderModels } from "../../lib/model-provider-adapters.ts";
+import { listProviderModels, requestProviderPlan } from "../../lib/model-provider-adapters.ts";
 import { modelConnectionHealth } from "../../lib/model-routing.ts";
+import { z } from "zod";
+
+const ModelProtocolProbeSchema = z.object({ ready: z.literal(true) }).strict();
 
 function personalConnection(profile: ModelProfileVault["profiles"][number]) {
   return {
@@ -113,24 +116,40 @@ export async function POST(request: Request) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8_000);
       try {
-        const models = await listProviderModels(
-          {
-            source: "personal",
-            profileId: profile.id,
-            profileName: profile.name,
-            provider: profile.provider,
-            protocol: profile.protocol,
-            apiKey: profile.apiKey,
-            baseURL: profile.baseURL,
-            model: profile.model,
-            budget: profile.budget,
-            capabilities: publicModelProfile(profile).capabilities,
-          },
-          controller.signal,
-        );
+        const models = await listProviderModels(personalConnection(profile), controller.signal);
         return Response.json({ models }, { headers: { "cache-control": "no-store" } });
       } catch (error) {
         if (controller.signal.aborted) throw new Error("The provider model-list request timed out.");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    } else if (input.action === "probe") {
+      if (!input.profile || typeof input.profile !== "object")
+        throw new Error("Enter the model profile details first.");
+      const profile = normalizeModelProfileDraft(input.profile);
+      if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
+        throw new Error("Device model runtimes are available only in the Orbit desktop app.");
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20_000);
+      try {
+        const result = await requestProviderPlan({
+          connection: personalConnection(profile),
+          instructions:
+            "Return the required readiness object through this provider's structured-output protocol. Do not add fields.",
+          input: "Confirm that this connection can return Orbit's required structured response.",
+          schema: ModelProtocolProbeSchema,
+          schemaName: "model_protocol_probe",
+          responseDescription: "Return the minimal Orbit model-protocol readiness object.",
+          signal: controller.signal,
+        });
+        if (!ModelProtocolProbeSchema.safeParse(result.output).success) {
+          throw new Error("The provider did not return Orbit's required structured response.");
+        }
+        return Response.json({ ready: true }, { headers: { "cache-control": "no-store" } });
+      } catch (error) {
+        if (controller.signal.aborted) throw new Error("The provider structured-response check timed out.");
         throw error;
       } finally {
         clearTimeout(timeout);

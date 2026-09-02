@@ -5,6 +5,8 @@ dist/
 .wrangler/
 public/ocr/
 app/icon.svg
+icon-design/**/*.svg
+icon-design/renders/
 coverage/
 package-lock.json
 *.tsbuildinfo

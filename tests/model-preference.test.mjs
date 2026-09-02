@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { DEFAULT_OPENAI_MODEL, modelProviderStatus, normalizeRuneModelMode } from "../app/lib/model-preference.ts";
@@ -434,6 +435,62 @@ test("verifies DeepSeek through its canonical model catalog even when generation
     if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
     else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
   }
+});
+
+test("probes DeepSeek structured output before saving a discovered profile", async () => {
+  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "deepseek-probe-vault-key-0123456789";
+  let providerRequest;
+  globalThis.fetch = async (input, init) => {
+    providerRequest = { input: String(input), init, body: JSON.parse(String(init.body)) };
+    return new Response(
+      JSON.stringify({
+        content: [{ type: "tool_use", name: "submit_rune_plan", input: { ready: true } }],
+        usage: { input_tokens: 19, output_tokens: 4 },
+      }),
+      { headers: { "content-type": "application/json" } },
+    );
+  };
+  try {
+    const response = await postModelProfiles(
+      new Request("https://rune.example/api/model-profiles", {
+        method: "POST",
+        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "probe",
+          profile: {
+            provider: "deepseek",
+            protocol: "anthropic-messages",
+            baseURL: "https://api.deepseek.com/anthropic",
+            model: "deepseek-v4-flash",
+            apiKey: "deepseek-probe-secret",
+          },
+        }),
+      }),
+    );
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload, { ready: true });
+    assert.equal(providerRequest.input, "https://api.deepseek.com/anthropic/messages");
+    assert.deepEqual(providerRequest.body.thinking, { type: "disabled" });
+    assert.equal(providerRequest.body.tool_choice.name, "submit_rune_plan");
+    assert.doesNotMatch(JSON.stringify(payload), /probe-secret/u);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+  }
+});
+
+test("requires catalog and structured-output checks before first-run save", async () => {
+  const source = await readFile(new URL("../app/components/welcome-model-step.tsx", import.meta.url), "utf8");
+  const catalog = source.indexOf('JSON.stringify({ action: "models", profile })');
+  const probe = source.indexOf('JSON.stringify({ action: "probe", profile: verifiedProfile })');
+  const save = source.indexOf('JSON.stringify({ action: "upsert", profile: verifiedProfile })');
+  assert.ok(catalog >= 0 && catalog < probe && probe < save);
+  assert.match(source, /connectionFailureDetail\(probePayload/u);
+  assert.match(source, /setConnectionError\(detail \? `\$\{copy\.connectionFailed\} \$\{detail\}`/u);
 });
 
 test("keeps loopback model runtimes desktop-only and never invents an authorization header", async () => {

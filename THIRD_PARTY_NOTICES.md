@@ -7,6 +7,7 @@ Orbit's welcome handwriting uses only redistributable code and font-derived data
 - **Tegaki**, copyright © 2026 Gokhan Kurt — <https://github.com/gkurt/tegaki>
 - **harfbuzzjs**, copyright © 2019–2026 The harfbuzzjs project authors — <https://github.com/harfbuzz/harfbuzzjs>
 - **Apple Hello Effect** by Chánh Đại. The English `Hello` centerline geometry in `app/components/handwritten-greeting.tsx` is adapted from the component published under the MIT License — <https://21st.dev/@ncdai/components/apple-hello-effect>
+- **Icon Designer Skills**, copyright © 2026 Paldom. Orbit's icon brief, continuous-corner background geometry, safe SVG checks, and 512/64/32/16 px critique workflow were adapted from the MIT-licensed project; Orbit's planetary artwork is original — <https://github.com/Paldom/icon-designer-skills>
 
 The MIT License applies to the items listed in this section:
 

@@ -104,8 +104,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Après cet import vérifié, Orbit ouvre la configuration de la présentation avec ce Document déjà sélectionné.",
   "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
     "Après cet import vérifié, Orbit ouvre la configuration de la revue opérationnelle avec cette source Data déjà sélectionnée.",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "Après confirmation, Orbit lit uniquement cet identifiant, vérifie le catalogue de modèles, puis le chiffre et l’enregistre comme connexion par défaut si la vérification réussit.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "Après confirmation, Orbit lit uniquement cet identifiant, vérifie le catalogue de modèles et une réponse structurée minimale, puis le chiffre et l’enregistre par défaut seulement si les deux vérifications réussissent.",
   Agent: "Agent",
   "Agent change scope": "Agent modifier la portée",
   "Agent composer focused": "Agent compositeur concentré",

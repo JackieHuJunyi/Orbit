@@ -232,6 +232,10 @@ export async function requestProviderPlan<T extends z.ZodType>({
 
   if (connection.protocol === "anthropic-messages") {
     const toolName = "submit_rune_plan";
+    // DeepSeek enables thinking by default. Its Anthropic-compatible endpoint
+    // rejects a forced named tool while thinking is active, so disable
+    // reasoning for this strictly typed, single-turn planning request.
+    const deepSeekThinking = connection.provider === "deepseek" ? { thinking: { type: "disabled" } } : {};
     const payload = (await providerJson(
       `${connection.baseURL}/messages`,
       {
@@ -244,6 +248,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
         body: JSON.stringify({
           model: connection.model,
           max_tokens: maximumOutputTokens,
+          ...deepSeekThinking,
           system: instructions,
           messages: [{ role: "user", content: input }],
           tools: [{ name: toolName, description: responseDescription, input_schema: format.schema }],

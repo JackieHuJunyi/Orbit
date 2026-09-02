@@ -3378,8 +3378,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 // natural instead of relying on machine translation.
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "20 KB maximum": "20 Ko maximum",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "Après confirmation, Orbit lit uniquement cet identifiant, vérifie le catalogue de modèles, puis le chiffre et l’enregistre comme connexion par défaut si la vérification réussit.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "Après confirmation, Orbit lit uniquement cet identifiant, vérifie le catalogue de modèles et une réponse structurée minimale, puis le chiffre et l’enregistre par défaut seulement si les deux vérifications réussissent.",
   "Back to connections": "Retour aux connexions",
   "Checking connections already saved in Orbit…": "Vérification des connexions déjà enregistrées dans Orbit…",
   "Cloud API": "API dans le cloud",
@@ -3434,8 +3434,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "20 KB maximum": "20 KB como máximo",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "Tras tu confirmación, Orbit lee solo esta credencial, verifica el catálogo de modelos y, únicamente si funciona, la cifra y guarda como conexión predeterminada.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "Tras tu confirmación, Orbit lee solo esta credencial, verifica el catálogo de modelos y una respuesta estructurada mínima y, únicamente si ambas comprobaciones funcionan, la cifra y guarda como conexión predeterminada.",
   "Back to connections": "Volver a las conexiones",
   "Checking connections already saved in Orbit…": "Comprobando las conexiones guardadas en Orbit…",
   "Cloud API": "API en la nube",
@@ -3490,8 +3490,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "20 KB maximum": "Не более 20 КБ",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и лишь при успешной проверке зашифрует и сохранит подключение по умолчанию.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и один минимальный структурированный ответ и лишь при успехе обеих проверок зашифрует и сохранит подключение по умолчанию.",
   "Back to connections": "Назад к подключениям",
   "Checking connections already saved in Orbit…": "Проверка подключений, сохранённых в Orbit…",
   "Cloud API": "Облачный API",
@@ -3546,8 +3546,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "20 KB maximum": "20 كيلوبايت كحد أقصى",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج ومن استجابة منظّمة صغيرة، ثم يشفّر الاتصال ويحفظه كافتراضي فقط إذا نجح الاختباران.",
   "Back to connections": "العودة إلى الاتصالات",
   "Checking connections already saved in Orbit…": "جارٍ التحقق من الاتصالات المحفوظة في Orbit…",
   "Cloud API": "واجهة API سحابية",
@@ -3600,8 +3600,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "20 KB maximum": "最大 20 KB",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧を検証します。成功した場合に限り暗号化し、既定の接続として保存します。",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧と最小限の構造化レスポンスを検証します。両方に成功した場合に限り暗号化し、既定の接続として保存します。",
   "Back to connections": "接続一覧に戻る",
   "Checking connections already saved in Orbit…": "Orbit に保存済みの接続を確認中…",
   "Cloud API": "クラウド API",
@@ -3654,8 +3654,8 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "20 KB maximum": "최대 20KB",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록을 검증합니다. 검증에 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록과 최소 구조화 응답을 검증합니다. 두 검증에 모두 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
   "Back to connections": "연결 목록으로 돌아가기",
   "Checking connections already saved in Orbit…": "Orbit에 저장된 연결 확인 중…",
   "Cloud API": "클라우드 API",

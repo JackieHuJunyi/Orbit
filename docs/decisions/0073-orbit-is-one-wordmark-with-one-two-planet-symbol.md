@@ -11,9 +11,9 @@ Orbit v1.55 paired the English product name with a Chinese translation in its pr
 
 The only public product wordmark is **Orbit**. It is always written left to right, never translated, and never receives a localized suffix. Interface locales may translate the words around it, such as “Welcome to” or “欢迎来到”, while preserving the exact product name.
 
-The canonical symbol contains two equal circular bodies aligned side by side. Each body owns one thin ellipse; both ellipses use the same size and angle, overlap, and intersect at two visible crossings. The bodies represent a person and AI as peers, while the parallel intersecting paths represent two independent actors meeting around one source and one reviewable workflow. The mark is geometric, monochrome, contains no letter, and uses no decorative gradient. At crossings, the two translucent strokes naturally gain weight instead of requiring another color or effect. The browser icon uses the same graphite geometry on a light rounded field.
+The canonical symbol contains two equal circular bodies, each travelling on one ellipse. Both ellipses use the same size, weight, and angle, overlap, and intersect at two visible crossings. The bodies represent a person and AI as peers, while the parallel intersecting paths represent two independent actors meeting around one source and one reviewable workflow. The mark is geometric, contains no letter, and uses no decorative gradient. Product chrome draws the paths in the current foreground and both nodes in one restrained interface accent. The application icon uses the same geometry on a continuous-corner graphite field with off-white paths and one coral node color.
 
-One `OrbitMark` React component owns the in-product geometry. First-run chrome and Workbench chrome consume that component rather than duplicating paths. `app/icon.svg` is the static browser representation, and its transparent 512 px derivative is the Electron window and macOS Dock icon. Marketing raster artwork may reproduce the geometry, but it is derivative and does not define the product mark.
+One `OrbitMark` React component owns the in-product geometry. First-run chrome and Workbench chrome consume that component rather than duplicating paths. `icon-design/icon.svg` is the 1024-unit master; `app/icon.svg` is the static browser representation, and its transparent 512 px derivative is the Electron window and macOS Dock icon. The brief, rejected candidates, 512/64/32/16 px renders, and pixel-grounded critique remain beside the master so later work can revise one source instead of redrawing the brand. Marketing raster artwork may reproduce the geometry, but it is derivative and does not define the product mark.
 
 The legacy `rune-*` storage, asset, IPC, environment, theme, and exported-code contracts established in ADR 0072 remain unchanged.
 
@@ -22,4 +22,5 @@ The legacy `rune-*` storage, asset, IPC, environment, theme, and exported-code c
 - Every locale shares one stable, compact product identity.
 - Header width and bidirectional layout no longer depend on a translated suffix.
 - The mark remains crisp, theme-aware, and inexpensive to revise at any interface size.
+- The app icon uses a continuous-corner field instead of a circular-arc rounded rectangle and keeps its glyph within the current Apple icon grid by rendered inspection.
 - Tests prohibit the retired bilingual lockup in current interface source and prove that exactly two planets and two intersecting paths appear in both reusable and static mark definitions.

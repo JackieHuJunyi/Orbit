@@ -99,8 +99,8 @@ export const INTERFACE_TRANSLATIONS = {
     "بعد تأكيد هذا الاستيراد، يفتح Orbit إعداد العرض مع تحديد هذا الـ Document مسبقًا.",
   "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
     "بعد تأكيد هذا الاستيراد، يفتح Orbit إعداد المراجعة التشغيلية مع تحديد مصدر Data هذا مسبقًا.",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج، ثم يشفّر الاتصال ويحفظه كافتراضي إذا نجح التحقق.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج ومن استجابة منظّمة صغيرة، ثم يشفّر الاتصال ويحفظه كافتراضي فقط إذا نجح الاختباران.",
   Agent: "Agent",
   "Agent change scope": "Agent تغيير النطاق",
   "Agent composer focused": "تم التركيز على الملحن Agent.",

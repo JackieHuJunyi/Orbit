@@ -109,6 +109,43 @@ test("adapts Anthropic Messages through one forced typed tool input", async () =
   assert.deepEqual(result, { output, usage: { inputTokens: 17, outputTokens: 7 } });
 });
 
+test("disables DeepSeek thinking before forcing the typed Anthropic tool", async () => {
+  let request;
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    request = { url: String(input), init, body: JSON.parse(String(init.body)) };
+    return jsonResponse({
+      content: [{ type: "tool_use", name: "submit_rune_plan", input: output }],
+      usage: { input_tokens: 23, output_tokens: 9 },
+    });
+  };
+  try {
+    const result = await requestProviderPlan({
+      connection: {
+        ...connection("anthropic-messages"),
+        provider: "deepseek",
+        baseURL: "https://api.deepseek.com/anthropic",
+        model: "deepseek-v4-flash",
+      },
+      instructions: "System contract",
+      input: "Current artifact",
+      schema,
+      schemaName: "orbit_deepseek_test",
+      signal: new AbortController().signal,
+    });
+    assert.equal(request.url, "https://api.deepseek.com/anthropic/messages");
+    assert.deepEqual(request.body.thinking, { type: "disabled" });
+    assert.deepEqual(request.body.tool_choice, {
+      type: "tool",
+      name: "submit_rune_plan",
+      disable_parallel_tool_use: true,
+    });
+    assert.deepEqual(result, { output, usage: { inputTokens: 23, outputTokens: 9 } });
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+
 test("adapts Gemini generateContent with JSON Schema and x-goog-api-key", async () => {
   const { request, result } = await run("gemini-generate-content", {
     candidates: [{ content: { parts: [{ text: JSON.stringify(output) }] } }],

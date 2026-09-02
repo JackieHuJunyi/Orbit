@@ -102,8 +102,8 @@ export const INTERFACE_TRANSLATIONS = {
     "После подтверждения импорта Orbit откроет настройку презентации с уже выбранным Document.",
   "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
     "После подтверждения импорта Orbit откроет настройку управленческого отчёта с уже выбранным источником Data.",
-  "After you confirm, Orbit reads this one credential, verifies the model catalog, then encrypts and saves it as the default only if verification succeeds.":
-    "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и лишь при успешной проверке зашифрует и сохранит подключение по умолчанию.",
+  "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
+    "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и один минимальный структурированный ответ и лишь при успехе обеих проверок зашифрует и сохранит подключение по умолчанию.",
   Agent: "Agent",
   "Agent change scope": "Область изменения Agent",
   "Agent composer focused": "Agent композитор сосредоточен",

@@ -96,6 +96,12 @@ function providerStatusFromState(state: ModelProfilesState, deploymentConnection
   };
 }
 
+function connectionFailureDetail(payload: { error?: unknown }, fallback: string) {
+  return typeof payload.error === "string" && payload.error.trim() && payload.error.length <= 240
+    ? payload.error.trim()
+    : fallback;
+}
+
 export function WelcomeModelStep({
   copy,
   locale,
@@ -201,10 +207,22 @@ export function WelcomeModelStep({
       });
       const modelPayload = (await modelResponse.json()) as { models?: unknown; error?: unknown };
       if (!modelResponse.ok || !Array.isArray(modelPayload.models) || !modelPayload.models.length) {
-        throw new Error("verification failed");
+        throw new Error(connectionFailureDetail(modelPayload, "The provider returned no usable model IDs."));
       }
       const models = modelPayload.models.filter((item): item is string => typeof item === "string");
       const verifiedProfile = { ...profile, model: models.includes(profile.model) ? profile.model : models[0] };
+      const probeResponse = await fetch("/api/model-profiles", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "probe", profile: verifiedProfile }),
+      });
+      const probePayload = (await probeResponse.json()) as { ready?: unknown; error?: unknown };
+      if (!probeResponse.ok || probePayload.ready !== true) {
+        throw new Error(
+          connectionFailureDetail(probePayload, "The provider did not complete the structured-output check."),
+        );
+      }
       const saveResponse = await fetch("/api/model-profiles", {
         method: "POST",
         credentials: "same-origin",
@@ -212,14 +230,17 @@ export function WelcomeModelStep({
         body: JSON.stringify({ action: "upsert", profile: verifiedProfile }),
       });
       const saved = (await saveResponse.json()) as ModelProfilesState & { error?: unknown };
-      if (!saveResponse.ok || typeof saved.configured !== "boolean") throw new Error("save failed");
+      if (!saveResponse.ok || typeof saved.configured !== "boolean") {
+        throw new Error(connectionFailureDetail(saved, "Orbit could not save the verified connection."));
+      }
       setModelStatus(providerStatusFromState(saved, copy.deploymentConnection));
       onModelModeChange("model-assisted");
       setManagerRevision((current) => current + 1);
       setSelectedCandidate(null);
       setConnectionError("");
-    } catch {
-      setConnectionError(copy.connectionFailed);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "";
+      setConnectionError(detail ? `${copy.connectionFailed} ${detail}` : copy.connectionFailed);
     } finally {
       setConnectionBusy(false);
     }
