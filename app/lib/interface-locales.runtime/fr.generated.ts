@@ -145,6 +145,7 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifacts",
   "Artifacts in Agent context": "Artifact dans le contexte Agent",
   Ascending: "Ascendant",
+  "Ask Orbit about this": "Interroger Orbit à ce sujet",
   "Ask the Agent to propose, without writing": "Demandez au Agent de proposer, sans écrire",
   Audience: "Public",
   Auto: "Automatique",
@@ -362,6 +363,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Discard proposed patch": "Supprimer le correctif proposé",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "La recherche consulte uniquement les emplacements de configuration connus et les ports des modèles locaux. Elle n’exécute aucun profil shell, ne téléverse aucun fichier et n’affiche aucune clé.",
+  "Dock Agent": "Ancrer l’Agent",
   Document: "Documenter",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "Le document dépasse la limite de sécurité du contexte du modèle ; une présentation locale déterministe est prête à être vérifiée",
@@ -450,6 +452,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "La première proposition est restée inappliquée",
   "fixed-layout": "disposition fixe",
   "fixed-layout PDF": "disposition fixe PDF",
+  "Float Agent": "Détacher l’Agent",
   "Focus Orbit Agent": "Concentrez-vous sur Orbit Agent",
   "Folder changes detected · review with Pull": "Modifications du dossier détectées · vérifiez-les avec Pull",
   "Folder connection cancelled": "Connexion au dossier annulée",
@@ -614,6 +617,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Monthly review": "Revue mensuelle",
   "more files": "plus de fichiers",
   "More tools": "Plus d’outils",
+  "Move Agent": "Déplacer l’Agent",
   "Move block down": "Déplacer le bloc vers le bas",
   "Move block up": "Déplacer le bloc vers le haut",
   "Move instantly among Split, Source, and Preview without changing source":

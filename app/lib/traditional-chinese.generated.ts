@@ -3238,6 +3238,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "尚無確認耗時"
   ],
   [
+    "就此内容询问",
+    "就此內容詢問"
+  ],
+  [
     "已下载到本机",
     "已下載到本機"
   ],
@@ -3460,6 +3464,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "没有可用字段",
     "沒有可用欄位"
+  ],
+  [
+    "浮動小数点数",
+    "浮動小數點數"
   ],
   [
     "添加对比范围",
@@ -6174,6 +6182,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "淺金"
   ],
   [
+    "浮动",
+    "浮動"
+  ],
+  [
     "深蓝",
     "深藍"
   ],
@@ -6216,6 +6228,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "视图",
     "檢視"
+  ],
+  [
+    "移动",
+    "移動"
   ],
   [
     "端点",

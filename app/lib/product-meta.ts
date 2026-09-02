@@ -4,4 +4,4 @@
  * contracts, while these values are safe to present to people.
  */
 export const ORBIT_PRODUCT_NAME = "Orbit";
-export const ORBIT_PRODUCT_VERSION = "1.56";
+export const ORBIT_PRODUCT_VERSION = "1.57";

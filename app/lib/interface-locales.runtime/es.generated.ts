@@ -145,6 +145,7 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifacts",
   "Artifacts in Agent context": "Artifacts en Agent contexto",
   Ascending: "Ascendente",
+  "Ask Orbit about this": "Preguntar a Orbit sobre esto",
   "Ask the Agent to propose, without writing": "Pídele al Agent que te proponga, sin escribir",
   Audience: "Audiencia",
   Auto: "Automático",
@@ -361,6 +362,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Discard proposed patch": "Descartar el parche propuesto",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "La búsqueda solo consulta ubicaciones de configuración conocidas y puertos de modelos locales. Nunca ejecuta perfiles de shell, sube archivos ni muestra claves.",
+  "Dock Agent": "Acoplar el Agent",
   Document: "Documento",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "El documento supera el límite seguro de contexto del modelo; se ha preparado una presentación local determinista para revisión",
@@ -448,6 +450,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "La primera propuesta quedó sin aplicar",
   "fixed-layout": "diseño fijo",
   "fixed-layout PDF": "diseño fijo PDF",
+  "Float Agent": "Desacoplar el Agent",
   "Focus Orbit Agent": "Enfoque Orbit Agent",
   "Folder changes detected · review with Pull": "Se detectaron cambios en la carpeta · revísalos con Pull",
   "Folder connection cancelled": "Conexión de carpeta cancelada",
@@ -611,6 +614,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Monthly review": "Revisión mensual",
   "more files": "más archivos",
   "More tools": "Más herramientas",
+  "Move Agent": "Mover el Agent",
   "Move block down": "Mover bloque hacia abajo",
   "Move block up": "Mover bloque hacia arriba",
   "Move instantly among Split, Source, and Preview without changing source":

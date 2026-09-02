@@ -143,6 +143,7 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifact с.",
   "Artifacts in Agent context": "Artifact в контексте Agent",
   Ascending: "восходящий",
+  "Ask Orbit about this": "Спросить Orbit об этом",
   "Ask the Agent to propose, without writing": "Попросите Agent сделать предложение, не записывая",
   Audience: "Аудитория",
   Auto: "Авто",
@@ -358,6 +359,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Discard proposed patch": "Отменить предложенный патч",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "Поиск обращается только к известным файлам конфигурации и портам локальных моделей. Он не выполняет профили shell, не загружает файлы и не показывает ключи.",
+  "Dock Agent": "Закрепить Agent",
   Document: "Документ",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "Документ превышает безопасный предел контекста модели; для проверки подготовлена локальная детерминированная презентация",
@@ -445,6 +447,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "Первое предложение осталось без применения",
   "fixed-layout": "фиксированная планировка",
   "fixed-layout PDF": "фиксированный макет PDF",
+  "Float Agent": "Открепить Agent",
   "Focus Orbit Agent": "Фокус Orbit Agent",
   "Folder changes detected · review with Pull": "Обнаружены изменения в папке · проверьте их с помощью Pull",
   "Folder connection cancelled": "Соединение с папкой отменено",
@@ -607,6 +610,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Monthly review": "Ежемесячный обзор",
   "more files": "больше файлов",
   "More tools": "Другие инструменты",
+  "Move Agent": "Переместить Agent",
   "Move block down": "Переместить блок вниз",
   "Move block up": "Переместить блок вверх",
   "Move instantly among Split, Source, and Preview without changing source":

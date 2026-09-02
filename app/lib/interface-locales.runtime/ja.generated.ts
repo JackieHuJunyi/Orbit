@@ -143,6 +143,7 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifact秒",
   "Artifacts in Agent context": "Agent コンテキスト内の Artifact",
   Ascending: "昇順",
+  "Ask Orbit about this": "この内容について Orbit に質問",
   "Ask the Agent to propose, without writing": "手紙を書かずに、Agent にプロポーズを依頼してください",
   Audience: "観客",
   Auto: "自動",
@@ -357,6 +358,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Discard proposed patch": "提案されたパッチを破棄する",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "検索対象は既知の設定場所とローカルモデルのポートだけです。シェル設定の実行、ファイルのアップロード、キーの表示は行いません。",
+  "Dock Agent": "Agent を固定",
   Document: "文書",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "文書がモデルの安全なコンテキスト上限を超えています。確認用に決定的なローカルプレゼンテーションを準備しました",
@@ -444,6 +446,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "最初の提案は適用されなかった",
   "fixed-layout": "固定レイアウト",
   "fixed-layout PDF": "固定レイアウト PDF",
+  "Float Agent": "Agent をフローティング表示",
   "Focus Orbit Agent": "フォーカス Orbit Agent",
   "Folder changes detected · review with Pull": "フォルダーの変更を検出しました · Pull で確認してください",
   "Folder connection cancelled": "フォルダー接続がキャンセルされました",
@@ -607,6 +610,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Monthly review": "月次レビュー",
   "more files": "さらに多くのファイル",
   "More tools": "その他のツール",
+  "Move Agent": "Agent を移動",
   "Move block down": "ブロックを下に移動",
   "Move block up": "ブロックを上に移動",
   "Move instantly among Split, Source, and Preview without changing source":

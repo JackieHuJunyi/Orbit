@@ -127,6 +127,16 @@ test("compact Preview selection opens and centers its exact Source range", async
   expect(selection.end).toBeGreaterThan(selection.start);
   expect(selection.scrollTop).toBeGreaterThan(0);
   expect(selection.scrollTop).toBeLessThanOrEqual(selection.scrollHeight - selection.viewportHeight + 1);
+  const contextTrigger = page.getByRole("button", { name: "Ask Orbit about this" });
+  await expect(contextTrigger).toBeVisible();
+  await contextTrigger.click();
+  const floatingAgent = page.locator(".agent-dock.open.floating");
+  await expect(floatingAgent).toBeVisible();
+  const floatingBounds = await floatingAgent.boundingBox();
+  expect(floatingBounds).not.toBeNull();
+  expect(floatingBounds!.x).toBeGreaterThanOrEqual(7);
+  expect(floatingBounds!.x + floatingBounds!.width).toBeLessThanOrEqual(383);
+  expect(floatingBounds!.y + floatingBounds!.height).toBeLessThanOrEqual(837);
 });
 
 test("Markdown preview keeps compact gutters and a readable optical measure in split and focus views", async ({

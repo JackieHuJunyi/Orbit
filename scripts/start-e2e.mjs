@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export function isExpectedE2EStreamCancellation(line) {
-  return /\[vinext\] Static file stream error for .*[/\\]dist[/\\]client[/\\]duckdb[/\\]duckdb-mvp\.wasm(?:\.part-\d+)?: Premature close\s*$/u.test(
+  return /\[vinext\] Static file stream error for .*[/\\]dist[/\\]client[/\\]duckdb[/\\](?:duckdb-mvp\.wasm(?:\.part-\d+)?|duckdb-browser-mvp\.worker\.js): Premature close\s*$/u.test(
     line,
   );
 }

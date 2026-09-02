@@ -140,6 +140,7 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifactث",
   "Artifacts in Agent context": "Artifact في سياق Agent.",
   Ascending: "تصاعدي",
+  "Ask Orbit about this": "اسأل Orbit عن هذا",
   "Ask the Agent to propose, without writing": "اطلب من Agent أن يقترح، دون كتابة",
   Audience: "الجمهور",
   Auto: "تلقائي",
@@ -352,6 +353,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Discard proposed patch": "تجاهل التصحيح المقترح",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "يفحص البحث مواقع الإعداد المعروفة ومنافذ النماذج المحلية فقط. ولا يشغّل ملفات shell أو يرفع ملفات أو يعرض أي مفتاح.",
+  "Dock Agent": "إرساء الوكيل",
   Document: "وثيقة",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "يتجاوز المستند حد أمان سياق النموذج؛ أُعد عرض محلي حتمي للمراجعة",
@@ -436,6 +438,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "بقي الاقتراح الأول دون تطبيق",
   "fixed-layout": "تخطيط ثابت",
   "fixed-layout PDF": "تخطيط ثابت PDF",
+  "Float Agent": "تعويم الوكيل",
   "Focus Orbit Agent": "التركيز Orbit Agent",
   "Folder changes detected · review with Pull": "تم اكتشاف تغييرات في المجلد · راجعها باستخدام Pull",
   "Folder connection cancelled": "تم إلغاء اتصال المجلد",
@@ -594,6 +597,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Monthly review": "مراجعة شهرية",
   "more files": "المزيد من الملفات",
   "More tools": "المزيد من الأدوات",
+  "Move Agent": "نقل الوكيل",
   "Move block down": "حرك الكتلة للأسفل",
   "Move block up": "حرك الكتلة لأعلى",
   "Move instantly among Split, Source, and Preview without changing source":

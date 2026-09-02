@@ -122,6 +122,11 @@ for (const viewport of VIEWPORTS) {
         await expect(selectedLanguage).toHaveCount(1);
         await expectInsideContainer(selectedLanguage, languageOptions);
         await expectInsideViewport(page, welcomeWindow);
+        if (viewport.name === "desktop") {
+          const bounds = await welcomeWindow.boundingBox();
+          expect(Math.abs(bounds!.x + bounds!.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(1);
+          expect(Math.abs(bounds!.y + bounds!.height / 2 - viewport.height / 2)).toBeLessThanOrEqual(1);
+        }
         await expectSeparated(greetingStage, languageCard);
         await expectNoDocumentOverflow(page);
 

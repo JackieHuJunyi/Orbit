@@ -133,6 +133,12 @@ test("filters only the expected DuckDB stream cancellation from the E2E server",
   );
   assert.equal(
     isExpectedE2EStreamCancellation(
+      "[vinext] Static file stream error for /workspace/dist/client/duckdb/duckdb-browser-mvp.worker.js: Premature close",
+    ),
+    true,
+  );
+  assert.equal(
+    isExpectedE2EStreamCancellation(
       "[vinext] Static file stream error for /workspace/dist/client/duckdb/duckdb-mvp.wasm: Permission denied",
     ),
     false,

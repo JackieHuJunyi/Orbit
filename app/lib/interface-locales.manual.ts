@@ -3730,24 +3730,48 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Model for this message": "Modèle pour ce message",
   "Agent will use local tools": "L’Agent utilisera les outils locaux",
+  "Float Agent": "Détacher l’Agent",
+  "Dock Agent": "Ancrer l’Agent",
+  "Move Agent": "Déplacer l’Agent",
+  "Ask Orbit about this": "Interroger Orbit à ce sujet",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
   "Model for this message": "Modelo para este mensaje",
   "Agent will use local tools": "El Agent usará herramientas locales",
+  "Float Agent": "Desacoplar el Agent",
+  "Dock Agent": "Acoplar el Agent",
+  "Move Agent": "Mover el Agent",
+  "Ask Orbit about this": "Preguntar a Orbit sobre esto",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
   "Model for this message": "Модель для этого сообщения",
   "Agent will use local tools": "Агент будет использовать локальные инструменты",
+  "Float Agent": "Открепить Agent",
+  "Dock Agent": "Закрепить Agent",
+  "Move Agent": "Переместить Agent",
+  "Ask Orbit about this": "Спросить Orbit об этом",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
   "Model for this message": "النموذج المستخدم لهذه الرسالة",
   "Agent will use local tools": "سيستخدم الوكيل الأدوات المحلية",
+  "Float Agent": "تعويم الوكيل",
+  "Dock Agent": "إرساء الوكيل",
+  "Move Agent": "نقل الوكيل",
+  "Ask Orbit about this": "اسأل Orbit عن هذا",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
   "Model for this message": "このメッセージで使うモデル",
   "Agent will use local tools": "Agent はローカルツールを使用します",
+  "Float Agent": "Agent をフローティング表示",
+  "Dock Agent": "Agent を固定",
+  "Move Agent": "Agent を移動",
+  "Ask Orbit about this": "この内容について Orbit に質問",
 });
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Model for this message": "이 메시지에 사용할 모델",
   "Agent will use local tools": "Agent가 로컬 도구를 사용합니다",
+  "Float Agent": "Agent 띄우기",
+  "Dock Agent": "Agent 고정",
+  "Move Agent": "Agent 이동",
+  "Ask Orbit about this": "이 내용에 대해 Orbit에 질문",
 });

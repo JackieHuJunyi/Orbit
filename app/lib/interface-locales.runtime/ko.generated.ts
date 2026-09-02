@@ -142,6 +142,7 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifact",
   "Artifacts in Agent context": "Agent 컨텍스트의 Artifact",
   Ascending: "오름차순",
+  "Ask Orbit about this": "이 내용에 대해 Orbit에 질문",
   "Ask the Agent to propose, without writing": "글을 쓰지 않고 Agent에 제안을 요청하세요.",
   Audience: "청중",
   Auto: "자동",
@@ -356,6 +357,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Discard proposed patch": "제안된 패치 폐기",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "검색은 알려진 설정 위치와 로컬 모델 포트만 확인합니다. 셸 설정을 실행하거나 파일을 업로드하거나 키를 표시하지 않습니다.",
+  "Dock Agent": "Agent 고정",
   Document: "문서",
   "Document exceeds the model context safety limit; deterministic local presentation prepared for review":
     "문서가 모델 컨텍스트 안전 한도를 초과했습니다. 검토할 결정적 로컬 프레젠테이션을 준비했습니다",
@@ -442,6 +444,7 @@ export const INTERFACE_TRANSLATIONS = {
   "First proposal stayed unapplied": "첫 번째 제안이 적용되지 않은 상태로 유지됨",
   "fixed-layout": "고정 레이아웃",
   "fixed-layout PDF": "고정 레이아웃 PDF",
+  "Float Agent": "Agent 띄우기",
   "Focus Orbit Agent": "집중 Orbit Agent",
   "Folder changes detected · review with Pull": "폴더 변경 감지 · Pull로 검토하세요",
   "Folder connection cancelled": "폴더 연결이 취소되었습니다.",
@@ -600,6 +603,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Monthly review": "월간 리뷰",
   "more files": "더 많은 파일",
   "More tools": "도구 더 보기",
+  "Move Agent": "Agent 이동",
   "Move block down": "블록을 아래로 이동",
   "Move block up": "블록을 위로 이동",
   "Move instantly among Split, Source, and Preview without changing source":

@@ -20,6 +20,7 @@ import {
   ImagePlus,
   Link2,
   LoaderCircle,
+  Move,
   PanelLeftClose,
   PanelLeftOpen,
   Pin,
@@ -46,6 +47,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
   ArtifactPreview,
@@ -180,6 +182,17 @@ import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode
 import type { ModelProfilesState } from "../lib/model-profiles";
 import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
 import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
+import {
+  DEFAULT_FLOATING_AGENT_SIZE,
+  clampFloatingAgentDock,
+  moveFloatingAgentDock,
+  normalizeAgentDockPlacement,
+  normalizeAgentDockPoint,
+  placeAgentContextTrigger,
+  placeFloatingAgentDock,
+  type AgentDockPlacement,
+  type AgentDockPoint,
+} from "../lib/agent-dock-layout";
 import {
   deferredSurfaceCopy,
   documentBriefingNoticeCopy,
@@ -349,7 +362,7 @@ function DeferredWorkbenchSurfaceFallback({
     <div className={className} role="status" aria-live="polite" aria-atomic="true">
       <div className="deferred-surface-status">
         <span className="deferred-surface-mark" aria-hidden="true">
-          R
+          <OrbitMark className="orbit-mark" />
         </span>
         <strong>{copy.preparing}</strong>
         <i aria-hidden="true" />
@@ -360,6 +373,9 @@ function DeferredWorkbenchSurfaceFallback({
 
 const STORAGE_KEY = "rune-workspace-v0";
 const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1";
+const AGENT_DOCK_LAYOUT_STORAGE_KEY = "rune-agent-dock-layout-v1";
+const ACTIVE_PREVIEW_AGENT_TARGET_SELECTOR =
+  ".preview-pane .document-source-block.active, .preview-pane .document-source-fragment.active, .preview-pane .document-target.active, .preview-pane .preview-data-target.active, .preview-pane .preview-data-cell.active, .preview-pane .deck-slide-canvas.active";
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
   patches: ArtifactSourcePatch[],
@@ -890,6 +906,9 @@ export function RuneWorkbench() {
   const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
   const [agentScope, setAgentScope] = useState<AgentScope>("artifact");
   const [agentComposerOpen, setAgentComposerOpen] = useState(false);
+  const [agentDockPlacement, setAgentDockPlacement] = useState<AgentDockPlacement>("docked");
+  const [agentDockPosition, setAgentDockPosition] = useState<AgentDockPoint>({ x: 12, y: 12 });
+  const [agentContextPosition, setAgentContextPosition] = useState<AgentDockPoint | null>(null);
   const [checkpoints, setCheckpoints] = useState<CheckpointMap>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [directoryHandle, setDirectoryHandle] = useState<DirectoryWorkspaceHandle | null>(null);
@@ -929,6 +948,7 @@ export function RuneWorkbench() {
   const toolsMenuRequestedFocusRef = useRef<WorkbenchMenuFocusEdge>("first");
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  const agentDockRef = useRef<HTMLDivElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewSelectionNoticeRef = useRef<PreviewSourceTarget | null>(null);
   const inspectSourceNavigationRef = useRef(false);
@@ -1153,6 +1173,7 @@ export function RuneWorkbench() {
   useEffect(
     () => () => {
       document.body.classList.remove("workspace-resizing");
+      document.body.classList.remove("agent-dragging");
     },
     [],
   );
@@ -1233,6 +1254,41 @@ export function RuneWorkbench() {
     return () => window.clearTimeout(timer);
   }, [hydrated, prompt]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(
+          AGENT_DOCK_LAYOUT_STORAGE_KEY,
+          JSON.stringify({ placement: agentDockPlacement, position: agentDockPosition }),
+        );
+      } catch {
+        // Floating placement remains available in memory.
+      }
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [agentDockPlacement, agentDockPosition, hydrated]);
+
+  useEffect(() => {
+    if (agentDockPlacement !== "floating") return;
+    const keepFloatingAgentVisible = () => {
+      const bounds = agentDockRef.current?.getBoundingClientRect();
+      setAgentDockPosition((current) =>
+        clampFloatingAgentDock(
+          current,
+          {
+            width: bounds?.width ?? Math.min(DEFAULT_FLOATING_AGENT_SIZE.width, window.innerWidth - 24),
+            height: bounds?.height ?? Math.min(DEFAULT_FLOATING_AGENT_SIZE.height, window.innerHeight - 24),
+          },
+          { width: window.innerWidth, height: window.innerHeight },
+        ),
+      );
+    };
+    keepFloatingAgentVisible();
+    window.addEventListener("resize", keepFloatingAgentVisible);
+    return () => window.removeEventListener("resize", keepFloatingAgentVisible);
+  }, [agentDockPlacement]);
+
   const handleVisualSourceDraftChange = useCallback((draft: VisualSourceDraft | null) => {
     setVisualSourceDraft((current) => {
       if (!current || !draft) return current === draft ? current : draft;
@@ -1284,6 +1340,8 @@ export function RuneWorkbench() {
     currentSourceSelection && !currentSelectionError
       ? { start: currentSourceSelection.start, end: currentSourceSelection.end }
       : null;
+  const validSourceSelectionStart = validSourceSelection?.start;
+  const validSourceSelectionEnd = validSourceSelection?.end;
   const currentSourceCursor =
     sourceCursor?.artifactId === selectedArtifact?.id && sourceCursor.sourceRevision === selectedArtifact?.source
       ? sourceCursor
@@ -1299,6 +1357,42 @@ export function RuneWorkbench() {
         : null,
     [currentSourceCursor, selectedArtifact, sourceLinkedPreviewTargets],
   );
+  useLayoutEffect(() => {
+    if (
+      !hydrated ||
+      validSourceSelectionStart == null ||
+      validSourceSelectionEnd == null ||
+      agentComposerOpen ||
+      pendingChange ||
+      welcomeOpen
+    ) {
+      setAgentContextPosition(null);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(ACTIVE_PREVIEW_AGENT_TARGET_SELECTOR);
+      let bounds = target?.getBoundingClientRect();
+      if (!bounds?.width || !bounds.height) bounds = sourceEditorRef.current?.getBoundingClientRect();
+      if (!bounds || !bounds.width || !bounds.height || bounds.bottom < 0 || bounds.top > window.innerHeight) {
+        setAgentContextPosition(null);
+        return;
+      }
+      setAgentContextPosition(
+        placeAgentContextTrigger(bounds, { width: window.innerWidth, height: window.innerHeight }),
+      );
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    agentComposerOpen,
+    hydrated,
+    pendingChange,
+    selectedArtifact?.id,
+    sourceNavigationEpoch,
+    validSourceSelectionEnd,
+    validSourceSelectionStart,
+    welcomeOpen,
+    workspaceView,
+  ]);
   const selectedCharacterCount = validSourceSelection ? validSourceSelection.end - validSourceSelection.start : 0;
   const canonicalDataArtifact = artifacts.find((artifact) => artifact.kind === "data");
   const selectedQueryDataResolution = useMemo(
@@ -1631,6 +1725,18 @@ export function RuneWorkbench() {
           );
           const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
           const storedAgentDraft = localStorage.getItem(AGENT_DRAFT_STORAGE_KEY) ?? "";
+          try {
+            const storedAgentLayout = JSON.parse(localStorage.getItem(AGENT_DOCK_LAYOUT_STORAGE_KEY) ?? "null") as {
+              placement?: unknown;
+              position?: unknown;
+            } | null;
+            if (storedAgentLayout) {
+              setAgentDockPlacement(normalizeAgentDockPlacement(storedAgentLayout.placement));
+              setAgentDockPosition(normalizeAgentDockPoint(storedAgentLayout.position));
+            }
+          } catch {
+            // Invalid presentation state falls back to the docked composer.
+          }
           setDetectedLocale(detected);
           setLocale(nextLocale);
           setModelMode(storedModelMode ?? "model-assisted");
@@ -4697,6 +4803,90 @@ export function RuneWorkbench() {
     void runAgent();
   }
 
+  function placeAgentBesideCurrentContext() {
+    const previewAnchor = document
+      .querySelector<HTMLElement>(ACTIVE_PREVIEW_AGENT_TARGET_SELECTOR)
+      ?.getBoundingClientRect();
+    const anchor =
+      previewAnchor?.width && previewAnchor.height ? previewAnchor : sourceEditorRef.current?.getBoundingClientRect();
+    if (!anchor) return;
+    setAgentDockPosition(placeFloatingAgentDock(anchor, { width: window.innerWidth, height: window.innerHeight }));
+  }
+
+  function openAgentFromContext() {
+    if (!validSourceSelection || operationStartBlocked) return;
+    placeAgentBesideCurrentContext();
+    setAgentDockPlacement("floating");
+    setAgentComposerOpen(true);
+    setAgentScope("selection");
+    setAgentError("");
+    setAgentContextPosition(null);
+    window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
+  }
+
+  function toggleAgentDockPlacement() {
+    if (agentDockPlacement === "floating") {
+      setAgentDockPlacement("docked");
+      return;
+    }
+    placeAgentBesideCurrentContext();
+    setAgentDockPlacement("floating");
+  }
+
+  function beginAgentDockDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (agentDockPlacement !== "floating" || event.button !== 0) return;
+    const panelBounds = agentDockRef.current?.getBoundingClientRect();
+    if (!panelBounds) return;
+    event.preventDefault();
+    const start = { x: event.clientX, y: event.clientY };
+    const origin = agentDockPosition;
+    const panel = { width: panelBounds.width, height: panelBounds.height };
+    document.body.classList.add("agent-dragging");
+    const move = (pointerEvent: globalThis.PointerEvent) => {
+      setAgentDockPosition(
+        moveFloatingAgentDock(origin, { x: pointerEvent.clientX - start.x, y: pointerEvent.clientY - start.y }, panel, {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        }),
+      );
+    };
+    const finish = () => {
+      document.body.classList.remove("agent-dragging");
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish, { once: true });
+    window.addEventListener("pointercancel", finish, { once: true });
+  }
+
+  function moveAgentDockFromKeyboard(event: KeyboardEvent<HTMLButtonElement>) {
+    if (agentDockPlacement !== "floating") return;
+    const direction =
+      event.key === "ArrowLeft"
+        ? { x: -1, y: 0 }
+        : event.key === "ArrowRight"
+          ? { x: 1, y: 0 }
+          : event.key === "ArrowUp"
+            ? { x: 0, y: -1 }
+            : event.key === "ArrowDown"
+              ? { x: 0, y: 1 }
+              : null;
+    if (!direction) return;
+    event.preventDefault();
+    const bounds = agentDockRef.current?.getBoundingClientRect();
+    const distance = event.shiftKey ? 48 : 12;
+    setAgentDockPosition((current) =>
+      moveFloatingAgentDock(
+        current,
+        { x: direction.x * distance, y: direction.y * distance },
+        bounds ? { width: bounds.width, height: bounds.height } : DEFAULT_FLOATING_AGENT_SIZE,
+        { width: window.innerWidth, height: window.innerHeight },
+      ),
+    );
+  }
+
   function changeAgentScope(scope: AgentScope) {
     if (!workbenchOperationGate.canStartOperation) return;
     setAgentScope(scope);
@@ -4799,6 +4989,19 @@ export function RuneWorkbench() {
           />
         )}
       </Suspense>
+      {agentContextPosition && (
+        <button
+          type="button"
+          className="agent-context-trigger"
+          style={{ left: agentContextPosition.x, top: agentContextPosition.y }}
+          onClick={openAgentFromContext}
+          aria-label={ui.askOrbitAboutSelection}
+          title={ui.askOrbitAboutSelection}
+        >
+          <Sparkles aria-hidden="true" />
+          <span>{ui.askOrbitAboutSelection}</span>
+        </button>
+      )}
       <header className="topbar">
         <div className="topbar-left">
           <button
@@ -5606,7 +5809,15 @@ export function RuneWorkbench() {
                 )}
               </div>
 
-              <div className={`agent-dock ${agentComposerOpen ? "open" : "collapsed"}`}>
+              <div
+                ref={agentDockRef}
+                className={`agent-dock ${agentComposerOpen ? `open ${agentDockPlacement}` : "collapsed docked"}`}
+                style={
+                  agentComposerOpen && agentDockPlacement === "floating"
+                    ? { left: agentDockPosition.x, top: agentDockPosition.y }
+                    : undefined
+                }
+              >
                 {!agentComposerOpen && (
                   <button
                     type="button"
@@ -5623,15 +5834,41 @@ export function RuneWorkbench() {
                   </button>
                 )}
                 {agentComposerOpen && (
-                  <button
-                    type="button"
-                    className="agent-dock-close"
-                    onClick={() => setAgentComposerOpen(false)}
-                    aria-label={runeText(locale, "Close Agent", "收起 Agent")}
-                    title={runeText(locale, "Close Agent", "收起 Agent")}
-                  >
-                    <X aria-hidden="true" />
-                  </button>
+                  <div className="agent-dock-toolbar">
+                    {agentDockPlacement === "floating" ? (
+                      <button
+                        type="button"
+                        className="agent-dock-grabber"
+                        onPointerDown={beginAgentDockDrag}
+                        onKeyDown={moveAgentDockFromKeyboard}
+                        aria-label={ui.moveAgent}
+                        title={ui.moveAgent}
+                      >
+                        <Move aria-hidden="true" />
+                        <span>{ui.focusAgent}</span>
+                      </button>
+                    ) : (
+                      <span className="agent-dock-title">{ui.focusAgent}</span>
+                    )}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={toggleAgentDockPlacement}
+                        aria-label={agentDockPlacement === "floating" ? ui.dockAgent : ui.floatAgent}
+                        title={agentDockPlacement === "floating" ? ui.dockAgent : ui.floatAgent}
+                      >
+                        {agentDockPlacement === "floating" ? <Pin aria-hidden="true" /> : <Move aria-hidden="true" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAgentComposerOpen(false)}
+                        aria-label={runeText(locale, "Close Agent", "收起 Agent")}
+                        title={runeText(locale, "Close Agent", "收起 Agent")}
+                      >
+                        <X aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
                 )}
                 {pendingChange && (
                   <div className="patch-card">

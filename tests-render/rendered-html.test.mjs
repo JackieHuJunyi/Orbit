@@ -807,9 +807,15 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.ok(composer.indexOf('className="agent-composer-body"') < composer.indexOf('className="agent-suggestions"'));
   assert.match(composer, /rows=\{2\}[\s\S]{0,80}maxLength=\{2_000\}/u);
   assert.match(contentStyles, /\.agent-model-picker select\s*\{/u);
+  assert.match(contentStyles, /\.agent-dock\.open\.floating\s*\{/u);
+  assert.match(contentStyles, /\.agent-context-trigger\s*\{/u);
   assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1"/u);
+  assert.match(workbench, /className="agent-context-trigger"/u);
+  assert.match(workbench, /onPointerDown=\{beginAgentDockDrag\}/u);
+  assert.match(workbench, /onKeyDown=\{moveAgentDockFromKeyboard\}/u);
   assert.match(workbench, /event\.key !== "Enter" \|\| event\.shiftKey \|\| event\.nativeEvent\.isComposing/u);
   assert.match(workbench, /setPrompt\(\(current\) => \(current === submittedComposerDraft \? "" : current\)\)/u);
+  assert.doesNotMatch(workbench, /className="deferred-surface-mark"[^]*>\s*R\s*</u);
 });
 
 test("organizes workspace files by product workflow rather than internal artifact inventory", async () => {
