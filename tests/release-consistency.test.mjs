@@ -110,6 +110,7 @@ test("runs every browser scenario in Chromium, Firefox, and WebKit", async () =>
     rootFile(".github/workflows/release-quality.yml"),
   ]);
   assert.match(config, /command: "npm run start:e2e"/u);
+  assert.match(config, /reuseExistingServer: false/u);
   for (const [name, device] of [
     ["chromium", "Desktop Chrome"],
     ["firefox", "Desktop Firefox"],

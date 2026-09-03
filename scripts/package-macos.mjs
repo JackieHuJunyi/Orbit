@@ -70,6 +70,7 @@ const executablePath = path.join(appPath, "Contents", "MacOS", "Orbit");
 const infoPath = path.join(appPath, "Contents", "Info.plist");
 const zipPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}.zip`);
 const dmgPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}.dmg`);
+const manifestPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}-manifest.json`);
 
 function notaryCredentials() {
   if (notaryProfile) return { keychainProfile: notaryProfile, ...(signKeychain ? { keychain: signKeychain } : {}) };
@@ -169,7 +170,7 @@ try {
       ...(signKeychain ? { keychain: signKeychain } : {}),
       platform: "darwin",
       optionsForFile: (filePath) =>
-        filePath === appPath
+        path.resolve(filePath) === path.resolve(appPath)
           ? { entitlements: path.join(root, "desktop", "entitlements.mac.plist"), hardenedRuntime: true }
           : {},
     });
@@ -227,7 +228,7 @@ try {
       dmg: { fileName: path.basename(dmgPath), bytes: dmgStat.size, sha256: await sha256(dmgPath) },
     },
   };
-  await writeFile(path.join(outputBase, "release-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
 } finally {
   await rm(temporaryDirectory, { recursive: true, force: true });

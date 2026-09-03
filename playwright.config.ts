@@ -19,7 +19,10 @@ export default defineConfig({
   webServer: {
     command: "npm run start:e2e",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    // A production build replaces hashed assets. Reusing an older local
+    // server after that replacement serves stale HTML pointing at deleted
+    // chunks and turns a deterministic test run into hydration noise.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

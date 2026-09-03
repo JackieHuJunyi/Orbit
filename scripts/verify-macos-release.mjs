@@ -11,7 +11,9 @@ const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "
 const requestedArch = process.argv.find((argument) => argument.startsWith("--arch="))?.slice("--arch=".length);
 const arch = requestedArch || process.arch;
 const directory = path.join(root, "out", "macos", packageJson.version, arch);
-const manifest = JSON.parse(await readFile(path.join(directory, "release-manifest.json"), "utf8"));
+const manifest = JSON.parse(
+  await readFile(path.join(directory, `Orbit-${packageJson.version}-macos-${arch}-manifest.json`), "utf8"),
+);
 const appPath = path.join(directory, "Orbit.app");
 const executablePath = path.join(appPath, "Contents", "MacOS", "Orbit");
 

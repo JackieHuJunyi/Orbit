@@ -254,6 +254,10 @@ test.describe("compact localized Agent conversation", () => {
       const thread = page.locator(".agent-conversation");
       await expect(thread).toBeVisible();
       await expect(thread.getByRole("listitem")).toHaveCount(2);
+      await expect(thread.getByRole("listitem").last()).toBeVisible();
+      expect(
+        await thread.locator("ol").evaluate((element) => element.getBoundingClientRect().height),
+      ).toBeGreaterThanOrEqual(96);
       await expectInsideViewport(page, page.locator(".agent-dock.open"));
       await expectNoDocumentOverflow(page);
     });

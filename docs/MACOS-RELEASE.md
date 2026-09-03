@@ -15,7 +15,7 @@ This builds the current machine architecture under `out/macos/<version>/<arch>/`
 - `Orbit.app`
 - `Orbit-<version>-macos-<arch>.zip`
 - `Orbit-<version>-macos-<arch>.dmg`
-- `release-manifest.json`
+- `Orbit-<version>-macos-<arch>-manifest.json`
 
 The manifest records `signed: false` and `notarized: false`. The app uses an ad-hoc signature only so its ASAR-integrity and fuse-hardened binary can be exercised locally.
 
