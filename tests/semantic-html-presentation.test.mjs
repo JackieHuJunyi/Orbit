@@ -14,7 +14,7 @@ import {
 const deck = `---
 version: 1
 title: Live review
-theme: rune-dark
+theme: orbit-dark
 ratio: 16:9
 lang: zh-CN
 origin: review.md
@@ -43,13 +43,13 @@ test("turns strict Deck input into proven semantic HTML with raw bindings and po
   assert.deepEqual(result.errors, []);
   assert.ok(result.source);
   assert.match(result.source, /^<!doctype html>/);
-  assert.match(result.source, /data-rune-format="presentation-v1"/);
+  assert.match(result.source, /data-orbit-format="presentation-v1"/);
   assert.match(result.source, /\{\{ metric\("review-query", "revenue", "currency"\) \}\}/);
   assert.match(result.source, /\{\{ chart\("review-chart"\) \}\}/);
   assert.doesNotMatch(result.source, /metric\(&quot;/);
   assert.deepEqual(semanticHtmlPresentationMetadata(result.source), {
     title: "Live review",
-    theme: "rune-dark",
+    theme: "orbit-dark",
     lang: "zh-CN",
     origin: "review.md",
     originRevision: "r1-a-aaaaaaaaaaaaaaaa",
@@ -68,7 +68,7 @@ test("creates one complete semantic HTML cover without exposing the internal Dec
   assert.equal(compileLegacyHtmlSlides(result.source).slides.length, 1);
   assert.deepEqual(semanticHtmlPresentationMetadata(result.source), {
     title: "Board narrative",
-    theme: "rune",
+    theme: "orbit",
     lang: "ja",
   });
   assert.doesNotMatch(result.source, /^---/);
@@ -106,7 +106,7 @@ test("replaces and inserts exact compiled slide ranges while retaining the compl
 });
 
 test("appends before the compiler-proven main close even when raw text and comments contain close-like text", () => {
-  const source = `<!doctype html><html lang="en"><head><style>.label::after{content:"</main>"}</style></head><body><main data-rune-format="presentation-v1" data-rune-title="Safe" data-rune-theme="rune" data-rune-lang="en"><!-- </main> --><section><h1>Safe</h1></section></main></body></html>`;
+  const source = `<!doctype html><html lang="en"><head><style>.label::after{content:"</main>"}</style></head><body><main data-orbit-format="presentation-v1" data-orbit-title="Safe" data-orbit-theme="orbit" data-orbit-lang="en"><!-- </main> --><section><h1>Safe</h1></section></main></body></html>`;
   const result = appendSemanticHtmlPresentationSlide(source, "<section><h2>Next</h2></section>");
   assert.deepEqual(result.errors, []);
   assert.ok(result.source);
@@ -143,8 +143,8 @@ test("fails closed for scripts, wrappers, invalid indices, no-ops, and invalid l
   assert.match(replaceSemanticHtmlPresentationSlide(source, 0, first.source).errors.join(" "), /does not change/i);
 
   const invalidRevision = source.replace(
-    'data-rune-lang="en"',
-    'data-rune-lang="en" data-rune-origin="brief.md" data-rune-origin-revision="not-a-revision"',
+    'data-orbit-lang="en"',
+    'data-orbit-lang="en" data-orbit-origin="brief.md" data-orbit-origin-revision="not-a-revision"',
   );
   assert.equal(semanticHtmlPresentationMetadata(invalidRevision), null);
 });

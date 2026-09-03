@@ -1,6 +1,6 @@
 # Orbit first-release handoff
 
-> Originally audited 2026-08-21 and refreshed 2026-09-03 against Orbit v1.58. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
+> Originally audited 2026-08-21 and refreshed 2026-09-03 against Orbit v1.59. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
 
 ## Completion decision
 
@@ -47,4 +47,4 @@ Do not add collaboration, cloud sync, a connector, richer charts, more OCR packa
 
 ## Reproduction gate
 
-From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Orbit v1.58 passes 724 unit tests, 29 render/architecture tests, 79 scenarios in each of Chromium, Firefox, and WebKit (237 browser executions), the 20/20 synthetic Golden Task Eval, 984 English interface strings across six generated locale catalogs plus Simplified/Traditional Chinese, formatting, lint, typecheck, production build, and zero-finding production/tooling dependency audits. The arm64 ad-hoc macOS QA package additionally passes ASAR/hash/fuse/architecture validation; Developer ID and notarization facts remain exclusive to the credentialed tagged workflow.
+From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Orbit v1.59 passes 724 unit tests, 30 render/architecture tests, 79 scenarios in each of Chromium, Firefox, and WebKit (237 browser executions), the 20/20 synthetic Golden Task Eval, 984 English interface strings across six generated locale catalogs plus Simplified/Traditional Chinese, formatting, lint, typecheck, production build, and zero-finding production/tooling dependency audits. The arm64 internal-QA macOS package additionally passes ASAR/hash/fuse/architecture validation; Developer ID and notarization facts remain exclusive to the credentialed tagged workflow.

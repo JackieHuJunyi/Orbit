@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { RUNE_APPEARANCE_STORAGE_KEY, RUNE_APPEARANCE_THEMES } from "./lib/appearance";
+import { ORBIT_APPEARANCE_STORAGE_KEY, ORBIT_APPEARANCE_THEMES } from "./lib/appearance";
 import { ORBIT_PRODUCT_NAME } from "./lib/product-meta";
 import "./styles/index.css";
 
-const RUNE_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.runeOnboarding=localStorage.getItem("rune-onboarding-v1")==="complete"?"complete":"pending";const theme=localStorage.getItem(${JSON.stringify(RUNE_APPEARANCE_STORAGE_KEY)});if(${JSON.stringify(RUNE_APPEARANCE_THEMES.map(({ id }) => id))}.includes(theme))root.dataset.theme=theme}catch{root.dataset.runeOnboarding="pending"}})();`;
+const ORBIT_PREHYDRATE_SCRIPT = `(()=>{const root=document.documentElement;try{root.dataset.orbitOnboarding=localStorage.getItem("orbit-onboarding-v1")==="complete"?"complete":"pending";const theme=localStorage.getItem(${JSON.stringify(ORBIT_APPEARANCE_STORAGE_KEY)});if(${JSON.stringify(ORBIT_APPEARANCE_THEMES.map(({ id }) => id))}.includes(theme))root.dataset.theme=theme}catch{root.dataset.orbitOnboarding="pending"}})();`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -46,9 +46,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" data-theme="mist-blue" data-rune-onboarding="pending" suppressHydrationWarning>
+    <html lang="en" dir="ltr" data-theme="mist-blue" data-orbit-onboarding="pending" suppressHydrationWarning>
       <head>
-        <script id="rune-prehydrate-state" dangerouslySetInnerHTML={{ __html: RUNE_PREHYDRATE_SCRIPT }} />
+        <script id="orbit-prehydrate-state" dangerouslySetInnerHTML={{ __html: ORBIT_PREHYDRATE_SCRIPT }} />
       </head>
       <body>{children}</body>
     </html>

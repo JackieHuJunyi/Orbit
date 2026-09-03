@@ -10,7 +10,7 @@ import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSou
 import { formatQueryDataSourceDirective } from "./query-source.ts";
 import { semanticHtmlPresentationFromDeckSource } from "./semantic-html-presentation.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
-import { isChineseRuneLocale, normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
+import { isChineseOrbitLocale, normalizeOrbitLocale, orbitText, type OrbitLocale } from "./localization.ts";
 import {
   MAX_OPERATING_REVIEW_EVIDENCE_ROWS,
   validateOperatingReviewNarrative,
@@ -60,7 +60,7 @@ export type OperatingReviewInput = {
   audience: OperatingReviewAudience;
   focus: string;
   deliverables: OperatingReviewDeliverable[];
-  locale: RuneLocale;
+  locale: OrbitLocale;
 };
 
 export const MAX_SAVED_OPERATING_REVIEWS = 8;
@@ -145,9 +145,9 @@ const audienceLabels = {
   },
 } as const;
 
-function audienceLabel(locale: RuneLocale, audience: OperatingReviewAudience) {
+function audienceLabel(locale: OrbitLocale, audience: OperatingReviewAudience) {
   if (locale === "zh-CN" || locale === "zh-TW" || locale === "en") return audienceLabels[locale][audience];
-  return runeText(locale, audienceLabels.en[audience], audienceLabels.en[audience]);
+  return orbitText(locale, audienceLabels.en[audience], audienceLabels.en[audience]);
 }
 
 function normalizeTaskText(value: string) {
@@ -356,11 +356,11 @@ LIMIT 20;
 }
 
 function operatingReviewScopeText(
-  locale: RuneLocale,
+  locale: OrbitLocale,
   scope: OperatingReviewScope | null,
   comparisonScope: OperatingReviewScope | null = null,
 ) {
-  if (!scope) return isChineseRuneLocale(locale) ? "全部数据行" : "all Data rows";
+  if (!scope) return isChineseOrbitLocale(locale) ? "全部数据行" : "all Data rows";
   const primary = formatOperatingReviewScopeLabel(scope);
   if (!comparisonScope) return primary;
   const comparison =
@@ -369,7 +369,7 @@ function operatingReviewScopeText(
     scope.field === comparisonScope.field
       ? String(comparisonScope.value)
       : formatOperatingReviewScopeLabel(comparisonScope);
-  return isChineseRuneLocale(locale) ? `${primary} 对比 ${comparison}` : `${primary} vs ${comparison}`;
+  return isChineseOrbitLocale(locale) ? `${primary} 对比 ${comparison}` : `${primary} vs ${comparison}`;
 }
 
 function narrativeEvidenceBinding(query: WorkspaceArtifact, input: OperatingReviewInput, evidenceRowId: string) {
@@ -388,14 +388,14 @@ function reportNarrativeSource(
   narrative?: OperatingReviewNarrative,
 ) {
   if (!narrative) return "";
-  const zh = isChineseRuneLocale(input.locale);
+  const zh = isChineseOrbitLocale(input.locale);
   const prompts = narrative.insights
     .map((insight) => {
       const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
       const supporting = insight.supportingEvidenceRowId
         ? narrativeEvidenceBinding(query, input, insight.supportingEvidenceRowId)
         : "";
-      return `<!-- rune:evidence ${query.id} ${insight.primaryEvidenceRowId}${insight.supportingEvidenceRowId ? ` ${insight.supportingEvidenceRowId}` : ""} -->
+      return `<!-- orbit:evidence ${query.id} ${insight.primaryEvidenceRowId}${insight.supportingEvidenceRowId ? ` ${insight.supportingEvidenceRowId}` : ""} -->
 ### ${markdownInline(normalizeTaskText(insight.title))}
 
 ${markdownInline(normalizeTaskText(insight.question))}
@@ -420,7 +420,7 @@ function deckNarrativeSource(
   narrative?: OperatingReviewNarrative,
 ) {
   if (!narrative) return "";
-  const zh = isChineseRuneLocale(input.locale);
+  const zh = isChineseOrbitLocale(input.locale);
   return narrative.insights
     .map((insight) => {
       const primary = narrativeEvidenceBinding(query, input, insight.primaryEvidenceRowId);
@@ -446,7 +446,7 @@ function reportSource(
   comparisonScope: OperatingReviewScope | null,
   narrative?: OperatingReviewNarrative,
 ) {
-  const zh = isChineseRuneLocale(input.locale);
+  const zh = isChineseOrbitLocale(input.locale);
   const title = markdownInline(normalizeTaskText(input.title));
   const period = markdownInline(normalizeTaskText(input.period));
   const focus = markdownInline(normalizeTaskText(input.focus));
@@ -490,7 +490,7 @@ ${narrativeSource}## 审核问题
 | --- | --- | --- | --- |
 | 待审核后填写 | — | — | ${sourceName} |
 `;
-    return runeText(input.locale, source, source, [
+    return orbitText(input.locale, source, source, [
       title,
       period,
       focus,
@@ -543,7 +543,7 @@ function deckSource(
   comparisonScope: OperatingReviewScope | null,
   narrative?: OperatingReviewNarrative,
 ) {
-  const zh = isChineseRuneLocale(input.locale);
+  const zh = isChineseOrbitLocale(input.locale);
   const title = markdownInline(normalizeTaskText(input.title));
   const period = markdownInline(normalizeTaskText(input.period));
   const focus = markdownInline(normalizeTaskText(input.focus));
@@ -557,7 +557,7 @@ function deckSource(
   const source = `---
 version: 1
 title: ${normalizeTaskText(input.title)}
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: ${input.locale}
 ---
@@ -607,7 +607,7 @@ ${
 ${zh ? "所有应用动作仍需在 Orbit 的事务审核中明确确认。" : "Every apply remains subject to an explicit Orbit transaction review."}
 `;
   return zh
-    ? runeText(input.locale, source, source, [
+    ? orbitText(input.locale, source, source, [
         title,
         period,
         focus,
@@ -640,7 +640,7 @@ export function prepareOperatingReviewWorkflow(
   if (!["sum", "average"].includes(input.aggregation)) errors.push("Choose sum or average aggregation.");
   if (!["bar", "line"].includes(input.mark)) errors.push("Choose a supported chart form.");
   if (!["number", "currency", "percent"].includes(input.format)) errors.push("Choose a supported number format.");
-  if (!normalizeRuneLocale(input.locale)) errors.push("Choose a supported interface language.");
+  if (!normalizeOrbitLocale(input.locale)) errors.push("Choose a supported interface language.");
 
   const deliverables = uniqueDeliverables(input.deliverables);
   if (!deliverables.length) errors.push("Choose at least one deliverable.");
@@ -793,17 +793,17 @@ export function prepareOperatingReviewWorkflow(
 
   const mutation = prepareWorkspaceMutation(artifacts, [], creations);
   if (mutation.errors.length) return { errors: mutation.errors };
-  const zh = isChineseRuneLocale(input.locale);
+  const zh = isChineseOrbitLocale(input.locale);
   const chineseSummary = `为「${title}」创建一条可核验经营汇报链`;
   const chineseDetail = `Orbit 将 ${data.name}、字段映射、SQL、图表和 ${deliverables.length} 份成品编译成一次原子审核事务。`;
   return {
     errors: [],
     plan: {
       summary: zh
-        ? runeText(input.locale, chineseSummary, chineseSummary, [title])
+        ? orbitText(input.locale, chineseSummary, chineseSummary, [title])
         : `Create a verifiable operating-review chain for “${title}”`,
       detail: zh
-        ? runeText(input.locale, chineseDetail, chineseDetail, [data.name])
+        ? orbitText(input.locale, chineseDetail, chineseDetail, [data.name])
         : `Orbit compiled ${data.name}, explicit field mappings, SQL, a live Chart, and ${deliverables.length} deliverable${deliverables.length === 1 ? "" : "s"} into one atomic review transaction.`,
       patches: [],
       creations,
@@ -1014,7 +1014,7 @@ export function normalizeSavedOperatingReviews(value: unknown): SavedOperatingRe
           (item): item is OperatingReviewDeliverable => item === "document" || item === "slides",
         )
       : [];
-    const normalizedLocale = normalizeRuneLocale(input?.locale);
+    const normalizedLocale = normalizeOrbitLocale(input?.locale);
     const normalizedScope = normalizeOperatingReviewScope(input?.scope);
     const normalizedComparisonScope = normalizeOperatingReviewScope(input?.comparisonScope);
     const comparisonIsValid =
@@ -1163,17 +1163,17 @@ export function prepareSavedOperatingReviewRerun(
     return { errors: ["The saved review already matches these settings and current source mapping."] };
   const mutation = prepareWorkspaceMutation(artifacts, patches, []);
   if (mutation.errors.length) return { errors: mutation.errors };
-  const zh = isChineseRuneLocale(input.locale);
+  const zh = isChineseOrbitLocale(input.locale);
   const chineseSummary = `更新已保存的「${normalizeTaskText(input.title)}」`;
   const chineseDetail = `Orbit 将重新编译 ${patches.length} 个既有文件；文件身份不变，所有变化仍需一次事务审核。`;
   return {
     errors: [],
     plan: {
       summary: zh
-        ? runeText(input.locale, chineseSummary, chineseSummary, [normalizeTaskText(input.title)])
+        ? orbitText(input.locale, chineseSummary, chineseSummary, [normalizeTaskText(input.title)])
         : `Update saved review “${normalizeTaskText(input.title)}”`,
       detail: zh
-        ? runeText(input.locale, chineseDetail, chineseDetail)
+        ? orbitText(input.locale, chineseDetail, chineseDetail)
         : `Orbit will recompile ${patches.length} existing files without changing their identities; every change still requires one transaction review.`,
       patches,
       creations: [],

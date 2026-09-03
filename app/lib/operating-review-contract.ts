@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RUNE_LOCALE_REGISTRY } from "./localization.ts";
+import { ORBIT_LOCALE_REGISTRY } from "./localization.ts";
 import {
   MAX_OPERATING_REVIEW_SCOPE_CONDITIONS,
   MAX_OPERATING_REVIEW_SCOPE_VALUE_CHARS,
@@ -120,7 +120,7 @@ const OperatingReviewInputSchema = z
       .array(z.enum(["document", "slides"]))
       .min(1)
       .max(2),
-    locale: z.enum(RUNE_LOCALE_REGISTRY.map((entry) => entry.locale)),
+    locale: z.enum(ORBIT_LOCALE_REGISTRY.map((entry) => entry.locale)),
   })
   .strict()
   .superRefine((input, context) => {

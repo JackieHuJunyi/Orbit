@@ -6,17 +6,17 @@ import {
 } from "./patches.ts";
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
 
-export type RuneTaskId = "operating-review" | "document-briefing";
-export type RuneTaskPhase = "awaiting-source" | "reviewing-source" | "configuring";
+export type OrbitTaskId = "operating-review" | "document-briefing";
+export type OrbitTaskPhase = "awaiting-source" | "reviewing-source" | "configuring";
 
-export type RuneTaskDefinition = {
-  id: RuneTaskId;
+export type OrbitTaskDefinition = {
+  id: OrbitTaskId;
   sourceAccept: string;
   acceptedArtifactKinds: readonly ArtifactKind[];
   requiredArtifactLabel: string;
 };
 
-export const RUNE_TASK_DEFINITIONS = {
+export const ORBIT_TASK_DEFINITIONS = {
   "operating-review": {
     id: "operating-review",
     sourceAccept: ".csv,.json,.xlsx,.ods",
@@ -29,27 +29,27 @@ export const RUNE_TASK_DEFINITIONS = {
     acceptedArtifactKinds: ["document"],
     requiredArtifactLabel: "readable Document source",
   },
-} as const satisfies Record<RuneTaskId, RuneTaskDefinition>;
+} as const satisfies Record<OrbitTaskId, OrbitTaskDefinition>;
 
-export type RuneTaskSession = {
-  taskId: RuneTaskId;
-  phase: RuneTaskPhase;
+export type OrbitTaskSession = {
+  taskId: OrbitTaskId;
+  phase: OrbitTaskPhase;
   baseRevision: WorkspaceSourceRevision;
   importedArtifactIds: string[];
   preferredArtifactId: string | null;
 };
 
-export type PreparedRuneTaskSession = {
-  session: RuneTaskSession | null;
+export type PreparedOrbitTaskSession = {
+  session: OrbitTaskSession | null;
   preferredArtifactId: string | null;
   errors: string[];
 };
 
-function failed(errors: string[]): PreparedRuneTaskSession {
+function failed(errors: string[]): PreparedOrbitTaskSession {
   return { session: null, preferredArtifactId: null, errors };
 }
 
-export function startRuneTaskSession(taskId: RuneTaskId, artifacts: WorkspaceArtifact[]): RuneTaskSession {
+export function startOrbitTaskSession(taskId: OrbitTaskId, artifacts: WorkspaceArtifact[]): OrbitTaskSession {
   return {
     taskId,
     phase: "awaiting-source",
@@ -59,13 +59,13 @@ export function startRuneTaskSession(taskId: RuneTaskId, artifacts: WorkspaceArt
   };
 }
 
-export function startRuneTaskFromArtifact(
-  taskId: RuneTaskId,
+export function startOrbitTaskFromArtifact(
+  taskId: OrbitTaskId,
   artifacts: WorkspaceArtifact[],
   artifactId: string,
-): PreparedRuneTaskSession {
+): PreparedOrbitTaskSession {
   const artifact = artifacts.find((item) => item.id === artifactId);
-  const definition = RUNE_TASK_DEFINITIONS[taskId];
+  const definition = ORBIT_TASK_DEFINITIONS[taskId];
   if (!artifact) return failed([`Task source is missing: ${artifactId}`]);
   if (!definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind)) {
     return failed([`${artifact.name} is not a supported source for this task.`]);
@@ -83,11 +83,11 @@ export function startRuneTaskFromArtifact(
   };
 }
 
-export function bindRuneTaskImportReview(
-  session: RuneTaskSession,
+export function bindOrbitTaskImportReview(
+  session: OrbitTaskSession,
   artifacts: WorkspaceArtifact[],
   review: WorkspaceImportReview,
-): PreparedRuneTaskSession {
+): PreparedOrbitTaskSession {
   if (session.phase !== "awaiting-source") {
     return failed(["This task is no longer waiting for a source import."]);
   }
@@ -97,7 +97,7 @@ export function bindRuneTaskImportReview(
   const reviewErrors = validateWorkspaceImportReview(artifacts, review);
   if (reviewErrors.length) return failed(reviewErrors);
 
-  const definition = RUNE_TASK_DEFINITIONS[session.taskId];
+  const definition = ORBIT_TASK_DEFINITIONS[session.taskId];
   const incompatible = review.importedArtifacts.find(
     (artifact) => !definition.acceptedArtifactKinds.some((kind) => kind === artifact.kind),
   );
@@ -123,11 +123,11 @@ export function bindRuneTaskImportReview(
   };
 }
 
-export function prepareRuneTaskAfterImport(
-  session: RuneTaskSession,
+export function prepareOrbitTaskAfterImport(
+  session: OrbitTaskSession,
   artifacts: WorkspaceArtifact[],
   review: WorkspaceImportReview,
-): PreparedRuneTaskSession {
+): PreparedOrbitTaskSession {
   if (session.phase !== "reviewing-source" || !session.preferredArtifactId) {
     return failed(["This task does not have a reviewed source to continue from."]);
   }
@@ -144,7 +144,7 @@ export function prepareRuneTaskAfterImport(
     return failed(["The reviewed task sources no longer match this import session."]);
   }
   const preferredArtifact = review.importedArtifacts.find((artifact) => artifact.id === session.preferredArtifactId);
-  const definition = RUNE_TASK_DEFINITIONS[session.taskId];
+  const definition = ORBIT_TASK_DEFINITIONS[session.taskId];
   if (!preferredArtifact || !definition.acceptedArtifactKinds.some((kind) => kind === preferredArtifact.kind)) {
     return failed([`The preferred ${definition.requiredArtifactLabel} is no longer part of this reviewed import.`]);
   }

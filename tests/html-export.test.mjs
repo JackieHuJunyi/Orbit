@@ -20,9 +20,9 @@ const onePixelPng = new Uint8Array(
     "base64",
   ),
 );
-const runeImageId = "d".repeat(64);
-const runeImageAsset = {
-  id: runeImageId,
+const orbitImageId = "d".repeat(64);
+const orbitImageAsset = {
+  id: orbitImageId,
   name: "proof.png",
   mimeType: "image/png",
   size: onePixelPng.length,
@@ -44,10 +44,10 @@ test("exports a deterministic self-contained Deck HTML handoff", () => {
   const html = new TextDecoder().decode(first.bytes);
   assert.match(html, /^<!doctype html>/);
   assert.match(html, /<meta name="generator" content="Orbit" \/>/);
-  assert.match(html, /data-rune-title="Q2 Board Briefing"/);
+  assert.match(html, /data-orbit-title="Q2 Board Briefing"/);
   assert.match(html, /\$4\.82M/);
   assert.match(html, /Q2 revenue by region/);
-  assert.match(html, /class="rune-embedded-chart"/);
+  assert.match(html, /class="orbit-embedded-chart"/);
   assert.match(html, /APAC/);
   assert.match(html, /@page\{size:13\.333333in 7\.5in/);
   assert.equal((html.match(/<section class="slide /g) ?? []).length, 4);
@@ -89,13 +89,13 @@ test("exports semantic HTML with reviewed local images as one scriptless portabl
     name: "semantic-image.html",
     kind: "slides",
     language: "Semantic HTML",
-    source: `<!doctype html><html lang="en"><head><style>.deck-image img{width:100%}</style></head><body><main data-rune-format="presentation-v1" data-rune-title="Semantic image" data-rune-theme="rune" data-rune-lang="en"><section class="slide split"><h1>Visual proof</h1><figure class="deck-image"><img src="rune-asset:sha256:${runeImageId}" alt="Portable proof" /></figure></section></main></body></html>`,
+    source: `<!doctype html><html lang="en"><head><style>.deck-image img{width:100%}</style></head><body><main data-orbit-format="presentation-v1" data-orbit-title="Semantic image" data-orbit-theme="orbit" data-orbit-lang="en"><section class="slide split"><h1>Visual proof</h1><figure class="deck-image"><img src="orbit-asset:sha256:${orbitImageId}" alt="Portable proof" /></figure></section></main></body></html>`,
   };
-  const result = exportDeckHtml(artifact, [artifact], [], [runeImageAsset]);
+  const result = exportDeckHtml(artifact, [artifact], [], [orbitImageAsset]);
   const html = new TextDecoder().decode(result.bytes);
   assert.equal(result.fileName, "semantic-image.html");
   assert.match(html, /src="data:image\/png;base64,/u);
-  assert.doesNotMatch(html, /rune-asset:sha256:/u);
+  assert.doesNotMatch(html, /orbit-asset:sha256:/u);
   assert.match(html, /Content-Security-Policy/u);
   assert.match(result.warnings.join(" "), /semantic presentation source/iu);
   assert.throws(() => exportDeckHtml(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
@@ -105,7 +105,7 @@ test("exports semantic HTML with reviewed local images as one scriptless portabl
         { ...artifact, source: artifact.source.replace("</style>", "@import url(https://example.com/x.css)</style>") },
         [artifact],
         [],
-        [runeImageAsset],
+        [orbitImageAsset],
       ),
     /executable or external resource boundary/iu,
   );
@@ -120,7 +120,7 @@ test("embeds reviewed Deck images as approved data URLs without opening an exter
     source: `---
 version: 1
 title: Image deck
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -130,11 +130,11 @@ lang: en
 
 The source remains readable.
 
-![Portable proof](rune-asset:sha256:${runeImageId})
+![Portable proof](orbit-asset:sha256:${orbitImageId})
 `,
   };
-  const first = exportDeckHtml(artifact, [artifact], [], [runeImageAsset]);
-  const second = exportDeckHtml(artifact, [artifact], [], [runeImageAsset]);
+  const first = exportDeckHtml(artifact, [artifact], [], [orbitImageAsset]);
+  const second = exportDeckHtml(artifact, [artifact], [], [orbitImageAsset]);
   assert.deepEqual(first.bytes, second.bytes);
   const html = new TextDecoder().decode(first.bytes);
   assert.match(html, /<img src="data:image\/png;base64,/u);
@@ -181,20 +181,20 @@ test("caps standalone HTML after local images are embedded", () => {
     source: `---
 version: 1
 title: Large export
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
 
 # Large image one
 
-![One](rune-asset:sha256:${firstId})
+![One](orbit-asset:sha256:${firstId})
 
 ---
 
 # Large image two
 
-![Two](rune-asset:sha256:${secondId})
+![Two](orbit-asset:sha256:${secondId})
 `,
   };
   assert.throws(() => exportDeckHtml(deck, [deck], [], assets), /exceeds Orbit's 12 MB export limit/i);
@@ -235,7 +235,7 @@ test("exports a scriptless line chart with deterministic SVG geometry", () => {
     source: `---
 version: 1
 title: Trend export
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -249,8 +249,8 @@ lang: en
   const second = exportDeckHtml(deck, [deck, data, chart]);
   assert.deepEqual(first.bytes, second.bytes);
   const html = new TextDecoder().decode(first.bytes);
-  assert.match(html, /rune-line-chart/);
-  assert.match(html, /<polyline class="rune-line-series"/);
+  assert.match(html, /orbit-line-chart/);
+  assert.match(html, /<polyline class="orbit-line-series"/);
   assert.equal((html.match(/<circle /g) ?? []).length, 3);
   assert.match(html, /Jan: 10/);
   assert.doesNotMatch(html, /<script\b/i);
@@ -291,7 +291,7 @@ test("exports a scriptless area chart with deterministic filled SVG geometry", (
     source: `---
 version: 1
 title: Volume export
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -302,8 +302,8 @@ lang: en
 `,
   };
   const html = new TextDecoder().decode(exportDeckHtml(deck, [deck, data, chart]).bytes);
-  assert.match(html, /rune-area-chart/);
-  assert.match(html, /<polygon class="rune-area-series"/);
+  assert.match(html, /orbit-area-chart/);
+  assert.match(html, /<polygon class="orbit-area-series"/);
   assert.match(html, /Monthly volume area chart/);
   assert.doesNotMatch(html, /<script\b/i);
 });

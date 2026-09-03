@@ -206,7 +206,7 @@ test("converts independent ODP slides and tables into safe semantic HTML", () =>
   assert.match(artifact.source, /<h1>Launch plan<\/h1>/u);
   assert.match(
     artifact.source,
-    /data-rune-title="Board &amp;#123;&amp;#123; metric\(&quot;fabricated&quot;\) &amp;#125;&amp;#125;"/u,
+    /data-orbit-title="Board &amp;#123;&amp;#123; metric\(&quot;fabricated&quot;\) &amp;#125;&amp;#125;"/u,
   );
   assert.match(artifact.source, /<li>A readable source for every team<\/li>/u);
   assert.match(artifact.source, /Scale &lt;APAC&gt;/u);
@@ -256,7 +256,7 @@ test("asset-aware OpenDocument import rejects corrupt pictures without leaking p
   const result = await convertOdfFileWithAssets("board.odp", odpFixture());
   assert.deepEqual(result.assets, []);
   assert.match(result.warnings.join(" "), /embedded image.*omitted/iu);
-  assert.doesNotMatch(result.artifacts[0].source, /RUNEIMPORTIMAGEPLACEHOLDER/u);
+  assert.doesNotMatch(result.artifacts[0].source, /ORBITIMPORTIMAGEPLACEHOLDER/u);
   assert.equal(result.artifacts[0].language, "Semantic HTML");
   assert.deepEqual(compileLegacyHtmlSlides(result.artifacts[0].source).errors, []);
 });

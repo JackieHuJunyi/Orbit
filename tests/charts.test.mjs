@@ -91,8 +91,8 @@ test("normalizes ordered line points across negative, zero, and positive values"
   assert.ok(Math.abs(points[1].y - 2 / 3) < Number.EPSILON);
   assert.ok(Math.abs(points[2].y) < Number.EPSILON);
   const html = renderChartModelHtml(resolution.model);
-  assert.match(html, /rune-line-chart/);
-  assert.match(html, /<polyline class="rune-line-series"/);
+  assert.match(html, /orbit-line-chart/);
+  assert.match(html, /<polyline class="orbit-line-series"/);
   assert.equal((html.match(/<circle /g) ?? []).length, 3);
   assert.match(html, /Jan: -10/);
   assert.doesNotMatch(html, /<script/i);
@@ -169,8 +169,8 @@ test("renders area charts with the same ordered points plus a bounded fill", () 
     ],
   );
   const html = renderChartModelHtml(model);
-  assert.match(html, /rune-area-chart/);
-  assert.match(html, /<polygon class="rune-area-series" points="50\.00,196/);
+  assert.match(html, /orbit-area-chart/);
+  assert.match(html, /<polygon class="orbit-area-series" points="50\.00,196/);
   assert.match(html, /950\.00,196"/);
   assert.match(html, /aria-label="Monthly volume area chart"/);
   assert.doesNotMatch(html, /<script/i);
@@ -363,6 +363,6 @@ test("compiles a chart directive into static sandbox-safe slide HTML", () => {
     return chart ? resolveChartModel(chart, defaultArtifacts, parseDataSource) : { errors: ["Missing chart"] };
   });
   assert.doesNotMatch(html, /\{\{\s*chart/);
-  assert.match(html, /class="rune-embedded-chart"/);
+  assert.match(html, /class="orbit-embedded-chart"/);
   assert.match(html, /Q2 revenue by region/);
 });

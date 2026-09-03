@@ -7,11 +7,11 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { convertPdfFileWithLibrary, convertPdfSemanticSnapshot } from "../app/lib/pdf-import.ts";
 
 const outputDirectory = new URL("../tmp/pdfs/", import.meta.url);
-const pdfPath = new URL("rune-pdf-import-qa.pdf", outputDirectory);
-const markdownPath = new URL("rune-pdf-import-qa.md", outputDirectory);
-const scannedPdfPath = new URL("rune-scanned-pdf-ocr-qa.pdf", outputDirectory);
-const scannedImagePath = new URL("rune-scanned-pdf-ocr-source.png", outputDirectory);
-const scannedMarkdownPath = new URL("rune-scanned-pdf-ocr-qa.md", outputDirectory);
+const pdfPath = new URL("orbit-pdf-import-qa.pdf", outputDirectory);
+const markdownPath = new URL("orbit-pdf-import-qa.md", outputDirectory);
+const scannedPdfPath = new URL("orbit-scanned-pdf-ocr-qa.pdf", outputDirectory);
+const scannedImagePath = new URL("orbit-scanned-pdf-ocr-source.png", outputDirectory);
+const scannedMarkdownPath = new URL("orbit-scanned-pdf-ocr-qa.md", outputDirectory);
 const document = await PDFDocument.create();
 document.setTitle("Orbit PDF Import QA");
 document.setAuthor("Orbit deterministic QA fixture");
@@ -20,7 +20,7 @@ const bold = await document.embedFont(StandardFonts.HelveticaBold);
 const accent = rgb(0.86, 0.2, 0.12);
 
 function drawChrome(page, pageNumber) {
-  page.drawText("RUNE / PDF IMPORT QA", { x: 72, y: 770, size: 9, font: regular, color: rgb(0.4, 0.4, 0.4) });
+  page.drawText("ORBIT / PDF IMPORT QA", { x: 72, y: 770, size: 9, font: regular, color: rgb(0.4, 0.4, 0.4) });
   page.drawText(`Page ${pageNumber}`, { x: 285, y: 28, size: 9, font: regular, color: rgb(0.4, 0.4, 0.4) });
 }
 
@@ -48,7 +48,7 @@ second.drawText("1. Confirm source ownership", { x: 88, y: 628, size: 12, font: 
 second.drawText("2. Review the generated Markdown", { x: 88, y: 602, size: 12, font: regular });
 
 const bytes = await document.save({ useObjectStreams: false });
-const imported = await convertPdfFileWithLibrary("rune-pdf-import-qa.pdf", bytes, pdfjs);
+const imported = await convertPdfFileWithLibrary("orbit-pdf-import-qa.pdf", bytes, pdfjs);
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(pdfPath, bytes);
 await writeFile(markdownPath, imported.artifacts[0].source, "utf8");
@@ -78,7 +78,7 @@ const embeddedScan = await scannedDocument.embedPng(scanPng);
 scannedPage.drawImage(embeddedScan, { x: 0, y: 0, width: 612, height: 792 });
 const scannedBytes = await scannedDocument.save({ useObjectStreams: false });
 const scannedMarkdown = convertPdfSemanticSnapshot(
-  "rune-scanned-pdf-ocr-qa.pdf",
+  "orbit-scanned-pdf-ocr-qa.pdf",
   {
     title: "Orbit Scanned PDF OCR QA",
     outlineCount: 0,

@@ -2,7 +2,7 @@ import { DEFAULT_OPENAI_MODEL } from "../../../lib/model-preference.ts";
 import { resolveModelRouting } from "../../../lib/model-credential-vault.ts";
 import { requestProviderPlan } from "../../../lib/model-provider-adapters.ts";
 import { executeModelRoute } from "../../../lib/model-routing.ts";
-import { loadRuneLocaleCatalog } from "../../../lib/localization.ts";
+import { loadOrbitLocaleCatalog } from "../../../lib/localization.ts";
 import {
   OperatingReviewModelRequestSchema,
   OperatingReviewNarrativeSchema,
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const { artifact, input } = parsed.data;
   const typedInput = input as OperatingReviewInput;
-  await loadRuneLocaleCatalog(typedInput.locale);
+  await loadOrbitLocaleCatalog(typedInput.locale);
   const localPlan = prepareOperatingReviewWorkflow([artifact], typedInput);
   if (!localPlan.plan || localPlan.errors.length) {
     return Response.json({ error: localPlan.errors[0] ?? "The operating-review source is invalid." }, { status: 400 });

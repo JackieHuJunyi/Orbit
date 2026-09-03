@@ -22,7 +22,7 @@ test("imports one Orbit JSON profile with aliases and a custom compatible endpoi
     }),
   );
 
-  assert.equal(result.source, "rune-json");
+  assert.equal(result.source, "orbit-json");
   assert.deepEqual(result.draft, {
     provider: "custom",
     protocol: "chat-completions",

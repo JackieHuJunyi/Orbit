@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { prepareRunePilotEvidenceExport } from "../app/lib/pilot-evidence.ts";
+import { prepareOrbitPilotEvidenceExport } from "../app/lib/pilot-evidence.ts";
 
 const sourceRevision = "r1-a-aaaaaaaaaaaaaaaa";
 const outputRevision = "r1-b-bbbbbbbbbbbbbbbb";
@@ -82,8 +82,8 @@ function evidenceFixture() {
 }
 
 test("builds deterministic, bounded and reviewable pilot evidence", () => {
-  const first = prepareRunePilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
-  const second = prepareRunePilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
+  const first = prepareOrbitPilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
+  const second = prepareOrbitPilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
   assert.deepEqual(first, second);
   assert.equal(first.fileName, "orbit-pilot-evidence-2026-08-14.json");
   assert.equal(first.mimeType, "application/json");
@@ -102,7 +102,7 @@ test("builds deterministic, bounded and reviewable pilot evidence", () => {
 });
 
 test("never serializes content identifiers, exact revision proofs, timestamps, or provider labels", () => {
-  const result = prepareRunePilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
+  const result = prepareOrbitPilotEvidenceExport(evidenceFixture(), new Date("2026-08-14T03:04:05.000Z"));
   const serialized = new TextDecoder().decode(result.bytes);
   for (const forbidden of [
     "private-run-id",
@@ -161,7 +161,7 @@ test("keeps deep-frozen input unchanged", () => {
   Object.freeze(input.deliveries[0]);
   Object.freeze(input.deliveries);
   Object.freeze(input);
-  prepareRunePilotEvidenceExport(input, new Date("2026-08-14T03:04:05.000Z"));
+  prepareOrbitPilotEvidenceExport(input, new Date("2026-08-14T03:04:05.000Z"));
   assert.deepEqual(input, snapshot);
 });
 
@@ -169,14 +169,14 @@ test("normalizes invalid and unlinked records before export", () => {
   const input = evidenceFixture();
   input.runs.unshift({ ...input.runs[0], id: "broken", completedAt: "not-a-date" });
   input.deliveries.unshift({ ...input.deliveries[0], id: "leak", runId: "missing" });
-  const result = prepareRunePilotEvidenceExport(input, new Date("2026-08-14T03:04:05.000Z"));
+  const result = prepareOrbitPilotEvidenceExport(input, new Date("2026-08-14T03:04:05.000Z"));
   assert.equal(result.package.runs.length, 2);
   assert.equal(result.package.deliveries.length, 1);
 });
 
 test("refuses an empty or invalid-only evidence ledger and invalid export time", () => {
   const empty = Object.freeze({ version: 3, runs: Object.freeze([]), deliveries: Object.freeze([]) });
-  assert.throws(() => prepareRunePilotEvidenceExport(empty), /guided task/i);
+  assert.throws(() => prepareOrbitPilotEvidenceExport(empty), /guided task/i);
   assert.deepEqual(empty, { version: 3, runs: [], deliveries: [] });
-  assert.throws(() => prepareRunePilotEvidenceExport(evidenceFixture(), new Date("invalid")), /valid export time/i);
+  assert.throws(() => prepareOrbitPilotEvidenceExport(evidenceFixture(), new Date("invalid")), /valid export time/i);
 });

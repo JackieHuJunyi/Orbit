@@ -20,7 +20,7 @@ export type PilotOutcomeComparison = {
   recordedOn: string;
   evidenceReference: string;
   manualMinutes: number;
-  runeMinutes: number;
+  orbitMinutes: number;
   manualTiming: ManualTiming;
   authorizedOrRedacted: true;
   sameScope: true;
@@ -108,7 +108,7 @@ function parseComparison(value: unknown, taskIds: Set<string>): PilotOutcomeComp
       "recordedOn",
       "evidenceReference",
       "manualMinutes",
-      "runeMinutes",
+      "orbitMinutes",
       "manualTiming",
       "authorizedOrRedacted",
       "sameScope",
@@ -136,7 +136,7 @@ function parseComparison(value: unknown, taskIds: Set<string>): PilotOutcomeComp
   if (!isCalendarDate(value.recordedOn) || !isReference(value.evidenceReference)) {
     throw new Error("Each P2 comparison needs a valid date and a bounded approved-system evidence reference.");
   }
-  if (!isBoundedInteger(value.manualMinutes, 1, MAX_MINUTES) || !isBoundedInteger(value.runeMinutes, 1, MAX_MINUTES)) {
+  if (!isBoundedInteger(value.manualMinutes, 1, MAX_MINUTES) || !isBoundedInteger(value.orbitMinutes, 1, MAX_MINUTES)) {
     throw new Error(`P2 timing must be whole minutes between 1 and ${MAX_MINUTES}.`);
   }
   if (value.manualTiming !== "measured" && value.manualTiming !== "estimated") {
@@ -181,7 +181,7 @@ export function compilePilotOutcomeGate(value: unknown): PilotOutcomeReport {
   const comparisons = value.comparisons.map((comparison) => parseComparison(comparison, taskIds));
   const participants = new Set(comparisons.map((comparison) => comparison.participantId)).size;
   const timeReductions = comparisons.map(
-    (comparison) => ((comparison.manualMinutes - comparison.runeMinutes) / comparison.manualMinutes) * 100,
+    (comparison) => ((comparison.manualMinutes - comparison.orbitMinutes) / comparison.manualMinutes) * 100,
   );
   const medianTimeReductionPercent = roundRate(median(timeReductions));
   const deliveryUsabilityPercent = roundRate(

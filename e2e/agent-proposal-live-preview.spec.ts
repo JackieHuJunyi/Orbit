@@ -3,12 +3,12 @@ import { expect, test, type Page } from "@playwright/test";
 async function openLocalAgentWorkbench(page: Page) {
   await page.addInitScript(() => {
     if (window !== window.top) return;
-    localStorage.setItem("rune-onboarding-v1", "complete");
-    localStorage.setItem("rune-model-mode-v1", "device-tools-only");
+    localStorage.setItem("orbit-onboarding-v1", "complete");
+    localStorage.setItem("orbit-model-mode-v1", "device-tools-only");
   });
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
 }
 
@@ -44,7 +44,7 @@ test("renders a local Agent proposal in complete Source and Preview before Disca
   await expect(page.getByText("Proposed output · nothing written")).toBeVisible();
   await expect(page.getByText("Canonical source stays unchanged until Apply")).toBeVisible();
   const persistedBeforeApply = await page.evaluate(() => {
-    const stored = localStorage.getItem("rune-workspace-v0");
+    const stored = localStorage.getItem("orbit-workspace-v0");
     if (!stored) return null;
     const parsed = JSON.parse(stored) as { artifacts?: Array<{ id?: string; source?: string }> };
     return parsed.artifacts?.find((artifact) => artifact.id === "q2-review")?.source ?? null;
@@ -69,7 +69,7 @@ test("renders a local Agent proposal in complete Source and Preview before Disca
 
   await page.reload();
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
   await expect(editor).toHaveValue(reviewedSource);
   await expect(page.locator(".document-paper .markdown-body")).toContainText(proposedText);
@@ -111,7 +111,7 @@ test("switches one multi-artifact Agent proposal between a coherent report and p
   );
 
   const persistedBeforeApply = await page.evaluate(() => {
-    const stored = localStorage.getItem("rune-workspace-v0");
+    const stored = localStorage.getItem("orbit-workspace-v0");
     if (!stored) return null;
     const parsed = JSON.parse(stored) as { artifacts?: Array<{ id?: string; source?: string }> };
     return {

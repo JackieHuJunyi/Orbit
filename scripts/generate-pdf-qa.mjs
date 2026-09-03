@@ -1,15 +1,15 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { exportPdfArtifact, RUNE_PDF_FONT_PATH } from "../app/lib/pdf-export.ts";
+import { exportPdfArtifact, ORBIT_PDF_FONT_PATH } from "../app/lib/pdf-export.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "../tests/query-snapshot-fixture.mjs";
 
 const outputDirectory = new URL("../output/pdf/", import.meta.url);
-const fontBytes = new Uint8Array(await readFile(new URL(`../public${RUNE_PDF_FONT_PATH}`, import.meta.url)));
+const fontBytes = new Uint8Array(await readFile(new URL(`../public${ORBIT_PDF_FONT_PATH}`, import.meta.url)));
 const snapshots = [defaultQuerySnapshot(), defaultSummaryQuerySnapshot()];
 const targets = [
-  ["document", "rune-v025-q2-review.pdf"],
-  ["data", "rune-v052-regional-revenue.pdf"],
-  ["slides", "rune-v025-board-briefing.pdf"],
+  ["document", "orbit-v025-q2-review.pdf"],
+  ["data", "orbit-v052-regional-revenue.pdf"],
+  ["slides", "orbit-v025-board-briefing.pdf"],
 ];
 
 await mkdir(outputDirectory, { recursive: true });

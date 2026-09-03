@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { extractRuneAssetIds, parseRuneMarkdownImage } from "./local-assets.ts";
+import { extractOrbitAssetIds, parseOrbitMarkdownImage } from "./local-assets.ts";
 import { PRESENTATION_CANVAS_WIDTH, PRESENTATION_PREVIEW_CANVAS_STYLE } from "./presentation-canvas.ts";
 import { PORTABLE_SOURCE_REVISION_PATTERN } from "./source-revision.ts";
 
@@ -7,7 +7,7 @@ const DeckFrontmatterSchema = z
   .object({
     version: z.literal("1").transform(() => 1 as const),
     title: z.string().trim().min(1).max(120),
-    theme: z.enum(["rune", "rune-dark"]),
+    theme: z.enum(["orbit", "orbit-dark"]),
     ratio: z.literal("16:9"),
     lang: z.enum(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]).default("en"),
     origin: z.string().trim().min(1).max(128).optional(),
@@ -140,16 +140,16 @@ function parseSlide(source: string, index: number): { slide?: DeckSlide; errors:
   if (!/^#{1,2}\s+\S/m.test(body)) return { errors: [`Slide ${index + 1} needs a # or ## heading.`] };
   const lines = body.split("\n");
   const images = lines.flatMap((line) => {
-    const image = parseRuneMarkdownImage(line);
+    const image = parseOrbitMarkdownImage(line);
     return image ? [image] : [];
   });
-  const runeReferences = extractRuneAssetIds(body);
+  const orbitReferences = extractOrbitAssetIds(body);
   const unsupportedImage = lines.find(
-    (line) => /!\[[^\]\n]*\]\([^)\n]+\)/u.test(line) && !parseRuneMarkdownImage(line),
+    (line) => /!\[[^\]\n]*\]\([^)\n]+\)/u.test(line) && !parseOrbitMarkdownImage(line),
   );
   if (unsupportedImage)
     return { errors: [`Slide ${index + 1} images must use one standalone Orbit local-image reference.`] };
-  if (runeReferences.some((id) => !images.some((image) => image.id === id))) {
+  if (orbitReferences.some((id) => !images.some((image) => image.id === id))) {
     return { errors: [`Slide ${index + 1} must place each Orbit local-image reference on its own line.`] };
   }
   if (images.length > 1) return { errors: [`Slide ${index + 1} supports one primary image.`] };
@@ -203,7 +203,7 @@ function escapeHtml(value: string) {
 function compileInline(source: string) {
   const tokens: string[] = [];
   const protectedSource = source.replace(/\\([\\<>*_`\[\]#+-])/g, "$1").replace(liveBindingTokenPattern, (token) => {
-    const placeholder = `RUNECHARTTOKEN${tokens.length}END`;
+    const placeholder = `ORBITCHARTTOKEN${tokens.length}END`;
     tokens.push(token);
     return placeholder;
   });
@@ -211,7 +211,7 @@ function compileInline(source: string) {
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>");
   tokens.forEach((token, index) => {
-    html = html.replace(`RUNECHARTTOKEN${index}END`, token);
+    html = html.replace(`ORBITCHARTTOKEN${index}END`, token);
   });
   return html;
 }
@@ -265,9 +265,9 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
       index += 1;
       continue;
     }
-    const image = parseRuneMarkdownImage(line);
+    const image = parseOrbitMarkdownImage(line);
     if (image) {
-      const reference = `rune-asset:sha256:${image.id}`;
+      const reference = `orbit-asset:sha256:${image.id}`;
       const url =
         safeDeckImageUrl(options.resolveLocalAssetUrl?.(reference) ?? null) ??
         (options.preserveLocalAssetReferences ? reference : null);
@@ -275,7 +275,7 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
       blocks.push(
         url
           ? `<figure class="deck-image"><img src="${escapeHtml(url)}" alt="${alt}" decoding="async" /></figure>`
-          : `<figure class="deck-image missing" data-rune-asset-state="missing" aria-label="${alt}"><span>Local image unavailable</span><strong>${alt}</strong></figure>`,
+          : `<figure class="deck-image missing" data-orbit-asset-state="missing" aria-label="${alt}"><span>Local image unavailable</span><strong>${alt}</strong></figure>`,
       );
       index += 1;
       continue;
@@ -320,7 +320,7 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
         !next ||
         /^(#{1,2})\s+/.test(next) ||
         /^[-*]\s+/.test(next) ||
-        parseRuneMarkdownImage(next) ||
+        parseOrbitMarkdownImage(next) ||
         chartTokenPattern.test(next)
       ) {
         chartTokenPattern.lastIndex = 0;
@@ -337,20 +337,20 @@ function compileBlocks(source: string, layout: DeckLayout, options: DeckCompileO
 
 function deckStyles() {
   return `
-    :root{--ink:#18211c;--muted:#627068;--paper:#f4f1e8;--accent:#ff5c35;--line:#d8d4c8;--stage:#dad7cf}body.rune-dark{--ink:#f5f1e8;--muted:#a9b5ad;--paper:#17201b;--line:#344139;--stage:#0d120f}*{box-sizing:border-box}body{margin:0;background:var(--stage);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.deck{display:grid;gap:32px;padding:32px}.slide{position:relative;width:min(1120px,100%);aspect-ratio:16/9;margin:auto;padding:8%;overflow:hidden;background:var(--paper);border-radius:10px;box-shadow:0 18px 50px rgba(24,33,28,.14)}.eyebrow{margin:0 0 20px;color:var(--accent);font-size:15px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1,h2{max-width:900px;margin:0;line-height:.98;letter-spacing:-.055em}h1{font-size:clamp(42px,6vw,82px)}h2{font-size:clamp(34px,4.2vw,64px)}p{max-width:720px;margin:28px 0 0;color:var(--muted);font-size:clamp(18px,2vw,28px);line-height:1.45}ul{display:grid;gap:14px;max-width:760px;margin:30px 0 0;padding-left:24px;color:var(--muted);font-size:clamp(17px,1.8vw,25px)}code{padding:2px 6px;border-radius:5px;background:rgba(98,112,104,.14);font-family:ui-monospace,monospace;font-size:.82em}.number{position:absolute;right:7%;bottom:6%;color:var(--muted);font-size:14px}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:42px}.metric{padding:26px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.38)}.metric strong{display:block;font-size:clamp(28px,4vw,54px);letter-spacing:-.05em}.metric span{color:var(--muted);font-size:14px}.split .slide-body{display:grid;grid-template-columns:1.05fr .95fr;gap:7%;align-items:center;height:calc(100% - 44px)}.split .chart-slot,.split .deck-image{grid-column:2;grid-row:1/span 4}.split .slide-body>h1,.split .slide-body>h2,.split .slide-body>p,.split .slide-body>ul{grid-column:1}.chart-slot{margin-top:28px}.chart-slot .rune-embedded-chart{padding:18px}.deck-image{position:absolute;right:7%;bottom:10%;width:45%;height:48%;margin:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);border-radius:22px;background:color-mix(in srgb,var(--paper) 82%,var(--ink) 8%);box-shadow:0 18px 45px rgba(20,28,23,.14)}.deck-image img{display:block;width:100%;height:100%;object-fit:contain}.deck-image.missing{display:grid;place-content:center;gap:8px;padding:24px;color:var(--muted);text-align:center}.deck-image.missing span{font-size:12px;letter-spacing:.12em;text-transform:uppercase}.deck-image.missing strong{font-size:18px;color:var(--ink)}.slide:has(.deck-image) .slide-body>h1,.slide:has(.deck-image) .slide-body>h2,.slide:has(.deck-image) .slide-body>p,.slide:has(.deck-image) .slide-body>ul{max-width:46%}.split .deck-image{position:relative;right:auto;bottom:auto;width:100%;height:min(380px,72%);align-self:center}.cover .deck-image,.conclusion .deck-image{height:56%;bottom:12%}.conclusion{background:var(--ink);color:var(--paper)}.conclusion p{color:color-mix(in srgb,var(--paper) 68%,transparent)}table{width:100%;margin-top:26px;border-collapse:collapse;color:var(--muted);font-size:15px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}@media(max-width:700px){.slide{border-radius:4px}.metric-grid{gap:8px}.metric{padding:14px}.deck{padding:12px}.split .slide-body{gap:3%}.deck-image{border-radius:10px}}
+    :root{--ink:#18211c;--muted:#627068;--paper:#f4f1e8;--accent:#ff5c35;--line:#d8d4c8;--stage:#dad7cf}body.orbit-dark{--ink:#f5f1e8;--muted:#a9b5ad;--paper:#17201b;--line:#344139;--stage:#0d120f}*{box-sizing:border-box}body{margin:0;background:var(--stage);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.deck{display:grid;gap:32px;padding:32px}.slide{position:relative;width:min(1120px,100%);aspect-ratio:16/9;margin:auto;padding:8%;overflow:hidden;background:var(--paper);border-radius:10px;box-shadow:0 18px 50px rgba(24,33,28,.14)}.eyebrow{margin:0 0 20px;color:var(--accent);font-size:15px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1,h2{max-width:900px;margin:0;line-height:.98;letter-spacing:-.055em}h1{font-size:clamp(42px,6vw,82px)}h2{font-size:clamp(34px,4.2vw,64px)}p{max-width:720px;margin:28px 0 0;color:var(--muted);font-size:clamp(18px,2vw,28px);line-height:1.45}ul{display:grid;gap:14px;max-width:760px;margin:30px 0 0;padding-left:24px;color:var(--muted);font-size:clamp(17px,1.8vw,25px)}code{padding:2px 6px;border-radius:5px;background:rgba(98,112,104,.14);font-family:ui-monospace,monospace;font-size:.82em}.number{position:absolute;right:7%;bottom:6%;color:var(--muted);font-size:14px}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:42px}.metric{padding:26px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.38)}.metric strong{display:block;font-size:clamp(28px,4vw,54px);letter-spacing:-.05em}.metric span{color:var(--muted);font-size:14px}.split .slide-body{display:grid;grid-template-columns:1.05fr .95fr;gap:7%;align-items:center;height:calc(100% - 44px)}.split .chart-slot,.split .deck-image{grid-column:2;grid-row:1/span 4}.split .slide-body>h1,.split .slide-body>h2,.split .slide-body>p,.split .slide-body>ul{grid-column:1}.chart-slot{margin-top:28px}.chart-slot .orbit-embedded-chart{padding:18px}.deck-image{position:absolute;right:7%;bottom:10%;width:45%;height:48%;margin:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);border-radius:22px;background:color-mix(in srgb,var(--paper) 82%,var(--ink) 8%);box-shadow:0 18px 45px rgba(20,28,23,.14)}.deck-image img{display:block;width:100%;height:100%;object-fit:contain}.deck-image.missing{display:grid;place-content:center;gap:8px;padding:24px;color:var(--muted);text-align:center}.deck-image.missing span{font-size:12px;letter-spacing:.12em;text-transform:uppercase}.deck-image.missing strong{font-size:18px;color:var(--ink)}.slide:has(.deck-image) .slide-body>h1,.slide:has(.deck-image) .slide-body>h2,.slide:has(.deck-image) .slide-body>p,.slide:has(.deck-image) .slide-body>ul{max-width:46%}.split .deck-image{position:relative;right:auto;bottom:auto;width:100%;height:min(380px,72%);align-self:center}.cover .deck-image,.conclusion .deck-image{height:56%;bottom:12%}.conclusion{background:var(--ink);color:var(--paper)}.conclusion p{color:color-mix(in srgb,var(--paper) 68%,transparent)}table{width:100%;margin-top:26px;border-collapse:collapse;color:var(--muted);font-size:15px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}@media(max-width:700px){.slide{border-radius:4px}.metric-grid{gap:8px}.metric{padding:14px}.deck{padding:12px}.split .slide-body{gap:3%}.deck-image{border-radius:10px}}
   `;
 }
 
 function deckMetadataAttributes(frontmatter: DeckFrontmatter) {
   const entries = [
-    ["data-rune-format", "presentation-v1"],
-    ["data-rune-title", frontmatter.title],
-    ["data-rune-theme", frontmatter.theme],
-    ["data-rune-lang", frontmatter.lang],
-    ["data-rune-origin", frontmatter.origin],
-    ["data-rune-origin-revision", frontmatter.origin_revision],
-    ["data-rune-audience", frontmatter.audience],
-    ["data-rune-purpose", frontmatter.purpose],
+    ["data-orbit-format", "presentation-v1"],
+    ["data-orbit-title", frontmatter.title],
+    ["data-orbit-theme", frontmatter.theme],
+    ["data-orbit-lang", frontmatter.lang],
+    ["data-orbit-origin", frontmatter.origin],
+    ["data-orbit-origin-revision", frontmatter.origin_revision],
+    ["data-orbit-audience", frontmatter.audience],
+    ["data-orbit-purpose", frontmatter.purpose],
   ] as const;
   return entries.flatMap(([name, value]) => (value ? [`${name}="${escapeHtml(value)}"`] : [])).join(" ");
 }
@@ -358,8 +358,8 @@ function deckMetadataAttributes(frontmatter: DeckFrontmatter) {
 function deckHtmlDocument(frontmatter: DeckFrontmatter, slides: string, preview = false) {
   return `<!doctype html>
 <html lang="${frontmatter.lang}">
-<head><meta charset="utf-8" /><meta name="viewport" content="width=${preview ? PRESENTATION_CANVAS_WIDTH : "device-width"},initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style>${preview ? `<style data-rune-preview-canvas="1120x630">${PRESENTATION_PREVIEW_CANVAS_STYLE}</style>` : ""}</head>
-<body class="${frontmatter.theme === "rune-dark" ? "rune-dark" : ""}"><main class="deck" ${deckMetadataAttributes(frontmatter)}>${slides}</main></body>
+<head><meta charset="utf-8" /><meta name="viewport" content="width=${preview ? PRESENTATION_CANVAS_WIDTH : "device-width"},initial-scale=1" /><title>${escapeHtml(frontmatter.title)}</title><style>${deckStyles()}</style>${preview ? `<style data-orbit-preview-canvas="1120x630">${PRESENTATION_PREVIEW_CANVAS_STYLE}</style>` : ""}</head>
+<body class="${frontmatter.theme === "orbit-dark" ? "orbit-dark" : ""}"><main class="deck" ${deckMetadataAttributes(frontmatter)}>${slides}</main></body>
 </html>`;
 }
 
@@ -370,7 +370,7 @@ export function compileDeckSource(source: string, options: DeckCompileOptions = 
   const slides = parsed.deck.slides.map((slide, index) => {
     const number = String(index + 1).padStart(2, "0");
     const totalLabel = String(total).padStart(2, "0");
-    return `<section class="slide ${slide.layout}" data-layout="${slide.layout}" data-slide-index="${index}"${slide.eyebrow ? ` data-eyebrow="${escapeHtml(slide.eyebrow)}"` : ""}${slide.sourceUnit ? ` data-rune-source-unit="${escapeHtml(slide.sourceUnit)}"` : ""}>
+    return `<section class="slide ${slide.layout}" data-layout="${slide.layout}" data-slide-index="${index}"${slide.eyebrow ? ` data-eyebrow="${escapeHtml(slide.eyebrow)}"` : ""}${slide.sourceUnit ? ` data-orbit-source-unit="${escapeHtml(slide.sourceUnit)}"` : ""}>
       ${slide.eyebrow ? `<p class="eyebrow">${escapeHtml(slide.eyebrow)}</p>` : ""}
       <div class="slide-body">${compileBlocks(slide.source, slide.layout, options)}</div>
       <span class="number">${number} / ${totalLabel}</span>

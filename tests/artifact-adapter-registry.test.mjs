@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { createRuneArtifactAdapterRegistry } from "../app/lib/artifact-adapter-registry.ts";
+import { createOrbitArtifactAdapterRegistry } from "../app/lib/artifact-adapter-registry.ts";
 import {
   artifactAdapterRegistry,
   artifactStats,
@@ -26,7 +26,7 @@ function adapter(kind, order, extension = `.${kind}`) {
 }
 
 test("requires one immutable adapter for every declared artifact kind", () => {
-  const registry = createRuneArtifactAdapterRegistry(
+  const registry = createOrbitArtifactAdapterRegistry(
     ["document", "data"],
     [adapter("data", 20), adapter("document", 10)],
   );
@@ -46,20 +46,20 @@ test("requires one immutable adapter for every declared artifact kind", () => {
 
 test("fails loud on missing, duplicate, unknown, malformed, and non-finite adapters", () => {
   assert.throws(
-    () => createRuneArtifactAdapterRegistry(["document", "data"], [adapter("document", 10)]),
+    () => createOrbitArtifactAdapterRegistry(["document", "data"], [adapter("document", 10)]),
     /adapter "data" is missing/,
   );
   assert.throws(
-    () => createRuneArtifactAdapterRegistry(["document"], [adapter("document", 10), adapter("document", 20)]),
+    () => createOrbitArtifactAdapterRegistry(["document"], [adapter("document", 10), adapter("document", 20)]),
     /registered more than once/,
   );
-  assert.throws(() => createRuneArtifactAdapterRegistry(["document"], [adapter("data", 10)]), /not a declared kind/);
+  assert.throws(() => createOrbitArtifactAdapterRegistry(["document"], [adapter("data", 10)]), /not a declared kind/);
   assert.throws(
-    () => createRuneArtifactAdapterRegistry(["document"], [adapter("document", Number.NaN)]),
+    () => createOrbitArtifactAdapterRegistry(["document"], [adapter("document", Number.NaN)]),
     /invalid order/,
   );
   assert.throws(
-    () => createRuneArtifactAdapterRegistry(["document"], [adapter("document", 10, "md")]),
+    () => createOrbitArtifactAdapterRegistry(["document"], [adapter("document", 10, "md")]),
     /dotted extension/,
   );
 });

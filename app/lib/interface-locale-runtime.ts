@@ -1,13 +1,13 @@
-type DeferredRuneLocale = "zh-TW" | "fr" | "es" | "ru" | "ar" | "ja" | "ko";
-type GeneratedRuneLocale = Exclude<DeferredRuneLocale, "zh-TW">;
+type DeferredOrbitLocale = "zh-TW" | "fr" | "es" | "ru" | "ar" | "ja" | "ko";
+type GeneratedOrbitLocale = Exclude<DeferredOrbitLocale, "zh-TW">;
 type InterfaceCatalog = Readonly<Record<string, string>>;
 type TraditionalChineseSegment = readonly [source: string, target: string];
 
-const interfaceCatalogs: Partial<Record<GeneratedRuneLocale, InterfaceCatalog>> = {};
-const localeLoads: Partial<Record<DeferredRuneLocale, Promise<void>>> = {};
+const interfaceCatalogs: Partial<Record<GeneratedOrbitLocale, InterfaceCatalog>> = {};
+const localeLoads: Partial<Record<DeferredOrbitLocale, Promise<void>>> = {};
 let traditionalChineseSegments: readonly TraditionalChineseSegment[] | null = null;
 
-const interfaceCatalogLoaders: Record<GeneratedRuneLocale, () => Promise<InterfaceCatalog>> = {
+const interfaceCatalogLoaders: Record<GeneratedOrbitLocale, () => Promise<InterfaceCatalog>> = {
   fr: () => import("./interface-locales.runtime/fr.generated.ts").then((module) => module.INTERFACE_TRANSLATIONS),
   es: () => import("./interface-locales.runtime/es.generated.ts").then((module) => module.INTERFACE_TRANSLATIONS),
   ru: () => import("./interface-locales.runtime/ru.generated.ts").then((module) => module.INTERFACE_TRANSLATIONS),
@@ -16,18 +16,18 @@ const interfaceCatalogLoaders: Record<GeneratedRuneLocale, () => Promise<Interfa
   ko: () => import("./interface-locales.runtime/ko.generated.ts").then((module) => module.INTERFACE_TRANSLATIONS),
 };
 
-export function isRuneLocaleCatalogLoaded(locale: string) {
+export function isOrbitLocaleCatalogLoaded(locale: string) {
   if (locale === "en" || locale === "zh-CN") return true;
   if (locale === "zh-TW") return traditionalChineseSegments != null;
   return Object.hasOwn(interfaceCatalogs, locale);
 }
 
-export async function loadRuneLocaleCatalog(locale: string) {
-  if (isRuneLocaleCatalogLoaded(locale)) return;
+export async function loadOrbitLocaleCatalog(locale: string) {
+  if (isOrbitLocaleCatalogLoaded(locale)) return;
   if (!(locale === "zh-TW" || Object.hasOwn(interfaceCatalogLoaders, locale))) {
     throw new Error(`Orbit cannot load unsupported interface locale “${locale}”.`);
   }
-  const deferredLocale = locale as DeferredRuneLocale;
+  const deferredLocale = locale as DeferredOrbitLocale;
   localeLoads[deferredLocale] ??=
     deferredLocale === "zh-TW"
       ? import("./traditional-chinese.generated.ts").then((module) => {
@@ -47,7 +47,7 @@ export async function loadRuneLocaleCatalog(locale: string) {
 }
 
 export function loadedInterfaceTranslation(locale: string, english: string) {
-  return interfaceCatalogs[locale as GeneratedRuneLocale]?.[english];
+  return interfaceCatalogs[locale as GeneratedOrbitLocale]?.[english];
 }
 
 export function loadedTraditionalChineseSegments() {

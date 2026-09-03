@@ -1,20 +1,20 @@
-import { createRuneSurfaceRegistry } from "./surface-registry.ts";
+import { createOrbitSurfaceRegistry } from "./surface-registry.ts";
 
-export const RUNE_WORKSPACE_SPLIT_STORAGE_KEY = "rune-workspace-split-v2";
-export const RUNE_WORKSPACE_VIEW_STORAGE_KEY = "rune-workspace-view-v1";
+export const ORBIT_WORKSPACE_SPLIT_STORAGE_KEY = "orbit-workspace-split-v2";
+export const ORBIT_WORKSPACE_VIEW_STORAGE_KEY = "orbit-workspace-view-v1";
 export const DEFAULT_WORKSPACE_SOURCE_PERCENT = 44;
 export const MIN_WORKSPACE_SOURCE_PERCENT = 35;
 export const MAX_WORKSPACE_SOURCE_PERCENT = 65;
-export const RUNE_WORKSPACE_VIEWS = ["split", "source", "preview"] as const;
-export type RuneWorkspaceView = (typeof RUNE_WORKSPACE_VIEWS)[number];
+export const ORBIT_WORKSPACE_VIEWS = ["split", "source", "preview"] as const;
+export type OrbitWorkspaceView = (typeof ORBIT_WORKSPACE_VIEWS)[number];
 
-export type RuneWorkspaceViewContribution = Readonly<{
-  id: RuneWorkspaceView;
+export type OrbitWorkspaceViewContribution = Readonly<{
+  id: OrbitWorkspaceView;
   shortcutCode: "Digit1" | "Digit2" | "Digit3";
   shortcutNumber: 1 | 2 | 3;
 }>;
 
-const workspaceViewRegistry = createRuneSurfaceRegistry<"workspace-view", RuneWorkspaceViewContribution>([
+const workspaceViewRegistry = createOrbitSurfaceRegistry<"workspace-view", OrbitWorkspaceViewContribution>([
   { id: "workspace-view", kind: "list" },
 ]);
 
@@ -27,20 +27,20 @@ const workspaceViewRegistry = createRuneSurfaceRegistry<"workspace-view", RuneWo
     id: view.id,
     surface: "workspace-view",
     order: index * 10,
-    value: view as RuneWorkspaceViewContribution,
+    value: view as OrbitWorkspaceViewContribution,
   });
 });
 
-export const RUNE_WORKSPACE_VIEW_CONTRIBUTIONS = Object.freeze(
+export const ORBIT_WORKSPACE_VIEW_CONTRIBUTIONS = Object.freeze(
   workspaceViewRegistry.entries("workspace-view").map((entry) => entry.value),
 );
 
-export type RuneWorkspaceViewShortcutEvent = Pick<
+export type OrbitWorkspaceViewShortcutEvent = Pick<
   KeyboardEvent,
   "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey"
 >;
 
-export type RuneWorkspaceSplitGeometry = Readonly<{
+export type OrbitWorkspaceSplitGeometry = Readonly<{
   basePercent: number;
   originX: number;
   width: number;
@@ -60,13 +60,13 @@ export function normalizeWorkspaceSourcePercent(value: unknown): number | null {
   return clampWorkspaceSourcePercent(parsed);
 }
 
-export function normalizeRuneWorkspaceView(value: unknown): RuneWorkspaceView | null {
-  return RUNE_WORKSPACE_VIEWS.includes(value as RuneWorkspaceView) ? (value as RuneWorkspaceView) : null;
+export function normalizeOrbitWorkspaceView(value: unknown): OrbitWorkspaceView | null {
+  return ORBIT_WORKSPACE_VIEWS.includes(value as OrbitWorkspaceView) ? (value as OrbitWorkspaceView) : null;
 }
 
-export function workspaceViewFromKeyboardShortcut(event: RuneWorkspaceViewShortcutEvent): RuneWorkspaceView | null {
+export function workspaceViewFromKeyboardShortcut(event: OrbitWorkspaceViewShortcutEvent): OrbitWorkspaceView | null {
   if (!(event.metaKey || event.ctrlKey) || !event.altKey || event.shiftKey) return null;
-  return RUNE_WORKSPACE_VIEW_CONTRIBUTIONS.find((view) => view.shortcutCode === event.code)?.id ?? null;
+  return ORBIT_WORKSPACE_VIEW_CONTRIBUTIONS.find((view) => view.shortcutCode === event.code)?.id ?? null;
 }
 
 export function workspaceSplitTracks(sourcePercent: number) {
@@ -77,7 +77,7 @@ export function workspaceSplitTracks(sourcePercent: number) {
   } as const;
 }
 
-export function workspaceSplitPercentFromDrag(clientX: number, geometry: RuneWorkspaceSplitGeometry) {
+export function workspaceSplitPercentFromDrag(clientX: number, geometry: OrbitWorkspaceSplitGeometry) {
   if (
     !Number.isFinite(clientX) ||
     !Number.isFinite(geometry.basePercent) ||

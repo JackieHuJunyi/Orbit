@@ -2,7 +2,7 @@
 
 import { ArchiveRestore, Files, History, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
 import type { WorkspaceResetPlan } from "../lib/workspace-reset";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 export function WorkspaceResetDialog({
@@ -14,13 +14,13 @@ export function WorkspaceResetDialog({
   onConfirm,
 }: {
   plan: WorkspaceResetPlan;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   error: string;
   submitting: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const copy = runeUICopy(locale).workspaceReset;
+  const copy = orbitUICopy(locale).workspaceReset;
   const restoringRecovery = plan.mode === "recovery";
   const title = restoringRecovery ? copy.recoveryTitle : copy.sampleTitle;
   const description = restoringRecovery ? copy.recoveryDescription : copy.sampleDescription;
@@ -47,7 +47,7 @@ export function WorkspaceResetDialog({
               disabled={submitting}
               onClick={onCancel}
             >
-              {runeUICopy(locale).common.cancel}
+              {orbitUICopy(locale).common.cancel}
             </button>
             <button className="button primary-button" type="button" disabled={submitting} onClick={onConfirm}>
               {submitting ? (

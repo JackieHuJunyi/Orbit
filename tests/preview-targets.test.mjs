@@ -336,7 +336,7 @@ test("links Deck and Chart source while leaving Query source without a false vis
   const deckSource = `---
 version: 1
 title: Briefing
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -472,7 +472,7 @@ test("maps Deck preview controls to complete slides without frontmatter or separ
   const source = `---
 version: 1
 title: Briefing
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

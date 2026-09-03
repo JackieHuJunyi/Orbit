@@ -1,7 +1,7 @@
-import type { RuneLocale, RuneUICopy } from "./localization";
-import { createRuneSurfaceRegistry } from "./surface-registry.ts";
+import type { OrbitLocale, OrbitUICopy } from "./localization";
+import { createOrbitSurfaceRegistry } from "./surface-registry.ts";
 
-export type RuneWorkbenchCommandId =
+export type OrbitWorkbenchCommandId =
   | "new-artifact"
   | "import-files"
   | "open-folder"
@@ -17,11 +17,11 @@ export type RuneWorkbenchCommandId =
   | "open-guide"
   | "open-models";
 
-export type RuneWorkbenchCommandGroup = "create" | "workspace" | "view" | "help";
+export type OrbitWorkbenchCommandGroup = "create" | "workspace" | "view" | "help";
 
-export type RuneWorkbenchCommand = {
-  id: RuneWorkbenchCommandId;
-  group: RuneWorkbenchCommandGroup;
+export type OrbitWorkbenchCommand = {
+  id: OrbitWorkbenchCommandId;
+  group: OrbitWorkbenchCommandGroup;
   label: string;
   detail: string;
   keywords: string[];
@@ -29,9 +29,9 @@ export type RuneWorkbenchCommand = {
   disabled?: boolean;
 };
 
-export type RuneWorkbenchCommandContext = {
-  ui: RuneUICopy["workbench"];
-  locale: RuneLocale;
+export type OrbitWorkbenchCommandContext = {
+  ui: OrbitUICopy["workbench"];
+  locale: OrbitLocale;
   artifactCreationDisabled: boolean;
   canCreateBriefing: boolean;
   canUseWorkspace: boolean;
@@ -39,16 +39,16 @@ export type RuneWorkbenchCommandContext = {
   canOpenFolder: boolean;
 };
 
-export type RuneCommandMenuCopy = {
+export type OrbitCommandMenuCopy = {
   title: string;
   placeholder: string;
   noResults: string;
   unavailable: string;
   close: string;
-  groups: Record<RuneWorkbenchCommandGroup, string>;
+  groups: Record<OrbitWorkbenchCommandGroup, string>;
 };
 
-const COMMAND_MENU_COPY: Record<RuneLocale, RuneCommandMenuCopy> = {
+const COMMAND_MENU_COPY: Record<OrbitLocale, OrbitCommandMenuCopy> = {
   "zh-CN": {
     title: "快速操作",
     placeholder: "搜索操作与视图…",
@@ -123,19 +123,19 @@ const COMMAND_MENU_COPY: Record<RuneLocale, RuneCommandMenuCopy> = {
   },
 };
 
-export function runeCommandMenuCopy(locale: RuneLocale): RuneCommandMenuCopy {
+export function orbitCommandMenuCopy(locale: OrbitLocale): OrbitCommandMenuCopy {
   return COMMAND_MENU_COPY[locale];
 }
 
-export function createRuneWorkbenchCommands({
+export function createOrbitWorkbenchCommands({
   ui,
   artifactCreationDisabled,
   canCreateBriefing,
   canUseWorkspace,
   canCheckpoint,
   canOpenFolder,
-}: RuneWorkbenchCommandContext): RuneWorkbenchCommand[] {
-  const builtInCommands: RuneWorkbenchCommand[] = [
+}: OrbitWorkbenchCommandContext): OrbitWorkbenchCommand[] {
+  const builtInCommands: OrbitWorkbenchCommand[] = [
     {
       id: "new-artifact",
       group: "create",
@@ -252,7 +252,7 @@ export function createRuneWorkbenchCommands({
       keywords: ["model", "api", "provider", "key", "模型", "配置"],
     },
   ];
-  const registry = createRuneSurfaceRegistry<"command-menu", RuneWorkbenchCommand>([
+  const registry = createOrbitSurfaceRegistry<"command-menu", OrbitWorkbenchCommand>([
     { id: "command-menu", kind: "list" },
   ]);
   builtInCommands.forEach((command, index) => {
@@ -274,7 +274,7 @@ function normalizeCommandText(value: string) {
     .trim();
 }
 
-function commandRank(command: RuneWorkbenchCommand, normalizedQuery: string) {
+function commandRank(command: OrbitWorkbenchCommand, normalizedQuery: string) {
   if (!normalizedQuery) return 0;
   const label = normalizeCommandText(command.label);
   const detail = normalizeCommandText(command.detail);
@@ -292,11 +292,11 @@ function commandRank(command: RuneWorkbenchCommand, normalizedQuery: string) {
   return 50;
 }
 
-export function filterRuneWorkbenchCommands(commands: readonly RuneWorkbenchCommand[], query: string) {
+export function filterOrbitWorkbenchCommands(commands: readonly OrbitWorkbenchCommand[], query: string) {
   const normalizedQuery = normalizeCommandText(query);
   return commands
     .map((command, index) => ({ command, index, rank: commandRank(command, normalizedQuery) }))
-    .filter((entry): entry is { command: RuneWorkbenchCommand; index: number; rank: number } => entry.rank !== null)
+    .filter((entry): entry is { command: OrbitWorkbenchCommand; index: number; rank: number } => entry.rank !== null)
     .sort((left, right) => left.rank - right.rank || left.index - right.index)
     .map((entry) => entry.command);
 }

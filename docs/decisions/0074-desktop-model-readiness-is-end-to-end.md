@@ -1,6 +1,6 @@
 # ADR 0074: Desktop model readiness is end to end
 
-- Status: accepted
+- Status: accepted for model readiness; desktop compatibility bootstrap superseded by ADR 0078
 - Date: 2026-09-02
 
 ## Context

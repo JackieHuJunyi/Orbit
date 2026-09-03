@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { runRuneGoldenTaskSet } from "../evals/run-golden-task-set.mjs";
+import { runOrbitGoldenTaskSet } from "../evals/run-golden-task-set.mjs";
 
 const BASELINE_URL = new URL("../evals/BASELINE.md", import.meta.url);
 
@@ -8,7 +8,7 @@ function tableCell(value) {
   return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
-export function renderRuneGoldenTaskReport(result) {
+export function renderOrbitGoldenTaskReport(result) {
   const rows = result.cases.map(
     (entry) =>
       `| \`${tableCell(entry.id)}\` | ${entry.expected} | ${entry.result} | ${tableCell(entry.coverage.join(" · "))} |`,
@@ -48,8 +48,8 @@ No human score is recorded until an authorized reviewer has completed a real tas
 }
 
 async function main() {
-  const result = await runRuneGoldenTaskSet();
-  const report = renderRuneGoldenTaskReport(result);
+  const result = await runOrbitGoldenTaskSet();
+  const report = renderOrbitGoldenTaskReport(result);
   if (process.argv.includes("--print")) {
     process.stdout.write(report);
   } else {

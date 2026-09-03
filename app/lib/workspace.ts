@@ -10,7 +10,7 @@ import {
 import { formatQueryDataSourceDirective, parseQueryDataSourceDirective } from "./query-source.ts";
 import { validateReadQuery } from "./sql.ts";
 import { formatInteger } from "./number-format.ts";
-import { createRuneArtifactAdapterRegistry } from "./artifact-adapter-registry.ts";
+import { createOrbitArtifactAdapterRegistry } from "./artifact-adapter-registry.ts";
 
 export type ArtifactKind = "document" | "data" | "query" | "chart" | "slides";
 
@@ -145,7 +145,7 @@ const marginChartSource = `{
 const slidesSource = `---
 version: 1
 title: Q2 Board Briefing
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -361,7 +361,7 @@ export function parseDataSource(source: string): ParsedData {
 
 const ARTIFACT_KINDS = ["document", "data", "query", "chart", "slides"] as const satisfies readonly ArtifactKind[];
 
-export const artifactAdapterRegistry = createRuneArtifactAdapterRegistry<
+export const artifactAdapterRegistry = createOrbitArtifactAdapterRegistry<
   ArtifactKind,
   WorkspaceArtifact,
   ArtifactStarterRequest
@@ -598,7 +598,7 @@ function planDeckSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan 
   const source = artifact.source;
   if (/深色|dark|night/i.test(prompt)) {
     return {
-      nextSource: source.replace(/^theme:\s*(?:rune|rune-dark)\s*$/m, "theme: rune-dark"),
+      nextSource: source.replace(/^theme:\s*(?:orbit|orbit-dark)\s*$/m, "theme: orbit-dark"),
       summary: "Switch the deck compiler to the Orbit night theme",
       detail: "Only the validated frontmatter theme changes; slide content stays untouched.",
     };
@@ -621,8 +621,8 @@ function planSlides(artifact: WorkspaceArtifact, prompt: string): LocalPlan {
   const source = artifact.source;
   if (/深色|dark|night/i.test(prompt)) {
     const themed = source
-      .replace(/data-rune-theme=(['"])rune\1/i, 'data-rune-theme="rune-dark"')
-      .replace(/<body\b[^>]*\bclass=(['"])[^'"]*\1/i, '<body class="rune-dark"')
+      .replace(/data-orbit-theme=(['"])orbit\1/i, 'data-orbit-theme="orbit-dark"')
+      .replace(/<body\b[^>]*\bclass=(['"])[^'"]*\1/i, '<body class="orbit-dark"')
       .replace(/--ink:\s*#[0-9a-f]{3,8}/i, "--ink: #f5f1e8")
       .replace(/--muted:\s*#[0-9a-f]{3,8}/i, "--muted: #a9b5ad")
       .replace(/--paper:\s*#[0-9a-f]{3,8}/i, "--paper: #17201b")

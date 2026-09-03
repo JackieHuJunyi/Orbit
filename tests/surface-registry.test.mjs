@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { createRuneSurfaceRegistry } from "../app/lib/surface-registry.ts";
+import { createOrbitSurfaceRegistry } from "../app/lib/surface-registry.ts";
 
 test("orders list contributions without mutating their input values", () => {
   const first = Object.freeze({ label: "first" });
   const second = Object.freeze({ label: "second" });
   const tied = Object.freeze({ label: "tied" });
-  const registry = createRuneSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
+  const registry = createOrbitSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
   registry.register({ id: "second", surface: "toolbar", order: 20, value: second });
   registry.register({ id: "first", surface: "toolbar", order: 10, value: first });
   registry.register({ id: "tied", surface: "toolbar", order: 20, value: tied });
@@ -25,7 +25,7 @@ test("orders list contributions without mutating their input values", () => {
 });
 
 test("disposes exactly the contribution that was registered", () => {
-  const registry = createRuneSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
+  const registry = createOrbitSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
   const disposeFirst = registry.register({ id: "first", surface: "toolbar", value: 1 });
   registry.register({ id: "second", surface: "toolbar", value: 2 });
   disposeFirst();
@@ -37,7 +37,7 @@ test("disposes exactly the contribution that was registered", () => {
 });
 
 test("fails loud on undeclared, duplicate, malformed, and overfilled surfaces", () => {
-  const registry = createRuneSurfaceRegistry([
+  const registry = createOrbitSurfaceRegistry([
     { id: "toolbar", kind: "list" },
     { id: "root", kind: "single" },
   ]);
@@ -55,13 +55,13 @@ test("fails loud on undeclared, duplicate, malformed, and overfilled surfaces", 
 test("rejects duplicate surface definitions and non-finite order", () => {
   assert.throws(
     () =>
-      createRuneSurfaceRegistry([
+      createOrbitSurfaceRegistry([
         { id: "toolbar", kind: "list" },
         { id: "toolbar", kind: "single" },
       ]),
     /declared more than once/,
   );
-  const registry = createRuneSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
+  const registry = createOrbitSurfaceRegistry([{ id: "toolbar", kind: "list" }]);
   assert.throws(
     () => registry.register({ id: "files", surface: "toolbar", order: Number.NaN, value: "bad" }),
     /invalid order/,

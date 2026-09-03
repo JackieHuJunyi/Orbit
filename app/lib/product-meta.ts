@@ -1,7 +1,3 @@
-/**
- * Public product identity. Keep this separate from the legacy `rune-*`
- * persistence and bridge namespaces: those identifiers are compatibility
- * contracts, while these values are safe to present to people.
- */
+/** Canonical product identity shared by interface and release metadata. */
 export const ORBIT_PRODUCT_NAME = "Orbit";
-export const ORBIT_PRODUCT_VERSION = "1.58";
+export const ORBIT_PRODUCT_VERSION = "1.59";

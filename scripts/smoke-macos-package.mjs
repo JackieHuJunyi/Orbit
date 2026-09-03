@@ -41,7 +41,7 @@ const child = spawn(executable, [], {
   env: {
     ...process.env,
     ORBIT_DESKTOP_QA_PORT: String(port),
-    RUNE_CREDENTIAL_ENCRYPTION_KEY: "a".repeat(64),
+    ORBIT_CREDENTIAL_ENCRYPTION_KEY: "a".repeat(64),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

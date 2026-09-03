@@ -3,12 +3,12 @@ import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts
 import { isDeckMarkdownArtifact, parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import {
-  extractRuneAssetIds,
-  parseRuneMarkdownImage,
-  runeImageAssetMap,
-  runeImageDimensions,
-  runeImageExtension,
-  type RuneExportImageAsset,
+  extractOrbitAssetIds,
+  parseOrbitMarkdownImage,
+  orbitImageAssetMap,
+  orbitImageDimensions,
+  orbitImageExtension,
+  type OrbitExportImageAsset,
 } from "./local-assets.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { convertSemanticHtmlPresentationToDeck } from "./semantic-html-presentation-export.ts";
@@ -44,13 +44,13 @@ type DocxContext = {
   warnings: Set<string>;
   workspace: WorkspaceArtifact[];
   querySnapshots: WorkspaceQuerySnapshot[];
-  images: Map<string, RuneExportImageAsset>;
-  usedImages: Map<string, { relationshipId: string; fileName: string; asset: RuneExportImageAsset }>;
+  images: Map<string, OrbitExportImageAsset>;
+  usedImages: Map<string, { relationshipId: string; fileName: string; asset: OrbitExportImageAsset }>;
   drawingId: number;
 };
 
 type PptParagraph = { text: string; bullet: boolean; level: number };
-type PptSlideImage = { reference: { id: string; alt: string }; asset: RuneExportImageAsset };
+type PptSlideImage = { reference: { id: string; alt: string }; asset: OrbitExportImageAsset };
 type PptSlideModel = {
   title: string;
   eyebrow: string;
@@ -357,13 +357,13 @@ function docxImage(reference: { id: string; alt: string }, context: DocxContext)
   let used = context.usedImages.get(reference.id);
   if (!used) {
     const relationshipId = `rId${context.relationships.length + 3}`;
-    const fileName = `rune-${reference.id}.${runeImageExtension(asset.mimeType)}`;
+    const fileName = `orbit-${reference.id}.${orbitImageExtension(asset.mimeType)}`;
     used = { relationshipId, fileName, asset };
     context.usedImages.set(reference.id, used);
     context.relationships.push({ id: relationshipId, target: `media/${fileName}`, kind: "image" });
   }
   const description = reference.alt || asset.name || "Orbit image";
-  const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
+  const dimensions = orbitImageDimensions(asset.bytes, asset.mimeType);
   if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${asset.id}`);
   const maxWidth = 5_486_400;
   const maxHeight = 7_086_600;
@@ -476,7 +476,7 @@ function exportDocx(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
-  imageAssets: readonly RuneExportImageAsset[],
+  imageAssets: readonly OrbitExportImageAsset[],
 ): OfficeExportResult {
   if (artifact.source.length > MAX_DOCX_EXPORT_SOURCE_CHARS)
     throw new Error("DOCX export is limited to 200,000 source characters.");
@@ -486,17 +486,17 @@ function exportDocx(
     warnings,
     workspace,
     querySnapshots,
-    images: runeImageAssetMap(imageAssets),
+    images: orbitImageAssetMap(imageAssets),
     usedImages: new Map(),
     drawingId: 0,
   };
   const blocks = parseMarkdownBlocks(artifact.source);
   const referencedImageIds = blocks.flatMap((block) =>
     block.type === "paragraph"
-      ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
+      ? [parseOrbitMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
       : [],
   );
-  const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
+  const inlineImage = extractOrbitAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
   if (inlineImage) throw new Error("Place each Orbit local image on its own Markdown line before DOCX export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Document: ${unexpectedImage.id}`);
@@ -523,7 +523,7 @@ function exportDocx(
             .join("");
           return `<w:p><w:pPr><w:pStyle w:val="CodeBlock"/></w:pPr>${runs}</w:p>`;
         }
-        const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
+        const imageReference = block.type === "paragraph" ? parseOrbitMarkdownImage(block.source) : null;
         if (imageReference) return docxImage(imageReference, context);
         const chartReference = block.source.match(EXACT_CHART_TOKEN)?.[1];
         if (chartReference) {
@@ -547,7 +547,7 @@ function exportDocx(
   const imageDefaults = [
     ...new Map(
       [...context.usedImages.values()].map(
-        ({ asset }) => [runeImageExtension(asset.mimeType), asset.mimeType] as const,
+        ({ asset }) => [orbitImageExtension(asset.mimeType), asset.mimeType] as const,
       ),
     ),
   ]
@@ -659,7 +659,7 @@ function deckSlideModel(
   warnings: Set<string>,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
-  images: Map<string, RuneExportImageAsset>,
+  images: Map<string, OrbitExportImageAsset>,
 ): PptSlideModel {
   const blocks = parseMarkdownBlocks(slide.source);
   const headingIndex = blocks.findIndex((block) => block.type === "heading");
@@ -677,7 +677,7 @@ function deckSlideModel(
     }
     if (block.type === "code") warnings.add("Fenced code in Deck Markdown was exported as plain presentation text.");
     const source = block.type === "code" ? block.source.replace(/\n/g, " · ") : block.source;
-    const imageReference = parseRuneMarkdownImage(source);
+    const imageReference = parseOrbitMarkdownImage(source);
     if (imageReference) {
       const asset = images.get(imageReference.id);
       if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
@@ -973,8 +973,8 @@ function pptTable(id: number, rows: string[][], y: number) {
   return `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="900000" y="${y}"/><a:ext cx="${totalWidth}" cy="${height}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${grid}</a:tblGrid>${rowXml}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
 }
 
-function fitPptImage(asset: RuneExportImageAsset, box: { x: number; y: number; cx: number; cy: number }) {
-  const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
+function fitPptImage(asset: OrbitExportImageAsset, box: { x: number; y: number; cx: number; cy: number }) {
+  const dimensions = orbitImageDimensions(asset.bytes, asset.mimeType);
   if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${asset.id}`);
   const scale = Math.min(box.cx / dimensions.width, box.cy / dimensions.height);
   const cx = Math.max(1, Math.round(dimensions.width * scale));
@@ -1085,13 +1085,13 @@ function exportPptx(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[],
-  imageAssets: readonly RuneExportImageAsset[],
+  imageAssets: readonly OrbitExportImageAsset[],
 ): OfficeExportResult {
   const parsed = parseDeckSource(artifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The Deck Markdown source is not valid.");
   const warnings = new Set<string>();
-  const images = runeImageAssetMap(imageAssets);
-  const referencedImageIds = extractRuneAssetIds(artifact.source);
+  const images = orbitImageAssetMap(imageAssets);
+  const referencedImageIds = extractOrbitAssetIds(artifact.source);
   const missingImage = referencedImageIds.find((id) => !images.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
@@ -1131,7 +1131,7 @@ function exportPptx(
     )
     .join("");
   const slideIds = models.map((_model, index) => `<p:sldId id="${256 + index}" r:id="rId${index + 2}"/>`).join("");
-  const imageDefaults = [...new Set(imageAssets.map((asset) => runeImageExtension(asset.mimeType)))]
+  const imageDefaults = [...new Set(imageAssets.map((asset) => orbitImageExtension(asset.mimeType)))]
     .map(
       (extension) =>
         `<Default Extension="${extension}" ContentType="${extension === "png" ? "image/png" : extension === "jpg" ? "image/jpeg" : extension === "webp" ? "image/webp" : "image/gif"}"/>`,
@@ -1152,13 +1152,13 @@ function exportPptx(
     "ppt/theme/theme1.xml": pptTheme(),
   };
   images.forEach((asset) => {
-    parts[`ppt/media/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`] = asset.bytes;
+    parts[`ppt/media/orbit-${asset.id}.${orbitImageExtension(asset.mimeType)}`] = asset.bytes;
   });
   models.forEach((model, index) => {
     const imageRelationshipId = model.image ? "rId2" : undefined;
     parts[`ppt/slides/slide${index + 1}.xml`] = pptSlideXml(model, imageRelationshipId);
     const imageRelationship = model.image
-      ? `<Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/image" Target="../media/rune-${model.image.asset.id}.${runeImageExtension(model.image.asset.mimeType)}"/>`
+      ? `<Relationship Id="rId2" Type="${OFFICE_RELATIONSHIPS}/image" Target="../media/orbit-${model.image.asset.id}.${orbitImageExtension(model.image.asset.mimeType)}"/>`
       : "";
     parts[`ppt/slides/_rels/slide${index + 1}.xml.rels`] =
       `${XML_DECLARATION}<Relationships xmlns="${PACKAGE_RELATIONSHIPS}"><Relationship Id="rId1" Type="${OFFICE_RELATIONSHIPS}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${imageRelationship}</Relationships>`;
@@ -1180,7 +1180,7 @@ export function exportOfficeArtifact(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[] = [],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
-  imageAssets: readonly RuneExportImageAsset[] = [],
+  imageAssets: readonly OrbitExportImageAsset[] = [],
 ): OfficeExportResult {
   if (!artifact.source.trim()) throw new Error("The source is empty.");
   if (artifact.source.length > MAX_OFFICE_EXPORT_SOURCE_CHARS)

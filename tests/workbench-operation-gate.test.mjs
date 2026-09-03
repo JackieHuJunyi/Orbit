@@ -89,7 +89,7 @@ test("compilation is immutable and never mutates the caller's complete registry"
 test("the workbench binds every owner to one gate and uses it for shared entry surfaces", async () => {
   const [gateSource, workbench] = await Promise.all([
     readFile(new URL("../app/lib/workbench-operation-gate.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(gateSource, /from ["']react|\b(?:window|document|localStorage|indexedDB|fetch)\s*[.(]/);

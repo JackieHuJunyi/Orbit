@@ -1,7 +1,7 @@
 export const deckSourceFixture = `---
 version: 1
 title: Q2 Board Briefing
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

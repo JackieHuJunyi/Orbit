@@ -70,7 +70,7 @@ function runNextWebKitSrcDocReplay() {
     task.frame.removeAttribute("srcdoc");
     task.loadListener = () => loadWebKitSrcDocReplaySource(task);
     task.frame.addEventListener("load", task.loadListener, { once: true });
-    task.frame.setAttribute("src", `about:blank#rune-srcdoc-replay-${++webKitSrcDocReplayIdentity}`);
+    task.frame.setAttribute("src", `about:blank#orbit-srcdoc-replay-${++webKitSrcDocReplayIdentity}`);
     task.phaseTimer = window.setTimeout(() => loadWebKitSrcDocReplaySource(task), 320);
   }, task.delay);
 }

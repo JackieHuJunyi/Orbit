@@ -1,22 +1,22 @@
 import type { ArtifactKind, WorkspaceArtifact } from "./workspace.ts";
 import {
-  isRuneLocaleCatalogLoaded,
+  isOrbitLocaleCatalogLoaded,
   loadedInterfaceTranslation,
   loadedTraditionalChineseSegments,
-  loadRuneLocaleCatalog,
+  loadOrbitLocaleCatalog,
 } from "./interface-locale-runtime.ts";
 
 let traditionalChinesePattern: RegExp | null = null;
 let traditionalChineseBySource: ReadonlyMap<string, string> | null = null;
 
-function requireRuneLocaleCatalog(locale: RuneLocale) {
-  if (!isRuneLocaleCatalogLoaded(locale)) {
+function requireOrbitLocaleCatalog(locale: OrbitLocale) {
+  if (!isOrbitLocaleCatalogLoaded(locale)) {
     throw new Error(`Orbit interface locale “${locale}” must be loaded before synchronous localization.`);
   }
 }
 
 function toTaiwanTraditional(value: string) {
-  requireRuneLocaleCatalog("zh-TW");
+  requireOrbitLocaleCatalog("zh-TW");
   const segments = loadedTraditionalChineseSegments()!;
   traditionalChinesePattern ??= new RegExp(
     segments.map(([source]) => source.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|"),
@@ -26,7 +26,7 @@ function toTaiwanTraditional(value: string) {
   return value.replace(traditionalChinesePattern, (source) => traditionalChineseBySource!.get(source) ?? source);
 }
 
-export const RUNE_LOCALE_REGISTRY = [
+export const ORBIT_LOCALE_REGISTRY = [
   {
     locale: "zh-CN",
     greeting: "你好",
@@ -101,20 +101,20 @@ export const RUNE_LOCALE_REGISTRY = [
   },
 ] as const;
 
-export type RuneLocale = (typeof RUNE_LOCALE_REGISTRY)[number]["locale"];
+export type OrbitLocale = (typeof ORBIT_LOCALE_REGISTRY)[number]["locale"];
 
-export { isRuneLocaleCatalogLoaded, loadRuneLocaleCatalog };
+export { isOrbitLocaleCatalogLoaded, loadOrbitLocaleCatalog };
 
-export function isChineseRuneLocale(locale: RuneLocale) {
+export function isChineseOrbitLocale(locale: OrbitLocale) {
   return locale === "zh-CN" || locale === "zh-TW";
 }
 
-export function localeDirection(locale: RuneLocale) {
-  return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.direction ?? "ltr";
+export function localeDirection(locale: OrbitLocale) {
+  return ORBIT_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.direction ?? "ltr";
 }
 
-export function workspaceSplitValueLabel(locale: RuneLocale, value: number) {
-  const labels: Record<RuneLocale, string> = {
+export function workspaceSplitValueLabel(locale: OrbitLocale, value: number) {
+  const labels: Record<OrbitLocale, string> = {
     "zh-CN": `源内容宽度 ${value}%`,
     "zh-TW": `來源內容寬度 ${value}%`,
     en: `Source width ${value}%`,
@@ -140,8 +140,8 @@ function convertPreservingValues(value: string, preservedValues: readonly string
   return converted;
 }
 
-export function runeText(
-  locale: RuneLocale,
+export function orbitText(
+  locale: OrbitLocale,
   english: string,
   simplifiedChinese: string,
   preservedValues: readonly string[] = [],
@@ -149,7 +149,7 @@ export function runeText(
   if (locale === "en") return english;
   if (locale === "zh-CN") return simplifiedChinese;
   if (locale === "zh-TW") return convertPreservingValues(simplifiedChinese, preservedValues);
-  requireRuneLocaleCatalog(locale);
+  requireOrbitLocaleCatalog(locale);
   return loadedInterfaceTranslation(locale, english) ?? english;
 }
 
@@ -173,12 +173,12 @@ function localizeChineseCatalog<T>(value: T): T {
   return value;
 }
 
-function localizeGeneratedCatalog<T>(locale: RuneLocale, value: T): T {
-  if (typeof value === "string") return runeText(locale, value, value) as T;
+function localizeGeneratedCatalog<T>(locale: OrbitLocale, value: T): T {
+  if (typeof value === "string") return orbitText(locale, value, value) as T;
   if (typeof value === "function") {
     return ((...args: unknown[]) => {
       const result = value(...args);
-      return typeof result === "string" ? runeText(locale, result, result) : localizeGeneratedCatalog(locale, result);
+      return typeof result === "string" ? orbitText(locale, result, result) : localizeGeneratedCatalog(locale, result);
     }) as T;
   }
   if (Array.isArray(value)) return value.map((item) => localizeGeneratedCatalog(locale, item)) as T;
@@ -190,14 +190,14 @@ function localizeGeneratedCatalog<T>(locale: RuneLocale, value: T): T {
   return value;
 }
 
-export function localizeRuneCopy<T>(locale: RuneLocale, english: T, simplifiedChinese: unknown = english): T {
+export function localizeOrbitCopy<T>(locale: OrbitLocale, english: T, simplifiedChinese: unknown = english): T {
   if (locale === "en") return english;
   if (locale === "zh-CN") return simplifiedChinese as T;
   if (locale === "zh-TW") return localizeChineseCatalog(simplifiedChinese as T);
   return localizeGeneratedCatalog(locale, english);
 }
 
-function localizeRuneMultiline(locale: RuneLocale, english: string, simplifiedChinese: string) {
+function localizeOrbitMultiline(locale: OrbitLocale, english: string, simplifiedChinese: string) {
   const source =
     locale === "en"
       ? english
@@ -206,26 +206,26 @@ function localizeRuneMultiline(locale: RuneLocale, english: string, simplifiedCh
         : locale === "zh-TW"
           ? toTaiwanTraditional(simplifiedChinese)
           : english;
-  if (locale === "en" || isChineseRuneLocale(locale)) return source;
-  requireRuneLocaleCatalog(locale);
+  if (locale === "en" || isChineseOrbitLocale(locale)) return source;
+  requireOrbitLocaleCatalog(locale);
   return source
     .split("\n")
     .map((line) => loadedInterfaceTranslation(locale, line) ?? line)
     .join("\n");
 }
 
-export const RUNE_LOCALE_STORAGE_KEY = "rune-locale-v1";
-export const RUNE_ONBOARDING_STORAGE_KEY = "rune-onboarding-v1";
-export const RUNE_GUIDE_ID = "rune-guide";
+export const ORBIT_LOCALE_STORAGE_KEY = "orbit-locale-v1";
+export const ORBIT_ONBOARDING_STORAGE_KEY = "orbit-onboarding-v1";
+export const ORBIT_GUIDE_ID = "orbit-guide";
 
-export function normalizeRuneLocale(value: unknown): RuneLocale | null {
-  return RUNE_LOCALE_REGISTRY.some((entry) => entry.locale === value) ? (value as RuneLocale) : null;
+export function normalizeOrbitLocale(value: unknown): OrbitLocale | null {
+  return ORBIT_LOCALE_REGISTRY.some((entry) => entry.locale === value) ? (value as OrbitLocale) : null;
 }
 
-export function detectPreferredLocale(languages: readonly string[] = []): RuneLocale {
+export function detectPreferredLocale(languages: readonly string[] = []): OrbitLocale {
   for (const language of languages) {
     const normalized = language.toLowerCase();
-    const match = RUNE_LOCALE_REGISTRY.flatMap((entry) => entry.languagePrefixes.map((prefix) => ({ entry, prefix })))
+    const match = ORBIT_LOCALE_REGISTRY.flatMap((entry) => entry.languagePrefixes.map((prefix) => ({ entry, prefix })))
       .filter(({ prefix }) => normalized === prefix || normalized.startsWith(`${prefix}-`))
       .sort((left, right) => right.prefix.length - left.prefix.length)[0]?.entry;
     if (match) return match.locale;
@@ -233,23 +233,23 @@ export function detectPreferredLocale(languages: readonly string[] = []): RuneLo
   return "en";
 }
 
-export function localeDisplayName(locale: RuneLocale) {
-  return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.nativeName ?? locale;
+export function localeDisplayName(locale: OrbitLocale) {
+  return ORBIT_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.nativeName ?? locale;
 }
 
-export function localeMonogram(locale: RuneLocale) {
-  return RUNE_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.monogram ?? "A";
+export function localeMonogram(locale: OrbitLocale) {
+  return ORBIT_LOCALE_REGISTRY.find((entry) => entry.locale === locale)?.monogram ?? "A";
 }
 
-export function runeGreetingSequence(preferred: RuneLocale): string[] {
+export function orbitGreetingSequence(preferred: OrbitLocale): string[] {
   const ordered = [
-    ...RUNE_LOCALE_REGISTRY.filter((entry) => entry.locale === preferred),
-    ...RUNE_LOCALE_REGISTRY.filter((entry) => entry.locale !== preferred),
+    ...ORBIT_LOCALE_REGISTRY.filter((entry) => entry.locale === preferred),
+    ...ORBIT_LOCALE_REGISTRY.filter((entry) => entry.locale !== preferred),
   ];
   return ordered.map((entry) => entry.greeting);
 }
 
-function buildRuneUICopy(locale: "zh-CN" | "en") {
+function buildOrbitUICopy(locale: "zh-CN" | "en") {
   const zh = locale === "zh-CN";
   const count = (value: number, singular: string, plural: string, chineseUnit: string) =>
     zh ? `${value} ${chineseUnit}` : `${value} ${value === 1 ? singular : plural}`;
@@ -348,7 +348,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       hideFiles: zh ? "隐藏工作区文件" : "Hide workspace files",
       showFiles: zh ? "显示工作区文件" : "Show workspace files",
       workspaceFiles: zh ? "工作区文件" : "Workspace files",
-      runeSections: zh ? "Orbit 功能区" : "Orbit sections",
+      orbitSections: zh ? "Orbit 功能区" : "Orbit sections",
       createOperatingReview: zh ? "创建经营汇报" : "Create operating review",
       savedReviews: zh ? "已保存任务" : "Saved tasks",
       recentTaskRuns: zh ? "最近任务记录" : "Recent task runs",
@@ -942,8 +942,8 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       document: zh ? "文档" : "Document",
       presentation: zh ? "演示" : "Presentation",
       queryBindingHelp: zh
-        ? "Orbit 会写入明确的 -- rune:data 指令，因此文件排序变化不会改变 workspace_data。"
-        : "Orbit writes an explicit -- rune:data directive, so workspace_data never changes when files are reordered.",
+        ? "Orbit 会写入明确的 -- orbit:data 指令，因此文件排序变化不会改变 workspace_data。"
+        : "Orbit writes an explicit -- orbit:data directive, so workspace_data never changes when files are reordered.",
       chartBindingHelp: zh
         ? "Chart JSON 保存精确来源 ID 与字段名；报告和演示可通过同一图表绑定复用。"
         : "The Chart JSON stores the exact source id and field names; reports and decks can reuse it with one chart binding.",
@@ -1050,7 +1050,7 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       alreadyFirst: zh ? "已经是第一个" : "Already first",
       alreadyLast: zh ? "已经是最后一个" : "Already last",
       lastCannotDelete: zh ? "不能删除最后一个内容块" : "The last block cannot be deleted",
-      runeDocument: zh ? "Orbit 文档" : "Orbit document",
+      orbitDocument: zh ? "Orbit 文档" : "Orbit document",
       documentMode: (mode: "block" | "section" | "select" | "live") =>
         zh
           ? {
@@ -1238,22 +1238,22 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
   };
 }
 
-export type RuneUICopy = ReturnType<typeof buildRuneUICopy>;
+export type OrbitUICopy = ReturnType<typeof buildOrbitUICopy>;
 
-const RUNE_UI_COPY: Partial<Record<RuneLocale, RuneUICopy>> = {
-  en: buildRuneUICopy("en"),
-  "zh-CN": buildRuneUICopy("zh-CN"),
+const ORBIT_UI_COPY: Partial<Record<OrbitLocale, OrbitUICopy>> = {
+  en: buildOrbitUICopy("en"),
+  "zh-CN": buildOrbitUICopy("zh-CN"),
 };
 
-export function runeUICopy(locale: RuneLocale): RuneUICopy {
-  const cached = RUNE_UI_COPY[locale];
+export function orbitUICopy(locale: OrbitLocale): OrbitUICopy {
+  const cached = ORBIT_UI_COPY[locale];
   if (cached) return cached;
-  requireRuneLocaleCatalog(locale);
+  requireOrbitLocaleCatalog(locale);
   const localized =
     locale === "zh-TW"
-      ? localizeChineseCatalog(buildRuneUICopy("zh-CN"))
-      : localizeGeneratedCatalog(locale, buildRuneUICopy("en"));
-  RUNE_UI_COPY[locale] = localized;
+      ? localizeChineseCatalog(buildOrbitUICopy("zh-CN"))
+      : localizeGeneratedCatalog(locale, buildOrbitUICopy("en"));
+  ORBIT_UI_COPY[locale] = localized;
   return localized;
 }
 
@@ -1303,8 +1303,8 @@ const englishSelectionCommands: Record<ArtifactKind, string[]> = {
   slides: ["Condense the selection into one sentence", "Turn the selection into three points"],
 };
 
-export function runeQuickCommands(
-  locale: RuneLocale,
+export function orbitQuickCommands(
+  locale: OrbitLocale,
   scope: "selection" | "artifact" | "workspace",
   kind: ArtifactKind,
 ) {
@@ -1313,14 +1313,14 @@ export function runeQuickCommands(
     if (scope === "selection") return englishSelectionCommands[kind];
     return englishArtifactCommands[kind];
   }
-  if (!isChineseRuneLocale(locale)) {
+  if (!isChineseOrbitLocale(locale)) {
     const commands =
       scope === "workspace"
         ? englishWorkspaceCommands
         : scope === "selection"
           ? englishSelectionCommands[kind]
           : englishArtifactCommands[kind];
-    return commands.map((command) => runeText(locale, command, command));
+    return commands.map((command) => orbitText(locale, command, command));
   }
   const commands =
     scope === "workspace"
@@ -1392,10 +1392,10 @@ const chineseStatusMessages: Record<string, string> = {
   "Agent composer focused": "已聚焦 Agent 输入框",
 };
 
-export function localizeRuneStatus(locale: RuneLocale, message: string) {
+export function localizeOrbitStatus(locale: OrbitLocale, message: string) {
   if (locale === "en") return message;
-  if (!isChineseRuneLocale(locale)) {
-    requireRuneLocaleCatalog(locale);
+  if (!isChineseOrbitLocale(locale)) {
+    requireOrbitLocaleCatalog(locale);
     return loadedInterfaceTranslation(locale, message) ?? message;
   }
   const exact = chineseStatusMessages[message];
@@ -1419,8 +1419,8 @@ export function localizeRuneStatus(locale: RuneLocale, message: string) {
       (value, folder, source) => `已从 ${folder} 读取 ${value} 个源文件 · ${source}`,
     ],
     [
-      /^Pushed (\d+) source files and rune\.workspace\.json to (.+)$/,
-      (value, folder) => `已将 ${value} 个源文件和 rune.workspace.json 写回 ${folder}`,
+      /^Pushed (\d+) source files and orbit\.workspace\.json to (.+)$/,
+      (value, folder) => `已将 ${value} 个源文件和 orbit.workspace.json 写回 ${folder}`,
     ],
     [/^Reading (.+) locally…$/, (target) => `正在本地读取 ${target}…`],
     [/^Import cancelled — (.+) did not change the workspace$/, (name) => `已取消导入 — ${name} 未修改工作区`],
@@ -1447,7 +1447,7 @@ export function localizeRuneStatus(locale: RuneLocale, message: string) {
   return message;
 }
 
-export const CHINESE_RUNE_GUIDE = [
+export const CHINESE_ORBIT_GUIDE = [
   "# 欢迎使用 Orbit",
   "",
   "> Orbit 是一个本地优先、可核验的 AI 工作台。你的源文件是事实，预览是实时编译结果；你批准前，Agent 不会写入文件。",
@@ -1494,7 +1494,7 @@ export const CHINESE_RUNE_GUIDE = [
   "",
   "## 设置模型",
   "",
-  "Orbit 支持 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages、Gemini generateContent 和自定义协议的个人模型配置。密钥保存后会被服务端加密成浏览器脚本不可读的 HttpOnly 凭据，不进入工作区或 localStorage；Web 本地/部署环境必须设置独立的 `RUNE_CREDENTIAL_ENCRYPTION_KEY`，Orbit Desktop 则用 macOS 钥匙串保护该主密钥。Orbit 不会把失败请求自动转给另一家供应商；没有配置模型时，确定性本地规划器仍然可用。",
+  "Orbit 支持 OpenAI Responses、OpenRouter/兼容 Chat Completions、Anthropic Messages、Gemini generateContent 和自定义协议的个人模型配置。密钥保存后会被服务端加密成浏览器脚本不可读的 HttpOnly 凭据，不进入工作区或 localStorage；Web 本地/部署环境必须设置独立的 `ORBIT_CREDENTIAL_ENCRYPTION_KEY`，Orbit Desktop 则用 macOS 钥匙串保护该主密钥。Orbit 不会把失败请求自动转给另一家供应商；没有配置模型时，确定性本地规划器仍然可用。",
   "",
   "## 下一步",
   "",
@@ -1502,7 +1502,7 @@ export const CHINESE_RUNE_GUIDE = [
   "",
 ].join("\n");
 
-export const ENGLISH_RUNE_GUIDE = [
+export const ENGLISH_ORBIT_GUIDE = [
   "# Welcome to Orbit",
   "",
   "> Orbit is a local-first, verifiable AI workspace. Your readable source is the truth and the preview is compiled live. The Agent never writes before you approve.",
@@ -1549,7 +1549,7 @@ export const ENGLISH_RUNE_GUIDE = [
   "",
   "## Connect a model",
   "",
-  "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `RUNE_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.",
+  "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `ORBIT_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.",
   "",
   "## Next",
   "",
@@ -1557,10 +1557,10 @@ export const ENGLISH_RUNE_GUIDE = [
   "",
 ].join("\n");
 
-export function createRuneGuideArtifact(locale: RuneLocale): WorkspaceArtifact {
-  const source = localizeRuneMultiline(locale, ENGLISH_RUNE_GUIDE, CHINESE_RUNE_GUIDE);
+export function createOrbitGuideArtifact(locale: OrbitLocale): WorkspaceArtifact {
+  const source = localizeOrbitMultiline(locale, ENGLISH_ORBIT_GUIDE, CHINESE_ORBIT_GUIDE);
   return {
-    id: RUNE_GUIDE_ID,
+    id: ORBIT_GUIDE_ID,
     name: "orbit-guide.md",
     kind: "document",
     language: `Markdown · ${localeDisplayName(locale)}`,

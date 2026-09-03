@@ -77,13 +77,13 @@ function normalizeDraft(draft: string, source: string) {
   return newline === "\n" ? withoutTrailingBlankLines : withoutTrailingBlankLines.replace(/\n/gu, newline);
 }
 
-function runeBindingTokens(source: string) {
+function orbitBindingTokens(source: string) {
   return source.match(/\{\{[^{}\r\n]+\}\}/gu) ?? [];
 }
 
 function bindingTokensAreByteStable(current: string, replacement: string) {
-  const currentTokens = runeBindingTokens(current);
-  const replacementTokens = runeBindingTokens(replacement);
+  const currentTokens = orbitBindingTokens(current);
+  const replacementTokens = orbitBindingTokens(replacement);
   if (JSON.stringify(replacementTokens) !== JSON.stringify(currentTokens)) return false;
   const bindingPattern = /\{\{[^{}\r\n]+\}\}/gu;
   const currentText = current.replace(bindingPattern, "");

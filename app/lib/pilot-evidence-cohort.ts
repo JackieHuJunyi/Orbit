@@ -1,21 +1,21 @@
 import {
-  MAX_RUNE_PILOT_EVIDENCE_BYTES,
-  RUNE_PILOT_EVIDENCE_KIND,
-  type RunePilotEvidenceDelivery,
-  type RunePilotEvidencePackage,
-  type RunePilotEvidenceRun,
+  MAX_ORBIT_PILOT_EVIDENCE_BYTES,
+  ORBIT_PILOT_EVIDENCE_KIND,
+  type OrbitPilotEvidenceDelivery,
+  type OrbitPilotEvidencePackage,
+  type OrbitPilotEvidenceRun,
 } from "./pilot-evidence.ts";
 import {
-  MAX_RUNE_TASK_DELIVERIES,
-  MAX_RUNE_TASK_DURATION_MS,
-  MAX_RUNE_TASK_RUNS,
-  RUNE_TASK_RUBRIC_DIMENSIONS,
-  type RuneTaskRubricDimension,
+  MAX_ORBIT_TASK_DELIVERIES,
+  MAX_ORBIT_TASK_DURATION_MS,
+  MAX_ORBIT_TASK_RUNS,
+  ORBIT_TASK_RUBRIC_DIMENSIONS,
+  type OrbitTaskRubricDimension,
 } from "./task-evidence.ts";
-import type { RuneTaskId } from "./task-runtime.ts";
+import type { OrbitTaskId } from "./task-runtime.ts";
 
-export const RUNE_PILOT_COHORT_KIND = "rune-pilot-evidence-cohort";
-export const MAX_RUNE_PILOT_COHORT_PARTICIPANTS = 50;
+export const ORBIT_PILOT_COHORT_KIND = "orbit-pilot-evidence-cohort";
+export const MAX_ORBIT_PILOT_COHORT_PARTICIPANTS = 50;
 
 type RunSummary = {
   total: number;
@@ -41,17 +41,17 @@ type DeliverySummary = {
   numberCorrectnessBelow4: number;
   pilotEligibleTasks: number;
   meetsPilotMinimum: boolean;
-  dimensionAverages: Record<RuneTaskRubricDimension, number | null>;
+  dimensionAverages: Record<OrbitTaskRubricDimension, number | null>;
 };
 
-export type RunePilotCohortParticipant = {
+export type OrbitPilotCohortParticipant = {
   participantId: string;
   evidence: unknown;
 };
 
-export type RunePilotCohortReport = {
+export type OrbitPilotCohortReport = {
   version: 1;
-  kind: typeof RUNE_PILOT_COHORT_KIND;
+  kind: typeof ORBIT_PILOT_COHORT_KIND;
   compiledOn: string;
   provenance: {
     evidenceClass: "candidate-human-outcome-cohort";
@@ -74,7 +74,7 @@ export type RunePilotCohortReport = {
     };
   };
   tasks: Array<{
-    taskId: RuneTaskId;
+    taskId: OrbitTaskId;
     runs: RunSummary;
     deliveries: DeliverySummary;
   }>;
@@ -82,10 +82,10 @@ export type RunePilotCohortReport = {
 
 type ValidatedParticipant = {
   participantId: string;
-  evidence: RunePilotEvidencePackage;
+  evidence: OrbitPilotEvidencePackage;
 };
 
-const TASK_IDS = new Set<RuneTaskId>(["operating-review", "document-briefing"]);
+const TASK_IDS = new Set<OrbitTaskId>(["operating-review", "document-briefing"]);
 const STOP_REASONS = new Set(["validation", "runtime", "stale", "persistence", "cancelled"]);
 const TARGETS = new Set([
   "csv",
@@ -147,7 +147,7 @@ function average(values: number[]) {
   return values.length ? Math.round(values.reduce((total, value) => total + value, 0) / values.length) : null;
 }
 
-function summarizeRuns(runs: RunePilotEvidenceRun[]): RunSummary {
+function summarizeRuns(runs: OrbitPilotEvidenceRun[]): RunSummary {
   const applied = runs.filter((run) => run.status === "applied");
   const modelRuns = runs.filter((run) => run.inputTokens != null && run.outputTokens != null);
   return {
@@ -163,11 +163,11 @@ function summarizeRuns(runs: RunePilotEvidenceRun[]): RunSummary {
 }
 
 function summarizeDeliveries(
-  deliveries: Array<{ participantId: string; delivery: RunePilotEvidenceDelivery }>,
+  deliveries: Array<{ participantId: string; delivery: OrbitPilotEvidenceDelivery }>,
 ): DeliverySummary {
   const usable = deliveries.filter(({ delivery }) => delivery.rating === "ready" || delivery.rating === "minor-edits");
   const humanEvaluated = deliveries.filter(({ delivery }) => delivery.evaluation);
-  const evaluatedRuns = new Map<string, RunePilotEvidenceDelivery[]>();
+  const evaluatedRuns = new Map<string, OrbitPilotEvidenceDelivery[]>();
   for (const { participantId, delivery } of humanEvaluated) {
     const runKey = `${participantId}:${delivery.runId}`;
     const outcomes = evaluatedRuns.get(runKey) ?? [];
@@ -175,7 +175,7 @@ function summarizeDeliveries(
     evaluatedRuns.set(runKey, outcomes);
   }
   const dimensionAverages = Object.fromEntries(
-    RUNE_TASK_RUBRIC_DIMENSIONS.map((dimension) => [
+    ORBIT_TASK_RUBRIC_DIMENSIONS.map((dimension) => [
       dimension,
       humanEvaluated.length
         ? Math.round(
@@ -185,7 +185,7 @@ function summarizeDeliveries(
           ) / 10
         : null,
     ]),
-  ) as Record<RuneTaskRubricDimension, number | null>;
+  ) as Record<OrbitTaskRubricDimension, number | null>;
   const pilotEligibleTasks = [...evaluatedRuns.values()].filter((outcomes) =>
     outcomes.every((outcome) => (outcome.evaluation?.rubric.numberCorrectness ?? 0) >= 4),
   ).length;
@@ -215,14 +215,14 @@ function validateEvaluation(value: unknown) {
     value.version !== 1 ||
     value.provenance !== "authorized-or-redacted" ||
     !isRecord(value.rubric) ||
-    !exactKeys(value.rubric, RUNE_TASK_RUBRIC_DIMENSIONS)
+    !exactKeys(value.rubric, ORBIT_TASK_RUBRIC_DIMENSIONS)
   )
     return false;
   const rubric = value.rubric;
-  return RUNE_TASK_RUBRIC_DIMENSIONS.every((dimension) => boundedInteger(rubric[dimension], 5, 1));
+  return ORBIT_TASK_RUBRIC_DIMENSIONS.every((dimension) => boundedInteger(rubric[dimension], 5, 1));
 }
 
-function validateRun(value: unknown, index: number): value is RunePilotEvidenceRun {
+function validateRun(value: unknown, index: number): value is OrbitPilotEvidenceRun {
   if (
     !isRecord(value) ||
     !exactKeys(value, [
@@ -252,7 +252,7 @@ function validateRun(value: unknown, index: number): value is RunePilotEvidenceR
   return (
     value.id === `run-${String(index + 1).padStart(3, "0")}` &&
     RUN_ID.test(value.id as string) &&
-    TASK_IDS.has(value.taskId as RuneTaskId) &&
+    TASK_IDS.has(value.taskId as OrbitTaskId) &&
     validDateOnly(value.completedOn) &&
     statusValid &&
     (value.planner === "local" || value.planner === "configured-model") &&
@@ -260,15 +260,15 @@ function validateRun(value: unknown, index: number): value is RunePilotEvidenceR
     boundedInteger(value.changedFileCount, 7) &&
     boundedInteger(value.queryCount, 50) &&
     boundedInteger(value.chartConsumerCount, 50) &&
-    boundedInteger(value.durationMs, MAX_RUNE_TASK_DURATION_MS) &&
+    boundedInteger(value.durationMs, MAX_ORBIT_TASK_DURATION_MS) &&
     tokensValid
   );
 }
 
 function validateDelivery(
   value: unknown,
-  runById: Map<string, RunePilotEvidenceRun>,
-): value is RunePilotEvidenceDelivery {
+  runById: Map<string, OrbitPilotEvidenceRun>,
+): value is OrbitPilotEvidenceDelivery {
   if (
     !isRecord(value) ||
     !exactKeys(value, [
@@ -310,12 +310,12 @@ function validateDelivery(
   );
 }
 
-export function parseRunePilotEvidencePackage(value: unknown): RunePilotEvidencePackage {
+export function parseOrbitPilotEvidencePackage(value: unknown): OrbitPilotEvidencePackage {
   if (
     !isRecord(value) ||
     !exactKeys(value, ["version", "kind", "exportedOn", "provenance", "summary", "runs", "deliveries"]) ||
     value.version !== 1 ||
-    value.kind !== RUNE_PILOT_EVIDENCE_KIND ||
+    value.kind !== ORBIT_PILOT_EVIDENCE_KIND ||
     !validDateOnly(value.exportedOn)
   ) {
     throw new Error("Pilot evidence package metadata is invalid.");
@@ -342,24 +342,24 @@ export function parseRunePilotEvidencePackage(value: unknown): RunePilotEvidence
   if (
     !Array.isArray(value.runs) ||
     value.runs.length < 1 ||
-    value.runs.length > MAX_RUNE_TASK_RUNS ||
+    value.runs.length > MAX_ORBIT_TASK_RUNS ||
     !value.runs.every((run, index) => validateRun(run, index))
   ) {
     throw new Error("Pilot evidence package runs are invalid.");
   }
-  const runs = value.runs as RunePilotEvidenceRun[];
+  const runs = value.runs as OrbitPilotEvidenceRun[];
   if (runs.some((run, index) => index > 0 && runs[index - 1].completedOn < run.completedOn)) {
     throw new Error("Pilot evidence package runs are not in compiler order.");
   }
   const runById = new Map(runs.map((run) => [run.id, run] as const));
   if (
     !Array.isArray(value.deliveries) ||
-    value.deliveries.length > MAX_RUNE_TASK_DELIVERIES ||
+    value.deliveries.length > MAX_ORBIT_TASK_DELIVERIES ||
     !value.deliveries.every((delivery) => validateDelivery(delivery, runById))
   ) {
     throw new Error("Pilot evidence package deliveries are invalid.");
   }
-  const deliveries = value.deliveries as RunePilotEvidenceDelivery[];
+  const deliveries = value.deliveries as OrbitPilotEvidenceDelivery[];
   if (deliveries.some((delivery, index) => index > 0 && deliveries[index - 1].confirmedOn < delivery.confirmedOn)) {
     throw new Error("Pilot evidence package deliveries are not in compiler order.");
   }
@@ -371,13 +371,13 @@ export function parseRunePilotEvidencePackage(value: unknown): RunePilotEvidence
   };
   if (!sameJson(value.summary, expectedSummary))
     throw new Error("Pilot evidence package summary does not match its records.");
-  if (new TextEncoder().encode(canonicalJson(value)).byteLength > MAX_RUNE_PILOT_EVIDENCE_BYTES) {
+  if (new TextEncoder().encode(canonicalJson(value)).byteLength > MAX_ORBIT_PILOT_EVIDENCE_BYTES) {
     throw new Error("Pilot evidence package exceeds Orbit's review limit.");
   }
-  return JSON.parse(JSON.stringify(value)) as RunePilotEvidencePackage;
+  return JSON.parse(JSON.stringify(value)) as OrbitPilotEvidencePackage;
 }
 
-function evidenceContentIdentity(evidence: RunePilotEvidencePackage) {
+function evidenceContentIdentity(evidence: OrbitPilotEvidencePackage) {
   const content: Record<string, unknown> = { ...evidence };
   delete content.exportedOn;
   return canonicalJson(content);
@@ -411,13 +411,13 @@ function recurrenceSummary(participants: ValidatedParticipant[]) {
   };
 }
 
-export function compileRunePilotCohort(
-  input: readonly RunePilotCohortParticipant[],
+export function compileOrbitPilotCohort(
+  input: readonly OrbitPilotCohortParticipant[],
   now: Date = new Date(),
-): RunePilotCohortReport {
+): OrbitPilotCohortReport {
   if (Number.isNaN(now.getTime())) throw new Error("Pilot cohort needs a valid compile time.");
-  if (!Array.isArray(input) || input.length < 1 || input.length > MAX_RUNE_PILOT_COHORT_PARTICIPANTS) {
-    throw new Error(`Pilot cohort requires 1–${MAX_RUNE_PILOT_COHORT_PARTICIPANTS} participants.`);
+  if (!Array.isArray(input) || input.length < 1 || input.length > MAX_ORBIT_PILOT_COHORT_PARTICIPANTS) {
+    throw new Error(`Pilot cohort requires 1–${MAX_ORBIT_PILOT_COHORT_PARTICIPANTS} participants.`);
   }
   const participantIds = new Set<string>();
   const packageContents = new Set<string>();
@@ -432,7 +432,7 @@ export function compileRunePilotCohort(
       throw new Error("Pilot cohort participant ids must be unique participant-NNN aliases.");
     }
     participantIds.add(participant.participantId);
-    const evidence = parseRunePilotEvidencePackage(participant.evidence);
+    const evidence = parseOrbitPilotEvidencePackage(participant.evidence);
     const contentIdentity = evidenceContentIdentity(evidence);
     if (packageContents.has(contentIdentity))
       throw new Error("Pilot cohort contains duplicate evidence package content.");
@@ -453,7 +453,7 @@ export function compileRunePilotCohort(
   }));
   return {
     version: 1,
-    kind: RUNE_PILOT_COHORT_KIND,
+    kind: ORBIT_PILOT_COHORT_KIND,
     compiledOn: now.toISOString().slice(0, 10),
     provenance: {
       evidenceClass: "candidate-human-outcome-cohort",
@@ -483,8 +483,8 @@ function displayDuration(value: number | null) {
   return value == null ? "—" : `${Math.round(value / 60_000)} min`;
 }
 
-export function renderRunePilotCohortMarkdown(report: RunePilotCohortReport) {
-  const dimensions = RUNE_TASK_RUBRIC_DIMENSIONS.map(
+export function renderOrbitPilotCohortMarkdown(report: OrbitPilotCohortReport) {
+  const dimensions = ORBIT_TASK_RUBRIC_DIMENSIONS.map(
     (dimension) => `| ${dimension} | ${report.summary.deliveries.dimensionAverages[dimension] ?? "—"} |`,
   ).join("\n");
   const tasks = report.tasks

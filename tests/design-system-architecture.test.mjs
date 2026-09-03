@@ -29,7 +29,7 @@ test("keeps empty, compact, and contextual surfaces inside the maintained cascad
     readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/responsive.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/model-profile-manager.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(workbench, /emptyWorkspace \? "is-empty" : ""/);
@@ -42,7 +42,7 @@ test("keeps empty, compact, and contextual surfaces inside the maintained cascad
   assert.match(responsive, /workspace-view-option="split"/);
   assert.match(content, /\.agent-dock\.collapsed/);
   assert.match(workbench, /agentComposerOpen/);
-  assert.match(workbench, /data-rune-hydrated=\{hydrated \? "true" : "false"\}/);
+  assert.match(workbench, /data-orbit-hydrated=\{hydrated \? "true" : "false"\}/);
   assert.match(shell, /\.workspace-view-switch button\s*\{[^}]*border:\s*0;[^}]*cursor:\s*pointer;/s);
   assert.match(onboarding, /\.model-profile-manager\.compact/);
   assert.match(modelManager, /state\.profiles\.length > 0 && state\.deployment\.configured/);
@@ -52,17 +52,17 @@ test("keeps the authoritative layer scale in tokens and consumes semantic layers
   const [tokens, ...responsibilityStyles] = await Promise.all(
     modules.map((name) => readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8")),
   );
-  assert.match(tokens, /--rune-layer-canvas:\s*0;/);
-  assert.match(tokens, /--rune-layer-workspace:\s*10;/);
-  assert.match(tokens, /--rune-layer-pane-float:\s*80;/);
-  assert.match(tokens, /--rune-layer-topbar:\s*100;/);
-  assert.match(tokens, /--rune-layer-global-float:\s*500;/);
-  assert.match(tokens, /--rune-layer-modal:\s*1000;/);
-  assert.match(tokens, /--rune-layer-onboarding:\s*1100;/);
+  assert.match(tokens, /--orbit-layer-canvas:\s*0;/);
+  assert.match(tokens, /--orbit-layer-workspace:\s*10;/);
+  assert.match(tokens, /--orbit-layer-pane-float:\s*80;/);
+  assert.match(tokens, /--orbit-layer-topbar:\s*100;/);
+  assert.match(tokens, /--orbit-layer-global-float:\s*500;/);
+  assert.match(tokens, /--orbit-layer-modal:\s*1000;/);
+  assert.match(tokens, /--orbit-layer-onboarding:\s*1100;/);
   for (const styles of responsibilityStyles) {
     assert.doesNotMatch(styles, /z-index:\s*-?\d/);
     for (const match of styles.matchAll(/z-index:\s*([^;]+);/g)) {
-      assert.match(match[1], /var\(--rune-layer-|calc\(var\(--rune-layer-/);
+      assert.match(match[1], /var\(--orbit-layer-|calc\(var\(--orbit-layer-/);
     }
   }
 });
@@ -74,15 +74,15 @@ test("prevents global and pane overlays from being clipped and keeps modal tiers
     readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
   ]);
-  assert.match(shell, /\.rune-shell\s*\{[^}]*isolation:\s*auto;[^}]*overflow:\s*visible;/s);
-  assert.match(shell, /\.rune-shell > \.topbar\s*\{[^}]*var\(--rune-layer-topbar\)/s);
+  assert.match(shell, /\.orbit-shell\s*\{[^}]*isolation:\s*auto;[^}]*overflow:\s*visible;/s);
+  assert.match(shell, /\.orbit-shell > \.topbar\s*\{[^}]*var\(--orbit-layer-topbar\)/s);
   assert.match(content, /\.preview-header\s*\{[^}]*overflow:\s*visible;/s);
   assert.match(
     overlays,
-    /\.tools-popover,\s*\.export-popover\s*\{[^}]*var\(--rune-layer-global-float\)[^}]*max-height:[^}]*overflow-y:\s*auto;/s,
+    /\.tools-popover,\s*\.export-popover\s*\{[^}]*var\(--orbit-layer-global-float\)[^}]*max-height:[^}]*overflow-y:\s*auto;/s,
   );
-  assert.match(overlays, /\.import-review-backdrop\s*\{[^}]*var\(--rune-layer-modal\)/s);
-  assert.match(onboarding, /\.welcome-backdrop\s*\{[^}]*var\(--rune-layer-onboarding\)/s);
+  assert.match(overlays, /\.import-review-backdrop\s*\{[^}]*var\(--orbit-layer-modal\)/s);
+  assert.match(onboarding, /\.welcome-backdrop\s*\{[^}]*var\(--orbit-layer-onboarding\)/s);
 });
 
 test("keeps focused content geometry and places the compact primary action with language choice", async () => {
@@ -91,8 +91,8 @@ test("keeps focused content geometry and places the compact primary action with 
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(tokens, /--rune-content-reading:\s*920px;/);
-  assert.match(tokens, /--rune-file-width:\s*220px;/);
+  assert.match(tokens, /--orbit-content-reading:\s*920px;/);
+  assert.match(tokens, /--orbit-file-width:\s*220px;/);
   assert.match(
     onboarding,
     /\.welcome-language-card > \.welcome-primary\s*\{[^}]*min-width:\s*118px;[^}]*align-self:\s*flex-end;/s,
@@ -109,16 +109,16 @@ test("keeps the navigable Deck canvas inside the content layer and semantic moti
   ]);
   assert.match(
     content,
-    /\.deck-slide-canvas\s*\{[^}]*var\(--rune-radius-card\)[^}]*var\(--rune-shadow-card\)[^}]*var\(--rune-duration-micro\)/s,
+    /\.deck-slide-canvas\s*\{[^}]*var\(--orbit-radius-card\)[^}]*var\(--orbit-shadow-card\)[^}]*var\(--orbit-duration-micro\)/s,
   );
-  assert.match(content, /\.deck-slide-source-hit\s*\{[^}]*z-index:\s*calc\(var\(--rune-layer-canvas\) \+ 1\)/s);
+  assert.match(content, /\.deck-slide-source-hit\s*\{[^}]*z-index:\s*calc\(var\(--orbit-layer-canvas\) \+ 1\)/s);
   assert.match(content, /\.deck-slide-source-hit:focus-visible/);
-  assert.doesNotMatch(motion, /\.welcome-window\s*\{[^}]*animation:\s*rune-float/s);
+  assert.doesNotMatch(motion, /\.welcome-window\s*\{[^}]*animation:\s*orbit-float/s);
 });
 
 test("keeps non-modal menu focus shared while business capabilities remain in the Workbench", async () => {
   const [workbench, activityRail, exportMenu, settingsMenu, menuFocus, responsive] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-activity-rail.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
@@ -130,7 +130,7 @@ test("keeps non-modal menu focus shared while business capabilities remain in th
   assert.match(activityRail, /onOpenSettings:\s*\(edge: WorkbenchMenuFocusEdge\) => void/);
   assert.match(exportMenu, /useWorkbenchMenuFocus\(\{/);
   assert.match(settingsMenu, /useWorkbenchMenuFocus\(\{/);
-  assert.match(settingsMenu, /actions\.length \+ RUNE_APPEARANCE_THEMES\.length/);
+  assert.match(settingsMenu, /actions\.length \+ ORBIT_APPEARANCE_THEMES\.length/);
   assert.doesNotMatch(
     settingsMenu,
     /useState|setArtifacts|persistDeviceWorkspace|localStorage|sessionStorage|indexedDB|fetch\(|showDirectoryPicker|createObjectURL/,
@@ -174,9 +174,9 @@ test("keeps the startup spectrum inside one licensed, path-timed handwritten per
   assert.match(glyphData, /TRADITIONAL_CHINESE_GREETING_GLYPHS/);
   assert.match(onboarding, /\.welcome-backdrop\[data-intro-phase="writing"\]\s*\{[^}]*background:\s*#050506;/s);
   assert.match(onboarding, /\.welcome-greeting-spectrum stop\s*\{\s*animation:\s*none;/s);
-  assert.match(motion, /@keyframes rune-greeting-pencil-write/);
-  assert.doesNotMatch(motion, /@keyframes rune-greeting-(?:write|ink-settle)/);
-  assert.match(motion, /@keyframes rune-setup-unfold/);
+  assert.match(motion, /@keyframes orbit-greeting-pencil-write/);
+  assert.doesNotMatch(motion, /@keyframes orbit-greeting-(?:write|ink-settle)/);
+  assert.match(motion, /@keyframes orbit-setup-unfold/);
   assert.doesNotMatch(experience, /WelcomeAmbientMotion|greetingCycleDuration|setGreetingIndex/);
   assert.doesNotMatch(onboarding + motion, /welcome-ambient|greeting-color-bloom|greeting-stroke-head/);
 });

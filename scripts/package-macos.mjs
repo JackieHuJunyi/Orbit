@@ -33,6 +33,8 @@ const notaryProfile = process.env.ORBIT_NOTARY_KEYCHAIN_PROFILE?.trim() || "";
 const appleId = process.env.APPLE_ID?.trim() || "";
 const appleIdPassword = process.env.APPLE_APP_SPECIFIC_PASSWORD?.trim() || "";
 const appleTeamId = process.env.APPLE_TEAM_ID?.trim() || "";
+const internalQa = !requireSigning;
+const artifactSuffix = internalQa ? "-internal-qa" : "";
 const passwordNotaryReady = Boolean(appleId && appleIdPassword && appleTeamId);
 const anyPasswordNotaryValue = Boolean(appleId || appleIdPassword || appleTeamId);
 if (anyPasswordNotaryValue && !passwordNotaryReady) {
@@ -68,8 +70,8 @@ const resourcesPath = path.join(appPath, "Contents", "Resources");
 const appAsarPath = path.join(resourcesPath, "app.asar");
 const executablePath = path.join(appPath, "Contents", "MacOS", "Orbit");
 const infoPath = path.join(appPath, "Contents", "Info.plist");
-const zipPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}.zip`);
-const dmgPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}.dmg`);
+const zipPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}${artifactSuffix}.zip`);
+const dmgPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}${artifactSuffix}.dmg`);
 const manifestPath = path.join(outputBase, `Orbit-${packageJson.version}-macos-${arch}-manifest.json`);
 
 function notaryCredentials() {
@@ -90,7 +92,7 @@ async function createDiskImage(sourceDirectory, destination) {
       await execFileAsync("/usr/bin/hdiutil", [
         "create",
         "-volname",
-        "Orbit",
+        internalQa ? "Orbit Internal QA" : "Orbit",
         "-srcfolder",
         sourceDirectory,
         "-ov",
@@ -162,6 +164,7 @@ try {
     CFBundleName: "Orbit",
     CFBundleShortVersionString: packageJson.version,
     CFBundleVersion: packageJson.version,
+    OrbitBuildChannel: internalQa ? "internal-qa" : "release",
     LSApplicationCategoryType: "public.app-category.productivity",
     NSAppleEventsUsageDescription:
       "Orbit uses Microsoft Word or PowerPoint only when you explicitly import or export a legacy Office file.",
@@ -227,7 +230,9 @@ try {
   if (signIdentity) {
     await execFileAsync("/usr/bin/codesign", ["--force", "--timestamp", "--sign", signIdentity, dmgPath]);
     const credentials = notaryCredentials();
-    if (credentials) await notarize({ appPath: dmgPath, ...credentials });
+    if (credentials) {
+      await notarize({ appPath: dmgPath, ...credentials });
+    }
   }
 
   const [appAsarStat, zipStat, dmgStat] = await Promise.all([stat(appAsarPath), stat(zipPath), stat(dmgPath)]);
@@ -238,6 +243,8 @@ try {
     arch,
     electronVersion,
     bundleIdentifier: "com.jackiehu.orbit",
+    channel: internalQa ? "internal-qa" : "release",
+    distributionReady: !internalQa && signed && notarized,
     signed,
     notarized,
     artifacts: {

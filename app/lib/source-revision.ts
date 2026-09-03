@@ -1,7 +1,7 @@
 export const PORTABLE_SOURCE_REVISION_PATTERN = /^r1-[0-9a-z]{1,8}-[0-9a-f]{16}$/u;
 
 // This stable token is a portable change detector, not a cryptographic identity
-// or write-authority boundary. Rune still re-reads and validates complete current
+// or write-authority boundary. Orbit still re-reads and validates complete current
 // source before preparing or applying every mutation.
 export function portableSourceRevision(source: string) {
   const bytes = new TextEncoder().encode(source);

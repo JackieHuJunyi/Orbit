@@ -46,9 +46,9 @@ const onePixelPng = new Uint8Array(
     "base64",
   ),
 );
-const runeImageId = "b".repeat(64);
-const runeImageAsset = {
-  id: runeImageId,
+const orbitImageId = "b".repeat(64);
+const orbitImageAsset = {
+  id: orbitImageId,
   name: "proof.png",
   mimeType: "image/png",
   size: onePixelPng.length,
@@ -61,18 +61,18 @@ test("embeds and reimports verified Orbit local images through portable ODT pict
     name: "image.md",
     kind: "document",
     language: "Markdown",
-    source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n`,
+    source: `# Proof\n\n![Portable proof](orbit-asset:sha256:${orbitImageId})\n`,
   };
-  const exported = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const exported = exportOdfArtifact(artifact, [artifact], [], [orbitImageAsset]);
   const parts = packageParts(exported.bytes);
-  assert.deepEqual(parts[`Pictures/rune-${runeImageId}.png`], onePixelPng);
-  assert.match(strFromU8(parts["content.xml"]), new RegExp(`Pictures/rune-${runeImageId}\\.png`, "u"));
+  assert.deepEqual(parts[`Pictures/orbit-${orbitImageId}.png`], onePixelPng);
+  assert.match(strFromU8(parts["content.xml"]), new RegExp(`Pictures/orbit-${orbitImageId}\\.png`, "u"));
   assert.match(strFromU8(parts["META-INF/manifest.xml"]), /manifest:media-type="image\/png"/u);
   assert.match(exported.warnings.join(" "), /embedded as portable, static ODT pictures/iu);
   const imported = await convertOdfFileWithAssets(exported.fileName, exported.bytes);
   assert.equal(imported.assets.length, 1);
   assert.deepEqual(imported.assets[0].bytes, onePixelPng);
-  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.artifacts[0].source, new RegExp(`orbit-asset:sha256:${imported.assets[0].id}`, "u"));
   assert.match(imported.warnings.join(" "), /verified local image.*preserved/iu);
 });
 
@@ -82,7 +82,7 @@ test("fails ODT export closed when a referenced Orbit image is missing", () => {
     name: "missing.md",
     kind: "document",
     language: "Markdown",
-    source: `![Missing](rune-asset:sha256:${runeImageId})`,
+    source: `![Missing](orbit-asset:sha256:${orbitImageId})`,
   };
   assert.throws(() => exportOdfArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
@@ -96,7 +96,7 @@ test("embeds and reimports a reviewed Deck image through deterministic ODP pictu
     source: `---
 version: 1
 title: Image deck
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -106,16 +106,16 @@ lang: en
 
 The source remains readable.
 
-![Portable proof](rune-asset:sha256:${runeImageId})
+![Portable proof](orbit-asset:sha256:${orbitImageId})
 `,
   };
-  const first = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
-  const second = exportOdfArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const first = exportOdfArtifact(artifact, [artifact], [], [orbitImageAsset]);
+  const second = exportOdfArtifact(artifact, [artifact], [], [orbitImageAsset]);
   assert.deepEqual(first.bytes, second.bytes);
   const parts = packageParts(first.bytes);
-  assert.deepEqual(parts[`Pictures/rune-${runeImageId}.png`], onePixelPng);
+  assert.deepEqual(parts[`Pictures/orbit-${orbitImageId}.png`], onePixelPng);
   const content = strFromU8(parts["content.xml"]);
-  assert.match(content, new RegExp(`Pictures/rune-${runeImageId}\\.png`, "u"));
+  assert.match(content, new RegExp(`Pictures/orbit-${orbitImageId}\\.png`, "u"));
   assert.match(content, /<draw:image/u);
   assert.match(strFromU8(parts["META-INF/manifest.xml"]), /manifest:media-type="image\/png"/u);
   assert.match(first.warnings.join(" "), /portable, static ODP media/iu);
@@ -124,8 +124,8 @@ The source remains readable.
   assert.deepEqual(imported.assets[0].bytes, onePixelPng);
   assert.equal(imported.artifacts[0].language, "Semantic HTML");
   assert.equal(imported.artifacts[0].name, "image-deck.html");
-  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
-  assert.match(imported.artifacts[0].source, /<figure class="deck-image"><img src="rune-asset:sha256:/u);
+  assert.match(imported.artifacts[0].source, new RegExp(`orbit-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.artifacts[0].source, /<figure class="deck-image"><img src="orbit-asset:sha256:/u);
   assert.deepEqual(validateArtifact(imported.artifacts[0]), []);
   assert.throws(() => exportOdfArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
 });
@@ -289,7 +289,7 @@ test("exports area Charts as semantic OpenDocument trend tables", () => {
     source: `---
 version: 1
 title: Volume review
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

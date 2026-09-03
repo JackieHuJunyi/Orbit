@@ -2,8 +2,8 @@
 
 import { Check, FileJson2, ListChecks, ShieldCheck, TriangleAlert } from "lucide-react";
 import { useState } from "react";
-import type { RunePilotEvidenceExport } from "../lib/pilot-evidence";
-import { localizeRuneCopy, runeUICopy, type RuneLocale } from "../lib/localization";
+import type { OrbitPilotEvidenceExport } from "../lib/pilot-evidence";
+import { localizeOrbitCopy, orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { PILOT_EVIDENCE_NOTICE_BASE_COPY } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
@@ -75,8 +75,8 @@ export const PILOT_EVIDENCE_BASE_COPY = {
   },
 } as const;
 
-export function pilotEvidenceCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, PILOT_EVIDENCE_BASE_COPY.en, PILOT_EVIDENCE_BASE_COPY["zh-CN"]);
+export function pilotEvidenceCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, PILOT_EVIDENCE_BASE_COPY.en, PILOT_EVIDENCE_BASE_COPY["zh-CN"]);
 }
 
 function readableBytes(bytes: number) {
@@ -91,14 +91,14 @@ export function PilotEvidenceReviewDialog({
   onCancel,
   onConfirm,
 }: {
-  result: RunePilotEvidenceExport;
-  locale: RuneLocale;
+  result: OrbitPilotEvidenceExport;
+  locale: OrbitLocale;
   error?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const copy = pilotEvidenceCopy(locale);
-  const ui = runeUICopy(locale);
+  const ui = orbitUICopy(locale);
   const [reviewed, setReviewed] = useState(false);
   const { summary } = result.package;
   const metrics = [

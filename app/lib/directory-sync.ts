@@ -1,5 +1,5 @@
 import type { DirectoryReadResult } from "./directory-workspace.ts";
-import type { PreparedRuneImageAsset } from "./local-assets.ts";
+import type { PreparedOrbitImageAsset } from "./local-assets.ts";
 import { validateWorkspaceArtifacts } from "./patches.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -47,12 +47,12 @@ export type CommitDirectorySyncPorts = Readonly<{
   expectedPlan: DirectorySyncPlan;
   readCurrentDeviceStateSnapshot: () => string;
   readCurrentArtifacts: () => WorkspaceArtifact[];
-  readCurrentAssets: () => Promise<PreparedRuneImageAsset[]>;
+  readCurrentAssets: () => Promise<PreparedOrbitImageAsset[]>;
   readDirectory: () => Promise<DirectoryReadResult>;
   apply: (
     plan: DirectorySyncPlan,
     directory: DirectoryReadResult,
-    currentAssets: PreparedRuneImageAsset[],
+    currentAssets: PreparedOrbitImageAsset[],
   ) => Promise<void>;
 }>;
 
@@ -68,7 +68,7 @@ function artifactSnapshot(artifacts: readonly WorkspaceArtifact[]) {
   );
 }
 
-function assetFacts(assets: readonly PreparedRuneImageAsset[]): DirectorySyncAssetFact[] {
+function assetFacts(assets: readonly PreparedOrbitImageAsset[]): DirectorySyncAssetFact[] {
   return assets.map(({ id, name, mimeType, size }) => ({ id, name, mimeType, size }));
 }
 

@@ -4,23 +4,23 @@ import test from "node:test";
 import { PDFDocument } from "pdf-lib";
 import {
   MAX_PDF_EXPORT_BYTES,
-  RUNE_PDF_FONT_PATH,
+  ORBIT_PDF_FONT_PATH,
   exportPdfArtifact,
   isPdfExportArtifact,
 } from "../app/lib/pdf-export.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 import { defaultQuerySnapshot, defaultSummaryQuerySnapshot } from "./query-snapshot-fixture.mjs";
 
-const fontBytes = new Uint8Array(await readFile(new URL(`../public${RUNE_PDF_FONT_PATH}`, import.meta.url)));
+const fontBytes = new Uint8Array(await readFile(new URL(`../public${ORBIT_PDF_FONT_PATH}`, import.meta.url)));
 const onePixelPng = new Uint8Array(
   Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XwTtWQAAAABJRU5ErkJggg==",
     "base64",
   ),
 );
-const runeImageId = "c".repeat(64);
-const runeImageAsset = {
-  id: runeImageId,
+const orbitImageId = "c".repeat(64);
+const orbitImageAsset = {
+  id: orbitImageId,
   name: "proof.png",
   mimeType: "image/png",
   size: onePixelPng.length,
@@ -60,10 +60,10 @@ test("embeds verified Orbit local images into fixed Document PDF", async () => {
     name: "image.md",
     kind: "document",
     language: "Markdown",
-    source: `# Proof\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n`,
+    source: `# Proof\n\n![Portable proof](orbit-asset:sha256:${orbitImageId})\n`,
   };
-  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
-  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
+  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [orbitImageAsset]);
+  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [orbitImageAsset]);
   assert.deepEqual(first.bytes, second.bytes);
   const document = await PDFDocument.load(first.bytes);
   assert.equal(document.getPageCount(), 1);
@@ -76,7 +76,7 @@ test("fails PDF export closed when a referenced Orbit image is missing", async (
     name: "missing.md",
     kind: "document",
     language: "Markdown",
-    source: `![Missing](rune-asset:sha256:${runeImageId})`,
+    source: `![Missing](orbit-asset:sha256:${orbitImageId})`,
   };
   await assert.rejects(
     () => exportPdfArtifact(artifact, [artifact], [], fontBytes),
@@ -132,7 +132,7 @@ test("embeds a reviewed Deck image into deterministic fixed PDF geometry", async
     source: `---
 version: 1
 title: Image deck
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -142,11 +142,11 @@ lang: en
 
 The source remains readable.
 
-![Portable proof](rune-asset:sha256:${runeImageId})
+![Portable proof](orbit-asset:sha256:${orbitImageId})
 `,
   };
-  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
-  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [runeImageAsset]);
+  const first = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [orbitImageAsset]);
+  const second = await exportPdfArtifact(artifact, [artifact], [], fontBytes, [orbitImageAsset]);
   assert.deepEqual(first.bytes, second.bytes);
   const document = await PDFDocument.load(first.bytes);
   assert.equal(document.getPageCount(), 1);
@@ -245,7 +245,7 @@ test("freezes line charts into deterministic vector Document and Deck PDFs", asy
     source: `---
 version: 1
 title: Trend PDF
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

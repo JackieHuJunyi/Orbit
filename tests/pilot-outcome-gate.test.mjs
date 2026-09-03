@@ -10,7 +10,7 @@ function comparison(index, overrides = {}) {
     recordedOn: "2026-08-19",
     evidenceReference: `approved-system/p2-${index + 1}`,
     manualMinutes: 100,
-    runeMinutes: 40,
+    orbitMinutes: 40,
     manualTiming: "measured",
     authorizedOrRedacted: true,
     sameScope: true,
@@ -27,7 +27,7 @@ function comparison(index, overrides = {}) {
 test("passes P2 only when every exact outcome threshold is met", () => {
   const comparisons = Array.from({ length: 10 }, (_, index) =>
     comparison(index, {
-      runeMinutes: index < 5 ? 60 : 40,
+      orbitMinutes: index < 5 ? 60 : 40,
       deliveryOutcome: index < 3 ? "not_usable" : index < 6 ? "minor_edits" : "ready",
       applied: index >= 4,
       manualTiming: index === 0 ? "estimated" : "measured",
@@ -61,7 +61,7 @@ test("passes P2 only when every exact outcome threshold is met", () => {
 test("keeps every missed P2 threshold visible instead of averaging it away", () => {
   const comparisons = Array.from({ length: 9 }, (_, index) =>
     comparison(index, {
-      runeMinutes: 80,
+      orbitMinutes: 80,
       deliveryOutcome: index < 3 ? "ready" : "not_usable",
       keyNumbersTraceable: index === 0 ? 4 : 5,
       applied: index < 2,

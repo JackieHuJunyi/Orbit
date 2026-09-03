@@ -37,8 +37,8 @@ test("server-renders the Orbit artifact workbench", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue" data-rune-onboarding="pending">/);
-  assert.match(html, /id="rune-prehydrate-state"/);
+  assert.match(html, /<html lang="en" dir="ltr" data-theme="mist-blue" data-orbit-onboarding="pending">/);
+  assert.match(html, /id="orbit-prehydrate-state"/);
   assert.match(html, /data-onboarding-sequence="spectrum-write-settle-setup"/);
   assert.doesNotMatch(html, /data-ambient-motion/);
   assert.match(html, /data-motion-renderer="vector-centerline"/);
@@ -89,7 +89,7 @@ test("server-renders the Orbit artifact workbench", async () => {
   assert.match(html, /aria-valuemax="65"/);
   assert.match(html, /Resize source and preview/);
   assert.match(html, /class="workspace with-file-rail view-split"/);
-  assert.match(html, /data-rune-hydrated="false"/);
+  assert.match(html, /data-orbit-hydrated="false"/);
   assert.doesNotMatch(html, /style=""/);
   assert.match(html, /role="group" aria-label="Workspace view"/);
   assert.match(html, /aria-label="Show source and preview"/);
@@ -128,10 +128,10 @@ test("renders all five canonical artifact modes", async () => {
 test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes out of the initial client bundle", async () => {
   const manifestUrl = new URL("../dist/client/.vite/manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
-  const workbenchEntry = manifest["app/components/rune-workbench.tsx"];
+  const workbenchEntry = manifest["app/components/orbit-workbench.tsx"];
   assert.ok(workbenchEntry);
   const initialStaticGraph = new Set();
-  const staticQueue = ["app/components/rune-workbench.tsx"];
+  const staticQueue = ["app/components/orbit-workbench.tsx"];
   while (staticQueue.length) {
     const entryKey = staticQueue.shift();
     if (!entryKey || initialStaticGraph.has(entryKey)) continue;
@@ -250,7 +250,7 @@ test("ships bounded semantic HTML slides as continuous exact-source preview page
 test("keeps semantic HTML presentation handoff explicit and outside the startup graph", async () => {
   const [workbench, exportMenu, exportCapabilities, officeExport, odfExport, pdfExport, conversion] = await Promise.all(
     [
-      readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
       readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
       readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/lib/office-export.ts", import.meta.url), "utf8"),
@@ -276,7 +276,7 @@ test("keeps semantic HTML presentation handoff explicit and outside the startup 
 
 test("offers semantic HTML direct source-bound editing plus an optional reviewed Deck copy", async () => {
   const [workbench, preview, editor, directEdit, conversion, imports, reviewDialog] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/semantic-html-slide-editor.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/visual-semantic-html-slide-edit.ts", import.meta.url), "utf8"),
@@ -304,14 +304,14 @@ test("offers semantic HTML direct source-bound editing plus an optional reviewed
   assert.match(conversion, /convertSemanticHtmlPresentationToDeck/);
   assert.match(conversion, /prepareWorkspaceImportReview/);
   assert.match(conversion, /original semantic HTML remains unchanged/);
-  assert.doesNotMatch(conversion, /fetch\(|localStorage|indexedDB|persist|download|putRuneImageAsset/iu);
+  assert.doesNotMatch(conversion, /fetch\(|localStorage|indexedDB|persist|download|putOrbitImageAsset/iu);
   assert.match(imports, /purpose:\s*"import" \| "editable-copy"/);
   assert.match(reviewDialog, /purpose === "editable-copy"/);
 });
 
 test("renders a complete read-only Agent proposal through the live source and output panes before Apply", async () => {
   const [workbench, projection, localization, contentStyles] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/proposal-preview.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/localization.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
@@ -338,7 +338,7 @@ test("renders a complete read-only Agent proposal through the live source and ou
 
 test("ships exactly one compiler-guided repair request site before the repeated runtime gate", async () => {
   const [source, client] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/agent-client.ts", import.meta.url), "utf8"),
   ]);
   assert.equal(source.split("runtimeRepair: repairFeedback").length - 1, 1);
@@ -466,7 +466,7 @@ test("ships a review-before-write import surface in the client", async () => {
   );
   assert.match(clientSource, /this query shape stays read-only because no one-to-one lineage was proven/);
   assert.match(clientSource, /Query result/);
-  assert.match(clientSource, /-- rune:data/);
+  assert.match(clientSource, /-- orbit:data/);
   assert.match(clientSource, /Explicit Data binding/);
   assert.match(clientSource, /Legacy first-Data binding/);
   assert.match(clientSource, /compiled from SQL/);
@@ -522,7 +522,7 @@ test("keeps an expanded transaction review scrollable inside the source pane", a
 test("ships persistent presentation-only workspace focus modes without unmounting either synchronized pane", async () => {
   const [styles, source, previewScroll, response] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/use-source-preview-scroll.ts", import.meta.url), "utf8"),
     render(),
   ]);
@@ -536,7 +536,7 @@ test("ships persistent presentation-only workspace focus modes without unmountin
     styles,
     /\.workspace\.view-preview \.preview-header \.workspace-view-switch\s*\{\s*display:\s*inline-flex;/,
   );
-  assert.match(source, /localStorage\.setItem\(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
+  assert.match(source, /localStorage\.setItem\(ORBIT_WORKSPACE_VIEW_STORAGE_KEY, view\)/);
   assert.match(source, /workspaceViewFromKeyboardShortcut\(event\)/);
   assert.match(html, /aria-keyshortcuts="Meta\+Alt\+1 Control\+Alt\+1"/);
   assert.match(
@@ -546,6 +546,14 @@ test("ships persistent presentation-only workspace focus modes without unmountin
   assert.match(source, /useSourcePreviewScroll\(\{[\s\S]*target: activePreviewTarget/);
   assert.match(previewScroll, /cursorEnd,[\s\S]*cursorStart,[\s\S]*block: repeatedTarget \? "nearest" : "center"/);
   assert.doesNotMatch(previewScroll, /setArtifacts|persistDeviceWorkspace|fetch\(|localStorage|indexedDB/);
+});
+
+test("prevents an older debounced device save from replacing a newer reviewed write", async () => {
+  const source = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /window\.setTimeout\(\(\) => \{[\s\S]*persistDeviceWorkspace\(\s*artifactsRef\.current,\s*selectedIdRef\.current,\s*checkpointsRef\.current,\s*savedOperatingReviewsRef\.current,\s*taskEvidenceRef\.current,/,
+  );
 });
 
 test("keeps preview validation visible while progressively disclosing detailed evidence", async () => {
@@ -562,7 +570,7 @@ test("keeps preview validation visible while progressively disclosing detailed e
 
 test("turns compiler failures into bounded actionable Preview diagnostics", async () => {
   const [workbench, diagnostics, styles] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/artifact-diagnostics.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/content.css", import.meta.url), "utf8"),
   ]);
@@ -595,16 +603,16 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
   assert.match(html, />Import</);
   assert.match(html, />Export</);
   const [source, settingsMenu, menuFocus] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/use-workbench-menu-focus.ts", import.meta.url), "utf8"),
   ]);
   assert.match(source, /<WorkbenchSettingsMenu/);
-  assert.doesNotMatch(source, /tools-theme-grid|RUNE_APPEARANCE_THEMES\.map/);
+  assert.doesNotMatch(source, /tools-theme-grid|ORBIT_APPEARANCE_THEMES\.map/);
   assert.match(settingsMenu, /className="tools-popover settings-popover"/);
   assert.match(settingsMenu, /role="menu"/);
   assert.match(settingsMenu, /label: directoryName \?\? copy\.openFolder/);
-  assert.match(settingsMenu, /actions\.length \+ RUNE_APPEARANCE_THEMES\.length/);
+  assert.match(settingsMenu, /actions\.length \+ ORBIT_APPEARANCE_THEMES\.length/);
   assert.match(settingsMenu, /role="menuitemradio"/);
   assert.match(settingsMenu, /className="tools-theme-name"/);
   assert.match(settingsMenu, /useWorkbenchMenuFocus\(\{/);
@@ -633,7 +641,7 @@ test("keeps primary file and handoff actions visible while disclosing workspace 
 
 test("reviews sample reset as a recoverable atomic workspace switch", async () => {
   const [workbench, activityRail, settingsMenu, dialog, planner, overlays] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-activity-rail.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workspace-reset-dialog.tsx", import.meta.url), "utf8"),
@@ -662,7 +670,7 @@ test("reviews sample reset as a recoverable atomic workspace switch", async () =
 
 test("reviews folder Pull, Push, and initialization against exact device and folder revisions", async () => {
   const [workbench, dialog, planner, resetPlanner, overlays] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/directory-sync-review-dialog.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/directory-sync.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/workspace-reset.ts", import.meta.url), "utf8"),
@@ -693,7 +701,7 @@ test("reviews folder Pull, Push, and initialization against exact device and fol
 
 test("records user-confirmed deliverable outcomes through the shared exact-revision ledger", async () => {
   const [workbench, dialog, outcomes, overlays] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/delivery-outcome-dialog.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/task-evidence.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/overlays.css", import.meta.url), "utf8"),
@@ -704,19 +712,19 @@ test("records user-confirmed deliverable outcomes through the shared exact-revis
   );
   assert.match(workbench, /destination !== "source"\s*\? result\.targetType/);
   assert.match(workbench, /openDeliveryConfirmationForArtifact\(\s*handoffArtifact,\s*"folder",\s*"folder"/);
-  assert.match(workbench, /recordRuneTaskDelivery\(\{/);
+  assert.match(workbench, /recordOrbitTaskDelivery\(\{/);
   assert.match(
     workbench,
     /persistDeviceWorkspace\(\s*artifactsRef\.current,\s*selectedId,\s*checkpointsRef\.current,\s*savedOperatingReviewsRef\.current,\s*nextEvidence,/,
   );
-  assert.match(workbench, /summarizeRuneTaskDeliveries\(workflowDeliveries\)/);
+  assert.match(workbench, /summarizeOrbitTaskDeliveries\(workflowDeliveries\)/);
   assert.doesNotMatch(workbench, /recordOperatingReviewDelivery\(/);
   assert.match(dialog, /Did this result become usable in real work\?/);
   assert.match(dialog, /type="radio"/);
   assert.match(dialog, /never document text or prompts/);
   assert.match(outcomes, /crypto\.subtle\.digest\("SHA-256"/);
-  assert.match(outcomes, /runeTaskDeliveryId\(runId, artifactId\)/);
-  assert.match(outcomes, /MAX_RUNE_TASK_DELIVERIES = 24/);
+  assert.match(outcomes, /orbitTaskDeliveryId\(runId, artifactId\)/);
+  assert.match(outcomes, /MAX_ORBIT_TASK_DELIVERIES = 24/);
   assert.doesNotMatch(outcomes, /prompt|documentText|sourceText/);
   assert.match(overlays, /\.delivery-outcome-options label\.selected/);
   assert.match(overlays, /\.delivery-outcome-context\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
@@ -735,7 +743,7 @@ test("uses one continuous desktop workspace surface while retaining separated re
 test("consolidates source language, checkpoints, and undo into one version surface", async () => {
   const response = await render();
   const html = await response.text();
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(html, /class="history-trigger source-version-trigger/);
   assert.match(html, /aria-label="Source and versions"/);
@@ -788,7 +796,7 @@ test("integrates assistance into the source surface and progressively discloses 
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const contentStyles = await readFile(new URL("../app/styles/content.css", import.meta.url), "utf8");
   const composer = await readFile(new URL("../app/components/agent-composer.tsx", import.meta.url), "utf8");
-  const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const workbench = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const dockShell = await readFile(new URL("../app/components/agent-dock-shell.tsx", import.meta.url), "utf8");
   const conversation = await readFile(new URL("../app/components/agent-conversation.tsx", import.meta.url), "utf8");
   assert.match(
@@ -811,7 +819,7 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.match(contentStyles, /\.agent-model-picker select\s*\{/u);
   assert.match(contentStyles, /\.agent-dock\.open\.floating\s*\{/u);
   assert.match(contentStyles, /\.agent-context-trigger\s*\{/u);
-  assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1"/u);
+  assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "orbit-agent-draft-v1"/u);
   assert.match(workbench, /className="agent-context-trigger"/u);
   assert.match(workbench, /onMovePointerDown=\{beginAgentDockDrag\}/u);
   assert.match(workbench, /onMoveKeyDown=\{moveAgentDockFromKeyboard\}/u);
@@ -844,7 +852,7 @@ test("organizes workspace files by product workflow rather than internal artifac
 });
 
 test("makes a changed linked presentation directly refreshable without adding a writer", async () => {
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(source, /className="artifact-refresh-action"/);
   assert.match(source, /aria-label=\{`\$\{ui\.reviewRefresh\} · \$\{artifact\.name\}`\}/);
@@ -857,7 +865,7 @@ test("makes a changed linked presentation directly refreshable without adding a 
 test("keeps the top bar global and moves duplicate task creation into the activity rail", async () => {
   const response = await render();
   const html = await response.text();
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const activityRailSource = await readFile(
     new URL("../app/components/workbench-activity-rail.tsx", import.meta.url),
     "utf8",
@@ -917,20 +925,20 @@ test("moves live lineage into preview evidence so compiled content starts immedi
 test("ships reviewed device-local images as content-hash Markdown references without base64 source", async () => {
   const response = await render();
   const html = await response.text();
-  const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const workbench = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const preview = await readFile(new URL("../app/components/artifact-previews.tsx", import.meta.url), "utf8");
   const assets = await readFile(new URL("../app/lib/local-assets.ts", import.meta.url), "utf8");
   assert.match(html, /aria-label="Insert local image"/);
   assert.match(workbench, /<LocalImageReviewDialog/);
-  assert.match(workbench, /accept=\{RUNE_IMAGE_ACCEPT\}/);
-  assert.match(workbench, /putRuneImageAsset\(pending\.asset\)/);
-  assert.match(workbench, /deleteRuneImageAsset\(pending\.asset\.id\)/);
+  assert.match(workbench, /accept=\{ORBIT_IMAGE_ACCEPT\}/);
+  assert.match(workbench, /putOrbitImageAsset\(pending\.asset\)/);
+  assert.match(workbench, /deleteOrbitImageAsset\(pending\.asset\.id\)/);
   assert.match(workbench, /selectedArtifact\.kind === "slides" && isDeckMarkdownArtifact\(selectedArtifact\)/);
   assert.match(preview, /compileDeckSource\(source, \{ resolveLocalAssetUrl \}\)/);
-  assert.match(preview, /data-rune-asset-state/);
+  assert.match(preview, /data-orbit-asset-state/);
   assert.match(preview, /defaultUrlTransform/);
   assert.match(preview, /node\.tagName === "img" && key === "src"/);
-  assert.match(assets, /rune-asset:sha256:/);
+  assert.match(assets, /orbit-asset:sha256:/);
   assert.match(assets, /indexedDB\.open/);
   assert.doesNotMatch(workbench, /readAsDataURL|data:image\/[^;]+;base64/);
   assert.doesNotMatch(assets, /readAsDataURL|data:image\/[^;]+;base64/);
@@ -945,7 +953,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
           readFile(new URL(`../app/styles/${name}.css`, import.meta.url), "utf8"),
         ),
       ),
-      readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
       readFile(new URL("../app/components/workbench-settings-menu.tsx", import.meta.url), "utf8"),
       readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
       readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
@@ -953,31 +961,31 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     ]);
   const modularStyles = styleFiles.join("\n");
   const styles = [legacyStyles, ...styleFiles].join("\n");
-  assert.match(styles, /--rune-content-wide:\s*1260px;/);
-  assert.match(styles, /--rune-frame-width:\s*87\.5%;/);
-  assert.match(styles, /--rune-radius-window:\s*32px;/);
-  assert.match(styles, /--rune-radius-workspace:\s*24px;/);
-  assert.match(styles, /--rune-type-display:\s*clamp\(46px,\s*5\.1vw,\s*70px\);/);
-  assert.match(styles, /--rune-duration-scene:\s*760ms;/);
-  assert.match(styles, /@keyframes rune-window-enter\s*\{\s*from\s*\{\s*opacity:\s*0;\s*transform:\s*scale\(\.975\);/);
-  assert.match(styles, /--rune-file-width:\s*220px;/);
+  assert.match(styles, /--orbit-content-wide:\s*1260px;/);
+  assert.match(styles, /--orbit-frame-width:\s*87\.5%;/);
+  assert.match(styles, /--orbit-radius-window:\s*32px;/);
+  assert.match(styles, /--orbit-radius-workspace:\s*24px;/);
+  assert.match(styles, /--orbit-type-display:\s*clamp\(46px,\s*5\.1vw,\s*70px\);/);
+  assert.match(styles, /--orbit-duration-scene:\s*760ms;/);
+  assert.match(styles, /@keyframes orbit-window-enter\s*\{\s*from\s*\{\s*opacity:\s*0;\s*transform:\s*scale\(\.975\);/);
+  assert.match(styles, /--orbit-file-width:\s*220px;/);
   assert.match(modularStyles, /\.welcome-intro-grid\s*\{[^}]*width:\s*min\(560px,\s*100%\);/s);
-  assert.match(modularStyles, /\.welcome-window\s*\{[^}]*max-height:\s*calc\(100dvh - var\(--rune-space-6\)\);/s);
+  assert.match(modularStyles, /\.welcome-window\s*\{[^}]*max-height:\s*calc\(100dvh - var\(--orbit-space-6\)\);/s);
   assert.match(
     styles,
     /\.workspace\.with-file-rail\s*\{[^}]*var\(--workspace-source-track,\s*44fr\)[^}]*var\(--workspace-preview-track,\s*56fr\)/s,
   );
   assert.match(
     styles,
-    /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--rune-stage\);[^}]*background-image:\s*none;/s,
+    /\.document-stage,\s*\.data-stage,\s*\.chart-stage,\s*\.slides-stage\s*\{[^}]*background:\s*var\(--orbit-stage\);[^}]*background-image:\s*none;/s,
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
-  assert.match(modularStyles, /@keyframes rune-greeting-dock/);
-  assert.match(modularStyles, /@keyframes rune-greeting-pencil-write/);
-  assert.match(modularStyles, /@keyframes rune-setup-unfold/);
+  assert.match(modularStyles, /@keyframes orbit-greeting-dock/);
+  assert.match(modularStyles, /@keyframes orbit-greeting-pencil-write/);
+  assert.match(modularStyles, /@keyframes orbit-setup-unfold/);
   assert.doesNotMatch(
     modularStyles,
-    /@keyframes rune-(?:welcome-ambient|greeting-color-bloom|greeting-stroke-head|greeting-pressure|boot-chroma)/,
+    /@keyframes orbit-(?:welcome-ambient|greeting-color-bloom|greeting-stroke-head|greeting-pressure|boot-chroma)/,
   );
   assert.match(modularStyles, /\.welcome-greeting-tegaki\s*\{[^}]*white-space:\s*nowrap/s);
   assert.match(modularStyles, /\.welcome-greeting-vector-stroke\s*\{[^}]*stroke-dasharray:\s*1/s);
@@ -986,7 +994,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     handwrittenGreeting,
     /#050506[^]*#30d158[^]*#ffd60a[^]*#ff9f0a[^]*#ff453a[^]*#ff375f[^]*#bf5af2[^]*#0a84ff/,
   );
-  assert.match(styles, /circle at var\(--rune-pointer-x\) var\(--rune-pointer-y\)/);
+  assert.match(styles, /circle at var\(--orbit-pointer-x\) var\(--orbit-pointer-y\)/);
   assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)/);
   assert.match(styles, /html\[data-locale="ar"\][^]*\.welcome-page h1/);
   assert.match(styles, /html\[data-locale="ja"\]/);
@@ -1035,7 +1043,7 @@ test("ships one Apple-informed optical and motion system across onboarding and t
     modularStyles,
     /\.welcome-intro-grid\[data-intro-phase="writing"\]\s*\{[^}]*position:\s*absolute;[^}]*place-items:\s*center;/s,
   );
-  assert.match(modularStyles, /@keyframes rune-greeting-dock\s*\{[^}]*clamp\(112px,\s*18vh,\s*170px\)/s);
+  assert.match(modularStyles, /@keyframes orbit-greeting-dock\s*\{[^}]*clamp\(112px,\s*18vh,\s*170px\)/s);
   assert.match(fluidSurface, /trackFluidSurface/);
   assert.match(fluidSurface, /event\.pointerType === "touch"/);
   assert.match(fluidSurface, /prefers-reduced-motion:\s*reduce/);

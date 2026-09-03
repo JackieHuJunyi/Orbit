@@ -10,7 +10,7 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 
   assert.deepEqual(imports.sort(), ["./imports.ts", "./patches.ts", "./workspace.ts"]);
   assert.match(runtime, /"awaiting-source" \| "reviewing-source" \| "configuring"/);
-  assert.match(runtime, /RUNE_TASK_DEFINITIONS/);
+  assert.match(runtime, /ORBIT_TASK_DEFINITIONS/);
   assert.match(runtime, /workspaceMatchesSourceRevision/);
   assert.match(runtime, /validateWorkspaceImportReview/);
   assert.doesNotMatch(runtime, /react|localStorage|indexedDB|document\.|window\.|fetch\(|persist/i);
@@ -36,7 +36,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
     styles,
     shellStyles,
   ] = await Promise.all([
-    source("../app/components/rune-workbench.tsx"),
+    source("../app/components/orbit-workbench.tsx"),
     source("../app/components/workspace-frame-controls.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
@@ -57,19 +57,19 @@ test("composes multiple tasks through declared capabilities, exact import identi
 
   assert.match(
     workbench,
-    /accept=\{RUNE_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/,
+    /accept=\{ORBIT_TASK_DEFINITIONS\[taskSession\?\.taskId \?\? "operating-review"\]\.sourceAccept\}/,
   );
-  assert.match(workbench, /startRuneTaskFromSource\("document-briefing", replacingOwner\)/);
-  assert.match(workbench, /bindRuneTaskImportReview\(activeTaskSession, baseArtifacts, prepared\.review\)/);
-  assert.match(workbench, /prepareRuneTaskAfterImport\(taskSession, artifacts, pendingImport\)/);
+  assert.match(workbench, /startOrbitTaskFromSource\("document-briefing", replacingOwner\)/);
+  assert.match(workbench, /bindOrbitTaskImportReview\(activeTaskSession, baseArtifacts, prepared\.review\)/);
+  assert.match(workbench, /prepareOrbitTaskAfterImport\(taskSession, artifacts, pendingImport\)/);
   assert.match(workbench, /preferredDataArtifactId=\{\s*taskSession\?\.phase === "configuring"/);
   assert.match(empty, /onStartReview/);
   assert.match(empty, /onStartBriefing/);
   assert.match(empty, /className="empty-task-primary"/);
-  assert.match(reviewDialog, /continuationTask\?: RuneTaskId/);
+  assert.match(reviewDialog, /continuationTask\?: OrbitTaskId/);
   assert.match(reviewDialog, /className="import-task-continuation"/);
   assert.match(operatingDialog, /initialInput\?\.dataArtifactId \?\? preferredDataArtifactId \?\? ""/);
-  assert.match(operatingDialog, /modelMode: RuneModelMode/);
+  assert.match(operatingDialog, /modelMode: OrbitModelMode/);
   assert.match(operatingCompiler, /prepareOperatingReviewEvidence/);
   assert.match(operatingCompiler, /formatQueryMetricReference/);
   assert.match(operatingCompiler, /prepareOperatingReviewScope/);
@@ -124,17 +124,17 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.doesNotMatch(briefingRoute, /prepareWorkspaceMutation|setArtifacts|persistDeviceWorkspace/);
   assert.match(providers, /case "operating-review"/);
   assert.match(providers, /case "document-briefing"/);
-  assert.match(providers, /satisfies Record<RuneTaskId, true>/);
+  assert.match(providers, /satisfies Record<OrbitTaskId, true>/);
   assert.doesNotMatch(providers, /react|localStorage|indexedDB|window\.|fetch\(|persist/i);
   assert.match(
     workbench,
-    /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "operating-review",\s*input,\s*\.\.\.\(narrative/,
+    /prepareOrbitTaskProvider\(baseArtifacts, \{\s*taskId: "operating-review",\s*input,\s*\.\.\.\(narrative/,
   );
-  assert.match(workbench, /prepareRuneTaskProvider\(baseArtifacts, \{\s*taskId: "document-briefing",\s*input,/);
-  assert.match(workbench, /prepareRuneTaskModelAssistance/);
+  assert.match(workbench, /prepareOrbitTaskProvider\(baseArtifacts, \{\s*taskId: "document-briefing",\s*input,/);
+  assert.match(workbench, /prepareOrbitTaskModelAssistance/);
   assert.doesNotMatch(workbench, /fetch\("\/api\/tasks\/(?:document-briefing|operating-review)"/);
-  assert.match(modelPlanning, /fetcher: RuneTaskModelFetch/);
-  assert.match(modelPlanning, /MAX_RUNE_TASK_MODEL_RESPONSE_BYTES = 128_000/);
+  assert.match(modelPlanning, /fetcher: OrbitTaskModelFetch/);
+  assert.match(modelPlanning, /MAX_ORBIT_TASK_MODEL_RESPONSE_BYTES = 128_000/);
   assert.match(modelPlanning, /prepareOperatingReviewEvidence/);
   assert.match(modelPlanning, /prepareDocumentBriefingEvidence/);
   assert.match(modelPlanning, /validateOperatingReviewNarrative/);
@@ -153,7 +153,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
   );
   assert.match(directRefresh, /documentBriefingSourceIdForPresentation\(target\)/);
   assert.match(directRefresh, /targetFreshness !== "changed"/);
-  assert.doesNotMatch(directRefresh, /setArtifacts|persistDeviceWorkspace|prepareRuneTaskProvider/);
+  assert.doesNotMatch(directRefresh, /setArtifacts|persistDeviceWorkspace|prepareOrbitTaskProvider/);
   assert.match(styles, /\.empty-task-primary/);
   assert.match(styles, /\.import-task-continuation/);
   assert.match(workbench, /inert=\{workspaceView === "preview"/);
@@ -164,6 +164,6 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(frameControls, /setPointerCapture/);
   assert.match(frameControls, /requestAnimationFrame/);
   assert.match(shellStyles, /Focus views keep both editor surfaces mounted/);
-  assert.match(shellStyles, /transition: grid-template-columns var\(--rune-duration-layout\)/);
-  assert.match(shellStyles, /prefers-reduced-motion|rune-duration-layout/);
+  assert.match(shellStyles, /transition: grid-template-columns var\(--orbit-duration-layout\)/);
+  assert.match(shellStyles, /prefers-reduced-motion|orbit-duration-layout/);
 });

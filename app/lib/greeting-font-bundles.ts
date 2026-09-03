@@ -1,5 +1,5 @@
 import type { TegakiBundle } from "tegaki";
-import type { RuneLocale } from "./localization.ts";
+import type { OrbitLocale } from "./localization.ts";
 import {
   JAPANESE_GREETING_GLYPHS,
   KOREAN_GREETING_GLYPHS,
@@ -46,7 +46,7 @@ function generatedBundle(
   };
 }
 
-export async function loadGreetingFontPlan(locale: RuneLocale): Promise<GreetingFontPlan> {
+export async function loadGreetingFontPlan(locale: OrbitLocale): Promise<GreetingFontPlan> {
   if (locale === "ar") {
     const { default: amiri } = await import("tegaki/fonts/amiri");
     return Object.freeze({ bundle: amiri, requiresShaper: true });

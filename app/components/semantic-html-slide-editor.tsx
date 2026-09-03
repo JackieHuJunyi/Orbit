@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Check, LoaderCircle, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { RuneUICopy } from "../lib/localization";
+import type { OrbitUICopy } from "../lib/localization";
 import type { PreviewSourceTarget } from "../lib/preview-targets";
 import {
   MAX_VISUAL_SEMANTIC_HTML_SLIDE_CHARS,
@@ -29,7 +29,7 @@ export function SemanticHtmlSlideEditor({
   target,
 }: {
   artifact: WorkspaceArtifact;
-  copy: RuneUICopy["preview"];
+  copy: OrbitUICopy["preview"];
   onClose: () => void;
   onSave: (
     artifact: WorkspaceArtifact,

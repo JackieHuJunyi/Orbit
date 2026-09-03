@@ -2,25 +2,25 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  createRuneGuideArtifact,
+  createOrbitGuideArtifact,
   detectPreferredLocale,
   localeDisplayName,
   localeDirection,
   localeMonogram,
-  loadRuneLocaleCatalog,
-  localizeRuneStatus,
-  normalizeRuneLocale,
-  runeGreetingSequence,
-  runeQuickCommands,
-  runeText,
-  runeUICopy,
+  loadOrbitLocaleCatalog,
+  localizeOrbitStatus,
+  normalizeOrbitLocale,
+  orbitGreetingSequence,
+  orbitQuickCommands,
+  orbitText,
+  orbitUICopy,
   workspaceSplitValueLabel,
-  RUNE_GUIDE_ID,
-  RUNE_LOCALE_REGISTRY,
+  ORBIT_GUIDE_ID,
+  ORBIT_LOCALE_REGISTRY,
 } from "../app/lib/localization.ts";
 import { validateArtifact } from "../app/lib/workspace.ts";
 
-await Promise.all(["zh-TW", "fr", "es", "ru", "ar", "ja", "ko"].map(loadRuneLocaleCatalog));
+await Promise.all(["zh-TW", "fr", "es", "ru", "ar", "ja", "ko"].map(loadOrbitLocaleCatalog));
 
 test("uses the first supported language in the device's ordered preferences", () => {
   assert.equal(detectPreferredLocale(["en-US", "zh-Hans-CN"]), "en");
@@ -37,48 +37,48 @@ test("uses the first supported language in the device's ordered preferences", ()
 });
 
 test("normalizes only supported Orbit interface locales", () => {
-  assert.equal(normalizeRuneLocale("zh-CN"), "zh-CN");
-  assert.equal(normalizeRuneLocale("en"), "en");
-  assert.equal(normalizeRuneLocale("zh-TW"), "zh-TW");
-  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) assert.equal(normalizeRuneLocale(locale), locale);
-  assert.equal(normalizeRuneLocale("en-US"), null);
-  assert.equal(normalizeRuneLocale(null), null);
+  assert.equal(normalizeOrbitLocale("zh-CN"), "zh-CN");
+  assert.equal(normalizeOrbitLocale("en"), "en");
+  assert.equal(normalizeOrbitLocale("zh-TW"), "zh-TW");
+  for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) assert.equal(normalizeOrbitLocale(locale), locale);
+  assert.equal(normalizeOrbitLocale("en-US"), null);
+  assert.equal(normalizeOrbitLocale(null), null);
   assert.equal(localeDisplayName("zh-CN"), "简体中文");
   assert.equal(localeDisplayName("zh-TW"), "繁體中文");
   assert.equal(localeMonogram("en"), "A");
   assert.equal(localeDisplayName("ar"), "العربية");
   assert.equal(localeDirection("ar"), "rtl");
   assert.equal(localeDirection("ja"), "ltr");
-  assert.equal(RUNE_LOCALE_REGISTRY.length, 9);
+  assert.equal(ORBIT_LOCALE_REGISTRY.length, 9);
   assert.deepEqual(
     ["zh-CN", "en", "fr", "es", "ru", "ar"].every((locale) =>
-      RUNE_LOCALE_REGISTRY.some((entry) => entry.locale === locale),
+      ORBIT_LOCALE_REGISTRY.some((entry) => entry.locale === locale),
     ),
     true,
   );
 });
 
 test("keeps welcome greetings identical to the complete interface locale registry", () => {
-  const registeredGreetings = RUNE_LOCALE_REGISTRY.map((entry) => `${entry.locale}:${entry.greeting}`).sort();
-  for (const entry of RUNE_LOCALE_REGISTRY) {
-    const sequence = runeGreetingSequence(entry.locale);
-    assert.equal(sequence.length, RUNE_LOCALE_REGISTRY.length);
+  const registeredGreetings = ORBIT_LOCALE_REGISTRY.map((entry) => `${entry.locale}:${entry.greeting}`).sort();
+  for (const entry of ORBIT_LOCALE_REGISTRY) {
+    const sequence = orbitGreetingSequence(entry.locale);
+    assert.equal(sequence.length, ORBIT_LOCALE_REGISTRY.length);
     assert.deepEqual(
-      RUNE_LOCALE_REGISTRY.map(({ locale, greeting }) => `${locale}:${greeting}`).sort(),
+      ORBIT_LOCALE_REGISTRY.map(({ locale, greeting }) => `${locale}:${greeting}`).sort(),
       registeredGreetings,
     );
-    assert.equal(runeGreetingSequence(entry.locale)[0], entry.greeting);
-    assert.ok(runeUICopy(entry.locale).workbench.livePreview);
-    assert.ok(createRuneGuideArtifact(entry.locale).source.length > 100);
+    assert.equal(orbitGreetingSequence(entry.locale)[0], entry.greeting);
+    assert.ok(orbitUICopy(entry.locale).workbench.livePreview);
+    assert.ok(createOrbitGuideArtifact(entry.locale).source.length > 100);
   }
 });
 
 test("creates a valid editable local guide in the selected language", () => {
-  const chinese = createRuneGuideArtifact("zh-CN");
-  const traditionalChinese = createRuneGuideArtifact("zh-TW");
-  const english = createRuneGuideArtifact("en");
-  assert.equal(chinese.id, RUNE_GUIDE_ID);
-  assert.equal(english.id, RUNE_GUIDE_ID);
+  const chinese = createOrbitGuideArtifact("zh-CN");
+  const traditionalChinese = createOrbitGuideArtifact("zh-TW");
+  const english = createOrbitGuideArtifact("en");
+  assert.equal(chinese.id, ORBIT_GUIDE_ID);
+  assert.equal(english.id, ORBIT_GUIDE_ID);
   assert.match(chinese.source, /欢迎使用 Orbit/);
   assert.match(traditionalChinese.source, /歡迎使用 Orbit/);
   assert.match(traditionalChinese.source, /文件/);
@@ -90,7 +90,7 @@ test("creates a valid editable local guide in the selected language", () => {
   assert.deepEqual(validateArtifact(traditionalChinese), []);
   assert.deepEqual(validateArtifact(english), []);
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
-    const guide = createRuneGuideArtifact(locale);
+    const guide = createOrbitGuideArtifact(locale);
     assert.notEqual(guide.source, english.source);
     assert.match(guide.source, /Orbit/);
     assert.match(guide.source, /⌘ Enter/);
@@ -109,13 +109,13 @@ function catalogShape(value) {
 }
 
 test("keeps one complete typed UI contract across all nine interface locales", () => {
-  const chinese = runeUICopy("zh-CN");
-  const traditionalChinese = runeUICopy("zh-TW");
-  const english = runeUICopy("en");
+  const chinese = orbitUICopy("zh-CN");
+  const traditionalChinese = orbitUICopy("zh-TW");
+  const english = orbitUICopy("en");
   assert.deepEqual(catalogShape(chinese), catalogShape(english));
   assert.deepEqual(catalogShape(traditionalChinese), catalogShape(english));
-  for (const { locale } of RUNE_LOCALE_REGISTRY)
-    assert.deepEqual(catalogShape(runeUICopy(locale)), catalogShape(english));
+  for (const { locale } of ORBIT_LOCALE_REGISTRY)
+    assert.deepEqual(catalogShape(orbitUICopy(locale)), catalogShape(english));
   assert.equal(chinese.workbench.livePreview, "实时预览");
   assert.equal(english.workbench.livePreview, "Live preview");
   assert.equal(traditionalChinese.workbench.livePreview, "即時預覽");
@@ -135,36 +135,36 @@ test("keeps one complete typed UI contract across all nine interface locales", (
   assert.equal(traditionalChinese.workspaceReset.sampleTitle, "恢復範例工作區？");
   assert.equal(english.workspaceReset.sampleTitle, "Restore the sample workspace?");
   for (const locale of ["fr", "es", "ru", "ar", "ja", "ko"]) {
-    assert.notEqual(runeUICopy(locale).workbench.livePreview, english.workbench.livePreview);
-    assert.notEqual(runeUICopy(locale).workbench.appearance, english.workbench.appearance);
-    assert.notEqual(runeUICopy(locale).workbench.deliveryOutcomeRecorded, english.workbench.deliveryOutcomeRecorded);
-    assert.notEqual(runeUICopy(locale).workbench.deliveryRatings.ready, english.workbench.deliveryRatings.ready);
-    assert.notEqual(runeUICopy(locale).workbench.proposalPreview, english.workbench.proposalPreview);
-    assert.notEqual(runeUICopy(locale).workbench.proposalSourceUnchanged, english.workbench.proposalSourceUnchanged);
-    assert.notEqual(runeUICopy(locale).workbench.refreshAvailable, english.workbench.refreshAvailable);
-    assert.notEqual(runeUICopy(locale).workbench.reviewRefresh, english.workbench.reviewRefresh);
-    assert.notEqual(runeUICopy(locale).preview.semanticHtmlEditMode, english.preview.semanticHtmlEditMode);
-    assert.notEqual(runeUICopy(locale).preview.slideHtml, english.preview.slideHtml);
-    assert.notEqual(runeUICopy(locale).preview.saveHtmlSlide, english.preview.saveHtmlSlide);
-    assert.notEqual(runeUICopy(locale).exportReview.title("source"), english.exportReview.title("source"));
-    assert.notEqual(runeUICopy(locale).exportReview.descriptors.source, english.exportReview.descriptors.source);
-    assert.notEqual(runeUICopy(locale).exportReview.sourceFileTitle, english.exportReview.sourceFileTitle);
-    assert.notEqual(runeUICopy(locale).checkpointRestore.title, english.checkpointRestore.title);
-    assert.notEqual(runeUICopy(locale).checkpointRestore.description, english.checkpointRestore.description);
-    assert.notEqual(runeUICopy(locale).checkpointRestore.safety, english.checkpointRestore.safety);
-    assert.notEqual(runeUICopy(locale).workspaceReset.sampleTitle, english.workspaceReset.sampleTitle);
-    assert.notEqual(runeUICopy(locale).workspaceReset.sampleDescription, english.workspaceReset.sampleDescription);
-    assert.notEqual(runeUICopy(locale).workspaceReset.recoverySafety, english.workspaceReset.recoverySafety);
-    assert.match(runeUICopy(locale).preview.validHtmlSlide, /<section>/u);
-    assert.doesNotMatch(runeUICopy(locale).preview.validHtmlSlide, /<(?:sección|قسم|セクション|섹션)>/iu);
-    assert.notEqual(runeUICopy(locale).workbench.diagnostics.openSource, english.workbench.diagnostics.openSource);
+    assert.notEqual(orbitUICopy(locale).workbench.livePreview, english.workbench.livePreview);
+    assert.notEqual(orbitUICopy(locale).workbench.appearance, english.workbench.appearance);
+    assert.notEqual(orbitUICopy(locale).workbench.deliveryOutcomeRecorded, english.workbench.deliveryOutcomeRecorded);
+    assert.notEqual(orbitUICopy(locale).workbench.deliveryRatings.ready, english.workbench.deliveryRatings.ready);
+    assert.notEqual(orbitUICopy(locale).workbench.proposalPreview, english.workbench.proposalPreview);
+    assert.notEqual(orbitUICopy(locale).workbench.proposalSourceUnchanged, english.workbench.proposalSourceUnchanged);
+    assert.notEqual(orbitUICopy(locale).workbench.refreshAvailable, english.workbench.refreshAvailable);
+    assert.notEqual(orbitUICopy(locale).workbench.reviewRefresh, english.workbench.reviewRefresh);
+    assert.notEqual(orbitUICopy(locale).preview.semanticHtmlEditMode, english.preview.semanticHtmlEditMode);
+    assert.notEqual(orbitUICopy(locale).preview.slideHtml, english.preview.slideHtml);
+    assert.notEqual(orbitUICopy(locale).preview.saveHtmlSlide, english.preview.saveHtmlSlide);
+    assert.notEqual(orbitUICopy(locale).exportReview.title("source"), english.exportReview.title("source"));
+    assert.notEqual(orbitUICopy(locale).exportReview.descriptors.source, english.exportReview.descriptors.source);
+    assert.notEqual(orbitUICopy(locale).exportReview.sourceFileTitle, english.exportReview.sourceFileTitle);
+    assert.notEqual(orbitUICopy(locale).checkpointRestore.title, english.checkpointRestore.title);
+    assert.notEqual(orbitUICopy(locale).checkpointRestore.description, english.checkpointRestore.description);
+    assert.notEqual(orbitUICopy(locale).checkpointRestore.safety, english.checkpointRestore.safety);
+    assert.notEqual(orbitUICopy(locale).workspaceReset.sampleTitle, english.workspaceReset.sampleTitle);
+    assert.notEqual(orbitUICopy(locale).workspaceReset.sampleDescription, english.workspaceReset.sampleDescription);
+    assert.notEqual(orbitUICopy(locale).workspaceReset.recoverySafety, english.workspaceReset.recoverySafety);
+    assert.match(orbitUICopy(locale).preview.validHtmlSlide, /<section>/u);
+    assert.doesNotMatch(orbitUICopy(locale).preview.validHtmlSlide, /<(?:sección|قسم|セクション|섹션)>/iu);
+    assert.notEqual(orbitUICopy(locale).workbench.diagnostics.openSource, english.workbench.diagnostics.openSource);
     assert.notEqual(
-      runeUICopy(locale).workbench.diagnostics.codes["chart-binding-invalid"].title,
+      orbitUICopy(locale).workbench.diagnostics.codes["chart-binding-invalid"].title,
       english.workbench.diagnostics.codes["chart-binding-invalid"].title,
     );
   }
-  for (const { locale } of RUNE_LOCALE_REGISTRY) {
-    const diagnostics = runeUICopy(locale).workbench.diagnostics;
+  for (const { locale } of ORBIT_LOCALE_REGISTRY) {
+    const diagnostics = orbitUICopy(locale).workbench.diagnostics;
     assert.ok(diagnostics.heading);
     assert.ok(diagnostics.openSource);
     assert.equal(Object.keys(diagnostics.codes).length, 13);
@@ -176,9 +176,9 @@ test("keeps one complete typed UI contract across all nine interface locales", (
 });
 
 test("formats dynamic review copy without fragile token replacement", () => {
-  const chinese = runeUICopy("zh-CN");
-  const traditionalChinese = runeUICopy("zh-TW");
-  const english = runeUICopy("en");
+  const chinese = orbitUICopy("zh-CN");
+  const traditionalChinese = orbitUICopy("zh-TW");
+  const english = orbitUICopy("en");
   assert.equal(
     chinese.importReview.description("经营数据.xlsx", 2),
     "经营数据.xlsx 已生成 2 份可读内容。确认前不会写入。",
@@ -193,7 +193,7 @@ test("formats dynamic review copy without fragile token replacement", () => {
     traditionalChinese.importReview.description("经营数据.xlsx", 2),
     "经营数据.xlsx 已生成 2 份可讀內容。確認前不會寫入。",
   );
-  assert.equal(runeText("zh-TW", "", "正在读取 经营数据.xlsx", ["经营数据.xlsx"]), "正在讀取 经营数据.xlsx");
+  assert.equal(orbitText("zh-TW", "", "正在读取 经营数据.xlsx", ["经营数据.xlsx"]), "正在讀取 经营数据.xlsx");
   assert.equal(
     chinese.preview.queryFootnote("DuckDB", "收入.csv", true, true),
     "DuckDB · 收入.csv 始终留在此浏览器 · 可证明时，结果行号与直接字段可打开规范源内容；派生单元格保持只读 · 预览最多显示 500 行。",
@@ -201,19 +201,19 @@ test("formats dynamic review copy without fragile token replacement", () => {
 });
 
 test("localizes suggested actions and high-frequency live status without altering English evidence", () => {
-  assert.equal(runeQuickCommands("en", "artifact", "chart")[1], "Change the accent to purple");
-  assert.equal(runeQuickCommands("zh-CN", "selection", "document")[0], "把选中内容压缩成一句话");
-  assert.equal(localizeRuneStatus("zh-CN", "Local workspace ready"), "本地工作区已就绪");
-  assert.equal(localizeRuneStatus("zh-TW", "Local workspace ready"), "本地工作區已就緒");
+  assert.equal(orbitQuickCommands("en", "artifact", "chart")[1], "Change the accent to purple");
+  assert.equal(orbitQuickCommands("zh-CN", "selection", "document")[0], "把选中内容压缩成一句话");
+  assert.equal(localizeOrbitStatus("zh-CN", "Local workspace ready"), "本地工作区已就绪");
+  assert.equal(localizeOrbitStatus("zh-TW", "Local workspace ready"), "本地工作區已就緒");
   assert.equal(
-    localizeRuneStatus("zh-CN", "report.md updated in canonical source · Push when ready"),
+    localizeOrbitStatus("zh-CN", "report.md updated in canonical source · Push when ready"),
     "report.md 已更新到规范源内容 · 可随时写回文件夹",
   );
-  assert.equal(localizeRuneStatus("en", "DuckDB could not run this query."), "DuckDB could not run this query.");
+  assert.equal(localizeOrbitStatus("en", "DuckDB could not run this query."), "DuckDB could not run this query.");
 });
 
 test("localizes the adjustable workspace split value in every interface language", () => {
-  for (const { locale } of RUNE_LOCALE_REGISTRY) {
+  for (const { locale } of ORBIT_LOCALE_REGISTRY) {
     const label = workspaceSplitValueLabel(locale, 47);
     assert.match(label, /47/);
     assert.match(label, /%|٪/);

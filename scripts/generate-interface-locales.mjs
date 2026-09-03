@@ -4,7 +4,7 @@ import ts from "typescript";
 import { GENERATED_INTERFACE_TRANSLATIONS } from "../app/lib/interface-locales.generated.ts";
 import { MANUAL_INTERFACE_TRANSLATIONS } from "../app/lib/interface-locales.manual.ts";
 
-import { ENGLISH_RUNE_GUIDE, localizeRuneStatus, runeQuickCommands, runeUICopy } from "../app/lib/localization.ts";
+import { ENGLISH_ORBIT_GUIDE, localizeOrbitStatus, orbitQuickCommands, orbitUICopy } from "../app/lib/localization.ts";
 
 const appRoot = path.resolve(import.meta.dirname, "..");
 const outputPath = path.join(appRoot, "app", "lib", "interface-locales.generated.ts");
@@ -65,7 +65,7 @@ const protectedTerms = [
   "localStorage",
   "HttpOnly",
   "API Key",
-  "RUNE_CREDENTIAL_ENCRYPTION_KEY",
+  "ORBIT_CREDENTIAL_ENCRYPTION_KEY",
 ];
 
 function collectStrings(value, strings) {
@@ -113,12 +113,12 @@ async function collectComponentEnglish(file, identifier, strings) {
 
 async function collectEnglishStrings() {
   const strings = new Set();
-  collectStrings(runeUICopy("en"), strings);
+  collectStrings(orbitUICopy("en"), strings);
   for (const kind of ["document", "data", "query", "chart", "slides"]) {
     for (const scope of ["selection", "artifact", "workspace"])
-      collectStrings(runeQuickCommands("en", scope, kind), strings);
+      collectStrings(orbitQuickCommands("en", scope, kind), strings);
   }
-  ENGLISH_RUNE_GUIDE.split("\n").forEach((line) => {
+  ENGLISH_ORBIT_GUIDE.split("\n").forEach((line) => {
     if (line.trim()) strings.add(line);
   });
   for (const [file, identifier] of componentCatalogs) await collectComponentEnglish(file, identifier, strings);
@@ -126,7 +126,7 @@ async function collectEnglishStrings() {
   const localizationSource = await fs.readFile(path.join(appRoot, "app/lib/localization.ts"), "utf8");
   const statusKeys = [...localizationSource.matchAll(/^\s{2}"([^"]+)":\s*"/gmu)].map((match) => match[1]);
   for (const status of statusKeys) {
-    if (localizeRuneStatus("zh-CN", status) !== status) strings.add(status);
+    if (localizeOrbitStatus("zh-CN", status) !== status) strings.add(status);
   }
   return [...strings].filter((value) => value.length <= 1_200).sort((left, right) => left.localeCompare(right));
 }
@@ -136,7 +136,7 @@ function protectText(text) {
   let value = text;
   const protect = (match) => {
     const index = replacements.push(match) - 1;
-    return `{{RUNE_TOKEN_${index}}}`;
+    return `{{ORBIT_TOKEN_${index}}}`;
   };
   value = value.replace(/`[^`]+`/gu, protect);
   value = value.replace(/(?:⌘|Ctrl|Command|Control|Alt|Shift|F2)(?:\s*[A-Z↵]|\s*Enter)?/gu, protect);
@@ -149,13 +149,15 @@ function protectText(text) {
 function restoreText(text, replacements) {
   let value = text;
   replacements.forEach((replacement, index) => {
-    value = value.replaceAll(`{{RUNE_TOKEN_${index}}}`, replacement).replaceAll(`{{RUNE TOKEN ${index}}}`, replacement);
+    value = value
+      .replaceAll(`{{ORBIT_TOKEN_${index}}}`, replacement)
+      .replaceAll(`{{ORBIT TOKEN ${index}}}`, replacement);
   });
   return value;
 }
 
 async function translateBatch(locale, entries) {
-  const marker = (index) => `<<<RUNE_SEGMENT_${index}>>>`;
+  const marker = (index) => `<<<ORBIT_SEGMENT_${index}>>>`;
   const body = entries.map((entry, index) => `${entry.value}\n${marker(index)}`).join("\n");
   const form = new URLSearchParams({ client: "gtx", sl: "en", tl: locale, dt: "t", q: body });
   let response;
@@ -171,7 +173,7 @@ async function translateBatch(locale, entries) {
   if (!response.ok) throw new Error(`Translation request for ${locale} failed (${response.status}).`);
   const payload = await response.json();
   const translated = Array.isArray(payload?.[0]) ? payload[0].map((segment) => segment?.[0] ?? "").join("") : "";
-  const parts = translated.split(/\n?<<<RUNE_SEGMENT_\d+>>>\n?/gu);
+  const parts = translated.split(/\n?<<<ORBIT_SEGMENT_\d+>>>\n?/gu);
   if (parts.length < entries.length) throw new Error(`Translation response for ${locale} lost a segment.`);
   return entries.map((entry, index) => restoreText((parts[index] ?? "").trim(), entry.replacements));
 }

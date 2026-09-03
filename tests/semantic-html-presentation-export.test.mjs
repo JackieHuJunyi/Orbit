@@ -66,16 +66,16 @@ test("converts bounded semantic HTML into immutable valid Deck handoff source", 
 test("preserves one verified semantic HTML image in the controlled Deck handoff", () => {
   const imageId = "c".repeat(64);
   const artifact = semanticHtmlArtifact(
-    `<main><section data-layout="split"><h1>Proof</h1><p>Readable evidence.</p><figure class="deck-image"><img src="rune-asset:sha256:${imageId}" alt="Q2 proof" /></figure></section></main>`,
+    `<main><section data-layout="split"><h1>Proof</h1><p>Readable evidence.</p><figure class="deck-image"><img src="orbit-asset:sha256:${imageId}" alt="Q2 proof" /></figure></section></main>`,
   );
   const result = convertSemanticHtmlPresentationToDeck(artifact);
-  assert.match(result.artifact.source, new RegExp(`!\\[Q2 proof\\]\\(rune-asset:sha256:${imageId}\\)`, "u"));
+  assert.match(result.artifact.source, new RegExp(`!\\[Q2 proof\\]\\(orbit-asset:sha256:${imageId}\\)`, "u"));
   assert.deepEqual(parseDeckSource(result.artifact.source).errors, []);
   assert.doesNotMatch(result.warnings.join(" "), /omitted.*image/iu);
 
   const twoImages = artifact.source.replace(
     "</figure>",
-    `</figure><img src="rune-asset:sha256:${"d".repeat(64)}" alt="Second" />`,
+    `</figure><img src="orbit-asset:sha256:${"d".repeat(64)}" alt="Second" />`,
   );
   assert.throws(
     () => convertSemanticHtmlPresentationToDeck({ ...artifact, source: twoImages }),
@@ -101,7 +101,7 @@ test("round-trips Orbit semantic metadata, metrics, and bindings without exporti
   const canonical = semanticHtmlPresentationFromDeckSource(`---
 version: 1
 title: Current board review
-theme: rune-dark
+theme: orbit-dark
 ratio: 16:9
 lang: ja
 origin: review.md
@@ -135,7 +135,7 @@ purpose: Approve the next operating plan
   });
 
   assert.match(result.artifact.source, /title: Current board review/u);
-  assert.match(result.artifact.source, /theme: rune-dark/u);
+  assert.match(result.artifact.source, /theme: orbit-dark/u);
   assert.match(result.artifact.source, /lang: ja/u);
   assert.match(result.artifact.source, /origin: review\.md/u);
   assert.match(result.artifact.source, /origin_revision: r1-a-aaaaaaaaaaaaaaaa/u);

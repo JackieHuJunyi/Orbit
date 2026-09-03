@@ -15,9 +15,9 @@ import {
   normalizeOperatingReviewDeliveryOutcomes,
   operatingReviewDeliveryId,
 } from "../app/lib/delivery-outcomes.ts";
-import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
+import { loadOrbitLocaleCatalog } from "../app/lib/localization.ts";
 
-await loadRuneLocaleCatalog("fr");
+await loadOrbitLocaleCatalog("fr");
 
 function dataArtifact() {
   return {

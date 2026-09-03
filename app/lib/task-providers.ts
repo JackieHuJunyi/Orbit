@@ -10,32 +10,32 @@ import {
   type OperatingReviewNarrative,
   type PreparedOperatingReview,
 } from "./operating-review.ts";
-import type { RuneTaskId } from "./task-runtime.ts";
+import type { OrbitTaskId } from "./task-runtime.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
-export const RUNE_TASK_PROVIDER_IDS = {
+export const ORBIT_TASK_PROVIDER_IDS = {
   "operating-review": true,
   "document-briefing": true,
-} as const satisfies Record<RuneTaskId, true>;
+} as const satisfies Record<OrbitTaskId, true>;
 
-export type RuneTaskProviderRequest =
+export type OrbitTaskProviderRequest =
   | { taskId: "operating-review"; input: OperatingReviewInput; narrative?: OperatingReviewNarrative }
   | { taskId: "document-briefing"; input: DocumentBriefingInput; outline?: DocumentBriefingModelOutline };
 
-export type PreparedRuneTaskProvider = PreparedOperatingReview | PreparedDocumentBriefing;
+export type PreparedOrbitTaskProvider = PreparedOperatingReview | PreparedDocumentBriefing;
 
-export function prepareRuneTaskProvider(
+export function prepareOrbitTaskProvider(
   artifacts: WorkspaceArtifact[],
-  request: Extract<RuneTaskProviderRequest, { taskId: "operating-review" }>,
+  request: Extract<OrbitTaskProviderRequest, { taskId: "operating-review" }>,
 ): PreparedOperatingReview;
-export function prepareRuneTaskProvider(
+export function prepareOrbitTaskProvider(
   artifacts: WorkspaceArtifact[],
-  request: Extract<RuneTaskProviderRequest, { taskId: "document-briefing" }>,
+  request: Extract<OrbitTaskProviderRequest, { taskId: "document-briefing" }>,
 ): PreparedDocumentBriefing;
-export function prepareRuneTaskProvider(
+export function prepareOrbitTaskProvider(
   artifacts: WorkspaceArtifact[],
-  request: RuneTaskProviderRequest,
-): PreparedRuneTaskProvider {
+  request: OrbitTaskProviderRequest,
+): PreparedOrbitTaskProvider {
   switch (request.taskId) {
     case "operating-review":
       return prepareOperatingReviewWorkflow(artifacts, request.input, request.narrative);

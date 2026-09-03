@@ -91,13 +91,13 @@ function directory(entries) {
 
 test("fingerprints only bounded Orbit source and asset metadata in stable order", async () => {
   const assets = directory([file("b.png", 20, 2), file("a.png", 10, 1)]);
-  assets.name = ".rune-assets";
+  assets.name = ".orbit-assets";
   const fingerprint = await directoryObservationFingerprint(
     directory([file("notes.txt", 99, 9), file("report.md", 30, 3), assets]),
   );
   assert.deepEqual(JSON.parse(fingerprint), [
-    [".rune-assets/a.png", 10, 1],
-    [".rune-assets/b.png", 20, 2],
+    [".orbit-assets/a.png", 10, 1],
+    [".orbit-assets/b.png", 20, 2],
     ["report.md", 30, 3],
   ]);
 });

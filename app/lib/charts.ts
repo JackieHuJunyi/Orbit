@@ -343,30 +343,30 @@ export function renderChartModelHtml(model: ChartModel): string {
         (datum) => `<div><span>${escapeHtml(datum.label)}</span><strong>${escapeHtml(datum.formatted)}</strong></div>`,
       )
       .join("");
-    return `<figure class="rune-embedded-chart rune-line-chart${model.spec.mark === "area" ? " rune-area-chart" : ""}" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
+    return `<figure class="orbit-embedded-chart orbit-line-chart${model.spec.mark === "area" ? " orbit-area-chart" : ""}" style="--orbit-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
   <style>
-    .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-line-plot{display:block;width:100%;height:auto;overflow:visible}.rune-line-grid line{stroke:rgba(98,112,104,.16);stroke-width:1}.rune-area-series{fill:var(--rune-chart-accent);fill-opacity:.16;stroke:none}.rune-line-series{fill:none;stroke:var(--rune-chart-accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.rune-line-points circle{fill:#fff;stroke:var(--rune-chart-accent);stroke-width:5;vector-effect:non-scaling-stroke}.rune-line-labels{display:grid;grid-template-columns:repeat(var(--rune-line-count),minmax(0,1fr));gap:6px;margin-top:4px}.rune-line-labels div{display:grid;gap:2px;min-width:0;text-align:center}.rune-line-labels span{overflow:hidden;color:#627068;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.rune-line-labels strong{color:#18211c;font-size:10px;font-variant-numeric:tabular-nums}
+    .orbit-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.orbit-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.orbit-embedded-chart figcaption strong{font-size:18px}.orbit-embedded-chart figcaption span{color:#627068;font-size:11px}.orbit-line-plot{display:block;width:100%;height:auto;overflow:visible}.orbit-line-grid line{stroke:rgba(98,112,104,.16);stroke-width:1}.orbit-area-series{fill:var(--orbit-chart-accent);fill-opacity:.16;stroke:none}.orbit-line-series{fill:none;stroke:var(--orbit-chart-accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.orbit-line-points circle{fill:#fff;stroke:var(--orbit-chart-accent);stroke-width:5;vector-effect:non-scaling-stroke}.orbit-line-labels{display:grid;grid-template-columns:repeat(var(--orbit-line-count),minmax(0,1fr));gap:6px;margin-top:4px}.orbit-line-labels div{display:grid;gap:2px;min-width:0;text-align:center}.orbit-line-labels span{overflow:hidden;color:#627068;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.orbit-line-labels strong{color:#18211c;font-size:10px;font-variant-numeric:tabular-nums}
   </style>
   <figcaption><strong>${escapeHtml(model.spec.title)}</strong><span>${escapeHtml(model.spec.description || `${model.spec.value} by ${model.spec.category}`)}</span></figcaption>
-  <svg class="rune-line-plot" viewBox="0 0 1000 220" role="img" aria-label="${escapeHtml(`${model.spec.title} ${model.spec.mark} chart`)}"><title>${escapeHtml(model.spec.title)}</title><g class="rune-line-grid"><line x1="50" y1="24" x2="950" y2="24"/><line x1="50" y1="110" x2="950" y2="110"/><line x1="50" y1="196" x2="950" y2="196"/></g>${model.spec.mark === "area" ? `<polygon class="rune-area-series" points="${areaPoints}"/>` : ""}<polyline class="rune-line-series" points="${plotPoints}"/><g class="rune-line-points">${circles}</g></svg>
-  <div class="rune-line-labels" style="--rune-line-count:${model.data.length}">${labels}</div>
+  <svg class="orbit-line-plot" viewBox="0 0 1000 220" role="img" aria-label="${escapeHtml(`${model.spec.title} ${model.spec.mark} chart`)}"><title>${escapeHtml(model.spec.title)}</title><g class="orbit-line-grid"><line x1="50" y1="24" x2="950" y2="24"/><line x1="50" y1="110" x2="950" y2="110"/><line x1="50" y1="196" x2="950" y2="196"/></g>${model.spec.mark === "area" ? `<polygon class="orbit-area-series" points="${areaPoints}"/>` : ""}<polyline class="orbit-line-series" points="${plotPoints}"/><g class="orbit-line-points">${circles}</g></svg>
+  <div class="orbit-line-labels" style="--orbit-line-count:${model.data.length}">${labels}</div>
 </figure>`;
   }
   const rows = model.data
     .map(
-      (datum) => `<div class="rune-chart-row">
+      (datum) => `<div class="orbit-chart-row">
     <span>${escapeHtml(datum.label)}</span>
-    <div class="rune-chart-track"><i style="width:${(datum.ratio * 100).toFixed(2)}%"></i></div>
+    <div class="orbit-chart-track"><i style="width:${(datum.ratio * 100).toFixed(2)}%"></i></div>
     <strong>${escapeHtml(datum.formatted)}</strong>
   </div>`,
     )
     .join("\n");
-  return `<figure class="rune-embedded-chart" style="--rune-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
+  return `<figure class="orbit-embedded-chart" style="--orbit-chart-accent:${model.spec.color}" aria-label="${escapeHtml(model.spec.title)}">
   <style>
-    .rune-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.rune-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.rune-embedded-chart figcaption strong{font-size:18px}.rune-embedded-chart figcaption span{color:#627068;font-size:11px}.rune-chart-rows{display:grid;gap:10px}.rune-chart-row{display:grid;grid-template-columns:minmax(82px,1fr) minmax(100px,3fr) auto;align-items:center;gap:10px;color:#627068;font-size:11px}.rune-chart-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rune-chart-row>strong{color:#18211c;font-size:11px;font-variant-numeric:tabular-nums}.rune-chart-track{height:9px;overflow:hidden;border-radius:999px;background:rgba(98,112,104,.16)}.rune-chart-track i{display:block;height:100%;border-radius:inherit;background:var(--rune-chart-accent)}
+    .orbit-embedded-chart{margin:0;padding:22px;border:1px solid rgba(98,112,104,.24);border-radius:14px;background:rgba(255,255,255,.4);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.orbit-embedded-chart figcaption{display:grid;gap:4px;margin-bottom:18px}.orbit-embedded-chart figcaption strong{font-size:18px}.orbit-embedded-chart figcaption span{color:#627068;font-size:11px}.orbit-chart-rows{display:grid;gap:10px}.orbit-chart-row{display:grid;grid-template-columns:minmax(82px,1fr) minmax(100px,3fr) auto;align-items:center;gap:10px;color:#627068;font-size:11px}.orbit-chart-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.orbit-chart-row>strong{color:#18211c;font-size:11px;font-variant-numeric:tabular-nums}.orbit-chart-track{height:9px;overflow:hidden;border-radius:999px;background:rgba(98,112,104,.16)}.orbit-chart-track i{display:block;height:100%;border-radius:inherit;background:var(--orbit-chart-accent)}
   </style>
   <figcaption><strong>${escapeHtml(model.spec.title)}</strong><span>${escapeHtml(model.spec.description || `${model.spec.value} by ${model.spec.category}`)}</span></figcaption>
-  <div class="rune-chart-rows">${rows}</div>
+  <div class="orbit-chart-rows">${rows}</div>
 </figure>`;
 }
 

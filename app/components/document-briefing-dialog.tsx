@@ -10,19 +10,19 @@ import {
   type DocumentBriefingInput,
   type DocumentBriefingSlideCount,
 } from "../lib/document-briefing";
-import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
-import type { RuneModelMode } from "../lib/model-preference";
+import { localizeOrbitCopy, type OrbitLocale } from "../lib/localization";
+import type { OrbitModelMode } from "../lib/model-preference";
 import type { WorkspaceArtifact } from "../lib/workspace";
 import { DOCUMENT_BRIEFING_NOTICE_BASE_COPY } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
 type DocumentBriefingDialogProps = {
   artifacts: WorkspaceArtifact[];
-  locale: RuneLocale;
+  locale: OrbitLocale;
   error?: string;
   preferredDocumentArtifactId?: string;
   preferredPresentationArtifactId?: string;
-  modelMode: RuneModelMode;
+  modelMode: OrbitModelMode;
   onCancel: () => void;
   onPrepare: (input: DocumentBriefingInput) => void | Promise<void>;
 };
@@ -118,8 +118,8 @@ export const DOCUMENT_BRIEFING_BASE_COPY = {
   },
 } as const;
 
-export function documentBriefingCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, DOCUMENT_BRIEFING_BASE_COPY.en, DOCUMENT_BRIEFING_BASE_COPY["zh-CN"]);
+export function documentBriefingCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, DOCUMENT_BRIEFING_BASE_COPY.en, DOCUMENT_BRIEFING_BASE_COPY["zh-CN"]);
 }
 
 function freshnessLabel(copy: ReturnType<typeof documentBriefingCopy>, freshness: "current" | "changed" | "unknown") {

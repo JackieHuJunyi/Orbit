@@ -29,13 +29,13 @@ test("keeps product, package, release notes, progress, and handoff on one curren
   assert.doesNotMatch(handoff, /main` and `origin\/main` resolve to/u);
 });
 
-test("presents Orbit while preserving the legacy Rune compatibility namespace", async () => {
+test("uses one Orbit identity across product, persistence, bridge, and desktop runtime", async () => {
   const [packageSource, layout, welcome, workbench, settings, desktop, localAssets, directoryWorkspace] =
     await Promise.all([
       rootFile("package.json"),
       rootFile("app/layout.tsx"),
       rootFile("app/components/welcome-experience.tsx"),
-      rootFile("app/components/rune-workbench.tsx"),
+      rootFile("app/components/orbit-workbench.tsx"),
       rootFile("app/components/workbench-settings-menu.tsx"),
       rootFile("desktop/main.mjs"),
       rootFile("app/lib/local-assets.ts"),
@@ -51,21 +51,20 @@ test("presents Orbit while preserving the legacy Rune compatibility namespace", 
   assert.match(welcome, /Welcome to Orbit/u);
   assert.match(workbench, /<strong dir="ltr">\{ORBIT_PRODUCT_NAME\}<\/strong>/u);
   assert.match(settings, /\{ORBIT_PRODUCT_NAME\} \{ORBIT_PRODUCT_VERSION\}/u);
-  assert.match(desktop, /app\.setName\("Orbit"\)/u);
-  assert.match(desktop, /app\.setName\("Rune"\)/u);
-  assert.match(desktop, /path\.join\(app\.getPath\("appData"\), "Rune"\)/u);
-  assert.match(desktop, /app\.setPath\("userData", legacyRuneUserDataDirectory\)/u);
-  assert.ok(desktop.indexOf('app.setName("Rune")') < desktop.indexOf("await initializeDesktopCredentialVault()"));
-  assert.ok(desktop.indexOf("await initializeDesktopCredentialVault()") < desktop.indexOf('app.setName("Orbit")'));
+  assert.equal(desktop.match(/app\.setName\("Orbit"\)/gu)?.length, 1);
+  assert.match(desktop, /path\.join\(app\.getPath\("appData"\), "Orbit"\)/u);
+  assert.match(desktop, /app\.setPath\("userData", path\.join\(app\.getPath\("appData"\), "Orbit"\)\)/u);
+  assert.ok(desktop.indexOf('app.setName("Orbit")') < desktop.indexOf("await initializeDesktopCredentialVault()"));
   assert.doesNotMatch(
     `${layout}\n${welcome}\n${workbench}\n${settings}\n${desktop}`,
     /Orbit · 引力|Welcome to Rune|<strong>Rune/u,
   );
 
-  assert.match(layout, /rune-onboarding-v1/u);
-  assert.match(desktop, /RUNE_CREDENTIAL_ENCRYPTION_KEY/u);
-  assert.match(directoryWorkspace, /\.rune-assets/u);
-  assert.match(localAssets, /rune-asset:sha256:/u);
+  assert.match(layout, /orbit-onboarding-v1/u);
+  assert.match(desktop, /ORBIT_CREDENTIAL_ENCRYPTION_KEY/u);
+  assert.match(directoryWorkspace, /\.orbit-assets/u);
+  assert.match(localAssets, /orbit-asset:sha256:/u);
+  assert.doesNotMatch(`${layout}\n${desktop}\n${localAssets}\n${directoryWorkspace}`, /Rune|rune|RUNE/u);
 });
 
 test("ships one shared, scalable two-planet Orbit mark", async () => {
@@ -76,7 +75,7 @@ test("ships one shared, scalable two-planet Orbit mark", async () => {
     readFile(new URL("../desktop/orbit-app-icon.png", import.meta.url)),
     rootFile("desktop/main.mjs"),
     rootFile("app/components/welcome-experience.tsx"),
-    rootFile("app/components/rune-workbench.tsx"),
+    rootFile("app/components/orbit-workbench.tsx"),
     rootFile("app/styles/shell.css"),
     rootFile("app/styles/onboarding.css"),
   ]);

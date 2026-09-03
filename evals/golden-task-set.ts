@@ -1,7 +1,7 @@
-import type { RuneTaskProviderRequest } from "../app/lib/task-providers.ts";
+import type { OrbitTaskProviderRequest } from "../app/lib/task-providers.ts";
 import type { WorkspaceArtifact } from "../app/lib/workspace.ts";
 
-export const RUNE_GOLDEN_TASK_SET_VERSION = 1;
+export const ORBIT_GOLDEN_TASK_SET_VERSION = 1;
 
 export type GoldenEvidenceRow = {
   category: string;
@@ -18,18 +18,18 @@ export type GoldenTaskExpected =
       slideCount?: number;
       refreshTargetId?: string;
       refreshTargetName?: string;
-      refreshTheme?: "rune" | "rune-dark";
+      refreshTheme?: "orbit" | "orbit-dark";
     }
   | { outcome: "rejected"; error: RegExp };
 
-export type RuneGoldenTask = {
+export type OrbitGoldenTask = {
   version: 1;
   id: string;
   title: string;
   provenance: "synthetic";
   coverage: string[];
   artifacts: WorkspaceArtifact[];
-  request: RuneTaskProviderRequest;
+  request: OrbitTaskProviderRequest;
   expected: GoldenTaskExpected;
 };
 
@@ -96,7 +96,7 @@ const refreshTarget: WorkspaceArtifact = {
   source: `---
 version: 1
 title: Existing briefing
-theme: rune-dark
+theme: orbit-dark
 ratio: 16:9
 lang: en
 origin: refresh-memo
@@ -112,7 +112,7 @@ An earlier source-linked presentation.
 `,
 };
 
-export const RUNE_GOLDEN_TASKS = [
+export const ORBIT_GOLDEN_TASKS = [
   {
     version: 1,
     id: "review-whole-table-sum",
@@ -672,7 +672,7 @@ export const RUNE_GOLDEN_TASKS = [
       slideCount: 4,
       refreshTargetId: refreshTarget.id,
       refreshTargetName: refreshTarget.name,
-      refreshTheme: "rune-dark",
+      refreshTheme: "orbit-dark",
     },
   },
   {
@@ -724,4 +724,4 @@ export const RUNE_GOLDEN_TASKS = [
     },
     expected: { outcome: "rejected", error: /not linked to Document source/i },
   },
-] as const satisfies readonly RuneGoldenTask[];
+] as const satisfies readonly OrbitGoldenTask[];

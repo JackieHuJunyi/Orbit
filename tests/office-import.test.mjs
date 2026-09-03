@@ -181,7 +181,7 @@ test("converts PPTX text and tables to valid, safely compiled semantic HTML", ()
   const artifact = result.artifacts[0];
   assert.equal(artifact.name, "board.html");
   assert.equal(artifact.language, "Semantic HTML");
-  assert.match(artifact.source, /data-rune-format="presentation-v1"/u);
+  assert.match(artifact.source, /data-orbit-format="presentation-v1"/u);
   assert.match(artifact.source, /data-layout="cover"/u);
   assert.match(artifact.source, /<h1>Launch plan<\/h1>/u);
   assert.match(artifact.source, /&lt;tag&gt;/u);
@@ -203,7 +203,7 @@ test("asset-aware Office import removes unresolved visuals without leaking conve
   const docx = await convertOfficeFileWithAssets("report.docx", docxFixture());
   assert.deepEqual(docx.assets, []);
   assert.match(docx.warnings.join(" "), /no supported image reference/iu);
-  assert.doesNotMatch(docx.artifacts[0].source, /RUNEIMPORTIMAGEPLACEHOLDER/u);
+  assert.doesNotMatch(docx.artifacts[0].source, /ORBITIMPORTIMAGEPLACEHOLDER/u);
 
   const pptx = await convertOfficeFileWithAssets("board.pptx", pptxFixture());
   assert.deepEqual(pptx.assets, []);

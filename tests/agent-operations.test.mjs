@@ -39,7 +39,7 @@ function operationPlan(edit, overrides = {}) {
 const deckSource = `---
 version: 1
 title: Board update
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

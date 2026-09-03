@@ -2,7 +2,7 @@
 
 import { Check, ChevronRight, FileArchive, FileCode2, FileText, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { ArtifactExportResult } from "../lib/export-contract";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 function readableBytes(bytes: number) {
@@ -22,7 +22,7 @@ export function ExportReviewDialog({
   sourceName: string;
   result: ArtifactExportResult;
   error?: string;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -38,7 +38,7 @@ export function ExportReviewDialog({
   const pdf = result.targetType === "pdf";
   const data = ["csv", "json"].includes(result.targetType);
   const kind = canonicalSource ? "source" : office ? "office" : odf ? "odf" : pdf ? "pdf" : data ? "data" : "html";
-  const copy = runeUICopy(locale);
+  const copy = orbitUICopy(locale);
   const reviewTitle = copy.exportReview.title(kind);
   const descriptor = copy.exportReview.descriptors[kind];
   const outputKind = canonicalSource

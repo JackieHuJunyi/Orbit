@@ -66,7 +66,7 @@ test("keeps existing Deck Markdown presentations eligible for Chart embedding", 
     source: `---
 version: 1
 title: Legacy
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

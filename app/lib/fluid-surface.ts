@@ -17,17 +17,17 @@ export function trackFluidSurface<T extends HTMLElement>(event: ReactPointerEven
   const normalizedY = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
 
   surface.dataset.pointerActive = "true";
-  surface.style.setProperty("--rune-pointer-x", `${(normalizedX * 100).toFixed(2)}%`);
-  surface.style.setProperty("--rune-pointer-y", `${(normalizedY * 100).toFixed(2)}%`);
-  surface.style.setProperty("--rune-pointer-shift-x", `${((normalizedX - 0.5) * 8).toFixed(2)}px`);
-  surface.style.setProperty("--rune-pointer-shift-y", `${((normalizedY - 0.5) * 6).toFixed(2)}px`);
+  surface.style.setProperty("--orbit-pointer-x", `${(normalizedX * 100).toFixed(2)}%`);
+  surface.style.setProperty("--orbit-pointer-y", `${(normalizedY * 100).toFixed(2)}%`);
+  surface.style.setProperty("--orbit-pointer-shift-x", `${((normalizedX - 0.5) * 8).toFixed(2)}px`);
+  surface.style.setProperty("--orbit-pointer-shift-y", `${((normalizedY - 0.5) * 6).toFixed(2)}px`);
 }
 
 export function resetFluidSurface<T extends HTMLElement>(event: ReactPointerEvent<T>) {
   const surface = event.currentTarget;
   delete surface.dataset.pointerActive;
-  surface.style.setProperty("--rune-pointer-x", DEFAULT_POINTER_POSITION);
-  surface.style.setProperty("--rune-pointer-y", DEFAULT_POINTER_POSITION);
-  surface.style.setProperty("--rune-pointer-shift-x", "0px");
-  surface.style.setProperty("--rune-pointer-shift-y", "0px");
+  surface.style.setProperty("--orbit-pointer-x", DEFAULT_POINTER_POSITION);
+  surface.style.setProperty("--orbit-pointer-y", DEFAULT_POINTER_POSITION);
+  surface.style.setProperty("--orbit-pointer-shift-x", "0px");
+  surface.style.setProperty("--orbit-pointer-shift-y", "0px");
 }

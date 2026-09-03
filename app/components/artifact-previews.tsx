@@ -45,7 +45,7 @@ import {
   X,
 } from "lucide-react";
 import { parseDataSource, type DataCell, type WorkspaceArtifact } from "../lib/workspace";
-import { runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale, type OrbitUICopy } from "../lib/localization";
 import {
   compileArtifactSource,
   compiledSourceRangeToCanonical,
@@ -195,7 +195,7 @@ type QueryRuntimeEntry =
 type QueryRuntime = Record<string, QueryRuntimeEntry>;
 const PREVIEW_QUERY_IDLE_DELAY_MS = 1_200;
 
-const PreviewCopyContext = createContext<RuneUICopy["preview"]>(runeUICopy("en").preview);
+const PreviewCopyContext = createContext<OrbitUICopy["preview"]>(orbitUICopy("en").preview);
 
 function usePreviewCopy() {
   return useContext(PreviewCopyContext);
@@ -715,7 +715,7 @@ function MarkdownSourcePart({
       components={contextualComponents}
       remarkPlugins={[remarkGfm]}
       urlTransform={(value, key, node) =>
-        node.tagName === "img" && key === "src" && value.startsWith("rune-asset:sha256:")
+        node.tagName === "img" && key === "src" && value.startsWith("orbit-asset:sha256:")
           ? value
           : defaultUrlTransform(value)
       }
@@ -813,15 +813,15 @@ function MarkdownSource({
     ) => {
       const { node, children, ...elementProps } = props;
       const imageSource = tag === "img" && typeof elementProps.src === "string" ? elementProps.src : "";
-      const localImage = imageSource.startsWith("rune-asset:");
+      const localImage = imageSource.startsWith("orbit-asset:");
       const localImageUrl = localImage ? resolveLocalAssetUrl?.(imageSource) : null;
       const renderedElementProps = localImage
         ? {
             ...elementProps,
             src: localImageUrl ?? undefined,
             className:
-              `${typeof elementProps.className === "string" ? elementProps.className : ""} rune-local-image ${localImageUrl ? "" : "missing"}`.trim(),
-            "data-rune-asset-state": localImageUrl ? "ready" : "missing",
+              `${typeof elementProps.className === "string" ? elementProps.className : ""} orbit-local-image ${localImageUrl ? "" : "missing"}`.trim(),
+            "data-orbit-asset-state": localImageUrl ? "ready" : "missing",
           }
         : elementProps;
       const target = node ? fragmentTargetForNode(node) : undefined;
@@ -1468,7 +1468,7 @@ function DocumentPreview({
     <div className="document-stage">
       <article className="document-paper">
         <div className="paper-meta">
-          <span>{copy.runeDocument}</span>
+          <span>{copy.orbitDocument}</span>
           <span>
             {copy.documentMode(
               onEditDocumentBlock && blockTargets.length
@@ -3118,7 +3118,7 @@ export function ArtifactPreview({
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
-  locale: RuneLocale;
+  locale: OrbitLocale;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDataCell?: DataCellEditHandler;
@@ -3135,7 +3135,7 @@ export function ArtifactPreview({
   queryRuntimeEnabled?: boolean;
 }) {
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts, queryRuntimeEnabled);
-  const copy = useMemo(() => runeUICopy(locale).preview, [locale]);
+  const copy = useMemo(() => orbitUICopy(locale).preview, [locale]);
   let content: ReactNode;
   if (!artifact.source.trim()) {
     content = <EmptyPreview message={copy.startWriting} />;

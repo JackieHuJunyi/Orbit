@@ -1,11 +1,11 @@
 import { validateWorkspaceArtifacts } from "./patches.ts";
 import { resolveArtifactConflicts } from "./artifact-identity.ts";
 import {
-  MAX_RUNE_LOCAL_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGES,
-  extractRuneAssetIds,
-  runeImageAssetMap,
-  type PreparedRuneImageAsset,
+  MAX_ORBIT_LOCAL_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGES,
+  extractOrbitAssetIds,
+  orbitImageAssetMap,
+  type PreparedOrbitImageAsset,
 } from "./local-assets.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -22,7 +22,7 @@ export type WorkspaceImportReview = {
   importedArtifacts: WorkspaceArtifact[];
   nextArtifacts: WorkspaceArtifact[];
   warnings: string[];
-  assets: PreparedRuneImageAsset[];
+  assets: PreparedOrbitImageAsset[];
 };
 
 export type PreparedWorkspaceImportReview = {
@@ -63,16 +63,16 @@ export function prepareWorkspaceImportReview(
   imported: WorkspaceArtifact[],
   sourceName: string,
   warnings: string[] = [],
-  assets: PreparedRuneImageAsset[] = [],
+  assets: PreparedOrbitImageAsset[] = [],
   purpose: WorkspaceImportReview["purpose"] = "import",
 ): PreparedWorkspaceImportReview {
   if (!sourceName.trim()) return { review: null, errors: ["The import source needs a filename."] };
   const prepared = prepareWorkspaceImport(existing, imported);
   if (prepared.errors.length) return { review: null, errors: prepared.errors };
-  const assetsById = new Map<string, PreparedRuneImageAsset>();
+  const assetsById = new Map<string, PreparedOrbitImageAsset>();
   try {
     assets.forEach((asset) => {
-      runeImageAssetMap([asset]);
+      orbitImageAssetMap([asset]);
       const existingAsset = assetsById.get(asset.id);
       if (
         existingAsset &&
@@ -91,18 +91,18 @@ export function prepareWorkspaceImportReview(
     };
   }
   const reviewedAssets = [...assetsById.values()];
-  if (reviewedAssets.length > MAX_RUNE_LOCAL_IMAGES) {
-    return { review: null, errors: [`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGES} local images.`] };
+  if (reviewedAssets.length > MAX_ORBIT_LOCAL_IMAGES) {
+    return { review: null, errors: [`One import can preserve at most ${MAX_ORBIT_LOCAL_IMAGES} local images.`] };
   }
-  if (reviewedAssets.reduce((total, asset) => total + asset.size, 0) > MAX_RUNE_LOCAL_IMAGE_BYTES) {
+  if (reviewedAssets.reduce((total, asset) => total + asset.size, 0) > MAX_ORBIT_LOCAL_IMAGE_BYTES) {
     return {
       review: null,
-      errors: [`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB of local images.`],
+      errors: [`One import can preserve at most ${MAX_ORBIT_LOCAL_IMAGE_BYTES / 1_048_576} MB of local images.`],
     };
   }
   if (reviewedAssets.length) {
     const referencedIds = new Set(
-      prepared.importedArtifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)),
+      prepared.importedArtifacts.flatMap((artifact) => extractOrbitAssetIds(artifact.source)),
     );
     const assetIds = new Set(reviewedAssets.map((asset) => asset.id));
     const missing = [...referencedIds].filter((id) => !assetIds.has(id));
@@ -138,12 +138,14 @@ export function validateWorkspaceImportReview(current: WorkspaceArtifact[], revi
     ];
   }
   try {
-    runeImageAssetMap(review.assets);
+    orbitImageAssetMap(review.assets);
   } catch (error) {
     return [error instanceof Error ? error.message : "The reviewed image assets are invalid."];
   }
   if (review.assets.length) {
-    const referencedIds = new Set(review.importedArtifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)));
+    const referencedIds = new Set(
+      review.importedArtifacts.flatMap((artifact) => extractOrbitAssetIds(artifact.source)),
+    );
     const assetIds = new Set(review.assets.map((asset) => asset.id));
     if (referencedIds.size !== assetIds.size || [...referencedIds].some((id) => !assetIds.has(id))) {
       return ["The reviewed sources and local images no longer form one exact transaction."];

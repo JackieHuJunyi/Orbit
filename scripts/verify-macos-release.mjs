@@ -17,6 +17,19 @@ const manifest = JSON.parse(
 const appPath = path.join(directory, "Orbit.app");
 const executablePath = path.join(appPath, "Contents", "MacOS", "Orbit");
 
+if (manifest.channel !== "internal-qa" && manifest.channel !== "release") {
+  throw new Error("The package manifest has an unknown distribution channel.");
+}
+if (manifest.distributionReady !== (manifest.channel === "release" && manifest.signed && manifest.notarized)) {
+  throw new Error("The package manifest overstates or understates distribution readiness.");
+}
+for (const artifact of [manifest.artifacts.zip, manifest.artifacts.dmg]) {
+  const markedInternal = artifact.fileName.includes("-internal-qa.");
+  if ((manifest.channel === "internal-qa") !== markedInternal) {
+    throw new Error(`${artifact.fileName} does not match the declared distribution channel.`);
+  }
+}
+
 for (const artifact of [manifest.artifacts.zip, manifest.artifacts.dmg]) {
   const filePath = path.join(directory, artifact.fileName);
   const metadata = await stat(filePath);
@@ -51,5 +64,12 @@ if (manifest.notarized) {
   await execFileAsync("/usr/bin/xcrun", ["stapler", "validate", path.join(directory, manifest.artifacts.dmg.fileName)]);
 }
 process.stdout.write(
-  `${JSON.stringify({ version: manifest.version, arch, signed: manifest.signed, notarized: manifest.notarized })}\n`,
+  `${JSON.stringify({
+    version: manifest.version,
+    arch,
+    channel: manifest.channel,
+    distributionReady: manifest.distributionReady,
+    signed: manifest.signed,
+    notarized: manifest.notarized,
+  })}\n`,
 );

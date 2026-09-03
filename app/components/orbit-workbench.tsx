@@ -133,7 +133,7 @@ import type { DirectorySyncPlan } from "../lib/directory-sync";
 import { observeWorkspaceDirectory } from "../lib/directory-observer";
 import type { ArtifactExportResult } from "../lib/export-contract";
 import { workspaceFileExportCapabilities, type WorkspaceFileExportDestination } from "../lib/workspace-file-export";
-import { prepareRunePilotEvidenceExport, type RunePilotEvidenceExport } from "../lib/pilot-evidence";
+import { prepareOrbitPilotEvidenceExport, type OrbitPilotEvidenceExport } from "../lib/pilot-evidence";
 import type { RuntimeImpactPreflight } from "../lib/query-preflight";
 import { buildAgentRuntimeRepair, type AgentRuntimeRepair } from "../lib/agent-repair";
 import { resolveQueryDataArtifact } from "../lib/query-source";
@@ -164,25 +164,29 @@ import {
 import { formatInteger } from "../lib/number-format";
 import type { PdfOcrProgress } from "../lib/pdf-import";
 import {
-  createRuneGuideArtifact,
+  createOrbitGuideArtifact,
   detectPreferredLocale,
   localeDirection,
-  loadRuneLocaleCatalog,
-  localizeRuneStatus,
-  normalizeRuneLocale,
-  runeQuickCommands,
-  runeText,
-  runeUICopy,
+  loadOrbitLocaleCatalog,
+  localizeOrbitStatus,
+  normalizeOrbitLocale,
+  orbitQuickCommands,
+  orbitText,
+  orbitUICopy,
   workspaceSplitValueLabel,
-  RUNE_GUIDE_ID,
-  RUNE_LOCALE_STORAGE_KEY,
-  RUNE_ONBOARDING_STORAGE_KEY,
-  type RuneLocale,
-  type RuneUICopy,
+  ORBIT_GUIDE_ID,
+  ORBIT_LOCALE_STORAGE_KEY,
+  ORBIT_ONBOARDING_STORAGE_KEY,
+  type OrbitLocale,
+  type OrbitUICopy,
 } from "../lib/localization";
-import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode } from "../lib/model-preference";
+import { normalizeOrbitModelMode, ORBIT_MODEL_MODE_STORAGE_KEY, type OrbitModelMode } from "../lib/model-preference";
 import type { ModelProfilesState } from "../lib/model-profiles";
-import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
+import {
+  normalizeOrbitAppearanceTheme,
+  ORBIT_APPEARANCE_STORAGE_KEY,
+  type OrbitAppearanceTheme,
+} from "../lib/appearance";
 import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
 import { AGENT_CONVERSATION_STORAGE_KEY } from "../lib/agent-conversation";
 import {
@@ -212,30 +216,30 @@ import {
   pilotEvidenceNoticeCopy,
 } from "../lib/workbench-surface-copy";
 import {
-  buildRuneHtmlImageInsertion,
-  buildRuneImageInsertion,
-  deleteRuneImageAsset,
-  extractRuneAssetIds,
-  getRuneImageBlob,
-  getRuneImageAsset,
-  parseRuneAssetReference,
-  prepareRuneImageAsset,
-  putRuneImageAsset,
-  runeImageAltFromName,
-  RUNE_IMAGE_ACCEPT,
-  type PreparedRuneImageAsset,
-  type RuneImageInsertion,
+  buildOrbitHtmlImageInsertion,
+  buildOrbitImageInsertion,
+  deleteOrbitImageAsset,
+  extractOrbitAssetIds,
+  getOrbitImageBlob,
+  getOrbitImageAsset,
+  parseOrbitAssetReference,
+  prepareOrbitImageAsset,
+  putOrbitImageAsset,
+  orbitImageAltFromName,
+  ORBIT_IMAGE_ACCEPT,
+  type PreparedOrbitImageAsset,
+  type OrbitImageInsertion,
 } from "../lib/local-assets";
 import {
   clampWorkspaceSourcePercent,
   DEFAULT_WORKSPACE_SOURCE_PERCENT,
-  normalizeRuneWorkspaceView,
+  normalizeOrbitWorkspaceView,
   normalizeWorkspaceSourcePercent,
-  RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
-  RUNE_WORKSPACE_VIEW_STORAGE_KEY,
+  ORBIT_WORKSPACE_SPLIT_STORAGE_KEY,
+  ORBIT_WORKSPACE_VIEW_STORAGE_KEY,
   workspaceViewFromKeyboardShortcut,
   workspaceSplitTracks,
-  type RuneWorkspaceView,
+  type OrbitWorkspaceView,
 } from "../lib/workspace-layout";
 import { sourceSelectionScrollTop } from "../lib/source-editor-scroll";
 import { prepareSourceNavigation, type PreparedSourceNavigation } from "../lib/source-navigation";
@@ -265,12 +269,12 @@ import {
   documentBriefingTargets,
   type DocumentBriefingInput,
 } from "../lib/document-briefing";
-import { prepareRuneTaskProvider } from "../lib/task-providers";
-import { prepareRuneTaskModelAssistance } from "../lib/task-model-planning";
+import { prepareOrbitTaskProvider } from "../lib/task-providers";
+import { prepareOrbitTaskModelAssistance } from "../lib/task-model-planning";
 import {
-  createRuneWorkbenchCommands,
-  runeCommandMenuCopy,
-  type RuneWorkbenchCommandId,
+  createOrbitWorkbenchCommands,
+  orbitCommandMenuCopy,
+  type OrbitWorkbenchCommandId,
 } from "../lib/workbench-commands";
 import {
   prepareWorkbenchOperationGate,
@@ -278,29 +282,29 @@ import {
   type WorkbenchOperationOwner,
 } from "../lib/workbench-operation-gate";
 import {
-  EMPTY_RUNE_TASK_EVIDENCE,
-  MAX_RUNE_TASK_DURATION_MS,
-  appendRuneTaskRun,
-  normalizeRuneTaskEvidence,
-  recordRuneTaskDelivery,
-  runeTaskRunsForIdentity,
-  summarizeRuneTaskDeliveries,
-  summarizeRuneTaskRuns,
-  type RuneTaskDeliveryConfirmation,
-  type RuneTaskDeliveryMethod,
-  type RuneTaskDeliveryTarget,
-  type RuneTaskEvidence,
-  type RuneTaskRun,
-  type RuneTaskStopReason,
+  EMPTY_ORBIT_TASK_EVIDENCE,
+  MAX_ORBIT_TASK_DURATION_MS,
+  appendOrbitTaskRun,
+  normalizeOrbitTaskEvidence,
+  recordOrbitTaskDelivery,
+  orbitTaskRunsForIdentity,
+  summarizeOrbitTaskDeliveries,
+  summarizeOrbitTaskRuns,
+  type OrbitTaskDeliveryConfirmation,
+  type OrbitTaskDeliveryMethod,
+  type OrbitTaskDeliveryTarget,
+  type OrbitTaskEvidence,
+  type OrbitTaskRun,
+  type OrbitTaskStopReason,
 } from "../lib/task-evidence";
 import {
-  bindRuneTaskImportReview,
-  prepareRuneTaskAfterImport,
-  RUNE_TASK_DEFINITIONS,
-  startRuneTaskFromArtifact,
-  startRuneTaskSession,
-  type RuneTaskId,
-  type RuneTaskSession,
+  bindOrbitTaskImportReview,
+  prepareOrbitTaskAfterImport,
+  ORBIT_TASK_DEFINITIONS,
+  startOrbitTaskFromArtifact,
+  startOrbitTaskSession,
+  type OrbitTaskId,
+  type OrbitTaskSession,
 } from "../lib/task-runtime";
 import { supportsLegacyOfficeDesktopExport } from "../lib/desktop-bridge";
 import {
@@ -364,7 +368,7 @@ function DeferredWorkbenchSurfaceFallback({
   locale,
   variant = "overlay",
 }: {
-  locale: RuneLocale;
+  locale: OrbitLocale;
   variant?: "inline" | "overlay";
 }) {
   const copy = deferredSurfaceCopy(locale);
@@ -382,9 +386,9 @@ function DeferredWorkbenchSurfaceFallback({
   );
 }
 
-const STORAGE_KEY = "rune-workspace-v0";
-const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1";
-const AGENT_DOCK_LAYOUT_STORAGE_KEY = "rune-agent-dock-layout-v1";
+const STORAGE_KEY = "orbit-workspace-v0";
+const AGENT_DRAFT_STORAGE_KEY = "orbit-agent-draft-v1";
+const AGENT_DOCK_LAYOUT_STORAGE_KEY = "orbit-agent-dock-layout-v1";
 const ACTIVE_PREVIEW_AGENT_TARGET_SELECTOR =
   ".preview-pane .document-source-block.active, .preview-pane .document-source-fragment.active, .preview-pane .document-target.active, .preview-pane .preview-data-target.active, .preview-pane .preview-data-cell.active, .preview-pane .deck-slide-canvas.active";
 
@@ -435,7 +439,7 @@ type PendingChange = {
   runtimePreflight?: RuntimeImpactPreflight;
   savedOperatingReviewAfterApply?: SavedOperatingReview;
   taskRun?: {
-    taskId: RuneTaskId;
+    taskId: OrbitTaskId;
     sourceArtifactId: string;
     outputArtifactIds: string[];
   };
@@ -448,7 +452,7 @@ type PendingPdfOcr = {
   baseArtifacts: WorkspaceArtifact[];
   sourceName: string;
   candidates: WorkspacePdfOcrCandidate[];
-  taskSession?: RuneTaskSession;
+  taskSession?: OrbitTaskSession;
 };
 
 type PendingExport = {
@@ -461,8 +465,8 @@ type PendingExport = {
 };
 
 type PendingPilotEvidence = {
-  baseEvidence: RuneTaskEvidence;
-  result: RunePilotEvidenceExport;
+  baseEvidence: OrbitTaskEvidence;
+  result: OrbitPilotEvidenceExport;
 };
 
 type PendingDeliveryConfirmation = {
@@ -472,8 +476,8 @@ type PendingDeliveryConfirmation = {
   artifactId: string;
   artifactName: string;
   sourceRevision: string;
-  method: RuneTaskDeliveryMethod;
-  target: RuneTaskDeliveryTarget;
+  method: OrbitTaskDeliveryMethod;
+  target: OrbitTaskDeliveryTarget;
   handoffLabel: string;
 };
 
@@ -507,8 +511,8 @@ type PendingDirectorySync = {
 
 type PendingLocalImage = {
   artifact: WorkspaceArtifact;
-  asset: PreparedRuneImageAsset;
-  insertion: RuneImageInsertion;
+  asset: PreparedOrbitImageAsset;
+  insertion: OrbitImageInsertion;
   offset: number;
   alt: string;
   error: string;
@@ -546,7 +550,7 @@ function DependencyGraphRail({
   contextArtifacts: WorkspaceArtifact[];
   pinnedArtifactIds: string[];
   selectedArtifactId: string;
-  copy: RuneUICopy["workbench"];
+  copy: OrbitUICopy["workbench"];
   onClearPins: () => void;
   onSelect: (artifactId: string) => void;
 }) {
@@ -709,7 +713,7 @@ function getDiffStats(before: string, after: string) {
   return { additions, removals };
 }
 
-function checkpointTime(createdAt: string, locale: RuneLocale) {
+function checkpointTime(createdAt: string, locale: OrbitLocale) {
   return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(
     new Date(createdAt),
   );
@@ -720,7 +724,7 @@ function persistDeviceWorkspace(
   selectedId: string,
   checkpoints: CheckpointMap,
   savedOperatingReviews: SavedOperatingReview[],
-  taskEvidence: RuneTaskEvidence,
+  taskEvidence: OrbitTaskEvidence,
   resetRecovery?: WorkspaceDeviceState | null,
 ) {
   let preservedResetRecovery: unknown;
@@ -758,27 +762,27 @@ function buildLocalImageSourceInsertion(
   assetId: string,
 ) {
   if (!isSemanticHtmlPresentation(artifact)) {
-    return { insertion: buildRuneImageInsertion(artifact.source, cursorOffset, alt, assetId), offset: cursorOffset };
+    return { insertion: buildOrbitImageInsertion(artifact.source, cursorOffset, alt, assetId), offset: cursorOffset };
   }
   const target = derivePreviewSourceTargets(artifact).find(
     (candidate) => candidate.kind === "deck-slide" && cursorOffset >= candidate.start && cursorOffset <= candidate.end,
   );
   if (!target) throw new Error("Place the source cursor inside one semantic HTML slide before inserting an image.");
-  if (extractRuneAssetIds(artifact.source.slice(target.start, target.end)).length) {
+  if (extractOrbitAssetIds(artifact.source.slice(target.start, target.end)).length) {
     throw new Error("A semantic HTML slide supports one primary local image. Choose another slide or remove it first.");
   }
   const closing = artifact.source.slice(target.start, target.end).match(/<\/section\s*>\s*$/iu);
   if (!closing || closing.index == null)
     throw new Error("Orbit could not prove this slide's closing section boundary.");
   const offset = target.start + closing.index;
-  const insertion = buildRuneHtmlImageInsertion(artifact.source, offset, alt, assetId);
+  const insertion = buildOrbitHtmlImageInsertion(artifact.source, offset, alt, assetId);
   const candidate = { ...artifact, source: insertion.nextSource };
   const errors = validateArtifact(candidate);
   if (errors.length) throw new Error(errors[0]);
   return { insertion, offset };
 }
 
-export function RuneWorkbench() {
+export function OrbitWorkbench() {
   const [artifacts, setArtifacts] = useState<WorkspaceArtifact[]>(() => cloneDefaultArtifacts());
   const [selectedId, setSelectedId] = useState("q2-review");
   const [hydrated, setHydrated] = useState(false);
@@ -803,9 +807,9 @@ export function RuneWorkbench() {
   const [documentBriefingError, setDocumentBriefingError] = useState("");
   const [documentBriefingState, setDocumentBriefingState] = useState<"idle" | "checking">("idle");
   const [preferredDocumentBriefingTargetId, setPreferredDocumentBriefingTargetId] = useState("");
-  const [taskSession, setTaskSession] = useState<RuneTaskSession | null>(null);
+  const [taskSession, setTaskSession] = useState<OrbitTaskSession | null>(null);
   const [savedOperatingReviews, setSavedOperatingReviews] = useState<SavedOperatingReview[]>([]);
-  const [taskEvidence, setTaskEvidence] = useState<RuneTaskEvidence>(EMPTY_RUNE_TASK_EVIDENCE);
+  const [taskEvidence, setTaskEvidence] = useState<OrbitTaskEvidence>(EMPTY_ORBIT_TASK_EVIDENCE);
   const [editingOperatingReviewId, setEditingOperatingReviewId] = useState("");
   const [pendingImport, setPendingImport] = useState<WorkspaceImportReview | null>(null);
   const [importError, setImportError] = useState("");
@@ -848,20 +852,20 @@ export function RuneWorkbench() {
   );
   const directoryWriteMuteUntilRef = useRef(0);
   const [notice, setNotice] = useState("Local workspace ready");
-  const [locale, setLocale] = useState<RuneLocale>("en");
-  const [detectedLocale, setDetectedLocale] = useState<RuneLocale>("en");
+  const [locale, setLocale] = useState<OrbitLocale>("en");
+  const [detectedLocale, setDetectedLocale] = useState<OrbitLocale>("en");
   const localeRequestRef = useRef(0);
-  const [modelMode, setModelMode] = useState<RuneModelMode>("model-assisted");
+  const [modelMode, setModelMode] = useState<OrbitModelMode>("model-assisted");
   const [modelProfilesState, setModelProfilesState] = useState<ModelProfilesState | null>(null);
   const [agentModelSwitching, setAgentModelSwitching] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(true);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
-  const [appearanceTheme, setAppearanceTheme] = useState<RuneAppearanceTheme>("mist-blue");
+  const [appearanceTheme, setAppearanceTheme] = useState<OrbitAppearanceTheme>("mist-blue");
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const [workspaceSourcePercent, setWorkspaceSourcePercent] = useState(DEFAULT_WORKSPACE_SOURCE_PERCENT);
-  const [workspaceView, setWorkspaceView] = useState<RuneWorkspaceView>("split");
+  const [workspaceView, setWorkspaceView] = useState<OrbitWorkspaceView>("split");
   const [sourceNavigationEpoch, setSourceNavigationEpoch] = useState(0);
   const [emptyWorkspace, setEmptyWorkspace] = useState(false);
   const [visualEditState, setVisualEditState] = useState<"idle" | "checking">("idle");
@@ -885,7 +889,7 @@ export function RuneWorkbench() {
   const inspectSourceNavigationRef = useRef(false);
   const importRef = useRef<HTMLInputElement>(null);
   const taskImportRef = useRef<HTMLInputElement>(null);
-  const taskImportIdRef = useRef<RuneTaskId>("operating-review");
+  const taskImportIdRef = useRef<OrbitTaskId>("operating-review");
   const imageImportRef = useRef<HTMLInputElement>(null);
   const importInFlightRef = useRef(false);
   const localImageInFlightRef = useRef(false);
@@ -905,7 +909,7 @@ export function RuneWorkbench() {
   taskEvidenceRef.current = taskEvidence;
   selectedIdRef.current = selectedId;
   workspaceResetRecoveryRef.current = workspaceResetRecovery;
-  const ui = useMemo(() => runeUICopy(locale).workbench, [locale]);
+  const ui = useMemo(() => orbitUICopy(locale).workbench, [locale]);
   const agentModelOptions = useMemo<AgentModelOption[]>(() => {
     const options: AgentModelOption[] = [];
     for (const profile of modelProfilesState?.profiles ?? []) {
@@ -928,7 +932,7 @@ export function RuneWorkbench() {
         : modelProfilesState?.activeSource === "deployment"
           ? "deployment"
           : "local";
-  const visibleNotice = useMemo(() => localizeRuneStatus(locale, notice), [locale, notice]);
+  const visibleNotice = useMemo(() => localizeOrbitStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
     () =>
       new Map(
@@ -943,12 +947,12 @@ export function RuneWorkbench() {
   useLayoutEffect(() => {
     let onboardingPending = true;
     try {
-      onboardingPending = localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete";
+      onboardingPending = localStorage.getItem(ORBIT_ONBOARDING_STORAGE_KEY) !== "complete";
     } catch {
       // A first-run welcome remains the safest initial state when device storage is unavailable.
     }
     setWelcomeOpen(onboardingPending);
-    document.documentElement.removeAttribute("data-rune-onboarding");
+    document.documentElement.removeAttribute("data-orbit-onboarding");
   }, []);
 
   useLayoutEffect(() => {
@@ -1010,7 +1014,7 @@ export function RuneWorkbench() {
     if (!hydrated) return;
     document.documentElement.dataset.theme = appearanceTheme;
     try {
-      localStorage.setItem(RUNE_APPEARANCE_STORAGE_KEY, appearanceTheme);
+      localStorage.setItem(ORBIT_APPEARANCE_STORAGE_KEY, appearanceTheme);
     } catch {
       // Appearance stays available in memory when device preference persistence is unavailable.
     }
@@ -1028,13 +1032,13 @@ export function RuneWorkbench() {
     const moveMaterialLight = (event: globalThis.PointerEvent) => {
       if (frame) window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        shell.style.setProperty("--rune-pointer-x", `${event.clientX}px`);
-        shell.style.setProperty("--rune-pointer-y", `${event.clientY}px`);
-        shell.style.setProperty("--rune-pointer-opacity", "1");
+        shell.style.setProperty("--orbit-pointer-x", `${event.clientX}px`);
+        shell.style.setProperty("--orbit-pointer-y", `${event.clientY}px`);
+        shell.style.setProperty("--orbit-pointer-opacity", "1");
         frame = 0;
       });
     };
-    const hideMaterialLight = () => shell.style.setProperty("--rune-pointer-opacity", "0");
+    const hideMaterialLight = () => shell.style.setProperty("--orbit-pointer-opacity", "0");
     shell.addEventListener("pointermove", moveMaterialLight, { passive: true });
     shell.addEventListener("pointerleave", hideMaterialLight);
     return () => {
@@ -1059,13 +1063,13 @@ export function RuneWorkbench() {
 
   useEffect(() => {
     if (!hydrated) return;
-    const referencedIds = [...new Set(artifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)))];
+    const referencedIds = [...new Set(artifacts.flatMap((artifact) => extractOrbitAssetIds(artifact.source)))];
     let cancelled = false;
     const nextUrls: Record<string, string> = {};
     void Promise.all(
       referencedIds.map(async (id) => {
         try {
-          const blob = await getRuneImageBlob(id);
+          const blob = await getOrbitImageBlob(id);
           if (blob && !cancelled) nextUrls[id] = URL.createObjectURL(blob);
         } catch {
           // A missing or unavailable device asset remains an explicit preview placeholder.
@@ -1095,7 +1099,7 @@ export function RuneWorkbench() {
 
   const resolveLocalAssetUrl = useCallback(
     (reference: string) => {
-      const id = parseRuneAssetReference(reference);
+      const id = parseOrbitAssetReference(reference);
       return id ? (localAssetUrls[id] ?? null) : null;
     },
     [localAssetUrls],
@@ -1139,18 +1143,20 @@ export function RuneWorkbench() {
       () => {
         if (Date.now() < directoryWriteMuteUntilRef.current) return;
         setDirectoryState((current) => (current === "syncing" ? current : "changed"));
-        setNotice(runeText(locale, "Folder changes detected · review with Pull", "检测到文件夹变化 · 请用“读取”审核"));
+        setNotice(orbitText(locale, "Folder changes detected · review with Pull", "检测到文件夹变化 · 请用“读取”审核"));
       },
       () => {
         setDirectoryState((current) => (current === "syncing" ? current : "error"));
-        setNotice(runeText(locale, "Folder monitoring stopped · reconnect to resume", "文件夹监控已停止 · 请重新连接"));
+        setNotice(
+          orbitText(locale, "Folder monitoring stopped · reconnect to resume", "文件夹监控已停止 · 请重新连接"),
+        );
       },
     );
   }, [directoryHandle, locale]);
-  const setPreferredModelMode = useCallback((nextMode: RuneModelMode) => {
+  const setPreferredModelMode = useCallback((nextMode: OrbitModelMode) => {
     setModelMode(nextMode);
     try {
-      localStorage.setItem(RUNE_MODEL_MODE_STORAGE_KEY, nextMode);
+      localStorage.setItem(ORBIT_MODEL_MODE_STORAGE_KEY, nextMode);
     } catch {
       // This preference contains no credential; in-memory mode remains available.
     }
@@ -1557,7 +1563,7 @@ export function RuneWorkbench() {
     try {
       if (value === "local") {
         setPreferredModelMode("device-tools-only");
-        setNotice(runeText(locale, "Agent will use local tools", "Agent 将使用本地工具"));
+        setNotice(orbitText(locale, "Agent will use local tools", "Agent 将使用本地工具"));
         return;
       }
       const requestBody =
@@ -1577,7 +1583,7 @@ export function RuneWorkbench() {
       setModelProfilesState(payload);
       setPreferredModelMode("model-assisted");
       const label = agentModelOptions.find((option) => option.value === value)?.label ?? ui.modelConnected;
-      setNotice(runeText(locale, `Model switched · ${label}`, `已切换模型 · ${label}`));
+      setNotice(orbitText(locale, `Model switched · ${label}`, `已切换模型 · ${label}`));
     } catch (error) {
       setAgentError(error instanceof Error ? error.message : "Orbit could not switch models.");
     } finally {
@@ -1587,12 +1593,12 @@ export function RuneWorkbench() {
   const canStartOrReplaceOperation = (owner?: WorkbenchOperationOwner) =>
     workbenchOperationGate.canStartOperation ||
     Boolean(owner && workbenchOperationCanReplace(workbenchOperationGate, owner));
-  const commandMenuCopy = useMemo(() => runeCommandMenuCopy(locale), [locale]);
+  const commandMenuCopy = useMemo(() => orbitCommandMenuCopy(locale), [locale]);
   const pilotEvidenceUI = useMemo(() => pilotEvidenceNoticeCopy(locale), [locale]);
   const localImageUI = useMemo(() => localImageActionCopy(locale), [locale]);
   const workbenchCommands = useMemo(
     () =>
-      createRuneWorkbenchCommands({
+      createOrbitWorkbenchCommands({
         ui,
         locale,
         artifactCreationDisabled,
@@ -1634,27 +1640,29 @@ export function RuneWorkbench() {
         const detected = detectPreferredLocale(
           navigator.languages?.length ? navigator.languages : [navigator.language],
         );
-        let nextLocale: RuneLocale = detected;
+        let nextLocale: OrbitLocale = detected;
         try {
-          nextLocale = normalizeRuneLocale(localStorage.getItem(RUNE_LOCALE_STORAGE_KEY)) ?? detected;
+          nextLocale = normalizeOrbitLocale(localStorage.getItem(ORBIT_LOCALE_STORAGE_KEY)) ?? detected;
         } catch {
           // Device preference storage can be unavailable while the in-memory workspace remains usable.
         }
         try {
-          await loadRuneLocaleCatalog(nextLocale);
+          await loadOrbitLocaleCatalog(nextLocale);
         } catch {
-          nextLocale = await loadRuneLocaleCatalog(detected)
+          nextLocale = await loadOrbitLocaleCatalog(detected)
             .then(() => detected)
             .catch(() => "en" as const);
         }
         if (cancelled) return;
         try {
-          const storedModelMode = normalizeRuneModelMode(localStorage.getItem(RUNE_MODEL_MODE_STORAGE_KEY));
-          const storedAppearance = normalizeRuneAppearanceTheme(localStorage.getItem(RUNE_APPEARANCE_STORAGE_KEY));
+          const storedModelMode = normalizeOrbitModelMode(localStorage.getItem(ORBIT_MODEL_MODE_STORAGE_KEY));
+          const storedAppearance = normalizeOrbitAppearanceTheme(localStorage.getItem(ORBIT_APPEARANCE_STORAGE_KEY));
           const storedWorkspaceSplit = normalizeWorkspaceSourcePercent(
-            localStorage.getItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY),
+            localStorage.getItem(ORBIT_WORKSPACE_SPLIT_STORAGE_KEY),
           );
-          const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
+          const storedWorkspaceView = normalizeOrbitWorkspaceView(
+            localStorage.getItem(ORBIT_WORKSPACE_VIEW_STORAGE_KEY),
+          );
           const storedAgentDraft = localStorage.getItem(AGENT_DRAFT_STORAGE_KEY) ?? "";
           try {
             restoreAgentConversation(JSON.parse(localStorage.getItem(AGENT_CONVERSATION_STORAGE_KEY) ?? "[]"));
@@ -1680,7 +1688,7 @@ export function RuneWorkbench() {
           setWorkspaceSourcePercent(storedWorkspaceSplit ?? DEFAULT_WORKSPACE_SOURCE_PERCENT);
           setWorkspaceView(storedWorkspaceView ?? "split");
           setPrompt(storedAgentDraft.slice(0, 2_000));
-          setWelcomeOpen(localStorage.getItem(RUNE_ONBOARDING_STORAGE_KEY) !== "complete");
+          setWelcomeOpen(localStorage.getItem(ORBIT_ONBOARDING_STORAGE_KEY) !== "complete");
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored) as {
@@ -1701,7 +1709,7 @@ export function RuneWorkbench() {
             setSelectedId(restoredId);
             setCheckpoints(normalizeCheckpointMap(parsed.checkpoints));
             setSavedOperatingReviews(normalizeSavedOperatingReviews(parsed.savedOperatingReviews));
-            setTaskEvidence(normalizeRuneTaskEvidence(parsed.taskEvidence));
+            setTaskEvidence(normalizeOrbitTaskEvidence(parsed.taskEvidence));
             if (parsed.resetRecovery) {
               const { normalizeWorkspaceDeviceState } = await import("../lib/workspace-reset");
               if (cancelled) return;
@@ -1730,13 +1738,13 @@ export function RuneWorkbench() {
     const next = clampWorkspaceSourcePercent(value);
     setWorkspaceSourcePercent(next);
     try {
-      localStorage.setItem(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, String(next));
+      localStorage.setItem(ORBIT_WORKSPACE_SPLIT_STORAGE_KEY, String(next));
     } catch {
       // The presentation-only split remains usable in memory.
     }
   }, []);
 
-  const setPreferredWorkspaceView = useCallback((view: RuneWorkspaceView) => {
+  const setPreferredWorkspaceView = useCallback((view: OrbitWorkspaceView) => {
     const workspace = workspaceRef.current;
     const paneLeavingFocus =
       view === "preview"
@@ -1757,7 +1765,7 @@ export function RuneWorkbench() {
       });
     }
     try {
-      localStorage.setItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY, view);
+      localStorage.setItem(ORBIT_WORKSPACE_VIEW_STORAGE_KEY, view);
     } catch {
       // The presentation-only view remains usable in memory.
     }
@@ -1781,7 +1789,13 @@ export function RuneWorkbench() {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
       try {
-        persistDeviceWorkspace(artifacts, selectedId, checkpoints, savedOperatingReviews, taskEvidence);
+        persistDeviceWorkspace(
+          artifactsRef.current,
+          selectedIdRef.current,
+          checkpointsRef.current,
+          savedOperatingReviewsRef.current,
+          taskEvidenceRef.current,
+        );
         setSaveState("saved");
         setSavedAt(new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       } catch {
@@ -1907,34 +1921,34 @@ export function RuneWorkbench() {
     setNotice("Closed the current file — every source remains safely in the workspace");
   }
 
-  async function setInterfaceLocale(nextLocale: RuneLocale) {
+  async function setInterfaceLocale(nextLocale: OrbitLocale) {
     const request = ++localeRequestRef.current;
     try {
-      await loadRuneLocaleCatalog(nextLocale);
+      await loadOrbitLocaleCatalog(nextLocale);
     } catch {
       if (request === localeRequestRef.current) setNotice("Orbit could not load that local interface language");
       return;
     }
     if (request !== localeRequestRef.current) return;
-    const currentDefaultGuide = createRuneGuideArtifact(locale);
-    const nextGuide = createRuneGuideArtifact(nextLocale);
+    const currentDefaultGuide = createOrbitGuideArtifact(locale);
+    const nextGuide = createOrbitGuideArtifact(nextLocale);
     setLocale(nextLocale);
     try {
-      localStorage.setItem(RUNE_LOCALE_STORAGE_KEY, nextLocale);
+      localStorage.setItem(ORBIT_LOCALE_STORAGE_KEY, nextLocale);
     } catch {
       // The in-memory choice still applies when browser preference storage is unavailable.
     }
     setArtifacts((current) =>
       current.map((artifact) =>
-        artifact.id === RUNE_GUIDE_ID && artifact.source === currentDefaultGuide.source ? nextGuide : artifact,
+        artifact.id === ORBIT_GUIDE_ID && artifact.source === currentDefaultGuide.source ? nextGuide : artifact,
       ),
     );
   }
 
   function ensureLocalGuide(nextLocale = locale) {
-    const guide = createRuneGuideArtifact(nextLocale);
+    const guide = createOrbitGuideArtifact(nextLocale);
     setArtifacts((current) =>
-      current.some((artifact) => artifact.id === RUNE_GUIDE_ID) ? current : [guide, ...current],
+      current.some((artifact) => artifact.id === ORBIT_GUIDE_ID) ? current : [guide, ...current],
     );
     return guide;
   }
@@ -1945,10 +1959,10 @@ export function RuneWorkbench() {
     importRef.current?.click();
   }
 
-  function startRuneTaskFromSource(taskId: RuneTaskId, replacingOwner?: WorkbenchOperationOwner) {
+  function startOrbitTaskFromSource(taskId: OrbitTaskId, replacingOwner?: WorkbenchOperationOwner) {
     if (!canStartOrReplaceOperation(replacingOwner)) return;
     taskImportIdRef.current = taskId;
-    setTaskSession(startRuneTaskSession(taskId, artifactsRef.current));
+    setTaskSession(startOrbitTaskSession(taskId, artifactsRef.current));
     setOperatingReviewError("");
     setDocumentBriefingError("");
     setPreferredDocumentBriefingTargetId("");
@@ -1956,12 +1970,12 @@ export function RuneWorkbench() {
     setEmptyWorkspace(true);
     setNotice(
       taskId === "document-briefing"
-        ? runeText(
+        ? orbitText(
             locale,
             "Choose Word, Markdown, ODT, or PDF — Orbit will review the import before shaping the presentation",
             "请选择 Word、Markdown、ODT 或 PDF — Orbit 会先审核导入，再设置演示",
           )
-        : runeText(
+        : orbitText(
             locale,
             "Choose CSV, JSON, XLSX, or ODS — Orbit will review the import before mapping the task",
             "请选择 CSV、JSON、XLSX 或 ODS — Orbit 会先审核导入，再进入任务映射",
@@ -1971,19 +1985,19 @@ export function RuneWorkbench() {
   }
 
   function startOperatingReviewFromData(replacingOwner?: WorkbenchOperationOwner) {
-    startRuneTaskFromSource("operating-review", replacingOwner);
+    startOrbitTaskFromSource("operating-review", replacingOwner);
   }
 
   function startDocumentBriefingFromDocument(replacingOwner?: WorkbenchOperationOwner) {
-    startRuneTaskFromSource("document-briefing", replacingOwner);
+    startOrbitTaskFromSource("document-briefing", replacingOwner);
   }
 
   function finishWelcome(action: WelcomeAction) {
     const guide = ensureLocalGuide();
     try {
-      localStorage.setItem(RUNE_ONBOARDING_STORAGE_KEY, "complete");
-      localStorage.setItem(RUNE_LOCALE_STORAGE_KEY, locale);
-      localStorage.setItem(RUNE_MODEL_MODE_STORAGE_KEY, modelMode);
+      localStorage.setItem(ORBIT_ONBOARDING_STORAGE_KEY, "complete");
+      localStorage.setItem(ORBIT_LOCALE_STORAGE_KEY, locale);
+      localStorage.setItem(ORBIT_MODEL_MODE_STORAGE_KEY, modelMode);
     } catch {
       // Onboarding remains complete for this session even without preference storage.
     }
@@ -2004,7 +2018,7 @@ export function RuneWorkbench() {
       startDocumentBriefingFromDocument("welcome");
       return;
     }
-    setSelectedId(artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? guide.id);
+    setSelectedId(artifacts.find((artifact) => artifact.id !== ORBIT_GUIDE_ID)?.id ?? guide.id);
     setEmptyWorkspace(false);
     setNotice("Sample workspace ready · every result stays linked to readable source");
   }
@@ -2095,8 +2109,8 @@ export function RuneWorkbench() {
     setSaveState("saving");
     setNotice("Reading and verifying the image locally");
     try {
-      const asset = await prepareRuneImageAsset(file.name, file.type, await file.arrayBuffer());
-      const alt = runeImageAltFromName(asset.name);
+      const asset = await prepareOrbitImageAsset(file.name, file.type, await file.arrayBuffer());
+      const alt = orbitImageAltFromName(asset.name);
       const preparedInsertion = buildLocalImageSourceInsertion(targetArtifact, offset, alt, asset.id);
       const { insertion } = preparedInsertion;
       if (deckArtifact) {
@@ -2168,7 +2182,7 @@ export function RuneWorkbench() {
       setPendingLocalImage({ ...pending, error: "This source is too large for a safe pre-insertion checkpoint." });
       return;
     }
-    let insertion: RuneImageInsertion;
+    let insertion: OrbitImageInsertion;
     try {
       insertion = buildLocalImageSourceInsertion(
         currentArtifact,
@@ -2207,7 +2221,7 @@ export function RuneWorkbench() {
     setNotice("Saving the image and canonical source reference atomically");
     let created = false;
     try {
-      created = await putRuneImageAsset(pending.asset);
+      created = await putOrbitImageAsset(pending.asset);
       try {
         persistDeviceWorkspace(
           prepared.nextArtifacts,
@@ -2217,7 +2231,7 @@ export function RuneWorkbench() {
           taskEvidenceRef.current,
         );
       } catch {
-        if (created) await deleteRuneImageAsset(pending.asset.id).catch(() => undefined);
+        if (created) await deleteOrbitImageAsset(pending.asset.id).catch(() => undefined);
         setSaveState("error");
         setPendingLocalImage((value) =>
           value
@@ -2250,7 +2264,7 @@ export function RuneWorkbench() {
         }),
       );
     } catch (error) {
-      if (created) await deleteRuneImageAsset(pending.asset.id).catch(() => undefined);
+      if (created) await deleteOrbitImageAsset(pending.asset.id).catch(() => undefined);
       setSaveState("saved");
       setPendingLocalImage((value) =>
         value
@@ -2522,7 +2536,7 @@ export function RuneWorkbench() {
     importInFlightRef.current = true;
     setImportState("reading");
     setImportError("");
-    setNotice(runeText(locale, "Verifying source…", "正在核验源内容…"));
+    setNotice(orbitText(locale, "Verifying source…", "正在核验源内容…"));
     try {
       const { prepareSemanticHtmlEditableCopy } = await import("../lib/semantic-html-editable-copy");
       const prepared = prepareSemanticHtmlEditableCopy(baseArtifacts, currentArtifact);
@@ -2531,7 +2545,7 @@ export function RuneWorkbench() {
       }
       setPendingImport(prepared.review);
       setTaskSession(null);
-      setNotice(runeText(locale, "Create an editable Deck Markdown presentation", "创建可编辑的 Deck Markdown 演示"));
+      setNotice(orbitText(locale, "Create an editable Deck Markdown presentation", "创建可编辑的 Deck Markdown 演示"));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Orbit could not prepare an editable presentation copy.";
       setImportError(message);
@@ -2748,10 +2762,10 @@ export function RuneWorkbench() {
   }
 
   async function collectWorkspaceLocalAssets(sourceArtifacts = artifactsRef.current) {
-    const ids = [...new Set(sourceArtifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)))];
-    const assets: PreparedRuneImageAsset[] = [];
+    const ids = [...new Set(sourceArtifacts.flatMap((artifact) => extractOrbitAssetIds(artifact.source)))];
+    const assets: PreparedOrbitImageAsset[] = [];
     for (const id of ids) {
-      const asset = await getRuneImageAsset(id);
+      const asset = await getOrbitImageAsset(id);
       if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${id}`);
       assets.push(asset);
     }
@@ -2760,8 +2774,8 @@ export function RuneWorkbench() {
 
   function openDeliveryConfirmationForArtifact(
     artifact: WorkspaceArtifact,
-    method: RuneTaskDeliveryMethod,
-    target: RuneTaskDeliveryTarget,
+    method: OrbitTaskDeliveryMethod,
+    target: OrbitTaskDeliveryTarget,
     handoffLabel: string,
     replacingOwner?: WorkbenchOperationOwner,
   ) {
@@ -2800,7 +2814,7 @@ export function RuneWorkbench() {
     });
   }
 
-  async function confirmDeliveryOutcome(confirmation: RuneTaskDeliveryConfirmation) {
+  async function confirmDeliveryOutcome(confirmation: OrbitTaskDeliveryConfirmation) {
     const pending = pendingDeliveryConfirmation;
     if (
       !pending ||
@@ -2825,7 +2839,7 @@ export function RuneWorkbench() {
             return output ? [[artifactId, portableSourceRevision(output.source)] as const] : [];
           }) ?? [],
       );
-      const nextEvidence = await recordRuneTaskDelivery({
+      const nextEvidence = await recordOrbitTaskDelivery({
         evidence: taskEvidenceRef.current,
         runId: pending.runId,
         artifactId: pending.artifactId,
@@ -2862,10 +2876,10 @@ export function RuneWorkbench() {
     const importedAssetIds: string[] = [];
     try {
       for (const asset of result.assets) {
-        if (await putRuneImageAsset(asset)) importedAssetIds.push(asset.id);
+        if (await putOrbitImageAsset(asset)) importedAssetIds.push(asset.id);
       }
     } catch (error) {
-      await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
+      await Promise.all(importedAssetIds.map((id) => deleteOrbitImageAsset(id).catch(() => undefined)));
       throw error;
     }
     const nextSelectedId = result.artifacts.some((artifact) => artifact.id === selectedIdRef.current)
@@ -2879,7 +2893,7 @@ export function RuneWorkbench() {
         ),
     );
     const pulledArtifactIds = new Set(result.artifacts.map((artifact) => artifact.id));
-    const nextTaskEvidence = normalizeRuneTaskEvidence({
+    const nextTaskEvidence = normalizeOrbitTaskEvidence({
       ...taskEvidenceRef.current,
       runs: taskEvidenceRef.current.runs.filter(
         (run) =>
@@ -2897,7 +2911,7 @@ export function RuneWorkbench() {
         recovery,
       );
     } catch (error) {
-      await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
+      await Promise.all(importedAssetIds.map((id) => deleteOrbitImageAsset(id).catch(() => undefined)));
       throw error;
     }
     setArtifacts(result.artifacts);
@@ -2955,7 +2969,7 @@ export function RuneWorkbench() {
     setToolsMenuOpen(false);
     setDirectoryState(directoryHandle ? "connected" : "disconnected");
     setNotice(
-      runeText(
+      orbitText(
         locale,
         "Folder sync ready for exact review — nothing has been written",
         "文件夹同步已可精确审核 — 尚未写入任何内容",
@@ -2967,7 +2981,7 @@ export function RuneWorkbench() {
     if (!pendingDirectorySync || pendingDirectorySync.submitting) return;
     setPendingDirectorySync(null);
     setDirectoryState(directoryHandle ? "connected" : "disconnected");
-    setNotice(runeText(locale, "Folder sync cancelled — nothing changed", "已取消文件夹同步 — 所有内容保持不变"));
+    setNotice(orbitText(locale, "Folder sync cancelled — nothing changed", "已取消文件夹同步 — 所有内容保持不变"));
   }
 
   async function confirmDirectorySync() {
@@ -3000,7 +3014,7 @@ export function RuneWorkbench() {
           setDirectoryHandle(pending.handle);
           setDirectoryState("connected");
           setNotice(
-            `${plan.mode === "initialize" ? "Initialized" : "Pushed"} ${currentArtifacts.length} source files${currentAssets.length ? ` and ${currentAssets.length} local images` : ""} with rune.workspace.json in ${pending.handle.name}`,
+            `${plan.mode === "initialize" ? "Initialized" : "Pushed"} ${currentArtifacts.length} source files${currentAssets.length ? ` and ${currentAssets.length} local images` : ""} with orbit.workspace.json in ${pending.handle.name}`,
           );
           if (handoffArtifact) {
             openDeliveryConfirmationForArtifact(
@@ -3087,7 +3101,7 @@ export function RuneWorkbench() {
     try {
       if (checkpoint.artifactId !== selectedArtifact.id) {
         setNotice(
-          runeText(locale, "That checkpoint no longer belongs to the selected file", "该恢复点已不属于当前文件"),
+          orbitText(locale, "That checkpoint no longer belongs to the selected file", "该恢复点已不属于当前文件"),
         );
         return;
       }
@@ -3098,7 +3112,9 @@ export function RuneWorkbench() {
         !currentArtifact ||
         checkpoint.source === currentArtifact.source
       ) {
-        setNotice(runeText(locale, "That checkpoint already matches the current source", "该恢复点已与当前源内容一致"));
+        setNotice(
+          orbitText(locale, "That checkpoint already matches the current source", "该恢复点已与当前源内容一致"),
+        );
         return;
       }
       const prepared = prepareCheckpointRestore(artifactsRef.current, checkpoint);
@@ -3108,7 +3124,7 @@ export function RuneWorkbench() {
       }
       setPendingCheckpointRestore({ plan: prepared.plan, error: "", submitting: false });
       setHistoryOpen(false);
-      setNotice(runeText(locale, "Checkpoint ready for exact source review", "恢复点已准备好进行精确源内容审核"));
+      setNotice(orbitText(locale, "Checkpoint ready for exact source review", "恢复点已准备好进行精确源内容审核"));
     } finally {
       checkpointRestoreInFlightRef.current = false;
     }
@@ -3118,7 +3134,7 @@ export function RuneWorkbench() {
     if (!pendingCheckpointRestore || pendingCheckpointRestore.submitting) return;
     setPendingCheckpointRestore(null);
     setNotice(
-      runeText(
+      orbitText(
         locale,
         "Checkpoint restore cancelled — every source stayed unchanged",
         "已取消版本恢复 — 所有源内容保持不变",
@@ -3133,7 +3149,7 @@ export function RuneWorkbench() {
     setPendingCheckpointRestore((current) => (current ? { ...current, error: "", submitting: true } : current));
     setSaveState("saving");
     setNotice(
-      runeText(locale, "Verifying checkpoint against the complete workspace…", "正在对照完整工作区核验恢复点…"),
+      orbitText(locale, "Verifying checkpoint against the complete workspace…", "正在对照完整工作区核验恢复点…"),
     );
 
     try {
@@ -3165,7 +3181,7 @@ export function RuneWorkbench() {
       setSaveState("saved");
       setSavedAt("");
       setNotice(
-        runeText(
+        orbitText(
           locale,
           `Restored checkpoint · ${committed.checkpointLabel}`,
           `已恢复恢复点 · ${committed.checkpointLabel}`,
@@ -3183,7 +3199,7 @@ export function RuneWorkbench() {
             }
           : current,
       );
-      setNotice(runeText(locale, "Restore held — every source stayed unchanged", "恢复已暂停 — 所有源内容保持不变"));
+      setNotice(orbitText(locale, "Restore held — every source stayed unchanged", "恢复已暂停 — 所有源内容保持不变"));
     }
   }
 
@@ -3489,11 +3505,11 @@ export function RuneWorkbench() {
     }
   }
 
-  function runeTaskRunFromPendingChange(
+  function orbitTaskRunFromPendingChange(
     change: PendingChange,
-    status: RuneTaskRun["status"],
-    stopReason: RuneTaskStopReason | null,
-  ): RuneTaskRun | undefined {
+    status: OrbitTaskRun["status"],
+    stopReason: OrbitTaskStopReason | null,
+  ): OrbitTaskRun | undefined {
     if (!change.taskRun) return undefined;
     const completedAt = new Date();
     const sourceArtifact = change.baseRevision.find((artifact) => artifact.id === change.taskRun?.sourceArtifactId);
@@ -3528,19 +3544,19 @@ export function RuneWorkbench() {
       durationMs:
         change.preparedAt == null
           ? 0
-          : Math.min(MAX_RUNE_TASK_DURATION_MS, Math.max(0, completedAt.getTime() - change.preparedAt)),
+          : Math.min(MAX_ORBIT_TASK_DURATION_MS, Math.max(0, completedAt.getTime() - change.preparedAt)),
       inputTokens: change.usage?.inputTokens ?? null,
       outputTokens: change.usage?.outputTokens ?? null,
     };
   }
 
-  function recordStoppedRuneTask(change: PendingChange, stopReason: RuneTaskStopReason) {
+  function recordStoppedOrbitTask(change: PendingChange, stopReason: OrbitTaskStopReason) {
     const identity = `${change.taskRun?.taskId ?? "none"}:${change.preparedAt ?? 0}`;
     if (!change.taskRun || recordedStoppedTaskIdsRef.current.has(identity)) return;
     recordedStoppedTaskIdsRef.current.add(identity);
-    const run = runeTaskRunFromPendingChange(change, "stopped", stopReason);
+    const run = orbitTaskRunFromPendingChange(change, "stopped", stopReason);
     if (!run) return;
-    const nextEvidence = appendRuneTaskRun(taskEvidenceRef.current, run);
+    const nextEvidence = appendOrbitTaskRun(taskEvidenceRef.current, run);
     try {
       persistDeviceWorkspace(
         artifactsRef.current,
@@ -3558,7 +3574,7 @@ export function RuneWorkbench() {
   function applyPendingChange() {
     if (!pendingChange || !workbenchOperationCanReplace(workbenchOperationGate, "agent-proposal")) return;
     if (!workspaceMatchesSourceRevision(artifacts, pendingChange.baseRevision)) {
-      recordStoppedRuneTask(pendingChange, "stale");
+      recordStoppedOrbitTask(pendingChange, "stale");
       setAgentError(
         "The workspace changed while this Agent plan was being prepared. Discard it and plan again from the current source revision.",
       );
@@ -3570,7 +3586,7 @@ export function RuneWorkbench() {
       return artifact ? [artifact] : [];
     });
     if (targetArtifacts.length !== pendingChange.patches.length) {
-      recordStoppedRuneTask(pendingChange, "stale");
+      recordStoppedOrbitTask(pendingChange, "stale");
       setAgentError("The plan references a file that is no longer in this workspace.");
       setNotice("Patch held for review — workspace context changed");
       return;
@@ -3600,7 +3616,7 @@ export function RuneWorkbench() {
 
     const prepared = prepareWorkspaceMutation(artifacts, pendingChange.patches, pendingChange.creations);
     if (prepared.errors.length) {
-      recordStoppedRuneTask(pendingChange, "validation");
+      recordStoppedOrbitTask(pendingChange, "validation");
       setAgentError(prepared.errors.slice(0, 3).join(" "));
       setNotice("Nothing applied — the complete workspace did not pass validation");
       return;
@@ -3628,9 +3644,9 @@ export function RuneWorkbench() {
 
     const nextSelectedId =
       pendingChange.selectAfterApplyArtifactId ?? pendingChange.creations[0]?.artifact.id ?? selectedId;
-    const completedTaskRun = runeTaskRunFromPendingChange(pendingChange, "applied", null);
+    const completedTaskRun = orbitTaskRunFromPendingChange(pendingChange, "applied", null);
     const nextTaskEvidence = completedTaskRun
-      ? appendRuneTaskRun(taskEvidenceRef.current, completedTaskRun)
+      ? appendOrbitTaskRun(taskEvidenceRef.current, completedTaskRun)
       : taskEvidenceRef.current;
     const nextSavedReviews = pendingChange.savedOperatingReviewAfterApply
       ? [
@@ -3652,7 +3668,7 @@ export function RuneWorkbench() {
       setSaveState("error");
       setAgentError("Device storage is full, so Orbit kept every source unchanged.");
       setNotice("Nothing applied — atomic persistence failed");
-      recordStoppedRuneTask(pendingChange, "persistence");
+      recordStoppedOrbitTask(pendingChange, "persistence");
       return;
     }
 
@@ -3680,10 +3696,10 @@ export function RuneWorkbench() {
 
   function discardPendingChange() {
     if (!pendingChange || !workbenchOperationCanReplace(workbenchOperationGate, "agent-proposal")) return;
-    recordStoppedRuneTask(pendingChange, "cancelled");
+    recordStoppedOrbitTask(pendingChange, "cancelled");
     setPendingChange(null);
     setPendingReviewId("");
-    setNotice(runeText(locale, "Review cancelled — every source stayed unchanged", "已取消审核 — 所有源内容保持不变"));
+    setNotice(orbitText(locale, "Review cancelled — every source stayed unchanged", "已取消审核 — 所有源内容保持不变"));
   }
 
   function undoLastAgentChange() {
@@ -3706,13 +3722,13 @@ export function RuneWorkbench() {
   }
 
   function sampleWorkspaceDeviceState(): WorkspaceDeviceState {
-    const sampleArtifacts = [createRuneGuideArtifact(locale), ...cloneDefaultArtifacts()];
+    const sampleArtifacts = [createOrbitGuideArtifact(locale), ...cloneDefaultArtifacts()];
     return {
       artifacts: sampleArtifacts,
-      selectedId: sampleArtifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? sampleArtifacts[0].id,
+      selectedId: sampleArtifacts.find((artifact) => artifact.id !== ORBIT_GUIDE_ID)?.id ?? sampleArtifacts[0].id,
       checkpoints: {},
       savedOperatingReviews: [],
-      taskEvidence: EMPTY_RUNE_TASK_EVIDENCE,
+      taskEvidence: EMPTY_ORBIT_TASK_EVIDENCE,
     };
   }
 
@@ -3720,7 +3736,7 @@ export function RuneWorkbench() {
     if (artifactCreationDisabled || directoryState === "syncing" || workspaceResetInFlightRef.current) return;
     const target = mode === "sample" ? sampleWorkspaceDeviceState() : workspaceResetRecoveryRef.current;
     if (!target) {
-      setNotice(runeText(locale, "No previous workspace is available on this device", "本机没有可恢复的上一个工作区"));
+      setNotice(orbitText(locale, "No previous workspace is available on this device", "本机没有可恢复的上一个工作区"));
       return;
     }
     workspaceResetInFlightRef.current = true;
@@ -3734,7 +3750,7 @@ export function RuneWorkbench() {
       setPendingWorkspaceReset({ plan: prepared.plan, error: "", submitting: false });
       setToolsMenuOpen(false);
       setNotice(
-        runeText(
+        orbitText(
           locale,
           "Workspace switch ready for review — nothing has been written",
           "工作区切换已可审核 — 尚未写入任何内容",
@@ -3748,7 +3764,7 @@ export function RuneWorkbench() {
   function cancelWorkspaceReset() {
     if (!pendingWorkspaceReset || pendingWorkspaceReset.submitting) return;
     setPendingWorkspaceReset(null);
-    setNotice(runeText(locale, "Workspace switch cancelled — nothing changed", "已取消工作区切换 — 所有内容保持不变"));
+    setNotice(orbitText(locale, "Workspace switch cancelled — nothing changed", "已取消工作区切换 — 所有内容保持不变"));
   }
 
   async function confirmWorkspaceReset() {
@@ -3804,12 +3820,12 @@ export function RuneWorkbench() {
       setSavedAt("");
       setNotice(
         committed.mode === "sample"
-          ? runeText(
+          ? orbitText(
               locale,
               "Sample workspace restored · previous workspace remains recoverable",
               "示例工作区已恢复 · 上一个工作区仍可恢复",
             )
-          : runeText(
+          : orbitText(
               locale,
               "Previous workspace restored · this switch remains reversible",
               "上一个工作区已恢复 · 本次切换仍可撤销",
@@ -3819,7 +3835,7 @@ export function RuneWorkbench() {
       const message = error instanceof Error ? error.message : "Orbit could not switch this workspace.";
       setSaveState(message.startsWith("Device persistence failed") ? "error" : "saved");
       setPendingWorkspaceReset((current) => (current ? { ...current, error: message, submitting: false } : current));
-      setNotice(runeText(locale, "Workspace switch held — nothing changed", "工作区切换已暂停 — 所有内容保持不变"));
+      setNotice(orbitText(locale, "Workspace switch held — nothing changed", "工作区切换已暂停 — 所有内容保持不变"));
     }
   }
 
@@ -3836,7 +3852,7 @@ export function RuneWorkbench() {
     setTaskSession(null);
     setOperatingReviewOpen(true);
     setNotice(
-      runeText(
+      orbitText(
         locale,
         "Choose the evidence, measure, and deliverables before Orbit prepares the full review chain",
         "先选择数据、口径和交付物，再生成整条汇报链",
@@ -3855,7 +3871,7 @@ export function RuneWorkbench() {
           : artifactsRef.current.find((artifact) => artifact.kind === "document");
     if (!source) {
       setNotice(
-        runeText(
+        orbitText(
           locale,
           "Open or import a Document before creating a presentation",
           "请先打开或导入一份 Document，再创建演示",
@@ -3863,7 +3879,7 @@ export function RuneWorkbench() {
       );
       return;
     }
-    const prepared = startRuneTaskFromArtifact("document-briefing", artifactsRef.current, source.id);
+    const prepared = startOrbitTaskFromArtifact("document-briefing", artifactsRef.current, source.id);
     if (!prepared.session || prepared.errors.length) {
       setNotice(prepared.errors[0] ?? "Orbit could not start this presentation task.");
       return;
@@ -3880,7 +3896,7 @@ export function RuneWorkbench() {
     setNotice(
       targetFreshness === "changed"
         ? `${ui.refreshAvailable} · ${source.name} → ${entryArtifact.name}`
-        : runeText(
+        : orbitText(
             locale,
             `Using ${source.name} as the exact presentation source`,
             `将 ${source.name} 作为演示的明确来源`,
@@ -3916,7 +3932,7 @@ export function RuneWorkbench() {
     setTaskSession(null);
     setOperatingReviewOpen(true);
     setNotice(
-      runeText(locale, `Preparing to rerun “${workflow.input.title}”`, `正在准备重新运行「${workflow.input.title}」`),
+      orbitText(locale, `Preparing to rerun “${workflow.input.title}”`, `正在准备重新运行「${workflow.input.title}」`),
     );
   }
 
@@ -3935,7 +3951,7 @@ export function RuneWorkbench() {
       const compileReview = (narrative?: OperatingReviewNarrative) =>
         savedWorkflow
           ? prepareSavedOperatingReviewRerun(baseArtifacts, savedWorkflow, input, narrative)
-          : prepareRuneTaskProvider(baseArtifacts, {
+          : prepareOrbitTaskProvider(baseArtifacts, {
               taskId: "operating-review",
               input,
               ...(narrative ? { narrative } : {}),
@@ -3949,7 +3965,7 @@ export function RuneWorkbench() {
       let provider = "local";
       let modelLabel = "";
       let usage: PendingChange["usage"];
-      const assistance = await prepareRuneTaskModelAssistance(
+      const assistance = await prepareOrbitTaskModelAssistance(
         baseArtifacts,
         { taskId: "operating-review", input },
         { mode: modelMode, fetcher: fetch, onModelRequest: () => setNotice(copy.modelShaping) },
@@ -4000,7 +4016,7 @@ export function RuneWorkbench() {
       };
       const transaction = prepareWorkspaceMutation(baseArtifacts, reviewPlan.patches, reviewPlan.creations);
       if (transaction.errors.length) {
-        recordStoppedRuneTask(pendingTaskChange, "validation");
+        recordStoppedOrbitTask(pendingTaskChange, "validation");
         setOperatingReviewError(transaction.errors.slice(0, 3).join(" "));
         return;
       }
@@ -4008,20 +4024,20 @@ export function RuneWorkbench() {
       try {
         runtimePreflight = await preflightRuntimeMutation(baseArtifacts, reviewPlan.patches, reviewPlan.creations);
       } catch (error) {
-        recordStoppedRuneTask(pendingTaskChange, "runtime");
+        recordStoppedOrbitTask(pendingTaskChange, "runtime");
         throw error;
       }
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
-        recordStoppedRuneTask({ ...pendingTaskChange, runtimePreflight }, "stale");
+        recordStoppedOrbitTask({ ...pendingTaskChange, runtimePreflight }, "stale");
         setOperatingReviewError(
-          runeText(
+          orbitText(
             locale,
             "The workspace changed during validation. Prepare the review again from the current data.",
             "验证期间工作区已发生变化。请按当前数据重新准备。",
           ),
         );
         setNotice(
-          runeText(locale, "Review not prepared — workspace revision changed", "汇报未生成 — 工作区版本已变化"),
+          orbitText(locale, "Review not prepared — workspace revision changed", "汇报未生成 — 工作区版本已变化"),
         );
         return;
       }
@@ -4053,7 +4069,7 @@ export function RuneWorkbench() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Orbit could not validate this operating review.";
       setOperatingReviewError(message);
-      setNotice(runeText(locale, "Review not prepared — runtime validation failed", "汇报未生成 — 运行验证未通过"));
+      setNotice(orbitText(locale, "Review not prepared — runtime validation failed", "汇报未生成 — 运行验证未通过"));
     } finally {
       setOperatingReviewState("idle");
     }
@@ -4068,7 +4084,7 @@ export function RuneWorkbench() {
     const baseRevision = captureWorkspaceSourceRevision(baseArtifacts);
     const copy = documentBriefingNoticeCopy(locale);
     try {
-      const assistance = await prepareRuneTaskModelAssistance(
+      const assistance = await prepareOrbitTaskModelAssistance(
         baseArtifacts,
         { taskId: "document-briefing", input },
         { mode: modelMode, fetcher: fetch, onModelRequest: () => setNotice(copy.modelShaping) },
@@ -4084,7 +4100,7 @@ export function RuneWorkbench() {
             ? copy.sourceTooLargeFallback
             : copy.localFallback;
 
-      const prepared = prepareRuneTaskProvider(baseArtifacts, {
+      const prepared = prepareOrbitTaskProvider(baseArtifacts, {
         taskId: "document-briefing",
         input,
         ...(outline ? { outline } : {}),
@@ -4116,7 +4132,7 @@ export function RuneWorkbench() {
       };
       const transaction = prepareWorkspaceMutation(baseArtifacts, prepared.plan.patches, prepared.plan.creations);
       if (transaction.errors.length) {
-        recordStoppedRuneTask(pendingTaskChange, "validation");
+        recordStoppedOrbitTask(pendingTaskChange, "validation");
         setDocumentBriefingError(transaction.errors.slice(0, 3).join(" "));
         return;
       }
@@ -4128,20 +4144,20 @@ export function RuneWorkbench() {
           prepared.plan.creations,
         );
       } catch (error) {
-        recordStoppedRuneTask(pendingTaskChange, "runtime");
+        recordStoppedOrbitTask(pendingTaskChange, "runtime");
         throw error;
       }
       if (!workspaceMatchesSourceRevision(artifactsRef.current, baseRevision)) {
-        recordStoppedRuneTask({ ...pendingTaskChange, runtimePreflight }, "stale");
+        recordStoppedOrbitTask({ ...pendingTaskChange, runtimePreflight }, "stale");
         setDocumentBriefingError(
-          runeText(
+          orbitText(
             locale,
             "The workspace changed during validation. Prepare the presentation again from the current document.",
             "验证期间工作区已发生变化。请按当前文档重新准备演示。",
           ),
         );
         setNotice(
-          runeText(locale, "Presentation not prepared — workspace revision changed", "演示未生成 — 工作区版本已变化"),
+          orbitText(locale, "Presentation not prepared — workspace revision changed", "演示未生成 — 工作区版本已变化"),
         );
         return;
       }
@@ -4160,7 +4176,7 @@ export function RuneWorkbench() {
     } catch (error) {
       setDocumentBriefingError(error instanceof Error ? error.message : "Orbit could not validate this presentation.");
       setNotice(
-        runeText(locale, "Presentation not prepared — runtime validation failed", "演示未生成 — 运行验证未通过"),
+        orbitText(locale, "Presentation not prepared — runtime validation failed", "演示未生成 — 运行验证未通过"),
       );
     } finally {
       setDocumentBriefingState("idle");
@@ -4273,12 +4289,12 @@ export function RuneWorkbench() {
     const activeTaskSession =
       taskSession?.taskId === taskId && taskSession.phase === "awaiting-source"
         ? taskSession
-        : startRuneTaskSession(taskId, artifactsRef.current);
+        : startOrbitTaskSession(taskId, artifactsRef.current);
     setTaskSession(activeTaskSession);
     await prepareFileImport(files, activeTaskSession);
   }
 
-  async function prepareFileImport(files: File[], activeTaskSession: RuneTaskSession | null = null) {
+  async function prepareFileImport(files: File[], activeTaskSession: OrbitTaskSession | null = null) {
     if (
       !files.length ||
       !workbenchOperationGate.canStartOperation ||
@@ -4316,7 +4332,7 @@ export function RuneWorkbench() {
       if (ocrCandidates.length) {
         if (activeTaskSession?.taskId === "operating-review") {
           throw new Error(
-            runeText(
+            orbitText(
               locale,
               "This task starts from CSV, JSON, XLSX, or ODS. Import PDF separately first.",
               "此任务需要从 CSV、JSON、XLSX 或 ODS 开始。请先单独导入 PDF。",
@@ -4333,7 +4349,7 @@ export function RuneWorkbench() {
         setPdfOcrError("");
         setPdfOcrProgress(null);
         setNotice(
-          runeText(
+          orbitText(
             locale,
             `Choose scan pages and OCR language for ${ocrCandidates.length} ${ocrCandidates.length === 1 ? "PDF" : "PDFs"}`,
             `请确认 ${ocrCandidates.length} 份 PDF 的扫描页与 OCR 语言`,
@@ -4352,7 +4368,7 @@ export function RuneWorkbench() {
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Orbit could not prepare an import review.");
       if (activeTaskSession) {
-        const boundTask = bindRuneTaskImportReview(activeTaskSession, baseArtifacts, prepared.review);
+        const boundTask = bindOrbitTaskImportReview(activeTaskSession, baseArtifacts, prepared.review);
         if (!boundTask.session || boundTask.errors.length) {
           throw new Error(boundTask.errors[0] ?? "Orbit could not bind this import to the task.");
         }
@@ -4387,7 +4403,7 @@ export function RuneWorkbench() {
       return;
     if (artifacts !== pending.baseArtifacts) {
       setPdfOcrError(
-        runeText(
+        orbitText(
           locale,
           "The workspace changed during OCR setup. Cancel and import again to review a fresh transaction.",
           "OCR 设置期间工作区已经变化。请取消并重新导入，以审核最新事务。",
@@ -4425,7 +4441,7 @@ export function RuneWorkbench() {
       if (prepared.errors.length) throw new Error(prepared.errors[0]);
       if (!prepared.review) throw new Error("Orbit could not prepare an import review.");
       if (pending.taskSession) {
-        const boundTask = bindRuneTaskImportReview(pending.taskSession, pending.baseArtifacts, prepared.review);
+        const boundTask = bindOrbitTaskImportReview(pending.taskSession, pending.baseArtifacts, prepared.review);
         if (!boundTask.session || boundTask.errors.length) {
           throw new Error(boundTask.errors[0] ?? "Orbit could not bind this OCR import to the task.");
         }
@@ -4434,7 +4450,7 @@ export function RuneWorkbench() {
       setPendingImport(prepared.review);
       setPendingPdfOcr(null);
       setNotice(
-        runeText(
+        orbitText(
           locale,
           `Review ${prepared.review.importedArtifacts.length} generated ${prepared.review.importedArtifacts.length === 1 ? "source" : "sources"} and page-level OCR confidence before import`,
           `请在写入前审核 ${prepared.review.importedArtifacts.length} 份生成的源内容与逐页 OCR 置信度`,
@@ -4442,14 +4458,14 @@ export function RuneWorkbench() {
       );
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        setNotice(runeText(locale, "OCR stopped — the workspace is unchanged", "OCR 已停止 — 工作区保持不变"));
+        setNotice(orbitText(locale, "OCR stopped — the workspace is unchanged", "OCR 已停止 — 工作区保持不变"));
         setPendingPdfOcr(null);
         if (pending.taskSession) setTaskSession(null);
       } else {
         setPdfOcrError(
           error instanceof Error
             ? error.message
-            : runeText(locale, "Orbit could not recognize those scanned pages.", "Orbit 无法识别这些扫描页。"),
+            : orbitText(locale, "Orbit could not recognize those scanned pages.", "Orbit 无法识别这些扫描页。"),
         );
       }
     } finally {
@@ -4472,7 +4488,7 @@ export function RuneWorkbench() {
     if (pendingPdfOcr.taskSession) setTaskSession(null);
     setPdfOcrError("");
     setPdfOcrProgress(null);
-    setNotice(runeText(locale, "OCR cancelled — the workspace is unchanged", "已取消 OCR — 工作区保持不变"));
+    setNotice(orbitText(locale, "OCR cancelled — the workspace is unchanged", "已取消 OCR — 工作区保持不变"));
   }
 
   function cancelPendingImport() {
@@ -4491,12 +4507,12 @@ export function RuneWorkbench() {
       !workbenchOperationCanReplace(workbenchOperationGate, "import-review")
     )
       return;
-    const taskContinuation = taskSession ? prepareRuneTaskAfterImport(taskSession, artifacts, pendingImport) : null;
+    const taskContinuation = taskSession ? prepareOrbitTaskAfterImport(taskSession, artifacts, pendingImport) : null;
     if (taskContinuation?.errors.length || (taskSession && !taskContinuation?.session)) {
       setTaskSession(null);
       setImportError(taskContinuation?.errors[0] ?? "Orbit could not continue this task from the reviewed import.");
       setNotice(
-        runeText(locale, "Import held for review — task context changed", "导入仍在等待审核 — 任务上下文已变化"),
+        orbitText(locale, "Import held for review — task context changed", "导入仍在等待审核 — 任务上下文已变化"),
       );
       return;
     }
@@ -4512,7 +4528,7 @@ export function RuneWorkbench() {
     setImportState("reading");
     try {
       for (const asset of pendingImport.assets) {
-        if (await putRuneImageAsset(asset)) importedAssetIds.push(asset.id);
+        if (await putOrbitImageAsset(asset)) importedAssetIds.push(asset.id);
       }
       persistDeviceWorkspace(
         pendingImport.nextArtifacts,
@@ -4522,7 +4538,7 @@ export function RuneWorkbench() {
         taskEvidenceRef.current,
       );
     } catch (error) {
-      await Promise.all(importedAssetIds.map((id) => deleteRuneImageAsset(id).catch(() => undefined)));
+      await Promise.all(importedAssetIds.map((id) => deleteOrbitImageAsset(id).catch(() => undefined)));
       setSaveState("error");
       setImportError(
         error instanceof Error
@@ -4555,7 +4571,7 @@ export function RuneWorkbench() {
         setDocumentBriefingError("");
         setDocumentBriefingOpen(true);
         setNotice(
-          runeText(
+          orbitText(
             locale,
             `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"}; choose the audience, purpose, and presentation length`,
             `已导入 ${importedCount} 份可读文档；请选择受众、重点与演示页数`,
@@ -4566,7 +4582,7 @@ export function RuneWorkbench() {
         setEditingOperatingReviewId("");
         setOperatingReviewOpen(true);
         setNotice(
-          runeText(
+          orbitText(
             locale,
             `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"}; choose the fields and deliverables for the review`,
             `已导入 ${importedCount} 份可读数据；请选择汇报字段与交付物`,
@@ -4600,7 +4616,7 @@ export function RuneWorkbench() {
     try {
       const { prepareWorkspaceFileExport } = await import("../lib/workspace-file-export-runtime");
       const result = await prepareWorkspaceFileExport(destination, targetArtifact, baseArtifacts, {
-        loadImageAsset: getRuneImageAsset,
+        loadImageAsset: getOrbitImageAsset,
       });
       setPendingExport({
         destination,
@@ -4662,7 +4678,7 @@ export function RuneWorkbench() {
     const exportedArtifact = pendingExport.baseArtifacts.find(
       (artifact) => artifact.id === sourceArtifactId && artifact.source === sourceRevision,
     );
-    const sourceDeliveryTarget: RuneTaskDeliveryTarget | null =
+    const sourceDeliveryTarget: OrbitTaskDeliveryTarget | null =
       destination !== "source"
         ? result.targetType
         : exportedArtifact?.kind === "document"
@@ -4686,7 +4702,7 @@ export function RuneWorkbench() {
     setPilotEvidenceError("");
     try {
       const baseEvidence = taskEvidenceRef.current;
-      const result = prepareRunePilotEvidenceExport(baseEvidence);
+      const result = prepareOrbitPilotEvidenceExport(baseEvidence);
       setPendingPilotEvidence({ baseEvidence, result });
       setNotice(`${pilotEvidenceUI.reviewNotice} · ${result.package.runs.length}`);
     } catch (error) {
@@ -4829,7 +4845,7 @@ export function RuneWorkbench() {
     );
   }
 
-  function runWorkbenchCommand(commandId: RuneWorkbenchCommandId) {
+  function runWorkbenchCommand(commandId: OrbitWorkbenchCommandId) {
     setCommandMenuOpen(false);
     setExportMenuOpen(false);
     setToolsMenuOpen(false);
@@ -4894,16 +4910,16 @@ export function RuneWorkbench() {
     },
   ].filter((group) => group.artifacts.length > 0);
   const documentBriefingRuns = taskEvidence.runs.filter((run) => run.taskId === "document-briefing");
-  const documentBriefingRunSummary = summarizeRuneTaskRuns(documentBriefingRuns);
+  const documentBriefingRunSummary = summarizeOrbitTaskRuns(documentBriefingRuns);
   const documentBriefingDeliveries = taskEvidence.deliveries.filter(
     (delivery) => delivery.taskId === "document-briefing",
   );
-  const documentBriefingDeliverySummary = summarizeRuneTaskDeliveries(documentBriefingDeliveries);
+  const documentBriefingDeliverySummary = summarizeOrbitTaskDeliveries(documentBriefingDeliveries);
   const saveStatusLabel = saveState === "saved" ? ui.saved : saveState === "error" ? ui.storageFull : ui.saving;
   const saveStatusDetail = saveState === "error" ? ui.deviceStorageFull : ui.lastSaved(savedAt || ui.justNow);
 
   return (
-    <main className="rune-shell" data-rune-hydrated={hydrated ? "true" : "false"} ref={shellRef}>
+    <main className="orbit-shell" data-orbit-hydrated={hydrated ? "true" : "false"} ref={shellRef}>
       <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} />}>
         {commandMenuOpen && (
           <WorkbenchCommandMenu
@@ -5020,7 +5036,7 @@ export function RuneWorkbench() {
             type="file"
             multiple
             aria-label={ui.import}
-            accept={RUNE_TASK_DEFINITIONS[taskSession?.taskId ?? "operating-review"].sourceAccept}
+            accept={ORBIT_TASK_DEFINITIONS[taskSession?.taskId ?? "operating-review"].sourceAccept}
             onChange={importTaskSource}
             disabled={operationStartBlocked}
           />
@@ -5029,7 +5045,7 @@ export function RuneWorkbench() {
             className="visually-hidden"
             type="file"
             aria-label={localImageUI.insertLocal}
-            accept={RUNE_IMAGE_ACCEPT}
+            accept={ORBIT_IMAGE_ACCEPT}
             onChange={(event) => void prepareLocalImage(event)}
             disabled={
               operationStartBlocked ||
@@ -5054,11 +5070,11 @@ export function RuneWorkbench() {
       >
         <WorkbenchActivityRail
           railView={railView}
-          sectionLabel={ui.runeSections}
+          sectionLabel={ui.orbitSections}
           workspaceFilesLabel={ui.workspaceFiles}
           newArtifactLabel={ui.newArtifact}
           createOperatingReviewLabel={ui.createOperatingReview}
-          documentBriefingLabel={runeText(
+          documentBriefingLabel={orbitText(
             locale,
             "Create or refresh presentation from document",
             "从文档创建或刷新演示",
@@ -5170,7 +5186,7 @@ export function RuneWorkbench() {
                   className="tiny-icon-button"
                   onClick={openNewArtifact}
                   disabled={artifactCreationDisabled}
-                  aria-label={runeText(locale, "Create a new artifact", "新建内容")}
+                  aria-label={orbitText(locale, "Create a new artifact", "新建内容")}
                   title={ui.newArtifact}
                 >
                   +
@@ -5267,18 +5283,18 @@ export function RuneWorkbench() {
                       Object.values(workflow.artifactIds).every((artifactId) =>
                         artifacts.some((artifact) => artifact.id === artifactId),
                       );
-                    const workflowRuns = runeTaskRunsForIdentity(taskEvidence, {
+                    const workflowRuns = orbitTaskRunsForIdentity(taskEvidence, {
                       taskId: "operating-review",
                       sourceArtifactId: workflow.input.dataArtifactId,
                       outputArtifactIds: Object.values(workflow.artifactIds),
                     });
                     const latestRun = workflowRuns[0];
-                    const runSummary = summarizeRuneTaskRuns(workflowRuns);
+                    const runSummary = summarizeOrbitTaskRuns(workflowRuns);
                     const workflowRunIds = new Set(workflowRuns.map((run) => run.id));
                     const workflowDeliveries = taskEvidence.deliveries.filter(
                       (delivery) => delivery.taskId === "operating-review" && workflowRunIds.has(delivery.runId),
                     );
-                    const deliverySummary = summarizeRuneTaskDeliveries(workflowDeliveries);
+                    const deliverySummary = summarizeOrbitTaskDeliveries(workflowDeliveries);
                     return (
                       <article className="saved-review-card" key={workflow.id}>
                         <button
@@ -5512,7 +5528,7 @@ export function RuneWorkbench() {
             onCreate={openNewArtifact}
             onDropFiles={(files) => void prepareFileImport(files)}
             onOpenSample={() => {
-              const sampleId = artifacts.find((artifact) => artifact.id !== RUNE_GUIDE_ID)?.id ?? artifacts[0].id;
+              const sampleId = artifacts.find((artifact) => artifact.id !== ORBIT_GUIDE_ID)?.id ?? artifacts[0].id;
               selectArtifact(sampleId);
             }}
           />
@@ -5745,7 +5761,7 @@ export function RuneWorkbench() {
                 moveLabel={ui.moveAgent}
                 dockLabel={ui.dockAgent}
                 floatLabel={ui.floatAgent}
-                closeLabel={runeText(locale, "Close Agent", "收起 Agent")}
+                closeLabel={orbitText(locale, "Close Agent", "收起 Agent")}
                 onOpen={() => {
                   setAgentComposerOpen(true);
                   window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
@@ -5972,7 +5988,7 @@ export function RuneWorkbench() {
                         ? ui.queryEvidence(workspaceAgentQueryCount)
                         : ""
                     }
-                    quickCommands={runeQuickCommands(locale, agentScope, selectedArtifact.kind)}
+                    quickCommands={orbitQuickCommands(locale, agentScope, selectedArtifact.kind)}
                   />
                 </div>
               </AgentDockShell>
@@ -6295,7 +6311,7 @@ export function RuneWorkbench() {
               setEditingOperatingReviewId("");
               setTaskSession(null);
               setNotice(
-                runeText(
+                orbitText(
                   locale,
                   "Operating review cancelled — the workspace is unchanged",
                   "已取消经营汇报 — 工作区保持不变",
@@ -6325,7 +6341,7 @@ export function RuneWorkbench() {
               setPreferredDocumentBriefingTargetId("");
               setTaskSession(null);
               setNotice(
-                runeText(
+                orbitText(
                   locale,
                   "Document presentation cancelled — the workspace is unchanged",
                   "已取消文档演示 — 工作区保持不变",

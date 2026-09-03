@@ -27,17 +27,15 @@ const STATIC_CONTENT_TYPES = Object.freeze({
   ".woff2": "font/woff2",
 });
 
-// Keep the established on-device vault and Electron profile after the public
-// rename. `safeStorage` is keyed to the application identity on macOS, so the
-// legacy name must remain active until its encrypted master key is loaded.
-// No window is created until the public Orbit identity is restored below.
-const legacyRuneUserDataDirectory = path.join(app.getPath("appData"), "Rune");
-app.setName("Rune");
-app.setPath("userData", legacyRuneUserDataDirectory);
-process.env.RUNE_DESKTOP_RUNTIME = "1";
+// Orbit owns one application, profile, and Keychain identity. Data created by
+// the former pre-release product identity is left untouched and never opened.
+// Testers therefore receive a clean profile and configure a model once.
+app.setName("Orbit");
+app.setPath("userData", path.join(app.getPath("appData"), "Orbit"));
+process.env.ORBIT_DESKTOP_RUNTIME = "1";
 
 async function initializeDesktopCredentialVault() {
-  const configuredKey = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY?.trim();
+  const configuredKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY?.trim();
   if (/^[a-f0-9]{64}$/.test(configuredKey ?? "")) return true;
   if (!safeStorage.isEncryptionAvailable()) return false;
   const userDataDirectory = app.getPath("userData");
@@ -58,7 +56,7 @@ async function initializeDesktopCredentialVault() {
     }
   }
   if (!/^[a-f0-9]{64}$/.test(key)) return false;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = key;
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = key;
   return true;
 }
 
@@ -87,7 +85,7 @@ async function serveStaticAsset(request, response, url) {
   return true;
 }
 
-async function startRuneServer() {
+async function startOrbitServer() {
   const worker = (await import(pathToFileURL(path.join(projectDirectory, "dist/server/index.js")).href)).default;
   const server = createServer(async (request, response) => {
     try {
@@ -136,7 +134,7 @@ async function startRuneServer() {
   return { server, url: `http://127.0.0.1:${address.port}` };
 }
 
-let runeServer;
+let orbitServer;
 let mainWindow;
 let desktopModelDiscovery;
 
@@ -155,8 +153,8 @@ async function loadDesktopWorkspace(window, url) {
   throw lastError instanceof Error ? lastError : new Error("Orbit Desktop could not load its local workspace.");
 }
 
-async function createRuneWindow() {
-  if (!runeServer) runeServer = await startRuneServer();
+async function createOrbitWindow() {
+  if (!orbitServer) orbitServer = await startOrbitServer();
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.show();
     mainWindow.focus();
@@ -188,10 +186,10 @@ async function createRuneWindow() {
   });
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   window.webContents.on("will-navigate", (event, target) => {
-    if (new URL(target).origin !== runeServer.url) event.preventDefault();
+    if (new URL(target).origin !== orbitServer.url) event.preventDefault();
   });
   try {
-    await loadDesktopWorkspace(window, runeServer.url);
+    await loadDesktopWorkspace(window, orbitServer.url);
     if (!window.isDestroyed()) {
       window.show();
     }
@@ -206,23 +204,22 @@ async function createRuneWindow() {
 
 app.whenReady().then(async () => {
   await initializeDesktopCredentialVault();
-  app.setName("Orbit");
   if (process.platform === "darwin") {
     app.setActivationPolicy("regular");
     app.dock.setIcon(orbitAppIconPath);
   }
   desktopModelDiscovery = createDesktopModelDiscovery({ homeDirectory: app.getPath("home") });
-  ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);
-  ipcMain.handle("rune:export-legacy-office", exportLegacyOffice);
-  ipcMain.handle("rune:discover-models", () => desktopModelDiscovery.scan());
-  ipcMain.handle("rune:import-discovered-model", (_event, id) => desktopModelDiscovery.importCandidate(id));
-  await createRuneWindow();
+  ipcMain.handle("orbit:convert-legacy-office", convertLegacyOffice);
+  ipcMain.handle("orbit:export-legacy-office", exportLegacyOffice);
+  ipcMain.handle("orbit:discover-models", () => desktopModelDiscovery.scan());
+  ipcMain.handle("orbit:import-discovered-model", (_event, id) => desktopModelDiscovery.importCandidate(id));
+  await createOrbitWindow();
   app.on("activate", () => {
-    void createRuneWindow();
+    void createOrbitWindow();
   });
 });
 
 app.on("window-all-closed", () => {
-  runeServer?.server?.close();
+  orbitServer?.server?.close();
   if (process.platform !== "darwin") app.quit();
 });

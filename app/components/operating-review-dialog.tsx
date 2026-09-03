@@ -4,8 +4,8 @@ import { BarChart3, Check, FileText, LoaderCircle, Plus, Presentation, ShieldChe
 import { useMemo, useState, type FormEvent } from "react";
 import { artifactCreationSourceOptions } from "../lib/artifact-creation";
 import { formatChartValue } from "../lib/charts";
-import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
-import type { RuneModelMode } from "../lib/model-preference";
+import { localizeOrbitCopy, type OrbitLocale } from "../lib/localization";
+import type { OrbitModelMode } from "../lib/model-preference";
 import {
   MAX_OPERATING_REVIEW_FOCUS_CHARS,
   MAX_OPERATING_REVIEW_PERIOD_CHARS,
@@ -33,11 +33,11 @@ import { ReviewDialog } from "./review-dialog";
 
 type OperatingReviewDialogProps = {
   artifacts: WorkspaceArtifact[];
-  locale: RuneLocale;
+  locale: OrbitLocale;
   error?: string;
   initialInput?: OperatingReviewInput;
   preferredDataArtifactId?: string;
-  modelMode: RuneModelMode;
+  modelMode: OrbitModelMode;
   onCancel: () => void;
   onPrepare: (input: OperatingReviewInput) => void | Promise<void>;
 };
@@ -253,8 +253,8 @@ export const OPERATING_REVIEW_BASE_COPY = {
   },
 } as const;
 
-export function operatingReviewCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, OPERATING_REVIEW_BASE_COPY.en, OPERATING_REVIEW_BASE_COPY["zh-CN"]);
+export function operatingReviewCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, OPERATING_REVIEW_BASE_COPY.en, OPERATING_REVIEW_BASE_COPY["zh-CN"]);
 }
 
 function selectedDeliverables(report: boolean, slides: boolean): OperatingReviewDeliverable[] {
@@ -263,7 +263,7 @@ function selectedDeliverables(report: boolean, slides: boolean): OperatingReview
   );
 }
 
-function comparisonConnector(locale: RuneLocale) {
+function comparisonConnector(locale: OrbitLocale) {
   return (
     {
       "zh-CN": "对比",
@@ -275,7 +275,7 @@ function comparisonConnector(locale: RuneLocale) {
       ar: "مقابل",
       ja: "対",
       ko: "대비",
-    } satisfies Record<RuneLocale, string>
+    } satisfies Record<OrbitLocale, string>
   )[locale];
 }
 

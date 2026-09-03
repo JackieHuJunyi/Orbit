@@ -10,7 +10,7 @@ import {
   type PdfOcrRegion,
 } from "../lib/pdf-import";
 import type { WorkspacePdfOcrCandidate as PdfOcrCandidate } from "../lib/workspace-file-import";
-import { isChineseRuneLocale, localizeRuneCopy, type RuneLocale } from "../lib/localization";
+import { isChineseOrbitLocale, localizeOrbitCopy, type OrbitLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 export type PdfOcrSelection = {
@@ -120,10 +120,10 @@ export const PDF_OCR_BASE_COPY = {
   },
 } as const;
 
-function initialDrafts(candidates: PdfOcrCandidate[], locale: RuneLocale): Draft[] {
+function initialDrafts(candidates: PdfOcrCandidate[], locale: OrbitLocale): Draft[] {
   return candidates.map((candidate) => ({
     fileIndex: candidate.fileIndex,
-    language: isChineseRuneLocale(locale) ? "eng+chi_sim" : "eng",
+    language: isChineseOrbitLocale(locale) ? "eng+chi_sim" : "eng",
     pages: formatPdfPageSelection(candidate.analysis.ocrCandidatePageNumbers),
     regions: {},
   }));
@@ -380,7 +380,7 @@ export function PdfOcrSetupDialog({
   onRecognize,
 }: {
   candidates: PdfOcrCandidate[];
-  locale: RuneLocale;
+  locale: OrbitLocale;
   processing: boolean;
   progress: PdfOcrProgress | null;
   activeFileName?: string;
@@ -388,7 +388,7 @@ export function PdfOcrSetupDialog({
   onCancel: () => void;
   onRecognize: (selections: PdfOcrSelection[]) => void;
 }) {
-  const copy = localizeRuneCopy<typeof PDF_OCR_BASE_COPY.en>(locale, PDF_OCR_BASE_COPY.en, PDF_OCR_BASE_COPY.zh);
+  const copy = localizeOrbitCopy<typeof PDF_OCR_BASE_COPY.en>(locale, PDF_OCR_BASE_COPY.en, PDF_OCR_BASE_COPY.zh);
   const [drafts, setDrafts] = useState(() => initialDrafts(candidates, locale));
   const [validationError, setValidationError] = useState("");
   const selectedCount = useMemo(

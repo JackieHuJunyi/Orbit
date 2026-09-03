@@ -44,7 +44,7 @@ export type ImportedModelProfileDraft = {
 export type ModelProfileImportWarning = { code: "credential-missing" } | { code: "unsupported-fields"; count: number };
 
 export type ModelProfileImportResult = {
-  source: "rune-json" | "cc-switch-deeplink";
+  source: "orbit-json" | "cc-switch-deeplink";
   draft: ImportedModelProfileDraft;
   warnings: ModelProfileImportWarning[];
 };
@@ -313,7 +313,7 @@ function parseJsonImport(input: string) {
   if (Array.isArray(record.profiles) || Array.isArray(record.providers)) {
     fail("batch", "Import one model profile at a time.");
   }
-  return { record, source: "rune-json" as const };
+  return { record, source: "orbit-json" as const };
 }
 
 export function parseModelProfileImport(raw: string): ModelProfileImportResult {

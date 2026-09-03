@@ -28,7 +28,7 @@ test("paints the handwritten first-run ritual before client JavaScript", async (
 });
 
 test("keeps a returning user on the server-rendered workbench before hydration", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
+  await page.addInitScript(() => localStorage.setItem("orbit-onboarding-v1", "complete"));
   await page.route(/\.js(?:\?|$)/u, (route) => route.abort());
   await page.goto("/");
 
@@ -45,8 +45,8 @@ test("applies a saved appearance before hydration to prevent a light-theme flash
         {
           origin: "http://localhost:3000",
           localStorage: [
-            { name: "rune-onboarding-v1", value: "complete" },
-            { name: "rune-appearance-theme-v1", value: "space-black" },
+            { name: "orbit-onboarding-v1", value: "complete" },
+            { name: "orbit-appearance-theme-v1", value: "space-black" },
           ],
         },
       ],
@@ -179,7 +179,7 @@ test("makes model-assisted and model-free continuation visibly distinct", async 
 
 test("reveals a discovered credential only after review and saves only after verification", async ({ page }) => {
   await page.addInitScript(() => {
-    Object.defineProperty(window, "runeDesktop", {
+    Object.defineProperty(window, "orbitDesktop", {
       configurable: false,
       value: {
         discoverModels: async () => ({
@@ -201,7 +201,7 @@ test("reveals a discovered credential only after review and saves only after ver
           ],
         }),
         importDiscoveredModel: async () => {
-          window.sessionStorage.setItem("rune-test-credential-read", "yes");
+          window.sessionStorage.setItem("orbit-test-credential-read", "yes");
           return {
             provider: "deepseek",
             protocol: "anthropic-messages",
@@ -281,7 +281,7 @@ test("reveals a discovered credential only after review and saves only after ver
   await expect(modelStep.getByText("DeepSeek", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Claude Code", { exact: false })).toBeVisible();
   await expect(modelStep).not.toContainText("discovery-test-secret");
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("rune-test-credential-read"))).toBeNull();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-credential-read"))).toBeNull();
 
   await modelStep.getByRole("button", { name: "Review", exact: true }).click();
   await expect(modelStep.getByRole("heading", { name: "Use this model connection?" })).toBeFocused();
@@ -290,7 +290,7 @@ test("reveals a discovered credential only after review and saves only after ver
   await expect(modelStep).not.toContainText("discovery-test-secret");
 
   await modelStep.getByRole("button", { name: "Verify & use" }).click();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("rune-test-credential-read"))).toBe("yes");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-credential-read"))).toBe("yes");
   await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "probe", "upsert"]);
   expect(writes.every((item) => item.apiKey === "discovery-test-secret")).toBe(true);
   await expect(modelStep.getByRole("button", { name: /Continue with model assistance/u })).toBeVisible();
@@ -423,7 +423,7 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await composer.type("and keep my draft.");
   await expect(composer).toHaveValue("Explain the source assumptions\nand keep my draft.");
   await expect
-    .poll(() => page.evaluate(() => localStorage.getItem("rune-agent-draft-v1")))
+    .poll(() => page.evaluate(() => localStorage.getItem("orbit-agent-draft-v1")))
     .toBe("Explain the source assumptions\nand keep my draft.");
 
   await expect(modelPicker).toHaveValue("profile:flash");
@@ -441,11 +441,11 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await expect(composer).toHaveValue("A follow-up written while the model is working.");
   await page.getByRole("button", { name: "Discard proposed patch" }).click();
   await expect
-    .poll(() => page.evaluate(() => localStorage.getItem("rune-agent-draft-v1")))
+    .poll(() => page.evaluate(() => localStorage.getItem("orbit-agent-draft-v1")))
     .toBe("A follow-up written while the model is working.");
 
   await page.reload();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await page.locator(".agent-dock-trigger").click();
   await expect(page.getByRole("log").getByRole("listitem")).toHaveCount(4);
   await expect(page.getByRole("textbox", { name: "Describe an artifact change" })).toHaveValue(
@@ -597,14 +597,14 @@ test("writes the opening greeting as one restrained spectrum performance", async
       .flatMap((unit) => unit.getAnimations())
       .map((animation) => ("animationName" in animation ? String(animation.animationName) : "")),
   );
-  expect(animationNames).toContain("rune-greeting-pencil-write");
+  expect(animationNames).toContain("orbit-greeting-pencil-write");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeVisible();
   await expect(page.locator('.welcome-intro-grid[data-intro-phase="ready"]')).toBeVisible();
 });
 
 test("reveals the Arabic writing path right to left without splitting its shaping run", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("rune-locale-v1", "ar"));
+  await page.addInitScript(() => localStorage.setItem("orbit-locale-v1", "ar"));
   await page.goto("/");
 
   const greeting = page.locator('.welcome-greeting[data-greeting-locale="ar"]');
@@ -660,14 +660,14 @@ test("reviews, cancels, and atomically persists a checkpoint restore", async ({ 
   await review.getByRole("button", { name: "Confirm restore", exact: true }).click();
   await expect(review).toBeHidden();
   await expect(editor).toHaveValue(originalSource);
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}"));
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("orbit-workspace-v0") ?? "{}"));
   expect(stored.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(originalSource);
   expect(
     stored.checkpoints["q2-review"].some((checkpoint: { source: string }) => checkpoint.source === changedSource),
   ).toBe(true);
 
   await page.reload();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(editor).toHaveValue(originalSource);
 });
 
@@ -693,7 +693,7 @@ test("reviews a sample reset, preserves the full workspace, and restores it afte
   await expect(sampleReview).toBeHidden();
   await expect(editor).toHaveValue(changedSource);
   expect(
-    await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}").resetRecovery),
+    await page.evaluate(() => JSON.parse(localStorage.getItem("orbit-workspace-v0") ?? "{}").resetRecovery),
   ).toBeUndefined();
 
   await tools.click();
@@ -701,13 +701,13 @@ test("reviews a sample reset, preserves the full workspace, and restores it afte
   await sampleReview.getByRole("button", { name: "Restore sample", exact: true }).click();
   await expect(sampleReview).toBeHidden();
   await expect(editor).toHaveValue(originalSource);
-  let stored = await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}"));
+  let stored = await page.evaluate(() => JSON.parse(localStorage.getItem("orbit-workspace-v0") ?? "{}"));
   expect(stored.resetRecovery.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(
     changedSource,
   );
 
   await page.reload();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(editor).toHaveValue(originalSource);
   await tools.click();
   await page.getByRole("menuitem", { name: /Restore previous workspace/u }).click();
@@ -717,14 +717,14 @@ test("reviews a sample reset, preserves the full workspace, and restores it afte
   await recoveryReview.getByRole("button", { name: "Restore previous workspace", exact: true }).click();
   await expect(recoveryReview).toBeHidden();
   await expect(editor).toHaveValue(changedSource);
-  stored = await page.evaluate(() => JSON.parse(localStorage.getItem("rune-workspace-v0") ?? "{}"));
+  stored = await page.evaluate(() => JSON.parse(localStorage.getItem("orbit-workspace-v0") ?? "{}"));
   expect(stored.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(changedSource);
   expect(stored.resetRecovery.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review")?.source).toBe(
     originalSource,
   );
 
   await page.reload();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(editor).toHaveValue(changedSource);
 });
 
@@ -922,14 +922,14 @@ test("creates semantic HTML as the readable default presentation source", async 
   await dialog.getByRole("radio", { name: /Presentation authored in semantic HTML/ }).click();
   await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Launch narrative");
   const preview = dialog.getByRole("region", { name: "New source preview" });
-  await expect(preview).toContainText('data-rune-format="presentation-v1"');
+  await expect(preview).toContainText('data-orbit-format="presentation-v1"');
   await expect(preview).toContainText('<section class="slide cover"');
   await dialog.getByRole("button", { name: "Create source" }).click();
 
   await expect(dialog).toBeHidden();
   await expect(page.locator("aside.file-rail").getByText("launch-narrative.html", { exact: true })).toBeVisible();
   const editor = page.locator("textarea.source-editor");
-  await expect(editor).toHaveValue(/data-rune-title="Launch narrative"/u);
+  await expect(editor).toHaveValue(/data-orbit-title="Launch narrative"/u);
   await expect(editor).toHaveValue(/<span class="number">01 \/ 01<\/span>/u);
   await expect(page.locator(".deck-slide-page")).toHaveCount(1);
 

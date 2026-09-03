@@ -1,18 +1,18 @@
-export type RuneSurfaceKind = "single" | "list";
+export type OrbitSurfaceKind = "single" | "list";
 
-export type RuneSurfaceDefinition<SurfaceId extends string> = {
+export type OrbitSurfaceDefinition<SurfaceId extends string> = {
   id: SurfaceId;
-  kind: RuneSurfaceKind;
+  kind: OrbitSurfaceKind;
 };
 
-export type RuneSurfaceContribution<SurfaceId extends string, Value> = {
+export type OrbitSurfaceContribution<SurfaceId extends string, Value> = {
   id: string;
   surface: SurfaceId;
   order?: number;
   value: Value;
 };
 
-export type RuneSurfaceEntry<Value> = Readonly<{
+export type OrbitSurfaceEntry<Value> = Readonly<{
   id: string;
   order: number;
   value: Value;
@@ -21,17 +21,17 @@ export type RuneSurfaceEntry<Value> = Readonly<{
 const CONTRIBUTION_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 /**
- * A small React-free composition seam for Rune's interface chrome.
+ * A small React-free composition seam for Orbit's interface chrome.
  *
  * Surface owners declare cardinality. Features contribute ordered values and
  * receive a disposer, so hot reload, tests, and future desktop modules can
  * remove everything they added without patching the shell.
  */
-export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
-  definitions: readonly RuneSurfaceDefinition<SurfaceId>[],
+export function createOrbitSurfaceRegistry<SurfaceId extends string, Value>(
+  definitions: readonly OrbitSurfaceDefinition<SurfaceId>[],
 ) {
-  const surfaceKinds = new Map<SurfaceId, RuneSurfaceKind>();
-  const records = new Map<SurfaceId, Array<RuneSurfaceEntry<Value> & { sequence: number }>>();
+  const surfaceKinds = new Map<SurfaceId, OrbitSurfaceKind>();
+  const records = new Map<SurfaceId, Array<OrbitSurfaceEntry<Value> & { sequence: number }>>();
   let sequence = 0;
 
   definitions.forEach((definition) => {
@@ -42,7 +42,7 @@ export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
     records.set(definition.id, []);
   });
 
-  function register(contribution: RuneSurfaceContribution<SurfaceId, Value>) {
+  function register(contribution: OrbitSurfaceContribution<SurfaceId, Value>) {
     const kind = surfaceKinds.get(contribution.surface);
     if (!kind) throw new Error(`Orbit surface "${contribution.surface}" is not declared.`);
     if (!CONTRIBUTION_ID_PATTERN.test(contribution.id)) {
@@ -78,7 +78,7 @@ export function createRuneSurfaceRegistry<SurfaceId extends string, Value>(
     };
   }
 
-  function entries(surface: SurfaceId): readonly RuneSurfaceEntry<Value>[] {
+  function entries(surface: SurfaceId): readonly OrbitSurfaceEntry<Value>[] {
     if (!surfaceKinds.has(surface)) throw new Error(`Orbit surface "${surface}" is not declared.`);
     return Object.freeze(
       [...records.get(surface)!]

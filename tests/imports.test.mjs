@@ -8,7 +8,7 @@ import {
   validateWorkspaceImportReview,
 } from "../app/lib/imports.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
-import { prepareRuneImageAsset } from "../app/lib/local-assets.ts";
+import { prepareOrbitImageAsset } from "../app/lib/local-assets.ts";
 import { deckArtifactFixture } from "./deck-fixture.mjs";
 
 const onePixelPng = new Uint8Array(
@@ -90,14 +90,14 @@ test("bounds import source previews without changing source statistics", () => {
 });
 
 test("binds imported image sources and bytes into one exact reviewed transaction", async () => {
-  const asset = await prepareRuneImageAsset("proof.png", "image/png", onePixelPng.slice().buffer);
+  const asset = await prepareOrbitImageAsset("proof.png", "image/png", onePixelPng.slice().buffer);
   const imported = [
     {
       id: "portable-report",
       name: "portable-report.md",
       kind: "document",
       language: "Markdown",
-      source: `# Proof\n\n![proof](rune-asset:sha256:${asset.id})\n`,
+      source: `# Proof\n\n![proof](orbit-asset:sha256:${asset.id})\n`,
     },
   ];
   const prepared = prepareWorkspaceImportReview(defaultArtifacts, imported, "proof.docx", [], [asset, asset]);

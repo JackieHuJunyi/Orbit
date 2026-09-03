@@ -168,7 +168,7 @@ test("reviews byte-exact canonical source for every artifact family without star
     name: "source-image-document.md",
     kind: "document",
     language: "Markdown",
-    source: `# Image\n\n![Proof](rune-asset:sha256:${imageId})\n`,
+    source: `# Image\n\n![Proof](orbit-asset:sha256:${imageId})\n`,
   });
   const imageResult = await prepareWorkspaceFileExport("source", imageDocument, [imageDocument], forbiddenPorts);
   assert.match(imageResult.warnings.join("\n"), /1 local image reference remains/i);
@@ -253,7 +253,7 @@ test("fails before handoff on unsupported targets, truncated evidence, or missin
     name: "image-document.md",
     kind: "document",
     language: "Markdown",
-    source: `# Image\n\n![Proof](rune-asset:sha256:${imageId})\n`,
+    source: `# Image\n\n![Proof](orbit-asset:sha256:${imageId})\n`,
   };
   const requested = [];
   await assert.rejects(
@@ -273,7 +273,7 @@ test("keeps capability metadata eager and the complete export runtime behind one
   const [capabilities, runtime, workbench, exportMenu, menuFocus] = await Promise.all([
     readFile(new URL("../app/lib/workspace-file-export.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/workbench-export-menu.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/use-workbench-menu-focus.ts", import.meta.url), "utf8"),
   ]);

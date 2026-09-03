@@ -2,13 +2,13 @@
 
 import { Check, HardDrive, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { PreparedRuneImageAsset, RuneImageInsertion } from "../lib/local-assets";
-import type { RuneLocale } from "../lib/localization";
+import type { PreparedOrbitImageAsset, OrbitImageInsertion } from "../lib/local-assets";
+import type { OrbitLocale } from "../lib/localization";
 import { localImageActionCopy } from "../lib/workbench-surface-copy";
 import { ReviewDialog } from "./review-dialog";
 
 const LOCAL_IMAGE_COPY: Record<
-  RuneLocale,
+  OrbitLocale,
   {
     kicker: string;
     title: string;
@@ -164,7 +164,7 @@ const LOCAL_IMAGE_COPY: Record<
   },
 };
 
-export function localImageCopy(locale: RuneLocale) {
+export function localImageCopy(locale: OrbitLocale) {
   return { ...LOCAL_IMAGE_COPY[locale], ...localImageActionCopy(locale) };
 }
 
@@ -173,13 +173,13 @@ function readableBytes(bytes: number) {
   return `${(bytes / 1_048_576).toFixed(1)} MB`;
 }
 
-function LocalImagePreview({ asset }: { asset: PreparedRuneImageAsset }) {
+function LocalImagePreview({ asset }: { asset: PreparedOrbitImageAsset }) {
   const [previewUrl] = useState(() => {
     const bytes = asset.bytes.slice().buffer as ArrayBuffer;
     return URL.createObjectURL(new Blob([bytes], { type: asset.mimeType }));
   });
   useEffect(() => () => URL.revokeObjectURL(previewUrl), [previewUrl]);
-  // Rune has already verified these device-local bytes; a framework image optimizer would cross the local-only boundary.
+  // Orbit has already verified these device-local bytes; a framework image optimizer would cross the local-only boundary.
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={previewUrl} alt="" />;
 }
@@ -196,13 +196,13 @@ export function LocalImageReviewDialog({
   onCancel,
   onConfirm,
 }: {
-  asset: PreparedRuneImageAsset;
+  asset: PreparedOrbitImageAsset;
   artifactName: string;
-  insertion: RuneImageInsertion;
+  insertion: OrbitImageInsertion;
   alt: string;
   error: string;
   submitting: boolean;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onAltChange: (value: string) => void;
   onCancel: () => void;
   onConfirm: () => void;

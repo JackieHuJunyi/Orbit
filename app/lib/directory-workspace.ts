@@ -2,16 +2,16 @@ import { z } from "zod";
 import { detectArtifact, type ArtifactKind, type WorkspaceArtifact } from "./workspace.ts";
 import { validateWorkspaceArtifacts } from "./patches.ts";
 import {
-  extractRuneAssetIds,
-  MAX_RUNE_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGES,
-  prepareRuneImageAsset,
-  type PreparedRuneImageAsset,
+  extractOrbitAssetIds,
+  MAX_ORBIT_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGES,
+  prepareOrbitImageAsset,
+  type PreparedOrbitImageAsset,
 } from "./local-assets.ts";
 
-export const WORKSPACE_MANIFEST_NAME = "rune.workspace.json";
-export const WORKSPACE_ASSET_DIRECTORY_NAME = ".rune-assets";
+export const WORKSPACE_MANIFEST_NAME = "orbit.workspace.json";
+export const WORKSPACE_ASSET_DIRECTORY_NAME = ".orbit-assets";
 export const MAX_DIRECTORY_ARTIFACTS = 50;
 export const MAX_DIRECTORY_FILE_BYTES = 2 * 1024 * 1024;
 export const MAX_DIRECTORY_TOTAL_BYTES = 8 * 1024 * 1024;
@@ -84,7 +84,7 @@ const ManifestAssetSchema = z
       .max(180)
       .refine((name) => !/[\\/\0]/u.test(name), "Asset names must be plain file names."),
     mimeType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
-    size: z.number().int().min(1).max(MAX_RUNE_IMAGE_BYTES),
+    size: z.number().int().min(1).max(MAX_ORBIT_IMAGE_BYTES),
   })
   .strict();
 
@@ -92,7 +92,7 @@ export const WorkspaceManifestSchema = z
   .object({
     version: z.union([z.literal(1), z.literal(2)]),
     artifacts: z.array(ManifestArtifactSchema).min(1).max(MAX_DIRECTORY_ARTIFACTS),
-    assets: z.array(ManifestAssetSchema).max(MAX_RUNE_LOCAL_IMAGES).optional(),
+    assets: z.array(ManifestAssetSchema).max(MAX_ORBIT_LOCAL_IMAGES).optional(),
   })
   .strict()
   .superRefine((manifest, context) => {
@@ -120,7 +120,7 @@ export const WorkspaceManifestSchema = z
       assetIds.add(asset.id);
       assetBytes += asset.size;
     });
-    if (assetBytes > MAX_RUNE_LOCAL_IMAGE_BYTES)
+    if (assetBytes > MAX_ORBIT_LOCAL_IMAGE_BYTES)
       context.addIssue({ code: "custom", path: ["assets"], message: "Asset bytes exceed Orbit's 64 MB folder limit." });
   });
 
@@ -128,7 +128,7 @@ export type WorkspaceManifest = z.infer<typeof WorkspaceManifestSchema>;
 
 export type DirectoryReadResult = {
   artifacts: WorkspaceArtifact[];
-  assets: PreparedRuneImageAsset[];
+  assets: PreparedOrbitImageAsset[];
   errors: string[];
   source: "manifest" | "scan" | "empty";
 };
@@ -140,7 +140,7 @@ function formatManifestError(error: z.ZodError) {
   });
 }
 
-function assetExtension(mimeType: PreparedRuneImageAsset["mimeType"]) {
+function assetExtension(mimeType: PreparedOrbitImageAsset["mimeType"]) {
   return mimeType === "image/png"
     ? "png"
     : mimeType === "image/jpeg"
@@ -150,17 +150,17 @@ function assetExtension(mimeType: PreparedRuneImageAsset["mimeType"]) {
         : "gif";
 }
 
-export function workspaceAssetFileName(asset: Pick<PreparedRuneImageAsset, "id" | "mimeType">) {
+export function workspaceAssetFileName(asset: Pick<PreparedOrbitImageAsset, "id" | "mimeType">) {
   return `${asset.id}.${assetExtension(asset.mimeType)}`;
 }
 
 export function buildWorkspaceManifest(
   artifacts: WorkspaceArtifact[],
-  assets: PreparedRuneImageAsset[] = [],
+  assets: PreparedOrbitImageAsset[] = [],
 ): WorkspaceManifest {
   const mismatched = artifacts.find((artifact) => !validateDetectedKind(artifact.name, artifact.source, artifact.kind));
   if (mismatched) throw new Error(`${mismatched.name} does not match its declared ${mismatched.kind} kind.`);
-  const referencedIds = new Set(artifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)));
+  const referencedIds = new Set(artifacts.flatMap((artifact) => extractOrbitAssetIds(artifact.source)));
   const assetById = new Map(assets.map((asset) => [asset.id, asset] as const));
   const missing = [...referencedIds].find((id) => !assetById.has(id));
   if (missing) throw new Error(`Referenced local image is missing: ${missing}`);
@@ -173,7 +173,7 @@ export function buildWorkspaceManifest(
   });
 }
 
-export function serializeWorkspaceManifest(artifacts: WorkspaceArtifact[], assets: PreparedRuneImageAsset[] = []) {
+export function serializeWorkspaceManifest(artifacts: WorkspaceArtifact[], assets: PreparedOrbitImageAsset[] = []) {
   return `${JSON.stringify(buildWorkspaceManifest(artifacts, assets), null, 2)}\n`;
 }
 
@@ -268,12 +268,12 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
       artifacts.push({ ...entry, source });
     }
     const errors = validateWorkspaceArtifacts(artifacts);
-    const referencedIds = new Set(artifacts.flatMap((artifact) => extractRuneAssetIds(artifact.source)));
+    const referencedIds = new Set(artifacts.flatMap((artifact) => extractOrbitAssetIds(artifact.source)));
     const manifestAssets = parsed.manifest.assets ?? [];
     if (referencedIds.size !== manifestAssets.length || manifestAssets.some((asset) => !referencedIds.has(asset.id))) {
       errors.push("Workspace image references do not exactly match the manifest asset list.");
     }
-    const assets: PreparedRuneImageAsset[] = [];
+    const assets: PreparedOrbitImageAsset[] = [];
     if (manifestAssets.length) {
       const assetDirectory = await optionalAssetDirectory(directory);
       if (!assetDirectory) errors.push(`Manifest asset folder not found: ${WORKSPACE_ASSET_DIRECTORY_NAME}`);
@@ -283,7 +283,7 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
             const handle = await assetDirectory.getFileHandle(workspaceAssetFileName(asset));
             const file = await handle.getFile();
             if (file.size !== asset.size) throw new Error("size does not match the manifest");
-            const prepared = await prepareRuneImageAsset(asset.name, asset.mimeType, await file.arrayBuffer());
+            const prepared = await prepareOrbitImageAsset(asset.name, asset.mimeType, await file.arrayBuffer());
             if (prepared.id !== asset.id) throw new Error("content hash does not match the manifest");
             assets.push(prepared);
           } catch (error) {
@@ -325,7 +325,7 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
     if (detected) artifacts.push({ ...detected, id: stableArtifactId(candidate.name, usedIds) });
   }
   const errors = validateWorkspaceArtifacts(artifacts);
-  if (artifacts.some((artifact) => extractRuneAssetIds(artifact.source).length))
+  if (artifacts.some((artifact) => extractOrbitAssetIds(artifact.source).length))
     errors.push("A manifest-free folder cannot resolve Orbit local image references.");
   return { artifacts: errors.length ? [] : artifacts, assets: [], errors, source: "scan" };
 }
@@ -333,13 +333,17 @@ export async function readWorkspaceDirectory(directory: DirectoryWorkspaceHandle
 export async function writeWorkspaceDirectory(
   directory: DirectoryWorkspaceHandle,
   artifacts: WorkspaceArtifact[],
-  assets: PreparedRuneImageAsset[] = [],
+  assets: PreparedOrbitImageAsset[] = [],
 ): Promise<string[]> {
   const validationErrors = validateWorkspaceArtifacts(artifacts);
   if (validationErrors.length) throw new Error(validationErrors[0]);
   buildWorkspaceManifest(artifacts, assets);
   for (const asset of assets) {
-    const verified = await prepareRuneImageAsset(asset.name, asset.mimeType, asset.bytes.slice().buffer as ArrayBuffer);
+    const verified = await prepareOrbitImageAsset(
+      asset.name,
+      asset.mimeType,
+      asset.bytes.slice().buffer as ArrayBuffer,
+    );
     if (verified.id !== asset.id || verified.size !== asset.size)
       throw new Error(`Folder asset failed content verification: ${asset.id}`);
   }

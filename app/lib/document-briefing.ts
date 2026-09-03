@@ -3,7 +3,7 @@ import { isDeckMarkdownArtifact, parseDeckSource } from "./deck.ts";
 import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
 import { derivePreviewSourceTargets } from "./preview-targets.ts";
 import { prepareWorkspaceMutation, type ArtifactCreationChange, type ArtifactSourcePatch } from "./patches.ts";
-import { normalizeRuneLocale, runeText, type RuneLocale } from "./localization.ts";
+import { normalizeOrbitLocale, orbitText, type OrbitLocale } from "./localization.ts";
 import { portableSourceRevision } from "./source-revision.ts";
 import {
   semanticHtmlPresentationFromDeckSource,
@@ -30,7 +30,7 @@ export type DocumentBriefingInput = {
   audience: DocumentBriefingAudience;
   focus: string;
   slideCount: DocumentBriefingSlideCount;
-  locale: RuneLocale;
+  locale: OrbitLocale;
 };
 
 export type DocumentBriefingPlan = {
@@ -45,7 +45,7 @@ export type DocumentBriefingTarget = {
   name: string;
   title: string;
   slideCount: number;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   audience?: DocumentBriefingAudience;
   purpose?: string;
   freshness: DocumentBriefingFreshness;
@@ -94,7 +94,7 @@ function documentBriefingPresentationFacts(artifact: WorkspaceArtifact) {
   return {
     title: metadata.title,
     slideCount: compilation.slides.length,
-    locale: normalizeRuneLocale(metadata.lang) ?? "en",
+    locale: normalizeOrbitLocale(metadata.lang) ?? "en",
     audience: metadata.audience,
     purpose: metadata.purpose,
     origin: metadata.origin,
@@ -249,17 +249,17 @@ export function prepareDocumentBriefingEvidence(artifacts: WorkspaceArtifact[], 
   return { source, evidenceUnits, errors: [] };
 }
 
-function audienceLabel(locale: RuneLocale, audience: DocumentBriefingAudience) {
+function audienceLabel(locale: OrbitLocale, audience: DocumentBriefingAudience) {
   const english = audience === "leadership" ? "Leadership" : audience === "customer" ? "Customer" : "Team";
   const chinese = audience === "leadership" ? "管理层" : audience === "customer" ? "客户" : "团队";
-  return runeText(locale, english, chinese);
+  return orbitText(locale, english, chinese);
 }
 
 function deckSource(
   source: WorkspaceArtifact,
   input: DocumentBriefingInput,
   units: BriefingUnit[],
-  theme: "rune" | "rune-dark" = "rune",
+  theme: "orbit" | "orbit-dark" = "orbit",
   outline?: DocumentBriefingModelOutline,
 ) {
   const title = markdownInline(normalizePlainText(input.title));
@@ -277,7 +277,7 @@ function deckSource(
   const contentSlides = content
     .map(
       ({ unit, title: slideTitle, body }, index) => `<!-- layout: content -->
-<!-- eyebrow: ${runeText(input.locale, `Source ${index + 1}`, `来源 ${index + 1}`)} · ${sourceName} -->
+<!-- eyebrow: ${orbitText(input.locale, `Source ${index + 1}`, `来源 ${index + 1}`)} · ${sourceName} -->
 <!-- source-unit: ${unit.id} -->
 
 ## ${markdownInline(normalizePlainText(slideTitle))}
@@ -299,11 +299,11 @@ purpose: ${normalizePlainText(input.focus)}
 ---
 
 <!-- layout: cover -->
-<!-- eyebrow: ${runeText(input.locale, "Document briefing", "文档简报")} -->
+<!-- eyebrow: ${orbitText(input.locale, "Document briefing", "文档简报")} -->
 
 # ${title}
 
-${audience} · ${runeText(input.locale, "Compiled from one reviewed local source", "由一份已审核的本地来源编译")}
+${audience} · ${orbitText(input.locale, "Compiled from one reviewed local source", "由一份已审核的本地来源编译")}
 
 ---
 
@@ -312,13 +312,13 @@ ${contentSlides}
 ---
 
 <!-- layout: conclusion -->
-<!-- eyebrow: ${runeText(input.locale, "Purpose", "目标")} -->
+<!-- eyebrow: ${orbitText(input.locale, "Purpose", "目标")} -->
 
-## ${runeText(input.locale, "Use the source to guide the decision.", "让来源内容支撑下一步判断。")}
+## ${orbitText(input.locale, "Use the source to guide the decision.", "让来源内容支撑下一步判断。")}
 
 ${focus}
 
-${runeText(input.locale, "Source identity stays attached to this presentation; review the transaction before Orbit writes it.", "这份演示始终保留来源身份；Orbit 只会在你审核事务后写入。")}
+${orbitText(input.locale, "Source identity stays attached to this presentation; review the transaction before Orbit writes it.", "这份演示始终保留来源身份；Orbit 只会在你审核事务后写入。")}
 `;
 }
 
@@ -339,7 +339,7 @@ export function prepareDocumentBriefingWorkflow(
   const target = input.targetArtifactId
     ? artifacts.find((artifact) => artifact.id === input.targetArtifactId)
     : undefined;
-  let targetTheme: "rune" | "rune-dark" = "rune";
+  let targetTheme: "orbit" | "orbit-dark" = "orbit";
   if (input.targetArtifactId && !target) {
     errors.push(`Presentation target is missing: ${input.targetArtifactId}`);
   } else if (target) {

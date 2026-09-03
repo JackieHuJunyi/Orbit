@@ -17,6 +17,6 @@ Rules:
 - Never add a new versioned “cascade seal” to `globals.css`.
 - Never write a numeric `z-index` outside `tokens.css` in the modular system.
 - A component consumes semantic tokens; it does not invent a local spacing, radius, duration, or layer scale without extending tokens first.
-- Global overlays must remain under `.topbar` or a future portal root and use `--rune-layer-global-float`; pane disclosures use `--rune-layer-pane-float`; blocking reviews and onboarding use their own tiers.
+- Global overlays must remain under `.topbar` or a future portal root and use `--orbit-layer-global-float`; pane disclosures use `--orbit-layer-pane-float`; blocking reviews and onboarding use their own tiers.
 - Do not animate a structural ancestor with `forwards`, because the retained transform creates a stacking context. Entry motion uses `backwards`, leaving the settled element untransformed.
 - Test desktop, 960px stacked, 680px compact, short-height, RTL, and reduced-motion boundaries before publishing UI changes.

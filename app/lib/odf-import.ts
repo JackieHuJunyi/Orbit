@@ -8,10 +8,10 @@ import { strFromU8, unzipSync, type Unzipped } from "fflate";
 
 import { createImportedImageToken, finalizeImportedImages, type ImportedImageCandidate } from "./imported-images.ts";
 import {
-  MAX_RUNE_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGES,
-  type PreparedRuneImageAsset,
+  MAX_ORBIT_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGES,
+  type PreparedOrbitImageAsset,
 } from "./local-assets.ts";
 import { semanticHtmlPresentationFromDeckSource } from "./semantic-html-presentation.ts";
 import type { DataCell, WorkspaceArtifact } from "./workspace.ts";
@@ -60,7 +60,7 @@ export type OdfImportResult = {
 };
 
 export type OdfImportWithAssetsResult = OdfImportResult & {
-  assets: PreparedRuneImageAsset[];
+  assets: PreparedOrbitImageAsset[];
 };
 
 function extensionOf(name: string) {
@@ -137,9 +137,9 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
         if (imagePart) {
           imageEntries += 1;
           if (
-            imageEntries > MAX_RUNE_LOCAL_IMAGES ||
-            file.originalSize > MAX_RUNE_IMAGE_BYTES ||
-            expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES
+            imageEntries > MAX_ORBIT_LOCAL_IMAGES ||
+            file.originalSize > MAX_ORBIT_IMAGE_BYTES ||
+            expandedImageBytes + file.originalSize > MAX_ORBIT_LOCAL_IMAGE_BYTES
           ) {
             imageLimitWarning = true;
             return false;
@@ -176,7 +176,7 @@ function openPackage(kind: OdfKind, input: ArrayBuffer | Uint8Array, importImage
       paths,
       warnings: imageLimitWarning
         ? [
-            `Embedded OpenDocument images beyond Orbit's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
+            `Embedded OpenDocument images beyond Orbit's ${MAX_ORBIT_LOCAL_IMAGES}-image, ${MAX_ORBIT_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_ORBIT_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
           ]
         : [],
       importImages,
@@ -1002,7 +1002,7 @@ function convertOdpToDeck(fileName: string, context: PackageContext, content: Xm
       "---",
       "version: 1",
       `title: ${safeTitle}`,
-      "theme: rune",
+      "theme: orbit",
       "ratio: 16:9",
       `lang: ${language}`,
       "---",

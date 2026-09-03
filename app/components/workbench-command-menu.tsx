@@ -20,15 +20,15 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
-  filterRuneWorkbenchCommands,
-  runeCommandMenuCopy,
-  type RuneWorkbenchCommand,
-  type RuneWorkbenchCommandGroup,
-  type RuneWorkbenchCommandId,
+  filterOrbitWorkbenchCommands,
+  orbitCommandMenuCopy,
+  type OrbitWorkbenchCommand,
+  type OrbitWorkbenchCommandGroup,
+  type OrbitWorkbenchCommandId,
 } from "../lib/workbench-commands";
-import type { RuneLocale } from "../lib/localization";
+import type { OrbitLocale } from "../lib/localization";
 
-const GROUP_ORDER: RuneWorkbenchCommandGroup[] = ["create", "workspace", "view", "help"];
+const GROUP_ORDER: OrbitWorkbenchCommandGroup[] = ["create", "workspace", "view", "help"];
 
 const COMMAND_ICONS = {
   "new-artifact": FilePlus2,
@@ -45,9 +45,9 @@ const COMMAND_ICONS = {
   "toggle-files": PanelLeftOpen,
   "open-guide": BookOpen,
   "open-models": Settings,
-} satisfies Record<RuneWorkbenchCommandId, typeof FilePlus2>;
+} satisfies Record<OrbitWorkbenchCommandId, typeof FilePlus2>;
 
-function nextEnabledIndex(commands: readonly RuneWorkbenchCommand[], start: number, direction: 1 | -1) {
+function nextEnabledIndex(commands: readonly OrbitWorkbenchCommand[], start: number, direction: 1 | -1) {
   if (!commands.some((command) => !command.disabled)) return -1;
   for (let step = 1; step <= commands.length; step += 1) {
     const index = (start + direction * step + commands.length) % commands.length;
@@ -70,17 +70,17 @@ export function WorkbenchCommandMenu({
   onClose,
   onRun,
 }: {
-  commands: readonly RuneWorkbenchCommand[];
-  locale: RuneLocale;
+  commands: readonly OrbitWorkbenchCommand[];
+  locale: OrbitLocale;
   direction: "ltr" | "rtl";
   onClose: () => void;
-  onRun: (id: RuneWorkbenchCommandId) => void;
+  onRun: (id: OrbitWorkbenchCommandId) => void;
 }) {
-  const copy = runeCommandMenuCopy(locale);
+  const copy = orbitCommandMenuCopy(locale);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const results = useMemo(() => filterRuneWorkbenchCommands(commands, query), [commands, query]);
+  const results = useMemo(() => filterOrbitWorkbenchCommands(commands, query), [commands, query]);
   const [activeIndex, setActiveIndex] = useState(() => results.findIndex((command) => !command.disabled));
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function WorkbenchCommandMenu({
     document.getElementById(`command-menu-option-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  function run(command: RuneWorkbenchCommand | undefined) {
+  function run(command: OrbitWorkbenchCommand | undefined) {
     if (!command || command.disabled) return;
     onRun(command.id);
   }
@@ -157,7 +157,7 @@ export function WorkbenchCommandMenu({
             placeholder={copy.placeholder}
             onChange={(event) => {
               const nextQuery = event.currentTarget.value;
-              const nextIndex = filterRuneWorkbenchCommands(commands, nextQuery).findIndex(
+              const nextIndex = filterOrbitWorkbenchCommands(commands, nextQuery).findIndex(
                 (command) => !command.disabled,
               );
               setQuery(nextQuery);

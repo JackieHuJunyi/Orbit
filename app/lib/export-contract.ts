@@ -33,6 +33,6 @@ export function safeExportBaseName(name: string) {
       .replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-")
       .replace(/^\.+|\.+$/g, "")
       .trim()
-      .slice(0, 96) || "rune-export";
+      .slice(0, 96) || "orbit-export";
   return /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(cleaned) ? `orbit-${cleaned}` : cleaned;
 }

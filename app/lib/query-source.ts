@@ -16,7 +16,7 @@ export type QueryDataSourceResolution<T extends QuerySourceArtifactLike = QueryS
     artifact?: T;
   };
 
-const QUERY_DATA_DIRECTIVE_PREFIX = "-- rune:data";
+const QUERY_DATA_DIRECTIVE_PREFIX = "-- orbit:data";
 const MAX_QUERY_DATA_ARTIFACT_ID_CHARS = 120;
 
 function validArtifactId(value: string) {
@@ -30,27 +30,29 @@ export function formatQueryDataSourceDirective(artifactId: string) {
 
 export function parseQueryDataSourceDirective(source: string): QueryDataSourceDirective {
   const lines = source.split(/\r?\n/u);
-  const directiveLines = lines.flatMap((line, index) => (/^\s*--\s*rune:data\b/iu.test(line) ? [{ line, index }] : []));
+  const directiveLines = lines.flatMap((line, index) =>
+    /^\s*--\s*orbit:data\b/iu.test(line) ? [{ line, index }] : [],
+  );
   if (!directiveLines.length) return { explicit: false, errors: [] };
   if (directiveLines.length > 1) {
-    return { explicit: true, errors: ["A Query can declare only one -- rune:data source."] };
+    return { explicit: true, errors: ["A Query can declare only one -- orbit:data source."] };
   }
 
   const directive = directiveLines[0];
   const firstContentLine = lines.findIndex((line) => Boolean(line.trim()));
   if (directive.index !== firstContentLine) {
-    return { explicit: true, errors: ["Put -- rune:data on the first non-empty Query line."] };
+    return { explicit: true, errors: ["Put -- orbit:data on the first non-empty Query line."] };
   }
-  const match = directive.line.match(/^\s*--\s*rune:data\s+(.+?)\s*$/iu);
+  const match = directive.line.match(/^\s*--\s*orbit:data\s+(.+?)\s*$/iu);
   if (!match) {
-    return { explicit: true, errors: ['Use -- rune:data "artifact-id" to bind workspace_data.'] };
+    return { explicit: true, errors: ['Use -- orbit:data "artifact-id" to bind workspace_data.'] };
   }
 
   let artifactId: unknown;
   try {
     artifactId = JSON.parse(match[1]);
   } catch {
-    return { explicit: true, errors: ['Use a quoted artifact id: -- rune:data "artifact-id".'] };
+    return { explicit: true, errors: ['Use a quoted artifact id: -- orbit:data "artifact-id".'] };
   }
   if (typeof artifactId !== "string" || !validArtifactId(artifactId)) {
     return { explicit: true, errors: ["A Query Data source id must be a quoted 1–120 character string."] };

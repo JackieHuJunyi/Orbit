@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { MAX_RUNE_TASK_MODEL_RESPONSE_BYTES, prepareRuneTaskModelAssistance } from "../app/lib/task-model-planning.ts";
+import {
+  MAX_ORBIT_TASK_MODEL_RESPONSE_BYTES,
+  prepareOrbitTaskModelAssistance,
+} from "../app/lib/task-model-planning.ts";
 
 function dataArtifact(overrides = {}) {
   return {
@@ -88,7 +91,7 @@ test("keeps local-only tasks away from the injected network capability", async (
   const request = Object.freeze({ taskId: "operating-review", input: Object.freeze(operatingInput()) });
   let fetchCount = 0;
 
-  const result = await prepareRuneTaskModelAssistance(artifacts, request, {
+  const result = await prepareOrbitTaskModelAssistance(artifacts, request, {
     mode: "device-tools-only",
     fetcher: async () => {
       fetchCount += 1;
@@ -108,7 +111,7 @@ test("fails over locally before fetch when the exact source is missing or oversi
     fetchCount += 1;
     return response({});
   };
-  const missing = await prepareRuneTaskModelAssistance(
+  const missing = await prepareOrbitTaskModelAssistance(
     [],
     {
       taskId: "operating-review",
@@ -116,7 +119,7 @@ test("fails over locally before fetch when the exact source is missing or oversi
     },
     { mode: "model-assisted", fetcher },
   );
-  const oversized = await prepareRuneTaskModelAssistance(
+  const oversized = await prepareOrbitTaskModelAssistance(
     [documentArtifact({ source: "x".repeat(100_001) })],
     {
       taskId: "document-briefing",
@@ -135,7 +138,7 @@ test("validates an operating-review response against locally recompiled evidence
   const input = operatingInput();
   let requestCount = 0;
   let requested = 0;
-  const result = await prepareRuneTaskModelAssistance(
+  const result = await prepareOrbitTaskModelAssistance(
     [data],
     {
       taskId: "operating-review",
@@ -173,7 +176,7 @@ test("validates an operating-review response against locally recompiled evidence
 });
 
 test("rejects malformed or oversized task-model output into deterministic fallback", async () => {
-  const invalid = await prepareRuneTaskModelAssistance(
+  const invalid = await prepareOrbitTaskModelAssistance(
     [dataArtifact()],
     {
       taskId: "operating-review",
@@ -184,7 +187,7 @@ test("rejects malformed or oversized task-model output into deterministic fallba
       fetcher: async () => response({ narrative: { insights: [] } }),
     },
   );
-  const oversized = await prepareRuneTaskModelAssistance(
+  const oversized = await prepareOrbitTaskModelAssistance(
     [dataArtifact()],
     {
       taskId: "operating-review",
@@ -193,7 +196,7 @@ test("rejects malformed or oversized task-model output into deterministic fallba
     {
       mode: "model-assisted",
       fetcher: async () =>
-        response({ padding: "x".repeat(MAX_RUNE_TASK_MODEL_RESPONSE_BYTES), narrative: validNarrative() }),
+        response({ padding: "x".repeat(MAX_ORBIT_TASK_MODEL_RESPONSE_BYTES), narrative: validNarrative() }),
     },
   );
 
@@ -211,7 +214,7 @@ test("routes Document briefing through the same injected and evidence-bound clie
       { sourceUnitId: "source-2", title: "Decision", bullets: ["Agree the next decision after review."] },
     ],
   };
-  const result = await prepareRuneTaskModelAssistance(
+  const result = await prepareOrbitTaskModelAssistance(
     [document],
     {
       taskId: "document-briefing",

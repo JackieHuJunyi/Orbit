@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Check, LoaderCircle } from "lucide-react";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { createLineDiffPreview } from "../lib/patches";
 import type { VisualDocumentBlockStructureAction } from "../lib/visual-document-block-structure";
 import { ReviewDialog } from "./review-dialog";
@@ -27,13 +27,13 @@ export function DocumentStructureReviewDialog({
   warnings: string[];
   error: string;
   submitting: boolean;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const diff = createLineDiffPreview(beforeSource, nextSource, 24);
   const destructive = action === "delete";
-  const copy = runeUICopy(locale);
+  const copy = orbitUICopy(locale);
   return (
     <ReviewDialog
       dialogId="document-structure-review"

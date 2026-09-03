@@ -22,10 +22,10 @@ async function observationEntries(handle: DirectoryWorkspaceHandle) {
   const entries: Array<[string, number, number | null]> = [];
   for await (const [name, entry] of handle.entries()) {
     if (entry.kind === "file") {
-      if (name !== "rune.workspace.json" && !/\.(?:md|markdown|csv|json|sql|html|htm)$/iu.test(name)) continue;
+      if (name !== "orbit.workspace.json" && !/\.(?:md|markdown|csv|json|sql|html|htm)$/iu.test(name)) continue;
       const file = await entry.getFile();
       entries.push([name, file.size, Number.isFinite(file.lastModified) ? (file.lastModified as number) : null]);
-    } else if (name === ".rune-assets" && entry.entries) {
+    } else if (name === ".orbit-assets" && entry.entries) {
       for await (const [assetName, asset] of entry.entries()) {
         if (asset.kind !== "file") continue;
         const file = await asset.getFile();

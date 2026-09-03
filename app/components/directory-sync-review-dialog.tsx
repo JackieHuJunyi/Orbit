@@ -2,7 +2,7 @@
 
 import { ArrowDown, Check, FolderInput, FolderOutput, HardDrive, LoaderCircle, ShieldCheck } from "lucide-react";
 import type { DirectorySyncPlan } from "../lib/directory-sync";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 const MAX_VISIBLE_CHANGES = 12;
@@ -16,13 +16,13 @@ export function DirectorySyncReviewDialog({
   onConfirm,
 }: {
   plan: DirectorySyncPlan;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   error: string;
   submitting: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const copy = runeUICopy(locale).directorySync;
+  const copy = orbitUICopy(locale).directorySync;
   const pulling = plan.mode === "pull";
   const initializing = plan.mode === "initialize";
   const title = pulling ? copy.pullTitle : initializing ? copy.initializeTitle : copy.pushTitle;
@@ -63,7 +63,7 @@ export function DirectorySyncReviewDialog({
               disabled={submitting}
               onClick={onCancel}
             >
-              {runeUICopy(locale).common.cancel}
+              {orbitUICopy(locale).common.cancel}
             </button>
             <button className="button primary-button" type="button" disabled={submitting} onClick={onConfirm}>
               {submitting ? (

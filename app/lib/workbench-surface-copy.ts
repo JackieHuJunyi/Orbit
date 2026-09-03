@@ -1,4 +1,4 @@
-import { localizeRuneCopy, type RuneLocale } from "./localization";
+import { localizeOrbitCopy, type OrbitLocale } from "./localization";
 
 export const OPERATING_REVIEW_NOTICE_BASE_COPY = {
   "zh-CN": {
@@ -61,7 +61,7 @@ export const PILOT_EVIDENCE_NOTICE_BASE_COPY = {
   },
 } as const;
 
-const LOCAL_IMAGE_ACTION_COPY: Record<RuneLocale, { insertLocal: string; insertLocalAtCursor: string }> = {
+const LOCAL_IMAGE_ACTION_COPY: Record<OrbitLocale, { insertLocal: string; insertLocalAtCursor: string }> = {
   en: { insertLocal: "Insert local image", insertLocalAtCursor: "Insert local image at the source cursor" },
   "zh-CN": { insertLocal: "插入本机图片", insertLocalAtCursor: "在源内容光标处插入本机图片" },
   "zh-TW": { insertLocal: "插入本機圖片", insertLocalAtCursor: "在來源內容游標處插入本機圖片" },
@@ -82,7 +82,7 @@ const LOCAL_IMAGE_ACTION_COPY: Record<RuneLocale, { insertLocal: string; insertL
   ko: { insertLocal: "로컬 이미지 삽입", insertLocalAtCursor: "소스 커서 위치에 로컬 이미지 삽입" },
 };
 
-const DEFERRED_SURFACE_COPY: Record<RuneLocale, { preparing: string }> = {
+const DEFERRED_SURFACE_COPY: Record<OrbitLocale, { preparing: string }> = {
   en: { preparing: "Preparing Orbit…" },
   "zh-CN": { preparing: "Orbit 正在准备…" },
   "zh-TW": { preparing: "Orbit 正在準備…" },
@@ -94,22 +94,22 @@ const DEFERRED_SURFACE_COPY: Record<RuneLocale, { preparing: string }> = {
   ko: { preparing: "Orbit 준비 중…" },
 };
 
-export function operatingReviewNoticeCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, OPERATING_REVIEW_NOTICE_BASE_COPY.en, OPERATING_REVIEW_NOTICE_BASE_COPY["zh-CN"]);
+export function operatingReviewNoticeCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, OPERATING_REVIEW_NOTICE_BASE_COPY.en, OPERATING_REVIEW_NOTICE_BASE_COPY["zh-CN"]);
 }
 
-export function documentBriefingNoticeCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, DOCUMENT_BRIEFING_NOTICE_BASE_COPY.en, DOCUMENT_BRIEFING_NOTICE_BASE_COPY["zh-CN"]);
+export function documentBriefingNoticeCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, DOCUMENT_BRIEFING_NOTICE_BASE_COPY.en, DOCUMENT_BRIEFING_NOTICE_BASE_COPY["zh-CN"]);
 }
 
-export function pilotEvidenceNoticeCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, PILOT_EVIDENCE_NOTICE_BASE_COPY.en, PILOT_EVIDENCE_NOTICE_BASE_COPY["zh-CN"]);
+export function pilotEvidenceNoticeCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, PILOT_EVIDENCE_NOTICE_BASE_COPY.en, PILOT_EVIDENCE_NOTICE_BASE_COPY["zh-CN"]);
 }
 
-export function localImageActionCopy(locale: RuneLocale) {
+export function localImageActionCopy(locale: OrbitLocale) {
   return LOCAL_IMAGE_ACTION_COPY[locale];
 }
 
-export function deferredSurfaceCopy(locale: RuneLocale) {
+export function deferredSurfaceCopy(locale: OrbitLocale) {
   return DEFERRED_SURFACE_COPY[locale];
 }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { DEFAULT_OPENAI_MODEL, modelProviderStatus, normalizeRuneModelMode } from "../app/lib/model-preference.ts";
+import { DEFAULT_OPENAI_MODEL, modelProviderStatus, normalizeOrbitModelMode } from "../app/lib/model-preference.ts";
 import { GET as getModelStatus } from "../app/api/model-status/route.ts";
 import {
   DEFAULT_MODEL_TOKEN_BUDGET,
@@ -24,12 +24,12 @@ import {
 import { GET as getModelProfiles, POST as postModelProfiles } from "../app/api/model-profiles/route.ts";
 
 test("normalizes only non-secret Orbit model preferences", () => {
-  assert.equal(normalizeRuneModelMode("model-assisted"), "model-assisted");
-  assert.equal(normalizeRuneModelMode("device-tools-only"), "device-tools-only");
-  assert.equal(normalizeRuneModelMode("auto"), "model-assisted");
-  assert.equal(normalizeRuneModelMode("local"), "device-tools-only");
-  assert.equal(normalizeRuneModelMode("openai"), null);
-  assert.equal(normalizeRuneModelMode(null), null);
+  assert.equal(normalizeOrbitModelMode("model-assisted"), "model-assisted");
+  assert.equal(normalizeOrbitModelMode("device-tools-only"), "device-tools-only");
+  assert.equal(normalizeOrbitModelMode("auto"), "model-assisted");
+  assert.equal(normalizeOrbitModelMode("local"), "device-tools-only");
+  assert.equal(normalizeOrbitModelMode("openai"), null);
+  assert.equal(normalizeOrbitModelMode(null), null);
 });
 
 test("exposes model readiness without exposing the server credential", () => {
@@ -188,7 +188,7 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
   assert.equal(ollama.protocol, "chat-completions");
   assert.equal(ollama.apiKey, "");
   assert.equal(modelProviderAvailableInEnvironment("ollama", {}), false);
-  assert.equal(modelProviderAvailableInEnvironment("ollama", { RUNE_DESKTOP_RUNTIME: "1" }), true);
+  assert.equal(modelProviderAvailableInEnvironment("ollama", { ORBIT_DESKTOP_RUNTIME: "1" }), true);
   assert.equal(modelProviderAvailableInEnvironment("openai", {}), true);
   assert.throws(
     () =>
@@ -205,14 +205,14 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
 });
 
 test("encrypts personal credentials in an HttpOnly cookie and rejects tampering", async () => {
-  const environment = { NODE_ENV: "production", RUNE_CREDENTIAL_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef" };
-  const request = new Request("https://rune.example/api/model-profiles");
+  const environment = { NODE_ENV: "production", ORBIT_CREDENTIAL_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef" };
+  const request = new Request("https://orbit.example/api/model-profiles");
   const profile = normalizeModelProfileDraft(
     {
       provider: "custom",
       name: "Research gateway",
       baseURL: "https://models.example.com/v1",
-      model: "rune-model-1",
+      model: "orbit-model-1",
       apiKey: "personal-secret",
     },
     undefined,
@@ -221,14 +221,14 @@ test("encrypts personal credentials in an HttpOnly cookie and rejects tampering"
   );
   const vault = { version: 1, activeProfileId: profile.id, failoverEnabled: false, profiles: [profile] };
   const cookie = await serializeModelProfileVaultCookie(request, vault, environment);
-  assert.match(cookie, /^rune_model_profiles_v1=/);
+  assert.match(cookie, /^orbit_model_profiles_v1=/);
   assert.match(cookie, /HttpOnly/);
   assert.match(cookie, /SameSite=Strict/);
   assert.match(cookie, /Path=\/api/);
   assert.match(cookie, /Secure/);
   assert.doesNotMatch(cookie, /personal-secret|Research gateway/);
 
-  const readRequest = new Request("https://rune.example/api/model-profiles", {
+  const readRequest = new Request("https://orbit.example/api/model-profiles", {
     headers: { cookie: cookie.split(";", 1)[0] },
   });
   assert.deepEqual(await readModelProfileVault(readRequest, environment), vault);
@@ -240,7 +240,7 @@ test("encrypts personal credentials in an HttpOnly cookie and rejects tampering"
   const tamperIndex = Math.floor(value.length / 2);
   const tampered = `${name}=${value.slice(0, tamperIndex)}${value[tamperIndex] === "a" ? "b" : "a"}${value.slice(tamperIndex + 1)}`;
   const empty = await readModelProfileVault(
-    new Request("https://rune.example", { headers: { cookie: tampered } }),
+    new Request("https://orbit.example", { headers: { cookie: tampered } }),
     environment,
   );
   assert.deepEqual(empty.profiles, []);
@@ -264,17 +264,17 @@ test("migrates existing v1 profiles without a protocol to the provider's explici
 });
 
 test("model profile route saves, redacts, activates, and deletes personal profiles", async () => {
-  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousNodeEnvironment = process.env.NODE_ENV;
   const previousKey = process.env.OPENAI_API_KEY;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "abcdef0123456789abcdef0123456789";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "abcdef0123456789abcdef0123456789";
   process.env.NODE_ENV = "production";
   delete process.env.OPENAI_API_KEY;
   try {
     const save = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({
           action: "upsert",
           profile: {
@@ -296,9 +296,9 @@ test("model profile route saves, redacts, activates, and deletes personal profil
     const cookie = save.headers.get("set-cookie").split(";", 1)[0];
 
     const refusedFailover = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", cookie, "content-type": "application/json" },
         body: JSON.stringify({ action: "failover", enabled: true }),
       }),
     );
@@ -307,9 +307,9 @@ test("model profile route saves, redacts, activates, and deletes personal profil
 
     process.env.OPENAI_API_KEY = "deployment-route-secret";
     const allowFailover = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", cookie, "content-type": "application/json" },
         body: JSON.stringify({ action: "failover", enabled: true }),
       }),
     );
@@ -318,15 +318,17 @@ test("model profile route saves, redacts, activates, and deletes personal profil
     assert.match(allowFailover.headers.get("set-cookie"), /HttpOnly/u);
     delete process.env.OPENAI_API_KEY;
 
-    const get = await getModelProfiles(new Request("https://rune.example/api/model-profiles", { headers: { cookie } }));
+    const get = await getModelProfiles(
+      new Request("https://orbit.example/api/model-profiles", { headers: { cookie } }),
+    );
     const listed = await get.json();
     assert.equal(listed.activeProfile.name, "Router");
     assert.doesNotMatch(JSON.stringify(listed), /route-secret/);
 
     const remove = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", cookie, "content-type": "application/json" },
         body: JSON.stringify({ action: "delete", profileId: saved.activeProfileId }),
       }),
     );
@@ -335,7 +337,7 @@ test("model profile route saves, redacts, activates, and deletes personal profil
     assert.equal((await remove.json()).configured, false);
 
     const crossOrigin = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
         headers: { origin: "https://evil.example", "content-type": "application/json" },
         body: JSON.stringify({ action: "activate", profileId: "anything" }),
@@ -344,8 +346,8 @@ test("model profile route saves, redacts, activates, and deletes personal profil
     assert.equal(crossOrigin.status, 403);
     assert.equal(MAX_MODEL_PROFILES, 3);
   } finally {
-    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
     if (previousNodeEnvironment === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousNodeEnvironment;
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
@@ -354,9 +356,9 @@ test("model profile route saves, redacts, activates, and deletes personal profil
 });
 
 test("fetches a bounded model catalog without following redirects or returning the credential", async () => {
-  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousFetch = globalThis.fetch;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "99999999999999999999999999999999";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "99999999999999999999999999999999";
   let providerRequest;
   globalThis.fetch = async (input, init) => {
     providerRequest = { input: String(input), init };
@@ -369,9 +371,9 @@ test("fetches a bounded model catalog without following redirects or returning t
   };
   try {
     const response = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({
           action: "models",
           profile: {
@@ -391,15 +393,15 @@ test("fetches a bounded model catalog without following redirects or returning t
     assert.doesNotMatch(JSON.stringify(payload), /catalog-secret/);
   } finally {
     globalThis.fetch = previousFetch;
-    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
   }
 });
 
 test("verifies DeepSeek through its canonical model catalog even when generation uses Anthropic Messages", async () => {
-  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousFetch = globalThis.fetch;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "deepseek-vault-key-0123456789abcdef";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "deepseek-vault-key-0123456789abcdef";
   let providerRequest;
   globalThis.fetch = async (input, init) => {
     providerRequest = { input: String(input), init };
@@ -409,9 +411,9 @@ test("verifies DeepSeek through its canonical model catalog even when generation
   };
   try {
     const response = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({
           action: "models",
           profile: {
@@ -432,21 +434,21 @@ test("verifies DeepSeek through its canonical model catalog even when generation
     assert.equal(headers.has("x-api-key"), false);
   } finally {
     globalThis.fetch = previousFetch;
-    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
   }
 });
 
 test("probes DeepSeek structured output before saving a discovered profile", async () => {
-  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousFetch = globalThis.fetch;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "deepseek-probe-vault-key-0123456789";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "deepseek-probe-vault-key-0123456789";
   let providerRequest;
   globalThis.fetch = async (input, init) => {
     providerRequest = { input: String(input), init, body: JSON.parse(String(init.body)) };
     return new Response(
       JSON.stringify({
-        content: [{ type: "tool_use", name: "submit_rune_plan", input: { ready: true } }],
+        content: [{ type: "tool_use", name: "submit_orbit_plan", input: { ready: true } }],
         usage: { input_tokens: 19, output_tokens: 4 },
       }),
       { headers: { "content-type": "application/json" } },
@@ -454,9 +456,9 @@ test("probes DeepSeek structured output before saving a discovered profile", asy
   };
   try {
     const response = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({
           action: "probe",
           profile: {
@@ -474,12 +476,12 @@ test("probes DeepSeek structured output before saving a discovered profile", asy
     assert.deepEqual(payload, { ready: true });
     assert.equal(providerRequest.input, "https://api.deepseek.com/anthropic/messages");
     assert.deepEqual(providerRequest.body.thinking, { type: "disabled" });
-    assert.equal(providerRequest.body.tool_choice.name, "submit_rune_plan");
+    assert.equal(providerRequest.body.tool_choice.name, "submit_orbit_plan");
     assert.doesNotMatch(JSON.stringify(payload), /probe-secret/u);
   } finally {
     globalThis.fetch = previousFetch;
-    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
   }
 });
 
@@ -494,24 +496,24 @@ test("requires catalog and structured-output checks before first-run save", asyn
 });
 
 test("keeps loopback model runtimes desktop-only and never invents an authorization header", async () => {
-  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-  const previousDesktopRuntime = process.env.RUNE_DESKTOP_RUNTIME;
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+  const previousDesktopRuntime = process.env.ORBIT_DESKTOP_RUNTIME;
   const previousFetch = globalThis.fetch;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "desktop-vault-key-0123456789abcdef";
-  delete process.env.RUNE_DESKTOP_RUNTIME;
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "desktop-vault-key-0123456789abcdef";
+  delete process.env.ORBIT_DESKTOP_RUNTIME;
   const profile = { provider: "ollama", name: "Ollama", model: "qwen3:8b", apiKey: "" };
   try {
     const webSave = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({ action: "upsert", profile }),
       }),
     );
     assert.equal(webSave.status, 400);
     assert.match((await webSave.json()).error, /desktop app/i);
 
-    process.env.RUNE_DESKTOP_RUNTIME = "1";
+    process.env.ORBIT_DESKTOP_RUNTIME = "1";
     let providerRequest;
     globalThis.fetch = async (input, init) => {
       providerRequest = { input: String(input), init };
@@ -520,9 +522,9 @@ test("keeps loopback model runtimes desktop-only and never invents an authorizat
       });
     };
     const catalog = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({ action: "models", profile }),
       }),
     );
@@ -532,9 +534,9 @@ test("keeps loopback model runtimes desktop-only and never invents an authorizat
     assert.equal(new Headers(providerRequest.init.headers).has("authorization"), false);
 
     const save = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", "content-type": "application/json" },
         body: JSON.stringify({ action: "upsert", profile }),
       }),
     );
@@ -542,40 +544,40 @@ test("keeps loopback model runtimes desktop-only and never invents an authorizat
     const saved = await save.json();
     assert.equal(saved.activeProfile.provider, "ollama");
     const cookie = save.headers.get("set-cookie").split(";", 1)[0];
-    delete process.env.RUNE_DESKTOP_RUNTIME;
+    delete process.env.ORBIT_DESKTOP_RUNTIME;
     const refusedActivation = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
-        headers: { origin: "https://rune.example", cookie, "content-type": "application/json" },
+        headers: { origin: "https://orbit.example", cookie, "content-type": "application/json" },
         body: JSON.stringify({ action: "activate", profileId: saved.activeProfileId }),
       }),
     );
     assert.equal(refusedActivation.status, 400);
     assert.deepEqual(
-      (await resolveModelRouting(new Request("https://rune.example/api/agent", { headers: { cookie } }), process.env))
+      (await resolveModelRouting(new Request("https://orbit.example/api/agent", { headers: { cookie } }), process.env))
         .connections,
       [],
     );
-    process.env.RUNE_DESKTOP_RUNTIME = "1";
+    process.env.ORBIT_DESKTOP_RUNTIME = "1";
     const desktopRouting = await resolveModelRouting(
-      new Request("https://rune.example/api/agent", { headers: { cookie } }),
+      new Request("https://orbit.example/api/agent", { headers: { cookie } }),
       process.env,
     );
     assert.equal(desktopRouting.connections[0]?.provider, "ollama");
     assert.equal(desktopRouting.connections[0]?.apiKey, "");
   } finally {
     globalThis.fetch = previousFetch;
-    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
-    if (previousDesktopRuntime === undefined) delete process.env.RUNE_DESKTOP_RUNTIME;
-    else process.env.RUNE_DESKTOP_RUNTIME = previousDesktopRuntime;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousDesktopRuntime === undefined) delete process.env.ORBIT_DESKTOP_RUNTIME;
+    else process.env.ORBIT_DESKTOP_RUNTIME = previousDesktopRuntime;
   }
 });
 
 test("personal profile takes precedence over the deployment connection", async () => {
   const environment = {
     NODE_ENV: "production",
-    RUNE_CREDENTIAL_ENCRYPTION_KEY: "fedcba9876543210fedcba9876543210",
+    ORBIT_CREDENTIAL_ENCRYPTION_KEY: "fedcba9876543210fedcba9876543210",
     OPENAI_API_KEY: "deployment-key",
     OPENAI_MODEL: "deployment-model",
   };
@@ -589,14 +591,14 @@ test("personal profile takes precedence over the deployment connection", async (
     "2026-08-13T00:00:00.000Z",
     () => "personal",
   );
-  const baseRequest = new Request("https://rune.example/api/model-profiles");
+  const baseRequest = new Request("https://orbit.example/api/model-profiles");
   const cookie = await serializeModelProfileVaultCookie(
     baseRequest,
     { version: 1, activeProfileId: "personal", profiles: [profile] },
     environment,
   );
   const connection = await resolveActiveModelConnection(
-    new Request("https://rune.example/api/agent", {
+    new Request("https://orbit.example/api/agent", {
       headers: { cookie: cookie.split(";", 1)[0] },
     }),
     environment,
@@ -608,7 +610,7 @@ test("personal profile takes precedence over the deployment connection", async (
 
 test("routing preserves the selected profile first and exposes fallbacks only after explicit authorization", async () => {
   const environment = {
-    RUNE_CREDENTIAL_ENCRYPTION_KEY: "routing-vault-key-0123456789abcdef",
+    ORBIT_CREDENTIAL_ENCRYPTION_KEY: "routing-vault-key-0123456789abcdef",
     OPENAI_API_KEY: "deployment-key",
   };
   const primary = normalizeModelProfileDraft(
@@ -623,7 +625,7 @@ test("routing preserves the selected profile first and exposes fallbacks only af
     "2026-08-19T00:00:00.000Z",
     () => "fallback",
   );
-  const baseRequest = new Request("https://rune.example/api/model-profiles");
+  const baseRequest = new Request("https://orbit.example/api/model-profiles");
   async function routing(failoverEnabled) {
     const cookie = await serializeModelProfileVaultCookie(
       baseRequest,
@@ -631,7 +633,7 @@ test("routing preserves the selected profile first and exposes fallbacks only af
       environment,
     );
     return resolveModelRouting(
-      new Request("https://rune.example/api/agent", { headers: { cookie: cookie.split(";", 1)[0] } }),
+      new Request("https://orbit.example/api/agent", { headers: { cookie: cookie.split(";", 1)[0] } }),
       environment,
     );
   }
@@ -650,9 +652,9 @@ test("routing preserves the selected profile first and exposes fallbacks only af
 });
 
 test("can switch from a personal profile back to the deployment model without deleting it", async () => {
-  const previousSecret = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousKey = process.env.OPENAI_API_KEY;
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "1234567890abcdef1234567890abcdef";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "1234567890abcdef1234567890abcdef";
   process.env.OPENAI_API_KEY = "deployment-secret";
   try {
     const profile = normalizeModelProfileDraft(
@@ -665,17 +667,17 @@ test("can switch from a personal profile back to the deployment model without de
       "2026-08-13T00:00:00.000Z",
       () => "personal",
     );
-    const request = new Request("https://rune.example/api/model-profiles");
+    const request = new Request("https://orbit.example/api/model-profiles");
     const cookie = await serializeModelProfileVaultCookie(request, {
       version: 1,
       activeProfileId: "personal",
       profiles: [profile],
     });
     const switched = await postModelProfiles(
-      new Request("https://rune.example/api/model-profiles", {
+      new Request("https://orbit.example/api/model-profiles", {
         method: "POST",
         headers: {
-          origin: "https://rune.example",
+          origin: "https://orbit.example",
           cookie: cookie.split(";", 1)[0],
           "content-type": "application/json",
         },
@@ -688,13 +690,13 @@ test("can switch from a personal profile back to the deployment model without de
     assert.equal(body.profiles.length, 1);
     const nextCookie = switched.headers.get("set-cookie").split(";", 1)[0];
     const connection = await resolveActiveModelConnection(
-      new Request("https://rune.example/api/agent", { headers: { cookie: nextCookie } }),
+      new Request("https://orbit.example/api/agent", { headers: { cookie: nextCookie } }),
     );
     assert.equal(connection?.source, "deployment");
     assert.equal(connection?.apiKey, "deployment-secret");
   } finally {
-    if (previousSecret === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-    else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previousKey;
   }

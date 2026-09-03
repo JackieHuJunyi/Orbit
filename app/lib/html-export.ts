@@ -5,12 +5,12 @@ import { compileDeckSource, isDeckMarkdownArtifact } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
 import {
-  extractRuneAssetIds,
-  parseRuneAssetReference,
-  renderRuneHtmlAssetReferences,
-  runeImageAssetMap,
-  runeImageDataUrl,
-  type RuneExportImageAsset,
+  extractOrbitAssetIds,
+  parseOrbitAssetReference,
+  renderOrbitHtmlAssetReferences,
+  orbitImageAssetMap,
+  orbitImageDataUrl,
+  type OrbitExportImageAsset,
 } from "./local-assets.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
@@ -18,9 +18,9 @@ import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 export const MAX_STANDALONE_HTML_BYTES = 12 * 1024 * 1024;
 
 const PORTABLE_EXPORT_HEAD = `<meta name="generator" content="Orbit" />
-<meta name="rune-export" content="standalone-deck-v1" />
+<meta name="orbit-export" content="standalone-deck-v1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:" />
-<style id="rune-portable-export">
+<style id="orbit-portable-export">
   @page{size:13.333333in 7.5in;margin:0}
   @media print{html,body{background:#fff!important}.deck{display:block;padding:0}.slide{width:13.333333in;height:7.5in;max-width:none;break-after:page;page-break-after:always;border-radius:0;box-shadow:none}.slide:last-child{break-after:auto;page-break-after:auto}}
 </style>`;
@@ -112,23 +112,23 @@ export function exportDeckHtml(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
-  imageAssets: readonly RuneExportImageAsset[] = [],
+  imageAssets: readonly OrbitExportImageAsset[] = [],
 ): ArtifactExportResult<"html"> {
   if (artifact.kind !== "slides") throw new Error("Standalone HTML export requires a presentation artifact.");
   const deckArtifact = isDeckMarkdownArtifact(artifact);
   const { compiledSource, charts } = resolvedCharts(artifact, workspace, querySnapshots);
-  const images = runeImageAssetMap(imageAssets);
-  const referencedImageIds = extractRuneAssetIds(compiledSource);
+  const images = orbitImageAssetMap(imageAssets);
+  const referencedImageIds = extractOrbitAssetIds(compiledSource);
   const missingImage = referencedImageIds.find((id) => !images.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Deck: ${unexpectedImage.id}`);
   const approvedDataUrls = new Set<string>();
   const resolveLocalAssetUrl = (reference: string) => {
-    const id = parseRuneAssetReference(reference);
+    const id = parseOrbitAssetReference(reference);
     const asset = id ? images.get(id) : null;
     if (!asset) return null;
-    const url = runeImageDataUrl(asset);
+    const url = orbitImageDataUrl(asset);
     approvedDataUrls.add(url);
     return url;
   };
@@ -140,7 +140,7 @@ export function exportDeckHtml(
   } else {
     const semantic = compileLegacyHtmlSlides(compiledSource);
     if (semantic.errors.length) throw new Error(semantic.errors[0]);
-    presentationHtml = renderRuneHtmlAssetReferences(compiledSource, resolveLocalAssetUrl);
+    presentationHtml = renderOrbitHtmlAssetReferences(compiledSource, resolveLocalAssetUrl);
   }
   const rendered = withPortableExportHead(
     renderChartReferencesToHtml(presentationHtml, (chartArtifactId) => {

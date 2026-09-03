@@ -15,9 +15,9 @@ import {
 } from "./model-profiles.ts";
 import { DEFAULT_OPENAI_MODEL } from "./model-preference.ts";
 
-const VAULT_AAD = new TextEncoder().encode("rune:model-profiles:v1");
+const VAULT_AAD = new TextEncoder().encode("orbit:model-profiles:v1");
 function vaultSecret(environment: Record<string, string | undefined>) {
-  const configured = environment.RUNE_CREDENTIAL_ENCRYPTION_KEY?.trim();
+  const configured = environment.ORBIT_CREDENTIAL_ENCRYPTION_KEY?.trim();
   if (configured && configured.length >= 32) return configured;
   return null;
 }
@@ -145,8 +145,8 @@ export function deploymentModelConnection(
     baseURL: "https://api.openai.com/v1",
     model: model && /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model) ? model : DEFAULT_OPENAI_MODEL,
     budget: normalizeModelTokenBudget({
-      maxInputTokens: Number(environment.RUNE_MODEL_MAX_INPUT_TOKENS),
-      maxOutputTokens: Number(environment.RUNE_MODEL_MAX_OUTPUT_TOKENS),
+      maxInputTokens: Number(environment.ORBIT_MODEL_MAX_INPUT_TOKENS),
+      maxOutputTokens: Number(environment.ORBIT_MODEL_MAX_OUTPUT_TOKENS),
     }),
     capabilities: modelCapabilityManifest("responses"),
   };

@@ -1,18 +1,18 @@
 import type { ArtifactExportKind } from "./export-contract.ts";
-import type { RuneTaskId } from "./task-runtime.ts";
+import type { OrbitTaskId } from "./task-runtime.ts";
 import { PORTABLE_SOURCE_REVISION_PATTERN, portableSourceRevision } from "./source-revision.ts";
 
-export const MAX_RUNE_TASK_RUNS = 24;
-export const MAX_RUNE_TASK_DELIVERIES = 24;
-export const MAX_RUNE_TASK_DURATION_MS = 30 * 60 * 1_000;
-export const MAX_RUNE_TASK_DELIVERY_MS = 365 * 24 * 60 * 60 * 1_000;
+export const MAX_ORBIT_TASK_RUNS = 24;
+export const MAX_ORBIT_TASK_DELIVERIES = 24;
+export const MAX_ORBIT_TASK_DURATION_MS = 30 * 60 * 1_000;
+export const MAX_ORBIT_TASK_DELIVERY_MS = 365 * 24 * 60 * 60 * 1_000;
 
-export type RuneTaskRunStatus = "applied" | "stopped";
-export type RuneTaskStopReason = "validation" | "runtime" | "stale" | "persistence" | "cancelled";
-export type RuneTaskDeliveryRating = "ready" | "minor-edits" | "not-ready";
-export type RuneTaskDeliveryMethod = "download" | "folder";
-export type RuneTaskDeliveryTarget = ArtifactExportKind | "md" | "deck-md" | "folder";
-export const RUNE_TASK_RUBRIC_DIMENSIONS = [
+export type OrbitTaskRunStatus = "applied" | "stopped";
+export type OrbitTaskStopReason = "validation" | "runtime" | "stale" | "persistence" | "cancelled";
+export type OrbitTaskDeliveryRating = "ready" | "minor-edits" | "not-ready";
+export type OrbitTaskDeliveryMethod = "download" | "folder";
+export type OrbitTaskDeliveryTarget = ArtifactExportKind | "md" | "deck-md" | "folder";
+export const ORBIT_TASK_RUBRIC_DIMENSIONS = [
   "numberCorrectness",
   "evidenceCompleteness",
   "conclusionUsefulness",
@@ -21,26 +21,26 @@ export const RUNE_TASK_RUBRIC_DIMENSIONS = [
   "changeComprehensibility",
   "timeSaved",
 ] as const;
-export type RuneTaskRubricDimension = (typeof RUNE_TASK_RUBRIC_DIMENSIONS)[number];
-export type RuneTaskRubricScore = 1 | 2 | 3 | 4 | 5;
-export type RuneTaskOutcomeRubric = Record<RuneTaskRubricDimension, RuneTaskRubricScore>;
-export type RuneTaskHumanEvaluation = {
+export type OrbitTaskRubricDimension = (typeof ORBIT_TASK_RUBRIC_DIMENSIONS)[number];
+export type OrbitTaskRubricScore = 1 | 2 | 3 | 4 | 5;
+export type OrbitTaskOutcomeRubric = Record<OrbitTaskRubricDimension, OrbitTaskRubricScore>;
+export type OrbitTaskHumanEvaluation = {
   version: 1;
   provenance: "authorized-or-redacted";
-  rubric: RuneTaskOutcomeRubric;
+  rubric: OrbitTaskOutcomeRubric;
 };
-export type RuneTaskDeliveryConfirmation = {
-  rating: RuneTaskDeliveryRating;
-  evaluation?: RuneTaskHumanEvaluation | null;
+export type OrbitTaskDeliveryConfirmation = {
+  rating: OrbitTaskDeliveryRating;
+  evaluation?: OrbitTaskHumanEvaluation | null;
 };
 
-export type RuneTaskRun = {
+export type OrbitTaskRun = {
   version: 1;
   id: string;
-  taskId: RuneTaskId;
+  taskId: OrbitTaskId;
   completedAt: string;
-  status: RuneTaskRunStatus;
-  stopReason: RuneTaskStopReason | null;
+  status: OrbitTaskRunStatus;
+  stopReason: OrbitTaskStopReason | null;
   provider: string;
   sourceArtifactId: string;
   sourceRevision: string;
@@ -54,43 +54,43 @@ export type RuneTaskRun = {
   outputTokens: number | null;
 };
 
-export type RuneTaskDeliveryOutcome = {
+export type OrbitTaskDeliveryOutcome = {
   version: 2;
   id: string;
   confirmedAt: string;
   runId: string;
-  taskId: RuneTaskId;
+  taskId: OrbitTaskId;
   artifactId: string;
-  method: RuneTaskDeliveryMethod;
-  target: RuneTaskDeliveryTarget;
-  rating: RuneTaskDeliveryRating;
+  method: OrbitTaskDeliveryMethod;
+  target: OrbitTaskDeliveryTarget;
+  rating: OrbitTaskDeliveryRating;
   sourceSha256: string;
   taskDurationMs: number;
-  evaluation: RuneTaskHumanEvaluation | null;
+  evaluation: OrbitTaskHumanEvaluation | null;
 };
 
-export type RuneTaskEvidence = {
+export type OrbitTaskEvidence = {
   version: 3;
-  runs: RuneTaskRun[];
-  deliveries: RuneTaskDeliveryOutcome[];
+  runs: OrbitTaskRun[];
+  deliveries: OrbitTaskDeliveryOutcome[];
 };
 
-export const EMPTY_RUNE_TASK_EVIDENCE: RuneTaskEvidence = {
+export const EMPTY_ORBIT_TASK_EVIDENCE: OrbitTaskEvidence = {
   version: 3,
   runs: [],
   deliveries: [],
 };
 
-export type RuneTaskRunIdentity = {
-  taskId: RuneTaskId;
+export type OrbitTaskRunIdentity = {
+  taskId: OrbitTaskId;
   sourceArtifactId: string;
   outputArtifactIds: readonly string[];
 };
 
-const TASK_IDS = new Set<RuneTaskId>(["operating-review", "document-briefing"]);
-const STOP_REASONS = new Set<RuneTaskStopReason>(["validation", "runtime", "stale", "persistence", "cancelled"]);
-const DELIVERY_RATINGS = new Set<RuneTaskDeliveryRating>(["ready", "minor-edits", "not-ready"]);
-const DOWNLOAD_TARGETS = new Set<RuneTaskDeliveryTarget>([
+const TASK_IDS = new Set<OrbitTaskId>(["operating-review", "document-briefing"]);
+const STOP_REASONS = new Set<OrbitTaskStopReason>(["validation", "runtime", "stale", "persistence", "cancelled"]);
+const DELIVERY_RATINGS = new Set<OrbitTaskDeliveryRating>(["ready", "minor-edits", "not-ready"]);
+const DOWNLOAD_TARGETS = new Set<OrbitTaskDeliveryTarget>([
   "csv",
   "json",
   "doc",
@@ -141,22 +141,22 @@ function normalizedOutputRevisions(value: unknown, outputArtifactIds: string[]) 
   return entries.every(([artifactId]) => outputArtifactIds.includes(artifactId)) ? revisions : undefined;
 }
 
-export function normalizeRuneTaskRuns(value: unknown): RuneTaskRun[] {
+export function normalizeOrbitTaskRuns(value: unknown): OrbitTaskRun[] {
   if (!Array.isArray(value)) return [];
-  const runs: RuneTaskRun[] = [];
+  const runs: OrbitTaskRun[] = [];
   const ids = new Set<string>();
-  for (const entry of value.slice(0, MAX_RUNE_TASK_RUNS * 2)) {
+  for (const entry of value.slice(0, MAX_ORBIT_TASK_RUNS * 2)) {
     if (!entry || typeof entry !== "object") continue;
-    const candidate = entry as Partial<RuneTaskRun>;
+    const candidate = entry as Partial<OrbitTaskRun>;
     const id = boundedText(candidate.id, 220);
-    const taskId = TASK_IDS.has(candidate.taskId as RuneTaskId) ? (candidate.taskId as RuneTaskId) : undefined;
+    const taskId = TASK_IDS.has(candidate.taskId as OrbitTaskId) ? (candidate.taskId as OrbitTaskId) : undefined;
     const completedAt = boundedText(candidate.completedAt, 40);
     const status = candidate.status === "applied" || candidate.status === "stopped" ? candidate.status : undefined;
     const stopReason =
       candidate.stopReason === null
         ? null
-        : STOP_REASONS.has(candidate.stopReason as RuneTaskStopReason)
-          ? (candidate.stopReason as RuneTaskStopReason)
+        : STOP_REASONS.has(candidate.stopReason as OrbitTaskStopReason)
+          ? (candidate.stopReason as OrbitTaskStopReason)
           : undefined;
     const provider = boundedText(candidate.provider, 40);
     const sourceArtifactId = boundedText(candidate.sourceArtifactId, 120);
@@ -171,7 +171,7 @@ export function normalizeRuneTaskRuns(value: unknown): RuneTaskRun[] {
     const changedFileCount = boundedInteger(candidate.changedFileCount, 7);
     const queryCount = boundedInteger(candidate.queryCount, 50);
     const chartConsumerCount = boundedInteger(candidate.chartConsumerCount, 50);
-    const durationMs = boundedInteger(candidate.durationMs, MAX_RUNE_TASK_DURATION_MS);
+    const durationMs = boundedInteger(candidate.durationMs, MAX_ORBIT_TASK_DURATION_MS);
     const inputTokens = candidate.inputTokens === null ? null : boundedInteger(candidate.inputTokens, 10_000_000);
     const outputTokens = candidate.outputTokens === null ? null : boundedInteger(candidate.outputTokens, 10_000_000);
     if (
@@ -218,17 +218,17 @@ export function normalizeRuneTaskRuns(value: unknown): RuneTaskRun[] {
       inputTokens,
       outputTokens,
     });
-    if (runs.length >= MAX_RUNE_TASK_RUNS) break;
+    if (runs.length >= MAX_ORBIT_TASK_RUNS) break;
   }
   return runs.sort((left, right) => right.completedAt.localeCompare(left.completedAt));
 }
 
-export function appendRuneTaskRun(evidence: RuneTaskEvidence, run: RuneTaskRun): RuneTaskEvidence {
-  const runs = normalizeRuneTaskRuns([run, ...evidence.runs]);
-  return normalizeRuneTaskEvidence({ ...evidence, version: 3, runs });
+export function appendOrbitTaskRun(evidence: OrbitTaskEvidence, run: OrbitTaskRun): OrbitTaskEvidence {
+  const runs = normalizeOrbitTaskRuns([run, ...evidence.runs]);
+  return normalizeOrbitTaskEvidence({ ...evidence, version: 3, runs });
 }
 
-export function summarizeRuneTaskRuns(runs: RuneTaskRun[]) {
+export function summarizeOrbitTaskRuns(runs: OrbitTaskRun[]) {
   const applied = runs.filter((run) => run.status === "applied");
   const modelRuns = runs.filter((run) => run.inputTokens != null && run.outputTokens != null);
   return {
@@ -245,18 +245,18 @@ export function summarizeRuneTaskRuns(runs: RuneTaskRun[]) {
   };
 }
 
-export function runeTaskDeliveryId(runId: string, artifactId: string) {
+export function orbitTaskDeliveryId(runId: string, artifactId: string) {
   return `delivery:${runId}:${artifactId}`;
 }
 
-export async function runeTaskSourceSha256(source: string) {
+export async function orbitTaskSourceSha256(source: string) {
   if (!globalThis.crypto?.subtle) throw new Error("This browser cannot create a local delivery revision proof.");
   const bytes = new TextEncoder().encode(source);
   const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-export function normalizeRuneTaskHumanEvaluation(value: unknown): RuneTaskHumanEvaluation | null {
+export function normalizeOrbitTaskHumanEvaluation(value: unknown): OrbitTaskHumanEvaluation | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as { version?: unknown; provenance?: unknown; rubric?: unknown };
   if (
@@ -269,43 +269,43 @@ export function normalizeRuneTaskHumanEvaluation(value: unknown): RuneTaskHumanE
     return null;
   const entries = Object.entries(candidate.rubric as Record<string, unknown>);
   if (
-    entries.length !== RUNE_TASK_RUBRIC_DIMENSIONS.length ||
-    entries.some(([dimension]) => !RUNE_TASK_RUBRIC_DIMENSIONS.includes(dimension as RuneTaskRubricDimension))
+    entries.length !== ORBIT_TASK_RUBRIC_DIMENSIONS.length ||
+    entries.some(([dimension]) => !ORBIT_TASK_RUBRIC_DIMENSIONS.includes(dimension as OrbitTaskRubricDimension))
   )
     return null;
-  const rubric = {} as RuneTaskOutcomeRubric;
-  for (const dimension of RUNE_TASK_RUBRIC_DIMENSIONS) {
+  const rubric = {} as OrbitTaskOutcomeRubric;
+  for (const dimension of ORBIT_TASK_RUBRIC_DIMENSIONS) {
     const score = (candidate.rubric as Record<string, unknown>)[dimension];
     if (!Number.isInteger(score) || Number(score) < 1 || Number(score) > 5) return null;
-    rubric[dimension] = Number(score) as RuneTaskRubricScore;
+    rubric[dimension] = Number(score) as OrbitTaskRubricScore;
   }
   return { version: 1, provenance: "authorized-or-redacted", rubric };
 }
 
-function normalizeRuneTaskDeliveries(value: unknown, runs: RuneTaskRun[]): RuneTaskDeliveryOutcome[] {
+function normalizeOrbitTaskDeliveries(value: unknown, runs: OrbitTaskRun[]): OrbitTaskDeliveryOutcome[] {
   if (!Array.isArray(value)) return [];
   const runById = new Map(runs.map((run) => [run.id, run] as const));
-  const deliveries: RuneTaskDeliveryOutcome[] = [];
+  const deliveries: OrbitTaskDeliveryOutcome[] = [];
   const ids = new Set<string>();
-  for (const entry of value.slice(0, MAX_RUNE_TASK_DELIVERIES * 2)) {
+  for (const entry of value.slice(0, MAX_ORBIT_TASK_DELIVERIES * 2)) {
     if (!entry || typeof entry !== "object") continue;
-    const candidate = entry as Partial<Omit<RuneTaskDeliveryOutcome, "version">> & { version?: unknown };
+    const candidate = entry as Partial<Omit<OrbitTaskDeliveryOutcome, "version">> & { version?: unknown };
     const id = boundedText(candidate.id, 380);
     const confirmedAt = boundedText(candidate.confirmedAt, 40);
     const runId = boundedText(candidate.runId, 220);
-    const taskId = TASK_IDS.has(candidate.taskId as RuneTaskId) ? (candidate.taskId as RuneTaskId) : undefined;
+    const taskId = TASK_IDS.has(candidate.taskId as OrbitTaskId) ? (candidate.taskId as OrbitTaskId) : undefined;
     const artifactId = boundedText(candidate.artifactId, 120);
     const method = candidate.method === "download" || candidate.method === "folder" ? candidate.method : undefined;
-    const target = typeof candidate.target === "string" ? (candidate.target as RuneTaskDeliveryTarget) : undefined;
-    const rating = DELIVERY_RATINGS.has(candidate.rating as RuneTaskDeliveryRating)
-      ? (candidate.rating as RuneTaskDeliveryRating)
+    const target = typeof candidate.target === "string" ? (candidate.target as OrbitTaskDeliveryTarget) : undefined;
+    const rating = DELIVERY_RATINGS.has(candidate.rating as OrbitTaskDeliveryRating)
+      ? (candidate.rating as OrbitTaskDeliveryRating)
       : undefined;
-    const taskDurationMs = boundedInteger(candidate.taskDurationMs, MAX_RUNE_TASK_DELIVERY_MS);
+    const taskDurationMs = boundedInteger(candidate.taskDurationMs, MAX_ORBIT_TASK_DELIVERY_MS);
     const run = runId ? runById.get(runId) : undefined;
     const targetMatchesMethod =
       method === "folder"
         ? target === "folder"
-        : method === "download" && DOWNLOAD_TARGETS.has(target as RuneTaskDeliveryTarget);
+        : method === "download" && DOWNLOAD_TARGETS.has(target as OrbitTaskDeliveryTarget);
     if (
       (candidate.version !== 1 && candidate.version !== 2) ||
       !id ||
@@ -319,7 +319,7 @@ function normalizeRuneTaskDeliveries(value: unknown, runs: RuneTaskRun[]): RuneT
       run.status !== "applied" ||
       run.taskId !== taskId ||
       !run.outputArtifactIds.includes(artifactId) ||
-      id !== runeTaskDeliveryId(runId, artifactId) ||
+      id !== orbitTaskDeliveryId(runId, artifactId) ||
       !method ||
       !target ||
       !targetMatchesMethod ||
@@ -341,27 +341,27 @@ function normalizeRuneTaskDeliveries(value: unknown, runs: RuneTaskRun[]): RuneT
       rating,
       sourceSha256: candidate.sourceSha256 as string,
       taskDurationMs,
-      evaluation: candidate.version === 2 ? normalizeRuneTaskHumanEvaluation(candidate.evaluation) : null,
+      evaluation: candidate.version === 2 ? normalizeOrbitTaskHumanEvaluation(candidate.evaluation) : null,
     });
-    if (deliveries.length >= MAX_RUNE_TASK_DELIVERIES) break;
+    if (deliveries.length >= MAX_ORBIT_TASK_DELIVERIES) break;
   }
   return deliveries.sort((left, right) => right.confirmedAt.localeCompare(left.confirmedAt));
 }
 
-export function normalizeRuneTaskEvidence(value: unknown): RuneTaskEvidence {
-  if (!value || typeof value !== "object") return { ...EMPTY_RUNE_TASK_EVIDENCE };
-  const candidate = value as Partial<RuneTaskEvidence>;
+export function normalizeOrbitTaskEvidence(value: unknown): OrbitTaskEvidence {
+  if (!value || typeof value !== "object") return { ...EMPTY_ORBIT_TASK_EVIDENCE };
+  const candidate = value as Partial<OrbitTaskEvidence>;
   const version = (candidate as { version?: unknown }).version;
-  if (version !== 1 && version !== 2 && version !== 3) return { ...EMPTY_RUNE_TASK_EVIDENCE };
-  const runs = normalizeRuneTaskRuns(candidate.runs);
+  if (version !== 1 && version !== 2 && version !== 3) return { ...EMPTY_ORBIT_TASK_EVIDENCE };
+  const runs = normalizeOrbitTaskRuns(candidate.runs);
   return {
     version: 3,
     runs,
-    deliveries: normalizeRuneTaskDeliveries(candidate.deliveries, runs),
+    deliveries: normalizeOrbitTaskDeliveries(candidate.deliveries, runs),
   };
 }
 
-export function runeTaskRunMatchesIdentity(run: RuneTaskRun, identity: RuneTaskRunIdentity) {
+export function orbitTaskRunMatchesIdentity(run: OrbitTaskRun, identity: OrbitTaskRunIdentity) {
   if (
     run.taskId !== identity.taskId ||
     run.sourceArtifactId !== identity.sourceArtifactId ||
@@ -375,24 +375,24 @@ export function runeTaskRunMatchesIdentity(run: RuneTaskRun, identity: RuneTaskR
   );
 }
 
-export function runeTaskRunsForIdentity(evidence: RuneTaskEvidence, identity: RuneTaskRunIdentity) {
-  return normalizeRuneTaskEvidence(evidence).runs.filter((run) => runeTaskRunMatchesIdentity(run, identity));
+export function orbitTaskRunsForIdentity(evidence: OrbitTaskEvidence, identity: OrbitTaskRunIdentity) {
+  return normalizeOrbitTaskEvidence(evidence).runs.filter((run) => orbitTaskRunMatchesIdentity(run, identity));
 }
 
-export async function recordRuneTaskDelivery(input: {
-  evidence: RuneTaskEvidence;
+export async function recordOrbitTaskDelivery(input: {
+  evidence: OrbitTaskEvidence;
   runId: string;
   artifactId: string;
   source: string;
   currentSourceRevision: string;
   currentOutputRevisions: Record<string, string>;
-  method: RuneTaskDeliveryMethod;
-  target: RuneTaskDeliveryTarget;
-  rating: RuneTaskDeliveryRating;
-  evaluation?: RuneTaskHumanEvaluation | null;
+  method: OrbitTaskDeliveryMethod;
+  target: OrbitTaskDeliveryTarget;
+  rating: OrbitTaskDeliveryRating;
+  evaluation?: OrbitTaskHumanEvaluation | null;
   now?: Date;
 }) {
-  const evidence = normalizeRuneTaskEvidence(input.evidence);
+  const evidence = normalizeOrbitTaskEvidence(input.evidence);
   const run = evidence.runs.find((candidate) => candidate.id === input.runId);
   if (!run || run.status !== "applied") throw new Error("The applied task run is no longer available.");
   if (!run.outputArtifactIds.includes(input.artifactId))
@@ -420,17 +420,17 @@ export async function recordRuneTaskDelivery(input: {
   const completedAt = Date.parse(run.completedAt);
   if (Number.isNaN(completedAt) || Number.isNaN(confirmedAt.getTime()))
     throw new Error("The task run has no valid completion time.");
-  const outcomeId = runeTaskDeliveryId(run.id, input.artifactId);
+  const outcomeId = orbitTaskDeliveryId(run.id, input.artifactId);
   const previousEvaluation = evidence.deliveries.find((delivery) => delivery.id === outcomeId)?.evaluation ?? null;
   const evaluation =
     input.evaluation === undefined
       ? previousEvaluation
       : input.evaluation === null
         ? null
-        : normalizeRuneTaskHumanEvaluation(input.evaluation);
+        : normalizeOrbitTaskHumanEvaluation(input.evaluation);
   if (input.evaluation != null && !evaluation)
     throw new Error("The detailed task evaluation is incomplete or invalid.");
-  const outcome: RuneTaskDeliveryOutcome = {
+  const outcome: OrbitTaskDeliveryOutcome = {
     version: 2,
     id: outcomeId,
     confirmedAt: confirmedAt.toISOString(),
@@ -440,11 +440,11 @@ export async function recordRuneTaskDelivery(input: {
     method: input.method,
     target: input.target,
     rating: input.rating,
-    sourceSha256: await runeTaskSourceSha256(input.source),
+    sourceSha256: await orbitTaskSourceSha256(input.source),
     taskDurationMs: run.durationMs + Math.max(0, confirmedAt.getTime() - completedAt),
     evaluation,
   };
-  const deliveries = normalizeRuneTaskDeliveries(
+  const deliveries = normalizeOrbitTaskDeliveries(
     [outcome, ...evidence.deliveries.filter((delivery) => delivery.id !== outcome.id)],
     evidence.runs,
   );
@@ -453,17 +453,17 @@ export async function recordRuneTaskDelivery(input: {
   return { ...evidence, deliveries };
 }
 
-export function summarizeRuneTaskDeliveries(deliveries: RuneTaskDeliveryOutcome[]) {
+export function summarizeOrbitTaskDeliveries(deliveries: OrbitTaskDeliveryOutcome[]) {
   const usable = deliveries.filter((outcome) => outcome.rating === "ready" || outcome.rating === "minor-edits");
   const humanEvaluated = deliveries.filter((outcome) => outcome.evaluation);
-  const evaluatedRuns = new Map<string, RuneTaskDeliveryOutcome[]>();
+  const evaluatedRuns = new Map<string, OrbitTaskDeliveryOutcome[]>();
   for (const outcome of humanEvaluated) {
     const runOutcomes = evaluatedRuns.get(outcome.runId) ?? [];
     runOutcomes.push(outcome);
     evaluatedRuns.set(outcome.runId, runOutcomes);
   }
   const dimensionAverages = Object.fromEntries(
-    RUNE_TASK_RUBRIC_DIMENSIONS.map((dimension) => [
+    ORBIT_TASK_RUBRIC_DIMENSIONS.map((dimension) => [
       dimension,
       humanEvaluated.length
         ? Math.round(
@@ -473,7 +473,7 @@ export function summarizeRuneTaskDeliveries(deliveries: RuneTaskDeliveryOutcome[
           ) / 10
         : null,
     ]),
-  ) as Record<RuneTaskRubricDimension, number | null>;
+  ) as Record<OrbitTaskRubricDimension, number | null>;
   const pilotEligibleTasks = [...evaluatedRuns.values()].filter((outcomes) =>
     outcomes.every((outcome) => (outcome.evaluation?.rubric.numberCorrectness ?? 0) >= 4),
   ).length;

@@ -56,7 +56,7 @@ test("clamps first and last source targets and handles a non-scrollable editor",
 });
 
 test("workbench applies preview selection, source scrolling, and gutter synchronization together", async () => {
-  const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const workbench = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const previewScroll = await readFile(
     new URL("../app/components/use-source-preview-scroll.ts", import.meta.url),
     "utf8",

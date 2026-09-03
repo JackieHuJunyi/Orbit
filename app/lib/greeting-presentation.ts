@@ -1,24 +1,24 @@
 import { planGreetingMotion, type GreetingMotionPlan, type GreetingWritingScript } from "./greeting-motion.ts";
-import { localeDirection, type RuneLocale } from "./localization.ts";
+import { localeDirection, type OrbitLocale } from "./localization.ts";
 
 export type GreetingPresentationPlan = Readonly<{
   canvasWidth: number;
   completeAfterMs: number;
   direction: "ltr" | "rtl";
   isLong: boolean;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   motion: GreetingMotionPlan;
   renderMode: "tegaki-font" | "vector-centerline";
   script: GreetingWritingScript;
   value: string;
 }>;
 
-function greetingUnits(value: string, locale: RuneLocale) {
+function greetingUnits(value: string, locale: OrbitLocale) {
   if (localeDirection(locale) === "rtl") return [value];
   return value.match(/\P{Mark}\p{Mark}*|\p{Mark}+/gu) ?? Array.from(value);
 }
 
-function greetingScript(locale: RuneLocale): GreetingWritingScript {
+function greetingScript(locale: OrbitLocale): GreetingWritingScript {
   if (locale === "ar") return "arabic";
   if (locale === "ja") return "kana";
   if (locale === "ko") return "hangul";
@@ -32,7 +32,7 @@ export function planGreetingPresentation({
   value,
 }: {
   durationScale?: number;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   value: string;
 }): GreetingPresentationPlan {
   const direction = localeDirection(locale);

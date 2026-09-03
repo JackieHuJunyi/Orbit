@@ -94,7 +94,7 @@ test("accepts one bounded compiler-guided repair attempt as untrusted replacemen
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
   };
   const runtimeRepair = {
     attempt: 1,
@@ -105,7 +105,7 @@ test("accepts one bounded compiler-guided repair attempt as untrusted replacemen
         name: "analysis.sql",
         kind: "query",
         language: "DuckDB SQL",
-        proposedSource: '-- rune:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
+        proposedSource: '-- orbit:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
         isCreation: false,
       },
     ],
@@ -151,7 +151,7 @@ test("rejects runtime repair feedback that crosses a Selection boundary or its s
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT Value AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT Value AS total FROM workspace_data;',
   };
   const start = queryArtifact.source.indexOf("Value");
   const end = start + "Value".length;
@@ -198,7 +198,7 @@ test("rejects runtime repair feedback that crosses a Selection boundary or its s
         name: "analysis.sql",
         kind: "query",
         language: "DuckDB SQL",
-        proposedSource: `-- rune:data "data"\nSELECT '${"x".repeat(94_950)}' FROM workspace_data`,
+        proposedSource: `-- orbit:data "data"\nSELECT '${"x".repeat(94_950)}' FROM workspace_data`,
         isCreation: false,
       },
     ],
@@ -226,7 +226,7 @@ test("binds Workspace repair identities and action/error budgets to the supplied
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
   };
   const base = {
     ...request,
@@ -581,7 +581,7 @@ test("constrains query patches to read-only DuckDB SQL", () => {
   const instructions = buildAgentInstructions(queryRequest);
   assert.match(instructions, /read-only DuckDB/);
   assert.match(instructions, /workspace_data/);
-  assert.match(instructions, /-- rune:data/);
+  assert.match(instructions, /-- orbit:data/);
   assert.match(instructions, /exact existing Data artifact id/);
 });
 
@@ -621,7 +621,7 @@ function defaultDeckRequest() {
       name: "deck.deck.md",
       kind: "slides",
       language: "Deck Markdown",
-      source: "---\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n<!-- layout: cover -->\n\n# Deck",
+      source: "---\ntitle: Deck\ntheme: orbit\nratio: 16:9\nlang: en\n---\n\n<!-- layout: cover -->\n\n# Deck",
     },
   });
 }
@@ -661,7 +661,7 @@ test("builds a bounded workspace request with coordinated file instructions", ()
   assert.match(buildAgentInstructions(workspaceRequest), /earlier successful action/);
   assert.match(buildAgentInstructions(workspaceRequest), /append_chart/);
   assert.match(buildAgentInstructions(workspaceRequest), /Item,Value/);
-  assert.match(buildAgentInstructions(workspaceRequest), /explicit -- rune:data directive/);
+  assert.match(buildAgentInstructions(workspaceRequest), /explicit -- orbit:data directive/);
   assert.match(buildAgentInstructions(workspaceRequest), /strict Chart JSON/);
   assert.match(buildAgentInstructions(workspaceRequest), /0-8 edits/);
   assert.match(buildAgentInstructions(workspaceRequest), /find and replace/);
@@ -702,7 +702,7 @@ test("accepts bounded Query evidence only in Workspace scope and exposes it as a
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
   };
   const queryEvidence = [
     {

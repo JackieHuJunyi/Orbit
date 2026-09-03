@@ -1,36 +1,36 @@
-export const RUNE_ASSET_SCHEME = "rune-asset:sha256:";
-export const MAX_RUNE_IMAGE_BYTES = 8 * 1_024 * 1_024;
-export const MAX_RUNE_LOCAL_IMAGES = 40;
-export const MAX_RUNE_LOCAL_IMAGE_BYTES = 64 * 1_024 * 1_024;
-export const RUNE_IMAGE_ACCEPT = ".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif";
+export const ORBIT_ASSET_SCHEME = "orbit-asset:sha256:";
+export const MAX_ORBIT_IMAGE_BYTES = 8 * 1_024 * 1_024;
+export const MAX_ORBIT_LOCAL_IMAGES = 40;
+export const MAX_ORBIT_LOCAL_IMAGE_BYTES = 64 * 1_024 * 1_024;
+export const ORBIT_IMAGE_ACCEPT = ".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif";
 
-export type RuneImageMimeType = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+export type OrbitImageMimeType = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
 
-export type PreparedRuneImageAsset = {
+export type PreparedOrbitImageAsset = {
   id: string;
   name: string;
-  mimeType: RuneImageMimeType;
+  mimeType: OrbitImageMimeType;
   size: number;
   bytes: Uint8Array;
 };
 
-export type RuneImageInsertion = {
+export type OrbitImageInsertion = {
   nextSource: string;
   markdown: string;
   start: number;
   end: number;
 };
 
-export type RuneExportImageAsset = Pick<PreparedRuneImageAsset, "id" | "name" | "mimeType" | "size" | "bytes">;
+export type OrbitExportImageAsset = Pick<PreparedOrbitImageAsset, "id" | "name" | "mimeType" | "size" | "bytes">;
 
-export type RuneImageDimensions = { width: number; height: number };
+export type OrbitImageDimensions = { width: number; height: number };
 
-type RuneLocalAssetRecord = Omit<PreparedRuneImageAsset, "bytes"> & {
+type OrbitLocalAssetRecord = Omit<PreparedOrbitImageAsset, "bytes"> & {
   blob: Blob;
   createdAt: string;
 };
 
-const DATABASE_NAME = "rune-local-assets-v1";
+const DATABASE_NAME = "orbit-local-assets-v1";
 const DATABASE_VERSION = 1;
 const IMAGE_STORE = "images";
 const SHA256_ID = /^[0-9a-f]{64}$/u;
@@ -39,7 +39,7 @@ function startsWith(bytes: Uint8Array, signature: readonly number[]) {
   return signature.every((value, index) => bytes[index] === value);
 }
 
-export function detectRuneImageMimeType(bytes: Uint8Array): RuneImageMimeType | null {
+export function detectOrbitImageMimeType(bytes: Uint8Array): OrbitImageMimeType | null {
   if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
   if (
@@ -67,7 +67,7 @@ function normalizedAssetName(name: string) {
   return (normalized || "image").slice(0, 180);
 }
 
-export function runeImageAltFromName(name: string) {
+export function orbitImageAltFromName(name: string) {
   const base =
     normalizedAssetName(name)
       .replace(/\.(?:png|jpe?g|webp|gif)$/iu, "")
@@ -108,38 +108,38 @@ function validUtf16Boundary(value: string, offset: number) {
   return !(previous >= 0xd800 && previous <= 0xdbff && current >= 0xdc00 && current <= 0xdfff);
 }
 
-export function createRuneAssetReference(id: string) {
+export function createOrbitAssetReference(id: string) {
   if (!SHA256_ID.test(id)) throw new Error("Orbit asset identity must be one lowercase SHA-256 digest.");
-  return `${RUNE_ASSET_SCHEME}${id}`;
+  return `${ORBIT_ASSET_SCHEME}${id}`;
 }
 
-export function parseRuneAssetReference(value: unknown): string | null {
-  if (typeof value !== "string" || !value.startsWith(RUNE_ASSET_SCHEME)) return null;
-  const id = value.slice(RUNE_ASSET_SCHEME.length);
+export function parseOrbitAssetReference(value: unknown): string | null {
+  if (typeof value !== "string" || !value.startsWith(ORBIT_ASSET_SCHEME)) return null;
+  const id = value.slice(ORBIT_ASSET_SCHEME.length);
   return SHA256_ID.test(id) ? id : null;
 }
 
-export function parseRuneMarkdownImage(source: string) {
-  const match = source.match(/^\s*!\[((?:\\.|[^\]])*)\]\(\s*(rune-asset:sha256:[0-9a-f]{64})\s*\)\s*$/u);
+export function parseOrbitMarkdownImage(source: string) {
+  const match = source.match(/^\s*!\[((?:\\.|[^\]])*)\]\(\s*(orbit-asset:sha256:[0-9a-f]{64})\s*\)\s*$/u);
   if (!match) return null;
-  const id = parseRuneAssetReference(match[2]);
+  const id = parseOrbitAssetReference(match[2]);
   return id ? { id, alt: match[1].replace(/\\([\\`*_[\]{}#>+!~<>-])/gu, "$1").trim() } : null;
 }
 
-export function createRuneHtmlImageMarkup(alt: string, assetId: string) {
+export function createOrbitHtmlImageMarkup(alt: string, assetId: string) {
   const safeAlt = escapeHtmlAttribute(alt);
   if (!safeAlt) throw new Error("Describe the image before inserting it.");
-  return `<figure class="deck-image"><img src="${createRuneAssetReference(assetId)}" alt="${safeAlt}" decoding="async" /></figure>`;
+  return `<figure class="deck-image"><img src="${createOrbitAssetReference(assetId)}" alt="${safeAlt}" decoding="async" /></figure>`;
 }
 
-export function buildRuneHtmlImageInsertion(
+export function buildOrbitHtmlImageInsertion(
   source: string,
   offset: number,
   alt: string,
   assetId: string,
-): RuneImageInsertion {
+): OrbitImageInsertion {
   if (!validUtf16Boundary(source, offset)) throw new Error("The image insertion point is no longer valid.");
-  const markdown = createRuneHtmlImageMarkup(alt, assetId);
+  const markdown = createOrbitHtmlImageMarkup(alt, assetId);
   const before = source.slice(0, offset);
   const after = source.slice(offset);
   const leading = before.length && !before.endsWith("\n") ? "\n" : "";
@@ -153,34 +153,34 @@ export function buildRuneHtmlImageInsertion(
   };
 }
 
-function safeRuneImageRenderUrl(value: string | null) {
+function safeOrbitImageRenderUrl(value: string | null) {
   if (!value) return null;
   return value.startsWith("blob:") || /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/iu.test(value)
     ? value
     : null;
 }
 
-export function renderRuneHtmlAssetReferences(
+export function renderOrbitHtmlAssetReferences(
   source: string,
   resolveLocalAssetUrl?: (reference: string) => string | null,
 ) {
   if (!resolveLocalAssetUrl) return source;
   return source.replace(/<img\b[^>]*>/giu, (tag) => {
-    const sourceAttribute = tag.match(/\bsrc\s*=\s*(["'])(rune-asset:sha256:[0-9a-f]{64})\1/iu);
+    const sourceAttribute = tag.match(/\bsrc\s*=\s*(["'])(orbit-asset:sha256:[0-9a-f]{64})\1/iu);
     if (!sourceAttribute) return tag;
     const reference = sourceAttribute[2];
-    if (!parseRuneAssetReference(reference)) return tag;
-    const resolved = safeRuneImageRenderUrl(resolveLocalAssetUrl(reference));
+    if (!parseOrbitAssetReference(reference)) return tag;
+    const resolved = safeOrbitImageRenderUrl(resolveLocalAssetUrl(reference));
     if (!resolved) return tag;
     const escaped = resolved.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
     return tag.replace(sourceAttribute[0], `src="${escaped}"`);
   });
 }
 
-export function extractRuneAssetIds(source: string) {
+export function extractOrbitAssetIds(source: string) {
   const ids: string[] = [];
   const seen = new Set<string>();
-  const pattern = /rune-asset:sha256:([0-9a-f]{64})/gu;
+  const pattern = /orbit-asset:sha256:([0-9a-f]{64})/gu;
   for (const match of source.matchAll(pattern)) {
     const id = match[1];
     if (!seen.has(id)) {
@@ -191,7 +191,7 @@ export function extractRuneAssetIds(source: string) {
   return ids;
 }
 
-export function runeImageExtension(mimeType: RuneImageMimeType) {
+export function orbitImageExtension(mimeType: OrbitImageMimeType) {
   return mimeType === "image/png"
     ? "png"
     : mimeType === "image/jpeg"
@@ -213,11 +213,11 @@ function uint32Be(bytes: Uint8Array, offset: number) {
   return (bytes[offset] * 0x1_000_000 + (bytes[offset + 1] << 16) + (bytes[offset + 2] << 8) + bytes[offset + 3]) >>> 0;
 }
 
-export function runeImageDimensions(
+export function orbitImageDimensions(
   bytes: Uint8Array,
-  mimeType = detectRuneImageMimeType(bytes),
-): RuneImageDimensions | null {
-  let dimensions: RuneImageDimensions | null = null;
+  mimeType = detectOrbitImageMimeType(bytes),
+): OrbitImageDimensions | null {
+  let dimensions: OrbitImageDimensions | null = null;
   if (mimeType === "image/png" && bytes.length >= 24) {
     dimensions = { width: uint32Be(bytes, 16), height: uint32Be(bytes, 20) };
   } else if (mimeType === "image/gif" && bytes.length >= 10) {
@@ -272,19 +272,19 @@ export function runeImageDimensions(
     : null;
 }
 
-export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) {
-  const byId = new Map<string, RuneExportImageAsset>();
+export function orbitImageAssetMap(assets: readonly OrbitExportImageAsset[] = []) {
+  const byId = new Map<string, OrbitExportImageAsset>();
   for (const asset of assets) {
     if (!SHA256_ID.test(asset.id)) throw new Error("Orbit export image identity must be one lowercase SHA-256 digest.");
     if (byId.has(asset.id)) throw new Error(`Orbit export image is duplicated: ${asset.id}`);
-    const detected = detectRuneImageMimeType(asset.bytes);
+    const detected = detectOrbitImageMimeType(asset.bytes);
     if (
       !detected ||
       detected !== asset.mimeType ||
-      !runeImageDimensions(asset.bytes, detected) ||
+      !orbitImageDimensions(asset.bytes, detected) ||
       asset.size !== asset.bytes.length ||
       !asset.bytes.length ||
-      asset.bytes.length > MAX_RUNE_IMAGE_BYTES
+      asset.bytes.length > MAX_ORBIT_IMAGE_BYTES
     ) {
       throw new Error(`Orbit export image is invalid: ${asset.id}`);
     }
@@ -293,7 +293,7 @@ export function runeImageAssetMap(assets: readonly RuneExportImageAsset[] = []) 
   return byId;
 }
 
-export function runeImageDataUrl(asset: RuneExportImageAsset) {
+export function orbitImageDataUrl(asset: OrbitExportImageAsset) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   let encoded = "";
   for (let index = 0; index < asset.bytes.length; index += 3) {
@@ -309,16 +309,16 @@ export function runeImageDataUrl(asset: RuneExportImageAsset) {
   return `data:${asset.mimeType};base64,${encoded}`;
 }
 
-export function buildRuneImageInsertion(
+export function buildOrbitImageInsertion(
   source: string,
   offset: number,
   alt: string,
   assetId: string,
-): RuneImageInsertion {
+): OrbitImageInsertion {
   if (!validUtf16Boundary(source, offset)) throw new Error("The image insertion point is no longer valid.");
   const safeAlt = escapeMarkdownAlt(alt);
   if (!safeAlt) throw new Error("Describe the image before inserting it.");
-  const markdown = `![${safeAlt}](${createRuneAssetReference(assetId)})`;
+  const markdown = `![${safeAlt}](${createOrbitAssetReference(assetId)})`;
   const before = source.slice(0, offset);
   const after = source.slice(offset);
   const leading = before.length && !before.endsWith("\n\n") ? (before.endsWith("\n") ? "\n" : "\n\n") : "";
@@ -332,16 +332,16 @@ export function buildRuneImageInsertion(
   };
 }
 
-export async function prepareRuneImageAsset(
+export async function prepareOrbitImageAsset(
   name: string,
   claimedMimeType: string,
   input: ArrayBuffer,
-): Promise<PreparedRuneImageAsset> {
+): Promise<PreparedOrbitImageAsset> {
   const bytes = new Uint8Array(input.slice(0));
   if (!bytes.length) throw new Error("The selected image is empty.");
-  if (bytes.length > MAX_RUNE_IMAGE_BYTES)
-    throw new Error(`Images are limited to ${MAX_RUNE_IMAGE_BYTES / 1_048_576} MB each.`);
-  const mimeType = detectRuneImageMimeType(bytes);
+  if (bytes.length > MAX_ORBIT_IMAGE_BYTES)
+    throw new Error(`Images are limited to ${MAX_ORBIT_IMAGE_BYTES / 1_048_576} MB each.`);
+  const mimeType = detectOrbitImageMimeType(bytes);
   if (!mimeType) throw new Error("Choose a real PNG, JPEG, WebP, or GIF image.");
   if (
     claimedMimeType &&
@@ -370,7 +370,7 @@ function openAssetDatabase() {
   });
 }
 
-export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
+export async function putOrbitImageAsset(asset: PreparedOrbitImageAsset) {
   const database = await openAssetDatabase();
   try {
     return await new Promise<boolean>((resolve, reject) => {
@@ -383,9 +383,9 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
         if (lookup.result) return;
         const all = store.getAll();
         all.onsuccess = () => {
-          const records = Array.isArray(all.result) ? (all.result as RuneLocalAssetRecord[]) : [];
-          if (records.length >= MAX_RUNE_LOCAL_IMAGES) {
-            policyError = new Error(`Orbit stores at most ${MAX_RUNE_LOCAL_IMAGES} local images on one device.`);
+          const records = Array.isArray(all.result) ? (all.result as OrbitLocalAssetRecord[]) : [];
+          if (records.length >= MAX_ORBIT_LOCAL_IMAGES) {
+            policyError = new Error(`Orbit stores at most ${MAX_ORBIT_LOCAL_IMAGES} local images on one device.`);
             transaction.abort();
             return;
           }
@@ -393,15 +393,15 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
             (total, record) => total + (Number.isFinite(record.size) ? record.size : 0),
             0,
           );
-          if (currentBytes + asset.size > MAX_RUNE_LOCAL_IMAGE_BYTES) {
+          if (currentBytes + asset.size > MAX_ORBIT_LOCAL_IMAGE_BYTES) {
             policyError = new Error(
-              `Orbit local images are limited to ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB on one device.`,
+              `Orbit local images are limited to ${MAX_ORBIT_LOCAL_IMAGE_BYTES / 1_048_576} MB on one device.`,
             );
             transaction.abort();
             return;
           }
           created = true;
-          const record: RuneLocalAssetRecord = {
+          const record: OrbitLocalAssetRecord = {
             id: asset.id,
             name: asset.name,
             mimeType: asset.mimeType,
@@ -422,19 +422,19 @@ export async function putRuneImageAsset(asset: PreparedRuneImageAsset) {
   }
 }
 
-export async function getRuneImageAsset(id: string): Promise<PreparedRuneImageAsset | null> {
+export async function getOrbitImageAsset(id: string): Promise<PreparedOrbitImageAsset | null> {
   if (!SHA256_ID.test(id)) return null;
   const database = await openAssetDatabase();
   try {
-    const record = await new Promise<RuneLocalAssetRecord | null>((resolve, reject) => {
+    const record = await new Promise<OrbitLocalAssetRecord | null>((resolve, reject) => {
       const request = database.transaction(IMAGE_STORE, "readonly").objectStore(IMAGE_STORE).get(id);
       request.onsuccess = () =>
-        resolve(request.result?.blob instanceof Blob ? (request.result as RuneLocalAssetRecord) : null);
+        resolve(request.result?.blob instanceof Blob ? (request.result as OrbitLocalAssetRecord) : null);
       request.onerror = () => reject(request.error ?? new Error("Orbit could not read this local image."));
     });
-    if (!record || !record.blob.size || record.blob.size > MAX_RUNE_IMAGE_BYTES) return null;
+    if (!record || !record.blob.size || record.blob.size > MAX_ORBIT_IMAGE_BYTES) return null;
     const bytes = new Uint8Array(await record.blob.arrayBuffer());
-    const mimeType = detectRuneImageMimeType(bytes);
+    const mimeType = detectOrbitImageMimeType(bytes);
     if (!mimeType) return null;
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     const actualId = [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
@@ -445,12 +445,12 @@ export async function getRuneImageAsset(id: string): Promise<PreparedRuneImageAs
   }
 }
 
-export async function getRuneImageBlob(id: string) {
-  const asset = await getRuneImageAsset(id);
+export async function getOrbitImageBlob(id: string) {
+  const asset = await getOrbitImageAsset(id);
   return asset ? new Blob([asset.bytes.buffer as ArrayBuffer], { type: asset.mimeType }) : null;
 }
 
-export async function deleteRuneImageAsset(id: string) {
+export async function deleteOrbitImageAsset(id: string) {
   if (!SHA256_ID.test(id)) return;
   const database = await openAssetDatabase();
   try {

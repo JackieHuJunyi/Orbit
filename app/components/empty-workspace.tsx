@@ -11,7 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useState, type DragEvent } from "react";
-import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
+import { localizeOrbitCopy, type OrbitLocale } from "../lib/localization";
 
 export const EMPTY_WORKSPACE_BASE_COPY = {
   "zh-CN": {
@@ -48,8 +48,8 @@ export const EMPTY_WORKSPACE_BASE_COPY = {
   },
 } as const;
 
-function emptyWorkspaceCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, EMPTY_WORKSPACE_BASE_COPY.en, EMPTY_WORKSPACE_BASE_COPY["zh-CN"]);
+function emptyWorkspaceCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, EMPTY_WORKSPACE_BASE_COPY.en, EMPTY_WORKSPACE_BASE_COPY["zh-CN"]);
 }
 
 export function EmptyWorkspace({
@@ -61,7 +61,7 @@ export function EmptyWorkspace({
   onDropFiles,
   onOpenSample,
 }: {
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onStartReview: () => void;
   onStartBriefing: () => void;
   onChooseFiles: () => void;

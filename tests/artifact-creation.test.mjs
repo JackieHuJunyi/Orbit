@@ -57,7 +57,7 @@ test("creates complete semantic HTML that compiles from one readable cover slide
   assert.match(parsed.slides[0].source, /<h1>Board Narrative<\/h1>/);
   assert.deepEqual(semanticHtmlPresentationMetadata(prepared.artifact.source), {
     title: "Board Narrative",
-    theme: "rune",
+    theme: "orbit",
     lang: "en",
   });
 });

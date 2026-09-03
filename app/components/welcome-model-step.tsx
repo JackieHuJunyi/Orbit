@@ -21,9 +21,9 @@ import {
   supportsDesktopModelDiscovery,
   type DiscoveredModelConnection,
 } from "../lib/desktop-bridge";
-import type { RuneLocale } from "../lib/localization";
+import type { OrbitLocale } from "../lib/localization";
 import type { ModelProfilesState } from "../lib/model-profiles";
-import type { ModelProviderStatus, RuneModelMode } from "../lib/model-preference";
+import type { ModelProviderStatus, OrbitModelMode } from "../lib/model-preference";
 
 export type WelcomeModelCopy = Readonly<{
   back: string;
@@ -111,11 +111,11 @@ export function WelcomeModelStep({
   onModelModeChange,
 }: {
   copy: WelcomeModelCopy;
-  locale: RuneLocale;
-  modelMode: RuneModelMode;
+  locale: OrbitLocale;
+  modelMode: OrbitModelMode;
   onBack: () => void;
-  onContinue: (mode: RuneModelMode) => void;
-  onModelModeChange: (mode: RuneModelMode) => void;
+  onContinue: (mode: OrbitModelMode) => void;
+  onModelModeChange: (mode: OrbitModelMode) => void;
 }) {
   const [modelStatus, setModelStatus] = useState<ModelProviderStatus | null>(null);
   const [modelStatusError, setModelStatusError] = useState("");

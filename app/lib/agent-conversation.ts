@@ -1,4 +1,4 @@
-export const AGENT_CONVERSATION_STORAGE_KEY = "rune-agent-conversation-v1";
+export const AGENT_CONVERSATION_STORAGE_KEY = "orbit-agent-conversation-v1";
 export const MAX_AGENT_CONVERSATION_MESSAGES = 16;
 export const MAX_AGENT_CONVERSATION_CONTEXT_MESSAGES = 12;
 export const MAX_AGENT_CONVERSATION_MESSAGE_CHARS = 2_000;

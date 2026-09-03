@@ -14,11 +14,11 @@ npm run desktop:smoke:mac
 This builds the current machine architecture under `out/macos/<version>/<arch>/`:
 
 - `Orbit.app`
-- `Orbit-<version>-macos-<arch>.zip`
-- `Orbit-<version>-macos-<arch>.dmg`
+- `Orbit-<version>-macos-<arch>-internal-qa.zip`
+- `Orbit-<version>-macos-<arch>-internal-qa.dmg`
 - `Orbit-<version>-macos-<arch>-manifest.json`
 
-The manifest records `signed: false` and `notarized: false`. The app uses an ad-hoc signature only so its ASAR-integrity and fuse-hardened binary can be exercised locally.
+The manifest records `channel: internal-qa`, `distributionReady: false`, `signed: false`, and `notarized: false`. The filename and mounted volume are visibly marked as internal QA. The app uses an ad-hoc signature only so its ASAR-integrity and fuse-hardened binary can be exercised locally; recipients may still need to bypass Gatekeeper manually and an ad-hoc update can make macOS ask again for Orbit Keychain access.
 
 Every `main` push repeats this package, verification, and packaged-runtime smoke test on a clean macOS runner. The smoke process uses a temporary loopback-only port and a disposable encryption key, verifies the real packaged homepage while the manifest verifies the release version, then stops the complete Electron process group.
 

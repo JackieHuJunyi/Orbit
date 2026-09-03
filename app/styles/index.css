@@ -1,5 +1,5 @@
 /*
- * Rune has one CSS entry point and one explicit cascade. `globals.css` still
+ * Orbit has one CSS entry point and one explicit cascade. `globals.css` still
  * contains the pre-component styles while they are migrated, but it can no
  * longer win by accident: every maintained surface owns a later layer.
  */

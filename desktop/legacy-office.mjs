@@ -232,7 +232,7 @@ export async function convertLegacyOffice(_event, input) {
   const bytes = coerceBytes(input?.bytes);
   const officeWasRunning = await officeProcessRunning(kind);
   await officeAvailable(kind);
-  const privateDirectory = await realpath(await mkdtemp(path.join(tmpdir(), "rune-legacy-office-")));
+  const privateDirectory = await realpath(await mkdtemp(path.join(tmpdir(), "orbit-legacy-office-")));
   const inputPath = path.join(privateDirectory, `source.${kind}`);
   const outputName = `${path.basename(input.fileName, `.${kind}`)}.${kind}x`;
   const outputPath = path.join(privateDirectory, outputName);
@@ -264,7 +264,7 @@ export async function exportLegacyOffice(_event, input) {
   const bytes = coerceBytes(input?.bytes);
   const officeWasRunning = await officeProcessRunning(kind);
   await officeAvailable(kind);
-  const privateDirectory = await realpath(await mkdtemp(path.join(tmpdir(), "rune-legacy-office-export-")));
+  const privateDirectory = await realpath(await mkdtemp(path.join(tmpdir(), "orbit-legacy-office-export-")));
   const modernExtension = kind === "doc" ? "docx" : "pptx";
   const legacyExtension = kind === "doc" ? "doc" : "ppt";
   const inputPath = path.join(privateDirectory, `source.${modernExtension}`);

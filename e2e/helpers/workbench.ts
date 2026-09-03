@@ -2,11 +2,11 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 export async function openWorkbench(page: Page) {
   await page.addInitScript(() => {
-    if (window === window.top) localStorage.setItem("rune-onboarding-v1", "complete");
+    if (window === window.top) localStorage.setItem("orbit-onboarding-v1", "complete");
   });
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
 }
 

@@ -63,7 +63,7 @@ function normalizedSemanticBody(draft: string) {
   return normalizeBody(draft, "\n");
 }
 
-function runeBindingTokens(source: string) {
+function orbitBindingTokens(source: string) {
   return source.match(/\{\{[^{}\r\n]+\}\}/gu) ?? [];
 }
 
@@ -200,7 +200,7 @@ export function prepareVisualDeckSlideEdit(
 
   const replacement = composeSlideFragment(input, newlineFor(artifact.source));
   const currentFragment = artifact.source.slice(target.start, target.end);
-  if (JSON.stringify(runeBindingTokens(replacement)) !== JSON.stringify(runeBindingTokens(currentFragment))) {
+  if (JSON.stringify(orbitBindingTokens(replacement)) !== JSON.stringify(orbitBindingTokens(currentFragment))) {
     return emptyResult(
       artifact.source,
       "Keep live metric and Chart bindings unchanged in the visual editor. Edit dependency source directly.",

@@ -1,19 +1,19 @@
-export type RuneArtifactCreationMetadata = Readonly<{
+export type OrbitArtifactCreationMetadata = Readonly<{
   label: string;
   format: string;
   extension: string;
   description: string;
 }>;
 
-export type RuneArtifactDetection<Kind extends string> = Readonly<{
+export type OrbitArtifactDetection<Kind extends string> = Readonly<{
   kind: Kind;
   language: string;
 }>;
 
-export type RuneArtifactAdapter<Kind extends string, Artifact, StarterRequest> = Readonly<{
+export type OrbitArtifactAdapter<Kind extends string, Artifact, StarterRequest> = Readonly<{
   kind: Kind;
   order: number;
-  creation: RuneArtifactCreationMetadata;
+  creation: OrbitArtifactCreationMetadata;
   quickCommands: readonly string[];
   detectLanguage: (name: string, source: string) => string | null;
   starterSource: (request: StarterRequest) => string;
@@ -22,13 +22,13 @@ export type RuneArtifactAdapter<Kind extends string, Artifact, StarterRequest> =
 }>;
 
 /**
- * Rune's artifact kinds are a closed product vocabulary, not runtime plugins.
+ * Orbit's artifact kinds are a closed product vocabulary, not runtime plugins.
  * This registry makes that vocabulary exhaustive and gives every kind one
  * adapter-owned home for detection, creation, validation, and display facts.
  */
-export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact, StarterRequest>(
+export function createOrbitArtifactAdapterRegistry<Kind extends string, Artifact, StarterRequest>(
   requiredKinds: readonly Kind[],
-  definitions: readonly RuneArtifactAdapter<Kind, Artifact, StarterRequest>[],
+  definitions: readonly OrbitArtifactAdapter<Kind, Artifact, StarterRequest>[],
 ) {
   if (!requiredKinds.length) throw new Error("Orbit requires at least one artifact kind.");
 
@@ -38,7 +38,7 @@ export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact,
     required.add(kind);
   });
 
-  const adapters = new Map<Kind, RuneArtifactAdapter<Kind, Artifact, StarterRequest>>();
+  const adapters = new Map<Kind, OrbitArtifactAdapter<Kind, Artifact, StarterRequest>>();
   const ordered = definitions.map((definition, sequence) => {
     if (!required.has(definition.kind)) {
       throw new Error(`Orbit artifact adapter "${definition.kind}" is not a declared kind.`);
@@ -77,7 +77,7 @@ export function createRuneArtifactAdapterRegistry<Kind extends string, Artifact,
     return adapter;
   }
 
-  function detect(name: string, source: string): RuneArtifactDetection<Kind> | null {
+  function detect(name: string, source: string): OrbitArtifactDetection<Kind> | null {
     for (const adapter of snapshot) {
       const language = adapter.detectLanguage(name, source);
       if (language) return Object.freeze({ kind: adapter.kind, language });

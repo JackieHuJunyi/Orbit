@@ -40,7 +40,7 @@ test("fails closed when the browser has no narrow Orbit desktop bridge", async (
 
 test("accepts one bounded converted OOXML package from the desktop bridge", async () => {
   globalThis.window = {
-    runeDesktop: {
+    orbitDesktop: {
       async convertLegacyOffice(input) {
         assert.equal(input.fileName, "brief.doc");
         assert.deepEqual(input.bytes, new Uint8Array([1, 2, 3]));
@@ -56,7 +56,7 @@ test("accepts one bounded converted OOXML package from the desktop bridge", asyn
 
 test("exports one bounded DOCX or PPTX package through the narrow desktop bridge", async () => {
   globalThis.window = {
-    runeDesktop: {
+    orbitDesktop: {
       async convertLegacyOffice() {
         throw new Error("not used");
       },
@@ -82,7 +82,7 @@ test("keeps legacy export unavailable on the web and rejects mismatched bridge o
     /requires the Orbit desktop app/i,
   );
   globalThis.window = {
-    runeDesktop: {
+    orbitDesktop: {
       async convertLegacyOffice() {
         throw new Error("not used");
       },
@@ -100,7 +100,7 @@ test("keeps legacy export unavailable on the web and rejects mismatched bridge o
 
 test("rejects unsupported input, invalid bridge output, and oversized legacy files", async () => {
   globalThis.window = {
-    runeDesktop: {
+    orbitDesktop: {
       async convertLegacyOffice() {
         return { fileName: "bad.txt", bytes: [], warning: "" };
       },
@@ -124,7 +124,7 @@ test("rejects unsupported input, invalid bridge output, and oversized legacy fil
 
 test("normalizes desktop model discovery without exposing credentials in scan results", async () => {
   globalThis.window = {
-    runeDesktop: {
+    orbitDesktop: {
       async discoverModels() {
         return {
           supported: true,
@@ -167,7 +167,7 @@ test("normalizes desktop model discovery without exposing credentials in scan re
 
 test("rejects a desktop discovery result that attempts to expose a credential", async () => {
   globalThis.window = {
-    runeDesktop: {
+    orbitDesktop: {
       async discoverModels() {
         return {
           supported: true,

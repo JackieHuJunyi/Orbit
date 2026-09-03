@@ -2,7 +2,7 @@ import { DOMParser, type Element as XmlElement, type Node as XmlNode } from "@xm
 import { parseDeckSource } from "./deck.ts";
 import { safeExportBaseName } from "./export-contract.ts";
 import { compileLegacyHtmlSlides } from "./legacy-html-slides.ts";
-import { parseRuneAssetReference } from "./local-assets.ts";
+import { parseOrbitAssetReference } from "./local-assets.ts";
 import { semanticHtmlPresentationMetadata } from "./semantic-html-presentation.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -14,7 +14,7 @@ export type SemanticHtmlPresentationExport = Readonly<{
 const SUPPORTED_DECK_LAYOUTS = new Set(["cover", "content", "metrics", "split", "conclusion"]);
 const OMITTED_TEXT_ELEMENTS = new Set(["script", "style", "template", "noscript", "svg", "canvas"]);
 const BLOCK_TEXT_ELEMENTS = new Set(["p", "blockquote", "pre", "figcaption"]);
-const RUNE_LOCALES = new Set(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]);
+const ORBIT_LOCALES = new Set(["en", "zh-CN", "zh-TW", "fr", "es", "ru", "ar", "ja", "ko"]);
 const LIVE_BINDING_PATTERN = /\{\{\s*(?:metric|chart)\([^{}\r\n]*\)\s*\}\}/giu;
 
 function tagName(node: XmlNode) {
@@ -159,7 +159,7 @@ function localImageMarkdown(root: XmlElement, warnings: Set<string>) {
   const localImages: string[] = [];
   Array.from(root.getElementsByTagName("img")).forEach((image) => {
     const source = image.getAttribute("src") ?? "";
-    const id = parseRuneAssetReference(source);
+    const id = parseOrbitAssetReference(source);
     if (!id) {
       warnings.add("Images not backed by verified Orbit local assets are omitted from presentation handoff.");
       return;
@@ -234,12 +234,12 @@ function collectBlocks(root: XmlElement, primaryHeading: XmlElement | null, warn
 
 function sourceLocale(source: string) {
   const raw = source.match(/<html\b[^>]*\blang\s*=\s*["']([^"']+)["']/iu)?.[1] ?? "en";
-  if (RUNE_LOCALES.has(raw)) return raw;
+  if (ORBIT_LOCALES.has(raw)) return raw;
   const normalized = raw.toLowerCase();
   if (normalized.startsWith("zh-tw") || normalized.startsWith("zh-hant")) return "zh-TW";
   if (normalized.startsWith("zh")) return "zh-CN";
   const base = normalized.split("-")[0];
-  return RUNE_LOCALES.has(base) ? base : "en";
+  return ORBIT_LOCALES.has(base) ? base : "en";
 }
 
 function parseSection(source: string, index: number, fallbackLabel: string, warnings: Set<string>) {
@@ -281,7 +281,7 @@ export function convertSemanticHtmlPresentationToDeck(artifact: WorkspaceArtifac
   const slides = compilation.slides.map((slide) => parseSection(slide.source, slide.index, slide.label, warnings));
   const metadata = semanticHtmlPresentationMetadata(artifact.source);
   const title = escapeDeckText(metadata?.title ?? safeExportBaseName(artifact.name));
-  const lang = metadata && RUNE_LOCALES.has(metadata.lang) ? metadata.lang : sourceLocale(artifact.source);
+  const lang = metadata && ORBIT_LOCALES.has(metadata.lang) ? metadata.lang : sourceLocale(artifact.source);
   const lineage = metadata
     ? [
         metadata.origin ? `origin: ${metadata.origin}` : "",
@@ -293,7 +293,7 @@ export function convertSemanticHtmlPresentationToDeck(artifact: WorkspaceArtifac
   const source = `---
 version: 1
 title: ${title}
-theme: ${metadata?.theme ?? "rune"}
+theme: ${metadata?.theme ?? "orbit"}
 ratio: 16:9
 lang: ${lang}${lineage.length ? `\n${lineage.join("\n")}` : ""}
 ---

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { RUNE_TASK_DEFINITIONS } from "../app/lib/task-runtime.ts";
-import { RUNE_TASK_PROVIDER_IDS, prepareRuneTaskProvider } from "../app/lib/task-providers.ts";
+import { ORBIT_TASK_DEFINITIONS } from "../app/lib/task-runtime.ts";
+import { ORBIT_TASK_PROVIDER_IDS, prepareOrbitTaskProvider } from "../app/lib/task-providers.ts";
 
 const document = {
   id: "source",
@@ -14,11 +14,11 @@ const document = {
 };
 
 test("keeps every registered task paired with one static provider", () => {
-  assert.deepEqual(Object.keys(RUNE_TASK_PROVIDER_IDS).sort(), Object.keys(RUNE_TASK_DEFINITIONS).sort());
+  assert.deepEqual(Object.keys(ORBIT_TASK_PROVIDER_IDS).sort(), Object.keys(ORBIT_TASK_DEFINITIONS).sort());
 });
 
 test("routes a typed document task through the shared pure provider boundary", () => {
-  const prepared = prepareRuneTaskProvider([document], {
+  const prepared = prepareOrbitTaskProvider([document], {
     taskId: "document-briefing",
     input: {
       sourceArtifactId: document.id,
@@ -35,7 +35,7 @@ test("routes a typed document task through the shared pure provider boundary", (
 });
 
 test("passes an evidence-bound model outline through the same pure compiler boundary", () => {
-  const prepared = prepareRuneTaskProvider([document], {
+  const prepared = prepareOrbitTaskProvider([document], {
     taskId: "document-briefing",
     input: {
       sourceArtifactId: document.id,
@@ -65,7 +65,7 @@ test("routes a typed operating-review task through the same provider boundary", 
     language: "CSV / JSON",
     source: "Region,Revenue\nAPAC,120\nEMEA,90\n",
   };
-  const prepared = prepareRuneTaskProvider([data], {
+  const prepared = prepareOrbitTaskProvider([data], {
     taskId: "operating-review",
     input: {
       title: "Weekly review",
@@ -97,7 +97,7 @@ test("passes evidence-bound operating questions through the same pure compiler b
     language: "CSV / JSON",
     source: "Region,Revenue\nAPAC,120\nEMEA,90\n",
   };
-  const prepared = prepareRuneTaskProvider([data], {
+  const prepared = prepareOrbitTaskProvider([data], {
     taskId: "operating-review",
     input: {
       title: "Weekly review",

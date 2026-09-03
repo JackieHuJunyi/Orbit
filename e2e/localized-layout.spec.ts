@@ -95,7 +95,7 @@ for (const viewport of VIEWPORTS) {
         const pageErrors: string[] = [];
         page.on("pageerror", (error) => pageErrors.push(error.message));
         await page.emulateMedia({ reducedMotion: "reduce" });
-        await page.addInitScript((localeId) => localStorage.setItem("rune-locale-v1", localeId), locale.id);
+        await page.addInitScript((localeId) => localStorage.setItem("orbit-locale-v1", localeId), locale.id);
         await page.goto("/");
 
         const root = page.locator("html");
@@ -170,7 +170,7 @@ for (const viewport of VIEWPORTS) {
           expect(Math.min(...controlHeights)).toBeGreaterThanOrEqual(44);
         }
 
-        await page.evaluate(() => localStorage.setItem("rune-onboarding-v1", "complete"));
+        await page.evaluate(() => localStorage.setItem("orbit-onboarding-v1", "complete"));
         await page.reload();
         await expect(root).toHaveAttribute("data-locale", locale.id);
         await expect(root).toHaveAttribute("dir", locale.direction);
@@ -221,11 +221,11 @@ test.describe("compact localized Agent conversation", () => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.addInitScript(
         ({ localeId }) => {
-          localStorage.setItem("rune-onboarding-v1", "complete");
-          localStorage.setItem("rune-locale-v1", localeId);
-          localStorage.setItem("rune-workspace-view-v1", "source");
+          localStorage.setItem("orbit-onboarding-v1", "complete");
+          localStorage.setItem("orbit-locale-v1", localeId);
+          localStorage.setItem("orbit-workspace-view-v1", "source");
           localStorage.setItem(
-            "rune-agent-conversation-v1",
+            "orbit-agent-conversation-v1",
             JSON.stringify([
               {
                 id: "localized-user",
@@ -249,7 +249,7 @@ test.describe("compact localized Agent conversation", () => {
         { localeId: locale.id },
       );
       await page.goto("/");
-      await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+      await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
       await page.locator("[data-agent-trigger]").click();
       const thread = page.locator(".agent-conversation");
       await expect(thread).toBeVisible();

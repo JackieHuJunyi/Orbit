@@ -3,14 +3,14 @@
 import { ChevronDown, FileArchive, FileCode2, FileOutput, FileText, LoaderCircle } from "lucide-react";
 import { useRef, type RefObject } from "react";
 import { useWorkbenchMenuFocus } from "./use-workbench-menu-focus";
-import type { RuneUICopy } from "../lib/localization";
+import type { OrbitUICopy } from "../lib/localization";
 import type { WorkspaceFileExportCapability, WorkspaceFileExportDestination } from "../lib/workspace-file-export";
 
 type WorkbenchExportMenuProps = {
   artifactName: string;
   capabilities: readonly WorkspaceFileExportCapability[];
   containerRef: RefObject<HTMLDivElement | null>;
-  copy: RuneUICopy["workbench"];
+  copy: OrbitUICopy["workbench"];
   disabled: boolean;
   legacyOfficeAvailable: boolean;
   open: boolean;
@@ -37,7 +37,7 @@ function capabilityIcon(capability: WorkspaceFileExportCapability) {
 function capabilityDetail(
   capability: WorkspaceFileExportCapability,
   artifactName: string,
-  copy: RuneUICopy["workbench"],
+  copy: OrbitUICopy["workbench"],
 ) {
   switch (capability.presentation.detail) {
     case "canonical-source":

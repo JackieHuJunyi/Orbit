@@ -8,7 +8,7 @@ import { serializeModelProfileVaultCookie } from "../app/lib/model-credential-va
 const originalFetch = globalThis.fetch;
 const originalApiKey = process.env.OPENAI_API_KEY;
 const originalModel = process.env.OPENAI_MODEL;
-const originalVaultKey = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+const originalVaultKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
 
 test.after(() => {
   globalThis.fetch = originalFetch;
@@ -16,26 +16,26 @@ test.after(() => {
   else process.env.OPENAI_API_KEY = originalApiKey;
   if (originalModel === undefined) delete process.env.OPENAI_MODEL;
   else process.env.OPENAI_MODEL = originalModel;
-  if (originalVaultKey === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-  else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = originalVaultKey;
+  if (originalVaultKey === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+  else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = originalVaultKey;
 });
 
 test("uses the active personal provider endpoint without exposing its credential in the Agent response", async () => {
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-personal-vault-key-123456789";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "agent-personal-vault-key-123456789";
   delete process.env.OPENAI_API_KEY;
   const profile = normalizeModelProfileDraft(
     {
       provider: "custom",
       name: "Private gateway",
       baseURL: "https://models.example.com/v1",
-      model: "rune-model-1",
+      model: "orbit-model-1",
       apiKey: "personal-agent-secret",
     },
     undefined,
     "2026-08-13T00:00:00.000Z",
     () => "private",
   );
-  const cookie = await serializeModelProfileVaultCookie(new Request("https://rune.example/api/model-profiles"), {
+  const cookie = await serializeModelProfileVaultCookie(new Request("https://orbit.example/api/model-profiles"), {
     version: 1,
     activeProfileId: profile.id,
     profiles: [profile],
@@ -57,7 +57,7 @@ test("uses the active personal provider endpoint without exposing its credential
     );
   };
   const response = await POST(
-    new Request("https://rune.example/api/agent", {
+    new Request("https://orbit.example/api/agent", {
       method: "POST",
       headers: {
         cookie: cookie.split(";", 1)[0],
@@ -70,7 +70,7 @@ test("uses the active personal provider endpoint without exposing its credential
   const payload = await response.json();
   assert.equal(payload.provider, "custom");
   assert.equal(payload.profileName, "Private gateway");
-  assert.equal(payload.model, "rune-model-1");
+  assert.equal(payload.model, "orbit-model-1");
   assert.deepEqual(payload.usage, { inputTokens: 1, outputTokens: 1 });
   assert.equal(providerUrl, "https://models.example.com/v1/responses");
   assert.equal(providerAuthorization, "Bearer personal-agent-secret");
@@ -78,7 +78,7 @@ test("uses the active personal provider endpoint without exposing its credential
 });
 
 test("routes an Anthropic profile through Messages and the unchanged Orbit operation compiler", async () => {
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-anthropic-vault-key-1234567";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "agent-anthropic-vault-key-1234567";
   delete process.env.OPENAI_API_KEY;
   const profile = normalizeModelProfileDraft(
     {
@@ -91,7 +91,7 @@ test("routes an Anthropic profile through Messages and the unchanged Orbit opera
     "2026-08-13T00:00:00.000Z",
     () => "anthropic",
   );
-  const cookie = await serializeModelProfileVaultCookie(new Request("https://rune.example/api/model-profiles"), {
+  const cookie = await serializeModelProfileVaultCookie(new Request("https://orbit.example/api/model-profiles"), {
     version: 1,
     activeProfileId: profile.id,
     profiles: [profile],
@@ -104,7 +104,7 @@ test("routes an Anthropic profile through Messages and the unchanged Orbit opera
         content: [
           {
             type: "tool_use",
-            name: "submit_rune_plan",
+            name: "submit_orbit_plan",
             input: {
               summary: "Shorten the conclusion",
               detail: "One Markdown section changes.",
@@ -118,7 +118,7 @@ test("routes an Anthropic profile through Messages and the unchanged Orbit opera
     );
   };
   const response = await POST(
-    new Request("https://rune.example/api/agent", {
+    new Request("https://orbit.example/api/agent", {
       method: "POST",
       headers: { cookie: cookie.split(";", 1)[0], "content-type": "application/json" },
       body: JSON.stringify(requestBody()),
@@ -132,12 +132,12 @@ test("routes an Anthropic profile through Messages and the unchanged Orbit opera
   assert.deepEqual(payload.usage, { inputTokens: 21, outputTokens: 9 });
   assert.equal(providerRequest.url, "https://api.anthropic.com/v1/messages");
   assert.equal(providerRequest.headers.get("x-api-key"), "anthropic-agent-secret");
-  assert.equal(providerRequest.body.tool_choice.name, "submit_rune_plan");
+  assert.equal(providerRequest.body.tool_choice.name, "submit_orbit_plan");
   assert.doesNotMatch(JSON.stringify(payload), /anthropic-agent-secret/);
 });
 
 test("routes a Gemini profile through generateContent and the unchanged Orbit operation compiler", async () => {
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "agent-gemini-vault-key-123456789";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "agent-gemini-vault-key-123456789";
   delete process.env.OPENAI_API_KEY;
   const profile = normalizeModelProfileDraft(
     {
@@ -150,7 +150,7 @@ test("routes a Gemini profile through generateContent and the unchanged Orbit op
     "2026-08-13T00:00:00.000Z",
     () => "gemini",
   );
-  const cookie = await serializeModelProfileVaultCookie(new Request("https://rune.example/api/model-profiles"), {
+  const cookie = await serializeModelProfileVaultCookie(new Request("https://orbit.example/api/model-profiles"), {
     version: 1,
     activeProfileId: profile.id,
     profiles: [profile],
@@ -181,7 +181,7 @@ test("routes a Gemini profile through generateContent and the unchanged Orbit op
     );
   };
   const response = await POST(
-    new Request("https://rune.example/api/agent", {
+    new Request("https://orbit.example/api/agent", {
       method: "POST",
       headers: { cookie: cookie.split(";", 1)[0], "content-type": "application/json" },
       body: JSON.stringify(requestBody()),
@@ -203,14 +203,14 @@ test("routes a Gemini profile through generateContent and the unchanged Orbit op
 
 function providerResponse(output) {
   return {
-    id: "resp_rune_test",
+    id: "resp_orbit_test",
     object: "response",
     created_at: 0,
     status: "completed",
     model: "gpt-5.6",
     output: [
       {
-        id: "msg_rune_test",
+        id: "msg_orbit_test",
         type: "message",
         status: "completed",
         role: "assistant",
@@ -276,7 +276,7 @@ function queryWorkspaceBody(overrides = {}) {
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
   };
   return requestBody({
     scope: "workspace",
@@ -445,7 +445,7 @@ test("returns a replacement plan marked as the single compiler-guided repair att
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
   };
   const runtimeRepair = {
     attempt: 1,
@@ -456,7 +456,7 @@ test("returns a replacement plan marked as the single compiler-guided repair att
         name: "analysis.sql",
         kind: "query",
         language: "DuckDB SQL",
-        proposedSource: '-- rune:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
+        proposedSource: '-- orbit:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
         isCreation: false,
       },
     ],
@@ -909,7 +909,7 @@ test("compiles a coordinated document-data-Deck operation plan without partial f
       name: "deck.deck.md",
       kind: "slides",
       language: "Deck Markdown",
-      source: "---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Old conclusion.",
+      source: "---\nversion: 1\ntitle: Deck\ntheme: orbit\nratio: 16:9\nlang: en\n---\n\n# Old conclusion.",
     },
     {
       id: "analysis",
@@ -1189,7 +1189,7 @@ test("creates typed Query and Chart sources from exact visible Agent bindings", 
       { name: "total-analysis.chart.json", kind: "chart", operationCount: 0 },
     ],
   );
-  assert.match(payload.plan.creations[0].artifact.source, /-- rune:data "data"/);
+  assert.match(payload.plan.creations[0].artifact.source, /-- orbit:data "data"/);
   assert.match(payload.plan.creations[1].artifact.source, /"source": "analysis"/);
 });
 
@@ -1281,7 +1281,7 @@ test("resolves provider creation handles into one concrete four-file dependency 
     ["data", "query", "chart", "document"],
   );
   const [data, query, chart, report] = payload.plan.creations.map((creation) => creation.artifact);
-  assert.match(query.source, new RegExp(`rune:data \\"${data.id}\\"`));
+  assert.match(query.source, new RegExp(`orbit:data \\"${data.id}\\"`));
   assert.match(chart.source, new RegExp(`\\"source\\": \\"${query.id}\\"`));
   assert.match(report.source, new RegExp(`chart\\(\\"${chart.id}\\"\\)`));
   assert.ok(payload.plan.creations.every((creation) => !("handle" in creation) && !("source" in creation)));

@@ -231,7 +231,7 @@ export async function requestProviderPlan<T extends z.ZodType>({
   }
 
   if (connection.protocol === "anthropic-messages") {
-    const toolName = "submit_rune_plan";
+    const toolName = "submit_orbit_plan";
     // DeepSeek enables thinking by default. Its Anthropic-compatible endpoint
     // rejects a forced named tool while thinking is active, so disable
     // reasoning for this strictly typed, single-turn planning request.

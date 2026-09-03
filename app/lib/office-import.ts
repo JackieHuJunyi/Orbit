@@ -7,10 +7,10 @@ import {
 import { strFromU8, unzipSync, type Unzipped } from "fflate";
 import { createImportedImageToken, finalizeImportedImages, type ImportedImageCandidate } from "./imported-images.ts";
 import {
-  MAX_RUNE_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGES,
-  type PreparedRuneImageAsset,
+  MAX_ORBIT_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGES,
+  type PreparedOrbitImageAsset,
 } from "./local-assets.ts";
 import { semanticHtmlPresentationFromDeckSource } from "./semantic-html-presentation.ts";
 import type { DataCell, WorkspaceArtifact } from "./workspace.ts";
@@ -38,7 +38,7 @@ export type OfficeImportResult = {
 };
 
 export type OfficeImportWithAssetsResult = OfficeImportResult & {
-  assets: PreparedRuneImageAsset[];
+  assets: PreparedOrbitImageAsset[];
 };
 
 type Relationship = {
@@ -103,9 +103,9 @@ function openPackage(input: ArrayBuffer | Uint8Array, importImages = false): Pac
         if (imagePart) {
           imageEntries += 1;
           if (
-            imageEntries > MAX_RUNE_LOCAL_IMAGES ||
-            file.originalSize > MAX_RUNE_IMAGE_BYTES ||
-            expandedImageBytes + file.originalSize > MAX_RUNE_LOCAL_IMAGE_BYTES
+            imageEntries > MAX_ORBIT_LOCAL_IMAGES ||
+            file.originalSize > MAX_ORBIT_IMAGE_BYTES ||
+            expandedImageBytes + file.originalSize > MAX_ORBIT_LOCAL_IMAGE_BYTES
           ) {
             imageLimitWarning = true;
             return false;
@@ -132,7 +132,7 @@ function openPackage(input: ArrayBuffer | Uint8Array, importImages = false): Pac
       files,
       warnings: imageLimitWarning
         ? [
-            `Embedded Office images beyond Orbit's ${MAX_RUNE_LOCAL_IMAGES}-image, ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_RUNE_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
+            `Embedded Office images beyond Orbit's ${MAX_ORBIT_LOCAL_IMAGES}-image, ${MAX_ORBIT_LOCAL_IMAGE_BYTES / 1_048_576}-MB, and ${MAX_ORBIT_IMAGE_BYTES / 1_048_576}-MB-per-image limits were not expanded.`,
           ]
         : [],
       importImages,
@@ -961,7 +961,7 @@ function convertPptxToDeck(fileName: string, context: PackageContext): OfficeImp
       "---",
       "version: 1",
       `title: ${oneLine(title)}`,
-      "theme: rune",
+      "theme: orbit",
       "ratio: 16:9",
       `lang: ${language}`,
       "---",

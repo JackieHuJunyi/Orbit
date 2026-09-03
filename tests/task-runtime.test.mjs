@@ -3,11 +3,11 @@ import test from "node:test";
 
 import { prepareWorkspaceImportReview } from "../app/lib/imports.ts";
 import {
-  bindRuneTaskImportReview,
-  prepareRuneTaskAfterImport,
-  RUNE_TASK_DEFINITIONS,
-  startRuneTaskFromArtifact,
-  startRuneTaskSession,
+  bindOrbitTaskImportReview,
+  prepareOrbitTaskAfterImport,
+  ORBIT_TASK_DEFINITIONS,
+  startOrbitTaskFromArtifact,
+  startOrbitTaskSession,
 } from "../app/lib/task-runtime.ts";
 import { defaultArtifacts } from "../app/lib/workspace.ts";
 
@@ -34,13 +34,13 @@ function reviewFor(imported = [importedData]) {
 }
 
 test("declares composable task entries with narrow source capabilities", () => {
-  assert.deepEqual(RUNE_TASK_DEFINITIONS["operating-review"], {
+  assert.deepEqual(ORBIT_TASK_DEFINITIONS["operating-review"], {
     id: "operating-review",
     sourceAccept: ".csv,.json,.xlsx,.ods",
     acceptedArtifactKinds: ["data"],
     requiredArtifactLabel: "readable Data source",
   });
-  assert.deepEqual(RUNE_TASK_DEFINITIONS["document-briefing"], {
+  assert.deepEqual(ORBIT_TASK_DEFINITIONS["document-briefing"], {
     id: "document-briefing",
     sourceAccept: ".doc,.docx,.odt,.pdf,.md,.markdown",
     acceptedArtifactKinds: ["document"],
@@ -50,15 +50,15 @@ test("declares composable task entries with narrow source capabilities", () => {
 
 test("moves an operating-review task through explicit source lifecycle phases", () => {
   const review = reviewFor();
-  const started = startRuneTaskSession("operating-review", defaultArtifacts);
+  const started = startOrbitTaskSession("operating-review", defaultArtifacts);
   assert.equal(started.phase, "awaiting-source");
 
-  const bound = bindRuneTaskImportReview(started, defaultArtifacts, review);
+  const bound = bindOrbitTaskImportReview(started, defaultArtifacts, review);
   assert.deepEqual(bound.errors, []);
   assert.equal(bound.session?.phase, "reviewing-source");
   assert.equal(bound.preferredArtifactId, importedData.id);
 
-  const continued = prepareRuneTaskAfterImport(bound.session, defaultArtifacts, review);
+  const continued = prepareOrbitTaskAfterImport(bound.session, defaultArtifacts, review);
   assert.deepEqual(continued.errors, []);
   assert.equal(continued.session?.phase, "configuring");
   assert.equal(continued.preferredArtifactId, importedData.id);
@@ -77,8 +77,8 @@ test("rejects non-Data task imports before the import can be applied", () => {
     source: "# Notes\n",
   };
   const review = reviewFor([document]);
-  const result = bindRuneTaskImportReview(
-    startRuneTaskSession("operating-review", defaultArtifacts),
+  const result = bindOrbitTaskImportReview(
+    startOrbitTaskSession("operating-review", defaultArtifacts),
     defaultArtifacts,
     review,
   );
@@ -88,42 +88,42 @@ test("rejects non-Data task imports before the import can be applied", () => {
 
 test("moves a document-briefing task through the same exact import lifecycle", () => {
   const review = reviewFor([importedDocument]);
-  const started = startRuneTaskSession("document-briefing", defaultArtifacts);
-  const bound = bindRuneTaskImportReview(started, defaultArtifacts, review);
+  const started = startOrbitTaskSession("document-briefing", defaultArtifacts);
+  const bound = bindOrbitTaskImportReview(started, defaultArtifacts, review);
   assert.deepEqual(bound.errors, []);
   assert.equal(bound.session?.phase, "reviewing-source");
   assert.equal(bound.preferredArtifactId, importedDocument.id);
 
-  const continued = prepareRuneTaskAfterImport(bound.session, defaultArtifacts, review);
+  const continued = prepareOrbitTaskAfterImport(bound.session, defaultArtifacts, review);
   assert.deepEqual(continued.errors, []);
   assert.equal(continued.session?.phase, "configuring");
   assert.equal(continued.preferredArtifactId, importedDocument.id);
 });
 
 test("opens a registered task from an existing compatible artifact without an import lifecycle", () => {
-  const result = startRuneTaskFromArtifact("document-briefing", defaultArtifacts, "q2-review");
+  const result = startOrbitTaskFromArtifact("document-briefing", defaultArtifacts, "q2-review");
   assert.deepEqual(result.errors, []);
   assert.equal(result.session?.phase, "configuring");
   assert.equal(result.session?.preferredArtifactId, "q2-review");
-  const rejected = startRuneTaskFromArtifact("document-briefing", defaultArtifacts, "regional-revenue");
+  const rejected = startOrbitTaskFromArtifact("document-briefing", defaultArtifacts, "regional-revenue");
   assert.equal(rejected.session, null);
   assert.match(rejected.errors.join(" "), /not a supported source/);
 });
 
 test("fails closed when workspace or reviewed import identity changes between phases", () => {
   const review = reviewFor();
-  const started = startRuneTaskSession("operating-review", defaultArtifacts);
+  const started = startOrbitTaskSession("operating-review", defaultArtifacts);
   const changed = defaultArtifacts.map((artifact, index) =>
     index === 0 ? { ...artifact, source: `${artifact.source}\nChanged.` } : artifact,
   );
-  const stale = bindRuneTaskImportReview(started, changed, review);
+  const stale = bindOrbitTaskImportReview(started, changed, review);
   assert.equal(stale.session, null);
   assert.match(stale.errors.join(" "), /workspace changed/);
 
-  const bound = bindRuneTaskImportReview(started, defaultArtifacts, review);
+  const bound = bindOrbitTaskImportReview(started, defaultArtifacts, review);
   assert.ok(bound.session);
   const replacementReview = reviewFor([{ ...importedData, id: "other-data", name: "other-data.csv" }]);
-  const mismatched = prepareRuneTaskAfterImport(bound.session, defaultArtifacts, replacementReview);
+  const mismatched = prepareOrbitTaskAfterImport(bound.session, defaultArtifacts, replacementReview);
   assert.equal(mismatched.session, null);
   assert.match(mismatched.errors.join(" "), /no longer match/);
 });

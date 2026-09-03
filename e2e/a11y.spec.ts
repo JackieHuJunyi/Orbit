@@ -17,7 +17,7 @@ test("fresh-user onboarding has no critical accessibility violations", async ({ 
 });
 
 test("workbench has no critical accessibility violations", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
+  await page.addInitScript(() => localStorage.setItem("orbit-onboarding-v1", "complete"));
   await page.goto("/");
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.getByRole("button", { name: "New", exact: true }).first()).toBeEnabled();
@@ -32,7 +32,7 @@ test("workbench has no critical accessibility violations", async ({ page }) => {
 });
 
 test("operating-review setup has no serious accessibility violations", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("rune-onboarding-v1", "complete"));
+  await page.addInitScript(() => localStorage.setItem("orbit-onboarding-v1", "complete"));
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Create operating review", exact: true })).toBeEnabled();
   await settleDefaultWorkspaceRuntime(page);
@@ -50,8 +50,8 @@ test("operating-review setup has no serious accessibility violations", async ({ 
 
 test("space-black operating-review setup has no serious accessibility violations", async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem("rune-onboarding-v1", "complete");
-    localStorage.setItem("rune-appearance-theme-v1", "space-black");
+    localStorage.setItem("orbit-onboarding-v1", "complete");
+    localStorage.setItem("orbit-appearance-theme-v1", "space-black");
   });
   await page.goto("/");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "space-black");

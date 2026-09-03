@@ -7,7 +7,7 @@ import { normalizeModelProfileDraft } from "../app/lib/model-profiles.ts";
 
 const originalFetch = globalThis.fetch;
 const originalApiKey = process.env.OPENAI_API_KEY;
-const originalVaultKey = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+const originalVaultKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
 
 const artifact = {
   id: "launch-source",
@@ -31,12 +31,12 @@ test.after(() => {
   globalThis.fetch = originalFetch;
   if (originalApiKey === undefined) delete process.env.OPENAI_API_KEY;
   else process.env.OPENAI_API_KEY = originalApiKey;
-  if (originalVaultKey === undefined) delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
-  else process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = originalVaultKey;
+  if (originalVaultKey === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+  else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = originalVaultKey;
 });
 
 async function personalCookie() {
-  process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY = "document-briefing-vault-key-123456789";
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "document-briefing-vault-key-123456789";
   delete process.env.OPENAI_API_KEY;
   const profile = normalizeModelProfileDraft(
     {
@@ -51,7 +51,7 @@ async function personalCookie() {
     () => "briefing",
   );
   return (
-    await serializeModelProfileVaultCookie(new Request("https://rune.example/api/model-profiles"), {
+    await serializeModelProfileVaultCookie(new Request("https://orbit.example/api/model-profiles"), {
       version: 1,
       activeProfileId: profile.id,
       profiles: [profile],
@@ -92,7 +92,7 @@ test("shapes a bounded source-evidenced outline through the active personal mode
     );
   };
   const response = await POST(
-    new Request("https://rune.example/api/tasks/document-briefing", {
+    new Request("https://orbit.example/api/tasks/document-briefing", {
       method: "POST",
       headers: { cookie, "content-type": "application/json" },
       body: JSON.stringify({ artifact, input }),
@@ -129,7 +129,7 @@ test("rejects a model outline that reuses evidence instead of broadening model a
       { headers: { "content-type": "application/json" } },
     );
   const response = await POST(
-    new Request("https://rune.example/api/tasks/document-briefing", {
+    new Request("https://orbit.example/api/tasks/document-briefing", {
       method: "POST",
       headers: { cookie, "content-type": "application/json" },
       body: JSON.stringify({ artifact, input }),
@@ -143,7 +143,7 @@ test("rejects a model outline that reuses evidence instead of broadening model a
 
 test("returns an explicit unconfigured result without contacting a provider", async () => {
   delete process.env.OPENAI_API_KEY;
-  delete process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY;
+  delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   globalThis.fetch = async () => {
     throw new Error("provider must not be called");
   };

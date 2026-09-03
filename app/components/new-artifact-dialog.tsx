@@ -22,7 +22,7 @@ import {
   type ChartCreationMark,
   type CreatableArtifactKind,
 } from "../lib/artifact-creation";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 import type { WorkspaceArtifact } from "../lib/workspace";
 import { chartEmbeddingTargets } from "../lib/chart-embedding";
 import { ReviewDialog } from "./review-dialog";
@@ -60,7 +60,7 @@ export function NewArtifactDialog({
 }: {
   artifacts: WorkspaceArtifact[];
   error?: string;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onCancel: () => void;
   onCreate: (input: ArtifactCreationInput, embedArtifactId?: string) => void | Promise<void>;
 }) {
@@ -73,7 +73,7 @@ export function NewArtifactDialog({
   const [format, setFormat] = useState<ChartCreationFormat>("number");
   const [embedArtifactId, setEmbedArtifactId] = useState("");
   const [creating, setCreating] = useState(false);
-  const copy = runeUICopy(locale);
+  const copy = orbitUICopy(locale);
   const embeddingTargets = useMemo(() => chartEmbeddingTargets(artifacts), [artifacts]);
   const sourceOptions = useMemo(
     () => (kind === "query" || kind === "chart" ? artifactCreationSourceOptions(artifacts, kind) : []),

@@ -5,17 +5,17 @@ import { chartLinePoints, resolveChartModel, type ChartModel } from "./charts.ts
 import { isDeckMarkdownArtifact, parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import {
-  extractRuneAssetIds,
-  parseRuneMarkdownImage,
-  runeImageAssetMap,
-  type RuneExportImageAsset,
+  extractOrbitAssetIds,
+  parseOrbitMarkdownImage,
+  orbitImageAssetMap,
+  type OrbitExportImageAsset,
 } from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import { convertSemanticHtmlPresentationToDeck } from "./semantic-html-presentation-export.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
 
-export const RUNE_PDF_FONT_PATH = "/fonts/rune-unifont.woff2";
+export const ORBIT_PDF_FONT_PATH = "/fonts/orbit-unifont.woff2";
 export const MAX_PDF_EXPORT_BYTES = 12 * 1024 * 1024;
 export const MAX_PDF_FONT_BYTES = 4 * 1024 * 1024;
 
@@ -68,8 +68,8 @@ function validateFontBytes(bytes: Uint8Array) {
     throw new Error("Orbit's PDF font asset is not a valid WOFF2 file.");
 }
 
-export async function loadRunePdfFont() {
-  const response = await fetch(RUNE_PDF_FONT_PATH, { cache: "force-cache" });
+export async function loadOrbitPdfFont() {
+  const response = await fetch(ORBIT_PDF_FONT_PATH, { cache: "force-cache" });
   if (!response.ok) throw new Error(`Orbit could not load its local PDF font (${response.status}).`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   validateFontBytes(bytes);
@@ -103,7 +103,7 @@ function plainInline(source: string, warnings: Set<string>) {
     .trim();
 }
 
-async function pdfCompatibleImage(asset: RuneExportImageAsset) {
+async function pdfCompatibleImage(asset: OrbitExportImageAsset) {
   if (asset.mimeType === "image/png" || asset.mimeType === "image/jpeg")
     return { bytes: asset.bytes, mimeType: asset.mimeType } as const;
   if (typeof createImageBitmap !== "function")
@@ -296,13 +296,13 @@ type DocumentContext = {
   page: PDFPage;
   y: number;
   pages: PDFPage[];
-  images: Map<string, { asset: RuneExportImageAsset; image: PDFImage }>;
+  images: Map<string, { asset: OrbitExportImageAsset; image: PDFImage }>;
 };
 
 function addDocumentPage(context: Omit<DocumentContext, "page" | "y">) {
   const page = context.document.addPage([A4_WIDTH, A4_HEIGHT]);
   page.drawRectangle({ x: 0, y: 0, width: A4_WIDTH, height: A4_HEIGHT, color: COLORS.white });
-  page.drawText("RUNE", { x: 48, y: A4_HEIGHT - 42, size: 8, font: context.font, color: COLORS.accent });
+  page.drawText("ORBIT", { x: 48, y: A4_HEIGHT - 42, size: 8, font: context.font, color: COLORS.accent });
   const title = safeText(context.artifactName, context.supported, context.warnings);
   const titleFont = fontForText(title, context);
   const titleLine = wrapText(title, titleFont, { size: 8, maxWidth: 300, maxLines: 1 }).lines[0];
@@ -584,7 +584,7 @@ async function renderDocumentPdf(
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
   fontBytes: Uint8Array,
-  imageAssets: readonly RuneExportImageAsset[],
+  imageAssets: readonly OrbitExportImageAsset[],
 ) {
   const warnings = new Set<string>([
     "Document pages use a fixed A4 layout; review page breaks before external handoff.",
@@ -592,17 +592,17 @@ async function renderDocumentPdf(
   ]);
   const source = assertCompiledSource(artifact, workspace, snapshots);
   const { document, font, unicodeFont, supported } = await createPdf(artifact.name, fontBytes);
-  const verifiedImages = runeImageAssetMap(imageAssets);
+  const verifiedImages = orbitImageAssetMap(imageAssets);
   const referencedImageIds = parseMarkdownBlocks(source).flatMap((block) =>
     block.type === "paragraph"
-      ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
+      ? [parseOrbitMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
       : [],
   );
-  const inlineImage = extractRuneAssetIds(source).find((id) => !referencedImageIds.includes(id));
+  const inlineImage = extractOrbitAssetIds(source).find((id) => !referencedImageIds.includes(id));
   if (inlineImage) throw new Error("Place each Orbit local image on its own Markdown line before PDF export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Document: ${unexpectedImage.id}`);
-  const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
+  const images = new Map<string, { asset: OrbitExportImageAsset; image: PDFImage }>();
   for (const [id, asset] of verifiedImages) {
     const compatible = await pdfCompatibleImage(asset);
     const image =
@@ -640,7 +640,7 @@ async function renderDocumentPdf(
   };
   parseMarkdownBlocks(source).forEach((block) => {
     if (block.type === "paragraph") {
-      const imageReference = parseRuneMarkdownImage(block.source);
+      const imageReference = parseOrbitMarkdownImage(block.source);
       if (imageReference) {
         drawDocumentImage(context, imageReference);
         return;
@@ -762,7 +762,7 @@ async function renderDataPdf(artifact: WorkspaceArtifact, fontBytes: Uint8Array)
     const page = document.addPage([width, height]);
     pages.push(page);
     page.drawRectangle({ x: 0, y: 0, width, height, color: COLORS.white });
-    page.drawText("RUNE", { x: left, y: height - 30, size: 8, font, color: COLORS.accent });
+    page.drawText("ORBIT", { x: left, y: height - 30, size: 8, font, color: COLORS.accent });
     const title = safeText(artifact.name, supported, warnings);
     const titleFont = fontForText(title, { font, unicodeFont });
     page.drawText(wrapText(title, titleFont, { size: 8, maxWidth: width - 150, maxLines: 1 }).lines[0], {
@@ -844,7 +844,7 @@ type DeckContext = {
   supported: Set<number>;
   warnings: Set<string>;
   theme: PdfTheme;
-  images: Map<string, { asset: RuneExportImageAsset; image: PDFImage }>;
+  images: Map<string, { asset: OrbitExportImageAsset; image: PDFImage }>;
 };
 
 function deckPlain(source: string, context: DeckContext) {
@@ -1000,7 +1000,7 @@ function drawDeckBody(
   for (const block of blocks) {
     if (
       block.type === "heading" ||
-      (block.type === "paragraph" && (CHART_TOKEN.test(block.source) || parseRuneMarkdownImage(block.source)))
+      (block.type === "paragraph" && (CHART_TOKEN.test(block.source) || parseOrbitMarkdownImage(block.source)))
     )
       continue;
     if (y < bottom + 20) {
@@ -1071,7 +1071,7 @@ function drawDeckSlide(
   const body = heading ? blocks.filter((block) => block !== heading) : blocks;
   const imageReference = body.flatMap((block) =>
     block.type === "paragraph"
-      ? [parseRuneMarkdownImage(block.source)].filter((value): value is { id: string; alt: string } => Boolean(value))
+      ? [parseOrbitMarkdownImage(block.source)].filter((value): value is { id: string; alt: string } => Boolean(value))
       : [],
   )[0];
   const chartIds = chartIdsFromBlocks(blocks);
@@ -1153,7 +1153,7 @@ async function renderDeckPdf(
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
   fontBytes: Uint8Array,
-  imageAssets: readonly RuneExportImageAsset[],
+  imageAssets: readonly OrbitExportImageAsset[],
 ) {
   const warnings = new Set<string>([
     "Deck slides use fixed 16:9 pages; animations, speaker notes, and editable slide objects are not included.",
@@ -1169,13 +1169,13 @@ async function renderDeckPdf(
   const parsed = parseDeckSource(deckArtifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "Deck Markdown could not compile for PDF export.");
   const { document, font, unicodeFont, supported } = await createPdf(parsed.deck.frontmatter.title, fontBytes);
-  const verifiedImages = runeImageAssetMap(imageAssets);
-  const referencedImageIds = extractRuneAssetIds(deckArtifact.source);
+  const verifiedImages = orbitImageAssetMap(imageAssets);
+  const referencedImageIds = extractOrbitAssetIds(deckArtifact.source);
   const missingImage = referencedImageIds.find((id) => !verifiedImages.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Deck: ${unexpectedImage.id}`);
-  const images = new Map<string, { asset: RuneExportImageAsset; image: PDFImage }>();
+  const images = new Map<string, { asset: OrbitExportImageAsset; image: PDFImage }>();
   for (const [id, asset] of verifiedImages) {
     const compatible = await pdfCompatibleImage(asset);
     const image =
@@ -1184,7 +1184,7 @@ async function renderDeckPdf(
         : await document.embedJpg(compatible.bytes);
     images.set(id, { asset, image });
   }
-  const dark = parsed.deck.frontmatter.theme === "rune-dark";
+  const dark = parsed.deck.frontmatter.theme === "orbit-dark";
   const theme: PdfTheme = dark
     ? { paper: COLORS.darkPaper, ink: COLORS.darkInk, muted: COLORS.darkMuted, line: rgb(0.204, 0.255, 0.224) }
     : { paper: COLORS.paper, ink: COLORS.ink, muted: COLORS.muted, line: COLORS.line };
@@ -1206,7 +1206,7 @@ export async function exportPdfArtifact(
   workspace: WorkspaceArtifact[],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
   providedFontBytes?: Uint8Array,
-  imageAssets: readonly RuneExportImageAsset[] = [],
+  imageAssets: readonly OrbitExportImageAsset[] = [],
 ): Promise<PdfExportResult> {
   if (!isPdfExportArtifact(artifact))
     throw new Error("Direct PDF export supports Markdown Documents, Data, Deck Markdown, and semantic HTML artifacts.");
@@ -1215,7 +1215,7 @@ export async function exportPdfArtifact(
     throw new Error(
       `PDF export is limited to ${sourceLimit.toLocaleString("en-US")} source characters for this artifact.`,
     );
-  const fontBytes = providedFontBytes ?? (await loadRunePdfFont());
+  const fontBytes = providedFontBytes ?? (await loadOrbitPdfFont());
   const rendered =
     artifact.kind === "document"
       ? await renderDocumentPdf(artifact, workspace, querySnapshots, fontBytes, imageAssets)

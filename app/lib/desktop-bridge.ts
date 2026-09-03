@@ -31,7 +31,7 @@ export type DiscoveredModelProfile = Pick<
   "provider" | "protocol" | "name" | "baseURL" | "model"
 > & { apiKey: string };
 
-type RuneDesktopApi = {
+type OrbitDesktopApi = {
   convertLegacyOffice(input: { bytes: Uint8Array; fileName: string }): Promise<{
     bytes: Uint8Array | ArrayBuffer | number[];
     fileName: string;
@@ -48,7 +48,7 @@ type RuneDesktopApi = {
 
 declare global {
   interface Window {
-    runeDesktop?: RuneDesktopApi;
+    orbitDesktop?: OrbitDesktopApi;
   }
 }
 
@@ -57,18 +57,18 @@ export function legacyOfficeFileName(name: string) {
 }
 
 export function supportsLegacyOfficeDesktopConversion() {
-  return typeof window !== "undefined" && typeof window.runeDesktop?.convertLegacyOffice === "function";
+  return typeof window !== "undefined" && typeof window.orbitDesktop?.convertLegacyOffice === "function";
 }
 
 export function supportsLegacyOfficeDesktopExport() {
-  return typeof window !== "undefined" && typeof window.runeDesktop?.exportLegacyOffice === "function";
+  return typeof window !== "undefined" && typeof window.orbitDesktop?.exportLegacyOffice === "function";
 }
 
 export function supportsDesktopModelDiscovery() {
   return (
     typeof window !== "undefined" &&
-    typeof window.runeDesktop?.discoverModels === "function" &&
-    typeof window.runeDesktop?.importDiscoveredModel === "function"
+    typeof window.orbitDesktop?.discoverModels === "function" &&
+    typeof window.orbitDesktop?.importDiscoveredModel === "function"
   );
 }
 
@@ -102,7 +102,7 @@ function boundedBridgeText(value: unknown, maximum: number) {
 
 export async function discoverDesktopModelConnections(): Promise<DesktopModelDiscovery> {
   if (!supportsDesktopModelDiscovery()) return { supported: true, candidates: [] };
-  const result = await window.runeDesktop!.discoverModels();
+  const result = await window.orbitDesktop!.discoverModels();
   if (!result || typeof result !== "object" || (result as { supported?: unknown }).supported !== true) {
     throw new Error("The Orbit desktop bridge returned an invalid model discovery result.");
   }
@@ -166,7 +166,7 @@ export async function discoverDesktopModelConnections(): Promise<DesktopModelDis
 
 export async function importDesktopModelConnection(id: string): Promise<DiscoveredModelProfile> {
   if (!supportsDesktopModelDiscovery()) throw new Error("Model discovery is available only in the Orbit desktop app.");
-  const result = await window.runeDesktop!.importDiscoveredModel(id);
+  const result = await window.orbitDesktop!.importDiscoveredModel(id);
   if (!result || typeof result !== "object") {
     throw new Error("The discovered model connection is invalid.");
   }
@@ -211,7 +211,7 @@ export async function convertLegacyOfficeFile(file: File): Promise<LegacyOfficeC
   if (file.size > MAX_LEGACY_OFFICE_IMPORT_BYTES)
     throw new Error(`${file.name}: legacy Office import is limited to 12 MB.`);
   const inputBytes = new Uint8Array(await file.arrayBuffer());
-  const result = await window.runeDesktop!.convertLegacyOffice({ fileName: file.name, bytes: inputBytes });
+  const result = await window.orbitDesktop!.convertLegacyOffice({ fileName: file.name, bytes: inputBytes });
   if (!result || !/\.(?:docx|pptx)$/i.test(result.fileName) || typeof result.warning !== "string") {
     throw new Error("The Orbit desktop bridge returned an invalid legacy Office conversion.");
   }
@@ -236,7 +236,7 @@ export async function exportLegacyOfficeFile(input: {
   if (!input.bytes.length || input.bytes.length > MAX_LEGACY_OFFICE_EXPORT_BYTES) {
     throw new Error("The modern Office package must be between 1 byte and 12 MB before legacy export.");
   }
-  const result = await window.runeDesktop!.exportLegacyOffice({ fileName: input.fileName, bytes: input.bytes });
+  const result = await window.orbitDesktop!.exportLegacyOffice({ fileName: input.fileName, bytes: input.bytes });
   const expectedExtension = /\.docx$/i.test(input.fileName) ? ".doc" : ".ppt";
   if (!result || !result.fileName.toLowerCase().endsWith(expectedExtension) || typeof result.warning !== "string") {
     throw new Error("The Orbit desktop bridge returned an invalid legacy Office export.");

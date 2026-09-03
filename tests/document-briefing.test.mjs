@@ -11,11 +11,11 @@ import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
 import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 import { buildWorkspaceDependencyGraph } from "../app/lib/dependency-graph.ts";
-import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
+import { loadOrbitLocaleCatalog } from "../app/lib/localization.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { buildWorkspaceTransactionReview } from "../app/lib/transaction-review.ts";
 
-await Promise.all(["zh-TW", "fr", "es", "ru", "ar", "ja", "ko"].map((locale) => loadRuneLocaleCatalog(locale)));
+await Promise.all(["zh-TW", "fr", "es", "ru", "ar", "ja", "ko"].map((locale) => loadOrbitLocaleCatalog(locale)));
 
 const sourceDocument = {
   id: "launch-source",
@@ -69,7 +69,7 @@ test("compiles one reviewed Document into an exact source-linked semantic HTML t
   assert.equal(parsed.slides.length, 6);
   assert.deepEqual(semanticHtmlPresentationMetadata(presentation.source), {
     title: "Launch briefing",
-    theme: "rune",
+    theme: "orbit",
     lang: "en",
     origin: sourceDocument.id,
     originRevision: portableSourceRevision(sourceDocument.source),
@@ -113,7 +113,7 @@ test("compiles a model-shaped outline only when every bounded source unit remain
   assert.deepEqual(result.errors, []);
   const source = result.plan?.creations[0].artifact.source ?? "";
   for (const unit of evidence.evidenceUnits)
-    assert.match(source, new RegExp(`data-rune-source-unit="${unit.id}"`, "u"));
+    assert.match(source, new RegExp(`data-orbit-source-unit="${unit.id}"`, "u"));
   assert.match(source, /<h2>Decision signal 1<\/h2>/u);
   assert.match(source, /<li>Evidence-grounded point 4<\/li>/u);
   assert.equal(compileLegacyHtmlSlides(source).slides.length, 6);
@@ -158,7 +158,7 @@ test("refreshes one linked presentation in place while retaining identity and li
   assert.ok(created);
   const themedPresentation = {
     ...created,
-    source: created.source.replace('data-rune-theme="rune"', 'data-rune-theme="rune-dark"'),
+    source: created.source.replace('data-orbit-theme="orbit"', 'data-orbit-theme="orbit-dark"'),
   };
   assert.equal(documentBriefingSourceIdForPresentation(themedPresentation), sourceDocument.id);
   assert.deepEqual(documentBriefingTargets([sourceDocument, themedPresentation], sourceDocument.id), [
@@ -196,7 +196,7 @@ test("refreshes one linked presentation in place while retaining identity and li
   assert.equal(nextPresentation.name, themedPresentation.name);
   assert.deepEqual(semanticHtmlPresentationMetadata(nextPresentation.source), {
     title: "Launch briefing",
-    theme: "rune-dark",
+    theme: "orbit-dark",
     lang: "en",
     origin: sourceDocument.id,
     originRevision: portableSourceRevision(updatedDocument.source),
@@ -270,7 +270,7 @@ test("keeps pre-freshness Deck Markdown refreshable as a compatibility source", 
     source: `---
 version: 1
 title: Launch briefing
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 origin: launch-source
@@ -332,7 +332,7 @@ test("resolves presentation name and id conflicts case-insensitively", () => {
     name: "LAUNCH-BRIEFING.DECK.MD",
     kind: "slides",
     language: "Deck Markdown",
-    source: "---\nversion: 1\ntitle: Existing\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Existing",
+    source: "---\nversion: 1\ntitle: Existing\ntheme: orbit\nratio: 16:9\nlang: en\n---\n\n# Existing",
   };
   const result = prepareDocumentBriefingWorkflow([sourceDocument, existingDeck], input({ slideCount: 4 }));
   assert.deepEqual(result.errors, []);
@@ -398,7 +398,7 @@ test("rejects a created semantic HTML presentation whose explicit Document origi
     ...creation,
     artifact: {
       ...creation.artifact,
-      source: creation.artifact.source.replace('data-rune-origin="launch-source"', 'data-rune-origin="missing"'),
+      source: creation.artifact.source.replace('data-orbit-origin="launch-source"', 'data-orbit-origin="missing"'),
     },
   };
   const result = prepareWorkspaceMutation([sourceDocument], [], [invalid]);

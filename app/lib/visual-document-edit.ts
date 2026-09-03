@@ -76,7 +76,7 @@ function normalizeDraft(draft: string, source: string) {
   return newline === "\n" ? withoutTrailingBlankLines : withoutTrailingBlankLines.replace(/\n/gu, newline);
 }
 
-function runeBindingTokens(source: string) {
+function orbitBindingTokens(source: string) {
   return source.match(/\{\{[^{}\r\n]+\}\}/gu) ?? [];
 }
 
@@ -162,7 +162,7 @@ export function prepareVisualDocumentSectionEdit(
       "Keep the section's heading level unchanged. Structural changes belong in canonical source.",
     );
   }
-  if (JSON.stringify(runeBindingTokens(replacement)) !== JSON.stringify(runeBindingTokens(currentFragment))) {
+  if (JSON.stringify(orbitBindingTokens(replacement)) !== JSON.stringify(orbitBindingTokens(currentFragment))) {
     return emptyResult(
       artifact.source,
       "Keep live metric and Chart bindings unchanged in the visual editor. Edit dependency source directly.",

@@ -168,7 +168,7 @@ test("keeps navigation planning outside React, DOM, provider, persistence, and m
 });
 
 test("routes Preview clicks and diagnostic repair through one Workbench effect executor", async () => {
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   const previewScroll = await readFile(
     new URL("../app/components/use-source-preview-scroll.ts", import.meta.url),
     "utf8",

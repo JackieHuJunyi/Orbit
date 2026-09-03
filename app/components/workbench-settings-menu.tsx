@@ -14,22 +14,22 @@ import {
 } from "lucide-react";
 import type { RefObject } from "react";
 import { useWorkbenchMenuFocus, type WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
-import { RUNE_APPEARANCE_THEMES, type RuneAppearanceTheme } from "../lib/appearance";
-import { runeText, runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
+import { ORBIT_APPEARANCE_THEMES, type OrbitAppearanceTheme } from "../lib/appearance";
+import { orbitText, orbitUICopy, type OrbitLocale, type OrbitUICopy } from "../lib/localization";
 import { ORBIT_PRODUCT_NAME, ORBIT_PRODUCT_VERSION } from "../lib/product-meta";
 
 type WorkbenchSettingsMenuProps = {
-  appearanceTheme: RuneAppearanceTheme;
+  appearanceTheme: OrbitAppearanceTheme;
   blocked: boolean;
   containerRef: RefObject<HTMLDivElement | null>;
-  copy: RuneUICopy["workbench"];
+  copy: OrbitUICopy["workbench"];
   directoryBusy: boolean;
   directoryChanged: boolean;
   directoryName: string | null;
   hasPilotEvidence: boolean;
   hasWorkspaceRecovery: boolean;
   workspaceResetBlocked: boolean;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   open: boolean;
   pilotEvidenceBody: string;
   pilotEvidenceEmpty: string;
@@ -45,7 +45,7 @@ type WorkbenchSettingsMenuProps = {
   onPushFolder: () => void;
   onRestorePreviousWorkspace: () => void;
   onRestoreSampleWorkspace: () => void;
-  onThemeChange: (theme: RuneAppearanceTheme) => void;
+  onThemeChange: (theme: OrbitAppearanceTheme) => void;
 };
 
 export function WorkbenchSettingsMenu({
@@ -78,8 +78,8 @@ export function WorkbenchSettingsMenu({
   onThemeChange,
 }: WorkbenchSettingsMenuProps) {
   const activeAppearance =
-    RUNE_APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) ?? RUNE_APPEARANCE_THEMES[0];
-  const workspaceResetCopy = runeUICopy(locale).workspaceReset;
+    ORBIT_APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) ?? ORBIT_APPEARANCE_THEMES[0];
+  const workspaceResetCopy = orbitUICopy(locale).workspaceReset;
   const actions = [
     {
       id: "guide",
@@ -119,7 +119,7 @@ export function WorkbenchSettingsMenu({
             id: "pull",
             icon: <RefreshCw aria-hidden="true" />,
             label: copy.pull,
-            detail: directoryChanged ? runeText(locale, "Changes detected", "检测到变化") : directoryName,
+            detail: directoryChanged ? orbitText(locale, "Changes detected", "检测到变化") : directoryName,
             disabled: directoryBusy || blocked,
             onSelect: onPullFolder,
           },
@@ -155,7 +155,7 @@ export function WorkbenchSettingsMenu({
     },
   ];
   const { onMenuKeyDown, setItemRef } = useWorkbenchMenuFocus({
-    itemCount: actions.length + RUNE_APPEARANCE_THEMES.length,
+    itemCount: actions.length + ORBIT_APPEARANCE_THEMES.length,
     open,
     onOpenChange,
     requestedFocusRef,
@@ -214,12 +214,12 @@ export function WorkbenchSettingsMenu({
         />
         <span>
           <small>{copy.activeTheme}</small>
-          <strong>{runeText(locale, activeAppearance.english, activeAppearance.chinese)}</strong>
+          <strong>{orbitText(locale, activeAppearance.english, activeAppearance.chinese)}</strong>
         </span>
       </div>
       <div className="tools-theme-grid" role="group" aria-label={copy.appearanceBody}>
-        {RUNE_APPEARANCE_THEMES.map((theme, index) => {
-          const themeName = runeText(locale, theme.english, theme.chinese);
+        {ORBIT_APPEARANCE_THEMES.map((theme, index) => {
+          const themeName = orbitText(locale, theme.english, theme.chinese);
           return (
             <button
               ref={(element) => setItemRef(actions.length + index, element)}

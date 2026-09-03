@@ -3,13 +3,13 @@
 import { BadgeCheck, Check, ChevronDown, CircleX, ListChecks, PencilLine, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import {
-  RUNE_TASK_RUBRIC_DIMENSIONS,
-  type RuneTaskDeliveryConfirmation,
-  type RuneTaskDeliveryRating,
-  type RuneTaskOutcomeRubric,
-  type RuneTaskRubricScore,
+  ORBIT_TASK_RUBRIC_DIMENSIONS,
+  type OrbitTaskDeliveryConfirmation,
+  type OrbitTaskDeliveryRating,
+  type OrbitTaskOutcomeRubric,
+  type OrbitTaskRubricScore,
 } from "../lib/task-evidence";
-import { localizeRuneCopy, type RuneLocale } from "../lib/localization";
+import { localizeOrbitCopy, type OrbitLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 export const DELIVERY_OUTCOME_BASE_COPY = {
@@ -100,18 +100,18 @@ export function DeliveryOutcomeDialog({
   workflowTitle: string;
   artifactName: string;
   handoffLabel: string;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   submitting?: boolean;
   error?: string;
   onCancel: () => void;
-  onConfirm: (confirmation: RuneTaskDeliveryConfirmation) => void | Promise<void>;
+  onConfirm: (confirmation: OrbitTaskDeliveryConfirmation) => void | Promise<void>;
 }) {
-  const copy = localizeRuneCopy(locale, DELIVERY_OUTCOME_BASE_COPY.en, DELIVERY_OUTCOME_BASE_COPY["zh-CN"]);
-  const [rating, setRating] = useState<RuneTaskDeliveryRating | null>(null);
+  const copy = localizeOrbitCopy(locale, DELIVERY_OUTCOME_BASE_COPY.en, DELIVERY_OUTCOME_BASE_COPY["zh-CN"]);
+  const [rating, setRating] = useState<OrbitTaskDeliveryRating | null>(null);
   const [detailed, setDetailed] = useState(false);
   const [authorized, setAuthorized] = useState(false);
-  const [rubric, setRubric] = useState<Partial<RuneTaskOutcomeRubric>>({});
-  const evaluationComplete = RUNE_TASK_RUBRIC_DIMENSIONS.every((dimension) => rubric[dimension] != null);
+  const [rubric, setRubric] = useState<Partial<OrbitTaskOutcomeRubric>>({});
+  const evaluationComplete = ORBIT_TASK_RUBRIC_DIMENSIONS.every((dimension) => rubric[dimension] != null);
   const canConfirm = Boolean(rating) && (!detailed || (authorized && evaluationComplete));
   const options = [
     { id: "ready" as const, title: copy.readyTitle, body: copy.readyBody, icon: BadgeCheck },
@@ -155,7 +155,7 @@ export function DeliveryOutcomeDialog({
                     evaluation: {
                       version: 1,
                       provenance: "authorized-or-redacted",
-                      rubric: rubric as RuneTaskOutcomeRubric,
+                      rubric: rubric as OrbitTaskOutcomeRubric,
                     },
                   });
               }}
@@ -230,7 +230,7 @@ export function DeliveryOutcomeDialog({
             <p>{copy.evaluationDescription}</p>
           </header>
           <div className="delivery-rubric">
-            {RUNE_TASK_RUBRIC_DIMENSIONS.map((dimension) => {
+            {ORBIT_TASK_RUBRIC_DIMENSIONS.map((dimension) => {
               const [title, description] = copy.rubric[dimension];
               return (
                 <div
@@ -254,7 +254,7 @@ export function DeliveryOutcomeDialog({
                           disabled={submitting}
                           aria-label={`${title} ${score} / 5`}
                           onChange={() =>
-                            setRubric((current) => ({ ...current, [dimension]: score as RuneTaskRubricScore }))
+                            setRubric((current) => ({ ...current, [dimension]: score as OrbitTaskRubricScore }))
                           }
                         />
                         <span aria-hidden="true">{score}</span>

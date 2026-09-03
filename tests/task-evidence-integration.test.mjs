@@ -6,13 +6,13 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("wires both focused tasks through one bounded device task evidence ledger", async () => {
   const [workbench, evidence, deliveryDialog] = await Promise.all([
-    read("../app/components/rune-workbench.tsx"),
+    read("../app/components/orbit-workbench.tsx"),
     read("../app/lib/task-evidence.ts"),
     read("../app/components/delivery-outcome-dialog.tsx"),
   ]);
 
-  assert.match(workbench, /taskEvidence: RuneTaskEvidence/);
-  assert.match(workbench, /setTaskEvidence\(normalizeRuneTaskEvidence\(parsed\.taskEvidence\)\)/);
+  assert.match(workbench, /taskEvidence: OrbitTaskEvidence/);
+  assert.match(workbench, /setTaskEvidence\(normalizeOrbitTaskEvidence\(parsed\.taskEvidence\)\)/);
   assert.match(
     workbench,
     /taskRun:\s*\{\s*taskId: "document-briefing",\s*sourceArtifactId: input\.sourceArtifactId,\s*outputArtifactIds: \[outputArtifactId\]/s,
@@ -21,27 +21,27 @@ test("wires both focused tasks through one bounded device task evidence ledger",
     workbench,
     /taskRun:\s*\{\s*taskId: "operating-review",\s*sourceArtifactId: input\.dataArtifactId,\s*outputArtifactIds: Object\.values\(savedOperatingReviewAfterApply\.artifactIds\)/s,
   );
-  assert.match(workbench, /runeTaskRunFromPendingChange\(pendingChange, "applied", null\)/);
-  assert.match(workbench, /recordStoppedRuneTask\(pendingChange, "(?:stale|validation|persistence|cancelled)"\)/);
-  assert.match(workbench, /recordRuneTaskDelivery\(\{/);
+  assert.match(workbench, /orbitTaskRunFromPendingChange\(pendingChange, "applied", null\)/);
+  assert.match(workbench, /recordStoppedOrbitTask\(pendingChange, "(?:stale|validation|persistence|cancelled)"\)/);
+  assert.match(workbench, /recordOrbitTaskDelivery\(\{/);
   assert.match(workbench, /currentOutput\.source !== pending\.sourceRevision/);
   assert.match(workbench, /candidate\.outputArtifactIds\.every\(\(artifactId\) =>/);
   assert.match(workbench, /currentOutputRevisions,/);
-  assert.match(workbench, /runeTaskRunsForIdentity\(taskEvidence, \{/);
+  assert.match(workbench, /orbitTaskRunsForIdentity\(taskEvidence, \{/);
   assert.doesNotMatch(workbench, /recordOperatingReviewDelivery|appendOperatingReviewRun|recordStoppedOperatingReview/);
   assert.match(workbench, /ui\.recentTaskRuns/);
 
-  assert.match(evidence, /export type RuneTaskEvidence = \{\s*version: 3;/s);
+  assert.match(evidence, /export type OrbitTaskEvidence = \{\s*version: 3;/s);
   assert.match(evidence, /version !== 1 && version !== 2 && version !== 3/);
-  assert.match(evidence, /MAX_RUNE_TASK_RUNS = 24/);
-  assert.match(evidence, /MAX_RUNE_TASK_DELIVERIES = 24/);
+  assert.match(evidence, /MAX_ORBIT_TASK_RUNS = 24/);
+  assert.match(evidence, /MAX_ORBIT_TASK_DELIVERIES = 24/);
   assert.match(evidence, /sourceRevision: string/);
   assert.match(evidence, /outputRevisions: Record<string, string>/);
   assert.match(evidence, /One or more task outputs changed after this run/);
   assert.match(evidence, /This output changed after the applied task/);
   assert.doesNotMatch(evidence, /prompt|sourceText|documentText|workspaceSource/u);
-  assert.match(deliveryDialog, /RuneTaskDeliveryRating/);
-  assert.match(deliveryDialog, /RUNE_TASK_RUBRIC_DIMENSIONS/);
+  assert.match(deliveryDialog, /OrbitTaskDeliveryRating/);
+  assert.match(deliveryDialog, /ORBIT_TASK_RUBRIC_DIMENSIONS/);
   assert.match(deliveryDialog, /provenance: "authorized-or-redacted"/);
   assert.match(deliveryDialog, /!detailed \|\| \(authorized && evaluationComplete\)/);
   assert.match(workbench, /evaluation: confirmation\.evaluation/);

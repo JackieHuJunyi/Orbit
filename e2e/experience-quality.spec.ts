@@ -49,14 +49,14 @@ test("hydrates cleanly and reveals the Agent only when requested", async ({ page
 
   await page.reload();
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(page.locator(".workspace")).toBeVisible();
   expect(failures).toEqual([]);
 });
 
 test("Space Black preserves readable text and distinct workspace surface levels", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.addInitScript(() => localStorage.setItem("rune-appearance-theme-v1", "space-black"));
+  await page.addInitScript(() => localStorage.setItem("orbit-appearance-theme-v1", "space-black"));
   await openWorkbench(page);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "space-black");
 

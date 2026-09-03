@@ -4,7 +4,7 @@ import test from "node:test";
 import { parseChartSource } from "../app/lib/charts.ts";
 import { compileArtifactSource } from "../app/lib/bindings.ts";
 import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
-import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
+import { loadOrbitLocaleCatalog } from "../app/lib/localization.ts";
 import {
   appendOperatingReviewRun,
   createSavedOperatingReview,
@@ -19,7 +19,7 @@ import { parseQueryDataSourceDirective } from "../app/lib/query-source.ts";
 import { createWorkspaceQuerySnapshot } from "../app/lib/query-snapshot.ts";
 import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 
-await loadRuneLocaleCatalog("zh-TW");
+await loadOrbitLocaleCatalog("zh-TW");
 
 function dataArtifact(overrides = {}) {
   return {
@@ -634,7 +634,7 @@ test("resolves every generated id and filename collision while preserving the ne
       name: "COLLISION-REVIEW-ANALYSIS.SQL",
       kind: "query",
       language: "DuckDB SQL",
-      source: '-- rune:data "source-data"\nSELECT Region, "Net Revenue" FROM workspace_data;\n',
+      source: '-- orbit:data "source-data"\nSELECT Region, "Net Revenue" FROM workspace_data;\n',
     },
     {
       id: "collision-review-view",
@@ -672,7 +672,7 @@ test("resolves every generated id and filename collision while preserving the ne
       kind: "slides",
       language: "Deck Markdown",
       source:
-        "---\nversion: 1\ntitle: Existing briefing\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Existing briefing\n",
+        "---\nversion: 1\ntitle: Existing briefing\ntheme: orbit\nratio: 16:9\nlang: en\n---\n\n# Existing briefing\n",
     },
   ];
   const before = structuredClone(existing);

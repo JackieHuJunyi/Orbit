@@ -64,9 +64,9 @@ const onePixelPng = new Uint8Array(
     "base64",
   ),
 );
-const runeImageId = "a".repeat(64);
-const runeImageAsset = {
-  id: runeImageId,
+const orbitImageId = "a".repeat(64);
+const orbitImageAsset = {
+  id: orbitImageId,
   name: "proof.png",
   mimeType: "image/png",
   size: onePixelPng.length,
@@ -79,11 +79,11 @@ test("embeds and reimports verified Orbit local images through portable DOCX med
     name: "image-report.md",
     kind: "document",
     language: "Markdown",
-    source: `# Image report\n\n![Portable proof](rune-asset:sha256:${runeImageId})\n`,
+    source: `# Image report\n\n![Portable proof](orbit-asset:sha256:${orbitImageId})\n`,
   };
-  const exported = exportOfficeArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const exported = exportOfficeArtifact(artifact, [artifact], [], [orbitImageAsset]);
   const parts = packageParts(exported.bytes);
-  assert.deepEqual(parts[`word/media/rune-${runeImageId}.png`], onePixelPng);
+  assert.deepEqual(parts[`word/media/orbit-${orbitImageId}.png`], onePixelPng);
   assert.match(strFromU8(parts["word/document.xml"]), /<w:drawing>/u);
   assert.match(strFromU8(parts["word/_rels/document.xml.rels"]), /relationships\/image/u);
   assert.match(strFromU8(parts["[Content_Types].xml"]), /ContentType="image\/png"/u);
@@ -91,7 +91,7 @@ test("embeds and reimports verified Orbit local images through portable DOCX med
   const imported = await convertOfficeFileWithAssets(exported.fileName, exported.bytes);
   assert.equal(imported.assets.length, 1);
   assert.deepEqual(imported.assets[0].bytes, onePixelPng);
-  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.artifacts[0].source, new RegExp(`orbit-asset:sha256:${imported.assets[0].id}`, "u"));
   assert.match(imported.warnings.join(" "), /verified local image.*preserved/iu);
 });
 
@@ -101,7 +101,7 @@ test("fails DOCX export closed when a referenced Orbit image is missing", () => 
     name: "missing.md",
     kind: "document",
     language: "Markdown",
-    source: `![Missing](rune-asset:sha256:${runeImageId})`,
+    source: `![Missing](orbit-asset:sha256:${orbitImageId})`,
   };
   assert.throws(() => exportOfficeArtifact(artifact), /Referenced local image is missing or corrupt/iu);
 });
@@ -115,7 +115,7 @@ test("embeds and reimports a reviewed Deck image through deterministic bounded P
     source: `---
 version: 1
 title: Image deck
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -125,14 +125,14 @@ lang: en
 
 The source remains readable.
 
-![Portable proof](rune-asset:sha256:${runeImageId})
+![Portable proof](orbit-asset:sha256:${orbitImageId})
 `,
   };
-  const first = exportOfficeArtifact(artifact, [artifact], [], [runeImageAsset]);
-  const second = exportOfficeArtifact(artifact, [artifact], [], [runeImageAsset]);
+  const first = exportOfficeArtifact(artifact, [artifact], [], [orbitImageAsset]);
+  const second = exportOfficeArtifact(artifact, [artifact], [], [orbitImageAsset]);
   assert.deepEqual(first.bytes, second.bytes);
   const parts = packageParts(first.bytes);
-  assert.deepEqual(parts[`ppt/media/rune-${runeImageId}.png`], onePixelPng);
+  assert.deepEqual(parts[`ppt/media/orbit-${orbitImageId}.png`], onePixelPng);
   assert.match(strFromU8(parts["ppt/slides/slide1.xml"]), /<p:pic>/u);
   assert.match(strFromU8(parts["ppt/slides/_rels/slide1.xml.rels"]), /relationships\/image/u);
   assert.match(strFromU8(parts["[Content_Types].xml"]), /ContentType="image\/png"/u);
@@ -143,8 +143,8 @@ The source remains readable.
   assert.deepEqual(imported.assets[0].bytes, onePixelPng);
   assert.equal(imported.artifacts[0].language, "Semantic HTML");
   assert.equal(imported.artifacts[0].name, "image-deck.html");
-  assert.match(imported.artifacts[0].source, new RegExp(`rune-asset:sha256:${imported.assets[0].id}`, "u"));
-  assert.match(imported.artifacts[0].source, /<figure class="deck-image"><img src="rune-asset:sha256:/u);
+  assert.match(imported.artifacts[0].source, new RegExp(`orbit-asset:sha256:${imported.assets[0].id}`, "u"));
+  assert.match(imported.artifacts[0].source, /<figure class="deck-image"><img src="orbit-asset:sha256:/u);
   assert.deepEqual(validateArtifact(imported.artifacts[0]), []);
   assert.throws(() => exportOfficeArtifact(artifact, [artifact]), /Referenced local image is missing or corrupt/iu);
 });
@@ -417,7 +417,7 @@ test("keeps hostile chart snapshot text inside escaped Office text nodes", () =>
     source: `---
 version: 1
 title: Hostile chart proof
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -476,7 +476,7 @@ test("keeps a 20-mark chart snapshot inside a content slide", () => {
     source: `---
 version: 1
 title: Full chart proof
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -539,7 +539,7 @@ test("freezes line charts as semantic DOCX trends and native PPTX vector lines",
     source: `---
 version: 1
 title: Trend review
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -609,7 +609,7 @@ test("freezes area charts as semantic DOCX trends and filled PPTX vectors", () =
     source: `---
 version: 1
 title: Volume review
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

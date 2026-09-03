@@ -32,7 +32,7 @@ async function verifyRoundTrip(directory, kind, artifact) {
   };
 }
 
-const directory = await mkdtemp(path.join(tmpdir(), "rune-legacy-office-qa-"));
+const directory = await mkdtemp(path.join(tmpdir(), "orbit-legacy-office-qa-"));
 try {
   const document = defaultArtifacts.find((artifact) => artifact.kind === "document");
   const slides = defaultArtifacts.find((artifact) => artifact.kind === "slides");

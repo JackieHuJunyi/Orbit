@@ -58,7 +58,7 @@ function parseStrictNumber(draft: string) {
 function parseCsvAutoValue(draft: string): DataCell {
   const singleCellSource = Papa.unparse(
     [
-      ["value", "_rune"],
+      ["value", "_orbit"],
       [draft, "1"],
     ],
     { quotes: true, newline: "\n" },

@@ -10,31 +10,31 @@ import {
   type PointerEvent as ReactPointerEvent,
   type RefObject,
 } from "react";
-import type { RuneUICopy } from "../lib/localization";
+import type { OrbitUICopy } from "../lib/localization";
 import {
   clampWorkspaceSourcePercent,
   DEFAULT_WORKSPACE_SOURCE_PERCENT,
   MAX_WORKSPACE_SOURCE_PERCENT,
   MIN_WORKSPACE_SOURCE_PERCENT,
-  RUNE_WORKSPACE_VIEW_CONTRIBUTIONS,
+  ORBIT_WORKSPACE_VIEW_CONTRIBUTIONS,
   workspaceSplitPercentFromDrag,
-  type RuneWorkspaceSplitGeometry,
-  type RuneWorkspaceView,
+  type OrbitWorkspaceSplitGeometry,
+  type OrbitWorkspaceView,
 } from "../lib/workspace-layout";
 
 type WorkspaceViewSwitchProps = {
-  ui: RuneUICopy["workbench"];
-  view: RuneWorkspaceView;
-  onChange: (view: RuneWorkspaceView) => void;
+  ui: OrbitUICopy["workbench"];
+  view: OrbitWorkspaceView;
+  onChange: (view: OrbitWorkspaceView) => void;
 };
 
-function WorkspaceViewIcon({ view }: { view: RuneWorkspaceView }) {
+function WorkspaceViewIcon({ view }: { view: OrbitWorkspaceView }) {
   if (view === "split") return <Columns2 aria-hidden="true" />;
   if (view === "source") return <Code2 aria-hidden="true" />;
   return <Eye aria-hidden="true" />;
 }
 
-function workspaceViewLabel(ui: RuneUICopy["workbench"], view: RuneWorkspaceView) {
+function workspaceViewLabel(ui: OrbitUICopy["workbench"], view: OrbitWorkspaceView) {
   if (view === "split") return { short: ui.splitView, accessible: ui.showSplitView };
   if (view === "source") return { short: ui.sourceView, accessible: ui.showSourceView };
   return { short: ui.previewView, accessible: ui.showPreviewView };
@@ -44,7 +44,7 @@ function workspaceViewLabel(ui: RuneUICopy["workbench"], view: RuneWorkspaceView
 export function WorkspaceViewSwitch({ ui, view, onChange }: WorkspaceViewSwitchProps) {
   return (
     <div className="workspace-view-switch" role="group" aria-label={ui.workspaceView} data-view={view}>
-      {RUNE_WORKSPACE_VIEW_CONTRIBUTIONS.map((contribution) => {
+      {ORBIT_WORKSPACE_VIEW_CONTRIBUTIONS.map((contribution) => {
         const label = workspaceViewLabel(ui, contribution.id);
         const shortcut = `⌘⌥${contribution.shortcutNumber} / Ctrl Alt ${contribution.shortcutNumber}`;
         return (
@@ -78,7 +78,7 @@ type WorkspaceSplitterProps = {
   onCommit: (value: number) => void;
 };
 
-function workspaceSplitGeometry(workspace: HTMLDivElement, originX: number): RuneWorkspaceSplitGeometry | null {
+function workspaceSplitGeometry(workspace: HTMLDivElement, originX: number): OrbitWorkspaceSplitGeometry | null {
   const sourcePane = workspace.querySelector<HTMLElement>(":scope > .source-pane");
   const previewPane = workspace.querySelector<HTMLElement>(":scope > .preview-pane");
   if (!sourcePane || !previewPane) return null;
@@ -110,7 +110,7 @@ export function WorkspaceSplitter({
 }: WorkspaceSplitterProps) {
   const [dragging, setDragging] = useState(false);
   const draggingRef = useRef(false);
-  const geometryRef = useRef<RuneWorkspaceSplitGeometry | null>(null);
+  const geometryRef = useRef<OrbitWorkspaceSplitGeometry | null>(null);
   const latestClientXRef = useRef(0);
   const latestPercentRef = useRef(value);
   const frameRef = useRef<number | null>(null);

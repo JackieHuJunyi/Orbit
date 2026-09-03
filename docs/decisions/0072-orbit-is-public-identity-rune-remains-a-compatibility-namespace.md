@@ -1,6 +1,6 @@
 # ADR 0072: Orbit is the public identity; Rune remains a compatibility namespace
 
-- Status: amended by ADR 0073 for the public wordmark; compatibility boundary remains accepted
+- Status: superseded by ADR 0078 before private testing
 - Date: 2026-09-02
 
 ## Context

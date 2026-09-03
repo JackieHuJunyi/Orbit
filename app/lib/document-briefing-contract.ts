@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RUNE_LOCALE_REGISTRY } from "./localization.ts";
+import { ORBIT_LOCALE_REGISTRY } from "./localization.ts";
 
 export const MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS = 100_000;
 export const MAX_DOCUMENT_BRIEFING_MODEL_SLIDE_TITLE_CHARS = 90;
@@ -23,7 +23,7 @@ const DocumentBriefingInputSchema = z
     audience: z.enum(["leadership", "team", "customer"]),
     focus: z.string().trim().min(1).max(180),
     slideCount: z.union([z.literal(4), z.literal(6), z.literal(8)]),
-    locale: z.enum(RUNE_LOCALE_REGISTRY.map((entry) => entry.locale)),
+    locale: z.enum(ORBIT_LOCALE_REGISTRY.map((entry) => entry.locale)),
   })
   .strict();
 

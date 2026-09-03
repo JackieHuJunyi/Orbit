@@ -2,7 +2,7 @@
 
 import { History, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
 import type { CheckpointRestorePlan } from "../lib/checkpoint-restore";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { ReviewDialog } from "./review-dialog";
 
 export function CheckpointRestoreDialog({
@@ -16,11 +16,11 @@ export function CheckpointRestoreDialog({
   plan: CheckpointRestorePlan;
   error: string;
   submitting: boolean;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const copy = runeUICopy(locale);
+  const copy = orbitUICopy(locale);
   return (
     <ReviewDialog
       dialogId="checkpoint-restore-review"

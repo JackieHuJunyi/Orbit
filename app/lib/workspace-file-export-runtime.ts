@@ -1,7 +1,7 @@
 import { compileArtifactSource, queryMetricSourceIdsForArtifact } from "./bindings.ts";
 import { chartQuerySourceIdsForArtifact } from "./charts.ts";
 import type { ArtifactExportResult } from "./export-contract.ts";
-import { extractRuneAssetIds, type PreparedRuneImageAsset } from "./local-assets.ts";
+import { extractOrbitAssetIds, type PreparedOrbitImageAsset } from "./local-assets.ts";
 import { resolveQueryDataArtifact } from "./query-source.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 import {
@@ -16,7 +16,7 @@ export type WorkspaceFileExportPorts = {
     queryArtifact: WorkspaceArtifact,
     dataArtifact: WorkspaceArtifact,
   ) => Promise<WorkspaceQuerySnapshot>;
-  loadImageAsset?: (id: string) => Promise<PreparedRuneImageAsset | null>;
+  loadImageAsset?: (id: string) => Promise<PreparedOrbitImageAsset | null>;
 };
 
 type WorkspaceFileExportContext = {
@@ -25,7 +25,7 @@ type WorkspaceFileExportContext = {
   exportArtifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
   querySnapshots: WorkspaceQuerySnapshot[];
-  imageAssets: PreparedRuneImageAsset[];
+  imageAssets: PreparedOrbitImageAsset[];
 };
 
 type WorkspaceFileExportConverter = (context: WorkspaceFileExportContext) => Promise<ArtifactExportResult>;
@@ -49,10 +49,10 @@ async function convertCanonicalSource(context: WorkspaceFileExportContext): Prom
   const warnings = [
     "This download preserves Orbit's exact readable canonical source; live bindings remain source expressions rather than frozen values.",
   ];
-  const assetCount = new Set(extractRuneAssetIds(context.artifact.source)).size;
+  const assetCount = new Set(extractOrbitAssetIds(context.artifact.source)).size;
   if (assetCount) {
     warnings.push(
-      `${assetCount} local image ${assetCount === 1 ? "reference remains" : "references remain"} as rune-asset identifiers. Use a connected folder or standalone/package export when the receiver also needs the image bytes.`,
+      `${assetCount} local image ${assetCount === 1 ? "reference remains" : "references remain"} as orbit-asset identifiers. Use a connected folder or standalone/package export when the receiver also needs the image bytes.`,
     );
   }
   if (context.artifact.kind === "data") {
@@ -167,8 +167,8 @@ async function prepareImageAssets(
   loader: NonNullable<WorkspaceFileExportPorts["loadImageAsset"]>,
 ) {
   if (artifact.kind !== "document" && artifact.kind !== "slides") return [];
-  const ids = [...new Set(extractRuneAssetIds(artifact.source))];
-  const assets: PreparedRuneImageAsset[] = [];
+  const ids = [...new Set(extractOrbitAssetIds(artifact.source))];
+  const assets: PreparedOrbitImageAsset[] = [];
   for (const id of ids) {
     const asset = await loader(id);
     if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${id}`);
@@ -221,8 +221,8 @@ export async function prepareWorkspaceFileExport(
   const loadImageAsset =
     ports.loadImageAsset ??
     (async (id) => {
-      const { getRuneImageAsset } = await import("./local-assets.ts");
-      return getRuneImageAsset(id);
+      const { getOrbitImageAsset } = await import("./local-assets.ts");
+      return getOrbitImageAsset(id);
     });
   const [querySnapshots, imageAssets] =
     destination === "source"

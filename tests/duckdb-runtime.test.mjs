@@ -81,14 +81,14 @@ test("preserves canonical parser row identity through filter, sort, aliases, and
   );
   await database.instantiate(() => {});
   database.open({});
-  const canonicalRows = parsed.rows.map((row, index) => ({ ...row, __rune_import_order__: index }));
+  const canonicalRows = parsed.rows.map((row, index) => ({ ...row, __orbit_import_order__: index }));
   database.registerFileText("canonical.json", JSON.stringify(canonicalRows));
   const connection = database.connect();
 
   try {
     connection.query(`CREATE TABLE workspace_data AS
       SELECT Region, Revenue FROM read_json_auto('canonical.json', format = 'array')
-      ORDER BY __rune_import_order__`);
+      ORDER BY __orbit_import_order__`);
     const result = connection.query(buildBoundedQuery(plan.sql));
     const rows = result.toArray().map((row) => row.toJSON());
     assert.deepEqual(

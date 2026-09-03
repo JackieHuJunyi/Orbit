@@ -8,7 +8,7 @@ test("creates a stable bounded UTF-8 source change token", () => {
   assert.equal(portableSourceRevision("hello"), "r1-5-a430d84680aabd0b");
   assert.match(portableSourceRevision("Orbit"), PORTABLE_SOURCE_REVISION_PATTERN);
   assert.match(portableSourceRevision("你好，Orbit"), PORTABLE_SOURCE_REVISION_PATTERN);
-  assert.notEqual(portableSourceRevision("Orbit"), portableSourceRevision("rune"));
+  assert.notEqual(portableSourceRevision("Orbit"), portableSourceRevision("orbit"));
   assert.notEqual(portableSourceRevision("é"), portableSourceRevision("e\u0301"));
 });
 

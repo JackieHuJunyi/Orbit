@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const [workbench, client, conversationModel, conversationHook, conversationView, dockShell] = await Promise.all([
-  readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+  readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
   readFile(new URL("../app/lib/agent-client.ts", import.meta.url), "utf8"),
   readFile(new URL("../app/lib/agent-conversation.ts", import.meta.url), "utf8"),
   readFile(new URL("../app/components/use-agent-conversation.ts", import.meta.url), "utf8"),

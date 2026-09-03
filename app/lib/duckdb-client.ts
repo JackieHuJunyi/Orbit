@@ -169,11 +169,11 @@ async function executeQuery(
   const parsedData = parseDataSource(dataSource);
   if (parsedData.errors.length) throw new Error(parsedData.errors[0]);
   if (!parsedData.columns.length) throw new Error("Add at least one data column before running SQL.");
-  let importOrderColumn = "__rune_import_order__";
+  let importOrderColumn = "__orbit_import_order__";
   const canonicalColumnNames = new Set(parsedData.columns.map((column) => column.toLowerCase()));
   while (canonicalColumnNames.has(importOrderColumn.toLowerCase())) importOrderColumn += "_";
   const canonicalRows = parsedData.rows.map((row, index) => ({ ...row, [importOrderColumn]: index }));
-  const fileName = `rune-workspace-${dataFormat.toLocaleLowerCase()}.json`;
+  const fileName = `orbit-workspace-${dataFormat.toLocaleLowerCase()}.json`;
   const database = await getDatabase();
   signal?.throwIfAborted();
   await database.dropFiles();

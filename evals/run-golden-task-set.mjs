@@ -5,15 +5,15 @@ import * as duckdb from "@duckdb/duckdb-wasm/blocking";
 import { findChartReferences, parseChartSource } from "../app/lib/charts.ts";
 import { parseDeckSource } from "../app/lib/deck.ts";
 import { compileLegacyHtmlSlides } from "../app/lib/legacy-html-slides.ts";
-import { loadRuneLocaleCatalog } from "../app/lib/localization.ts";
+import { loadOrbitLocaleCatalog } from "../app/lib/localization.ts";
 import { prepareWorkspaceMutation } from "../app/lib/patches.ts";
 import { semanticHtmlPresentationMetadata } from "../app/lib/semantic-html-presentation.ts";
 import { buildBoundedQuery } from "../app/lib/sql.ts";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
-import { prepareRuneTaskProvider } from "../app/lib/task-providers.ts";
+import { prepareOrbitTaskProvider } from "../app/lib/task-providers.ts";
 import { operatingReviewMetricField, prepareOperatingReviewEvidence } from "../app/lib/operating-review.ts";
 import { parseDataSource } from "../app/lib/workspace.ts";
-import { RUNE_GOLDEN_TASK_SET_VERSION, RUNE_GOLDEN_TASKS } from "./golden-task-set.ts";
+import { ORBIT_GOLDEN_TASK_SET_VERSION, ORBIT_GOLDEN_TASKS } from "./golden-task-set.ts";
 
 function deepFreeze(value) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
@@ -87,7 +87,7 @@ function assertDocumentBriefing(task, artifacts) {
     assert.equal(metadata.audience, input.audience);
     assert.equal(metadata.purpose, input.focus);
     theme = metadata.theme;
-    sourceUnits = [...output.source.matchAll(/data-rune-source-unit="(source-\d+)"/gu)].map((match) => match[1]);
+    sourceUnits = [...output.source.matchAll(/data-orbit-source-unit="(source-\d+)"/gu)].map((match) => match[1]);
   } else {
     const parsed = parseDeckSource(output.source);
     assert.deepEqual(parsed.errors, []);
@@ -157,20 +157,20 @@ async function runOperatingReviewQuery(runtime, task, output, runtimeIndex) {
   assert.ok(data && query);
   const parsed = parseDataSource(data.source);
   assert.deepEqual(parsed.errors, []);
-  const fileName = `rune-golden-${runtimeIndex}.json`;
+  const fileName = `orbit-golden-${runtimeIndex}.json`;
   runtime.database.registerFileText(
     fileName,
     JSON.stringify(
       parsed.rows.map((row, index) => ({
         ...row,
-        __rune_import_order__: index,
+        __orbit_import_order__: index,
       })),
     ),
   );
   runtime.connection.query(`CREATE OR REPLACE TABLE workspace_data AS
-    SELECT * EXCLUDE (__rune_import_order__)
+    SELECT * EXCLUDE (__orbit_import_order__)
     FROM read_json_auto('${fileName}', format = 'array')
-    ORDER BY __rune_import_order__`);
+    ORDER BY __orbit_import_order__`);
   const result = runtime.connection.query(buildBoundedQuery(query.source));
   return result.toArray().map((row) => row.toJSON());
 }
@@ -186,23 +186,23 @@ function failedCase(task, error) {
   };
 }
 
-export async function runRuneGoldenTaskSet() {
+export async function runOrbitGoldenTaskSet() {
   const cases = [];
   await Promise.all(
-    [...new Set(RUNE_GOLDEN_TASKS.map((task) => task.request.input.locale))].map((locale) =>
-      loadRuneLocaleCatalog(locale),
+    [...new Set(ORBIT_GOLDEN_TASKS.map((task) => task.request.input.locale))].map((locale) =>
+      loadOrbitLocaleCatalog(locale),
     ),
   );
   const runtime = await createRuntime();
   let runtimeVerified = 0;
   try {
-    for (const task of RUNE_GOLDEN_TASKS) {
+    for (const task of ORBIT_GOLDEN_TASKS) {
       const artifacts = cloneFrozen(task.artifacts);
       const request = cloneFrozen(task.request);
       const beforeArtifacts = structuredClone(artifacts);
       const beforeRequest = structuredClone(request);
       try {
-        const prepared = prepareRuneTaskProvider(artifacts, request);
+        const prepared = prepareOrbitTaskProvider(artifacts, request);
         if (task.expected.outcome === "rejected") {
           assert.equal(prepared.plan, undefined, "a rejected task produced a plan");
           assert.ok(prepared.errors.length > 0, "a rejected task did not explain why it stopped");
@@ -243,12 +243,12 @@ export async function runRuneGoldenTaskSet() {
   }
 
   const passed = cases.filter((entry) => entry.result === "passed").length;
-  const expectedSuccess = RUNE_GOLDEN_TASKS.filter((task) => task.expected.outcome === "success").length;
-  const expectedRejected = RUNE_GOLDEN_TASKS.length - expectedSuccess;
+  const expectedSuccess = ORBIT_GOLDEN_TASKS.filter((task) => task.expected.outcome === "success").length;
+  const expectedRejected = ORBIT_GOLDEN_TASKS.length - expectedSuccess;
   return {
-    version: RUNE_GOLDEN_TASK_SET_VERSION,
+    version: ORBIT_GOLDEN_TASK_SET_VERSION,
     fixtureProvenance: "synthetic",
-    taskCount: RUNE_GOLDEN_TASKS.length,
+    taskCount: ORBIT_GOLDEN_TASKS.length,
     passed,
     failed: cases.length - passed,
     expectedSuccess,

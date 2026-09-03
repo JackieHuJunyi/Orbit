@@ -28,12 +28,12 @@ import { OrbitMark } from "./orbit-mark";
 import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
   localeDisplayName,
-  localizeRuneCopy,
-  runeGreetingSequence,
-  RUNE_LOCALE_REGISTRY,
-  type RuneLocale,
+  localizeOrbitCopy,
+  orbitGreetingSequence,
+  ORBIT_LOCALE_REGISTRY,
+  type OrbitLocale,
 } from "../lib/localization";
-import { type RuneModelMode } from "../lib/model-preference";
+import { type OrbitModelMode } from "../lib/model-preference";
 import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
 import { workspaceViewFromKeyboardShortcut } from "../lib/workspace-layout";
 
@@ -216,8 +216,8 @@ export const WELCOME_BASE_COPY = {
   },
 } as const;
 
-function welcomeCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, WELCOME_BASE_COPY.en, WELCOME_BASE_COPY["zh-CN"]);
+function welcomeCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, WELCOME_BASE_COPY.en, WELCOME_BASE_COPY["zh-CN"]);
 }
 
 function ShortcutKey({ children }: { children: ReactNode }) {
@@ -231,7 +231,7 @@ function IsolatedProductName({ children }: { children: string }) {
       {pieces.map((piece, index) => (
         <Fragment key={`${piece}-${index}`}>
           {piece.startsWith(ORBIT_PRODUCT_NAME) ? (
-            <bdi className="rune-name" dir="ltr">
+            <bdi className="orbit-name" dir="ltr">
               {piece}
             </bdi>
           ) : (
@@ -260,13 +260,13 @@ export function WelcomeExperience({
   onComplete,
   onDismiss,
 }: {
-  detectedLocale: RuneLocale;
-  locale: RuneLocale;
+  detectedLocale: OrbitLocale;
+  locale: OrbitLocale;
   startAt?: WelcomeStep;
   dismissible?: boolean;
-  modelMode: RuneModelMode;
-  onLocaleChange: (locale: RuneLocale) => void;
-  onModelModeChange: (mode: RuneModelMode) => void;
+  modelMode: OrbitModelMode;
+  onLocaleChange: (locale: OrbitLocale) => void;
+  onModelModeChange: (mode: OrbitModelMode) => void;
   onComplete: (action: WelcomeAction) => void;
   onDismiss?: () => void;
 }) {
@@ -281,9 +281,9 @@ export function WelcomeExperience({
   const modifier = usesMacControls ? "⌘" : "Ctrl";
   const optionModifier = usesMacControls ? "⌥" : "Alt";
   const text = welcomeCopy(locale);
-  const greetings = useMemo(() => runeGreetingSequence(locale), [locale]);
+  const greetings = useMemo(() => orbitGreetingSequence(locale), [locale]);
   const greeting = greetings[0] ?? "Hello";
-  const greetingLocale = RUNE_LOCALE_REGISTRY.find((entry) => entry.greeting === greeting)?.locale ?? locale;
+  const greetingLocale = ORBIT_LOCALE_REGISTRY.find((entry) => entry.greeting === greeting)?.locale ?? locale;
   const greetingPresentation = useMemo(
     () => planGreetingPresentation({ locale: greetingLocale, value: greeting }),
     [greeting, greetingLocale],
@@ -446,7 +446,7 @@ export function WelcomeExperience({
                     aria-label={text.languageTitle}
                     ref={languageOptionsRef}
                   >
-                    {RUNE_LOCALE_REGISTRY.map(({ locale: option }) => (
+                    {ORBIT_LOCALE_REGISTRY.map(({ locale: option }) => (
                       <button
                         type="button"
                         role="radio"

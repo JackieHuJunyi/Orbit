@@ -34,7 +34,7 @@ test("prepares one collision-safe editable Deck copy without changing canonical 
     source: `---
 version: 1
 title: Existing
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---

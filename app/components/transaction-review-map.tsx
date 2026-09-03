@@ -11,7 +11,7 @@ import {
   Workflow,
 } from "lucide-react";
 
-import { runeUICopy, type RuneLocale, type RuneUICopy } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale, type OrbitUICopy } from "../lib/localization";
 import type { WorkspaceDependencyKind } from "../lib/dependency-graph";
 import type { WorkspaceTransactionNode, WorkspaceTransactionReview } from "../lib/transaction-review";
 import type { ArtifactKind } from "../lib/workspace";
@@ -43,7 +43,7 @@ function TransactionNode({
   node: WorkspaceTransactionNode;
   active: boolean;
   compact?: boolean;
-  copy: RuneUICopy;
+  copy: OrbitUICopy;
   onSelect: (artifactId: string) => void;
 }) {
   const statusLabel = copy.transaction.statuses[node.status];
@@ -85,10 +85,10 @@ export function TransactionReviewMap({
 }: {
   review: WorkspaceTransactionReview;
   activeArtifactId: string;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onSelect: (artifactId: string) => void;
 }) {
-  const copy = runeUICopy(locale);
+  const copy = orbitUICopy(locale);
   const nodeById = new Map(review.nodes.map((node) => [node.artifactId, node] as const));
   const bindingChanges = review.addedEdgeCount + review.removedEdgeCount + review.updatedEdgeCount;
   return (

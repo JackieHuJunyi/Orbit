@@ -24,9 +24,9 @@ test("fits one fixed 1120 by 630 presentation canvas without changing its intern
 test("isolated Deck and semantic HTML previews declare the fixed canvas contract", () => {
   const deck = compileDeckSource(deckSourceFixture);
   assert.deepEqual(deck.errors, []);
-  assert.doesNotMatch(deck.html ?? "", /data-rune-preview-canvas/u);
+  assert.doesNotMatch(deck.html ?? "", /data-orbit-preview-canvas/u);
   for (const slide of deck.previewSlides ?? []) {
-    assert.match(slide.html, /data-rune-preview-canvas="1120x630"/u);
+    assert.match(slide.html, /data-orbit-preview-canvas="1120x630"/u);
     assert.match(slide.html, /width:1120px!important;height:630px!important/u);
     assert.match(slide.html, /<meta name="viewport" content="width=1120,initial-scale=1"/u);
   }
@@ -35,7 +35,7 @@ test("isolated Deck and semantic HTML previews declare the fixed canvas contract
     "<main><section><h1>Stable layout</h1><table><tr><td>Proof</td></tr></table></section></main>",
   );
   assert.deepEqual(semantic.errors, []);
-  assert.match(semantic.slides[0].html, /data-rune-preview-canvas="1120x630"/u);
+  assert.match(semantic.slides[0].html, /data-orbit-preview-canvas="1120x630"/u);
   assert.match(semantic.slides[0].html, /body>main>section\{width:1120px!important;height:630px!important/u);
 });
 
@@ -62,7 +62,7 @@ test("the host frame observes its viewport and scales a fixed-size iframe", asyn
   assert.match(component, /webKitSrcDocReplayQueue/u);
   assert.match(component, /activeWebKitSrcDocReplay/u);
   assert.match(component, /frame\.removeAttribute\("srcdoc"\)/u);
-  assert.match(component, /about:blank#rune-srcdoc-replay-/u);
+  assert.match(component, /about:blank#orbit-srcdoc-replay-/u);
   assert.match(component, /task\.frame\.setAttribute\("srcdoc", task\.source\)/u);
   assert.match(component, /task\.frame\.dataset\.srcdocReady = "true"/u);
   assert.match(component, /data-srcdoc-ready="false"/u);

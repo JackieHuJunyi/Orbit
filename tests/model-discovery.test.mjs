@@ -70,7 +70,7 @@ test("recognizes a direct DeepSeek environment without exposing its credential",
 });
 
 test("discovers bounded Claude, Codex, and Gemini live configurations without executing them", async () => {
-  const home = "/Users/rune";
+  const home = "/Users/orbit";
   const files = new Map([
     [
       path.join(home, ".claude", "settings.json"),
@@ -136,7 +136,7 @@ test("discovers running Ollama and LM Studio catalogs as credential-free device 
 });
 
 test("reads CC Switch through a read-only bounded provider query", async () => {
-  const home = await mkdtemp(path.join(tmpdir(), "rune-discovery-"));
+  const home = await mkdtemp(path.join(tmpdir(), "orbit-discovery-"));
   const directory = path.join(home, ".cc-switch");
   await mkdir(directory);
   const database = new DatabaseSync(path.join(directory, "cc-switch.db"));
@@ -170,7 +170,7 @@ test("reads CC Switch through a read-only bounded provider query", async () => {
 });
 
 test("recognizes and deduplicates one DeepSeek connection shared by CC Switch and Claude Code", async () => {
-  const home = await mkdtemp(path.join(tmpdir(), "rune-deepseek-discovery-"));
+  const home = await mkdtemp(path.join(tmpdir(), "orbit-deepseek-discovery-"));
   const ccSwitchDirectory = path.join(home, ".cc-switch");
   const claudeDirectory = path.join(home, ".claude");
   await Promise.all([mkdir(ccSwitchDirectory), mkdir(claudeDirectory)]);

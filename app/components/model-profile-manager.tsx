@@ -42,7 +42,7 @@ import {
   type ModelProfileImportErrorCode,
   type ModelProfileImportResult,
 } from "../lib/model-profile-import";
-import { localizeRuneCopy, runeText, type RuneLocale } from "../lib/localization";
+import { localizeOrbitCopy, orbitText, type OrbitLocale } from "../lib/localization";
 import type { ModelProviderStatus } from "../lib/model-preference";
 
 export const MODEL_MANAGER_BASE_COPY = {
@@ -61,7 +61,7 @@ export const MODEL_MANAGER_BASE_COPY = {
     importReview: "检查配置",
     importReviewTitle: "确认导入内容",
     importSource: "来源",
-    importRuneJson: "Orbit JSON",
+    importOrbitJson: "Orbit JSON",
     importCcSwitch: "CC Switch 导入链接",
     importCredential: "凭据",
     importCredentialDetected: "已检测到；预览中不显示",
@@ -142,7 +142,7 @@ export const MODEL_MANAGER_BASE_COPY = {
     importReview: "Review config",
     importReviewTitle: "Confirm imported configuration",
     importSource: "Source",
-    importRuneJson: "Orbit JSON",
+    importOrbitJson: "Orbit JSON",
     importCcSwitch: "CC Switch import link",
     importCredential: "Credential",
     importCredentialDetected: "Detected; never shown in preview",
@@ -209,8 +209,8 @@ export const MODEL_MANAGER_BASE_COPY = {
   },
 } as const;
 
-function modelManagerCopy(locale: RuneLocale) {
-  return localizeRuneCopy(locale, MODEL_MANAGER_BASE_COPY.en, MODEL_MANAGER_BASE_COPY["zh-CN"]);
+function modelManagerCopy(locale: OrbitLocale) {
+  return localizeOrbitCopy(locale, MODEL_MANAGER_BASE_COPY.en, MODEL_MANAGER_BASE_COPY["zh-CN"]);
 }
 
 type EditableProfile = {
@@ -303,7 +303,7 @@ export function ModelProfileManager({
   onStatusChange,
 }: {
   compact?: boolean;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onStatusChange: (status: ModelProviderStatus) => void;
 }) {
   const text = modelManagerCopy(locale);
@@ -504,7 +504,7 @@ export function ModelProfileManager({
   return (
     <section
       className={`model-profile-manager ${compact ? "compact" : ""}`.trim()}
-      aria-label={runeText(locale, "Personal model profiles", "个人模型配置")}
+      aria-label={orbitText(locale, "Personal model profiles", "个人模型配置")}
       ref={managerRef}
     >
       {!editor && !importOpen && state?.deployment.configured && (
@@ -696,7 +696,7 @@ export function ModelProfileManager({
               <dl className="model-import-review">
                 <div>
                   <dt>{text.importSource}</dt>
-                  <dd>{importReview.source === "rune-json" ? text.importRuneJson : text.importCcSwitch}</dd>
+                  <dd>{importReview.source === "orbit-json" ? text.importOrbitJson : text.importCcSwitch}</dd>
                 </div>
                 <div>
                   <dt>{text.preset}</dt>

@@ -20,7 +20,7 @@ const [
   readFile(new URL("../desktop/legacy-office.mjs", import.meta.url), "utf8"),
   readFile(new URL("../desktop/preload.cjs", import.meta.url), "utf8"),
   readFile(new URL("../package.json", import.meta.url), "utf8"),
-  readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+  readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
   readFile(new URL("../app/lib/workspace-file-import.ts", import.meta.url), "utf8"),
   readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
   readFile(new URL("../scripts/package-macos.mjs", import.meta.url), "utf8"),
@@ -34,10 +34,10 @@ test("ships narrow context-isolated desktop capabilities without renderer Node a
   assert.match(main, /contextIsolation:\s*true/);
   assert.match(main, /nodeIntegration:\s*false/);
   assert.match(main, /sandbox:\s*true/);
-  assert.match(preload, /rune:convert-legacy-office/);
-  assert.match(preload, /rune:export-legacy-office/);
-  assert.match(preload, /rune:discover-models/);
-  assert.match(preload, /rune:import-discovered-model/);
+  assert.match(preload, /orbit:convert-legacy-office/);
+  assert.match(preload, /orbit:export-legacy-office/);
+  assert.match(preload, /orbit:discover-models/);
+  assert.match(preload, /orbit:import-discovered-model/);
   assert.match(preload, /require\("electron"\)/);
   assert.doesNotMatch(preload, /ipcRenderer\.(?:send|on)|require\("node:/);
   assert.match(packageJson, /"desktop:dev"/);
@@ -50,9 +50,9 @@ test("protects the desktop model-vault master key with Electron safeStorage", ()
   assert.match(main, /safeStorage\.encryptString\(key\)/);
   assert.match(main, /randomBytes\(32\)\.toString\("hex"\)/);
   assert.match(main, /writeFile\(temporaryPath,[\s\S]*mode: 0o600, flag: "wx"/);
-  assert.match(main, /process\.env\.RUNE_CREDENTIAL_ENCRYPTION_KEY = key/);
-  assert.doesNotMatch(preload, /credential|safeStorage|RUNE_CREDENTIAL/);
-  assert.match(main, /RUNE_DESKTOP_RUNTIME = "1"/);
+  assert.match(main, /process\.env\.ORBIT_CREDENTIAL_ENCRYPTION_KEY = key/);
+  assert.doesNotMatch(preload, /credential|safeStorage|ORBIT_CREDENTIAL/);
+  assert.match(main, /ORBIT_DESKTOP_RUNTIME = "1"/);
 });
 
 test("legacy Office conversion is bounded, macro-disabled, temporary, and review-first", () => {
@@ -94,7 +94,7 @@ test("desktop navigation remains pinned to Orbit's ephemeral loopback origin", (
   assert.match(main, /"x-content-type-options": "nosniff"/);
   assert.match(main, /responseHeaders\["content-security-policy"\]/);
   assert.match(main, /setWindowOpenHandler\(\(\) => \(\{ action: "deny" \}\)\)/);
-  assert.match(main, /if \(new URL\(target\)\.origin !== runeServer\.url\) event\.preventDefault\(\)/);
+  assert.match(main, /if \(new URL\(target\)\.origin !== orbitServer\.url\) event\.preventDefault\(\)/);
   assert.match(main, /app\.on\("activate"/);
   assert.match(main, /async function loadDesktopWorkspace/);
   assert.match(main, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/);
@@ -121,6 +121,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macPackage, /WasmTrapHandlers/);
   assert.match(macPackage, /await sign\(/);
   assert.equal(macPackage.match(/await notarize\(/g)?.length, 2);
+  assert.match(macPackage, /artifactSuffix = internalQa \? "-internal-qa" : ""/);
+  assert.match(macPackage, /distributionReady: !internalQa && signed && notarized/);
   assert.match(macPackage, /\/usr\/bin\/hdiutil/);
   assert.match(macPackage, /attempt < 3/);
   assert.match(macPackage, /device not configured\|resource busy\|设备未配置/);
@@ -128,12 +130,14 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.doesNotMatch(macPackage, /(?:app|tests\?|e2e|docs|scripts|node_modules).*payloadDirectory/);
   assert.match(macVerify, /getCurrentFuseWire/);
   assert.match(macVerify, /stapler", "validate"/);
+  assert.match(macVerify, /manifest\.channel === "internal-qa"/);
+  assert.match(macVerify, /manifest\.distributionReady/);
   assert.match(macReleaseWorkflow, /tags: \["v\*"\]/);
   assert.match(macReleaseWorkflow, /MACOS_CERTIFICATE/);
   assert.match(macReleaseWorkflow, /APPLE_APP_SPECIFIC_PASSWORD/);
   assert.match(macReleaseWorkflow, /gh release create/);
   assert.match(macSmoke, /ORBIT_DESKTOP_QA_PORT/);
-  assert.match(macSmoke, /RUNE_CREDENTIAL_ENCRYPTION_KEY: "a"\.repeat\(64\)/);
+  assert.match(macSmoke, /ORBIT_CREDENTIAL_ENCRYPTION_KEY: "a"\.repeat\(64\)/);
   assert.match(macSmoke, /Packaged Orbit did not return the expected product document/);
   assert.match(releaseQualityWorkflow, /macos-package:[\s\S]*smoke-macos-package\.mjs/);
 });

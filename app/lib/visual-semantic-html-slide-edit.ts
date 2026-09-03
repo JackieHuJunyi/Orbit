@@ -59,7 +59,7 @@ function normalizeSectionDraft(draft: string, newline: string) {
   return newline === "\n" ? normalized : normalized.replace(/\n/gu, newline);
 }
 
-function runeBindingTokens(source: string) {
+function orbitBindingTokens(source: string) {
   return source.match(/\{\{[^{}\r\n]+\}\}/gu) ?? [];
 }
 
@@ -176,7 +176,9 @@ export function prepareVisualSemanticHtmlSlideEdit(
   if (candidate.replacement === currentFragment) {
     return emptyResult(artifact.source, "The edited semantic HTML slide is unchanged.");
   }
-  if (JSON.stringify(runeBindingTokens(candidate.replacement)) !== JSON.stringify(runeBindingTokens(currentFragment))) {
+  if (
+    JSON.stringify(orbitBindingTokens(candidate.replacement)) !== JSON.stringify(orbitBindingTokens(currentFragment))
+  ) {
     return emptyResult(
       artifact.source,
       "Keep live metric and Chart bindings unchanged in the visual HTML editor. Edit dependency source directly.",

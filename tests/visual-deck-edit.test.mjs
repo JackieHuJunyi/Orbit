@@ -16,7 +16,7 @@ function deck(source) {
 }
 
 const source =
-  "---\r\nversion: 1\r\ntitle: Briefing\r\ntheme: rune\r\nratio: 16:9\r\nlang: en\r\n---\r\n\r\n<!-- layout: cover -->\r\n<!-- eyebrow: Review -->\r\n# Opening\r\n\r\nStart here.\r\n\r\n---\r\n\r\n<!-- layout: content -->\r\n## Decision\r\n\r\nWait.\r\n";
+  "---\r\nversion: 1\r\ntitle: Briefing\r\ntheme: orbit\r\nratio: 16:9\r\nlang: en\r\n---\r\n\r\n<!-- layout: cover -->\r\n<!-- eyebrow: Review -->\r\n# Opening\r\n\r\nStart here.\r\n\r\n---\r\n\r\n<!-- layout: content -->\r\n## Decision\r\n\r\nWait.\r\n";
 
 test("replaces one exact Deck slide and preserves every byte outside its range", () => {
   const artifact = deck(source);

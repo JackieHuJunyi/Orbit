@@ -64,7 +64,7 @@ test("connects a Deck Markdown presentation to its exact Document origin", () =>
     name: "deck.deck.md",
     kind: "slides",
     language: "Deck Markdown",
-    source: `---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\norigin: ${document.id}\n---\n\n# Deck`,
+    source: `---\nversion: 1\ntitle: Deck\ntheme: orbit\nratio: 16:9\nlang: en\norigin: ${document.id}\n---\n\n# Deck`,
   };
   const graph = buildWorkspaceDependencyGraph([document, linkedDeck]);
   assert.deepEqual(graph.issues, []);
@@ -97,7 +97,7 @@ test("connects a semantic HTML presentation to its exact Document origin", () =>
     kind: "slides",
     language: "Semantic HTML",
     source:
-      '<!doctype html><html lang="en"><body><main data-rune-format="presentation-v1" data-rune-title="Presentation" data-rune-theme="rune" data-rune-lang="en" data-rune-origin="brief"><section><h1>Presentation</h1></section></main></body></html>',
+      '<!doctype html><html lang="en"><body><main data-orbit-format="presentation-v1" data-orbit-title="Presentation" data-orbit-theme="orbit" data-orbit-lang="en" data-orbit-origin="brief"><section><h1>Presentation</h1></section></main></body></html>',
   };
   const graph = buildWorkspaceDependencyGraph([document, presentation]);
   assert.deepEqual(graph.issues, []);
@@ -118,7 +118,8 @@ test("reports a missing Deck origin without inventing a dependency", () => {
     name: "deck.deck.md",
     kind: "slides",
     language: "Deck Markdown",
-    source: "---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\norigin: missing-document\n---\n\n# Deck",
+    source:
+      "---\nversion: 1\ntitle: Deck\ntheme: orbit\nratio: 16:9\nlang: en\norigin: missing-document\n---\n\n# Deck",
   };
   const graph = buildWorkspaceDependencyGraph([linkedDeck]);
   assert.deepEqual(graph.edges, []);
@@ -202,7 +203,7 @@ test("keeps the selected artifact while enforcing per-file and total context bud
     name: "deck.deck.md",
     kind: "slides",
     language: "Deck Markdown",
-    source: "---\nversion: 1\ntitle: Deck\ntheme: rune\nratio: 16:9\nlang: en\n---\n\n# Deck",
+    source: "---\nversion: 1\ntitle: Deck\ntheme: orbit\nratio: 16:9\nlang: en\n---\n\n# Deck",
   };
   const workspace = [selected, oversizedData, smallDeck];
   const graph = buildWorkspaceDependencyGraph(workspace);

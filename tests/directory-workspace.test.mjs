@@ -161,7 +161,7 @@ test("writes and rereads exactly referenced content-hash assets through the hidd
       name: "report.md",
       kind: "document",
       language: "Markdown",
-      source: `# Report\n\n![View](rune-asset:sha256:${id})`,
+      source: `# Report\n\n![View](orbit-asset:sha256:${id})`,
     },
   ];
   const assets = [{ id, name: "view.png", mimeType: "image/png", size: png.length, bytes: png }];
@@ -187,7 +187,7 @@ test("refuses missing, corrupt, unreferenced, and manifest-free folder assets", 
     name: "report.md",
     kind: "document",
     language: "Markdown",
-    source: `# Report\n\n![View](rune-asset:sha256:${id})`,
+    source: `# Report\n\n![View](orbit-asset:sha256:${id})`,
   };
   assert.throws(() => buildWorkspaceManifest([artifact]), /missing/);
   const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);

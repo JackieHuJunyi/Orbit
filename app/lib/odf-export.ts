@@ -4,12 +4,12 @@ import { resolveChartModel, type ChartModel } from "./charts.ts";
 import { isDeckMarkdownArtifact, parseDeckSource, type DeckSlide } from "./deck.ts";
 import { safeExportBaseName, type ArtifactExportResult } from "./export-contract.ts";
 import {
-  extractRuneAssetIds,
-  parseRuneMarkdownImage,
-  runeImageAssetMap,
-  runeImageDimensions,
-  runeImageExtension,
-  type RuneExportImageAsset,
+  extractOrbitAssetIds,
+  parseOrbitMarkdownImage,
+  orbitImageAssetMap,
+  orbitImageDimensions,
+  orbitImageExtension,
+  type OrbitExportImageAsset,
 } from "./local-assets.ts";
 import { parseMarkdownBlocks, type MarkdownBlock } from "./office-export.ts";
 import type { WorkspaceQuerySnapshot } from "./query-snapshot.ts";
@@ -42,7 +42,7 @@ type InlineSegment = {
 };
 
 type OdpParagraph = { text: string; bullet: boolean; level: number; strong?: boolean };
-type OdpSlideImage = { reference: { id: string; alt: string }; asset: RuneExportImageAsset };
+type OdpSlideImage = { reference: { id: string; alt: string }; asset: OrbitExportImageAsset };
 type OdpSlideModel = {
   title: string;
   eyebrow: string;
@@ -100,7 +100,7 @@ function xmlAttribute(value: string) {
   return xmlText(value).replaceAll('"', "&quot;").replaceAll("'", "&apos;");
 }
 
-function manifest(kind: OdfExportKind, images: Iterable<{ path: string; asset: RuneExportImageAsset }> = []) {
+function manifest(kind: OdfExportKind, images: Iterable<{ path: string; asset: OrbitExportImageAsset }> = []) {
   const mime = ODF_MIME_TYPES[kind];
   const imageEntries = [...images]
     .map(
@@ -120,11 +120,11 @@ function packageOdf(
   title: string,
   content: string,
   styles: string,
-  images = new Map<string, RuneExportImageAsset>(),
+  images = new Map<string, OrbitExportImageAsset>(),
 ) {
   const timestamp = new Date(Date.UTC(1980, 0, 1));
   const packagedImages = [...images.values()].map((asset) => ({
-    path: `Pictures/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`,
+    path: `Pictures/orbit-${asset.id}.${orbitImageExtension(asset.mimeType)}`,
     asset,
   }));
   const files: Zippable = {
@@ -326,7 +326,7 @@ function blockToOdt(
   warnings: Set<string>,
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
-  images: Map<string, RuneExportImageAsset>,
+  images: Map<string, OrbitExportImageAsset>,
 ) {
   if (block.type === "heading")
     return `<text:h text:style-name="${block.level === 1 ? "OrbitTitle" : `OrbitHeading${Math.min(6, block.level)}`}" text:outline-level="${Math.min(6, block.level)}">${odfInline(block.source, warnings)}</text:h>`;
@@ -339,13 +339,13 @@ function blockToOdt(
     warnings.add("Fenced Markdown code was exported as preformatted OpenDocument text.");
     return `<text:p text:style-name="OrbitCodeBlock">${xmlText(block.source).replaceAll("\n", "<text:line-break/>") || " "}</text:p>`;
   }
-  const imageReference = block.type === "paragraph" ? parseRuneMarkdownImage(block.source) : null;
+  const imageReference = block.type === "paragraph" ? parseOrbitMarkdownImage(block.source) : null;
   if (imageReference) {
     const asset = images.get(imageReference.id);
     if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
-    const path = `Pictures/rune-${asset.id}.${runeImageExtension(asset.mimeType)}`;
+    const path = `Pictures/orbit-${asset.id}.${orbitImageExtension(asset.mimeType)}`;
     const alt = imageReference.alt || asset.name || "Orbit image";
-    const dimensions = runeImageDimensions(asset.bytes, asset.mimeType);
+    const dimensions = orbitImageDimensions(asset.bytes, asset.mimeType);
     if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${asset.id}`);
     const naturalWidth = dimensions.width / 96;
     const naturalHeight = dimensions.height / 96;
@@ -369,19 +369,19 @@ function exportOdt(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
-  imageAssets: readonly RuneExportImageAsset[],
+  imageAssets: readonly OrbitExportImageAsset[],
 ): OdfExportResult {
   if (artifact.source.length > MAX_ODT_SOURCE_CHARS)
     throw new Error("ODT export is limited to 200,000 source characters.");
   const warnings = new Set<string>();
-  const images = runeImageAssetMap(imageAssets);
+  const images = orbitImageAssetMap(imageAssets);
   const blocks = parseMarkdownBlocks(artifact.source);
   const referencedImageIds = blocks.flatMap((block) =>
     block.type === "paragraph"
-      ? [parseRuneMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
+      ? [parseOrbitMarkdownImage(block.source)?.id].filter((id): id is string => Boolean(id))
       : [],
   );
-  const inlineImage = extractRuneAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
+  const inlineImage = extractOrbitAssetIds(artifact.source).find((id) => !referencedImageIds.includes(id));
   if (inlineImage) throw new Error("Place each Orbit local image on its own Markdown line before ODT export.");
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
   if (unexpectedImage) throw new Error(`Orbit export image is not referenced by this Document: ${unexpectedImage.id}`);
@@ -457,7 +457,7 @@ function deckSlideModel(
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
   index: number,
-  images: Map<string, RuneExportImageAsset>,
+  images: Map<string, OrbitExportImageAsset>,
 ): OdpSlideModel {
   const blocks = parseMarkdownBlocks(slide.source);
   const titleBlock = blocks.find((block) => block.type === "heading");
@@ -487,7 +487,7 @@ function deckSlideModel(
       paragraphs.push({ text: plainMarkdownInline(block.source, warnings), bullet: false, level: 0, strong: true });
       return;
     }
-    const imageReference = parseRuneMarkdownImage(block.source);
+    const imageReference = parseOrbitMarkdownImage(block.source);
     if (imageReference) {
       const asset = images.get(imageReference.id);
       if (!asset) throw new Error(`Referenced local image is missing or corrupt: ${imageReference.id}`);
@@ -540,7 +540,7 @@ function odpTextFrame(model: OdpSlideModel) {
 }
 
 function odpImageFrame(image: OdpSlideImage) {
-  const dimensions = runeImageDimensions(image.asset.bytes, image.asset.mimeType);
+  const dimensions = orbitImageDimensions(image.asset.bytes, image.asset.mimeType);
   if (!dimensions) throw new Error(`Orbit export image dimensions are invalid: ${image.asset.id}`);
   const box = { x: 6.55, y: 1.55, width: 5.95, height: 4.95 };
   const scale = Math.min(box.width / dimensions.width, box.height / dimensions.height);
@@ -548,7 +548,7 @@ function odpImageFrame(image: OdpSlideImage) {
   const height = dimensions.height * scale;
   const x = box.x + (box.width - width) / 2;
   const y = box.y + (box.height - height) / 2;
-  const path = `Pictures/rune-${image.asset.id}.${runeImageExtension(image.asset.mimeType)}`;
+  const path = `Pictures/orbit-${image.asset.id}.${orbitImageExtension(image.asset.mimeType)}`;
   return `<draw:frame draw:style-name="OrbitImageFrame" draw:name="${xmlAttribute(image.reference.alt || image.asset.name || "Orbit image")}" svg:x="${x.toFixed(4)}in" svg:y="${y.toFixed(4)}in" svg:width="${width.toFixed(4)}in" svg:height="${height.toFixed(4)}in"><draw:image xlink:href="${xmlAttribute(path)}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame>`;
 }
 
@@ -560,13 +560,13 @@ function exportOdp(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[],
   snapshots: WorkspaceQuerySnapshot[],
-  imageAssets: readonly RuneExportImageAsset[],
+  imageAssets: readonly OrbitExportImageAsset[],
 ): OdfExportResult {
   const parsed = parseDeckSource(artifact.source);
   if (!parsed.deck) throw new Error(parsed.errors[0] ?? "The Deck Markdown source is not valid.");
   const warnings = new Set<string>();
-  const images = runeImageAssetMap(imageAssets);
-  const referencedImageIds = extractRuneAssetIds(artifact.source);
+  const images = orbitImageAssetMap(imageAssets);
+  const referencedImageIds = extractOrbitAssetIds(artifact.source);
   const missingImage = referencedImageIds.find((id) => !images.has(id));
   if (missingImage) throw new Error(`Referenced local image is missing or corrupt: ${missingImage}`);
   const unexpectedImage = imageAssets.find((asset) => !referencedImageIds.includes(asset.id));
@@ -614,7 +614,7 @@ export function exportOdfArtifact(
   artifact: WorkspaceArtifact,
   workspace: WorkspaceArtifact[] = [],
   querySnapshots: WorkspaceQuerySnapshot[] = [],
-  imageAssets: readonly RuneExportImageAsset[] = [],
+  imageAssets: readonly OrbitExportImageAsset[] = [],
 ): OdfExportResult {
   if (!artifact.source.trim()) throw new Error("The source is empty.");
   if (artifact.source.length > MAX_ODF_EXPORT_SOURCE_CHARS)

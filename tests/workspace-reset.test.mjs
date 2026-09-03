@@ -8,7 +8,7 @@ import {
   prepareWorkspaceReset,
   serializeWorkspaceDeviceState,
 } from "../app/lib/workspace-reset.ts";
-import { EMPTY_RUNE_TASK_EVIDENCE } from "../app/lib/task-evidence.ts";
+import { EMPTY_ORBIT_TASK_EVIDENCE } from "../app/lib/task-evidence.ts";
 import { cloneDefaultArtifacts } from "../app/lib/workspace.ts";
 
 function state(overrides = {}) {
@@ -18,7 +18,7 @@ function state(overrides = {}) {
     selectedId: artifacts[0].id,
     checkpoints: {},
     savedOperatingReviews: [],
-    taskEvidence: EMPTY_RUNE_TASK_EVIDENCE,
+    taskEvidence: EMPTY_ORBIT_TASK_EVIDENCE,
     ...overrides,
   };
 }

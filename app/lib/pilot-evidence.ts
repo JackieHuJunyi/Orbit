@@ -1,26 +1,26 @@
 import {
-  normalizeRuneTaskEvidence,
-  summarizeRuneTaskDeliveries,
-  summarizeRuneTaskRuns,
-  type RuneTaskDeliveryMethod,
-  type RuneTaskDeliveryRating,
-  type RuneTaskDeliveryTarget,
-  type RuneTaskEvidence,
-  type RuneTaskHumanEvaluation,
-  type RuneTaskRunStatus,
-  type RuneTaskStopReason,
+  normalizeOrbitTaskEvidence,
+  summarizeOrbitTaskDeliveries,
+  summarizeOrbitTaskRuns,
+  type OrbitTaskDeliveryMethod,
+  type OrbitTaskDeliveryRating,
+  type OrbitTaskDeliveryTarget,
+  type OrbitTaskEvidence,
+  type OrbitTaskHumanEvaluation,
+  type OrbitTaskRunStatus,
+  type OrbitTaskStopReason,
 } from "./task-evidence.ts";
-import type { RuneTaskId } from "./task-runtime.ts";
+import type { OrbitTaskId } from "./task-runtime.ts";
 
-export const RUNE_PILOT_EVIDENCE_KIND = "rune-pilot-evidence";
-export const MAX_RUNE_PILOT_EVIDENCE_BYTES = 128 * 1_024;
+export const ORBIT_PILOT_EVIDENCE_KIND = "orbit-pilot-evidence";
+export const MAX_ORBIT_PILOT_EVIDENCE_BYTES = 128 * 1_024;
 
-export type RunePilotEvidenceRun = {
+export type OrbitPilotEvidenceRun = {
   id: string;
-  taskId: RuneTaskId;
+  taskId: OrbitTaskId;
   completedOn: string;
-  status: RuneTaskRunStatus;
-  stopReason: RuneTaskStopReason | null;
+  status: OrbitTaskRunStatus;
+  stopReason: OrbitTaskStopReason | null;
   planner: "local" | "configured-model";
   outputCount: number;
   changedFileCount: number;
@@ -31,21 +31,21 @@ export type RunePilotEvidenceRun = {
   outputTokens: number | null;
 };
 
-export type RunePilotEvidenceDelivery = {
+export type OrbitPilotEvidenceDelivery = {
   runId: string;
   output: string;
   confirmedOn: string;
-  taskId: RuneTaskId;
-  method: RuneTaskDeliveryMethod;
-  target: RuneTaskDeliveryTarget;
-  rating: RuneTaskDeliveryRating;
+  taskId: OrbitTaskId;
+  method: OrbitTaskDeliveryMethod;
+  target: OrbitTaskDeliveryTarget;
+  rating: OrbitTaskDeliveryRating;
   taskDurationMs: number;
-  evaluation: RuneTaskHumanEvaluation | null;
+  evaluation: OrbitTaskHumanEvaluation | null;
 };
 
-export type RunePilotEvidencePackage = {
+export type OrbitPilotEvidencePackage = {
   version: 1;
-  kind: typeof RUNE_PILOT_EVIDENCE_KIND;
+  kind: typeof ORBIT_PILOT_EVIDENCE_KIND;
   exportedOn: string;
   provenance: {
     scope: "device-local";
@@ -56,15 +56,15 @@ export type RunePilotEvidencePackage = {
     uploadPerformed: false;
   };
   summary: {
-    runs: ReturnType<typeof summarizeRuneTaskRuns>;
-    deliveries: ReturnType<typeof summarizeRuneTaskDeliveries>;
+    runs: ReturnType<typeof summarizeOrbitTaskRuns>;
+    deliveries: ReturnType<typeof summarizeOrbitTaskDeliveries>;
   };
-  runs: RunePilotEvidenceRun[];
-  deliveries: RunePilotEvidenceDelivery[];
+  runs: OrbitPilotEvidenceRun[];
+  deliveries: OrbitPilotEvidenceDelivery[];
 };
 
-export type RunePilotEvidenceExport = {
-  package: RunePilotEvidencePackage;
+export type OrbitPilotEvidenceExport = {
+  package: OrbitPilotEvidencePackage;
   bytes: Uint8Array;
   fileName: string;
   mimeType: "application/json";
@@ -78,12 +78,12 @@ function numberedAlias(prefix: string, index: number, width: number) {
   return `${prefix}-${String(index + 1).padStart(width, "0")}`;
 }
 
-export function prepareRunePilotEvidenceExport(
-  input: RuneTaskEvidence,
+export function prepareOrbitPilotEvidenceExport(
+  input: OrbitTaskEvidence,
   now: Date = new Date(),
-): RunePilotEvidenceExport {
+): OrbitPilotEvidenceExport {
   if (Number.isNaN(now.getTime())) throw new Error("Pilot evidence needs a valid export time.");
-  const evidence = normalizeRuneTaskEvidence(input);
+  const evidence = normalizeOrbitTaskEvidence(input);
   if (!evidence.runs.length) throw new Error("Complete a guided task before exporting pilot evidence.");
 
   const runAliases = new Map(evidence.runs.map((run, index) => [run.id, numberedAlias("run", index, 3)] as const));
@@ -94,7 +94,7 @@ export function prepareRunePilotEvidenceExport(
     });
   }
 
-  const runs: RunePilotEvidenceRun[] = evidence.runs.map((run) => ({
+  const runs: OrbitPilotEvidenceRun[] = evidence.runs.map((run) => ({
     id: runAliases.get(run.id) as string,
     taskId: run.taskId,
     completedOn: publicDate(run.completedAt),
@@ -109,7 +109,7 @@ export function prepareRunePilotEvidenceExport(
     inputTokens: run.inputTokens,
     outputTokens: run.outputTokens,
   }));
-  const deliveries: RunePilotEvidenceDelivery[] = evidence.deliveries.map((delivery) => ({
+  const deliveries: OrbitPilotEvidenceDelivery[] = evidence.deliveries.map((delivery) => ({
     runId: runAliases.get(delivery.runId) as string,
     output: outputAliases.get(`${delivery.runId}:${delivery.artifactId}`) as string,
     confirmedOn: publicDate(delivery.confirmedAt),
@@ -127,9 +127,9 @@ export function prepareRunePilotEvidenceExport(
       : null,
   }));
   const exportedOn = now.toISOString().slice(0, 10);
-  const evidencePackage: RunePilotEvidencePackage = {
+  const evidencePackage: OrbitPilotEvidencePackage = {
     version: 1,
-    kind: RUNE_PILOT_EVIDENCE_KIND,
+    kind: ORBIT_PILOT_EVIDENCE_KIND,
     exportedOn,
     provenance: {
       scope: "device-local",
@@ -140,14 +140,14 @@ export function prepareRunePilotEvidenceExport(
       uploadPerformed: false,
     },
     summary: {
-      runs: summarizeRuneTaskRuns(evidence.runs),
-      deliveries: summarizeRuneTaskDeliveries(evidence.deliveries),
+      runs: summarizeOrbitTaskRuns(evidence.runs),
+      deliveries: summarizeOrbitTaskDeliveries(evidence.deliveries),
     },
     runs,
     deliveries,
   };
   const bytes = new TextEncoder().encode(`${JSON.stringify(evidencePackage, null, 2)}\n`);
-  if (bytes.byteLength > MAX_RUNE_PILOT_EVIDENCE_BYTES) {
+  if (bytes.byteLength > MAX_ORBIT_PILOT_EVIDENCE_BYTES) {
     throw new Error("Pilot evidence is larger than Orbit's local review limit.");
   }
   return {

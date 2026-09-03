@@ -5,7 +5,7 @@ import { TegakiRenderer, type TegakiBundle } from "tegaki";
 import { loadGreetingFontPlan } from "../lib/greeting-font-bundles.ts";
 import type { GreetingPresentationPlan } from "../lib/greeting-presentation";
 
-const RUNE_SPECTRUM = [
+const ORBIT_SPECTRUM = [
   "#050506",
   "#30d158",
   "#ffd60a",
@@ -53,8 +53,8 @@ export function HandwrittenGreeting({
   const [fontLoadFailed, setFontLoadFailed] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const identifier = useId().replaceAll(":", "");
-  const gradientId = `rune-greeting-spectrum-${identifier}`;
-  const pencilTextureId = `rune-greeting-pencil-${identifier}`;
+  const gradientId = `orbit-greeting-spectrum-${identifier}`;
+  const pencilTextureId = `orbit-greeting-pencil-${identifier}`;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -126,7 +126,7 @@ export function HandwrittenGreeting({
             className="welcome-greeting-tegaki"
             direction={direction}
             effects={{
-              globalGradient: { colors: [...RUNE_SPECTRUM], angle: direction === "rtl" ? 180 : 0 },
+              globalGradient: { colors: [...ORBIT_SPECTRUM], angle: direction === "rtl" ? 180 : 0 },
               pressureWidth: { strength: 0.82 },
               taper: { startLength: 0.035, endLength: 0.075 },
               wobble: { amplitude: 0.26, frequency: 4.2, mode: "noise" },
@@ -179,8 +179,8 @@ export function HandwrittenGreeting({
           y1="34"
           y2="190"
         >
-          {RUNE_SPECTRUM.map((color, index) => (
-            <stop key={`${color}-${index}`} offset={index / (RUNE_SPECTRUM.length - 1)} stopColor={color} />
+          {ORBIT_SPECTRUM.map((color, index) => (
+            <stop key={`${color}-${index}`} offset={index / (ORBIT_SPECTRUM.length - 1)} stopColor={color} />
           ))}
         </linearGradient>
         <filter colorInterpolationFilters="sRGB" height="114%" id={pencilTextureId} width="104%" x="-2%" y="-7%">
@@ -215,7 +215,7 @@ export function HandwrittenGreeting({
             onAnimationEnd={
               index === ENGLISH_HELLO_STROKES.length - 1
                 ? (event: AnimationEvent<SVGPathElement>) => {
-                    if (event.animationName === "rune-greeting-pencil-write") onWritingComplete?.();
+                    if (event.animationName === "orbit-greeting-pencil-write") onWritingComplete?.();
                   }
                 : undefined
             }

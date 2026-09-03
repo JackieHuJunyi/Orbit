@@ -1,6 +1,6 @@
-export const RUNE_APPEARANCE_STORAGE_KEY = "rune-appearance-theme-v1";
+export const ORBIT_APPEARANCE_STORAGE_KEY = "orbit-appearance-theme-v1";
 
-export const RUNE_APPEARANCE_THEMES = [
+export const ORBIT_APPEARANCE_THEMES = [
   {
     id: "ultramarine",
     english: "Ultramarine",
@@ -99,8 +99,8 @@ export const RUNE_APPEARANCE_THEMES = [
   },
 ] as const;
 
-export type RuneAppearanceTheme = (typeof RUNE_APPEARANCE_THEMES)[number]["id"];
+export type OrbitAppearanceTheme = (typeof ORBIT_APPEARANCE_THEMES)[number]["id"];
 
-export function normalizeRuneAppearanceTheme(value: unknown): RuneAppearanceTheme | null {
-  return RUNE_APPEARANCE_THEMES.some((theme) => theme.id === value) ? (value as RuneAppearanceTheme) : null;
+export function normalizeOrbitAppearanceTheme(value: unknown): OrbitAppearanceTheme | null {
+  return ORBIT_APPEARANCE_THEMES.some((theme) => theme.id === value) ? (value as OrbitAppearanceTheme) : null;
 }

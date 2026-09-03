@@ -1,5 +1,5 @@
 export const MAX_QUERY_ROWS = 500;
-export const QUERY_PROVENANCE_COLUMN = "__rune_source_row_index__";
+export const QUERY_PROVENANCE_COLUMN = "__orbit_source_row_index__";
 
 export type QueryCellLineage = {
   sourceRowIndex: number;
@@ -546,5 +546,5 @@ export function buildBoundedQuery(source: string, limit = MAX_QUERY_ROWS): strin
   if (errors.length) throw new Error(errors[0]);
   const requestedLimit = Number.isFinite(limit) ? Math.floor(limit) : MAX_QUERY_ROWS;
   const safeLimit = Math.min(MAX_QUERY_ROWS, Math.max(1, requestedLimit));
-  return `SELECT * FROM (${normalizeReadQuery(source)}) AS rune_result LIMIT ${safeLimit + 1}`;
+  return `SELECT * FROM (${normalizeReadQuery(source)}) AS orbit_result LIMIT ${safeLimit + 1}`;
 }

@@ -4,18 +4,18 @@ import test from "node:test";
 import { portableSourceRevision } from "../app/lib/source-revision.ts";
 
 import {
-  EMPTY_RUNE_TASK_EVIDENCE,
-  MAX_RUNE_TASK_DELIVERIES,
-  MAX_RUNE_TASK_RUNS,
-  appendRuneTaskRun,
-  normalizeRuneTaskHumanEvaluation,
-  normalizeRuneTaskEvidence,
-  recordRuneTaskDelivery,
-  runeTaskDeliveryId,
-  runeTaskRunMatchesIdentity,
-  runeTaskRunsForIdentity,
-  summarizeRuneTaskDeliveries,
-  summarizeRuneTaskRuns,
+  EMPTY_ORBIT_TASK_EVIDENCE,
+  MAX_ORBIT_TASK_DELIVERIES,
+  MAX_ORBIT_TASK_RUNS,
+  appendOrbitTaskRun,
+  normalizeOrbitTaskHumanEvaluation,
+  normalizeOrbitTaskEvidence,
+  recordOrbitTaskDelivery,
+  orbitTaskDeliveryId,
+  orbitTaskRunMatchesIdentity,
+  orbitTaskRunsForIdentity,
+  summarizeOrbitTaskDeliveries,
+  summarizeOrbitTaskRuns,
 } from "../app/lib/task-evidence.ts";
 
 function humanEvaluation(rubric = {}) {
@@ -69,10 +69,10 @@ function briefingRun(overrides = {}) {
 }
 
 test("records one normalized content-free task run and summary", () => {
-  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
+  const evidence = appendOrbitTaskRun(EMPTY_ORBIT_TASK_EVIDENCE, briefingRun());
   assert.equal(evidence.version, 3);
   assert.equal(evidence.runs.length, 1);
-  assert.deepEqual(summarizeRuneTaskRuns(evidence.runs), {
+  assert.deepEqual(summarizeOrbitTaskRuns(evidence.runs), {
     total: 1,
     applied: 1,
     stopped: 0,
@@ -94,13 +94,13 @@ test("migrates the v1 ledger forward without losing exact runs or deliveries", (
     outputArtifactIds: ["review-query", "review-chart", "review-document", "review-slides"],
     outputSources: ["SELECT 1;", "{}", "# Review\n", "---\ntitle: Review\n---\n"],
   });
-  const migrated = normalizeRuneTaskEvidence({
+  const migrated = normalizeOrbitTaskEvidence({
     version: 1,
     runs: [operatingReview],
     deliveries: [
       {
         version: 1,
-        id: runeTaskDeliveryId(operatingReview.id, "review-document"),
+        id: orbitTaskDeliveryId(operatingReview.id, "review-document"),
         confirmedAt: "2026-08-14T08:01:00.000Z",
         runId: operatingReview.id,
         taskId: "operating-review",
@@ -123,22 +123,22 @@ test("migrates the v1 ledger forward without losing exact runs or deliveries", (
   assert.equal(migrated.deliveries.length, 1);
   assert.equal(migrated.deliveries[0].version, 2);
   assert.equal(migrated.deliveries[0].evaluation, null);
-  assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], identity), true);
+  assert.equal(orbitTaskRunMatchesIdentity(migrated.runs[0], identity), true);
   assert.deepEqual(
-    runeTaskRunsForIdentity(migrated, identity).map((run) => run.id),
+    orbitTaskRunsForIdentity(migrated, identity).map((run) => run.id),
     [operatingReview.id],
   );
   assert.equal(
-    runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, outputArtifactIds: ["review-document"] }),
+    orbitTaskRunMatchesIdentity(migrated.runs[0], { ...identity, outputArtifactIds: ["review-document"] }),
     false,
   );
-  assert.equal(runeTaskRunMatchesIdentity(migrated.runs[0], { ...identity, sourceArtifactId: "another-data" }), false);
+  assert.equal(orbitTaskRunMatchesIdentity(migrated.runs[0], { ...identity, sourceArtifactId: "another-data" }), false);
 });
 
 test("binds a delivery judgment to the exact applied task output and revision", async () => {
-  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
+  const evidence = appendOrbitTaskRun(EMPTY_ORBIT_TASK_EVIDENCE, briefingRun());
   const source = "# strategy-briefing\n";
-  const recorded = await recordRuneTaskDelivery({
+  const recorded = await recordOrbitTaskDelivery({
     evidence,
     runId: evidence.runs[0].id,
     artifactId: "strategy-briefing",
@@ -152,7 +152,7 @@ test("binds a delivery judgment to the exact applied task output and revision", 
   });
   assert.deepEqual(recorded.deliveries[0], {
     version: 2,
-    id: runeTaskDeliveryId(evidence.runs[0].id, "strategy-briefing"),
+    id: orbitTaskDeliveryId(evidence.runs[0].id, "strategy-briefing"),
     confirmedAt: "2026-08-14T08:01:00.000Z",
     runId: evidence.runs[0].id,
     taskId: "document-briefing",
@@ -164,17 +164,17 @@ test("binds a delivery judgment to the exact applied task output and revision", 
     taskDurationMs: 64_000,
     evaluation: null,
   });
-  assert.equal(summarizeRuneTaskDeliveries(recorded.deliveries).usableRate, 100);
+  assert.equal(summarizeOrbitTaskDeliveries(recorded.deliveries).usableRate, 100);
   assert.doesNotMatch(JSON.stringify(recorded), /Strategy briefing|Direction/u);
 });
 
 test("records only complete authorized seven-dimensional evaluations and exposes the number gate", async () => {
   const run = briefingRun();
-  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
+  const evidence = appendOrbitTaskRun(EMPTY_ORBIT_TASK_EVIDENCE, run);
   const evaluation = humanEvaluation({ numberCorrectness: 3 });
   const frozenInput = deepFreeze({ evidence, evaluation });
   const before = JSON.stringify(frozenInput);
-  const recorded = await recordRuneTaskDelivery({
+  const recorded = await recordOrbitTaskDelivery({
     evidence: frozenInput.evidence,
     runId: run.id,
     artifactId: "strategy-briefing",
@@ -190,7 +190,7 @@ test("records only complete authorized seven-dimensional evaluations and exposes
 
   assert.equal(JSON.stringify(frozenInput), before);
   assert.deepEqual(recorded.deliveries[0].evaluation, evaluation);
-  assert.deepEqual(summarizeRuneTaskDeliveries(recorded.deliveries), {
+  assert.deepEqual(summarizeOrbitTaskDeliveries(recorded.deliveries), {
     total: 1,
     ready: 0,
     minorEdits: 1,
@@ -217,10 +217,10 @@ test("records only complete authorized seven-dimensional evaluations and exposes
   const incomplete = humanEvaluation();
   delete incomplete.rubric.timeSaved;
   const frozenIncomplete = Object.freeze({ ...incomplete, rubric: Object.freeze(incomplete.rubric) });
-  assert.equal(normalizeRuneTaskHumanEvaluation(frozenIncomplete), null);
+  assert.equal(normalizeOrbitTaskHumanEvaluation(frozenIncomplete), null);
   await assert.rejects(
     () =>
-      recordRuneTaskDelivery({
+      recordOrbitTaskDelivery({
         evidence,
         runId: run.id,
         artifactId: "strategy-briefing",
@@ -242,12 +242,12 @@ test("counts unique real tasks, preserves a detailed evaluation on quick reconfi
     outputArtifactIds: ["strategy-document", "strategy-deck"],
     outputSources: ["# strategy-document\n", "# strategy-deck\n"],
   });
-  let evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
+  let evidence = appendOrbitTaskRun(EMPTY_ORBIT_TASK_EVIDENCE, run);
   for (const [artifactId, source, score] of [
     ["strategy-document", "# strategy-document\n", 5],
     ["strategy-deck", "# strategy-deck\n", 3],
   ]) {
-    evidence = await recordRuneTaskDelivery({
+    evidence = await recordOrbitTaskDelivery({
       evidence,
       runId: run.id,
       artifactId,
@@ -261,7 +261,7 @@ test("counts unique real tasks, preserves a detailed evaluation on quick reconfi
       now: new Date(`2026-08-14T08:0${score}:00.000Z`),
     });
   }
-  const summary = summarizeRuneTaskDeliveries(evidence.deliveries);
+  const summary = summarizeOrbitTaskDeliveries(evidence.deliveries);
   assert.equal(summary.humanEvaluated, 2);
   assert.equal(summary.reviewedRealTasks, 1);
   assert.equal(summary.numberCorrectnessBelow4, 1);
@@ -271,7 +271,7 @@ test("counts unique real tasks, preserves a detailed evaluation on quick reconfi
   const priorEvaluation = evidence.deliveries.find(
     (delivery) => delivery.artifactId === "strategy-document",
   ).evaluation;
-  evidence = await recordRuneTaskDelivery({
+  evidence = await recordOrbitTaskDelivery({
     evidence,
     runId: run.id,
     artifactId: "strategy-document",
@@ -297,10 +297,10 @@ test("refuses an operating-review handoff when any linked task output changed", 
     outputArtifactIds: ["review-query", "review-chart", "review-document"],
     outputSources: ["SELECT 1;", "{}", "# Review\n"],
   });
-  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, run);
+  const evidence = appendOrbitTaskRun(EMPTY_ORBIT_TASK_EVIDENCE, run);
   await assert.rejects(
     () =>
-      recordRuneTaskDelivery({
+      recordOrbitTaskDelivery({
         evidence,
         runId: run.id,
         artifactId: "review-document",
@@ -319,10 +319,10 @@ test("refuses an operating-review handoff when any linked task output changed", 
 });
 
 test("fails closed for fabricated, stopped, mismatched, or malformed task evidence", async () => {
-  const evidence = appendRuneTaskRun(EMPTY_RUNE_TASK_EVIDENCE, briefingRun());
+  const evidence = appendOrbitTaskRun(EMPTY_ORBIT_TASK_EVIDENCE, briefingRun());
   await assert.rejects(
     () =>
-      recordRuneTaskDelivery({
+      recordOrbitTaskDelivery({
         evidence,
         runId: evidence.runs[0].id,
         artifactId: "another-deck",
@@ -337,7 +337,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
   );
   await assert.rejects(
     () =>
-      recordRuneTaskDelivery({
+      recordOrbitTaskDelivery({
         evidence,
         runId: evidence.runs[0].id,
         artifactId: "strategy-briefing",
@@ -352,7 +352,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
   );
   await assert.rejects(
     () =>
-      recordRuneTaskDelivery({
+      recordOrbitTaskDelivery({
         evidence,
         runId: evidence.runs[0].id,
         artifactId: "strategy-briefing",
@@ -365,13 +365,13 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
       }),
     /task source changed/i,
   );
-  const stopped = appendRuneTaskRun(
-    EMPTY_RUNE_TASK_EVIDENCE,
+  const stopped = appendOrbitTaskRun(
+    EMPTY_ORBIT_TASK_EVIDENCE,
     briefingRun({ status: "stopped", stopReason: "cancelled" }),
   );
   await assert.rejects(
     () =>
-      recordRuneTaskDelivery({
+      recordOrbitTaskDelivery({
         evidence: stopped,
         runId: stopped.runs[0].id,
         artifactId: "strategy-briefing",
@@ -385,7 +385,7 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
     /applied task run/i,
   );
   assert.deepEqual(
-    normalizeRuneTaskEvidence({
+    normalizeOrbitTaskEvidence({
       version: 1,
       runs: [
         briefingRun({ taskId: "unknown" }),
@@ -400,9 +400,9 @@ test("fails closed for fabricated, stopped, mismatched, or malformed task eviden
 });
 
 test("keeps run and delivery history bounded, newest first, and reconfirmation stable", async () => {
-  let evidence = EMPTY_RUNE_TASK_EVIDENCE;
-  for (let index = 0; index < MAX_RUNE_TASK_RUNS + 8; index += 1) {
-    evidence = appendRuneTaskRun(
+  let evidence = EMPTY_ORBIT_TASK_EVIDENCE;
+  for (let index = 0; index < MAX_ORBIT_TASK_RUNS + 8; index += 1) {
+    evidence = appendOrbitTaskRun(
       evidence,
       briefingRun({
         id: `task-run:document-briefing:${index}`,
@@ -411,19 +411,19 @@ test("keeps run and delivery history bounded, newest first, and reconfirmation s
       }),
     );
   }
-  assert.equal(evidence.runs.length, MAX_RUNE_TASK_RUNS);
-  assert.equal(evidence.runs[0].id, `task-run:document-briefing:${MAX_RUNE_TASK_RUNS + 7}`);
+  assert.equal(evidence.runs.length, MAX_ORBIT_TASK_RUNS);
+  assert.equal(evidence.runs[0].id, `task-run:document-briefing:${MAX_ORBIT_TASK_RUNS + 7}`);
 
-  let deliveryEvidence = EMPTY_RUNE_TASK_EVIDENCE;
-  for (let index = 0; index < MAX_RUNE_TASK_DELIVERIES + 6; index += 1) {
+  let deliveryEvidence = EMPTY_ORBIT_TASK_EVIDENCE;
+  for (let index = 0; index < MAX_ORBIT_TASK_DELIVERIES + 6; index += 1) {
     const run = briefingRun({
       id: `task-run:document-briefing:delivery-${index}`,
       completedAt: new Date(Date.UTC(2026, 7, 14, 10, index)).toISOString(),
       outputArtifactIds: [`delivery-deck-${index}`],
       outputSources: [`# Deck ${index}\n`],
     });
-    deliveryEvidence = appendRuneTaskRun(deliveryEvidence, run);
-    deliveryEvidence = await recordRuneTaskDelivery({
+    deliveryEvidence = appendOrbitTaskRun(deliveryEvidence, run);
+    deliveryEvidence = await recordOrbitTaskDelivery({
       evidence: deliveryEvidence,
       runId: run.id,
       artifactId: `delivery-deck-${index}`,
@@ -436,13 +436,13 @@ test("keeps run and delivery history bounded, newest first, and reconfirmation s
       now: new Date(Date.UTC(2026, 7, 14, 10, index, 30)),
     });
   }
-  assert.equal(deliveryEvidence.deliveries.length, MAX_RUNE_TASK_DELIVERIES);
+  assert.equal(deliveryEvidence.deliveries.length, MAX_ORBIT_TASK_DELIVERIES);
   const latest = deliveryEvidence.deliveries[0];
-  const reconfirmed = await recordRuneTaskDelivery({
+  const reconfirmed = await recordOrbitTaskDelivery({
     evidence: deliveryEvidence,
     runId: latest.runId,
     artifactId: latest.artifactId,
-    source: `# Deck ${MAX_RUNE_TASK_DELIVERIES + 5}\n`,
+    source: `# Deck ${MAX_ORBIT_TASK_DELIVERIES + 5}\n`,
     currentSourceRevision: deliveryEvidence.runs.find((run) => run.id === latest.runId).sourceRevision,
     currentOutputRevisions: deliveryEvidence.runs.find((run) => run.id === latest.runId).outputRevisions,
     method: "folder",
@@ -450,6 +450,6 @@ test("keeps run and delivery history bounded, newest first, and reconfirmation s
     rating: "not-ready",
     now: new Date("2026-08-14T12:00:00.000Z"),
   });
-  assert.equal(reconfirmed.deliveries.length, MAX_RUNE_TASK_DELIVERIES);
+  assert.equal(reconfirmed.deliveries.length, MAX_ORBIT_TASK_DELIVERIES);
   assert.equal(reconfirmed.deliveries[0].rating, "not-ready");
 });

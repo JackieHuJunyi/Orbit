@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
-import { runeUICopy, type RuneLocale } from "../lib/localization";
+import { orbitUICopy, type OrbitLocale } from "../lib/localization";
 
 export function ReviewDialog({
   dialogId,
@@ -24,10 +24,10 @@ export function ReviewDialog({
   dialogClassName?: string;
   children: ReactNode;
   footer: ReactNode;
-  locale: RuneLocale;
+  locale: OrbitLocale;
   onCancel: () => void;
 }) {
-  const copy = runeUICopy(locale);
+  const copy = orbitUICopy(locale);
   const dialogRef = useRef<HTMLElement>(null);
   const cancelRef = useRef(onCancel);
 

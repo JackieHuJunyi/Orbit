@@ -1,5 +1,5 @@
 import { convertLegacyOfficeFile, legacyOfficeFileName } from "./desktop-bridge.ts";
-import type { PreparedRuneImageAsset } from "./local-assets.ts";
+import type { PreparedOrbitImageAsset } from "./local-assets.ts";
 import type { PdfImportAnalysis, PdfOcrProgress, PdfOcrRequest } from "./pdf-import.ts";
 import { detectArtifact, type WorkspaceArtifact } from "./workspace.ts";
 
@@ -26,7 +26,7 @@ export type WorkspacePdfOcrCandidate = {
 export type WorkspaceFileConversion = {
   artifacts: WorkspaceArtifact[];
   warnings: string[];
-  assets: PreparedRuneImageAsset[];
+  assets: PreparedOrbitImageAsset[];
 };
 
 export type WorkspaceFilesConversionOptions = {
@@ -203,7 +203,7 @@ export async function convertWorkspaceImportFiles(
 ): Promise<WorkspaceFileConversion> {
   const artifacts: WorkspaceArtifact[] = [];
   const warnings: string[] = [];
-  const assets: PreparedRuneImageAsset[] = [];
+  const assets: PreparedOrbitImageAsset[] = [];
   for (const [fileIndex, file] of files.entries()) {
     if (options.signal?.aborted) throw new DOMException("OCR cancelled", "AbortError");
     options.onActiveFileName?.(file.name);

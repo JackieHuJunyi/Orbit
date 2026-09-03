@@ -8,7 +8,7 @@ export type SemanticHtmlPresentationMetadata = Readonly<{
   origin?: string;
   originRevision?: string;
   purpose?: string;
-  theme: "rune" | "rune-dark";
+  theme: "orbit" | "orbit-dark";
   title: string;
 }>;
 
@@ -50,17 +50,17 @@ function rootAttributes(source: string) {
 
 export function semanticHtmlPresentationMetadata(source: string): SemanticHtmlPresentationMetadata | null {
   const parsed = rootAttributes(source);
-  if (!parsed || parsed.attributes.get("data-rune-format") !== "presentation-v1") return null;
-  const title = parsed.attributes.get("data-rune-title")?.trim() ?? "";
-  const lang = parsed.attributes.get("data-rune-lang")?.trim() ?? "en";
-  const theme = parsed.attributes.get("data-rune-theme") === "rune-dark" ? "rune-dark" : "rune";
-  const origin = parsed.attributes.get("data-rune-origin")?.trim() || undefined;
-  const originRevision = parsed.attributes.get("data-rune-origin-revision")?.trim() || undefined;
-  const audienceValue = parsed.attributes.get("data-rune-audience")?.trim();
+  if (!parsed || parsed.attributes.get("data-orbit-format") !== "presentation-v1") return null;
+  const title = parsed.attributes.get("data-orbit-title")?.trim() ?? "";
+  const lang = parsed.attributes.get("data-orbit-lang")?.trim() ?? "en";
+  const theme = parsed.attributes.get("data-orbit-theme") === "orbit-dark" ? "orbit-dark" : "orbit";
+  const origin = parsed.attributes.get("data-orbit-origin")?.trim() || undefined;
+  const originRevision = parsed.attributes.get("data-orbit-origin-revision")?.trim() || undefined;
+  const audienceValue = parsed.attributes.get("data-orbit-audience")?.trim();
   const audience = ["customer", "leadership", "team"].includes(audienceValue ?? "")
     ? (audienceValue as SemanticHtmlPresentationMetadata["audience"])
     : undefined;
-  const purpose = parsed.attributes.get("data-rune-purpose")?.trim() || undefined;
+  const purpose = parsed.attributes.get("data-orbit-purpose")?.trim() || undefined;
   if (!title || title.length > 120 || !lang || lang.length > 16) return null;
   if (origin && !PORTABLE_ORIGIN_PATTERN.test(origin)) return null;
   if (originRevision && (!origin || !PORTABLE_SOURCE_REVISION_PATTERN.test(originRevision))) return null;
@@ -102,7 +102,7 @@ export function semanticHtmlPresentationStarter(title: string, lang = "en") {
   return semanticHtmlPresentationFromDeckSource(`---
 version: 1
 title: ${title}
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: ${lang}
 ---
@@ -169,7 +169,7 @@ function normalizeSlideNumber(section: string, index: number, total: number) {
   return section.replace(/<\/section\s*>\s*$/iu, `<span class="number">${label}</span>\n</section>`);
 }
 
-function normalizeRunePresentationSlides(source: string) {
+function normalizeOrbitPresentationSlides(source: string) {
   if (!semanticHtmlPresentationMetadata(source)) return source;
   const compilation = compileLegacyHtmlSlides(source);
   if (compilation.errors.length) return source;
@@ -183,7 +183,7 @@ function normalizeRunePresentationSlides(source: string) {
 }
 
 function validateSemanticSlideMutation(source: string, expectedSlideCount: number): SemanticHtmlSourceResult {
-  const normalized = normalizeRunePresentationSlides(source);
+  const normalized = normalizeOrbitPresentationSlides(source);
   const next = compileLegacyHtmlSlides(normalized);
   if (next.errors.length || next.slides.length !== expectedSlideCount) {
     return Object.freeze({

@@ -3,11 +3,11 @@ import path from "node:path";
 import process from "node:process";
 
 import {
-  MAX_RUNE_PILOT_COHORT_PARTICIPANTS,
-  compileRunePilotCohort,
-  renderRunePilotCohortMarkdown,
+  MAX_ORBIT_PILOT_COHORT_PARTICIPANTS,
+  compileOrbitPilotCohort,
+  renderOrbitPilotCohortMarkdown,
 } from "../app/lib/pilot-evidence-cohort.ts";
-import { MAX_RUNE_PILOT_EVIDENCE_BYTES } from "../app/lib/pilot-evidence.ts";
+import { MAX_ORBIT_PILOT_EVIDENCE_BYTES } from "../app/lib/pilot-evidence.ts";
 
 const args = process.argv.slice(2);
 if (args.length < 1 || args.length > 2 || args.includes("--help") || args.includes("-h")) {
@@ -41,9 +41,9 @@ if (
   manifest.version !== 1 ||
   !Array.isArray(manifest.participants) ||
   manifest.participants.length < 1 ||
-  manifest.participants.length > MAX_RUNE_PILOT_COHORT_PARTICIPANTS
+  manifest.participants.length > MAX_ORBIT_PILOT_COHORT_PARTICIPANTS
 ) {
-  throw new Error(`Pilot manifest requires version 1 and 1–${MAX_RUNE_PILOT_COHORT_PARTICIPANTS} participants.`);
+  throw new Error(`Pilot manifest requires version 1 and 1–${MAX_ORBIT_PILOT_COHORT_PARTICIPANTS} participants.`);
 }
 
 const manifestDirectory = path.dirname(manifestPath);
@@ -77,7 +77,7 @@ for (const entry of manifest.participants) {
   let evidence;
   try {
     const stats = await lstat(evidencePath);
-    if (!stats.isFile() || stats.isSymbolicLink() || stats.size > MAX_RUNE_PILOT_EVIDENCE_BYTES)
+    if (!stats.isFile() || stats.isSymbolicLink() || stats.size > MAX_ORBIT_PILOT_EVIDENCE_BYTES)
       throw new Error("invalid file");
     evidence = JSON.parse(await readFile(evidencePath, "utf8"));
   } catch {
@@ -86,8 +86,8 @@ for (const entry of manifest.participants) {
   participants.push({ participantId: entry.participantId, evidence });
 }
 
-const report = compileRunePilotCohort(participants);
-const markdown = renderRunePilotCohortMarkdown(report);
+const report = compileOrbitPilotCohort(participants);
+const markdown = renderOrbitPilotCohortMarkdown(report);
 if (!args[1]) {
   process.stdout.write(markdown);
 } else {

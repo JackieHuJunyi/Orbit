@@ -9,20 +9,20 @@
 .welcome-actions button,
 .shortcut-lessons > div,
 .tools-menu-actions > button,
-.tools-theme-grid > button { transition: color var(--rune-duration-micro) ease, background-color var(--rune-duration-micro) ease, border-color var(--rune-duration-micro) ease, box-shadow var(--rune-duration-surface) var(--rune-ease-out), transform var(--rune-duration-micro) var(--rune-ease-out); }
-.command-menu-group > button { transition: background-color var(--rune-duration-micro) var(--rune-ease-smooth), opacity var(--rune-duration-micro) ease; }
+.tools-theme-grid > button { transition: color var(--orbit-duration-micro) ease, background-color var(--orbit-duration-micro) ease, border-color var(--orbit-duration-micro) ease, box-shadow var(--orbit-duration-surface) var(--orbit-ease-out), transform var(--orbit-duration-micro) var(--orbit-ease-out); }
+.command-menu-group > button { transition: background-color var(--orbit-duration-micro) var(--orbit-ease-smooth), opacity var(--orbit-duration-micro) ease; }
 
-.rune-shell > .statusbar.is-visible {
-  animation: rune-statusbar-notice 4.2s var(--rune-ease-out) both;
+.orbit-shell > .statusbar.is-visible {
+  animation: orbit-statusbar-notice 4.2s var(--orbit-ease-out) both;
 }
 
-@keyframes rune-statusbar-notice {
+@keyframes orbit-statusbar-notice {
   0% { opacity: 0; transform: translate3d(-50%, 8px, 0) scale(.98); }
   7%, 88% { opacity: 1; transform: translate3d(-50%, 0, 0) scale(1); }
   100% { opacity: 0; transform: translate3d(-50%, 3px, 0) scale(.99); }
 }
 
-@keyframes rune-statusbar-notice-reduced {
+@keyframes orbit-statusbar-notice-reduced {
   0%, 99% { opacity: 1; transform: translate3d(-50%, 0, 0); }
   100% { opacity: 0; transform: translate3d(-50%, 0, 0); }
 }
@@ -36,26 +36,26 @@
 .patch-card,
 .visual-document-editor,
 .visual-chart-editor,
-.visual-deck-editor { transition: box-shadow var(--rune-duration-hover) var(--rune-ease-out), transform var(--rune-duration-hover) var(--rune-ease-spring), border-color var(--rune-duration-micro) ease; }
+.visual-deck-editor { transition: box-shadow var(--orbit-duration-hover) var(--orbit-ease-out), transform var(--orbit-duration-hover) var(--orbit-ease-spring), border-color var(--orbit-duration-micro) ease; }
 
 .workspace > .activity-rail,
 .workspace > .file-rail,
 .workspace > .source-pane,
 .workspace > .workspace-splitter,
-.workspace > .preview-pane { animation: rune-surface-enter 240ms ease-out backwards; }
+.workspace > .preview-pane { animation: orbit-surface-enter 240ms ease-out backwards; }
 .tools-popover,
-.export-popover { animation: rune-popover-material 280ms var(--rune-ease-out) backwards; }
-.agent-dock.open.floating { animation: rune-floating-agent-in 220ms var(--rune-ease-out) backwards; }
-.agent-context-trigger { animation: rune-context-action-in 180ms var(--rune-ease-out) backwards; }
-.import-review-backdrop { animation: rune-review-backdrop-in 260ms ease backwards; }
-.command-menu-backdrop { animation: rune-backdrop-in 180ms ease backwards; }
-.command-menu { animation: rune-command-menu-in 280ms var(--rune-ease-out) backwards; }
-.import-review-dialog { animation: rune-dialog-in var(--rune-duration-surface) var(--rune-ease-out) backwards; }
-.welcome-page { animation: rune-scene-enter var(--rune-duration-scene) var(--rune-ease-out) backwards; }
-.welcome-window { animation: rune-window-enter 640ms var(--rune-ease-out) backwards; }
-.welcome-window[data-intro-phase="ready"] { animation: rune-setup-unfold 760ms var(--rune-ease-out) both; }
+.export-popover { animation: orbit-popover-material 280ms var(--orbit-ease-out) backwards; }
+.agent-dock.open.floating { animation: orbit-floating-agent-in 220ms var(--orbit-ease-out) backwards; }
+.agent-context-trigger { animation: orbit-context-action-in 180ms var(--orbit-ease-out) backwards; }
+.import-review-backdrop { animation: orbit-review-backdrop-in 260ms ease backwards; }
+.command-menu-backdrop { animation: orbit-backdrop-in 180ms ease backwards; }
+.command-menu { animation: orbit-command-menu-in 280ms var(--orbit-ease-out) backwards; }
+.import-review-dialog { animation: orbit-dialog-in var(--orbit-duration-surface) var(--orbit-ease-out) backwards; }
+.welcome-page { animation: orbit-scene-enter var(--orbit-duration-scene) var(--orbit-ease-out) backwards; }
+.welcome-window { animation: orbit-window-enter 640ms var(--orbit-ease-out) backwards; }
+.welcome-window[data-intro-phase="ready"] { animation: orbit-setup-unfold 760ms var(--orbit-ease-out) both; }
 .welcome-page > :not(.welcome-intro-grid),
-.welcome-intro-grid > * { animation: rune-content-reveal var(--rune-duration-scene) var(--rune-ease-out) backwards; }
+.welcome-intro-grid > * { animation: orbit-content-reveal var(--orbit-duration-scene) var(--orbit-ease-out) backwards; }
 .welcome-welcome .welcome-intro-grid[data-intro-phase="writing"] .welcome-language-card {
   animation: none;
   visibility: hidden;
@@ -65,10 +65,10 @@
   transform: translate3d(0, 16px, 0);
 }
 .welcome-welcome .welcome-intro-grid[data-intro-phase="ready"] .welcome-language-card {
-  animation: rune-content-reveal 720ms var(--rune-ease-out) 220ms both;
+  animation: orbit-content-reveal 720ms var(--orbit-ease-out) 220ms both;
 }
 .welcome-intro-grid[data-intro-phase="ready"] .welcome-greeting-stage {
-  animation: rune-greeting-dock 780ms var(--rune-ease-out) both;
+  animation: orbit-greeting-dock 780ms var(--orbit-ease-out) both;
 }
 .welcome-intro-grid[data-intro-phase="writing"] .welcome-greeting-stage { animation: none; }
 .welcome-page > :nth-child(2) { animation-delay: 70ms; }
@@ -78,11 +78,11 @@
 .welcome-greeting-vector-stroke {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: rune-greeting-pencil-write var(--greeting-stroke-duration) ease-in-out forwards;
+  animation: orbit-greeting-pencil-write var(--greeting-stroke-duration) ease-in-out forwards;
   animation-delay: var(--greeting-stroke-delay);
 }
-.deferred-surface-status > i::after { animation: rune-deferred-surface-progress 1.1s var(--rune-ease-smooth) infinite alternate; }
-.empty-drop-zone { animation: rune-surface-enter 520ms var(--rune-ease-out) backwards; }
+.deferred-surface-status > i::after { animation: orbit-deferred-surface-progress 1.1s var(--orbit-ease-smooth) infinite alternate; }
+.empty-drop-zone { animation: orbit-surface-enter 520ms var(--orbit-ease-out) backwards; }
 
 @media (hover: hover) {
   .button:hover:not(:disabled),
@@ -92,14 +92,14 @@
   .welcome-primary:hover:not(:disabled) { transform: translateY(-1px); }
   .artifact-row:hover,
   .welcome-actions button:hover { transform: translateY(-1px); }
-  .artifact-row:hover { box-shadow: var(--rune-shadow-card-hover); }
-  .ghost-button:hover:not(:disabled) { box-shadow: var(--rune-shadow-card); }
+  .artifact-row:hover { box-shadow: var(--orbit-shadow-card-hover); }
+  .ghost-button:hover:not(:disabled) { box-shadow: var(--orbit-shadow-card); }
   .document-paper:hover,
   .chart-card:hover,
   .deck-slide:hover,
   .data-grid-wrap:hover,
   .saved-review-card:hover,
-  .patch-card:hover { box-shadow: var(--rune-shadow-card); }
+  .patch-card:hover { box-shadow: var(--orbit-shadow-card); }
 }
 .button:active:not(:disabled),
 .icon-button:active:not(:disabled),
@@ -109,28 +109,28 @@
 .language-options button:active:not(:disabled),
 .welcome-actions button:active:not(:disabled) {
   transform: scale(.975);
-  transition-duration: var(--rune-duration-press);
+  transition-duration: var(--orbit-duration-press);
 }
 
-@keyframes rune-preview-settle { from { opacity: .45; transform: translate3d(0, 8px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-surface-enter { from { opacity: .72; } to { opacity: 1; } }
-@keyframes rune-popover-material { from { opacity: 0; filter: blur(2px); transform: translate3d(0, -4px, 0) scale(.985); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-floating-agent-in { from { opacity: 0; transform: translate3d(0, 8px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-context-action-in { from { opacity: 0; transform: translate3d(0, 5px, 0) scale(.98); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-backdrop-in { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; } }
-@keyframes rune-review-backdrop-in { from { background-color: transparent; backdrop-filter: blur(0) saturate(100%); } }
-@keyframes rune-dialog-in { from { transform: translate3d(0, 18px, 0) scale(.975); } to { transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-command-menu-in { from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
-@keyframes rune-scene-enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
-@keyframes rune-window-enter { from { opacity: 0; transform: scale(.975); } to { opacity: 1; transform: scale(1); } }
-@keyframes rune-setup-unfold { from { opacity: 0; transform: scale(.965); } to { opacity: 1; transform: scale(1); } }
-@keyframes rune-content-reveal { from { opacity: 0; filter: blur(8px); transform: translate3d(0, 18px, 0); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); } }
-@keyframes rune-greeting-dock {
+@keyframes orbit-preview-settle { from { opacity: .45; transform: translate3d(0, 8px, 0) scale(.995); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes orbit-surface-enter { from { opacity: .72; } to { opacity: 1; } }
+@keyframes orbit-popover-material { from { opacity: 0; filter: blur(2px); transform: translate3d(0, -4px, 0) scale(.985); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes orbit-floating-agent-in { from { opacity: 0; transform: translate3d(0, 8px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes orbit-context-action-in { from { opacity: 0; transform: translate3d(0, 5px, 0) scale(.98); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes orbit-backdrop-in { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; } }
+@keyframes orbit-review-backdrop-in { from { background-color: transparent; backdrop-filter: blur(0) saturate(100%); } }
+@keyframes orbit-dialog-in { from { transform: translate3d(0, 18px, 0) scale(.975); } to { transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes orbit-command-menu-in { from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes orbit-scene-enter { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes orbit-window-enter { from { opacity: 0; transform: scale(.975); } to { opacity: 1; transform: scale(1); } }
+@keyframes orbit-setup-unfold { from { opacity: 0; transform: scale(.965); } to { opacity: 1; transform: scale(1); } }
+@keyframes orbit-content-reveal { from { opacity: 0; filter: blur(8px); transform: translate3d(0, 18px, 0); } to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); } }
+@keyframes orbit-greeting-dock {
   from { opacity: .16; transform: translate3d(0, clamp(112px, 18vh, 170px), 0) scale(1.5); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
-@keyframes rune-greeting-pencil-write { 0% { stroke-dashoffset: 1; } 100% { stroke-dashoffset: 0; } }
-@keyframes rune-deferred-surface-progress { from { opacity: .48; transform: scaleX(.18); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes orbit-greeting-pencil-write { 0% { stroke-dashoffset: 1; } 100% { stroke-dashoffset: 0; } }
+@keyframes orbit-deferred-surface-progress { from { opacity: .48; transform: scaleX(.18); } to { opacity: 1; transform: scaleX(1); } }
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -147,10 +147,10 @@
     position: relative;
     inset: auto;
     width: min(880px, 100%);
-    height: min(780px, calc(100dvh - var(--rune-space-6)));
-    max-height: calc(100dvh - var(--rune-space-6));
+    height: min(780px, calc(100dvh - var(--orbit-space-6)));
+    max-height: calc(100dvh - var(--orbit-space-6));
     grid-template-rows: 60px minmax(0, 1fr);
-    border: 1px solid var(--rune-material-edge);
+    border: 1px solid var(--orbit-material-edge);
     border-radius: 30px;
     background: rgba(255, 255, 255, .96);
     box-shadow: 0 28px 90px rgba(0, 0, 0, .12);
@@ -176,9 +176,9 @@
     height: 90px;
     transform: none;
   }
-  .rune-shell::before { display: none; }
-  .rune-shell > .statusbar.is-visible {
-    animation: rune-statusbar-notice-reduced 4.2s step-end both !important;
+  .orbit-shell::before { display: none; }
+  .orbit-shell > .statusbar.is-visible {
+    animation: orbit-statusbar-notice-reduced 4.2s step-end both !important;
   }
   .workspace > .activity-rail,
   .workspace > .file-rail,

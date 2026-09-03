@@ -1,11 +1,11 @@
 import {
-  MAX_RUNE_LOCAL_IMAGE_BYTES,
-  MAX_RUNE_LOCAL_IMAGES,
-  createRuneAssetReference,
-  prepareRuneImageAsset,
-  runeImageAltFromName,
-  runeImageAssetMap,
-  type PreparedRuneImageAsset,
+  MAX_ORBIT_LOCAL_IMAGE_BYTES,
+  MAX_ORBIT_LOCAL_IMAGES,
+  createOrbitAssetReference,
+  prepareOrbitImageAsset,
+  orbitImageAltFromName,
+  orbitImageAssetMap,
+  type PreparedOrbitImageAsset,
 } from "./local-assets.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
@@ -19,11 +19,11 @@ export type ImportedImageCandidate = {
 
 export type FinalizedImportedImages = {
   artifacts: WorkspaceArtifact[];
-  assets: PreparedRuneImageAsset[];
+  assets: PreparedOrbitImageAsset[];
   warnings: string[];
 };
 
-const IMPORT_IMAGE_TOKEN_PREFIX = "RUNEIMPORTIMAGEPLACEHOLDER";
+const IMPORT_IMAGE_TOKEN_PREFIX = "ORBITIMPORTIMAGEPLACEHOLDER";
 
 export function createImportedImageToken(index: number) {
   if (!Number.isSafeInteger(index) || index < 0)
@@ -44,8 +44,8 @@ function normalizedWarningDetail(error: unknown) {
 }
 
 function importedImageMarkdown(name: string, id: string) {
-  const alt = runeImageAltFromName(name).replace(/\\/gu, "\\\\").replace(/\[/gu, "\\[").replace(/\]/gu, "\\]");
-  return `![${alt}](${createRuneAssetReference(id)})`;
+  const alt = orbitImageAltFromName(name).replace(/\\/gu, "\\\\").replace(/\[/gu, "\\[").replace(/\]/gu, "\\]");
+  return `![${alt}](${createOrbitAssetReference(id)})`;
 }
 
 export async function finalizeImportedImages(
@@ -71,16 +71,16 @@ export async function finalizeImportedImages(
   }
 
   const replacements = new Map<string, string>();
-  const assetsById = new Map<string, PreparedRuneImageAsset>();
+  const assetsById = new Map<string, PreparedOrbitImageAsset>();
   const nextWarnings = [...warnings];
   for (const candidate of candidates) {
     try {
-      const asset = await prepareRuneImageAsset(
+      const asset = await prepareOrbitImageAsset(
         candidate.name,
         candidate.claimedMimeType,
         candidate.bytes.slice().buffer as ArrayBuffer,
       );
-      runeImageAssetMap([asset]);
+      orbitImageAssetMap([asset]);
       assetsById.set(asset.id, assetsById.get(asset.id) ?? asset);
       replacements.set(candidate.token, importedImageMarkdown(candidate.name, asset.id));
     } catch (error) {
@@ -90,13 +90,13 @@ export async function finalizeImportedImages(
   }
 
   const assets = [...assetsById.values()];
-  if (assets.length > MAX_RUNE_LOCAL_IMAGES)
-    throw new Error(`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGES} local images.`);
+  if (assets.length > MAX_ORBIT_LOCAL_IMAGES)
+    throw new Error(`One import can preserve at most ${MAX_ORBIT_LOCAL_IMAGES} local images.`);
   const totalBytes = assets.reduce((total, asset) => total + asset.size, 0);
-  if (totalBytes > MAX_RUNE_LOCAL_IMAGE_BYTES) {
-    throw new Error(`One import can preserve at most ${MAX_RUNE_LOCAL_IMAGE_BYTES / 1_048_576} MB of local images.`);
+  if (totalBytes > MAX_ORBIT_LOCAL_IMAGE_BYTES) {
+    throw new Error(`One import can preserve at most ${MAX_ORBIT_LOCAL_IMAGE_BYTES / 1_048_576} MB of local images.`);
   }
-  runeImageAssetMap(assets);
+  orbitImageAssetMap(assets);
 
   const nextArtifacts = artifacts.map((artifact) => {
     let source = artifact.source;

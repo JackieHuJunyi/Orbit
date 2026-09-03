@@ -23,7 +23,7 @@ const surfaceModules = [
 
 test("loads low-frequency Workbench surfaces through typed lazy boundaries", async () => {
   const [source, welcome] = await Promise.all([
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
   ]);
 

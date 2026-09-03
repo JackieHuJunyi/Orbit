@@ -1,72 +1,72 @@
 /*
- * Rune design-system authority.
+ * Orbit design-system authority.
  * Components consume these semantic values; layer numbers must not be repeated.
  */
 :root {
-  --rune-space-1: 4px;
-  --rune-space-2: 8px;
-  --rune-space-3: 12px;
-  --rune-space-4: 16px;
-  --rune-space-5: 20px;
-  --rune-space-6: 24px;
-  --rune-space-8: 32px;
-  --rune-space-10: 40px;
-  --rune-space-12: 48px;
-  --rune-space-16: 64px;
+  --orbit-space-1: 4px;
+  --orbit-space-2: 8px;
+  --orbit-space-3: 12px;
+  --orbit-space-4: 16px;
+  --orbit-space-5: 20px;
+  --orbit-space-6: 24px;
+  --orbit-space-8: 32px;
+  --orbit-space-10: 40px;
+  --orbit-space-12: 48px;
+  --orbit-space-16: 64px;
 
-  --rune-radius-window: 32px;
-  --rune-radius-workspace: 24px;
-  --rune-radius-card: 22px;
-  --rune-radius-control: 13px;
-  --rune-radius-small: 10px;
+  --orbit-radius-window: 32px;
+  --orbit-radius-workspace: 24px;
+  --orbit-radius-card: 22px;
+  --orbit-radius-control: 13px;
+  --orbit-radius-small: 10px;
 
-  --rune-type-display: clamp(46px, 5.1vw, 70px);
-  --rune-type-title: 28px;
-  --rune-type-heading: 17px;
-  --rune-type-body: 15px;
-  --rune-type-ui: 13px;
-  --rune-type-caption: 11px;
+  --orbit-type-display: clamp(46px, 5.1vw, 70px);
+  --orbit-type-title: 28px;
+  --orbit-type-heading: 17px;
+  --orbit-type-body: 15px;
+  --orbit-type-ui: 13px;
+  --orbit-type-caption: 11px;
 
-  --rune-accent-surface: var(--theme-accent);
-  --rune-accent-foreground: #ffffff;
+  --orbit-accent-surface: var(--theme-accent);
+  --orbit-accent-foreground: #ffffff;
 
-  --rune-content-reading: 920px;
-  --rune-file-width: 220px;
+  --orbit-content-reading: 920px;
+  --orbit-file-width: 220px;
 
   /* Functional materials. Large surfaces are quieter and thicker; controls
      remain more opaque so text never competes with the background. */
-  --rune-material-canvas: #f3f3f5;
-  --rune-material-window: rgba(250, 250, 252, .82);
-  --rune-material-raised: rgba(255, 255, 255, .8);
-  --rune-material-control: rgba(255, 255, 255, .9);
-  --rune-material-solid: #ffffff;
-  --rune-material-edge: rgba(255, 255, 255, .72);
-  --rune-material-divider: rgba(29, 29, 31, .085);
-  --rune-material-highlight: rgba(255, 255, 255, .72);
-  --rune-shadow-window: 0 24px 80px rgba(24, 24, 28, .09), inset 0 1px rgba(255, 255, 255, .92);
-  --rune-shadow-raised: 0 16px 48px rgba(24, 24, 28, .07), inset 0 1px rgba(255, 255, 255, .9);
+  --orbit-material-canvas: #f3f3f5;
+  --orbit-material-window: rgba(250, 250, 252, .82);
+  --orbit-material-raised: rgba(255, 255, 255, .8);
+  --orbit-material-control: rgba(255, 255, 255, .9);
+  --orbit-material-solid: #ffffff;
+  --orbit-material-edge: rgba(255, 255, 255, .72);
+  --orbit-material-divider: rgba(29, 29, 31, .085);
+  --orbit-material-highlight: rgba(255, 255, 255, .72);
+  --orbit-shadow-window: 0 24px 80px rgba(24, 24, 28, .09), inset 0 1px rgba(255, 255, 255, .92);
+  --orbit-shadow-raised: 0 16px 48px rgba(24, 24, 28, .07), inset 0 1px rgba(255, 255, 255, .9);
 
-  --rune-ease-out: cubic-bezier(.16, 1, .3, 1);
-  --rune-ease-smooth: cubic-bezier(.2, .8, .2, 1);
+  --orbit-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --orbit-ease-smooth: cubic-bezier(.2, .8, .2, 1);
   /* Critically damped by default. Overshoot is reserved for real momentum. */
-  --rune-ease-spring: cubic-bezier(.22, 1, .36, 1);
-  --rune-duration-press: 100ms;
-  --rune-duration-micro: 180ms;
-  --rune-duration-hover: 260ms;
-  --rune-duration-layout: 240ms;
-  --rune-duration-surface: 420ms;
-  --rune-duration-scene: 760ms;
+  --orbit-ease-spring: cubic-bezier(.22, 1, .36, 1);
+  --orbit-duration-press: 100ms;
+  --orbit-duration-micro: 180ms;
+  --orbit-duration-hover: 260ms;
+  --orbit-duration-layout: 240ms;
+  --orbit-duration-surface: 420ms;
+  --orbit-duration-scene: 760ms;
 
-  --rune-layer-underlay: -1;
-  --rune-layer-canvas: 0;
-  --rune-layer-local-float: 1;
-  --rune-layer-workspace: 10;
-  --rune-layer-status: 30;
-  --rune-layer-pane-float: 80;
-  --rune-layer-topbar: 100;
-  --rune-layer-global-float: 500;
-  --rune-layer-modal: 1000;
-  --rune-layer-onboarding: 1100;
+  --orbit-layer-underlay: -1;
+  --orbit-layer-canvas: 0;
+  --orbit-layer-local-float: 1;
+  --orbit-layer-workspace: 10;
+  --orbit-layer-status: 30;
+  --orbit-layer-pane-float: 80;
+  --orbit-layer-topbar: 100;
+  --orbit-layer-global-float: 500;
+  --orbit-layer-modal: 1000;
+  --orbit-layer-onboarding: 1100;
 }
 
 html[data-theme="space-black"] {
@@ -84,25 +84,25 @@ html[data-theme="space-black"] {
   --theme-accent: #91c8e9;
   --theme-soft: #1b3445;
   --theme-rgb: 145, 200, 233;
-  --rune-accent-surface: #2f719d;
-  --rune-accent-foreground: #ffffff;
-  --rune-stage: #0f1215;
-  --rune-material: rgba(22, 26, 31, .86);
-  --rune-material-strong: rgba(25, 30, 36, .95);
-  --rune-glass: rgba(20, 24, 29, .78);
-  --rune-glass-strong: rgba(25, 30, 36, .92);
-  --rune-hairline: rgba(223, 235, 245, .13);
-  --rune-hairline-strong: rgba(223, 235, 245, .22);
-  --rune-material-canvas: #07090b;
-  --rune-material-window: rgba(18, 22, 27, .92);
-  --rune-material-raised: rgba(30, 36, 43, .92);
-  --rune-material-control: rgba(42, 50, 59, .94);
-  --rune-material-solid: #252c34;
-  --rune-material-edge: rgba(223, 235, 245, .17);
-  --rune-material-divider: rgba(223, 235, 245, .14);
-  --rune-material-highlight: rgba(255, 255, 255, .1);
-  --rune-shadow-window: 0 28px 88px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .08);
-  --rune-shadow-raised: 0 18px 54px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .07);
+  --orbit-accent-surface: #2f719d;
+  --orbit-accent-foreground: #ffffff;
+  --orbit-stage: #0f1215;
+  --orbit-material: rgba(22, 26, 31, .86);
+  --orbit-material-strong: rgba(25, 30, 36, .95);
+  --orbit-glass: rgba(20, 24, 29, .78);
+  --orbit-glass-strong: rgba(25, 30, 36, .92);
+  --orbit-hairline: rgba(223, 235, 245, .13);
+  --orbit-hairline-strong: rgba(223, 235, 245, .22);
+  --orbit-material-canvas: #07090b;
+  --orbit-material-window: rgba(18, 22, 27, .92);
+  --orbit-material-raised: rgba(30, 36, 43, .92);
+  --orbit-material-control: rgba(42, 50, 59, .94);
+  --orbit-material-solid: #252c34;
+  --orbit-material-edge: rgba(223, 235, 245, .17);
+  --orbit-material-divider: rgba(223, 235, 245, .14);
+  --orbit-material-highlight: rgba(255, 255, 255, .1);
+  --orbit-shadow-window: 0 28px 88px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .08);
+  --orbit-shadow-raised: 0 18px 54px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .07);
 }
 
 html {
@@ -128,21 +128,21 @@ select { letter-spacing: inherit; }
 .welcome-primary,
 .run-button,
 .export-menu-trigger {
-  background: var(--rune-accent-surface);
-  color: var(--rune-accent-foreground);
+  background: var(--orbit-accent-surface);
+  color: var(--orbit-accent-foreground);
 }
 
-.rune-shell button,
+.orbit-shell button,
 .welcome-backdrop button,
 .import-review-dialog button { font-size: max(11px, .8125rem); }
-.rune-shell small,
+.orbit-shell small,
 .welcome-backdrop small,
 .import-review-dialog small { font-size: max(10px, .6875rem); line-height: 1.4; }
-.rune-shell input,
-.rune-shell select,
+.orbit-shell input,
+.orbit-shell select,
 .import-review-dialog input,
 .import-review-dialog select,
-.import-review-dialog textarea { font-size: var(--rune-type-ui); }
+.import-review-dialog textarea { font-size: var(--orbit-type-ui); }
 .overline { font-size: 10px; line-height: 1.3; }
 
 @supports (corner-shape: squircle) {

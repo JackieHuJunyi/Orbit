@@ -9,9 +9,9 @@ import {
 } from "./model-profiles.ts";
 
 export const DEFAULT_OPENAI_MODEL = "gpt-5.6";
-export const RUNE_MODEL_MODE_STORAGE_KEY = "rune-model-mode-v1";
+export const ORBIT_MODEL_MODE_STORAGE_KEY = "orbit-model-mode-v1";
 
-export type RuneModelMode = "model-assisted" | "device-tools-only";
+export type OrbitModelMode = "model-assisted" | "device-tools-only";
 
 export type ModelProviderStatus = {
   configured: boolean;
@@ -29,7 +29,7 @@ function safeModelName(value: string | undefined) {
   return candidate && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/u.test(candidate) ? candidate : DEFAULT_OPENAI_MODEL;
 }
 
-export function normalizeRuneModelMode(value: unknown): RuneModelMode | null {
+export function normalizeOrbitModelMode(value: unknown): OrbitModelMode | null {
   if (value === "model-assisted" || value === "auto") return "model-assisted";
   if (value === "device-tools-only" || value === "local") return "device-tools-only";
   return null;
@@ -39,8 +39,8 @@ export function modelProviderStatus(environment: Record<string, string | undefin
   const configured = Boolean(environment.OPENAI_API_KEY?.trim());
   const budget = normalizeModelTokenBudget(
     {
-      maxInputTokens: Number(environment.RUNE_MODEL_MAX_INPUT_TOKENS),
-      maxOutputTokens: Number(environment.RUNE_MODEL_MAX_OUTPUT_TOKENS),
+      maxInputTokens: Number(environment.ORBIT_MODEL_MAX_INPUT_TOKENS),
+      maxOutputTokens: Number(environment.ORBIT_MODEL_MAX_OUTPUT_TOKENS),
     },
     DEFAULT_MODEL_TOKEN_BUDGET,
   );

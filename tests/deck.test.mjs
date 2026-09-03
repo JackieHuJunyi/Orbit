@@ -96,7 +96,7 @@ test("compiles metrics, numbering, and a shared chart into static deck HTML", ()
       : { errors: ["Missing chart"] };
   });
   assert.doesNotMatch(runtime, /\{\{\s*chart/);
-  assert.match(runtime, /rune-embedded-chart/);
+  assert.match(runtime, /orbit-embedded-chart/);
   assert.doesNotMatch(runtime, /<script/i);
 });
 
@@ -134,7 +134,7 @@ test("renders one standalone content-hash image per non-metrics slide and fails 
   const source = `---
 version: 1
 title: Image deck
-theme: rune
+theme: orbit
 ratio: 16:9
 lang: en
 ---
@@ -144,22 +144,22 @@ lang: en
 
 Readable context stays editable.
 
-![Quarterly proof](rune-asset:sha256:${id})
+![Quarterly proof](orbit-asset:sha256:${id})
 `;
   assert.deepEqual(parseDeckSource(source).errors, []);
   const missing = compileDeckSource(source).html ?? "";
-  assert.match(missing, /data-rune-asset-state="missing"/u);
+  assert.match(missing, /data-orbit-asset-state="missing"/u);
   assert.doesNotMatch(missing, /<img\s+src=/u);
   const rendered =
-    compileDeckSource(source, { resolveLocalAssetUrl: () => "blob:https://rune.local/proof" }).html ?? "";
-  assert.match(rendered, /<img src="blob:https:\/\/rune\.local\/proof" alt="Quarterly proof"/u);
+    compileDeckSource(source, { resolveLocalAssetUrl: () => "blob:https://orbit.local/proof" }).html ?? "";
+  assert.match(rendered, /<img src="blob:https:\/\/orbit\.local\/proof" alt="Quarterly proof"/u);
   const hostile =
     compileDeckSource(source, { resolveLocalAssetUrl: () => "https://example.com/tracker.png" }).html ?? "";
   assert.doesNotMatch(hostile, /example\.com/u);
 
   assert.match(
     parseDeckSource(
-      source.replace(`![Quarterly proof](rune-asset:sha256:${id})`, "![Remote](https://example.com/a.png)"),
+      source.replace(`![Quarterly proof](orbit-asset:sha256:${id})`, "![Remote](https://example.com/a.png)"),
     ).errors.join(" "),
     /standalone Orbit local-image reference/u,
   );
@@ -170,8 +170,8 @@ Readable context stays editable.
   assert.match(
     parseDeckSource(
       source.replace(
-        `![Quarterly proof](rune-asset:sha256:${id})`,
-        `![One](rune-asset:sha256:${id})\n\n![Two](rune-asset:sha256:${"b".repeat(64)})`,
+        `![Quarterly proof](orbit-asset:sha256:${id})`,
+        `![One](orbit-asset:sha256:${id})\n\n![Two](orbit-asset:sha256:${"b".repeat(64)})`,
       ),
     ).errors.join(" "),
     /one primary image/u,
@@ -220,7 +220,7 @@ test("keeps legacy semantic HTML decks valid", () => {
 test("plans theme and conclusion changes in Deck Markdown source", () => {
   const deck = deckArtifact();
   const dark = planLocalChange(deck, "把主题改成深色");
-  assert.match(dark.nextSource, /^theme: rune-dark$/m);
+  assert.match(dark.nextSource, /^theme: orbit-dark$/m);
   assert.deepEqual(validateArtifact({ ...deck, source: dark.nextSource }), []);
 
   const conclusion = planLocalChange(deck, "新增一页结论");

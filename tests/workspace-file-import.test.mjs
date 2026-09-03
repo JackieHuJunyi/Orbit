@@ -65,7 +65,7 @@ test("converts a mixed readable-source batch in input order through the shared p
     sourceFile("model.csv", "region,revenue\nNorth,120\n"),
     sourceFile(
       "board.html",
-      '<main data-rune-format="presentation-v1" data-title="Board"><section data-slide-index="1"><h1>Board</h1></section></main>',
+      '<main data-orbit-format="presentation-v1" data-title="Board"><section data-slide-index="1"><h1>Board</h1></section></main>',
     ),
   ]);
   const active = [];
@@ -95,7 +95,7 @@ test("fails closed for an unsupported source instead of inventing a canonical ar
 test("keeps heavyweight converters deferred and removes duplicated format branching from Workbench", async () => {
   const [adapterSource, workbenchSource] = await Promise.all([
     readFile(new URL("../app/lib/workspace-file-import.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8"),
   ]);
 
   for (const moduleName of ["office-import", "odf-import", "pdf-import-client"]) {

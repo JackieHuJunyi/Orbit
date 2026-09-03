@@ -72,16 +72,16 @@ test("uses bounded fallback labels without changing exact source ranges", () => 
 
 test("resolves only verified local image references in isolated slide HTML", () => {
   const id = "a".repeat(64);
-  const source = `<main><section><h1>Proof</h1><img src="rune-asset:sha256:${id}" alt="Proof" /></section></main>`;
+  const source = `<main><section><h1>Proof</h1><img src="orbit-asset:sha256:${id}" alt="Proof" /></section></main>`;
   const resolved = compileLegacyHtmlSlides(source, {
-    resolveLocalAssetUrl: () => "blob:https://rune.local/proof",
+    resolveLocalAssetUrl: () => "blob:https://orbit.local/proof",
   });
   assert.deepEqual(resolved.errors, []);
-  assert.match(resolved.slides[0].html, /src="blob:https:\/\/rune\.local\/proof"/u);
-  assert.match(resolved.slides[0].source, new RegExp(`rune-asset:sha256:${id}`, "u"));
+  assert.match(resolved.slides[0].html, /src="blob:https:\/\/orbit\.local\/proof"/u);
+  assert.match(resolved.slides[0].source, new RegExp(`orbit-asset:sha256:${id}`, "u"));
   assert.equal(
     source,
-    `<main><section><h1>Proof</h1><img src="rune-asset:sha256:${id}" alt="Proof" /></section></main>`,
+    `<main><section><h1>Proof</h1><img src="orbit-asset:sha256:${id}" alt="Proof" /></section></main>`,
   );
 });
 

@@ -7,19 +7,19 @@ import {
   MAX_WORKSPACE_SOURCE_PERCENT,
   MIN_WORKSPACE_SOURCE_PERCENT,
   normalizeWorkspaceSourcePercent,
-  normalizeRuneWorkspaceView,
-  RUNE_WORKSPACE_SPLIT_STORAGE_KEY,
-  RUNE_WORKSPACE_VIEW_CONTRIBUTIONS,
-  RUNE_WORKSPACE_VIEW_STORAGE_KEY,
-  RUNE_WORKSPACE_VIEWS,
+  normalizeOrbitWorkspaceView,
+  ORBIT_WORKSPACE_SPLIT_STORAGE_KEY,
+  ORBIT_WORKSPACE_VIEW_CONTRIBUTIONS,
+  ORBIT_WORKSPACE_VIEW_STORAGE_KEY,
+  ORBIT_WORKSPACE_VIEWS,
   workspaceSplitPercentFromDrag,
   workspaceViewFromKeyboardShortcut,
   workspaceSplitTracks,
 } from "../app/lib/workspace-layout.ts";
 
 test("keeps a bounded source/preview split as presentation-only local state", () => {
-  assert.equal(RUNE_WORKSPACE_SPLIT_STORAGE_KEY, "rune-workspace-split-v2");
-  assert.equal(RUNE_WORKSPACE_VIEW_STORAGE_KEY, "rune-workspace-view-v1");
+  assert.equal(ORBIT_WORKSPACE_SPLIT_STORAGE_KEY, "orbit-workspace-split-v2");
+  assert.equal(ORBIT_WORKSPACE_VIEW_STORAGE_KEY, "orbit-workspace-view-v1");
   assert.equal(DEFAULT_WORKSPACE_SOURCE_PERCENT, 44);
   assert.equal(clampWorkspaceSourcePercent(-10), MIN_WORKSPACE_SOURCE_PERCENT);
   assert.equal(clampWorkspaceSourcePercent(90), MAX_WORKSPACE_SOURCE_PERCENT);
@@ -28,14 +28,14 @@ test("keeps a bounded source/preview split as presentation-only local state", ()
 });
 
 test("accepts only the three explicit presentation views", () => {
-  assert.deepEqual(RUNE_WORKSPACE_VIEWS, ["split", "source", "preview"]);
-  for (const view of RUNE_WORKSPACE_VIEWS) assert.equal(normalizeRuneWorkspaceView(view), view);
-  assert.equal(normalizeRuneWorkspaceView("focus"), null);
-  assert.equal(normalizeRuneWorkspaceView(null), null);
+  assert.deepEqual(ORBIT_WORKSPACE_VIEWS, ["split", "source", "preview"]);
+  for (const view of ORBIT_WORKSPACE_VIEWS) assert.equal(normalizeOrbitWorkspaceView(view), view);
+  assert.equal(normalizeOrbitWorkspaceView("focus"), null);
+  assert.equal(normalizeOrbitWorkspaceView(null), null);
 });
 
 test("maps one explicit cross-platform shortcut family to presentation views", () => {
-  assert.deepEqual(RUNE_WORKSPACE_VIEW_CONTRIBUTIONS, [
+  assert.deepEqual(ORBIT_WORKSPACE_VIEW_CONTRIBUTIONS, [
     { id: "split", shortcutCode: "Digit1", shortcutNumber: 1 },
     { id: "source", shortcutCode: "Digit2", shortcutNumber: 2 },
     { id: "preview", shortcutCode: "Digit3", shortcutNumber: 3 },

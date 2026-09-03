@@ -3,19 +3,19 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld(
-  "runeDesktop",
+  "orbitDesktop",
   Object.freeze({
     convertLegacyOffice(input) {
-      return ipcRenderer.invoke("rune:convert-legacy-office", input);
+      return ipcRenderer.invoke("orbit:convert-legacy-office", input);
     },
     exportLegacyOffice(input) {
-      return ipcRenderer.invoke("rune:export-legacy-office", input);
+      return ipcRenderer.invoke("orbit:export-legacy-office", input);
     },
     discoverModels() {
-      return ipcRenderer.invoke("rune:discover-models");
+      return ipcRenderer.invoke("orbit:discover-models");
     },
     importDiscoveredModel(id) {
-      return ipcRenderer.invoke("rune:import-discovered-model", id);
+      return ipcRenderer.invoke("orbit:import-discovered-model", id);
     },
   }),
 );

@@ -7,11 +7,11 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-  compileRunePilotCohort,
-  parseRunePilotEvidencePackage,
-  renderRunePilotCohortMarkdown,
+  compileOrbitPilotCohort,
+  parseOrbitPilotEvidencePackage,
+  renderOrbitPilotCohortMarkdown,
 } from "../app/lib/pilot-evidence-cohort.ts";
-import { prepareRunePilotEvidenceExport } from "../app/lib/pilot-evidence.ts";
+import { prepareOrbitPilotEvidenceExport } from "../app/lib/pilot-evidence.ts";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -80,7 +80,7 @@ function delivery(runRecord, { date, rating = "ready", numberCorrectness = 5 }) 
 function participantOnePackage() {
   const first = run({ id: "p1-first", date: "2026-07-01" });
   const second = run({ id: "p1-second", date: "2026-07-15", provider: "configured", tokens: true });
-  return prepareRunePilotEvidenceExport(
+  return prepareOrbitPilotEvidenceExport(
     {
       version: 3,
       runs: [first, second],
@@ -95,7 +95,7 @@ function participantOnePackage() {
 
 function participantTwoPackage() {
   const briefing = run({ id: "p2-briefing", date: "2026-07-04", taskId: "document-briefing" });
-  return prepareRunePilotEvidenceExport(
+  return prepareOrbitPilotEvidenceExport(
     {
       version: 3,
       runs: [briefing],
@@ -108,14 +108,14 @@ function participantTwoPackage() {
 test("strictly parses a compiler-owned pilot package without mutating it", () => {
   const evidence = participantOnePackage();
   const snapshot = structuredClone(evidence);
-  const parsed = parseRunePilotEvidencePackage(evidence);
+  const parsed = parseOrbitPilotEvidencePackage(evidence);
   assert.deepEqual(parsed, evidence);
   assert.notEqual(parsed, evidence);
   assert.deepEqual(evidence, snapshot);
 });
 
 test("aggregates candidate outcomes, number gates, task mix, and 28-day recurrence", () => {
-  const report = compileRunePilotCohort(
+  const report = compileOrbitPilotCohort(
     [
       { participantId: "participant-001", evidence: participantOnePackage() },
       { participantId: "participant-002", evidence: participantTwoPackage() },
@@ -159,7 +159,7 @@ test("marks the pilot minimum only after twenty distinct fully evaluated eligibl
   const participants = Array.from({ length: 20 }, (_, index) => {
     const day = String(index + 1).padStart(2, "0");
     const taskRun = run({ id: `threshold-${day}`, date: `2026-07-${day}` });
-    const evidence = prepareRunePilotEvidenceExport(
+    const evidence = prepareOrbitPilotEvidenceExport(
       {
         version: 3,
         runs: [taskRun],
@@ -169,14 +169,14 @@ test("marks the pilot minimum only after twenty distinct fully evaluated eligibl
     ).package;
     return { participantId: `participant-${String(index + 1).padStart(3, "0")}`, evidence };
   });
-  const report = compileRunePilotCohort(participants, new Date("2026-08-14T00:00:00.000Z"));
+  const report = compileOrbitPilotCohort(participants, new Date("2026-08-14T00:00:00.000Z"));
   assert.equal(report.summary.deliveries.reviewedRealTasks, 20);
   assert.equal(report.summary.deliveries.pilotEligibleTasks, 20);
   assert.equal(report.summary.deliveries.meetsPilotMinimum, true);
 });
 
 test("emits only aggregate report facts and never participant aliases or source records", () => {
-  const report = compileRunePilotCohort(
+  const report = compileOrbitPilotCohort(
     [
       { participantId: "participant-001", evidence: participantOnePackage() },
       { participantId: "participant-002", evidence: participantTwoPackage() },
@@ -184,7 +184,7 @@ test("emits only aggregate report facts and never participant aliases or source 
     new Date("2026-08-14T12:00:00.000Z"),
   );
   const json = JSON.stringify(report);
-  const markdown = renderRunePilotCohortMarkdown(report);
+  const markdown = renderOrbitPilotCohortMarkdown(report);
   for (const forbidden of ["participant-001", "participant-002", "run-001", "output-01", "source-p1", "p1-first"]) {
     assert.equal(json.includes(forbidden), false, forbidden);
     assert.equal(markdown.includes(forbidden), false, forbidden);
@@ -197,24 +197,24 @@ test("emits only aggregate report facts and never participant aliases or source 
 test("rejects altered provenance, fields, links, order, and summaries", () => {
   const provenance = structuredClone(participantOnePackage());
   provenance.provenance.uploadPerformed = true;
-  assert.throws(() => parseRunePilotEvidencePackage(provenance), /provenance/i);
+  assert.throws(() => parseOrbitPilotEvidencePackage(provenance), /provenance/i);
 
   const foreignField = structuredClone(participantOnePackage());
   foreignField.runs[0].sourceArtifactId = "should-never-exist";
-  assert.throws(() => parseRunePilotEvidencePackage(foreignField), /runs/i);
+  assert.throws(() => parseOrbitPilotEvidencePackage(foreignField), /runs/i);
 
   const link = structuredClone(participantOnePackage());
   link.deliveries[0].runId = "run-999";
-  assert.throws(() => parseRunePilotEvidencePackage(link), /deliveries/i);
+  assert.throws(() => parseOrbitPilotEvidencePackage(link), /deliveries/i);
 
   const order = structuredClone(participantOnePackage());
   order.runs.reverse();
-  assert.throws(() => parseRunePilotEvidencePackage(order), /runs|order/i);
+  assert.throws(() => parseOrbitPilotEvidencePackage(order), /runs|order/i);
 
   const summary = structuredClone(participantOnePackage());
   summary.summary.deliveries.pilotEligibleTasks = 20;
   summary.summary.deliveries.meetsPilotMinimum = true;
-  assert.throws(() => parseRunePilotEvidencePackage(summary), /summary/i);
+  assert.throws(() => parseOrbitPilotEvidencePackage(summary), /summary/i);
 });
 
 test("requires one unique pseudonymous package per participant and rejects duplicate content across export dates", () => {
@@ -222,7 +222,7 @@ test("requires one unique pseudonymous package per participant and rejects dupli
   const sameContentLater = { ...structuredClone(first), exportedOn: "2026-08-03" };
   assert.throws(
     () =>
-      compileRunePilotCohort([
+      compileOrbitPilotCohort([
         { participantId: "participant-001", evidence: first },
         { participantId: "participant-002", evidence: sameContentLater },
       ]),
@@ -230,14 +230,14 @@ test("requires one unique pseudonymous package per participant and rejects dupli
   );
   assert.throws(
     () =>
-      compileRunePilotCohort([
+      compileOrbitPilotCohort([
         { participantId: "participant-001", evidence: first },
         { participantId: "participant-001", evidence: participantTwoPackage() },
       ]),
     /participant ids/i,
   );
   assert.throws(
-    () => compileRunePilotCohort([{ participantId: "alice@example.com", evidence: first }]),
+    () => compileOrbitPilotCohort([{ participantId: "alice@example.com", evidence: first }]),
     /participant-NNN/i,
   );
 });
@@ -263,14 +263,14 @@ test("keeps deep-frozen cohort input unchanged on success and failure", () => {
   const participant = Object.freeze({ participantId: "participant-001", evidence: frozenEvidence });
   const input = Object.freeze([participant]);
   const snapshot = structuredClone(input);
-  compileRunePilotCohort(input, new Date("2026-08-14T00:00:00.000Z"));
+  compileOrbitPilotCohort(input, new Date("2026-08-14T00:00:00.000Z"));
   assert.deepEqual(input, snapshot);
-  assert.throws(() => compileRunePilotCohort(input, new Date("invalid")), /valid compile time/i);
+  assert.throws(() => compileOrbitPilotCohort(input, new Date("invalid")), /valid compile time/i);
   assert.deepEqual(input, snapshot);
 });
 
 test("CLI reads one relative regular file per alias and writes non-overwriting private aggregate reports", async () => {
-  const temporary = await mkdtemp(path.join(tmpdir(), "rune-pilot-cohort-"));
+  const temporary = await mkdtemp(path.join(tmpdir(), "orbit-pilot-cohort-"));
   try {
     const evidenceDirectory = path.join(temporary, "evidence");
     const outputDirectory = path.join(temporary, "reports");
@@ -321,6 +321,6 @@ test("keeps the cohort compiler pure and the filesystem CLI outside the producti
   const source = await readFile(new URL("../app/lib/pilot-evidence-cohort.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /from ["']react|node:fs|localStorage|sessionStorage|indexedDB|\bfetch\s*\(/u);
   assert.doesNotMatch(source, /aggregate-pilot-evidence/u);
-  const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const workbench = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(workbench, /pilot-evidence-cohort|aggregate-pilot-evidence/u);
 });

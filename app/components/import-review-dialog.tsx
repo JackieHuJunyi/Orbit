@@ -13,9 +13,9 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { createImportSourcePreview, type WorkspaceImportReview } from "../lib/imports";
-import { localizeRuneCopy, runeUICopy, type RuneLocale } from "../lib/localization";
+import { localizeOrbitCopy, orbitUICopy, type OrbitLocale } from "../lib/localization";
 import { formatInteger } from "../lib/number-format";
-import type { RuneTaskId } from "../lib/task-runtime";
+import type { OrbitTaskId } from "../lib/task-runtime";
 import type { ArtifactKind, WorkspaceArtifact } from "../lib/workspace";
 import { ReviewDialog } from "./review-dialog";
 
@@ -71,15 +71,15 @@ export function ImportReviewDialog({
   warnings: string[];
   error?: string;
   busy?: boolean;
-  locale: RuneLocale;
-  continuationTask?: RuneTaskId;
+  locale: OrbitLocale;
+  continuationTask?: OrbitTaskId;
   purpose?: WorkspaceImportReview["purpose"];
   onCancel: () => void;
   onConfirm: () => void | Promise<void>;
 }) {
   const uniqueWarnings = [...new Set(warnings)];
-  const copy = runeUICopy(locale);
-  const taskCopy = localizeRuneCopy(locale, IMPORT_REVIEW_TASK_BASE_COPY.en, IMPORT_REVIEW_TASK_BASE_COPY["zh-CN"]);
+  const copy = orbitUICopy(locale);
+  const taskCopy = localizeOrbitCopy(locale, IMPORT_REVIEW_TASK_BASE_COPY.en, IMPORT_REVIEW_TASK_BASE_COPY["zh-CN"]);
   const continuesTask = Boolean(continuationTask);
   const continuesBriefing = continuationTask === "document-briefing";
 

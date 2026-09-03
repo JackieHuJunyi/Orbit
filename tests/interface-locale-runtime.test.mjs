@@ -3,35 +3,35 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
-  isRuneLocaleCatalogLoaded,
+  isOrbitLocaleCatalogLoaded,
   loadedInterfaceTranslation,
   loadedTraditionalChineseSegments,
-  loadRuneLocaleCatalog,
+  loadOrbitLocaleCatalog,
 } from "../app/lib/interface-locale-runtime.ts";
-import { runeText } from "../app/lib/localization.ts";
+import { orbitText } from "../app/lib/localization.ts";
 
 test("loads only the requested local interface catalog before synchronous localization", async () => {
-  assert.equal(isRuneLocaleCatalogLoaded("en"), true);
-  assert.equal(isRuneLocaleCatalogLoaded("zh-CN"), true);
-  assert.equal(isRuneLocaleCatalogLoaded("fr"), false);
-  assert.equal(isRuneLocaleCatalogLoaded("es"), false);
-  assert.throws(() => runeText("fr", "Appearance", "外观"), /must be loaded/);
+  assert.equal(isOrbitLocaleCatalogLoaded("en"), true);
+  assert.equal(isOrbitLocaleCatalogLoaded("zh-CN"), true);
+  assert.equal(isOrbitLocaleCatalogLoaded("fr"), false);
+  assert.equal(isOrbitLocaleCatalogLoaded("es"), false);
+  assert.throws(() => orbitText("fr", "Appearance", "外观"), /must be loaded/);
 
-  await Promise.all([loadRuneLocaleCatalog("fr"), loadRuneLocaleCatalog("fr")]);
-  assert.equal(isRuneLocaleCatalogLoaded("fr"), true);
-  assert.equal(isRuneLocaleCatalogLoaded("es"), false);
+  await Promise.all([loadOrbitLocaleCatalog("fr"), loadOrbitLocaleCatalog("fr")]);
+  assert.equal(isOrbitLocaleCatalogLoaded("fr"), true);
+  assert.equal(isOrbitLocaleCatalogLoaded("es"), false);
   assert.equal(loadedInterfaceTranslation("fr", "Appearance"), "Apparence");
-  assert.equal(runeText("fr", "Appearance", "外观"), "Apparence");
+  assert.equal(orbitText("fr", "Appearance", "外观"), "Apparence");
 });
 
 test("loads Traditional Chinese conversion data independently and rejects unknown locales", async () => {
-  assert.equal(isRuneLocaleCatalogLoaded("zh-TW"), false);
-  await loadRuneLocaleCatalog("zh-TW");
-  assert.equal(isRuneLocaleCatalogLoaded("zh-TW"), true);
+  assert.equal(isOrbitLocaleCatalogLoaded("zh-TW"), false);
+  await loadOrbitLocaleCatalog("zh-TW");
+  assert.equal(isOrbitLocaleCatalogLoaded("zh-TW"), true);
   assert.ok((loadedTraditionalChineseSegments()?.length ?? 0) > 100);
-  assert.equal(runeText("zh-TW", "", "实时预览"), "即時預覽");
-  await assert.rejects(() => loadRuneLocaleCatalog("de"), /unsupported interface locale/);
-  await assert.rejects(() => loadRuneLocaleCatalog("toString"), /unsupported interface locale/);
+  assert.equal(orbitText("zh-TW", "", "实时预览"), "即時預覽");
+  await assert.rejects(() => loadOrbitLocaleCatalog("de"), /unsupported interface locale/);
+  await assert.rejects(() => loadOrbitLocaleCatalog("toString"), /unsupported interface locale/);
 });
 
 test("keeps source catalogs out of the synchronous localization entry", async () => {

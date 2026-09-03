@@ -1,6 +1,6 @@
 import { normalizeCheckpointMap, type CheckpointMap } from "./checkpoints.ts";
 import { normalizeSavedOperatingReviews, type SavedOperatingReview } from "./operating-review.ts";
-import { normalizeRuneTaskEvidence, type RuneTaskEvidence } from "./task-evidence.ts";
+import { normalizeOrbitTaskEvidence, type OrbitTaskEvidence } from "./task-evidence.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
 export const MAX_WORKSPACE_RESET_SNAPSHOT_BYTES = 12 * 1_024 * 1_024;
@@ -10,7 +10,7 @@ export type WorkspaceDeviceState = Readonly<{
   selectedId: string;
   checkpoints: CheckpointMap;
   savedOperatingReviews: SavedOperatingReview[];
-  taskEvidence: RuneTaskEvidence;
+  taskEvidence: OrbitTaskEvidence;
 }>;
 
 export type WorkspaceResetMode = "sample" | "recovery";
@@ -90,7 +90,7 @@ export function normalizeWorkspaceDeviceState(value: unknown): WorkspaceDeviceSt
     selectedId: candidate.selectedId,
     checkpoints: normalizeCheckpointMap(candidate.checkpoints),
     savedOperatingReviews: normalizeSavedOperatingReviews(candidate.savedOperatingReviews),
-    taskEvidence: normalizeRuneTaskEvidence(candidate.taskEvidence),
+    taskEvidence: normalizeOrbitTaskEvidence(candidate.taskEvidence),
   };
 }
 

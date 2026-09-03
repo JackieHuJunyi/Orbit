@@ -1,22 +1,22 @@
 .welcome-backdrop {
   position: fixed;
-  z-index: var(--rune-layer-onboarding);
+  z-index: var(--orbit-layer-onboarding);
   isolation: isolate;
   inset: 0;
   display: grid;
   overflow: hidden;
   place-items: center;
-  padding: max(var(--rune-space-3), env(safe-area-inset-top))
-    max(var(--rune-space-3), env(safe-area-inset-right))
-    max(var(--rune-space-3), env(safe-area-inset-bottom))
-    max(var(--rune-space-3), env(safe-area-inset-left));
+  padding: max(var(--orbit-space-3), env(safe-area-inset-top))
+    max(var(--orbit-space-3), env(safe-area-inset-right))
+    max(var(--orbit-space-3), env(safe-area-inset-bottom))
+    max(var(--orbit-space-3), env(safe-area-inset-left));
   background: #f5f5f7;
   animation: none;
-  transition: background-color 920ms var(--rune-ease-out);
+  transition: background-color 920ms var(--orbit-ease-out);
 }
 
 /* The head bootstrap updates this attribute before the body can paint. */
-html[data-rune-onboarding="complete"] .welcome-backdrop {
+html[data-orbit-onboarding="complete"] .welcome-backdrop {
   display: none;
 }
 
@@ -31,29 +31,29 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 }
 
 .welcome-window {
-  --rune-pointer-x: 50%;
-  --rune-pointer-y: 50%;
-  --rune-pointer-shift-x: 0px;
-  --rune-pointer-shift-y: 0px;
+  --orbit-pointer-x: 50%;
+  --orbit-pointer-y: 50%;
+  --orbit-pointer-shift-x: 0px;
+  --orbit-pointer-shift-y: 0px;
   position: relative;
-  z-index: var(--rune-layer-local-float);
+  z-index: var(--orbit-layer-local-float);
   isolation: isolate;
   display: grid;
   width: min(880px, 100%);
-  height: min(780px, calc(100dvh - var(--rune-space-6)));
-  max-height: calc(100dvh - var(--rune-space-6));
+  height: min(780px, calc(100dvh - var(--orbit-space-6)));
+  max-height: calc(100dvh - var(--orbit-space-6));
   min-height: 0;
   grid-template-rows: 60px minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid var(--rune-material-edge);
+  border: 1px solid var(--orbit-material-edge);
   border-radius: 30px;
   background: rgba(255, 255, 255, .96);
   box-shadow: 0 28px 90px rgba(0, 0, 0, .12), inset 0 1px rgba(255, 255, 255, .9);
   transition:
-    border-color 720ms var(--rune-ease-out),
-    background-color 720ms var(--rune-ease-out),
-    box-shadow 720ms var(--rune-ease-out),
-    grid-template-rows 820ms var(--rune-ease-out);
+    border-color 720ms var(--orbit-ease-out),
+    background-color 720ms var(--orbit-ease-out),
+    box-shadow 720ms var(--orbit-ease-out),
+    grid-template-rows 820ms var(--orbit-ease-out);
 }
 
 .welcome-window[data-intro-phase="writing"] {
@@ -86,13 +86,13 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   padding-inline: 24px;
-  border-bottom: 1px solid var(--rune-material-divider);
+  border-bottom: 1px solid var(--orbit-material-divider);
   background: rgba(255, 255, 255, .86);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   transition:
-    opacity 620ms var(--rune-ease-out),
-    transform 620ms var(--rune-ease-out),
+    opacity 620ms var(--orbit-ease-out),
+    transform 620ms var(--orbit-ease-out),
     visibility 0s linear;
 }
 
@@ -116,7 +116,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   justify-self: end;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--rune-space-2);
+  gap: var(--orbit-space-2);
 }
 
 .welcome-chrome-actions > button {
@@ -126,32 +126,32 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding-inline: var(--rune-space-3);
+  padding-inline: var(--orbit-space-3);
   border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--rune-material-control);
+  background: var(--orbit-material-control);
   color: var(--muted);
   cursor: pointer;
-  font-size: var(--rune-type-caption);
+  font-size: var(--orbit-type-caption);
   white-space: nowrap;
   transition:
-    color var(--rune-duration-micro) ease,
-    background-color var(--rune-duration-micro) ease,
-    transform var(--rune-duration-press) var(--rune-ease-out);
+    color var(--orbit-duration-micro) ease,
+    background-color var(--orbit-duration-micro) ease,
+    transform var(--orbit-duration-press) var(--orbit-ease-out);
 }
 
-.welcome-chrome-actions > button:hover { color: var(--ink); background: var(--rune-material-solid); }
+.welcome-chrome-actions > button:hover { color: var(--ink); background: var(--orbit-material-solid); }
 .welcome-chrome-actions > button:active { transform: scale(.96); }
 .welcome-chrome-actions > button svg { width: 15px; height: 15px; }
 
 .welcome-step-navigation {
   display: grid;
-  width: min(var(--rune-frame-width), 860px);
+  width: min(var(--orbit-frame-width), 860px);
   grid-template-columns: auto minmax(0, 1fr);
   align-items: end;
-  gap: var(--rune-space-3);
-  margin-top: var(--rune-space-5);
-  padding-bottom: var(--rune-space-2);
+  gap: var(--orbit-space-3);
+  margin-top: var(--orbit-space-5);
+  padding-bottom: var(--orbit-space-2);
 }
 .welcome-step-back {
   display: inline-flex;
@@ -160,9 +160,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   justify-content: center;
   gap: 7px;
   padding-inline: 15px 17px;
-  border: 1px solid var(--rune-material-divider);
+  border: 1px solid var(--orbit-material-divider);
   border-radius: 999px;
-  background: var(--rune-material-control);
+  background: var(--orbit-material-control);
   color: var(--ink);
   cursor: pointer;
   font: inherit;
@@ -170,18 +170,18 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   font-weight: 630;
   white-space: nowrap;
   transition:
-    border-color var(--rune-duration-micro) ease,
-    background-color var(--rune-duration-micro) ease,
-    transform var(--rune-duration-press) var(--rune-ease-out);
+    border-color var(--orbit-duration-micro) ease,
+    background-color var(--orbit-duration-micro) ease,
+    transform var(--orbit-duration-press) var(--orbit-ease-out);
 }
 .welcome-step-back:hover {
-  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--rune-material-divider));
-  background: var(--rune-material-solid);
+  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--orbit-material-divider));
+  background: var(--orbit-material-solid);
 }
 .welcome-step-back:active { transform: scale(.97); }
 .welcome-step-back svg { width: 15px; height: 15px; color: var(--muted); }
 .welcome-step-navigation > .welcome-primary { justify-self: end; }
-.welcome-ready-navigation { margin-top: var(--rune-space-6); }
+.welcome-ready-navigation { margin-top: var(--orbit-space-6); }
 
 .welcome-chrome-brand {
   display: inline-flex;
@@ -244,7 +244,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 
 .welcome-intro-grid[data-intro-phase="writing"] {
   position: absolute;
-  z-index: var(--rune-layer-local-float);
+  z-index: var(--orbit-layer-local-float);
   inset: 0;
   width: 100%;
   height: 100%;
@@ -267,7 +267,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   justify-self: center;
   overflow: visible;
   transform-origin: 50% 54%;
-  transition: transform 820ms var(--rune-ease-out);
+  transition: transform 820ms var(--orbit-ease-out);
   will-change: transform;
 }
 
@@ -329,9 +329,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 
 .welcome-page h1 {
   max-width: 720px;
-  margin-block: var(--rune-space-3) var(--rune-space-4);
+  margin-block: var(--orbit-space-3) var(--orbit-space-4);
   color: var(--ink);
-  font-size: var(--rune-type-display);
+  font-size: var(--orbit-type-display);
   font-optical-sizing: auto;
   font-weight: 670;
   letter-spacing: -.052em;
@@ -343,7 +343,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   max-width: 660px;
   margin: 0;
   color: var(--muted);
-  font-size: var(--rune-type-body);
+  font-size: var(--orbit-type-body);
   line-height: 1.64;
   text-wrap: pretty;
 }
@@ -411,7 +411,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   border-radius: 16px;
   background: rgba(255, 255, 255, .82);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .025);
-  scrollbar-color: var(--rune-material-divider) transparent;
+  scrollbar-color: var(--orbit-material-divider) transparent;
   scrollbar-width: thin;
   scroll-snap-type: y proximity;
 }
@@ -434,17 +434,17 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 }
 .language-options button:hover { background: rgba(29, 29, 31, .045); }
 .language-options button.selected {
-  border-color: var(--rune-accent-surface);
-  background: var(--rune-accent-surface);
+  border-color: var(--orbit-accent-surface);
+  background: var(--orbit-accent-surface);
   box-shadow: none;
-  color: var(--rune-accent-foreground);
+  color: var(--orbit-accent-foreground);
 }
 .language-options strong { font-size: 13.5px; font-weight: 640; line-height: 1.28; }
-.language-options small { color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.3; }
-.language-options button.selected small { color: color-mix(in srgb, var(--rune-accent-foreground) 82%, transparent); }
+.language-options small { color: var(--muted); font-size: var(--orbit-type-caption); line-height: 1.3; }
+.language-options button.selected small { color: color-mix(in srgb, var(--orbit-accent-foreground) 82%, transparent); }
 .language-options button > span:first-child { display: grid; gap: 1px; min-width: 0; }
 .language-options button > svg { width: 16px; height: 16px; color: var(--theme-accent); }
-.language-options button.selected > svg { color: var(--rune-accent-foreground); }
+.language-options button.selected > svg { color: var(--orbit-accent-foreground); }
 
 .welcome-language-card > .welcome-primary {
   min-width: 118px;
@@ -455,21 +455,21 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   font-size: 13px;
 }
 .welcome-welcome > .welcome-primary { margin-top: 0; }
-.welcome-icon-disc { width: 72px; height: 72px; flex: 0 0 auto; border-radius: var(--rune-radius-card); }
+.welcome-icon-disc { width: 72px; height: 72px; flex: 0 0 auto; border-radius: var(--orbit-radius-card); }
 .welcome-model .welcome-icon-disc { width: 58px; height: 58px; border-radius: 18px; }
-.model-setup-panel { width: min(var(--rune-frame-width), 860px); gap: var(--rune-space-3); margin-block: var(--rune-space-6) var(--rune-space-5); }
+.model-setup-panel { width: min(var(--orbit-frame-width), 860px); gap: var(--orbit-space-3); margin-block: var(--orbit-space-6) var(--orbit-space-5); }
 .welcome-page.welcome-model h1 {
   max-width: 700px;
-  margin-block: var(--rune-space-2) var(--rune-space-3);
+  margin-block: var(--orbit-space-2) var(--orbit-space-3);
   font-size: clamp(32px, 4.2vw, 44px);
   line-height: 1.07;
 }
 .welcome-page.welcome-model > p { max-width: 680px; font-size: clamp(13px, 1.55vw, 15px); line-height: 1.58; }
 .model-status-card strong,
-.model-mode-options strong { font-size: var(--rune-type-ui); }
+.model-mode-options strong { font-size: var(--orbit-type-ui); }
 .model-status-card small,
 .model-mode-options small,
-.model-status-card > button { font-size: var(--rune-type-caption); }
+.model-status-card > button { font-size: var(--orbit-type-caption); }
 .model-setup-panel:has(.model-profile-import, .model-profile-editor) > .model-status-card,
 .model-setup-panel:has(.model-profile-import, .model-profile-editor) > .model-mode-options,
 .model-setup-panel:has(.model-profile-import, .model-profile-editor) > .model-discovery { display: none; }
@@ -483,9 +483,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .model-discovery {
   display: grid;
   overflow: hidden;
-  border: 1px solid var(--rune-material-divider);
+  border: 1px solid var(--orbit-material-divider);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--rune-material-solid) 92%, transparent);
+  background: color-mix(in srgb, var(--orbit-material-solid) 92%, transparent);
   box-shadow: 0 8px 28px rgba(24, 24, 28, .04);
   text-align: start;
 }
@@ -497,18 +497,18 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .model-discovery[data-discovery-state="unavailable"] > header { display: none; }
 .model-discovery[data-discovery-state="unavailable"] .model-discovery-empty {
   min-height: 54px;
-  border: 1px solid var(--rune-material-divider);
+  border: 1px solid var(--orbit-material-divider);
   border-radius: 15px;
-  background: var(--rune-material-control);
+  background: var(--orbit-material-control);
 }
 .model-discovery > header {
   display: grid;
   min-height: 62px;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--rune-space-3);
+  gap: var(--orbit-space-3);
   padding: 10px 12px;
-  border-bottom: 1px solid var(--rune-material-divider);
+  border-bottom: 1px solid var(--orbit-material-divider);
 }
 .model-discovery > header > span,
 .model-discovery-results > article > span {
@@ -542,7 +542,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   padding-inline: 11px;
   border: 0;
   border-radius: 11px;
-  background: var(--rune-material-control);
+  background: var(--orbit-material-control);
   color: var(--theme-accent);
   cursor: pointer;
   font: inherit;
@@ -558,25 +558,25 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   min-height: 58px;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--rune-space-3);
+  gap: var(--orbit-space-3);
   padding: 8px;
   border-radius: 13px;
 }
-.model-discovery-results > article + article { border-top: 1px solid var(--rune-material-divider); }
+.model-discovery-results > article + article { border-top: 1px solid var(--orbit-material-divider); }
 .model-discovery-results em { color: var(--theme-accent); font-size: 10.5px; font-style: normal; line-height: 1.4; }
 .model-discovery-empty { display: grid; min-height: 66px; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 10px; padding: 12px 14px; }
 .model-discovery-empty > svg { width: 18px; height: 18px; color: var(--subtle); }
 .model-discovery-review { display: grid; justify-items: start; gap: 10px; padding: 15px; }
 .model-discovery-review h2 { margin: 0; color: var(--ink); font-size: 20px; letter-spacing: -.025em; outline: 0; }
 .model-discovery-review > p { max-width: 680px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
-.model-discovery-review dl { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid var(--rune-material-divider); border-radius: 13px; }
+.model-discovery-review dl { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid var(--orbit-material-divider); border-radius: 13px; }
 .model-discovery-review dl > div { min-width: 0; padding: 9px 11px; }
-.model-discovery-review dl > div:nth-child(odd) { border-inline-end: 1px solid var(--rune-material-divider); }
-.model-discovery-review dl > div:nth-child(n + 3) { border-top: 1px solid var(--rune-material-divider); }
+.model-discovery-review dl > div:nth-child(odd) { border-inline-end: 1px solid var(--orbit-material-divider); }
+.model-discovery-review dl > div:nth-child(n + 3) { border-top: 1px solid var(--orbit-material-divider); }
 .model-discovery-review dt { color: var(--subtle); font-size: 10px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
 .model-discovery-review dd { margin: 3px 0 0; overflow: hidden; color: var(--ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .model-discovery-review > .welcome-primary { min-height: 40px; justify-self: end; }
-.welcome-model-actions { display: flex; width: min(var(--rune-frame-width), 860px); align-items: stretch; justify-content: flex-end; gap: 10px; margin-bottom: var(--rune-space-6); }
+.welcome-model-actions { display: flex; width: min(var(--orbit-frame-width), 860px); align-items: stretch; justify-content: flex-end; gap: 10px; margin-bottom: var(--orbit-space-6); }
 .welcome-model-navigation .welcome-model-actions { width: auto; min-width: 0; margin-bottom: 0; }
 .welcome-model-actions > .welcome-primary { min-height: 48px; box-shadow: none; }
 .welcome-model-primary {
@@ -592,7 +592,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .welcome-model-primary strong { font-size: 12px; font-weight: 680; }
 .welcome-model-primary small {
   max-width: 310px;
-  color: color-mix(in srgb, var(--rune-accent-foreground) 82%, transparent);
+  color: color-mix(in srgb, var(--orbit-accent-foreground) 82%, transparent);
   font-size: 11px;
   line-height: 1.3;
 }
@@ -603,7 +603,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   align-items: center;
   gap: 9px;
   padding: 8px 14px;
-  border: 1px solid var(--rune-material-divider);
+  border: 1px solid var(--orbit-material-divider);
   border-radius: 14px;
   background: transparent;
   color: var(--ink);
@@ -615,14 +615,14 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .welcome-secondary > span { display: grid; gap: 1px; }
 .welcome-secondary strong { font-size: 12px; font-weight: 660; }
 .welcome-secondary small { max-width: 310px; color: var(--muted); font-size: 11px; line-height: 1.35; }
-.shortcut-lessons { width: min(var(--rune-frame-width), 860px); gap: 10px; margin-top: var(--rune-space-6); }
-.shortcut-lessons > div { min-height: 68px; padding: var(--rune-space-3) var(--rune-space-4); border-radius: var(--rune-radius-control); }
+.shortcut-lessons { width: min(var(--orbit-frame-width), 860px); gap: 10px; margin-top: var(--orbit-space-6); }
+.shortcut-lessons > div { min-height: 68px; padding: var(--orbit-space-3) var(--orbit-space-4); border-radius: var(--orbit-radius-control); }
 .shortcut-lessons strong,
 .welcome-actions strong { font-size: 14px; line-height: 1.3; }
 .shortcut-lessons small,
 .welcome-actions small { font-size: 12px; line-height: 1.42; }
-.welcome-actions { width: min(var(--rune-frame-width), 860px); }
-.welcome-actions button { min-height: 74px; border-radius: var(--rune-radius-card); }
+.welcome-actions { width: min(var(--orbit-frame-width), 860px); }
+.welcome-actions button { min-height: 74px; border-radius: var(--orbit-radius-card); }
 
 .empty-workspace-canvas {
   position: relative;
@@ -633,41 +633,41 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   grid-template-rows: minmax(0, auto) auto;
   align-content: center;
   justify-items: center;
-  gap: var(--rune-space-4);
+  gap: var(--orbit-space-4);
   overflow: auto;
-  padding: clamp(var(--rune-space-4), 4vw, var(--rune-space-10));
+  padding: clamp(var(--orbit-space-4), 4vw, var(--orbit-space-10));
   background:
-    radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--rune-material-solid) 92%, transparent), rgba(var(--theme-rgb), .025) 56%, transparent 80%),
-    var(--rune-stage);
+    radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--orbit-material-solid) 92%, transparent), rgba(var(--theme-rgb), .025) 56%, transparent 80%),
+    var(--orbit-stage);
 }
 
 .empty-drop-zone {
-  --rune-pointer-x: 50%;
-  --rune-pointer-y: 50%;
-  --rune-pointer-shift-x: 0px;
-  --rune-pointer-shift-y: 0px;
+  --orbit-pointer-x: 50%;
+  --orbit-pointer-y: 50%;
+  --orbit-pointer-shift-x: 0px;
+  --orbit-pointer-shift-y: 0px;
   position: relative;
   isolation: isolate;
   display: grid;
-  width: min(var(--rune-frame-width), 960px);
+  width: min(var(--orbit-frame-width), 960px);
   min-height: min(520px, calc(100dvh - 190px));
   grid-template-columns: minmax(0, .88fr) minmax(380px, 1.12fr);
   align-items: center;
-  gap: clamp(var(--rune-space-8), 5vw, var(--rune-space-16));
+  gap: clamp(var(--orbit-space-8), 5vw, var(--orbit-space-16));
   overflow: hidden;
-  padding: clamp(var(--rune-space-8), 5vw, var(--rune-space-12));
-  border: 1px solid var(--rune-material-edge);
-  border-radius: var(--rune-radius-window);
-  background: var(--rune-material-raised);
-  box-shadow: var(--rune-shadow-raised);
+  padding: clamp(var(--orbit-space-8), 5vw, var(--orbit-space-12));
+  border: 1px solid var(--orbit-material-edge);
+  border-radius: var(--orbit-radius-window);
+  background: var(--orbit-material-raised);
+  box-shadow: var(--orbit-shadow-raised);
   backdrop-filter: blur(28px) saturate(150%);
   -webkit-backdrop-filter: blur(28px) saturate(150%);
   transform: translate3d(0, 0, 0);
   transition:
-    border-color var(--rune-duration-micro) ease,
-    background-color var(--rune-duration-micro) ease,
-    box-shadow var(--rune-duration-hover) var(--rune-ease-out),
-    transform var(--rune-duration-surface) var(--rune-ease-spring);
+    border-color var(--orbit-duration-micro) ease,
+    background-color var(--orbit-duration-micro) ease,
+    box-shadow var(--orbit-duration-hover) var(--orbit-ease-out),
+    transform var(--orbit-duration-surface) var(--orbit-ease-spring);
 }
 
 .empty-drop-zone::before {
@@ -675,7 +675,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(
-    460px circle at var(--rune-pointer-x) var(--rune-pointer-y),
+    460px circle at var(--orbit-pointer-x) var(--orbit-pointer-y),
     rgba(var(--theme-rgb), .1),
     transparent 70%
   );
@@ -685,9 +685,9 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 }
 
 .empty-drop-zone.dragging {
-  border-color: color-mix(in srgb, var(--theme-accent) 44%, var(--rune-material-edge));
-  background: color-mix(in srgb, var(--theme-soft) 20%, var(--rune-material-raised));
-  box-shadow: 0 22px 64px rgba(var(--theme-rgb), .14), inset 0 1px var(--rune-material-highlight);
+  border-color: color-mix(in srgb, var(--theme-accent) 44%, var(--orbit-material-edge));
+  background: color-mix(in srgb, var(--theme-soft) 20%, var(--orbit-material-raised));
+  box-shadow: 0 22px 64px rgba(var(--theme-rgb), .14), inset 0 1px var(--orbit-material-highlight);
   transform: translate3d(0, -2px, 0) scale(1.003);
 }
 .empty-drop-zone.dragging::before { opacity: 1; }
@@ -701,7 +701,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   position: relative;
   width: 116px;
   height: 82px;
-  margin-bottom: var(--rune-space-8);
+  margin-bottom: var(--orbit-space-8);
   transform: none;
 }
 .empty-file-stack span {
@@ -710,12 +710,12 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   width: 62px;
   height: 76px;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--theme-accent) 15%, var(--rune-material-divider));
-  border-radius: var(--rune-radius-control);
-  background: var(--rune-material-solid);
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 15%, var(--orbit-material-divider));
+  border-radius: var(--orbit-radius-control);
+  background: var(--orbit-material-solid);
   box-shadow: 0 10px 24px rgba(24, 24, 28, .085);
   color: var(--muted);
-  transition: transform var(--rune-duration-hover) var(--rune-ease-out);
+  transition: transform var(--orbit-duration-hover) var(--orbit-ease-out);
 }
 .empty-file-stack span:first-child { left: 0; transform: rotate(-8deg); }
 .empty-file-stack span:nth-child(2) { right: 0; transform: rotate(8deg); }
@@ -731,7 +731,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 }
 .empty-hero h1 {
   max-width: 520px;
-  margin: var(--rune-space-3) 0 var(--rune-space-3);
+  margin: var(--orbit-space-3) 0 var(--orbit-space-3);
   color: var(--ink);
   font-size: clamp(36px, 4vw, 54px);
   font-optical-sizing: auto;
@@ -744,7 +744,7 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
   max-width: 500px;
   margin: 0;
   color: var(--muted);
-  font-size: var(--rune-type-body);
+  font-size: var(--orbit-type-body);
   letter-spacing: -.005em;
   line-height: 1.6;
   text-wrap: pretty;
@@ -752,60 +752,60 @@ html[data-rune-onboarding="complete"] .welcome-backdrop {
 .empty-support {
   display: block;
   max-width: 500px;
-  margin-top: var(--rune-space-5);
+  margin-top: var(--orbit-space-5);
   color: var(--muted);
-  font-size: var(--rune-type-caption);
+  font-size: var(--orbit-type-caption);
   line-height: 1.5;
 }
 .empty-open-primary {
   display: inline-flex;
-  min-height: var(--rune-control-large);
+  min-height: var(--orbit-control-large);
   align-items: center;
-  gap: var(--rune-space-2);
-  margin-top: var(--rune-space-6);
-  padding-inline: var(--rune-space-5);
+  gap: var(--orbit-space-2);
+  margin-top: var(--orbit-space-6);
+  padding-inline: var(--orbit-space-5);
   border: 0;
   border-radius: 999px;
-  background: var(--rune-accent-surface);
+  background: var(--orbit-accent-surface);
   box-shadow: 0 8px 22px rgba(var(--theme-rgb), .17);
-  color: var(--rune-accent-foreground);
+  color: var(--orbit-accent-foreground);
   cursor: pointer;
   font-size: 13px;
   font-weight: 660;
   transition:
-    background-color var(--rune-duration-micro) ease,
-    transform var(--rune-duration-press) var(--rune-ease-out);
+    background-color var(--orbit-duration-micro) ease,
+    transform var(--orbit-duration-press) var(--orbit-ease-out);
 }
-.empty-open-primary:hover { background: color-mix(in srgb, var(--rune-accent-surface) 88%, black); }
+.empty-open-primary:hover { background: color-mix(in srgb, var(--orbit-accent-surface) 88%, black); }
 .empty-open-primary:active { transform: scale(.975); }
 .empty-open-primary svg { width: 16px; height: 16px; }
 
-.empty-task-list { width: 100%; gap: var(--rune-space-3); margin-top: 0; }
-.empty-choice-divider { width: 100%; margin-top: var(--rune-space-5); }
-.empty-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--rune-space-2); margin: var(--rune-space-4) 0 0; }
+.empty-task-list { width: 100%; gap: var(--orbit-space-3); margin-top: 0; }
+.empty-choice-divider { width: 100%; margin-top: var(--orbit-space-5); }
+.empty-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--orbit-space-2); margin: var(--orbit-space-4) 0 0; }
 .empty-actions > button:not(.welcome-primary) {
   display: inline-flex;
   min-height: 38px;
   align-items: center;
-  gap: var(--rune-space-2);
-  padding-inline: var(--rune-space-3);
-  border: 1px solid var(--rune-material-divider);
+  gap: var(--orbit-space-2);
+  padding-inline: var(--orbit-space-3);
+  border: 1px solid var(--orbit-material-divider);
   border-radius: 999px;
-  background: var(--rune-material-control);
+  background: var(--orbit-material-control);
   color: var(--ink);
   cursor: pointer;
   font-size: 12px;
   font-weight: 620;
   transition:
-    border-color var(--rune-duration-micro) ease,
-    background-color var(--rune-duration-micro) ease,
-    box-shadow var(--rune-duration-micro) ease,
-    transform var(--rune-duration-press) var(--rune-ease-out);
+    border-color var(--orbit-duration-micro) ease,
+    background-color var(--orbit-duration-micro) ease,
+    box-shadow var(--orbit-duration-micro) ease,
+    transform var(--orbit-duration-press) var(--orbit-ease-out);
 }
-.empty-actions > button:hover { border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--rune-material-divider)); background: var(--rune-material-solid); box-shadow: 0 6px 18px rgba(var(--theme-rgb), .08); }
+.empty-actions > button:hover { border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--orbit-material-divider)); background: var(--orbit-material-solid); box-shadow: 0 6px 18px rgba(var(--theme-rgb), .08); }
 .empty-actions > button:active { transform: scale(.97); }
 .empty-actions svg { width: 15px; height: 15px; }
-.empty-guide-note { margin: 0; color: var(--muted); font-size: var(--rune-type-caption); line-height: 1.45; text-align: center; }
+.empty-guide-note { margin: 0; color: var(--muted); font-size: var(--orbit-type-caption); line-height: 1.45; text-align: center; }
 
 html[data-locale="zh-CN"],
 html[data-locale="zh-TW"],
@@ -856,7 +856,7 @@ html[data-locale="ar"] .welcome-language-heading h1 {
   font-size: clamp(30px, 3.4vw, 40px);
   line-height: 1.18;
 }
-.welcome-language-heading .rune-name { unicode-bidi: isolate; font: inherit; }
+.welcome-language-heading .orbit-name { unicode-bidi: isolate; font: inherit; }
 html[data-locale="ar"] .welcome-language-heading h1 { unicode-bidi: plaintext; }
 .language-options { scroll-padding-block: 8px; }
 .language-options button { scroll-margin-block: 8px; }
@@ -873,29 +873,29 @@ html[dir="rtl"] .model-discovery-results button svg,
 html[dir="rtl"] .model-discovery-back svg { transform: scaleX(-1); }
 html[dir="rtl"] .empty-task-primary:hover > svg:last-child { transform: translateX(-3px) scaleX(-1); }
 
-html[data-theme="space-black"] .welcome-backdrop { background: var(--rune-material-canvas); }
+html[data-theme="space-black"] .welcome-backdrop { background: var(--orbit-material-canvas); }
 html[data-theme="space-black"] .welcome-window {
-  border-color: var(--rune-material-edge);
-  background: var(--rune-material-window);
-  box-shadow: var(--rune-shadow-window);
+  border-color: var(--orbit-material-edge);
+  background: var(--orbit-material-window);
+  box-shadow: var(--orbit-shadow-window);
 }
-html[data-theme="space-black"] .welcome-chrome { border-bottom-color: var(--rune-material-divider); background: rgba(16, 20, 24, .82); }
+html[data-theme="space-black"] .welcome-chrome { border-bottom-color: var(--orbit-material-divider); background: rgba(16, 20, 24, .82); }
 html[data-theme="space-black"] .welcome-icon-disc {
-  border-color: var(--rune-material-edge);
-  background: var(--rune-material-raised);
-  box-shadow: var(--rune-shadow-raised);
+  border-color: var(--orbit-material-edge);
+  background: var(--orbit-material-raised);
+  box-shadow: var(--orbit-shadow-raised);
 }
 html[data-theme="space-black"] .model-status-card {
-  border-color: var(--rune-material-divider);
-  background: var(--rune-material-raised);
-  box-shadow: inset 0 1px var(--rune-material-highlight);
+  border-color: var(--orbit-material-divider);
+  background: var(--orbit-material-raised);
+  box-shadow: inset 0 1px var(--orbit-material-highlight);
 }
 html[data-theme="space-black"] .model-status-card.connected {
   border-color: rgba(145, 216, 167, .34);
-  background: color-mix(in srgb, #183b28 58%, var(--rune-material-raised));
+  background: color-mix(in srgb, #183b28 58%, var(--orbit-material-raised));
 }
 html[data-theme="space-black"] .model-status-card > span {
-  background: var(--rune-material-control);
+  background: var(--orbit-material-control);
   color: var(--muted);
 }
 html[data-theme="space-black"] .model-status-card.connected > span {
@@ -903,26 +903,26 @@ html[data-theme="space-black"] .model-status-card.connected > span {
   color: #fff;
 }
 html[data-theme="space-black"] .model-status-card > button {
-  border-color: var(--rune-material-divider);
-  background: var(--rune-material-solid);
+  border-color: var(--orbit-material-divider);
+  background: var(--orbit-material-solid);
   color: var(--ink);
 }
 html[data-theme="space-black"] .model-status-card > button:hover {
-  border-color: var(--rune-material-edge);
-  background: var(--rune-material-control);
+  border-color: var(--orbit-material-edge);
+  background: var(--orbit-material-control);
 }
 html[data-theme="space-black"] .model-discovery,
 html[data-theme="space-black"] .welcome-secondary {
-  border-color: var(--rune-material-divider);
-  background: var(--rune-material-raised);
-  box-shadow: inset 0 1px var(--rune-material-highlight);
+  border-color: var(--orbit-material-divider);
+  background: var(--orbit-material-raised);
+  box-shadow: inset 0 1px var(--orbit-material-highlight);
 }
-html[data-theme="space-black"] .model-discovery > header { border-bottom-color: var(--rune-material-divider); }
+html[data-theme="space-black"] .model-discovery > header { border-bottom-color: var(--orbit-material-divider); }
 html[data-theme="space-black"] .model-discovery > header > span,
 html[data-theme="space-black"] .model-discovery-results > article > span,
 html[data-theme="space-black"] .model-discovery > header > button,
 html[data-theme="space-black"] .model-discovery-results button,
-html[data-theme="space-black"] .model-discovery-back { background: var(--rune-material-control); }
+html[data-theme="space-black"] .model-discovery-back { background: var(--orbit-material-control); }
 html[data-theme="space-black"] .welcome-language-card,
 html[data-theme="space-black"] .language-options,
 html[data-theme="space-black"] .language-options button,
@@ -930,13 +930,13 @@ html[data-theme="space-black"] .shortcut-lessons > div,
 html[data-theme="space-black"] .welcome-actions button,
 html[data-theme="space-black"] .model-mode-options > button,
 html[data-theme="space-black"] .empty-drop-zone {
-  border-color: var(--rune-material-divider);
-  background: var(--rune-material-raised);
-  box-shadow: inset 0 1px var(--rune-material-highlight);
+  border-color: var(--orbit-material-divider);
+  background: var(--orbit-material-raised);
+  box-shadow: inset 0 1px var(--orbit-material-highlight);
 }
 html[data-theme="space-black"] .language-options button:hover,
 html[data-theme="space-black"] .language-options button.selected,
-html[data-theme="space-black"] .welcome-actions button:hover { background: var(--rune-material-solid); }
+html[data-theme="space-black"] .welcome-actions button:hover { background: var(--orbit-material-solid); }
 html[data-theme="space-black"] .language-options button.selected {
   border-color: rgba(var(--theme-rgb), .52);
   box-shadow: 0 0 0 3px rgba(var(--theme-rgb), .1);
@@ -949,7 +949,7 @@ html[data-theme="space-black"] .language-options button.selected > svg { color: 
   .welcome-window,
   .welcome-chrome,
   .empty-drop-zone {
-    background: var(--rune-material-solid);
+    background: var(--orbit-material-solid);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

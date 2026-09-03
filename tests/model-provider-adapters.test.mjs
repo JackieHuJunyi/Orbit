@@ -53,7 +53,7 @@ async function run(protocol, providerPayload) {
       instructions: "System contract",
       input: "Current artifact",
       schema,
-      schemaName: "rune_test",
+      schemaName: "orbit_test",
       signal: new AbortController().signal,
     });
     return { request, result };
@@ -92,7 +92,7 @@ test("adapts OpenAI-compatible Chat Completions with strict response_format", as
 
 test("adapts Anthropic Messages through one forced typed tool input", async () => {
   const { request, result } = await run("anthropic-messages", {
-    content: [{ type: "tool_use", name: "submit_rune_plan", input: output }],
+    content: [{ type: "tool_use", name: "submit_orbit_plan", input: output }],
     usage: { input_tokens: 17, output_tokens: 7 },
   });
   const headers = new Headers(request.init.headers);
@@ -102,7 +102,7 @@ test("adapts Anthropic Messages through one forced typed tool input", async () =
   assert.equal(headers.get("authorization"), null);
   assert.deepEqual(request.body.tool_choice, {
     type: "tool",
-    name: "submit_rune_plan",
+    name: "submit_orbit_plan",
     disable_parallel_tool_use: true,
   });
   assert.equal(request.body.tools[0].input_schema.additionalProperties, false);
@@ -115,7 +115,7 @@ test("disables DeepSeek thinking before forcing the typed Anthropic tool", async
   globalThis.fetch = async (input, init) => {
     request = { url: String(input), init, body: JSON.parse(String(init.body)) };
     return jsonResponse({
-      content: [{ type: "tool_use", name: "submit_rune_plan", input: output }],
+      content: [{ type: "tool_use", name: "submit_orbit_plan", input: output }],
       usage: { input_tokens: 23, output_tokens: 9 },
     });
   };
@@ -137,7 +137,7 @@ test("disables DeepSeek thinking before forcing the typed Anthropic tool", async
     assert.deepEqual(request.body.thinking, { type: "disabled" });
     assert.deepEqual(request.body.tool_choice, {
       type: "tool",
-      name: "submit_rune_plan",
+      name: "submit_orbit_plan",
       disable_parallel_tool_use: true,
     });
     assert.deepEqual(result, { output, usage: { inputTokens: 23, outputTokens: 9 } });
@@ -212,7 +212,7 @@ test("fails closed for invalid structured output and oversized provider response
           instructions: "x",
           input: "y",
           schema,
-          schemaName: "rune_test",
+          schemaName: "orbit_test",
           signal: new AbortController().signal,
         }),
       /invalid structured JSON/i,
@@ -229,7 +229,7 @@ test("fails closed for invalid structured output and oversized provider response
           instructions: "x",
           input: "y",
           schema,
-          schemaName: "rune_test",
+          schemaName: "orbit_test",
           signal: new AbortController().signal,
         }),
       /unexpectedly large/i,
@@ -255,7 +255,7 @@ test("does not echo a provider error body that may contain sensitive evidence", 
           instructions: "x",
           input: "y",
           schema,
-          schemaName: "rune_test",
+          schemaName: "orbit_test",
           signal: new AbortController().signal,
         }),
       (error) => {
@@ -293,7 +293,7 @@ test("enforces each profile's input and output token budget before accepting a p
           instructions: "x".repeat(2_100),
           input: "y",
           schema,
-          schemaName: "rune_test",
+          schemaName: "orbit_test",
           signal: new AbortController().signal,
         }),
       /estimated.*above.*input budget/i,
@@ -306,7 +306,7 @@ test("enforces each profile's input and output token budget before accepting a p
           instructions: "short",
           input: "bounded",
           schema,
-          schemaName: "rune_test",
+          schemaName: "orbit_test",
           signal: new AbortController().signal,
         }),
       /reported output usage above/i,

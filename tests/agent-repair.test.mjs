@@ -10,7 +10,7 @@ const artifacts = [
     name: "analysis.sql",
     kind: "query",
     language: "DuckDB SQL",
-    source: '-- rune:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
+    source: '-- orbit:data "data"\nSELECT SUM(Value) AS total FROM workspace_data;',
   },
 ];
 
@@ -22,7 +22,7 @@ test("builds exact bounded feedback from an unapplied runtime proposal", () => {
         artifactId: "analysis",
         summary: "Use a new field",
         detail: "The first proposal references a missing field.",
-        nextSource: '-- rune:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
+        nextSource: '-- orbit:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
       },
     ],
     [],
@@ -36,7 +36,7 @@ test("builds exact bounded feedback from an unapplied runtime proposal", () => {
       name: "analysis.sql",
       kind: "query",
       language: "DuckDB SQL",
-      proposedSource: '-- rune:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
+      proposedSource: '-- orbit:data "data"\nSELECT SUM(missing_value) AS total FROM workspace_data;',
       isCreation: false,
     },
   ]);

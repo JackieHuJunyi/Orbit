@@ -7,7 +7,7 @@ import {
   MAX_DOCUMENT_BRIEFING_MODEL_SOURCE_CHARS,
   validateDocumentBriefingModelOutline,
 } from "./document-briefing-contract.ts";
-import type { RuneModelMode } from "./model-preference.ts";
+import type { OrbitModelMode } from "./model-preference.ts";
 import {
   prepareOperatingReviewEvidence,
   type OperatingReviewInput,
@@ -19,41 +19,41 @@ import {
 } from "./operating-review-contract.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
 
-export const MAX_RUNE_TASK_MODEL_RESPONSE_BYTES = 128_000;
+export const MAX_ORBIT_TASK_MODEL_RESPONSE_BYTES = 128_000;
 
-export type RuneTaskModelUsage = {
+export type OrbitTaskModelUsage = {
   inputTokens: number | null;
   outputTokens: number | null;
 };
 
-export type RuneTaskModelOutcome = "local" | "model" | "source-too-large" | "unavailable";
+export type OrbitTaskModelOutcome = "local" | "model" | "source-too-large" | "unavailable";
 
-type RuneTaskModelMetadata = {
-  outcome: RuneTaskModelOutcome;
+type OrbitTaskModelMetadata = {
+  outcome: OrbitTaskModelOutcome;
   provider: string;
   modelLabel: string;
-  usage?: RuneTaskModelUsage;
+  usage?: OrbitTaskModelUsage;
 };
 
-export type OperatingReviewModelAssistance = RuneTaskModelMetadata & {
+export type OperatingReviewModelAssistance = OrbitTaskModelMetadata & {
   taskId: "operating-review";
   narrative?: OperatingReviewNarrative;
 };
 
-export type DocumentBriefingModelAssistance = RuneTaskModelMetadata & {
+export type DocumentBriefingModelAssistance = OrbitTaskModelMetadata & {
   taskId: "document-briefing";
   outline?: DocumentBriefingModelOutline;
 };
 
-export type RuneTaskModelRequest =
+export type OrbitTaskModelRequest =
   | { taskId: "operating-review"; input: OperatingReviewInput }
   | { taskId: "document-briefing"; input: DocumentBriefingInput };
 
-export type RuneTaskModelFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+export type OrbitTaskModelFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-export type RuneTaskModelOptions = {
-  mode: RuneModelMode;
-  fetcher: RuneTaskModelFetch;
+export type OrbitTaskModelOptions = {
+  mode: OrbitModelMode;
+  fetcher: OrbitTaskModelFetch;
   onModelRequest?: () => void;
 };
 
@@ -70,7 +70,7 @@ function nonNegativeInteger(value: unknown) {
   return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : null;
 }
 
-export function normalizeRuneTaskModelUsage(value: RemoteTaskModelPayload["usage"]): RuneTaskModelUsage {
+export function normalizeOrbitTaskModelUsage(value: RemoteTaskModelPayload["usage"]): OrbitTaskModelUsage {
   return {
     inputTokens: nonNegativeInteger(value?.inputTokens),
     outputTokens: nonNegativeInteger(value?.outputTokens),
@@ -86,7 +86,7 @@ async function readBoundedTaskModelJson(response: Response): Promise<RemoteTaskM
     const { done, value } = await reader.read();
     if (done) break;
     received += value.byteLength;
-    if (received > MAX_RUNE_TASK_MODEL_RESPONSE_BYTES) {
+    if (received > MAX_ORBIT_TASK_MODEL_RESPONSE_BYTES) {
       await reader.cancel();
       throw new Error("Orbit received an oversized task-model response.");
     }
@@ -114,27 +114,27 @@ function metadataText(value: unknown, maximumCharacters: number) {
   return [...normalized].slice(0, maximumCharacters).join("");
 }
 
-function localAssistance<T extends RuneTaskModelRequest["taskId"]>(
+function localAssistance<T extends OrbitTaskModelRequest["taskId"]>(
   taskId: T,
-  outcome: Exclude<RuneTaskModelOutcome, "model">,
+  outcome: Exclude<OrbitTaskModelOutcome, "model">,
 ) {
   return { taskId, outcome, provider: "local", modelLabel: "" };
 }
 
-export async function prepareRuneTaskModelAssistance(
+export async function prepareOrbitTaskModelAssistance(
   artifacts: WorkspaceArtifact[],
-  request: Extract<RuneTaskModelRequest, { taskId: "operating-review" }>,
-  options: RuneTaskModelOptions,
+  request: Extract<OrbitTaskModelRequest, { taskId: "operating-review" }>,
+  options: OrbitTaskModelOptions,
 ): Promise<OperatingReviewModelAssistance>;
-export async function prepareRuneTaskModelAssistance(
+export async function prepareOrbitTaskModelAssistance(
   artifacts: WorkspaceArtifact[],
-  request: Extract<RuneTaskModelRequest, { taskId: "document-briefing" }>,
-  options: RuneTaskModelOptions,
+  request: Extract<OrbitTaskModelRequest, { taskId: "document-briefing" }>,
+  options: OrbitTaskModelOptions,
 ): Promise<DocumentBriefingModelAssistance>;
-export async function prepareRuneTaskModelAssistance(
+export async function prepareOrbitTaskModelAssistance(
   artifacts: WorkspaceArtifact[],
-  request: RuneTaskModelRequest,
-  options: RuneTaskModelOptions,
+  request: OrbitTaskModelRequest,
+  options: OrbitTaskModelOptions,
 ): Promise<OperatingReviewModelAssistance | DocumentBriefingModelAssistance> {
   if (options.mode === "device-tools-only") return localAssistance(request.taskId, "local");
 
@@ -160,7 +160,7 @@ export async function prepareRuneTaskModelAssistance(
     const payload = await readBoundedTaskModelJson(response);
     const provider = metadataText(payload.provider, 40) || "model";
     const modelLabel = metadataText(payload.profileName, 120) || metadataText(payload.model, 120) || provider;
-    const usage = normalizeRuneTaskModelUsage(payload.usage);
+    const usage = normalizeOrbitTaskModelUsage(payload.usage);
 
     if (request.taskId === "operating-review") {
       const evidence = prepareOperatingReviewEvidence(artifacts, request.input);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { planGreetingPresentation } from "../app/lib/greeting-presentation.ts";
-import { RUNE_LOCALE_REGISTRY } from "../app/lib/localization.ts";
+import { ORBIT_LOCALE_REGISTRY } from "../app/lib/localization.ts";
 
 test("plans one frozen path timeline for every interface greeting", () => {
   const expectedScripts = {
@@ -17,7 +17,7 @@ test("plans one frozen path timeline for every interface greeting", () => {
     ko: "hangul",
   };
 
-  for (const entry of RUNE_LOCALE_REGISTRY) {
+  for (const entry of ORBIT_LOCALE_REGISTRY) {
     const plan = planGreetingPresentation({ locale: entry.locale, value: entry.greeting });
 
     assert.equal(plan.locale, entry.locale);

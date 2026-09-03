@@ -1,4 +1,4 @@
-import { renderRuneHtmlAssetReferences } from "./local-assets.ts";
+import { renderOrbitHtmlAssetReferences } from "./local-assets.ts";
 import { PRESENTATION_CANVAS_WIDTH, PRESENTATION_PREVIEW_CANVAS_STYLE } from "./presentation-canvas.ts";
 
 export type LegacyHtmlSlide = Readonly<{
@@ -103,8 +103,8 @@ function slideDocument(
 ) {
   const safeHtmlOpen = htmlOpen || '<html lang="en">';
   const safeMainOpen = mainOpen || "<main>";
-  const renderedSection = renderRuneHtmlAssetReferences(section, options.resolveLocalAssetUrl);
-  return `<!doctype html>${safeHtmlOpen}<head><meta charset="utf-8"><meta name="viewport" content="width=${PRESENTATION_CANVAS_WIDTH},initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; font-src data:">${sharedStyles.join("")}<style data-rune-preview-canvas="1120x630">${PRESENTATION_PREVIEW_CANVAS_STYLE}</style></head><body>${safeMainOpen}${renderedSection}</main></body></html>`;
+  const renderedSection = renderOrbitHtmlAssetReferences(section, options.resolveLocalAssetUrl);
+  return `<!doctype html>${safeHtmlOpen}<head><meta charset="utf-8"><meta name="viewport" content="width=${PRESENTATION_CANVAS_WIDTH},initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; font-src data:">${sharedStyles.join("")}<style data-orbit-preview-canvas="1120x630">${PRESENTATION_PREVIEW_CANVAS_STYLE}</style></head><body>${safeMainOpen}${renderedSection}</main></body></html>`;
 }
 
 export function compileLegacyHtmlSlides(

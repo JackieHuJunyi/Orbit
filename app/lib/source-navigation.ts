@@ -1,6 +1,6 @@
 import { sourceSelectionError } from "./source-selection.ts";
 import type { WorkspaceArtifact } from "./workspace.ts";
-import type { RuneWorkspaceView } from "./workspace-layout.ts";
+import type { OrbitWorkspaceView } from "./workspace-layout.ts";
 
 export const MAX_SOURCE_NAVIGATION_REFERENCE_CHARS = 200;
 
@@ -84,7 +84,7 @@ export function prepareSourceNavigation(
   input: Readonly<{
     artifacts: readonly WorkspaceArtifact[];
     selectedArtifactId: string;
-    workspaceView: RuneWorkspaceView;
+    workspaceView: OrbitWorkspaceView;
     request: SourceNavigationRequest;
   }>,
 ): SourceNavigationResult {
