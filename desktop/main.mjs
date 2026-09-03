@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, safeStorage } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -37,6 +37,8 @@ app.setPath("userData", legacyRuneUserDataDirectory);
 process.env.RUNE_DESKTOP_RUNTIME = "1";
 
 async function initializeDesktopCredentialVault() {
+  const configuredKey = process.env.RUNE_CREDENTIAL_ENCRYPTION_KEY?.trim();
+  if (/^[a-f0-9]{64}$/.test(configuredKey ?? "")) return true;
   if (!safeStorage.isEncryptionAvailable()) return false;
   const userDataDirectory = app.getPath("userData");
   const encryptedPath = path.join(userDataDirectory, "credential-vault-key.bin");
@@ -108,6 +110,11 @@ async function startRuneServer() {
       if (webResponse.body) for await (const chunk of webResponse.body) response.write(chunk);
       response.end();
     } catch (error) {
+      console.error("Orbit Desktop request failed", error);
+      if (response.headersSent) {
+        response.destroy(error instanceof Error ? error : undefined);
+        return;
+      }
       response.writeHead(500, { "content-type": "text/plain;charset=utf-8" });
       response.end(error instanceof Error ? error.message : "Orbit Desktop server error");
     }
@@ -126,6 +133,21 @@ let runeServer;
 let mainWindow;
 let desktopModelDiscovery;
 
+async function loadDesktopWorkspace(window, url) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await window.loadURL(url);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (window.isDestroyed() || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 180 * (attempt + 1)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Orbit Desktop could not load its local workspace.");
+}
+
 async function createRuneWindow() {
   if (!runeServer) runeServer = await startRuneServer();
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -138,6 +160,8 @@ async function createRuneWindow() {
     height: 940,
     minWidth: 960,
     minHeight: 640,
+    show: false,
+    title: "Orbit",
     titleBarStyle: "hiddenInset",
     backgroundColor: "#f6f5f1",
     icon: orbitAppIconPath,
@@ -149,6 +173,9 @@ async function createRuneWindow() {
     },
   });
   mainWindow = window;
+  window.center();
+  window.show();
+  window.focus();
   window.on("closed", () => {
     if (mainWindow === window) mainWindow = undefined;
   });
@@ -156,13 +183,27 @@ async function createRuneWindow() {
   window.webContents.on("will-navigate", (event, target) => {
     if (new URL(target).origin !== runeServer.url) event.preventDefault();
   });
-  await window.loadURL(runeServer.url);
+  try {
+    await loadDesktopWorkspace(window, runeServer.url);
+    if (!window.isDestroyed()) {
+      window.show();
+    }
+  } catch (error) {
+    console.error("Orbit Desktop window failed to load", error);
+    dialog.showErrorBox(
+      "Orbit could not open",
+      "The local workspace did not finish loading. Close Orbit and try again; your device files were not changed.",
+    );
+  }
 }
 
 app.whenReady().then(async () => {
   await initializeDesktopCredentialVault();
   app.setName("Orbit");
-  if (process.platform === "darwin") app.dock.setIcon(orbitAppIconPath);
+  if (process.platform === "darwin") {
+    app.setActivationPolicy("regular");
+    app.dock.setIcon(orbitAppIconPath);
+  }
   desktopModelDiscovery = createDesktopModelDiscovery({ homeDirectory: app.getPath("home") });
   ipcMain.handle("rune:convert-legacy-office", convertLegacyOffice);
   ipcMain.handle("rune:export-legacy-office", exportLegacyOffice);

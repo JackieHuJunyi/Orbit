@@ -107,6 +107,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent change scope": "Agent 변경 범위",
   "Agent composer focused": "Agent 작곡가 중심",
   "Agent context": "Agent 컨텍스트",
+  "Agent conversation cleared": "Agent 대화를 지웠습니다",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent은(는) 하나의 교체 계획을 준비하기 위해 로컬 컴파일러 오류를 사용하고 있습니다.",
   "Agent will use local tools": "Agent가 로컬 도구를 사용합니다",
@@ -124,6 +125,7 @@ export const INTERFACE_TRANSLATIONS = {
     "익명 파일럿 증거를 로컬에 다운로드함 · 업로드 없음",
   "Anonymous run-001 / output-01 labels and dates without exact timestamps":
     "익명 run-001 / output-01 레이블과 정확한 시각이 없는 날짜",
+  Answer: "답변",
   "API base URL": "API 기본 URL",
   "API Key": "API Key",
   "API keys, model provider names, source revisions, and delivery fingerprints":
@@ -142,6 +144,11 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifact",
   "Artifacts in Agent context": "Agent 컨텍스트의 Artifact",
   Ascending: "오름차순",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "작업 공간에 관해 질문하거나 연결된 소스로 만들 결과를 설명하세요…",
+  "Ask about this file or describe the change you want…": "이 파일에 관해 질문하거나 원하는 변경을 설명하세요…",
+  "Ask about this selection or describe a change confined to it…":
+    "이 선택 영역에 관해 질문하거나 이 영역 안에서만 적용할 변경을 설명하세요…",
   "Ask Orbit about this": "이 내용에 대해 Orbit에 질문",
   "Ask the Agent to propose, without writing": "글을 쓰지 않고 Agent에 제안을 요청하세요.",
   Audience: "청중",
@@ -183,6 +190,7 @@ export const INTERFACE_TRANSLATIONS = {
   "CC Switch import link": "CC 스위치 가져오기 링크",
   Change: "변화",
   "Change comprehensibility": "변경 이해도",
+  "Change proposal": "변경 제안",
   "Change the accent to purple": "악센트를 보라색으로 변경",
   "changed lines": "변경된 줄",
   "Changes detected": "변경 감지됨",
@@ -228,6 +236,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose valid Chart properties.": "유효한 Chart 속성을 선택하세요.",
   "Choose your Orbit language": "Orbit 언어를 선택하세요",
   Clear: "지우기",
+  "Clear conversation": "대화 지우기",
   "Clear pins": "클리어 핀",
   "Click again to delete": "삭제하려면 다시 클릭하세요.",
   "Close current file": "현재 파일 닫기",
@@ -264,6 +273,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Continue setup": "계속 설정",
   "Continue with model assistance": "모델을 사용해 계속",
   "Continue without a model": "모델 없이 계속",
+  Conversation: "대화",
   "Cosmic Orange": "코스믹 오렌지",
   "Create a new artifact": "새 아티팩트 만들기",
   "Create a new presentation": "새 프레젠테이션 만들기",
@@ -402,6 +412,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Encrypting…": "암호화 중…",
   Endpoint: "엔드포인트",
   "Enter a focus view": "집중 보기로 전환",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter로 보내기 · Shift Enter로 줄 바꿈 · 모든 쓰기 작업은 계속 검토가 필요합니다",
   Equals: "같음",
   "Every artifact stays readable to people and models.":
     "모든 아티팩트는 사람과 모델이 읽을 수 있는 상태로 유지됩니다.",
@@ -975,6 +987,7 @@ export const INTERFACE_TRANSLATIONS = {
   "self-contained scriptless file": "자체 포함된 스크립트 없는 파일",
   semantic: "의미론적",
   "Semantic HTML → select or edit one exact slide": "시맨틱 HTML → 정확한 슬라이드 하나 선택 또는 편집",
+  "Send to Orbit": "Orbit에 보내기",
   "Shaping and verifying…": "구성하고 확인하는 중…",
   "Show API key": "API 키 표시",
   "Show preview only": "미리보기만 표시",
@@ -1143,6 +1156,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unsaved · ready to save": "저장되지 않음 · 저장할 준비가 됨",
   "Unsupported structure boundary": "지원되지 않는 구조 경계",
   "Untitled chart": "제목 없는 차트",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "최대 16개의 메시지만 이 기기에 저장되며 문서나 내보낸 파일에는 기록되지 않습니다.",
   Update: "업데이트",
   "Update in place · identity preserved": "제자리 업데이트 · ID 유지",
   "Update this operating-review task": "이 운영 검토 작업 업데이트",
@@ -1202,6 +1217,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace view": "작업 공간 보기",
   "Write in Source and the live output will recompile immediately.":
     "Source에 입력하면 라이브 출력이 즉시 다시 컴파일됩니다.",
+  You: "나",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "지원되는 파일을 여기에 놓을 수도 있습니다. 모든 호환 변환은 쓰기 전에 검토할 수 있습니다.",
   "You can still add a provider yourself or import a configuration.":

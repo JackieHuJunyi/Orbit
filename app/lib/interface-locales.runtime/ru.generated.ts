@@ -108,6 +108,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent change scope": "Область изменения Agent",
   "Agent composer focused": "Agent композитор сосредоточен",
   "Agent context": "Контекст Agent",
+  "Agent conversation cleared": "Диалог с Agent очищен",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent использует сбой локального компилятора для подготовки одного плана замены.",
   "Agent will use local tools": "Агент будет использовать локальные инструменты",
@@ -125,6 +126,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Анонимные данные пилота скачаны локально · загрузка в сеть не выполнялась",
   "Anonymous run-001 / output-01 labels and dates without exact timestamps":
     "Анонимные метки run-001 / output-01 и даты без точного времени",
+  Answer: "Ответ",
   "API base URL": "Базовый URL API",
   "API Key": "API Key",
   "API keys, model provider names, source revisions, and delivery fingerprints":
@@ -143,6 +145,11 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifact с.",
   "Artifacts in Agent context": "Artifact в контексте Agent",
   Ascending: "восходящий",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "Задайте вопрос о рабочем пространстве или опишите результат для связанных источников…",
+  "Ask about this file or describe the change you want…": "Задайте вопрос об этом файле или опишите нужное изменение…",
+  "Ask about this selection or describe a change confined to it…":
+    "Задайте вопрос об этом фрагменте или опишите изменение только в его пределах…",
   "Ask Orbit about this": "Спросить Orbit об этом",
   "Ask the Agent to propose, without writing": "Попросите Agent сделать предложение, не записывая",
   Audience: "Аудитория",
@@ -185,6 +192,7 @@ export const INTERFACE_TRANSLATIONS = {
   "CC Switch import link": "Ссылка для импорта CC Switch",
   Change: "Изменение",
   "Change comprehensibility": "Понятность изменений",
+  "Change proposal": "Предложение изменений",
   "Change the accent to purple": "Смените акцент на фиолетовый",
   "changed lines": "измененные строки",
   "Changes detected": "Обнаружены изменения",
@@ -230,6 +238,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose valid Chart properties.": "Выберите действительные свойства Chart.",
   "Choose your Orbit language": "Выберите язык Orbit",
   Clear: "Очистить",
+  "Clear conversation": "Очистить диалог",
   "Clear pins": "Очистить булавки",
   "Click again to delete": "Нажмите еще раз, чтобы удалить",
   "Close current file": "Закрыть текущий файл",
@@ -266,6 +275,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Continue setup": "Продолжить настройку",
   "Continue with model assistance": "Продолжить с моделью",
   "Continue without a model": "Продолжить без модели",
+  Conversation: "Диалог",
   "Cosmic Orange": "Космический оранжевый",
   "Create a new artifact": "Создать новый артефакт",
   "Create a new presentation": "Создать новую презентацию",
@@ -405,6 +415,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Encrypting…": "Шифрование…",
   Endpoint: "Адрес API",
   "Enter a focus view": "Перейти в режим фокуса",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter — отправить · Shift Enter — новая строка · любая запись по-прежнему требует проверки",
   Equals: "Равно",
   "Every artifact stays readable to people and models.": "Каждый артефакт остается читабельным для людей и моделей.",
   "Every piece of work, with a clear source.": "Каждая часть работы, с ясным источником.",
@@ -994,6 +1006,7 @@ export const INTERFACE_TRANSLATIONS = {
   "self-contained scriptless file": "автономный файл без сценариев",
   semantic: "смысловой",
   "Semantic HTML → select or edit one exact slide": "Семантический HTML → выбрать или изменить один точный слайд",
+  "Send to Orbit": "Отправить в Orbit",
   "Shaping and verifying…": "Формирование и проверка…",
   "Show API key": "Показать ключ API",
   "Show preview only": "Показать только предпросмотр",
@@ -1165,6 +1178,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unsaved · ready to save": "Не сохранено · готово к сохранению",
   "Unsupported structure boundary": "Неподдерживаемая граница конструкции",
   "Untitled chart": "Диаграмма без названия",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "До 16 сообщений хранятся только на этом устройстве и никогда не записываются в документы или экспортируемые файлы.",
   Update: "Обновить",
   "Update in place · identity preserved": "Обновление на месте · идентичность сохранена",
   "Update this operating-review task": "Обновить эту задачу оперативного анализа",
@@ -1226,6 +1241,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace view": "Вид рабочей области",
   "Write in Source and the live output will recompile immediately.":
     "Введите содержимое в Source — результат будет сразу перекомпилирован.",
+  You: "Вы",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "Сюда также можно перетащить любой поддерживаемый файл. Каждое преобразование совместимости проверяется до записи.",
   "You can still add a provider yourself or import a configuration.":

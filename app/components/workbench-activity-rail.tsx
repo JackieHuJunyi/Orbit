@@ -93,7 +93,13 @@ export function WorkbenchActivityRail({
         >
           <Presentation />
         </button>
-        <button className="activity-button" onClick={onFocusAgent} aria-label={focusAgentLabel} title={focusAgentLabel}>
+        <button
+          className="activity-button"
+          data-agent-trigger
+          onClick={onFocusAgent}
+          aria-label={focusAgentLabel}
+          title={focusAgentLabel}
+        >
           <Sparkles />
         </button>
         <button

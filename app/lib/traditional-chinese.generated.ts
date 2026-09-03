@@ -158,10 +158,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "或點選鉛筆可編輯已證明的標量單元格"
   ],
   [
-    "描述一个需要多份内容共同完成的结果",
-    "描述一個需要多份內容共同完成的結果"
-  ],
-  [
     "结果行号与直接字段可打开规范源内容",
     "結果行號與直接欄位可開啟規範源內容"
   ],
@@ -196,6 +192,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "恢复点已准备好进行精确源内容审核",
     "恢復點已準備好進行精確源內容稽核"
+  ],
+  [
+    "或描述需要多份内容共同完成的结果",
+    "或描述需要多份內容共同完成的結果"
   ],
   [
     "报告和演示可通过同一图表绑定复用",
@@ -296,10 +296,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "报告和演示编译为一次待审核事务",
     "報告和演示編譯為一次待稽核事務"
-  ],
-  [
-    "描述你希望对当前文件做出的修改",
-    "描述你希望對當前檔案做出的修改"
   ],
   [
     "数据范围与报告周期仍需精确确认",
@@ -618,10 +614,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "供輔助技術使用的圖片說明"
   ],
   [
-    "写入前始终可以审核和撤销",
-    "寫入前始終可以稽核和撤銷"
-  ],
-  [
     "创建一条可核验经营汇报链",
     "建立一條可核驗經營彙報鏈"
   ],
@@ -720,10 +712,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "报告和演示共享同一份事实",
     "報告和演示共享同一份事實"
-  ],
-  [
-    "描述只针对当前选区的修改",
-    "描述只針對當前選區的修改"
   ],
   [
     "本地指南仍在左侧工作区中",
@@ -836,6 +824,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "一页绑定当前版本的语义",
     "一頁綁定當前版本的語義"
+  ],
+  [
+    "不会写入文档或导出文件",
+    "不會寫入文件或匯出檔案"
   ],
   [
     "不能删除最后一个内容块",
@@ -988,6 +980,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "或把引用改为一个明确的",
     "或把引用改為一個明確的"
+  ],
+  [
+    "或描述只针对这里的修改",
+    "或描述只針對這裡的修改"
   ],
   [
     "或点击行号提供完整记录",
@@ -1420,6 +1416,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "亲手试试四个快捷键",
     "親手試試四個快捷鍵"
+  ],
+  [
+    "仅存储在这台设备上",
+    "僅儲存在這臺裝置上"
   ],
   [
     "从数据创建经营汇报",
@@ -2048,6 +2048,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "所有内容保持不变",
     "所有內容保持不變"
+  ],
+  [
+    "所有写入仍需审核",
+    "所有寫入仍需稽核"
   ],
   [
     "所有变化仍需审核",
@@ -2878,6 +2882,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "規範源內容新增"
   ],
   [
+    "询问工作区内容",
+    "詢問工作區內容"
+  ],
+  [
     "请先添加有效的",
     "請先新增有效的"
   ],
@@ -3570,6 +3578,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "讓每一份工作"
   ],
   [
+    "询问当前文件",
+    "詢問當前檔案"
+  ],
+  [
+    "询问当前选区",
+    "詢問當前選區"
+  ],
+  [
     "请先单独导入",
     "請先單獨匯入"
   ],
@@ -3896,6 +3912,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "密钥经同源",
     "金鑰經同源"
+  ],
+  [
+    "对话已清除",
+    "對話已清除"
   ],
   [
     "导入数据后",
@@ -4506,10 +4526,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "最近執行"
   ],
   [
-    "准备修改",
-    "準備修改"
-  ],
-  [
     "准备好了",
     "準備好了"
   ],
@@ -5058,6 +5074,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "新增條件"
   ],
   [
+    "清除对话",
+    "清除對話"
+  ],
+  [
     "源单元格",
     "源單元格"
   ],
@@ -5442,6 +5462,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "參照元"
   ],
   [
+    "发送给",
+    "傳送給"
+  ],
+  [
     "变更行",
     "變更行"
   ],
@@ -5586,6 +5610,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "未關聯"
   ],
   [
+    "条消息",
+    "條訊息"
+  ],
+  [
     "来源行",
     "來源行"
   ],
@@ -5656,6 +5684,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "管理层",
     "管理層"
+  ],
+  [
+    "範囲内",
+    "範囲內"
   ],
   [
     "编辑器",
@@ -5768,6 +5800,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "任务",
     "任務"
+  ],
+  [
+    "会話",
+    "會話"
   ],
   [
     "余白",
@@ -5886,6 +5922,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "雙方"
   ],
   [
+    "发送",
+    "傳送"
+  ],
+  [
     "受众",
     "受眾"
   ],
@@ -5982,6 +6022,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "對比"
   ],
   [
+    "对话",
+    "對話"
+  ],
+  [
     "对象",
     "物件"
   ],
@@ -6068,6 +6112,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "指标",
     "指標"
+  ],
+  [
+    "换行",
+    "換行"
   ],
   [
     "描画",

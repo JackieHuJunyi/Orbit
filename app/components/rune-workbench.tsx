@@ -20,7 +20,6 @@ import {
   ImagePlus,
   Link2,
   LoaderCircle,
-  Move,
   PanelLeftClose,
   PanelLeftOpen,
   Pin,
@@ -61,6 +60,9 @@ import {
   type SemanticHtmlSlideEditHandler,
 } from "./artifact-previews";
 import { AgentComposer, type AgentModelOption, type AgentScope } from "./agent-composer";
+import { AgentConversation } from "./agent-conversation";
+import { AgentDockShell } from "./agent-dock-shell";
+import { useAgentConversation } from "./use-agent-conversation";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchExportMenu } from "./workbench-export-menu";
 import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
@@ -182,6 +184,15 @@ import { normalizeRuneModelMode, RUNE_MODEL_MODE_STORAGE_KEY, type RuneModelMode
 import type { ModelProfilesState } from "../lib/model-profiles";
 import { normalizeRuneAppearanceTheme, RUNE_APPEARANCE_STORAGE_KEY, type RuneAppearanceTheme } from "../lib/appearance";
 import { ORBIT_PRODUCT_NAME } from "../lib/product-meta";
+import { AGENT_CONVERSATION_STORAGE_KEY } from "../lib/agent-conversation";
+import {
+  normalizeRemoteAgentPlan,
+  normalizeRemoteAgentUsage,
+  postAgentRequest,
+  requestRemoteAgentTurn,
+  type RemoteAgentRequestBody,
+  type RemoteAgentResponse,
+} from "../lib/agent-client";
 import {
   DEFAULT_FLOATING_AGENT_SIZE,
   clampFloatingAgentDock,
@@ -376,6 +387,7 @@ const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1";
 const AGENT_DOCK_LAYOUT_STORAGE_KEY = "rune-agent-dock-layout-v1";
 const ACTIVE_PREVIEW_AGENT_TARGET_SELECTOR =
   ".preview-pane .document-source-block.active, .preview-pane .document-source-fragment.active, .preview-pane .document-target.active, .preview-pane .preview-data-target.active, .preview-pane .preview-data-cell.active, .preview-pane .deck-slide-canvas.active";
+
 async function preflightRuntimeMutation(
   artifacts: WorkspaceArtifact[],
   patches: ArtifactSourcePatch[],
@@ -502,89 +514,6 @@ type PendingLocalImage = {
   error: string;
   submitting: boolean;
 };
-
-type RemoteFilePlan = ArtifactSourcePatch & { operationCount: number };
-type RemoteSinglePlan = Omit<RemoteFilePlan, "artifactId">;
-type RemoteCreationPlan = ArtifactCreationChange & { operationCount: number };
-type RemoteWorkspacePlan = {
-  summary: string;
-  detail: string;
-  patches: RemoteFilePlan[];
-  creations: RemoteCreationPlan[];
-};
-
-type RemoteAgentResponse = {
-  error?: string;
-  code?: string;
-  provider?: string;
-  model?: string;
-  profileName?: string;
-  plan?: unknown;
-  queryArtifactIds?: string[];
-  repairAttempt?: number;
-  usage?: { inputTokens?: unknown; outputTokens?: unknown };
-};
-
-function normalizeAgentUsage(value: RemoteAgentResponse["usage"]) {
-  const token = (candidate: unknown) =>
-    Number.isInteger(candidate) && Number(candidate) >= 0 ? Number(candidate) : null;
-  return { inputTokens: token(value?.inputTokens), outputTokens: token(value?.outputTokens) };
-}
-
-function isRemoteSinglePlan(value: unknown): value is RemoteSinglePlan {
-  return Boolean(
-    value &&
-    typeof value === "object" &&
-    typeof (value as RemoteSinglePlan).nextSource === "string" &&
-    typeof (value as RemoteSinglePlan).summary === "string" &&
-    typeof (value as RemoteSinglePlan).detail === "string" &&
-    Number.isInteger((value as RemoteSinglePlan).operationCount) &&
-    (value as RemoteSinglePlan).operationCount > 0,
-  );
-}
-
-function isRemoteWorkspacePlan(value: unknown): value is RemoteWorkspacePlan {
-  if (!value || typeof value !== "object") return false;
-  const plan = value as RemoteWorkspacePlan;
-  const patchesValid =
-    Array.isArray(plan.patches) &&
-    plan.patches.every(
-      (patch) =>
-        typeof patch.artifactId === "string" &&
-        typeof patch.nextSource === "string" &&
-        typeof patch.summary === "string" &&
-        typeof patch.detail === "string" &&
-        Number.isInteger(patch.operationCount) &&
-        patch.operationCount > 0,
-    );
-  const creationsValid =
-    Array.isArray(plan.creations) &&
-    plan.creations.every((creation) => {
-      const artifact = creation.artifact;
-      return (
-        Boolean(artifact) &&
-        typeof artifact.id === "string" &&
-        typeof artifact.name === "string" &&
-        ["document", "data", "query", "chart", "slides"].includes(artifact.kind) &&
-        typeof artifact.language === "string" &&
-        typeof artifact.source === "string" &&
-        typeof creation.summary === "string" &&
-        typeof creation.detail === "string" &&
-        Number.isInteger(creation.operationCount) &&
-        creation.operationCount >= 0 &&
-        creation.operationCount <= 8
-      );
-    });
-  const actionCount = (plan.patches?.length ?? 0) + (plan.creations?.length ?? 0);
-  return (
-    typeof plan.summary === "string" &&
-    typeof plan.detail === "string" &&
-    patchesValid &&
-    creationsValid &&
-    actionCount > 0 &&
-    actionCount <= 4
-  );
-}
 
 function ArtifactIcon({ kind, size = 16 }: { kind: ArtifactKind; size?: number }) {
   if (kind === "document") return <FileText size={size} aria-hidden="true" />;
@@ -853,6 +782,8 @@ export function RuneWorkbench() {
   const [artifacts, setArtifacts] = useState<WorkspaceArtifact[]>(() => cloneDefaultArtifacts());
   const [selectedId, setSelectedId] = useState("q2-review");
   const [hydrated, setHydrated] = useState(false);
+  const agentThread = useAgentConversation(hydrated);
+  const restoreAgentConversation = agentThread.restore;
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [savedAt, setSavedAt] = useState("");
   const [fileRailOpen, setFileRailOpen] = useState(true);
@@ -1726,6 +1657,11 @@ export function RuneWorkbench() {
           const storedWorkspaceView = normalizeRuneWorkspaceView(localStorage.getItem(RUNE_WORKSPACE_VIEW_STORAGE_KEY));
           const storedAgentDraft = localStorage.getItem(AGENT_DRAFT_STORAGE_KEY) ?? "";
           try {
+            restoreAgentConversation(JSON.parse(localStorage.getItem(AGENT_CONVERSATION_STORAGE_KEY) ?? "[]"));
+          } catch {
+            restoreAgentConversation([]);
+          }
+          try {
             const storedAgentLayout = JSON.parse(localStorage.getItem(AGENT_DOCK_LAYOUT_STORAGE_KEY) ?? "null") as {
               placement?: unknown;
               position?: unknown;
@@ -1788,7 +1724,7 @@ export function RuneWorkbench() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [restoreAgentConversation]);
 
   const setPreferredWorkspaceSplit = useCallback((value: number) => {
     const next = clampWorkspaceSourcePercent(value);
@@ -3290,6 +3226,9 @@ export function RuneWorkbench() {
     const targetWorkspacePinsIncluded =
       scope !== "workspace" || targetWorkspacePinnedArtifactIds.length === workspacePinnedArtifactIds.length;
     const targetRevision = captureWorkspaceSourceRevision(targetArtifacts);
+    const priorConversation = agentThread.context;
+    agentThread.appendUser(instruction);
+    const appendAssistantTurn = agentThread.appendAssistant;
     setAgentState("planning");
     setAgentError("");
     setPendingChange(null);
@@ -3343,37 +3282,16 @@ export function RuneWorkbench() {
 
     if (remoteEligible && modelMode === "model-assisted") {
       try {
-        const remoteRequest = {
+        const remoteRequest: RemoteAgentRequestBody = {
           scope,
           artifact: targetArtifact,
           selection: scope === "selection" ? targetSelection : undefined,
           workspaceArtifacts: scope === "workspace" ? targetWorkspaceContext : undefined,
           workspaceDependencies: scope === "workspace" ? targetWorkspaceDependencies : undefined,
           workspacePinnedArtifactIds: scope === "workspace" ? targetWorkspacePinnedArtifactIds : undefined,
+          conversation: priorConversation,
           prompt: instruction,
           metrics,
-        };
-        type RemoteRequestBody = typeof remoteRequest & {
-          queryEvidence?: unknown;
-          runtimeRepair?: AgentRuntimeRepair;
-        };
-        const sendRemoteRequest = (body: RemoteRequestBody) =>
-          fetch("/api/agent", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(body),
-          });
-        const normalizeRemotePlan = (candidate: unknown): RemoteWorkspacePlan | null => {
-          if (scope === "workspace" && isRemoteWorkspacePlan(candidate)) return candidate;
-          if (scope !== "workspace" && isRemoteSinglePlan(candidate)) {
-            return {
-              summary: candidate.summary,
-              detail: candidate.detail,
-              patches: [{ artifactId: targetArtifact.id, ...candidate }],
-              creations: [],
-            };
-          }
-          return null;
         };
         const stopRemoteRepair = (message: string) => {
           setPendingChange(null);
@@ -3381,40 +3299,37 @@ export function RuneWorkbench() {
           setNotice("Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged");
           setAgentState("idle");
         };
-        let remoteBody: RemoteRequestBody = remoteRequest;
-        let response = await sendRemoteRequest(remoteBody);
-        let payload = (await response.json().catch(() => ({}))) as RemoteAgentResponse;
-        let queryEvidenceCount = 0;
+        const {
+          response,
+          payload: initialPayload,
+          requestBody: remoteBody,
+          queryEvidenceCount,
+        } = await requestRemoteAgentTurn({
+          body: remoteRequest,
+          workspaceArtifacts: targetWorkspaceContext,
+          onQueryEvidenceRequested: (count) => {
+            setNotice(`Agent is inspecting ${count} current Query ${count === 1 ? "result" : "results"} locally`);
+          },
+          collectQueryEvidence: async (context) => {
+            const [{ collectWorkspaceAgentQueryEvidence }, { runWorkspaceQuerySnapshot }] = await Promise.all([
+              import("../lib/agent-evidence"),
+              import("../lib/duckdb-client"),
+            ]);
+            return collectWorkspaceAgentQueryEvidence(context, runWorkspaceQuerySnapshot);
+          },
+        });
+        let payload: RemoteAgentResponse = initialPayload;
 
-        if (scope === "workspace" && response.status === 428 && payload.code === "QUERY_EVIDENCE_REQUIRED") {
-          const expectedQueryIds = targetWorkspaceContext
-            .filter((artifact) => artifact.kind === "query")
-            .map((artifact) => artifact.id);
-          if (
-            !payload.queryArtifactIds ||
-            payload.queryArtifactIds.length !== expectedQueryIds.length ||
-            payload.queryArtifactIds.some((artifactId, index) => artifactId !== expectedQueryIds[index])
-          ) {
-            throw new Error("The model provider requested stale Query evidence.");
-          }
-          setNotice(
-            `Agent is inspecting ${expectedQueryIds.length} current Query ${expectedQueryIds.length === 1 ? "result" : "results"} locally`,
-          );
-          const [{ collectWorkspaceAgentQueryEvidence }, { runWorkspaceQuerySnapshot }] = await Promise.all([
-            import("../lib/agent-evidence"),
-            import("../lib/duckdb-client"),
-          ]);
-          const queryEvidence = await collectWorkspaceAgentQueryEvidence(
-            targetWorkspaceContext,
-            runWorkspaceQuerySnapshot,
-          );
-          queryEvidenceCount = queryEvidence.length;
-          remoteBody = { ...remoteRequest, queryEvidence };
-          response = await sendRemoteRequest(remoteBody);
-          payload = (await response.json().catch(() => ({}))) as RemoteAgentResponse;
+        if (response.ok && typeof payload.answer === "string" && payload.answer.trim()) {
+          setPendingChange(null);
+          appendAssistantTurn("answer", payload.answer, payload.model ?? payload.profileName);
+          clearSubmittedComposerDraft();
+          setNotice(`Orbit answered from the current source context${payload.model ? ` · ${payload.model}` : ""}`);
+          setAgentState("idle");
+          return;
         }
 
-        let remotePlan = response.ok ? normalizeRemotePlan(payload.plan) : null;
+        let remotePlan = response.ok ? normalizeRemoteAgentPlan(scope, targetArtifact.id, payload.plan) : null;
         if (remotePlan) {
           let runtimePreflight: RuntimeImpactPreflight | undefined;
           let runtimeRepair: PendingChange["runtimeRepair"];
@@ -3441,14 +3356,18 @@ export function RuneWorkbench() {
             let repairResponse: Response;
             let repairPayload: RemoteAgentResponse;
             try {
-              repairResponse = await sendRemoteRequest({ ...remoteBody, runtimeRepair: repairFeedback });
-              repairPayload = (await repairResponse.json().catch(() => ({}))) as RemoteAgentResponse;
+              ({ response: repairResponse, payload: repairPayload } = await postAgentRequest({
+                ...remoteBody,
+                runtimeRepair: repairFeedback,
+              }));
             } catch {
               stopRemoteRepair("Automatic repair stopped after one attempt · the model provider could not be reached.");
               return;
             }
             const replacementPlan =
-              repairResponse.ok && repairPayload.repairAttempt === 1 ? normalizeRemotePlan(repairPayload.plan) : null;
+              repairResponse.ok && repairPayload.repairAttempt === 1
+                ? normalizeRemoteAgentPlan(scope, targetArtifact.id, repairPayload.plan)
+                : null;
             if (!replacementPlan) {
               const reason =
                 repairPayload.error ??
@@ -3479,10 +3398,15 @@ export function RuneWorkbench() {
             selection: scope === "selection" ? (targetSelection ?? undefined) : undefined,
             baseRevision: targetRevision,
             ...remotePlan,
-            usage: normalizeAgentUsage(payload.usage),
+            usage: normalizeRemoteAgentUsage(payload.usage),
             runtimeRepair,
             runtimePreflight,
           });
+          appendAssistantTurn(
+            "proposal",
+            payload.message?.trim() || `${remotePlan.summary}\n${remotePlan.detail}`,
+            payload.model ?? payload.profileName,
+          );
           clearSubmittedComposerDraft();
           const repairSuffix = runtimeRepair ? " · repaired once from local compiler feedback" : "";
           if (scope === "workspace") {
@@ -3521,6 +3445,7 @@ export function RuneWorkbench() {
           ...localPlan,
           runtimePreflight,
         });
+        appendAssistantTurn("proposal", `${localPlan.summary}\n${localPlan.detail}`, "Local tools");
         const changeCount = localPlan.patches.length + localPlan.creations.length;
         setNotice(`${fallbackNotice} · ${changeCount} ${changeCount === 1 ? "file" : "files"} prepared`);
       } else {
@@ -3546,6 +3471,7 @@ export function RuneWorkbench() {
           creations: [],
           runtimePreflight,
         });
+        appendAssistantTurn("proposal", `${localPlan.summary}\n${localPlan.detail}`, "Local tools");
         setNotice(fallbackNotice);
       }
       clearSubmittedComposerDraft();
@@ -5159,6 +5085,7 @@ export function RuneWorkbench() {
           onOperatingReview={openOperatingReview}
           onDocumentBriefing={openDocumentBriefing}
           onFocusAgent={() => {
+            setPreferredWorkspaceView("source");
             setAgentComposerOpen(true);
             window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
             setNotice(ui.focusAgent);
@@ -5809,66 +5736,40 @@ export function RuneWorkbench() {
                 )}
               </div>
 
-              <div
-                ref={agentDockRef}
-                className={`agent-dock ${agentComposerOpen ? `open ${agentDockPlacement}` : "collapsed docked"}`}
-                style={
-                  agentComposerOpen && agentDockPlacement === "floating"
-                    ? { left: agentDockPosition.x, top: agentDockPosition.y }
-                    : undefined
-                }
+              <AgentDockShell
+                panelRef={agentDockRef}
+                open={agentComposerOpen}
+                placement={agentDockPlacement}
+                position={agentDockPosition}
+                triggerLabel={ui.focusAgent}
+                moveLabel={ui.moveAgent}
+                dockLabel={ui.dockAgent}
+                floatLabel={ui.floatAgent}
+                closeLabel={runeText(locale, "Close Agent", "收起 Agent")}
+                onOpen={() => {
+                  setAgentComposerOpen(true);
+                  window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
+                }}
+                onTogglePlacement={toggleAgentDockPlacement}
+                onClose={() => setAgentComposerOpen(false)}
+                onMovePointerDown={beginAgentDockDrag}
+                onMoveKeyDown={moveAgentDockFromKeyboard}
               >
-                {!agentComposerOpen && (
-                  <button
-                    type="button"
-                    className="agent-dock-trigger"
-                    onClick={() => {
-                      setAgentComposerOpen(true);
-                      window.requestAnimationFrame(() => promptRef.current?.focus({ preventScroll: true }));
-                    }}
-                    aria-expanded="false"
-                  >
-                    <Sparkles aria-hidden="true" />
-                    <span>{ui.focusAgent}</span>
-                    <kbd>⌘ ↵</kbd>
-                  </button>
-                )}
                 {agentComposerOpen && (
-                  <div className="agent-dock-toolbar">
-                    {agentDockPlacement === "floating" ? (
-                      <button
-                        type="button"
-                        className="agent-dock-grabber"
-                        onPointerDown={beginAgentDockDrag}
-                        onKeyDown={moveAgentDockFromKeyboard}
-                        aria-label={ui.moveAgent}
-                        title={ui.moveAgent}
-                      >
-                        <Move aria-hidden="true" />
-                        <span>{ui.focusAgent}</span>
-                      </button>
-                    ) : (
-                      <span className="agent-dock-title">{ui.focusAgent}</span>
-                    )}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={toggleAgentDockPlacement}
-                        aria-label={agentDockPlacement === "floating" ? ui.dockAgent : ui.floatAgent}
-                        title={agentDockPlacement === "floating" ? ui.dockAgent : ui.floatAgent}
-                      >
-                        {agentDockPlacement === "floating" ? <Pin aria-hidden="true" /> : <Move aria-hidden="true" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAgentComposerOpen(false)}
-                        aria-label={runeText(locale, "Close Agent", "收起 Agent")}
-                        title={runeText(locale, "Close Agent", "收起 Agent")}
-                      >
-                        <X aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
+                  <AgentConversation
+                    messages={agentThread.messages}
+                    conversationLabel={ui.conversation}
+                    clearLabel={ui.clearConversation}
+                    userLabel={ui.conversationYou}
+                    assistantLabel={ui.assistant}
+                    answerLabel={ui.conversationAnswer}
+                    proposalLabel={ui.conversationProposal}
+                    privacyLabel={ui.conversationPrivacy}
+                    onClear={() => {
+                      agentThread.clear();
+                      setNotice(ui.conversationCleared);
+                    }}
+                  />
                 )}
                 {pendingChange && (
                   <div className="patch-card">
@@ -6074,7 +5975,7 @@ export function RuneWorkbench() {
                     quickCommands={runeQuickCommands(locale, agentScope, selectedArtifact.kind)}
                   />
                 </div>
-              </div>
+              </AgentDockShell>
             </section>
 
             <WorkspaceSplitter

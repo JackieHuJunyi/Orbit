@@ -108,6 +108,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent change scope": "Agent のスコープ変更",
   "Agent composer focused": "Agent 作曲家に焦点を当てた",
   "Agent context": "Agent コンテキスト",
+  "Agent conversation cleared": "Agent の会話を消去しました",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent は、ローカル コンパイラの障害を使用して 1 つの代替プランを準備しています",
   "Agent will use local tools": "Agent はローカルツールを使用します",
@@ -125,6 +126,7 @@ export const INTERFACE_TRANSLATIONS = {
     "匿名のパイロット証拠をローカルにダウンロードしました · アップロードはありません",
   "Anonymous run-001 / output-01 labels and dates without exact timestamps":
     "匿名の run-001 / output-01 ラベルと時刻を含まない日付",
+  Answer: "回答",
   "API base URL": "APIベースURL",
   "API Key": "API Key",
   "API keys, model provider names, source revisions, and delivery fingerprints":
@@ -143,6 +145,12 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifact秒",
   "Artifacts in Agent context": "Agent コンテキスト内の Artifact",
   Ascending: "昇順",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "ワークスペースについて質問するか、関連するソースを使った成果を説明してください…",
+  "Ask about this file or describe the change you want…":
+    "このファイルについて質問するか、加えたい変更を説明してください…",
+  "Ask about this selection or describe a change confined to it…":
+    "この選択範囲について質問するか、範囲内だけの変更を説明してください…",
   "Ask Orbit about this": "この内容について Orbit に質問",
   "Ask the Agent to propose, without writing": "手紙を書かずに、Agent にプロポーズを依頼してください",
   Audience: "観客",
@@ -184,6 +192,7 @@ export const INTERFACE_TRANSLATIONS = {
   "CC Switch import link": "CC スイッチのインポート リンク",
   Change: "変化",
   "Change comprehensibility": "変更の分かりやすさ",
+  "Change proposal": "変更案",
   "Change the accent to purple": "アクセントを紫に変更",
   "changed lines": "変更された行",
   "Changes detected": "変更を検出",
@@ -229,6 +238,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose valid Chart properties.": "有効な Chart プロパティを選択してください。",
   "Choose your Orbit language": "Orbit の言語を選択してください",
   Clear: "クリア",
+  "Clear conversation": "会話を消去",
   "Clear pins": "クリアピン",
   "Click again to delete": "削除するにはもう一度クリックします",
   "Close current file": "現在のファイルを閉じる",
@@ -265,6 +275,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Continue setup": "セットアップを続行する",
   "Continue with model assistance": "モデルを使って続ける",
   "Continue without a model": "モデルなしで続ける",
+  Conversation: "会話",
   "Cosmic Orange": "コズミックオレンジ",
   "Create a new artifact": "新しいアーティファクトを作成する",
   "Create a new presentation": "新しいプレゼンテーションを作成",
@@ -403,6 +414,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Encrypting…": "暗号化中…",
   Endpoint: "エンドポイント",
   "Enter a focus view": "フォーカス表示に切り替える",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter で送信 · Shift Enter で改行 · 書き込みには引き続き確認が必要です",
   Equals: "等しい",
   "Every artifact stays readable to people and models.":
     "すべてのアーティファクトは、人やモデルにとって読みやすいままです。",
@@ -989,6 +1002,7 @@ export const INTERFACE_TRANSLATIONS = {
   "self-contained scriptless file": "自己完結型のスクリプトレス ファイル",
   semantic: "意味論的な",
   "Semantic HTML → select or edit one exact slide": "セマンティック HTML → 1 枚の正確なスライドを選択または編集",
+  "Send to Orbit": "Orbit に送信",
   "Shaping and verifying…": "構成して検証中…",
   "Show API key": "API キーを表示",
   "Show preview only": "プレビューだけを表示",
@@ -1160,6 +1174,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unsaved · ready to save": "未保存 · 保存する準備ができています",
   "Unsupported structure boundary": "サポートされていない構造境界",
   "Untitled chart": "無題のグラフ",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "最大16件のメッセージがこのデバイスにだけ保存され、文書や書き出しファイルには追加されません。",
   Update: "アップデート",
   "Update in place · identity preserved": "同じファイルを更新 · ID を保持",
   "Update this operating-review task": "この運用レビュータスクを更新します",
@@ -1219,6 +1235,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace view": "ワークスペース表示",
   "Write in Source and the live output will recompile immediately.":
     "Source に入力すると、ライブ出力がすぐに再コンパイルされます。",
+  You: "あなた",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "対応ファイルをここにドロップすることもできます。互換変換は書き込み前に必ず確認できます。",
   "You can still add a provider yourself or import a configuration.": "プロバイダーの追加や設定の読み込みもできます。",

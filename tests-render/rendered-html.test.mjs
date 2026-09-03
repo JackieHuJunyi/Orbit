@@ -25,6 +25,12 @@ async function render() {
   );
 }
 
+async function readBuiltClientJavaScript() {
+  const clientRoot = new URL("../dist/client/", import.meta.url);
+  const files = (await readdir(clientRoot, { recursive: true })).filter((name) => /\.(?:js|mjs)$/u.test(name));
+  return (await Promise.all(files.map((name) => readFile(new URL(name, clientRoot), "utf8")))).join("\n");
+}
+
 test("server-renders the Orbit artifact workbench", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -116,7 +122,7 @@ test("renders all five canonical artifact modes", async () => {
   assert.match(html, /aria-haspopup="menu"/);
   assert.match(html, />Export</);
   assert.match(html, /Live output/);
-  assert.match(html, /every write remains reviewable and undoable/i);
+  assert.match(html, /every write still requires review/i);
 });
 
 test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes out of the initial client bundle", async () => {
@@ -199,14 +205,7 @@ test("keeps compatibility parsers, low-frequency surfaces, and heavy runtimes ou
 });
 
 test("ships one complete-source live mirror boundary for every revision-bound visual draft", async () => {
-  const clientDir = new URL("../dist/client/assets/", import.meta.url);
-  const bundle = (
-    await Promise.all(
-      (await readdir(clientDir))
-        .filter((name) => name.endsWith(".js"))
-        .map((name) => readFile(new URL(name, clientDir), "utf8")),
-    )
-  ).join("\n");
+  const bundle = await readBuiltClientJavaScript();
   assert.match(bundle, /complete source draft synced live/);
   assert.match(bundle, /Unsaved synchronized source draft/);
   assert.match(bundle, /visual-source-sync-state/);
@@ -338,20 +337,21 @@ test("renders a complete read-only Agent proposal through the live source and ou
 });
 
 test("ships exactly one compiler-guided repair request site before the repeated runtime gate", async () => {
-  const source = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const [source, client] = await Promise.all([
+    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/agent-client.ts", import.meta.url), "utf8"),
+  ]);
   assert.equal(source.split("runtimeRepair: repairFeedback").length - 1, 1);
   assert.match(source, /repairPayload\.repairAttempt === 1/);
   assert.match(source, /preflightRuntimeImpact\(\s*replacementPlan\.patches,\s*replacementPlan\.creations/);
   assert.match(source, /Automatic repair stopped after one attempt/);
   assert.match(source, /Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged/);
-  assert.match(source, /\["document", "data", "query", "chart", "slides"\]\.includes\(artifact\.kind\)/);
-  assert.match(source, /creation\.operationCount >= 0[\s\S]*creation\.operationCount <= 8/);
+  assert.match(client, /\["document", "data", "query", "chart", "slides"\]\.includes\(creation\.artifact\.kind\)/);
+  assert.match(client, /creation\.operationCount >= 0[\s\S]*creation\.operationCount <= 8/);
 });
 
 test("ships a review-before-write import surface in the client", async () => {
-  const assetsUrl = new URL("../dist/client/assets/", import.meta.url);
-  const files = (await readdir(assetsUrl)).filter((name) => name.endsWith(".js"));
-  const clientSource = (await Promise.all(files.map((name) => readFile(new URL(name, assetsUrl), "utf8")))).join("\n");
+  const clientSource = await readBuiltClientJavaScript();
   assert.match(clientSource, /Review imported sources/);
   assert.match(clientSource, /PDF import recovers selectable text and approximate reading order/);
   assert.match(clientSource, /scanned PDFs require explicit page and English\/Simplified-Chinese OCR choices/);
@@ -789,6 +789,8 @@ test("integrates assistance into the source surface and progressively discloses 
   const contentStyles = await readFile(new URL("../app/styles/content.css", import.meta.url), "utf8");
   const composer = await readFile(new URL("../app/components/agent-composer.tsx", import.meta.url), "utf8");
   const workbench = await readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8");
+  const dockShell = await readFile(new URL("../app/components/agent-dock-shell.tsx", import.meta.url), "utf8");
+  const conversation = await readFile(new URL("../app/components/agent-conversation.tsx", import.meta.url), "utf8");
   assert.match(
     html,
     /class="agent-composer"[\s\S]*class="agent-suggestions"[\s\S]*class="agent-scope-switch"[\s\S]*class="run-button"/,
@@ -811,8 +813,11 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.match(contentStyles, /\.agent-context-trigger\s*\{/u);
   assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "rune-agent-draft-v1"/u);
   assert.match(workbench, /className="agent-context-trigger"/u);
-  assert.match(workbench, /onPointerDown=\{beginAgentDockDrag\}/u);
-  assert.match(workbench, /onKeyDown=\{moveAgentDockFromKeyboard\}/u);
+  assert.match(workbench, /onMovePointerDown=\{beginAgentDockDrag\}/u);
+  assert.match(workbench, /onMoveKeyDown=\{moveAgentDockFromKeyboard\}/u);
+  assert.match(dockShell, /onPointerDown=\{onMovePointerDown\}/u);
+  assert.match(dockShell, /onKeyDown=\{onMoveKeyDown\}/u);
+  assert.match(conversation, /role="log"/u);
   assert.match(workbench, /event\.key !== "Enter" \|\| event\.shiftKey \|\| event\.nativeEvent\.isComposing/u);
   assert.match(workbench, /setPrompt\(\(current\) => \(current === submittedComposerDraft \? "" : current\)\)/u);
   assert.doesNotMatch(workbench, /className="deferred-surface-mark"[^]*>\s*R\s*</u);

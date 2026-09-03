@@ -1,9 +1,11 @@
 import {
+  AgentArtifactTurnSchema,
   AgentCompiledPatchSchema,
   AgentCompiledWorkspacePatchSchema,
   AgentOperationPatchSchema,
   AgentRequestSchema,
   AgentWorkspaceOperationPlanSchema,
+  AgentWorkspaceTurnSchema,
   buildAgentInput,
   buildAgentInstructions,
 } from "../../lib/agent-contract.ts";
@@ -25,6 +27,33 @@ import { DEFAULT_OPENAI_MODEL } from "../../lib/model-preference.ts";
 import { resolveModelRouting } from "../../lib/model-credential-vault.ts";
 import { requestProviderPlan } from "../../lib/model-provider-adapters.ts";
 import { executeModelRoute } from "../../lib/model-routing.ts";
+
+function normalizeProviderTurn(output: unknown, workspace: boolean) {
+  if (workspace) {
+    const turn = AgentWorkspaceTurnSchema.safeParse(output);
+    if (turn.success) {
+      if (turn.data.outcome === "answer") return { outcome: "answer" as const, message: turn.data.message };
+      return {
+        outcome: "change" as const,
+        message: turn.data.message,
+        plan: { summary: turn.data.summary, detail: turn.data.detail, actions: turn.data.actions },
+      };
+    }
+    const legacy = AgentWorkspaceOperationPlanSchema.safeParse(output);
+    return legacy.success ? { outcome: "change" as const, message: legacy.data.summary, plan: legacy.data } : null;
+  }
+  const turn = AgentArtifactTurnSchema.safeParse(output);
+  if (turn.success) {
+    if (turn.data.outcome === "answer") return { outcome: "answer" as const, message: turn.data.message };
+    return {
+      outcome: "change" as const,
+      message: turn.data.message,
+      plan: { summary: turn.data.summary, detail: turn.data.detail, edits: turn.data.edits },
+    };
+  }
+  const legacy = AgentOperationPatchSchema.safeParse(output);
+  return legacy.success ? { outcome: "change" as const, message: legacy.data.summary, plan: legacy.data } : null;
+}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -114,7 +143,7 @@ export async function POST(request: Request) {
     const providerTimeout = setTimeout(() => providerController.abort(), 60_000);
     let routed;
     try {
-      const schema = workspaceScope ? AgentWorkspaceOperationPlanSchema : AgentOperationPatchSchema;
+      const schema = workspaceScope ? AgentWorkspaceTurnSchema : AgentArtifactTurnSchema;
       routed = await executeModelRoute({
         ...routing,
         signal: providerController.signal,
@@ -124,12 +153,13 @@ export async function POST(request: Request) {
             instructions: buildAgentInstructions(parsed.data),
             input: buildAgentInput(parsed.data),
             schema,
-            schemaName: workspaceScope ? "workspace_operations" : "artifact_operations",
-            responseDescription: "Return Orbit's proposed typed source-operation plan for local validation.",
+            schemaName: workspaceScope ? "workspace_agent_turn" : "artifact_agent_turn",
+            responseDescription:
+              "Answer directly when no write is needed, otherwise return Orbit's typed source-operation plan for local validation.",
             signal: providerController.signal,
           });
-          if (!schema.safeParse(response.output).success)
-            throw new Error("The model returned an invalid operation plan.");
+          if (!normalizeProviderTurn(response.output, workspaceScope))
+            throw new Error("The model returned an invalid Agent turn.");
           return response;
         },
       });
@@ -141,11 +171,30 @@ export async function POST(request: Request) {
     const model = connection.model || DEFAULT_OPENAI_MODEL;
 
     if (!response.output) {
-      return Response.json({ error: "The model did not return a usable patch." }, { status: 502 });
+      return Response.json({ error: "The model did not return a usable Agent turn." }, { status: 502 });
+    }
+
+    const turn = normalizeProviderTurn(response.output, workspaceScope);
+    if (!turn) return Response.json({ error: "The model returned an invalid Agent turn." }, { status: 502 });
+    if (turn.outcome === "answer") {
+      if (parsed.data.runtimeRepair) {
+        return Response.json(
+          { error: "The model answered instead of replacing the failed operation plan." },
+          { status: 502 },
+        );
+      }
+      return Response.json({
+        provider: connection.provider,
+        profileName: connection.profileName,
+        model,
+        answer: turn.message,
+        usage: response.usage,
+        routing: { attempts: routed.attempts, failoverUsed: routed.failoverUsed },
+      });
     }
 
     if (workspaceScope) {
-      const operationPlan = AgentWorkspaceOperationPlanSchema.safeParse(response.output);
+      const operationPlan = AgentWorkspaceOperationPlanSchema.safeParse(turn.plan);
       if (!operationPlan.success) {
         return Response.json({ error: "The model returned an invalid workspace operation plan." }, { status: 502 });
       }
@@ -191,11 +240,12 @@ export async function POST(request: Request) {
         repairAttempt: parsed.data.runtimeRepair?.attempt,
         usage: response.usage,
         routing: { attempts: routed.attempts, failoverUsed: routed.failoverUsed },
+        message: turn.message,
         plan: workspacePlan.data,
       });
     }
 
-    const operationPlan = AgentOperationPatchSchema.safeParse(response.output);
+    const operationPlan = AgentOperationPatchSchema.safeParse(turn.plan);
     if (!operationPlan.success) {
       return Response.json({ error: "The model returned an invalid artifact operation plan." }, { status: 502 });
     }
@@ -276,6 +326,7 @@ export async function POST(request: Request) {
       repairAttempt: parsed.data.runtimeRepair?.attempt,
       usage: response.usage,
       routing: { attempts: routed.attempts, failoverUsed: routed.failoverUsed },
+      message: turn.message,
       plan: artifactPlan.data,
     });
   } catch {

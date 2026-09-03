@@ -3775,3 +3775,114 @@ Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
   "Move Agent": "Agent 이동",
   "Ask Orbit about this": "이 내용에 대해 Orbit에 질문",
 });
+
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
+  Conversation: "Conversation",
+  "Clear conversation": "Effacer la conversation",
+  "Agent conversation cleared": "Conversation de l’Agent effacée",
+  You: "Vous",
+  Answer: "Réponse",
+  "Change proposal": "Proposition de modification",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "Jusqu’à 16 messages restent uniquement sur cet appareil ; ils ne sont jamais intégrés aux documents ni aux exports.",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "Posez une question sur l’espace de travail ou décrivez un résultat à produire à partir de plusieurs sources…",
+  "Ask about this selection or describe a change confined to it…":
+    "Posez une question sur cette sélection ou décrivez une modification limitée à celle-ci…",
+  "Ask about this file or describe the change you want…":
+    "Posez une question sur ce fichier ou décrivez la modification souhaitée…",
+  "Send to Orbit": "Envoyer à Orbit",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Entrée pour envoyer · Maj Entrée pour une nouvelle ligne · toute écriture doit toujours être validée",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.es, {
+  Conversation: "Conversación",
+  "Clear conversation": "Borrar conversación",
+  "Agent conversation cleared": "Conversación del Agent borrada",
+  You: "Tú",
+  Answer: "Respuesta",
+  "Change proposal": "Propuesta de cambio",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "Hasta 16 mensajes permanecen solo en este dispositivo; nunca se escriben en documentos ni exportaciones.",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "Pregunta sobre el espacio de trabajo o describe un resultado que abarque las fuentes conectadas…",
+  "Ask about this selection or describe a change confined to it…":
+    "Pregunta sobre esta selección o describe un cambio limitado a ella…",
+  "Ask about this file or describe the change you want…":
+    "Pregunta sobre este archivo o describe el cambio que deseas…",
+  "Send to Orbit": "Enviar a Orbit",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter para enviar · Shift Enter para una línea nueva · toda escritura sigue requiriendo revisión",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ru, {
+  Conversation: "Диалог",
+  "Clear conversation": "Очистить диалог",
+  "Agent conversation cleared": "Диалог с Agent очищен",
+  You: "Вы",
+  Answer: "Ответ",
+  "Change proposal": "Предложение изменений",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "До 16 сообщений хранятся только на этом устройстве и никогда не записываются в документы или экспортируемые файлы.",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "Задайте вопрос о рабочем пространстве или опишите результат для связанных источников…",
+  "Ask about this selection or describe a change confined to it…":
+    "Задайте вопрос об этом фрагменте или опишите изменение только в его пределах…",
+  "Ask about this file or describe the change you want…": "Задайте вопрос об этом файле или опишите нужное изменение…",
+  "Send to Orbit": "Отправить в Orbit",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter — отправить · Shift Enter — новая строка · любая запись по-прежнему требует проверки",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ar, {
+  Conversation: "المحادثة",
+  "Clear conversation": "مسح المحادثة",
+  "Agent conversation cleared": "تم مسح محادثة الوكيل",
+  You: "أنت",
+  Answer: "إجابة",
+  "Change proposal": "اقتراح تعديل",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "تظل آخر 16 رسالة على هذا الجهاز فقط، ولا تُكتب مطلقًا داخل المستندات أو الملفات المصدّرة.",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "اسأل عن مساحة العمل أو صِف نتيجة تعتمد على المصادر المرتبطة…",
+  "Ask about this selection or describe a change confined to it…": "اسأل عن هذا التحديد أو صِف تعديلًا يقتصر عليه…",
+  "Ask about this file or describe the change you want…": "اسأل عن هذا الملف أو صِف التعديل الذي تريده…",
+  "Send to Orbit": "إرسال إلى Orbit",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter للإرسال · Shift Enter لسطر جديد · كل كتابة تظل بحاجة إلى مراجعتك",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ja, {
+  Conversation: "会話",
+  "Clear conversation": "会話を消去",
+  "Agent conversation cleared": "Agent の会話を消去しました",
+  You: "あなた",
+  Answer: "回答",
+  "Change proposal": "変更案",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "最大16件のメッセージがこのデバイスにだけ保存され、文書や書き出しファイルには追加されません。",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "ワークスペースについて質問するか、関連するソースを使った成果を説明してください…",
+  "Ask about this selection or describe a change confined to it…":
+    "この選択範囲について質問するか、範囲内だけの変更を説明してください…",
+  "Ask about this file or describe the change you want…":
+    "このファイルについて質問するか、加えたい変更を説明してください…",
+  "Send to Orbit": "Orbit に送信",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter で送信 · Shift Enter で改行 · 書き込みには引き続き確認が必要です",
+});
+Object.assign(MANUAL_INTERFACE_TRANSLATIONS.ko, {
+  Conversation: "대화",
+  "Clear conversation": "대화 지우기",
+  "Agent conversation cleared": "Agent 대화를 지웠습니다",
+  You: "나",
+  Answer: "답변",
+  "Change proposal": "변경 제안",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "최대 16개의 메시지만 이 기기에 저장되며 문서나 내보낸 파일에는 기록되지 않습니다.",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "작업 공간에 관해 질문하거나 연결된 소스로 만들 결과를 설명하세요…",
+  "Ask about this selection or describe a change confined to it…":
+    "이 선택 영역에 관해 질문하거나 이 영역 안에서만 적용할 변경을 설명하세요…",
+  "Ask about this file or describe the change you want…": "이 파일에 관해 질문하거나 원하는 변경을 설명하세요…",
+  "Send to Orbit": "Orbit에 보내기",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter로 보내기 · Shift Enter로 줄 바꿈 · 모든 쓰기 작업은 계속 검토가 필요합니다",
+});

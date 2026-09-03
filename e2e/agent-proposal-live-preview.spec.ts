@@ -18,7 +18,7 @@ async function prepareSummaryProposal(page: Page) {
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
   await expect(composer).toBeVisible();
   await composer.fill("Rewrite the executive summary as three points");
-  await page.getByRole("button", { name: "Prepare change" }).click();
+  await page.getByRole("button", { name: "Send to Orbit" }).click();
   await expect(page.locator(".patch-card")).toBeVisible();
 }
 
@@ -91,7 +91,7 @@ test("switches one multi-artifact Agent proposal between a coherent report and p
   await page
     .getByRole("textbox", { name: "Describe a workspace change" })
     .fill("Synchronize the workspace quarterly conclusion across the report and presentation");
-  await page.getByRole("button", { name: "Prepare change" }).click();
+  await page.getByRole("button", { name: "Send to Orbit" }).click();
 
   const patch = page.locator(".patch-card");
   await expect(patch).toBeVisible();

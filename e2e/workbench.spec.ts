@@ -324,6 +324,11 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   ];
   let activeProfileId = "flash";
   const writes: Array<{ action?: string; profileId?: string }> = [];
+  const agentRequests: Array<{
+    prompt?: string;
+    conversation?: Array<{ role: string; content: string }>;
+    artifact: { source: string };
+  }> = [];
   const currentState = () => ({
     vaultAvailable: true,
     configured: true,
@@ -356,7 +361,23 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
     await route.fulfill({ status: 400, contentType: "application/json", body: '{"error":"Unexpected action"}' });
   });
   await page.route("**/api/agent", async (route) => {
-    const input = route.request().postDataJSON() as { artifact: { source: string } };
+    const input = route.request().postDataJSON() as (typeof agentRequests)[number];
+    agentRequests.push(input);
+    if (input.prompt === "What evidence supports the conclusion?") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          provider: "deepseek",
+          profileName: "DeepSeek Flash",
+          model: "deepseek-v4-flash",
+          answer: "The conclusion follows the visible revenue and margin evidence.",
+          usage: { inputTokens: 12, outputTokens: 9 },
+          routing: { attempts: 1, failoverUsed: false },
+        }),
+      });
+      return;
+    }
     await new Promise((resolve) => setTimeout(resolve, 400));
     await route.fulfill({
       status: 200,
@@ -382,7 +403,21 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await expect(page.locator(".agent-dock.open.docked")).toBeVisible();
   await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
+  const modelPicker = page.getByLabel("Model for this message");
   await expect(composer).toBeEditable();
+  await expect(modelPicker).toHaveValue("profile:flash");
+  await composer.fill("What evidence supports the conclusion?");
+  await composer.press("Enter");
+  await expect.poll(() => agentRequests.length).toBe(1);
+  expect(agentRequests[0].prompt).toBe("What evidence supports the conclusion?");
+  const conversation = page.getByRole("log");
+  await expect(conversation.getByText("What evidence supports the conclusion?", { exact: true })).toBeVisible();
+  await expect(
+    conversation.getByText("The conclusion follows the visible revenue and margin evidence.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".patch-card")).toHaveCount(0);
+  expect(agentRequests[0].conversation).toEqual([]);
+
   await composer.fill("Explain the source assumptions");
   await composer.press("Shift+Enter");
   await composer.type("and keep my draft.");
@@ -391,7 +426,6 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
     .poll(() => page.evaluate(() => localStorage.getItem("rune-agent-draft-v1")))
     .toBe("Explain the source assumptions\nand keep my draft.");
 
-  const modelPicker = page.getByLabel("Model for this message");
   await expect(modelPicker).toHaveValue("profile:flash");
   await modelPicker.selectOption("profile:pro");
   await expect.poll(() => writes).toEqual([{ action: "activate", profileId: "pro" }]);
@@ -400,6 +434,10 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await composer.press("Enter");
   await composer.fill("A follow-up written while the model is working.");
   await expect(page.locator(".patch-card")).toBeVisible();
+  expect(agentRequests[1].conversation).toEqual([
+    { role: "user", content: "What evidence supports the conclusion?" },
+    { role: "assistant", content: "The conclusion follows the visible revenue and margin evidence." },
+  ]);
   await expect(composer).toHaveValue("A follow-up written while the model is working.");
   await page.getByRole("button", { name: "Discard proposed patch" }).click();
   await expect
@@ -409,6 +447,7 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await page.reload();
   await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
   await page.locator(".agent-dock-trigger").click();
+  await expect(page.getByRole("log").getByRole("listitem")).toHaveCount(4);
   await expect(page.getByRole("textbox", { name: "Describe an artifact change" })).toHaveValue(
     "A follow-up written while the model is working.",
   );

@@ -110,6 +110,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent change scope": "Agent modifier la portée",
   "Agent composer focused": "Agent compositeur concentré",
   "Agent context": "Agent contexte",
+  "Agent conversation cleared": "Conversation de l’Agent effacée",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "Agent utilise l'échec du compilateur local pour préparer un plan de remplacement",
   "Agent will use local tools": "L’Agent utilisera les outils locaux",
@@ -127,6 +128,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Preuves du pilote anonymes téléchargées localement · aucun envoi effectué",
   "Anonymous run-001 / output-01 labels and dates without exact timestamps":
     "Identifiants anonymes run-001 / output-01 et dates sans heure précise",
+  Answer: "Réponse",
   "API base URL": "URL de base de l'API",
   "API Key": "API Key",
   "API keys, model provider names, source revisions, and delivery fingerprints":
@@ -145,6 +147,12 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifacts",
   "Artifacts in Agent context": "Artifact dans le contexte Agent",
   Ascending: "Ascendant",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "Posez une question sur l’espace de travail ou décrivez un résultat à produire à partir de plusieurs sources…",
+  "Ask about this file or describe the change you want…":
+    "Posez une question sur ce fichier ou décrivez la modification souhaitée…",
+  "Ask about this selection or describe a change confined to it…":
+    "Posez une question sur cette sélection ou décrivez une modification limitée à celle-ci…",
   "Ask Orbit about this": "Interroger Orbit à ce sujet",
   "Ask the Agent to propose, without writing": "Demandez au Agent de proposer, sans écrire",
   Audience: "Public",
@@ -187,6 +195,7 @@ export const INTERFACE_TRANSLATIONS = {
   "CC Switch import link": "Lien d'importation de CC Switch",
   Change: "Variation",
   "Change comprehensibility": "Compréhension des modifications",
+  "Change proposal": "Proposition de modification",
   "Change the accent to purple": "Changez l'accent en violet",
   "changed lines": "lignes modifiées",
   "Changes detected": "Modifications détectées",
@@ -232,6 +241,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose valid Chart properties.": "Choisissez des propriétés Chart valides.",
   "Choose your Orbit language": "Choisissez votre langue Orbit",
   Clear: "Effacer",
+  "Clear conversation": "Effacer la conversation",
   "Clear pins": "Effacer les épingles",
   "Click again to delete": "Cliquez à nouveau pour supprimer",
   "Close current file": "Fermer le fichier actuel",
@@ -269,6 +279,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Continue setup": "Continuer la configuration",
   "Continue with model assistance": "Continuer avec le modèle",
   "Continue without a model": "Continuer sans modèle",
+  Conversation: "Conversation",
   "Cosmic Orange": "Orange cosmique",
   "Create a new artifact": "Créer un nouvel artefact",
   "Create a new presentation": "Créer une nouvelle présentation",
@@ -409,6 +420,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Encrypting…": "Chiffrement…",
   Endpoint: "Point de terminaison",
   "Enter a focus view": "Passer à une vue ciblée",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Entrée pour envoyer · Maj Entrée pour une nouvelle ligne · toute écriture doit toujours être validée",
   Equals: "Égal",
   "Every artifact stays readable to people and models.":
     "Chaque artefact reste lisible par les personnes et les modèles.",
@@ -1003,6 +1016,7 @@ export const INTERFACE_TRANSLATIONS = {
   semantic: "sémantique",
   "Semantic HTML → select or edit one exact slide":
     "HTML sémantique → sélectionner ou modifier une diapositive précise",
+  "Send to Orbit": "Envoyer à Orbit",
   "Shaping and verifying…": "Structuration et vérification…",
   "Show API key": "Afficher la clé API",
   "Show preview only": "Afficher uniquement l’aperçu",
@@ -1178,6 +1192,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unsaved · ready to save": "Non enregistré · prêt à enregistrer",
   "Unsupported structure boundary": "Limite de structure non prise en charge",
   "Untitled chart": "Graphique sans titre",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "Jusqu’à 16 messages restent uniquement sur cet appareil ; ils ne sont jamais intégrés aux documents ni aux exports.",
   Update: "Mise à jour",
   "Update in place · identity preserved": "Mise à jour sur place · identité préservée",
   "Update this operating-review task": "Mettre à jour cette tâche de revue opérationnelle",
@@ -1239,6 +1255,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace view": "Vue de l’espace de travail",
   "Write in Source and the live output will recompile immediately.":
     "Écrivez dans Source ; le résultat en direct sera immédiatement recompilé.",
+  You: "Vous",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "Vous pouvez aussi déposer ici tout fichier pris en charge. Chaque conversion de compatibilité est vérifiée avant l’écriture.",
   "You can still add a provider yourself or import a configuration.":

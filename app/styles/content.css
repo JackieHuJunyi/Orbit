@@ -179,6 +179,79 @@
 .agent-dock-toolbar > div > button:hover { background: var(--rune-material-control); color: var(--ink); }
 .agent-dock-toolbar > div > button svg { width: 14px; height: 14px; }
 
+.agent-conversation {
+  display: grid;
+  min-height: 0;
+  gap: 7px;
+  padding: 2px 3px 0;
+}
+
+.agent-conversation > header {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rune-space-2);
+}
+
+.agent-conversation > header > span,
+.agent-conversation > header > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-conversation > header > span { color: var(--muted); font-size: 11px; }
+.agent-conversation > header svg { width: 13px; height: 13px; }
+.agent-conversation > header > button {
+  min-height: 28px;
+  padding-inline: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--subtle);
+  cursor: pointer;
+  font-size: 10px;
+}
+.agent-conversation > header > button:hover { background: var(--rune-material-control); color: var(--ink); }
+
+.agent-conversation > ol {
+  display: grid;
+  max-height: 210px;
+  gap: 8px;
+  margin: 0;
+  padding: 0 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.agent-conversation li {
+  display: grid;
+  max-width: 92%;
+  gap: 4px;
+  padding: 9px 11px;
+  border: 1px solid var(--rune-material-divider);
+  border-radius: 15px 15px 15px 5px;
+  background: var(--rune-material-solid);
+}
+
+.agent-conversation li.user {
+  justify-self: end;
+  border-color: color-mix(in srgb, var(--theme-accent) 18%, var(--rune-material-divider));
+  border-radius: 15px 15px 5px;
+  background: color-mix(in srgb, var(--theme-accent) 9%, var(--rune-material-solid));
+}
+
+.agent-conversation li > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.agent-conversation li > div strong { color: var(--muted); font-size: 10px; font-weight: 680; }
+.agent-conversation li > div small,
+.agent-conversation-model { color: var(--subtle); font-size: 9px; }
+.agent-conversation li > p { margin: 0; color: var(--ink); font-size: 12px; line-height: 1.48; white-space: pre-wrap; }
+.agent-conversation-privacy { margin: 0 3px; color: var(--subtle); font-size: 9px; line-height: 1.35; }
+
+.agent-dock.open.floating .agent-conversation > ol { max-height: 260px; }
+
 .agent-context-trigger {
   position: fixed;
   z-index: var(--rune-layer-pane-float);

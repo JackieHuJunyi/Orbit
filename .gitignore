@@ -17,6 +17,7 @@
 /.next/
 /.vinext/
 /out/
+/desktop/orbit-app-icon.icns
 
 # misc
 .DS_Store

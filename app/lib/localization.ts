@@ -316,6 +316,15 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       valid: zh ? "有效" : "Valid",
       assistant: "Orbit",
       assistantBody: zh ? "先准备修改，再由你确认写入" : "Prepares a change before you approve the write",
+      conversation: zh ? "对话" : "Conversation",
+      clearConversation: zh ? "清除对话" : "Clear conversation",
+      conversationCleared: zh ? "Agent 对话已清除" : "Agent conversation cleared",
+      conversationYou: zh ? "你" : "You",
+      conversationAnswer: zh ? "回答" : "Answer",
+      conversationProposal: zh ? "修改提案" : "Change proposal",
+      conversationPrivacy: zh
+        ? "最多保留 16 条消息，仅存储在这台设备上；不会写入文档或导出文件。"
+        : "Up to 16 messages stay on this device only; they are never written into documents or exports.",
       selection: zh ? "选区" : "Selection",
       file: zh ? "当前文件" : "File",
       workspaceScope: zh ? "工作区" : "Workspace",
@@ -323,13 +332,17 @@ function buildRuneUICopy(locale: "zh-CN" | "en") {
       localFallback: zh ? "本地模式" : "Local mode",
       agentModel: zh ? "本次使用的模型" : "Model for this message",
       suggestedActions: zh ? "建议操作" : "Suggested actions",
-      askWorkspace: zh ? "描述一个需要多份内容共同完成的结果…" : "Describe an outcome across the connected workspace…",
-      askSelection: zh ? "描述只针对当前选区的修改…" : "Describe a change confined to this selection…",
-      askFile: zh ? "描述你希望对当前文件做出的修改…" : "Describe the change you want in this file…",
-      planChange: zh ? "准备修改" : "Prepare change",
+      askWorkspace: zh
+        ? "询问工作区内容，或描述需要多份内容共同完成的结果…"
+        : "Ask about the workspace or describe an outcome across connected sources…",
+      askSelection: zh
+        ? "询问当前选区，或描述只针对这里的修改…"
+        : "Ask about this selection or describe a change confined to it…",
+      askFile: zh ? "询问当前文件，或描述你希望做出的修改…" : "Ask about this file or describe the change you want…",
+      planChange: zh ? "发送给 Orbit" : "Send to Orbit",
       planHint: zh
-        ? "⌘ Enter 准备修改 · 写入前始终可以审核和撤销"
-        : "⌘ Enter to prepare · every write remains reviewable and undoable",
+        ? "Enter 发送 · Shift Enter 换行 · 所有写入仍需审核"
+        : "Enter to send · Shift Enter for a new line · every write still requires review",
       sourceEditor: zh ? "源内容编辑器" : "Source editor",
       preview: zh ? "编译后的成品预览" : "Compiled artifact preview",
       hideFiles: zh ? "隐藏工作区文件" : "Hide workspace files",

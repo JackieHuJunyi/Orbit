@@ -4,12 +4,14 @@ import { zodTextFormat } from "openai/helpers/zod";
 
 import {
   AgentCompiledPatchSchema,
+  AgentArtifactTurnSchema,
   AgentOperationPatchSchema,
   AgentPatchSchema,
   AgentRequestSchema,
   AgentRuntimeRepairSchema,
   AgentWorkspacePatchSchema,
   AgentWorkspaceOperationPlanSchema,
+  AgentWorkspaceTurnSchema,
   buildAgentInput,
   buildAgentInstructions,
 } from "../app/lib/agent-contract.ts";
@@ -32,6 +34,58 @@ test("accepts a bounded artifact request and preserves metric context", () => {
   assert.match(buildAgentInstructions(parsed), /exact existing Query id/);
   assert.match(buildAgentInstructions(parsed), /only Workspace scope may introduce or retarget/i);
   assert.match(buildAgentInput(parsed), /total_revenue/);
+});
+
+test("accepts bounded multi-turn context and separates answers from reviewed changes", () => {
+  const parsed = AgentRequestSchema.parse({
+    ...request,
+    conversation: [
+      { role: "user", content: "What does the conclusion mean?" },
+      { role: "assistant", content: "It summarizes the current source." },
+    ],
+  });
+  assert.deepEqual(JSON.parse(buildAgentInput(parsed)).priorConversation, parsed.conversation);
+  assert.match(buildAgentInstructions(parsed), /outcome answer/i);
+  assert.equal(
+    AgentArtifactTurnSchema.safeParse({
+      outcome: "answer",
+      message: "It reflects the current source.",
+      summary: "",
+      detail: "",
+      edits: [],
+    }).success,
+    true,
+  );
+  assert.equal(
+    AgentArtifactTurnSchema.safeParse({
+      outcome: "answer",
+      message: "Unsafe mixed turn",
+      summary: "Edit too",
+      detail: "This answer also tries to write.",
+      edits: [{ type: "replace_text", find: "old", replace: "new" }],
+    }).success,
+    false,
+  );
+  assert.equal(
+    AgentWorkspaceTurnSchema.safeParse({
+      outcome: "answer",
+      message: "No workspace write is needed.",
+      summary: "",
+      detail: "",
+      actions: [],
+    }).success,
+    true,
+  );
+  assert.equal(
+    AgentRequestSchema.safeParse({
+      ...request,
+      conversation: Array.from({ length: 11 }, (_, index) => ({
+        role: index % 2 ? "assistant" : "user",
+        content: "x".repeat(2_000),
+      })),
+    }).success,
+    false,
+  );
 });
 
 test("accepts one bounded compiler-guided repair attempt as untrusted replacement context", () => {

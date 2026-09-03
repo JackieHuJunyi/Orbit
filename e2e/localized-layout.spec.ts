@@ -212,3 +212,50 @@ for (const viewport of VIEWPORTS) {
     }
   });
 }
+
+test.describe("compact localized Agent conversation", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const locale of LOCALES) {
+    test(`${locale.id} keeps a two-turn Agent thread readable and bounded`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.addInitScript(
+        ({ localeId }) => {
+          localStorage.setItem("rune-onboarding-v1", "complete");
+          localStorage.setItem("rune-locale-v1", localeId);
+          localStorage.setItem("rune-workspace-view-v1", "source");
+          localStorage.setItem(
+            "rune-agent-conversation-v1",
+            JSON.stringify([
+              {
+                id: "localized-user",
+                role: "user",
+                kind: "prompt",
+                content: "Explain the evidence behind this conclusion and keep the source unchanged.",
+                createdAt: "2026-09-03T00:00:00.000Z",
+              },
+              {
+                id: "localized-assistant",
+                role: "assistant",
+                kind: "answer",
+                content:
+                  "The conclusion is grounded in the visible revenue, margin, and retention evidence in the current workspace.",
+                createdAt: "2026-09-03T00:00:01.000Z",
+                model: "DeepSeek",
+              },
+            ]),
+          );
+        },
+        { localeId: locale.id },
+      );
+      await page.goto("/");
+      await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
+      await page.locator("[data-agent-trigger]").click();
+      const thread = page.locator(".agent-conversation");
+      await expect(thread).toBeVisible();
+      await expect(thread.getByRole("listitem")).toHaveCount(2);
+      await expectInsideViewport(page, page.locator(".agent-dock.open"));
+      await expectNoDocumentOverflow(page);
+    });
+  }
+});

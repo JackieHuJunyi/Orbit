@@ -344,8 +344,14 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   assert.deepEqual(payload.usage, { inputTokens: 1, outputTokens: 1 });
   assert.equal("edits" in payload.plan, false);
   assert.equal(providerRequest.max_output_tokens, DEFAULT_MODEL_TOKEN_BUDGET.maxOutputTokens);
-  assert.equal(providerRequest.text.format.name, "artifact_operations");
-  assert.deepEqual(Object.keys(providerRequest.text.format.schema.properties).sort(), ["detail", "edits", "summary"]);
+  assert.equal(providerRequest.text.format.name, "artifact_agent_turn");
+  assert.deepEqual(Object.keys(providerRequest.text.format.schema.properties).sort(), [
+    "detail",
+    "edits",
+    "message",
+    "outcome",
+    "summary",
+  ]);
   const operationTypes = providerRequest.text.format.schema.properties.edits.items.anyOf.map(
     (operation) => operation.properties.type.const,
   );
@@ -363,6 +369,53 @@ test("compiles a provider Markdown-section operation into the concrete Agent res
   ]);
   assert.equal("nextSource" in providerRequest.text.format.schema.properties, false);
   assert.match(providerRequest.input[0].content, /Markdown by exact heading|ordered edits/i);
+});
+
+test("returns an answer-only Agent turn and forwards bounded prior conversation", async () => {
+  process.env.OPENAI_API_KEY = "test-key";
+  process.env.OPENAI_MODEL = "gpt-5.6";
+  let providerRequest;
+  globalThis.fetch = async (_input, init) => {
+    providerRequest = JSON.parse(String(init?.body));
+    return new Response(
+      JSON.stringify(
+        providerResponse({
+          outcome: "answer",
+          message: "The conclusion is based on the visible revenue and margin evidence.",
+          summary: "",
+          detail: "",
+          edits: [],
+        }),
+      ),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  };
+
+  const response = await POST(
+    new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(
+        requestBody({
+          prompt: "What evidence supports it?",
+          conversation: [
+            { role: "user", content: "Summarize the conclusion." },
+            { role: "assistant", content: "The conclusion emphasizes durable growth." },
+          ],
+        }),
+      ),
+    }),
+  );
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.answer, "The conclusion is based on the visible revenue and margin evidence.");
+  assert.equal("plan" in payload, false);
+  const modelInput = JSON.parse(providerRequest.input[1].content);
+  assert.deepEqual(modelInput.priorConversation, [
+    { role: "user", content: "Summarize the conclusion." },
+    { role: "assistant", content: "The conclusion emphasizes durable growth." },
+  ]);
+  assert.doesNotMatch(JSON.stringify(payload), /Summarize the conclusion/);
 });
 
 test("returns a replacement plan marked as the single compiler-guided repair attempt", async () => {

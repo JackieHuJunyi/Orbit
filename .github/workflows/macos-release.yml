@@ -1,0 +1,75 @@
+name: macOS release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: macos-14
+    timeout-minutes: 90
+    env:
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ORBIT_MAC_SIGN_IDENTITY: ${{ secrets.ORBIT_MAC_SIGN_IDENTITY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - name: Import Developer ID certificate
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          test -n "$MACOS_CERTIFICATE"
+          test -n "$MACOS_CERTIFICATE_PASSWORD"
+          test -n "$KEYCHAIN_PASSWORD"
+          CERTIFICATE_PATH="$RUNNER_TEMP/orbit-developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/orbit-signing.keychain-db"
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -k "$KEYCHAIN_PATH" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo "ORBIT_MAC_KEYCHAIN=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run audit:production
+      - run: npm run audit:tooling
+      - run: npm run desktop:release:mac
+      - run: npm run desktop:verify:mac -- --arch=arm64
+      - run: npm run desktop:verify:mac -- --arch=x64
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Orbit-macOS-${{ github.ref_name }}
+          path: |
+            out/macos/**/*.dmg
+            out/macos/**/*.zip
+            out/macos/**/release-manifest.json
+          retention-days: 14
+      - name: Publish tagged GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ASSETS=()
+          while IFS= read -r asset; do ASSETS+=("$asset"); done < <(find out/macos -type f \( -name '*.dmg' -o -name '*.zip' -o -name 'release-manifest.json' \) -print)
+          gh release create "$GITHUB_REF_NAME" "${ASSETS[@]}" --verify-tag --generate-notes
+      - name: Remove signing keychain
+        if: always()
+        run: |
+          if test -n "${ORBIT_MAC_KEYCHAIN:-}"; then
+            security delete-keychain "$ORBIT_MAC_KEYCHAIN" || true
+          fi

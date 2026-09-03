@@ -105,6 +105,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Agent change scope": "Agent تغيير النطاق",
   "Agent composer focused": "تم التركيز على الملحن Agent.",
   "Agent context": "سياق Agent.",
+  "Agent conversation cleared": "تم مسح محادثة الوكيل",
   "Agent is using the local compiler failure to prepare one replacement plan":
     "يستخدم Agent فشل المترجم المحلي لإعداد خطة بديلة واحدة",
   "Agent will use local tools": "سيستخدم الوكيل الأدوات المحلية",
@@ -122,6 +123,7 @@ export const INTERFACE_TRANSLATIONS = {
     "نُزّلت أدلة التجربة مجهولة الهوية محليًا · لم يُنفذ أي رفع",
   "Anonymous run-001 / output-01 labels and dates without exact timestamps":
     "تسميات مجهولة run-001 / output-01 وتواريخ بلا أوقات دقيقة",
+  Answer: "إجابة",
   "API base URL": "عنوان URL الأساسي لواجهة برمجة التطبيقات",
   "API Key": "API Key",
   "API keys, model provider names, source revisions, and delivery fingerprints":
@@ -140,6 +142,10 @@ export const INTERFACE_TRANSLATIONS = {
   Artifacts: "Artifactث",
   "Artifacts in Agent context": "Artifact في سياق Agent.",
   Ascending: "تصاعدي",
+  "Ask about the workspace or describe an outcome across connected sources…":
+    "اسأل عن مساحة العمل أو صِف نتيجة تعتمد على المصادر المرتبطة…",
+  "Ask about this file or describe the change you want…": "اسأل عن هذا الملف أو صِف التعديل الذي تريده…",
+  "Ask about this selection or describe a change confined to it…": "اسأل عن هذا التحديد أو صِف تعديلًا يقتصر عليه…",
   "Ask Orbit about this": "اسأل Orbit عن هذا",
   "Ask the Agent to propose, without writing": "اطلب من Agent أن يقترح، دون كتابة",
   Audience: "الجمهور",
@@ -181,6 +187,7 @@ export const INTERFACE_TRANSLATIONS = {
   "CC Switch import link": "رابط استيراد CC Switch",
   Change: "التغيّر",
   "Change comprehensibility": "وضوح التغييرات",
+  "Change proposal": "اقتراح تعديل",
   "Change the accent to purple": "تغيير اللهجة إلى اللون الأرجواني",
   "changed lines": "تغيرت الخطوط",
   "Changes detected": "تم اكتشاف تغييرات",
@@ -225,6 +232,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose valid Chart properties.": "اختر خصائص Chart صالحة.",
   "Choose your Orbit language": "اختر لغة Orbit",
   Clear: "واضح",
+  "Clear conversation": "مسح المحادثة",
   "Clear pins": "دبابيس واضحة",
   "Click again to delete": "انقر مرة أخرى للحذف",
   "Close current file": "إغلاق الملف الحالي",
@@ -261,6 +269,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Continue setup": "متابعة الإعداد",
   "Continue with model assistance": "المتابعة باستخدام نموذج",
   "Continue without a model": "المتابعة من دون نموذج",
+  Conversation: "المحادثة",
   "Cosmic Orange": "برتقالي كوني",
   "Create a new artifact": "إنشاء قطعة أثرية جديدة",
   "Create a new presentation": "إنشاء عرض جديد",
@@ -397,6 +406,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Encrypting…": "جارٍ التشفير…",
   Endpoint: "نقطة الاتصال",
   "Enter a focus view": "انتقل إلى عرض التركيز",
+  "Enter to send · Shift Enter for a new line · every write still requires review":
+    "Enter للإرسال · Shift Enter لسطر جديد · كل كتابة تظل بحاجة إلى مراجعتك",
   Equals: "يساوي",
   "Every artifact stays readable to people and models.": "تظل كل قطعة أثرية قابلة للقراءة للأشخاص والنماذج.",
   "Every piece of work, with a clear source.": "كل عمل، مع مصدر واضح.",
@@ -970,6 +981,7 @@ export const INTERFACE_TRANSLATIONS = {
   "self-contained scriptless file": "ملف نصي قائم بذاته",
   semantic: "دلالي",
   "Semantic HTML → select or edit one exact slide": "HTML دلالي ← تحديد شريحة واحدة دقيقة أو تحريرها",
+  "Send to Orbit": "إرسال إلى Orbit",
   "Shaping and verifying…": "جارٍ التشكيل والتحقق…",
   "Show API key": "إظهار مفتاح API",
   "Show preview only": "إظهار المعاينة فقط",
@@ -1137,6 +1149,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Unsaved · ready to save": "غير محفوظ · جاهز للحفظ",
   "Unsupported structure boundary": "حدود البنية غير مدعومة",
   "Untitled chart": "مخطط بدون عنوان",
+  "Up to 16 messages stay on this device only; they are never written into documents or exports.":
+    "تظل آخر 16 رسالة على هذا الجهاز فقط، ولا تُكتب مطلقًا داخل المستندات أو الملفات المصدّرة.",
   Update: "تحديث",
   "Update in place · identity preserved": "تحديث في المكان · الهوية محفوظة",
   "Update this operating-review task": "قم بتحديث مهمة مراجعة التشغيل هذه",
@@ -1195,6 +1209,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Workspace view": "عرض مساحة العمل",
   "Write in Source and the live output will recompile immediately.":
     "اكتب في Source وستُعاد ترجمة النتيجة الحية فورًا.",
+  You: "أنت",
   "You can also drop any supported file here. Every compatibility conversion is reviewed before writing.":
     "يمكنك أيضًا إسقاط أي ملف مدعوم هنا. ستُراجع كل عملية تحويل توافقية قبل الكتابة.",
   "You can still add a provider yourself or import a configuration.": "يمكنك أيضًا إضافة جهة تزويد أو استيراد إعداد.",

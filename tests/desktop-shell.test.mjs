@@ -2,16 +2,29 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [main, legacyOffice, preload, packageJson, workbench, workspaceFileImport, workspaceFileExportRuntime] =
-  await Promise.all([
-    readFile(new URL("../desktop/main.mjs", import.meta.url), "utf8"),
-    readFile(new URL("../desktop/legacy-office.mjs", import.meta.url), "utf8"),
-    readFile(new URL("../desktop/preload.cjs", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/workspace-file-import.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
-  ]);
+const [
+  main,
+  legacyOffice,
+  preload,
+  packageJson,
+  workbench,
+  workspaceFileImport,
+  workspaceFileExportRuntime,
+  macPackage,
+  macVerify,
+  macReleaseWorkflow,
+] = await Promise.all([
+  readFile(new URL("../desktop/main.mjs", import.meta.url), "utf8"),
+  readFile(new URL("../desktop/legacy-office.mjs", import.meta.url), "utf8"),
+  readFile(new URL("../desktop/preload.cjs", import.meta.url), "utf8"),
+  readFile(new URL("../package.json", import.meta.url), "utf8"),
+  readFile(new URL("../app/components/rune-workbench.tsx", import.meta.url), "utf8"),
+  readFile(new URL("../app/lib/workspace-file-import.ts", import.meta.url), "utf8"),
+  readFile(new URL("../app/lib/workspace-file-export-runtime.ts", import.meta.url), "utf8"),
+  readFile(new URL("../scripts/package-macos.mjs", import.meta.url), "utf8"),
+  readFile(new URL("../scripts/verify-macos-release.mjs", import.meta.url), "utf8"),
+  readFile(new URL("../.github/workflows/macos-release.yml", import.meta.url), "utf8"),
+]);
 
 test("ships narrow context-isolated desktop capabilities without renderer Node access", () => {
   assert.match(main, /contextIsolation:\s*true/);
@@ -28,6 +41,7 @@ test("ships narrow context-isolated desktop capabilities without renderer Node a
 
 test("protects the desktop model-vault master key with Electron safeStorage", () => {
   assert.match(main, /safeStorage\.isEncryptionAvailable\(\)/);
+  assert.match(main, /if \(\/\^\[a-f0-9\]\{64\}\$\/\.test\(configuredKey/);
   assert.match(main, /safeStorage\.decryptString\(await readFile\(encryptedPath\)\)/);
   assert.match(main, /safeStorage\.encryptString\(key\)/);
   assert.match(main, /randomBytes\(32\)\.toString\("hex"\)/);
@@ -77,4 +91,35 @@ test("desktop navigation remains pinned to Orbit's ephemeral loopback origin", (
   assert.match(main, /setWindowOpenHandler\(\(\) => \(\{ action: "deny" \}\)\)/);
   assert.match(main, /if \(new URL\(target\)\.origin !== runeServer\.url\) event\.preventDefault\(\)/);
   assert.match(main, /app\.on\("activate"/);
+  assert.match(main, /async function loadDesktopWorkspace/);
+  assert.match(main, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/);
+  assert.match(main, /dialog\.showErrorBox/);
+  assert.match(main, /show: false/);
+  assert.match(main, /mainWindow = window[\s\S]*window\.center\(\)[\s\S]*window\.show\(\)[\s\S]*window\.focus\(\)/);
+  assert.match(main, /app\.setActivationPolicy\("regular"\)/);
+});
+
+test("ships a bounded signed, notarized, integrity-checked macOS release chain", () => {
+  const parsedPackage = JSON.parse(packageJson);
+  assert.equal(parsedPackage.main, "desktop/main.mjs");
+  assert.equal(parsedPackage.productName, "Orbit");
+  assert.match(parsedPackage.scripts["desktop:release:mac"], /--arch=arm64 --require-signing/);
+  assert.match(parsedPackage.scripts["desktop:release:mac"], /--arch=x64 --require-signing/);
+  assert.match(macPackage, /createPackageWithOptions/);
+  assert.match(macPackage, /ElectronAsarIntegrity/);
+  assert.match(macPackage, /strictlyRequireAllFuses: true/);
+  assert.match(macPackage, /EnableEmbeddedAsarIntegrityValidation/);
+  assert.match(macPackage, /OnlyLoadAppFromAsar/);
+  assert.match(macPackage, /WasmTrapHandlers/);
+  assert.match(macPackage, /await sign\(/);
+  assert.equal(macPackage.match(/await notarize\(/g)?.length, 2);
+  assert.match(macPackage, /\/usr\/bin\/hdiutil/);
+  assert.match(macPackage, /NSAppleEventsUsageDescription/);
+  assert.doesNotMatch(macPackage, /(?:app|tests\?|e2e|docs|scripts|node_modules).*payloadDirectory/);
+  assert.match(macVerify, /getCurrentFuseWire/);
+  assert.match(macVerify, /stapler", "validate"/);
+  assert.match(macReleaseWorkflow, /tags: \["v\*"\]/);
+  assert.match(macReleaseWorkflow, /MACOS_CERTIFICATE/);
+  assert.match(macReleaseWorkflow, /APPLE_APP_SPECIFIC_PASSWORD/);
+  assert.match(macReleaseWorkflow, /gh release create/);
 });
