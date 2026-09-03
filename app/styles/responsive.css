@@ -202,6 +202,7 @@
   .workspace .icon-button,
   .workspace .tiny-icon-button { width: 44px; min-width: 44px; height: 44px; }
   .agent-dock-trigger { min-height: 44px; }
+  .agent-conversation { min-height: 188px; }
   .agent-conversation > ol { min-height: 112px; }
   .import-task-continuation { grid-template-columns: 34px minmax(0, 1fr); padding: var(--rune-space-3); border-radius: var(--rune-radius-control); }
   .import-task-continuation > svg { width: 34px; height: 34px; padding: 9px; }

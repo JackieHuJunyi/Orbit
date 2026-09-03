@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { ORBIT_PRODUCT_NAME, ORBIT_PRODUCT_VERSION } from "../app/lib/product-meta.ts";
-import { isExpectedE2EStreamCancellation } from "../scripts/start-e2e.mjs";
+import { isE2EDuckDbAssetPath, isExpectedE2EStreamCancellation } from "../scripts/start-e2e.mjs";
 
 const rootFile = (name) => readFile(new URL(`../${name}`, import.meta.url), "utf8");
 
@@ -149,4 +149,9 @@ test("filters only the expected DuckDB stream cancellation from the E2E server",
     false,
   );
   assert.equal(isExpectedE2EStreamCancellation("[vinext] API route failed"), false);
+  assert.equal(isE2EDuckDbAssetPath("/duckdb/duckdb-browser-mvp.worker.js"), true);
+  assert.equal(isE2EDuckDbAssetPath("/duckdb/duckdb-mvp.wasm.manifest.json"), true);
+  assert.equal(isE2EDuckDbAssetPath("/duckdb/duckdb-mvp.wasm.part-0"), true);
+  assert.equal(isE2EDuckDbAssetPath("/duckdb/../package.json"), false);
+  assert.equal(isE2EDuckDbAssetPath("/ocr/worker.min.js"), false);
 });
