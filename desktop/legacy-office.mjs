@@ -1,12 +1,12 @@
 import { execFile } from "node:child_process";
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 export const MAX_LEGACY_BYTES = 12 * 1024 * 1024;
-export const CONVERSION_TIMEOUT_MS = 30_000;
+export const CONVERSION_TIMEOUT_MS = 60_000;
 const WORD_PATH = "/Applications/Microsoft Word.app";
 const POWERPOINT_PATH = "/Applications/Microsoft PowerPoint.app";
 
@@ -43,20 +43,30 @@ export function legacyConversionAppleScript(kind, inputPath, outputPath) {
     return `
 tell application "Microsoft Word"
   set oldSecurity to automation security
+  set oldAlerts to display alerts
   set automation security to msoAutomationSecurityForceDisable
+  set display alerts to alerts none
   set convertedDocument to missing value
   try
-    open file name ${input} read only true add to recent files false
+    open POSIX file ${input}
+    repeat 100 times
+      if (count documents) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count documents) is 0 then error "Microsoft Word did not finish opening the conversion source."
     set convertedDocument to active document
     save as convertedDocument file name ${output} file format format document add to recent files false
+    set convertedDocument to active document
     close convertedDocument saving no
   on error errorMessage number errorNumber
     try
       if convertedDocument is not missing value then close convertedDocument saving no
     end try
+    set display alerts to oldAlerts
     set automation security to oldSecurity
     error errorMessage number errorNumber
   end try
+  set display alerts to oldAlerts
   set automation security to oldSecurity
 end tell`;
   return `
@@ -67,13 +77,26 @@ tell application "Microsoft PowerPoint"
   set convertedPresentation to missing value
   try
     open POSIX file ${input}
+    repeat 100 times
+      if (count presentations) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count presentations) is 0 then error "Microsoft PowerPoint did not finish opening the conversion source."
     set convertedPresentation to active presentation
     save convertedPresentation in POSIX file ${output} as save as Open XML presentation
-    close convertedPresentation
+    repeat with openPresentation in (get presentations)
+      try
+        set openPresentationPath to full name of openPresentation as text
+        if openPresentationPath is ${input} or openPresentationPath is ${output} then close openPresentation
+      end try
+    end repeat
   on error errorMessage number errorNumber
-    try
-      if convertedPresentation is not missing value then close convertedPresentation
-    end try
+    repeat with openPresentation in (get presentations)
+      try
+        set openPresentationPath to full name of openPresentation as text
+        if openPresentationPath is ${input} or openPresentationPath is ${output} then close openPresentation
+      end try
+    end repeat
     if hadSecurityValue then set automation security to oldSecurity
     error errorMessage number errorNumber
   end try
@@ -88,20 +111,30 @@ export function legacyExportAppleScript(kind, inputPath, outputPath) {
     return `
 tell application "Microsoft Word"
   set oldSecurity to automation security
+  set oldAlerts to display alerts
   set automation security to msoAutomationSecurityForceDisable
+  set display alerts to alerts none
   set exportedDocument to missing value
   try
-    open file name ${input} read only true add to recent files false
+    open POSIX file ${input}
+    repeat 100 times
+      if (count documents) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count documents) is 0 then error "Microsoft Word did not finish opening the export source."
     set exportedDocument to active document
     save as exportedDocument file name ${output} file format format document97 add to recent files false
+    set exportedDocument to active document
     close exportedDocument saving no
   on error errorMessage number errorNumber
     try
       if exportedDocument is not missing value then close exportedDocument saving no
     end try
+    set display alerts to oldAlerts
     set automation security to oldSecurity
     error errorMessage number errorNumber
   end try
+  set display alerts to oldAlerts
   set automation security to oldSecurity
 end tell`;
   return `
@@ -112,13 +145,26 @@ tell application "Microsoft PowerPoint"
   set exportedPresentation to missing value
   try
     open POSIX file ${input}
+    repeat 100 times
+      if (count presentations) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count presentations) is 0 then error "Microsoft PowerPoint did not finish opening the export source."
     set exportedPresentation to active presentation
     save exportedPresentation in POSIX file ${output} as save as presentation
-    close exportedPresentation
+    repeat with openPresentation in (get presentations)
+      try
+        set openPresentationPath to full name of openPresentation as text
+        if openPresentationPath is ${input} or openPresentationPath is ${output} then close openPresentation
+      end try
+    end repeat
   on error errorMessage number errorNumber
-    try
-      if exportedPresentation is not missing value then close exportedPresentation
-    end try
+    repeat with openPresentation in (get presentations)
+      try
+        set openPresentationPath to full name of openPresentation as text
+        if openPresentationPath is ${input} or openPresentationPath is ${output} then close openPresentation
+      end try
+    end repeat
     if hadSecurityValue then set automation security to oldSecurity
     error errorMessage number errorNumber
   end try
@@ -138,6 +184,35 @@ async function officeAvailable(kind) {
     );
 }
 
+async function officeProcessRunning(kind) {
+  const executable =
+    kind === "doc"
+      ? `${WORD_PATH}/Contents/MacOS/Microsoft Word`
+      : `${POWERPOINT_PATH}/Contents/MacOS/Microsoft PowerPoint`;
+  try {
+    await execFileAsync("/usr/bin/pgrep", ["-f", executable], { timeout: 2_000, maxBuffer: 8 * 1024 });
+    return true;
+  } catch (error) {
+    if (error?.code === 1) return false;
+    // A process-inspection failure must never authorize Orbit to quit an app
+    // that may already belong to the user.
+    return true;
+  }
+}
+
+async function quitOfficeStartedByOrbit(kind) {
+  const applicationName = kind === "doc" ? "Microsoft Word" : "Microsoft PowerPoint";
+  await execFileAsync(
+    "/usr/bin/osascript",
+    ["-e", `tell application ${JSON.stringify(applicationName)} to quit saving no`],
+    {
+      timeout: 10_000,
+      maxBuffer: 32 * 1024,
+      windowsHide: true,
+    },
+  ).catch(() => undefined);
+}
+
 async function runConversion(source) {
   try {
     await execFileAsync("/usr/bin/osascript", ["-e", source], {
@@ -147,7 +222,7 @@ async function runConversion(source) {
     });
   } catch (error) {
     if (error?.killed || error?.signal)
-      throw new Error("The local Office conversion exceeded Orbit's 30 second limit and was stopped.");
+      throw new Error("The local Office conversion exceeded Orbit's 60 second limit and was stopped.");
     throw error;
   }
 }
@@ -155,8 +230,9 @@ async function runConversion(source) {
 export async function convertLegacyOffice(_event, input) {
   const kind = exactLegacyKind(input?.fileName ?? "");
   const bytes = coerceBytes(input?.bytes);
+  const officeWasRunning = await officeProcessRunning(kind);
   await officeAvailable(kind);
-  const privateDirectory = await mkdtemp(path.join(tmpdir(), "rune-legacy-office-"));
+  const privateDirectory = await realpath(await mkdtemp(path.join(tmpdir(), "rune-legacy-office-")));
   const inputPath = path.join(privateDirectory, `source.${kind}`);
   const outputName = `${path.basename(input.fileName, `.${kind}`)}.${kind}x`;
   const outputPath = path.join(privateDirectory, outputName);
@@ -173,11 +249,12 @@ export async function convertLegacyOffice(_event, input) {
     };
   } catch (error) {
     if (error?.killed || error?.signal)
-      throw new Error("The local Office conversion exceeded Orbit's 30 second limit and was stopped.");
+      throw new Error("The local Office conversion exceeded Orbit's 60 second limit and was stopped.");
     throw new Error(
       error instanceof Error ? error.message : "Orbit Desktop could not convert that legacy Office file.",
     );
   } finally {
+    if (!officeWasRunning) await quitOfficeStartedByOrbit(kind);
     await rm(privateDirectory, { recursive: true, force: true });
   }
 }
@@ -185,8 +262,9 @@ export async function convertLegacyOffice(_event, input) {
 export async function exportLegacyOffice(_event, input) {
   const kind = exactModernKind(input?.fileName ?? "");
   const bytes = coerceBytes(input?.bytes);
+  const officeWasRunning = await officeProcessRunning(kind);
   await officeAvailable(kind);
-  const privateDirectory = await mkdtemp(path.join(tmpdir(), "rune-legacy-office-export-"));
+  const privateDirectory = await realpath(await mkdtemp(path.join(tmpdir(), "rune-legacy-office-export-")));
   const modernExtension = kind === "doc" ? "docx" : "pptx";
   const legacyExtension = kind === "doc" ? "doc" : "ppt";
   const inputPath = path.join(privateDirectory, `source.${modernExtension}`);
@@ -206,6 +284,7 @@ export async function exportLegacyOffice(_event, input) {
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Orbit Desktop could not create that legacy Office file.");
   } finally {
+    if (!officeWasRunning) await quitOfficeStartedByOrbit(kind);
     await rm(privateDirectory, { recursive: true, force: true });
   }
 }

@@ -39,10 +39,24 @@ test("protects the desktop model-vault master key with Electron safeStorage", ()
 
 test("legacy Office conversion is bounded, macro-disabled, temporary, and review-first", () => {
   assert.match(legacyOffice, /MAX_LEGACY_BYTES = 12 \* 1024 \* 1024/);
-  assert.match(legacyOffice, /CONVERSION_TIMEOUT_MS = 30_000/);
+  assert.match(legacyOffice, /CONVERSION_TIMEOUT_MS = 60_000/);
   assert.match(legacyOffice, /msoAutomationSecurityForceDisable/g);
+  assert.equal(legacyOffice.match(/set display alerts to alerts none/g)?.length, 2);
+  assert.equal(legacyOffice.match(/open POSIX file/g)?.length, 4);
+  assert.equal(legacyOffice.match(/repeat 100 times/g)?.length, 4);
+  assert.match(legacyOffice, /open POSIX file[\s\S]*set convertedDocument to active document/);
+  assert.match(legacyOffice, /save as convertedDocument[\s\S]*set convertedDocument to active document/);
+  assert.match(legacyOffice, /open POSIX file[\s\S]*set exportedDocument to active document/);
+  assert.match(legacyOffice, /save as exportedDocument[\s\S]*set exportedDocument to active document/);
+  assert.match(legacyOffice, /realpath\(await mkdtemp/);
+  assert.equal(legacyOffice.match(/full name of openPresentation as text/g)?.length, 4);
+  assert.match(legacyOffice, /save convertedPresentation[\s\S]*openPresentationPath is \$\{input\}/);
+  assert.match(legacyOffice, /save exportedPresentation[\s\S]*openPresentationPath is \$\{output\}/);
   assert.match(legacyOffice, /mkdtemp\(/);
   assert.match(legacyOffice, /rm\(privateDirectory, \{ recursive: true, force: true \}\)/);
+  assert.match(legacyOffice, /officeProcessRunning/);
+  assert.match(legacyOffice, /process-inspection failure must never authorize Orbit to quit/);
+  assert.equal(legacyOffice.match(/if \(!officeWasRunning\) await quitOfficeStartedByOrbit\(kind\)/g)?.length, 2);
   assert.match(workspaceFileImport, /convertLegacyOfficeFile/);
   assert.match(workspaceFileImport, /convertOfficeFileWithAssets/);
   assert.match(workbench, /convertWorkspaceImportFiles/);

@@ -42,6 +42,11 @@ test("hydrates cleanly and reveals the Agent only when requested", async ({ page
   await expect(dock).toHaveClass(/open/);
   await expect(page.getByRole("textbox", { name: "Describe an artifact change" })).toBeFocused();
 
+  // Let the current page finish its same-origin DuckDB load before navigating
+  // away. WebKit reports a cancelled Wasm fetch as a page error even though
+  // React correctly aborts the obsolete query during reload.
+  await expect(page.locator("[data-chart-source-row]").first()).toBeVisible({ timeout: 30_000 });
+
   await page.reload();
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.locator('main[data-rune-hydrated="true"]')).toBeVisible();
@@ -137,6 +142,26 @@ test("compact Preview selection opens and centers its exact Source range", async
   expect(floatingBounds!.x).toBeGreaterThanOrEqual(7);
   expect(floatingBounds!.x + floatingBounds!.width).toBeLessThanOrEqual(383);
   expect(floatingBounds!.y + floatingBounds!.height).toBeLessThanOrEqual(837);
+});
+
+test("moves the floating Agent with the keyboard without changing its source scope", async ({ page }) => {
+  await openWorkbench(page);
+  await page.locator(".agent-dock-trigger").click();
+  await page.getByRole("button", { name: "Float Agent" }).click();
+  const floatingAgent = page.locator(".agent-dock.open.floating");
+  await expect(floatingAgent).toBeVisible();
+  const beforeMove = await floatingAgent.boundingBox();
+  const moveHandle = page.getByRole("button", { name: "Move Agent" });
+  expect(beforeMove).not.toBeNull();
+  await moveHandle.focus();
+  await moveHandle.press("Shift+ArrowLeft");
+  await moveHandle.press("Shift+ArrowDown");
+  const afterMove = await floatingAgent.boundingBox();
+  expect(afterMove).not.toBeNull();
+  expect(Math.abs(afterMove!.x - beforeMove!.x) + Math.abs(afterMove!.y - beforeMove!.y)).toBeGreaterThan(80);
+  await expect(
+    page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }),
+  ).toHaveClass(/active/);
 });
 
 test("Markdown preview keeps compact gutters and a readable optical measure in split and focus views", async ({

@@ -35,6 +35,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run format:check
       - run: npm run audit:production
+      - run: npm run audit:tooling
 
   e2e:
     name: e2e (${{ matrix.project }})

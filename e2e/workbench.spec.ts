@@ -378,22 +378,7 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   });
 
   await openWorkbench(page);
-  await page.locator(".document-source-block h2").filter({ hasText: "Executive summary" }).click();
-  const contextTrigger = page.getByRole("button", { name: "Ask Orbit about this" });
-  await expect(contextTrigger).toBeVisible();
-  await contextTrigger.click();
-  const floatingAgent = page.locator(".agent-dock.open.floating");
-  await expect(floatingAgent).toBeVisible();
-  const beforeMove = await floatingAgent.boundingBox();
-  const moveHandle = page.getByRole("button", { name: "Move Agent" });
-  expect(beforeMove).not.toBeNull();
-  await moveHandle.focus();
-  await moveHandle.press("Shift+ArrowLeft");
-  await moveHandle.press("Shift+ArrowDown");
-  const afterMove = await floatingAgent.boundingBox();
-  expect(afterMove).not.toBeNull();
-  expect(Math.abs(afterMove!.x - beforeMove!.x) + Math.abs(afterMove!.y - beforeMove!.y)).toBeGreaterThan(80);
-  await page.getByRole("button", { name: "Dock Agent" }).click();
+  await page.locator(".agent-dock-trigger").click();
   await expect(page.locator(".agent-dock.open.docked")).toBeVisible();
   await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });

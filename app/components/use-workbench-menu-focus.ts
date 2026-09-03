@@ -49,6 +49,36 @@ export function useWorkbenchMenuFocus({
     });
   }, [onOpenChange, restoreFocusRef]);
 
+  const closeAndMovePastTrigger = useCallback(
+    (backward: boolean) => {
+      onOpenChange(false);
+      // WebKit can retain a detached menu item as document.activeElement when
+      // React unmounts a popover during the browser's native Tab traversal.
+      // Resolve the adjacent visible control from the stable trigger after the
+      // close commit so Tab always exits the menu instead of leaving focus in
+      // hidden chrome.
+      window.requestAnimationFrame(() => {
+        const trigger = restoreFocusRef.current;
+        if (!trigger) return;
+        const candidates = Array.from(
+          document.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter(
+          (element) =>
+            !element.hidden &&
+            element.getAttribute("aria-hidden") !== "true" &&
+            element.getClientRects().length > 0 &&
+            getComputedStyle(element).visibility !== "hidden",
+        );
+        const triggerIndex = candidates.indexOf(trigger);
+        const next = candidates[triggerIndex + (backward ? -1 : 1)];
+        next?.focus({ preventScroll: true });
+      });
+    },
+    [onOpenChange, restoreFocusRef],
+  );
+
   const requestOpen = useCallback(
     (edge: WorkbenchMenuFocusEdge) => {
       ownRequestedFocusRef.current = edge;
@@ -80,14 +110,15 @@ export function useWorkbenchMenuFocus({
         return;
       }
       if (event.key === "Tab") {
-        onOpenChange(false);
+        event.preventDefault();
+        closeAndMovePastTrigger(event.shiftKey);
         return;
       }
       if (nextIndex == null) return;
       event.preventDefault();
       items[nextIndex]?.focus({ preventScroll: true });
     },
-    [closeAndRestoreFocus, enabledItems, onOpenChange],
+    [closeAndMovePastTrigger, closeAndRestoreFocus, enabledItems],
   );
 
   return { closeAndRestoreFocus, onMenuKeyDown, requestOpen, setItemRef } as const;
