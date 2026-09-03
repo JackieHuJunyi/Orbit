@@ -114,7 +114,11 @@ try {
     throw new Error("Run npm run prepare:macos-icon before packaging Orbit.");
   });
   const localElectronApp = path.join(root, "node_modules", "electron", "dist", "Electron.app");
-  if (arch === process.arch) {
+  const localElectronAvailable = await access(localElectronApp).then(
+    () => true,
+    () => false,
+  );
+  if (arch === process.arch && localElectronAvailable) {
     await cp(localElectronApp, appPath, { recursive: true, verbatimSymlinks: true });
   } else {
     const electronArchive = await downloadArtifact({

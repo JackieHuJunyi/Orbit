@@ -112,6 +112,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(parsedPackage.scripts["desktop:release:mac"], /--arch=x64 --require-signing/);
   assert.equal(parsedPackage.scripts["desktop:smoke:mac"], "node scripts/smoke-macos-package.mjs");
   assert.match(macPackage, /createPackageWithOptions/);
+  assert.match(macPackage, /arch === process\.arch && localElectronAvailable/);
+  assert.match(macPackage, /downloadArtifact/);
   assert.match(macPackage, /ElectronAsarIntegrity/);
   assert.match(macPackage, /strictlyRequireAllFuses: true/);
   assert.match(macPackage, /EnableEmbeddedAsarIntegrityValidation/);
