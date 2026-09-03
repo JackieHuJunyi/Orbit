@@ -84,6 +84,30 @@ async function sha256(filePath) {
     .digest("hex");
 }
 
+async function createDiskImage(sourceDirectory, destination) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await execFileAsync("/usr/bin/hdiutil", [
+        "create",
+        "-volname",
+        "Orbit",
+        "-srcfolder",
+        sourceDirectory,
+        "-ov",
+        "-format",
+        "UDZO",
+        destination,
+      ]);
+      return;
+    } catch (error) {
+      const message = `${error?.stderr ?? ""} ${error instanceof Error ? error.message : ""}`;
+      if (attempt === 2 || !/device not configured|resource busy|设备未配置/iu.test(message)) throw error;
+      await rm(destination, { force: true });
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+}
+
 try {
   const iconPath = path.join(root, "desktop", "orbit-app-icon.icns");
   await access(iconPath).catch(() => {
@@ -195,17 +219,7 @@ try {
   await mkdir(dmgDirectory, { recursive: true });
   await cp(appPath, path.join(dmgDirectory, "Orbit.app"), { recursive: true, verbatimSymlinks: true });
   await symlink("/Applications", path.join(dmgDirectory, "Applications"));
-  await execFileAsync("/usr/bin/hdiutil", [
-    "create",
-    "-volname",
-    "Orbit",
-    "-srcfolder",
-    dmgDirectory,
-    "-ov",
-    "-format",
-    "UDZO",
-    dmgPath,
-  ]);
+  await createDiskImage(dmgDirectory, dmgPath);
   if (signIdentity) {
     await execFileAsync("/usr/bin/codesign", ["--force", "--timestamp", "--sign", signIdentity, dmgPath]);
     const credentials = notaryCredentials();

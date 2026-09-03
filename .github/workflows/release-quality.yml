@@ -65,3 +65,22 @@ jobs:
           name: playwright-report-${{ matrix.project }}
           path: playwright-report/
           retention-days: 7
+
+  macos-package:
+    runs-on: macos-14
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run prepare:macos-icon
+      - name: Package, verify, and start the current macOS architecture
+        run: |
+          ARCH=$(node -p 'process.arch')
+          node scripts/package-macos.mjs --arch="$ARCH"
+          node scripts/verify-macos-release.mjs --arch="$ARCH"
+          node scripts/smoke-macos-package.mjs --arch="$ARCH"

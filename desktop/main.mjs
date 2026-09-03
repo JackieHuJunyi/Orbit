@@ -119,9 +119,16 @@ async function startRuneServer() {
       response.end(error instanceof Error ? error.message : "Orbit Desktop server error");
     }
   });
+  const requestedQaPort = Number(process.env.ORBIT_DESKTOP_QA_PORT ?? 0);
+  if (
+    process.env.ORBIT_DESKTOP_QA_PORT &&
+    (!Number.isSafeInteger(requestedQaPort) || requestedQaPort < 1_024 || requestedQaPort > 65_535)
+  ) {
+    throw new Error("ORBIT_DESKTOP_QA_PORT must be an integer from 1024 through 65535.");
+  }
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
+    server.listen(requestedQaPort, "127.0.0.1", resolve);
   });
   const address = server.address();
   if (!address || typeof address === "string")

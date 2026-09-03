@@ -13,6 +13,8 @@ const [
   macPackage,
   macVerify,
   macReleaseWorkflow,
+  macSmoke,
+  releaseQualityWorkflow,
 ] = await Promise.all([
   readFile(new URL("../desktop/main.mjs", import.meta.url), "utf8"),
   readFile(new URL("../desktop/legacy-office.mjs", import.meta.url), "utf8"),
@@ -24,6 +26,8 @@ const [
   readFile(new URL("../scripts/package-macos.mjs", import.meta.url), "utf8"),
   readFile(new URL("../scripts/verify-macos-release.mjs", import.meta.url), "utf8"),
   readFile(new URL("../.github/workflows/macos-release.yml", import.meta.url), "utf8"),
+  readFile(new URL("../scripts/smoke-macos-package.mjs", import.meta.url), "utf8"),
+  readFile(new URL("../.github/workflows/release-quality.yml", import.meta.url), "utf8"),
 ]);
 
 test("ships narrow context-isolated desktop capabilities without renderer Node access", () => {
@@ -83,7 +87,8 @@ test("legacy Office conversion is bounded, macro-disabled, temporary, and review
 });
 
 test("desktop navigation remains pinned to Orbit's ephemeral loopback origin", () => {
-  assert.match(main, /server\.listen\(0, "127\.0\.0\.1"/);
+  assert.match(main, /server\.listen\(requestedQaPort, "127\.0\.0\.1"/);
+  assert.match(main, /ORBIT_DESKTOP_QA_PORT must be an integer from 1024 through 65535/);
   assert.match(main, /serveStaticAsset\(request, response, url\)/);
   assert.match(main, /assetPath\.startsWith\(`\$\{clientDirectory\}\$\{path\.sep\}`\)/);
   assert.match(main, /"x-content-type-options": "nosniff"/);
@@ -105,6 +110,7 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.equal(parsedPackage.productName, "Orbit");
   assert.match(parsedPackage.scripts["desktop:release:mac"], /--arch=arm64 --require-signing/);
   assert.match(parsedPackage.scripts["desktop:release:mac"], /--arch=x64 --require-signing/);
+  assert.equal(parsedPackage.scripts["desktop:smoke:mac"], "node scripts/smoke-macos-package.mjs");
   assert.match(macPackage, /createPackageWithOptions/);
   assert.match(macPackage, /ElectronAsarIntegrity/);
   assert.match(macPackage, /strictlyRequireAllFuses: true/);
@@ -114,6 +120,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macPackage, /await sign\(/);
   assert.equal(macPackage.match(/await notarize\(/g)?.length, 2);
   assert.match(macPackage, /\/usr\/bin\/hdiutil/);
+  assert.match(macPackage, /attempt < 3/);
+  assert.match(macPackage, /device not configured\|resource busy\|设备未配置/);
   assert.match(macPackage, /NSAppleEventsUsageDescription/);
   assert.doesNotMatch(macPackage, /(?:app|tests\?|e2e|docs|scripts|node_modules).*payloadDirectory/);
   assert.match(macVerify, /getCurrentFuseWire/);
@@ -122,4 +130,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macReleaseWorkflow, /MACOS_CERTIFICATE/);
   assert.match(macReleaseWorkflow, /APPLE_APP_SPECIFIC_PASSWORD/);
   assert.match(macReleaseWorkflow, /gh release create/);
+  assert.match(macSmoke, /ORBIT_DESKTOP_QA_PORT/);
+  assert.match(macSmoke, /RUNE_CREDENTIAL_ENCRYPTION_KEY: "a"\.repeat\(64\)/);
+  assert.match(macSmoke, /Packaged Orbit did not return the expected product document/);
+  assert.match(releaseQualityWorkflow, /macos-package:[\s\S]*smoke-macos-package\.mjs/);
 });

@@ -44,6 +44,7 @@
     "prepare:macos-icon": "node scripts/prepare-macos-icon.mjs",
     "desktop:package:mac": "npm run build && npm run prepare:macos-icon && node scripts/package-macos.mjs",
     "desktop:verify:mac": "node scripts/verify-macos-release.mjs",
+    "desktop:smoke:mac": "node scripts/smoke-macos-package.mjs",
     "desktop:release:mac": "npm run build && npm run prepare:macos-icon && node scripts/package-macos.mjs --arch=arm64 --require-signing && node scripts/package-macos.mjs --arch=x64 --require-signing"
   },
   "dependencies": {
