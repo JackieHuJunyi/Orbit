@@ -58,7 +58,7 @@ export function planGreetingPresentation({
 
   return Object.freeze({
     canvasWidth,
-    completeAfterMs: renderMode === "vector-centerline" ? 3_560 : 9_000,
+    completeAfterMs: renderMode === "vector-centerline" ? 3_560 : Math.round(9_000 * motion.durationScale),
     direction,
     isLong,
     locale,

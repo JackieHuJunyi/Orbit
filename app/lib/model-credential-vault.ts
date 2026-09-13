@@ -2,6 +2,7 @@ import {
   EMPTY_MODEL_PROFILE_VAULT,
   MODEL_PROFILE_COOKIE,
   MODEL_PROFILE_COOKIE_MAX_AGE,
+  currentModelProfileBaseURL,
   modelCapabilityManifest,
   modelProviderAvailableInEnvironment,
   normalizeModelTokenBudget,
@@ -114,7 +115,10 @@ export type ActiveModelConnection = {
   capabilities: ModelCapabilityManifest;
 };
 
-function storedProfileConnection(profile: StoredModelProfile): ActiveModelConnection {
+function storedProfileConnection(
+  profile: StoredModelProfile,
+  environment: Record<string, string | undefined>,
+): ActiveModelConnection {
   return {
     source: "personal",
     profileId: profile.id,
@@ -122,7 +126,7 @@ function storedProfileConnection(profile: StoredModelProfile): ActiveModelConnec
     provider: profile.provider,
     protocol: profile.protocol,
     apiKey: profile.apiKey,
-    baseURL: profile.baseURL,
+    baseURL: currentModelProfileBaseURL(profile.provider, profile.baseURL, environment),
     model: profile.model,
     budget: { ...profile.budget },
     capabilities: modelCapabilityManifest(profile.protocol),
@@ -159,7 +163,7 @@ export async function resolveModelRouting(
   const vault = await readModelProfileVault(request, environment);
   const personal = vault.profiles
     .filter((profile) => modelProviderAvailableInEnvironment(profile.provider, environment))
-    .map(storedProfileConnection);
+    .map((profile) => storedProfileConnection(profile, environment));
   const deployment = deploymentModelConnection(environment);
   const activeIndex = personal.findIndex((connection) => connection.profileId === vault.activeProfileId);
   const primary = activeIndex >= 0 ? personal[activeIndex] : deployment;

@@ -29,6 +29,7 @@ const [
   readFile(new URL("../scripts/smoke-macos-package.mjs", import.meta.url), "utf8"),
   readFile(new URL("../.github/workflows/release-quality.yml", import.meta.url), "utf8"),
 ]);
+const accountRuntime = await readFile(new URL("../desktop/account-model-runtime.mjs", import.meta.url), "utf8");
 
 test("ships narrow context-isolated desktop capabilities without renderer Node access", () => {
   assert.match(main, /contextIsolation:\s*true/);
@@ -53,6 +54,22 @@ test("protects the desktop model-vault master key with Electron safeStorage", ()
   assert.match(main, /process\.env\.ORBIT_CREDENTIAL_ENCRYPTION_KEY = key/);
   assert.doesNotMatch(preload, /credential|safeStorage|ORBIT_CREDENTIAL/);
   assert.match(main, /ORBIT_DESKTOP_RUNTIME = "1"/);
+});
+
+test("uses signed-in official model clients without reading or persisting their OAuth tokens", () => {
+  assert.match(main, /createDesktopAccountModelRuntime/);
+  assert.match(main, /accountRuntimeToken\(masterKey\)/);
+  assert.match(main, /desktopAccountRuntime\?\.fetch\(webRequest, url\)/);
+  assert.match(accountRuntime, /\["login", "status"\]/);
+  assert.match(accountRuntime, /\["auth", "status"\]/);
+  assert.match(accountRuntime, /parsed\?\.authMethod === "oauth_token"/);
+  assert.match(accountRuntime, /"--no-session-persistence"/);
+  assert.match(accountRuntime, /"--tools",\s*""/);
+  assert.match(accountRuntime, /"--ephemeral"/);
+  assert.match(accountRuntime, /"shell_tool"/);
+  assert.match(accountRuntime, /"unified_exec"/);
+  assert.match(accountRuntime, /delete safe\[key\]/);
+  assert.doesNotMatch(accountRuntime, /auth\.json|oauth_creds|keychain|security find/u);
 });
 
 test("legacy Office conversion is bounded, macro-disabled, temporary, and review-first", () => {
@@ -88,13 +105,15 @@ test("legacy Office conversion is bounded, macro-disabled, temporary, and review
 
 test("desktop navigation remains pinned to Orbit's ephemeral loopback origin", () => {
   assert.match(main, /server\.listen\(requestedQaPort, "127\.0\.0\.1"/);
+  assert.match(main, /process\.env\.ORBIT_DESKTOP_ORIGIN = url/);
   assert.match(main, /ORBIT_DESKTOP_QA_PORT must be an integer from 1024 through 65535/);
   assert.match(main, /serveStaticAsset\(request, response, url\)/);
   assert.match(main, /assetPath\.startsWith\(`\$\{clientDirectory\}\$\{path\.sep\}`\)/);
   assert.match(main, /"x-content-type-options": "nosniff"/);
   assert.match(main, /responseHeaders\["content-security-policy"\]/);
   assert.match(main, /setWindowOpenHandler\(\(\) => \(\{ action: "deny" \}\)\)/);
-  assert.match(main, /if \(new URL\(target\)\.origin !== orbitServer\.url\) event\.preventDefault\(\)/);
+  assert.match(main, /const workspaceOrigin = new URL\(orbitServer\.url\)\.origin/);
+  assert.match(main, /if \(new URL\(target\)\.origin !== workspaceOrigin\) event\.preventDefault\(\)/);
   assert.match(main, /app\.on\("activate"/);
   assert.match(main, /async function loadDesktopWorkspace/);
   assert.match(main, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/);
@@ -137,6 +156,7 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macReleaseWorkflow, /APPLE_APP_SPECIFIC_PASSWORD/);
   assert.match(macReleaseWorkflow, /gh release create/);
   assert.match(macSmoke, /ORBIT_DESKTOP_QA_PORT/);
+  assert.match(macSmoke, /ORBIT_DESKTOP_QA_PROFILE/);
   assert.match(macSmoke, /ORBIT_CREDENTIAL_ENCRYPTION_KEY: "a"\.repeat\(64\)/);
   assert.match(macSmoke, /Packaged Orbit did not return the expected product document/);
   assert.match(releaseQualityWorkflow, /macos-package:[\s\S]*smoke-macos-package\.mjs/);

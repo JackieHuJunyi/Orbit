@@ -156,9 +156,7 @@ function restoreText(text, replacements) {
   return value;
 }
 
-async function translateBatch(locale, entries) {
-  const marker = (index) => `<<<ORBIT_SEGMENT_${index}>>>`;
-  const body = entries.map((entry, index) => `${entry.value}\n${marker(index)}`).join("\n");
+async function requestTranslation(locale, body) {
   const form = new URLSearchParams({ client: "gtx", sl: "en", tl: locale, dt: "t", q: body });
   let response;
   for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -172,9 +170,21 @@ async function translateBatch(locale, entries) {
   }
   if (!response.ok) throw new Error(`Translation request for ${locale} failed (${response.status}).`);
   const payload = await response.json();
-  const translated = Array.isArray(payload?.[0]) ? payload[0].map((segment) => segment?.[0] ?? "").join("") : "";
+  return Array.isArray(payload?.[0]) ? payload[0].map((segment) => segment?.[0] ?? "").join("") : "";
+}
+
+async function translateBatch(locale, entries) {
+  const marker = (index) => `<<<ORBIT_SEGMENT_${index}>>>`;
+  const body = entries.map((entry, index) => `${entry.value}\n${marker(index)}`).join("\n");
+  const translated = await requestTranslation(locale, body);
   const parts = translated.split(/\n?<<<ORBIT_SEGMENT_\d+>>>\n?/gu);
-  if (parts.length < entries.length) throw new Error(`Translation response for ${locale} lost a segment.`);
+  if (parts.length < entries.length) {
+    return Promise.all(
+      entries.map(async (entry) =>
+        restoreText((await requestTranslation(locale, entry.value)).trim(), entry.replacements),
+      ),
+    );
+  }
   return entries.map((entry, index) => restoreText((parts[index] ?? "").trim(), entry.replacements));
 }
 

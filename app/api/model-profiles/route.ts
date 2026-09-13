@@ -1,5 +1,7 @@
 import {
   MAX_MODEL_PROFILES,
+  currentModelProfileBaseURL,
+  isAccountModelProvider,
   modelProviderAvailableInEnvironment,
   normalizeModelProfileDraft,
   publicModelProfile,
@@ -28,7 +30,7 @@ function personalConnection(profile: ModelProfileVault["profiles"][number]) {
     provider: profile.provider,
     protocol: profile.protocol,
     apiKey: profile.apiKey,
-    baseURL: profile.baseURL,
+    baseURL: currentModelProfileBaseURL(profile.provider, profile.baseURL),
     model: profile.model,
     budget: profile.budget,
     capabilities: publicModelProfile(profile).capabilities,
@@ -132,7 +134,7 @@ export async function POST(request: Request) {
         throw new Error("Device model runtimes are available only in the Orbit desktop app.");
       }
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20_000);
+      const timeout = setTimeout(() => controller.abort(), isAccountModelProvider(profile.provider) ? 60_000 : 20_000);
       try {
         const result = await requestProviderPlan({
           connection: personalConnection(profile),

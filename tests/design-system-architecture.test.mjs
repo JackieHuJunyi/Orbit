@@ -161,6 +161,8 @@ test("keeps the startup spectrum inside one licensed, path-timed handwritten per
   assert.match(component, /"data-ink-material": "pressure-pencil-spectrum"/);
   assert.match(component, /<TegakiRenderer/);
   assert.match(component, /speed: penSpeed/);
+  assert.match(component, /variant === "inline" \? "welcome-signature" : "welcome-greeting"/);
+  assert.match(experience, /presentation=\{welcomeSignaturePresentation\}/);
   assert.doesNotMatch(component, /stagger:/);
   assert.match(component, /feTurbulence[^]*feDisplacementMap/);
   assert.doesNotMatch(component, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);

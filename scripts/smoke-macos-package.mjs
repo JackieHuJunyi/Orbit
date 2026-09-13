@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
@@ -23,6 +24,7 @@ async function availableLoopbackPort() {
 }
 
 const port = await availableLoopbackPort();
+const qaProfile = await mkdtemp(path.join(tmpdir(), "orbit-package-smoke-"));
 const executable = path.join(
   root,
   "out",
@@ -41,6 +43,7 @@ const child = spawn(executable, [], {
   env: {
     ...process.env,
     ORBIT_DESKTOP_QA_PORT: String(port),
+    ORBIT_DESKTOP_QA_PROFILE: qaProfile,
     ORBIT_CREDENTIAL_ENCRYPTION_KEY: "a".repeat(64),
   },
   stdio: ["ignore", "pipe", "pipe"],
@@ -99,4 +102,5 @@ try {
   process.stdout.write(`${JSON.stringify({ version: packageJson.version, arch, port: "loopback", ready: true })}\n`);
 } finally {
   await stop();
+  await rm(qaProfile, { recursive: true, force: true });
 }

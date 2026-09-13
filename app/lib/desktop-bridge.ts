@@ -9,20 +9,42 @@ export type LegacyOfficeConversion = {
 
 export type DiscoveredModelConnection = {
   id: string;
-  sourceKind: "environment" | "app-config" | "cc-switch" | "local-runtime";
+  sourceKind: "environment" | "app-config" | "cc-switch" | "local-runtime" | "account-runtime";
   sourceLabel: string;
   locality: "cloud" | "device";
-  provider: "openai" | "openrouter" | "deepseek" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
+  provider:
+    | "openai"
+    | "openrouter"
+    | "deepseek"
+    | "anthropic"
+    | "gemini"
+    | "codex-account"
+    | "claude-account"
+    | "gemini-account"
+    | "ollama"
+    | "lmstudio"
+    | "custom";
   protocol: "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
   name: string;
   baseURL: string;
   model: string;
   models: string[];
-  credentialState: "detected" | "not-required";
+  credentialState: "detected" | "not-required" | "account-session";
+};
+
+export type DiscoveredAccountRuntime = {
+  id: "codex" | "claude" | "gemini";
+  provider: "codex-account" | "claude-account" | "gemini-account";
+  label: string;
+  sourceLabel: string;
+  model: string;
+  installed: boolean;
+  status: "ready" | "verify-required" | "sign-in-required" | "not-installed";
 };
 
 export type DesktopModelDiscovery = {
   supported: true;
+  accounts: DiscoveredAccountRuntime[];
   candidates: DiscoveredModelConnection[];
 };
 
@@ -78,6 +100,9 @@ function modelProvider(value: unknown): DiscoveredModelConnection["provider"] | 
     value === "deepseek" ||
     value === "anthropic" ||
     value === "gemini" ||
+    value === "codex-account" ||
+    value === "claude-account" ||
+    value === "gemini-account" ||
     value === "ollama" ||
     value === "lmstudio" ||
     value === "custom"
@@ -101,12 +126,13 @@ function boundedBridgeText(value: unknown, maximum: number) {
 }
 
 export async function discoverDesktopModelConnections(): Promise<DesktopModelDiscovery> {
-  if (!supportsDesktopModelDiscovery()) return { supported: true, candidates: [] };
+  if (!supportsDesktopModelDiscovery()) return { supported: true, accounts: [], candidates: [] };
   const result = await window.orbitDesktop!.discoverModels();
   if (!result || typeof result !== "object" || (result as { supported?: unknown }).supported !== true) {
     throw new Error("The Orbit desktop bridge returned an invalid model discovery result.");
   }
   const rawCandidates = (result as { candidates?: unknown }).candidates;
+  const rawAccounts = (result as { accounts?: unknown }).accounts;
   if (!Array.isArray(rawCandidates) || rawCandidates.length > 32) {
     throw new Error("The Orbit desktop bridge returned too many model discovery results.");
   }
@@ -134,9 +160,10 @@ export async function discoverDesktopModelConnections(): Promise<DesktopModelDis
       (sourceKind !== "environment" &&
         sourceKind !== "app-config" &&
         sourceKind !== "cc-switch" &&
-        sourceKind !== "local-runtime") ||
+        sourceKind !== "local-runtime" &&
+        sourceKind !== "account-runtime") ||
       (locality !== "cloud" && locality !== "device") ||
-      (credentialState !== "detected" && credentialState !== "not-required")
+      (credentialState !== "detected" && credentialState !== "not-required" && credentialState !== "account-session")
     )
       return [];
     const models = Array.isArray(item.models)
@@ -161,7 +188,35 @@ export async function discoverDesktopModelConnections(): Promise<DesktopModelDis
       } as DiscoveredModelConnection,
     ];
   });
-  return { supported: true, candidates };
+  const accounts = Array.isArray(rawAccounts)
+    ? rawAccounts.flatMap((value) => {
+        if (!value || typeof value !== "object") return [];
+        const item = value as Record<string, unknown>;
+        const id = item.id;
+        const provider = modelProvider(item.provider);
+        const status = item.status;
+        const label = boundedBridgeText(item.label, 40);
+        const sourceLabel = boundedBridgeText(item.sourceLabel, 80);
+        const model = boundedBridgeText(item.model, 120);
+        if (
+          (id !== "codex" && id !== "claude" && id !== "gemini") ||
+          (provider !== "codex-account" && provider !== "claude-account" && provider !== "gemini-account") ||
+          (status !== "ready" &&
+            status !== "verify-required" &&
+            status !== "sign-in-required" &&
+            status !== "not-installed") ||
+          typeof item.installed !== "boolean" ||
+          !label ||
+          !sourceLabel ||
+          !model
+        )
+          return [];
+        return [
+          { id, provider, status, installed: item.installed, label, sourceLabel, model } as DiscoveredAccountRuntime,
+        ];
+      })
+    : [];
+  return { supported: true, accounts, candidates };
 }
 
 export async function importDesktopModelConnection(id: string): Promise<DiscoveredModelProfile> {

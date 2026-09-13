@@ -2,9 +2,11 @@ import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { convertLegacyOffice, exportLegacyOffice } from "./legacy-office.mjs";
+import { accountRuntimeToken, createDesktopAccountModelRuntime } from "./account-model-runtime.mjs";
 import { createDesktopModelDiscovery } from "./model-discovery.mjs";
 
 const desktopDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -31,7 +33,15 @@ const STATIC_CONTENT_TYPES = Object.freeze({
 // the former pre-release product identity is left untouched and never opened.
 // Testers therefore receive a clean profile and configure a model once.
 app.setName("Orbit");
-app.setPath("userData", path.join(app.getPath("appData"), "Orbit"));
+const requestedQaProfile = process.env.ORBIT_DESKTOP_QA_PROFILE?.trim() ?? "";
+const allowedQaProfileRoot = `${tmpdir()}${path.sep}`;
+const qaProfileDirectory =
+  path.isAbsolute(requestedQaProfile) &&
+  requestedQaProfile.startsWith(allowedQaProfileRoot) &&
+  path.basename(requestedQaProfile).startsWith("orbit-")
+    ? requestedQaProfile
+    : "";
+app.setPath("userData", qaProfileDirectory || path.join(app.getPath("appData"), "Orbit"));
 process.env.ORBIT_DESKTOP_RUNTIME = "1";
 
 async function initializeDesktopCredentialVault() {
@@ -99,6 +109,16 @@ async function startOrbitServer() {
         body,
         duplex: body ? "half" : undefined,
       });
+      const accountResponse = await desktopAccountRuntime?.fetch(webRequest, url);
+      if (accountResponse) {
+        const accountHeaders = Object.fromEntries(accountResponse.headers);
+        accountHeaders["cache-control"] = "no-store";
+        accountHeaders["x-content-type-options"] = "nosniff";
+        response.writeHead(accountResponse.status, accountHeaders);
+        if (accountResponse.body) for await (const chunk of accountResponse.body) response.write(chunk);
+        response.end();
+        return;
+      }
       const webResponse = await worker.fetch(webRequest, {}, { waitUntil() {}, passThroughOnException() {} });
       const responseHeaders = Object.fromEntries(webResponse.headers);
       responseHeaders["content-security-policy"] =
@@ -131,12 +151,15 @@ async function startOrbitServer() {
   const address = server.address();
   if (!address || typeof address === "string")
     throw new Error("Orbit Desktop could not start its local workspace server.");
-  return { server, url: `http://127.0.0.1:${address.port}` };
+  const url = `http://127.0.0.1:${address.port}`;
+  process.env.ORBIT_DESKTOP_ORIGIN = url;
+  return { server, url };
 }
 
 let orbitServer;
 let mainWindow;
 let desktopModelDiscovery;
+let desktopAccountRuntime;
 
 async function loadDesktopWorkspace(window, url) {
   let lastError;
@@ -186,7 +209,8 @@ async function createOrbitWindow() {
   });
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   window.webContents.on("will-navigate", (event, target) => {
-    if (new URL(target).origin !== orbitServer.url) event.preventDefault();
+    const workspaceOrigin = new URL(orbitServer.url).origin;
+    if (new URL(target).origin !== workspaceOrigin) event.preventDefault();
   });
   try {
     await loadDesktopWorkspace(window, orbitServer.url);
@@ -203,12 +227,23 @@ async function createOrbitWindow() {
 }
 
 app.whenReady().then(async () => {
-  await initializeDesktopCredentialVault();
+  const vaultReady = await initializeDesktopCredentialVault();
   if (process.platform === "darwin") {
     app.setActivationPolicy("regular");
     app.dock.setIcon(orbitAppIconPath);
   }
-  desktopModelDiscovery = createDesktopModelDiscovery({ homeDirectory: app.getPath("home") });
+  const masterKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY ?? "";
+  desktopAccountRuntime = vaultReady
+    ? createDesktopAccountModelRuntime({
+        accountToken: accountRuntimeToken(masterKey),
+        getOrigin: () => orbitServer?.url,
+        homeDirectory: app.getPath("home"),
+      })
+    : undefined;
+  desktopModelDiscovery = createDesktopModelDiscovery({
+    accountRuntime: desktopAccountRuntime,
+    homeDirectory: app.getPath("home"),
+  });
   ipcMain.handle("orbit:convert-legacy-office", convertLegacyOffice);
   ipcMain.handle("orbit:export-legacy-office", exportLegacyOffice);
   ipcMain.handle("orbit:discover-models", () => desktopModelDiscovery.scan());

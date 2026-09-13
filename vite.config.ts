@@ -5,7 +5,7 @@ import { sites } from "./build/sites-vite-plugin.ts";
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
-// Rune is local-first and does not use a D1/R2 binding yet. The Worker entry
+// Orbit is local-first and does not use a D1/R2 binding yet. The Worker entry
 // still runs under nodejs_compat; a database binding can be re-added here and
 // in `worker/index.ts` when one is actually introduced.
 const localBindingConfig = {
@@ -24,7 +24,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    // Rune's startup graph has its own strict 530 KB release gate. A separate
+    // Orbit's startup graph has its own strict 530 KB release gate. A separate
     // 1.3 MB ceiling covers intentionally deferred document/PDF capabilities
     // so Vite reports real regressions instead of warning on known lazy chunks.
     build: { chunkSizeWarningLimit: 1_300 },

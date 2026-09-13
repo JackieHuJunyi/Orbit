@@ -5,6 +5,7 @@ import {
   normalizeModelTokenBudget,
   type ModelCapabilityManifest,
   type ModelConnectionHealth,
+  type ModelProviderKind,
   type ModelTokenBudget,
 } from "./model-profiles.ts";
 
@@ -15,7 +16,7 @@ export type OrbitModelMode = "model-assisted" | "device-tools-only";
 
 export type ModelProviderStatus = {
   configured: boolean;
-  provider: "openai" | "openrouter" | "deepseek" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom" | null;
+  provider: ModelProviderKind | null;
   model: string | null;
   source?: "personal" | "deployment" | null;
   profileName?: string | null;

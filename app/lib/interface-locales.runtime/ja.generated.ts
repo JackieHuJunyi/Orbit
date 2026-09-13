@@ -45,8 +45,6 @@ export const INTERFACE_TRANSLATIONS = {
   "| Save a checkpoint | ⌘ S | Ctrl S |": "|チェックポイントを保存する | ⌘ S | Ctrl S |",
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |":
     "| 分割 / ソース / プレビュー表示を切り替える | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
-  "⌘ Enter to prepare · every write remains reviewable and undoable":
-    "⌘ Enter · すべての書き込みはレビュー可能で取り消し可能です",
   "1 source": "1 ソース",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. ツールバーで **インポート** を選択するか、現在のファイルを閉じてファイルを中央にドロップします。",
@@ -78,6 +76,7 @@ export const INTERFACE_TRANSLATIONS = {
   "A team report focused on the largest change and next owner":
     "最大の変化と次の担当者に焦点を当てたチーム向けレポート",
   "Accent color": "アクセントカラー",
+  "Account access": "アカウントアクセス",
   Active: "アクティブ",
   Add: "追加",
   "Add a conclusion slide": "結論スライドを追加する",
@@ -104,6 +103,8 @@ export const INTERFACE_TRANSLATIONS = {
     "確認済みのインポート後、Orbit はこの Data ソースを選択した状態で経営レビュー設定を開きます。",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧と最小限の構造化レスポンスを検証します。両方に成功した場合に限り暗号化し、既定の接続として保存します。",
+  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
+    "あなたが確認した後、正式なクライアントは文書のない構造化された 1 つの応答を完了します。 Orbit は接続名のみを保存し、OAuth トークンをコピーしません。",
   Agent: "Agent",
   "Agent change scope": "Agent のスコープ変更",
   "Agent composer focused": "Agent 作曲家に焦点を当てた",
@@ -216,6 +217,7 @@ export const INTERFACE_TRANSLATIONS = {
     "確認済みの文書、対象者、目的を選択してください。Orbit は新しいプレゼンテーションを作成することも、ファイル ID と元文書との関係を保ったまま既存の連携プレゼンテーションを更新することもできます。",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "確認済みの文書、対象者、目的を選択してください。Orbit は編集可能な Deck Markdown を作成し、元文書との明示的な関係を保持します。",
+  "Choose a signed-in account": "サインインしたアカウントを選択してください",
   "Choose an existing Chart id or create and validate that Chart first.":
     "既存の Chart ID を選ぶか、先にその Chart を作成して検証してください。",
   "Choose an existing metric key or an explicit Query output field.":
@@ -335,12 +337,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Deployment connection": "デプロイ接続",
   "Deployment model": "導入モデル",
   Descending: "降順",
-  "Describe a change confined to this selection…": "この選択範囲に限定された変更について説明してください...",
   "Describe a selected-source change": "選択したソースの変更を説明する",
   "Describe a workspace change": "ワークスペースの変更について説明する",
   "Describe an artifact change": "アーティファクトの変更について説明する",
-  "Describe an outcome across the connected workspace…": "接続されたワークスペース全体の結果について説明します...",
-  "Describe the change you want in this file…": "このファイルに必要な変更を記述してください…",
   Description: "説明",
   "Detailed evaluation": "詳細評価",
   "detected scan pages": "検出したスキャンページ",
@@ -367,6 +366,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "この結果は実際の業務で使えるものになりましたか？",
   Discard: "廃棄する",
   "Discard proposed patch": "提案されたパッチを破棄する",
+  "Discovery calls only official-client sign-in status commands and local model ports. It never reads browser cookies, OAuth tokens, or Keychain contents.":
+    "Discovery は、公式クライアントのサインイン ステータス コマンドとローカル モデル ポートのみを呼び出します。ブラウザーの Cookie、OAuth トークン、またはキーチェーンのコンテンツを読み取ることはありません。",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "検索対象は既知の設定場所とローカルモデルのポートだけです。シェル設定の実行、ファイルのアップロード、キーの表示は行いません。",
   "Dock Agent": "Agent を固定",
@@ -536,6 +537,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Insert block after": "後にブロックを挿入",
   "Insert block before": "前にブロックを挿入",
   "Insights support a useful next decision.": "洞察が次の有用な意思決定を支えます。",
+  "Installed; sign-in checked when connected": "インストール済み。接続時にサインインがチェックされる",
   Intelligence: "インテリジェンス",
   "Is one of": "のいずれかです",
   Italic: "イタリック体",
@@ -600,6 +602,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Match all conditions": "すべての条件に一致する",
   "Mist Blue": "ミストブルー",
   Model: "モデル",
+  "Model accounts on this Mac": "この Mac 上のモデル アカウント",
   "Model connected": "接続されているモデル",
   "Model for this message": "このメッセージで使うモデル",
   "Model settings": "モデル設定",
@@ -653,6 +656,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No cross-file bindings change in this transaction.":
     "このトランザクションではファイル間のバインディングは変更されません。",
   "No hidden graph state": "非表示のグラフ状態なし",
+  "No local account or device model is ready": "準備ができているローカル アカウントまたはデバイス モデルがありません",
   "No model selected yet": "モデルはまだ選択されていません",
   "No personal model profiles yet. Add one to switch providers here.":
     "個人的なモデルのプロフィールはまだありません。ここにプロバイダーを切り替えるために追加します。",
@@ -666,6 +670,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Not checked yet": "未確認",
   "Not included; enter it in the password field after using this config":
     "含まれていません。この設定を使用した後、パスワードフィールドにそれを入力してください",
+  "Not installed on this Mac": "この Mac にはインストールされていません",
   "Not ready to deliver": "まだ納品できない",
   "Nothing applied — atomic persistence failed": "何も適用されませんでした - アトミック永続化が失敗しました",
   "Nothing applied — selection boundary verification failed": "何も適用されませんでした - 選択境界の検証に失敗しました",
@@ -720,6 +725,7 @@ export const INTERFACE_TRANSLATIONS = {
     "表示するのはプロバイダー、参照元、エンドポイント、モデルだけです。認証情報は接続を選んだ後に読み取ります。",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "異なる値は先頭100件だけ表示します。必要に応じて、値の種類が少ない期間フィールドを選択してください。",
+  "Only through the local official client": "現地の公式クライアント経由のみ",
   "Open a file": "ファイルを開く",
   "Open files": "ファイルを開く",
   "Open folder": "フォルダーを開く",
@@ -747,6 +753,8 @@ export const INTERFACE_TRANSLATIONS = {
     "任意です。選択すると、ローカルの根拠、SQL、グラフ、モデルコンテキストには完全一致する行だけを使用します。",
   "Or open something else": "または別の内容を開く",
   Orbit: "Orbit",
+  "Orbit checks only whether each official client is installed and signed in. It never copies account credentials.":
+    "Orbit は、各公式クライアントがインストールされ、サインインしているかどうかのみをチェックします。アカウントの認証情報は決してコピーされません。",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit はモデルへリクエストする前に、現在のデータ範囲からこの結果をローカルで集計しました。",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -788,6 +796,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit がこのデバイスに保存するのは、評価、形式、経過時間、ソース改訂の指紋だけです。文書本文やプロンプトは保存しません。",
   "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `ORBIT_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Orbit は、個人用の OpenAI Responses、OpenRouter/互換 Chat Completions、Anthropic Messages、Gemini generateContent、カスタムプロトコルの各プロファイルに対応しています。保存後、サーバーはキーをブラウザスクリプトから読み取れない HttpOnly 認証情報として暗号化し、ワークスペースや localStorage には一切保存しません。ローカルまたはデプロイ済みの Web サーバーには別の `ORBIT_CREDENTIAL_ENCRYPTION_KEY` が必要で、Orbit Desktop はそのマスターキーを macOS キーチェーンで保護します。プロバイダー間のフェイルオーバーは初期設定ではオフで、モデル設定で明示的に許可した場合にのみ実行されます。モデルがなくても決定論的なローカルプランナーを利用できます。",
+  "Orbit uses models through official clients on this Mac. Codex, Claude Code, or Gemini CLI keeps ownership of sign-in and token refresh.":
+    "Orbit は、この Mac 上の公式クライアントを通じてモデルを使用します。 Codex、Claude Code、または Gemini CLI は、サインインとトークンの更新の所有権を保持します。",
   "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
     "Orbit はフォルダが空のままであることを確認し、現在の読み取り可能なソース、参照画像、マニフェストを書き込みます。",
   "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
@@ -830,7 +840,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Plan an AI change": "AI の変更を計画する",
   "portable data": "ポータブルデータ",
   "Prepare a verifiable operating-review chain": "検証可能な運用レビューチェーンを準備する",
-  "Prepare change": "小銭の準備",
   "Prepare review": "レビューの準備",
   "Prepare update review": "アップデートレビューの準備",
   "Prepares a change before you approve the write": "書き込みを承認する前に変更を準備します",
@@ -1010,6 +1019,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Show source only": "ソースだけを表示",
   "Show workspace files": "ワークスペースファイルを表示する",
   Showing: "表示",
+  "Sign in through Codex, Claude Code, or Gemini CLI, then scan again.":
+    "Codex、Claude Code、または Gemini CLI を通じてサインインし、再度スキャンします。",
+  "Sign in through the official client first": "まずは公式クライアント経由でサインインしてください",
+  "Sign-in managed by the official client": "サインインは公式クライアントによって管理されます",
+  "Signed in and ready": "サインインして準備完了",
   Silver: "シルバー",
   Skip: "スキップ",
   "Sky Blue": "スカイブルー",
@@ -1198,6 +1212,7 @@ export const INTERFACE_TRANSLATIONS = {
     "選択したクラウドまたはローカルモデルを使用し、変更は引き続き自分で確認する",
   "Use this configuration": "この構成を使用します",
   "Use this model connection?": "このモデル接続を使いますか？",
+  "Use this signed-in account?": "このサインインしたアカウントを使用しますか?",
   Valid: "有効",
   Validated: "検証済み",
   "Value field": "値フィールド",

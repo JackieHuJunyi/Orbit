@@ -63,8 +63,8 @@ export const WELCOME_BASE_COPY = {
     recommended: "系统推荐",
     continue: "继续",
     modelEyebrow: "智能设置",
-    modelTitle: "让 Orbit 找到你已有的模型",
-    modelBody: "桌面版会在明确范围内查找已有配置与本地模型；发现阶段不显示、复制或验证任何密钥。",
+    modelTitle: "选择一个已登录账号",
+    modelBody: "Orbit 通过本机的官方客户端使用模型。登录凭据始终由 Codex、Claude Code 或 Gemini CLI 管理。",
     checkingModel: "正在检查 Orbit 中已有的连接…",
     connectedModel: "已经准备好",
     connectedModelBody: "当前默认连接可用于先审后写的模型辅助。",
@@ -76,10 +76,10 @@ export const WELCOME_BASE_COPY = {
     useLocalBody: "只使用设备端解析、转换和确定性工具，不向模型服务发送内容",
     recheck: "重新扫描",
     discoveryScanning: "正在查找这台设备上的模型…",
-    discoveryTitle: "此设备上的可用连接",
-    discoveryBody: "仅显示供应商、来源、endpoint 和模型；选择后才读取凭据并验证连接。",
-    discoveryEmpty: "未找到可直接复用的模型连接",
-    discoveryEmptyBody: "你仍可以手动添加供应商或导入一份配置。",
+    discoveryTitle: "这台 Mac 上的模型账号",
+    discoveryBody: "Orbit 只检查官方客户端是否安装、是否已登录，不读取或复制账号凭据。",
+    discoveryEmpty: "没有可用的本机账号或本地模型",
+    discoveryEmptyBody: "请先在 Codex、Claude Code 或 Gemini CLI 中完成登录，然后重新扫描。",
     discoveryUnavailable: "网页版不能读取电脑上的应用配置；仍可手动连接模型。",
     discoveryError: "Orbit 无法完成设备扫描；没有读取或保存任何配置。",
     deviceModel: "在此设备上运行",
@@ -90,15 +90,22 @@ export const WELCOME_BASE_COPY = {
     deploymentConnection: "部署连接",
     credentialDetected: "发现凭据；尚未读取",
     credentialNotRequired: "无需 API Key",
+    credentialAccount: "登录由官方客户端管理",
+    accountReady: "已登录，可以使用",
+    accountVerify: "已安装，连接时验证登录",
+    accountSignIn: "请先在官方客户端登录",
+    accountMissing: "这台 Mac 尚未安装",
+    accountAccess: "账号访问",
+    accountAccessValue: "仅通过本机官方客户端",
     reviewConnection: "查看",
-    reviewTitle: "使用这个模型连接？",
+    reviewTitle: "使用这个本机账号？",
     connectionReviewBody:
-      "确认后，Orbit 只读取这一项凭据，验证模型目录和一次最小结构化响应；两项都成功后才加密保存并设为默认。",
+      "确认后，Orbit 会让官方客户端完成一次不含文档内容的结构化响应；成功后只保存连接名称，不复制 OAuth token。",
     connectAndVerify: "验证并使用",
     connecting: "正在验证…",
     chooseAnother: "返回连接列表",
     connectionFailed: "这个连接暂时无法验证；Orbit 没有保存它。",
-    scanPrivacy: "扫描只读取已知配置位置与本机模型端口；不会执行 shell 配置、上传文件或展示密钥。",
+    scanPrivacy: "扫描只调用官方客户端的登录状态命令和本机模型端口；不会读取浏览器 Cookie、OAuth token 或钥匙串内容。",
     modelSafety:
       "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Orbit 也不会把它写进工作区、localStorage、Artifact 或 Git。",
     modelUnavailable: "无法读取模型状态；你可以选择不使用模型继续。",
@@ -145,9 +152,9 @@ export const WELCOME_BASE_COPY = {
     recommended: "System recommendation",
     continue: "Continue",
     modelEyebrow: "Intelligence",
-    modelTitle: "Let Orbit find the models you already use",
+    modelTitle: "Choose a signed-in account",
     modelBody:
-      "The desktop app checks a defined set of existing configurations and device model runtimes. Discovery never displays, copies, or verifies a key.",
+      "Orbit uses models through official clients on this Mac. Codex, Claude Code, or Gemini CLI keeps ownership of sign-in and token refresh.",
     checkingModel: "Checking connections already saved in Orbit…",
     connectedModel: "Ready",
     connectedModelBody: "The current default can provide review-before-write model assistance.",
@@ -159,11 +166,11 @@ export const WELCOME_BASE_COPY = {
     useLocalBody: "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service",
     recheck: "Scan again",
     discoveryScanning: "Looking for models on this device…",
-    discoveryTitle: "Connections available on this device",
+    discoveryTitle: "Model accounts on this Mac",
     discoveryBody:
-      "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.",
-    discoveryEmpty: "No reusable model connection was found",
-    discoveryEmptyBody: "You can still add a provider yourself or import a configuration.",
+      "Orbit checks only whether each official client is installed and signed in. It never copies account credentials.",
+    discoveryEmpty: "No local account or device model is ready",
+    discoveryEmptyBody: "Sign in through Codex, Claude Code, or Gemini CLI, then scan again.",
     discoveryUnavailable:
       "The web app cannot read application settings on your computer. You can still connect a model manually.",
     discoveryError: "Orbit could not complete the device scan. No configuration was read or saved.",
@@ -175,16 +182,23 @@ export const WELCOME_BASE_COPY = {
     deploymentConnection: "Deployment connection",
     credentialDetected: "Credential found; not read yet",
     credentialNotRequired: "No API key required",
+    credentialAccount: "Sign-in managed by the official client",
+    accountReady: "Signed in and ready",
+    accountVerify: "Installed; sign-in checked when connected",
+    accountSignIn: "Sign in through the official client first",
+    accountMissing: "Not installed on this Mac",
+    accountAccess: "Account access",
+    accountAccessValue: "Only through the local official client",
     reviewConnection: "Review",
-    reviewTitle: "Use this model connection?",
+    reviewTitle: "Use this signed-in account?",
     connectionReviewBody:
-      "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.",
+      "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.",
     connectAndVerify: "Verify & use",
     connecting: "Verifying…",
     chooseAnother: "Back to connections",
     connectionFailed: "Orbit could not verify this connection and did not save it.",
     scanPrivacy:
-      "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.",
+      "Discovery calls only official-client sign-in status commands and local model ports. It never reads browser cookies, OAuth tokens, or Keychain contents.",
     modelSafety:
       "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Orbit never writes it to the workspace, localStorage, an Artifact, or Git.",
     modelUnavailable: "Orbit could not read model status. You can continue without a model.",
@@ -287,6 +301,10 @@ export function WelcomeExperience({
   const greetingPresentation = useMemo(
     () => planGreetingPresentation({ locale: greetingLocale, value: greeting }),
     [greeting, greetingLocale],
+  );
+  const welcomeSignaturePresentation = useMemo(
+    () => planGreetingPresentation({ durationScale: 0.6, locale, value: text.welcomeEyebrow }),
+    [locale, text.welcomeEyebrow],
   );
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
   const stepIndex = steps.indexOf(step);
@@ -432,8 +450,15 @@ export function WelcomeExperience({
                 </div>
                 <section className="welcome-language-card" aria-labelledby="welcome-title">
                   <div className="welcome-language-heading">
-                    <span className="welcome-eyebrow">
-                      <IsolatedProductName>{text.welcomeEyebrow}</IsolatedProductName>
+                    <span className="welcome-eyebrow welcome-written-eyebrow" aria-label={text.welcomeEyebrow}>
+                      <span className="visually-hidden">{text.welcomeEyebrow}</span>
+                      <span aria-hidden="true">
+                        <HandwrittenGreeting
+                          key={`signature-${locale}`}
+                          presentation={welcomeSignaturePresentation}
+                          variant="inline"
+                        />
+                      </span>
                     </span>
                     <h1 id="welcome-title">
                       <IsolatedProductName>{text.languageTitle}</IsolatedProductName>
@@ -485,7 +510,6 @@ export function WelcomeExperience({
             >
               <WelcomeModelStep
                 copy={text}
-                locale={locale}
                 modelMode={modelMode}
                 onModelModeChange={onModelModeChange}
                 onBack={showPreviousStep}

@@ -88,7 +88,7 @@ test("loads model setup after the handwritten opening without restarting it", as
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
+  const modelStep = page.getByRole("dialog", { name: "Choose a signed-in account" });
   await expect(modelStep).toBeVisible();
   await expect(modelStep.getByText(/The web app cannot read application settings/u)).toBeVisible();
   await expect(modelStep.getByRole("button", { name: /Continue without a model/u })).toBeVisible();
@@ -167,7 +167,7 @@ test("makes model-assisted and model-free continuation visibly distinct", async 
   await page.goto("/");
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
+  const modelStep = page.getByRole("dialog", { name: "Choose a signed-in account" });
   const assisted = modelStep.getByRole("button", { name: /Continue with model assistance/u });
   const withoutModel = modelStep.getByRole("button", { name: /Continue without a model/u });
   await expect(assisted).toContainText("confirm every change");
@@ -177,38 +177,67 @@ test("makes model-assisted and model-free continuation visibly distinct", async 
   await expect(withoutModel).toBeVisible();
 });
 
-test("reveals a discovered credential only after review and saves only after verification", async ({ page }) => {
+test("connects a signed-in account without reading or displaying its OAuth token", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, "orbitDesktop", {
       configurable: false,
       value: {
         discoverModels: async () => ({
           supported: true,
+          accounts: [
+            {
+              id: "codex",
+              provider: "codex-account",
+              label: "ChatGPT",
+              sourceLabel: "Codex · ChatGPT account",
+              model: "chatgpt-codex-account",
+              installed: true,
+              status: "ready",
+            },
+            {
+              id: "claude",
+              provider: "claude-account",
+              label: "Claude",
+              sourceLabel: "Claude Code · Claude account",
+              model: "claude-account",
+              installed: true,
+              status: "sign-in-required",
+            },
+            {
+              id: "gemini",
+              provider: "gemini-account",
+              label: "Gemini",
+              sourceLabel: "Gemini CLI · Google account",
+              model: "gemini-account",
+              installed: false,
+              status: "not-installed",
+            },
+          ],
           candidates: [
             {
               id: "candidate-1",
-              sourceKind: "app-config",
-              sourceLabel: "Claude Code",
-              locality: "cloud",
-              provider: "deepseek",
-              protocol: "anthropic-messages",
-              name: "DeepSeek",
-              baseURL: "https://api.deepseek.com/anthropic",
-              model: "deepseek-v4-flash",
+              sourceKind: "account-runtime",
+              sourceLabel: "Codex · ChatGPT account",
+              locality: "device",
+              provider: "codex-account",
+              protocol: "responses",
+              name: "Codex · ChatGPT account",
+              baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+              model: "chatgpt-codex-account",
               models: [],
-              credentialState: "detected",
+              credentialState: "account-session",
             },
           ],
         }),
         importDiscoveredModel: async () => {
-          window.sessionStorage.setItem("orbit-test-credential-read", "yes");
+          window.sessionStorage.setItem("orbit-test-account-bridge-imported", "yes");
           return {
-            provider: "deepseek",
-            protocol: "anthropic-messages",
-            name: "DeepSeek",
-            baseURL: "https://api.deepseek.com/anthropic",
-            model: "deepseek-v4-flash",
-            apiKey: "discovery-test-secret",
+            provider: "codex-account",
+            protocol: "responses",
+            name: "Codex · ChatGPT account",
+            baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+            model: "chatgpt-codex-account",
+            apiKey: "private-loopback-token",
           };
         },
       },
@@ -247,7 +276,7 @@ test("reveals a discovered credential only after review and saves only after ver
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ models: ["deepseek-v4-flash"] }),
+        body: JSON.stringify({ models: ["chatgpt-codex-account"] }),
       });
       return;
     }
@@ -262,9 +291,9 @@ test("reveals a discovered credential only after review and saves only after ver
       activeSource: "personal",
       activeProfile: {
         id: "saved",
-        provider: "deepseek",
-        name: "DeepSeek",
-        model: "deepseek-v4-flash",
+        provider: "codex-account",
+        name: "Codex · ChatGPT account",
+        model: "chatgpt-codex-account",
         credentialConfigured: true,
       },
     };
@@ -277,24 +306,28 @@ test("reveals a discovered credential only after review and saves only after ver
 
   await page.goto("/");
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  const modelStep = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
-  await expect(modelStep.getByText("DeepSeek", { exact: true })).toBeVisible();
-  await expect(modelStep.getByText("Claude Code", { exact: false })).toBeVisible();
-  await expect(modelStep).not.toContainText("discovery-test-secret");
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-credential-read"))).toBeNull();
+  const modelStep = page.getByRole("dialog", { name: "Choose a signed-in account" });
+  await expect(modelStep.getByText("ChatGPT", { exact: true })).toBeVisible();
+  await expect(modelStep.getByText("Signed in and ready", { exact: true })).toBeVisible();
+  await expect(modelStep.getByText("Sign in through the official client first", { exact: true })).toBeVisible();
+  await expect(modelStep.getByText("Not installed on this Mac", { exact: true })).toBeVisible();
+  await expect(modelStep).not.toContainText("private-loopback-token");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-account-bridge-imported"))).toBeNull();
 
   await modelStep.getByRole("button", { name: "Review", exact: true }).click();
-  await expect(modelStep.getByRole("heading", { name: "Use this model connection?" })).toBeFocused();
+  await expect(modelStep.getByRole("heading", { name: "Use this signed-in account?" })).toBeFocused();
   await expect(modelStep.getByText("Model", { exact: true })).toBeVisible();
-  await expect(modelStep.getByText("Endpoint", { exact: true })).toBeVisible();
-  await expect(modelStep).not.toContainText("discovery-test-secret");
+  await expect(modelStep.getByText("Account access", { exact: true })).toBeVisible();
+  await expect(modelStep).not.toContainText("private-loopback-token");
 
   await modelStep.getByRole("button", { name: "Verify & use" }).click();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-credential-read"))).toBe("yes");
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-account-bridge-imported")))
+    .toBe("yes");
   await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "probe", "upsert"]);
-  expect(writes.every((item) => item.apiKey === "discovery-test-secret")).toBe(true);
+  expect(writes.every((item) => item.apiKey === "private-loopback-token")).toBe(true);
   await expect(modelStep.getByRole("button", { name: /Continue with model assistance/u })).toBeVisible();
-  await expect(modelStep).not.toContainText("discovery-test-secret");
+  await expect(modelStep).not.toContainText("private-loopback-token");
 });
 
 test("keeps free-text Agent drafts and switches the active model inside the composer", async ({ page }) => {
@@ -453,7 +486,50 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   );
 });
 
-test("reviews a CC Switch model import without navigating or persisting its credential", async ({ page }) => {
+test("keeps desktop model settings account-first with no API-key setup surface", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "orbitDesktop", {
+      configurable: false,
+      value: {
+        discoverModels: async () => ({
+          supported: true,
+          accounts: [
+            {
+              id: "codex",
+              provider: "codex-account",
+              label: "ChatGPT",
+              sourceLabel: "Codex · ChatGPT account",
+              model: "chatgpt-codex-account",
+              installed: true,
+              status: "ready",
+            },
+            {
+              id: "claude",
+              provider: "claude-account",
+              label: "Claude",
+              sourceLabel: "Claude Code · Claude account",
+              model: "claude-account",
+              installed: true,
+              status: "ready",
+            },
+            {
+              id: "gemini",
+              provider: "gemini-account",
+              label: "Gemini",
+              sourceLabel: "Gemini CLI · Google account",
+              model: "gemini-account",
+              installed: false,
+              status: "not-installed",
+            },
+          ],
+          candidates: [],
+        }),
+        importDiscoveredModel: async () => {
+          throw new Error("not used");
+        },
+      },
+    });
+  });
   const profileWrites: string[] = [];
   await page.route("**/api/model-profiles", async (route) => {
     if (route.request().method() !== "GET") {
@@ -487,43 +563,17 @@ test("reviews a CC Switch model import without navigating or persisting its cred
   await page.getByRole("button", { name: "More tools" }).click();
   await page.getByRole("menuitem", { name: /Model settings/u }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Let Orbit find the models you already use" });
-  await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Import config", exact: true }).click();
-  await expect(dialog.locator(".model-status-card")).toBeHidden();
-  await expect(dialog.locator(".model-mode-options")).toBeHidden();
-
-  const credential = "secret-import-only-key";
-  const link = `ccswitch://v1/import?resource=provider&app=codex&name=Personal%20OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=${credential}&model=gpt-5.6`;
-  await dialog.getByRole("textbox", { name: "Paste config or CC Switch link" }).fill(link);
-  await dialog.getByRole("button", { name: "Review config", exact: true }).click();
-
-  await expect(dialog.getByText("Confirm imported configuration", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("CC Switch import link", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("Detected; never shown in preview", { exact: true })).toBeVisible();
-  await expect(dialog.getByText(credential, { exact: true })).toHaveCount(0);
-  await expect.poll(() => dialog.locator(".welcome-page").evaluate((node) => node.scrollTop)).toBe(0);
-  await expect.poll(() => dialog.locator(".model-profile-manager").evaluate((node) => node.scrollTop)).toBe(0);
-  expect(await dialog.locator(".model-profile-manager").evaluate((node) => node.scrollWidth - node.clientWidth)).toBe(
-    0,
-  );
-  expect(page.url()).not.toContain("ccswitch");
+  const dialog = page.getByRole("dialog", { name: "Choose a signed-in account" });
+  await expect(dialog.getByText("ChatGPT", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Claude", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Gemini", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Signed in and ready", { exact: true })).toHaveCount(2);
+  await expect(dialog.getByText("Not installed on this Mac", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Add provider", exact: true })).toHaveCount(0);
+  await expect(dialog.getByText("API Key", { exact: true })).toHaveCount(0);
+  await expect(dialog.locator(".model-profile-manager")).toHaveCount(0);
   expect(profileWrites).toEqual([]);
-
-  await dialog.getByRole("button", { name: "Use this configuration", exact: true }).click();
-  const editor = dialog.locator("form.model-profile-editor");
-  await expect(editor.getByRole("radio", { name: "OpenAI", exact: true })).toHaveAttribute("aria-checked", "true");
-  await expect(editor.getByRole("textbox", { name: "Default model ID" })).toHaveValue("gpt-5.6");
-  const keyInput = editor.getByRole("textbox", { name: /^API Key/u });
-  await expect(keyInput).toHaveAttribute("type", "password");
-  await expect(keyInput).toHaveValue(credential);
-  expect(profileWrites).toEqual([]);
-  expect(
-    await page.evaluate((secret) => Object.values(localStorage).some((value) => value.includes(secret)), credential),
-  ).toBe(false);
-
-  await editor.locator("footer").getByRole("button", { name: "Cancel", exact: true }).click();
-  await expect(keyInput).toHaveCount(0);
 });
 
 test("moves backward and forward through every onboarding step without losing the flow", async ({ page }) => {
@@ -532,7 +582,7 @@ test("moves backward and forward through every onboarding step without losing th
   const welcomeWindow = page.locator(".welcome-window");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  await expect(page.getByRole("dialog", { name: "Let Orbit find the models you already use" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Choose a signed-in account" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Choose your Orbit language" })).toBeVisible();
@@ -541,7 +591,7 @@ test("moves backward and forward through every onboarding step without losing th
   await expect(page.getByRole("dialog", { name: "Try four shortcuts yourself" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Let Orbit find the models you already use" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Choose a signed-in account" })).toBeVisible();
   await welcomeWindow.getByRole("button", { name: /Continue without a model/u }).click();
   await welcomeWindow.getByRole("button", { name: "Learn later", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Your workspace, under your control." })).toBeVisible();
@@ -601,6 +651,11 @@ test("writes the opening greeting as one restrained spectrum performance", async
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeVisible();
   await expect(page.locator('.welcome-intro-grid[data-intro-phase="ready"]')).toBeVisible();
+  const welcomeSignature = page.locator('.welcome-written-eyebrow[aria-label="Welcome to Orbit"] .welcome-signature');
+  await expect(welcomeSignature).toBeVisible();
+  await expect(welcomeSignature).toHaveAttribute("data-ink-effect", "spectrum-write");
+  await expect(welcomeSignature).toHaveAttribute("data-writing-style", "font-derived-centerline");
+  await expect(welcomeSignature.locator("canvas")).toBeVisible();
 });
 
 test("reveals the Arabic writing path right to left without splitting its shaping run", async ({ page }) => {

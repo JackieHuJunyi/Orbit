@@ -45,8 +45,6 @@ export const INTERFACE_TRANSLATIONS = {
   "| Save a checkpoint | ⌘ S | Ctrl S |": "| Сохранить контрольную точку | ⌘ S | Ctrl S |",
   "| Switch Split / Source / Preview view | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |":
     "| Вид: оба окна / исходник / предпросмотр | ⌘⌥ 1 / 2 / 3 | Ctrl Alt 1 / 2 / 3 |",
-  "⌘ Enter to prepare · every write remains reviewable and undoable":
-    "⌘ Enter, чтобы подготовиться · каждое написание можно просмотреть и отменить.",
   "1 source": "1 источник",
   "1. Choose **Import** in the toolbar, or close the current file and drop one into the center.":
     "1. Выберите **Импорт** на панели инструментов или закройте текущий файл и перетащите его в центр.",
@@ -78,6 +76,7 @@ export const INTERFACE_TRANSLATIONS = {
   "A team report focused on the largest change and next owner":
     "Отчёт для команды о самом значимом изменении и следующем ответственном",
   "Accent color": "Акцентный цвет",
+  "Account access": "Доступ к аккаунту",
   Active: "Активный",
   Add: "Добавить",
   "Add a conclusion slide": "Добавьте итоговый слайд",
@@ -104,6 +103,8 @@ export const INTERFACE_TRANSLATIONS = {
     "После подтверждения импорта Orbit откроет настройку управленческого отчёта с уже выбранным источником Data.",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и один минимальный структурированный ответ и лишь при успехе обеих проверок зашифрует и сохранит подключение по умолчанию.",
+  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
+    "После вашего подтверждения официальный клиент отправляет один структурированный ответ без документов. Orbit сохраняет только имя соединения и никогда не копирует свой токен OAuth.",
   Agent: "Agent",
   "Agent change scope": "Область изменения Agent",
   "Agent composer focused": "Agent композитор сосредоточен",
@@ -216,6 +217,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Выберите проверенный документ, аудиторию и цель. Orbit может создать новую презентацию или обновить связанную, сохранив идентичность файла и связь с источником.",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "Выберите проверенный документ, аудиторию и цель. Orbit создаст редактируемый Deck Markdown и сохранит явную связь с исходным документом.",
+  "Choose a signed-in account": "Выберите учетную запись для входа",
   "Choose an existing Chart id or create and validate that Chart first.":
     "Выберите идентификатор существующего Chart либо сначала создайте и проверьте этот Chart.",
   "Choose an existing metric key or an explicit Query output field.":
@@ -336,12 +338,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Deployment connection": "Подключение развёртывания",
   "Deployment model": "Модель развертывания",
   Descending: "По убыванию",
-  "Describe a change confined to this selection…": "Опишите изменение, ограниченное этим выбором…",
   "Describe a selected-source change": "Опишите изменение выбранного источника",
   "Describe a workspace change": "Опишите изменение рабочего пространства",
   "Describe an artifact change": "Опишите изменение артефакта",
-  "Describe an outcome across the connected workspace…": "Опишите результат в подключенном рабочем пространстве…",
-  "Describe the change you want in this file…": "Опишите изменение, которое вы хотите внести в этот файл…",
   Description: "Описание",
   "Detailed evaluation": "Подробная оценка",
   "detected scan pages": "обнаружены сканированные страницы",
@@ -367,6 +366,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "Стал ли этот результат пригоден для реальной работы?",
   Discard: "Отбросить",
   "Discard proposed patch": "Отменить предложенный патч",
+  "Discovery calls only official-client sign-in status commands and local model ports. It never reads browser cookies, OAuth tokens, or Keychain contents.":
+    "Discovery вызывает только команды статуса входа официального клиента и порты локальной модели. Он никогда не считывает файлы cookie браузера, токены OAuth или содержимое связки ключей.",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "Поиск обращается только к известным файлам конфигурации и портам локальных моделей. Он не выполняет профили shell, не загружает файлы и не показывает ключи.",
   "Dock Agent": "Закрепить Agent",
@@ -535,6 +536,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Insert block after": "Вставить блок после",
   "Insert block before": "Вставить блок перед",
   "Insights support a useful next decision.": "Выводы помогают принять следующее полезное решение.",
+  "Installed; sign-in checked when connected": "Установлен; вход проверен при подключении",
   Intelligence: "Интеллект",
   "Is one of": "Является одним из",
   Italic: "Курсив",
@@ -599,6 +601,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Match all conditions": "Соответствовать всем условиям",
   "Mist Blue": "Туманно-синий",
   Model: "Модель",
+  "Model accounts on this Mac": "Аккаунты моделей на этом Mac",
   "Model connected": "Модель подключена",
   "Model for this message": "Модель для этого сообщения",
   "Model settings": "Настройки модели",
@@ -650,6 +653,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No compatible source": "Нет совместимого источника",
   "No cross-file bindings change in this transaction.": "В этой транзакции не изменяются межфайловые привязки.",
   "No hidden graph state": "Нет скрытого состояния графика",
+  "No local account or device model is ready": "Ни одна локальная учетная запись или модель устройства не готовы.",
   "No model selected yet": "Модель ещё не выбрана",
   "No personal model profiles yet. Add one to switch providers here.":
     "Личных профилей моделей пока нет. Добавьте сюда одного, чтобы переключить провайдера.",
@@ -663,6 +667,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Not checked yet": "Ещё не проверено",
   "Not included; enter it in the password field after using this config":
     "Не включено; введите его в поле пароля после использования этой конфигурации",
+  "Not installed on this Mac": "Не установлено на этом Mac",
   "Not ready to deliver": "Пока не готово",
   "Nothing applied — atomic persistence failed": "Ничего не применялось — атомарное сохранение не удалось",
   "Nothing applied — selection boundary verification failed":
@@ -719,6 +724,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Показаны только поставщик, источник, адрес и модель. Orbit прочитает учётные данные лишь после вашего выбора.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
     "Показаны только первые 100 уникальных значений; при необходимости выберите поле периода с меньшим числом значений.",
+  "Only through the local official client": "Только через местный официальный клиент",
   "Open a file": "Открыть файл",
   "Open files": "Открыть файлы",
   "Open folder": "Открыть папку",
@@ -746,6 +752,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Необязательно. После выбора локальные доказательства, SQL, диаграммы и контекст модели используют только строки с точным совпадением.",
   "Or open something else": "Или откройте другой материал",
   Orbit: "Orbit",
+  "Orbit checks only whether each official client is installed and signed in. It never copies account credentials.":
+    "Orbit проверяет только то, установлен ли каждый официальный клиент и выполнен ли вход в систему. Он никогда не копирует учетные данные учетной записи.",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit локально скомпилировал эти результаты для текущей области до любого запроса к модели.",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -788,6 +796,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit хранит на этом устройстве только оценку, формат, затраченное время и отпечаток версии исходника — без текста документа и запросов.",
   "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `ORBIT_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Orbit поддерживает личные профили OpenAI Responses, OpenRouter/совместимых Chat Completions, Anthropic Messages, Gemini generateContent и пользовательских протоколов. После сохранения сервер шифрует ключ в учётных данных HttpOnly, недоступных сценариям браузера; ключ никогда не попадает в рабочую область или localStorage. Локальным и развёрнутым веб-серверам нужен отдельный `ORBIT_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop защищает этот главный ключ с помощью Связки ключей macOS. Переключение между поставщиками по умолчанию выключено и работает только после явного разрешения в настройках моделей; детерминированные локальные планировщики доступны и без модели.",
+  "Orbit uses models through official clients on this Mac. Codex, Claude Code, or Gemini CLI keeps ownership of sign-in and token refresh.":
+    "Orbit использует модели через официальные клиенты на этом Mac. Codex, Claude Code или Gemini CLI сохраняет право собственности на вход в систему и обновление токена.",
   "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
     "Orbit убедится, что папка всё ещё пуста, а затем запишет текущие читаемые исходники, связанные изображения и манифест.",
   "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
@@ -830,7 +840,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Plan an AI change": "Запланируйте изменение ИИ",
   "portable data": "переносимые данные",
   "Prepare a verifiable operating-review chain": "Подготовьте поддающуюся проверке цепочку операционных проверок",
-  "Prepare change": "Подготовьте изменения",
   "Prepare review": "Подготовить обзор",
   "Prepare update review": "Подготовить обзор обновлений",
   "Prepares a change before you approve the write": "Подготавливает изменение перед тем, как вы одобрите запись.",
@@ -1014,6 +1023,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Show source only": "Показать только исходник",
   "Show workspace files": "Показать файлы рабочей области",
   Showing: "Показано",
+  "Sign in through Codex, Claude Code, or Gemini CLI, then scan again.":
+    "Войдите в систему через Codex, Claude Code или интерфейс командной строки Gemini, а затем повторите сканирование.",
+  "Sign in through the official client first": "Сначала авторизуйтесь через официальный клиент",
+  "Sign-in managed by the official client": "Вход в систему осуществляется официальным клиентом",
+  "Signed in and ready": "Вошли в систему и готовы",
   Silver: "Серебристый",
   Skip: "Пропустить",
   "Sky Blue": "Небесно-голубой",
@@ -1202,6 +1216,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Использовать выбранную облачную или локальную модель; каждое изменение по-прежнему подтверждаете вы",
   "Use this configuration": "Используйте эту конфигурацию",
   "Use this model connection?": "Использовать это подключение?",
+  "Use this signed-in account?": "Использовать этот аккаунт для входа?",
   Valid: "Действителен",
   Validated: "проверено",
   "Value field": "Поле значения",

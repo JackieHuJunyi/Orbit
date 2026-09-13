@@ -37,6 +37,24 @@ const PROVIDERS = Object.freeze({
     baseURL: "https://generativelanguage.googleapis.com/v1beta",
     model: "gemini-2.5-pro",
   },
+  "codex-account": {
+    label: "ChatGPT",
+    protocol: "responses",
+    baseURL: "http://127.0.0.1",
+    model: "chatgpt-codex-account",
+  },
+  "claude-account": {
+    label: "Claude",
+    protocol: "responses",
+    baseURL: "http://127.0.0.1",
+    model: "claude-account",
+  },
+  "gemini-account": {
+    label: "Gemini",
+    protocol: "responses",
+    baseURL: "http://127.0.0.1",
+    model: "gemini-account",
+  },
 });
 
 function cleanText(value, maximum = 300) {
@@ -84,6 +102,7 @@ function profileCandidate({
   protocol,
   locality = "cloud",
   models = [],
+  credentialState,
 }) {
   const preset = PROVIDERS[provider] ?? PROVIDERS.openai;
   const endpoint = cleanText(baseURL, 300) || preset.baseURL;
@@ -117,7 +136,7 @@ function profileCandidate({
       .map((item) => cleanModel(item, ""))
       .filter(Boolean)
       .slice(0, 80),
-    credentialState: local ? "not-required" : "detected",
+    credentialState: credentialState || (local ? "not-required" : "detected"),
     profile,
   };
 }
@@ -361,8 +380,10 @@ async function localRuntimeCandidates(capabilities) {
 }
 
 export function createDesktopModelDiscovery({
+  accountRuntime,
   homeDirectory,
   environment = process.env,
+  includeApiConnections = false,
   capabilities: overrides = {},
 } = {}) {
   const home = homeDirectory || process.env.USERPROFILE || process.env.HOME || "";
@@ -371,8 +392,12 @@ export function createDesktopModelDiscovery({
 
   async function scan() {
     privateCandidates.clear();
-    const discovered = [...candidatesFromEnvironment(environment, "environment", "Environment", "process")];
-    if (home) {
+    const accountDiscovery = accountRuntime ? await accountRuntime.discover() : { accounts: [], connections: [] };
+    const discovered = accountDiscovery.connections.map((connection) => profileCandidate(connection));
+    if (includeApiConnections) {
+      discovered.push(...candidatesFromEnvironment(environment, "environment", "Environment", "process"));
+    }
+    if (home && includeApiConnections) {
       discovered.push(...(await ccSwitchCandidates(path.join(home, ".cc-switch", "cc-switch.db"))));
 
       const claudeSettings = await boundedJson(path.join(home, ".claude", "settings.json"), capabilities);
@@ -422,7 +447,7 @@ export function createDesktopModelDiscovery({
       )
       .slice(0, MAX_DISCOVERED_CONNECTIONS);
     for (const candidate of unique) privateCandidates.set(candidate.id, candidate);
-    return { supported: true, candidates: unique.map(publicCandidate) };
+    return { supported: true, accounts: accountDiscovery.accounts, candidates: unique.map(publicCandidate) };
   }
 
   async function importCandidate(id) {

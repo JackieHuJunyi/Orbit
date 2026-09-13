@@ -8,6 +8,7 @@ import {
   DEFAULT_MODEL_TOKEN_BUDGET,
   MAX_MODEL_PROFILES,
   UNKNOWN_MODEL_CONNECTION_HEALTH,
+  currentModelProfileBaseURL,
   modelCapabilityManifest,
   modelProviderAvailableInEnvironment,
   normalizeCustomModelBaseURL,
@@ -190,6 +191,39 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
   assert.equal(modelProviderAvailableInEnvironment("ollama", {}), false);
   assert.equal(modelProviderAvailableInEnvironment("ollama", { ORBIT_DESKTOP_RUNTIME: "1" }), true);
   assert.equal(modelProviderAvailableInEnvironment("openai", {}), true);
+  const account = normalizeModelProfileDraft({
+    provider: "codex-account",
+    model: "chatgpt-codex-account",
+    baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+    apiKey: "private-loopback-token",
+  });
+  assert.equal(account.protocol, "responses");
+  assert.equal(account.baseURL, "http://127.0.0.1:54321/__orbit_account__/codex/v1");
+  assert.equal(modelProviderAvailableInEnvironment("codex-account", {}), false);
+  assert.equal(modelProviderAvailableInEnvironment("codex-account", { ORBIT_DESKTOP_RUNTIME: "1" }), false);
+  assert.equal(
+    modelProviderAvailableInEnvironment("codex-account", {
+      ORBIT_DESKTOP_RUNTIME: "1",
+      ORBIT_DESKTOP_ORIGIN: "http://127.0.0.1:61234",
+    }),
+    true,
+  );
+  assert.equal(
+    currentModelProfileBaseURL("codex-account", account.baseURL, {
+      ORBIT_DESKTOP_ORIGIN: "http://127.0.0.1:61234",
+    }),
+    "http://127.0.0.1:61234/__orbit_account__/codex/v1",
+  );
+  assert.throws(
+    () =>
+      normalizeModelProfileDraft({
+        provider: "codex-account",
+        model: "chatgpt-codex-account",
+        baseURL: "http://localhost:54321/__orbit_account__/codex/v1",
+        apiKey: "private-loopback-token",
+      }),
+    /private loopback endpoint/i,
+  );
   assert.throws(
     () =>
       normalizeModelProfileDraft(

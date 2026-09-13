@@ -128,6 +128,7 @@ test("normalizes desktop model discovery without exposing credentials in scan re
       async discoverModels() {
         return {
           supported: true,
+          accounts: [],
           candidates: [
             {
               id: "candidate-1",
@@ -162,6 +163,60 @@ test("normalizes desktop model discovery without exposing credentials in scan re
   assert.equal(discovery.candidates.length, 1);
   assert.doesNotMatch(JSON.stringify(discovery), /secret/u);
   assert.equal((await importDesktopModelConnection("candidate-1")).apiKey, "secret-only-after-confirm");
+  delete globalThis.window;
+});
+
+test("accepts redacted signed-in account runtimes without exposing their bridge token", async () => {
+  globalThis.window = {
+    orbitDesktop: {
+      async discoverModels() {
+        return {
+          supported: true,
+          accounts: [
+            {
+              id: "codex",
+              provider: "codex-account",
+              label: "ChatGPT",
+              sourceLabel: "Codex · ChatGPT account",
+              model: "chatgpt-codex-account",
+              installed: true,
+              status: "ready",
+            },
+          ],
+          candidates: [
+            {
+              id: "account-candidate",
+              sourceKind: "account-runtime",
+              sourceLabel: "Codex · ChatGPT account",
+              locality: "device",
+              provider: "codex-account",
+              protocol: "responses",
+              name: "Codex · ChatGPT account",
+              baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+              model: "chatgpt-codex-account",
+              models: [],
+              credentialState: "account-session",
+            },
+          ],
+        };
+      },
+      async importDiscoveredModel() {
+        return {
+          provider: "codex-account",
+          protocol: "responses",
+          name: "Codex · ChatGPT account",
+          baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+          model: "chatgpt-codex-account",
+          apiKey: "private-loopback-token",
+        };
+      },
+    },
+  };
+  const discovery = await discoverDesktopModelConnections();
+  assert.equal(discovery.accounts[0].status, "ready");
+  assert.equal(discovery.candidates[0].credentialState, "account-session");
+  assert.doesNotMatch(JSON.stringify(discovery), /private-loopback-token/u);
+  assert.equal((await importDesktopModelConnection("account-candidate")).provider, "codex-account");
   delete globalThis.window;
 });
 

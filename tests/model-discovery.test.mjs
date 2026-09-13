@@ -29,6 +29,7 @@ test("discovers process credentials without returning a secret before explicit i
   const discovery = createDesktopModelDiscovery({
     homeDirectory: "/missing",
     environment: { OPENAI_API_KEY: "process-secret", OPENAI_MODEL: "gpt-5.6-sol" },
+    includeApiConnections: true,
     capabilities: missingFiles(),
   });
   const result = await discovery.scan();
@@ -44,6 +45,54 @@ test("discovers process credentials without returning a secret before explicit i
   await assert.rejects(() => discovery.importCandidate("unknown"), /no longer available/i);
 });
 
+test("defaults to signed-in accounts without reading API configuration", async () => {
+  const accountToken = "account-bridge-token";
+  const discovery = createDesktopModelDiscovery({
+    accountRuntime: {
+      async discover() {
+        return {
+          accounts: [
+            {
+              id: "codex",
+              provider: "codex-account",
+              label: "ChatGPT",
+              sourceLabel: "Codex · ChatGPT account",
+              model: "chatgpt-codex-account",
+              installed: true,
+              status: "ready",
+            },
+          ],
+          connections: [
+            {
+              sourceKind: "account-runtime",
+              sourceLabel: "Codex · ChatGPT account",
+              sourceIdentity: "account:codex",
+              provider: "codex-account",
+              name: "Codex · ChatGPT account",
+              baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+              model: "chatgpt-codex-account",
+              apiKey: accountToken,
+              protocol: "responses",
+              locality: "device",
+              credentialState: "account-session",
+            },
+          ],
+        };
+      },
+    },
+    homeDirectory: "/missing",
+    environment: { OPENAI_API_KEY: "must-not-be-read" },
+    capabilities: missingFiles(),
+  });
+  const result = await discovery.scan();
+  assert.equal(result.accounts[0].status, "ready");
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0].provider, "codex-account");
+  assert.equal(result.candidates[0].credentialState, "account-session");
+  assert.doesNotMatch(JSON.stringify(result), /account-bridge-token|must-not-be-read/u);
+  assert.equal((await discovery.importCandidate(result.candidates[0].id)).apiKey, accountToken);
+});
+
 test("recognizes a direct DeepSeek environment without exposing its credential", async () => {
   const discovery = createDesktopModelDiscovery({
     homeDirectory: "/missing",
@@ -51,6 +100,7 @@ test("recognizes a direct DeepSeek environment without exposing its credential",
       DEEPSEEK_API_KEY: "deepseek-process-secret",
       DEEPSEEK_MODEL: "deepseek-v4-pro",
     },
+    includeApiConnections: true,
     capabilities: missingFiles(),
   });
   const result = await discovery.scan();
@@ -95,6 +145,7 @@ test("discovers bounded Claude, Codex, and Gemini live configurations without ex
   const discovery = createDesktopModelDiscovery({
     homeDirectory: home,
     environment: {},
+    includeApiConnections: true,
     capabilities: missingFiles(files),
   });
   const result = await discovery.scan();
@@ -157,7 +208,11 @@ test("reads CC Switch through a read-only bounded provider query", async () => {
   );
   database.close();
   try {
-    const discovery = createDesktopModelDiscovery({ homeDirectory: home, environment: {} });
+    const discovery = createDesktopModelDiscovery({
+      homeDirectory: home,
+      environment: {},
+      includeApiConnections: true,
+    });
     const result = await discovery.scan();
     assert.equal(result.candidates.length, 1);
     assert.equal(result.candidates[0].sourceLabel, "CC Switch · Codex");
@@ -194,6 +249,7 @@ test("recognizes and deduplicates one DeepSeek connection shared by CC Switch an
     const discovery = createDesktopModelDiscovery({
       homeDirectory: home,
       environment: {},
+      includeApiConnections: true,
       capabilities: {
         async fetch() {
           throw new Error("no local runtime");

@@ -12,16 +12,16 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  UserRound,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ModelProfileManager } from "./model-profile-manager";
 import {
   discoverDesktopModelConnections,
   importDesktopModelConnection,
   supportsDesktopModelDiscovery,
+  type DiscoveredAccountRuntime,
   type DiscoveredModelConnection,
 } from "../lib/desktop-bridge";
-import type { OrbitLocale } from "../lib/localization";
 import type { ModelProfilesState } from "../lib/model-profiles";
 import type { ModelProviderStatus, OrbitModelMode } from "../lib/model-preference";
 
@@ -55,6 +55,13 @@ export type WelcomeModelCopy = Readonly<{
   deploymentConnection: string;
   credentialDetected: string;
   credentialNotRequired: string;
+  credentialAccount: string;
+  accountReady: string;
+  accountVerify: string;
+  accountSignIn: string;
+  accountMissing: string;
+  accountAccess: string;
+  accountAccessValue: string;
   reviewConnection: string;
   reviewTitle: string;
   connectionReviewBody: string;
@@ -104,14 +111,12 @@ function connectionFailureDetail(payload: { error?: unknown }, fallback: string)
 
 export function WelcomeModelStep({
   copy,
-  locale,
   modelMode,
   onBack,
   onContinue,
   onModelModeChange,
 }: {
   copy: WelcomeModelCopy;
-  locale: OrbitLocale;
   modelMode: OrbitModelMode;
   onBack: () => void;
   onContinue: (mode: OrbitModelMode) => void;
@@ -121,11 +126,11 @@ export function WelcomeModelStep({
   const [modelStatusError, setModelStatusError] = useState("");
   const [checkingModel, setCheckingModel] = useState(true);
   const [discoveryState, setDiscoveryState] = useState<DiscoveryState>("idle");
+  const [accounts, setAccounts] = useState<DiscoveredAccountRuntime[]>([]);
   const [candidates, setCandidates] = useState<DiscoveredModelConnection[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<DiscoveredModelConnection | null>(null);
   const [connectionBusy, setConnectionBusy] = useState(false);
   const [connectionError, setConnectionError] = useState("");
-  const [managerRevision, setManagerRevision] = useState(0);
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
   const lastDiscoveryTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -156,10 +161,12 @@ export function WelcomeModelStep({
     setConnectionError("");
     try {
       const result = await discoverDesktopModelConnections();
+      setAccounts(result.accounts);
       setCandidates(result.candidates);
       setDiscoveryState("complete");
     } catch {
       setCandidates([]);
+      setAccounts([]);
       setDiscoveryState("error");
     }
   }, []);
@@ -177,15 +184,6 @@ export function WelcomeModelStep({
     const frame = window.requestAnimationFrame(() => reviewHeadingRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
   }, [selectedCandidate]);
-
-  const handleProfileStatus = useCallback(
-    (status: ModelProviderStatus) => {
-      setModelStatus(status);
-      setModelStatusError("");
-      if (status.configured) onModelModeChange("model-assisted");
-    },
-    [onModelModeChange],
-  );
 
   function closeReview() {
     setSelectedCandidate(null);
@@ -235,7 +233,6 @@ export function WelcomeModelStep({
       }
       setModelStatus(providerStatusFromState(saved, copy.deploymentConnection));
       onModelModeChange("model-assisted");
-      setManagerRevision((current) => current + 1);
       setSelectedCandidate(null);
       setConnectionError("");
     } catch (error) {
@@ -247,6 +244,12 @@ export function WelcomeModelStep({
   }
 
   const configured = Boolean(modelStatus?.configured);
+  const accountCandidateByProvider = new Map(
+    candidates
+      .filter((candidate) => candidate.sourceKind === "account-runtime")
+      .map((candidate) => [candidate.provider, candidate] as const),
+  );
+  const localModelCandidates = candidates.filter((candidate) => candidate.sourceKind === "local-runtime");
 
   return (
     <>
@@ -322,10 +325,17 @@ export function WelcomeModelStep({
                   <dt>{copy.modelLabel}</dt>
                   <dd dir="ltr">{selectedCandidate.model}</dd>
                 </div>
-                <div>
-                  <dt>{copy.endpointLabel}</dt>
-                  <dd dir="ltr">{selectedCandidate.baseURL}</dd>
-                </div>
+                {selectedCandidate.sourceKind === "account-runtime" ? (
+                  <div>
+                    <dt>{copy.accountAccess}</dt>
+                    <dd>{copy.accountAccessValue}</dd>
+                  </div>
+                ) : (
+                  <div>
+                    <dt>{copy.endpointLabel}</dt>
+                    <dd dir="ltr">{selectedCandidate.baseURL}</dd>
+                  </div>
+                )}
               </dl>
               {connectionError && (
                 <p className="model-manager-error" role="alert">
@@ -342,9 +352,43 @@ export function WelcomeModelStep({
                 {connectionBusy ? copy.connecting : copy.connectAndVerify}
               </button>
             </div>
-          ) : discoveryState === "complete" && candidates.length ? (
-            <div className="model-discovery-results">
-              {candidates.map((candidate) => (
+          ) : discoveryState === "complete" && (accounts.length || localModelCandidates.length) ? (
+            <div className="model-discovery-results account-runtime-results">
+              {accounts.map((account) => {
+                const candidate = accountCandidateByProvider.get(account.provider);
+                const statusText =
+                  account.status === "ready"
+                    ? copy.accountReady
+                    : account.status === "verify-required"
+                      ? copy.accountVerify
+                      : account.status === "sign-in-required"
+                        ? copy.accountSignIn
+                        : copy.accountMissing;
+                return (
+                  <article data-account-status={account.status} key={account.id}>
+                    <span>{account.status === "ready" ? <Check /> : <UserRound />}</span>
+                    <div>
+                      <strong>{account.label}</strong>
+                      <small>{account.sourceLabel}</small>
+                      <em>{statusText}</em>
+                    </div>
+                    {candidate && (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          lastDiscoveryTriggerRef.current = event.currentTarget;
+                          setSelectedCandidate(candidate);
+                          setConnectionError("");
+                        }}
+                      >
+                        {copy.reviewConnection}
+                        <ArrowRight />
+                      </button>
+                    )}
+                  </article>
+                );
+              })}
+              {localModelCandidates.map((candidate) => (
                 <article key={candidate.id}>
                   <span>{candidate.locality === "device" ? <Cpu /> : <Cloud />}</span>
                   <div>
@@ -353,9 +397,11 @@ export function WelcomeModelStep({
                       {candidate.model} · {candidate.sourceLabel}
                     </small>
                     <em>
-                      {candidate.credentialState === "not-required"
-                        ? copy.credentialNotRequired
-                        : copy.credentialDetected}
+                      {candidate.credentialState === "account-session"
+                        ? copy.credentialAccount
+                        : candidate.credentialState === "not-required"
+                          ? copy.credentialNotRequired
+                          : copy.credentialDetected}
                     </em>
                   </div>
                   <button
@@ -391,9 +437,6 @@ export function WelcomeModelStep({
           )}
         </section>
 
-        {!selectedCandidate && (
-          <ModelProfileManager key={managerRevision} compact locale={locale} onStatusChange={handleProfileStatus} />
-        )}
         <p className="model-safety-note">
           <ShieldCheck />
           {discoveryState === "unavailable" ? copy.modelSafety : copy.scanPrivacy}

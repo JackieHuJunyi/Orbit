@@ -381,6 +381,31 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
   color: var(--theme-accent);
 }
 .welcome-language-heading .welcome-eyebrow { margin-bottom: 7px; }
+.welcome-language-heading .welcome-written-eyebrow {
+  display: grid;
+  width: min(360px, 78vw);
+  height: 54px;
+  place-items: center;
+  margin-bottom: 11px;
+  color: var(--theme-accent);
+}
+.welcome-signature {
+  display: block;
+  width: min(360px, 78vw);
+  height: 54px;
+  overflow: visible;
+  font-family: "Snell Roundhand", "Segoe Script", "Apple Chancery", cursive;
+  font-size: 50px;
+  font-weight: 400;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+.welcome-signature.long { font-size: 40px; }
+.welcome-signature[data-greeting-locale^="zh"] { font-size: 48px; letter-spacing: -.035em; }
+.welcome-signature[data-greeting-locale="ja"],
+.welcome-signature[data-greeting-locale="ko"] { font-size: 43px; letter-spacing: -.03em; }
+.welcome-signature[data-greeting-locale="ar"] { font-size: 44px; letter-spacing: 0; }
+.welcome-signature .welcome-greeting-tegaki { filter: saturate(.92); }
 .welcome-language-heading h1 {
   max-width: 520px;
   margin: 0;
@@ -564,6 +589,14 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
 }
 .model-discovery-results > article + article { border-top: 1px solid var(--orbit-material-divider); }
 .model-discovery-results em { color: var(--theme-accent); font-size: 10.5px; font-style: normal; line-height: 1.4; }
+.account-runtime-results > article[data-account-status="ready"] > span {
+  background: color-mix(in srgb, #34c759 11%, var(--orbit-material-control));
+  color: #248a3d;
+}
+.account-runtime-results > article[data-account-status="not-installed"],
+.account-runtime-results > article[data-account-status="sign-in-required"] { opacity: .64; }
+.account-runtime-results > article[data-account-status="not-installed"] em,
+.account-runtime-results > article[data-account-status="sign-in-required"] em { color: var(--muted); }
 .model-discovery-empty { display: grid; min-height: 66px; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 10px; padding: 12px 14px; }
 .model-discovery-empty > svg { width: 18px; height: 18px; color: var(--subtle); }
 .model-discovery-review { display: grid; justify-items: start; gap: 10px; padding: 15px; }

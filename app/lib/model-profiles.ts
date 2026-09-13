@@ -17,7 +17,17 @@ export const DEFAULT_MODEL_TOKEN_BUDGET: Readonly<ModelTokenBudget> = Object.fre
 });
 
 export type ModelProviderKind =
-  "openai" | "openrouter" | "deepseek" | "anthropic" | "gemini" | "ollama" | "lmstudio" | "custom";
+  | "openai"
+  | "openrouter"
+  | "deepseek"
+  | "anthropic"
+  | "gemini"
+  | "codex-account"
+  | "claude-account"
+  | "gemini-account"
+  | "ollama"
+  | "lmstudio"
+  | "custom";
 export type ModelProtocol = "responses" | "chat-completions" | "anthropic-messages" | "gemini-generate-content";
 
 export type ModelCapabilityManifest = {
@@ -130,6 +140,39 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     requiresCredential: false,
   },
   {
+    id: "codex-account",
+    label: "ChatGPT via Codex",
+    baseURL: "http://127.0.0.1",
+    defaultModel: "chatgpt-codex-account",
+    protocol: "responses",
+    editableEndpoint: false,
+    editableProtocol: false,
+    locality: "device",
+    requiresCredential: true,
+  },
+  {
+    id: "claude-account",
+    label: "Claude account",
+    baseURL: "http://127.0.0.1",
+    defaultModel: "claude-account",
+    protocol: "responses",
+    editableEndpoint: false,
+    editableProtocol: false,
+    locality: "device",
+    requiresCredential: true,
+  },
+  {
+    id: "gemini-account",
+    label: "Google account via Gemini CLI",
+    baseURL: "http://127.0.0.1",
+    defaultModel: "gemini-account",
+    protocol: "responses",
+    editableEndpoint: false,
+    editableProtocol: false,
+    locality: "device",
+    requiresCredential: true,
+  },
+  {
     id: "lmstudio",
     label: "LM Studio",
     baseURL: "http://127.0.0.1:1234/v1",
@@ -216,14 +259,85 @@ export const EMPTY_MODEL_PROFILE_VAULT: ModelProfileVault = {
 };
 
 export function isDeviceModelProvider(provider: ModelProviderKind) {
-  return provider === "ollama" || provider === "lmstudio";
+  return (
+    provider === "ollama" ||
+    provider === "lmstudio" ||
+    provider === "codex-account" ||
+    provider === "claude-account" ||
+    provider === "gemini-account"
+  );
+}
+
+export function isAccountModelProvider(provider: ModelProviderKind) {
+  return provider === "codex-account" || provider === "claude-account" || provider === "gemini-account";
+}
+
+function accountRuntimeId(provider: ModelProviderKind) {
+  return provider === "codex-account" ? "codex" : provider === "claude-account" ? "claude" : "gemini";
+}
+
+function normalizeDesktopAccountBaseURL(value: unknown, provider: ModelProviderKind) {
+  const input = cleanText(value, 300);
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    throw new Error("The signed-in account bridge is unavailable. Scan this Mac again.");
+  }
+  const runtime = accountRuntimeId(provider);
+  const port = Number(url.port);
+  if (
+    url.protocol !== "http:" ||
+    url.hostname !== "127.0.0.1" ||
+    !Number.isInteger(port) ||
+    port < 1_024 ||
+    port > 65_535 ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    url.pathname.replace(/\/+$/u, "") !== `/__orbit_account__/${runtime}/v1`
+  ) {
+    throw new Error("The signed-in account bridge must use Orbit's private loopback endpoint.");
+  }
+  return `${url.origin}${url.pathname.replace(/\/+$/u, "")}`;
 }
 
 export function modelProviderAvailableInEnvironment(
   provider: ModelProviderKind,
   environment: Record<string, string | undefined> = process.env,
 ) {
+  if (isAccountModelProvider(provider)) {
+    return environment.ORBIT_DESKTOP_RUNTIME === "1" && Boolean(environment.ORBIT_DESKTOP_ORIGIN);
+  }
   return !isDeviceModelProvider(provider) || environment.ORBIT_DESKTOP_RUNTIME === "1";
+}
+
+export function currentModelProfileBaseURL(
+  provider: ModelProviderKind,
+  storedBaseURL: string,
+  environment: Record<string, string | undefined> = process.env,
+) {
+  if (!isAccountModelProvider(provider)) return storedBaseURL;
+  const origin = environment.ORBIT_DESKTOP_ORIGIN?.trim() ?? "";
+  try {
+    const url = new URL(origin);
+    const port = Number(url.port);
+    if (
+      url.protocol !== "http:" ||
+      url.hostname !== "127.0.0.1" ||
+      !Number.isInteger(port) ||
+      port < 1_024 ||
+      port > 65_535 ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash
+    )
+      return storedBaseURL;
+    return `${url.origin}/__orbit_account__/${accountRuntimeId(provider)}/v1`;
+  } catch {
+    return storedBaseURL;
+  }
 }
 
 function boundedInteger(value: unknown, minimum: number, maximum: number) {
@@ -305,6 +419,9 @@ export function normalizeModelProfileDraft(
     provider !== "deepseek" &&
     provider !== "anthropic" &&
     provider !== "gemini" &&
+    provider !== "codex-account" &&
+    provider !== "claude-account" &&
+    provider !== "gemini-account" &&
     provider !== "ollama" &&
     provider !== "lmstudio" &&
     provider !== "custom"
@@ -326,7 +443,11 @@ export function normalizeModelProfileDraft(
   if (!model || !/^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model)) {
     throw new Error("Enter a valid model ID without spaces.");
   }
-  const baseURL = preset.editableEndpoint ? normalizeCustomModelBaseURL(draft.baseURL) : preset.baseURL;
+  const baseURL = isAccountModelProvider(provider)
+    ? normalizeDesktopAccountBaseURL(draft.baseURL, provider)
+    : preset.editableEndpoint
+      ? normalizeCustomModelBaseURL(draft.baseURL)
+      : preset.baseURL;
   const budget = normalizeModelTokenBudget(draft.budget, existing?.budget ?? DEFAULT_MODEL_TOKEN_BUDGET);
   const suppliedKey = cleanText(draft.apiKey, 512);
   if (

@@ -43,9 +43,11 @@ function normalizedPenSpeed(locale: GreetingPresentationPlan["locale"]) {
 export function HandwrittenGreeting({
   onWritingComplete,
   presentation,
+  variant = "hero",
 }: {
   onWritingComplete?: () => void;
   presentation: GreetingPresentationPlan;
+  variant?: "hero" | "inline";
 }) {
   const { direction, isLong, locale, motion, renderMode, script, value } = presentation;
   const usesVectorCenterline = renderMode === "vector-centerline";
@@ -88,7 +90,7 @@ export function HandwrittenGreeting({
     };
   }, [locale, usesVectorCenterline]);
 
-  const className = `welcome-greeting ${isLong ? "long" : ""}`.trim();
+  const className = `${variant === "inline" ? "welcome-signature" : "welcome-greeting"} ${isLong ? "long" : ""}`.trim();
   const penSpeed = normalizedPenSpeed(locale);
   const sharedData = {
     "data-direction": direction,
@@ -144,7 +146,7 @@ export function HandwrittenGreeting({
                 : {
                     mode: "uncontrolled",
                     delay: 0.12,
-                    speed: penSpeed,
+                    speed: penSpeed / motion.durationScale,
                     easing: easeInOutCubic,
                     loop: false,
                   }

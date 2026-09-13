@@ -53,7 +53,10 @@ test("uses one Orbit identity across product, persistence, bridge, and desktop r
   assert.match(settings, /\{ORBIT_PRODUCT_NAME\} \{ORBIT_PRODUCT_VERSION\}/u);
   assert.equal(desktop.match(/app\.setName\("Orbit"\)/gu)?.length, 1);
   assert.match(desktop, /path\.join\(app\.getPath\("appData"\), "Orbit"\)/u);
-  assert.match(desktop, /app\.setPath\("userData", path\.join\(app\.getPath\("appData"\), "Orbit"\)\)/u);
+  assert.match(
+    desktop,
+    /app\.setPath\("userData", qaProfileDirectory \|\| path\.join\(app\.getPath\("appData"\), "Orbit"\)\)/u,
+  );
   assert.ok(desktop.indexOf('app.setName("Orbit")') < desktop.indexOf("await initializeDesktopCredentialVault()"));
   assert.doesNotMatch(
     `${layout}\n${welcome}\n${workbench}\n${settings}\n${desktop}`,

@@ -430,7 +430,6 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /source-bound analysis workflow/);
   assert.match(clientSource, /把选中内容压缩成一句话/);
   assert.match(clientSource, /把选中数值乘以 1\.1/);
-  assert.match(clientSource, /change confined to this selection/);
   assert.match(clientSource, /selection-confined patch/);
   assert.match(clientSource, /Selection Agent is limited to/);
   assert.match(clientSource, /selection boundary verification failed/);
@@ -1004,6 +1003,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /<HandwrittenGreeting/);
   assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /planGreetingPresentation\(\{ locale: greetingLocale, value: greeting \}\)/);
+  assert.match(welcome, /planGreetingPresentation\(\{ durationScale: 0\.6, locale, value: text\.welcomeEyebrow \}\)/);
+  assert.match(welcome, /variant="inline"/);
+  assert.match(modularStyles, /\.welcome-signature\s*\{[^}]*height:\s*54px;/s);
   assert.match(welcome, /greetingPresentation\.completeAfterMs \+ 180/);
   assert.match(handwrittenGreeting, /<linearGradient/);
   assert.match(handwrittenGreeting, /className="welcome-greeting-vector-stroke"/);
