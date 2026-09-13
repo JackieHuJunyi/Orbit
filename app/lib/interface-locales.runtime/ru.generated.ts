@@ -92,6 +92,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add condition": "Добавить условие",
   "Add model provider": "Добавить поставщика моделей",
   "Add next actions": "Добавить следующие действия",
+  "Add page numbers at a consistent reviewed position.": "Добавьте номера страниц в одинаковых позициях обзора.",
   "Add provider": "Добавить провайдера",
   "Add source content": "Добавьте исходное содержимое",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
@@ -105,8 +106,6 @@ export const INTERFACE_TRANSLATIONS = {
     "После вашего подтверждения Orbit считывает только эту конфигурацию, проверяет ее каталог моделей и один минимальный структурированный ответ, затем шифрует и сохраняет ее как настройку по умолчанию.",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "После подтверждения Orbit прочитает только эти учётные данные, проверит каталог моделей и один минимальный структурированный ответ и лишь при успехе обеих проверок зашифрует и сохранит подключение по умолчанию.",
-  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
-    "После вашего подтверждения официальный клиент отправляет один структурированный ответ без документов. Orbit сохраняет только имя соединения и никогда не копирует свой токен OAuth.",
   Agent: "Agent",
   "Agent change scope": "Область изменения Agent",
   "Agent composer focused": "Agent композитор сосредоточен",
@@ -144,6 +143,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Apply all": "Применить все",
   "Apply an Agent patch or press ⌘S to capture the current source.":
     "Примените патч Agent или нажмите ⌘S, чтобы захватить текущий источник.",
+  "Apply an exact crop box to selected pages.": "Apply точная рамка обрезки выбранных страниц.",
   "Apply structure change": "Применить изменение структуры",
   Area: "Область",
   "Area · volume sequence": "Область · последовательность объёмов",
@@ -208,9 +208,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "Проверьте синтаксис связи и выберите метрику, существующую в этой рабочей области.",
   "Check these settings first:": "Сначала проверьте эти настройки:",
+  Checkbox: "Флажок",
+  "Checked by default": "Проверено по умолчанию",
   "Checking connections already saved in Orbit…": "Проверка подключений, сохранённых в Orbit…",
   "Checkpoint history": "История контрольных точек",
   "Checkpoint restore details": "Сведения о восстановлении контрольной точки",
+  "Choices (one per line or comma-separated)": "Варианты выбора (по одному в строке или через запятую)",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "Выберите канонический источник. Файлы запросов и Chart привязываются к точным исходным артефактам и полям из их первой версии.",
   "Choose a fetched model": "Выберите полученную модель",
@@ -222,6 +225,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Выберите проверенный документ, аудиторию и цель. Orbit может создать новую презентацию или обновить связанную, сохранив идентичность файла и связь с источником.",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "Выберите проверенный документ, аудиторию и цель. Orbit создаст редактируемый Deck Markdown и сохранит явную связь с исходным документом.",
+  "Choose again": "Выбрать еще раз",
   "Choose an existing Chart id or create and validate that Chart first.":
     "Выберите идентификатор существующего Chart либо сначала создайте и проверьте этот Chart.",
   "Choose an existing metric key or an explicit Query output field.":
@@ -230,6 +234,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Выберите Chart акцентный цвет.",
   "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "Выберите CSV, JSON, XLSX или ODS. Orbit сначала покажет результат импорта, а затем проведёт по полям, показателям, диаграммам и результатам.",
+  "Choose files": "Выберите файлы",
   "Choose JSON / text file": "Выберите JSON / текстовый файл.",
   "Choose maximum visible Chart marks": "Выберите максимально видимые отметки Chart.",
   "Choose one exact scope value, or return to all Data rows.":
@@ -248,18 +253,25 @@ export const INTERFACE_TRANSLATIONS = {
   "Clear pins": "Очистить булавки",
   "Click again to delete": "Нажмите еще раз, чтобы удалить",
   "Close current file": "Закрыть текущий файл",
+  "Close PDF tools": "Закрыть инструменты PDF",
   "Close tutorial": "Закрыть руководство",
   "Closed the current file — every source remains in the workspace":
     "Закрыл текущий файл — все исходники остаются в рабочей области",
   "Closed the current file — every source remains safely in the workspace":
     "Закрыл текущий файл — каждый источник остается в безопасности в рабочей области.",
   "Cloud API": "Облачный API",
+  "Combine complete PDFs in a chosen order.": "Объедините полные PDF в выбранном порядке.",
+  "Combine photographed or scanned pages into a PDF.":
+    "Объедините сфотографированные или отсканированные страницы в PDF.",
+  "Compare PDFs": "Сравнить PDF",
   "Compare with": "Сравнить с",
   "Comparison rows": "Строки сравнения",
   "Compiled artifact preview": "Предварительный просмотр скомпилированного артефакта",
   "Compiler-guided repair passed": "Восстановление с помощью компилятора пройдено",
   "Complete the required fields and Orbit will validate the whole workflow before review.":
     "Заполните обязательные поля, и Orbit проверит весь рабочий процесс перед проверкой.",
+  "Complete; review before download": "Полный; просмотрите перед загрузкой",
+  "Compress PDF": "Сжать PDF",
   "Conclusion usefulness": "Полезность выводов",
   "Conclusions trace to sufficient supporting evidence.": "Выводы опираются на достаточные подтверждающие данные.",
   "Condense the selection into one sentence": "Сократите выделенное в одно предложение",
@@ -277,32 +289,45 @@ export const INTERFACE_TRANSLATIONS = {
   "Connect the models you already use": "Подключите модели, которые вы уже используете",
   "Connected folder": "Подключенная папка",
   "Connections available on this device": "Подключения на этом устройстве",
-  "Connections on this Mac": "Подключения на этом Mac",
+  "Connections found on this Mac": "Соединения, найденные на этом Mac",
   "Content workspace": "Рабочая область контента",
   Continue: "Продолжить",
+  "Continue in Orbit": "Продолжить через Orbit",
   "Continue setup": "Продолжить настройку",
   "Continue with model assistance": "Продолжить с моделью",
   "Continue without a model": "Продолжить без модели",
   Conversation: "Диалог",
+  "Convert Word, PowerPoint, Excel, and OpenDocument sources through Orbit's reviewed export path.":
+    "Конвертируйте источники Word, PowerPoint, Excel и OpenDocument с помощью проверенного пути экспорта Orbit.",
+  "Copy selected pages into a new PDF.": "Скопируйте выбранные страницы в новый PDF.",
   "Cosmic Orange": "Космический оранжевый",
+  "Create a clean PDF from entered text.": "Создайте чистый PDF из введенного текста.",
   "Create a new artifact": "Создать новый артефакт",
   "Create a new presentation": "Создать новую презентацию",
   "Create a presentation from the current report": "Создать презентацию из текущего отчета",
   "Create a review from data": "Создать отчёт на основе данных",
   "Create an analysis, chart, and report from revenue data":
     "Создайте анализ, диаграмму и отчет на основе данных о доходах.",
+  "Create an archival conformance copy when the desktop converter is available.":
+    "Создайте архивную копию, соответствующую требованиям, если доступен настольный конвертер.",
   "Create an editable Deck Markdown presentation": "Создайте редактируемую презентацию Deck Markdown.",
   "Create an editable Markdown report": "Создайте редактируемый отчет Markdown.",
   "Create an editable semantic HTML presentation": "Создать редактируемую презентацию в семантическом HTML",
   "Create blank": "Создать пустой",
+  "Create one PDF page per PNG or JPEG image.": "Создайте одну страницу PDF для каждого изображения PNG или JPEG.",
+  "Create one PDF per selected page or range.": "Создайте один PDF для каждой выбранной страницы или диапазона.",
   "Create operating review": "Создать операционный обзор",
+  "Create or fill text, checkbox, choice, and list fields.":
+    "Создайте или заполните поля текста, флажка, выбора и списка.",
   "Create or refresh a light presentation": "Создайте или обновите лёгкую презентацию",
+  "Create PDF": "Создать PDF",
   "Create presentation from document": "Создать презентацию из документа",
   "Create reusable Chart only": "Создавайте только многоразовые Chart",
   "Create review": "Создать отзыв",
   "Create source": "Создать источник",
   Credential: "Полномочия",
   "Credential found; not read yet": "Учётные данные найдены · ещё не прочитаны",
+  "Crop PDF": "Обрезать PDF",
   Currency: "Валюта",
   "Currency · USD": "Валюта · доллары США",
   Current: "Текущий",
@@ -330,6 +355,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Сначала определите доказательства, показатели и аудиторию. Orbit объединяет анализ, диаграмму, отчет и слайды в одну транзакцию проверки.",
   Delete: "Удалить",
   "Delete block": "Удалить блок",
+  "Delete selected pages after review.": "Удалить выбранные страницы после просмотра.",
   Deliverable: "Готовый материал",
   "Deliverable after minor edits": "Готово после небольших правок",
   "Deliverable outcome": "Итог готового материала",
@@ -372,8 +398,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "Стал ли этот результат пригоден для реальной работы?",
   Discard: "Отбросить",
   "Discard proposed patch": "Отменить предложенный патч",
-  "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.":
-    "Discovery проверяет статус официального клиента, известные местоположения конфигурации, коммутатор CC и порты локальной модели. Он никогда не читает файлы cookie браузера и не отображает ключи API или токены OAuth.",
+  "Discovery checks official-client status, literal shell configuration, known app settings, CC Switch, and local model ports. It never executes a shell or displays API keys or OAuth tokens.":
+    "Discovery проверяет статус официального клиента, буквальную конфигурацию оболочки, известные настройки приложения, CC Switch и порты локальной модели. Он никогда не запускает оболочку и не отображает ключи API или токены OAuth.",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "Поиск обращается только к известным файлам конфигурации и портам локальных моделей. Он не выполняет профили shell, не загружает файлы и не показывает ключи.",
   "Dock Agent": "Закрепить Agent",
@@ -401,6 +427,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Draft Chart preview": "Предварительный просмотр черновика Chart",
   "Draft preview": "Предварительный просмотр черновика",
   "Drag to select the OCR region": "Перетащите, чтобы выбрать область OCR",
+  Dropdown: "Падать",
   "Earlier device records (read only)": "Ранние записи на устройстве (только чтение)",
   "Edges recompile from source; pins last only for this session.":
     "Edges перекомпилируются из исходного кода; контакты действуют только в течение этого сеанса.",
@@ -409,6 +436,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Edit Chart description": "Изменить описание Chart",
   "Edit Chart title": "Изменить заголовок Chart",
   "Edit model provider": "Изменить поставщика модели",
+  "Edit PDF": "Редактировать PDF",
   "Edit this canonical source cell": "Изменить эту каноническую исходную ячейку",
   "Editable output": "Редактируемый результат",
   Edited: "Отредактировано",
@@ -419,6 +447,7 @@ export const INTERFACE_TRANSLATIONS = {
   Empty: "Пустой",
   "en-US": "ru-US",
   Enable: "Включить",
+  "Encrypt a PDF with a user password locally.": "Зашифруйте PDF с помощью пароля пользователя локально.",
   "Encrypting…": "Шифрование…",
   Endpoint: "Адрес API",
   "Enter a focus view": "Перейти в режим фокуса",
@@ -447,12 +476,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Export held for review — workspace context changed":
     "Экспорт приостановлен на проверку — контекст рабочей области изменен.",
   "Export pilot evidence": "Экспортировать данные пилота",
+  "Extract embedded raster images without rendering page backgrounds.":
+    "Извлекайте встроенные растровые изображения без рендеринга фона страницы.",
+  "Extract images": "Извлечение изображений",
+  "Extract pages": "Извлечь страницы",
   Eyebrow: "Брови",
   "Fetch models": "Получить модели",
   "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
     "Получение списка моделей проверяет только аутентификацию и каталог. Первый план Agent также проверяет структурированный вывод выбранного протокола. Для повторной попытки у другого поставщика требуется отдельное разрешение в настройках моделей.",
   "Fetching…": "Получение…",
   "Fidelity notes": "Примечания о верности",
+  "Field name": "Имя поля",
+  "Field type": "Тип поля",
   "Fields and measure": "Поля и мера",
   File: "Файл",
   "File names, Artifact IDs, workspace paths, and user identity":
@@ -462,6 +497,8 @@ export const INTERFACE_TRANSLATIONS = {
   files: "файлы",
   "Files available after the switch": "Файлы, доступные после переключения",
   "Files in proposed patch": "Файлы в предлагаемом патче",
+  "Files stay local by default; AI actions remain review-before-write.":
+    "По умолчанию файлы остаются локальными; Действия ИИ выполняются по принципу «проверка перед записью».",
   "Filter value": "Значение фильтра",
   "First proposal stayed unapplied": "Первое предложение осталось без применения",
   "fixed-layout": "фиксированная планировка",
@@ -485,6 +522,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Файлы, содержащие только папки, останутся нетронутыми, но не будут принадлежать новому манифесту рабочей области Orbit.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "Например, 1-3, 5; можно выбрать только обнаруженные сканированные страницы.",
+  "For example 1,3-5; blank means all": "Например 1,3-5; пусто означает все",
   "For example: July 2026": "Например: июль 2026 г.",
   "For example: July operating review": "Например: Обзор операционной деятельности за июль.",
   "For example: Product launch briefing": "Например: презентация запуска продукта",
@@ -498,6 +536,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Hide API key": "Скрыть ключ API",
   "Hide workspace files": "Скрыть файлы рабочей области",
   "HTML · PPTX · ODP · PDF": "HTML · PPTX · ODP · PDF",
+  "HTML to PDF": "От HTML до PDF",
   "Human-reviewed real tasks": "Реальные задачи с экспертной оценкой",
   "I confirm this task is authorized for evaluation or its content is redacted.":
     "Подтверждаю, что задача разрешена для оценки или её содержимое обезличено.",
@@ -507,6 +546,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Определите самое значимое изменение с прошлой недели и назначьте следующее решение или ответственного.",
   "Ignored unsupported fields": "Игнорируются неподдерживаемые поля",
   Image: "Изображение",
+  "Images to PDF": "Изображения для PDF",
   Import: "Импорт",
   "Import a document, review it, then choose audience, purpose, and length":
     "Импортируйте документ, проверьте его, затем выберите аудиторию, цель и объём",
@@ -522,7 +562,13 @@ export const INTERFACE_TRANSLATIONS = {
   "Import details": "Подробности импорта",
   "Import held for review — workspace context changed":
     "Импорт задержан на проверку — контекст рабочей области изменен.",
+  "Import locally extracted text, then ask the selected model for a source-linked summary.":
+    "Импортируйте локально извлеченный текст, а затем запросите у выбранной модели сводку со ссылкой на источник.",
   "Import one model profile": "Импортировать один профиль модели",
+  "Import PDF into canonical Markdown, then export a reviewed DOCX.":
+    "Импортируйте PDF в канонический Markdown, затем экспортируйте проверенный DOCX.",
+  "Import PDF pages, review structure, then export PPTX.":
+    "Импортируйте страницы PDF, проверьте структуру, затем экспортируйте PPTX.",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "Импортировать PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX или ODS. Orbit сначала просматривает конверсию, а затем проведет вас по полям, показателям, диаграммам и результатам.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -561,6 +607,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Keep valid Deck Markdown or script-free semantic HTML.":
     "Используйте корректный Deck Markdown или семантический HTML без скриптов.",
   Language: "Язык",
+  "Large document quick preview": "Быстрый просмотр большого документа",
   "Last run": "Последний запуск",
   Lavender: "Лавандовый",
   Layout: "Макет",
@@ -573,7 +620,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Light Gold": "Светлое золото",
   Line: "Линия",
   "Line · sequence": "Линия · последовательность",
+  "Linearize and normalize a PDF for fast opening.": "Линеаризуйте и нормализуйте PDF для быстрого открытия.",
   Link: "Ссылка",
+  List: "Список",
   "Live artifact dependencies": "Зависимости живых артефактов",
   "Live chart": "Живой график",
   "Live compilation": "Живая подборка",
@@ -592,6 +641,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local or configured-model planning plus input/output token counts when available":
     "Локальное планирование или настроенная модель, а также число входных и выходных токенов при наличии",
   "Local planner": "Местный планировщик",
+  "Local processing · explicit review · AI only when useful":
+    "Локальная обработка · явная проверка · ИИ только тогда, когда он полезен",
   "Local runtime validation failed": "Проверка локальной среды выполнения не удалась",
   "Local SQL bound to Data": "Локальный SQL, привязанный к данным",
   "Local workspace": "Локальное рабочее пространство",
@@ -605,6 +656,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Manual checkpoint saved on this device": "Ручная контрольная точка сохранена на этом устройстве.",
   Mark: "Марк",
   "Match all conditions": "Соответствовать всем условиям",
+  "Merge PDFs": "Объединить PDF",
   "Mist Blue": "Туманно-синий",
   Model: "Модель",
   "Model connected": "Модель подключена",
@@ -646,6 +698,7 @@ export const INTERFACE_TRANSLATIONS = {
   "New block after": "Новый блок после",
   "New block before": "Новый блок раньше",
   "New file": "Новый файл",
+  "New page order": "Новый порядок страниц",
   "New semantic HTML": "Новый семантический HTML",
   "New source diff": "Новый исходный код",
   "New source preview": "Предварительный просмотр нового исходного кода",
@@ -697,8 +750,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Numeric value field": "Поле числового значения",
   "OCR language for": "Язык OCR для",
   "OCR pages for": "Страницы OCR для",
+  "OCR PDF": "OCR PDF",
   "OCR settings": "Настройки OCR",
   of: "из",
+  "Office to PDF": "Офис в PDF",
   "On-device recognition": "Распознавание на устройстве",
   "One atomic device write · a checkpoint is created first":
     "Запись одного атомарного устройства · сначала создается контрольная точка",
@@ -718,8 +773,6 @@ export const INTERFACE_TRANSLATIONS = {
     "Один семантический HTML-слайд для текущей ревизии · в реальном времени отражается в Source · перед сохранением проверяется вся презентация",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "Один слайд с привязкой к ревизии · привязки остаются фиксированными · сохранение записывает канонический исходный код",
-  "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.":
-    "Одно сканирование объединяет вошедшие в систему учетные записи, известные конфигурации API и локальные модели. Учетные данные никогда не отображаются в этом списке.",
   "One source workspace": "Одно исходное рабочее пространство",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "Одна строгая спецификация · проверено влияние на время выполнения · сохранены переписаны канонические Chart JSON",
@@ -727,6 +780,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Только после сбоя основной модели Orbit может отправить тот же ограниченный контент другому настроенному поставщику. По умолчанию выключено.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "Показаны только поля, которые являются числовыми во всей текущей области данных.",
+  "Only installed, signed-in, configured, or running connections appear. Services that were not found take no space.":
+    "Отображаются только установленные, авторизованные, настроенные или запущенные подключения. Службы, которые не были найдены, не занимают места.",
   "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
     "Показаны только поставщик, источник, адрес и модель. Orbit прочитает учётные данные лишь после вашего выбора.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
@@ -746,6 +801,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Operating review · task first": "Операционный обзор · сначала задача",
   "Operating team": "Операционная команда",
   "Operating-review task settings": "Параметры задачи оперативного контроля",
+  "Optimize PDF": "Оптимизируйте PDF",
   optional: "необязательно",
   "Optional · seven dimensions · about one minute": "Необязательно · семь критериев · около минуты",
   "Optional page region": "Необязательная область страницы",
@@ -759,6 +815,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Необязательно. После выбора локальные доказательства, SQL, диаграммы и контекст модели используют только строки с точным совпадением.",
   "Or open something else": "Или откройте другой материал",
   Orbit: "Orbit",
+  "Orbit already confirmed the account state during discovery. Continue saves the model choice immediately; the first conversation still runs through the official client, and Orbit never copies its OAuth token.":
+    "Orbit уже подтвердил состояние учетной записи во время обнаружения. Продолжить немедленно сохраняет выбор модели; первый диалог по-прежнему проходит через официальный клиент, и Orbit никогда не копирует свой токен OAuth.",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit локально скомпилировал эти результаты для текущей области до любого запроса к модели.",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -813,14 +871,22 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit восстановит всю локальную рабочую область до сброса, а текущую сохранит как следующую восстанавливаемую версию.",
   "Orbit writes an explicit -- orbit:data directive, so workspace_data never changes when files are reordered.":
     "Orbit записывает явную директиву -- orbit:data, поэтому данные workspace_data никогда не изменяются при переупорядочении файлов.",
+  "Organize pages": "Организация страниц",
+  "Organize, convert, edit, secure, and understand PDFs":
+    "Упорядочивайте, конвертируйте, редактируйте, защищайте и анализируйте PDF",
   "Output budget per task": "Бюджет выходных токенов на задачу",
   "Overall time saved": "Общая экономия времени",
+  "Overlay one PDF page set on another.": "Наложение одного набора страниц PDF на другой.",
+  "Overlay PDFs": "Наложение PDF с",
   page: "страница",
   "Page images stay on device · results remain reviewable":
     "Изображения остаются на устройстве · результаты можно проверить",
   "Page language": "Язык страницы",
+  "Page numbers": "Номера страниц",
   pages: "страниц",
+  Pages: "Страницы",
   "Pages to recognize": "Страницы для распознавания",
+  Password: "Пароль",
   "Paste config or CC Switch link": "Вставьте ссылку на конфигурацию или CC Switch.",
   "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
     "Вставьте один объект JSON или ccswitch://v1/import?resource=provider…",
@@ -831,8 +897,16 @@ export const INTERFACE_TRANSLATIONS = {
     "Исправление отправлено на проверку — контекст рабочей области изменен.",
   "Patch held for review — workspace source revision changed":
     "Исправление отправлено на проверку — изменена версия исходного кода рабочей области.",
+  "PDF forms": "PDF формы",
   "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
     "Страницы PDF отрисовываются только в этом браузере. Orbit загружает встроенный модуль OCR и языковые данные с этого сайта, а браузер кэширует их; изображения и распознанный текст никогда не отправляются.",
+  "PDF to Excel": "PDF в Excel",
+  "PDF to images": "PDF к изображениям",
+  "PDF to Markdown": "От PDF до Markdown",
+  "PDF to PDF/A": "От PDF до PDF/A",
+  "PDF to PowerPoint": "PDF в PowerPoint",
+  "PDF to Word": "PDF в Word",
+  "PDF tools": "Инструменты PDF",
   Percent: "Процент",
   "Period and audience": "Период и аудитория",
   "Pilot Evidence · on device": "Данные пилота · на устройстве",
@@ -840,6 +914,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Pilot Evidence export contents": "Состав экспорта данных пилота",
   "Pilot evidence held for review — device records changed":
     "Данные пилота задержаны для проверки — записи на устройстве изменились",
+  "Place a visible typed signature without claiming cryptographic certification.":
+    "Разместите видимую печатную подпись, не требуя криптографической сертификации.",
+  "Place repeated translucent text across selected pages.":
+    "Разместите повторяющийся полупрозрачный текст на выбранных страницах.",
+  "Place reviewed text on an exact page and position.":
+    "Разместите рецензируемый текст на определенной странице и в определенном месте.",
   "Plan an AI change": "Запланируйте изменение ИИ",
   "portable data": "переносимые данные",
   "Prepare a verifiable operating-review chain": "Подготовьте поддающуюся проверке цепочку операционных проверок",
@@ -847,6 +927,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepare update review": "Подготовить обзор обновлений",
   "Prepares a change before you approve the write": "Подготавливает изменение перед тем, как вы одобрите запись.",
   "Preparing OCR": "Подготовка OCR",
+  "Preparing one bounded repair": "Подготовка одного ограниченного ремонта",
   Presentation: "Презентация",
   "Presentation authored in semantic HTML": "Презентация в семантическом HTML",
   "Presentation destination": "Куда сохранить презентацию",
@@ -867,6 +948,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Previous workspace": "Предыдущая рабочая область",
   "Primary and comparison scopes each need at least one complete condition.":
     "Для основной области и области сравнения требуется хотя бы одно полное условие.",
+  "Processing locally…": "Обработка локально…",
   "Profile name": "Имя профиля",
   "Project brief": "Краткое описание проекта",
   "Proposal preview": "Предпросмотр предложения",
@@ -874,8 +956,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Proposed output · nothing written": "Предлагаемый результат · ничего не записано",
   "Proposed source": "Предлагаемый исходник",
   "Proposed source dependency changes": "Предлагаемые изменения зависимости источника",
+  "Protect PDF": "Защитите PDF",
   Provider: "Поставщик",
   "Provider-reported token usage": "Расход токенов по данным поставщика",
+  "Public HTTPS URL": "Публичный URL-адрес HTTPS",
   "Pull folder changes": "Извлечь изменения в папке",
   "Pull these folder changes?": "Загрузить эти изменения из папки?",
   "Push these changes to the folder?": "Записать эти изменения в папку?",
@@ -885,23 +969,34 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "Вывод запроса",
   "Quick start": "Быстрый старт",
   Quote: "Цитата",
+  "Rasterize reviewed pages and permanently burn in redaction regions.":
+    "Растеризуйте проверенные страницы и навсегда сожгите их в регионах редактирования.",
   "Readable file": "Читаемый файл",
   "readable source": "читаемый исходник",
   "Readable source": "Читабельный источник",
   "Readable, analyzable table data": "Читаемые и анализируемые табличные данные",
+  "Reading available models…": "Чтение доступных моделей…",
+  "Reading current Query results locally": "Чтение текущих результатов Query локально",
   "Reading model profiles…": "Чтение профилей моделей…",
+  "Reading this connection…": "Читая эту связь…",
   Ready: "Готов",
   "Ready to deliver": "Готово к передаче",
   "ready to edit": "готов редактировать",
   "real tasks reviewed": "реальных задач оценено",
   "Real-task evaluation": "Оценка реальной задачи",
+  "Rebuild readable PDF structure when qpdf can recover it.":
+    "Перестройте читаемую структуру PDF, когда qpdf сможет ее восстановить.",
   "Recent call succeeded": "Последний вызов выполнен успешно",
   "Recent task runs": "Недавние запуски задач",
   Recognize: "Распознать",
+  "Recognize selected scanned pages with Orbit's local OCR review.":
+    "Распознавайте выбранные отсканированные страницы с помощью локального обзора OCR от Orbit.",
   "Recognizing page": "Распознавание страницы",
   "Recognizing…": "Распознавание…",
   "Recommended from this device. You can change it whenever you like.":
     "Рекомендуется с этого устройства. Вы можете изменить его, когда захотите.",
+  "Recompress streams and generate compact object streams locally.":
+    "Повторно сжимайте потоки и генерируйте компактные объектные потоки локально.",
   "Reconnect existing Data or Query and exact category and value fields.":
     "Повторно подключите существующие Data или Query и точные поля категории и значения.",
   "Reconnect the missing Chart": "Подключить отсутствующий Chart",
@@ -913,19 +1008,33 @@ export const INTERFACE_TRANSLATIONS = {
   "Recover files, versions, and task records from before reset": "Восстановить файлы, версии и историю задач до сброса",
   "Recovered after one compiler-guided repair":
     "Восстановлено после одного восстановления под руководством компилятора.",
+  "Redact PDF": "Отредактировать PDF",
   "Refresh available": "Доступно обновление",
   "Refresh linked presentation in place": "Обновить связанную презентацию на месте",
   "Related reference": "Связанная ссылка",
   "Release to prepare the import": "Выпуск для подготовки импорта",
   "Remove condition": "Удалить условие",
+  "Remove encryption after the user supplies the current password.":
+    "Удалите шифрование после того, как пользователь введет текущий пароль.",
   "Remove from workspace": "Удалить из рабочей области",
+  "Remove pages": "Удалить страницы",
   "Remove scripts or executable markup; Orbit previews only script-free content.":
     "Удалите скрипты и исполняемую разметку: Orbit показывает только содержимое без скриптов.",
   "Remove temporary Agent context pin": "Удалить временную булавку контекста Agent",
   "Remove unsafe content": "Удалить небезопасное содержимое",
+  "Render and compare page structure without changing either input.":
+    "Отображение и сравнение структуры страницы без изменения входных данных.",
+  "Render one public HTTPS page in an isolated desktop session.":
+    "Отображение одной общедоступной страницы HTTPS в изолированном сеансе рабочего стола.",
+  "Render safe semantic HTML through Orbit's fixed PDF export.":
+    "Обеспечьте безопасную семантику HTML посредством фиксированного экспорта PDF в Orbit.",
+  "Render selected PDF pages as PNG images.": "Отобразить выбранные страницы PDF как изображения PNG.",
   "Rendered presentation preview": "Предварительный просмотр визуализированной презентации",
   "Rendering a private on-device preview…": "Локальная отрисовка приватного предпросмотра…",
   "Rendering page": "Локальная отрисовка страницы",
+  "Reorder and duplicate pages with an explicit page sequence.":
+    "Измените порядок и дублируйте страницы с явной последовательностью страниц.",
+  "Repair PDF": "Восстановить PDF",
   "Repair the Chart definition": "Исправить определение Chart",
   "Repair the Chart source": "Исправить источник Chart",
   "Repair the Data source": "Исправить источник Data",
@@ -952,6 +1061,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Restore the sample workspace?": "Восстановить пример рабочей области?",
   "Restored the latest device draft": "Восстановлен последний черновик устройства",
   "Result summary": "Сводка результатов",
+  Results: "Результаты",
   "Revenue analysis": "Анализ доходов",
   "Revenue by region": "Выручка по регионам",
   Review: "Проверить",
@@ -959,6 +1069,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review canonical source": "Проверить канонический исходник",
   "Review checkpoint restore": "Проверить восстановление контрольной точки",
   "Review config": "Конфигурация Review",
+  "Review extracted tables as canonical Data before XLSX export.":
+    "Review извлек таблицы как канонические Data перед экспортом XLSX.",
   "Review first, preserve the current workspace, then open the sample":
     "Сначала проверить, сохранить текущую область, затем открыть пример",
   "Review focus": "Фокус обзора",
@@ -974,7 +1086,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Review title": "Название отзыва",
   "Review-question planner": "Планировщик вопросов обзора",
   "Rose Pearl": "Розовый жемчуг",
+  "Rotate pages": "Поворот страниц",
+  "Rotate selected pages by 90, 180, or 270 degrees.": "Поворот выбранных страниц на 90, 180 или 270 градусов.",
+  Rotation: "Вращение",
   "Run history": "История запуска",
+  "Run tool": "Запустить инструмент",
   "Running locally": "Запуск локально",
   "Runs on this device": "Работает на этом устройстве",
   "Runtime impact preflight passed": "Предварительная проверка влияния среды выполнения пройдена",
@@ -1001,9 +1117,12 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "сохраненные задачи",
   "Saved tasks": "Сохраненные задачи",
   Saving: "Сохранение",
+  "Saving securely…": "Безопасное сохранение…",
   "Scan again": "Найти снова",
+  "Scan to PDF": "Сканировать в PDF",
   "Scanned PDF · explicit selection": "Сканированный PDF · явный выбор",
   "Scope filters": "Фильтры области",
+  "Search PDF tools": "Поиск инструментов PDF",
   "See the full data-to-report-and-deck chain":
     "Ознакомьтесь с полной цепочкой передачи данных в отчет и представление",
   "Select a changed file to inspect its source diff.":
@@ -1027,6 +1146,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Show workspace files": "Показать файлы рабочей области",
   Showing: "Показано",
   "Sign in through the official client first": "Сначала авторизуйтесь через официальный клиент",
+  "Sign PDF": "Подпишите PDF",
   "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.":
     "Вход в систему осуществляется официальным клиентом на этом Mac; Orbit не хранит токен OAuth.",
   "Sign-in managed by the official client": "Вход в систему осуществляется официальным клиентом",
@@ -1062,6 +1182,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Sources in proposed transaction": "Источники в предлагаемой сделке",
   "Space Black": "Космический чёрный",
   Split: "Оба",
+  "Split PDF": "Разделить PDF",
   standalone: "автономный",
   Starlight: "Звёздный свет",
   "Start from a cadence": "Начать с периодичности",
@@ -1074,11 +1195,14 @@ export const INTERFACE_TRANSLATIONS = {
     "Сначала следуйте рекомендации по исправлению, а при необходимости раскройте точное сообщение компилятора.",
   "Start writing to compile a preview.": "Начните писать для составления превью.",
   "Started a fresh local workspace": "Запустил новое локальное рабочее пространство",
+  "Starting the selected model": "Запуск выбранной модели",
   "State the question this review must answer and the decision it should support.":
     "Укажите вопрос, на который должен ответить этот обзор, и решение, которое он должен поддержать.",
   "State what the audience needs to understand and the decision the presentation should support.":
     "Укажите, что должна понять аудитория и какое решение должна поддержать презентация.",
+  "Still waiting; you can stop": "Все еще жду; ты можешь остановиться",
   Stop: "Остановить",
+  "Stop model request": "Остановить запрос модели",
   Stopped: "Остановлено",
   "Storage full": "Хранилище заполнено",
   "Strict Chart JSON · source identity locked": "Строгий Chart JSON · идентификатор источника заблокирован",
@@ -1087,6 +1211,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Structured output": "Структурированный вывод",
   "Suggested actions": "Предлагаемые действия",
   Sum: "Сумма",
+  "Summarize PDF": "Подведите итог PDF",
   "Summarize quarterly revenue": "Подведите итоги квартальной выручки",
   "Switch to the dark theme": "Переключиться на темную тему",
   "Switched artifact context": "Переключенный контекст артефакта",
@@ -1109,6 +1234,7 @@ export const INTERFACE_TRANSLATIONS = {
   Team: "Команда",
   "Temporarily avoided": "Временно исключён",
   "Temporary Workspace Agent context pins cleared": "Контекстные метки временной рабочей области Agent удалены.",
+  "Testing structured response…": "Тестирование структурированного ответа…",
   Text: "Текст",
   "That checkpoint already matches the current source": "Эта контрольная точка уже соответствует текущему источнику",
   "That file is too large. Choose one configuration smaller than 20 KB.":
@@ -1150,11 +1276,13 @@ export const INTERFACE_TRANSLATIONS = {
   "The layout is usable without material rework.": "Макет пригоден без существенной переработки.",
   "The model is preparing review questions from bounded aggregate evidence…":
     "Модель готовит вопросы обзора на основе ограниченных агрегированных доказательств…",
+  "The model is reading current context": "Модель читает текущий контекст",
   "The model is shaping this presentation from bounded source evidence…":
     "Модель формирует презентацию на основе ограниченных свидетельств источника…",
   "The numbers, structure, and language meet this task.": "Числа, структура и язык соответствуют задаче.",
   "The original detail was too long and is truncated in this view.":
     "Исходное сообщение слишком длинное и сокращено в этом представлении.",
+  "The PDF operation failed.": "Операция PDF не удалась.",
   "The result saves meaningful time over manual work.":
     "Результат заметно экономит время по сравнению с ручной работой.",
   "The user can understand what Orbit changed and why.": "Пользователь понимает, что и почему изменил Orbit.",
@@ -1174,11 +1302,16 @@ export const INTERFACE_TRANSLATIONS = {
     "Этот исходник не изменён; его живой результат построен на основе всего предлагаемого рабочего пространства.",
   Title: "Название",
   To: "Чтобы",
+  "To keep switching and typing responsive, this view shows the beginning first. The complete content remains in the Source editor.":
+    "Чтобы переключение и ввод текста оставались оперативными, в этом представлении сначала отображается начало. Полный контент остается в редакторе Source.",
   "To protect credentials, Orbit does not import from remote config URLs.":
     "Чтобы защитить учетные данные, Orbit не импортирует данные из URL-адресов удаленной конфигурации.",
   tokens: "токенов",
   Top: "Сверху",
   "Transaction map": "Карта транзакций",
+  "Translate imported canonical text through a reviewed Agent proposal.":
+    "Переведите импортированный канонический текст с помощью проверенного предложения Agent.",
+  "Translate PDF": "Перевести PDF",
   "Trim the selection": "Обрезать выделение",
   "Try four shortcuts yourself": "Попробуйте четыре сочетания клавиш",
   "Turn data into a verifiable review.": "Превратите данные в проверяемый отчёт.",
@@ -1189,6 +1322,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "Неизвестный источник",
   Unlinked: "Отключено",
   "Unlinked artifacts": "Несвязанные артефакты",
+  "Unlock PDF": "Разблокировать PDF",
   "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
     "Посторонние файлы останутся нетронутыми; будут записаны только проверенные исходники, изображения и манифест Orbit.",
   "Unresolved dependencies": "Неразрешенные зависимости",
@@ -1216,6 +1350,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Используйте Orbit JSON или ссылку для импорта одного поставщика CC Switch. Orbit сначала просматривает его и никогда не сохраняет сразу.",
   "Use Orbit JSON or one ccswitch://v1/import provider link.":
     "Используйте Orbit JSON или одну ссылку ccswitch://v1/import поставщика.",
+  "Use Orbit's local text, table, and optional OCR importer to create Markdown.":
+    "Используйте локальный текст, таблицу и дополнительный импортер OCR Orbit для создания Markdown.",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "Используйте прямоугольный CSV с заголовками или плоский JSON со скалярными значениями.",
   "Use the selected cloud or device model; you still confirm every change":
@@ -1225,6 +1361,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Use this model connection?": "Использовать это подключение?",
   Valid: "Действителен",
   Validated: "проверено",
+  "Validating the model result locally": "Проверка результата модели локально",
   "Value field": "Поле значения",
   "Values, definitions, and calculations are accurate.": "Значения, определения и расчёты точны.",
   "Verify & use": "Проверить и использовать",
@@ -1235,6 +1372,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Verifying…": "Проверка…",
   Version: "Версия",
   "Visible marks": "Видимые отметки",
+  "Visible signature": "Видимая подпись",
   "Visual deliverability": "Визуальная готовность к передаче",
   "Visual edit · complete source draft synced live":
     "Визуальное редактирование · полный черновик исходного кода синхронизируется в реальном времени",
@@ -1244,6 +1382,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Визуальное редактирование отклонено: не удалось сохранить устройство",
   "Visual edit rejected — every source stayed unchanged":
     "Визуальное редактирование отклонено — все источники остались без изменений",
+  Watermark: "Водяной знак",
+  "Web page to PDF": "Веб-страница PDF",
   "Weekly operating review": "Еженедельный операционный обзор",
   "Weekly review": "Еженедельный обзор",
   "Welcome & local guide": "Добро пожаловать и местный гид",

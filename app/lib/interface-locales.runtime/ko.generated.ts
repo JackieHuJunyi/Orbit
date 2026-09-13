@@ -91,6 +91,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add condition": "조건 추가",
   "Add model provider": "모델 제공자 추가",
   "Add next actions": "다음 작업 추가",
+  "Add page numbers at a consistent reviewed position.": "일관된 검토 위치에 페이지 번호를 추가합니다.",
   "Add provider": "제공업체 추가",
   "Add source content": "소스 콘텐츠 추가",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
@@ -104,8 +105,6 @@ export const INTERFACE_TRANSLATIONS = {
     "확인하면 Orbit은(는) 이 구성만 읽고 모델 카탈로그와 구조화된 최소 응답 하나를 확인한 다음 이를 암호화하여 기본값으로 저장합니다.",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록과 최소 구조화 응답을 검증합니다. 두 검증에 모두 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
-  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
-    "확인 후 공식 클라이언트는 문서가 없는 구조화된 응답 하나를 완료합니다. Orbit은 연결 이름만 저장하고 OAuth 토큰을 복사하지 않습니다.",
   Agent: "Agent",
   "Agent change scope": "Agent 변경 범위",
   "Agent composer focused": "Agent 작곡가 중심",
@@ -143,6 +142,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Apply all": "모두 적용",
   "Apply an Agent patch or press ⌘S to capture the current source.":
     "Agent 패치를 적용하거나 ⌘S를 눌러 현재 소스를 캡처하세요.",
+  "Apply an exact crop box to selected pages.": "Apply 선택한 페이지에 대한 정확한 자르기 상자.",
   "Apply structure change": "구조 변경 적용",
   Area: "영역",
   "Area · volume sequence": "영역 · 규모 추이",
@@ -206,9 +206,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "바인딩 구문을 확인하고 이 작업 공간에 존재하는 지표를 선택하세요.",
   "Check these settings first:": "먼저 다음 설정을 확인하세요.",
+  Checkbox: "체크박스",
+  "Checked by default": "기본적으로 선택됨",
   "Checking connections already saved in Orbit…": "Orbit에 저장된 연결 확인 중…",
   "Checkpoint history": "체크포인트 내역",
   "Checkpoint restore details": "체크포인트 복원 세부 정보",
+  "Choices (one per line or comma-separated)": "선택 사항(한 줄에 하나씩 또는 쉼표로 구분)",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "표준 소스를 선택하세요. 쿼리 및 Chart 파일은 첫 번째 개정의 정확한 업스트림 아티팩트 및 필드에 바인딩됩니다.",
   "Choose a fetched model": "가져온 모델 선택",
@@ -220,6 +223,7 @@ export const INTERFACE_TRANSLATIONS = {
     "검토된 문서, 대상, 목적을 선택하세요. Orbit은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "검토된 문서, 대상, 목적을 선택하세요. Orbit이 편집 가능한 Deck Markdown을 만들고 원본 문서와의 명시적 관계를 유지합니다.",
+  "Choose again": "다시 선택",
   "Choose an existing Chart id or create and validate that Chart first.":
     "기존 Chart ID를 선택하거나 먼저 해당 Chart를 만들고 검증하세요.",
   "Choose an existing metric key or an explicit Query output field.":
@@ -228,6 +232,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Chart 강조 색상을 선택하세요",
   "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "CSV, JSON, XLSX 또는 ODS를 선택하세요. Orbit이 먼저 가져오기 결과를 보여 준 다음 필드, 지표, 차트와 결과물 설정을 안내합니다.",
+  "Choose files": "파일 선택",
   "Choose JSON / text file": "JSON / 텍스트 파일 선택",
   "Choose maximum visible Chart marks": "표시되는 최대 Chart 마크를 선택하세요.",
   "Choose one exact scope value, or return to all Data rows.":
@@ -246,18 +251,24 @@ export const INTERFACE_TRANSLATIONS = {
   "Clear pins": "클리어 핀",
   "Click again to delete": "삭제하려면 다시 클릭하세요.",
   "Close current file": "현재 파일 닫기",
+  "Close PDF tools": "PDF 도구 닫기",
   "Close tutorial": "튜토리얼 닫기",
   "Closed the current file — every source remains in the workspace":
     "현재 파일을 닫았습니다. 모든 소스는 작업 공간에 남아 있습니다.",
   "Closed the current file — every source remains safely in the workspace":
     "현재 파일을 닫았습니다. 모든 소스는 작업 공간에 안전하게 남아 있습니다.",
   "Cloud API": "클라우드 API",
+  "Combine complete PDFs in a chosen order.": "완전한 PDF을(를) 선택한 순서로 결합합니다.",
+  "Combine photographed or scanned pages into a PDF.": "사진을 찍거나 스캔한 페이지를 PDF으로 결합합니다.",
+  "Compare PDFs": "PDF 비교",
   "Compare with": "비교 대상",
   "Comparison rows": "비교 행",
   "Compiled artifact preview": "컴파일된 아티팩트 미리보기",
   "Compiler-guided repair passed": "컴파일러 기반 복구 통과",
   "Complete the required fields and Orbit will validate the whole workflow before review.":
     "필수 필드를 작성하면 Orbit이(가) 검토 전에 전체 워크플로를 검증합니다.",
+  "Complete; review before download": "완료; 다운로드하기 전에 검토하세요",
+  "Compress PDF": "PDF 압축",
   "Conclusion usefulness": "결론의 유용성",
   "Conclusions trace to sufficient supporting evidence.": "결론을 충분한 근거까지 추적할 수 있습니다.",
   "Condense the selection into one sentence": "선택 항목을 한 문장으로 압축합니다.",
@@ -275,31 +286,43 @@ export const INTERFACE_TRANSLATIONS = {
   "Connect the models you already use": "이미 사용하고 있는 모델을 연결하세요",
   "Connected folder": "연결된 폴더",
   "Connections available on this device": "이 기기에서 사용할 수 있는 연결",
-  "Connections on this Mac": "이 Mac의 연결",
+  "Connections found on this Mac": "이 Mac에서 발견된 연결",
   "Content workspace": "콘텐츠 작업공간",
   Continue: "계속",
+  "Continue in Orbit": "Orbit에서 계속",
   "Continue setup": "계속 설정",
   "Continue with model assistance": "모델을 사용해 계속",
   "Continue without a model": "모델 없이 계속",
   Conversation: "대화",
+  "Convert Word, PowerPoint, Excel, and OpenDocument sources through Orbit's reviewed export path.":
+    "Orbit에서 검토한 내보내기 경로를 통해 Word, PowerPoint, Excel 및 OpenDocument 소스를 변환하세요.",
+  "Copy selected pages into a new PDF.": "선택한 페이지를 새 PDF에 복사합니다.",
   "Cosmic Orange": "코스믹 오렌지",
+  "Create a clean PDF from entered text.": "입력된 텍스트에서 깨끗한 PDF을 생성합니다.",
   "Create a new artifact": "새 아티팩트 만들기",
   "Create a new presentation": "새 프레젠테이션 만들기",
   "Create a presentation from the current report": "현재 보고서에서 프레젠테이션 만들기",
   "Create a review from data": "데이터로 운영 리뷰 만들기",
   "Create an analysis, chart, and report from revenue data": "수익 데이터를 바탕으로 분석, 차트, 보고서 만들기",
+  "Create an archival conformance copy when the desktop converter is available.":
+    "데스크톱 변환기를 사용할 수 있을 때 보관 적합성 복사본을 만듭니다.",
   "Create an editable Deck Markdown presentation": "편집 가능한 Deck Markdown 프레젠테이션 만들기",
   "Create an editable Markdown report": "편집 가능한 Markdown 보고서 만들기",
   "Create an editable semantic HTML presentation": "편집 가능한 시맨틱 HTML 프레젠테이션 만들기",
   "Create blank": "공백 만들기",
+  "Create one PDF page per PNG or JPEG image.": "PNG 또는 JPEG 이미지당 하나의 PDF 페이지를 만듭니다.",
+  "Create one PDF per selected page or range.": "선택한 페이지 또는 범위당 하나의 PDF을(를) 만듭니다.",
   "Create operating review": "운영 검토 작성",
+  "Create or fill text, checkbox, choice, and list fields.": "텍스트, 확인란, 선택 및 목록 필드를 생성하거나 채웁니다.",
   "Create or refresh a light presentation": "가벼운 프레젠테이션 만들기 또는 갱신",
+  "Create PDF": "PDF 생성",
   "Create presentation from document": "문서에서 프레젠테이션 만들기",
   "Create reusable Chart only": "재사용 가능한 Chart만 생성",
   "Create review": "리뷰 작성",
   "Create source": "소스 생성",
   Credential: "자격 증명",
   "Credential found; not read yet": "인증 정보 감지 · 아직 읽지 않음",
+  "Crop PDF": "PDF 자르기",
   Currency: "통화",
   "Currency · USD": "통화 · USD",
   Current: "현재",
@@ -327,6 +350,7 @@ export const INTERFACE_TRANSLATIONS = {
     "증거, 측정항목, 대상을 먼저 정의하세요. Orbit은 분석, 차트, 보고서 및 슬라이드를 하나의 검토 트랜잭션으로 컴파일합니다.",
   Delete: "삭제",
   "Delete block": "블록 삭제",
+  "Delete selected pages after review.": "검토 후 선택한 페이지를 삭제합니다.",
   Deliverable: "결과물",
   "Deliverable after minor edits": "조금 수정하면 전달 가능",
   "Deliverable outcome": "결과물 평가",
@@ -370,8 +394,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "이 결과를 실제 업무에 사용할 수 있었나요?",
   Discard: "폐기",
   "Discard proposed patch": "제안된 패치 폐기",
-  "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.":
-    "Discovery는 공식 클라이언트 상태, 알려진 구성 위치, CC 스위치 및 로컬 모델 포트를 확인합니다. 브라우저 쿠키를 읽거나 API 키 또는 OAuth 토큰을 표시하지 않습니다.",
+  "Discovery checks official-client status, literal shell configuration, known app settings, CC Switch, and local model ports. It never executes a shell or displays API keys or OAuth tokens.":
+    "Discovery는 공식 클라이언트 상태, 리터럴 셸 구성, 알려진 앱 설정, CC 스위치 및 로컬 모델 포트를 확인합니다. 셸을 실행하거나 API 키 또는 OAuth 토큰을 표시하지 않습니다.",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "검색은 알려진 설정 위치와 로컬 모델 포트만 확인합니다. 셸 설정을 실행하거나 파일을 업로드하거나 키를 표시하지 않습니다.",
   "Dock Agent": "Agent 고정",
@@ -398,6 +422,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Draft Chart preview": "초안 Chart 미리보기",
   "Draft preview": "초안 미리보기",
   "Drag to select the OCR region": "드래그하여 OCR 영역 선택",
+  Dropdown: "드롭다운",
   "Earlier device records (read only)": "이전 기기 기록(읽기 전용)",
   "Edges recompile from source; pins last only for this session.":
     "Edge는 소스에서 다시 컴파일됩니다. 핀은 이 세션 동안만 지속됩니다.",
@@ -406,6 +431,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Edit Chart description": "Chart 설명 수정",
   "Edit Chart title": "Chart 제목 수정",
   "Edit model provider": "모델 제공자 수정",
+  "Edit PDF": "PDF 수정",
   "Edit this canonical source cell": "이 표준 소스 셀 편집",
   "Editable output": "편집 가능한 결과물",
   Edited: "편집됨",
@@ -416,6 +442,7 @@ export const INTERFACE_TRANSLATIONS = {
   Empty: "비어 있음",
   "en-US": "en-US",
   Enable: "활성화",
+  "Encrypt a PDF with a user password locally.": "사용자 비밀번호를 사용하여 로컬에서 PDF을 암호화합니다.",
   "Encrypting…": "암호화 중…",
   Endpoint: "엔드포인트",
   "Enter a focus view": "집중 보기로 전환",
@@ -444,12 +471,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Export as standalone HTML": "독립형 HTML으로 내보내기",
   "Export held for review — workspace context changed": "검토를 위해 내보내기 보류됨 - 작업공간 컨텍스트가 변경됨",
   "Export pilot evidence": "파일럿 증거 내보내기",
+  "Extract embedded raster images without rendering page backgrounds.":
+    "페이지 배경을 렌더링하지 않고 포함된 래스터 이미지를 추출합니다.",
+  "Extract images": "이미지 추출",
+  "Extract pages": "페이지 추출",
   Eyebrow: "눈썹",
   "Fetch models": "모델 가져오기",
   "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
     "모델 가져오기는 인증과 모델 목록만 확인합니다. 첫 Agent 계획은 선택한 프로토콜의 구조화된 출력도 검증합니다. 다른 공급자로 재시도하려면 모델 설정에서 별도의 권한을 허용해야 합니다.",
   "Fetching…": "가져오는 중…",
   "Fidelity notes": "충실도 메모",
+  "Field name": "필드 이름",
+  "Field type": "필드 유형",
   "Fields and measure": "필드 및 측정값",
   File: "파일",
   "File names, Artifact IDs, workspace paths, and user identity":
@@ -459,6 +492,8 @@ export const INTERFACE_TRANSLATIONS = {
   files: "파일",
   "Files available after the switch": "전환 후 사용 가능한 파일",
   "Files in proposed patch": "제안된 패치의 파일",
+  "Files stay local by default; AI actions remain review-before-write.":
+    "파일은 기본적으로 로컬로 유지됩니다. AI 작업은 작성 전 검토 상태로 유지됩니다.",
   "Filter value": "필터 값",
   "First proposal stayed unapplied": "첫 번째 제안이 적용되지 않은 상태로 유지됨",
   "fixed-layout": "고정 레이아웃",
@@ -481,6 +516,7 @@ export const INTERFACE_TRANSLATIONS = {
     "폴더 전용 파일은 그대로 유지되지만 새로운 Orbit 작업공간 매니페스트에 속하지 않습니다.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "예: 1-3, 5. 감지된 스캔 페이지만 선택할 수 있습니다.",
+  "For example 1,3-5; blank means all": "예를 들어 1,3-5; 공백은 모두를 의미",
   "For example: July 2026": "예: 2026년 7월",
   "For example: July operating review": "예: 7월 운영 검토",
   "For example: Product launch briefing": "예: 제품 출시 브리핑",
@@ -494,6 +530,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Hide API key": "API 키 숨기기",
   "Hide workspace files": "작업공간 파일 숨기기",
   "HTML · PPTX · ODP · PDF": "HTML · PPTX · ODP · PDF",
+  "HTML to PDF": "HTML - PDF",
   "Human-reviewed real tasks": "사람이 검토한 실제 작업",
   "I confirm this task is authorized for evaluation or its content is redacted.":
     "이 작업이 평가용으로 승인되었거나 콘텐츠가 비식별 처리되었음을 확인합니다.",
@@ -503,6 +540,7 @@ export const INTERFACE_TRANSLATIONS = {
     "지난주 이후 가장 중요한 변화를 파악하고 다음 의사결정 또는 담당자를 지정합니다.",
   "Ignored unsupported fields": "지원되지 않는 필드는 무시됩니다.",
   Image: "이미지",
+  "Images to PDF": "PDF에 대한 이미지",
   Import: "가져오기",
   "Import a document, review it, then choose audience, purpose, and length":
     "문서를 가져와 검토한 뒤 대상, 목적과 길이를 선택하세요",
@@ -517,7 +555,12 @@ export const INTERFACE_TRANSLATIONS = {
     "데이터를 가져온 뒤 바로 필드 연결과 결과물 설정으로 이동합니다",
   "Import details": "가져오기 세부정보",
   "Import held for review — workspace context changed": "검토를 위해 가져오기 보류 — 작업공간 컨텍스트가 변경됨",
+  "Import locally extracted text, then ask the selected model for a source-linked summary.":
+    "로컬에서 추출된 텍스트를 가져온 다음 선택한 모델에 소스 연결 요약을 요청하세요.",
   "Import one model profile": "하나의 모델 프로필 가져오기",
+  "Import PDF into canonical Markdown, then export a reviewed DOCX.":
+    "PDF을 표준 Markdown으로 가져온 다음 검토된 DOCX을 내보냅니다.",
+  "Import PDF pages, review structure, then export PPTX.": "PDF 페이지를 가져오고 구조를 검토한 후 PPTX을 내보냅니다.",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON 가져오기, XLSX 또는 ODS. Orbit은 먼저 변환을 미리 본 다음 필드, 측정값, 차트 및 결과물을 안내합니다.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -554,6 +597,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Keep valid Deck Markdown or script-free semantic HTML.":
     "유효한 Deck Markdown 또는 스크립트 없는 시맨틱 HTML을 사용하세요.",
   Language: "언어",
+  "Large document quick preview": "대용량 문서 빠른 미리보기",
   "Last run": "마지막 실행",
   Lavender: "라벤더",
   Layout: "레이아웃",
@@ -566,7 +610,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Light Gold": "라이트 골드",
   Line: "라인",
   "Line · sequence": "라인 · 시퀀스",
+  "Linearize and normalize a PDF for fast opening.": "빠른 열기를 위해 PDF을 선형화하고 정규화합니다.",
   Link: "링크",
+  List: "목록",
   "Live artifact dependencies": "라이브 아티팩트 종속성",
   "Live chart": "라이브 차트",
   "Live compilation": "라이브 편집",
@@ -585,6 +631,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Local or configured-model planning plus input/output token counts when available":
     "로컬 또는 구성된 모델의 계획과 사용 가능한 경우 입출력 토큰 수",
   "Local planner": "지역 기획자",
+  "Local processing · explicit review · AI only when useful": "로컬 처리 · 명시적 검토 · 유용한 경우에만 AI",
   "Local runtime validation failed": "로컬 런타임 검증 실패",
   "Local SQL bound to Data": "데이터에 바인딩된 로컬 SQL",
   "Local workspace": "로컬 작업공간",
@@ -598,6 +645,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Manual checkpoint saved on this device": "이 기기에 수동 체크포인트가 저장되었습니다.",
   Mark: "마크",
   "Match all conditions": "모든 조건 일치",
+  "Merge PDFs": "PDF 병합",
   "Mist Blue": "미스트 블루",
   Model: "모델",
   "Model connected": "연결된 모델",
@@ -639,6 +687,7 @@ export const INTERFACE_TRANSLATIONS = {
   "New block after": "이후 새 블록",
   "New block before": "이전에 새 블록",
   "New file": "새 파일",
+  "New page order": "새 페이지 순서",
   "New semantic HTML": "새 시맨틱 HTML",
   "New source diff": "새로운 소스 차이점",
   "New source preview": "새로운 소스 미리보기",
@@ -689,8 +738,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Numeric value field": "숫자 값 필드",
   "OCR language for": "OCR 언어:",
   "OCR pages for": "OCR 페이지:",
+  "OCR PDF": "OCR PDF",
   "OCR settings": "OCR 설정",
   of: "/",
+  "Office to PDF": "PDF 방향 사무실",
   "On-device recognition": "기기 내 인식",
   "One atomic device write · a checkpoint is created first": "하나의 원자 장치 쓰기 · 체크포인트가 먼저 생성됩니다.",
   "One atomic device write · every source stays unchanged on failure":
@@ -709,8 +760,6 @@ export const INTERFACE_TRANSLATIONS = {
     "현재 리비전에 고정된 시맨틱 HTML 슬라이드 하나 · Source에 실시간 반영 · 저장 전 전체 프레젠테이션 검증",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "한 개의 개정판 슬라이드 · 바인딩은 고정된 상태로 유지됨 · 저장 시 표준 소스 쓰기",
-  "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.":
-    "한 번의 스캔으로 로그인된 계정, 알려진 API 구성 및 로컬 모델을 결합합니다. 자격 증명은 이 목록에 표시되지 않습니다.",
   "One source workspace": "단일 소스 작업 공간",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "엄격한 사양 1개 · 런타임 영향 확인 · 저장 시 정식 Chart JSON 재작성",
@@ -718,6 +767,8 @@ export const INTERFACE_TRANSLATIONS = {
     "기본 모델이 실패한 경우에만 Orbit이 동일한 제한된 콘텐츠를 설정된 다른 공급자에게 보낼 수 있습니다. 기본값은 꺼짐입니다.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "현재 데이터 범위 전체에서 숫자인 필드만 표시합니다.",
+  "Only installed, signed-in, configured, or running connections appear. Services that were not found take no space.":
+    "설치, 로그인, 구성 또는 실행 중인 연결만 나타납니다. 발견되지 않은 서비스는 공간을 차지하지 않습니다.",
   "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
     "제공자, 출처, 엔드포인트, 모델만 표시합니다. Orbit은 연결을 선택한 후에만 인증 정보를 읽습니다.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
@@ -737,6 +788,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Operating review · task first": "운영 검토·과제 우선",
   "Operating team": "운영팀",
   "Operating-review task settings": "운영 검토 작업 설정",
+  "Optimize PDF": "PDF 최적화",
   optional: "선택사항",
   "Optional · seven dimensions · about one minute": "선택 사항 · 7개 항목 · 약 1분",
   "Optional page region": "선택적 페이지 영역",
@@ -750,6 +802,8 @@ export const INTERFACE_TRANSLATIONS = {
     "선택 사항입니다. 선택하면 로컬 근거, SQL, 차트, 모델 컨텍스트는 정확히 일치하는 행만 사용합니다.",
   "Or open something else": "또는 다른 콘텐츠 열기",
   Orbit: "Orbit",
+  "Orbit already confirmed the account state during discovery. Continue saves the model choice immediately; the first conversation still runs through the official client, and Orbit never copies its OAuth token.":
+    "Orbit은(는) 이미 검색 중에 계정 상태를 확인했습니다. 계속은 모델 선택을 즉시 저장합니다. 첫 번째 대화는 여전히 공식 클라이언트를 통해 실행되며 Orbit은 OAuth 토큰을 복사하지 않습니다.",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -803,13 +857,20 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit은 재설정 전 기기 작업공간 전체를 복원하고 현재 작업공간은 다음에 복원할 수 있는 버전으로 보존합니다.",
   "Orbit writes an explicit -- orbit:data directive, so workspace_data never changes when files are reordered.":
     "Orbit은 명시적인 --orbit:data 지시문을 작성하므로 파일이 다시 정렬될 때 작업 공간_데이터가 변경되지 않습니다.",
+  "Organize pages": "페이지 구성",
+  "Organize, convert, edit, secure, and understand PDFs": "PDF 구성, 변환, 편집, 보안 및 이해",
   "Output budget per task": "작업당 출력 예산",
   "Overall time saved": "전체 시간 절감",
+  "Overlay one PDF page set on another.": "하나의 PDF 페이지 세트를 다른 페이지에 오버레이합니다.",
+  "Overlay PDFs": "오버레이 PDF",
   page: "페이지",
   "Page images stay on device · results remain reviewable": "페이지 이미지는 기기에 유지 · 결과는 검토 가능",
   "Page language": "페이지 언어",
+  "Page numbers": "페이지 번호",
   pages: "페이지",
+  Pages: "페이지",
   "Pages to recognize": "인식할 페이지",
+  Password: "비밀번호",
   "Paste config or CC Switch link": "구성 또는 CC 스위치 링크 붙여넣기",
   "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
     "하나의 JSON 객체를 붙여넣거나 ccswitch://v1/import?resource=provider…",
@@ -818,14 +879,26 @@ export const INTERFACE_TRANSLATIONS = {
     "검토를 위해 패치 보류 - 변경된 모든 파일에는 안전 체크포인트가 필요합니다.",
   "Patch held for review — workspace context changed": "검토를 위해 패치 보류 — 작업공간 컨텍스트가 변경됨",
   "Patch held for review — workspace source revision changed": "검토를 위해 패치 보류 — 작업공간 소스 개정이 변경됨",
+  "PDF forms": "PDF 양식",
   "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
     "PDF 페이지는 이 브라우저에서만 렌더링됩니다. Orbit은 이 사이트에서 내장 OCR 런타임과 언어 데이터를 불러오고 브라우저가 이를 캐시합니다. 페이지 이미지와 인식된 텍스트는 전송되지 않습니다.",
+  "PDF to Excel": "PDF을(를) Excel로",
+  "PDF to images": "이미지에 대한 PDF",
+  "PDF to Markdown": "PDF - Markdown",
+  "PDF to PDF/A": "PDF - PDF/A",
+  "PDF to PowerPoint": "PDF을(를) PowerPoint로",
+  "PDF to Word": "PDF을(를) Word로",
+  "PDF tools": "PDF 도구",
   Percent: "퍼센트",
   "Period and audience": "기간 및 대상",
   "Pilot Evidence · on device": "파일럿 증거 · 기기 내",
   "Pilot evidence export cancelled — nothing was downloaded": "파일럿 증거 내보내기 취소됨 — 다운로드된 파일 없음",
   "Pilot Evidence export contents": "파일럿 증거 내보내기 내용",
   "Pilot evidence held for review — device records changed": "파일럿 증거 검토 보류 — 기기 기록이 변경됨",
+  "Place a visible typed signature without claiming cryptographic certification.":
+    "암호화 인증을 요구하지 않고 눈에 보이는 유형의 서명을 배치합니다.",
+  "Place repeated translucent text across selected pages.": "선택한 페이지 전체에 반복되는 반투명 텍스트를 배치합니다.",
+  "Place reviewed text on an exact page and position.": "검토된 텍스트를 정확한 페이지와 위치에 배치하세요.",
   "Plan an AI change": "AI 변화 계획",
   "portable data": "휴대용 데이터",
   "Prepare a verifiable operating-review chain": "검증 가능한 운영-검토 체인 준비",
@@ -833,6 +906,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepare update review": "업데이트 검토 준비",
   "Prepares a change before you approve the write": "쓰기를 승인하기 전에 변경 사항을 준비합니다.",
   "Preparing OCR": "OCR 준비 중",
+  "Preparing one bounded repair": "하나의 제한된 수리 준비",
   Presentation: "프리젠테이션",
   "Presentation authored in semantic HTML": "시맨틱 HTML로 작성하는 프레젠테이션",
   "Presentation destination": "프레젠테이션 대상",
@@ -852,6 +926,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Previous workspace": "이전 작업공간",
   "Primary and comparison scopes each need at least one complete condition.":
     "기본 범위와 비교 범위에는 각각 하나 이상의 완전한 조건이 필요합니다.",
+  "Processing locally…": "로컬에서 처리 중…",
   "Profile name": "프로필 이름",
   "Project brief": "프로젝트 개요",
   "Proposal preview": "제안 미리보기",
@@ -859,8 +934,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Proposed output · nothing written": "제안된 결과물 · 아직 쓰지 않음",
   "Proposed source": "제안된 소스",
   "Proposed source dependency changes": "제안된 소스 종속성 변경 사항",
+  "Protect PDF": "PDF 보호",
   Provider: "공급자",
   "Provider-reported token usage": "공급자가 보고한 토큰 사용량",
+  "Public HTTPS URL": "공개 HTTPS URL",
   "Pull folder changes": "폴더 변경 사항 가져오기",
   "Pull these folder changes?": "이 폴더 변경 사항을 가져올까요?",
   "Push these changes to the folder?": "이 변경 사항을 폴더에 내보낼까요?",
@@ -870,23 +947,34 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "쿼리 출력",
   "Quick start": "빠른 시작",
   Quote: "견적",
+  "Rasterize reviewed pages and permanently burn in redaction regions.":
+    "검토된 페이지를 래스터화하고 편집 영역에서 영구적으로 구울 수 있습니다.",
   "Readable file": "읽을 수 있는 파일",
   "readable source": "읽을 수 있는 소스",
   "Readable source": "읽을 수 있는 소스",
   "Readable, analyzable table data": "읽고 분석 가능한 테이블 데이터",
+  "Reading available models…": "사용 가능한 모델을 읽는 중…",
+  "Reading current Query results locally": "현재 Query 결과를 로컬에서 읽기",
   "Reading model profiles…": "모델 프로필을 읽는 중…",
+  "Reading this connection…": "이 연결을 읽는 중…",
   Ready: "준비",
   "Ready to deliver": "바로 전달 가능",
   "ready to edit": "편집할 준비가 되었습니다",
   "real tasks reviewed": "개의 실제 작업 평가",
   "Real-task evaluation": "실제 작업 평가",
+  "Rebuild readable PDF structure when qpdf can recover it.":
+    "qpdf가 복구할 수 있는 경우 읽기 가능한 PDF 구조를 다시 빌드하세요.",
   "Recent call succeeded": "최근 호출 성공",
   "Recent task runs": "최근 작업 실행",
   Recognize: "인식",
+  "Recognize selected scanned pages with Orbit's local OCR review.":
+    "Orbit의 로컬 OCR 리뷰를 통해 선택한 스캔 페이지를 인식하세요.",
   "Recognizing page": "페이지 인식 중",
   "Recognizing…": "인식 중…",
   "Recommended from this device. You can change it whenever you like.":
     "이 기기에서 권장됩니다. 원할 때 언제든지 변경할 수 있습니다.",
+  "Recompress streams and generate compact object streams locally.":
+    "스트림을 다시 압축하고 로컬에서 압축 개체 스트림을 생성합니다.",
   "Reconnect existing Data or Query and exact category and value fields.":
     "기존 Data 또는 Query와 정확한 범주 및 값 필드를 다시 연결하세요.",
   "Reconnect the missing Chart": "누락된 Chart 다시 연결",
@@ -897,19 +985,33 @@ export const INTERFACE_TRANSLATIONS = {
   "Recording…": "기록 중…",
   "Recover files, versions, and task records from before reset": "재설정 전 파일, 버전 및 작업 기록 복원",
   "Recovered after one compiler-guided repair": "한 번의 컴파일러 기반 복구 후에 복구됨",
+  "Redact PDF": "PDF 수정",
   "Refresh available": "갱신 가능",
   "Refresh linked presentation in place": "연결된 프레젠테이션을 제자리에서 갱신",
   "Related reference": "관련 참조",
   "Release to prepare the import": "가져오기 준비를 위한 릴리스",
   "Remove condition": "조건 제거",
+  "Remove encryption after the user supplies the current password.":
+    "사용자가 현재 비밀번호를 제공한 후 암호화를 제거합니다.",
   "Remove from workspace": "작업공간에서 제거",
+  "Remove pages": "페이지 제거",
   "Remove scripts or executable markup; Orbit previews only script-free content.":
     "스크립트나 실행 가능한 마크업을 제거하세요. Orbit은 스크립트 없는 콘텐츠만 미리 봅니다.",
   "Remove temporary Agent context pin": "임시 Agent 컨텍스트 핀 제거",
   "Remove unsafe content": "안전하지 않은 콘텐츠 제거",
+  "Render and compare page structure without changing either input.":
+    "입력을 변경하지 않고 페이지 구조를 렌더링하고 비교합니다.",
+  "Render one public HTTPS page in an isolated desktop session.":
+    "격리된 데스크톱 세션에서 하나의 공개 HTTPS 페이지를 렌더링합니다.",
+  "Render safe semantic HTML through Orbit's fixed PDF export.":
+    "Orbit의 고정된 PDF 내보내기를 통해 안전한 의미 체계 HTML를 렌더링합니다.",
+  "Render selected PDF pages as PNG images.": "선택한 PDF 페이지를 PNG 이미지로 렌더링합니다.",
   "Rendered presentation preview": "렌더링된 프레젠테이션 미리보기",
   "Rendering a private on-device preview…": "기기에서 비공개 미리보기를 렌더링하는 중…",
   "Rendering page": "페이지 렌더링 중",
+  "Reorder and duplicate pages with an explicit page sequence.":
+    "명시적인 페이지 순서로 페이지를 재정렬하고 복제합니다.",
+  "Repair PDF": "PDF 수리",
   "Repair the Chart definition": "Chart 정의 수정",
   "Repair the Chart source": "Chart 소스 수정",
   "Repair the Data source": "Data 소스 수정",
@@ -936,6 +1038,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Restore the sample workspace?": "샘플 작업공간을 복원할까요?",
   "Restored the latest device draft": "최신 장치 초안을 복원했습니다.",
   "Result summary": "결과 요약",
+  Results: "결과",
   "Revenue analysis": "수익분석",
   "Revenue by region": "지역별 수익",
   Review: "검토",
@@ -943,6 +1046,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review canonical source": "정규 소스 검토",
   "Review checkpoint restore": "체크포인트 복원 검토",
   "Review config": "Review 구성",
+  "Review extracted tables as canonical Data before XLSX export.":
+    "Review는 XLSX 내보내기 전에 테이블을 표준 Data으로 추출했습니다.",
   "Review first, preserve the current workspace, then open the sample":
     "먼저 검토하고 현재 작업공간을 보존한 뒤 샘플 열기",
   "Review focus": "검토 초점",
@@ -957,7 +1062,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Review title": "리뷰 제목",
   "Review-question planner": "리뷰 질문 플래너",
   "Rose Pearl": "로즈 펄",
+  "Rotate pages": "페이지 회전",
+  "Rotate selected pages by 90, 180, or 270 degrees.": "선택한 페이지를 90도, 180도 또는 270도 회전합니다.",
+  Rotation: "회전",
   "Run history": "실행 기록",
+  "Run tool": "도구 실행",
   "Running locally": "로컬에서 실행",
   "Runs on this device": "이 기기에서 실행",
   "Runtime impact preflight passed": "런타임 영향 프리플라이트 통과",
@@ -984,9 +1093,12 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "저장된 작업",
   "Saved tasks": "저장된 작업",
   Saving: "저장 중",
+  "Saving securely…": "안전하게 저장 중…",
   "Scan again": "다시 검색",
+  "Scan to PDF": "PDF으로 스캔",
   "Scanned PDF · explicit selection": "스캔 PDF · 명시적 선택",
   "Scope filters": "범위 필터",
+  "Search PDF tools": "PDF 도구 검색",
   "See the full data-to-report-and-deck chain": "전체 데이터-보고 및 자료 체인 보기",
   "Select a changed file to inspect its source diff.": "소스 차이점을 검사하려면 변경된 파일을 선택하세요.",
   "Select or edit a Deck slide": "Deck 슬라이드 선택 또는 편집",
@@ -1008,6 +1120,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Show workspace files": "작업공간 파일 표시",
   Showing: "표시",
   "Sign in through the official client first": "먼저 공식 클라이언트를 통해 로그인하세요.",
+  "Sign PDF": "PDF에 서명하세요.",
   "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.":
     "로그인은 이 Mac의 공식 클라이언트에서 관리됩니다. Orbit은 OAuth 토큰을 저장하지 않습니다.",
   "Sign-in managed by the official client": "공식 클라이언트에서 관리하는 로그인",
@@ -1043,6 +1156,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Sources in proposed transaction": "제안된 거래의 소스",
   "Space Black": "스페이스 블랙",
   Split: "분할",
+  "Split PDF": "PDF 분할",
   standalone: "독립형",
   Starlight: "스타라이트",
   "Start from a cadence": "보고 주기로 시작",
@@ -1055,11 +1169,14 @@ export const INTERFACE_TRANSLATIONS = {
     "먼저 수정 방향을 확인하고 필요할 때 정확한 컴파일러 근거를 펼쳐 보세요.",
   "Start writing to compile a preview.": "미리보기를 컴파일하기 위해 글쓰기를 시작하세요.",
   "Started a fresh local workspace": "새로운 로컬 작업 공간을 시작했습니다",
+  "Starting the selected model": "선택한 모델 시작",
   "State the question this review must answer and the decision it should support.":
     "이 검토가 답변해야 하는 질문과 이를 뒷받침해야 하는 결정을 기술합니다.",
   "State what the audience needs to understand and the decision the presentation should support.":
     "대상이 이해해야 할 내용과 프레젠테이션이 뒷받침할 결정을 적으세요.",
+  "Still waiting; you can stop": "아직도 기다리고 있습니다. 그만둬도 돼",
   Stop: "중지",
+  "Stop model request": "모델 요청 중지",
   Stopped: "중지됨",
   "Storage full": "저장용량이 가득 참",
   "Strict Chart JSON · source identity locked": "엄격한 Chart JSON · 소스 ID가 잠겼습니다.",
@@ -1068,6 +1185,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Structured output": "구조화된 출력",
   "Suggested actions": "권장 조치",
   Sum: "합계",
+  "Summarize PDF": "PDF 요약",
   "Summarize quarterly revenue": "분기별 수익 요약",
   "Switch to the dark theme": "어두운 테마로 전환",
   "Switched artifact context": "전환된 아티팩트 컨텍스트",
@@ -1090,6 +1208,7 @@ export const INTERFACE_TRANSLATIONS = {
   Team: "팀",
   "Temporarily avoided": "일시적으로 제외됨",
   "Temporary Workspace Agent context pins cleared": "임시 작업공간 Agent 컨텍스트 핀이 삭제되었습니다.",
+  "Testing structured response…": "구조화된 응답 테스트 중…",
   Text: "텍스트",
   "That checkpoint already matches the current source": "해당 체크포인트는 이미 현재 소스와 일치합니다.",
   "That file is too large. Choose one configuration smaller than 20 KB.":
@@ -1130,11 +1249,13 @@ export const INTERFACE_TRANSLATIONS = {
   "The layout is usable without material rework.": "큰 재작업 없이 레이아웃을 사용할 수 있습니다.",
   "The model is preparing review questions from bounded aggregate evidence…":
     "모델이 범위가 제한된 집계 근거에서 리뷰 질문을 준비하고 있습니다…",
+  "The model is reading current context": "모델이 현재 컨텍스트를 읽고 있습니다.",
   "The model is shaping this presentation from bounded source evidence…":
     "모델이 범위가 제한된 원본 근거로 프레젠테이션을 구성하고 있습니다…",
   "The numbers, structure, and language meet this task.": "수치, 구조, 표현이 이 작업의 요구를 충족합니다.",
   "The original detail was too long and is truncated in this view.":
     "원본 세부 정보가 너무 길어 이 보기에서 잘렸습니다.",
+  "The PDF operation failed.": "PDF 작업이 실패했습니다.",
   "The result saves meaningful time over manual work.": "수작업보다 의미 있는 시간을 절약합니다.",
   "The user can understand what Orbit changed and why.": "사용자가 Orbit이 무엇을 왜 변경했는지 이해할 수 있습니다.",
   "The web app cannot read application settings on your computer. You can still connect a model manually.":
@@ -1152,11 +1273,16 @@ export const INTERFACE_TRANSLATIONS = {
     "이 소스 자체는 변경되지 않았으며, 실시간 결과물은 제안된 전체 작업 공간을 기준으로 렌더링됩니다.",
   Title: "제목",
   To: "받는 사람",
+  "To keep switching and typing responsive, this view shows the beginning first. The complete content remains in the Source editor.":
+    "반응형 전환 및 입력을 계속하기 위해 이 보기에는 시작 부분이 먼저 표시됩니다. 전체 콘텐츠는 Source 편집기에 남아 있습니다.",
   "To protect credentials, Orbit does not import from remote config URLs.":
     "자격 증명을 보호하기 위해 Orbit은(는) 원격 구성 URL에서 가져오지 않습니다.",
   tokens: "토큰",
   Top: "위",
   "Transaction map": "거래 지도",
+  "Translate imported canonical text through a reviewed Agent proposal.":
+    "검토된 Agent 제안을 통해 가져온 표준 텍스트를 번역합니다.",
+  "Translate PDF": "PDF 번역",
   "Trim the selection": "선택 부분 다듬기",
   "Try four shortcuts yourself": "네 가지 단축키 직접 사용해 보기",
   "Turn data into a verifiable review.": "데이터를 검증 가능한 리뷰로 전환하세요.",
@@ -1167,6 +1293,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "알 수 없는 출처",
   Unlinked: "연결 해제됨",
   "Unlinked artifacts": "연결 해제된 아티팩트",
+  "Unlock PDF": "PDF 잠금 해제",
   "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
     "관련 없는 파일은 그대로 유지됩니다. 검토한 소스, 이미지, Orbit 매니페스트만 기록합니다.",
   "Unresolved dependencies": "해결되지 않은 종속성",
@@ -1194,6 +1321,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit JSON 또는 CC 스위치 단일 공급자 가져오기 링크를 사용하세요. Orbit이(가) 먼저 검토하고 즉시 저장하지 않습니다.",
   "Use Orbit JSON or one ccswitch://v1/import provider link.":
     "Orbit JSON 또는 ccswitch://v1/import 공급자 링크 하나를 사용하세요.",
+  "Use Orbit's local text, table, and optional OCR importer to create Markdown.":
+    "Orbit의 로컬 텍스트, 테이블 및 선택적 OCR 가져오기 도구를 사용하여 Markdown을(를) 생성하세요.",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "헤더가 있는 직사각형 CSV 또는 스칼라 값을 포함한 플랫 JSON을 사용하세요.",
   "Use the selected cloud or device model; you still confirm every change":
@@ -1203,6 +1332,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Use this model connection?": "이 모델 연결을 사용할까요?",
   Valid: "유효",
   Validated: "검증됨",
+  "Validating the model result locally": "모델 결과를 로컬에서 검증",
   "Value field": "값 필드",
   "Values, definitions, and calculations are accurate.": "값, 정의, 계산이 정확합니다.",
   "Verify & use": "검증 후 사용",
@@ -1213,6 +1343,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Verifying…": "확인 중…",
   Version: "버전",
   "Visible marks": "보이는 마크",
+  "Visible signature": "보이는 서명",
   "Visual deliverability": "시각적 전달 완성도",
   "Visual edit · complete source draft synced live": "시각적 편집 · 전체 소스 초안이 실시간으로 동기화됨",
   "Visual edit held — the workspace changed during verification":
@@ -1220,6 +1351,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Visual edit rejected — device persistence failed": "시각적 편집이 거부됨 - 장치 지속성 실패",
   "Visual edit rejected — every source stayed unchanged":
     "시각적 편집이 거부됨 - 모든 소스가 변경되지 않은 상태로 유지됨",
+  Watermark: "워터마크",
+  "Web page to PDF": "PDF에 대한 웹페이지",
   "Weekly operating review": "주간 운영 리뷰",
   "Weekly review": "주간 리뷰",
   "Welcome & local guide": "환영 및 현지 가이드",

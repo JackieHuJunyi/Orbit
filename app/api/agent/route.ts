@@ -140,6 +140,8 @@ export async function POST(request: Request) {
   try {
     const workspaceScope = parsed.data.scope === "workspace";
     const providerController = new AbortController();
+    const stopProvider = () => providerController.abort(request.signal.reason);
+    request.signal.addEventListener("abort", stopProvider, { once: true });
     const providerTimeout = setTimeout(() => providerController.abort(), 60_000);
     let routed;
     try {
@@ -165,6 +167,7 @@ export async function POST(request: Request) {
       });
     } finally {
       clearTimeout(providerTimeout);
+      request.signal.removeEventListener("abort", stopProvider);
     }
     const response = routed.result;
     const connection = routed.connection;

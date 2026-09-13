@@ -194,6 +194,8 @@ type QueryRuntimeEntry =
 
 type QueryRuntime = Record<string, QueryRuntimeEntry>;
 const PREVIEW_QUERY_IDLE_DELAY_MS = 1_200;
+export const LARGE_DOCUMENT_PREVIEW_SOURCE_CHARS = 24_000;
+export const LARGE_DOCUMENT_SOURCE_CHARS = 250_000;
 
 const PreviewCopyContext = createContext<OrbitUICopy["preview"]>(orbitUICopy("en").preview);
 
@@ -386,6 +388,46 @@ function EmptyPreview({ message }: { message: string }) {
     <div className="empty-preview">
       <AlertTriangle aria-hidden="true" />
       <p>{message}</p>
+    </div>
+  );
+}
+
+function LargeDocumentPreview({
+  artifact,
+  artifacts,
+  queryRuntime,
+  resolveLocalAssetUrl,
+}: {
+  artifact: WorkspaceArtifact;
+  artifacts: WorkspaceArtifact[];
+  queryRuntime: QueryRuntime;
+  resolveLocalAssetUrl?: LocalAssetUrlResolver;
+}) {
+  const copy = usePreviewCopy();
+  const rawExcerpt = artifact.source.slice(0, LARGE_DOCUMENT_PREVIEW_SOURCE_CHARS);
+  const paragraphEnd = rawExcerpt.lastIndexOf("\n\n");
+  const excerpt = paragraphEnd > 0 ? rawExcerpt.slice(0, paragraphEnd) : rawExcerpt;
+  const compiled = compileArtifactSource(excerpt, artifacts, readyQuerySnapshots(queryRuntime));
+  return (
+    <div className="document-stage large-document-stage">
+      <article className="document-paper">
+        <div className="paper-meta">
+          <span>{copy.orbitDocument}</span>
+          <span>{copy.largeDocument}</span>
+        </div>
+        <div className="large-document-notice" role="status">
+          <strong>{copy.largeDocument}</strong>
+          <p>{copy.largeDocumentBody}</p>
+        </div>
+        <div className="markdown-body">
+          <MarkdownSource
+            source={compiled.source}
+            artifacts={artifacts}
+            queryRuntime={queryRuntime}
+            resolveLocalAssetUrl={resolveLocalAssetUrl}
+          />
+        </div>
+      </article>
     </div>
   );
 }
@@ -3139,6 +3181,15 @@ export function ArtifactPreview({
   let content: ReactNode;
   if (!artifact.source.trim()) {
     content = <EmptyPreview message={copy.startWriting} />;
+  } else if (artifact.kind === "document" && artifact.source.length > LARGE_DOCUMENT_SOURCE_CHARS) {
+    content = (
+      <LargeDocumentPreview
+        artifact={artifact}
+        artifacts={artifacts}
+        queryRuntime={queryRuntime}
+        resolveLocalAssetUrl={resolveLocalAssetUrl}
+      />
+    );
   } else {
     const compiled = compileArtifactSource(artifact.source, artifacts, readyQuerySnapshots(queryRuntime));
     const previewRenderers: Record<WorkspaceArtifact["kind"], () => ReactNode> = {

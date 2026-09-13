@@ -29,6 +29,15 @@ The MIT License applies to the items listed in this section:
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
 
+## PDF runtime licenses
+
+- **qpdf-wasm**, the Apache-2.0 Emscripten wrapper for qpdf used by Orbit's isolated PDF worker — <https://github.com/jsscheller/qpdf-wasm>
+- **qpdf**, copyright © 2005-2026 Jay Berkenbilt and contributors, distributed under the Artistic License 2.0 — <https://github.com/qpdf/qpdf>
+- **ghostscript-wasm**, the AGPL-3.0 Emscripten build used only by Orbit's isolated PDF/A worker — <https://github.com/jsscheller/ghostscript-wasm>
+- **Ghostscript**, copyright © Artifex Software, Inc. and contributors, distributed under GNU AGPL v3; Orbit ships the unmodified corresponding npm build and links its complete source above — <https://www.ghostscript.com/>
+
+Complete license texts for qpdf-wasm, qpdf, and ghostscript-wasm ship in `desktop/licenses/` and therefore inside every Orbit desktop package.
+
 ## SIL Open Font License 1.1
 
 `app/lib/greeting-glyph-data/` and `public/fonts/greeting/` contain greeting-only centerline data and font subsets generated from the following fonts. Runtime font bundles supplied by Tegaki are noted separately. These font-derived portions remain under the SIL Open Font License, Version 1.1.

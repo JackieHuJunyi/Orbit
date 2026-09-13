@@ -72,6 +72,10 @@ export type WelcomeModelCopy = Readonly<{
   apiConnectionReviewBody: string;
   connectAndVerify: string;
   connecting: string;
+  connectionReading: string;
+  connectionCatalog: string;
+  connectionResponse: string;
+  connectionSaving: string;
   chooseAnother: string;
   connectionFailed: string;
   scanPrivacy: string;
@@ -81,6 +85,7 @@ export type WelcomeModelCopy = Readonly<{
 }>;
 
 type DiscoveryState = "idle" | "scanning" | "complete" | "unavailable" | "error";
+type ConnectionPhase = "idle" | "reading" | "catalog" | "response" | "saving";
 
 function providerStatusFromState(state: ModelProfilesState, deploymentConnection: string): ModelProviderStatus {
   const active = state.activeProfile;
@@ -136,7 +141,7 @@ export function WelcomeModelStep({
   const [accounts, setAccounts] = useState<DiscoveredAccountRuntime[]>([]);
   const [candidates, setCandidates] = useState<DiscoveredModelConnection[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<DiscoveredModelConnection | null>(null);
-  const [connectionBusy, setConnectionBusy] = useState(false);
+  const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>("idle");
   const [connectionError, setConnectionError] = useState("");
   const [managerRevision, setManagerRevision] = useState(0);
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -209,11 +214,12 @@ export function WelcomeModelStep({
   }
 
   async function connectCandidate() {
-    if (!selectedCandidate || connectionBusy) return;
-    setConnectionBusy(true);
+    if (!selectedCandidate || connectionPhase !== "idle") return;
+    setConnectionPhase("reading");
     setConnectionError("");
     try {
       const profile = await importDesktopModelConnection(selectedCandidate.id);
+      setConnectionPhase("catalog");
       const modelResponse = await fetch("/api/model-profiles", {
         method: "POST",
         credentials: "same-origin",
@@ -226,18 +232,25 @@ export function WelcomeModelStep({
       }
       const models = modelPayload.models.filter((item): item is string => typeof item === "string");
       const verifiedProfile = { ...profile, model: models.includes(profile.model) ? profile.model : models[0] };
-      const probeResponse = await fetch("/api/model-profiles", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "probe", profile: verifiedProfile }),
-      });
-      const probePayload = (await probeResponse.json()) as { ready?: unknown; error?: unknown };
-      if (!probeResponse.ok || probePayload.ready !== true) {
-        throw new Error(
-          connectionFailureDetail(probePayload, "The provider did not complete the structured-output check."),
-        );
+      const account = accounts.find((item) => item.provider === selectedCandidate.provider);
+      const requiresResponseProbe =
+        selectedCandidate.sourceKind !== "account-runtime" || account?.status === "verify-required";
+      if (requiresResponseProbe) {
+        setConnectionPhase("response");
+        const probeResponse = await fetch("/api/model-profiles", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "probe", profile: verifiedProfile }),
+        });
+        const probePayload = (await probeResponse.json()) as { ready?: unknown; error?: unknown };
+        if (!probeResponse.ok || probePayload.ready !== true) {
+          throw new Error(
+            connectionFailureDetail(probePayload, "The provider did not complete the structured-output check."),
+          );
+        }
       }
+      setConnectionPhase("saving");
       const saveResponse = await fetch("/api/model-profiles", {
         method: "POST",
         credentials: "same-origin",
@@ -257,7 +270,7 @@ export function WelcomeModelStep({
       const detail = error instanceof Error ? error.message : "";
       setConnectionError(detail ? `${copy.connectionFailed} ${detail}` : copy.connectionFailed);
     } finally {
-      setConnectionBusy(false);
+      setConnectionPhase("idle");
     }
   }
 
@@ -268,6 +281,18 @@ export function WelcomeModelStep({
       .map((candidate) => [candidate.provider, candidate] as const),
   );
   const configuredCandidates = candidates.filter((candidate) => candidate.sourceKind !== "account-runtime");
+  const availableAccounts = accounts.filter((account) => account.installed && account.status !== "not-installed");
+  const connectionBusy = connectionPhase !== "idle";
+  const connectionPhaseLabel =
+    connectionPhase === "reading"
+      ? copy.connectionReading
+      : connectionPhase === "catalog"
+        ? copy.connectionCatalog
+        : connectionPhase === "response"
+          ? copy.connectionResponse
+          : connectionPhase === "saving"
+            ? copy.connectionSaving
+            : copy.connecting;
 
   return (
     <>
@@ -371,13 +396,13 @@ export function WelcomeModelStep({
                 onClick={() => void connectCandidate()}
               >
                 {connectionBusy ? <RefreshCw className="agent-spinner" /> : <Check />}
-                {connectionBusy ? copy.connecting : copy.connectAndVerify}
+                {connectionBusy ? connectionPhaseLabel : copy.connectAndVerify}
               </button>
             </div>
-          ) : discoveryState === "complete" && (accounts.length || configuredCandidates.length) ? (
+          ) : discoveryState === "complete" && (availableAccounts.length || configuredCandidates.length) ? (
             <div className="model-discovery-results account-runtime-results">
-              {accounts.length > 0 && <div className="model-discovery-group-label">{copy.accountGroup}</div>}
-              {accounts.map((account) => {
+              {availableAccounts.length > 0 && <div className="model-discovery-group-label">{copy.accountGroup}</div>}
+              {availableAccounts.map((account) => {
                 const candidate = accountCandidateByProvider.get(account.provider);
                 const statusText =
                   account.status === "ready"

@@ -217,6 +217,36 @@ test("Markdown preview keeps compact gutters and a readable optical measure in s
   expect(focused.bodyFontSize).toBeGreaterThanOrEqual(16.5);
 });
 
+test("acknowledges a large-file switch before deferred compilation and avoids a massive line-number DOM", async ({
+  page,
+}) => {
+  await openWorkbench(page);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("orbit-workspace-v0"))).not.toBeNull();
+  await page.addInitScript(() => {
+    const state = JSON.parse(localStorage.getItem("orbit-workspace-v0") ?? "null");
+    if (!state?.artifacts) return;
+    const document = state.artifacts.find((artifact: { id: string }) => artifact.id === "q2-review");
+    document.source = `# Large review\n\n${Array.from({ length: 18_000 }, (_, index) => `Paragraph ${index + 1}: current source evidence.`).join("\n\n")}`;
+    state.selectedId = "regional-revenue";
+    localStorage.setItem("orbit-workspace-v0", JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible({ timeout: 15_000 });
+
+  const target = page.locator("button.artifact-row").filter({ hasText: "q2-review.md" });
+  const elapsed = await target.evaluate(async (button) => {
+    const startedAt = performance.now();
+    (button as HTMLButtonElement).click();
+    while (!button.classList.contains("active")) await new Promise(requestAnimationFrame);
+    return performance.now() - startedAt;
+  });
+  expect(elapsed).toBeLessThan(500);
+  await expect(page.locator('.workspace[data-artifact-switching="false"]')).toBeVisible({ timeout: 5_000 });
+  await expect(page.locator('.editor-wrap[data-large-source="true"]')).toBeVisible();
+  await expect(page.locator(".line-gutter")).toBeHidden();
+  await expect(page.getByRole("textbox", { name: /Edit q2-review\.md source/u })).toHaveValue(/^# Large review/u);
+});
+
 for (const viewport of [
   { name: "desktop", width: 1440, height: 900, minimumCanvasRatio: 0.7 },
   { name: "compact", width: 390, height: 844, minimumCanvasRatio: 0.75 },

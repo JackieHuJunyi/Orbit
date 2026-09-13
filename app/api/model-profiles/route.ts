@@ -18,6 +18,7 @@ import {
 import { modelProviderStatus } from "../../lib/model-preference.ts";
 import { listProviderModels, requestProviderPlan } from "../../lib/model-provider-adapters.ts";
 import { modelConnectionHealth } from "../../lib/model-routing.ts";
+import { accountModelChoice } from "../../../shared/account-model-catalog.mjs";
 import { z } from "zod";
 
 const ModelProtocolProbeSchema = z.object({ ready: z.literal(true) }).strict();
@@ -100,7 +101,13 @@ export async function POST(request: Request) {
   }
   if (!body || typeof body !== "object")
     return Response.json({ error: "The model configuration request is invalid." }, { status: 400 });
-  const input = body as { action?: unknown; profileId?: unknown; profile?: unknown; enabled?: unknown };
+  const input = body as {
+    action?: unknown;
+    profileId?: unknown;
+    profile?: unknown;
+    model?: unknown;
+    enabled?: unknown;
+  };
   const vault = await readModelProfileVault(request);
   let next: ModelProfileVault;
   try {
@@ -173,6 +180,23 @@ export async function POST(request: Request) {
         ? vault.profiles.map((item) => (item.id === existing.id ? profile : item))
         : [...vault.profiles, profile];
       next = { ...vault, profiles, activeProfileId: profile.id };
+    } else if (input.action === "account-model") {
+      if (typeof input.profileId !== "string" || typeof input.model !== "string") {
+        throw new Error("Choose an account model and effort level.");
+      }
+      const existing = vault.profiles.find((profile) => profile.id === input.profileId);
+      if (!existing || !isAccountModelProvider(existing.provider)) {
+        throw new Error("That signed-in account profile no longer exists.");
+      }
+      if (!accountModelChoice(existing.provider, input.model)) {
+        throw new Error("Choose a supported model and effort level for this account.");
+      }
+      const updated = { ...existing, model: input.model, updatedAt: new Date().toISOString() };
+      next = {
+        ...vault,
+        profiles: vault.profiles.map((profile) => (profile.id === updated.id ? updated : profile)),
+        activeProfileId: updated.id,
+      };
     } else if (input.action === "deployment") {
       if (!modelProviderStatus(process.env).configured) throw new Error("No deployment model is configured.");
       next = { ...vault, activeProfileId: null };

@@ -39,9 +39,19 @@ test("ships narrow context-isolated desktop capabilities without renderer Node a
   assert.match(preload, /orbit:export-legacy-office/);
   assert.match(preload, /orbit:discover-models/);
   assert.match(preload, /orbit:import-discovered-model/);
+  assert.match(preload, /orbit:render-web-pdf/);
   assert.match(preload, /require\("electron"\)/);
   assert.doesNotMatch(preload, /ipcRenderer\.(?:send|on)|require\("node:/);
   assert.match(packageJson, /"desktop:dev"/);
+  assert.match(main, /safePublicWebUrl/);
+  assert.match(main, /url\.protocol !== "https:"/);
+  assert.match(main, /validatePublicWebTarget/);
+  assert.match(main, /lookup\(hostname, \{ all: true, verbatim: true \}\)/);
+  assert.match(main, /nonPublicWebAddresses\.addSubnet/);
+  assert.match(main, /session\.webRequest\.onBeforeRequest/);
+  assert.match(main, /partition: `orbit-web-pdf-/);
+  assert.match(main, /printToPDF/);
+  assert.match(main, /80 \* 1024 \* 1024/);
 });
 
 test("protects the desktop model-vault master key with Electron safeStorage", () => {
@@ -132,6 +142,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(parsedPackage.scripts["desktop:release:mac"], /--arch=x64 --require-signing/);
   assert.equal(parsedPackage.scripts["desktop:smoke:mac"], "node scripts/smoke-macos-package.mjs");
   assert.match(macPackage, /createPackageWithOptions/);
+  assert.match(macPackage, /"shared"/);
+  assert.match(macPackage, /\/shared\/account-model-catalog\.mjs/);
   assert.match(macPackage, /arch === process\.arch && localElectronAvailable/);
   assert.match(macPackage, /downloadArtifact/);
   assert.match(macPackage, /ElectronAsarIntegrity/);

@@ -197,7 +197,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
               provider: "codex-account",
               label: "ChatGPT",
               sourceLabel: "Codex · ChatGPT account",
-              model: "chatgpt-codex-account",
+              model: "gpt-5.6-terra@medium",
               installed: true,
               status: "ready",
             },
@@ -206,7 +206,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
               provider: "claude-account",
               label: "Claude",
               sourceLabel: "Claude Code · Claude account",
-              model: "claude-account",
+              model: "sonnet@medium",
               installed: true,
               status: "sign-in-required",
             },
@@ -215,7 +215,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
               provider: "gemini-account",
               label: "Gemini",
               sourceLabel: "Gemini CLI · Google account",
-              model: "gemini-account",
+              model: "gemini-2.5-flash",
               installed: false,
               status: "not-installed",
             },
@@ -230,7 +230,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
               protocol: "responses",
               name: "Codex · ChatGPT account",
               baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
-              model: "chatgpt-codex-account",
+              model: "gpt-5.6-terra@medium",
               models: [],
               credentialState: "account-session",
             },
@@ -243,7 +243,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
             protocol: "responses",
             name: "Codex · ChatGPT account",
             baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
-            model: "chatgpt-codex-account",
+            model: "gpt-5.6-terra@medium",
             apiKey: "private-loopback-token",
           };
         },
@@ -283,7 +283,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ models: ["chatgpt-codex-account"] }),
+        body: JSON.stringify({ models: ["gpt-5.6-terra@medium", "gpt-5.6-luna@max"] }),
       });
       return;
     }
@@ -300,7 +300,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
         id: "saved",
         provider: "codex-account",
         name: "Codex · ChatGPT account",
-        model: "chatgpt-codex-account",
+        model: "gpt-5.6-terra@medium",
         credentialConfigured: true,
       },
     };
@@ -318,7 +318,8 @@ test("connects a signed-in account without reading or displaying its OAuth token
   await expect(modelStep.getByText("ChatGPT", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Signed in and ready", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Sign in through the official client first", { exact: true })).toBeVisible();
-  await expect(modelStep.getByText("Not installed on this Mac", { exact: true })).toBeVisible();
+  await expect(modelStep.getByText("Gemini", { exact: true })).toHaveCount(0);
+  await expect(modelStep.getByText("Not installed on this Mac", { exact: true })).toHaveCount(0);
   await expect(modelStep).not.toContainText("private-loopback-token");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-account-bridge-imported"))).toBeNull();
 
@@ -332,7 +333,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
   await expect
     .poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-account-bridge-imported")))
     .toBe("yes");
-  await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "probe", "upsert"]);
+  await expect.poll(() => writes.map((item) => item.action)).toEqual(["models", "upsert"]);
   expect(writes.every((item) => item.apiKey === "private-loopback-token")).toBe(true);
   await expect(modelStep.getByRole("button", { name: /Continue with model assistance/u })).toBeVisible();
   await expect(modelStep).not.toContainText("private-loopback-token");
@@ -494,6 +495,96 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   );
 });
 
+test("switches model and reasoning level inside one signed-in account profile", async ({ page }) => {
+  const profile = {
+    id: "codex",
+    name: "Codex · ChatGPT account",
+    provider: "codex-account",
+    protocol: "responses",
+    baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+    model: "gpt-5.6-terra@medium",
+    budget: { maxInputTokens: 50_000, maxOutputTokens: 4_000 },
+    credentialConfigured: true,
+    capabilities: {
+      protocol: "responses",
+      structuredOutput: "json-schema",
+      modelCatalog: true,
+      tokenUsage: "provider-reported",
+      maximumOutputTokens: 8_000,
+    },
+    health: { status: "healthy", checkedAt: "2026-09-13T00:00:00.000Z", retryAt: null },
+    createdAt: "2026-09-13T00:00:00.000Z",
+    updatedAt: "2026-09-13T00:00:00.000Z",
+  };
+  const writes: Array<{ action?: string; profileId?: string; model?: string }> = [];
+  let agentRequestStarted = false;
+  const state = () => ({
+    vaultAvailable: true,
+    configured: true,
+    activeProfileId: profile.id,
+    activeSource: "personal",
+    activeProfile: profile,
+    profiles: [profile],
+    failoverEnabled: false,
+    deployment: {
+      configured: false,
+      provider: null,
+      model: null,
+      budget: null,
+      capabilities: null,
+      health: { status: "unknown", checkedAt: null, retryAt: null },
+    },
+  });
+  await page.route("**/api/model-profiles", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state()) });
+      return;
+    }
+    const input = route.request().postDataJSON() as (typeof writes)[number];
+    writes.push(input);
+    if (input.action !== "account-model" || input.profileId !== profile.id || !input.model) {
+      await route.fulfill({ status: 400, contentType: "application/json", body: '{"error":"Unexpected action"}' });
+      return;
+    }
+    profile.model = input.model;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state()) });
+  });
+  await page.route("**/api/agent", async (route) => {
+    agentRequestStarted = true;
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    await route
+      .fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ answer: "This response should be cancelled." }),
+      })
+      .catch(() => undefined);
+  });
+
+  await openWorkbench(page);
+  await page.locator(".agent-dock-trigger").click();
+  const modelPicker = page.getByLabel("Model for this message");
+  await expect(modelPicker.getByRole("option", { name: /GPT-5\.6 Luna · Max/u })).toBeAttached();
+  await expect(modelPicker.getByRole("option", { name: /GPT-5\.6 Sol · High/u })).toBeAttached();
+  await expect(modelPicker.getByRole("option", { name: /GPT-5\.6 Terra · Medium/u })).toBeAttached();
+  await modelPicker.selectOption("profile:codex:account-model:gpt-5.6-luna@max");
+  await expect.poll(() => writes).toEqual([{ action: "account-model", profileId: "codex", model: "gpt-5.6-luna@max" }]);
+  await expect(modelPicker).toHaveValue("profile:codex:account-model:gpt-5.6-luna@max");
+
+  await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
+  const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
+  await composer.fill("Explain this source without changing it.");
+  await composer.press("Enter");
+  await expect.poll(() => agentRequestStarted).toBe(true);
+  const stop = page.getByRole("button", { name: "Stop model request" });
+  await expect(stop).toBeVisible();
+  await expect(page.locator(".agent-hint")).toContainText(/Starting the selected model|reading current context/u);
+  await stop.click();
+  await expect(page.getByRole("button", { name: "Send to Orbit" })).toBeVisible();
+  await expect(page.locator(".patch-card")).toHaveCount(0);
+  await expect(composer).toHaveValue("Explain this source without changing it.");
+});
+
 test("groups signed-in accounts, detected APIs, local models, and manual configuration", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, "orbitDesktop", {
@@ -601,9 +692,9 @@ test("groups signed-in accounts, detected APIs, local models, and manual configu
   const dialog = page.getByRole("dialog", { name: "Connect the models you already use" });
   await expect(dialog.getByText("ChatGPT", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Claude", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("Gemini", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Gemini", { exact: true })).toHaveCount(0);
   await expect(dialog.getByText("Signed in and ready", { exact: true })).toHaveCount(2);
-  await expect(dialog.getByText("Not installed on this Mac", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Not installed on this Mac", { exact: true })).toHaveCount(0);
   await expect(dialog.getByText("Signed-in accounts", { exact: true })).toBeVisible();
   await expect(dialog.getByText("API configurations and local models", { exact: true })).toBeVisible();
   await expect(dialog.getByText("DeepSeek", { exact: true })).toBeVisible();
@@ -616,6 +707,152 @@ test("groups signed-in accounts, detected APIs, local models, and manual configu
   await dialog.locator("form.model-profile-editor footer").getByRole("button", { name: "Cancel" }).click();
   await expect(dialog.getByText("API Key", { exact: true })).toHaveCount(0);
   expect(profileWrites).toEqual([]);
+});
+
+test("opens the complete PDF tool registry from More tools and from a matching Agent request", async ({ page }) => {
+  const pdf = await PDFDocument.create();
+  const firstPage = pdf.addPage([320, 480]);
+  pdf.addPage([320, 480]);
+  const pixel = await pdf.embedPng(
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2ZQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  );
+  firstPage.drawImage(pixel, { x: 24, y: 24, width: 40, height: 40 });
+  const sourceBytes = await pdf.save();
+
+  await openWorkbench(page);
+  await page.getByRole("button", { name: "More tools" }).click();
+  await page.getByRole("menuitem", { name: /PDF tools/u }).click();
+  let dialog = page.getByRole("dialog", { name: "PDF tools" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".pdf-tool-list button")).toHaveCount(36);
+  await dialog.getByRole("button", { name: "Compress PDF", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(sourceBytes),
+  });
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const result = dialog.getByRole("region", { name: "Results" });
+  await expect(result).toBeVisible({ timeout: 15_000 });
+  const downloadPromise = page.waitForEvent("download");
+  await result.getByRole("button", { name: /two-pages-compressed\.pdf/u }).click();
+  const download = await downloadPromise;
+  const downloadedPath = await download.path();
+  expect(downloadedPath).not.toBeNull();
+  const compressed = await readFile(downloadedPath!);
+  expect((await PDFDocument.load(compressed)).getPageCount()).toBe(2);
+
+  await dialog.getByRole("button", { name: "PDF to PDF/A", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(sourceBytes),
+  });
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const archivalResult = dialog.getByRole("region", { name: "Results" });
+  await expect(archivalResult).toBeVisible({ timeout: 25_000 });
+  const archivalDownloadPromise = page.waitForEvent("download");
+  await archivalResult.getByRole("button", { name: /two-pages-pdfa\.pdf/u }).click();
+  const archivalPath = await (await archivalDownloadPromise).path();
+  expect(archivalPath).not.toBeNull();
+  const archivalBytes = await readFile(archivalPath!);
+  expect((await PDFDocument.load(archivalBytes)).getPageCount()).toBe(2);
+  expect(Buffer.from(archivalBytes).toString("latin1")).toMatch(/pdfaid:part|GTS_PDFA/iu);
+
+  await dialog.getByRole("button", { name: "Protect PDF", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(sourceBytes),
+  });
+  await dialog.getByLabel("Password").fill("orbit-test-password");
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const protectedResult = dialog.getByRole("region", { name: "Results" });
+  await expect(protectedResult).toBeVisible({ timeout: 15_000 });
+  const protectedDownloadPromise = page.waitForEvent("download");
+  await protectedResult.getByRole("button", { name: /two-pages-protected\.pdf/u }).click();
+  const protectedDownload = await protectedDownloadPromise;
+  const protectedPath = await protectedDownload.path();
+  expect(protectedPath).not.toBeNull();
+  const protectedBytes = await readFile(protectedPath!);
+  await expect(PDFDocument.load(protectedBytes)).rejects.toThrow(/encrypted/i);
+
+  await dialog.getByRole("button", { name: "Unlock PDF", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages-protected.pdf",
+    mimeType: "application/pdf",
+    buffer: protectedBytes,
+  });
+  await dialog.getByLabel("Password").fill("orbit-test-password");
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const unlockedResult = dialog.getByRole("region", { name: "Results" });
+  await expect(unlockedResult).toBeVisible({ timeout: 15_000 });
+  const unlockedDownloadPromise = page.waitForEvent("download");
+  await unlockedResult.getByRole("button", { name: /two-pages-protected-unlocked\.pdf/u }).click();
+  const unlockedDownload = await unlockedDownloadPromise;
+  const unlockedPath = await unlockedDownload.path();
+  expect(unlockedPath).not.toBeNull();
+  expect((await PDFDocument.load(await readFile(unlockedPath!))).getPageCount()).toBe(2);
+
+  await dialog.getByRole("button", { name: "PDF to images", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(sourceBytes),
+  });
+  await dialog.getByPlaceholder(/blank means all/u).fill("1");
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const imageResult = dialog.getByRole("region", { name: "Results" });
+  await expect(imageResult).toBeVisible({ timeout: 15_000 });
+  const imageDownloadPromise = page.waitForEvent("download");
+  await imageResult.getByRole("button", { name: /two-pages-page-1\.png/u }).click();
+  const imagePath = await (await imageDownloadPromise).path();
+  expect(imagePath).not.toBeNull();
+  expect(
+    Buffer.from(await readFile(imagePath!))
+      .subarray(0, 8)
+      .toString("hex"),
+  ).toBe("89504e470d0a1a0a");
+
+  await dialog.getByRole("button", { name: "Extract images", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(sourceBytes),
+  });
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const extractedImageResult = dialog.getByRole("region", { name: "Results" });
+  await expect(extractedImageResult).toBeVisible({ timeout: 15_000 });
+  await expect(extractedImageResult.getByRole("button", { name: /page-1-image-1\.png/u })).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Redact PDF", exact: true }).click();
+  await dialog.locator('.pdf-tool-files input[type="file"]').setInputFiles({
+    name: "two-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(sourceBytes),
+  });
+  await dialog.getByPlaceholder(/blank means all/u).fill("1");
+  await dialog.getByRole("button", { name: "Run tool" }).click();
+  const redactedResult = dialog.getByRole("region", { name: "Results" });
+  await expect(redactedResult).toBeVisible({ timeout: 15_000 });
+  const redactedDownloadPromise = page.waitForEvent("download");
+  await redactedResult.getByRole("button", { name: /two-pages-redacted\.pdf/u }).click();
+  const redactedPath = await (await redactedDownloadPromise).path();
+  expect(redactedPath).not.toBeNull();
+  expect((await PDFDocument.load(await readFile(redactedPath!))).getPageCount()).toBe(2);
+
+  await dialog.getByRole("button", { name: "Close PDF tools" }).click();
+  await page.locator(".agent-dock-trigger").click();
+  await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
+  const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
+  await composer.fill("Merge these PDF files");
+  await composer.press("Enter");
+  dialog = page.getByRole("dialog", { name: "PDF tools" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Merge PDFs", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("moves backward and forward through every onboarding step without losing the flow", async ({ page }) => {
@@ -1233,7 +1470,7 @@ test("owns complete keyboard focus in the bottom-left settings menu", async ({ p
   await trigger.focus();
   await trigger.press("ArrowDown");
   await expect(panel).toBeVisible();
-  await expect(actions).toHaveCount(5);
+  await expect(actions).toHaveCount(6);
   await expect(themes).toHaveCount(12);
   const firstActionChrome = await actions.nth(0).evaluate((element) => {
     const style = getComputedStyle(element);
@@ -1244,8 +1481,10 @@ test("owns complete keyboard focus in the bottom-left settings menu", async ({ p
   await page.keyboard.press("ArrowDown");
   await expect(actions.nth(1)).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(actions.nth(2)).toBeDisabled();
-  await expect(actions.nth(3)).toBeFocused();
+  await expect(actions.nth(2)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(actions.nth(3)).toBeDisabled();
+  await expect(actions.nth(4)).toBeFocused();
   await page.keyboard.press("End");
   await expect(themes.nth(11)).toHaveAccessibleName("Space Black");
   await expect(themes.nth(11)).toBeFocused();

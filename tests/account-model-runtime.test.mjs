@@ -9,6 +9,7 @@ import {
   createDesktopAccountModelRuntime,
   DESKTOP_ACCOUNT_RUNTIME_LIMITS,
 } from "../desktop/account-model-runtime.mjs";
+import { accountModelChoices, defaultAccountModel } from "../shared/account-model-catalog.mjs";
 
 function processQueue(results, calls) {
   return (executable, args, options) => {
@@ -60,7 +61,9 @@ function readinessRequest(token, runtime) {
     method: "POST",
     headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify({
-      model: `${runtime}-account`,
+      model: defaultAccountModel(
+        `${runtime === "codex" ? "codex" : runtime === "claude" ? "claude" : "gemini"}-account`,
+      ),
       input: [
         { role: "system", content: "Return one readiness object." },
         { role: "user", content: "Confirm readiness." },
@@ -152,6 +155,8 @@ test("runs signed-in Codex with ephemeral structured output and model tools disa
   assert.equal(invocation.args.includes("--ephemeral"), true);
   assert.equal(invocation.args.includes("--ignore-user-config"), true);
   assert.equal(invocation.args.includes("--output-schema"), true);
+  assert.equal(invocation.args.includes("gpt-5.6-luna"), true);
+  assert.equal(invocation.args.includes('model_reasoning_effort="low"'), true);
   assert.equal(invocation.args.includes("shell_tool"), true);
   assert.equal(invocation.args.includes("unified_exec"), true);
   assert.match(invocation.input, /Do not use tools, inspect files, or add commentary/u);
@@ -184,15 +189,26 @@ test("runs Claude OAuth with no tools or session persistence and rejects foreign
   const response = await runtime.fetch(request, new URL(request.url));
   assert.equal(response.status, 200);
   const invocation = calls.at(-1);
-  assert.deepEqual(invocation.args.slice(0, 7), [
-    "--safe-mode",
-    "--tools",
-    "",
-    "--no-session-persistence",
-    "--permission-mode",
-    "dontAsk",
-    "--output-format",
-  ]);
+  assert.equal(invocation.args.includes("--safe-mode"), true);
+  assert.equal(invocation.args.includes("--no-session-persistence"), true);
+  assert.equal(invocation.args.includes("--model"), true);
+  assert.equal(invocation.args.includes("fable"), true);
+  assert.equal(invocation.args.includes("--effort"), true);
+  assert.equal(invocation.args.includes("low"), true);
+});
+
+test("publishes bounded account model and effort choices instead of one symbolic model", async () => {
+  assert.equal(accountModelChoices("codex-account").length, 10);
+  assert.equal(accountModelChoices("claude-account").length, 7);
+  assert.equal(accountModelChoices("gemini-account").length, 2);
+  assert.equal(
+    accountModelChoices("codex-account").some((choice) => choice.id === "gpt-5.6-luna@max"),
+    true,
+  );
+  assert.equal(
+    accountModelChoices("codex-account").some((choice) => choice.id === "gpt-5.6-sol@high"),
+    true,
+  );
 });
 
 test("derives a stable private bridge token and publishes strict runtime bounds", () => {

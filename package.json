@@ -1,6 +1,6 @@
 {
   "name": "orbit-office",
-  "version": "1.60.0",
+  "version": "1.62.0",
   "private": true,
   "productName": "Orbit",
   "main": "desktop/main.mjs",
@@ -12,7 +12,9 @@
   "scripts": {
     "prepare:ocr": "node scripts/prepare-ocr.mjs",
     "prepare:duckdb": "node scripts/prepare-duckdb.mjs",
-    "prepare:runtime": "npm run prepare:ocr && npm run prepare:duckdb",
+    "prepare:qpdf": "node scripts/prepare-qpdf.mjs",
+    "prepare:ghostscript": "node scripts/prepare-ghostscript.mjs",
+    "prepare:runtime": "npm run prepare:ocr && npm run prepare:duckdb && npm run prepare:qpdf && npm run prepare:ghostscript",
     "dev": "npm run prepare:runtime && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
     "build": "npm run prepare:runtime && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "start": "npm run prepare:runtime && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
@@ -49,6 +51,8 @@
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "1.32.0",
+    "@jspawn/ghostscript-wasm": "0.0.2",
+    "@jspawn/qpdf-wasm": "0.0.2",
     "@pdf-lib/fontkit": "1.1.1",
     "@xmldom/xmldom": "0.9.12",
     "fflate": "0.8.3",

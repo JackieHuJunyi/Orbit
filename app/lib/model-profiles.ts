@@ -1,3 +1,5 @@
+import { accountModelChoice, defaultAccountModel } from "../../shared/account-model-catalog.mjs";
+
 export const MAX_MODEL_PROFILES = 6;
 export const MODEL_PROFILE_COOKIE = "orbit_model_profiles_v1";
 export const MODEL_PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
@@ -143,7 +145,7 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     id: "codex-account",
     label: "ChatGPT via Codex",
     baseURL: "http://127.0.0.1",
-    defaultModel: "chatgpt-codex-account",
+    defaultModel: defaultAccountModel("codex-account"),
     protocol: "responses",
     editableEndpoint: false,
     editableProtocol: false,
@@ -154,7 +156,7 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     id: "claude-account",
     label: "Claude account",
     baseURL: "http://127.0.0.1",
-    defaultModel: "claude-account",
+    defaultModel: defaultAccountModel("claude-account"),
     protocol: "responses",
     editableEndpoint: false,
     editableProtocol: false,
@@ -165,7 +167,7 @@ export const MODEL_PROVIDER_PRESETS: readonly ModelProviderPreset[] = [
     id: "gemini-account",
     label: "Google account via Gemini CLI",
     baseURL: "http://127.0.0.1",
-    defaultModel: "gemini-account",
+    defaultModel: defaultAccountModel("gemini-account"),
     protocol: "responses",
     editableEndpoint: false,
     editableProtocol: false,
@@ -443,6 +445,9 @@ export function normalizeModelProfileDraft(
   if (!model || !/^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model)) {
     throw new Error("Enter a valid model ID without spaces.");
   }
+  if (isAccountModelProvider(provider) && !accountModelChoice(provider, model)) {
+    throw new Error("Choose a supported model and effort level for this signed-in account.");
+  }
   const baseURL = isAccountModelProvider(provider)
     ? normalizeDesktopAccountBaseURL(draft.baseURL, provider)
     : preset.editableEndpoint
@@ -508,8 +513,12 @@ export function normalizeModelProfileVault(value: unknown): ModelProfileVault {
       if (!profile || typeof profile !== "object") return [];
       const item = profile as StoredModelProfile;
       try {
+        const migratedItem =
+          isAccountModelProvider(item.provider) && !accountModelChoice(item.provider, item.model)
+            ? { ...item, model: defaultAccountModel(item.provider) }
+            : item;
         const normalized = normalizeModelProfileDraft(
-          item,
+          migratedItem,
           {
             ...item,
             apiKey: cleanText(item.apiKey, 512),

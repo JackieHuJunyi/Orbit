@@ -76,8 +76,8 @@ export const WELCOME_BASE_COPY = {
     useLocalBody: "只使用设备端解析、转换和确定性工具，不向模型服务发送内容",
     recheck: "重新扫描",
     discoveryScanning: "正在查找这台设备上的模型…",
-    discoveryTitle: "这台 Mac 上的可用连接",
-    discoveryBody: "一次扫描汇总已登录账号、已知 API 配置和本地模型；任何凭据都不会出现在列表中。",
+    discoveryTitle: "这台 Mac 上发现的连接",
+    discoveryBody: "只显示实际安装、登录、配置或正在运行的连接；未发现的服务不会占位。",
     discoveryEmpty: "没有发现可复用的连接",
     discoveryEmptyBody: "可以在下方手动添加 API Key、导入配置，或先在官方客户端完成登录。",
     discoveryUnavailable: "网页版不能读取电脑上的应用配置；仍可手动连接模型。",
@@ -102,15 +102,19 @@ export const WELCOME_BASE_COPY = {
     reviewConnection: "查看",
     reviewTitle: "使用这个连接？",
     connectionReviewBody:
-      "确认后，Orbit 会让官方客户端完成一次不含文档内容的结构化响应；成功后只保存连接名称，不复制 OAuth token。",
+      "Orbit 已在扫描时确认账号状态。继续后会直接保存模型选择；首次对话仍由官方客户端执行，Orbit 不复制 OAuth token。",
     apiConnectionReviewBody:
       "确认后，Orbit 只读取这一项配置，验证模型目录和一次最小结构化响应；成功后才加密保存并设为默认。",
     connectAndVerify: "验证并使用",
     connecting: "正在验证…",
+    connectionReading: "正在读取这个连接…",
+    connectionCatalog: "正在读取可用模型…",
+    connectionResponse: "正在测试结构化响应…",
+    connectionSaving: "正在安全保存…",
     chooseAnother: "返回连接列表",
     connectionFailed: "这个连接暂时无法验证；Orbit 没有保存它。",
     scanPrivacy:
-      "扫描仅检查官方客户端状态、已知配置位置、CC Switch 和本地模型端口；不会读取浏览器 Cookie，也不会在列表中展示密钥或 OAuth token。",
+      "扫描仅检查官方客户端状态、Shell 中的字面量配置、已知应用配置、CC Switch 和本地模型端口；不会执行 Shell，也不会展示密钥或 OAuth token。",
     modelSafety:
       "API 密钥会加密保存；账号登录仍由官方客户端管理。两者都不会写入工作区、localStorage、Artifact 或 Git。",
     modelUnavailable: "无法读取模型状态；你可以选择不使用模型继续。",
@@ -171,9 +175,9 @@ export const WELCOME_BASE_COPY = {
     useLocalBody: "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service",
     recheck: "Scan again",
     discoveryScanning: "Looking for models on this device…",
-    discoveryTitle: "Connections on this Mac",
+    discoveryTitle: "Connections found on this Mac",
     discoveryBody:
-      "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.",
+      "Only installed, signed-in, configured, or running connections appear. Services that were not found take no space.",
     discoveryEmpty: "No reusable connection was found",
     discoveryEmptyBody: "Add an API key or import a configuration below, or sign in through an official client first.",
     discoveryUnavailable:
@@ -199,15 +203,19 @@ export const WELCOME_BASE_COPY = {
     reviewConnection: "Review",
     reviewTitle: "Use this connection?",
     connectionReviewBody:
-      "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.",
+      "Orbit already confirmed the account state during discovery. Continue saves the model choice immediately; the first conversation still runs through the official client, and Orbit never copies its OAuth token.",
     apiConnectionReviewBody:
       "After you confirm, Orbit reads only this configuration, verifies its model catalog and one minimal structured response, then encrypts and saves it as the default.",
     connectAndVerify: "Verify & use",
     connecting: "Verifying…",
+    connectionReading: "Reading this connection…",
+    connectionCatalog: "Reading available models…",
+    connectionResponse: "Testing structured response…",
+    connectionSaving: "Saving securely…",
     chooseAnother: "Back to connections",
     connectionFailed: "Orbit could not verify this connection and did not save it.",
     scanPrivacy:
-      "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.",
+      "Discovery checks official-client status, literal shell configuration, known app settings, CC Switch, and local model ports. It never executes a shell or displays API keys or OAuth tokens.",
     modelSafety:
       "API keys are encrypted; account sign-in remains with the official client. Neither enters the workspace, localStorage, an Artifact, or Git.",
     modelUnavailable: "Orbit could not read model status. You can continue without a model.",

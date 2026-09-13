@@ -92,6 +92,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add condition": "条件の追加",
   "Add model provider": "モデルプロバイダーの追加",
   "Add next actions": "次のアクションを追加する",
+  "Add page numbers at a consistent reviewed position.": "一貫したレビュー位置にページ番号を追加します。",
   "Add provider": "プロバイダーの追加",
   "Add source content": "ソース内容を追加",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
@@ -105,8 +106,6 @@ export const INTERFACE_TRANSLATIONS = {
     "確認すると、Orbit はこの構成のみを読み取り、そのモデル カタログと 1 つの最小限の構造化レスポンスを検証し、それを暗号化してデフォルトとして保存します。",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "確認後、Orbit はこの接続の認証情報だけを読み取り、モデル一覧と最小限の構造化レスポンスを検証します。両方に成功した場合に限り暗号化し、既定の接続として保存します。",
-  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
-    "あなたが確認した後、正式なクライアントは文書のない構造化された 1 つの応答を完了します。 Orbit は接続名のみを保存し、OAuth トークンをコピーしません。",
   Agent: "Agent",
   "Agent change scope": "Agent のスコープ変更",
   "Agent composer focused": "Agent 作曲家に焦点を当てた",
@@ -144,6 +143,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Apply all": "全て適用",
   "Apply an Agent patch or press ⌘S to capture the current source.":
     "Agent パッチを適用するか、⌘S を押して現在のソースをキャプチャします。",
+  "Apply an exact crop box to selected pages.": "Apply 選択したページに正確なクロップ ボックスを追加します。",
   "Apply structure change": "構造変更を適用する",
   Area: "面",
   "Area · volume sequence": "面 · ボリューム推移",
@@ -208,9 +208,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "バインディング構文を確認し、このワークスペースに存在する指標を選択してください。",
   "Check these settings first:": "まず次の設定を確認してください。",
+  Checkbox: "チェックボックス",
+  "Checked by default": "デフォルトでチェックされています",
   "Checking connections already saved in Orbit…": "Orbit に保存済みの接続を確認中…",
   "Checkpoint history": "チェックポイント履歴",
   "Checkpoint restore details": "チェックポイント復元の詳細",
+  "Choices (one per line or comma-separated)": "選択肢 (1 行に 1 つ、またはカンマ区切り)",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "正規のソースを選択します。クエリ ファイルと Chart ファイルは、最初のリビジョンの正確なアップストリーム アーティファクトとフィールドにバインドされます。",
   "Choose a fetched model": "取得したモデルを選択してください",
@@ -222,6 +225,7 @@ export const INTERFACE_TRANSLATIONS = {
     "確認済みの文書、対象者、目的を選択してください。Orbit は新しいプレゼンテーションを作成することも、ファイル ID と元文書との関係を保ったまま既存の連携プレゼンテーションを更新することもできます。",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "確認済みの文書、対象者、目的を選択してください。Orbit は編集可能な Deck Markdown を作成し、元文書との明示的な関係を保持します。",
+  "Choose again": "もう一度選択してください",
   "Choose an existing Chart id or create and validate that Chart first.":
     "既存の Chart ID を選ぶか、先にその Chart を作成して検証してください。",
   "Choose an existing metric key or an explicit Query output field.":
@@ -230,6 +234,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Chart のアクセントカラーを選択してください",
   "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "CSV、JSON、XLSX、ODS を選択してください。Orbit はまずインポート内容を表示し、その後フィールド、指標、グラフ、成果物の設定へ案内します。",
+  "Choose files": "ファイルの選択",
   "Choose JSON / text file": "JSON / テキスト ファイルを選択してください",
   "Choose maximum visible Chart marks": "表示可能な最大の Chart マークを選択してください",
   "Choose one exact scope value, or return to all Data rows.":
@@ -248,18 +253,24 @@ export const INTERFACE_TRANSLATIONS = {
   "Clear pins": "クリアピン",
   "Click again to delete": "削除するにはもう一度クリックします",
   "Close current file": "現在のファイルを閉じる",
+  "Close PDF tools": "PDF ツールを閉じる",
   "Close tutorial": "チュートリアルを閉じる",
   "Closed the current file — every source remains in the workspace":
     "現在のファイルを閉じました - すべてのソースはワークスペースに残ります",
   "Closed the current file — every source remains safely in the workspace":
     "現在のファイルを閉じました - すべてのソースはワークスペースに安全に残ります",
   "Cloud API": "クラウド API",
+  "Combine complete PDFs in a chosen order.": "選択した順序で完全な PDF を結合します。",
+  "Combine photographed or scanned pages into a PDF.": "写真またはスキャンしたページを PDF に結合します。",
+  "Compare PDFs": "PDF を比較します",
   "Compare with": "比較対象",
   "Comparison rows": "比較対象の行",
   "Compiled artifact preview": "コンパイルされたアーティファクトのプレビュー",
   "Compiler-guided repair passed": "コンパイラによる修復に合格しました",
   "Complete the required fields and Orbit will validate the whole workflow before review.":
     "必須フィールドに入力すると、Orbit がレビュー前にワークフロー全体を検証します。",
+  "Complete; review before download": "完了。ダウンロードする前に確認してください",
+  "Compress PDF": "PDFを圧縮します",
   "Conclusion usefulness": "結論の有用性",
   "Conclusions trace to sufficient supporting evidence.": "結論を十分な根拠までたどれます。",
   "Condense the selection into one sentence": "選択内容を 1 つの文に要約する",
@@ -277,31 +288,44 @@ export const INTERFACE_TRANSLATIONS = {
   "Connect the models you already use": "すでに使用しているモデルを接続する",
   "Connected folder": "接続されたフォルダー",
   "Connections available on this device": "このデバイスで利用できる接続",
-  "Connections on this Mac": "この Mac 上の接続",
+  "Connections found on this Mac": "この Mac で見つかった接続",
   "Content workspace": "コンテンツワークスペース",
   Continue: "続ける",
+  "Continue in Orbit": "Orbitで続行してください",
   "Continue setup": "セットアップを続行する",
   "Continue with model assistance": "モデルを使って続ける",
   "Continue without a model": "モデルなしで続ける",
   Conversation: "会話",
+  "Convert Word, PowerPoint, Excel, and OpenDocument sources through Orbit's reviewed export path.":
+    "Orbit のレビュー済みエクスポート パスを通じて Word、PowerPoint、Excel、OpenDocument ソースを変換します。",
+  "Copy selected pages into a new PDF.": "選択したページを新しい PDF にコピーします。",
   "Cosmic Orange": "コズミックオレンジ",
+  "Create a clean PDF from entered text.": "入力したテキストからクリーンな PDF を作成します。",
   "Create a new artifact": "新しいアーティファクトを作成する",
   "Create a new presentation": "新しいプレゼンテーションを作成",
   "Create a presentation from the current report": "現在のレポートからプレゼンテーションを作成する",
   "Create a review from data": "データから経営レビューを作成",
   "Create an analysis, chart, and report from revenue data": "収益データから分析、グラフ、レポートを作成する",
+  "Create an archival conformance copy when the desktop converter is available.":
+    "デスクトップコンバータが利用可能な場合は、アーカイブ適合コピーを作成します。",
   "Create an editable Deck Markdown presentation": "編集可能な Deck Markdown プレゼンテーションを作成します",
   "Create an editable Markdown report": "編集可能な Markdown レポートを作成する",
   "Create an editable semantic HTML presentation": "編集可能なセマンティック HTML プレゼンテーションを作成",
   "Create blank": "空白の作成",
+  "Create one PDF page per PNG or JPEG image.": "PNG または JPEG 画像ごとに 1 つの PDF ページを作成します。",
+  "Create one PDF per selected page or range.": "選択したページまたは範囲ごとに 1 つの PDF を作成します。",
   "Create operating review": "運用レビューの作成",
+  "Create or fill text, checkbox, choice, and list fields.":
+    "テキスト、チェックボックス、選択肢、およびリストのフィールドを作成または入力します。",
   "Create or refresh a light presentation": "軽やかなプレゼンテーションを作成・更新",
+  "Create PDF": "PDF を作成する",
   "Create presentation from document": "文書からプレゼンテーションを作成",
   "Create reusable Chart only": "再利用可能な Chart のみを作成します",
   "Create review": "レビューの作成",
   "Create source": "ソースの作成",
   Credential: "資格情報",
   "Credential found; not read yet": "認証情報を検出 · まだ未読",
+  "Crop PDF": "PDFを切り取る",
   Currency: "通貨",
   "Currency · USD": "通貨・米ドル",
   Current: "現在",
@@ -329,6 +353,7 @@ export const INTERFACE_TRANSLATIONS = {
     "まず証拠、指標、対象者を定義します。 Orbit は、分析、グラフ、レポート、スライドを 1 つのレビュー トランザクションにまとめます。",
   Delete: "削除",
   "Delete block": "ブロックの削除",
+  "Delete selected pages after review.": "確認後、選択したページを削除します。",
   Deliverable: "成果物",
   "Deliverable after minor edits": "軽微な修正後に納品可能",
   "Deliverable outcome": "成果物の結果",
@@ -372,8 +397,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "この結果は実際の業務で使えるものになりましたか？",
   Discard: "廃棄する",
   "Discard proposed patch": "提案されたパッチを破棄する",
-  "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.":
-    "Discovery は、公式クライアントのステータス、既知の構成の場所、CC スイッチ、およびローカル モデル ポートをチェックします。ブラウザーの Cookie を読み取ったり、API キーや OAuth トークンを表示したりすることはありません。",
+  "Discovery checks official-client status, literal shell configuration, known app settings, CC Switch, and local model ports. It never executes a shell or displays API keys or OAuth tokens.":
+    "Discovery は、公式クライアントのステータス、リテラルのシェル構成、既知のアプリ設定、CC スイッチ、およびローカル モデル ポートをチェックします。シェルを実行したり、API キーや OAuth トークンを表示したりすることはありません。",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "検索対象は既知の設定場所とローカルモデルのポートだけです。シェル設定の実行、ファイルのアップロード、キーの表示は行いません。",
   "Dock Agent": "Agent を固定",
@@ -400,6 +425,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Draft Chart preview": "ドラフト Chart プレビュー",
   "Draft preview": "ドラフトプレビュー",
   "Drag to select the OCR region": "ドラッグして OCR 領域を選択",
+  Dropdown: "ドロップダウン",
   "Earlier device records (read only)": "以前のデバイス記録（読み取り専用）",
   "Edges recompile from source; pins last only for this session.":
     "エッジはソースから再コンパイルされます。ピンはこのセッションの間のみ有効です。",
@@ -408,6 +434,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Edit Chart description": "Chartの説明を編集",
   "Edit Chart title": "Chartのタイトルを編集",
   "Edit model provider": "モデルプロバイダーの編集",
+  "Edit PDF": "PDFを編集",
   "Edit this canonical source cell": "この正規ソース セルを編集します",
   "Editable output": "編集可能な成果物",
   Edited: "編集済み",
@@ -418,6 +445,7 @@ export const INTERFACE_TRANSLATIONS = {
   Empty: "空の",
   "en-US": "en-US",
   Enable: "有効にする",
+  "Encrypt a PDF with a user password locally.": "ユーザーパスワードを使用してローカルで PDF を暗号化します。",
   "Encrypting…": "暗号化中…",
   Endpoint: "エンドポイント",
   "Enter a focus view": "フォーカス表示に切り替える",
@@ -447,12 +475,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Export held for review — workspace context changed":
     "エクスポートはレビューのために保留されています - ワークスペースのコンテキストが変更されました",
   "Export pilot evidence": "パイロット証拠をエクスポート",
+  "Extract embedded raster images without rendering page backgrounds.":
+    "ページの背景をレンダリングせずに、埋め込まれたラスター イメージを抽出します。",
+  "Extract images": "画像の抽出",
+  "Extract pages": "ページの抽出",
   Eyebrow: "眉毛",
   "Fetch models": "モデルのフェッチ",
   "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
     "モデルの取得で確認するのは認証とモデル一覧だけです。最初の Agent プランでは、選択したプロトコルの構造化出力も検証します。別のプロバイダーで再試行するには、モデル設定で個別の許可が必要です。",
   "Fetching…": "取得中…",
   "Fidelity notes": "忠実度に関するメモ",
+  "Field name": "フィールド名",
+  "Field type": "フィールドタイプ",
   "Fields and measure": "フィールドとメジャー",
   File: "ファイル",
   "File names, Artifact IDs, workspace paths, and user identity":
@@ -462,6 +496,8 @@ export const INTERFACE_TRANSLATIONS = {
   files: "ファイル",
   "Files available after the switch": "切り替え後に使用できるファイル",
   "Files in proposed patch": "提案されたパッチ内のファイル",
+  "Files stay local by default; AI actions remain review-before-write.":
+    "ファイルはデフォルトではローカルに残ります。 AI アクションは引き続き書き込み前にレビューされます。",
   "Filter value": "フィルター値",
   "First proposal stayed unapplied": "最初の提案は適用されなかった",
   "fixed-layout": "固定レイアウト",
@@ -485,6 +521,7 @@ export const INTERFACE_TRANSLATIONS = {
     "フォルダーのみのファイルは変更されませんが、新しい Orbit ワークスペース マニフェストには属しません。",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "例：1-3, 5。検出されたスキャンページだけを選択できます。",
+  "For example 1,3-5; blank means all": "たとえば、1,3-5;空白はすべてを意味します",
   "For example: July 2026": "例: 2026 年 7 月",
   "For example: July operating review": "例：7月の営業振り返り",
   "For example: Product launch briefing": "例：製品ローンチ説明会",
@@ -498,6 +535,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Hide API key": "API キーを隠す",
   "Hide workspace files": "ワークスペースファイルを非表示にする",
   "HTML · PPTX · ODP · PDF": "HTML · PPTX · ODP · PDF",
+  "HTML to PDF": "HTMLからPDFまで",
   "Human-reviewed real tasks": "人が評価した実タスク",
   "I confirm this task is authorized for evaluation or its content is redacted.":
     "このタスクが評価を許可されているか、内容が匿名化済みであることを確認します。",
@@ -507,6 +545,7 @@ export const INTERFACE_TRANSLATIONS = {
     "先週からの最も重要な変化を特定し、次の意思決定または担当者を明確にします。",
   "Ignored unsupported fields": "サポートされていないフィールドは無視されます",
   Image: "画像",
+  "Images to PDF": "画像を PDF に送信",
   Import: "インポート",
   "Import a document, review it, then choose audience, purpose, and length":
     "文書をインポートして確認し、対象者、目的、長さを選択します",
@@ -522,7 +561,13 @@ export const INTERFACE_TRANSLATIONS = {
   "Import details": "インポートの詳細",
   "Import held for review — workspace context changed":
     "インポートはレビューのために保留されています - ワークスペースのコンテキストが変更されました",
+  "Import locally extracted text, then ask the selected model for a source-linked summary.":
+    "ローカルに抽出されたテキストをインポートし、選択したモデルにソースにリンクされた概要を要求します。",
   "Import one model profile": "1 つのモデル プロファイルをインポートする",
+  "Import PDF into canonical Markdown, then export a reviewed DOCX.":
+    "PDF を正規の Markdown にインポートし、レビュー済みの DOCX をエクスポートします。",
+  "Import PDF pages, review structure, then export PPTX.":
+    "PDF ページをインポートし、構造を確認してから、PPTX をエクスポートします。",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "PDF、DOC、DOCX、Markdown、PPT、HTML、CSV、JSON、XLSX、またはODS。 Orbit は、最初にコンバージョンをプレビューし、次にフィールド、メジャー、グラフ、成果物を案内します。",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -561,6 +606,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Keep valid Deck Markdown or script-free semantic HTML.":
     "有効な Deck Markdown、またはスクリプトを含まないセマンティック HTML を使用してください。",
   Language: "言語",
+  "Large document quick preview": "大きなドキュメントのクイック プレビュー",
   "Last run": "最後の実行",
   Lavender: "ラベンダー",
   Layout: "レイアウト",
@@ -573,7 +619,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Light Gold": "ライトゴールド",
   Line: "ライン",
   "Line · sequence": "ライン・シーケンス",
+  "Linearize and normalize a PDF for fast opening.": "高速に開くために、PDF を線形化および正規化します。",
   Link: "リンク",
+  List: "リスト",
   "Live artifact dependencies": "ライブアーティファクトの依存関係",
   "Live chart": "ライブチャート",
   "Live compilation": "ライブコンピレーション",
@@ -593,6 +641,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Local or configured-model planning plus input/output token counts when available":
     "ローカルまたは設定済みモデルによる計画と、利用可能な場合の入出力トークン数",
   "Local planner": "ローカルプランナー",
+  "Local processing · explicit review · AI only when useful": "ローカル処理・明示的なレビュー・有用な場合のみAI",
   "Local runtime validation failed": "ローカルランタイム検証に失敗しました",
   "Local SQL bound to Data": "データにバインドされたローカル SQL",
   "Local workspace": "ローカルワークスペース",
@@ -606,6 +655,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Manual checkpoint saved on this device": "このデバイスに手動チェックポイントが保存されました",
   Mark: "マーク",
   "Match all conditions": "すべての条件に一致する",
+  "Merge PDFs": "PDF を結合します",
   "Mist Blue": "ミストブルー",
   Model: "モデル",
   "Model connected": "接続されているモデル",
@@ -648,6 +698,7 @@ export const INTERFACE_TRANSLATIONS = {
   "New block after": "後の新しいブロック",
   "New block before": "前の新しいブロック",
   "New file": "新しいファイル",
+  "New page order": "新しいページの順序",
   "New semantic HTML": "新しいセマンティック HTML",
   "New source diff": "新しいソースの差分",
   "New source preview": "新しいソースのプレビュー",
@@ -698,8 +749,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Numeric value field": "数値フィールド",
   "OCR language for": "OCR 言語：",
   "OCR pages for": "OCR ページ：",
+  "OCR PDF": "OCR PDF",
   "OCR settings": "OCR 設定",
   of: "/",
+  "Office to PDF": "オフィスから PDF へ",
   "On-device recognition": "デバイス上で認識",
   "One atomic device write · a checkpoint is created first":
     "1 つのアトミック デバイス書き込み - 最初にチェックポイントが作成されます",
@@ -719,8 +772,6 @@ export const INTERFACE_TRANSLATIONS = {
     "リビジョンに固定された 1 枚のセマンティック HTML スライド · Source にリアルタイム反映 · 保存前にプレゼンテーション全体を検証",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "1 つのリビジョンバインドされたスライド · バインディングは固定されたまま · 保存は正規ソースを書き込みます",
-  "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.":
-    "1 回のスキャンで、サインインしたアカウント、既知の API 構成、ローカル モデルが結合されます。資格情報がこのリストに表示されることはありません。",
   "One source workspace": "1 つのソース ワークスペース",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "1 つの厳密な仕様 · 実行時の影響が検証済み · 正規の書き換え保存 Chart JSON",
@@ -728,6 +779,8 @@ export const INTERFACE_TRANSLATIONS = {
     "プライマリモデルが失敗した場合に限り、Orbit は同じ制限済みコンテンツを別の設定済みプロバイダーへ送信できます。初期設定ではオフです。",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "現在のデータ範囲全体で数値になっているフィールドだけを表示します。",
+  "Only installed, signed-in, configured, or running connections appear. Services that were not found take no space.":
+    "インストール済み、サインイン済み、構成済み、または実行中の接続のみが表示されます。見つからなかったサービスにはスペースは必要ありません。",
   "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
     "表示するのはプロバイダー、参照元、エンドポイント、モデルだけです。認証情報は接続を選んだ後に読み取ります。",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
@@ -747,6 +800,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Operating review · task first": "運用レビュー・タスクファースト",
   "Operating team": "運営チーム",
   "Operating-review task settings": "運用レビュータスクの設定",
+  "Optimize PDF": "PDFを最適化する",
   optional: "オプション",
   "Optional · seven dimensions · about one minute": "任意 · 7 項目 · 約 1 分",
   "Optional page region": "任意のページ領域",
@@ -760,6 +814,8 @@ export const INTERFACE_TRANSLATIONS = {
     "任意です。選択すると、ローカルの根拠、SQL、グラフ、モデルコンテキストには完全一致する行だけを使用します。",
   "Or open something else": "または別の内容を開く",
   Orbit: "Orbit",
+  "Orbit already confirmed the account state during discovery. Continue saves the model choice immediately; the first conversation still runs through the official client, and Orbit never copies its OAuth token.":
+    "Orbit は検出時にアカウントの状態をすでに確認しています。 「続行」を選択すると、モデルの選択がすぐに保存されます。最初の会話は引き続き公式クライアントを介して実行され、Orbit が OAuth トークンをコピーすることはありません。",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit はモデルへリクエストする前に、現在のデータ範囲からこの結果をローカルで集計しました。",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -813,13 +869,20 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit はリセット前のワークスペース全体を復元し、現在のワークスペースを次に復元できるバージョンとして保持します。",
   "Orbit writes an explicit -- orbit:data directive, so workspace_data never changes when files are reordered.":
     "Orbit は明示的な -- orbit:data ディレクティブを書き込むため、ファイルの順序が変更されても workspace_data が変更されることはありません。",
+  "Organize pages": "ページを整理する",
+  "Organize, convert, edit, secure, and understand PDFs": "PDF を整理、変換、編集、保護、理解する",
   "Output budget per task": "タスクごとの出力上限",
   "Overall time saved": "全体の時間短縮",
+  "Overlay one PDF page set on another.": "1 つの PDF ページ セットを別のページ セットにオーバーレイします。",
+  "Overlay PDFs": "オーバーレイ PDF",
   page: "ページ",
   "Page images stay on device · results remain reviewable": "ページ画像はデバイス内に保持 · 結果は確認可能",
   "Page language": "ページの言語",
+  "Page numbers": "ページ番号",
   pages: "ページ",
+  Pages: "ページ",
   "Pages to recognize": "認識するページ",
+  Password: "パスワード",
   "Paste config or CC Switch link": "設定または CC スイッチのリンクを貼り付けます",
   "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
     "1 つの JSON オブジェクト、または ccswitch://v1/import?resource=provider… を貼り付けます。",
@@ -830,8 +893,16 @@ export const INTERFACE_TRANSLATIONS = {
     "パッチはレビューのために保留されています - ワークスペースのコンテキストが変更されました",
   "Patch held for review — workspace source revision changed":
     "パッチはレビューのために保留されています - ワークスペースのソース リビジョンが変更されました",
+  "PDF forms": "PDF フォーム",
   "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
     "PDF ページはこのブラウザ内だけでレンダリングされます。Orbit は内蔵 OCR ランタイムと言語データをこのサイトから読み込み、ブラウザがキャッシュします。ページ画像や認識されたテキストは送信されません。",
+  "PDF to Excel": "PDF を Excel に送信",
+  "PDF to images": "画像への PDF",
+  "PDF to Markdown": "PDFからMarkdownまで",
+  "PDF to PDF/A": "PDF から PDF/A",
+  "PDF to PowerPoint": "PDF から PowerPoint へ",
+  "PDF to Word": "PDF を Word に変換",
+  "PDF tools": "PDF ツール",
   Percent: "パーセント",
   "Period and audience": "期間と対象者",
   "Pilot Evidence · on device": "パイロット証拠 · デバイス内",
@@ -840,6 +911,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Pilot Evidence export contents": "パイロット証拠のエクスポート内容",
   "Pilot evidence held for review — device records changed":
     "パイロット証拠を保留しました — デバイスの記録が変更されました",
+  "Place a visible typed signature without claiming cryptographic certification.":
+    "暗号化認証を要求せずに、目に見えるタイプの署名を配置します。",
+  "Place repeated translucent text across selected pages.":
+    "選択したページ全体に半透明のテキストを繰り返し配置します。",
+  "Place reviewed text on an exact page and position.": "レビューしたテキストを正確なページと位置に配置します。",
   "Plan an AI change": "AI の変更を計画する",
   "portable data": "ポータブルデータ",
   "Prepare a verifiable operating-review chain": "検証可能な運用レビューチェーンを準備する",
@@ -847,6 +923,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepare update review": "アップデートレビューの準備",
   "Prepares a change before you approve the write": "書き込みを承認する前に変更を準備します",
   "Preparing OCR": "OCR を準備しています",
+  "Preparing one bounded repair": "1 つの制限付き修復を準備しています",
   Presentation: "プレゼンテーション",
   "Presentation authored in semantic HTML": "セマンティック HTML で作成するプレゼンテーション",
   "Presentation destination": "プレゼンテーションの保存先",
@@ -867,6 +944,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Previous workspace": "以前のワークスペース",
   "Primary and comparison scopes each need at least one complete condition.":
     "主スコープと比較スコープには、それぞれ少なくとも 1 つの完全な条件が必要です。",
+  "Processing locally…": "ローカルで処理中…",
   "Profile name": "プロファイル名",
   "Project brief": "プロジェクト概要",
   "Proposal preview": "提案プレビュー",
@@ -874,8 +952,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Proposed output · nothing written": "提案された成果物 · まだ書き込まれていません",
   "Proposed source": "提案されたソース",
   "Proposed source dependency changes": "提案されたソース依存関係の変更",
+  "Protect PDF": "PDFを保護する",
   Provider: "プロバイダー",
   "Provider-reported token usage": "プロバイダー報告のトークン使用量",
+  "Public HTTPS URL": "パブリックHTTPS URL",
   "Pull folder changes": "フォルダーの変更をプルする",
   "Pull these folder changes?": "このフォルダの変更を取り込みますか？",
   "Push these changes to the folder?": "この変更をフォルダへ書き出しますか？",
@@ -885,23 +965,34 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "クエリ出力",
   "Quick start": "クイックスタート",
   Quote: "引用",
+  "Rasterize reviewed pages and permanently burn in redaction regions.":
+    "レビューされたページをラスタライズし、編集領域を永続的に焼き付けます。",
   "Readable file": "読み取り可能なファイル",
   "readable source": "読み取り可能なソース",
   "Readable source": "読みやすいソース",
   "Readable, analyzable table data": "読みやすく分析可能なテーブルデータ",
+  "Reading available models…": "利用可能なモデルを読み取り中…",
+  "Reading current Query results locally": "現在の Query の結果をローカルで読み取る",
   "Reading model profiles…": "モデルのプロファイルを読み取り中…",
+  "Reading this connection…": "このつながりを読むと…",
   Ready: "準備完了",
   "Ready to deliver": "そのまま納品できる",
   "ready to edit": "編集する準備ができました",
   "real tasks reviewed": "件の実タスクを評価",
   "Real-task evaluation": "実タスク評価",
+  "Rebuild readable PDF structure when qpdf can recover it.":
+    "qpdf が回復できる場合は、読み取り可能な PDF 構造を再構築します。",
   "Recent call succeeded": "直近の呼び出しは成功しました",
   "Recent task runs": "最近のタスク実行",
   Recognize: "認識",
+  "Recognize selected scanned pages with Orbit's local OCR review.":
+    "選択したスキャンされたページを、Orbit のローカル OCR レビューで認識します。",
   "Recognizing page": "ページを認識しています",
   "Recognizing…": "認識中…",
   "Recommended from this device. You can change it whenever you like.":
     "この端末からの推奨。いつでも好きなときに変更できます。",
+  "Recompress streams and generate compact object streams locally.":
+    "ストリームを再圧縮し、コンパクトなオブジェクト ストリームをローカルに生成します。",
   "Reconnect existing Data or Query and exact category and value fields.":
     "既存の Data または Query と、正確なカテゴリ・値フィールドを再接続してください。",
   "Reconnect the missing Chart": "見つからない Chart を再接続",
@@ -912,19 +1003,33 @@ export const INTERFACE_TRANSLATIONS = {
   "Recording…": "記録中…",
   "Recover files, versions, and task records from before reset": "リセット前のファイル、バージョン、タスク履歴を復元",
   "Recovered after one compiler-guided repair": "コンパイラによる 1 回の修復後に回復",
+  "Redact PDF": "PDFを秘匿化する",
   "Refresh available": "更新できます",
   "Refresh linked presentation in place": "連携プレゼンテーションをそのまま更新",
   "Related reference": "関連する参照",
   "Release to prepare the import": "リリースしてインポートを準備します",
   "Remove condition": "条件の削除",
+  "Remove encryption after the user supplies the current password.":
+    "ユーザーが現在のパスワードを入力した後、暗号化を削除します。",
   "Remove from workspace": "ワークスペースから削除",
+  "Remove pages": "ページを削除する",
   "Remove scripts or executable markup; Orbit previews only script-free content.":
     "スクリプトや実行可能なマークアップを削除してください。Orbit はスクリプトのない内容だけをプレビューします。",
   "Remove temporary Agent context pin": "一時的な Agent コンテキスト ピンを削除します",
   "Remove unsafe content": "安全でない内容を削除",
+  "Render and compare page structure without changing either input.":
+    "どちらの入力も変更せずに、ページ構造をレンダリングして比較します。",
+  "Render one public HTTPS page in an isolated desktop session.":
+    "分離されたデスクトップ セッションで 1 つのパブリック HTTPS ページをレンダリングします。",
+  "Render safe semantic HTML through Orbit's fixed PDF export.":
+    "Orbit の修正された PDF エクスポートを通じて、安全なセマンティック HTML をレンダリングします。",
+  "Render selected PDF pages as PNG images.": "選択した PDF ページを PNG 画像としてレンダリングします。",
   "Rendered presentation preview": "レンダリングされたプレゼンテーションのプレビュー",
   "Rendering a private on-device preview…": "デバイス上で非公開プレビューを描画しています…",
   "Rendering page": "ページをレンダリングしています",
+  "Reorder and duplicate pages with an explicit page sequence.":
+    "明示的なページ順序を使用してページを並べ替えたり複製したりできます。",
+  "Repair PDF": "PDFを修理する",
   "Repair the Chart definition": "Chart 定義を修正",
   "Repair the Chart source": "Chart ソースを修正",
   "Repair the Data source": "Data ソースを修正",
@@ -951,6 +1056,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Restore the sample workspace?": "サンプルワークスペースを復元しますか？",
   "Restored the latest device draft": "最新のデバイスドラフトを復元しました",
   "Result summary": "結果の概要",
+  Results: "結果",
   "Revenue analysis": "収益分析",
   "Revenue by region": "地域別の収益",
   Review: "確認",
@@ -958,6 +1064,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review canonical source": "正規ソースを確認",
   "Review checkpoint restore": "チェックポイントの復元を確認",
   "Review config": "Review 構成",
+  "Review extracted tables as canonical Data before XLSX export.":
+    "Review は、XLSX のエクスポート前にテーブルを正規の Data として抽出しました。",
   "Review first, preserve the current workspace, then open the sample":
     "先に確認し、現在のワークスペースを保持してからサンプルを開く",
   "Review focus": "レビューの焦点",
@@ -973,7 +1081,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Review title": "レビューのタイトル",
   "Review-question planner": "レビュー質問プランナー",
   "Rose Pearl": "ローズパール",
+  "Rotate pages": "ページを回転する",
+  "Rotate selected pages by 90, 180, or 270 degrees.": "選択したページを 90、180、または 270 度回転します。",
+  Rotation: "回転",
   "Run history": "実行履歴",
+  "Run tool": "実行ツール",
   "Running locally": "ローカルで実行する",
   "Runs on this device": "このデバイスで実行",
   "Runtime impact preflight passed": "ランタイム インパクト プリフライトに合格しました",
@@ -1000,9 +1112,12 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "保存されたタスク",
   "Saved tasks": "保存されたタスク",
   Saving: "保存",
+  "Saving securely…": "安全に保存…",
   "Scan again": "もう一度検索",
+  "Scan to PDF": "PDF にスキャンします",
   "Scanned PDF · explicit selection": "スキャン PDF · 明示的な選択",
   "Scope filters": "スコープフィルター",
+  "Search PDF tools": "PDF ツールを検索",
   "See the full data-to-report-and-deck chain": "データからレポート、デッキまでの完全なチェーンをご覧ください",
   "Select a changed file to inspect its source diff.": "変更されたファイルを選択して、そのソース差分を検査します。",
   "Select or edit a Deck slide": "Deck スライドを選択または編集します",
@@ -1023,6 +1138,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Show workspace files": "ワークスペースファイルを表示する",
   Showing: "表示",
   "Sign in through the official client first": "まずは公式クライアント経由でサインインしてください",
+  "Sign PDF": "PDFに署名します",
   "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.":
     "サインインは、この Mac 上の公式クライアントによって管理されます。 Orbit には OAuth トークンが保存されません。",
   "Sign-in managed by the official client": "サインインは公式クライアントによって管理されます",
@@ -1058,6 +1174,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Sources in proposed transaction": "提案された取引のソース",
   "Space Black": "スペースブラック",
   Split: "分割",
+  "Split PDF": "PDFを分割",
   standalone: "スタンドアロン",
   Starlight: "スターライト",
   "Start from a cadence": "レポート周期から始める",
@@ -1070,11 +1187,14 @@ export const INTERFACE_TRANSLATIONS = {
     "まず修正方針を確認し、必要なときだけコンパイラの正確な根拠を表示します。",
   "Start writing to compile a preview.": "プレビューをコンパイルするために書き込みを開始します。",
   "Started a fresh local workspace": "新しいローカル ワークスペースを開始しました",
+  "Starting the selected model": "選択したモデルの起動",
   "State the question this review must answer and the decision it should support.":
     "このレビューで回答する必要がある質問と、レビューがサポートする必要がある決定を述べます。",
   "State what the audience needs to understand and the decision the presentation should support.":
     "対象者に理解してほしいことと、プレゼンが支える判断を記述してください。",
+  "Still waiting; you can stop": "まだ待っています。止めてもいいよ",
   Stop: "停止",
+  "Stop model request": "モデルの停止リクエスト",
   Stopped: "停止しました",
   "Storage full": "ストレージがいっぱいです",
   "Strict Chart JSON · source identity locked": "厳密な Chart JSON · ソース ID がロックされました",
@@ -1083,6 +1203,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Structured output": "構造化出力",
   "Suggested actions": "推奨されるアクション",
   Sum: "合計",
+  "Summarize PDF": "PDFの概要",
   "Summarize quarterly revenue": "四半期収益を要約する",
   "Switch to the dark theme": "ダークテーマに切り替える",
   "Switched artifact context": "切り替えられたアーティファクト コンテキスト",
@@ -1105,6 +1226,7 @@ export const INTERFACE_TRANSLATIONS = {
   Team: "チーム",
   "Temporarily avoided": "一時的に回避中",
   "Temporary Workspace Agent context pins cleared": "一時ワークスペース Agent のコンテキスト ピンがクリアされました",
+  "Testing structured response…": "構造化された応答をテストしています…",
   Text: "テキスト",
   "That checkpoint already matches the current source": "そのチェックポイントはすでに現在のソースと一致しています",
   "That file is too large. Choose one configuration smaller than 20 KB.":
@@ -1146,11 +1268,13 @@ export const INTERFACE_TRANSLATIONS = {
   "The layout is usable without material rework.": "大幅な手直しなしでレイアウトを使用できます。",
   "The model is preparing review questions from bounded aggregate evidence…":
     "モデルが範囲を限定した集計根拠からレビュー質問を準備しています…",
+  "The model is reading current context": "モデルは現在のコンテキストを読み取っています",
   "The model is shaping this presentation from bounded source evidence…":
     "モデルが範囲を限定したソース根拠からプレゼンテーションを構成しています…",
   "The numbers, structure, and language meet this task.": "数値、構成、表現がこのタスクを満たしています。",
   "The original detail was too long and is truncated in this view.":
     "元の詳細が長すぎるため、この表示では省略されています。",
+  "The PDF operation failed.": "PDF オペレーションが失敗しました。",
   "The result saves meaningful time over manual work.": "手作業と比べて有意に時間を短縮できます。",
   "The user can understand what Orbit changed and why.": "Orbit が何をなぜ変更したかをユーザーが理解できます。",
   "The web app cannot read application settings on your computer. You can still connect a model manually.":
@@ -1170,11 +1294,16 @@ export const INTERFACE_TRANSLATIONS = {
     "このソース自体は変更されていません。ライブ成果物は提案されたワークスペース全体を基に再描画されています。",
   Title: "タイトル",
   To: "に",
+  "To keep switching and typing responsive, this view shows the beginning first. The complete content remains in the Source editor.":
+    "切り替えや入力の応答性を維持するために、このビューでは最初に始まりが表示されます。完全なコンテンツは Source エディターに残ります。",
   "To protect credentials, Orbit does not import from remote config URLs.":
     "認証情報を保護するために、Orbit はリモート構成 URL からインポートしません。",
   tokens: "トークン",
   Top: "上",
   "Transaction map": "トランザクションマップ",
+  "Translate imported canonical text through a reviewed Agent proposal.":
+    "インポートされた正規テキストを、レビューされた Agent プロポーザルを通じて翻訳します。",
+  "Translate PDF": "PDFを翻訳",
   "Trim the selection": "選択範囲をトリムする",
   "Try four shortcuts yourself": "4 つのショートカットを試す",
   "Turn data into a verifiable review.": "データを検証可能なレビューに変換。",
@@ -1185,6 +1314,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "出典不明",
   Unlinked: "リンクされていない",
   "Unlinked artifacts": "リンクされていないアーティファクト",
+  "Unlock PDF": "PDFのロックを解除する",
   "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
     "無関係なファイルは変更しません。レビューしたソース、画像、Orbit マニフェストだけを書き込みます。",
   "Unresolved dependencies": "未解決の依存関係",
@@ -1212,6 +1342,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit JSON または CC Switch の単一プロバイダーのインポート リンクを使用します。 Orbit は最初にそれをレビューし、すぐには保存しません。",
   "Use Orbit JSON or one ccswitch://v1/import provider link.":
     "Orbit JSON または 1 つの ccswitch://v1/import プロバイダー リンクを使用します。",
+  "Use Orbit's local text, table, and optional OCR importer to create Markdown.":
+    "Orbit のローカル テキスト、テーブル、およびオプションの OCR インポーターを使用して、Markdown を作成します。",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "ヘッダー付きの矩形 CSV、またはスカラー値を含むフラット JSON を使用してください。",
   "Use the selected cloud or device model; you still confirm every change":
@@ -1221,6 +1353,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Use this model connection?": "このモデル接続を使いますか？",
   Valid: "有効",
   Validated: "検証済み",
+  "Validating the model result locally": "モデルの結果をローカルで検証する",
   "Value field": "値フィールド",
   "Values, definitions, and calculations are accurate.": "値、定義、計算が正確です。",
   "Verify & use": "検証して使用",
@@ -1231,6 +1364,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Verifying…": "確認中…",
   Version: "バージョン",
   "Visible marks": "目に見えるマーク",
+  "Visible signature": "目に見える署名",
   "Visual deliverability": "視覚的な納品可能性",
   "Visual edit · complete source draft synced live": "ビジュアル編集・完全なソースドラフトをライブ同期",
   "Visual edit held — the workspace changed during verification":
@@ -1238,6 +1372,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Visual edit rejected — device persistence failed": "ビジュアル編集が拒否されました - デバイスの永続化に失敗しました",
   "Visual edit rejected — every source stayed unchanged":
     "ビジュアル編集は拒否されました - すべてのソースは変更されませんでした",
+  Watermark: "透かし",
+  "Web page to PDF": "ウェブページから PDF へ",
   "Weekly operating review": "週次経営レビュー",
   "Weekly review": "週次レビュー",
   "Welcome & local guide": "ようこそ＆地元ガイド",

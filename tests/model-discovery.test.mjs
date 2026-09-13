@@ -5,7 +5,11 @@ import path from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
-import { createDesktopModelDiscovery, DESKTOP_MODEL_DISCOVERY_LIMITS } from "../desktop/model-discovery.mjs";
+import {
+  createDesktopModelDiscovery,
+  DESKTOP_API_PROVIDER_REGISTRY,
+  DESKTOP_MODEL_DISCOVERY_LIMITS,
+} from "../desktop/model-discovery.mjs";
 
 function missingFiles(files = new Map()) {
   return {
@@ -61,6 +65,15 @@ test("defaults to signed-in accounts without reading API configuration", async (
               installed: true,
               status: "ready",
             },
+            {
+              id: "gemini",
+              provider: "gemini-account",
+              label: "Gemini",
+              sourceLabel: "Gemini CLI · Google account",
+              model: "gemini-2.5-flash",
+              installed: false,
+              status: "not-installed",
+            },
           ],
           connections: [
             {
@@ -86,6 +99,7 @@ test("defaults to signed-in accounts without reading API configuration", async (
   });
   const result = await discovery.scan();
   assert.equal(result.accounts[0].status, "ready");
+  assert.equal(result.accounts.length, 1);
   assert.equal(result.candidates.length, 1);
   assert.equal(result.candidates[0].provider, "codex-account");
   assert.equal(result.candidates[0].credentialState, "account-session");
@@ -117,6 +131,64 @@ test("recognizes a direct DeepSeek environment without exposing its credential",
   );
   assert.doesNotMatch(JSON.stringify(result), /deepseek-process-secret/u);
   assert.equal((await discovery.importCandidate(result.candidates[0].id)).apiKey, "deepseek-process-secret");
+});
+
+test("discovers major compatible providers from literal shell configuration without executing it", async () => {
+  const home = "/Users/orbit";
+  const files = new Map([
+    [
+      path.join(home, ".zshrc"),
+      [
+        "export XAI_API_KEY='xai-secret'",
+        "export GROQ_API_KEY='groq-secret'",
+        "export DASHSCOPE_API_KEY='qwen-secret'",
+        "export ARK_API_KEY='doubao-secret'",
+        "export HUNYUAN_API_KEY='hunyuan-secret'",
+        "export OPENAI_API_KEY=$(security find-generic-password -w -s ignored)",
+      ].join("\n"),
+    ],
+  ]);
+  const discovery = createDesktopModelDiscovery({
+    homeDirectory: home,
+    environment: {},
+    includeApiConnections: true,
+    capabilities: missingFiles(files),
+  });
+  const result = await discovery.scan();
+  assert.deepEqual(
+    result.candidates.map((candidate) => candidate.name).sort(),
+    ["Alibaba Cloud · Qwen", "Groq", "Tencent Hunyuan", "Volcengine Ark · Doubao", "xAI"].sort(),
+  );
+  assert.equal(
+    result.candidates.every((candidate) => candidate.sourceLabel === "Shell · .zshrc"),
+    true,
+  );
+  assert.doesNotMatch(JSON.stringify(result), /secret|security find/u);
+});
+
+test("keeps the provider registry broad, explicit, and compatible with Orbit transports", () => {
+  const ids = DESKTOP_API_PROVIDER_REGISTRY.map((provider) => provider.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const id of [
+    "openai",
+    "anthropic",
+    "gemini",
+    "deepseek",
+    "openrouter",
+    "xai",
+    "mistral",
+    "groq",
+    "together",
+    "dashscope",
+    "volcengine-ark",
+    "tencent-hunyuan",
+  ]) {
+    assert.equal(ids.includes(id), true, id);
+  }
+  assert.equal(
+    DESKTOP_API_PROVIDER_REGISTRY.every((provider) => provider.apiKeyVariables.length > 0),
+    true,
+  );
 });
 
 test("discovers bounded Claude, Codex, and Gemini live configurations without executing them", async () => {

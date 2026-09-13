@@ -40,6 +40,7 @@ import {
   Suspense,
   SyntheticEvent,
   useCallback,
+  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -59,7 +60,7 @@ import {
   type SemanticHtmlEditableCopyHandler,
   type SemanticHtmlSlideEditHandler,
 } from "./artifact-previews";
-import { AgentComposer, type AgentModelOption, type AgentScope } from "./agent-composer";
+import { AgentComposer, type AgentScope } from "./agent-composer";
 import { AgentConversation } from "./agent-conversation";
 import { AgentDockShell } from "./agent-dock-shell";
 import { useAgentConversation } from "./use-agent-conversation";
@@ -67,6 +68,8 @@ import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchExportMenu } from "./workbench-export-menu";
 import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
 import { WorkbenchStatusBar } from "./workbench-statusbar";
+import { WorkspaceArtifactList } from "./workspace-artifact-list";
+import { usePdfToolFlow } from "./use-pdf-tool-flow";
 import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
 import { useSourcePreviewScroll } from "./use-source-preview-scroll";
@@ -92,8 +95,9 @@ import {
 import { planLocalWorkspaceAgentChange } from "../lib/local-workspace-agent";
 import { prepareArtifactDiagnostics } from "../lib/artifact-diagnostics";
 import { planLocalSelectionChange } from "../lib/local-selection-agent";
-import { compileArtifactSource, findMetricReferences, findQueryMetricReferences } from "../lib/bindings";
-import { findChartReferences, parseChartSource, validateChartSourceBinding } from "../lib/charts";
+import { compileArtifactSource } from "../lib/bindings";
+import { parseChartSource, validateChartSourceBinding } from "../lib/charts";
+import { buildArtifactRailModel } from "../lib/artifact-rail-model";
 import { prepareChartEmbedding } from "../lib/chart-embedding";
 import { isDeckMarkdownArtifact, parseDeckSource } from "../lib/deck";
 import {
@@ -163,6 +167,7 @@ import {
 } from "../lib/source-selection";
 import { formatInteger } from "../lib/number-format";
 import type { PdfOcrProgress } from "../lib/pdf-import";
+import { pdfToolImportContinuation } from "../lib/pdf-tool-continuation";
 import {
   createOrbitGuideArtifact,
   detectPreferredLocale,
@@ -182,6 +187,14 @@ import {
 } from "../lib/localization";
 import { normalizeOrbitModelMode, ORBIT_MODEL_MODE_STORAGE_KEY, type OrbitModelMode } from "../lib/model-preference";
 import type { ModelProfilesState } from "../lib/model-profiles";
+import {
+  agentActivityCanStop,
+  agentActivityLabel,
+  agentModelSelectionRequest,
+  buildAgentModelOptions,
+  selectedAgentModelValue,
+  type AgentActivity,
+} from "../lib/agent-model-options";
 import {
   normalizeOrbitAppearanceTheme,
   ORBIT_APPEARANCE_STORAGE_KEY,
@@ -241,7 +254,7 @@ import {
   workspaceSplitTracks,
   type OrbitWorkspaceView,
 } from "../lib/workspace-layout";
-import { sourceSelectionScrollTop } from "../lib/source-editor-scroll";
+import { sourceEditorPresentation, sourceSelectionScrollTop } from "../lib/source-editor-scroll";
 import { prepareSourceNavigation, type PreparedSourceNavigation } from "../lib/source-navigation";
 import { portableSourceRevision } from "../lib/source-revision";
 import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
@@ -361,6 +374,7 @@ const WorkbenchCommandMenu = lazy(() =>
 const PdfOcrSetupDialog = lazy(() =>
   import("./pdf-ocr-setup-dialog").then((module) => ({ default: module.PdfOcrSetupDialog })),
 );
+const PdfToolCenter = lazy(() => import("./pdf-tool-center").then((module) => ({ default: module.PdfToolCenter })));
 const TransactionReviewMap = lazy(() =>
   import("./transaction-review-map").then((module) => ({ default: module.TransactionReviewMap })),
 );
@@ -785,6 +799,7 @@ function buildLocalImageSourceInsertion(
 export function OrbitWorkbench() {
   const [artifacts, setArtifacts] = useState<WorkspaceArtifact[]>(() => cloneDefaultArtifacts());
   const [selectedId, setSelectedId] = useState("q2-review");
+  const deferredSelectedId = useDeferredValue(selectedId);
   const [hydrated, setHydrated] = useState(false);
   const agentThread = useAgentConversation(hydrated);
   const restoreAgentConversation = agentThread.restore;
@@ -838,7 +853,7 @@ export function OrbitWorkbench() {
   const [exportState, setExportState] = useState<"idle" | WorkspaceFileExportDestination>("idle");
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [agentError, setAgentError] = useState("");
-  const [agentState, setAgentState] = useState<"idle" | "planning">("idle");
+  const [agentState, setAgentState] = useState<AgentActivity>("idle");
   const [agentScope, setAgentScope] = useState<AgentScope>("artifact");
   const [agentComposerOpen, setAgentComposerOpen] = useState(false);
   const [agentDockPlacement, setAgentDockPlacement] = useState<AgentDockPlacement>("docked");
@@ -894,6 +909,7 @@ export function OrbitWorkbench() {
   const importInFlightRef = useRef(false);
   const localImageInFlightRef = useRef(false);
   const pdfOcrAbortRef = useRef<AbortController | null>(null);
+  const agentAbortRef = useRef<AbortController | null>(null);
   const exportInFlightRef = useRef(false);
   const visualEditInFlightRef = useRef(false);
   const artifactsRef = useRef(artifacts);
@@ -903,6 +919,7 @@ export function OrbitWorkbench() {
   const selectedIdRef = useRef(selectedId);
   const workspaceResetRecoveryRef = useRef(workspaceResetRecovery);
   const recordedStoppedTaskIdsRef = useRef(new Set<string>());
+  const pdfTools = usePdfToolFlow({ locale, importRef, setNotice });
   artifactsRef.current = artifacts;
   checkpointsRef.current = checkpoints;
   savedOperatingReviewsRef.current = savedOperatingReviews;
@@ -910,28 +927,11 @@ export function OrbitWorkbench() {
   selectedIdRef.current = selectedId;
   workspaceResetRecoveryRef.current = workspaceResetRecovery;
   const ui = useMemo(() => orbitUICopy(locale).workbench, [locale]);
-  const agentModelOptions = useMemo<AgentModelOption[]>(() => {
-    const options: AgentModelOption[] = [];
-    for (const profile of modelProfilesState?.profiles ?? []) {
-      options.push({ value: `profile:${profile.id}`, label: `${profile.name} · ${profile.model}` });
-    }
-    if (modelProfilesState?.deployment.configured) {
-      options.push({
-        value: "deployment",
-        label: `${modelProfilesState.deployment.provider ?? ui.modelConnected} · ${modelProfilesState.deployment.model ?? ui.modelConnected}`,
-      });
-    }
-    options.push({ value: "local", label: ui.localFallback });
-    return options;
-  }, [modelProfilesState, ui.localFallback, ui.modelConnected]);
-  const selectedAgentModel =
-    modelMode === "device-tools-only"
-      ? "local"
-      : modelProfilesState?.activeSource === "personal" && modelProfilesState.activeProfileId
-        ? `profile:${modelProfilesState.activeProfileId}`
-        : modelProfilesState?.activeSource === "deployment"
-          ? "deployment"
-          : "local";
+  const agentModelOptions = useMemo(
+    () => buildAgentModelOptions(modelProfilesState, { local: ui.localFallback, connected: ui.modelConnected }),
+    [modelProfilesState, ui.localFallback, ui.modelConnected],
+  );
+  const selectedAgentModel = selectedAgentModelValue(modelMode, modelProfilesState);
   const visibleNotice = useMemo(() => localizeOrbitStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
     () =>
@@ -942,6 +942,10 @@ export function OrbitWorkbench() {
           .map((target) => [target.artifactId, target] as const),
       ),
     [artifacts],
+  );
+  const { groups: artifactGroups, referenceCounts: artifactReferenceCounts } = useMemo(
+    () => buildArtifactRailModel(artifacts, ui),
+    [artifacts, ui],
   );
 
   useLayoutEffect(() => {
@@ -1109,6 +1113,7 @@ export function OrbitWorkbench() {
     () => () => {
       document.body.classList.remove("workspace-resizing");
       document.body.classList.remove("agent-dragging");
+      agentAbortRef.current?.abort();
     },
     [],
   );
@@ -1251,7 +1256,8 @@ export function OrbitWorkbench() {
     });
   }, []);
 
-  const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedId) ?? artifacts[0];
+  const selectedArtifact = artifacts.find((artifact) => artifact.id === deferredSelectedId) ?? artifacts[0];
+  const artifactSwitchPending = selectedArtifact?.id !== selectedId;
   const activeVisualSourceDraft =
     selectedArtifact &&
     visualSourceDraft?.artifactId === selectedArtifact.id &&
@@ -1453,10 +1459,7 @@ export function OrbitWorkbench() {
     [artifacts, pendingChange, pendingReviewId, selectedArtifact],
   );
   const editorSource = activeVisualSourceDraft?.nextSource ?? presentedArtifact?.source ?? "";
-  const lineNumbers = useMemo(
-    () => Array.from({ length: editorSource.split("\n").length || 1 }, (_, index) => index + 1).join("\n"),
-    [editorSource],
-  );
+  const { large: largeSourceMode, lineNumbers } = useMemo(() => sourceEditorPresentation(editorSource), [editorSource]);
   const pendingTotals = useMemo(
     () =>
       pendingStats.reduce(
@@ -1501,6 +1504,7 @@ export function OrbitWorkbench() {
           "agent-proposal": Boolean(pendingChange),
           "import-review": Boolean(pendingImport),
           "pdf-ocr": Boolean(pendingPdfOcr),
+          "pdf-tools": pdfTools.open,
           "export-review": Boolean(pendingExport),
           "pilot-evidence": Boolean(pendingPilotEvidence),
           "delivery-outcome": Boolean(pendingDeliveryConfirmation),
@@ -1512,7 +1516,7 @@ export function OrbitWorkbench() {
           "visual-draft": Boolean(activeVisualSourceDraft),
         },
         busy: {
-          "agent-planning": agentState === "planning",
+          "agent-planning": agentState !== "idle",
           "model-switching": agentModelSwitching,
           "import-reading": importState === "reading",
           "export-preparing": exportState !== "idle",
@@ -1548,6 +1552,7 @@ export function OrbitWorkbench() {
       pendingImport,
       pendingLocalImage,
       pendingPdfOcr,
+      pdfTools.open,
       pendingPilotEvidence,
       pendingWorkspaceReset,
       visualEditState,
@@ -1566,8 +1571,8 @@ export function OrbitWorkbench() {
         setNotice(orbitText(locale, "Agent will use local tools", "Agent 将使用本地工具"));
         return;
       }
-      const requestBody =
-        value === "deployment" ? { action: "deployment" } : { action: "activate", profileId: value.slice(8) };
+      const requestBody = agentModelSelectionRequest(value);
+      if (!requestBody) throw new Error("Orbit could not read that model selection.");
       const response = await fetch("/api/model-profiles", {
         method: "POST",
         credentials: "same-origin",
@@ -1782,7 +1787,7 @@ export function OrbitWorkbench() {
   }, [setPreferredWorkspaceView, workspaceView]);
 
   useEffect(() => {
-    if (pendingChange || agentError || agentState === "planning") setAgentComposerOpen(true);
+    if (pendingChange || agentError || agentState !== "idle") setAgentComposerOpen(true);
   }, [agentError, agentState, pendingChange]);
 
   useEffect(() => {
@@ -2630,7 +2635,7 @@ export function OrbitWorkbench() {
       setNotice(`Selection Agent is limited to ${formatInteger(MAX_AGENT_SELECTION_CHARS)} characters`);
       return;
     }
-    if (agentState !== "planning") setAgentScope("selection");
+    if (agentState === "idle") setAgentScope("selection");
     const previewLabel = previewTarget?.start === start && previewTarget.end === end ? previewTarget.label : "";
     setNotice(
       previewLabel
@@ -3203,9 +3208,23 @@ export function OrbitWorkbench() {
     }
   }
 
+  function stopAgent() {
+    const controller = agentAbortRef.current;
+    if (!controller) return;
+    agentAbortRef.current = null;
+    controller.abort("Stopped by the user");
+    setAgentState("idle");
+    setAgentError("");
+    setNotice(orbitText(locale, "Model request stopped · nothing changed", "已停止模型请求 · 内容没有变化"));
+  }
+
   async function runAgent(nextPrompt = prompt) {
     const instruction = nextPrompt.trim();
     if (!instruction || !workbenchOperationGate.canStartOperation) return;
+    if (pdfTools.openMatchingIntent(instruction, workbenchOperationGate.canStartOperation)) {
+      if (nextPrompt === prompt) setPrompt("");
+      return;
+    }
     const submittedComposerDraft = nextPrompt === prompt ? prompt : null;
     const clearSubmittedComposerDraft = () => {
       if (submittedComposerDraft == null) return;
@@ -3245,7 +3264,7 @@ export function OrbitWorkbench() {
     const priorConversation = agentThread.context;
     agentThread.appendUser(instruction);
     const appendAssistantTurn = agentThread.appendAssistant;
-    setAgentState("planning");
+    setAgentState("preparing");
     setAgentError("");
     setPendingChange(null);
     setPendingReviewId("");
@@ -3297,6 +3316,9 @@ export function OrbitWorkbench() {
     }
 
     if (remoteEligible && modelMode === "model-assisted") {
+      const remoteController = new AbortController();
+      agentAbortRef.current = remoteController;
+      const remoteFetch: typeof fetch = (input, init) => fetch(input, { ...init, signal: remoteController.signal });
       try {
         const remoteRequest: RemoteAgentRequestBody = {
           scope,
@@ -3315,6 +3337,7 @@ export function OrbitWorkbench() {
           setNotice("Nothing proposed — one automatic repair attempt stopped; every source stayed unchanged");
           setAgentState("idle");
         };
+        setAgentState("waiting");
         const {
           response,
           payload: initialPayload,
@@ -3323,7 +3346,9 @@ export function OrbitWorkbench() {
         } = await requestRemoteAgentTurn({
           body: remoteRequest,
           workspaceArtifacts: targetWorkspaceContext,
+          fetcher: remoteFetch,
           onQueryEvidenceRequested: (count) => {
+            setAgentState("query-evidence");
             setNotice(`Agent is inspecting ${count} current Query ${count === 1 ? "result" : "results"} locally`);
           },
           collectQueryEvidence: async (context) => {
@@ -3334,6 +3359,7 @@ export function OrbitWorkbench() {
             return collectWorkspaceAgentQueryEvidence(context, runWorkspaceQuerySnapshot);
           },
         });
+        setAgentState("validating");
         let payload: RemoteAgentResponse = initialPayload;
 
         if (response.ok && typeof payload.answer === "string" && payload.answer.trim()) {
@@ -3368,14 +3394,18 @@ export function OrbitWorkbench() {
               stopRemoteRepair(`Automatic repair could not start · ${message}`);
               return;
             }
+            setAgentState("repairing");
             setNotice("Agent is using the local compiler failure to prepare one replacement plan");
             let repairResponse: Response;
             let repairPayload: RemoteAgentResponse;
             try {
-              ({ response: repairResponse, payload: repairPayload } = await postAgentRequest({
-                ...remoteBody,
-                runtimeRepair: repairFeedback,
-              }));
+              ({ response: repairResponse, payload: repairPayload } = await postAgentRequest(
+                {
+                  ...remoteBody,
+                  runtimeRepair: repairFeedback,
+                },
+                remoteFetch,
+              ));
             } catch {
               stopRemoteRepair("Automatic repair stopped after one attempt · the model provider could not be reached.");
               return;
@@ -3443,12 +3473,20 @@ export function OrbitWorkbench() {
             ? "Local patch ready · model provider not configured"
             : "Local patch ready · model provider unavailable";
       } catch {
+        if (remoteController.signal.aborted) {
+          setPendingChange(null);
+          setAgentState("idle");
+          return;
+        }
         fallbackNotice = "Local patch ready · network fallback active";
+      } finally {
+        if (agentAbortRef.current === remoteController) agentAbortRef.current = null;
       }
     }
 
     if (modelMode === "device-tools-only") fallbackNotice = "Local patch ready · continuing without a model";
 
+    setAgentState("validating");
     try {
       if (scope === "workspace") {
         const localPlan = planLocalWorkspaceAgentChange(targetArtifacts, instruction, targetWorkspaceContext);
@@ -4279,6 +4317,7 @@ export function OrbitWorkbench() {
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
     const files = [...(event.target.files ?? [])];
     event.target.value = "";
+    if (!files.length) pdfTools.clearIntent();
     await prepareFileImport(files);
   }
 
@@ -4497,6 +4536,7 @@ export function OrbitWorkbench() {
     setPendingImport(null);
     setImportError("");
     setTaskSession(null);
+    pdfTools.clearIntent();
     setNotice(`Import cancelled — ${sourceName} did not change the workspace`);
   }
 
@@ -4592,6 +4632,19 @@ export function OrbitWorkbench() {
       return;
     }
     setTaskSession(null);
+    if (pdfTools.intent) {
+      const continuation = pdfToolImportContinuation(locale, pdfTools.intent);
+      pdfTools.clearIntent();
+      if (continuation.prompt) {
+        setAgentScope("artifact");
+        setPrompt(continuation.prompt);
+        setAgentComposerOpen(true);
+        setNotice(continuation.notice);
+        return;
+      }
+      setNotice(continuation.notice);
+      return;
+    }
     setNotice(
       `Imported ${importedCount} readable ${importedCount === 1 ? "source" : "sources"} from ${sourceName}${warningCount ? ` · ${warningCount} fidelity ${warningCount === 1 ? "note" : "notes"} reviewed` : ""}`,
     );
@@ -4896,19 +4949,6 @@ export function OrbitWorkbench() {
     }
   }
 
-  const artifactGroups = [
-    { id: "sources", label: ui.sources, artifacts: artifacts.filter((artifact) => artifact.kind === "data") },
-    {
-      id: "analysis",
-      label: ui.analysis,
-      artifacts: artifacts.filter((artifact) => artifact.kind === "query" || artifact.kind === "chart"),
-    },
-    {
-      id: "deliverables",
-      label: ui.deliverables,
-      artifacts: artifacts.filter((artifact) => artifact.kind === "document" || artifact.kind === "slides"),
-    },
-  ].filter((group) => group.artifacts.length > 0);
   const documentBriefingRuns = taskEvidence.runs.filter((run) => run.taskId === "document-briefing");
   const documentBriefingRunSummary = summarizeOrbitTaskRuns(documentBriefingRuns);
   const documentBriefingDeliveries = taskEvidence.deliveries.filter(
@@ -5061,6 +5101,8 @@ export function OrbitWorkbench() {
       <div
         ref={workspaceRef}
         className={`workspace ${fileRailOpen ? "with-file-rail" : "without-file-rail"} view-${workspaceView} ${emptyWorkspace ? "is-empty" : ""}`.trim()}
+        data-artifact-switching={artifactSwitchPending ? "true" : "false"}
+        aria-busy={artifactSwitchPending}
         style={
           {
             "--workspace-source-track": workspaceSplitTracks(workspaceSourcePercent).source,
@@ -5154,6 +5196,7 @@ export function OrbitWorkbench() {
               onOpenFolder={() => void connectWorkspaceFolder()}
               onOpenGuide={openWelcomeGuide}
               onOpenModels={openModelSettings}
+              onOpenPdfTools={() => pdfTools.openTools(workbenchOperationGate.canStartOperation)}
               onPullFolder={() => void pullWorkspaceFolder()}
               onPushFolder={() => void pushWorkspaceFolder()}
               onRestorePreviousWorkspace={() => void reviewWorkspaceReset("recovery")}
@@ -5192,85 +5235,23 @@ export function OrbitWorkbench() {
                   +
                 </button>
               </div>
-              <nav className="artifact-groups" aria-label={ui.artifacts}>
-                {artifactGroups.map((group) => (
-                  <section
-                    className={`artifact-group artifact-group-${group.id}`}
-                    aria-labelledby={`artifact-group-${group.id}`}
-                    key={group.id}
-                  >
-                    <header className="artifact-group-label">
-                      <h2 id={`artifact-group-${group.id}`}>{group.label}</h2>
-                      <span>{group.artifacts.length}</span>
-                    </header>
-                    <div className="artifact-list">
-                      {group.artifacts.map((artifact) => {
-                        const metricReferenceCount = findMetricReferences(artifact.source).length;
-                        const queryMetricReferenceCount = findQueryMetricReferences(artifact.source).length;
-                        const chartReferenceCount = findChartReferences(artifact.source).length;
-                        const referenceCount = metricReferenceCount + queryMetricReferenceCount + chartReferenceCount;
-                        const pinned = workspacePinnedArtifactIds.includes(artifact.id);
-                        const inAgentContext = workspaceAgentContext.some(
-                          (contextArtifact) => contextArtifact.id === artifact.id,
-                        );
-                        const briefingFreshness = documentBriefingTargetsById.get(artifact.id)?.freshness;
-                        return (
-                          <div
-                            className={`artifact-row-shell ${inAgentContext ? "in-agent-context" : ""} ${briefingFreshness === "changed" ? "has-refresh" : ""}`.trim()}
-                            data-agent-context={inAgentContext ? "true" : undefined}
-                            key={artifact.id}
-                          >
-                            <button
-                              className={`artifact-row ${artifact.id === selectedArtifact.id ? "active" : ""}`}
-                              disabled={Boolean(activeVisualSourceDraft)}
-                              onClick={() => selectArtifact(artifact.id)}
-                            >
-                              <span className={`artifact-icon ${artifact.kind}`}>
-                                <ArtifactIcon kind={artifact.kind} />
-                              </span>
-                              <span className="artifact-label">
-                                <strong>{artifact.name}</strong>
-                                <small>
-                                  <span>
-                                    {artifact.language}
-                                    {referenceCount ? ` · ${ui.liveBindings(referenceCount)}` : ""}
-                                  </span>
-                                  {briefingFreshness === "changed" && (
-                                    <span className="artifact-refresh-status">{ui.refreshAvailable}</span>
-                                  )}
-                                </small>
-                              </span>
-                            </button>
-                            <button
-                              type="button"
-                              className={`artifact-context-pin ${pinned ? "active" : ""}`.trim()}
-                              aria-label={ui.pinContext(artifact.name, pinned)}
-                              aria-pressed={pinned}
-                              title={pinned ? ui.removePin : ui.keepPin}
-                              disabled={Boolean(activeVisualSourceDraft)}
-                              onClick={() => toggleWorkspaceContextPin(artifact.id)}
-                            >
-                              <Pin aria-hidden="true" />
-                            </button>
-                            {briefingFreshness === "changed" && (
-                              <button
-                                type="button"
-                                className="artifact-refresh-action"
-                                aria-label={`${ui.reviewRefresh} · ${artifact.name}`}
-                                title={ui.reviewRefresh}
-                                disabled={artifactCreationDisabled}
-                                onClick={() => reviewLinkedPresentationRefresh(artifact.id)}
-                              >
-                                <RefreshCw aria-hidden="true" />
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-              </nav>
+              <WorkspaceArtifactList
+                groups={artifactGroups}
+                referenceCounts={artifactReferenceCounts}
+                selectedId={selectedId}
+                pinnedIds={workspacePinnedArtifactIds}
+                contextIds={new Set(workspaceAgentContext.map((artifact) => artifact.id))}
+                briefingFreshness={
+                  new Map([...documentBriefingTargetsById].map(([id, target]) => [id, target.freshness] as const))
+                }
+                copy={ui}
+                locked={Boolean(activeVisualSourceDraft)}
+                creationDisabled={artifactCreationDisabled}
+                renderIcon={(artifact) => <ArtifactIcon kind={artifact.kind} />}
+                onSelect={selectArtifact}
+                onTogglePin={toggleWorkspaceContextPin}
+                onReviewRefresh={reviewLinkedPresentationRefresh}
+              />
               {!!savedOperatingReviews.length && (
                 <section className="saved-review-list" aria-label={ui.savedReviews}>
                   <div className="artifact-group-label">
@@ -5661,7 +5642,7 @@ export function OrbitWorkbench() {
                 </section>
               )}
 
-              <div className="editor-wrap">
+              <div className="editor-wrap" data-large-source={largeSourceMode ? "true" : "false"}>
                 <pre
                   ref={gutterRef}
                   className={`line-gutter ${activeVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()}
@@ -5719,6 +5700,7 @@ export function OrbitWorkbench() {
                   wrap="off"
                   readOnly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
                   disabled={
+                    artifactSwitchPending ||
                     visualEditState !== "idle" ||
                     Boolean(pendingCheckpointRestore) ||
                     Boolean(pendingWorkspaceReset) ||
@@ -5726,6 +5708,7 @@ export function OrbitWorkbench() {
                     Boolean(pendingDocumentStructure)
                   }
                   aria-busy={
+                    artifactSwitchPending ||
                     visualEditState !== "idle" ||
                     Boolean(pendingCheckpointRestore) ||
                     Boolean(pendingWorkspaceReset) ||
@@ -5952,7 +5935,9 @@ export function OrbitWorkbench() {
                     onQuickCommand={(command) => void runAgent(command)}
                     scope={agentScope}
                     onScopeChange={changeAgentScope}
-                    busy={agentState === "planning" || visualEditState !== "idle"}
+                    busy={agentState !== "idle" || visualEditState !== "idle"}
+                    modelBusy={agentState !== "idle"}
+                    stoppable={agentActivityCanStop(agentState)}
                     modelSwitching={agentModelSwitching}
                     locked={operationStartBlocked}
                     selectionUnavailable={!validSourceSelection}
@@ -5976,12 +5961,22 @@ export function OrbitWorkbench() {
                     suggestedActionsLabel={ui.suggestedActions}
                     sendLabel={ui.planChange}
                     sendTitle={`${ui.planChange} (Enter)`}
+                    stopLabel={ui.stopModel}
+                    workingLabel={agentActivityLabel(agentState, {
+                      starting: ui.modelStarting,
+                      reading: ui.modelReading,
+                      query: ui.modelQueryEvidence,
+                      validating: ui.modelValidating,
+                      repairing: ui.modelRepairing,
+                    })}
+                    longWaitLabel={ui.modelWaiting}
                     modelConnectedLabel={ui.modelConnected}
                     localFallbackLabel={ui.localFallback}
                     modelSelectLabel={ui.agentModel}
                     modelOptions={agentModelOptions}
                     selectedModel={selectedAgentModel}
                     onModelChange={(value) => void changeAgentModel(value)}
+                    onStop={stopAgent}
                     planHint={ui.planHint}
                     queryEvidenceText={
                       agentScope === "workspace" && workspaceAgentQueryCount > 0
@@ -6280,6 +6275,7 @@ export function OrbitWorkbench() {
       <WorkbenchStatusBar visibleNotice={visibleNotice} artifactStatsText={artifactStats(presentedArtifact)} />
 
       <Suspense fallback={<DeferredWorkbenchSurfaceFallback locale={locale} />}>
+        {pdfTools.open && <PdfToolCenter locale={locale} {...pdfTools.centerProps} />}
         {newArtifactOpen && (
           <NewArtifactDialog
             artifacts={artifacts}

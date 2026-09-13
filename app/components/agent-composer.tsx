@@ -1,7 +1,15 @@
 "use client";
 
-import { ChevronDown, LoaderCircle, Play, Sparkles } from "lucide-react";
-import { useEffect, useImperativeHandle, useRef, type ChangeEvent, type KeyboardEvent, type Ref } from "react";
+import { ChevronDown, LoaderCircle, Play, Sparkles, Square } from "lucide-react";
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type Ref,
+} from "react";
 
 export type AgentScope = "selection" | "artifact" | "workspace";
 
@@ -29,6 +37,8 @@ export type AgentComposerProps = Readonly<{
   scope: AgentScope;
   onScopeChange: (scope: AgentScope) => void;
   busy: boolean;
+  modelBusy: boolean;
+  stoppable: boolean;
   modelSwitching: boolean;
   locked: boolean;
   selectionUnavailable: boolean;
@@ -40,12 +50,16 @@ export type AgentComposerProps = Readonly<{
   suggestedActionsLabel: string;
   sendLabel: string;
   sendTitle: string;
+  stopLabel: string;
+  workingLabel: string;
+  longWaitLabel: string;
   modelConnectedLabel: string;
   localFallbackLabel: string;
   modelSelectLabel: string;
   modelOptions: readonly AgentModelOption[];
   selectedModel: string;
   onModelChange: (value: string) => void;
+  onStop: () => void;
   planHint: string;
   queryEvidenceText: string;
   quickCommands: readonly string[];
@@ -67,6 +81,8 @@ export function AgentComposer({
   scope,
   onScopeChange,
   busy,
+  modelBusy,
+  stoppable,
   modelSwitching,
   locked,
   selectionUnavailable,
@@ -78,17 +94,22 @@ export function AgentComposer({
   suggestedActionsLabel,
   sendLabel,
   sendTitle,
+  stopLabel,
+  workingLabel,
+  longWaitLabel,
   modelConnectedLabel,
   localFallbackLabel,
   modelSelectLabel,
   modelOptions,
   selectedModel,
   onModelChange,
+  onStop,
   planHint,
   queryEvidenceText,
   quickCommands,
 }: AgentComposerProps) {
   const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [waitingSeconds, setWaitingSeconds] = useState(0);
 
   // Expose the underlying textarea through the React 19 ref-as-prop contract.
   // The node is attached before this handle is materialized, so the non-null
@@ -100,6 +121,17 @@ export function AgentComposer({
     // (for example after a successful plan) or on first mount.
     if (!prompt) resizeComposerTextarea(localTextareaRef.current);
   }, [prompt]);
+
+  useEffect(() => {
+    if (!modelBusy) return;
+    const startedAt = Date.now();
+    const frame = window.requestAnimationFrame(() => setWaitingSeconds(0));
+    const timer = window.setInterval(() => setWaitingSeconds(Math.floor((Date.now() - startedAt) / 1_000)), 1_000);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearInterval(timer);
+    };
+  }, [modelBusy]);
 
   const canScope = (target: AgentScope) => !busy && !locked && !(target === "selection" && selectionUnavailable);
 
@@ -178,18 +210,22 @@ export function AgentComposer({
               <ChevronDown aria-hidden="true" />
             </label>
             <button
-              className="run-button"
-              onClick={onRun}
-              disabled={sendDisabled || modelSwitching}
-              aria-label={sendLabel}
-              title={sendTitle}
+              className={`run-button ${modelBusy && stoppable ? "stop" : ""}`.trim()}
+              onClick={modelBusy && stoppable ? onStop : onRun}
+              disabled={modelBusy ? !stoppable : sendDisabled || modelSwitching}
+              aria-label={modelBusy && stoppable ? stopLabel : sendLabel}
+              title={modelBusy && stoppable ? stopLabel : sendTitle}
             >
-              {busy ? <LoaderCircle className="agent-spinner" /> : <Play />}
+              {modelBusy && stoppable ? <Square /> : busy ? <LoaderCircle className="agent-spinner" /> : <Play />}
             </button>
           </div>
         </div>
       </div>
-      <p className="agent-hint">{planHint}</p>
+      <p className="agent-hint" aria-live="polite">
+        {modelBusy
+          ? `${waitingSeconds >= 15 ? `${workingLabel} · ${longWaitLabel}` : workingLabel} · ${waitingSeconds}s`
+          : planHint}
+      </p>
     </>
   );
 }

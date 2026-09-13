@@ -57,6 +57,228 @@ const PROVIDERS = Object.freeze({
   },
 });
 
+export const DESKTOP_API_PROVIDER_REGISTRY = Object.freeze([
+  {
+    id: "openai",
+    label: "OpenAI",
+    provider: "openai",
+    protocol: "responses",
+    baseURL: "https://api.openai.com/v1",
+    model: "gpt-5.6",
+    apiKeyVariables: ["OPENAI_API_KEY"],
+    baseURLVariables: ["OPENAI_BASE_URL"],
+    modelVariables: ["OPENAI_MODEL"],
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    provider: "anthropic",
+    protocol: "anthropic-messages",
+    baseURL: "https://api.anthropic.com/v1",
+    model: "claude-sonnet-5",
+    apiKeyVariables: ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"],
+    baseURLVariables: ["ANTHROPIC_BASE_URL"],
+    modelVariables: ["ANTHROPIC_MODEL"],
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    provider: "gemini",
+    protocol: "gemini-generate-content",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta",
+    model: "gemini-2.5-pro",
+    apiKeyVariables: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+    baseURLVariables: ["GEMINI_BASE_URL", "GOOGLE_GEMINI_BASE_URL"],
+    modelVariables: ["GEMINI_MODEL"],
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    provider: "deepseek",
+    protocol: "chat-completions",
+    baseURL: "https://api.deepseek.com",
+    model: "deepseek-v4-flash",
+    apiKeyVariables: ["DEEPSEEK_API_KEY", "DEEPSEEK_AUTH_TOKEN"],
+    baseURLVariables: ["DEEPSEEK_BASE_URL"],
+    modelVariables: ["DEEPSEEK_MODEL"],
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    provider: "openrouter",
+    protocol: "chat-completions",
+    baseURL: "https://openrouter.ai/api/v1",
+    model: "openai/gpt-5.6",
+    apiKeyVariables: ["OPENROUTER_API_KEY"],
+    baseURLVariables: ["OPENROUTER_BASE_URL"],
+    modelVariables: ["OPENROUTER_MODEL"],
+  },
+  {
+    id: "xai",
+    label: "xAI",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.x.ai/v1",
+    model: "grok-4.6",
+    apiKeyVariables: ["XAI_API_KEY"],
+    baseURLVariables: ["XAI_BASE_URL"],
+    modelVariables: ["XAI_MODEL"],
+  },
+  {
+    id: "mistral",
+    label: "Mistral AI",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.mistral.ai/v1",
+    model: "mistral-large-latest",
+    apiKeyVariables: ["MISTRAL_API_KEY"],
+    baseURLVariables: ["MISTRAL_BASE_URL"],
+    modelVariables: ["MISTRAL_MODEL"],
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.groq.com/openai/v1",
+    model: "openai/gpt-oss-20b",
+    apiKeyVariables: ["GROQ_API_KEY"],
+    baseURLVariables: ["GROQ_BASE_URL"],
+    modelVariables: ["GROQ_MODEL"],
+  },
+  {
+    id: "together",
+    label: "Together AI",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.together.xyz/v1",
+    model: "openai/gpt-oss-20b",
+    apiKeyVariables: ["TOGETHER_API_KEY"],
+    baseURLVariables: ["TOGETHER_BASE_URL"],
+    modelVariables: ["TOGETHER_MODEL"],
+  },
+  {
+    id: "perplexity",
+    label: "Perplexity",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.perplexity.ai",
+    model: "sonar-pro",
+    apiKeyVariables: ["PERPLEXITY_API_KEY", "PPLX_API_KEY"],
+    baseURLVariables: ["PERPLEXITY_BASE_URL"],
+    modelVariables: ["PERPLEXITY_MODEL", "PPLX_MODEL"],
+  },
+  {
+    id: "moonshot",
+    label: "Moonshot · Kimi",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.moonshot.cn/v1",
+    model: "kimi-k2.5",
+    apiKeyVariables: ["MOONSHOT_API_KEY", "KIMI_API_KEY"],
+    baseURLVariables: ["MOONSHOT_BASE_URL", "KIMI_BASE_URL"],
+    modelVariables: ["MOONSHOT_MODEL", "KIMI_MODEL"],
+  },
+  {
+    id: "dashscope",
+    label: "Alibaba Cloud · Qwen",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    model: "qwen-plus",
+    apiKeyVariables: ["DASHSCOPE_API_KEY", "QWEN_API_KEY"],
+    baseURLVariables: ["DASHSCOPE_BASE_URL", "QWEN_BASE_URL"],
+    modelVariables: ["DASHSCOPE_MODEL", "QWEN_MODEL"],
+  },
+  {
+    id: "volcengine-ark",
+    label: "Volcengine Ark · Doubao",
+    provider: "custom",
+    protocol: "responses",
+    baseURL: "https://ark.cn-beijing.volces.com/api/v3",
+    model: "doubao-seed-2-0-lite-260215",
+    apiKeyVariables: ["ARK_API_KEY", "VOLCENGINE_ARK_API_KEY"],
+    baseURLVariables: ["ARK_BASE_URL", "VOLCENGINE_ARK_BASE_URL"],
+    modelVariables: ["ARK_MODEL", "DOUBAO_MODEL"],
+  },
+  {
+    id: "tencent-hunyuan",
+    label: "Tencent Hunyuan",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://tokenhub.tencentmaas.com/v1",
+    model: "hy3-preview",
+    apiKeyVariables: ["HUNYUAN_API_KEY", "TENCENTMAAS_API_KEY", "TOKENHUB_API_KEY"],
+    baseURLVariables: ["HUNYUAN_BASE_URL", "TENCENTMAAS_BASE_URL", "TOKENHUB_BASE_URL"],
+    modelVariables: ["HUNYUAN_MODEL", "TENCENTMAAS_MODEL", "TOKENHUB_MODEL"],
+  },
+  {
+    id: "zhipu",
+    label: "Zhipu AI · GLM",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    model: "glm-4.5",
+    apiKeyVariables: ["ZHIPUAI_API_KEY", "BIGMODEL_API_KEY"],
+    baseURLVariables: ["ZHIPUAI_BASE_URL", "BIGMODEL_BASE_URL"],
+    modelVariables: ["ZHIPUAI_MODEL", "BIGMODEL_MODEL"],
+  },
+  {
+    id: "minimax",
+    label: "MiniMax",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.minimax.io/v1",
+    model: "MiniMax-M2.1",
+    apiKeyVariables: ["MINIMAX_API_KEY"],
+    baseURLVariables: ["MINIMAX_BASE_URL"],
+    modelVariables: ["MINIMAX_MODEL"],
+  },
+  {
+    id: "siliconflow",
+    label: "SiliconFlow",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.siliconflow.cn/v1",
+    model: "deepseek-ai/DeepSeek-V3.2",
+    apiKeyVariables: ["SILICONFLOW_API_KEY"],
+    baseURLVariables: ["SILICONFLOW_BASE_URL"],
+    modelVariables: ["SILICONFLOW_MODEL"],
+  },
+  {
+    id: "fireworks",
+    label: "Fireworks AI",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.fireworks.ai/inference/v1",
+    model: "accounts/fireworks/models/gpt-oss-120b",
+    apiKeyVariables: ["FIREWORKS_API_KEY"],
+    baseURLVariables: ["FIREWORKS_BASE_URL"],
+    modelVariables: ["FIREWORKS_MODEL"],
+  },
+  {
+    id: "cerebras",
+    label: "Cerebras",
+    provider: "custom",
+    protocol: "chat-completions",
+    baseURL: "https://api.cerebras.ai/v1",
+    model: "gpt-oss-120b",
+    apiKeyVariables: ["CEREBRAS_API_KEY"],
+    baseURLVariables: ["CEREBRAS_BASE_URL"],
+    modelVariables: ["CEREBRAS_MODEL"],
+  },
+]);
+
+const SHELL_ENVIRONMENT_FILES = Object.freeze([
+  ".zshenv",
+  ".zprofile",
+  ".zshrc",
+  ".bash_profile",
+  ".bashrc",
+  ".profile",
+  ".env",
+]);
+
 function cleanText(value, maximum = 300) {
   if (typeof value !== "string") return "";
   const text = value.trim();
@@ -171,6 +393,7 @@ function parseEnvironmentText(text) {
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
+    if (/`|\$\(|\$\{/u.test(value)) continue;
     result[match[1]] = value;
   }
   return result;
@@ -183,62 +406,20 @@ function tomlString(text, key) {
 
 function candidatesFromEnvironment(environment, sourceKind, sourceLabel, sourceIdentity) {
   const values = environment && typeof environment === "object" ? environment : {};
-  return [
+  const firstValue = (keys) => keys.map((key) => cleanText(values[key], 512)).find(Boolean) ?? "";
+  return DESKTOP_API_PROVIDER_REGISTRY.map((provider) =>
     profileCandidate({
       sourceKind,
       sourceLabel,
-      sourceIdentity: `${sourceIdentity}:openai`,
-      provider: "openai",
-      name: "OpenAI",
-      baseURL: values.OPENAI_BASE_URL,
-      model: values.OPENAI_MODEL,
-      apiKey: values.OPENAI_API_KEY,
-      protocol: "responses",
+      sourceIdentity: `${sourceIdentity}:${provider.id}`,
+      provider: provider.provider,
+      name: provider.label,
+      baseURL: firstValue(provider.baseURLVariables) || provider.baseURL,
+      model: firstValue(provider.modelVariables) || provider.model,
+      apiKey: firstValue(provider.apiKeyVariables),
+      protocol: provider.protocol,
     }),
-    profileCandidate({
-      sourceKind,
-      sourceLabel,
-      sourceIdentity: `${sourceIdentity}:openrouter`,
-      provider: "openrouter",
-      name: "OpenRouter",
-      model: values.OPENROUTER_MODEL,
-      apiKey: values.OPENROUTER_API_KEY,
-      protocol: "chat-completions",
-    }),
-    profileCandidate({
-      sourceKind,
-      sourceLabel,
-      sourceIdentity: `${sourceIdentity}:deepseek`,
-      provider: "deepseek",
-      name: "DeepSeek",
-      baseURL: values.DEEPSEEK_BASE_URL,
-      model: values.DEEPSEEK_MODEL,
-      apiKey: values.DEEPSEEK_API_KEY || values.DEEPSEEK_AUTH_TOKEN,
-      protocol: "chat-completions",
-    }),
-    profileCandidate({
-      sourceKind,
-      sourceLabel,
-      sourceIdentity: `${sourceIdentity}:anthropic`,
-      provider: "anthropic",
-      name: "Anthropic",
-      baseURL: values.ANTHROPIC_BASE_URL,
-      model: values.ANTHROPIC_MODEL,
-      apiKey: values.ANTHROPIC_API_KEY || values.ANTHROPIC_AUTH_TOKEN,
-      protocol: "anthropic-messages",
-    }),
-    profileCandidate({
-      sourceKind,
-      sourceLabel,
-      sourceIdentity: `${sourceIdentity}:gemini`,
-      provider: "gemini",
-      name: "Google Gemini",
-      baseURL: values.GEMINI_BASE_URL || values.GOOGLE_GEMINI_BASE_URL,
-      model: values.GEMINI_MODEL,
-      apiKey: values.GEMINI_API_KEY || values.GOOGLE_API_KEY,
-      protocol: "gemini-generate-content",
-    }),
-  ].filter(Boolean);
+  ).filter(Boolean);
 }
 
 function ccSwitchCandidate(row) {
@@ -398,6 +579,15 @@ export function createDesktopModelDiscovery({
       discovered.push(...candidatesFromEnvironment(environment, "environment", "Environment", "process"));
     }
     if (home && includeApiConnections) {
+      const shellEnvironments = await Promise.all(
+        SHELL_ENVIRONMENT_FILES.map(async (fileName) => ({
+          fileName,
+          values: parseEnvironmentText(await boundedText(path.join(home, fileName), capabilities)),
+        })),
+      );
+      for (const { fileName, values } of shellEnvironments) {
+        discovered.push(...candidatesFromEnvironment(values, "app-config", `Shell · ${fileName}`, `shell:${fileName}`));
+      }
       discovered.push(...(await ccSwitchCandidates(path.join(home, ".cc-switch", "cc-switch.db"))));
 
       const claudeSettings = await boundedJson(path.join(home, ".claude", "settings.json"), capabilities);
@@ -447,7 +637,11 @@ export function createDesktopModelDiscovery({
       )
       .slice(0, MAX_DISCOVERED_CONNECTIONS);
     for (const candidate of unique) privateCandidates.set(candidate.id, candidate);
-    return { supported: true, accounts: accountDiscovery.accounts, candidates: unique.map(publicCandidate) };
+    return {
+      supported: true,
+      accounts: accountDiscovery.accounts.filter((account) => account.installed && account.status !== "not-installed"),
+      candidates: unique.map(publicCandidate),
+    };
   }
 
   async function importCandidate(id) {

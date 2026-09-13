@@ -851,11 +851,11 @@ test("organizes workspace files by product workflow rather than internal artifac
 });
 
 test("makes a changed linked presentation directly refreshable without adding a writer", async () => {
-  const source = await readFile(new URL("../app/components/orbit-workbench.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/components/workspace-artifact-list.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(source, /className="artifact-refresh-action"/);
-  assert.match(source, /aria-label=\{`\$\{ui\.reviewRefresh\} · \$\{artifact\.name\}`\}/);
-  assert.match(source, /disabled=\{artifactCreationDisabled\}/);
+  assert.match(source, /aria-label=\{`\$\{copy\.reviewRefresh\} · \$\{artifact\.name\}`\}/);
+  assert.match(source, /disabled=\{creationDisabled\}/);
   assert.match(styles, /\.artifact-refresh-action\s*\{[^}]*inset-inline-end:\s*9px;/s);
   assert.match(styles, /\.artifact-row-shell\.has-refresh \.artifact-context-pin\s*\{[^}]*top:\s*4px;/s);
   assert.match(styles, /\.artifact-row\s*\{[^}]*padding-inline-end:\s*38px;/s);

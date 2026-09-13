@@ -17,5 +17,8 @@ contextBridge.exposeInMainWorld(
     importDiscoveredModel(id) {
       return ipcRenderer.invoke("orbit:import-discovered-model", id);
     },
+    renderWebPdf(url) {
+      return ipcRenderer.invoke("orbit:render-web-pdf", { url });
+    },
   }),
 );

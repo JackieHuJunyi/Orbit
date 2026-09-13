@@ -193,7 +193,7 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
   assert.equal(modelProviderAvailableInEnvironment("openai", {}), true);
   const account = normalizeModelProfileDraft({
     provider: "codex-account",
-    model: "chatgpt-codex-account",
+    model: "gpt-5.6-luna@low",
     baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
     apiKey: "private-loopback-token",
   });
@@ -218,7 +218,7 @@ test("normalizes supported model presets and rejects unsafe custom endpoints", (
     () =>
       normalizeModelProfileDraft({
         provider: "codex-account",
-        model: "chatgpt-codex-account",
+        model: "gpt-5.6-luna@low",
         baseURL: "http://localhost:54321/__orbit_account__/codex/v1",
         apiKey: "private-loopback-token",
       }),
@@ -295,6 +295,27 @@ test("migrates existing v1 profiles without a protocol to the provider's explici
   assert.equal(normalized.profiles.length, 1);
   assert.equal(normalized.profiles[0].protocol, "chat-completions");
   assert.equal(normalized.profiles[0].apiKey, "legacy-secret");
+
+  const legacyAccount = normalizeModelProfileVault({
+    version: 1,
+    activeProfileId: "codex",
+    failoverEnabled: false,
+    profiles: [
+      {
+        id: "codex",
+        name: "Codex account",
+        provider: "codex-account",
+        protocol: "responses",
+        baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+        model: "chatgpt-codex-account",
+        apiKey: "private-loopback-token",
+        budget: { maxInputTokens: 50_000, maxOutputTokens: 4_000 },
+        createdAt: "2026-09-13T00:00:00.000Z",
+        updatedAt: "2026-09-13T00:00:00.000Z",
+      },
+    ],
+  });
+  assert.equal(legacyAccount.profiles[0].model, "gpt-5.6-luna@low");
 });
 
 test("model profile route saves, redacts, activates, and deletes personal profiles", async () => {
@@ -386,6 +407,80 @@ test("model profile route saves, redacts, activates, and deletes personal profil
     else process.env.NODE_ENV = previousNodeEnvironment;
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previousKey;
+  }
+});
+
+test("switches a signed-in account model and effort without returning or replacing its private capability", async () => {
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+  const previousDesktopRuntime = process.env.ORBIT_DESKTOP_RUNTIME;
+  const previousDesktopOrigin = process.env.ORBIT_DESKTOP_ORIGIN;
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "account-model-switch-secret-123456";
+  process.env.ORBIT_DESKTOP_RUNTIME = "1";
+  process.env.ORBIT_DESKTOP_ORIGIN = "http://127.0.0.1:54321";
+  try {
+    const request = new Request("http://127.0.0.1:54321/api/model-profiles");
+    const profile = normalizeModelProfileDraft(
+      {
+        provider: "codex-account",
+        name: "Codex account",
+        model: "gpt-5.6-luna@low",
+        baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+        apiKey: "private-loopback-capability",
+      },
+      undefined,
+      "2026-09-13T00:00:00.000Z",
+      () => "codex",
+    );
+    const cookie = await serializeModelProfileVaultCookie(request, {
+      version: 1,
+      activeProfileId: profile.id,
+      failoverEnabled: false,
+      profiles: [profile],
+    });
+    const response = await postModelProfiles(
+      new Request("http://127.0.0.1:54321/api/model-profiles", {
+        method: "POST",
+        headers: {
+          origin: "http://127.0.0.1:54321",
+          cookie: cookie.split(";", 1)[0],
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "account-model",
+          profileId: profile.id,
+          model: "gpt-5.6-sol@high",
+        }),
+      }),
+    );
+    assert.equal(response.status, 200);
+    const state = await response.json();
+    assert.equal(state.activeProfile.model, "gpt-5.6-sol@high");
+    assert.doesNotMatch(JSON.stringify(state), /private-loopback-capability/u);
+    const updatedCookie = response.headers.get("set-cookie").split(";", 1)[0];
+    const stored = await readModelProfileVault(
+      new Request("http://127.0.0.1:54321/api/model-profiles", { headers: { cookie: updatedCookie } }),
+    );
+    assert.equal(stored.profiles[0].apiKey, "private-loopback-capability");
+
+    const invalid = await postModelProfiles(
+      new Request("http://127.0.0.1:54321/api/model-profiles", {
+        method: "POST",
+        headers: {
+          origin: "http://127.0.0.1:54321",
+          cookie: updatedCookie,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ action: "account-model", profileId: profile.id, model: "invented-model@max" }),
+      }),
+    );
+    assert.equal(invalid.status, 400);
+  } finally {
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+    if (previousDesktopRuntime === undefined) delete process.env.ORBIT_DESKTOP_RUNTIME;
+    else process.env.ORBIT_DESKTOP_RUNTIME = previousDesktopRuntime;
+    if (previousDesktopOrigin === undefined) delete process.env.ORBIT_DESKTOP_ORIGIN;
+    else process.env.ORBIT_DESKTOP_ORIGIN = previousDesktopOrigin;
   }
 });
 
@@ -519,12 +614,16 @@ test("probes DeepSeek structured output before saving a discovered profile", asy
   }
 });
 
-test("requires catalog and structured-output checks before first-run save", async () => {
+test("requires a catalog and probes APIs or unverifiable accounts before first-run save", async () => {
   const source = await readFile(new URL("../app/components/welcome-model-step.tsx", import.meta.url), "utf8");
   const catalog = source.indexOf('JSON.stringify({ action: "models", profile })');
   const probe = source.indexOf('JSON.stringify({ action: "probe", profile: verifiedProfile })');
   const save = source.indexOf('JSON.stringify({ action: "upsert", profile: verifiedProfile })');
   assert.ok(catalog >= 0 && catalog < probe && probe < save);
+  assert.match(
+    source,
+    /selectedCandidate\.sourceKind !== "account-runtime" \|\| account\?\.status === "verify-required"/u,
+  );
   assert.match(source, /connectionFailureDetail\(probePayload/u);
   assert.match(source, /setConnectionError\(detail \? `\$\{copy\.connectionFailed\} \$\{detail\}`/u);
 });

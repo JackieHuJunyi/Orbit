@@ -5,6 +5,7 @@ import { GENERATED_INTERFACE_TRANSLATIONS } from "../app/lib/interface-locales.g
 import { MANUAL_INTERFACE_TRANSLATIONS } from "../app/lib/interface-locales.manual.ts";
 
 import { ENGLISH_ORBIT_GUIDE, localizeOrbitStatus, orbitQuickCommands, orbitUICopy } from "../app/lib/localization.ts";
+import { PDF_TOOL_REGISTRY } from "../app/lib/pdf-tool-registry.ts";
 
 const appRoot = path.resolve(import.meta.dirname, "..");
 const outputPath = path.join(appRoot, "app", "lib", "interface-locales.generated.ts");
@@ -19,6 +20,7 @@ const componentCatalogs = [
   ["app/components/delivery-outcome-dialog.tsx", "DELIVERY_OUTCOME_BASE_COPY"],
   ["app/components/pilot-evidence-review-dialog.tsx", "PILOT_EVIDENCE_BASE_COPY"],
   ["app/components/pdf-ocr-setup-dialog.tsx", "PDF_OCR_BASE_COPY"],
+  ["app/components/pdf-tool-center.tsx", "PDF_TOOL_CENTER_BASE_COPY"],
   ["app/lib/workbench-surface-copy.ts", "OPERATING_REVIEW_NOTICE_BASE_COPY"],
   ["app/lib/workbench-surface-copy.ts", "DOCUMENT_BRIEFING_NOTICE_BASE_COPY"],
   ["app/lib/workbench-surface-copy.ts", "PILOT_EVIDENCE_NOTICE_BASE_COPY"],
@@ -121,6 +123,10 @@ async function collectEnglishStrings() {
   ENGLISH_ORBIT_GUIDE.split("\n").forEach((line) => {
     if (line.trim()) strings.add(line);
   });
+  for (const tool of PDF_TOOL_REGISTRY) {
+    strings.add(tool.title);
+    strings.add(tool.description);
+  }
   for (const [file, identifier] of componentCatalogs) await collectComponentEnglish(file, identifier, strings);
 
   const localizationSource = await fs.readFile(path.join(appRoot, "app/lib/localization.ts"), "utf8");

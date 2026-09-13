@@ -5,6 +5,7 @@ import {
   BookOpen,
   Check,
   FileCode2,
+  Files,
   FolderOpen,
   Palette,
   RefreshCw,
@@ -41,6 +42,7 @@ type WorkbenchSettingsMenuProps = {
   onOpenFolder: () => void;
   onOpenGuide: () => void;
   onOpenModels: () => void;
+  onOpenPdfTools: () => void;
   onPullFolder: () => void;
   onPushFolder: () => void;
   onRestorePreviousWorkspace: () => void;
@@ -71,6 +73,7 @@ export function WorkbenchSettingsMenu({
   onOpenFolder,
   onOpenGuide,
   onOpenModels,
+  onOpenPdfTools,
   onPullFolder,
   onPushFolder,
   onRestorePreviousWorkspace,
@@ -96,6 +99,14 @@ export function WorkbenchSettingsMenu({
       detail: copy.localFirst,
       disabled: blocked,
       onSelect: onOpenModels,
+    },
+    {
+      id: "pdf-tools",
+      icon: <Files aria-hidden="true" />,
+      label: copy.pdfTools,
+      detail: copy.pdfToolsBody,
+      disabled: blocked,
+      onSelect: onOpenPdfTools,
     },
     {
       id: "pilot-evidence",
@@ -182,6 +193,7 @@ export function WorkbenchSettingsMenu({
             ref={(element) => setItemRef(index, element)}
             type="button"
             role="menuitem"
+            data-settings-action={action.id}
             disabled={action.disabled}
             onClick={() => {
               onOpenChange(false);

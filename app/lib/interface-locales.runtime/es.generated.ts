@@ -94,6 +94,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Add condition": "Agregar condición",
   "Add model provider": "Agregar proveedor de modelo",
   "Add next actions": "Agregar siguientes acciones",
+  "Add page numbers at a consistent reviewed position.":
+    "Agregue números de página en una posición revisada consistente.",
   "Add provider": "Agregar proveedor",
   "Add source content": "Añadir contenido de origen",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
@@ -107,8 +109,6 @@ export const INTERFACE_TRANSLATIONS = {
     "Después de confirmar, Orbit lee solo esta configuración, verifica su catálogo de modelos y una respuesta estructurada mínima, luego la cifra y la guarda como predeterminada.",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "Tras tu confirmación, Orbit lee solo esta credencial, verifica el catálogo de modelos y una respuesta estructurada mínima y, únicamente si ambas comprobaciones funcionan, la cifra y guarda como conexión predeterminada.",
-  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
-    "Después de confirmar, el cliente oficial completa una respuesta estructurada sin documentos. Orbit guarda solo el nombre de la conexión y nunca copia su token OAuth.",
   Agent: "Agent",
   "Agent change scope": "Agent cambiar alcance",
   "Agent composer focused": "Agent compositor centrado",
@@ -146,6 +146,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Apply all": "Aplicar todo",
   "Apply an Agent patch or press ⌘S to capture the current source.":
     "Aplique un parche Agent o presione ⌘S para capturar la fuente actual.",
+  "Apply an exact crop box to selected pages.": "Apply un cuadro de recorte exacto para las páginas seleccionadas.",
   "Apply structure change": "Aplicar cambio de estructura",
   Area: "Área",
   "Area · volume sequence": "Área · secuencia de volúmenes",
@@ -211,9 +212,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "Comprueba la sintaxis del enlace y elige una métrica que exista en este espacio de trabajo.",
   "Check these settings first:": "Primero verifique estas configuraciones:",
+  Checkbox: "Casilla de verificación",
+  "Checked by default": "Marcado por defecto",
   "Checking connections already saved in Orbit…": "Comprobando las conexiones guardadas en Orbit…",
   "Checkpoint history": "Historial de puntos de control",
   "Checkpoint restore details": "Detalles de la restauración del punto de control",
+  "Choices (one per line or comma-separated)": "Opciones (una por línea o separadas por comas)",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "Elija una fuente canónica. Los archivos de consulta y Chart se vinculan a artefactos y campos ascendentes exactos desde su primera revisión.",
   "Choose a fetched model": "Elija un modelo recuperado",
@@ -225,6 +229,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Elige un documento revisado, el público y el objetivo. Orbit puede crear una presentación nueva o actualizar una vinculada conservando la identidad del archivo y su relación con el origen.",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "Elige un documento revisado, el público y el objetivo. Orbit crea un Deck Markdown editable y mantiene una relación explícita con el documento de origen.",
+  "Choose again": "Elige de nuevo",
   "Choose an existing Chart id or create and validate that Chart first.":
     "Elige el identificador de un Chart existente o crea y valida primero ese Chart.",
   "Choose an existing metric key or an explicit Query output field.":
@@ -233,6 +238,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "Elige Chart color de acento",
   "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "Elige CSV, JSON, XLSX u ODS. Orbit muestra primero la importación y después te guía por los campos, las medidas, los gráficos y los entregables.",
+  "Choose files": "Elige archivos",
   "Choose JSON / text file": "Elija JSON/archivo de texto",
   "Choose maximum visible Chart marks": "Elige el máximo de Chart marcas visibles",
   "Choose one exact scope value, or return to all Data rows.":
@@ -251,18 +257,24 @@ export const INTERFACE_TRANSLATIONS = {
   "Clear pins": "Pines transparentes",
   "Click again to delete": "Haga clic nuevamente para eliminar",
   "Close current file": "Cerrar archivo actual",
+  "Close PDF tools": "Cerrar PDF herramientas",
   "Close tutorial": "Cerrar tutorial",
   "Closed the current file — every source remains in the workspace":
     "Cerré el archivo actual: todas las fuentes permanecen en el espacio de trabajo",
   "Closed the current file — every source remains safely in the workspace":
     "Cerró el archivo actual: todas las fuentes permanecen seguras en el espacio de trabajo",
   "Cloud API": "API en la nube",
+  "Combine complete PDFs in a chosen order.": "Combina PDF completos en el orden elegido.",
+  "Combine photographed or scanned pages into a PDF.": "Combine páginas fotografiadas o escaneadas en un PDF.",
+  "Compare PDFs": "Comparar PDFs",
   "Compare with": "Comparar con",
   "Comparison rows": "Filas de comparación",
   "Compiled artifact preview": "Vista previa del artefacto compilado",
   "Compiler-guided repair passed": "Se aprobó la reparación guiada por el compilador.",
   "Complete the required fields and Orbit will validate the whole workflow before review.":
     "Complete los campos obligatorios y Orbit validará todo el flujo de trabajo antes de revisarlo.",
+  "Complete; review before download": "Completo; revisar antes de descargar",
+  "Compress PDF": "Comprimir PDF",
   "Conclusion usefulness": "Utilidad de las conclusiones",
   "Conclusions trace to sufficient supporting evidence.": "Las conclusiones se apoyan en pruebas suficientes.",
   "Condense the selection into one sentence": "Condensar la selección en una frase.",
@@ -280,32 +292,45 @@ export const INTERFACE_TRANSLATIONS = {
   "Connect the models you already use": "Conecta los modelos que ya utilizas",
   "Connected folder": "Carpeta conectada",
   "Connections available on this device": "Conexiones disponibles en este dispositivo",
-  "Connections on this Mac": "Conexiones en esta Mac",
+  "Connections found on this Mac": "Conexiones encontradas en esta Mac",
   "Content workspace": "Espacio de trabajo de contenido",
   Continue: "Continuar",
+  "Continue in Orbit": "Continuar en Orbit",
   "Continue setup": "Continuar con la configuración",
   "Continue with model assistance": "Continuar con el modelo",
   "Continue without a model": "Continuar sin modelo",
   Conversation: "Conversación",
+  "Convert Word, PowerPoint, Excel, and OpenDocument sources through Orbit's reviewed export path.":
+    "Convierta fuentes de Word, PowerPoint, Excel y OpenDocument a través de la ruta de exportación revisada de Orbit.",
+  "Copy selected pages into a new PDF.": "Copie las páginas seleccionadas en un nuevo PDF.",
   "Cosmic Orange": "Naranja cósmico",
+  "Create a clean PDF from entered text.": "Crea un PDF limpio a partir del texto ingresado.",
   "Create a new artifact": "Crear un nuevo artefacto",
   "Create a new presentation": "Crear una presentación nueva",
   "Create a presentation from the current report": "Crear una presentación a partir del informe actual",
   "Create a review from data": "Crear una revisión a partir de datos",
   "Create an analysis, chart, and report from revenue data":
     "Cree un análisis, un gráfico y un informe a partir de datos de ingresos",
+  "Create an archival conformance copy when the desktop converter is available.":
+    "Cree una copia de conformidad de archivo cuando el convertidor de escritorio esté disponible.",
   "Create an editable Deck Markdown presentation": "Crea una presentación Deck Markdown editable",
   "Create an editable Markdown report": "Crear un informe Markdown editable",
   "Create an editable semantic HTML presentation": "Crear una presentación HTML semántica editable",
   "Create blank": "crear en blanco",
+  "Create one PDF page per PNG or JPEG image.": "Cree una página PDF por imagen PNG o JPEG.",
+  "Create one PDF per selected page or range.": "Cree un PDF por página o rango seleccionado.",
   "Create operating review": "Crear revisión operativa",
+  "Create or fill text, checkbox, choice, and list fields.":
+    "Cree o complete campos de texto, casillas de verificación, opciones y listas.",
   "Create or refresh a light presentation": "Crear o actualizar una presentación ligera",
+  "Create PDF": "Crear PDF",
   "Create presentation from document": "Crear una presentación a partir de un documento",
   "Create reusable Chart only": "Crear solo Chart reutilizable",
   "Create review": "Crear reseña",
   "Create source": "Crear fuente",
   Credential: "Credencial",
   "Credential found; not read yet": "Credencial detectada · aún no leída",
+  "Crop PDF": "Recortar PDF",
   Currency: "Moneda",
   "Currency · USD": "Moneda · USD",
   Current: "Actual",
@@ -333,6 +358,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Primero defina la evidencia, la métrica y la audiencia. Orbit compila el análisis, el gráfico, el informe y las diapositivas en una sola transacción de revisión.",
   Delete: "Eliminar",
   "Delete block": "Eliminar bloque",
+  "Delete selected pages after review.": "Elimine las páginas seleccionadas después de la revisión.",
   Deliverable: "Entregable",
   "Deliverable after minor edits": "Entregable tras pequeños ajustes",
   "Deliverable outcome": "Resultado del entregable",
@@ -376,8 +402,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "¿Este resultado llegó a ser útil en un trabajo real?",
   Discard: "Descartar",
   "Discard proposed patch": "Descartar el parche propuesto",
-  "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.":
-    "Discovery verifica el estado del cliente oficial, las ubicaciones de configuración conocidas, el conmutador CC y los puertos del modelo local. Nunca lee las cookies del navegador ni muestra claves API o tokens OAuth.",
+  "Discovery checks official-client status, literal shell configuration, known app settings, CC Switch, and local model ports. It never executes a shell or displays API keys or OAuth tokens.":
+    "Discovery verifica el estado del cliente oficial, la configuración literal del shell, la configuración de aplicaciones conocidas, el conmutador CC y los puertos del modelo local. Nunca ejecuta un shell ni muestra claves API o tokens OAuth.",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "La búsqueda solo consulta ubicaciones de configuración conocidas y puertos de modelos locales. Nunca ejecuta perfiles de shell, sube archivos ni muestra claves.",
   "Dock Agent": "Acoplar el Agent",
@@ -405,6 +431,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Draft Chart preview": "Vista previa del borrador Chart",
   "Draft preview": "Vista previa del borrador",
   "Drag to select the OCR region": "Arrastra para seleccionar la región de OCR",
+  Dropdown: "Menú desplegable",
   "Earlier device records (read only)": "Registros anteriores del dispositivo (solo lectura)",
   "Edges recompile from source; pins last only for this session.":
     "Los bordes se recompilan desde la fuente; Los pines duran solo para esta sesión.",
@@ -413,6 +440,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Edit Chart description": "Editar descripción de Chart",
   "Edit Chart title": "Editar título de Chart",
   "Edit model provider": "Editar proveedor de modelo",
+  "Edit PDF": "Editar PDF",
   "Edit this canonical source cell": "Editar esta celda fuente canónica",
   "Editable output": "Resultado editable",
   Edited: "Editado",
@@ -423,6 +451,7 @@ export const INTERFACE_TRANSLATIONS = {
   Empty: "vacio",
   "en-US": "es-US",
   Enable: "Habilitar",
+  "Encrypt a PDF with a user password locally.": "Cifre un PDF con una contraseña de usuario localmente.",
   "Encrypting…": "Cifrando…",
   Endpoint: "Endpoint",
   "Enter a focus view": "Entrar en una vista de enfoque",
@@ -451,12 +480,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Export held for review — workspace context changed":
     "Exportación retenida para revisión: el contexto del espacio de trabajo cambió",
   "Export pilot evidence": "Exportar evidencia piloto",
+  "Extract embedded raster images without rendering page backgrounds.":
+    "Extraiga imágenes rasterizadas incrustadas sin renderizar fondos de página.",
+  "Extract images": "Extraer imágenes",
+  "Extract pages": "Extraer páginas",
   Eyebrow: "ceja",
   "Fetch models": "Obtener modelos",
   "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
     "Obtener los modelos solo comprueba la autenticación y el catálogo. El primer plan de Agent también verifica la salida estructurada del protocolo elegido. Reintentar con otro proveedor requiere un permiso independiente en los ajustes de modelos.",
   "Fetching…": "Recuperando...",
   "Fidelity notes": "notas de fidelidad",
+  "Field name": "Nombre del campo",
+  "Field type": "Tipo de campo",
   "Fields and measure": "Campos y medida",
   File: "Archivo",
   "File names, Artifact IDs, workspace paths, and user identity":
@@ -466,6 +501,8 @@ export const INTERFACE_TRANSLATIONS = {
   files: "archivos",
   "Files available after the switch": "Archivos disponibles después del cambio",
   "Files in proposed patch": "Archivos en el parche propuesto",
+  "Files stay local by default; AI actions remain review-before-write.":
+    "Los archivos permanecen locales de forma predeterminada; Las acciones de IA siguen siendo de revisión antes de escribir.",
   "Filter value": "Valor del filtro",
   "First proposal stayed unapplied": "La primera propuesta quedó sin aplicar",
   "fixed-layout": "diseño fijo",
@@ -490,6 +527,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Los archivos de solo carpetas permanecen intactos, pero no pertenecerán al nuevo manifiesto del espacio de trabajo Orbit.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "Por ejemplo 1-3, 5; solo se pueden seleccionar las páginas escaneadas detectadas.",
+  "For example 1,3-5; blank means all": "Por ejemplo 1,3-5; en blanco significa todo",
   "For example: July 2026": "Por ejemplo: julio de 2026",
   "For example: July operating review": "Por ejemplo: revisión operativa de julio",
   "For example: Product launch briefing": "Por ejemplo: presentación del lanzamiento del producto",
@@ -503,6 +541,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Hide API key": "Ocultar clave API",
   "Hide workspace files": "Ocultar archivos del espacio de trabajo",
   "HTML · PPTX · ODP · PDF": "HTML · PPTX · ODP · PDF",
+  "HTML to PDF": "HTML a PDF",
   "Human-reviewed real tasks": "Tareas reales revisadas por personas",
   "I confirm this task is authorized for evaluation or its content is redacted.":
     "Confirmo que esta tarea está autorizada para evaluación o que su contenido está anonimizado.",
@@ -512,6 +551,7 @@ export const INTERFACE_TRANSLATIONS = {
     "Identifica el cambio más importante desde la semana pasada y asigna la siguiente decisión o responsable.",
   "Ignored unsupported fields": "Campos no admitidos ignorados",
   Image: "Imagen",
+  "Images to PDF": "Imágenes para PDF",
   Import: "Importar",
   "Import a document, review it, then choose audience, purpose, and length":
     "Importa un documento, revísalo y elige el público, el objetivo y la extensión",
@@ -527,7 +567,13 @@ export const INTERFACE_TRANSLATIONS = {
   "Import details": "Detalles de importación",
   "Import held for review — workspace context changed":
     "Importación retenida para revisión: el contexto del espacio de trabajo cambió",
+  "Import locally extracted text, then ask the selected model for a source-linked summary.":
+    "Importe texto extraído localmente y luego solicite al modelo seleccionado un resumen vinculado a la fuente.",
   "Import one model profile": "Importar un perfil de modelo",
+  "Import PDF into canonical Markdown, then export a reviewed DOCX.":
+    "Importe PDF al Markdown canónico y luego exporte un DOCX revisado.",
+  "Import PDF pages, review structure, then export PPTX.":
+    "Importe PDF páginas, revise la estructura y luego exporte PPTX.",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "Importar PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX o ODS. Orbit primero obtiene una vista previa de la conversión y luego lo guía a través de campos, medidas, gráficos y entregables.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -566,6 +612,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Keep valid Deck Markdown or script-free semantic HTML.":
     "Mantén un Deck Markdown válido o HTML semántico sin scripts.",
   Language: "Idioma",
+  "Large document quick preview": "Vista previa rápida de documentos grandes",
   "Last run": "última ejecución",
   Lavender: "Lavanda",
   Layout: "Diseño",
@@ -578,7 +625,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Light Gold": "Oro claro",
   Line: "Línea",
   "Line · sequence": "Línea · secuencia",
+  "Linearize and normalize a PDF for fast opening.": "Linealiza y normaliza un PDF para una apertura rápida.",
   Link: "Enlace",
+  List: "Lista",
   "Live artifact dependencies": "Dependencias de artefactos en vivo",
   "Live chart": "gráfico en vivo",
   "Live compilation": "compilación en vivo",
@@ -597,6 +646,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local or configured-model planning plus input/output token counts when available":
     "Planificación local o con un modelo configurado y, cuando estén disponibles, recuentos de tokens de entrada y salida",
   "Local planner": "Planificador local",
+  "Local processing · explicit review · AI only when useful":
+    "Procesamiento local · revisión explícita · IA solo cuando sea útil",
   "Local runtime validation failed": "Error en la validación del tiempo de ejecución local",
   "Local SQL bound to Data": "SQL local vinculado a datos",
   "Local workspace": "Espacio de trabajo local",
@@ -610,6 +661,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Manual checkpoint saved on this device": "Punto de control manual guardado en este dispositivo",
   Mark: "marca",
   "Match all conditions": "Coincidir con todas las condiciones",
+  "Merge PDFs": "Fusionar PDFs",
   "Mist Blue": "Azul bruma",
   Model: "Modelo",
   "Model connected": "Modelo conectado",
@@ -652,6 +704,7 @@ export const INTERFACE_TRANSLATIONS = {
   "New block after": "Nuevo bloque después",
   "New block before": "Nuevo bloque antes",
   "New file": "Nuevo archivo",
+  "New page order": "Nuevo orden de páginas",
   "New semantic HTML": "Nuevo HTML semántico",
   "New source diff": "Nueva fuente de diferencia",
   "New source preview": "Vista previa de nueva fuente",
@@ -704,8 +757,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Numeric value field": "Campo de valor numérico",
   "OCR language for": "Idioma de OCR para",
   "OCR pages for": "Páginas OCR de",
+  "OCR PDF": "OCR PDF",
   "OCR settings": "Ajustes de OCR",
   of: "de",
+  "Office to PDF": "Oficina a PDF",
   "On-device recognition": "Reconocimiento en el dispositivo",
   "One atomic device write · a checkpoint is created first":
     "Escritura de un dispositivo atómico · primero se crea un punto de control",
@@ -725,8 +780,6 @@ export const INTERFACE_TRANSLATIONS = {
     "Una diapositiva HTML semántica vinculada a la revisión · reflejada en vivo en Source · presentación completa verificada antes de guardar",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "Una diapositiva encuadernada con revisión · los enlaces permanecen fijos · guardar escrituras fuente canónica",
-  "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.":
-    "Un análisis combina cuentas iniciadas, configuraciones de API conocidas y modelos locales. Las credenciales nunca aparecen en esta lista.",
   "One source workspace": "Espacio de trabajo de una sola fuente",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "Una especificación estricta · impacto en tiempo de ejecución verificado · guardar reescrituras canónicas Chart JSON",
@@ -734,6 +787,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Solo si falla el modelo principal, Orbit puede enviar el mismo contenido acotado a otro proveedor configurado. Desactivado de forma predeterminada.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "Solo se muestran los campos que son numéricos en todo el ámbito de datos actual.",
+  "Only installed, signed-in, configured, or running connections appear. Services that were not found take no space.":
+    "Solo aparecen las conexiones instaladas, iniciadas, configuradas o en ejecución. Los servicios que no fueron encontrados no ocupan espacio.",
   "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
     "Solo se muestran el proveedor, el origen, el endpoint y el modelo. Orbit lee la credencial después de que elijas una conexión.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
@@ -753,6 +808,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Operating review · task first": "Revisión operativa · tarea primero",
   "Operating team": "Equipo operativo",
   "Operating-review task settings": "Configuración de tareas de revisión operativa",
+  "Optimize PDF": "Optimizar PDF",
   optional: "opcional",
   "Optional · seven dimensions · about one minute": "Opcional · siete dimensiones · alrededor de un minuto",
   "Optional page region": "Región de página opcional",
@@ -766,6 +822,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Opcional. Al seleccionarlo, la evidencia local, SQL, los gráficos y el contexto del modelo usan solo las filas que coinciden exactamente.",
   "Or open something else": "O abre otro contenido",
   Orbit: "Orbit",
+  "Orbit already confirmed the account state during discovery. Continue saves the model choice immediately; the first conversation still runs through the official client, and Orbit never copies its OAuth token.":
+    "Orbit ya confirmó el estado de la cuenta durante el descubrimiento. Continuar guarda la elección del modelo inmediatamente; la primera conversación aún se ejecuta a través del cliente oficial y Orbit nunca copia su token OAuth.",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit compiló estos resultados localmente a partir del ámbito actual, antes de cualquier solicitud al modelo.",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -820,14 +878,21 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit restaurará el espacio de trabajo local completo anterior al restablecimiento y conservará el actual como la siguiente versión recuperable.",
   "Orbit writes an explicit -- orbit:data directive, so workspace_data never changes when files are reordered.":
     "Orbit escribe una directiva explícita -- orbit:data, por lo que workspace_data nunca cambia cuando se reordenan los archivos.",
+  "Organize pages": "Organizar páginas",
+  "Organize, convert, edit, secure, and understand PDFs": "Organice, convierta, edite, proteja y comprenda PDFs",
   "Output budget per task": "Presupuesto de salida por tarea",
   "Overall time saved": "Ahorro de tiempo total",
+  "Overlay one PDF page set on another.": "Superponga un conjunto de páginas PDF sobre otro.",
+  "Overlay PDFs": "Superposición de PDFs",
   page: "página",
   "Page images stay on device · results remain reviewable":
     "Las imágenes permanecen en el dispositivo · los resultados se pueden revisar",
   "Page language": "Idioma de la página",
+  "Page numbers": "Números de página",
   pages: "páginas",
+  Pages: "paginas",
   "Pages to recognize": "Páginas para reconocer",
+  Password: "Contraseña",
   "Paste config or CC Switch link": "Pegar configuración o enlace CC Switch",
   "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
     "Pegue un objeto JSON o haga clic en ccswitch://v1/import?resource=provider…",
@@ -838,8 +903,16 @@ export const INTERFACE_TRANSLATIONS = {
     "Parche retenido para revisión: el contexto del espacio de trabajo cambió",
   "Patch held for review — workspace source revision changed":
     "Parche retenido para revisión: se cambió la revisión de la fuente del espacio de trabajo",
+  "PDF forms": "PDF formularios",
   "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
     "Las páginas PDF se renderizan solo en este navegador. Orbit carga su motor OCR integrado y los datos de idioma desde este sitio, y el navegador los almacena en caché; las imágenes y el texto reconocido nunca se envían.",
+  "PDF to Excel": "PDF a Excel",
+  "PDF to images": "PDF a imágenes",
+  "PDF to Markdown": "PDF a Markdown",
+  "PDF to PDF/A": "PDF a PDF/A",
+  "PDF to PowerPoint": "PDF a PowerPoint",
+  "PDF to Word": "PDF a Word",
+  "PDF tools": "PDF herramientas",
   Percent: "Porcentaje",
   "Period and audience": "Periodo y audiencia",
   "Pilot Evidence · on device": "Evidencia piloto · en el dispositivo",
@@ -848,6 +921,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Pilot Evidence export contents": "Contenido de la exportación de evidencia piloto",
   "Pilot evidence held for review — device records changed":
     "Evidencia piloto retenida para revisión — cambiaron los registros del dispositivo",
+  "Place a visible typed signature without claiming cryptographic certification.":
+    "Coloque una firma mecanografiada visible sin reclamar certificación criptográfica.",
+  "Place repeated translucent text across selected pages.":
+    "Coloque texto translúcido repetido en las páginas seleccionadas.",
+  "Place reviewed text on an exact page and position.": "Coloque el texto revisado en una página y posición exactas.",
   "Plan an AI change": "Planificar un cambio de IA",
   "portable data": "datos portátiles",
   "Prepare a verifiable operating-review chain": "Preparar una cadena de revisión operativa verificable.",
@@ -855,6 +933,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepare update review": "Preparar revisión de actualización",
   "Prepares a change before you approve the write": "Prepara un cambio antes de aprobar la escritura.",
   "Preparing OCR": "Preparando OCR",
+  "Preparing one bounded repair": "Preparando una reparación local",
   Presentation: "Presentación",
   "Presentation authored in semantic HTML": "Presentación creada en HTML semántico",
   "Presentation destination": "Destino de la presentación",
@@ -875,6 +954,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Previous workspace": "Espacio de trabajo anterior",
   "Primary and comparison scopes each need at least one complete condition.":
     "Los ámbitos primario y de comparación necesitan cada uno al menos una condición completa.",
+  "Processing locally…": "Procesando localmente...",
   "Profile name": "Nombre del perfil",
   "Project brief": "Resumen del proyecto",
   "Proposal preview": "Vista previa de la propuesta",
@@ -882,8 +962,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Proposed output · nothing written": "Resultado propuesto · nada escrito",
   "Proposed source": "Fuente propuesta",
   "Proposed source dependency changes": "Cambios de dependencia de fuente propuestos",
+  "Protect PDF": "Proteger PDF",
   Provider: "Proveedor",
   "Provider-reported token usage": "Uso de tokens informado por el proveedor",
+  "Public HTTPS URL": "URL HTTPS pública",
   "Pull folder changes": "Extraer cambios de carpeta",
   "Pull these folder changes?": "¿Traer estos cambios de la carpeta?",
   "Push these changes to the folder?": "¿Enviar estos cambios a la carpeta?",
@@ -893,23 +975,34 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "Salida de la consulta",
   "Quick start": "Inicio rápido",
   Quote: "Cotización",
+  "Rasterize reviewed pages and permanently burn in redaction regions.":
+    "Rasterice las páginas revisadas y grabe permanentemente en las regiones de redacción.",
   "Readable file": "Archivo legible",
   "readable source": "fuente legible",
   "Readable source": "Fuente legible",
   "Readable, analyzable table data": "Datos de tabla legibles y analizables",
+  "Reading available models…": "Leyendo modelos disponibles...",
+  "Reading current Query results locally": "Leyendo los resultados actuales de Query localmente",
   "Reading model profiles…": "Leyendo perfiles de modelos...",
+  "Reading this connection…": "Leyendo esta conexión...",
   Ready: "Listo",
   "Ready to deliver": "Listo para entregar",
   "ready to edit": "listo para editar",
   "real tasks reviewed": "tareas reales evaluadas",
   "Real-task evaluation": "Evaluación de tarea real",
+  "Rebuild readable PDF structure when qpdf can recover it.":
+    "Reconstruya la estructura legible PDF cuando qpdf pueda recuperarla.",
   "Recent call succeeded": "La llamada reciente se completó correctamente",
   "Recent task runs": "Ejecuciones recientes",
   Recognize: "Reconocer",
+  "Recognize selected scanned pages with Orbit's local OCR review.":
+    "Reconozca las páginas escaneadas seleccionadas con la revisión local OCR de Orbit.",
   "Recognizing page": "Reconociendo la página",
   "Recognizing…": "Reconociendo…",
   "Recommended from this device. You can change it whenever you like.":
     "Recomendado desde este dispositivo. Puedes cambiarlo cuando quieras.",
+  "Recompress streams and generate compact object streams locally.":
+    "Vuelva a comprimir flujos y genere flujos de objetos compactos localmente.",
   "Reconnect existing Data or Query and exact category and value fields.":
     "Vuelve a conectar Data o Query existentes y los campos exactos de categoría y valor.",
   "Reconnect the missing Chart": "Volver a conectar el Chart ausente",
@@ -921,19 +1014,33 @@ export const INTERFACE_TRANSLATIONS = {
   "Recover files, versions, and task records from before reset":
     "Recuperar archivos, versiones y registros de tareas anteriores al restablecimiento",
   "Recovered after one compiler-guided repair": "Recuperado después de una reparación guiada por el compilador",
+  "Redact PDF": "Redactar PDF",
   "Refresh available": "Actualización disponible",
   "Refresh linked presentation in place": "Actualizar la presentación vinculada en el mismo archivo",
   "Related reference": "Referencia relacionada",
   "Release to prepare the import": "Liberación para preparar la importación.",
   "Remove condition": "Eliminar condición",
+  "Remove encryption after the user supplies the current password.":
+    "Elimine el cifrado después de que el usuario proporcione la contraseña actual.",
   "Remove from workspace": "Quitar del espacio de trabajo",
+  "Remove pages": "Quitar páginas",
   "Remove scripts or executable markup; Orbit previews only script-free content.":
     "Elimina scripts o marcado ejecutable; Orbit solo previsualiza contenido sin scripts.",
   "Remove temporary Agent context pin": "Eliminar el pin de contexto temporal Agent",
   "Remove unsafe content": "Eliminar contenido no seguro",
+  "Render and compare page structure without changing either input.":
+    "Renderice y compare la estructura de la página sin cambiar ninguna de las entradas.",
+  "Render one public HTTPS page in an isolated desktop session.":
+    "Representa una página HTTPS pública en una sesión de escritorio aislada.",
+  "Render safe semantic HTML through Orbit's fixed PDF export.":
+    "Represente HTML semántico seguro mediante la exportación fija de PDF de Orbit.",
+  "Render selected PDF pages as PNG images.": "Representa las PDF páginas seleccionadas como imágenes PNG.",
   "Rendered presentation preview": "Vista previa de la presentación renderizada",
   "Rendering a private on-device preview…": "Renderizando una vista previa privada en el dispositivo…",
   "Rendering page": "Renderizando la página",
+  "Reorder and duplicate pages with an explicit page sequence.":
+    "Reordene y duplique páginas con una secuencia de páginas explícita.",
+  "Repair PDF": "Reparar PDF",
   "Repair the Chart definition": "Corregir la definición del Chart",
   "Repair the Chart source": "Corregir la fuente del Chart",
   "Repair the Data source": "Corregir la fuente Data",
@@ -960,6 +1067,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Restore the sample workspace?": "¿Restaurar el espacio de trabajo de ejemplo?",
   "Restored the latest device draft": "Restaurado el último borrador del dispositivo.",
   "Result summary": "Resumen de resultados",
+  Results: "Resultados",
   "Revenue analysis": "Análisis de ingresos",
   "Revenue by region": "Ingresos por región",
   Review: "Revisar",
@@ -967,6 +1075,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review canonical source": "Revisar la fuente canónica",
   "Review checkpoint restore": "Revisar la restauración del punto de control",
   "Review config": "Review configuración",
+  "Review extracted tables as canonical Data before XLSX export.":
+    "Review extrajo tablas como Data canónicas antes de la exportación de XLSX.",
   "Review first, preserve the current workspace, then open the sample":
     "Revisar primero, conservar el espacio actual y después abrir el ejemplo",
   "Review focus": "Enfoque de revisión",
@@ -982,7 +1092,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Review title": "Título de la reseña",
   "Review-question planner": "Planificador de preguntas de revisión",
   "Rose Pearl": "Perla rosa",
+  "Rotate pages": "rotar páginas",
+  "Rotate selected pages by 90, 180, or 270 degrees.": "Gire las páginas seleccionadas 90, 180 o 270 grados.",
+  Rotation: "Rotación",
   "Run history": "Historial de ejecución",
+  "Run tool": "Ejecutar herramienta",
   "Running locally": "Ejecutando localmente",
   "Runs on this device": "Se ejecuta en este dispositivo",
   "Runtime impact preflight passed": "Se pasó la verificación previa del impacto en tiempo de ejecución",
@@ -1009,9 +1123,12 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "tareas guardadas",
   "Saved tasks": "Tareas guardadas",
   Saving: "Ahorro",
+  "Saving securely…": "Guardando de forma segura…",
   "Scan again": "Buscar de nuevo",
+  "Scan to PDF": "Escanear a PDF",
   "Scanned PDF · explicit selection": "PDF escaneado · selección explícita",
   "Scope filters": "Filtros de alcance",
+  "Search PDF tools": "Buscar PDF herramientas",
   "See the full data-to-report-and-deck chain": "Vea la cadena completa de datos a informes y presentaciones",
   "Select a changed file to inspect its source diff.":
     "Seleccione un archivo modificado para inspeccionar su diferencia de origen.",
@@ -1034,6 +1151,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Show workspace files": "Mostrar archivos del espacio de trabajo",
   Showing: "Mostrando",
   "Sign in through the official client first": "Inicie sesión primero a través del cliente oficial",
+  "Sign PDF": "Firmar PDF",
   "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.":
     "El inicio de sesión lo gestiona el cliente oficial de esta Mac; Orbit no almacena ningún token de OAuth.",
   "Sign-in managed by the official client": "Inicio de sesión gestionado por el cliente oficial",
@@ -1069,6 +1187,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Sources in proposed transaction": "Fuentes en la transacción propuesta",
   "Space Black": "Negro espacial",
   Split: "Dividida",
+  "Split PDF": "Dividir PDF",
   standalone: "independiente",
   Starlight: "Luz estelar",
   "Start from a cadence": "Empezar por una frecuencia",
@@ -1081,11 +1200,14 @@ export const INTERFACE_TRANSLATIONS = {
     "Empieza por la orientación de corrección y muestra después la evidencia exacta del compilador cuando haga falta.",
   "Start writing to compile a preview.": "Empiece a escribir para compilar una vista previa.",
   "Started a fresh local workspace": "Comenzó un nuevo espacio de trabajo local",
+  "Starting the selected model": "Iniciando el modelo seleccionado",
   "State the question this review must answer and the decision it should support.":
     "Indique la pregunta que esta revisión debe responder y la decisión que debe respaldar.",
   "State what the audience needs to understand and the decision the presentation should support.":
     "Indica qué necesita comprender el público y qué decisión debe respaldar la presentación.",
+  "Still waiting; you can stop": "Todavía esperando; puedes parar",
   Stop: "Detener",
+  "Stop model request": "Detener solicitud de modelo",
   Stopped: "Detenido",
   "Storage full": "Almacenamiento lleno",
   "Strict Chart JSON · source identity locked": "Estricto Chart JSON · identidad de origen bloqueada",
@@ -1094,6 +1216,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Structured output": "Salida estructurada",
   "Suggested actions": "Acciones sugeridas",
   Sum: "suma",
+  "Summarize PDF": "Resumir PDF",
   "Summarize quarterly revenue": "Resumir los ingresos trimestrales",
   "Switch to the dark theme": "Cambiar al tema oscuro",
   "Switched artifact context": "Contexto de artefacto cambiado",
@@ -1117,6 +1240,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Temporarily avoided": "Evitado temporalmente",
   "Temporary Workspace Agent context pins cleared":
     "Se han borrado los pines de contexto del espacio de trabajo temporal Agent",
+  "Testing structured response…": "Probando la respuesta estructurada...",
   Text: "Texto",
   "That checkpoint already matches the current source": "Ese punto de control ya coincide con la fuente actual.",
   "That file is too large. Choose one configuration smaller than 20 KB.":
@@ -1158,11 +1282,13 @@ export const INTERFACE_TRANSLATIONS = {
   "The layout is usable without material rework.": "El diseño puede usarse sin una reelaboración importante.",
   "The model is preparing review questions from bounded aggregate evidence…":
     "El modelo está preparando preguntas de revisión a partir de evidencia agregada acotada…",
+  "The model is reading current context": "El modelo está leyendo el contexto actual.",
   "The model is shaping this presentation from bounded source evidence…":
     "El modelo está estructurando esta presentación con evidencia de origen acotada…",
   "The numbers, structure, and language meet this task.": "Las cifras, la estructura y el lenguaje cumplen esta tarea.",
   "The original detail was too long and is truncated in this view.":
     "El detalle original era demasiado largo y se ha truncado en esta vista.",
+  "The PDF operation failed.": "La operación PDF falló.",
   "The result saves meaningful time over manual work.":
     "El resultado ahorra un tiempo significativo frente al trabajo manual.",
   "The user can understand what Orbit changed and why.": "El usuario puede entender qué cambió Orbit y por qué.",
@@ -1182,11 +1308,16 @@ export const INTERFACE_TRANSLATIONS = {
     "Esta fuente no cambia; su resultado en directo se renderiza con todo el espacio de trabajo propuesto.",
   Title: "Título",
   To: "a",
+  "To keep switching and typing responsive, this view shows the beginning first. The complete content remains in the Source editor.":
+    "Para seguir cambiando y escribiendo con capacidad de respuesta, esta vista muestra el comienzo primero. El contenido completo permanece en el editor Source.",
   "To protect credentials, Orbit does not import from remote config URLs.":
     "Para proteger las credenciales, Orbit no importa desde URL de configuración remota.",
   tokens: "tokens",
   Top: "Arriba",
   "Transaction map": "Mapa de transacciones",
+  "Translate imported canonical text through a reviewed Agent proposal.":
+    "Traducir texto canónico importado a través de una propuesta Agent revisada.",
+  "Translate PDF": "Traducir PDF",
   "Trim the selection": "Recortar la selección",
   "Try four shortcuts yourself": "Prueba cuatro atajos",
   "Turn data into a verifiable review.": "Convierte los datos en una revisión verificable.",
@@ -1197,6 +1328,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "Fuente desconocida",
   Unlinked: "Desvinculado",
   "Unlinked artifacts": "Artefactos desvinculados",
+  "Unlock PDF": "Desbloquear PDF",
   "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
     "Los archivos no relacionados permanecen intactos; solo se escriben las fuentes, imágenes y el manifiesto de Orbit revisados.",
   "Unresolved dependencies": "Dependencias no resueltas",
@@ -1224,6 +1356,8 @@ export const INTERFACE_TRANSLATIONS = {
     "Utilice Orbit JSON o un enlace de importación de proveedor único de CC Switch. Orbit lo revisa primero y nunca lo guarda inmediatamente.",
   "Use Orbit JSON or one ccswitch://v1/import provider link.":
     "Utilice Orbit JSON o un enlace de proveedor ccswitch://v1/import.",
+  "Use Orbit's local text, table, and optional OCR importer to create Markdown.":
+    "Utilice el texto local, la tabla y el importador OCR opcional de Orbit para crear Markdown.",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "Usa CSV rectangular con encabezados o JSON plano con valores escalares.",
   "Use the selected cloud or device model; you still confirm every change":
@@ -1233,6 +1367,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Use this model connection?": "¿Usar esta conexión?",
   Valid: "Válido",
   Validated: "Validado",
+  "Validating the model result locally": "Validar el resultado del modelo localmente",
   "Value field": "Campo de valor",
   "Values, definitions, and calculations are accurate.": "Los valores, las definiciones y los cálculos son correctos.",
   "Verify & use": "Verificar y usar",
@@ -1243,6 +1378,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Verifying…": "Verificando…",
   Version: "Versión",
   "Visible marks": "Marcas visibles",
+  "Visible signature": "Firma visible",
   "Visual deliverability": "Calidad visual entregable",
   "Visual edit · complete source draft synced live":
     "Edición visual · borrador completo del código fuente sincronizado en vivo",
@@ -1251,6 +1387,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Visual edit rejected — device persistence failed": "Edición visual rechazada: falló la persistencia del dispositivo",
   "Visual edit rejected — every source stayed unchanged":
     "Edición visual rechazada: todas las fuentes se mantuvieron sin cambios",
+  Watermark: "marca de agua",
+  "Web page to PDF": "Página web de PDF",
   "Weekly operating review": "Revisión operativa semanal",
   "Weekly review": "Revisión semanal",
   "Welcome & local guide": "Bienvenida y guía local.",

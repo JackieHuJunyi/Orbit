@@ -6,6 +6,7 @@ export const WORKBENCH_OPERATION_OWNERS = [
   "agent-proposal",
   "import-review",
   "pdf-ocr",
+  "pdf-tools",
   "export-review",
   "pilot-evidence",
   "delivery-outcome",

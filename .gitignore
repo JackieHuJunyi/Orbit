@@ -60,6 +60,16 @@ rune-pilot-cohort-*.md
 # `npm run prepare:duckdb`; never commit the generated ~39 MB pair.
 /public/duckdb/
 
+# qpdf's browser binary is regenerated from the pinned npm package. The small
+# Orbit-owned worker stays tracked beside these generated runtime files.
+/public/qpdf/qpdf.js
+/public/qpdf/qpdf.wasm
+
+# Ghostscript is also regenerated from its pinned npm package; keep only the
+# Orbit-owned worker in source control.
+/public/ghostscript/gs.js
+/public/ghostscript/gs.wasm
+
 # Local OpenAI Sites hosting metadata (project id, optional d1/r2 bindings).
 # Copy from .openai/hosting.example.json — never commit a real project id.
 .openai/hosting.json

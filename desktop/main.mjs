@@ -2,6 +2,8 @@ import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { lookup } from "node:dns/promises";
+import { BlockList, isIP } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -176,6 +178,141 @@ async function loadDesktopWorkspace(window, url) {
   throw lastError instanceof Error ? lastError : new Error("Orbit Desktop could not load its local workspace.");
 }
 
+function safePublicWebUrl(value) {
+  if (typeof value !== "string" || value.length > 2_048) throw new Error("Enter a valid HTTPS page URL.");
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Enter a valid HTTPS page URL.");
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (
+    url.protocol !== "https:" ||
+    (url.port && url.port !== "443") ||
+    url.username ||
+    url.password ||
+    !hostname.includes(".") ||
+    /^(?:localhost|\d+(?:\.\d+){3}|\[[a-f0-9:]+\])$/iu.test(hostname) ||
+    [".localhost", ".local", ".internal", ".home", ".lan"].some((suffix) => hostname.endsWith(suffix))
+  ) {
+    throw new Error("Web to PDF accepts only a public HTTPS page.");
+  }
+  return url.href;
+}
+
+const nonPublicWebAddresses = new BlockList();
+for (const [address, prefix] of [
+  ["0.0.0.0", 8],
+  ["10.0.0.0", 8],
+  ["100.64.0.0", 10],
+  ["127.0.0.0", 8],
+  ["169.254.0.0", 16],
+  ["172.16.0.0", 12],
+  ["192.0.0.0", 24],
+  ["192.0.2.0", 24],
+  ["192.168.0.0", 16],
+  ["198.18.0.0", 15],
+  ["198.51.100.0", 24],
+  ["203.0.113.0", 24],
+  ["224.0.0.0", 3],
+]) {
+  nonPublicWebAddresses.addSubnet(address, prefix, "ipv4");
+}
+for (const [address, prefix] of [
+  ["::", 128],
+  ["::1", 128],
+  ["fc00::", 7],
+  ["fe80::", 10],
+  ["ff00::", 8],
+  ["2001:db8::", 32],
+]) {
+  nonPublicWebAddresses.addSubnet(address, prefix, "ipv6");
+}
+
+function isPublicWebAddress(address, family) {
+  const normalizedFamily = family === 6 || family === "IPv6" ? "ipv6" : "ipv4";
+  if (!isIP(address)) return false;
+  if (address.toLowerCase().startsWith("::ffff:")) {
+    const mapped = address.slice(7);
+    return isIP(mapped) === 4 && !nonPublicWebAddresses.check(mapped, "ipv4");
+  }
+  return !nonPublicWebAddresses.check(address, normalizedFamily);
+}
+
+async function validatePublicWebTarget(value) {
+  const href = safePublicWebUrl(value);
+  const hostname = new URL(href).hostname;
+  const addresses = await Promise.race([
+    lookup(hostname, { all: true, verbatim: true }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("The web address lookup timed out.")), 5_000)),
+  ]);
+  if (!addresses.length || addresses.some(({ address, family }) => !isPublicWebAddress(address, family))) {
+    throw new Error("Web to PDF cannot connect to a local, private, or reserved network address.");
+  }
+  return href;
+}
+
+async function renderPublicWebPageToPdf(_event, input) {
+  const url = await validatePublicWebTarget(input?.url);
+  const window = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      partition: `orbit-web-pdf-${randomBytes(12).toString("hex")}`,
+    },
+  });
+  window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  const requestVerdicts = new Map();
+  window.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+    let candidate;
+    try {
+      candidate = new URL(details.url);
+    } catch {
+      callback({ cancel: true });
+      return;
+    }
+    if (candidate.protocol === "data:" || candidate.protocol === "blob:") {
+      callback({ cancel: false });
+      return;
+    }
+    const cacheKey = `${candidate.protocol}//${candidate.host}`;
+    const verdict = requestVerdicts.get(cacheKey) ?? validatePublicWebTarget(candidate.href);
+    requestVerdicts.set(cacheKey, verdict);
+    void verdict.then(
+      () => callback({ cancel: false }),
+      () => callback({ cancel: true }),
+    );
+  });
+  try {
+    let loadTimer;
+    try {
+      const timeout = new Promise((_, reject) => {
+        loadTimer = setTimeout(() => reject(new Error("The web page took too long to load.")), 20_000);
+      });
+      await Promise.race([window.loadURL(url), timeout]);
+    } finally {
+      clearTimeout(loadTimer);
+    }
+    const bytes = await window.webContents.printToPDF({
+      printBackground: true,
+      preferCSSPageSize: true,
+      pageSize: "A4",
+    });
+    if (!bytes.length || bytes.length > 80 * 1024 * 1024) {
+      throw new Error("The rendered PDF is outside Orbit's size limit.");
+    }
+    return {
+      bytes: new Uint8Array(bytes),
+      fileName: `${new URL(url).hostname.replace(/[^a-z0-9.-]/giu, "-")}.pdf`,
+    };
+  } finally {
+    if (!window.isDestroyed()) window.destroy();
+  }
+}
+
 async function createOrbitWindow() {
   if (!orbitServer) orbitServer = await startOrbitServer();
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -249,6 +386,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("orbit:export-legacy-office", exportLegacyOffice);
   ipcMain.handle("orbit:discover-models", () => desktopModelDiscovery.scan());
   ipcMain.handle("orbit:import-discovered-model", (_event, id) => desktopModelDiscovery.importCandidate(id));
+  ipcMain.handle("orbit:render-web-pdf", renderPublicWebPageToPdf);
   await createOrbitWindow();
   app.on("activate", () => {
     void createOrbitWindow();

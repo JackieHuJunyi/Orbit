@@ -4,6 +4,7 @@ import { constants } from "node:fs";
 import { access, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { accountModelChoice, accountModelChoices, defaultAccountModel } from "../shared/account-model-catalog.mjs";
 
 const MAX_PROCESS_OUTPUT_BYTES = 2 * 1024 * 1024;
 const MAX_REQUEST_BYTES = 1_000_000;
@@ -17,7 +18,7 @@ const ACCOUNT_RUNTIMES = Object.freeze([
     label: "ChatGPT",
     sourceLabel: "Codex · ChatGPT account",
     executable: "codex",
-    model: "chatgpt-codex-account",
+    model: defaultAccountModel("codex-account"),
   },
   {
     id: "claude",
@@ -25,7 +26,7 @@ const ACCOUNT_RUNTIMES = Object.freeze([
     label: "Claude",
     sourceLabel: "Claude Code · Claude account",
     executable: "claude",
-    model: "claude-account",
+    model: defaultAccountModel("claude-account"),
   },
   {
     id: "gemini",
@@ -33,7 +34,7 @@ const ACCOUNT_RUNTIMES = Object.freeze([
     label: "Gemini",
     sourceLabel: "Gemini CLI · Google account",
     executable: "gemini",
-    model: "gemini-account",
+    model: defaultAccountModel("gemini-account"),
   },
 ]);
 
@@ -94,7 +95,7 @@ async function findExecutable(name, homeDirectory, environment, capabilities) {
   return "";
 }
 
-function runBoundedProcess(executable, args, { cwd, environment, input = "", timeoutMs }, capabilities) {
+function runBoundedProcess(executable, args, { cwd, environment, input = "", signal, timeoutMs }, capabilities) {
   return new Promise((resolve, reject) => {
     const child = capabilities.spawn(executable, args, {
       cwd,
@@ -105,10 +106,15 @@ function runBoundedProcess(executable, args, { cwd, environment, input = "", tim
     let stdout = Buffer.alloc(0);
     let stderr = Buffer.alloc(0);
     let settled = false;
+    const abort = () => {
+      child.kill("SIGKILL");
+      finish(() => reject(new Error("The signed-in model request was stopped.")));
+    };
     const finish = (callback) => {
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
+      signal?.removeEventListener("abort", abort);
       callback();
     };
     const append = (current, chunk) => {
@@ -140,6 +146,11 @@ function runBoundedProcess(executable, args, { cwd, environment, input = "", tim
       child.kill("SIGKILL");
       finish(() => reject(new Error("The signed-in model client timed out.")));
     }, timeoutMs);
+    if (signal?.aborted) {
+      abort();
+      return;
+    }
+    signal?.addEventListener("abort", abort, { once: true });
     child.stdin.end(input);
   });
 }
@@ -213,7 +224,7 @@ function parseJsonValue(value) {
   }
 }
 
-async function runCodex(runtime, executable, prompt, schema, context) {
+async function runCodex(runtime, executable, prompt, schema, selection, context) {
   const directory = await context.capabilities.mkdtemp(path.join(context.tmpDirectory, "orbit-codex-account-"));
   try {
     const schemaPath = path.join(directory, "schema.json");
@@ -229,6 +240,10 @@ async function runCodex(runtime, executable, prompt, schema, context) {
       "read-only",
       "--color",
       "never",
+      "--model",
+      selection.model,
+      "--config",
+      `model_reasoning_effort="${selection.effort}"`,
       "--disable",
       "shell_tool",
       "--disable",
@@ -266,11 +281,15 @@ async function runCodex(runtime, executable, prompt, schema, context) {
   }
 }
 
-async function runClaude(runtime, executable, prompt, schema, context) {
+async function runClaude(runtime, executable, prompt, schema, selection, context) {
   const result = await runBoundedProcess(
     executable,
     [
       "--safe-mode",
+      "--model",
+      selection.model,
+      "--effort",
+      selection.effort,
       "--tools",
       "",
       "--no-session-persistence",
@@ -293,11 +312,11 @@ async function runClaude(runtime, executable, prompt, schema, context) {
   return { output, usage };
 }
 
-async function runGemini(runtime, executable, prompt, schema, context) {
+async function runGemini(runtime, executable, prompt, schema, selection, context) {
   const schemaInstruction = `JSON schema:\n${schema.encoded}\n\n${prompt}`;
   const result = await runBoundedProcess(
     executable,
-    ["--approval-mode", "plan", "--output-format", "json", "--prompt", schemaInstruction],
+    ["--approval-mode", "plan", "--model", selection.model, "--output-format", "json", "--prompt", schemaInstruction],
     { ...context, timeoutMs: GENERATION_TIMEOUT_MS },
     context.capabilities,
   );
@@ -406,18 +425,26 @@ export function createDesktopAccountModelRuntime({
       return Response.json({ error: `Sign in through ${runtime.sourceLabel} first.` }, { status: 401 });
     }
     if (match[2] === "models") {
-      return Response.json({ object: "list", data: [{ id: runtime.model, object: "model" }] });
+      return Response.json({
+        object: "list",
+        data: accountModelChoices(runtime.provider).map((choice) => ({ id: choice.id, object: "model" })),
+      });
     }
     try {
       const body = await boundedRequestJson(request);
       const prompt = combinedPrompt(body);
       const schema = responseSchema(body);
+      const selection = accountModelChoice(runtime.provider, cleanText(body?.model, 120));
+      if (!selection) {
+        return Response.json({ error: "Choose a supported model and effort level for this account." }, { status: 400 });
+      }
+      const requestContext = { ...context, signal: request.signal };
       const result =
         runtime.id === "codex"
-          ? await runCodex(runtime, executable, prompt, schema, context)
+          ? await runCodex(runtime, executable, prompt, schema, selection, requestContext)
           : runtime.id === "claude"
-            ? await runClaude(runtime, executable, prompt, schema, context)
-            : await runGemini(runtime, executable, prompt, schema, context);
+            ? await runClaude(runtime, executable, prompt, schema, selection, requestContext)
+            : await runGemini(runtime, executable, prompt, schema, selection, requestContext);
       return Response.json(responsesPayload(result), { headers: { "cache-control": "no-store" } });
     } catch (error) {
       return Response.json(

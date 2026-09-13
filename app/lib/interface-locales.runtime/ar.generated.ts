@@ -89,6 +89,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Add condition": "إضافة شرط",
   "Add model provider": "إضافة مزود النموذج",
   "Add next actions": "أضف الإجراءات التالية",
+  "Add page numbers at a consistent reviewed position.": "أضف أرقام الصفحات في موضع مراجعة ثابت.",
   "Add provider": "إضافة مزود",
   "Add source content": "أضف محتوى المصدر",
   "Adjust this period and recompile the existing analysis, chart, and deliverables. File identities stay stable and every change remains reviewable.":
@@ -102,8 +103,6 @@ export const INTERFACE_TRANSLATIONS = {
     "بعد التأكيد، يقرأ Orbit هذا التكوين فقط، ويتحقق من كتالوج النماذج الخاص به والاستجابة المنظمة البسيطة، ثم يقوم بتشفيره وحفظه كإعداد افتراضي.",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "بعد تأكيدك، يقرأ Orbit بيانات اعتماد هذا الاتصال فقط ويتحقق من قائمة النماذج ومن استجابة منظّمة صغيرة، ثم يشفّر الاتصال ويحفظه كافتراضي فقط إذا نجح الاختباران.",
-  "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
-    "بعد التأكيد، يقوم العميل الرسمي بإكمال استجابة منظمة واحدة خالية من المستندات. يحفظ Orbit اسم الاتصال فقط ولا ينسخ رمز OAuth المميز الخاص به مطلقًا.",
   Agent: "Agent",
   "Agent change scope": "Agent تغيير النطاق",
   "Agent composer focused": "تم التركيز على الملحن Agent.",
@@ -141,6 +140,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Apply all": "تطبيق الكل",
   "Apply an Agent patch or press ⌘S to capture the current source.":
     "قم بتطبيق التصحيح Agent أو اضغط على ⌘S لالتقاط المصدر الحالي.",
+  "Apply an exact crop box to selected pages.": "Apply مربع اقتصاص دقيق للصفحات المحددة.",
   "Apply structure change": "تطبيق تغيير الهيكل",
   Area: "مساحي",
   "Area · volume sequence": "مساحي · تسلسل الحجم",
@@ -203,9 +203,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Check the binding syntax and choose one metric that exists in this workspace.":
     "تحقق من صياغة الربط واختر مقياسًا موجودًا في مساحة العمل هذه.",
   "Check these settings first:": "تحقق من هذه الإعدادات أولاً:",
+  Checkbox: "خانة الاختيار",
+  "Checked by default": "تم التحقق بشكل افتراضي",
   "Checking connections already saved in Orbit…": "جارٍ التحقق من الاتصالات المحفوظة في Orbit…",
   "Checkpoint history": "تاريخ نقطة التفتيش",
   "Checkpoint restore details": "تفاصيل استعادة نقطة الحفظ",
+  "Choices (one per line or comma-separated)": "الاختيارات (واحد لكل سطر أو مفصولة بفواصل)",
   "Choose a canonical source. Query and Chart files bind to exact upstream artifacts and fields from their first revision.":
     "اختر مصدرًا أساسيًا. يرتبط الاستعلام وملفات Chart بالعناصر والحقول الأولية الدقيقة من المراجعة الأولى الخاصة بهم.",
   "Choose a fetched model": "اختر نموذجًا تم جلبه",
@@ -217,6 +220,7 @@ export const INTERFACE_TRANSLATIONS = {
     "اختر مستندًا تمت مراجعته والجمهور والهدف. يستطيع Orbit إنشاء عرض جديد أو تحديث عرض مرتبط مع الحفاظ على هوية الملف وعلاقته بالمصدر.",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "اختر مستندًا تمت مراجعته والجمهور والهدف. ينشئ Orbit ملف Deck Markdown قابلًا للتحرير ويحافظ على علاقة صريحة بالمستند المصدر.",
+  "Choose again": "اختر مرة أخرى",
   "Choose an existing Chart id or create and validate that Chart first.":
     "اختر معرّف Chart موجودًا، أو أنشئ ذلك Chart وتحقق منه أولًا.",
   "Choose an existing metric key or an explicit Query output field.":
@@ -225,6 +229,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Choose Chart accent color": "اختر لون التمييز Chart.",
   "Choose CSV, JSON, XLSX, or ODS. Orbit shows the import first, then guides you through fields, measures, charts, and deliverables.":
     "اختر CSV أو JSON أو XLSX أو ODS. يعرض Orbit الاستيراد أولًا، ثم يرشدك عبر الحقول والمقاييس والمخططات والمخرجات.",
+  "Choose files": "اختر الملفات",
   "Choose JSON / text file": "اختر JSON / ملف نصي",
   "Choose maximum visible Chart marks": "اختر أقصى Chart من العلامات المرئية",
   "Choose one exact scope value, or return to all Data rows.": "اختر قيمة نطاق مطابقة، أو عُد إلى كل صفوف البيانات.",
@@ -242,18 +247,24 @@ export const INTERFACE_TRANSLATIONS = {
   "Clear pins": "دبابيس واضحة",
   "Click again to delete": "انقر مرة أخرى للحذف",
   "Close current file": "إغلاق الملف الحالي",
+  "Close PDF tools": "أغلق أدوات PDF.",
   "Close tutorial": "إغلاق البرنامج التعليمي",
   "Closed the current file — every source remains in the workspace":
     "تم إغلاق الملف الحالي — يبقى كل مصدر في مساحة العمل",
   "Closed the current file — every source remains safely in the workspace":
     "تم إغلاق الملف الحالي — ويظل كل مصدر آمنًا في مساحة العمل",
   "Cloud API": "واجهة API سحابية",
+  "Combine complete PDFs in a chosen order.": "اجمع PDF كاملة بالترتيب المختار.",
+  "Combine photographed or scanned pages into a PDF.": "قم بدمج الصفحات المصورة أو الممسوحة ضوئيًا في PDF.",
+  "Compare PDFs": "قارن بين PDF.",
   "Compare with": "المقارنة مع",
   "Comparison rows": "صفوف المقارنة",
   "Compiled artifact preview": "معاينة قطعة أثرية مجمعة",
   "Compiler-guided repair passed": "تم اجتياز الإصلاح الموجه بواسطة المترجم",
   "Complete the required fields and Orbit will validate the whole workflow before review.":
     "أكمل الحقول المطلوبة وسيقوم Orbit بالتحقق من صحة سير العمل بالكامل قبل المراجعة.",
+  "Complete; review before download": "كامل؛ المراجعة قبل التحميل",
+  "Compress PDF": "ضغط PDF",
   "Conclusion usefulness": "فائدة الاستنتاجات",
   "Conclusions trace to sufficient supporting evidence.": "تستند الاستنتاجات إلى أدلة داعمة كافية.",
   "Condense the selection into one sentence": "قم بتكثيف التحديد في جملة واحدة",
@@ -271,31 +282,44 @@ export const INTERFACE_TRANSLATIONS = {
   "Connect the models you already use": "قم بتوصيل النماذج التي تستخدمها بالفعل",
   "Connected folder": "مجلد متصل",
   "Connections available on this device": "الاتصالات المتاحة على هذا الجهاز",
-  "Connections on this Mac": "الاتصالات على جهاز Mac هذا",
+  "Connections found on this Mac": "تم العثور على الاتصالات على جهاز Mac هذا",
   "Content workspace": "مساحة عمل المحتوى",
   Continue: "متابعة",
+  "Continue in Orbit": "المتابعة في Orbit",
   "Continue setup": "متابعة الإعداد",
   "Continue with model assistance": "المتابعة باستخدام نموذج",
   "Continue without a model": "المتابعة من دون نموذج",
   Conversation: "المحادثة",
+  "Convert Word, PowerPoint, Excel, and OpenDocument sources through Orbit's reviewed export path.":
+    "قم بتحويل مصادر Word وPowerPoint وExcel وOpenDocument من خلال مسار التصدير الذي تمت مراجعته في Orbit.",
+  "Copy selected pages into a new PDF.": "انسخ الصفحات المحددة إلى PDF الجديد.",
   "Cosmic Orange": "برتقالي كوني",
+  "Create a clean PDF from entered text.": "أنشئ PDF نظيفًا من النص المُدخل.",
   "Create a new artifact": "إنشاء قطعة أثرية جديدة",
   "Create a new presentation": "إنشاء عرض جديد",
   "Create a presentation from the current report": "إنشاء عرض تقديمي من التقرير الحالي",
   "Create a review from data": "إنشاء مراجعة من البيانات",
   "Create an analysis, chart, and report from revenue data": "إنشاء تحليل ومخطط وتقرير من بيانات الإيرادات",
+  "Create an archival conformance copy when the desktop converter is available.":
+    "قم بإنشاء نسخة مطابقة أرشيفية عند توفر محول سطح المكتب.",
   "Create an editable Deck Markdown presentation": "إنشاء عرض تقديمي Deck Markdown قابل للتعديل",
   "Create an editable Markdown report": "قم بإنشاء تقرير Markdown قابل للتحرير",
   "Create an editable semantic HTML presentation": "إنشاء عرض HTML دلالي قابل للتعديل",
   "Create blank": "إنشاء فارغة",
+  "Create one PDF page per PNG or JPEG image.": "قم بإنشاء صفحة PDF واحدة لكل صورة PNG أو JPEG.",
+  "Create one PDF per selected page or range.": "قم بإنشاء PDF واحد لكل صفحة أو نطاق محدد.",
   "Create operating review": "إنشاء مراجعة التشغيل",
+  "Create or fill text, checkbox, choice, and list fields.":
+    "قم بإنشاء أو تعبئة حقول النص وخانة الاختيار والاختيار والقائمة.",
   "Create or refresh a light presentation": "أنشئ عرضًا خفيفًا أو حدّثه",
+  "Create PDF": "إنشاء PDF",
   "Create presentation from document": "إنشاء عرض من مستند",
   "Create reusable Chart only": "قم بإنشاء Chart القابل لإعادة الاستخدام فقط",
   "Create review": "إنشاء مراجعة",
   "Create source": "إنشاء مصدر",
   Credential: "بيانات الاعتماد",
   "Credential found; not read yet": "تم العثور على بيانات اعتماد · لم تُقرأ بعد",
+  "Crop PDF": "اقتصاص PDF",
   Currency: "العملة",
   "Currency · USD": "العملة · الدولار الأمريكي",
   Current: "الحالي",
@@ -323,6 +347,7 @@ export const INTERFACE_TRANSLATIONS = {
     "حدد الأدلة والمقياس والجمهور أولاً. يقوم Orbit بتجميع التحليل والمخطط والتقرير والشرائح في معاملة مراجعة واحدة.",
   Delete: "حذف",
   "Delete block": "حذف الكتلة",
+  "Delete selected pages after review.": "حذف الصفحات المحددة بعد المراجعة.",
   Deliverable: "المخرج",
   "Deliverable after minor edits": "قابل للتسليم بعد تعديلات بسيطة",
   "Deliverable outcome": "نتيجة المخرج",
@@ -365,8 +390,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "هل أصبحت هذه النتيجة قابلة للاستخدام في عمل حقيقي؟",
   Discard: "تجاهل",
   "Discard proposed patch": "تجاهل التصحيح المقترح",
-  "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.":
-    "يتحقق الاكتشاف من حالة العميل الرسمي ومواقع التكوين المعروفة وCC Switch ومنافذ الطراز المحلي. ولا يقرأ أبدًا ملفات تعريف الارتباط للمتصفح أو يعرض مفاتيح API أو رموز OAuth المميزة.",
+  "Discovery checks official-client status, literal shell configuration, known app settings, CC Switch, and local model ports. It never executes a shell or displays API keys or OAuth tokens.":
+    "يتحقق الاكتشاف من حالة العميل الرسمي، وتكوين shell الحرفي، وإعدادات التطبيق المعروفة، وCC Switch، ومنافذ الطراز المحلي. لا ينفذ مطلقًا shell أو يعرض مفاتيح API أو رموز OAuth المميزة.",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "يفحص البحث مواقع الإعداد المعروفة ومنافذ النماذج المحلية فقط. ولا يشغّل ملفات shell أو يرفع ملفات أو يعرض أي مفتاح.",
   "Dock Agent": "إرساء الوكيل",
@@ -392,6 +417,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Draft Chart preview": "مسودة معاينة Chart.",
   "Draft preview": "معاينة المسودة",
   "Drag to select the OCR region": "اسحب لتحديد منطقة التعرّف الضوئي",
+  Dropdown: "القائمة المنسدلة",
   "Earlier device records (read only)": "سجلات سابقة على الجهاز (للقراءة فقط)",
   "Edges recompile from source; pins last only for this session.":
     "إعادة ترجمة الحواف من المصدر؛ الدبابيس الأخيرة لهذه الجلسة فقط.",
@@ -400,6 +426,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Edit Chart description": "تعديل وصف Chart.",
   "Edit Chart title": "تعديل عنوان Chart.",
   "Edit model provider": "تحرير موفر النموذج",
+  "Edit PDF": "تعديل PDF",
   "Edit this canonical source cell": "تحرير هذه الخلية المصدر الأساسية",
   "Editable output": "مخرج قابل للتحرير",
   Edited: "تم تحريره",
@@ -410,6 +437,7 @@ export const INTERFACE_TRANSLATIONS = {
   Empty: "فارغ",
   "en-US": "ar-US",
   Enable: "تمكين",
+  "Encrypt a PDF with a user password locally.": "قم بتشفير PDF بكلمة مرور المستخدم محليًا.",
   "Encrypting…": "جارٍ التشفير…",
   Endpoint: "نقطة الاتصال",
   "Enter a focus view": "انتقل إلى عرض التركيز",
@@ -437,12 +465,18 @@ export const INTERFACE_TRANSLATIONS = {
   "Export as standalone HTML": "تصدير كمستقل HTML",
   "Export held for review — workspace context changed": "تم تعليق التصدير للمراجعة - تم تغيير سياق مساحة العمل",
   "Export pilot evidence": "تصدير أدلة التجربة",
+  "Extract embedded raster images without rendering page backgrounds.":
+    "قم باستخراج الصور النقطية المضمنة دون عرض خلفيات الصفحة.",
+  "Extract images": "استخراج الصور",
+  "Extract pages": "استخراج الصفحات",
   Eyebrow: "الحاجب",
   "Fetch models": "جلب النماذج",
   "Fetching models checks authentication and the model catalog only. The first Agent plan still verifies structured output for the selected protocol. Cross-provider retry requires separate permission in Models settings.":
     "يقتصر جلب النماذج على التحقق من المصادقة ودليل النماذج. وتظل خطة Agent الأولى تتحقق من الإخراج المنظم للبروتوكول المحدد. وتتطلب إعادة المحاولة عبر مزود آخر إذناً منفصلاً في إعدادات النماذج.",
   "Fetching…": "جارٍ الجلب…",
   "Fidelity notes": "ملاحظات الإخلاص",
+  "Field name": "اسم الحقل",
+  "Field type": "نوع الحقل",
   "Fields and measure": "الحقول والقياس",
   File: "ملف",
   "File names, Artifact IDs, workspace paths, and user identity":
@@ -452,6 +486,8 @@ export const INTERFACE_TRANSLATIONS = {
   files: "ملفات",
   "Files available after the switch": "الملفات المتاحة بعد التبديل",
   "Files in proposed patch": "الملفات في التصحيح المقترح",
+  "Files stay local by default; AI actions remain review-before-write.":
+    "تظل الملفات محلية بشكل افتراضي؛ تظل إجراءات الذكاء الاصطناعي تخضع للمراجعة قبل الكتابة.",
   "Filter value": "قيمة التصفية",
   "First proposal stayed unapplied": "بقي الاقتراح الأول دون تطبيق",
   "fixed-layout": "تخطيط ثابت",
@@ -474,6 +510,7 @@ export const INTERFACE_TRANSLATIONS = {
     "تبقى ملفات المجلد فقط دون تغيير ولكنها لن تنتمي إلى بيان مساحة العمل Orbit الجديد.",
   "For example 1-3, 5; only detected scan pages can be selected.":
     "مثل 1-3، 5؛ لا يمكن اختيار سوى الصفحات الممسوحة المكتشفة.",
+  "For example 1,3-5; blank means all": "على سبيل المثال 1،3-5؛ فارغ يعني الكل",
   "For example: July 2026": "على سبيل المثال: يوليو 2026",
   "For example: July operating review": "على سبيل المثال: مراجعة التشغيل لشهر يوليو",
   "For example: Product launch briefing": "مثل: موجز إطلاق المنتج",
@@ -487,6 +524,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Hide API key": "إخفاء مفتاح API",
   "Hide workspace files": "إخفاء ملفات مساحة العمل",
   "HTML · PPTX · ODP · PDF": "HTML · PPTX · ODP · PDF",
+  "HTML to PDF": "HTML إلى PDF",
   "Human-reviewed real tasks": "مهام حقيقية راجعها أشخاص",
   "I confirm this task is authorized for evaluation or its content is redacted.":
     "أؤكد أن هذه المهمة مصرح بتقييمها أو أن محتواها منقح.",
@@ -496,6 +534,7 @@ export const INTERFACE_TRANSLATIONS = {
     "حدّد أهم تغيير منذ الأسبوع الماضي وعيّن القرار التالي أو المسؤول عنه.",
   "Ignored unsupported fields": "تم تجاهل الحقول غير المدعومة",
   Image: "صورة",
+  "Images to PDF": "صور إلى PDF",
   Import: "استيراد",
   "Import a document, review it, then choose audience, purpose, and length":
     "استورد مستندًا وراجعه، ثم اختر الجمهور والهدف والطول",
@@ -510,7 +549,12 @@ export const INTERFACE_TRANSLATIONS = {
     "استورد البيانات، ثم انتقل مباشرة إلى ربط الحقول وإعداد المخرجات",
   "Import details": "تفاصيل الاستيراد",
   "Import held for review — workspace context changed": "تم تعليق الاستيراد للمراجعة — تم تغيير سياق مساحة العمل",
+  "Import locally extracted text, then ask the selected model for a source-linked summary.":
+    "قم باستيراد النص المستخرج محليًا، ثم اطلب من النموذج المحدد تقديم ملخص مرتبط بالمصدر.",
   "Import one model profile": "استيراد ملف تعريف نموذج واحد",
+  "Import PDF into canonical Markdown, then export a reviewed DOCX.":
+    "قم باستيراد PDF إلى Markdown الأساسي، ثم قم بتصدير DOCX الذي تمت مراجعته.",
+  "Import PDF pages, review structure, then export PPTX.": "قم باستيراد صفحات PDF، ومراجعة البنية، ثم تصدير PPTX.",
   "Import PDF, DOC, DOCX, Markdown, PPT, HTML, CSV, JSON, XLSX, or ODS. Orbit previews the conversion first, then guides you through fields, measures, charts, and deliverables.":
     "استيراد PDF، DOC، DOCX، Markdown، PPT، HTML، CSV، JSON، XLSX، أو ODS. يقوم Orbit بمعاينة التحويل أولاً، ثم يرشدك عبر الحقول والمقاييس والمخططات والتسليمات.",
   "Import real data, review it, then map fields, measures, and deliverables":
@@ -547,6 +591,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Keep valid Deck Markdown or script-free semantic HTML.":
     "استخدم Deck Markdown صالحًا أو HTML دلاليًا خاليًا من البرامج النصية.",
   Language: "اللغة",
+  "Large document quick preview": "معاينة سريعة للمستندات الكبيرة",
   "Last run": "التشغيل الأخير",
   Lavender: "خزامي",
   Layout: "التخطيط",
@@ -559,7 +604,9 @@ export const INTERFACE_TRANSLATIONS = {
   "Light Gold": "ذهبي فاتح",
   Line: "الخط",
   "Line · sequence": "الخط · التسلسل",
+  "Linearize and normalize a PDF for fast opening.": "خطي وتطبيع PDF للفتح السريع.",
   Link: "رابط",
+  List: "قائمة",
   "Live artifact dependencies": "تبعيات قطعة أثرية حية",
   "Live chart": "الرسم البياني المباشر",
   "Live compilation": "التجميع المباشر",
@@ -578,6 +625,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Local or configured-model planning plus input/output token counts when available":
     "تخطيط محلي أو بنموذج مُعدّ، مع أعداد رموز الإدخال والإخراج عند توفرها",
   "Local planner": "مخطط محلي",
+  "Local processing · explicit review · AI only when useful":
+    "المعالجة المحلية · المراجعة الصريحة · الذكاء الاصطناعي فقط عندما يكون مفيدًا",
   "Local runtime validation failed": "فشل التحقق من صحة وقت التشغيل المحلي",
   "Local SQL bound to Data": "محلي SQL مرتبط بالبيانات",
   "Local workspace": "مساحة العمل المحلية",
@@ -591,6 +640,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Manual checkpoint saved on this device": "تم حفظ نقطة التفتيش اليدوية على هذا الجهاز",
   Mark: "مارك",
   "Match all conditions": "مطابقة كافة الشروط",
+  "Merge PDFs": "دمج PDF ثانية",
   "Mist Blue": "أزرق ضبابي",
   Model: "النموذج",
   "Model connected": "النموذج متصل",
@@ -632,6 +682,7 @@ export const INTERFACE_TRANSLATIONS = {
   "New block after": "كتلة جديدة بعد",
   "New block before": "كتلة جديدة من قبل",
   "New file": "ملف جديد",
+  "New page order": "ترتيب الصفحات الجديد",
   "New semantic HTML": "HTML دلالي جديد",
   "New source diff": "اختلاف المصدر الجديد",
   "New source preview": "معاينة المصدر الجديد",
@@ -681,8 +732,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Numeric value field": "حقل القيمة الرقمية",
   "OCR language for": "لغة التعرّف الضوئي لـ",
   "OCR pages for": "صفحات التعرّف الضوئي لـ",
+  "OCR PDF": "OCR PDF",
   "OCR settings": "إعدادات التعرّف الضوئي",
   of: "من",
+  "Office to PDF": "مكتب إلى PDF",
   "On-device recognition": "تعرّف على الجهاز",
   "One atomic device write · a checkpoint is created first": "جهاز ذري واحد يكتب · يتم إنشاء نقطة تفتيش أولاً",
   "One atomic device write · every source stays unchanged on failure":
@@ -701,8 +754,6 @@ export const INTERFACE_TRANSLATIONS = {
     "شريحة HTML دلالية مرتبطة بالمراجعة · تنعكس مباشرة في Source · يُتحقق من العرض الكامل قبل الحفظ",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "شريحة واحدة مرتبطة بالمراجعة · تبقى الارتباطات ثابتة · حفظ يكتب المصدر الأساسي",
-  "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.":
-    "يجمع الفحص الواحد بين الحسابات المسجلة وتكوينات واجهة برمجة التطبيقات المعروفة والنماذج المحلية. لا تظهر بيانات الاعتماد أبدًا في هذه القائمة.",
   "One source workspace": "مساحة عمل مصدر واحد",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "مواصفات صارمة واحدة · تم التحقق من تأثير وقت التشغيل · حفظ يعيد كتابة القانون الأساسي Chart JSON",
@@ -710,6 +761,8 @@ export const INTERFACE_TRANSLATIONS = {
     "لا يجوز لـ Orbit إرسال المحتوى المحدود نفسه إلى مزود آخر مُعدّ إلا بعد فشل النموذج الأساسي. هذا الخيار متوقف افتراضياً.",
   "Only fields that are numeric throughout the current Data scope are shown.":
     "تظهر فقط الحقول الرقمية في كامل نطاق البيانات الحالي.",
+  "Only installed, signed-in, configured, or running connections appear. Services that were not found take no space.":
+    "تظهر فقط الاتصالات المثبتة أو التي تم تسجيل الدخول إليها أو التي تم تكوينها أو قيد التشغيل. الخدمات التي لم يتم العثور عليها لا تأخذ أي مساحة.",
   "Only provider, source, endpoint, and model are shown. Orbit reads a credential only after you choose one.":
     "تظهر جهة التزويد والمصدر ونقطة الاتصال والنموذج فقط. ولا يقرأ Orbit بيانات الاعتماد إلا بعد اختيارك.",
   "Only the first 100 distinct values are shown; choose a lower-cardinality period field if needed.":
@@ -729,6 +782,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Operating review · task first": "مراجعة التشغيل · المهمة أولاً",
   "Operating team": "فريق التشغيل",
   "Operating-review task settings": "إعدادات مهمة مراجعة التشغيل",
+  "Optimize PDF": "تحسين PDF",
   optional: "اختياري",
   "Optional · seven dimensions · about one minute": "اختياري · سبعة أبعاد · نحو دقيقة",
   "Optional page region": "منطقة اختيارية من الصفحة",
@@ -742,6 +796,8 @@ export const INTERFACE_TRANSLATIONS = {
     "اختياري. عند التحديد، تستخدم الأدلة المحلية وSQL والرسوم البيانية وسياق النموذج الصفوف المطابقة تمامًا فقط.",
   "Or open something else": "أو افتح محتوى آخر",
   Orbit: "Orbit",
+  "Orbit already confirmed the account state during discovery. Continue saves the model choice immediately; the first conversation still runs through the official client, and Orbit never copies its OAuth token.":
+    "أكد Orbit بالفعل حالة الحساب أثناء الاكتشاف. الاستمرار يحفظ اختيار النموذج على الفور؛ لا تزال المحادثة الأولى تعمل من خلال العميل الرسمي، ولا ينسخ Orbit رمز OAuth المميز الخاص به مطلقًا.",
   "Orbit compiled these results locally from the current scope before any model request.":
     "جمّع Orbit هذه النتائج محليًا من نطاق البيانات الحالي قبل إرسال أي طلب إلى النموذج.",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -795,13 +851,20 @@ export const INTERFACE_TRANSLATIONS = {
     "سيستعيد Orbit مساحة العمل المحلية الكاملة قبل إعادة الضبط، ويحفظ المساحة الحالية بوصفها الإصدار التالي القابل للاستعادة.",
   "Orbit writes an explicit -- orbit:data directive, so workspace_data never changes when files are reordered.":
     "يكتب Orbit توجيهًا صريحًا -- orbit:data، لذا لا تتغير بيانات مساحة العمل أبدًا عند إعادة ترتيب الملفات.",
+  "Organize pages": "تنظيم الصفحات",
+  "Organize, convert, edit, secure, and understand PDFs": "تنظيم وتحويل وتحرير وتأمين وفهم PDF.",
   "Output budget per task": "ميزانية الإخراج لكل مهمة",
   "Overall time saved": "إجمالي الوقت الموفر",
+  "Overlay one PDF page set on another.": "تراكب مجموعة صفحات PDF واحدة على مجموعة أخرى.",
+  "Overlay PDFs": "تراكب PDF ثانية",
   page: "صفحة",
   "Page images stay on device · results remain reviewable": "تبقى صور الصفحات على الجهاز · تظل النتائج قابلة للمراجعة",
   "Page language": "لغة الصفحة",
+  "Page numbers": "أرقام الصفحات",
   pages: "صفحات",
+  Pages: "الصفحات",
   "Pages to recognize": "الصفحات المراد التعرّف عليها",
+  Password: "كلمة المرور",
   "Paste config or CC Switch link": "الصق رابط التكوين أو CC Switch",
   "Paste one JSON object, or ccswitch://v1/import?resource=provider…":
     "الصق كائنًا واحدًا JSON، أو ccswitch://v1/import?resource=provider...",
@@ -811,14 +874,26 @@ export const INTERFACE_TRANSLATIONS = {
   "Patch held for review — workspace context changed": "تم تعليق التصحيح للمراجعة — تم تغيير سياق مساحة العمل",
   "Patch held for review — workspace source revision changed":
     "تم تعليق التصحيح للمراجعة - تم تغيير مراجعة مصدر مساحة العمل",
+  "PDF forms": "نماذج PDF.",
   "PDF pages render only in this browser. Orbit loads its bundled OCR runtime and language data from this site and the browser caches them; page images and recognized text are never sent.":
     "تُعرض صفحات PDF داخل هذا المتصفح فقط. يحمّل Orbit مشغّل التعرّف الضوئي المضمّن وبيانات اللغة من هذا الموقع ويخزّنهما المتصفح مؤقتًا؛ ولا تُرسل صور الصفحات أو النصوص المتعرّف عليها.",
+  "PDF to Excel": "PDF إلى Excel",
+  "PDF to images": "PDF للصور",
+  "PDF to Markdown": "PDF إلى Markdown",
+  "PDF to PDF/A": "PDF إلى PDF/أ",
+  "PDF to PowerPoint": "PDF إلى PowerPoint",
+  "PDF to Word": "PDF إلى Word",
+  "PDF tools": "أدوات PDF.",
   Percent: "نسبة مئوية",
   "Period and audience": "الفترة والجمهور",
   "Pilot Evidence · on device": "أدلة التجربة · على الجهاز",
   "Pilot evidence export cancelled — nothing was downloaded": "أُلغي تصدير أدلة التجربة — لم يُنزّل أي ملف",
   "Pilot Evidence export contents": "محتويات تصدير أدلة التجربة",
   "Pilot evidence held for review — device records changed": "أدلة التجربة معلّقة للمراجعة — تغيّرت سجلات الجهاز",
+  "Place a visible typed signature without claiming cryptographic certification.":
+    "ضع توقيعًا مكتوبًا مرئيًا دون المطالبة بشهادة التشفير.",
+  "Place repeated translucent text across selected pages.": "ضع نصًا شفافًا متكررًا عبر الصفحات المحددة.",
+  "Place reviewed text on an exact page and position.": "ضع النص الذي تمت مراجعته على صفحة وموضع محددين.",
   "Plan an AI change": "خطط لتغيير الذكاء الاصطناعي",
   "portable data": "البيانات المحمولة",
   "Prepare a verifiable operating-review chain": "قم بإعداد سلسلة مراجعة تشغيلية يمكن التحقق منها",
@@ -826,6 +901,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Prepare update review": "إعداد مراجعة التحديث",
   "Prepares a change before you approve the write": "يقوم بإعداد التغيير قبل الموافقة على الكتابة",
   "Preparing OCR": "جارٍ إعداد التعرّف الضوئي",
+  "Preparing one bounded repair": "إعداد إصلاح واحد يحدها",
   Presentation: "العرض التقديمي",
   "Presentation authored in semantic HTML": "عرض مكتوب بلغة HTML الدلالية",
   "Presentation destination": "وجهة العرض",
@@ -846,6 +922,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Previous workspace": "مساحة العمل السابقة",
   "Primary and comparison scopes each need at least one complete condition.":
     "يحتاج كل من النطاقات الأساسية ونطاقات المقارنة إلى شرط كامل واحد على الأقل.",
+  "Processing locally…": "المعالجة محلياً...",
   "Profile name": "اسم الملف الشخصي",
   "Project brief": "ملخص المشروع",
   "Proposal preview": "معاينة الاقتراح",
@@ -853,8 +930,10 @@ export const INTERFACE_TRANSLATIONS = {
   "Proposed output · nothing written": "النتيجة المقترحة · لم تتم أي كتابة",
   "Proposed source": "المصدر المقترح",
   "Proposed source dependency changes": "تغييرات تبعية المصدر المقترحة",
+  "Protect PDF": "حماية PDF",
   Provider: "مزود",
   "Provider-reported token usage": "استخدام الرموز المبلغ عنه من المزود",
+  "Public HTTPS URL": "عنوان URL العام لـ HTTPS",
   "Pull folder changes": "سحب تغييرات المجلد",
   "Pull these folder changes?": "هل تريد سحب تغييرات المجلد هذه؟",
   "Push these changes to the folder?": "هل تريد دفع هذه التغييرات إلى المجلد؟",
@@ -864,23 +943,34 @@ export const INTERFACE_TRANSLATIONS = {
   "Query output": "إخراج الاستعلام",
   "Quick start": "بداية سريعة",
   Quote: "اقتباس",
+  "Rasterize reviewed pages and permanently burn in redaction regions.":
+    "قم بتنقيط الصفحات التي تمت مراجعتها وحرقها بشكل دائم في مناطق التنقيح.",
   "Readable file": "ملف قابل للقراءة",
   "readable source": "مصدر قابل للقراءة",
   "Readable source": "مصدر قابل للقراءة",
   "Readable, analyzable table data": "بيانات جدول قابلة للقراءة والتحليل",
+  "Reading available models…": "قراءة النماذج المتوفرة...",
+  "Reading current Query results locally": "قراءة نتائج Query الحالية محليًا",
   "Reading model profiles…": "قراءة ملفات تعريف النماذج...",
+  "Reading this connection…": "قراءة هذا الاتصال...",
   Ready: "جاهز",
   "Ready to deliver": "جاهز للتسليم",
   "ready to edit": "جاهز للتحرير",
   "real tasks reviewed": "مهام حقيقية جرى تقييمها",
   "Real-task evaluation": "تقييم مهمة حقيقية",
+  "Rebuild readable PDF structure when qpdf can recover it.":
+    "أعد بناء بنية PDF القابلة للقراءة عندما يتمكن qpdf من استعادتها.",
   "Recent call succeeded": "نجح آخر استدعاء",
   "Recent task runs": "عمليات المهام الأخيرة",
   Recognize: "تعرّف على",
+  "Recognize selected scanned pages with Orbit's local OCR review.":
+    "تعرف على الصفحات الممسوحة ضوئيًا المحددة من خلال مراجعة Orbit المحلية OCR.",
   "Recognizing page": "جارٍ التعرّف على الصفحة",
   "Recognizing…": "جارٍ التعرّف…",
   "Recommended from this device. You can change it whenever you like.":
     "الموصى بها من هذا الجهاز. يمكنك تغييره وقتما تشاء.",
+  "Recompress streams and generate compact object streams locally.":
+    "قم بإعادة ضغط التدفقات وإنشاء تدفقات كائنات مضغوطة محليًا.",
   "Reconnect existing Data or Query and exact category and value fields.":
     "أعد ربط Data أو Query موجودين وحقلي الفئة والقيمة المحددين.",
   "Reconnect the missing Chart": "أعد ربط Chart المفقود",
@@ -892,19 +982,31 @@ export const INTERFACE_TRANSLATIONS = {
   "Recover files, versions, and task records from before reset":
     "استعادة الملفات والإصدارات وسجلات المهام من قبل إعادة الضبط",
   "Recovered after one compiler-guided repair": "تم استرداده بعد إصلاح موجه بواسطة المترجم",
+  "Redact PDF": "تنقيح PDF",
   "Refresh available": "يتوفر تحديث",
   "Refresh linked presentation in place": "تحديث العرض المرتبط في مكانه",
   "Related reference": "المرجع المرتبط",
   "Release to prepare the import": "الافراج عن لإعداد الاستيراد",
   "Remove condition": "إزالة الشرط",
+  "Remove encryption after the user supplies the current password.":
+    "قم بإزالة التشفير بعد قيام المستخدم بتوفير كلمة المرور الحالية.",
   "Remove from workspace": "إزالة من مساحة العمل",
+  "Remove pages": "إزالة الصفحات",
   "Remove scripts or executable markup; Orbit previews only script-free content.":
     "أزل البرامج النصية أو الترميز القابل للتنفيذ؛ يعاين Orbit المحتوى الخالي من البرامج النصية فقط.",
   "Remove temporary Agent context pin": "قم بإزالة دبوس السياق Agent المؤقت",
   "Remove unsafe content": "أزل المحتوى غير الآمن",
+  "Render and compare page structure without changing either input.":
+    "عرض ومقارنة بنية الصفحة دون تغيير أي من المدخلات.",
+  "Render one public HTTPS page in an isolated desktop session.": "عرض صفحة HTTPS عامة واحدة في جلسة سطح مكتب معزولة.",
+  "Render safe semantic HTML through Orbit's fixed PDF export.":
+    "عرض HTML الدلالي الآمن من خلال تصدير Orbit الثابت PDF.",
+  "Render selected PDF pages as PNG images.": "عرض صفحات PDF المحددة كصور PNG.",
   "Rendered presentation preview": "معاينة العرض التقديمي",
   "Rendering a private on-device preview…": "جارٍ عرض معاينة خاصة على الجهاز…",
   "Rendering page": "جارٍ عرض الصفحة",
+  "Reorder and duplicate pages with an explicit page sequence.": "إعادة ترتيب الصفحات وتكرارها بتسلسل صفحات واضح.",
+  "Repair PDF": "إصلاح PDF",
   "Repair the Chart definition": "أصلح تعريف Chart",
   "Repair the Chart source": "أصلح مصدر Chart",
   "Repair the Data source": "أصلح مصدر Data",
@@ -931,6 +1033,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Restore the sample workspace?": "هل تريد استعادة مساحة العمل النموذجية؟",
   "Restored the latest device draft": "تمت استعادة أحدث مسودة للجهاز",
   "Result summary": "ملخص النتيجة",
+  Results: "النتائج",
   "Revenue analysis": "تحليل الإيرادات",
   "Revenue by region": "الإيرادات حسب المنطقة",
   Review: "مراجعة",
@@ -938,6 +1041,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Review canonical source": "مراجعة المصدر الأساسي",
   "Review checkpoint restore": "مراجعة استعادة نقطة الحفظ",
   "Review config": "التكوين Review",
+  "Review extracted tables as canonical Data before XLSX export.":
+    "تم استخراج الجداول Review باعتبارها Data الأساسية قبل تصدير XLSX.",
   "Review first, preserve the current workspace, then open the sample":
     "راجع أولاً، ثم احفظ مساحة العمل الحالية وافتح النموذج",
   "Review focus": "مراجعة التركيز",
@@ -952,7 +1057,11 @@ export const INTERFACE_TRANSLATIONS = {
   "Review title": "مراجعة العنوان",
   "Review-question planner": "مخطط أسئلة المراجعة",
   "Rose Pearl": "لؤلؤي وردي",
+  "Rotate pages": "تدوير الصفحات",
+  "Rotate selected pages by 90, 180, or 270 degrees.": "قم بتدوير الصفحات المحددة بمقدار 90 أو 180 أو 270 درجة.",
+  Rotation: "دوران",
   "Run history": "تشغيل التاريخ",
+  "Run tool": "تشغيل الأداة",
   "Running locally": "تشغيل محليا",
   "Runs on this device": "يعمل على هذا الجهاز",
   "Runtime impact preflight passed": "تم تجاوز الاختبار المبدئي لتأثير وقت التشغيل",
@@ -979,9 +1088,12 @@ export const INTERFACE_TRANSLATIONS = {
   "saved tasks": "المهام المحفوظة",
   "Saved tasks": "المهام المحفوظة",
   Saving: "الادخار",
+  "Saving securely…": "الحفظ بشكل آمن…",
   "Scan again": "البحث مجددًا",
+  "Scan to PDF": "المسح الضوئي إلى PDF",
   "Scanned PDF · explicit selection": "PDF ممسوح ضوئيًا · اختيار صريح",
   "Scope filters": "مرشحات النطاق",
+  "Search PDF tools": "ابحث عن أدوات PDF.",
   "See the full data-to-report-and-deck chain": "راجع السلسلة الكاملة من البيانات إلى التقرير والسطح",
   "Select a changed file to inspect its source diff.": "حدد ملفًا تم تغييره لفحص اختلاف مصدره.",
   "Select or edit a Deck slide": "حدد أو قم بتحرير شريحة Deck.",
@@ -1002,6 +1114,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Show workspace files": "إظهار ملفات مساحة العمل",
   Showing: "عرض",
   "Sign in through the official client first": "قم بتسجيل الدخول من خلال العميل الرسمي أولاً",
+  "Sign PDF": "التوقيع PDF",
   "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.":
     "تتم إدارة تسجيل الدخول بواسطة العميل الرسمي على جهاز Mac هذا؛ لا يخزن Orbit أي رمز OAuth مميز.",
   "Sign-in managed by the official client": "تسجيل الدخول يدار من قبل العميل الرسمي",
@@ -1037,6 +1150,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Sources in proposed transaction": "المصادر في الصفقة المقترحة",
   "Space Black": "أسود فلكي",
   Split: "مقسّم",
+  "Split PDF": "تقسيم PDF",
   standalone: "مستقل",
   Starlight: "ضوء النجوم",
   "Start from a cadence": "ابدأ من وتيرة التقارير",
@@ -1049,11 +1163,14 @@ export const INTERFACE_TRANSLATIONS = {
     "ابدأ بإرشاد الإصلاح، ثم اعرض دليل المصرّف الدقيق عند الحاجة.",
   "Start writing to compile a preview.": "ابدأ الكتابة لتجميع المعاينة.",
   "Started a fresh local workspace": "بدأت مساحة عمل محلية جديدة",
+  "Starting the selected model": "بدء النموذج المحدد",
   "State the question this review must answer and the decision it should support.":
     "اذكر السؤال الذي يجب أن تجيب عليه هذه المراجعة والقرار الذي يجب أن تدعمه.",
   "State what the audience needs to understand and the decision the presentation should support.":
     "حدّد ما يحتاج الجمهور إلى فهمه والقرار الذي يجب أن يدعمه العرض.",
+  "Still waiting; you can stop": "مازلت أنتظر؛ يمكنك التوقف",
   Stop: "إيقاف",
+  "Stop model request": "إيقاف طلب النموذج",
   Stopped: "توقف",
   "Storage full": "التخزين ممتلئ",
   "Strict Chart JSON · source identity locked": "صارم Chart JSON · تم قفل هوية المصدر",
@@ -1062,6 +1179,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Structured output": "إخراج منظم",
   "Suggested actions": "الإجراءات المقترحة",
   Sum: "مجموع",
+  "Summarize PDF": "تلخيص PDF",
   "Summarize quarterly revenue": "تلخيص الإيرادات ربع السنوية",
   "Switch to the dark theme": "قم بالتبديل إلى المظهر المظلم",
   "Switched artifact context": "تبديل سياق قطعة أثرية",
@@ -1084,6 +1202,7 @@ export const INTERFACE_TRANSLATIONS = {
   Team: "الفريق",
   "Temporarily avoided": "مستبعد مؤقتاً",
   "Temporary Workspace Agent context pins cleared": "تم مسح دبابيس السياق في مساحة العمل المؤقتة Agent.",
+  "Testing structured response…": "جارٍ اختبار الاستجابة المنظمة…",
   Text: "نص",
   "That checkpoint already matches the current source": "نقطة التفتيش هذه تتطابق بالفعل مع المصدر الحالي",
   "That file is too large. Choose one configuration smaller than 20 KB.":
@@ -1123,11 +1242,13 @@ export const INTERFACE_TRANSLATIONS = {
   "The layout is usable without material rework.": "التخطيط قابل للاستخدام دون إعادة عمل جوهرية.",
   "The model is preparing review questions from bounded aggregate evidence…":
     "يُعد النموذج أسئلة مراجعة من أدلة تجميعية محدودة…",
+  "The model is reading current context": "النموذج يقرأ السياق الحالي",
   "The model is shaping this presentation from bounded source evidence…":
     "يشكّل النموذج هذا العرض من أدلة مصدر محدودة…",
   "The numbers, structure, and language meet this task.": "الأرقام والبنية واللغة مناسبة لهذه المهمة.",
   "The original detail was too long and is truncated in this view.":
     "كانت التفاصيل الأصلية طويلة جدًا وقد اختُصرت في هذا العرض.",
+  "The PDF operation failed.": "فشلت عملية PDF.",
   "The result saves meaningful time over manual work.": "توفر النتيجة وقتًا ملحوظًا مقارنة بالعمل اليدوي.",
   "The user can understand what Orbit changed and why.": "يستطيع المستخدم فهم ما غيّره Orbit ولماذا.",
   "The web app cannot read application settings on your computer. You can still connect a model manually.":
@@ -1145,11 +1266,16 @@ export const INTERFACE_TRANSLATIONS = {
     "هذا المصدر لم يتغير؛ وتُعرض نتيجته المباشرة استنادًا إلى مساحة العمل المقترحة كاملة.",
   Title: "العنوان",
   To: "ل",
+  "To keep switching and typing responsive, this view shows the beginning first. The complete content remains in the Source editor.":
+    "للاستمرار في التبديل والكتابة بشكل مستجيب، يُظهر هذا العرض البداية أولاً. يبقى المحتوى الكامل في محرر Source.",
   "To protect credentials, Orbit does not import from remote config URLs.":
     "لحماية بيانات الاعتماد، لا يتم استيراد Orbit من عناوين URL للتكوين عن بعد.",
   tokens: "رمزاً",
   Top: "الأعلى",
   "Transaction map": "خريطة المعاملات",
+  "Translate imported canonical text through a reviewed Agent proposal.":
+    "ترجمة النص الأساسي المستورد من خلال اقتراح Agent الذي تمت مراجعته.",
+  "Translate PDF": "ترجمة PDF",
   "Trim the selection": "تقليم التحديد",
   "Try four shortcuts yourself": "جرّب أربعة اختصارات بنفسك",
   "Turn data into a verifiable review.": "حوّل البيانات إلى مراجعة قابلة للتحقق.",
@@ -1160,6 +1286,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Unknown source": "مصدر غير معروف",
   Unlinked: "غير مرتبط",
   "Unlinked artifacts": "التحف غير المرتبطة",
+  "Unlock PDF": "فتح PDF",
   "Unrelated files stay untouched; only the reviewed sources, images, and Orbit manifest are written.":
     "تبقى الملفات غير المرتبطة دون تغيير؛ ولا تُكتب إلا المصادر والصور وبيان Orbit التي تمت مراجعتها.",
   "Unresolved dependencies": "التبعيات التي لم يتم حلها",
@@ -1187,6 +1314,8 @@ export const INTERFACE_TRANSLATIONS = {
     "استخدم Orbit JSON أو رابط استيراد موفر واحد لـ CC Switch. يقوم Orbit بمراجعته أولاً ولا يحفظه على الفور.",
   "Use Orbit JSON or one ccswitch://v1/import provider link.":
     "استخدم Orbit JSON أو رابط موفر ccswitch://v1/import واحد.",
+  "Use Orbit's local text, table, and optional OCR importer to create Markdown.":
+    "استخدم النص المحلي والجدول والمستورد OCR المحلي لـ OCR لإنشاء Markdown.",
   "Use rectangular CSV with headers, or flat JSON containing scalar values.":
     "استخدم CSV مستطيلاً بعناوين، أو JSON مسطحًا يحتوي قيمًا قياسية.",
   "Use the selected cloud or device model; you still confirm every change":
@@ -1196,6 +1325,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Use this model connection?": "هل تريد استخدام هذا الاتصال؟",
   Valid: "صالح",
   Validated: "تم التحقق من صحتها",
+  "Validating the model result locally": "التحقق من صحة نتيجة النموذج محليا",
   "Value field": "حقل القيمة",
   "Values, definitions, and calculations are accurate.": "القيم والتعريفات والحسابات دقيقة.",
   "Verify & use": "التحقق والاستخدام",
@@ -1206,12 +1336,15 @@ export const INTERFACE_TRANSLATIONS = {
   "Verifying…": "جارٍ التحقق…",
   Version: "الإصدار",
   "Visible marks": "علامات مرئية",
+  "Visible signature": "توقيع مرئي",
   "Visual deliverability": "الجاهزية البصرية للتسليم",
   "Visual edit · complete source draft synced live": "التحرير المرئي · مشروع المصدر الكامل الذي تمت مزامنته مباشرة",
   "Visual edit held — the workspace changed during verification":
     "تم تعليق التحرير المرئي — تم تغيير مساحة العمل أثناء التحقق",
   "Visual edit rejected — device persistence failed": "تم رفض التحرير المرئي — فشل ثبات الجهاز",
   "Visual edit rejected — every source stayed unchanged": "تم رفض التعديل المرئي، وبقي كل مصدر دون تغيير",
+  Watermark: "العلامة المائية",
+  "Web page to PDF": "صفحة الويب إلى PDF",
   "Weekly operating review": "مراجعة تشغيلية أسبوعية",
   "Weekly review": "مراجعة أسبوعية",
   "Welcome & local guide": "الترحيب والدليل المحلي",

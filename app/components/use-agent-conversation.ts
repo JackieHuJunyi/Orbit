@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   AGENT_CONVERSATION_STORAGE_KEY,
   agentConversationContext,
@@ -32,17 +32,14 @@ export function useAgentConversation(hydrated: boolean) {
   const [messages, setMessages] = useState<AgentConversationMessage[]>([]);
   const loadedRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!hydrated || !loadedRef.current) return;
-    const timer = window.setTimeout(() => {
-      try {
-        if (messages.length) localStorage.setItem(AGENT_CONVERSATION_STORAGE_KEY, JSON.stringify(messages));
-        else localStorage.removeItem(AGENT_CONVERSATION_STORAGE_KEY);
-      } catch {
-        // Conversation stays available in memory when device storage is unavailable.
-      }
-    }, 180);
-    return () => window.clearTimeout(timer);
+    try {
+      if (messages.length) localStorage.setItem(AGENT_CONVERSATION_STORAGE_KEY, JSON.stringify(messages));
+      else localStorage.removeItem(AGENT_CONVERSATION_STORAGE_KEY);
+    } catch {
+      // Conversation stays available in memory when device storage is unavailable.
+    }
   }, [hydrated, messages]);
 
   const append = useCallback(

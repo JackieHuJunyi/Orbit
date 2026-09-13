@@ -2,10 +2,6 @@
 
 export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
-    "会让官方客户端完成一次不含文档内容的结构化响应",
-    "會讓官方客戶端完成一次不含文件內容的結構化響應"
-  ],
-  [
     "只有文件内容与本机工作区仍和本次审核完全一致时",
     "只有檔案內容與本機工作區仍和本次稽核完全一致時"
   ],
@@ -174,6 +170,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "圖表顯示主範圍減去對比範圍的變化"
   ],
   [
+    "完整内容始终保留在左侧源编辑器中",
+    "完整內容始終保留在左側源編輯器中"
+  ],
+  [
     "并选择当前工作区中唯一存在的指标",
     "並選擇當前工作區中唯一存在的指標"
   ],
@@ -248,6 +248,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "再保留当前工作区并打开内置示例",
     "再保留當前工作區並開啟內建範例"
+  ],
+  [
+    "再由所选模型生成需要审核的结果",
+    "再由所選模型生成需要稽核的結果"
   ],
   [
     "变化值按主范围减去对比范围计算",
@@ -438,10 +442,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "以及演示結束後要做出的判斷"
   ],
   [
-    "任何凭据都不会出现在列表中",
-    "任何憑據都不會出現在列表中"
-  ],
-  [
     "会先让你明确选择页码和英文",
     "會先讓你明確選擇頁碼和英文"
   ],
@@ -534,6 +534,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "確認圖片及其可讀源內容引用"
   ],
   [
+    "确认完整结果后再写入或下载",
+    "確認完整結果後再寫入或下載"
+  ],
+  [
     "结构和表达已经满足本次工作",
     "結構和表達已經滿足本次工作"
   ],
@@ -562,6 +566,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "這份演示已不再需要來源重新整理"
   ],
   [
+    "选择文件和参数后在本机执行",
+    "選擇檔案和引數後在本機執行"
+  ],
+  [
     "问题与决策提示必须由你审核",
     "問題與決策提示必須由你稽核"
   ],
@@ -574,6 +582,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "需要時再展開編譯器原始資訊"
   ],
   [
+    "首次对话仍由官方客户端执行",
+    "首次對話仍由官方客戶端執行"
+  ],
+  [
     "一次自动修复尝试后已停止",
     "一次自動修復嘗試後已停止"
   ],
@@ -584,10 +596,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "不会修改工作区或本机草稿",
     "不會修改工作區或本機草稿"
-  ],
-  [
-    "也不会在列表中展示密钥或",
-    "也不會在列表中展示金鑰或"
   ],
   [
     "也可以手动添加或导入连接",
@@ -612,6 +620,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "供辅助技术使用的图片说明",
     "供輔助技術使用的圖片說明"
+  ],
+  [
+    "先在本机提取为可读源内容",
+    "先在本機提取為可讀源內容"
   ],
   [
     "创建一条可核验经营汇报链",
@@ -786,6 +798,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "繫結以建立第一條即時關係"
   ],
   [
+    "继续后会直接保存模型选择",
+    "繼續後會直接儲存模型選擇"
+  ],
+  [
     "编号与仅精确到日期的时间",
     "編號與僅精確到日期的時間"
   ],
@@ -828,10 +844,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "一个绑定当前版本的章节",
     "一個綁定當前版本的章節"
-  ],
-  [
-    "一次扫描汇总已登录账号",
-    "一次掃描彙總已登入賬號"
   ],
   [
     "一页绑定当前版本的演示",
@@ -958,6 +970,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "已從規範源內容建立連結"
   ],
   [
+    "已在扫描时确认账号状态",
+    "已在掃描時確認賬號狀態"
+  ],
+  [
     "已引用图片与工作区清单",
     "已引用圖片與工作區清單"
   ],
@@ -1038,6 +1054,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "普通點選連結定位源內容"
   ],
   [
+    "桌面端在隔离环境中执行",
+    "桌面端在隔離環境中執行"
+  ],
+  [
+    "模型正在阅读当前上下文",
+    "模型正在閱讀當前上下文"
+  ],
+  [
     "正在加载并缓存语言模型",
     "正在載入並快取語言模型"
   ],
@@ -1102,6 +1126,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "跟隨版本更新的上下文包"
   ],
   [
+    "运行前请确认文件和选项",
+    "執行前請確認檔案和選項"
+  ],
+  [
     "选择或编辑一个精确章节",
     "選擇或編輯一個精確章節"
   ],
@@ -1142,8 +1170,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "不攜帶隱藏公式或指令碼"
   ],
   [
+    "不读取浏览器登录信息",
+    "不讀取瀏覽器登入資訊"
+  ],
+  [
     "两者都不会写入工作区",
     "兩者都不會寫入工作區"
+  ],
+  [
+    "为保持切换和输入流畅",
+    "為保持切換和輸入流暢"
   ],
   [
     "交付结果已记录在本机",
@@ -1266,10 +1302,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "恢復前後的規範源差異"
   ],
   [
-    "成功后只保存连接名称",
-    "成功後只儲存連線名稱"
-  ],
-  [
     "或使用不含脚本的语义",
     "或使用不含指令碼的語義"
   ],
@@ -1318,6 +1350,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "更新這條經營彙報任務"
   ],
   [
+    "未发现的服务不会占位",
+    "未發現的服務不會佔位"
+  ],
+  [
     "来源或设置未通过验证",
     "來源或設定未通過驗證"
   ],
@@ -1326,8 +1362,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "根據收入資料建立分析"
   ],
   [
+    "正在准备一次受限修复",
+    "正在準備一次受限修復"
+  ],
+  [
     "正在对照实时来源核验",
     "正在對照即時來源核驗"
+  ],
+  [
+    "正在本地验证模型结果",
+    "正在本地驗證模型結果"
   ],
   [
     "此文件的源内容未修改",
@@ -1422,6 +1466,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "選擇精確規範源單元格"
   ],
   [
+    "配置或正在运行的连接",
+    "配置或正在執行的連線"
+  ],
+  [
     "页面只在浏览器内渲染",
     "頁面只在瀏覽器內渲染"
   ],
@@ -1480,6 +1528,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "写入前先创建恢复点",
     "寫入前先建立恢復點"
+  ],
+  [
+    "功能仍遵循先审后写",
+    "功能仍遵循先審後寫"
   ],
   [
     "即可保存当前源内容",
@@ -1678,6 +1730,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在核驗即時源內容"
   ],
   [
+    "正在测试结构化响应",
+    "正在測試結構化響應"
+  ],
+  [
     "每份内容都保持可读",
     "每份內容都保持可讀"
   ],
@@ -1758,6 +1814,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "這次演示要推動什麼"
   ],
   [
+    "这里先显示文档开头",
+    "這裡先顯示文件開頭"
+  ],
+  [
+    "选择并审核目标格式",
+    "選擇並稽核目標格式"
+  ],
+  [
     "选择或编辑文档章节",
     "選擇或編輯文件章節"
   ],
@@ -1806,6 +1870,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "主題色十六進位制值"
   ],
   [
+    "也不会展示密钥或",
+    "也不會展示金鑰或"
+  ],
+  [
     "仍可手动连接模型",
     "仍可手動連線模型"
   ],
@@ -1844,6 +1912,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "使用带表头的矩形",
     "使用帶表頭的矩形"
+  ],
+  [
+    "依据和待确认问题",
+    "依據和待確認問題"
   ],
   [
     "保存到规范源内容",
@@ -2018,6 +2090,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "已恢復範例工作區"
   ],
   [
+    "已打开匹配的本地",
+    "已開啟匹配的本地"
+  ],
+  [
     "已清除临时工作区",
     "已清除臨時工作區"
   ],
@@ -2088,6 +2164,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "文件身份保持不变",
     "檔案身份保持不變"
+  ],
+  [
+    "文件默认留在本机",
+    "檔案預設留在本機"
   ],
   [
     "文档演示任务设置",
@@ -2190,12 +2270,24 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在準備重新執行"
   ],
   [
+    "正在启动所选模型",
+    "正在啟動所選模型"
+  ],
+  [
     "正在编辑精确章节",
     "正在編輯精確章節"
   ],
   [
+    "正在读取可用模型",
+    "正在讀取可用模型"
+  ],
+  [
     "正在读取模型配置",
     "正在讀取模型配置"
+  ],
+  [
+    "正在读取这个连接",
+    "正在讀取這個連線"
   ],
   [
     "每一页可单独设置",
@@ -2246,6 +2338,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "結果仍有關鍵錯誤"
   ],
   [
+    "结果确认后再下载",
+    "結果確認後再下載"
+  ],
+  [
     "编译后的成品预览",
     "編譯後的成品預覽"
   ],
@@ -2278,6 +2374,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "請先檢查以下設定"
   ],
   [
+    "请先确认准备好的",
+    "請先確認準備好的"
+  ],
+  [
     "请取消并重新导入",
     "請取消並重新匯入"
   ],
@@ -2288,6 +2388,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "请确认页码和语言",
     "請確認頁碼和語言"
+  ],
+  [
+    "请选择源文件进入",
+    "請選擇原始檔進入"
   ],
   [
     "转换和确定性工具",
@@ -2332,10 +2436,6 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "上下文中的内容",
     "上下文中的內容"
-  ],
-  [
-    "不会读取浏览器",
-    "不會讀取瀏覽器"
   ],
   [
     "不会进入工作区",
@@ -2506,6 +2606,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "原子持久化失敗"
   ],
   [
+    "原文件保持不变",
+    "原檔案保持不變"
+  ],
+  [
     "发送后加密进入",
     "傳送後加密進入"
   ],
@@ -2524,6 +2628,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "只显示实时成品",
     "只顯示即時成品"
+  ],
+  [
+    "只显示实际安装",
+    "只顯示實際安裝"
   ],
   [
     "可以创建新演示",
@@ -2566,8 +2674,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "塊左側還能新增"
   ],
   [
+    "大文档快速预览",
+    "大文件快速預覽"
+  ],
+  [
     "它不能单独证明",
     "它不能單獨證明"
+  ],
+  [
+    "安全与智能处理",
+    "安全與智慧處理"
   ],
   [
     "审核后才会写入",
@@ -2618,6 +2734,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "工作區切換詳情"
   ],
   [
+    "已停止模型请求",
+    "已停止模型請求"
+  ],
+  [
     "已关闭当前文件",
     "已關閉當前檔案"
   ],
@@ -2664,6 +2784,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "并由浏览器缓存",
     "並由瀏覽器快取"
+  ],
+  [
+    "总结这份导入的",
+    "總結這份匯入的"
   ],
   [
     "恢复最近恢复点",
@@ -2830,6 +2954,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正文定位按鈕按"
   ],
   [
+    "每行或逗号分隔",
+    "每行或逗號分隔"
+  ],
+  [
     "没有匹配的操作",
     "沒有匹配的操作"
   ],
@@ -2974,6 +3102,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "頁面影像不上傳"
   ],
   [
+    "预览与导出流程",
+    "預覽與匯出流程"
+  ],
+  [
     "预览并框选区域",
     "預覽並框選區域"
   ],
@@ -3010,12 +3142,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "上下文固定項"
   ],
   [
-    "上的可用连接",
-    "上的可用連線"
+    "上发现的连接",
+    "上發現的連線"
   ],
   [
     "下载使用标准",
     "下載使用標準"
+  ],
+  [
+    "下载前请确认",
+    "下載前請確認"
   ],
   [
     "下载包含版式",
@@ -3126,6 +3262,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "保留在資料夾"
   ],
   [
+    "停止模型请求",
+    "停止模型請求"
+  ],
+  [
     "先添加源内容",
     "先新增源內容"
   ],
@@ -3144,6 +3284,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "内容块源内容",
     "內容塊源內容"
+  ],
+  [
+    "内容没有变化",
+    "內容沒有變化"
   ],
   [
     "内嵌配置无效",
@@ -3172,6 +3316,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "切换专注视图",
     "切換專注檢視"
+  ],
+  [
+    "列出核心结论",
+    "列出核心結論"
   ],
   [
     "创建可编辑的",
@@ -3318,6 +3466,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "已是當前版本"
   ],
   [
+    "已知应用配置",
+    "已知應用配置"
+  ],
+  [
     "已经是第一个",
     "已經是第一個"
   ],
@@ -3360,6 +3512,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "打开本地指南",
     "開啟本地指南"
+  ],
+  [
+    "把这份导入的",
+    "把這份匯入的"
   ],
   [
     "按下对应按键",
@@ -3474,6 +3630,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在加密儲存"
   ],
   [
+    "正在安全保存",
+    "正在安全儲存"
+  ],
+  [
     "正在安全切换",
     "正在安全切換"
   ],
@@ -3488,6 +3648,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "正在本地运行",
     "正在本地執行"
+  ],
+  [
+    "正在本机处理",
+    "正在本機處理"
   ],
   [
     "正在编辑完整",
@@ -3528,6 +3692,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "源内容与版本",
     "源內容與版本"
+  ],
+  [
+    "源内容已导入",
+    "源內容已匯入"
   ],
   [
     "源内容编辑器",
@@ -3910,6 +4078,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "可重複執行"
   ],
   [
+    "可随时停止",
+    "可隨時停止"
+  ],
+  [
     "各区域收入",
     "各區域收入"
   ],
@@ -4100,6 +4272,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "文档转演示",
     "文件轉演示"
+  ],
+  [
+    "新页面顺序",
+    "新頁面順序"
+  ],
+  [
+    "暗号化認証",
+    "暗號化認証"
   ],
   [
     "未关联内容",
@@ -4306,6 +4486,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "證據已連線"
   ],
   [
+    "请求再发送",
+    "請求再發送"
+  ],
+  [
     "请选择受众",
     "請選擇受眾"
   ],
@@ -4398,12 +4582,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "上次儲存"
   ],
   [
+    "下拉选项",
+    "下拉選項"
+  ],
+  [
     "下载匿名",
     "下載匿名"
   ],
   [
     "不会写入",
     "不會寫入"
+  ],
+  [
+    "不会执行",
+    "不會執行"
   ],
   [
     "与字段名",
@@ -4486,6 +4678,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "份源內容"
   ],
   [
+    "优化修复",
+    "最佳化修復"
+  ],
+  [
     "会把分析",
     "會把分析"
   ],
@@ -4520,6 +4716,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "保留一个",
     "保留一個"
+  ],
+  [
+    "保留标题",
+    "保留標題"
   ],
   [
     "保真说明",
@@ -4590,6 +4790,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "建立彙報"
   ],
   [
+    "删除页面",
+    "刪除頁面"
+  ],
+  [
+    "加密保护",
+    "加密保護"
+  ],
+  [
     "参照画像",
     "參照畫像"
   ],
@@ -4630,6 +4838,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "可見圖形"
   ],
   [
+    "可见签名",
+    "可見簽名"
+  ],
+  [
     "可证明时",
     "可證明時"
   ],
@@ -4662,6 +4874,18 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "基礎地址"
   ],
   [
+    "处理失败",
+    "處理失敗"
+  ],
+  [
+    "处理完成",
+    "處理完成"
+  ],
+  [
+    "处理结果",
+    "處理結果"
+  ],
+  [
     "変更内容",
     "変更內容"
   ],
@@ -4670,8 +4894,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "始終排除"
   ],
   [
+    "字段名称",
+    "欄位名稱"
+  ],
+  [
     "字段映射",
     "欄位對映"
+  ],
+  [
+    "字段类型",
+    "欄位型別"
+  ],
+  [
+    "安全签署",
+    "安全簽署"
   ],
   [
     "实时同步",
@@ -4704,6 +4940,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "审核插入",
     "稽核插入"
+  ],
+  [
+    "审核流程",
+    "稽核流程"
   ],
   [
     "审核问题",
@@ -4798,6 +5038,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "建議操作"
   ],
   [
+    "开始处理",
+    "開始處理"
+  ],
+  [
     "当前主题",
     "當前主題"
   ],
@@ -4866,6 +5110,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "執行團隊"
   ],
   [
+    "扫描件转",
+    "掃描件轉"
+  ],
+  [
+    "扫描识别",
+    "掃描識別"
+  ],
+  [
     "报告周期",
     "報告週期"
   ],
@@ -4880,6 +5132,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "提出改动",
     "提出改動"
+  ],
+  [
+    "提取图片",
+    "提取圖片"
+  ],
+  [
+    "提取页面",
+    "提取頁面"
   ],
   [
     "提案预览",
@@ -4918,12 +5178,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "資料範圍"
   ],
   [
+    "整理页面",
+    "整理頁面"
+  ],
+  [
     "文件大小",
     "檔案大小"
   ],
   [
     "文件补丁",
     "檔案補丁"
+  ],
+  [
+    "文字识别",
+    "文字識別"
   ],
   [
     "文本文件",
@@ -4954,6 +5222,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "方向正確"
   ],
   [
+    "旋转角度",
+    "旋轉角度"
+  ],
+  [
+    "旋转页面",
+    "旋轉頁面"
+  ],
+  [
     "无序列表",
     "無序列表"
   ],
@@ -4974,12 +5250,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "明確交付"
   ],
   [
+    "明确审核",
+    "明確稽核"
+  ],
+  [
     "明确选择",
     "明確選擇"
   ],
   [
     "是可读源",
     "是可讀源"
+  ],
+  [
+    "智能处理",
+    "智慧處理"
   ],
   [
     "智能设置",
@@ -5008,6 +5292,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "本地准备",
     "本地準備"
+  ],
+  [
+    "本地处理",
+    "本地處理"
   ],
   [
     "本地来源",
@@ -5058,6 +5346,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "來源身份"
   ],
   [
+    "格式转换",
+    "格式轉換"
+  ],
+  [
     "检查配置",
     "檢查配置"
   ],
@@ -5102,6 +5394,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在驗證"
   ],
   [
+    "永久涂黑",
+    "永久塗黑"
+  ],
+  [
     "汇总方式",
     "彙總方式"
   ],
@@ -5120,6 +5416,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "添加条件",
     "新增條件"
+  ],
+  [
+    "添加水印",
+    "新增水印"
+  ],
+  [
+    "添加页码",
+    "新增頁碼"
   ],
   [
     "清除对话",
@@ -5170,6 +5474,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "的演示頁"
   ],
   [
+    "目标语言",
+    "目標語言"
+  ],
+  [
     "相关引用",
     "相關引用"
   ],
@@ -5192,6 +5500,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "移除临时",
     "移除臨時"
+  ],
+  [
+    "移除密码",
+    "移除密碼"
   ],
   [
     "移除条件",
@@ -5252,6 +5564,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "继续设置",
     "繼續設定"
+  ],
+  [
+    "编辑标注",
+    "編輯標註"
   ],
   [
     "编辑精确",
@@ -5322,6 +5638,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "執行歷史"
   ],
   [
+    "选择文件",
+    "選擇檔案"
+  ],
+  [
     "选择需要",
     "選擇需要"
   ],
@@ -5358,6 +5678,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "需要處理"
   ],
   [
+    "页面整理",
+    "頁面整理"
+  ],
+  [
     "页面语言",
     "頁面語言"
   ],
@@ -5372,6 +5696,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "默认关闭",
     "預設關閉"
+  ],
+  [
+    "默认勾选",
+    "預設勾選"
   ],
   [
     "默认模型",
@@ -5428,6 +5756,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "中打开",
     "中開啟"
+  ],
+  [
+    "中继续",
+    "中繼續"
   ],
   [
     "主题色",
@@ -5546,12 +5878,20 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "圖片和"
   ],
   [
+    "图片转",
+    "圖片轉"
+  ],
+  [
     "图表和",
     "圖表和"
   ],
   [
     "在分栏",
     "在分欄"
+  ],
+  [
+    "复选框",
+    "核取方塊"
   ],
   [
     "对比行",
@@ -5722,6 +6062,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "的圖表"
   ],
   [
+    "的导入",
+    "的匯入"
+  ],
+  [
     "的眉题",
     "的眉題"
   ],
@@ -5756,6 +6100,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "编辑器",
     "編輯器"
+  ],
+  [
+    "网页转",
+    "網頁轉"
+  ],
+  [
+    "翻译为",
+    "翻譯為"
   ],
   [
     "自定义",
@@ -5804,6 +6156,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "超凡蓝",
     "超凡藍"
+  ],
+  [
+    "转图片",
+    "轉圖片"
+  ],
+  [
+    "转换为",
+    "轉換為"
   ],
   [
     "输入框",
@@ -5866,6 +6226,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "任務"
   ],
   [
+    "优化",
+    "最佳化"
+  ],
+  [
     "会話",
     "會話"
   ],
@@ -5882,12 +6246,24 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "儲存"
   ],
   [
+    "保护",
+    "保護"
+  ],
+  [
+    "修复",
+    "修復"
+  ],
+  [
     "全体",
     "全體"
   ],
   [
     "全局",
     "全域性"
+  ],
+  [
+    "公开",
+    "公開"
   ],
   [
     "关闭",
@@ -5916,6 +6292,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "写回",
     "寫回"
+  ],
+  [
+    "写真",
+    "寫真"
   ],
   [
     "决策",
@@ -5998,6 +6378,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "變化"
   ],
   [
+    "叠加",
+    "疊加"
+  ],
+  [
     "口径",
     "口徑"
   ],
@@ -6012,6 +6396,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "可选",
     "可選"
+  ],
+  [
+    "合并",
+    "合併"
   ],
   [
     "启用",
@@ -6076,6 +6464,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "客户",
     "客戶"
+  ],
+  [
+    "密码",
+    "密碼"
   ],
   [
     "密钥",
@@ -6146,6 +6538,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "従來"
   ],
   [
+    "总结",
+    "總結"
+  ],
+  [
     "总计",
     "總計"
   ],
@@ -6186,6 +6582,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "描畫"
   ],
   [
+    "搜索",
+    "搜尋"
+  ],
+  [
     "支持",
     "支援"
   ],
@@ -6220,6 +6620,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "斜体",
     "斜體"
+  ],
+  [
+    "旋转",
+    "旋轉"
   ],
   [
     "无效",
@@ -6298,6 +6702,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "浮動"
   ],
   [
+    "涂黑",
+    "塗黑"
+  ],
+  [
     "深蓝",
     "深藍"
   ],
@@ -6320,6 +6728,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "番号",
     "番號"
+  ],
+  [
+    "登录",
+    "登入"
   ],
   [
     "目录",
@@ -6352,6 +6764,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "等于",
     "等於"
+  ],
+  [
+    "签名",
+    "簽名"
+  ],
+  [
+    "签署",
+    "簽署"
   ],
   [
     "简中",
@@ -6406,6 +6826,14 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "編輯"
   ],
   [
+    "网址",
+    "網址"
+  ],
+  [
+    "翻译",
+    "翻譯"
+  ],
+  [
     "聴衆",
     "聴眾"
   ],
@@ -6434,6 +6862,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "行數"
   ],
   [
+    "表单",
+    "表單"
+  ],
+  [
     "裏付",
     "裡付"
   ],
@@ -6452,6 +6884,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "规范",
     "規範"
+  ],
+  [
+    "解锁",
+    "解鎖"
   ],
   [
     "計画",
@@ -6486,6 +6922,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "語言"
   ],
   [
+    "请从",
+    "請從"
+  ],
+  [
     "请用",
     "請用"
   ],
@@ -6506,6 +6946,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "跳過"
   ],
   [
+    "转换",
+    "轉換"
+  ],
+  [
     "输入",
     "輸入"
   ],
@@ -6518,6 +6962,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "這臺"
   ],
   [
+    "进入",
+    "進入"
+  ],
+  [
     "选区",
     "選區"
   ],
@@ -6526,8 +6974,16 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "選擇"
   ],
   [
+    "选项",
+    "選項"
+  ],
+  [
     "連携",
     "連攜"
+  ],
+  [
+    "遮盖",
+    "遮蓋"
   ],
   [
     "金额",
@@ -6564,6 +7020,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "页码",
     "頁碼"
+  ],
+  [
+    "页面",
+    "頁面"
   ],
   [
     "項目",
@@ -6640,6 +7100,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "让",
     "讓"
+  ],
+  [
+    "转",
+    "轉"
   ],
   [
     "页",

@@ -139,7 +139,7 @@ try {
   await cp(iconPath, path.join(resourcesPath, "orbit.icns"));
 
   await mkdir(payloadDirectory, { recursive: true });
-  for (const relative of ["dist", "desktop", "package.json", "THIRD_PARTY_NOTICES.md"]) {
+  for (const relative of ["dist", "desktop", "shared", "package.json", "THIRD_PARTY_NOTICES.md"]) {
     await cp(path.join(root, relative), path.join(payloadDirectory, relative), {
       recursive: true,
       verbatimSymlinks: true,
@@ -147,7 +147,12 @@ try {
   }
   await createPackageWithOptions(payloadDirectory, appAsarPath, { dot: true, unpack: "**/*.node" });
   const packagedFiles = listPackage(appAsarPath, { isPack: false });
-  for (const required of ["/package.json", "/desktop/main.mjs", "/dist/server/index.js"]) {
+  for (const required of [
+    "/package.json",
+    "/desktop/main.mjs",
+    "/shared/account-model-catalog.mjs",
+    "/dist/server/index.js",
+  ]) {
     if (!packagedFiles.includes(required)) throw new Error(`The packaged ASAR is missing ${required}.`);
   }
   if (packagedFiles.some((file) => /^\/(?:app|tests?|e2e|docs|scripts|node_modules)\//u.test(file))) {

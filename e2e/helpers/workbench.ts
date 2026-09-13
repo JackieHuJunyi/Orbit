@@ -12,6 +12,7 @@ export async function openWorkbench(page: Page) {
 
 export async function selectWorkspaceFile(page: Page, name: string) {
   await page.locator("aside.file-rail").getByText(name, { exact: true }).click();
+  await expect(page.getByRole("textbox", { name: `Edit ${name} source` })).toBeVisible();
 }
 
 export async function importTextSource(page: Page, file: { name: string; mimeType: string; source: string }) {

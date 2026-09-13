@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { sourceSelectionScrollTop } from "../app/lib/source-editor-scroll.ts";
+import { sourceEditorPresentation, sourceSelectionScrollTop } from "../app/lib/source-editor-scroll.ts";
 
 const source = Array.from({ length: 100 }, (_, index) => `line ${index + 1}`).join("\n");
 
@@ -53,6 +53,8 @@ test("clamps first and last source targets and handles a non-scrollable editor",
     }),
     0,
   );
+  assert.equal(sourceEditorPresentation("a\nb").lineNumbers, "1\n2");
+  assert.deepEqual(sourceEditorPresentation("x".repeat(250_001)), { large: true, lineNumbers: "" });
 });
 
 test("workbench applies preview selection, source scrolling, and gutter synchronization together", async () => {

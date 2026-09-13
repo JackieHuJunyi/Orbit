@@ -182,6 +182,10 @@ test("keeps both welcome lines inside one licensed, path-timed typeface system",
     assert.match(glyphData, new RegExp(`"${character}"`));
   }
   assert.match(onboarding, /\.welcome-backdrop\[data-intro-phase="writing"\]\s*\{[^}]*background:\s*#050506;/s);
+  assert.match(
+    onboarding,
+    /\.welcome-language-heading \.welcome-written-eyebrow\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s,
+  );
   assert.doesNotMatch(motion, /@keyframes orbit-greeting-(?:write|ink-settle)/);
   assert.match(motion, /@keyframes orbit-setup-unfold/);
   assert.doesNotMatch(experience, /WelcomeAmbientMotion|greetingCycleDuration|setGreetingIndex/);

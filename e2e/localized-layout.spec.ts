@@ -195,6 +195,17 @@ for (const viewport of VIEWPORTS) {
         await expect(settingsMenu).toBeHidden();
         await expect(settingsTrigger).toBeFocused();
 
+        await settingsTrigger.press("ArrowDown");
+        await expect(settingsMenu).toBeVisible();
+        await settingsMenu.locator('[data-settings-action="pdf-tools"]').click();
+        const pdfTools = page.locator(".pdf-tool-window");
+        await expect(pdfTools).toBeVisible();
+        await expect(pdfTools.locator(".pdf-tool-list button")).toHaveCount(36);
+        await expectInsideViewport(page, pdfTools);
+        await expectNoDocumentOverflow(page);
+        await pdfTools.locator(":scope > header > button").click();
+        await expect(pdfTools).toBeHidden();
+
         await page.evaluate(() =>
           window.dispatchEvent(
             new KeyboardEvent("keydown", { key: "w", ctrlKey: true, bubbles: true, cancelable: true }),

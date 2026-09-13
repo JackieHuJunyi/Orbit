@@ -19,6 +19,7 @@ test("keeps task definitions pure and outside the React or persistence boundary"
 test("composes multiple tasks through declared capabilities, exact import identity, and typed continuations", async () => {
   const [
     workbench,
+    workspaceArtifactList,
     frameControls,
     empty,
     reviewDialog,
@@ -37,6 +38,7 @@ test("composes multiple tasks through declared capabilities, exact import identi
     shellStyles,
   ] = await Promise.all([
     source("../app/components/orbit-workbench.tsx"),
+    source("../app/components/workspace-artifact-list.tsx"),
     source("../app/components/workspace-frame-controls.tsx"),
     source("../app/components/empty-workspace.tsx"),
     source("../app/components/import-review-dialog.tsx"),
@@ -143,9 +145,9 @@ test("composes multiple tasks through declared capabilities, exact import identi
   assert.match(workbench, /planningKind: "task-outline"/);
   assert.match(workbench, /planningKind: "task-narrative"/);
   assert.match(workbench, /documentBriefingTargetsById/);
-  assert.match(workbench, /briefingFreshness === "changed"/);
+  assert.match(workspaceArtifactList, /freshness === "changed"/);
   assert.match(workbench, /function reviewLinkedPresentationRefresh\(artifactId: string\)/);
-  assert.match(workbench, /onClick=\{\(\) => reviewLinkedPresentationRefresh\(artifact\.id\)\}/);
+  assert.match(workspaceArtifactList, /onClick=\{\(\) => onReviewRefresh\(artifact\.id\)\}/);
   assert.match(workbench, /openDocumentBriefingForArtifact\(target\)/);
   const directRefresh = workbench.slice(
     workbench.indexOf("function reviewLinkedPresentationRefresh"),

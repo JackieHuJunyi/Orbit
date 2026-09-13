@@ -7,8 +7,10 @@ import {
   exportLegacyOfficeFile,
   importDesktopModelConnection,
   legacyOfficeFileName,
+  renderDesktopWebPdf,
   supportsLegacyOfficeDesktopConversion,
   supportsLegacyOfficeDesktopExport,
+  supportsDesktopWebPdf,
 } from "../app/lib/desktop-bridge.ts";
 
 function fakeFile(name, bytes) {
@@ -51,6 +53,22 @@ test("accepts one bounded converted OOXML package from the desktop bridge", asyn
   const result = await convertLegacyOfficeFile(fakeFile("brief.doc", [1, 2, 3]));
   assert.equal(result.fileName, "brief.docx");
   assert.deepEqual(result.bytes, new Uint8Array([80, 75, 3, 4]));
+  delete globalThis.window;
+});
+
+test("accepts one bounded Web-to-PDF result through the desktop-only bridge", async () => {
+  globalThis.window = {
+    orbitDesktop: {
+      async renderWebPdf(url) {
+        assert.equal(url, "https://example.com/report");
+        return { fileName: "example.com.pdf", bytes: new Uint8Array([37, 80, 68, 70, 45]) };
+      },
+    },
+  };
+  assert.equal(supportsDesktopWebPdf(), true);
+  const result = await renderDesktopWebPdf("https://example.com/report");
+  assert.equal(result.name, "example.com.pdf");
+  assert.deepEqual(result.bytes, new Uint8Array([37, 80, 68, 70, 45]));
   delete globalThis.window;
 });
 

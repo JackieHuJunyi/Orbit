@@ -36,3 +36,12 @@ export function sourceSelectionScrollTop({
   const selectionCenter = ((firstLine + lastLine + 1) / 2) * lineHeight;
   return Math.max(0, Math.min(scrollHeight - viewportHeight, selectionCenter - viewportHeight / 2));
 }
+export function sourceEditorPresentation(source: string) {
+  const large = source.length > 250_000;
+  return {
+    large,
+    lineNumbers: large
+      ? ""
+      : Array.from({ length: source.split("\n").length || 1 }, (_, index) => index + 1).join("\n"),
+  } as const;
+}

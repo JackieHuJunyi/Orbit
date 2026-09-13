@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "public/duckdb/**",
     "public/ocr/**",
+    "public/qpdf/qpdf.js",
+    "public/qpdf/qpdf.wasm",
+    "public/ghostscript/gs.js",
+    "public/ghostscript/gs.wasm",
     "next-env.d.ts",
   ]),
 ]);

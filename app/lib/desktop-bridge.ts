@@ -66,6 +66,7 @@ type OrbitDesktopApi = {
   }>;
   discoverModels(): Promise<unknown>;
   importDiscoveredModel(id: string): Promise<unknown>;
+  renderWebPdf(url: string): Promise<unknown>;
 };
 
 declare global {
@@ -92,6 +93,23 @@ export function supportsDesktopModelDiscovery() {
     typeof window.orbitDesktop?.discoverModels === "function" &&
     typeof window.orbitDesktop?.importDiscoveredModel === "function"
   );
+}
+
+export function supportsDesktopWebPdf() {
+  return typeof window !== "undefined" && typeof window.orbitDesktop?.renderWebPdf === "function";
+}
+
+export async function renderDesktopWebPdf(url: string) {
+  if (!supportsDesktopWebPdf()) throw new Error("Web to PDF is available in the Orbit desktop app.");
+  const result = await window.orbitDesktop!.renderWebPdf(url);
+  if (!result || typeof result !== "object") throw new Error("Orbit Desktop returned an invalid PDF.");
+  const item = result as { bytes?: unknown; fileName?: unknown };
+  const bytes = resultBytes(item.bytes as Uint8Array | ArrayBuffer | number[]);
+  const fileName = boundedBridgeText(item.fileName, 180);
+  if (!bytes.length || !fileName.toLocaleLowerCase().endsWith(".pdf")) {
+    throw new Error("Orbit Desktop returned an invalid PDF.");
+  }
+  return { bytes, name: fileName, type: "application/pdf" } as const;
 }
 
 function modelProvider(value: unknown): DiscoveredModelConnection["provider"] | null {

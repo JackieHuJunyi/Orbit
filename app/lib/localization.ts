@@ -276,6 +276,8 @@ function buildOrbitUICopy(locale: "zh-CN" | "en") {
       storageFull: zh ? "存储空间不足" : "Storage full",
       help: zh ? "欢迎与本地指南" : "Welcome & local guide",
       models: zh ? "模型配置" : "Model settings",
+      pdfTools: zh ? "PDF 工具" : "PDF tools",
+      pdfToolsBody: zh ? "整理、转换、编辑、安全与智能处理" : "Organize, convert, edit, secure, and understand PDFs",
       appearance: zh ? "外观" : "Appearance",
       moreTools: zh ? "更多工具" : "More tools",
       workspaceTools: zh ? "工作区工具" : "Workspace tools",
@@ -340,6 +342,13 @@ function buildOrbitUICopy(locale: "zh-CN" | "en") {
         : "Ask about this selection or describe a change confined to it…",
       askFile: zh ? "询问当前文件，或描述你希望做出的修改…" : "Ask about this file or describe the change you want…",
       planChange: zh ? "发送给 Orbit" : "Send to Orbit",
+      stopModel: zh ? "停止模型请求" : "Stop model request",
+      modelStarting: zh ? "正在启动所选模型" : "Starting the selected model",
+      modelReading: zh ? "模型正在阅读当前上下文" : "The model is reading current context",
+      modelWaiting: zh ? "仍在等待，可随时停止" : "Still waiting; you can stop",
+      modelQueryEvidence: zh ? "正在本地读取 Query 结果" : "Reading current Query results locally",
+      modelValidating: zh ? "正在本地验证模型结果" : "Validating the model result locally",
+      modelRepairing: zh ? "正在准备一次受限修复" : "Preparing one bounded repair",
       planHint: zh
         ? "Enter 发送 · Shift Enter 换行 · 所有写入仍需审核"
         : "Enter to send · Shift Enter for a new line · every write still requires review",
@@ -1224,6 +1233,10 @@ function buildOrbitUICopy(locale: "zh-CN" | "en") {
       createEditableDeck: zh ? "创建可编辑的 Deck Markdown 演示" : "Create an editable Deck Markdown presentation",
       renderedPresentation: zh ? "已渲染演示预览" : "Rendered presentation preview",
       startWriting: zh ? "开始输入即可编译预览。" : "Start writing to compile a preview.",
+      largeDocument: zh ? "大文档快速预览" : "Large document quick preview",
+      largeDocumentBody: zh
+        ? "为保持切换和输入流畅，这里先显示文档开头；完整内容始终保留在左侧源编辑器中。"
+        : "To keep switching and typing responsive, this view shows the beginning first. The complete content remains in the Source editor.",
       formattingLabels: {
         bold: zh ? "粗体" : "Bold",
         italic: zh ? "斜体" : "Italic",
