@@ -49,6 +49,7 @@ process.env.ORBIT_DESKTOP_RUNTIME = "1";
 async function initializeDesktopCredentialVault() {
   const configuredKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY?.trim();
   if (/^[a-f0-9]{64}$/.test(configuredKey ?? "")) return true;
+  if (await isInternalQaBuild()) return initializeInternalQaCredentialVault();
   if (!safeStorage.isEncryptionAvailable()) return false;
   const userDataDirectory = app.getPath("userData");
   const encryptedPath = path.join(userDataDirectory, "credential-vault-key.bin");
@@ -63,6 +64,39 @@ async function initializeDesktopCredentialVault() {
     try {
       await writeFile(temporaryPath, safeStorage.encryptString(key), { mode: 0o600, flag: "wx" });
       await rename(temporaryPath, encryptedPath);
+    } finally {
+      await rm(temporaryPath, { force: true });
+    }
+  }
+  if (!/^[a-f0-9]{64}$/.test(key)) return false;
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = key;
+  return true;
+}
+
+async function isInternalQaBuild() {
+  if (!app.isPackaged) return false;
+  try {
+    const channel = JSON.parse(await readFile(path.join(desktopDirectory, "build-channel.json"), "utf8"));
+    return channel?.channel === "internal-qa";
+  } catch {
+    return false;
+  }
+}
+
+async function initializeInternalQaCredentialVault() {
+  const userDataDirectory = app.getPath("userData");
+  const keyPath = path.join(userDataDirectory, "credential-vault-key.internal-qa");
+  let key;
+  try {
+    key = (await readFile(keyPath, "utf8")).trim();
+  } catch (error) {
+    if (error?.code !== "ENOENT") return false;
+    key = randomBytes(32).toString("hex");
+    await mkdir(userDataDirectory, { recursive: true, mode: 0o700 });
+    const temporaryPath = `${keyPath}.${process.pid}.tmp`;
+    try {
+      await writeFile(temporaryPath, `${key}\n`, { mode: 0o600, flag: "wx" });
+      await rename(temporaryPath, keyPath);
     } finally {
       await rm(temporaryPath, { force: true });
     }
@@ -176,6 +210,18 @@ async function loadDesktopWorkspace(window, url) {
     }
   }
   throw lastError instanceof Error ? lastError : new Error("Orbit Desktop could not load its local workspace.");
+}
+
+async function waitForQaWorkspaceHydration(window) {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if (window.isDestroyed()) throw new Error("Orbit Desktop closed before the workspace hydrated.");
+    const hydrated = await window.webContents
+      .executeJavaScript('document.querySelector("main[data-orbit-hydrated=\\"true\\"]") !== null', true)
+      .catch(() => false);
+    if (hydrated) return;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error("Orbit Desktop did not hydrate its workspace within 30 seconds.");
 }
 
 function safePublicWebUrl(value) {
@@ -349,8 +395,17 @@ async function createOrbitWindow() {
     const workspaceOrigin = new URL(orbitServer.url).origin;
     if (new URL(target).origin !== workspaceOrigin) event.preventDefault();
   });
+  if (qaProfileDirectory) {
+    window.webContents.on("did-fail-load", (_event, code, description) =>
+      console.error(`[Orbit QA] window load failed ${code} ${description}`),
+    );
+  }
   try {
     await loadDesktopWorkspace(window, orbitServer.url);
+    if (qaProfileDirectory) {
+      await waitForQaWorkspaceHydration(window);
+      console.error("[Orbit QA] renderer hydrated");
+    }
     if (!window.isDestroyed()) {
       window.show();
     }

@@ -49,7 +49,7 @@ if (!architectures.trim().split(/\s+/u).includes(expectedBinaryArchitecture)) {
 const fuseWire = await getCurrentFuseWire(appPath);
 for (const [option, state] of [
   [FuseV1Options.RunAsNode, FuseState.DISABLE],
-  [FuseV1Options.EnableCookieEncryption, FuseState.ENABLE],
+  [FuseV1Options.EnableCookieEncryption, manifest.channel === "release" ? FuseState.ENABLE : FuseState.DISABLE],
   [FuseV1Options.EnableNodeOptionsEnvironmentVariable, FuseState.DISABLE],
   [FuseV1Options.EnableNodeCliInspectArguments, FuseState.DISABLE],
   [FuseV1Options.EnableEmbeddedAsarIntegrityValidation, FuseState.ENABLE],

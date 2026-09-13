@@ -145,11 +145,17 @@ try {
       verbatimSymlinks: true,
     });
   }
+  await writeFile(
+    path.join(payloadDirectory, "desktop", "build-channel.json"),
+    `${JSON.stringify({ channel: internalQa ? "internal-qa" : "release" })}\n`,
+    "utf8",
+  );
   await createPackageWithOptions(payloadDirectory, appAsarPath, { dot: true, unpack: "**/*.node" });
   const packagedFiles = listPackage(appAsarPath, { isPack: false });
   for (const required of [
     "/package.json",
     "/desktop/main.mjs",
+    "/desktop/build-channel.json",
     "/shared/account-model-catalog.mjs",
     "/dist/server/index.js",
   ]) {
@@ -185,7 +191,10 @@ try {
     resetAdHocDarwinSignature: true,
     strictlyRequireAllFuses: true,
     [FuseV1Options.RunAsNode]: false,
-    [FuseV1Options.EnableCookieEncryption]: true,
+    // Chromium cookie encryption uses the macOS Keychain and requires a stable
+    // signing identity. Ad-hoc internal builds do not persist provider login
+    // cookies, so enabling it there can block the first loopback navigation.
+    [FuseV1Options.EnableCookieEncryption]: !internalQa,
     [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
     [FuseV1Options.EnableNodeCliInspectArguments]: false,
     [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,

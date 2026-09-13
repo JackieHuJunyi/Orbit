@@ -18,9 +18,9 @@ This builds the current machine architecture under `out/macos/<version>/<arch>/`
 - `Orbit-<version>-macos-<arch>-internal-qa.dmg`
 - `Orbit-<version>-macos-<arch>-manifest.json`
 
-The manifest records `channel: internal-qa`, `distributionReady: false`, `signed: false`, and `notarized: false`. The filename and mounted volume are visibly marked as internal QA. The app uses an ad-hoc signature only so its ASAR-integrity and fuse-hardened binary can be exercised locally; recipients may still need to bypass Gatekeeper manually and an ad-hoc update can make macOS ask again for Orbit Keychain access.
+The manifest records `channel: internal-qa`, `distributionReady: false`, `signed: false`, and `notarized: false`. The filename and mounted volume are visibly marked as internal QA. The app uses an ad-hoc signature only so its ASAR-integrity and fuse-hardened binary can be exercised locally; recipients may still need to bypass Gatekeeper manually. Chromium cookie encryption stays off in this channel because Electron requires a stable signing identity for its macOS Keychain binding. An internal build keeps its model-vault key in the same permission-restricted QA profile rather than opening Keychain, so it must not be treated as a distribution-security boundary. The Developer ID release channel turns cookie encryption on and protects the model-vault key with `safeStorage` before signing and notarization.
 
-Every `main` push repeats this package, verification, and packaged-runtime smoke test on a clean macOS runner. The smoke process uses a temporary loopback-only port and a disposable encryption key, verifies the real packaged homepage while the manifest verifies the release version, then stops the complete Electron process group.
+Every `main` push repeats this package, verification, and packaged-runtime smoke test on a clean macOS runner. The smoke process uses a temporary loopback-only port and disposable QA profile, verifies both the real packaged homepage and a hydrated desktop renderer while the manifest verifies the release version, then stops the complete Electron process group.
 
 ## GitHub release authority
 

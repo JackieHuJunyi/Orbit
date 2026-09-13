@@ -56,6 +56,8 @@ test("ships narrow context-isolated desktop capabilities without renderer Node a
 
 test("protects the desktop model-vault master key with Electron safeStorage", () => {
   assert.match(main, /safeStorage\.isEncryptionAvailable\(\)/);
+  assert.match(main, /credential-vault-key\.internal-qa/);
+  assert.match(main, /isInternalQaBuild/);
   assert.match(main, /if \(\/\^\[a-f0-9\]\{64\}\$\/\.test\(configuredKey/);
   assert.match(main, /safeStorage\.decryptString\(await readFile\(encryptedPath\)\)/);
   assert.match(main, /safeStorage\.encryptString\(key\)/);
@@ -144,6 +146,7 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macPackage, /createPackageWithOptions/);
   assert.match(macPackage, /"shared"/);
   assert.match(macPackage, /\/shared\/account-model-catalog\.mjs/);
+  assert.match(macPackage, /build-channel\.json/);
   assert.match(macPackage, /arch === process\.arch && localElectronAvailable/);
   assert.match(macPackage, /downloadArtifact/);
   assert.match(macPackage, /ElectronAsarIntegrity/);
@@ -151,6 +154,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macPackage, /EnableEmbeddedAsarIntegrityValidation/);
   assert.match(macPackage, /OnlyLoadAppFromAsar/);
   assert.match(macPackage, /WasmTrapHandlers/);
+  assert.match(macPackage, /EnableCookieEncryption\]: !internalQa/);
+  assert.match(macVerify, /manifest\.channel === "release" \? FuseState\.ENABLE : FuseState\.DISABLE/);
   assert.match(macPackage, /await sign\(/);
   assert.equal(macPackage.match(/await notarize\(/g)?.length, 2);
   assert.match(macPackage, /artifactSuffix = internalQa \? "-internal-qa" : ""/);
@@ -170,7 +175,8 @@ test("ships a bounded signed, notarized, integrity-checked macOS release chain",
   assert.match(macReleaseWorkflow, /gh release create/);
   assert.match(macSmoke, /ORBIT_DESKTOP_QA_PORT/);
   assert.match(macSmoke, /ORBIT_DESKTOP_QA_PROFILE/);
-  assert.match(macSmoke, /ORBIT_CREDENTIAL_ENCRYPTION_KEY: "a"\.repeat\(64\)/);
+  assert.doesNotMatch(macSmoke, /ORBIT_CREDENTIAL_ENCRYPTION_KEY/);
+  assert.match(macSmoke, /\[Orbit QA\] renderer hydrated/);
   assert.match(macSmoke, /Packaged Orbit did not return the expected product document/);
   assert.match(releaseQualityWorkflow, /macos-package:[\s\S]*smoke-macos-package\.mjs/);
 });

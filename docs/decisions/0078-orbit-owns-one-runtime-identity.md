@@ -17,6 +17,8 @@ The desktop process sets `Orbit` before any `safeStorage` call and uses `~/Libra
 
 Local packages are internal evidence, not distributable releases. Their ZIP and DMG filenames and mounted volume say `internal-qa`, and their manifest says `distributionReady: false`. Only the fail-closed Developer ID, hardened-runtime, notarization, stapling, Gatekeeper, and version-matched tag path may produce a release-channel artifact.
 
+An ad-hoc internal-QA build cannot bind Electron's macOS cookie encryption or `safeStorage` access to a stable signing identity. Its generated build-channel marker therefore disables Chromium cookie encryption and keeps a random vault key inside the permission-restricted QA profile, avoiding repeated Keychain prompts while making no distribution-security claim. The Developer ID release channel enables cookie encryption and uses `safeStorage`; both channels retain renderer sandboxing, context isolation, disabled Node integration, ASAR integrity, and review-before-write.
+
 ## Consequences
 
 - macOS can only present `Orbit Safe Storage` for current credentials; Orbit never triggers the former Keychain entry.

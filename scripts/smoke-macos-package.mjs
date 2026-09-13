@@ -44,7 +44,6 @@ const child = spawn(executable, [], {
     ...process.env,
     ORBIT_DESKTOP_QA_PORT: String(port),
     ORBIT_DESKTOP_QA_PROFILE: qaProfile,
-    ORBIT_CREDENTIAL_ENCRYPTION_KEY: "a".repeat(64),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -98,6 +97,15 @@ try {
     throw lastError instanceof Error ? lastError : new Error("Packaged Orbit did not start within 30 seconds.");
   if (!html.includes("<title>Orbit — Work that traces back to source</title>")) {
     throw new Error("Packaged Orbit did not return the expected product document.");
+  }
+  for (let attempt = 0; attempt < 120 && !output.includes("[Orbit QA] renderer hydrated"); attempt += 1) {
+    if (child.exitCode != null || child.signalCode) {
+      throw new Error(`Packaged Orbit exited before its renderer hydrated.\n${output}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  if (!output.includes("[Orbit QA] renderer hydrated")) {
+    throw new Error(`Packaged Orbit served HTML but did not hydrate its desktop window.\n${output}`);
   }
   process.stdout.write(`${JSON.stringify({ version: packageJson.version, arch, port: "loopback", ready: true })}\n`);
 } finally {
