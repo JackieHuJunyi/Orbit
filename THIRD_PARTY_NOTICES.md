@@ -6,7 +6,7 @@ Orbit's welcome handwriting uses only redistributable code and font-derived data
 
 - **Tegaki**, copyright © 2026 Gokhan Kurt — <https://github.com/gkurt/tegaki>
 - **harfbuzzjs**, copyright © 2019–2026 The harfbuzzjs project authors — <https://github.com/harfbuzz/harfbuzzjs>
-- **Apple Hello Effect** by Chánh Đại. The English `Hello` centerline geometry in `app/components/handwritten-greeting.tsx` is adapted from the component published under the MIT License — <https://21st.dev/@ncdai/components/apple-hello-effect>
+- **Apple Hello Effect** by Chánh Đại was used as a motion and composition reference; Orbit does not ship its glyph geometry — <https://21st.dev/@ncdai/components/apple-hello-effect>
 - **Icon Designer Skills**, copyright © 2026 Paldom. Orbit's icon brief, continuous-corner background geometry, safe SVG checks, and 512/64/32/16 px critique workflow were adapted from the MIT-licensed project; Orbit's planetary artwork is original — <https://github.com/Paldom/icon-designer-skills>
 
 The MIT License applies to the items listed in this section:
@@ -31,7 +31,7 @@ The MIT License applies to the items listed in this section:
 
 ## SIL Open Font License 1.1
 
-`app/lib/greeting-glyph-data.ts` contains greeting-only centerline data generated from the following fonts. Runtime font bundles supplied by Tegaki are noted separately. These font-derived portions remain under the SIL Open Font License, Version 1.1.
+`app/lib/greeting-glyph-data/` and `public/fonts/greeting/` contain greeting-only centerline data and font subsets generated from the following fonts. Runtime font bundles supplied by Tegaki are noted separately. These font-derived portions remain under the SIL Open Font License, Version 1.1.
 
 - **Caveat** — Copyright 2014 The Caveat Project Authors — <https://github.com/googlefonts/caveat>
 - **Ma Shan Zheng** — Copyright 2018 The Ma Shan Zheng Project Authors — <https://github.com/google/fonts/tree/main/ofl/mashanzheng>

@@ -243,6 +243,7 @@ app.whenReady().then(async () => {
   desktopModelDiscovery = createDesktopModelDiscovery({
     accountRuntime: desktopAccountRuntime,
     homeDirectory: app.getPath("home"),
+    includeApiConnections: true,
   });
   ipcMain.handle("orbit:convert-legacy-office", convertLegacyOffice);
   ipcMain.handle("orbit:export-legacy-office", exportLegacyOffice);

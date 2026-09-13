@@ -69,6 +69,7 @@ test("uses signed-in official model clients without reading or persisting their 
   assert.match(accountRuntime, /"shell_tool"/);
   assert.match(accountRuntime, /"unified_exec"/);
   assert.match(accountRuntime, /delete safe\[key\]/);
+  assert.match(main, /includeApiConnections: true/);
   assert.doesNotMatch(accountRuntime, /auth\.json|oauth_creds|keychain|security find/u);
 });
 

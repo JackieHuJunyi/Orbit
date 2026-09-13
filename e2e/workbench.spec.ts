@@ -1,7 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { openWorkbench, selectWorkspaceFile } from "./helpers/workbench";
+
+async function waitForWelcomeLanguageReady(page: Page) {
+  await expect(page.locator(".welcome-window")).toHaveAttribute("data-intro-phase", "ready", { timeout: 12_000 });
+  await expect(page.locator(".welcome-language-card")).toHaveAttribute("data-signature-phase", "ready", {
+    timeout: 8_000,
+  });
+}
 
 test("paints the handwritten first-run ritual before client JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -13,7 +20,7 @@ test("paints the handwritten first-run ritual before client JavaScript", async (
   await expect(welcome).toBeVisible();
   await expect(welcome).toHaveAttribute("data-intro-phase", "writing");
   await expect(firstFrame.locator("[data-ambient-motion]")).toHaveCount(0);
-  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveAttribute(
+  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="tegaki-font-centerline"]')).toHaveAttribute(
     "aria-label",
     "Hello",
   );
@@ -84,11 +91,10 @@ test("starts a fresh user with language choice before outcome-first task choices
 test("loads model setup after the handwritten opening without restarting it", async ({ page }) => {
   await page.goto("/");
 
-  const welcomeWindow = page.locator(".welcome-window");
-  await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
+  await waitForWelcomeLanguageReady(page);
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Choose a signed-in account" });
+  const modelStep = page.getByRole("dialog", { name: "Connect the models you already use" });
   await expect(modelStep).toBeVisible();
   await expect(modelStep.getByText(/The web app cannot read application settings/u)).toBeVisible();
   await expect(modelStep.getByRole("button", { name: /Continue without a model/u })).toBeVisible();
@@ -112,7 +118,7 @@ test("loads model setup after the handwritten opening without restarting it", as
   });
   expect(navigationGeometry.backTop).toBeGreaterThan(0);
   expect(Math.abs(navigationGeometry.backBottom - navigationGeometry.actionBottom)).toBeLessThanOrEqual(2);
-  await expect(page.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveCount(0);
+  await expect(page.locator(".welcome-greeting")).toHaveCount(0);
 });
 
 test("makes model-assisted and model-free continuation visibly distinct", async ({ page }) => {
@@ -165,9 +171,10 @@ test("makes model-assisted and model-free continuation visibly distinct", async 
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(connectedState) }),
   );
   await page.goto("/");
+  await waitForWelcomeLanguageReady(page);
   await page.locator(".welcome-language-card > .welcome-primary").click();
 
-  const modelStep = page.getByRole("dialog", { name: "Choose a signed-in account" });
+  const modelStep = page.getByRole("dialog", { name: "Connect the models you already use" });
   const assisted = modelStep.getByRole("button", { name: /Continue with model assistance/u });
   const withoutModel = modelStep.getByRole("button", { name: /Continue without a model/u });
   await expect(assisted).toContainText("confirm every change");
@@ -305,8 +312,9 @@ test("connects a signed-in account without reading or displaying its OAuth token
   });
 
   await page.goto("/");
+  await waitForWelcomeLanguageReady(page);
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  const modelStep = page.getByRole("dialog", { name: "Choose a signed-in account" });
+  const modelStep = page.getByRole("dialog", { name: "Connect the models you already use" });
   await expect(modelStep.getByText("ChatGPT", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Signed in and ready", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Sign in through the official client first", { exact: true })).toBeVisible();
@@ -315,7 +323,7 @@ test("connects a signed-in account without reading or displaying its OAuth token
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("orbit-test-account-bridge-imported"))).toBeNull();
 
   await modelStep.getByRole("button", { name: "Review", exact: true }).click();
-  await expect(modelStep.getByRole("heading", { name: "Use this signed-in account?" })).toBeFocused();
+  await expect(modelStep.getByRole("heading", { name: "Use this connection?" })).toBeFocused();
   await expect(modelStep.getByText("Model", { exact: true })).toBeVisible();
   await expect(modelStep.getByText("Account access", { exact: true })).toBeVisible();
   await expect(modelStep).not.toContainText("private-loopback-token");
@@ -486,7 +494,7 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   );
 });
 
-test("keeps desktop model settings account-first with no API-key setup surface", async ({ page }) => {
+test("groups signed-in accounts, detected APIs, local models, and manual configuration", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, "orbitDesktop", {
       configurable: false,
@@ -522,7 +530,34 @@ test("keeps desktop model settings account-first with no API-key setup surface",
               status: "not-installed",
             },
           ],
-          candidates: [],
+          candidates: [
+            {
+              id: "api-candidate",
+              sourceKind: "cc-switch",
+              sourceLabel: "CC Switch · DeepSeek",
+              locality: "cloud",
+              provider: "deepseek",
+              protocol: "chat-completions",
+              name: "DeepSeek",
+              baseURL: "https://api.deepseek.com",
+              model: "deepseek-v4-flash",
+              models: [],
+              credentialState: "detected",
+            },
+            {
+              id: "local-candidate",
+              sourceKind: "local-runtime",
+              sourceLabel: "Ollama",
+              locality: "device",
+              provider: "ollama",
+              protocol: "chat-completions",
+              name: "Ollama",
+              baseURL: "http://127.0.0.1:11434/v1",
+              model: "qwen3:8b",
+              models: ["qwen3:8b"],
+              credentialState: "not-required",
+            },
+          ],
         }),
         importDiscoveredModel: async () => {
           throw new Error("not used");
@@ -563,16 +598,23 @@ test("keeps desktop model settings account-first with no API-key setup surface",
   await page.getByRole("button", { name: "More tools" }).click();
   await page.getByRole("menuitem", { name: /Model settings/u }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Choose a signed-in account" });
+  const dialog = page.getByRole("dialog", { name: "Connect the models you already use" });
   await expect(dialog.getByText("ChatGPT", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Claude", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Gemini", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Signed in and ready", { exact: true })).toHaveCount(2);
   await expect(dialog.getByText("Not installed on this Mac", { exact: true })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toHaveCount(0);
-  await expect(dialog.getByRole("button", { name: "Add provider", exact: true })).toHaveCount(0);
+  await expect(dialog.getByText("Signed-in accounts", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("API configurations and local models", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("DeepSeek", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("CC Switch · DeepSeek", { exact: false })).toBeVisible();
+  await expect(dialog.getByText("Ollama", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Import config", exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Add provider", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Add provider", exact: true }).click();
+  await expect(dialog.getByText("API Key", { exact: true })).toBeVisible();
+  await dialog.locator("form.model-profile-editor footer").getByRole("button", { name: "Cancel" }).click();
   await expect(dialog.getByText("API Key", { exact: true })).toHaveCount(0);
-  await expect(dialog.locator(".model-profile-manager")).toHaveCount(0);
   expect(profileWrites).toEqual([]);
 });
 
@@ -580,9 +622,9 @@ test("moves backward and forward through every onboarding step without losing th
   await page.goto("/");
 
   const welcomeWindow = page.locator(".welcome-window");
-  await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
+  await waitForWelcomeLanguageReady(page);
   await page.locator(".welcome-language-card > .welcome-primary").click();
-  await expect(page.getByRole("dialog", { name: "Choose a signed-in account" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Connect the models you already use" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Choose your Orbit language" })).toBeVisible();
@@ -591,7 +633,7 @@ test("moves backward and forward through every onboarding step without losing th
   await expect(page.getByRole("dialog", { name: "Try four shortcuts yourself" })).toBeVisible();
 
   await welcomeWindow.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Choose a signed-in account" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Connect the models you already use" })).toBeVisible();
   await welcomeWindow.getByRole("button", { name: /Continue without a model/u }).click();
   await welcomeWindow.getByRole("button", { name: "Learn later", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Your workspace, under your control." })).toBeVisible();
@@ -609,8 +651,15 @@ test("writes the opening greeting as one restrained spectrum performance", async
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeHidden();
   await expect(page.locator(".welcome-backdrop")).toHaveCSS("background-color", "rgb(5, 5, 6)");
   await expect(greeting).toBeVisible();
+  await expect(greeting).toHaveAttribute("data-font-state", "ready");
+  await expect(greeting).toHaveAttribute("data-glyph-coverage", "complete");
+  const firstGreetingProgress = Number(await greeting.getAttribute("data-writing-progress"));
+  expect(firstGreetingProgress).toBeLessThan(1);
+  await expect
+    .poll(async () => Number(await greeting.getAttribute("data-writing-progress")), { timeout: 4_000 })
+    .toBeGreaterThan(firstGreetingProgress);
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
-  await expect(greeting).toHaveAttribute("data-motion-renderer", "vector-centerline");
+  await expect(greeting).toHaveAttribute("data-motion-renderer", "tegaki-font-centerline");
   await expect(greeting).toHaveAttribute("data-motion-timeline", "path-length-staggered");
   await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-write");
   await expect(greeting).toHaveAttribute("data-ink-material", "pressure-pencil-spectrum");
@@ -621,13 +670,10 @@ test("writes the opening greeting as one restrained spectrum performance", async
   await expect(greeting).toHaveAttribute("data-motion-sequence", "write-settle-reveal");
   await expect(greeting).toHaveAttribute("data-writing-continuity", "connected");
   await expect(greeting).toHaveAttribute("data-writing-style", "font-derived-centerline");
-  await expect(greeting).toHaveAttribute("data-pen-speed", "reference");
-  await expect(greeting).toHaveAttribute("data-stroke-count", "2");
-  await expect(greeting.locator(".welcome-greeting-spectrum stop")).toHaveCount(9);
-  await expect(greeting.locator(".welcome-greeting-vector-stroke")).toHaveCount(2);
+  await expect(greeting).toHaveAttribute("data-pen-speed", "1");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "5");
+  await expect(greeting.locator("canvas")).toBeVisible();
   await expect(greeting.locator(".welcome-greeting-color-bloom, .welcome-greeting-stroke-head")).toHaveCount(0);
-  await expect(greeting.locator("feTurbulence")).toHaveCount(1);
-  await expect(greeting.locator(".welcome-greeting-vector-stroke").first()).toBeVisible();
   await expect(page.locator("[data-ambient-motion]")).toHaveCount(0);
 
   const openingGeometry = await page.locator(".welcome-greeting-stage").evaluate((stage) => {
@@ -642,20 +688,25 @@ test("writes the opening greeting as one restrained spectrum performance", async
   expect(Math.abs(openingGeometry.centerX - openingGeometry.viewportCenterX)).toBeLessThanOrEqual(2);
   expect(Math.abs(openingGeometry.centerY - openingGeometry.viewportCenterY)).toBeLessThanOrEqual(24);
 
-  const animationNames = await greeting.evaluate((element) =>
-    Array.from(element.querySelectorAll(".welcome-greeting-vector-stroke"))
-      .flatMap((unit) => unit.getAnimations())
-      .map((animation) => ("animationName" in animation ? String(animation.animationName) : "")),
-  );
-  expect(animationNames).toContain("orbit-greeting-pencil-write");
   await expect(welcomeWindow).toHaveAttribute("data-intro-phase", "ready");
   await expect(welcomeWindow.locator(".welcome-chrome")).toBeVisible();
   await expect(page.locator('.welcome-intro-grid[data-intro-phase="ready"]')).toBeVisible();
   const welcomeSignature = page.locator('.welcome-written-eyebrow[aria-label="Welcome to Orbit"] .welcome-signature');
   await expect(welcomeSignature).toBeVisible();
+  await expect(welcomeSignature).toHaveAttribute("data-font-state", "ready");
+  await expect(welcomeSignature).toHaveAttribute("data-glyph-coverage", "complete");
+  const firstSignatureProgress = Number(await welcomeSignature.getAttribute("data-writing-progress"));
+  expect(firstSignatureProgress).toBeLessThan(1);
+  await expect
+    .poll(async () => Number(await welcomeSignature.getAttribute("data-writing-progress")), { timeout: 4_000 })
+    .toBeGreaterThan(firstSignatureProgress);
   await expect(welcomeSignature).toHaveAttribute("data-ink-effect", "spectrum-write");
   await expect(welcomeSignature).toHaveAttribute("data-writing-style", "font-derived-centerline");
   await expect(welcomeSignature.locator("canvas")).toBeVisible();
+  expect(await welcomeSignature.getAttribute("data-font-family")).toBe(await greeting.getAttribute("data-font-family"));
+  await expect(page.locator(".welcome-language-card")).toHaveAttribute("data-signature-phase", "ready", {
+    timeout: 8_000,
+  });
 });
 
 test("reveals the Arabic writing path right to left without splitting its shaping run", async ({ page }) => {

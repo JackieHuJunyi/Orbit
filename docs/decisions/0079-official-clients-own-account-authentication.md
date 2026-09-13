@@ -5,7 +5,7 @@
 
 ## Context
 
-Orbit's first model setup treated every cloud model as an API connection. That duplicated configuration users had already completed in Codex, Claude Code, or Gemini CLI and exposed endpoint, model, and key concepts before a person could begin work. The product owner chose an account-first experiment: ChatGPT, Google, and Claude subscriptions should be usable through their installed official clients without copying tokens into Orbit.
+Orbit's first model setup treated every cloud model as an API connection. That duplicated configuration users had already completed in Codex, Claude Code, or Gemini CLI and exposed endpoint, model, and key concepts before a person could begin work. The product owner requires account sessions to be usable without copying tokens, while also preserving API keys, CC Switch, manual configuration, import, and local runtimes as equal valid paths.
 
 ## Decision
 
@@ -17,7 +17,7 @@ The stored profile does not treat an ephemeral loopback port as durable identity
 
 The loopback endpoint accepts only the capability token. It runs the official client without a shell, strips API keys and provider tokens from the child environment, bounds input/output and time, uses an empty temporary workspace, and disables tools and session persistence where the client supports it. Codex runs ephemerally with user configuration, rules, shell, browser, computer, apps, and hooks disabled. Claude Code runs in safe mode with an empty tool list and no session persistence. Gemini CLI runs headlessly in plan mode; the row stays unavailable when it is not installed, and a failed Google login never becomes a saved connection.
 
-API-config and CC Switch discovery are disabled in the production desktop composition and their manual form is removed from onboarding. The older adapters remain covered as compatibility code but are no longer the primary product path.
+Production desktop discovery composes five connection families: official signed-in accounts, redacted known API/application configurations, read-only CC Switch entries, fixed Ollama/LM Studio loopback catalogs, and user-initiated manual API or configuration import. The UI groups account rows separately from configured API and local rows instead of replacing either group. Discovery never returns a secret; Orbit reads one credential only after the user reviews that exact candidate, verifies it, and then encrypts it in the existing vault.
 
 ## Consequences
 
@@ -25,4 +25,5 @@ API-config and CC Switch discovery are disabled in the production desktop compos
 - Gemini follows the same bridge but cannot be claimed as locally proven until its CLI is installed and its own Google login succeeds.
 - Orbit stores no provider OAuth credential and cannot silently refresh, export, or revoke an account session.
 - Account calls can be slower than direct APIs because an official client starts for each bounded turn; connection state and errors must remain visible.
+- Users can keep subscription-backed, API-backed, and device-local models together and switch among their saved redacted profiles.
 - A future provider-native OAuth integration requires its own registered client, consent, revocation, and policy review rather than reusing another app's token.

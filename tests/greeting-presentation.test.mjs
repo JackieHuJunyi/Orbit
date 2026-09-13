@@ -24,6 +24,7 @@ test("plans one frozen path timeline for every interface greeting", () => {
     assert.equal(plan.value, entry.greeting);
     assert.equal(plan.direction, entry.direction);
     assert.equal(plan.script, expectedScripts[entry.locale]);
+    assert.equal(plan.renderMode, "tegaki-font");
     assert.ok(plan.canvasWidth >= 430 && plan.canvasWidth <= 1_040);
     assert.ok(plan.motion.completeAfterMs < plan.motion.cycleDurationMs);
     assert.ok(plan.motion.cycleDurationMs >= 5_000 && plan.motion.cycleDurationMs <= 7_000);

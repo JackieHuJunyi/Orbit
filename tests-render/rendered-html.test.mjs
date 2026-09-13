@@ -41,7 +41,7 @@ test("server-renders the Orbit artifact workbench", async () => {
   assert.match(html, /id="orbit-prehydrate-state"/);
   assert.match(html, /data-onboarding-sequence="spectrum-write-settle-setup"/);
   assert.doesNotMatch(html, /data-ambient-motion/);
-  assert.match(html, /data-motion-renderer="vector-centerline"/);
+  assert.match(html, /data-motion-renderer="tegaki-font-centerline"/);
   assert.doesNotMatch(html, /Preparing Orbit/);
   assert.match(html, /<title>Orbit — Work that traces back to source<\/title>/i);
   assert.match(html, /Local workspace/);
@@ -980,14 +980,12 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   );
   assert.match(styles, /@supports \(corner-shape:\s*squircle\)/);
   assert.match(modularStyles, /@keyframes orbit-greeting-dock/);
-  assert.match(modularStyles, /@keyframes orbit-greeting-pencil-write/);
   assert.match(modularStyles, /@keyframes orbit-setup-unfold/);
   assert.doesNotMatch(
     modularStyles,
     /@keyframes orbit-(?:welcome-ambient|greeting-color-bloom|greeting-stroke-head|greeting-pressure|boot-chroma)/,
   );
   assert.match(modularStyles, /\.welcome-greeting-tegaki\s*\{[^}]*white-space:\s*nowrap/s);
-  assert.match(modularStyles, /\.welcome-greeting-vector-stroke\s*\{[^}]*stroke-dasharray:\s*1/s);
   assert.match(modularStyles, /grid-template-areas:\s*"greeting"\s*"language"/s);
   assert.match(
     handwrittenGreeting,
@@ -1003,20 +1001,21 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /<HandwrittenGreeting/);
   assert.match(welcome, /window\.setTimeout/);
   assert.match(welcome, /planGreetingPresentation\(\{ locale: greetingLocale, value: greeting \}\)/);
-  assert.match(welcome, /planGreetingPresentation\(\{ durationScale: 0\.6, locale, value: text\.welcomeEyebrow \}\)/);
+  assert.match(
+    welcome,
+    /planGreetingPresentation\(\{ durationScale: 0\.6, locale: greetingLocale, value: text\.welcomeEyebrow \}\)/,
+  );
   assert.match(welcome, /variant="inline"/);
+  assert.match(welcome, /greetingIntroComplete && \(/);
+  assert.match(welcome, /onWritingComplete=\{\(\) => setWelcomeSignatureComplete\(true\)\}/);
+  assert.match(welcome, /data-signature-phase=\{welcomeSignatureComplete \? "ready" : "writing"\}/);
   assert.match(modularStyles, /\.welcome-signature\s*\{[^}]*height:\s*54px;/s);
   assert.match(welcome, /greetingPresentation\.completeAfterMs \+ 180/);
-  assert.match(handwrittenGreeting, /<linearGradient/);
-  assert.match(handwrittenGreeting, /className="welcome-greeting-vector-stroke"/);
+  assert.match(welcome, /WELCOME_SIGNATURE_COMPLETE_AFTER_MS/);
   assert.match(handwrittenGreeting, /<TegakiRenderer/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
-  assert.match(handwrittenGreeting, /feTurbulence[^]*feDisplacementMap/);
   assert.doesNotMatch(handwrittenGreeting, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);
-  assert.match(
-    handwrittenGreeting,
-    /"data-motion-renderer": usesVectorCenterline \? "vector-centerline" : "tegaki-font-centerline"/,
-  );
+  assert.match(handwrittenGreeting, /"data-motion-renderer": "tegaki-font-centerline"/);
   assert.match(handwrittenGreeting, /"data-motion-timeline": "path-length-staggered"/);
   assert.match(handwrittenGreeting, /"data-ink-effect": "spectrum-write"/);
   assert.match(handwrittenGreeting, /"data-ink-material": "pressure-pencil-spectrum"/);
@@ -1027,7 +1026,10 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /data-onboarding-sequence="spectrum-write-settle-setup"/);
   assert.match(handwrittenGreeting, /"data-writing-style": "font-derived-centerline"/);
   assert.match(handwrittenGreeting, /"data-motion-script": script/);
-  assert.match(handwrittenGreeting, /ENGLISH_HELLO_STROKES\.map/);
+  assert.match(handwrittenGreeting, /data-font-family=\{fontBundle\?\.family \?\? "loading"\}/);
+  assert.match(handwrittenGreeting, /data-glyph-coverage=/);
+  assert.match(handwrittenGreeting, /engine\?\.restart\(\)/);
+  assert.match(handwrittenGreeting, /WELCOME_SIGNATURE_DURATION_SECONDS/);
   assert.doesNotMatch(
     handwrittenGreeting,
     /offsetPath|motion\.writePath|welcome-greeting-flourish|welcome-greeting-stroke-head/,

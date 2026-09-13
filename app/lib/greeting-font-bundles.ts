@@ -1,12 +1,9 @@
 import type { TegakiBundle } from "tegaki";
 import type { OrbitLocale } from "./localization.ts";
-import {
-  JAPANESE_GREETING_GLYPHS,
-  KOREAN_GREETING_GLYPHS,
-  LATIN_GREETING_GLYPHS,
-  SIMPLIFIED_CHINESE_GREETING_GLYPHS,
-  TRADITIONAL_CHINESE_GREETING_GLYPHS,
-} from "./greeting-glyph-data.ts";
+import caveatGlyphData from "./greeting-glyph-data/caveat.json";
+import iansuiGlyphData from "./greeting-glyph-data/iansui.json";
+import maShanZhengGlyphData from "./greeting-glyph-data/ma-shan-zheng.json";
+import nanumPenScriptGlyphData from "./greeting-glyph-data/nanum-pen-script.json";
 
 type GreetingFontPlan = Readonly<{
   bundle: TegakiBundle;
@@ -17,28 +14,21 @@ function asGlyphData(value: unknown) {
   return value as TegakiBundle["glyphData"];
 }
 
-function withoutShapedVariants(bundle: TegakiBundle): TegakiBundle {
-  const plainBundle = { ...bundle };
-  delete plainBundle.features;
-  delete plainBundle.glyphDataById;
-  return plainBundle;
-}
-
 function generatedBundle(
-  base: TegakiBundle,
   input: Readonly<{
     ascender: number;
     descender: number;
     family: string;
+    fontUrl: string;
     glyphData: TegakiBundle["glyphData"];
   }>,
 ): TegakiBundle {
   return {
-    version: base.version,
+    version: 0,
     family: `Orbit ${input.family}`,
     lineCap: "round",
-    fontUrl: base.fontUrl,
-    fontFaceCSS: `@font-face { font-family: 'Orbit ${input.family}'; src: url(${base.fontUrl}); }`,
+    fontUrl: input.fontUrl,
+    fontFaceCSS: `@font-face { font-family: 'Orbit ${input.family}'; src: url(${input.fontUrl}) format('truetype'); }`,
     unitsPerEm: 1_000,
     ascender: input.ascender,
     descender: input.descender,
@@ -52,26 +42,14 @@ export async function loadGreetingFontPlan(locale: OrbitLocale): Promise<Greetin
     return Object.freeze({ bundle: amiri, requiresShaper: true });
   }
 
-  const { default: caveat } = await import("tegaki/fonts/caveat");
-
-  if (locale === "fr" || locale === "es" || locale === "ru") {
-    const plainCaveat = withoutShapedVariants(caveat);
-    return Object.freeze({
-      bundle: {
-        ...plainCaveat,
-        glyphData: asGlyphData({ ...caveat.glyphData, ...LATIN_GREETING_GLYPHS }),
-      },
-      requiresShaper: false,
-    });
-  }
-
   if (locale === "zh-CN") {
     return Object.freeze({
-      bundle: generatedBundle(caveat, {
+      bundle: generatedBundle({
         ascender: 880,
         descender: -120,
         family: "Ma Shan Zheng",
-        glyphData: asGlyphData(SIMPLIFIED_CHINESE_GREETING_GLYPHS),
+        fontUrl: "/fonts/greeting/ma-shan-zheng.ttf",
+        glyphData: asGlyphData(maShanZhengGlyphData),
       }),
       requiresShaper: false,
     });
@@ -79,34 +57,45 @@ export async function loadGreetingFontPlan(locale: OrbitLocale): Promise<Greetin
 
   if (locale === "zh-TW") {
     return Object.freeze({
-      bundle: generatedBundle(caveat, {
+      bundle: generatedBundle({
         ascender: 940,
         descender: -180,
         family: "Iansui",
-        glyphData: asGlyphData(TRADITIONAL_CHINESE_GREETING_GLYPHS),
+        fontUrl: "/fonts/greeting/iansui.ttf",
+        glyphData: asGlyphData(iansuiGlyphData),
       }),
       requiresShaper: false,
     });
   }
 
   if (locale === "ja") {
+    const { default: kleeOne } = await import("tegaki/fonts/klee-one");
     return Object.freeze({
-      bundle: generatedBundle(caveat, {
-        ascender: 1_160,
-        descender: -288,
-        family: "Klee One",
-        glyphData: asGlyphData(JAPANESE_GREETING_GLYPHS),
+      bundle: kleeOne,
+      requiresShaper: false,
+    });
+  }
+
+  if (locale === "ko") {
+    return Object.freeze({
+      bundle: generatedBundle({
+        ascender: 800,
+        descender: -200,
+        family: "Nanum Pen Script",
+        fontUrl: "/fonts/greeting/nanum-pen-script.ttf",
+        glyphData: asGlyphData(nanumPenScriptGlyphData),
       }),
       requiresShaper: false,
     });
   }
 
   return Object.freeze({
-    bundle: generatedBundle(caveat, {
-      ascender: 800,
-      descender: -200,
-      family: "Nanum Pen Script",
-      glyphData: asGlyphData(KOREAN_GREETING_GLYPHS),
+    bundle: generatedBundle({
+      ascender: 960,
+      descender: -300,
+      family: "Caveat",
+      fontUrl: "/fonts/greeting/caveat.ttf",
+      glyphData: asGlyphData(caveatGlyphData),
     }),
     requiresShaper: false,
   });

@@ -325,7 +325,6 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
 }
 .welcome-intro-grid[data-intro-phase="ready"] .welcome-greeting { font-size: 72px; }
 .welcome-intro-grid[data-intro-phase="ready"] .welcome-greeting.long { font-size: 49px; }
-.welcome-greeting-spectrum stop { animation: none; }
 
 .welcome-page h1 {
   max-width: 720px;
@@ -421,6 +420,25 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
   font-size: 13px;
   line-height: 1.45;
   text-wrap: balance;
+}
+
+.welcome-language-card[data-signature-phase="writing"] .welcome-language-heading h1,
+.welcome-language-card[data-signature-phase="writing"] .welcome-language-heading p,
+.welcome-language-card[data-signature-phase="writing"] .language-options,
+.welcome-language-card[data-signature-phase="writing"] > .welcome-primary {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+.welcome-language-card[data-signature-phase="ready"] .welcome-language-heading h1,
+.welcome-language-card[data-signature-phase="ready"] .welcome-language-heading p,
+.welcome-language-card[data-signature-phase="ready"] .language-options,
+.welcome-language-card[data-signature-phase="ready"] > .welcome-primary {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 420ms var(--orbit-ease-out),
+    transform 520ms var(--orbit-ease-out);
 }
 
 .language-options {
@@ -577,7 +595,20 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
 .model-discovery > header > button svg,
 .model-discovery-results button svg,
 .model-discovery-back svg { width: 13px; height: 13px; }
-.model-discovery-results { display: grid; max-height: min(210px, 26dvh); overflow: auto; padding: 5px; }
+.model-discovery-results { display: grid; max-height: min(286px, 32dvh); overflow: auto; padding: 5px; }
+.model-discovery-group-label {
+  position: sticky;
+  z-index: var(--orbit-layer-local-float);
+  top: 0;
+  padding: 7px 9px 5px;
+  background: color-mix(in srgb, var(--orbit-material-solid) 94%, transparent);
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: .055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
 .model-discovery-results > article {
   display: grid;
   min-height: 58px;
@@ -1015,6 +1046,5 @@ html[data-theme="space-black"] .language-options button.selected > svg { color: 
   .welcome-language-card::before,
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before { display: none; }
-  .welcome-greeting-vector-stroke { animation: none; stroke: CanvasText; stroke-dashoffset: 0; }
   .welcome-greeting-tegaki canvas { filter: grayscale(1) contrast(2); }
 }

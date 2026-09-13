@@ -17,7 +17,7 @@ const LOCALES = [
     script: "logographic",
     strokes: "2",
   },
-  { id: "en", direction: "ltr", penSpeed: "reference", renderer: "vector-centerline", script: "cursive", strokes: "2" },
+  { id: "en", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "5" },
   { id: "fr", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "7" },
   { id: "es", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "4" },
   { id: "ru", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "6" },
@@ -105,6 +105,7 @@ for (const viewport of VIEWPORTS) {
         const greeting = dialog.locator(`.welcome-greeting[data-greeting-locale="${locale.id}"]`);
         const greetingStage = dialog.locator(".welcome-greeting-stage");
         const languageCard = dialog.locator(".welcome-language-card");
+        const welcomeSignature = dialog.locator(".welcome-signature");
         const selectedLanguage = languageOptions.locator('[role="radio"][aria-checked="true"]');
         const primaryAction = dialog.locator(".welcome-language-card > .welcome-primary");
 
@@ -115,9 +116,14 @@ for (const viewport of VIEWPORTS) {
         await expect(greeting).toHaveAttribute("data-motion-renderer", locale.renderer);
         await expect(greeting).toHaveAttribute("data-pen-speed", locale.penSpeed);
         await expect(greeting).toHaveAttribute("data-stroke-count", locale.strokes);
-        if (locale.renderer === "tegaki-font-centerline") {
-          await expect(greeting).toHaveAttribute("data-font-state", "ready");
-        }
+        await expect(greeting).toHaveAttribute("data-font-state", "ready");
+        await expect(greeting).toHaveAttribute("data-glyph-coverage", "complete");
+        await expect(languageCard).toHaveAttribute("data-signature-phase", "ready");
+        await expect(welcomeSignature).toHaveAttribute("data-font-state", "ready");
+        await expect(welcomeSignature).toHaveAttribute("data-glyph-coverage", "complete");
+        expect(await welcomeSignature.getAttribute("data-font-family")).toBe(
+          await greeting.getAttribute("data-font-family"),
+        );
         await expect(languageOptions.getByRole("radio")).toHaveCount(LOCALES.length);
         await expect(selectedLanguage).toHaveCount(1);
         await expectInsideContainer(selectedLanguage, languageOptions);

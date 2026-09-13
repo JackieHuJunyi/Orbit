@@ -15,6 +15,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ModelProfileManager } from "./model-profile-manager";
 import {
   discoverDesktopModelConnections,
   importDesktopModelConnection,
@@ -22,6 +23,7 @@ import {
   type DiscoveredAccountRuntime,
   type DiscoveredModelConnection,
 } from "../lib/desktop-bridge";
+import type { OrbitLocale } from "../lib/localization";
 import type { ModelProfilesState } from "../lib/model-profiles";
 import type { ModelProviderStatus, OrbitModelMode } from "../lib/model-preference";
 
@@ -62,9 +64,12 @@ export type WelcomeModelCopy = Readonly<{
   accountMissing: string;
   accountAccess: string;
   accountAccessValue: string;
+  accountGroup: string;
+  configuredGroup: string;
   reviewConnection: string;
   reviewTitle: string;
   connectionReviewBody: string;
+  apiConnectionReviewBody: string;
   connectAndVerify: string;
   connecting: string;
   chooseAnother: string;
@@ -111,12 +116,14 @@ function connectionFailureDetail(payload: { error?: unknown }, fallback: string)
 
 export function WelcomeModelStep({
   copy,
+  locale,
   modelMode,
   onBack,
   onContinue,
   onModelModeChange,
 }: {
   copy: WelcomeModelCopy;
+  locale: OrbitLocale;
   modelMode: OrbitModelMode;
   onBack: () => void;
   onContinue: (mode: OrbitModelMode) => void;
@@ -131,6 +138,7 @@ export function WelcomeModelStep({
   const [selectedCandidate, setSelectedCandidate] = useState<DiscoveredModelConnection | null>(null);
   const [connectionBusy, setConnectionBusy] = useState(false);
   const [connectionError, setConnectionError] = useState("");
+  const [managerRevision, setManagerRevision] = useState(0);
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
   const lastDiscoveryTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -185,6 +193,15 @@ export function WelcomeModelStep({
     return () => window.cancelAnimationFrame(frame);
   }, [selectedCandidate]);
 
+  const handleProfileStatus = useCallback(
+    (status: ModelProviderStatus) => {
+      setModelStatus(status);
+      setModelStatusError("");
+      if (status.configured) onModelModeChange("model-assisted");
+    },
+    [onModelModeChange],
+  );
+
   function closeReview() {
     setSelectedCandidate(null);
     setConnectionError("");
@@ -233,6 +250,7 @@ export function WelcomeModelStep({
       }
       setModelStatus(providerStatusFromState(saved, copy.deploymentConnection));
       onModelModeChange("model-assisted");
+      setManagerRevision((current) => current + 1);
       setSelectedCandidate(null);
       setConnectionError("");
     } catch (error) {
@@ -249,7 +267,7 @@ export function WelcomeModelStep({
       .filter((candidate) => candidate.sourceKind === "account-runtime")
       .map((candidate) => [candidate.provider, candidate] as const),
   );
-  const localModelCandidates = candidates.filter((candidate) => candidate.sourceKind === "local-runtime");
+  const configuredCandidates = candidates.filter((candidate) => candidate.sourceKind !== "account-runtime");
 
   return (
     <>
@@ -311,7 +329,11 @@ export function WelcomeModelStep({
               <h2 ref={reviewHeadingRef} tabIndex={-1}>
                 {copy.reviewTitle}
               </h2>
-              <p>{copy.connectionReviewBody}</p>
+              <p>
+                {selectedCandidate.sourceKind === "account-runtime"
+                  ? copy.connectionReviewBody
+                  : copy.apiConnectionReviewBody}
+              </p>
               <dl>
                 <div>
                   <dt>{selectedCandidate.locality === "device" ? copy.deviceModel : copy.cloudModel}</dt>
@@ -352,8 +374,9 @@ export function WelcomeModelStep({
                 {connectionBusy ? copy.connecting : copy.connectAndVerify}
               </button>
             </div>
-          ) : discoveryState === "complete" && (accounts.length || localModelCandidates.length) ? (
+          ) : discoveryState === "complete" && (accounts.length || configuredCandidates.length) ? (
             <div className="model-discovery-results account-runtime-results">
+              {accounts.length > 0 && <div className="model-discovery-group-label">{copy.accountGroup}</div>}
               {accounts.map((account) => {
                 const candidate = accountCandidateByProvider.get(account.provider);
                 const statusText =
@@ -388,7 +411,10 @@ export function WelcomeModelStep({
                   </article>
                 );
               })}
-              {localModelCandidates.map((candidate) => (
+              {configuredCandidates.length > 0 && (
+                <div className="model-discovery-group-label">{copy.configuredGroup}</div>
+              )}
+              {configuredCandidates.map((candidate) => (
                 <article key={candidate.id}>
                   <span>{candidate.locality === "device" ? <Cpu /> : <Cloud />}</span>
                   <div>
@@ -436,6 +462,10 @@ export function WelcomeModelStep({
             </div>
           )}
         </section>
+
+        {!selectedCandidate && (
+          <ModelProfileManager key={managerRevision} compact locale={locale} onStatusChange={handleProfileStatus} />
+        )}
 
         <p className="model-safety-note">
           <ShieldCheck />

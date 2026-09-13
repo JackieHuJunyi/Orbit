@@ -97,7 +97,7 @@ test("keeps focused content geometry and places the compact primary action with 
     onboarding,
     /\.welcome-language-card > \.welcome-primary\s*\{[^}]*min-width:\s*118px;[^}]*align-self:\s*flex-end;/s,
   );
-  const cardStart = component.indexOf('<section className="welcome-language-card"');
+  const cardStart = component.indexOf('className="welcome-language-card"');
   const cardEnd = component.indexOf("</section>", cardStart);
   assert.match(component.slice(cardStart, cardEnd), /className="welcome-primary"/);
 });
@@ -145,12 +145,16 @@ test("keeps non-modal menu focus shared while business capabilities remain in th
   assert.match(responsive, /html\[dir="rtl"\] \.settings-popover\s*\{[^}]*right:\s*10px;[^}]*left:\s*10px;/);
 });
 
-test("keeps the startup spectrum inside one licensed, path-timed handwritten performance", async () => {
+test("keeps both welcome lines inside one licensed, path-timed typeface system", async () => {
   const [component, experience, fontBundles, glyphData, onboarding, motion] = await Promise.all([
     readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/greeting-font-bundles.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/greeting-glyph-data.ts", import.meta.url), "utf8"),
+    Promise.all(
+      ["caveat", "ma-shan-zheng", "iansui", "nanum-pen-script"].map((name) =>
+        readFile(new URL(`../app/lib/greeting-glyph-data/${name}.json`, import.meta.url), "utf8"),
+      ),
+    ).then((files) => files.join("\n")),
     readFile(new URL("../app/styles/onboarding.css", import.meta.url), "utf8"),
     readFile(new URL("../app/styles/motion.css", import.meta.url), "utf8"),
   ]);
@@ -160,23 +164,24 @@ test("keeps the startup spectrum inside one licensed, path-timed handwritten per
   assert.match(component, /"data-color-system": "apple-hello-spectrum"/);
   assert.match(component, /"data-ink-material": "pressure-pencil-spectrum"/);
   assert.match(component, /<TegakiRenderer/);
-  assert.match(component, /speed: penSpeed/);
+  assert.match(component, /speed: penSpeed \/ motion\.durationScale/);
+  assert.match(component, /duration: WELCOME_SIGNATURE_DURATION_SECONDS/);
   assert.match(component, /variant === "inline" \? "welcome-signature" : "welcome-greeting"/);
   assert.match(experience, /presentation=\{welcomeSignaturePresentation\}/);
+  assert.match(experience, /locale: greetingLocale, value: text\.welcomeEyebrow/);
   assert.doesNotMatch(component, /stagger:/);
-  assert.match(component, /feTurbulence[^]*feDisplacementMap/);
   assert.doesNotMatch(component, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);
   assert.match(experience, /greetingPresentation\.completeAfterMs \+ 180/);
+  assert.match(experience, /WELCOME_SIGNATURE_COMPLETE_AFTER_MS/);
   assert.match(fontBundles, /Ma Shan Zheng/);
   assert.match(fontBundles, /Iansui/);
-  assert.match(fontBundles, /Klee One/);
+  assert.match(fontBundles, /tegaki\/fonts\/klee-one/);
   assert.match(fontBundles, /Nanum Pen Script/);
   assert.match(fontBundles, /tegaki\/fonts\/amiri/);
-  assert.match(glyphData, /SIMPLIFIED_CHINESE_GREETING_GLYPHS/);
-  assert.match(glyphData, /TRADITIONAL_CHINESE_GREETING_GLYPHS/);
+  for (const character of ["你", "好", "欢", "迎", "来", "到", "哈", "囉", "歡", "來", "O", "r", "b", "i", "t"]) {
+    assert.match(glyphData, new RegExp(`"${character}"`));
+  }
   assert.match(onboarding, /\.welcome-backdrop\[data-intro-phase="writing"\]\s*\{[^}]*background:\s*#050506;/s);
-  assert.match(onboarding, /\.welcome-greeting-spectrum stop\s*\{\s*animation:\s*none;/s);
-  assert.match(motion, /@keyframes orbit-greeting-pencil-write/);
   assert.doesNotMatch(motion, /@keyframes orbit-greeting-(?:write|ink-settle)/);
   assert.match(motion, /@keyframes orbit-setup-unfold/);
   assert.doesNotMatch(experience, /WelcomeAmbientMotion|greetingCycleDuration|setGreetingIndex/);

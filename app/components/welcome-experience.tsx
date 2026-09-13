@@ -23,7 +23,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { HandwrittenGreeting } from "./handwritten-greeting";
+import { HandwrittenGreeting, WELCOME_SIGNATURE_COMPLETE_AFTER_MS } from "./handwritten-greeting";
 import { OrbitMark } from "./orbit-mark";
 import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
@@ -63,8 +63,8 @@ export const WELCOME_BASE_COPY = {
     recommended: "系统推荐",
     continue: "继续",
     modelEyebrow: "智能设置",
-    modelTitle: "选择一个已登录账号",
-    modelBody: "Orbit 通过本机的官方客户端使用模型。登录凭据始终由 Codex、Claude Code 或 Gemini CLI 管理。",
+    modelTitle: "连接你已有的模型",
+    modelBody: "可以使用已登录账号、已有 API 配置、本地模型，也可以手动添加或导入连接。",
     checkingModel: "正在检查 Orbit 中已有的连接…",
     connectedModel: "已经准备好",
     connectedModelBody: "当前默认连接可用于先审后写的模型辅助。",
@@ -76,10 +76,10 @@ export const WELCOME_BASE_COPY = {
     useLocalBody: "只使用设备端解析、转换和确定性工具，不向模型服务发送内容",
     recheck: "重新扫描",
     discoveryScanning: "正在查找这台设备上的模型…",
-    discoveryTitle: "这台 Mac 上的模型账号",
-    discoveryBody: "Orbit 只检查官方客户端是否安装、是否已登录，不读取或复制账号凭据。",
-    discoveryEmpty: "没有可用的本机账号或本地模型",
-    discoveryEmptyBody: "请先在 Codex、Claude Code 或 Gemini CLI 中完成登录，然后重新扫描。",
+    discoveryTitle: "这台 Mac 上的可用连接",
+    discoveryBody: "一次扫描汇总已登录账号、已知 API 配置和本地模型；任何凭据都不会出现在列表中。",
+    discoveryEmpty: "没有发现可复用的连接",
+    discoveryEmptyBody: "可以在下方手动添加 API Key、导入配置，或先在官方客户端完成登录。",
     discoveryUnavailable: "网页版不能读取电脑上的应用配置；仍可手动连接模型。",
     discoveryError: "Orbit 无法完成设备扫描；没有读取或保存任何配置。",
     deviceModel: "在此设备上运行",
@@ -97,17 +97,22 @@ export const WELCOME_BASE_COPY = {
     accountMissing: "这台 Mac 尚未安装",
     accountAccess: "账号访问",
     accountAccessValue: "仅通过本机官方客户端",
+    accountGroup: "已登录账号",
+    configuredGroup: "API 配置与本地模型",
     reviewConnection: "查看",
-    reviewTitle: "使用这个本机账号？",
+    reviewTitle: "使用这个连接？",
     connectionReviewBody:
       "确认后，Orbit 会让官方客户端完成一次不含文档内容的结构化响应；成功后只保存连接名称，不复制 OAuth token。",
+    apiConnectionReviewBody:
+      "确认后，Orbit 只读取这一项配置，验证模型目录和一次最小结构化响应；成功后才加密保存并设为默认。",
     connectAndVerify: "验证并使用",
     connecting: "正在验证…",
     chooseAnother: "返回连接列表",
     connectionFailed: "这个连接暂时无法验证；Orbit 没有保存它。",
-    scanPrivacy: "扫描只调用官方客户端的登录状态命令和本机模型端口；不会读取浏览器 Cookie、OAuth token 或钥匙串内容。",
+    scanPrivacy:
+      "扫描仅检查官方客户端状态、已知配置位置、CC Switch 和本地模型端口；不会读取浏览器 Cookie，也不会在列表中展示密钥或 OAuth token。",
     modelSafety:
-      "个人密钥会被加密为 HttpOnly 凭据；浏览器脚本不能读回它，Orbit 也不会把它写进工作区、localStorage、Artifact 或 Git。",
+      "API 密钥会加密保存；账号登录仍由官方客户端管理。两者都不会写入工作区、localStorage、Artifact 或 Git。",
     modelUnavailable: "无法读取模型状态；你可以选择不使用模型继续。",
     shortcutEyebrow: "快速上手",
     shortcutTitle: "亲手试试四个快捷键",
@@ -152,9 +157,9 @@ export const WELCOME_BASE_COPY = {
     recommended: "System recommendation",
     continue: "Continue",
     modelEyebrow: "Intelligence",
-    modelTitle: "Choose a signed-in account",
+    modelTitle: "Connect the models you already use",
     modelBody:
-      "Orbit uses models through official clients on this Mac. Codex, Claude Code, or Gemini CLI keeps ownership of sign-in and token refresh.",
+      "Use a signed-in account, an existing API configuration, a local model, or add and import a connection yourself.",
     checkingModel: "Checking connections already saved in Orbit…",
     connectedModel: "Ready",
     connectedModelBody: "The current default can provide review-before-write model assistance.",
@@ -166,11 +171,11 @@ export const WELCOME_BASE_COPY = {
     useLocalBody: "Use only on-device parsing, conversion, and deterministic tools; send nothing to a model service",
     recheck: "Scan again",
     discoveryScanning: "Looking for models on this device…",
-    discoveryTitle: "Model accounts on this Mac",
+    discoveryTitle: "Connections on this Mac",
     discoveryBody:
-      "Orbit checks only whether each official client is installed and signed in. It never copies account credentials.",
-    discoveryEmpty: "No local account or device model is ready",
-    discoveryEmptyBody: "Sign in through Codex, Claude Code, or Gemini CLI, then scan again.",
+      "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.",
+    discoveryEmpty: "No reusable connection was found",
+    discoveryEmptyBody: "Add an API key or import a configuration below, or sign in through an official client first.",
     discoveryUnavailable:
       "The web app cannot read application settings on your computer. You can still connect a model manually.",
     discoveryError: "Orbit could not complete the device scan. No configuration was read or saved.",
@@ -189,18 +194,22 @@ export const WELCOME_BASE_COPY = {
     accountMissing: "Not installed on this Mac",
     accountAccess: "Account access",
     accountAccessValue: "Only through the local official client",
+    accountGroup: "Signed-in accounts",
+    configuredGroup: "API configurations and local models",
     reviewConnection: "Review",
-    reviewTitle: "Use this signed-in account?",
+    reviewTitle: "Use this connection?",
     connectionReviewBody:
       "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.",
+    apiConnectionReviewBody:
+      "After you confirm, Orbit reads only this configuration, verifies its model catalog and one minimal structured response, then encrypts and saves it as the default.",
     connectAndVerify: "Verify & use",
     connecting: "Verifying…",
     chooseAnother: "Back to connections",
     connectionFailed: "Orbit could not verify this connection and did not save it.",
     scanPrivacy:
-      "Discovery calls only official-client sign-in status commands and local model ports. It never reads browser cookies, OAuth tokens, or Keychain contents.",
+      "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.",
     modelSafety:
-      "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Orbit never writes it to the workspace, localStorage, an Artifact, or Git.",
+      "API keys are encrypted; account sign-in remains with the official client. Neither enters the workspace, localStorage, an Artifact, or Git.",
     modelUnavailable: "Orbit could not read model status. You can continue without a model.",
     shortcutEyebrow: "Quick start",
     shortcutTitle: "Try four shortcuts yourself",
@@ -287,6 +296,7 @@ export function WelcomeExperience({
   const [step, setStep] = useState<WelcomeStep>(startAt);
   const [completedShortcuts, setCompletedShortcuts] = useState<ShortcutId[]>([]);
   const [greetingIntroComplete, setGreetingIntroComplete] = useState(false);
+  const [welcomeSignatureComplete, setWelcomeSignatureComplete] = useState(false);
   const languageOptionsRef = useRef<HTMLDivElement>(null);
   const selectedLanguageOptionRef = useRef<HTMLButtonElement>(null);
   // Keep the server and first client render identical. The external-store
@@ -303,8 +313,8 @@ export function WelcomeExperience({
     [greeting, greetingLocale],
   );
   const welcomeSignaturePresentation = useMemo(
-    () => planGreetingPresentation({ durationScale: 0.6, locale, value: text.welcomeEyebrow }),
-    [locale, text.welcomeEyebrow],
+    () => planGreetingPresentation({ durationScale: 0.6, locale: greetingLocale, value: text.welcomeEyebrow }),
+    [greetingLocale, text.welcomeEyebrow],
   );
   const steps = useMemo<WelcomeStep[]>(() => ["welcome", "model", "shortcuts", "ready"], []);
   const stepIndex = steps.indexOf(step);
@@ -324,6 +334,16 @@ export function WelcomeExperience({
     );
     return () => window.clearTimeout(fallback);
   }, [greetingIntroComplete, greetingPresentation.completeAfterMs, step]);
+
+  useEffect(() => {
+    if (step !== "welcome" || !greetingIntroComplete || welcomeSignatureComplete) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fallback = window.setTimeout(
+      () => setWelcomeSignatureComplete(true),
+      reducedMotion ? 0 : WELCOME_SIGNATURE_COMPLETE_AFTER_MS,
+    );
+    return () => window.clearTimeout(fallback);
+  }, [greetingIntroComplete, step, welcomeSignatureComplete]);
 
   useEffect(() => {
     if (step !== "welcome") return;
@@ -448,17 +468,24 @@ export function WelcomeExperience({
                     key={locale}
                   />
                 </div>
-                <section className="welcome-language-card" aria-labelledby="welcome-title">
+                <section
+                  className="welcome-language-card"
+                  data-signature-phase={welcomeSignatureComplete ? "ready" : "writing"}
+                  aria-labelledby="welcome-title"
+                >
                   <div className="welcome-language-heading">
                     <span className="welcome-eyebrow welcome-written-eyebrow" aria-label={text.welcomeEyebrow}>
                       <span className="visually-hidden">{text.welcomeEyebrow}</span>
-                      <span aria-hidden="true">
-                        <HandwrittenGreeting
-                          key={`signature-${locale}`}
-                          presentation={welcomeSignaturePresentation}
-                          variant="inline"
-                        />
-                      </span>
+                      {greetingIntroComplete && (
+                        <span aria-hidden="true">
+                          <HandwrittenGreeting
+                            key={`signature-${locale}`}
+                            onWritingComplete={() => setWelcomeSignatureComplete(true)}
+                            presentation={welcomeSignaturePresentation}
+                            variant="inline"
+                          />
+                        </span>
+                      )}
                     </span>
                     <h1 id="welcome-title">
                       <IsolatedProductName>{text.languageTitle}</IsolatedProductName>
@@ -510,6 +537,7 @@ export function WelcomeExperience({
             >
               <WelcomeModelStep
                 copy={text}
+                locale={locale}
                 modelMode={modelMode}
                 onModelModeChange={onModelModeChange}
                 onBack={showPreviousStep}

@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
+  UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
@@ -28,6 +29,7 @@ import {
   MIN_MODEL_INPUT_TOKEN_BUDGET,
   MIN_MODEL_OUTPUT_TOKEN_BUDGET,
   MODEL_PROVIDER_PRESETS,
+  isAccountModelProvider,
   type ModelProfilesState,
   type ModelProtocol,
   type ModelProviderKind,
@@ -124,6 +126,7 @@ export const MODEL_MANAGER_BASE_COPY = {
     readError: "Orbit 暂时无法读取模型配置；你可以稍后重试。",
     updateError: "Orbit 暂时无法完成模型配置；你的原配置没有改变。",
     modelsError: "Orbit 暂时无法验证模型目录；配置尚未保存。",
+    accountManaged: "登录由本机官方客户端管理；Orbit 不保存 OAuth token。",
   },
   en: {
     loading: "Reading model profiles…",
@@ -206,6 +209,7 @@ export const MODEL_MANAGER_BASE_COPY = {
     readError: "Orbit could not read model configurations. Try again in a moment.",
     updateError: "Orbit could not complete that model change. Your existing configuration is unchanged.",
     modelsError: "Orbit could not verify that model catalog. The configuration was not saved.",
+    accountManaged: "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.",
   },
 } as const;
 
@@ -548,16 +552,16 @@ export function ModelProfileManager({
             className={`model-profile-card ${state.activeProfileId === profile.id ? "active" : ""}`}
             key={profile.id}
           >
-            <span>
-              <KeyRound />
-            </span>
+            <span>{isAccountModelProvider(profile.provider) ? <UserRound /> : <KeyRound />}</span>
             <div>
               <strong>{profile.name}</strong>
               <small>
                 {MODEL_PROVIDER_PRESETS.find((item) => item.id === profile.provider)?.label} · {profile.model}
               </small>
               <p>
-                {modelProtocolLabel(profile.protocol)} · {profile.baseURL}
+                {isAccountModelProvider(profile.provider)
+                  ? text.accountManaged
+                  : `${modelProtocolLabel(profile.protocol)} · ${profile.baseURL}`}
               </p>
               <small className={`model-profile-health ${profile.health.status}`}>
                 {healthLabel(profile.health, text)}
@@ -579,20 +583,22 @@ export function ModelProfileManager({
                   {text.enable}
                 </button>
               )}
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={(event) => {
-                  returnFocusRef.current = event.currentTarget;
-                  closeImport();
-                  setEditor(editableProfile(profile));
-                  setModels([]);
-                  setError("");
-                }}
-              >
-                <Pencil />
-                {text.edit}
-              </button>
+              {!isAccountModelProvider(profile.provider) && (
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={(event) => {
+                    returnFocusRef.current = event.currentTarget;
+                    closeImport();
+                    setEditor(editableProfile(profile));
+                    setModels([]);
+                    setError("");
+                  }}
+                >
+                  <Pencil />
+                  {text.edit}
+                </button>
+              )}
               <button
                 type="button"
                 className={pendingDeleteId === profile.id ? "danger" : ""}

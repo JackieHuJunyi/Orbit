@@ -67,8 +67,6 @@ export const INTERFACE_TRANSLATIONS = {
     "중대한 오류, 누락 또는 재작업이 남아 있어 아직 전달할 수 없습니다.",
   "A paragraph, heading, list, quote, code block, table, or divider…":
     "단락, 제목, 목록, 인용문, 코드 블록, 표 또는 구분선…",
-  "A personal key is encrypted into an HttpOnly credential that browser scripts cannot read back; Orbit never writes it to the workspace, localStorage, an Artifact, or Git.":
-    "개인 키는 브라우저 스크립트가 다시 읽을 수 없는 HttpOnly 자격 증명으로 암호화됩니다. Orbit은 작업공간, localStorage, Artifact 또는 Git에 이를 쓰지 않습니다.",
   "A sample counts only when every score is complete and the content is confirmed as authorized or redacted. A score of 1 needs work; 5 is excellent.":
     "모든 점수를 입력하고 콘텐츠가 평가용으로 승인되었거나 비식별 처리되었음을 확인해야 표본으로 집계됩니다. 1점은 개선 필요, 5점은 매우 우수함을 뜻합니다.",
   "A successful download or folder write does not prove the result was useful. Choose the closest outcome so Orbit can separate technical success from a real deliverable.":
@@ -87,6 +85,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Add a valid Data table before creating a Query.": "쿼리를 생성하기 전에 유효한 데이터 테이블을 추가하세요.",
   "Add a valid Data table or Query before creating a Chart.":
     "Chart을(를) 생성하기 전에 유효한 데이터 테이블 또는 쿼리를 추가하세요.",
+  "Add an API key or import a configuration below, or sign in through an official client first.":
+    "API 키를 추가하거나 아래 구성을 가져오거나 먼저 공식 클라이언트를 통해 로그인하세요.",
   "Add comparison scope": "비교 범위 추가",
   "Add condition": "조건 추가",
   "Add model provider": "모델 제공자 추가",
@@ -100,6 +100,8 @@ export const INTERFACE_TRANSLATIONS = {
     "검토된 가져오기를 확인하면 Orbit이 이 Document를 미리 선택한 상태로 프레젠테이션 설정을 엽니다.",
   "After this reviewed import, Orbit opens the operating-review setup with this Data source already selected.":
     "검토된 가져오기를 확인하면 Orbit이 이 Data 소스를 미리 선택한 상태로 운영 리뷰 설정을 엽니다.",
+  "After you confirm, Orbit reads only this configuration, verifies its model catalog and one minimal structured response, then encrypts and saves it as the default.":
+    "확인하면 Orbit은(는) 이 구성만 읽고 모델 카탈로그와 구조화된 최소 응답 하나를 확인한 다음 이를 암호화하여 기본값으로 저장합니다.",
   "After you confirm, Orbit reads this one credential, verifies the model catalog and one minimal structured response, then encrypts and saves it as the default only if both succeed.":
     "확인하면 Orbit은 이 연결의 인증 정보만 읽어 모델 목록과 최소 구조화 응답을 검증합니다. 두 검증에 모두 성공한 경우에만 암호화하여 기본 연결로 저장합니다.",
   "After you confirm, the official client completes one document-free structured response. Orbit saves only the connection name and never copies its OAuth token.":
@@ -128,7 +130,10 @@ export const INTERFACE_TRANSLATIONS = {
     "익명 run-001 / output-01 레이블과 정확한 시각이 없는 날짜",
   Answer: "답변",
   "API base URL": "API 기본 URL",
+  "API configurations and local models": "API 구성 및 로컬 모델",
   "API Key": "API Key",
+  "API keys are encrypted; account sign-in remains with the official client. Neither enters the workspace, localStorage, an Artifact, or Git.":
+    "API 키는 암호화됩니다. 계정 로그인은 공식 클라이언트에 남아 있습니다. 작업공간, localStorage, Artifact 또는 Git에 들어가지 않습니다.",
   "API keys, model provider names, source revisions, and delivery fingerprints":
     "API 키, 모델 공급자 이름, 소스 리비전, 전달 지문",
   "API protocol": "API 프로토콜",
@@ -215,7 +220,6 @@ export const INTERFACE_TRANSLATIONS = {
     "검토된 문서, 대상, 목적을 선택하세요. Orbit은 새 프레젠테이션을 만들거나 파일 ID와 원본 문서 관계를 유지한 채 연결된 프레젠테이션을 갱신할 수 있습니다.",
   "Choose a reviewed document, audience, and purpose. Orbit creates editable Deck Markdown and keeps an explicit relationship to the source document.":
     "검토된 문서, 대상, 목적을 선택하세요. Orbit이 편집 가능한 Deck Markdown을 만들고 원본 문서와의 명시적 관계를 유지합니다.",
-  "Choose a signed-in account": "로그인한 계정을 선택하세요",
   "Choose an existing Chart id or create and validate that Chart first.":
     "기존 Chart ID를 선택하거나 먼저 해당 Chart를 만들고 검증하세요.",
   "Choose an existing metric key or an explicit Query output field.":
@@ -268,8 +272,10 @@ export const INTERFACE_TRANSLATIONS = {
   "confirmed deliverables": "개 확인된 결과물",
   "Confirming only downloads to this device; Orbit does not upload or send the file.":
     "확인하면 이 기기에만 다운로드됩니다. Orbit은 파일을 업로드하거나 전송하지 않습니다.",
+  "Connect the models you already use": "이미 사용하고 있는 모델을 연결하세요",
   "Connected folder": "연결된 폴더",
   "Connections available on this device": "이 기기에서 사용할 수 있는 연결",
+  "Connections on this Mac": "이 Mac의 연결",
   "Content workspace": "콘텐츠 작업공간",
   Continue: "계속",
   "Continue setup": "계속 설정",
@@ -364,8 +370,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Did this result become usable in real work?": "이 결과를 실제 업무에 사용할 수 있었나요?",
   Discard: "폐기",
   "Discard proposed patch": "제안된 패치 폐기",
-  "Discovery calls only official-client sign-in status commands and local model ports. It never reads browser cookies, OAuth tokens, or Keychain contents.":
-    "검색에서는 공식 클라이언트 로그인 상태 명령과 로컬 모델 포트만 호출합니다. 브라우저 쿠키, OAuth 토큰 또는 키체인 콘텐츠를 읽지 않습니다.",
+  "Discovery checks official-client status, known configuration locations, CC Switch, and local model ports. It never reads browser cookies or displays API keys or OAuth tokens.":
+    "Discovery는 공식 클라이언트 상태, 알려진 구성 위치, CC 스위치 및 로컬 모델 포트를 확인합니다. 브라우저 쿠키를 읽거나 API 키 또는 OAuth 토큰을 표시하지 않습니다.",
   "Discovery reads only known configuration locations and local model ports. It never executes shell profiles, uploads files, or displays a key.":
     "검색은 알려진 설정 위치와 로컬 모델 포트만 확인합니다. 셸 설정을 실행하거나 파일을 업로드하거나 키를 표시하지 않습니다.",
   "Dock Agent": "Agent 고정",
@@ -594,7 +600,6 @@ export const INTERFACE_TRANSLATIONS = {
   "Match all conditions": "모든 조건 일치",
   "Mist Blue": "미스트 블루",
   Model: "모델",
-  "Model accounts on this Mac": "이 Mac의 모델 계정",
   "Model connected": "연결된 모델",
   "Model for this message": "이 메시지에 사용할 모델",
   "Model settings": "모델 설정",
@@ -646,10 +651,10 @@ export const INTERFACE_TRANSLATIONS = {
   "No compatible source": "호환되는 소스가 없습니다.",
   "No cross-file bindings change in this transaction.": "이 트랜잭션에서는 파일 간 바인딩이 변경되지 않습니다.",
   "No hidden graph state": "숨겨진 그래프 상태 없음",
-  "No local account or device model is ready": "로컬 계정이나 장치 모델이 준비되지 않았습니다.",
   "No model selected yet": "아직 모델을 선택하지 않았습니다",
   "No personal model profiles yet. Add one to switch providers here.":
     "아직 개인 모델 프로필이 없습니다. 여기에 공급자를 전환하려면 하나를 추가하세요.",
+  "No reusable connection was found": "재사용 가능한 연결을 찾을 수 없습니다.",
   "No reusable model connection was found": "재사용할 수 있는 연결을 찾지 못했습니다",
   "No strictly numeric field": "엄격한 숫자 필드 없음",
   "No unsaved change": "저장되지 않은 변경사항 없음",
@@ -704,6 +709,8 @@ export const INTERFACE_TRANSLATIONS = {
     "현재 리비전에 고정된 시맨틱 HTML 슬라이드 하나 · Source에 실시간 반영 · 저장 전 전체 프레젠테이션 검증",
   "One revision-bound slide · bindings stay fixed · save writes canonical source":
     "한 개의 개정판 슬라이드 · 바인딩은 고정된 상태로 유지됨 · 저장 시 표준 소스 쓰기",
+  "One scan combines signed-in accounts, known API configurations, and local models. Credentials never appear in this list.":
+    "한 번의 스캔으로 로그인된 계정, 알려진 API 구성 및 로컬 모델을 결합합니다. 자격 증명은 이 목록에 표시되지 않습니다.",
   "One source workspace": "단일 소스 작업 공간",
   "One strict spec · runtime impact verified · save rewrites canonical Chart JSON":
     "엄격한 사양 1개 · 런타임 영향 확인 · 저장 시 정식 Chart JSON 재작성",
@@ -743,8 +750,6 @@ export const INTERFACE_TRANSLATIONS = {
     "선택 사항입니다. 선택하면 로컬 근거, SQL, 차트, 모델 컨텍스트는 정확히 일치하는 행만 사용합니다.",
   "Or open something else": "또는 다른 콘텐츠 열기",
   Orbit: "Orbit",
-  "Orbit checks only whether each official client is installed and signed in. It never copies account credentials.":
-    "Orbit은 각 공식 클라이언트가 설치 및 로그인되었는지 여부만 확인합니다. 계정 자격 증명은 복사하지 않습니다.",
   "Orbit compiled these results locally from the current scope before any model request.":
     "Orbit이 모델에 요청하기 전에 현재 데이터 범위에서 이 결과를 로컬로 집계했습니다.",
   "Orbit could not complete that model change. Your existing configuration is unchanged.":
@@ -786,8 +791,6 @@ export const INTERFACE_TRANSLATIONS = {
     "Orbit은 이 기기에 판단, 형식, 경과 시간, 소스 리비전 지문만 저장하며 문서 내용이나 프롬프트는 저장하지 않습니다.",
   "Orbit supports personal OpenAI Responses, OpenRouter/compatible Chat Completions, Anthropic Messages, Gemini generateContent, and custom protocol profiles. After Save, the server encrypts the key into an HttpOnly credential that browser scripts cannot read; it never enters the workspace or localStorage. Local/deployed web servers need a separate `ORBIT_CREDENTIAL_ENCRYPTION_KEY`; Orbit Desktop protects that master key with the macOS Keychain. Cross-provider failover is off by default and runs only after you explicitly allow it in Models settings; deterministic local planners remain available without a model.":
     "Orbit은 개인 OpenAI Responses, OpenRouter/호환 Chat Completions, Anthropic Messages, Gemini generateContent 및 사용자 지정 프로토콜 프로필을 지원합니다. 저장 후 서버는 브라우저 스크립트가 읽을 수 없는 HttpOnly 자격 증명으로 키를 암호화하며, 키는 작업공간이나 localStorage에 저장되지 않습니다. 로컬 또는 배포된 웹 서버에는 별도의 `ORBIT_CREDENTIAL_ENCRYPTION_KEY`이 필요하며 Orbit Desktop은 해당 마스터 키를 macOS 키체인으로 보호합니다. 공급자 간 장애 조치는 기본적으로 꺼져 있고 모델 설정에서 명시적으로 허용한 뒤에만 실행됩니다. 모델이 없어도 결정론적 로컬 플래너를 사용할 수 있습니다.",
-  "Orbit uses models through official clients on this Mac. Codex, Claude Code, or Gemini CLI keeps ownership of sign-in and token refresh.":
-    "Orbit은(는) 이 Mac의 공식 클라이언트를 통해 모델을 사용합니다. Codex, Claude Code 또는 Gemini CLI는 로그인 및 토큰 새로 고침에 대한 소유권을 유지합니다.",
   "Orbit will confirm the folder is still empty, then write the current readable sources, referenced images, and workspace manifest.":
     "Orbit은 폴더가 여전히 비어 있는지 확인한 다음 현재 읽을 수 있는 소스, 참조 이미지, 작업공간 매니페스트를 씁니다.",
   "Orbit will read the folder again and replace the device workspace only if both sides still exactly match this review.":
@@ -1004,11 +1007,12 @@ export const INTERFACE_TRANSLATIONS = {
   "Show source only": "소스만 표시",
   "Show workspace files": "작업공간 파일 표시",
   Showing: "표시",
-  "Sign in through Codex, Claude Code, or Gemini CLI, then scan again.":
-    "Codex, Claude Code 또는 Gemini CLI를 통해 로그인한 후 다시 스캔하세요.",
   "Sign in through the official client first": "먼저 공식 클라이언트를 통해 로그인하세요.",
+  "Sign-in is managed by the official client on this Mac; Orbit stores no OAuth token.":
+    "로그인은 이 Mac의 공식 클라이언트에서 관리됩니다. Orbit은 OAuth 토큰을 저장하지 않습니다.",
   "Sign-in managed by the official client": "공식 클라이언트에서 관리하는 로그인",
   "Signed in and ready": "로그인되었으며 준비되었습니다.",
+  "Signed-in accounts": "로그인된 계정",
   Silver: "실버",
   Skip: "건너뛰기",
   "Sky Blue": "스카이 블루",
@@ -1179,6 +1183,8 @@ export const INTERFACE_TRANSLATIONS = {
   "usable or minor edits": "사용 가능 또는 가벼운 수정 필요",
   "Use a discovered connection, add one yourself, or continue without a model.":
     "찾은 연결을 사용하거나 직접 추가하거나 모델 없이 계속하세요.",
+  "Use a signed-in account, an existing API configuration, a local model, or add and import a connection yourself.":
+    "로그인한 계정, 기존 API 구성, 로컬 모델을 사용하거나 직접 연결을 추가하고 가져옵니다.",
   "Use a supported mark, fields, format, and one existing Data or Query source.":
     "지원되는 마크, 필드, 형식과 기존 Data 또는 Query 소스를 사용하세요.",
   "Use all Data rows": "모든 Data 행 사용",
@@ -1193,8 +1199,8 @@ export const INTERFACE_TRANSLATIONS = {
   "Use the selected cloud or device model; you still confirm every change":
     "선택한 클라우드 또는 로컬 모델을 사용하며 모든 변경은 직접 확인",
   "Use this configuration": "이 구성을 사용하세요",
+  "Use this connection?": "이 연결을 사용하시겠습니까?",
   "Use this model connection?": "이 모델 연결을 사용할까요?",
-  "Use this signed-in account?": "이 로그인된 계정을 사용하시겠습니까?",
   Valid: "유효",
   Validated: "검증됨",
   "Value field": "값 필드",

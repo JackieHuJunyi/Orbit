@@ -1,4 +1,4 @@
-export const MAX_MODEL_PROFILES = 3;
+export const MAX_MODEL_PROFILES = 6;
 export const MODEL_PROFILE_COOKIE = "orbit_model_profiles_v1";
 export const MODEL_PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 export const MIN_MODEL_INPUT_TOKEN_BUDGET = 1_024;

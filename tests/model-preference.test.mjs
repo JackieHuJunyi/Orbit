@@ -378,7 +378,7 @@ test("model profile route saves, redacts, activates, and deletes personal profil
       }),
     );
     assert.equal(crossOrigin.status, 403);
-    assert.equal(MAX_MODEL_PROFILES, 3);
+    assert.equal(MAX_MODEL_PROFILES, 6);
   } finally {
     if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
     else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
