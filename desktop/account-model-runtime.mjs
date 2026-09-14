@@ -4,12 +4,20 @@ import { constants } from "node:fs";
 import { access, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { accountModelChoice, accountModelChoices, defaultAccountModel } from "../shared/account-model-catalog.mjs";
+import {
+  accountModelChoices,
+  createAccountModelChoice,
+  defaultAccountModel,
+} from "../shared/account-model-catalog.mjs";
 
 const MAX_PROCESS_OUTPUT_BYTES = 2 * 1024 * 1024;
 const MAX_REQUEST_BYTES = 1_000_000;
 const STATUS_TIMEOUT_MS = 4_000;
+const MODEL_CATALOG_TIMEOUT_MS = 8_000;
 const GENERATION_TIMEOUT_MS = 55_000;
+const MODEL_CATALOG_CACHE_MS = 30_000;
+const MAX_CODEX_MODEL_PAGES = 4;
+const MAX_CODEX_MODEL_CHOICES = 800;
 
 const ACCOUNT_RUNTIMES = Object.freeze([
   {
@@ -155,6 +163,85 @@ function runBoundedProcess(executable, args, { cwd, environment, input = "", sig
   });
 }
 
+function runBoundedJsonRpcProcess(executable, args, messages, responseId, context) {
+  return new Promise((resolve, reject) => {
+    const child = context.capabilities.spawn(executable, args, {
+      cwd: context.cwd,
+      env: accountOnlyEnvironment(context.environment),
+      shell: false,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let receivedBytes = 0;
+    let pending = "";
+    let response = null;
+    let stderr = Buffer.alloc(0);
+    let settled = false;
+    const finish = (callback) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      callback();
+    };
+    const stopWith = (error) => {
+      child.kill("SIGKILL");
+      finish(() => reject(error));
+    };
+    child.stdout.setEncoding?.("utf8");
+    child.stdout.on("data", (chunk) => {
+      const text = String(chunk);
+      receivedBytes += Buffer.byteLength(text);
+      if (receivedBytes > MAX_PROCESS_OUTPUT_BYTES) {
+        stopWith(new Error("The signed-in model client returned too much output."));
+        return;
+      }
+      pending += text;
+      while (pending.includes("\n")) {
+        const newline = pending.indexOf("\n");
+        const line = pending.slice(0, newline).trim();
+        pending = pending.slice(newline + 1);
+        if (!line) continue;
+        try {
+          const message = JSON.parse(line);
+          if (message?.id === responseId && !response) {
+            response = message;
+            child.stdin.end();
+          }
+        } catch {
+          // App-server notifications that are not valid JSON cannot satisfy
+          // the requested response and remain bounded by the output limit.
+        }
+      }
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr = Buffer.concat([stderr, Buffer.from(chunk)]);
+      if (stderr.length > MAX_PROCESS_OUTPUT_BYTES) stopWith(new Error("The signed-in model client failed."));
+    });
+    child.once("error", (error) => finish(() => reject(error)));
+    child.once("close", (code) => {
+      if (response) {
+        finish(() => resolve(response));
+        return;
+      }
+      const detail = cleanText(stderr.toString("utf8"), 300);
+      finish(() =>
+        reject(
+          new Error(
+            detail ||
+              (code === 0
+                ? "The signed-in model client closed before answering."
+                : "The signed-in model client failed."),
+          ),
+        ),
+      );
+    });
+    const timeout = setTimeout(
+      () => stopWith(new Error("The signed-in model client timed out.")),
+      MODEL_CATALOG_TIMEOUT_MS,
+    );
+    child.stdin.write(`${messages.map((message) => JSON.stringify(message)).join("\n")}\n`);
+  });
+}
+
 async function accountStatus(runtime, executable, context) {
   if (!executable) return "not-installed";
   try {
@@ -188,6 +275,79 @@ async function accountStatus(runtime, executable, context) {
   } catch {
     return "sign-in-required";
   }
+}
+
+function codexModelChoices(payload) {
+  const models = Array.isArray(payload?.data) ? payload.data : [];
+  const choices = models.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || entry.hidden === true) return [];
+    const model = cleanText(entry.model || entry.id, 110);
+    const displayName = cleanText(entry.displayName, 100);
+    if (!model) return [];
+    const efforts = Array.isArray(entry.supportedReasoningEfforts)
+      ? entry.supportedReasoningEfforts
+          .map((item) => cleanText(item?.reasoningEffort, 16))
+          .filter((effort, index, all) => effort && all.indexOf(effort) === index)
+      : [];
+    const resolvedEfforts = efforts.length ? efforts : [null];
+    return resolvedEfforts.flatMap((effort) => {
+      const choice = createAccountModelChoice(model, effort, displayName);
+      if (!choice) return [];
+      return [
+        Object.freeze({
+          ...choice,
+          isDefault:
+            entry.isDefault === true &&
+            (cleanText(entry.defaultReasoningEffort, 16) ? effort === entry.defaultReasoningEffort : effort === null),
+        }),
+      ];
+    });
+  });
+  return choices
+    .filter((choice, index, all) => all.findIndex((item) => item.id === choice.id) === index)
+    .slice(0, MAX_CODEX_MODEL_CHOICES);
+}
+
+async function readCodexModelPage(executable, context, appVersion, cursor) {
+  const messages = [
+    {
+      method: "initialize",
+      id: 1,
+      params: { clientInfo: { name: "orbit_desktop", title: "Orbit", version: appVersion } },
+    },
+    { method: "initialized", params: {} },
+    {
+      method: "model/list",
+      id: 2,
+      params: { limit: 100, includeHidden: false, ...(cursor ? { cursor } : {}) },
+    },
+  ];
+  const response = await runBoundedJsonRpcProcess(
+    executable,
+    ["app-server", "--listen", "stdio://"],
+    messages,
+    2,
+    context,
+  );
+  if (response.error) throw new Error("Codex returned an invalid signed-in model catalog.");
+  return response.result;
+}
+
+async function readCodexModelChoices(executable, context, appVersion) {
+  const data = [];
+  const seenCursors = new Set();
+  let cursor = "";
+  for (let pageIndex = 0; pageIndex < MAX_CODEX_MODEL_PAGES; pageIndex += 1) {
+    const page = await readCodexModelPage(executable, context, appVersion, cursor);
+    if (Array.isArray(page?.data)) data.push(...page.data);
+    const nextCursor = cleanText(page?.nextCursor, 240);
+    if (!nextCursor || seenCursors.has(nextCursor)) break;
+    seenCursors.add(nextCursor);
+    cursor = nextCursor;
+  }
+  const choices = codexModelChoices({ data });
+  if (!choices.length) throw new Error("Codex returned no visible models for this account.");
+  return choices;
 }
 
 function combinedPrompt(body) {
@@ -242,8 +402,7 @@ async function runCodex(runtime, executable, prompt, schema, selection, context)
       "never",
       "--model",
       selection.model,
-      "--config",
-      `model_reasoning_effort="${selection.effort}"`,
+      ...(selection.effort ? ["--config", `model_reasoning_effort="${selection.effort}"`] : []),
       "--disable",
       "shell_tool",
       "--disable",
@@ -361,6 +520,7 @@ export function createDesktopAccountModelRuntime({
   accountToken,
   getOrigin,
   homeDirectory,
+  appVersion = "1",
   environment = process.env,
   capabilities: overrides = {},
 } = {}) {
@@ -374,13 +534,38 @@ export function createDesktopAccountModelRuntime({
     tmpDirectory: tmpdir(),
   };
   let latest = [];
+  const modelCatalogCache = new Map();
+
+  async function runtimeModelChoices(runtime, executable) {
+    if (runtime.provider !== "codex-account") return accountModelChoices(runtime.provider);
+    const cached = modelCatalogCache.get(runtime.id);
+    if (cached && Date.now() - cached.readAt < MODEL_CATALOG_CACHE_MS) return cached.choices;
+    try {
+      const choices = await readCodexModelChoices(executable, context, cleanText(appVersion, 32) || "1");
+      modelCatalogCache.set(runtime.id, { choices, readAt: Date.now(), source: "codex-app-server" });
+      return choices;
+    } catch {
+      const choices = accountModelChoices(runtime.provider);
+      modelCatalogCache.set(runtime.id, { choices, readAt: Date.now(), source: "fallback" });
+      return choices;
+    }
+  }
 
   async function discover() {
-    const accounts = await Promise.all(
+    modelCatalogCache.clear();
+    const discoveredAccounts = await Promise.all(
       ACCOUNT_RUNTIMES.map(async (runtime) => {
         const executable = await findExecutable(runtime.executable, home, environment, capabilities);
         const status = await accountStatus(runtime, executable, context);
         return Object.freeze({ ...runtime, executable, status });
+      }),
+    );
+    const accounts = await Promise.all(
+      discoveredAccounts.map(async (account) => {
+        if (account.provider !== "codex-account" || account.status !== "ready" || !account.executable) return account;
+        const modelChoices = await runtimeModelChoices(account, account.executable);
+        const model = modelChoices.find((choice) => choice.isDefault)?.id ?? modelChoices[0]?.id ?? account.model;
+        return Object.freeze({ ...account, model, modelChoices });
       }),
     );
     latest = accounts;
@@ -396,6 +581,7 @@ export function createDesktopAccountModelRuntime({
             name: account.sourceLabel,
             baseURL: `${origin}/__orbit_account__/${account.id}/v1`,
             model: account.model,
+            models: account.modelChoices?.map((choice) => choice.id) ?? [],
             apiKey: accountToken,
             protocol: "responses",
             locality: "device",
@@ -403,7 +589,15 @@ export function createDesktopAccountModelRuntime({
           }))
       : [];
     return {
-      accounts: accounts.map(({ executable, ...account }) => ({ ...account, installed: Boolean(executable) })),
+      accounts: accounts.map(({ id, provider, label, sourceLabel, model, status, executable }) => ({
+        id,
+        provider,
+        label,
+        sourceLabel,
+        model,
+        status,
+        installed: Boolean(executable),
+      })),
       connections,
     };
   }
@@ -425,16 +619,18 @@ export function createDesktopAccountModelRuntime({
       return Response.json({ error: `Sign in through ${runtime.sourceLabel} first.` }, { status: 401 });
     }
     if (match[2] === "models") {
+      const choices = await runtimeModelChoices(runtime, executable);
       return Response.json({
         object: "list",
-        data: accountModelChoices(runtime.provider).map((choice) => ({ id: choice.id, object: "model" })),
+        data: choices.map((choice) => ({ id: choice.id, object: "model" })),
       });
     }
     try {
       const body = await boundedRequestJson(request);
       const prompt = combinedPrompt(body);
       const schema = responseSchema(body);
-      const selection = accountModelChoice(runtime.provider, cleanText(body?.model, 120));
+      const choices = await runtimeModelChoices(runtime, executable);
+      const selection = choices.find((choice) => choice.id === cleanText(body?.model, 120));
       if (!selection) {
         return Response.json({ error: "Choose a supported model and effort level for this account." }, { status: 400 });
       }
@@ -463,6 +659,7 @@ export function accountRuntimeToken(masterKey) {
 
 export const DESKTOP_ACCOUNT_RUNTIME_LIMITS = Object.freeze({
   generationTimeoutMs: GENERATION_TIMEOUT_MS,
+  modelCatalogTimeoutMs: MODEL_CATALOG_TIMEOUT_MS,
   maximumOutputBytes: MAX_PROCESS_OUTPUT_BYTES,
   maximumRequestBytes: MAX_REQUEST_BYTES,
   statusTimeoutMs: STATUS_TIMEOUT_MS,

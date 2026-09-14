@@ -382,8 +382,8 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
 .welcome-language-heading .welcome-eyebrow { margin-bottom: 7px; }
 .welcome-language-heading .welcome-written-eyebrow {
   display: grid;
-  width: min(360px, 78vw);
-  height: 54px;
+  width: min(470px, 84vw);
+  height: 68px;
   place-items: center;
   margin-bottom: 11px;
   padding: 0;
@@ -397,21 +397,21 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
 }
 .welcome-signature {
   display: block;
-  width: min(360px, 78vw);
-  height: 54px;
+  width: min(470px, 84vw);
+  height: 68px;
   overflow: visible;
   font-family: "Snell Roundhand", "Segoe Script", "Apple Chancery", cursive;
-  font-size: 50px;
+  font-size: 62px;
   font-weight: 400;
-  letter-spacing: -.045em;
+  letter-spacing: -.075em;
   line-height: 1;
 }
-.welcome-signature.long { font-size: 40px; }
-.welcome-signature[data-greeting-locale^="zh"] { font-size: 48px; letter-spacing: -.035em; }
+.welcome-signature.long { font-size: 49px; }
+.welcome-signature[data-greeting-locale^="zh"] { font-size: 59px; letter-spacing: -.055em; }
 .welcome-signature[data-greeting-locale="ja"],
-.welcome-signature[data-greeting-locale="ko"] { font-size: 43px; letter-spacing: -.03em; }
-.welcome-signature[data-greeting-locale="ar"] { font-size: 44px; letter-spacing: 0; }
-.welcome-signature .welcome-greeting-tegaki { filter: saturate(.92); }
+.welcome-signature[data-greeting-locale="ko"] { font-size: 53px; letter-spacing: -.03em; }
+.welcome-signature[data-greeting-locale="ar"] { font-size: 54px; letter-spacing: 0; }
+.welcome-signature .welcome-greeting-tegaki { filter: saturate(.98); }
 .welcome-language-heading h1 {
   max-width: 520px;
   margin: 0;
@@ -433,9 +433,9 @@ html[data-orbit-onboarding="complete"] .welcome-backdrop {
 .welcome-language-card[data-signature-phase="writing"] .welcome-language-heading p,
 .welcome-language-card[data-signature-phase="writing"] .language-options,
 .welcome-language-card[data-signature-phase="writing"] > .welcome-primary {
-  opacity: 0;
+  opacity: .22;
   pointer-events: none;
-  transform: translateY(8px);
+  transform: translateY(4px);
 }
 .welcome-language-card[data-signature-phase="ready"] .welcome-language-heading h1,
 .welcome-language-card[data-signature-phase="ready"] .welcome-language-heading p,

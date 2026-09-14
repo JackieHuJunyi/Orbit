@@ -17,17 +17,30 @@ function processQueue(results, calls) {
     child.stdout = new PassThrough();
     child.stderr = new PassThrough();
     child.kill = () => undefined;
+    let input = "";
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      calls.push({ executable, args, options, input });
+      const result = results.shift() ?? { code: 0, stdout: "" };
+      queueMicrotask(() => {
+        if (result.stdout) child.stdout.write(result.stdout);
+        if (result.stderr) child.stderr.write(result.stderr);
+        child.stdout.end();
+        child.stderr.end();
+        child.emit("close", result.code ?? 0, null);
+      });
+    };
     child.stdin = {
-      end(input) {
-        calls.push({ executable, args, options, input: String(input ?? "") });
-        const result = results.shift() ?? { code: 0, stdout: "" };
-        queueMicrotask(() => {
-          if (result.stdout) child.stdout.write(result.stdout);
-          if (result.stderr) child.stderr.write(result.stderr);
-          child.stdout.end();
-          child.stderr.end();
-          child.emit("close", result.code ?? 0, null);
-        });
+      write(chunk) {
+        input += String(chunk ?? "");
+        start();
+        return true;
+      },
+      end(chunk) {
+        input += String(chunk ?? "");
+        start();
       },
     };
     return child;
@@ -174,6 +187,7 @@ test("runs Claude OAuth with no tools or session persistence and rejects foreign
       [
         { code: 0, stderr: "Logged in using ChatGPT" },
         { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+        { code: 1 },
         {
           code: 0,
           stdout: '{"structured_output":{"ready":true},"usage":{"input_tokens":8,"output_tokens":3}}',
@@ -211,11 +225,81 @@ test("publishes bounded account model and effort choices instead of one symbolic
   );
 });
 
+test("reads the signed-in Codex model catalog and each model's supported reasoning efforts", async () => {
+  const calls = [];
+  const token = "e".repeat(64);
+  const modelList = {
+    id: 2,
+    result: {
+      data: [
+        {
+          id: "gpt-6-astra",
+          model: "gpt-6-astra",
+          displayName: "GPT-6-Astra",
+          hidden: false,
+          isDefault: true,
+          defaultReasoningEffort: "medium",
+          supportedReasoningEfforts: [
+            { reasoningEffort: "low" },
+            { reasoningEffort: "medium" },
+            { reasoningEffort: "max" },
+          ],
+        },
+        {
+          id: "gpt-5.6-luna",
+          model: "gpt-5.6-luna",
+          displayName: "GPT-5.6-Luna",
+          hidden: false,
+          supportedReasoningEfforts: [{ reasoningEffort: "low" }],
+        },
+      ],
+      nextCursor: null,
+    },
+  };
+  const runtime = createDesktopAccountModelRuntime({
+    accountToken: token,
+    getOrigin: () => "http://127.0.0.1:54321",
+    homeDirectory: "/Users/orbit",
+    appVersion: "1.64.0",
+    environment: { PATH: "/usr/local/bin" },
+    capabilities: runtimeCapabilities(
+      [
+        { code: 0, stderr: "Logged in using ChatGPT" },
+        { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+        { code: 0, stdout: `${JSON.stringify(modelList)}\n` },
+      ],
+      calls,
+    ),
+  });
+  const discovery = await runtime.discover();
+  const request = new Request("http://127.0.0.1:54321/__orbit_account__/codex/v1/models", {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  const response = await runtime.fetch(request, new URL(request.url));
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.deepEqual(
+    payload.data.map((model) => model.id),
+    ["gpt-6-astra@low", "gpt-6-astra@medium", "gpt-6-astra@max", "gpt-5.6-luna@low"],
+  );
+  assert.equal(discovery.connections[0].model, "gpt-6-astra@medium");
+  assert.deepEqual(
+    discovery.connections[0].models,
+    payload.data.map((model) => model.id),
+  );
+  const invocation = calls.at(-1);
+  assert.deepEqual(invocation.args, ["app-server", "--listen", "stdio://"]);
+  assert.match(invocation.input, /"method":"initialize"/u);
+  assert.match(invocation.input, /"method":"model\/list"/u);
+  assert.match(invocation.input, /"includeHidden":false/u);
+});
+
 test("derives a stable private bridge token and publishes strict runtime bounds", () => {
   assert.match(accountRuntimeToken("a".repeat(64)), /^[a-f0-9]{64}$/u);
   assert.equal(accountRuntimeToken("a".repeat(64)), accountRuntimeToken("a".repeat(64)));
   assert.deepEqual(DESKTOP_ACCOUNT_RUNTIME_LIMITS, {
     generationTimeoutMs: 55_000,
+    modelCatalogTimeoutMs: 8_000,
     maximumOutputBytes: 2 * 1024 * 1024,
     maximumRequestBytes: 1_000_000,
     statusTimeoutMs: 4_000,

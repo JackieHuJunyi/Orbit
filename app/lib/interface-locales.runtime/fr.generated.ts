@@ -486,6 +486,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Export held for review — workspace context changed":
     "Exportation en attente de révision : le contexte de l'espace de travail a été modifié",
   "Export pilot evidence": "Exporter les preuves du pilote",
+  "Extra high": "Très haut",
   "Extract embedded raster images without rendering page backgrounds.":
     "Extrayez les images raster intégrées sans afficher les arrière-plans de page.",
   "Extract images": "Extraire des images",
@@ -675,6 +676,7 @@ export const INTERFACE_TRANSLATIONS = {
   Max: "Max.",
   Medium: "Moyen",
   "Merge PDFs": "Fusionner PDF s",
+  Minimal: "Minime",
   "Mist Blue": "Bleu brume",
   Model: "Modèle",
   "Model connected": "Modèle connecté",
@@ -742,6 +744,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable Document in this workspace": "Aucun Document utilisable dans cet espace de travail",
   "No usable value in this field": "Aucune valeur utilisable dans ce champ",
   "No workspace or device draft changes": "Aucune modification de brouillon d’espace de travail ou d’appareil",
+  None: "Aucun",
   "Not checked yet": "Pas encore vérifié",
   "Not included; enter it in the password field after using this config":
     "Non inclus ; entrez-le dans le champ du mot de passe après avoir utilisé cette configuration",
@@ -1346,6 +1349,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn data into a verifiable review.": "Transformez les données en une revue vérifiable.",
   "Turn one document into a light presentation": "Transformez un document en une présentation légère",
   "Turn the selection into three points": "Transformez la sélection en trois points",
+  Ultra: "Ultra",
   Ultramarine: "Bleu outremer",
   Unchanged: "Inchangé",
   "Unknown source": "Source inconnue",

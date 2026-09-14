@@ -463,7 +463,7 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await openWorkbench(page);
   await page.locator(".agent-dock-trigger").click();
   await expect(page.locator(".agent-dock.open.docked")).toBeVisible();
-  await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
+  await page.getByRole("combobox", { name: "Agent change scope" }).selectOption("artifact");
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
   const modelPicker = page.getByRole("button", { name: "Model for this message" });
   await expect(composer).toBeEditable();
@@ -592,10 +592,20 @@ test("switches model and reasoning level inside one signed-in account profile", 
   await expect(modelMenu.getByRole("radio", { name: "GPT-5.6 Terra" })).toBeVisible();
   await modelMenu.getByRole("radio", { name: "GPT-5.6 Luna" }).click();
   await modelMenu.getByRole("slider", { name: "Reasoning" }).press("End");
-  await expect.poll(() => writes).toEqual([{ action: "account-model", profileId: "codex", model: "gpt-5.6-luna@max" }]);
+  await expect
+    .poll(() => writes.at(-1))
+    .toEqual({
+      action: "account-model",
+      profileId: "codex",
+      model: "gpt-5.6-luna@max",
+    });
+  expect(writes.filter((request) => request.action === "account-model")).toEqual([
+    { action: "account-model", profileId: "codex", model: "gpt-5.6-luna@medium" },
+    { action: "account-model", profileId: "codex", model: "gpt-5.6-luna@max" },
+  ]);
   await expect(modelPicker).toContainText("GPT-5.6 Luna · Max");
 
-  await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
+  await page.getByRole("combobox", { name: "Agent change scope" }).selectOption("artifact");
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
   await composer.fill("Explain this source without changing it.");
   await composer.press("Enter");
@@ -1063,7 +1073,7 @@ test("opens the complete PDF tool registry from More tools and from a matching A
 
   await dialog.getByRole("button", { name: "Close PDF tools" }).click();
   await page.locator(".agent-dock-trigger").click();
-  await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
+  await page.getByRole("combobox", { name: "Agent change scope" }).selectOption("artifact");
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
   await composer.fill("Merge these PDF files");
   await composer.press("Enter");

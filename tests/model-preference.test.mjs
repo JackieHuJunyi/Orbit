@@ -414,9 +414,15 @@ test("switches a signed-in account model and effort without returning or replaci
   const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousDesktopRuntime = process.env.ORBIT_DESKTOP_RUNTIME;
   const previousDesktopOrigin = process.env.ORBIT_DESKTOP_ORIGIN;
+  const previousFetch = globalThis.fetch;
   process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "account-model-switch-secret-123456";
   process.env.ORBIT_DESKTOP_RUNTIME = "1";
   process.env.ORBIT_DESKTOP_ORIGIN = "http://127.0.0.1:54321";
+  globalThis.fetch = async (input, init) => {
+    assert.equal(String(input), "http://127.0.0.1:54321/__orbit_account__/codex/v1/models");
+    assert.equal(new Headers(init?.headers).get("authorization"), "Bearer private-loopback-capability");
+    return Response.json({ data: [{ id: "gpt-5.6-luna@low" }, { id: "gpt-5.6-sol@high" }] });
+  };
   try {
     const request = new Request("http://127.0.0.1:54321/api/model-profiles");
     const profile = normalizeModelProfileDraft(
@@ -481,6 +487,7 @@ test("switches a signed-in account model and effort without returning or replaci
     else process.env.ORBIT_DESKTOP_RUNTIME = previousDesktopRuntime;
     if (previousDesktopOrigin === undefined) delete process.env.ORBIT_DESKTOP_ORIGIN;
     else process.env.ORBIT_DESKTOP_ORIGIN = previousDesktopOrigin;
+    globalThis.fetch = previousFetch;
   }
 });
 

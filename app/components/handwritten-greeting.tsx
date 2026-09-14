@@ -20,6 +20,13 @@ const ORBIT_SPECTRUM = [
 export const WELCOME_SIGNATURE_DURATION_SECONDS = 2.8;
 export const WELCOME_SIGNATURE_COMPLETE_AFTER_MS = 3_040;
 
+export function welcomeSignatureDurationMs(value: string) {
+  const writingUnits = Array.from(value.normalize("NFC")).filter((character) =>
+    /[^\p{Mark}\p{White_Space}]/u.test(character),
+  ).length;
+  return Math.round(Math.min(5_200, Math.max(WELCOME_SIGNATURE_DURATION_SECONDS * 1_000, writingUnits * 240)));
+}
+
 // The English hero uses the MIT-licensed centerline geometry from Chánh Đại's
 // Apple Hello Effect. It reproduces the earlier thin, continuous opening
 // gesture without bundling SF-Hello or any Apple-owned font or path asset.
@@ -255,7 +262,7 @@ export function HandwrittenGreeting({
                   mode: "uncontrolled",
                   delay: 0.12,
                   ...(variant === "inline"
-                    ? { duration: WELCOME_SIGNATURE_DURATION_SECONDS }
+                    ? { duration: welcomeSignatureDurationMs(value) / 1_000 }
                     : { speed: penSpeed / motion.durationScale }),
                   easing: easeInOutCubic,
                   loop: false,

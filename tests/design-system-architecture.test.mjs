@@ -41,6 +41,7 @@ test("keeps empty, compact, and contextual surfaces inside the maintained cascad
   assert.match(responsive, /@media \(max-width:\s*960px\)[\s\S]*grid-template-rows:\s*minmax\(0, 1fr\)/);
   assert.match(responsive, /workspace-view-option="split"/);
   assert.match(content, /\.agent-dock\.collapsed/);
+  assert.doesNotMatch(content, /\.agent-composer\s*\{[^}]*transform:/s);
   assert.match(workbench, /agentComposerOpen/);
   assert.match(workbench, /data-orbit-hydrated=\{hydrated \? "true" : "false"\}/);
   assert.match(shell, /\.workspace-view-switch button\s*\{[^}]*border:\s*0;[^}]*cursor:\s*pointer;/s);
@@ -165,7 +166,7 @@ test("restores the licensed English Hello gesture while keeping every translated
   assert.match(component, /"data-ink-material": "pressure-pencil-spectrum"/);
   assert.match(component, /<TegakiRenderer/);
   assert.match(component, /speed: penSpeed \/ motion\.durationScale/);
-  assert.match(component, /duration: WELCOME_SIGNATURE_DURATION_SECONDS/);
+  assert.match(component, /duration: welcomeSignatureDurationMs\(value\) \/ 1_000/);
   assert.match(component, /ENGLISH_HELLO_STROKES/);
   assert.match(component, /licensed-vector-centerline/);
   assert.match(component, /feTurbulence[^]*feDisplacementMap/);
@@ -175,7 +176,7 @@ test("restores the licensed English Hello gesture while keeping every translated
   assert.doesNotMatch(component, /stagger:/);
   assert.doesNotMatch(component, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);
   assert.match(experience, /greetingPresentation\.completeAfterMs \+ 180/);
-  assert.match(experience, /WELCOME_SIGNATURE_COMPLETE_AFTER_MS/);
+  assert.match(experience, /welcomeSignatureDurationMs\(text\.welcomeEyebrow\) \+ 240/);
   assert.match(fontBundles, /Ma Shan Zheng/);
   assert.match(fontBundles, /Iansui/);
   assert.match(fontBundles, /tegaki\/fonts\/klee-one/);

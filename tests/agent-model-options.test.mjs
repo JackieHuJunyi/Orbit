@@ -69,6 +69,50 @@ test("keeps discovered connections and account sign-in entry points in Chat afte
   assert.equal(selectedAgentModelValue("device-tools-only", null), "local");
 });
 
+test("renders only the models and effort levels returned by a signed-in Codex account", () => {
+  const accountProfile = {
+    id: "codex",
+    name: "Codex · ChatGPT account",
+    provider: "codex-account",
+    protocol: "responses",
+    baseURL: "http://127.0.0.1:54321/__orbit_account__/codex/v1",
+    model: "gpt-6-astra@medium",
+    budget: { maxInputTokens: 16_000, maxOutputTokens: 4_000 },
+    createdAt: "2026-09-14T00:00:00.000Z",
+    updatedAt: "2026-09-14T00:00:00.000Z",
+    credentialConfigured: true,
+    capabilities: {},
+    health: { status: "unknown", checkedAt: null, retryAt: null },
+  };
+  const state = {
+    vaultAvailable: true,
+    configured: true,
+    activeProfileId: accountProfile.id,
+    activeSource: "personal",
+    activeProfile: accountProfile,
+    profiles: [accountProfile],
+    failoverEnabled: false,
+    deployment: { configured: false, provider: null, model: null, budget: null, capabilities: null },
+  };
+  const options = buildAgentModelOptions(state, null, labels, {
+    codex: ["gpt-6-astra@low", "gpt-6-astra@medium", "gpt-6-astra@max", "gpt-5.6-luna@low"],
+  });
+  assert.deepEqual(
+    options.slice(0, -1).map(({ modelLabel, effort }) => ({ modelLabel, effort })),
+    [
+      { modelLabel: "GPT-6 Astra", effort: "low" },
+      { modelLabel: "GPT-6 Astra", effort: "medium" },
+      { modelLabel: "GPT-6 Astra", effort: "max" },
+      { modelLabel: "GPT-5.6 Luna", effort: "low" },
+    ],
+  );
+  assert.equal(
+    options.some((option) => option.effort === "high"),
+    false,
+  );
+  assert.match(selectedAgentModelValue("model-assisted", state, options), /gpt-6-astra@medium/u);
+});
+
 test("connects one discovered chat choice through catalog, probe, and encrypted profile save", async () => {
   globalThis.window = {
     orbitDesktop: {

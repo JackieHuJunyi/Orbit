@@ -159,9 +159,7 @@ test("moves the floating Agent with the keyboard without changing its source sco
   const afterMove = await floatingAgent.boundingBox();
   expect(afterMove).not.toBeNull();
   expect(Math.abs(afterMove!.x - beforeMove!.x) + Math.abs(afterMove!.y - beforeMove!.y)).toBeGreaterThan(80);
-  await expect(
-    page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }),
-  ).toHaveClass(/active/);
+  await expect(page.getByRole("combobox", { name: "Agent change scope" })).toHaveValue("artifact");
 });
 
 test("Markdown preview keeps compact gutters and a readable optical measure in split and focus views", async ({

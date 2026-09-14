@@ -6710,6 +6710,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "來源"
   ],
   [
+    "极高",
+    "極高"
+  ],
+  [
     "查看",
     "檢視"
   ],
@@ -7144,6 +7148,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "数",
     "數"
+  ],
+  [
+    "无",
+    "無"
   ],
   [
     "横",

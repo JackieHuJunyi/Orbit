@@ -357,9 +357,9 @@ export async function listProviderModels(connection: ActiveModelConnection, sign
       const id = modelId(item, connection.protocol);
       return id ? [id] : [];
     })
-    .filter((id, index, all) => all.indexOf(id) === index)
-    .sort()
-    .slice(0, 80);
+    .filter((id, index, all) => all.indexOf(id) === index);
+  if (!connection.provider.endsWith("-account")) models.sort();
+  models.splice(connection.provider.endsWith("-account") ? 800 : 80);
   if (!models.length) throw new Error("The provider returned no usable model IDs.");
   return models;
 }

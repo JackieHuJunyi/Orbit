@@ -1,4 +1,4 @@
-import { accountModelChoice, defaultAccountModel } from "../../shared/account-model-catalog.mjs";
+import { accountModelSelection, defaultAccountModel } from "../../shared/account-model-catalog.mjs";
 
 export const MAX_MODEL_PROFILES = 6;
 export const MODEL_PROFILE_COOKIE = "orbit_model_profiles_v1";
@@ -445,7 +445,7 @@ export function normalizeModelProfileDraft(
   if (!model || !/^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,119}$/u.test(model)) {
     throw new Error("Enter a valid model ID without spaces.");
   }
-  if (isAccountModelProvider(provider) && !accountModelChoice(provider, model)) {
+  if (isAccountModelProvider(provider) && !accountModelSelection(provider, model)) {
     throw new Error("Choose a supported model and effort level for this signed-in account.");
   }
   const baseURL = isAccountModelProvider(provider)
@@ -514,7 +514,7 @@ export function normalizeModelProfileVault(value: unknown): ModelProfileVault {
       const item = profile as StoredModelProfile;
       try {
         const migratedItem =
-          isAccountModelProvider(item.provider) && !accountModelChoice(item.provider, item.model)
+          isAccountModelProvider(item.provider) && !accountModelSelection(item.provider, item.model)
             ? { ...item, model: defaultAccountModel(item.provider) }
             : item;
         const normalized = normalizeModelProfileDraft(

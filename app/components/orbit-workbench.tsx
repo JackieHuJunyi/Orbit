@@ -5942,10 +5942,14 @@ export function OrbitWorkbench() {
                       signIn: ui.signInModel,
                       useLocal: ui.useLocalTools,
                       efforts: {
+                        none: ui.reasoningNone,
+                        minimal: ui.reasoningMinimal,
                         low: ui.reasoningLow,
                         medium: ui.reasoningMedium,
                         high: ui.reasoningHigh,
+                        xhigh: ui.reasoningXHigh,
                         max: ui.reasoningMax,
+                        ultra: ui.reasoningUltra,
                       },
                     }}
                     onStop={stopAgent}

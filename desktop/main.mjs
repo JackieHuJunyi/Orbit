@@ -440,6 +440,7 @@ if (!primaryDesktopInstance) {
           accountToken: accountRuntimeToken(masterKey),
           getOrigin: () => orbitServer?.url,
           homeDirectory: app.getPath("home"),
+          appVersion: app.getVersion(),
         })
       : undefined;
     desktopModelDiscovery = createDesktopModelDiscovery({

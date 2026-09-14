@@ -1,6 +1,6 @@
 {
   "name": "orbit-office",
-  "version": "1.63.0",
+  "version": "1.64.0",
   "private": true,
   "productName": "Orbit",
   "main": "desktop/main.mjs",

@@ -805,7 +805,7 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.match(html, /<details class="agent-suggestions"><summary>/);
   assert.match(html, /data-agent-free-text="true"/);
   assert.match(html, /aria-label="Model for this message"/);
-  assert.match(html, /role="group" aria-label="Agent change scope"/);
+  assert.match(html, /class="agent-scope-switch"[\s\S]*<select[^>]*aria-label="Agent change scope"/);
   assert.match(html, /class="agent-hint"/);
   assert.doesNotMatch(html, /class="agent-title-row"/);
   assert.doesNotMatch(html, /class="agent-avatar"/);
@@ -814,9 +814,16 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.match(styles, /\.agent-composer:focus-within\s*\{/);
   assert.match(styles, /\.run-button\s*\{[^}]*border-radius:\s*999px;/s);
   assert.ok(composer.indexOf('className="agent-composer-body"') < composer.indexOf('className="agent-suggestions"'));
-  assert.match(composer, /rows=\{2\}[\s\S]{0,80}maxLength=\{2_000\}/u);
+  assert.match(composer, /rows=\{1\}[\s\S]{0,80}maxLength=\{2_000\}/u);
+  assert.match(composer, /className="agent-thinking-pulse"/u);
+  assert.match(contentStyles, /\.agent-suggestions-popover\s*\{/u);
   assert.match(contentStyles, /\.agent-model-trigger\s*\{/u);
   assert.match(contentStyles, /\.agent-model-popover\s*\{/u);
+  assert.doesNotMatch(contentStyles, /\.agent-composer\s*\{[^}]*transform:/su);
+  assert.match(
+    await readFile(new URL("../app/components/agent-model-picker.tsx", import.meta.url), "utf8"),
+    /choose\(option\.value, family\.filter\(\(candidate\) => candidate\.effort\)\.length <= 1\)/u,
+  );
   assert.match(contentStyles, /\.agent-dock\.open\.floating\s*\{/u);
   assert.match(contentStyles, /\.agent-context-trigger\s*\{/u);
   assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "orbit-agent-draft-v1"/u);
@@ -1010,9 +1017,9 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(welcome, /greetingIntroComplete && \(/);
   assert.match(welcome, /onWritingComplete=\{\(\) => setWelcomeSignatureComplete\(true\)\}/);
   assert.match(welcome, /data-signature-phase=\{welcomeSignatureComplete \? "ready" : "writing"\}/);
-  assert.match(modularStyles, /\.welcome-signature\s*\{[^}]*height:\s*54px;/s);
+  assert.match(modularStyles, /\.welcome-signature\s*\{[^}]*height:\s*68px;/s);
   assert.match(welcome, /greetingPresentation\.completeAfterMs \+ 180/);
-  assert.match(welcome, /WELCOME_SIGNATURE_COMPLETE_AFTER_MS/);
+  assert.match(welcome, /welcomeSignatureDurationMs\(text\.welcomeEyebrow\) \+ 240/);
   assert.match(handwrittenGreeting, /<TegakiRenderer/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
   assert.doesNotMatch(handwrittenGreeting, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);

@@ -479,6 +479,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Export held for review — workspace context changed":
     "エクスポートはレビューのために保留されています - ワークスペースのコンテキストが変更されました",
   "Export pilot evidence": "パイロット証拠をエクスポート",
+  "Extra high": "エクストラハイ",
   "Extract embedded raster images without rendering page backgrounds.":
     "ページの背景をレンダリングせずに、埋め込まれたラスター イメージを抽出します。",
   "Extract images": "画像の抽出",
@@ -666,6 +667,7 @@ export const INTERFACE_TRANSLATIONS = {
   Max: "マックス",
   Medium: "中",
   "Merge PDFs": "PDF を結合します",
+  Minimal: "最小限",
   "Mist Blue": "ミストブルー",
   Model: "モデル",
   "Model connected": "接続されているモデル",
@@ -734,6 +736,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable Document in this workspace": "このワークスペースに利用可能な Document がありません",
   "No usable value in this field": "このフィールドに使用できる値がありません",
   "No workspace or device draft changes": "ワークスペースまたはデバイスのドラフトは変更されません",
+  None: "なし",
   "Not checked yet": "未確認",
   "Not included; enter it in the password field after using this config":
     "含まれていません。この設定を使用した後、パスワードフィールドにそれを入力してください",
@@ -1324,6 +1327,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn data into a verifiable review.": "データを検証可能なレビューに変換。",
   "Turn one document into a light presentation": "一つの文書を軽やかなプレゼンに",
   "Turn the selection into three points": "選択範囲を 3 点に変換します",
+  Ultra: "Ultra",
   Ultramarine: "ウルトラマリン",
   Unchanged: "変わらない",
   "Unknown source": "出典不明",

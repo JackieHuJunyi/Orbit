@@ -86,8 +86,7 @@ test("switches one multi-artifact Agent proposal between a coherent report and p
   const editor = page.locator("textarea.source-editor");
   const originalReport = await editor.inputValue();
   await page.locator(".agent-dock-trigger").click();
-  const scope = page.getByRole("group", { name: "Agent change scope" });
-  await scope.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByRole("combobox", { name: "Agent change scope" }).selectOption("workspace");
   await page
     .getByRole("textbox", { name: "Describe a workspace change" })
     .fill("Synchronize the workspace quarterly conclusion across the report and presentation");

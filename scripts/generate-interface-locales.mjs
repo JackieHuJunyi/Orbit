@@ -61,6 +61,7 @@ const protectedTerms = [
   "PDF",
   "HTML",
   "OCR",
+  "Ultra",
   "macOS",
   "Windows",
   "Linux",

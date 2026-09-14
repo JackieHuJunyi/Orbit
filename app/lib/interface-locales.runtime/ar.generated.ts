@@ -469,6 +469,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Export as standalone HTML": "تصدير كمستقل HTML",
   "Export held for review — workspace context changed": "تم تعليق التصدير للمراجعة - تم تغيير سياق مساحة العمل",
   "Export pilot evidence": "تصدير أدلة التجربة",
+  "Extra high": "ارتفاع إضافي",
   "Extract embedded raster images without rendering page backgrounds.":
     "قم باستخراج الصور النقطية المضمنة دون عرض خلفيات الصفحة.",
   "Extract images": "استخراج الصور",
@@ -651,6 +652,7 @@ export const INTERFACE_TRANSLATIONS = {
   Max: "ماكس",
   Medium: "متوسط",
   "Merge PDFs": "دمج PDF ثانية",
+  Minimal: "الحد الأدنى",
   "Mist Blue": "أزرق ضبابي",
   Model: "النموذج",
   "Model connected": "النموذج متصل",
@@ -717,6 +719,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable Document in this workspace": "لا يوجد Document صالح في مساحة العمل",
   "No usable value in this field": "لا توجد قيمة صالحة في هذا الحقل",
   "No workspace or device draft changes": "لا توجد تغييرات في مساحة العمل أو مسودة الجهاز",
+  None: "لا شيء",
   "Not checked yet": "لم يُفحص بعد",
   "Not included; enter it in the password field after using this config":
     "غير متضمن؛ أدخله في حقل كلمة المرور بعد استخدام هذا التكوين",
@@ -1296,6 +1299,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn data into a verifiable review.": "حوّل البيانات إلى مراجعة قابلة للتحقق.",
   "Turn one document into a light presentation": "حوّل مستندًا واحدًا إلى عرض خفيف",
   "Turn the selection into three points": "تحويل التحديد إلى ثلاث نقاط",
+  Ultra: "Ultra",
   Ultramarine: "أزرق ألترا مارين",
   Unchanged: "دون تغيير",
   "Unknown source": "مصدر غير معروف",

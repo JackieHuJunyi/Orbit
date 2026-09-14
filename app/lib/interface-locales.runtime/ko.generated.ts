@@ -475,6 +475,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Export as standalone HTML": "독립형 HTML으로 내보내기",
   "Export held for review — workspace context changed": "검토를 위해 내보내기 보류됨 - 작업공간 컨텍스트가 변경됨",
   "Export pilot evidence": "파일럿 증거 내보내기",
+  "Extra high": "매우 높음",
   "Extract embedded raster images without rendering page backgrounds.":
     "페이지 배경을 렌더링하지 않고 포함된 래스터 이미지를 추출합니다.",
   "Extract images": "이미지 추출",
@@ -656,6 +657,7 @@ export const INTERFACE_TRANSLATIONS = {
   Max: "맥스",
   Medium: "중간",
   "Merge PDFs": "PDF 병합",
+  Minimal: "최소",
   "Mist Blue": "미스트 블루",
   Model: "모델",
   "Model connected": "연결된 모델",
@@ -722,6 +724,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable Document in this workspace": "이 작업 공간에 사용할 수 있는 Document가 없습니다",
   "No usable value in this field": "이 필드에 사용할 수 있는 값이 없습니다",
   "No workspace or device draft changes": "작업 공간 또는 장치 초안 변경 없음",
+  None: "없음",
   "Not checked yet": "아직 확인하지 않음",
   "Not included; enter it in the password field after using this config":
     "포함되지 않음; 이 구성을 사용한 후 비밀번호 필드에 입력하세요.",
@@ -1303,6 +1306,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn data into a verifiable review.": "데이터를 검증 가능한 리뷰로 전환하세요.",
   "Turn one document into a light presentation": "한 문서를 가벼운 프레젠테이션으로",
   "Turn the selection into three points": "선택 항목을 세 개의 점으로 변환",
+  Ultra: "Ultra",
   Ultramarine: "울트라마린",
   Unchanged: "변경되지 않음",
   "Unknown source": "알 수 없는 출처",

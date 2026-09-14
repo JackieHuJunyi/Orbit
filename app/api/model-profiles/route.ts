@@ -18,7 +18,6 @@ import {
 import { modelProviderStatus } from "../../lib/model-preference.ts";
 import { listProviderModels, requestProviderPlan } from "../../lib/model-provider-adapters.ts";
 import { modelConnectionHealth } from "../../lib/model-routing.ts";
-import { accountModelChoice } from "../../../shared/account-model-catalog.mjs";
 import { z } from "zod";
 
 const ModelProtocolProbeSchema = z.object({ ready: z.literal(true) }).strict();
@@ -80,6 +79,20 @@ function jsonState(vault: ModelProfileVault, cookie?: string) {
   return Response.json(state(vault), { headers });
 }
 
+async function verifiedProfileModels(profile: ModelProfileVault["profiles"][number]) {
+  const controller = new AbortController();
+  const timeoutMs = isAccountModelProvider(profile.provider) ? 10_000 : 8_000;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await listProviderModels(personalConnection(profile), controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("The provider model-list request timed out.");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function GET(request: Request) {
   return jsonState(await readModelProfileVault(request));
 }
@@ -122,17 +135,8 @@ export async function POST(request: Request) {
       if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
         throw new Error("Device model runtimes are available only in the Orbit desktop app.");
       }
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8_000);
-      try {
-        const models = await listProviderModels(personalConnection(profile), controller.signal);
-        return Response.json({ models }, { headers: { "cache-control": "no-store" } });
-      } catch (error) {
-        if (controller.signal.aborted) throw new Error("The provider model-list request timed out.");
-        throw error;
-      } finally {
-        clearTimeout(timeout);
-      }
+      const models = await verifiedProfileModels(profile);
+      return Response.json({ models }, { headers: { "cache-control": "no-store" } });
     } else if (input.action === "probe") {
       if (!input.profile || typeof input.profile !== "object")
         throw new Error("Enter the model profile details first.");
@@ -176,6 +180,12 @@ export async function POST(request: Request) {
       if (!modelProviderAvailableInEnvironment(profile.provider, process.env)) {
         throw new Error("Device model runtimes are available only in the Orbit desktop app.");
       }
+      if (isAccountModelProvider(profile.provider)) {
+        const models = await verifiedProfileModels(profile);
+        if (!models.includes(profile.model)) {
+          throw new Error("That model and reasoning level are no longer available to this signed-in account.");
+        }
+      }
       const profiles = existing
         ? vault.profiles.map((item) => (item.id === existing.id ? profile : item))
         : [...vault.profiles, profile];
@@ -188,10 +198,12 @@ export async function POST(request: Request) {
       if (!existing || !isAccountModelProvider(existing.provider)) {
         throw new Error("That signed-in account profile no longer exists.");
       }
-      if (!accountModelChoice(existing.provider, input.model)) {
-        throw new Error("Choose a supported model and effort level for this account.");
+      const model = input.model.trim();
+      const models = await verifiedProfileModels(existing);
+      if (!models.includes(model)) {
+        throw new Error("That model and reasoning level are no longer available to this signed-in account.");
       }
-      const updated = { ...existing, model: input.model, updatedAt: new Date().toISOString() };
+      const updated = { ...existing, model, updatedAt: new Date().toISOString() };
       next = {
         ...vault,
         profiles: vault.profiles.map((profile) => (profile.id === updated.id ? updated : profile)),

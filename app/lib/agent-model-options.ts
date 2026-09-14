@@ -1,4 +1,4 @@
-import { accountModelChoice, accountModelChoices } from "../../shared/account-model-catalog.mjs";
+import { accountModelChoices, accountModelSelection } from "../../shared/account-model-catalog.mjs";
 import type { DesktopModelDiscovery, DiscoveredModelConnection } from "./desktop-bridge.ts";
 import { isAccountModelProvider, type ModelProfilesState } from "./model-profiles.ts";
 import type { OrbitModelMode } from "./model-preference.ts";
@@ -37,7 +37,12 @@ export function buildAgentModelOptions(
   const options: AgentModelOption[] = [];
   for (const profile of state?.profiles ?? []) {
     if (isAccountModelProvider(profile.provider)) {
-      for (const choice of accountModelChoices(profile.provider)) {
+      const catalog = profileModels[profile.id];
+      const choices = (catalog === undefined ? [profile.model] : catalog)
+        .map((model) => accountModelSelection(profile.provider, model))
+        .filter((choice): choice is NonNullable<typeof choice> => Boolean(choice));
+      const fallbackChoices = choices.length ? choices : accountModelChoices(profile.provider);
+      for (const choice of fallbackChoices) {
         const value = accountModelOptionValue(profile.id, choice.id);
         options.push({
           value,
@@ -180,7 +185,7 @@ export function selectedAgentModelValue(
   if (mode === "device-tools-only") return "local";
   if (state?.activeSource === "personal" && state.activeProfileId) {
     const active = state.activeProfile;
-    if (active && isAccountModelProvider(active.provider) && accountModelChoice(active.provider, active.model)) {
+    if (active && isAccountModelProvider(active.provider) && accountModelSelection(active.provider, active.model)) {
       return accountModelOptionValue(active.id, active.model);
     }
     return (

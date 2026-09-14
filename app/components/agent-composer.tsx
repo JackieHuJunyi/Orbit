@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LoaderCircle, Play, Sparkles, Square } from "lucide-react";
+import { ArrowUp, ChevronDown, LoaderCircle, Sparkles, Square } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -154,12 +154,13 @@ export function AgentComposer({
   const canScope = (target: AgentScope) => !busy && !locked && !(target === "selection" && selectionUnavailable);
 
   const sendDisabled = !prompt.trim() || busy || locked || (scope === "selection" && selectionUnavailable);
+  const composerState = modelBusy ? "working" : sendDisabled ? "idle" : "ready";
 
   return (
     <>
-      <div className="agent-composer">
+      <div className="agent-composer" data-composer-state={composerState}>
         <div className="agent-composer-body">
-          <span className="agent-composer-label">{ariaLabel}</span>
+          <span className="agent-composer-label visually-hidden">{ariaLabel}</span>
           <textarea
             ref={(element) => {
               localTextareaRef.current = element;
@@ -171,40 +172,47 @@ export function AgentComposer({
             }}
             onKeyDown={onPromptKeyDown}
             placeholder={placeholder}
-            rows={2}
+            rows={1}
             maxLength={2_000}
             aria-label={ariaLabel}
             data-agent-free-text="true"
           />
         </div>
-        <details className="agent-suggestions">
-          <summary>
-            <Sparkles className="composer-spark" aria-hidden="true" />
-            <span>{suggestedActionsLabel}</span>
-            <ChevronDown aria-hidden="true" />
-          </summary>
-          <div className="quick-commands" aria-label={suggestedActionsLabel}>
-            {quickCommands.map((command) => (
-              <button key={command} onClick={() => onQuickCommand(command)} disabled={busy || locked}>
-                {command}
-              </button>
-            ))}
-          </div>
-          {queryEvidenceText && <p className="agent-evidence-hint">{queryEvidenceText}</p>}
-        </details>
         <div className="agent-composer-row">
-          <div className="agent-scope-switch" role="group" aria-label={scopeGroupLabel}>
-            {AGENT_SCOPE_ORDER.map((candidate) => (
-              <button
-                key={candidate}
-                className={scope === candidate ? "active" : ""}
-                onClick={() => onScopeChange(candidate)}
-                disabled={!canScope(candidate)}
-                aria-pressed={scope === candidate}
+          <div className="agent-composer-actions">
+            <details className="agent-suggestions">
+              <summary>
+                <Sparkles className="composer-spark" aria-hidden="true" />
+                <span>{suggestedActionsLabel}</span>
+                <ChevronDown aria-hidden="true" />
+              </summary>
+              <div className="agent-suggestions-popover">
+                <div className="quick-commands" aria-label={suggestedActionsLabel}>
+                  {quickCommands.map((command) => (
+                    <button key={command} onClick={() => onQuickCommand(command)} disabled={busy || locked}>
+                      {command}
+                    </button>
+                  ))}
+                </div>
+                {queryEvidenceText && <p className="agent-evidence-hint">{queryEvidenceText}</p>}
+              </div>
+            </details>
+            <label className="agent-scope-switch">
+              <span className="visually-hidden">{scopeGroupLabel}</span>
+              <select
+                value={scope}
+                onChange={(event) => onScopeChange(event.currentTarget.value as AgentScope)}
+                disabled={busy || locked}
+                aria-label={scopeGroupLabel}
               >
-                {scopeLabels[candidate]}
-              </button>
-            ))}
+                {AGENT_SCOPE_ORDER.map((candidate) => (
+                  <option key={candidate} value={candidate} disabled={!canScope(candidate)}>
+                    {scopeLabels[candidate]}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" />
+            </label>
           </div>
           <div className="agent-composer-trailing">
             <AgentModelPicker
@@ -220,21 +228,30 @@ export function AgentComposer({
               onManage={onManageModels}
             />
             <button
-              className={`run-button ${modelBusy && stoppable ? "stop" : ""}`.trim()}
+              className={`run-button ${!sendDisabled ? "ready" : ""} ${modelBusy && stoppable ? "stop" : ""}`.trim()}
               onClick={modelBusy && stoppable ? onStop : onRun}
               disabled={modelBusy ? !stoppable : sendDisabled || modelSwitching}
               aria-label={modelBusy && stoppable ? stopLabel : sendLabel}
               title={modelBusy && stoppable ? stopLabel : sendTitle}
             >
-              {modelBusy && stoppable ? <Square /> : busy ? <LoaderCircle className="agent-spinner" /> : <Play />}
+              {modelBusy && stoppable ? <Square /> : busy ? <LoaderCircle className="agent-spinner" /> : <ArrowUp />}
             </button>
           </div>
         </div>
       </div>
-      <p className="agent-hint" aria-live="polite">
-        {modelBusy
-          ? `${waitingSeconds >= 15 ? `${workingLabel} · ${longWaitLabel}` : workingLabel} · ${waitingSeconds}s`
-          : planHint}
+      <p className={`agent-hint ${modelBusy ? "is-working" : ""}`.trim()} aria-live="polite">
+        {modelBusy && (
+          <span className="agent-thinking-pulse" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+        )}
+        <span>
+          {modelBusy
+            ? `${waitingSeconds >= 15 ? `${workingLabel} · ${longWaitLabel}` : workingLabel} · ${waitingSeconds}s`
+            : planHint}
+        </span>
       </p>
     </>
   );

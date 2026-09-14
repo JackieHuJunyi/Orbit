@@ -15,7 +15,7 @@ import {
 } from "../lib/desktop-bridge";
 import { connectDiscoveredModelConnection, type ModelConnectionPhase } from "../lib/model-connection-client";
 import { orbitText, type OrbitLocale, type OrbitUICopy } from "../lib/localization";
-import { isAccountModelProvider, type ModelProfilesState } from "../lib/model-profiles";
+import type { ModelProfilesState } from "../lib/model-profiles";
 import { ORBIT_MODEL_MODE_STORAGE_KEY, type OrbitModelMode } from "../lib/model-preference";
 
 export type AgentModelDiscoveryState = "idle" | "scanning" | "complete" | "unavailable" | "error";
@@ -205,25 +205,24 @@ export function useAgentModelController({
 
 async function loadProfileModelCatalogs(state: ModelProfilesState) {
   const entries = await Promise.all(
-    state.profiles
-      .filter((profile) => !isAccountModelProvider(profile.provider))
-      .map(async (profile) => {
-        try {
-          const response = await fetch("/api/model-profiles", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ action: "models", profile }),
-          });
-          const payload = (await response.json()) as { models?: unknown };
-          const models = Array.isArray(payload.models)
-            ? payload.models.filter((model): model is string => typeof model === "string").slice(0, 80)
-            : [];
-          return [profile.id, models] as const;
-        } catch {
-          return [profile.id, []] as const;
-        }
-      }),
+    state.profiles.map(async (profile) => {
+      try {
+        const response = await fetch("/api/model-profiles", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "models", profile }),
+        });
+        const payload = (await response.json()) as { models?: unknown };
+        const limit = profile.provider.endsWith("-account") ? 800 : 80;
+        const models = Array.isArray(payload.models)
+          ? payload.models.filter((model): model is string => typeof model === "string").slice(0, limit)
+          : [];
+        return [profile.id, models] as const;
+      } catch {
+        return [profile.id, []] as const;
+      }
+    }),
   );
   return Object.fromEntries(entries) as Record<string, readonly string[]>;
 }

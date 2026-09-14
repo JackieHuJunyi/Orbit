@@ -23,7 +23,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { HandwrittenGreeting, WELCOME_SIGNATURE_COMPLETE_AFTER_MS } from "./handwritten-greeting";
+import { HandwrittenGreeting, welcomeSignatureDurationMs } from "./handwritten-greeting";
 import { OrbitMark } from "./orbit-mark";
 import { planGreetingPresentation } from "../lib/greeting-presentation";
 import {
@@ -348,10 +348,10 @@ export function WelcomeExperience({
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const fallback = window.setTimeout(
       () => setWelcomeSignatureComplete(true),
-      reducedMotion ? 0 : WELCOME_SIGNATURE_COMPLETE_AFTER_MS,
+      reducedMotion ? 0 : welcomeSignatureDurationMs(text.welcomeEyebrow) + 240,
     );
     return () => window.clearTimeout(fallback);
-  }, [greetingIntroComplete, step, welcomeSignatureComplete]);
+  }, [greetingIntroComplete, step, text.welcomeEyebrow, welcomeSignatureComplete]);
 
   useEffect(() => {
     if (step !== "welcome") return;
@@ -513,7 +513,10 @@ export function WelcomeExperience({
                         aria-checked={locale === option}
                         className={locale === option ? "selected" : ""}
                         ref={locale === option ? selectedLanguageOptionRef : undefined}
-                        onClick={() => onLocaleChange(option)}
+                        onClick={() => {
+                          setWelcomeSignatureComplete(false);
+                          onLocaleChange(option);
+                        }}
                         key={option}
                       >
                         <span>

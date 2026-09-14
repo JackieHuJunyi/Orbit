@@ -331,6 +331,10 @@ export const MANUAL_INTERFACE_TRANSLATIONS = {
   }),
 } as Record<"fr" | "es" | "ru" | "ar" | "ja" | "ko", Record<string, string>>;
 
+for (const translations of Object.values(MANUAL_INTERFACE_TRANSLATIONS)) {
+  Object.assign(translations, { Ultra: "Ultra" });
+}
+
 Object.assign(MANUAL_INTERFACE_TRANSLATIONS.fr, {
   "Recent task runs": "Exécutions récentes",
   "Operating review": "Revue d’activité",

@@ -480,6 +480,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Export held for review — workspace context changed":
     "Экспорт приостановлен на проверку — контекст рабочей области изменен.",
   "Export pilot evidence": "Экспортировать данные пилота",
+  "Extra high": "Очень высокий",
   "Extract embedded raster images without rendering page backgrounds.":
     "Извлекайте встроенные растровые изображения без рендеринга фона страницы.",
   "Extract images": "Извлечение изображений",
@@ -667,6 +668,7 @@ export const INTERFACE_TRANSLATIONS = {
   Max: "Макс",
   Medium: "Середина",
   "Merge PDFs": "Объединить PDF",
+  Minimal: "Минимальный",
   "Mist Blue": "Туманно-синий",
   Model: "Модель",
   "Model connected": "Модель подключена",
@@ -733,6 +735,7 @@ export const INTERFACE_TRANSLATIONS = {
   "No usable Document in this workspace": "В рабочей области нет подходящего Document",
   "No usable value in this field": "В этом поле нет подходящих значений",
   "No workspace or device draft changes": "Никаких изменений в рабочей области или устройстве.",
+  None: "Никто",
   "Not checked yet": "Ещё не проверено",
   "Not included; enter it in the password field after using this config":
     "Не включено; введите его в поле пароля после использования этой конфигурации",
@@ -1332,6 +1335,7 @@ export const INTERFACE_TRANSLATIONS = {
   "Turn data into a verifiable review.": "Превратите данные в проверяемый отчёт.",
   "Turn one document into a light presentation": "Превратите документ в лёгкую презентацию",
   "Turn the selection into three points": "Превратите выделение в три точки",
+  Ultra: "Ultra",
   Ultramarine: "Ультрамарин",
   Unchanged: "Без изменений",
   "Unknown source": "Неизвестный источник",

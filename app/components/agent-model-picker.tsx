@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Cpu, LoaderCircle, RefreshCw, Settings2, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Cpu, LoaderCircle, RefreshCw, Settings2, Sparkles } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { AgentModelOption } from "../lib/agent-model-options";
 
@@ -163,8 +163,7 @@ export function AgentModelPicker({
     const effort = focusedDraft?.effort;
     const option = family.find((candidate) => candidate.effort === effort) ?? preferredEffortOption(family);
     if (!option) return;
-    setDraftValue(option.value);
-    if (family.filter((candidate) => candidate.effort).length <= 1) choose(option.value, true);
+    choose(option.value, family.filter((candidate) => candidate.effort).length <= 1);
   }
 
   return (
@@ -249,7 +248,11 @@ export function AgentModelPicker({
               })}
             </div>
           </section>
-          <div className="agent-model-configurator">
+          <div
+            className="agent-model-configurator"
+            data-model-count={modelFamilies.length}
+            key={`${focusedConnection?.key ?? "none"}:${focusedDraft?.modelKey ?? "none"}`}
+          >
             {focusedConnection?.action === "connect" || focusedConnection?.action === "settings" ? (
               <section className="agent-model-connect-card">
                 <span className="agent-model-option-icon connect" aria-hidden="true">
@@ -290,7 +293,8 @@ export function AgentModelPicker({
                         onClick={() => chooseModel(family.key)}
                         key={family.key}
                       >
-                        {family.label}
+                        <span>{family.label}</span>
+                        {family.key === focusedDraft?.modelKey && <Check aria-hidden="true" />}
                       </button>
                     ))}
                   </div>
