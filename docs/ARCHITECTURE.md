@@ -809,6 +809,8 @@ Orbit v1.58 separates a conversational turn from a source transaction. `agent-co
 
 The macOS release path also has one narrow composition boundary. `package-macos.mjs` copies only built `dist`, desktop runtime, package metadata, and third-party notices into an ASAR; no application source, tests, development scripts, or `node_modules` enter the archive. It embeds the ASAR header hash in `Info.plist`, explicitly sets all nine Electron 43 fuses, assigns the stable bundle id and Apple-events disclosure, then produces architecture-specific ZIP/DMG files plus a SHA-256 manifest. Local QA is ad-hoc signed and records that it is not notarized. `--require-signing` fails without Developer ID plus notary credentials, signs with hardened runtime, notarizes/staples both app and DMG, and lets `verify-macos-release.mjs` enforce architecture, hashes, fuses, codesign, Gatekeeper, and tickets before a matching Git tag may publish. See [ADR 0077](decisions/0077-agent-conversation-and-macos-release-have-bounded-owners.md).
 
+The desktop workspace binds its internal server to one fixed loopback-only Orbit port and requests a single-instance lock after selecting its exact profile. Browser-origin localStorage, IndexedDB, and encrypted HttpOnly model cookies therefore survive ordinary restarts; a second launch focuses the existing window instead of creating a competing server. Release QA supplies a separate temporary profile and explicit random port, so smoke jobs cannot touch the durable user origin.
+
 ## Quality gates
 
 ### Presentation default boundary

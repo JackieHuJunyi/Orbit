@@ -28,3 +28,4 @@ The picker is composer-native and progressively disclosed: one quiet current-mod
 - No credential or account token enters React discovery state; only the selected row crosses the existing narrow desktop bridge.
 - A device scan is read-only and non-blocking, while connection and activation remain serialized by the Workbench operation gate.
 - Provider-specific catalogs remain session-only and are refreshed from the credential-owning server boundary; Orbit persists only the exact selected model, never a stale catalog snapshot.
+- The desktop bridge uses one stable loopback origin plus a single-instance lock, so the encrypted model cookie and local/model preference survive application restarts instead of being stranded under an obsolete random port.

@@ -15,6 +15,7 @@ const desktopDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(desktopDirectory, "..");
 const clientDirectory = path.join(projectDirectory, "dist/client");
 const orbitAppIconPath = path.join(desktopDirectory, "orbit-app-icon.png");
+const ORBIT_DESKTOP_PORT = 43_719;
 const STATIC_CONTENT_TYPES = Object.freeze({
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -45,6 +46,7 @@ const qaProfileDirectory =
     : "";
 app.setPath("userData", qaProfileDirectory || path.join(app.getPath("appData"), "Orbit"));
 process.env.ORBIT_DESKTOP_RUNTIME = "1";
+const primaryDesktopInstance = app.requestSingleInstanceLock();
 
 async function initializeDesktopCredentialVault() {
   const configuredKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY?.trim();
@@ -173,7 +175,7 @@ async function startOrbitServer() {
       response.end(error instanceof Error ? error.message : "Orbit Desktop server error");
     }
   });
-  const requestedQaPort = Number(process.env.ORBIT_DESKTOP_QA_PORT ?? 0);
+  const requestedQaPort = Number(process.env.ORBIT_DESKTOP_QA_PORT ?? ORBIT_DESKTOP_PORT);
   if (
     process.env.ORBIT_DESKTOP_QA_PORT &&
     (!Number.isSafeInteger(requestedQaPort) || requestedQaPort < 1_024 || requestedQaPort > 65_535)
@@ -418,37 +420,46 @@ async function createOrbitWindow() {
   }
 }
 
-app.whenReady().then(async () => {
-  const vaultReady = await initializeDesktopCredentialVault();
-  if (process.platform === "darwin") {
-    app.setActivationPolicy("regular");
-    app.dock.setIcon(orbitAppIconPath);
-  }
-  const masterKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY ?? "";
-  desktopAccountRuntime = vaultReady
-    ? createDesktopAccountModelRuntime({
-        accountToken: accountRuntimeToken(masterKey),
-        getOrigin: () => orbitServer?.url,
-        homeDirectory: app.getPath("home"),
-      })
-    : undefined;
-  desktopModelDiscovery = createDesktopModelDiscovery({
-    accountRuntime: desktopAccountRuntime,
-    homeDirectory: app.getPath("home"),
-    includeApiConnections: true,
+if (!primaryDesktopInstance) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow?.isMinimized()) mainWindow.restore();
+    mainWindow?.show();
+    mainWindow?.focus();
   });
-  ipcMain.handle("orbit:convert-legacy-office", convertLegacyOffice);
-  ipcMain.handle("orbit:export-legacy-office", exportLegacyOffice);
-  ipcMain.handle("orbit:discover-models", () => desktopModelDiscovery.scan());
-  ipcMain.handle("orbit:import-discovered-model", (_event, id) => desktopModelDiscovery.importCandidate(id));
-  ipcMain.handle("orbit:render-web-pdf", renderPublicWebPageToPdf);
-  await createOrbitWindow();
-  app.on("activate", () => {
-    void createOrbitWindow();
+  app.whenReady().then(async () => {
+    const vaultReady = await initializeDesktopCredentialVault();
+    if (process.platform === "darwin") {
+      app.setActivationPolicy("regular");
+      app.dock.setIcon(orbitAppIconPath);
+    }
+    const masterKey = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY ?? "";
+    desktopAccountRuntime = vaultReady
+      ? createDesktopAccountModelRuntime({
+          accountToken: accountRuntimeToken(masterKey),
+          getOrigin: () => orbitServer?.url,
+          homeDirectory: app.getPath("home"),
+        })
+      : undefined;
+    desktopModelDiscovery = createDesktopModelDiscovery({
+      accountRuntime: desktopAccountRuntime,
+      homeDirectory: app.getPath("home"),
+      includeApiConnections: true,
+    });
+    ipcMain.handle("orbit:convert-legacy-office", convertLegacyOffice);
+    ipcMain.handle("orbit:export-legacy-office", exportLegacyOffice);
+    ipcMain.handle("orbit:discover-models", () => desktopModelDiscovery.scan());
+    ipcMain.handle("orbit:import-discovered-model", (_event, id) => desktopModelDiscovery.importCandidate(id));
+    ipcMain.handle("orbit:render-web-pdf", renderPublicWebPageToPdf);
+    await createOrbitWindow();
+    app.on("activate", () => {
+      void createOrbitWindow();
+    });
   });
-});
 
-app.on("window-all-closed", () => {
-  orbitServer?.server?.close();
-  if (process.platform !== "darwin") app.quit();
-});
+  app.on("window-all-closed", () => {
+    orbitServer?.server?.close();
+    if (process.platform !== "darwin") app.quit();
+  });
+}

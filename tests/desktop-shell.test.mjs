@@ -116,7 +116,10 @@ test("legacy Office conversion is bounded, macro-disabled, temporary, and review
   assert.match(workspaceFileExportRuntime, /Legacy Office output is a compatibility handoff/);
 });
 
-test("desktop navigation remains pinned to Orbit's ephemeral loopback origin", () => {
+test("desktop navigation remains pinned to Orbit's restart-stable loopback origin", () => {
+  assert.match(main, /ORBIT_DESKTOP_PORT = 43_719/);
+  assert.match(main, /app\.requestSingleInstanceLock\(\)/);
+  assert.match(main, /app\.on\("second-instance"/);
   assert.match(main, /server\.listen\(requestedQaPort, "127\.0\.0\.1"/);
   assert.match(main, /process\.env\.ORBIT_DESKTOP_ORIGIN = url/);
   assert.match(main, /ORBIT_DESKTOP_QA_PORT must be an integer from 1024 through 65535/);
