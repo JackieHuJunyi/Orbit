@@ -64,6 +64,7 @@ import { AgentComposer, type AgentScope } from "./agent-composer";
 import { AgentConversation } from "./agent-conversation";
 import { AgentDockShell } from "./agent-dock-shell";
 import { useAgentConversation } from "./use-agent-conversation";
+import { useAgentModelController } from "./use-agent-model-controller";
 import { WorkbenchActivityRail } from "./workbench-activity-rail";
 import { WorkbenchExportMenu } from "./workbench-export-menu";
 import type { WorkbenchMenuFocusEdge } from "./use-workbench-menu-focus";
@@ -185,16 +186,8 @@ import {
   type OrbitLocale,
   type OrbitUICopy,
 } from "../lib/localization";
-import { normalizeOrbitModelMode, ORBIT_MODEL_MODE_STORAGE_KEY, type OrbitModelMode } from "../lib/model-preference";
-import type { ModelProfilesState } from "../lib/model-profiles";
-import {
-  agentActivityCanStop,
-  agentActivityLabel,
-  agentModelSelectionRequest,
-  buildAgentModelOptions,
-  selectedAgentModelValue,
-  type AgentActivity,
-} from "../lib/agent-model-options";
+import { normalizeOrbitModelMode, ORBIT_MODEL_MODE_STORAGE_KEY } from "../lib/model-preference";
+import { agentActivityCanStop, agentActivityLabel, type AgentActivity } from "../lib/agent-model-options";
 import {
   normalizeOrbitAppearanceTheme,
   ORBIT_APPEARANCE_STORAGE_KEY,
@@ -870,9 +863,6 @@ export function OrbitWorkbench() {
   const [locale, setLocale] = useState<OrbitLocale>("en");
   const [detectedLocale, setDetectedLocale] = useState<OrbitLocale>("en");
   const localeRequestRef = useRef(0);
-  const [modelMode, setModelMode] = useState<OrbitModelMode>("model-assisted");
-  const [modelProfilesState, setModelProfilesState] = useState<ModelProfilesState | null>(null);
-  const [agentModelSwitching, setAgentModelSwitching] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(true);
   const [welcomeStartAt, setWelcomeStartAt] = useState<WelcomeStep>("welcome");
   const [welcomeDismissible, setWelcomeDismissible] = useState(false);
@@ -927,11 +917,22 @@ export function OrbitWorkbench() {
   selectedIdRef.current = selectedId;
   workspaceResetRecoveryRef.current = workspaceResetRecovery;
   const ui = useMemo(() => orbitUICopy(locale).workbench, [locale]);
-  const agentModelOptions = useMemo(
-    () => buildAgentModelOptions(modelProfilesState, { local: ui.localFallback, connected: ui.modelConnected }),
-    [modelProfilesState, ui.localFallback, ui.modelConnected],
-  );
-  const selectedAgentModel = selectedAgentModelValue(modelMode, modelProfilesState);
+  const agentModels = useAgentModelController({
+    composerOpen: agentComposerOpen,
+    hydrated,
+    locale,
+    setNotice,
+    ui,
+    welcomeOpen,
+  });
+  const modelMode = agentModels.mode;
+  const setModelMode = agentModels.restoreMode;
+  const setPreferredModelMode = agentModels.setPreferredMode;
+  const agentModelOptions = agentModels.options;
+  const selectedAgentModel = agentModels.selected;
+  const agentModelSwitching = agentModels.switching;
+  const agentModelDiscoveryState = agentModels.discoveryState;
+  const refreshDiscoveredAgentModels = agentModels.refreshDiscovery;
   const visibleNotice = useMemo(() => localizeOrbitStatus(locale, notice), [locale, notice]);
   const documentBriefingTargetsById = useMemo(
     () =>
@@ -1158,31 +1159,6 @@ export function OrbitWorkbench() {
       },
     );
   }, [directoryHandle, locale]);
-  const setPreferredModelMode = useCallback((nextMode: OrbitModelMode) => {
-    setModelMode(nextMode);
-    try {
-      localStorage.setItem(ORBIT_MODEL_MODE_STORAGE_KEY, nextMode);
-    } catch {
-      // This preference contains no credential; in-memory mode remains available.
-    }
-  }, []);
-
-  const refreshAgentModels = useCallback(async () => {
-    try {
-      const response = await fetch("/api/model-profiles", { cache: "no-store", credentials: "same-origin" });
-      const payload = (await response.json()) as ModelProfilesState;
-      if (!response.ok || !Array.isArray(payload.profiles) || typeof payload.configured !== "boolean") return;
-      setModelProfilesState(payload);
-    } catch {
-      // The free-text composer and deterministic local planner stay available.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated || welcomeOpen) return;
-    void refreshAgentModels();
-  }, [agentComposerOpen, hydrated, refreshAgentModels, welcomeOpen]);
-
   useEffect(() => {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
@@ -1561,40 +1537,6 @@ export function OrbitWorkbench() {
   );
   const operationStartBlocked = !workbenchOperationGate.canStartOperation;
   const artifactCreationDisabled = operationStartBlocked;
-  async function changeAgentModel(value: string) {
-    if (agentModelSwitching || operationStartBlocked) return;
-    setAgentModelSwitching(true);
-    setAgentError("");
-    try {
-      if (value === "local") {
-        setPreferredModelMode("device-tools-only");
-        setNotice(orbitText(locale, "Agent will use local tools", "Agent 将使用本地工具"));
-        return;
-      }
-      const requestBody = agentModelSelectionRequest(value);
-      if (!requestBody) throw new Error("Orbit could not read that model selection.");
-      const response = await fetch("/api/model-profiles", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      const payload = (await response.json()) as ModelProfilesState & { error?: unknown };
-      if (!response.ok || !payload.configured) {
-        throw new Error(
-          typeof payload.error === "string" ? payload.error : "Orbit could not activate that model connection.",
-        );
-      }
-      setModelProfilesState(payload);
-      setPreferredModelMode("model-assisted");
-      const label = agentModelOptions.find((option) => option.value === value)?.label ?? ui.modelConnected;
-      setNotice(orbitText(locale, `Model switched · ${label}`, `已切换模型 · ${label}`));
-    } catch (error) {
-      setAgentError(error instanceof Error ? error.message : "Orbit could not switch models.");
-    } finally {
-      setAgentModelSwitching(false);
-    }
-  }
   const canStartOrReplaceOperation = (owner?: WorkbenchOperationOwner) =>
     workbenchOperationGate.canStartOperation ||
     Boolean(owner && workbenchOperationCanReplace(workbenchOperationGate, owner));
@@ -1737,7 +1679,7 @@ export function OrbitWorkbench() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [restoreAgentConversation]);
+  }, [restoreAgentConversation, setModelMode]);
 
   const setPreferredWorkspaceSplit = useCallback((value: number) => {
     const next = clampWorkspaceSourcePercent(value);
@@ -5941,7 +5883,6 @@ export function OrbitWorkbench() {
                     modelSwitching={agentModelSwitching}
                     locked={operationStartBlocked}
                     selectionUnavailable={!validSourceSelection}
-                    mode={selectedAgentModel === "local" ? "local" : "openai"}
                     placeholder={
                       agentScope === "workspace"
                         ? ui.askWorkspace
@@ -5970,12 +5911,43 @@ export function OrbitWorkbench() {
                       repairing: ui.modelRepairing,
                     })}
                     longWaitLabel={ui.modelWaiting}
-                    modelConnectedLabel={ui.modelConnected}
-                    localFallbackLabel={ui.localFallback}
                     modelSelectLabel={ui.agentModel}
                     modelOptions={agentModelOptions}
+                    modelDiscoveryState={agentModelDiscoveryState}
                     selectedModel={selectedAgentModel}
-                    onModelChange={(value) => void changeAgentModel(value)}
+                    onModelChange={(value) =>
+                      void agentModels.change(value, {
+                        blocked: operationStartBlocked,
+                        onError: setAgentError,
+                        onOpenSettings: openModelSettings,
+                      })
+                    }
+                    onModelPickerOpen={() => {
+                      if (agentModelDiscoveryState === "idle") void refreshDiscoveredAgentModels();
+                    }}
+                    onRefreshModels={() => void refreshDiscoveredAgentModels()}
+                    onManageModels={openModelSettings}
+                    modelMenuLabels={{
+                      connected: ui.connectedModels,
+                      available: ui.availableModels,
+                      local: ui.localTools,
+                      scanning: ui.scanningModels,
+                      refresh: ui.refreshModels,
+                      manage: ui.manageModels,
+                      current: ui.currentModel,
+                      providers: ui.modelProviders,
+                      models: ui.modelFamilies,
+                      reasoning: ui.modelReasoning,
+                      connect: ui.connectModel,
+                      signIn: ui.signInModel,
+                      useLocal: ui.useLocalTools,
+                      efforts: {
+                        low: ui.reasoningLow,
+                        medium: ui.reasoningMedium,
+                        high: ui.reasoningHigh,
+                        max: ui.reasoningMax,
+                      },
+                    }}
                     onStop={stopAgent}
                     planHint={ui.planHint}
                     queryEvidenceText={

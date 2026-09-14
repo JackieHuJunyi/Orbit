@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-09-14 — Completed Orbit v1.63 with swipeable provider/model rails, a draggable supported-effort control, verified API/local catalog switching, found-only discovery after skipped setup, and the restored MIT-licensed continuous English “Hello” gesture.
 - 2026-09-14 — Completed Orbit v1.62 with one thirty-six-tool PDF workspace, local page/edit/security/render runtimes, PDF/A and encryption workers, existing reviewed conversion/OCR/Agent continuations, and chat-to-deterministic-tool routing.
 - 2026-09-13 — Completed Orbit v1.61 with found-only nineteen-provider discovery, literal safe shell scanning, fast account connection, model/effort switching for Codex and Claude, interruptible elapsed Agent requests, and deferred bounded rendering for responsive large-file navigation.
 - 2026-09-13 — Completed Orbit v1.60 with locally proven API-key-free ChatGPT/Codex and Claude OAuth runtimes, honest Gemini CLI state, private loopback routing, the restored union of API/CC Switch/manual-import/local-model choices, and a two-stage nine-locale welcome whose greeting and translated Orbit line use the exact same fully covered OFL typeface.

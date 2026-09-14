@@ -24,7 +24,7 @@ test("plans one frozen path timeline for every interface greeting", () => {
     assert.equal(plan.value, entry.greeting);
     assert.equal(plan.direction, entry.direction);
     assert.equal(plan.script, expectedScripts[entry.locale]);
-    assert.equal(plan.renderMode, "tegaki-font");
+    assert.equal(plan.renderMode, entry.locale === "en" ? "vector-centerline" : "tegaki-font");
     assert.ok(plan.canvasWidth >= 430 && plan.canvasWidth <= 1_040);
     assert.ok(plan.motion.completeAfterMs < plan.motion.cycleDurationMs);
     assert.ok(plan.motion.cycleDurationMs >= 5_000 && plan.motion.cycleDurationMs <= 7_000);
@@ -39,6 +39,8 @@ test("does not mutate presentation input and applies one duration scale to drawi
 
   assert.deepEqual(input, { durationScale: 1.25, locale: "en", value: "Hello" });
   assert.equal(plan.motion.durationScale, 1.25);
+  assert.equal(plan.renderMode, "vector-centerline");
+  assert.equal(plan.completeAfterMs, 3_560);
   assert.equal(plan.motion.writeDurationMs, 2_500);
   assert.equal(plan.motion.settleDurationMs, 775);
   assert.ok(plan.motion.completeAfterMs < plan.motion.cycleDurationMs);

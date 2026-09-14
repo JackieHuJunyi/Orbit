@@ -41,7 +41,7 @@ test("server-renders the Orbit artifact workbench", async () => {
   assert.match(html, /id="orbit-prehydrate-state"/);
   assert.match(html, /data-onboarding-sequence="spectrum-write-settle-setup"/);
   assert.doesNotMatch(html, /data-ambient-motion/);
-  assert.match(html, /data-motion-renderer="tegaki-font-centerline"/);
+  assert.match(html, /data-motion-renderer="vector-centerline"/);
   assert.doesNotMatch(html, /Preparing Orbit/);
   assert.match(html, /<title>Orbit — Work that traces back to source<\/title>/i);
   assert.match(html, /Local workspace/);
@@ -815,7 +815,8 @@ test("integrates assistance into the source surface and progressively discloses 
   assert.match(styles, /\.run-button\s*\{[^}]*border-radius:\s*999px;/s);
   assert.ok(composer.indexOf('className="agent-composer-body"') < composer.indexOf('className="agent-suggestions"'));
   assert.match(composer, /rows=\{2\}[\s\S]{0,80}maxLength=\{2_000\}/u);
-  assert.match(contentStyles, /\.agent-model-picker select\s*\{/u);
+  assert.match(contentStyles, /\.agent-model-trigger\s*\{/u);
+  assert.match(contentStyles, /\.agent-model-popover\s*\{/u);
   assert.match(contentStyles, /\.agent-dock\.open\.floating\s*\{/u);
   assert.match(contentStyles, /\.agent-context-trigger\s*\{/u);
   assert.match(workbench, /const AGENT_DRAFT_STORAGE_KEY = "orbit-agent-draft-v1"/u);
@@ -1015,7 +1016,10 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /<TegakiRenderer/);
   assert.doesNotMatch(handwrittenGreeting, /<tspan/);
   assert.doesNotMatch(handwrittenGreeting, /welcome-greeting-(?:color-bloom|ink-trail|ink-sheen|stroke-head)/);
-  assert.match(handwrittenGreeting, /"data-motion-renderer": "tegaki-font-centerline"/);
+  assert.match(
+    handwrittenGreeting,
+    /"data-motion-renderer": usesVectorCenterline \? "vector-centerline" : "tegaki-font-centerline"/,
+  );
   assert.match(handwrittenGreeting, /"data-motion-timeline": "path-length-staggered"/);
   assert.match(handwrittenGreeting, /"data-ink-effect": "spectrum-write"/);
   assert.match(handwrittenGreeting, /"data-ink-material": "pressure-pencil-spectrum"/);
@@ -1024,7 +1028,10 @@ test("ships one Apple-informed optical and motion system across onboarding and t
   assert.match(handwrittenGreeting, /"data-ink-trace": "progressive"/);
   assert.match(handwrittenGreeting, /"data-motion-sequence": "write-settle-reveal"/);
   assert.match(welcome, /data-onboarding-sequence="spectrum-write-settle-setup"/);
-  assert.match(handwrittenGreeting, /"data-writing-style": "font-derived-centerline"/);
+  assert.match(
+    handwrittenGreeting,
+    /"data-writing-style": usesVectorCenterline \? "licensed-vector-centerline" : "font-derived-centerline"/,
+  );
   assert.match(handwrittenGreeting, /"data-motion-script": script/);
   assert.match(handwrittenGreeting, /data-font-family=\{fontBundle\?\.family \?\? "loading"\}/);
   assert.match(handwrittenGreeting, /data-glyph-coverage=/);

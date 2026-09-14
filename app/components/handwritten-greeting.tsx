@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type AnimationEvent, type CSSProperties } from "react";
 import { TegakiRenderer, type TegakiBundle, type TegakiRendererHandle } from "tegaki";
 import { loadGreetingFontPlan } from "../lib/greeting-font-bundles.ts";
 import type { GreetingPresentationPlan } from "../lib/greeting-presentation";
@@ -19,6 +19,14 @@ const ORBIT_SPECTRUM = [
 
 export const WELCOME_SIGNATURE_DURATION_SECONDS = 2.8;
 export const WELCOME_SIGNATURE_COMPLETE_AFTER_MS = 3_040;
+
+// The English hero uses the MIT-licensed centerline geometry from Chánh Đại's
+// Apple Hello Effect. It reproduces the earlier thin, continuous opening
+// gesture without bundling SF-Hello or any Apple-owned font or path asset.
+const ENGLISH_HELLO_STROKES = [
+  "M8.69214 166.553C36.2393 151.239 61.3409 131.548 89.8191 98.0295C109.203 75.1488 119.625 49.0228 120.122 31.0026C120.37 17.6036 113.836 7.43883 101.759 7.43883C88.3598 7.43883 79.9231 17.6036 74.7122 40.9363C69.005 66.5793 64.7866 96.0036 54.1166 190.356",
+  "M55.1624 181.135C60.6251 133.114 81.4118 98.0479 107.963 98.0479C123.844 98.0479 133.937 110.703 131.071 128.817C129.457 139.487 127.587 150.405 125.408 163.06C122.869 178.941 130.128 191.348 152.122 191.348C184.197 191.348 219.189 173.523 237.097 145.915C243.198 136.509 245.68 128.073 245.928 119.884C246.176 104.996 237.739 93.8296 222.851 93.8296C203.992 93.8296 189.6 115.17 189.6 142.465C189.6 171.745 205.481 192.341 239.208 192.341C285.066 192.341 335.86 137.292 359.199 75.8585C365.788 58.513 368.26 42.4065 368.26 31.1512C368.26 17.8057 364.042 7.55823 352.131 7.55823C340.469 7.55823 332.777 16.6141 325.829 30.9129C317.688 47.4967 311.667 71.4162 309.203 98.4549C303 166.301 316.896 191.348 349.936 191.348C390 191.348 434.542 135.534 457.286 75.6686C463.803 58.513 466.275 42.4065 466.275 31.1512C466.275 17.8057 462.057 7.55823 450.146 7.55823C438.484 7.55823 430.792 16.6141 423.844 30.9129C415.703 47.4967 409.682 71.4162 407.218 98.4549C401.015 166.301 414.911 191.348 444.416 191.348C473.874 191.348 489.877 165.67 499.471 138.402C508.955 111.447 520.618 94.8221 544.935 94.8221C565.035 94.8221 580.916 109.71 580.916 137.75C580.916 168.768 560.792 192.093 535.362 192.341C512.984 192.589 498.285 174.475 499.774 147.179C501.511 116.907 519.873 94.8221 543.943 94.8221C557.839 94.8221 569.51 100.999 578.682 107.725C603.549 125.866 622.709 114.656 630.047 96.7186",
+] as const;
 
 const easeInOutCubic = (value: number) =>
   value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
@@ -50,11 +58,16 @@ export function HandwrittenGreeting({
   presentation: GreetingPresentationPlan;
   variant?: "hero" | "inline";
 }) {
-  const { direction, isLong, locale, motion, script, value } = presentation;
+  const { direction, isLong, locale, motion, renderMode, script, value } = presentation;
+  const usesVectorCenterline = variant === "hero" && renderMode === "vector-centerline";
   const [fontBundle, setFontBundle] = useState<TegakiBundle | null>(null);
   const [fontLoadFailed, setFontLoadFailed] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const rendererRef = useRef<TegakiRendererHandle>(null);
+  const vectorRef = useRef<SVGSVGElement>(null);
+  const identifier = useId().replaceAll(":", "");
+  const gradientId = `orbit-greeting-spectrum-${identifier}`;
+  const pencilTextureId = `orbit-greeting-pencil-${identifier}`;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -65,6 +78,7 @@ export function HandwrittenGreeting({
   }, []);
 
   useEffect(() => {
+    if (usesVectorCenterline) return;
     let active = true;
     void loadGreetingFontPlan(locale)
       .then(async (plan) => {
@@ -84,15 +98,33 @@ export function HandwrittenGreeting({
     return () => {
       active = false;
     };
-  }, [locale]);
+  }, [locale, usesVectorCenterline]);
 
   useEffect(() => {
-    if (!fontBundle || reducedMotion) return;
+    if (!fontBundle || reducedMotion || usesVectorCenterline) return;
     const frame = window.requestAnimationFrame(() => {
       rendererRef.current?.engine?.restart();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [fontBundle, locale, reducedMotion, value, variant]);
+  }, [fontBundle, locale, reducedMotion, usesVectorCenterline, value, variant]);
+
+  useEffect(() => {
+    if (!usesVectorCenterline) return;
+    if (reducedMotion) {
+      vectorRef.current?.setAttribute("data-writing-progress", "1");
+      return;
+    }
+    const startedAt = performance.now() + 120;
+    const duration = 3_440;
+    let frame = 0;
+    const update = (now: number) => {
+      const progress = Math.max(0, Math.min(0.995, (now - startedAt) / duration));
+      vectorRef.current?.setAttribute("data-writing-progress", String(progress));
+      if (progress < 0.995) frame = window.requestAnimationFrame(update);
+    };
+    frame = window.requestAnimationFrame(update);
+    return () => window.cancelAnimationFrame(frame);
+  }, [reducedMotion, usesVectorCenterline, value]);
 
   const className = `${variant === "inline" ? "welcome-signature" : "welcome-greeting"} ${isLong ? "long" : ""}`.trim();
   const penSpeed = normalizedPenSpeed(locale);
@@ -101,7 +133,7 @@ export function HandwrittenGreeting({
     "data-duration-scale": motion.durationScale,
     "data-greeting-locale": locale,
     "data-motion-count": motion.motionCount,
-    "data-motion-renderer": "tegaki-font-centerline",
+    "data-motion-renderer": usesVectorCenterline ? "vector-centerline" : "tegaki-font-centerline",
     "data-motion-timeline": "path-length-staggered",
     "data-motion-script": script,
     "data-ink-effect": "spectrum-write",
@@ -112,10 +144,77 @@ export function HandwrittenGreeting({
     "data-boot-motion": "center-write-settle",
     "data-motion-sequence": "write-settle-reveal",
     "data-writing-continuity": script === "cursive" || script === "arabic" ? "connected" : "stroke-ordered",
-    "data-writing-style": "font-derived-centerline",
-    "data-pen-speed": penSpeed,
-    "data-stroke-count": motion.motionCount,
+    "data-writing-style": usesVectorCenterline ? "licensed-vector-centerline" : "font-derived-centerline",
+    "data-pen-speed": usesVectorCenterline ? "reference" : penSpeed,
+    "data-stroke-count": usesVectorCenterline ? ENGLISH_HELLO_STROKES.length : motion.motionCount,
   } as const;
+
+  if (usesVectorCenterline) {
+    return (
+      <svg
+        ref={vectorRef}
+        aria-label={value}
+        className={className}
+        {...sharedData}
+        data-font-family="Orbit Hello centerline"
+        data-font-ready="true"
+        data-font-state="ready"
+        data-glyph-coverage="complete"
+        data-writing-progress="0"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        viewBox="0 0 638 200"
+      >
+        <defs>
+          <linearGradient gradientUnits="userSpaceOnUse" id={gradientId} x1="8" x2="630" y1="34" y2="190">
+            {ORBIT_SPECTRUM.map((color, index) => (
+              <stop key={`${color}-${index}`} offset={index / (ORBIT_SPECTRUM.length - 1)} stopColor={color} />
+            ))}
+          </linearGradient>
+          <filter colorInterpolationFilters="sRGB" height="114%" id={pencilTextureId} width="104%" x="-2%" y="-7%">
+            <feTurbulence baseFrequency="0.82" numOctaves="1" result="paperGrain" seed="11" type="fractalNoise" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="paperGrain"
+              scale="0.32"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+        <g className="welcome-greeting-pencil" filter={`url(#${pencilTextureId})`}>
+          {ENGLISH_HELLO_STROKES.map((path, index) => (
+            <path
+              className="welcome-greeting-vector-stroke"
+              d={path}
+              fill="none"
+              key={path}
+              pathLength="1"
+              stroke={`url(#${gradientId})`}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="14.8883"
+              style={
+                {
+                  "--greeting-stroke-delay": `${index === 0 ? 120 : 760}ms`,
+                  "--greeting-stroke-duration": `${index === 0 ? 820 : 2_800}ms`,
+                } as CSSProperties
+              }
+              onAnimationEnd={
+                index === ENGLISH_HELLO_STROKES.length - 1
+                  ? (event: AnimationEvent<SVGPathElement>) => {
+                      if (event.animationName !== "orbit-greeting-pencil-write") return;
+                      event.currentTarget.closest(".welcome-greeting")?.setAttribute("data-writing-progress", "1");
+                      onWritingComplete?.();
+                    }
+                  : undefined
+              }
+            />
+          ))}
+        </g>
+      </svg>
+    );
+  }
 
   return (
     <div

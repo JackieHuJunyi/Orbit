@@ -484,6 +484,59 @@ test("switches a signed-in account model and effort without returning or replaci
   }
 });
 
+test("switches a connected API profile only to a model still present in its verified catalog", async () => {
+  const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = "profile-model-switch-secret-12345678";
+  globalThis.fetch = async (_input, init) => {
+    assert.equal(new Headers(init.headers).get("authorization"), "Bearer private-deepseek-key");
+    return Response.json({ data: [{ id: "deepseek-v4-flash" }, { id: "deepseek-v4-pro" }] });
+  };
+  try {
+    const baseRequest = new Request("https://orbit.example/api/model-profiles");
+    const profile = normalizeModelProfileDraft(
+      {
+        provider: "deepseek",
+        protocol: "chat-completions",
+        baseURL: "https://api.deepseek.com",
+        name: "DeepSeek",
+        model: "deepseek-v4-flash",
+        apiKey: "private-deepseek-key",
+      },
+      undefined,
+      "2026-09-14T00:00:00.000Z",
+      () => "deepseek",
+    );
+    const cookie = await serializeModelProfileVaultCookie(baseRequest, {
+      version: 1,
+      activeProfileId: profile.id,
+      failoverEnabled: false,
+      profiles: [profile],
+    });
+    const request = (model) =>
+      new Request("https://orbit.example/api/model-profiles", {
+        method: "POST",
+        headers: {
+          origin: "https://orbit.example",
+          cookie: cookie.split(";", 1)[0],
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ action: "profile-model", profileId: profile.id, model }),
+      });
+    const switched = await postModelProfiles(request("deepseek-v4-pro"));
+    assert.equal(switched.status, 200);
+    assert.equal((await switched.json()).activeProfile.model, "deepseek-v4-pro");
+    assert.doesNotMatch(switched.headers.get("set-cookie"), /private-deepseek-key/u);
+    const rejected = await postModelProfiles(request("invented-model"));
+    assert.equal(rejected.status, 400);
+    assert.match((await rejected.json()).error, /no longer in the provider catalog/i);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousSecret === undefined) delete process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY = previousSecret;
+  }
+});
+
 test("fetches a bounded model catalog without following redirects or returning the credential", async () => {
   const previousSecret = process.env.ORBIT_CREDENTIAL_ENCRYPTION_KEY;
   const previousFetch = globalThis.fetch;
@@ -615,17 +668,21 @@ test("probes DeepSeek structured output before saving a discovered profile", asy
 });
 
 test("requires a catalog and probes APIs or unverifiable accounts before first-run save", async () => {
-  const source = await readFile(new URL("../app/components/welcome-model-step.tsx", import.meta.url), "utf8");
-  const catalog = source.indexOf('JSON.stringify({ action: "models", profile })');
-  const probe = source.indexOf('JSON.stringify({ action: "probe", profile: verifiedProfile })');
-  const save = source.indexOf('JSON.stringify({ action: "upsert", profile: verifiedProfile })');
+  const [welcome, connectionClient] = await Promise.all([
+    readFile(new URL("../app/components/welcome-model-step.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/model-connection-client.ts", import.meta.url), "utf8"),
+  ]);
+  const catalog = connectionClient.indexOf('JSON.stringify({ action: "models", profile })');
+  const probe = connectionClient.indexOf('JSON.stringify({ action: "probe", profile: verifiedProfile })');
+  const save = connectionClient.indexOf('JSON.stringify({ action: "upsert", profile: verifiedProfile })');
   assert.ok(catalog >= 0 && catalog < probe && probe < save);
   assert.match(
-    source,
-    /selectedCandidate\.sourceKind !== "account-runtime" \|\| account\?\.status === "verify-required"/u,
+    connectionClient,
+    /candidate\.sourceKind !== "account-runtime" \|\| account\?\.status === "verify-required"/u,
   );
-  assert.match(source, /connectionFailureDetail\(probePayload/u);
-  assert.match(source, /setConnectionError\(detail \? `\$\{copy\.connectionFailed\} \$\{detail\}`/u);
+  assert.match(connectionClient, /providerError\(probePayload/u);
+  assert.match(welcome, /connectDiscoveredModelConnection/u);
+  assert.match(welcome, /setConnectionError\(detail \? `\$\{copy\.connectionFailed\} \$\{detail\}`/u);
 });
 
 test("keeps loopback model runtimes desktop-only and never invents an authorization header", async () => {

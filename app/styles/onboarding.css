@@ -1053,5 +1053,6 @@ html[data-theme="space-black"] .language-options button.selected > svg { color: 
   .welcome-language-card::before,
   .empty-drop-zone::before { display: none; }
   .welcome-greeting-stage::before { display: none; }
+  .welcome-greeting-vector-stroke { animation: none; stroke: CanvasText; stroke-dashoffset: 0; }
   .welcome-greeting-tegaki canvas { filter: grayscale(1) contrast(2); }
 }

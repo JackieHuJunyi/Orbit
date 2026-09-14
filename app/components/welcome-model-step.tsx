@@ -18,7 +18,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ModelProfileManager } from "./model-profile-manager";
 import {
   discoverDesktopModelConnections,
-  importDesktopModelConnection,
   supportsDesktopModelDiscovery,
   type DiscoveredAccountRuntime,
   type DiscoveredModelConnection,
@@ -26,6 +25,7 @@ import {
 import type { OrbitLocale } from "../lib/localization";
 import type { ModelProfilesState } from "../lib/model-profiles";
 import type { ModelProviderStatus, OrbitModelMode } from "../lib/model-preference";
+import { connectDiscoveredModelConnection, type ModelConnectionPhase } from "../lib/model-connection-client";
 
 export type WelcomeModelCopy = Readonly<{
   back: string;
@@ -85,8 +85,6 @@ export type WelcomeModelCopy = Readonly<{
 }>;
 
 type DiscoveryState = "idle" | "scanning" | "complete" | "unavailable" | "error";
-type ConnectionPhase = "idle" | "reading" | "catalog" | "response" | "saving";
-
 function providerStatusFromState(state: ModelProfilesState, deploymentConnection: string): ModelProviderStatus {
   const active = state.activeProfile;
   if (active) {
@@ -113,12 +111,6 @@ function providerStatusFromState(state: ModelProfilesState, deploymentConnection
   };
 }
 
-function connectionFailureDetail(payload: { error?: unknown }, fallback: string) {
-  return typeof payload.error === "string" && payload.error.trim() && payload.error.length <= 240
-    ? payload.error.trim()
-    : fallback;
-}
-
 export function WelcomeModelStep({
   copy,
   locale,
@@ -141,7 +133,7 @@ export function WelcomeModelStep({
   const [accounts, setAccounts] = useState<DiscoveredAccountRuntime[]>([]);
   const [candidates, setCandidates] = useState<DiscoveredModelConnection[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<DiscoveredModelConnection | null>(null);
-  const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>("idle");
+  const [connectionPhase, setConnectionPhase] = useState<ModelConnectionPhase>("idle");
   const [connectionError, setConnectionError] = useState("");
   const [managerRevision, setManagerRevision] = useState(0);
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -218,49 +210,11 @@ export function WelcomeModelStep({
     setConnectionPhase("reading");
     setConnectionError("");
     try {
-      const profile = await importDesktopModelConnection(selectedCandidate.id);
-      setConnectionPhase("catalog");
-      const modelResponse = await fetch("/api/model-profiles", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "models", profile }),
+      const saved = await connectDiscoveredModelConnection({
+        candidate: selectedCandidate,
+        accounts,
+        onPhase: setConnectionPhase,
       });
-      const modelPayload = (await modelResponse.json()) as { models?: unknown; error?: unknown };
-      if (!modelResponse.ok || !Array.isArray(modelPayload.models) || !modelPayload.models.length) {
-        throw new Error(connectionFailureDetail(modelPayload, "The provider returned no usable model IDs."));
-      }
-      const models = modelPayload.models.filter((item): item is string => typeof item === "string");
-      const verifiedProfile = { ...profile, model: models.includes(profile.model) ? profile.model : models[0] };
-      const account = accounts.find((item) => item.provider === selectedCandidate.provider);
-      const requiresResponseProbe =
-        selectedCandidate.sourceKind !== "account-runtime" || account?.status === "verify-required";
-      if (requiresResponseProbe) {
-        setConnectionPhase("response");
-        const probeResponse = await fetch("/api/model-profiles", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "probe", profile: verifiedProfile }),
-        });
-        const probePayload = (await probeResponse.json()) as { ready?: unknown; error?: unknown };
-        if (!probeResponse.ok || probePayload.ready !== true) {
-          throw new Error(
-            connectionFailureDetail(probePayload, "The provider did not complete the structured-output check."),
-          );
-        }
-      }
-      setConnectionPhase("saving");
-      const saveResponse = await fetch("/api/model-profiles", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "upsert", profile: verifiedProfile }),
-      });
-      const saved = (await saveResponse.json()) as ModelProfilesState & { error?: unknown };
-      if (!saveResponse.ok || typeof saved.configured !== "boolean") {
-        throw new Error(connectionFailureDetail(saved, "Orbit could not save the verified connection."));
-      }
       setModelStatus(providerStatusFromState(saved, copy.deploymentConnection));
       onModelModeChange("model-assisted");
       setManagerRevision((current) => current + 1);

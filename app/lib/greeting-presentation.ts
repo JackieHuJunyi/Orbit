@@ -8,7 +8,7 @@ export type GreetingPresentationPlan = Readonly<{
   isLong: boolean;
   locale: OrbitLocale;
   motion: GreetingMotionPlan;
-  renderMode: "tegaki-font";
+  renderMode: "tegaki-font" | "vector-centerline";
   script: GreetingWritingScript;
   value: string;
 }>;
@@ -38,10 +38,14 @@ export function planGreetingPresentation({
   const direction = localeDirection(locale);
   const script = greetingScript(locale);
   const units = greetingUnits(value, locale);
-  const renderMode = "tegaki-font" as const;
+  const renderMode = locale === "en" && value === "Hello" ? "vector-centerline" : "tegaki-font";
   const compactScript = script === "logographic" || script === "kana" || script === "hangul";
   const canvasWidth =
-    locale === "ar" ? 680 : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
+    renderMode === "vector-centerline"
+      ? 638
+      : locale === "ar"
+        ? 680
+        : Math.round(Math.min(1040, Math.max(430, value.length * (compactScript ? 155 : 82) + 100)));
   const motion = planGreetingMotion({
     canvasWidth,
     direction,
@@ -54,7 +58,7 @@ export function planGreetingPresentation({
 
   return Object.freeze({
     canvasWidth,
-    completeAfterMs: Math.round(9_000 * motion.durationScale),
+    completeAfterMs: renderMode === "vector-centerline" ? 3_560 : Math.round(9_000 * motion.durationScale),
     direction,
     isLong,
     locale,

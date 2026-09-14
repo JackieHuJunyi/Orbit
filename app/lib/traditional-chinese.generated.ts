@@ -750,6 +750,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "正在查詢這臺裝置上的模型"
   ],
   [
+    "正在查看这台设备上的模型",
+    "正在檢視這臺裝置上的模型"
+  ],
+  [
     "此事务不会改变跨文件绑定",
     "此事務不會改變跨檔案繫結"
   ],
@@ -1068,6 +1072,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "正在设备内生成私密预览",
     "正在裝置內生成私密預覽"
+  ],
+  [
+    "正在验证一次结构化响应",
+    "正在驗證一次結構化響應"
   ],
   [
     "每次改动先显示具体差异",
@@ -3006,6 +3014,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "等合成測試結果"
   ],
   [
+    "管理模型与连接",
+    "管理模型與連線"
+  ],
+  [
     "编译器原始信息",
     "編譯器原始資訊"
   ],
@@ -3096,6 +3108,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "隐藏工作区文件",
     "隱藏工作區檔案"
+  ],
+  [
+    "需要先登录账号",
+    "需要先登入賬號"
   ],
   [
     "页面图像不上传",
@@ -3670,6 +3686,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "此源內容過大"
   ],
   [
+    "此设备上可用",
+    "此裝置上可用"
+  ],
+  [
     "汇总季度收入",
     "彙總季度收入"
   ],
@@ -3842,6 +3862,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "配置檔案過大"
   ],
   [
+    "重新扫描模型",
+    "重新掃描模型"
+  ],
+  [
     "重新连接缺失",
     "重新連線缺失"
   ],
@@ -3880,6 +3904,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "不会从远程",
     "不會從遠端"
+  ],
+  [
+    "不调用模型",
+    "不呼叫模型"
   ],
   [
     "与清单部件",
@@ -3968,6 +3996,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "保存内容块",
     "儲存內容塊"
+  ],
+  [
+    "保存到本机",
+    "儲存到本機"
   ],
   [
     "保存并启用",
@@ -4416,6 +4448,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "的草稿预览",
     "的草稿預覽"
+  ],
+  [
+    "确定性处理",
+    "確定性處理"
   ],
   [
     "确认下载后",
@@ -5058,6 +5094,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "復元自體"
   ],
   [
+    "思考强度",
+    "思考強度"
+  ],
+  [
     "总体而言",
     "總體而言"
   ],
@@ -5234,6 +5274,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "無序列表"
   ],
   [
+    "无需模型",
+    "無需模型"
+  ],
+  [
     "日期区间",
     "日期區間"
   ],
@@ -5322,6 +5366,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
     "本機資源"
   ],
   [
+    "本次消息",
+    "本次訊息"
+  ],
+  [
     "本次目标",
     "本次目標"
   ],
@@ -5352,6 +5400,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "检查配置",
     "檢查配置"
+  ],
+  [
+    "模型服务",
+    "模型服務"
   ],
   [
     "欢迎使用",
@@ -6028,6 +6080,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "正在从",
     "正在從"
+  ],
+  [
+    "正在将",
+    "正在將"
   ],
   [
     "源内容",
@@ -6964,6 +7020,10 @@ export const TRADITIONAL_CHINESE_SEGMENTS = [
   [
     "进入",
     "進入"
+  ],
+  [
+    "连接",
+    "連線"
   ],
   [
     "选区",

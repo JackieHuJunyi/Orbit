@@ -17,7 +17,7 @@ const LOCALES = [
     script: "logographic",
     strokes: "2",
   },
-  { id: "en", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "5" },
+  { id: "en", direction: "ltr", penSpeed: "reference", renderer: "vector-centerline", script: "cursive", strokes: "2" },
   { id: "fr", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "7" },
   { id: "es", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "4" },
   { id: "ru", direction: "ltr", penSpeed: "1", renderer: "tegaki-font-centerline", script: "cursive", strokes: "6" },
@@ -121,9 +121,15 @@ for (const viewport of VIEWPORTS) {
         await expect(languageCard).toHaveAttribute("data-signature-phase", "ready");
         await expect(welcomeSignature).toHaveAttribute("data-font-state", "ready");
         await expect(welcomeSignature).toHaveAttribute("data-glyph-coverage", "complete");
-        expect(await welcomeSignature.getAttribute("data-font-family")).toBe(
-          await greeting.getAttribute("data-font-family"),
-        );
+        if (locale.id === "en") {
+          expect(await welcomeSignature.getAttribute("data-font-family")).not.toBe(
+            await greeting.getAttribute("data-font-family"),
+          );
+        } else {
+          expect(await welcomeSignature.getAttribute("data-font-family")).toBe(
+            await greeting.getAttribute("data-font-family"),
+          );
+        }
         await expect(languageOptions.getByRole("radio")).toHaveCount(LOCALES.length);
         await expect(selectedLanguage).toHaveCount(1);
         await expectInsideContainer(selectedLanguage, languageOptions);
@@ -277,6 +283,13 @@ test.describe("compact localized Agent conversation", () => {
       ).toBeGreaterThanOrEqual(96);
       await expectSeparated(thread.getByRole("listitem").last(), page.locator(".agent-dock-composer"));
       await expectSeparated(thread.locator(".agent-conversation-privacy"), page.locator(".agent-dock-composer"));
+      await page.locator(".agent-model-trigger").click();
+      const modelMenu = page.locator(".agent-model-popover");
+      await expect(modelMenu).toBeVisible();
+      await expect(modelMenu.getByRole("tab")).toHaveCount(1);
+      await expectInsideViewport(page, modelMenu);
+      await page.keyboard.press("Escape");
+      await expect(modelMenu).toBeHidden();
       await expectInsideViewport(page, page.locator(".agent-dock.open"));
       await expectNoDocumentOverflow(page);
     });

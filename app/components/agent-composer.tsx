@@ -10,13 +10,12 @@ import {
   type KeyboardEvent,
   type Ref,
 } from "react";
+import { AgentModelPicker } from "./agent-model-picker";
+import type { AgentModelOption } from "../lib/agent-model-options";
 
 export type AgentScope = "selection" | "artifact" | "workspace";
 
-export type AgentModelOption = Readonly<{
-  value: string;
-  label: string;
-}>;
+export type { AgentModelOption } from "../lib/agent-model-options";
 
 const AGENT_SCOPE_ORDER = ["selection", "artifact", "workspace"] as const;
 const MAX_COMPOSER_TEXT_HEIGHT = 132;
@@ -42,7 +41,6 @@ export type AgentComposerProps = Readonly<{
   modelSwitching: boolean;
   locked: boolean;
   selectionUnavailable: boolean;
-  mode: "openai" | "local";
   placeholder: string;
   ariaLabel: string;
   scopeLabels: Readonly<Record<AgentScope, string>>;
@@ -53,12 +51,30 @@ export type AgentComposerProps = Readonly<{
   stopLabel: string;
   workingLabel: string;
   longWaitLabel: string;
-  modelConnectedLabel: string;
-  localFallbackLabel: string;
   modelSelectLabel: string;
   modelOptions: readonly AgentModelOption[];
+  modelDiscoveryState: "idle" | "scanning" | "complete" | "unavailable" | "error";
   selectedModel: string;
   onModelChange: (value: string) => void;
+  onModelPickerOpen: () => void;
+  onRefreshModels: () => void;
+  onManageModels: () => void;
+  modelMenuLabels: Readonly<{
+    connected: string;
+    available: string;
+    local: string;
+    scanning: string;
+    refresh: string;
+    manage: string;
+    current: string;
+    providers: string;
+    models: string;
+    reasoning: string;
+    connect: string;
+    signIn: string;
+    useLocal: string;
+    efforts: Readonly<Record<string, string>>;
+  }>;
   onStop: () => void;
   planHint: string;
   queryEvidenceText: string;
@@ -86,7 +102,6 @@ export function AgentComposer({
   modelSwitching,
   locked,
   selectionUnavailable,
-  mode,
   placeholder,
   ariaLabel,
   scopeLabels,
@@ -97,12 +112,15 @@ export function AgentComposer({
   stopLabel,
   workingLabel,
   longWaitLabel,
-  modelConnectedLabel,
-  localFallbackLabel,
   modelSelectLabel,
   modelOptions,
+  modelDiscoveryState,
   selectedModel,
   onModelChange,
+  onModelPickerOpen,
+  onRefreshModels,
+  onManageModels,
+  modelMenuLabels,
   onStop,
   planHint,
   queryEvidenceText,
@@ -189,26 +207,18 @@ export function AgentComposer({
             ))}
           </div>
           <div className="agent-composer-trailing">
-            <label className={`agent-model-picker ${mode}`}>
-              <span className="visually-hidden">{modelSelectLabel}</span>
-              <select
-                value={selectedModel}
-                onChange={(event) => onModelChange(event.currentTarget.value)}
-                disabled={busy || locked || modelSwitching}
-                aria-label={modelSelectLabel}
-              >
-                {modelOptions.length ? (
-                  modelOptions.map((option) => (
-                    <option value={option.value} key={option.value}>
-                      {option.label}
-                    </option>
-                  ))
-                ) : (
-                  <option value={selectedModel}>{mode === "openai" ? modelConnectedLabel : localFallbackLabel}</option>
-                )}
-              </select>
-              <ChevronDown aria-hidden="true" />
-            </label>
+            <AgentModelPicker
+              options={modelOptions}
+              selected={selectedModel}
+              busy={busy || locked}
+              switching={modelSwitching}
+              discoveryState={modelDiscoveryState}
+              labels={{ select: modelSelectLabel, ...modelMenuLabels }}
+              onChange={onModelChange}
+              onOpen={onModelPickerOpen}
+              onRefresh={onRefreshModels}
+              onManage={onManageModels}
+            />
             <button
               className={`run-button ${modelBusy && stoppable ? "stop" : ""}`.trim()}
               onClick={modelBusy && stoppable ? onStop : onRun}

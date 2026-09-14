@@ -145,7 +145,7 @@ test("keeps non-modal menu focus shared while business capabilities remain in th
   assert.match(responsive, /html\[dir="rtl"\] \.settings-popover\s*\{[^}]*right:\s*10px;[^}]*left:\s*10px;/);
 });
 
-test("keeps both welcome lines inside one licensed, path-timed typeface system", async () => {
+test("restores the licensed English Hello gesture while keeping every translated line redistributable", async () => {
   const [component, experience, fontBundles, glyphData, onboarding, motion] = await Promise.all([
     readFile(new URL("../app/components/handwritten-greeting.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/welcome-experience.tsx", import.meta.url), "utf8"),
@@ -166,6 +166,9 @@ test("keeps both welcome lines inside one licensed, path-timed typeface system",
   assert.match(component, /<TegakiRenderer/);
   assert.match(component, /speed: penSpeed \/ motion\.durationScale/);
   assert.match(component, /duration: WELCOME_SIGNATURE_DURATION_SECONDS/);
+  assert.match(component, /ENGLISH_HELLO_STROKES/);
+  assert.match(component, /licensed-vector-centerline/);
+  assert.match(component, /feTurbulence[^]*feDisplacementMap/);
   assert.match(component, /variant === "inline" \? "welcome-signature" : "welcome-greeting"/);
   assert.match(experience, /presentation=\{welcomeSignaturePresentation\}/);
   assert.match(experience, /locale: greetingLocale, value: text\.welcomeEyebrow/);
@@ -186,6 +189,7 @@ test("keeps both welcome lines inside one licensed, path-timed typeface system",
     onboarding,
     /\.welcome-language-heading \.welcome-written-eyebrow\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s,
   );
+  assert.match(motion, /@keyframes orbit-greeting-pencil-write/);
   assert.doesNotMatch(motion, /@keyframes orbit-greeting-(?:write|ink-settle)/);
   assert.match(motion, /@keyframes orbit-setup-unfold/);
   assert.doesNotMatch(experience, /WelcomeAmbientMotion|greetingCycleDuration|setGreetingIndex/);

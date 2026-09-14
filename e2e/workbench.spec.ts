@@ -20,7 +20,7 @@ test("paints the handwritten first-run ritual before client JavaScript", async (
   await expect(welcome).toBeVisible();
   await expect(welcome).toHaveAttribute("data-intro-phase", "writing");
   await expect(firstFrame.locator("[data-ambient-motion]")).toHaveCount(0);
-  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="tegaki-font-centerline"]')).toHaveAttribute(
+  await expect(firstFrame.locator('.welcome-greeting[data-motion-renderer="vector-centerline"]')).toHaveAttribute(
     "aria-label",
     "Hello",
   );
@@ -393,10 +393,30 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(currentState()) });
       return;
     }
-    const input = route.request().postDataJSON() as { action?: string; profileId?: string };
+    const input = route.request().postDataJSON() as {
+      action?: string;
+      profileId?: string;
+      model?: string;
+      profile?: { model?: string };
+    };
+    if (input.action === "models") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ models: [input.profile?.model ?? "model"] }),
+      });
+      return;
+    }
     writes.push(input);
-    if (input.action === "activate" && profiles.some((item) => item.id === input.profileId)) {
+    if (
+      (input.action === "activate" || input.action === "profile-model") &&
+      profiles.some((item) => item.id === input.profileId)
+    ) {
       activeProfileId = input.profileId!;
+      if (input.action === "profile-model" && input.model) {
+        const profile = profiles.find((item) => item.id === input.profileId);
+        if (profile) profile.model = input.model;
+      }
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(currentState()) });
       return;
     }
@@ -445,9 +465,9 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
   await expect(page.locator(".agent-dock.open.docked")).toBeVisible();
   await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
-  const modelPicker = page.getByLabel("Model for this message");
+  const modelPicker = page.getByRole("button", { name: "Model for this message" });
   await expect(composer).toBeEditable();
-  await expect(modelPicker).toHaveValue("profile:flash");
+  await expect(modelPicker).toContainText("deepseek-v4-flash");
   await composer.fill("What evidence supports the conclusion?");
   await composer.press("Enter");
   await expect.poll(() => agentRequests.length).toBe(1);
@@ -468,10 +488,11 @@ test("keeps free-text Agent drafts and switches the active model inside the comp
     .poll(() => page.evaluate(() => localStorage.getItem("orbit-agent-draft-v1")))
     .toBe("Explain the source assumptions\nand keep my draft.");
 
-  await expect(modelPicker).toHaveValue("profile:flash");
-  await modelPicker.selectOption("profile:pro");
-  await expect.poll(() => writes).toEqual([{ action: "activate", profileId: "pro" }]);
-  await expect(modelPicker).toHaveValue("profile:pro");
+  await modelPicker.click();
+  const modelMenu = page.getByRole("dialog", { name: "Model for this message" });
+  await modelMenu.getByRole("tab", { name: /DeepSeek Pro/u }).click();
+  await expect.poll(() => writes).toEqual([{ action: "profile-model", profileId: "pro", model: "deepseek-v4-pro" }]);
+  await expect(modelPicker).toContainText("deepseek-v4-pro");
 
   await composer.press("Enter");
   await composer.fill("A follow-up written while the model is working.");
@@ -563,13 +584,16 @@ test("switches model and reasoning level inside one signed-in account profile", 
 
   await openWorkbench(page);
   await page.locator(".agent-dock-trigger").click();
-  const modelPicker = page.getByLabel("Model for this message");
-  await expect(modelPicker.getByRole("option", { name: /GPT-5\.6 Luna · Max/u })).toBeAttached();
-  await expect(modelPicker.getByRole("option", { name: /GPT-5\.6 Sol · High/u })).toBeAttached();
-  await expect(modelPicker.getByRole("option", { name: /GPT-5\.6 Terra · Medium/u })).toBeAttached();
-  await modelPicker.selectOption("profile:codex:account-model:gpt-5.6-luna@max");
+  const modelPicker = page.getByRole("button", { name: "Model for this message" });
+  await modelPicker.click();
+  const modelMenu = page.getByRole("dialog", { name: "Model for this message" });
+  await expect(modelMenu.getByRole("radio", { name: "GPT-5.6 Luna" })).toBeVisible();
+  await expect(modelMenu.getByRole("radio", { name: "GPT-5.6 Sol" })).toBeVisible();
+  await expect(modelMenu.getByRole("radio", { name: "GPT-5.6 Terra" })).toBeVisible();
+  await modelMenu.getByRole("radio", { name: "GPT-5.6 Luna" }).click();
+  await modelMenu.getByRole("slider", { name: "Reasoning" }).press("End");
   await expect.poll(() => writes).toEqual([{ action: "account-model", profileId: "codex", model: "gpt-5.6-luna@max" }]);
-  await expect(modelPicker).toHaveValue("profile:codex:account-model:gpt-5.6-luna@max");
+  await expect(modelPicker).toContainText("GPT-5.6 Luna · Max");
 
   await page.getByRole("group", { name: "Agent change scope" }).getByRole("button", { name: "File" }).click();
   const composer = page.getByRole("textbox", { name: "Describe an artifact change" });
@@ -583,6 +607,199 @@ test("switches model and reasoning level inside one signed-in account profile", 
   await expect(page.getByRole("button", { name: "Send to Orbit" })).toBeVisible();
   await expect(page.locator(".patch-card")).toHaveCount(0);
   await expect(composer).toHaveValue("Explain this source without changing it.");
+});
+
+test("discovers and connects models from Chat after onboarding was skipped", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("orbit-model-mode-v1", "device-tools-only");
+    Object.defineProperty(window, "orbitDesktop", {
+      configurable: false,
+      value: {
+        discoverModels: async () => ({
+          supported: true,
+          accounts: [
+            {
+              id: "claude",
+              provider: "claude-account",
+              label: "Claude",
+              sourceLabel: "Claude Code · Claude account",
+              model: "claude-account",
+              installed: true,
+              status: "sign-in-required",
+            },
+          ],
+          candidates: [
+            {
+              id: "deepseek-chat-choice",
+              sourceKind: "cc-switch",
+              sourceLabel: "CC Switch · DeepSeek",
+              locality: "cloud",
+              provider: "deepseek",
+              protocol: "chat-completions",
+              name: "DeepSeek",
+              baseURL: "https://api.deepseek.com",
+              model: "deepseek-v4-flash",
+              models: [],
+              credentialState: "detected",
+            },
+            {
+              id: "duck-chat-choice",
+              sourceKind: "cc-switch",
+              sourceLabel: "CC Switch · Claude",
+              locality: "cloud",
+              provider: "custom",
+              protocol: "anthropic-messages",
+              name: "Duck coding",
+              baseURL: "https://duck.example/v1",
+              model: "claude-sonnet-5",
+              models: [],
+              credentialState: "detected",
+            },
+            {
+              id: "glm-chat-choice",
+              sourceKind: "cc-switch",
+              sourceLabel: "CC Switch · Claude",
+              locality: "cloud",
+              provider: "custom",
+              protocol: "anthropic-messages",
+              name: "Zhipu GLM",
+              baseURL: "https://glm.example/v1",
+              model: "glm-5.2",
+              models: [],
+              credentialState: "detected",
+            },
+          ],
+        }),
+        importDiscoveredModel: async (id: string) => {
+          if (id !== "deepseek-chat-choice") throw new Error("Unexpected candidate");
+          return {
+            provider: "deepseek",
+            protocol: "chat-completions",
+            name: "DeepSeek",
+            baseURL: "https://api.deepseek.com",
+            model: "deepseek-v4-flash",
+            apiKey: "private-chat-import-key",
+          };
+        },
+      },
+    });
+  });
+  const profile = {
+    id: "deepseek",
+    name: "DeepSeek",
+    provider: "deepseek",
+    protocol: "chat-completions",
+    baseURL: "https://api.deepseek.com",
+    model: "deepseek-v4-flash",
+    budget: { maxInputTokens: 50_000, maxOutputTokens: 4_000 },
+    credentialConfigured: true,
+    capabilities: {
+      protocol: "chat-completions",
+      structuredOutput: "json-schema",
+      modelCatalog: true,
+      tokenUsage: "provider-reported",
+      maximumOutputTokens: 8_000,
+    },
+    health: { status: "healthy", checkedAt: "2026-09-14T00:00:00.000Z", retryAt: null },
+    createdAt: "2026-09-14T00:00:00.000Z",
+    updatedAt: "2026-09-14T00:00:00.000Z",
+  };
+  const emptyState = {
+    vaultAvailable: true,
+    configured: false,
+    activeProfileId: null,
+    activeSource: null,
+    activeProfile: null,
+    profiles: [],
+    failoverEnabled: false,
+    deployment: {
+      configured: false,
+      provider: null,
+      model: null,
+      budget: null,
+      capabilities: null,
+      health: { status: "unknown", checkedAt: null, retryAt: null },
+    },
+  };
+  const connectedState = {
+    ...emptyState,
+    configured: true,
+    activeProfileId: profile.id,
+    activeSource: "personal",
+    activeProfile: profile,
+    profiles: [profile],
+  };
+  let currentState: object = emptyState;
+  const actions: string[] = [];
+  await page.route("**/api/model-profiles", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(currentState) });
+      return;
+    }
+    const input = route.request().postDataJSON() as { action?: string; model?: string };
+    if (input.action === "models" && currentState === connectedState) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: '{"models":["deepseek-v4-flash","deepseek-v4-pro"]}',
+      });
+      return;
+    }
+    actions.push(input.action ?? "");
+    if (input.action === "models") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: '{"models":["deepseek-v4-flash"]}' });
+      return;
+    }
+    if (input.action === "probe") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: '{"ready":true}' });
+      return;
+    }
+    if (input.action === "upsert") {
+      currentState = connectedState;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(currentState) });
+      return;
+    }
+    if (input.action === "profile-model" && input.model === "deepseek-v4-pro") {
+      profile.model = input.model;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(connectedState) });
+      return;
+    }
+    await route.fulfill({ status: 400, contentType: "application/json", body: '{"error":"Unexpected action"}' });
+  });
+
+  await openWorkbench(page);
+  await page.locator(".agent-dock-trigger").click();
+  const picker = page.getByRole("button", { name: "Model for this message" });
+  await expect(picker).toContainText("Local tools");
+  await picker.click();
+  const menu = page.getByRole("dialog", { name: "Model for this message" });
+  await expect(menu.getByRole("tab")).toHaveCount(5);
+  expect(
+    await menu.locator(".agent-model-provider-strip").evaluate((element) => element.scrollWidth > element.clientWidth),
+  ).toBe(true);
+  await expect(menu.getByRole("tab", { name: /Claude.*Sign in/u })).toBeVisible();
+  await menu.getByRole("tab", { name: /DeepSeek.*Connect/u }).click();
+  await expect(menu).toContainText("CC Switch · DeepSeek");
+  await menu.getByRole("button", { name: "Connect", exact: true }).click();
+
+  await expect.poll(() => actions).toEqual(["models", "probe", "upsert"]);
+  await expect(picker).toContainText("deepseek-v4-flash");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("orbit-model-mode-v1"))).toBe("model-assisted");
+
+  await picker.click();
+  await expect(menu.getByRole("tab", { name: /DeepSeek.*For this message/u })).toBeVisible();
+  await menu.getByRole("radio", { name: "deepseek-v4-pro" }).click();
+  await expect.poll(() => actions).toEqual(["models", "probe", "upsert", "profile-model"]);
+  await expect(picker).toContainText("deepseek-v4-pro");
+
+  await picker.click();
+  await menu.getByRole("tab", { name: /Local tools/u }).click();
+  await expect(picker).toContainText("Local tools");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("orbit-model-mode-v1"))).toBe("device-tools-only");
+
+  await picker.click();
+  await menu.getByRole("button", { name: "Manage models and connections" }).click();
+  await expect(page.getByRole("dialog", { name: "Connect the models you already use" })).toBeVisible();
 });
 
 test("groups signed-in accounts, detected APIs, local models, and manual configuration", async ({ page }) => {
@@ -896,7 +1113,7 @@ test("writes the opening greeting as one restrained spectrum performance", async
     .poll(async () => Number(await greeting.getAttribute("data-writing-progress")), { timeout: 4_000 })
     .toBeGreaterThan(firstGreetingProgress);
   await expect(greeting).toHaveAttribute("data-motion-script", "cursive");
-  await expect(greeting).toHaveAttribute("data-motion-renderer", "tegaki-font-centerline");
+  await expect(greeting).toHaveAttribute("data-motion-renderer", "vector-centerline");
   await expect(greeting).toHaveAttribute("data-motion-timeline", "path-length-staggered");
   await expect(greeting).toHaveAttribute("data-ink-effect", "spectrum-write");
   await expect(greeting).toHaveAttribute("data-ink-material", "pressure-pencil-spectrum");
@@ -906,10 +1123,10 @@ test("writes the opening greeting as one restrained spectrum performance", async
   await expect(greeting).toHaveAttribute("data-boot-motion", "center-write-settle");
   await expect(greeting).toHaveAttribute("data-motion-sequence", "write-settle-reveal");
   await expect(greeting).toHaveAttribute("data-writing-continuity", "connected");
-  await expect(greeting).toHaveAttribute("data-writing-style", "font-derived-centerline");
-  await expect(greeting).toHaveAttribute("data-pen-speed", "1");
-  await expect(greeting).toHaveAttribute("data-stroke-count", "5");
-  await expect(greeting.locator("canvas")).toBeVisible();
+  await expect(greeting).toHaveAttribute("data-writing-style", "licensed-vector-centerline");
+  await expect(greeting).toHaveAttribute("data-pen-speed", "reference");
+  await expect(greeting).toHaveAttribute("data-stroke-count", "2");
+  await expect(greeting.locator(".welcome-greeting-vector-stroke")).toHaveCount(2);
   await expect(greeting.locator(".welcome-greeting-color-bloom, .welcome-greeting-stroke-head")).toHaveCount(0);
   await expect(page.locator("[data-ambient-motion]")).toHaveCount(0);
 
@@ -940,7 +1157,9 @@ test("writes the opening greeting as one restrained spectrum performance", async
   await expect(welcomeSignature).toHaveAttribute("data-ink-effect", "spectrum-write");
   await expect(welcomeSignature).toHaveAttribute("data-writing-style", "font-derived-centerline");
   await expect(welcomeSignature.locator("canvas")).toBeVisible();
-  expect(await welcomeSignature.getAttribute("data-font-family")).toBe(await greeting.getAttribute("data-font-family"));
+  expect(await welcomeSignature.getAttribute("data-font-family")).not.toBe(
+    await greeting.getAttribute("data-font-family"),
+  );
   await expect(page.locator(".welcome-language-card")).toHaveAttribute("data-signature-phase", "ready", {
     timeout: 8_000,
   });

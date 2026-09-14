@@ -197,6 +197,38 @@ export async function POST(request: Request) {
         profiles: vault.profiles.map((profile) => (profile.id === updated.id ? updated : profile)),
         activeProfileId: updated.id,
       };
+    } else if (input.action === "profile-model") {
+      if (typeof input.profileId !== "string" || typeof input.model !== "string") {
+        throw new Error("Choose a model from the verified provider catalog.");
+      }
+      const existing = vault.profiles.find((profile) => profile.id === input.profileId);
+      const model = input.model.trim();
+      if (
+        !existing ||
+        isAccountModelProvider(existing.provider) ||
+        !model ||
+        model.length > 120 ||
+        /[\u0000-\u001f\u007f]/u.test(model)
+      ) {
+        throw new Error("That model profile or model ID is unavailable.");
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8_000);
+      try {
+        const models = await listProviderModels(personalConnection(existing), controller.signal);
+        if (!models.includes(model)) throw new Error("That model is no longer in the provider catalog.");
+      } catch (error) {
+        if (controller.signal.aborted) throw new Error("The provider model-list request timed out.");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+      const updated = { ...existing, model, updatedAt: new Date().toISOString() };
+      next = {
+        ...vault,
+        profiles: vault.profiles.map((profile) => (profile.id === updated.id ? updated : profile)),
+        activeProfileId: updated.id,
+      };
     } else if (input.action === "deployment") {
       if (!modelProviderStatus(process.env).configured) throw new Error("No deployment model is configured.");
       next = { ...vault, activeProfileId: null };
