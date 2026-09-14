@@ -96,14 +96,17 @@ export function buildAgentModelOptions(
   );
   for (const candidate of availableCandidates) {
     const value = `${DISCOVERED_MODEL_MARKER}${candidate.id}`;
+    const connectionLabel = isAccountModelProvider(candidate.provider)
+      ? accountConnectionLabel(candidate.provider)
+      : candidate.name;
     options.push({
       value,
-      label: candidate.name,
+      label: connectionLabel,
       detail: `${candidate.model} · ${candidate.sourceLabel}`,
       group: "available",
       action: "connect",
       connectionKey: value,
-      connectionLabel: candidate.name,
+      connectionLabel,
       modelKey: candidate.model,
       modelLabel: candidate.model,
       effort: null,
