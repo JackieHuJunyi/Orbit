@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { createCanvas } from "@napi-rs/canvas";
 import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 import { openWorkbench, selectWorkspaceFile } from "./helpers/workbench";
@@ -1687,6 +1688,94 @@ test("selects an on-device OCR region without writing the workspace", async ({ p
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(dialog).toBeHidden();
   expect(pageErrors).toEqual([]);
+});
+
+test("recognizes a scanned PDF with the bundled on-device OCR runtime", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "One real browser runtime covers the shared same-origin OCR assets.");
+  test.setTimeout(90_000);
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+  const ocrTraffic: string[] = [];
+  const requestFailures: string[] = [];
+  const responseFailures: string[] = [];
+  const externalRequests: string[] = [];
+  const clip = (value: string) => (value.length > 1_000 ? `${value.slice(0, 1_000)}…` : value);
+  const isOcrAsset = (url: string) => url.includes("/ocr/");
+  await page.route("**/*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    if (["blob:", "data:"].includes(requestUrl.protocol) || requestUrl.origin === "http://localhost:3000") {
+      await route.continue();
+      return;
+    }
+    externalRequests.push(requestUrl.href);
+    await route.abort("blockedbyclient");
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && !/^Estimating resolution as \d+$/u.test(message.text())) {
+      consoleErrors.push(clip(message.text()));
+    }
+  });
+  page.on("requestfailed", (request) => {
+    if (isOcrAsset(request.url())) {
+      requestFailures.push(`${request.url()} · ${request.failure()?.errorText ?? "failed"}`);
+    }
+  });
+  page.on("request", (request) => {
+    if (isOcrAsset(request.url())) ocrTraffic.push(`request ${request.url()}`);
+  });
+  page.on("response", (response) => {
+    if (!isOcrAsset(response.url())) return;
+    ocrTraffic.push(`response ${response.status()} ${response.url()}`);
+    if (response.status() >= 400) responseFailures.push(`${response.status()} ${response.url()}`);
+  });
+  await openWorkbench(page);
+
+  const scan = createCanvas(1_400, 500);
+  const context = scan.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, scan.width, scan.height);
+  context.fillStyle = "#111111";
+  context.font = "bold 82px Arial";
+  context.fillText("ORBIT LOCAL OCR 2026", 80, 190);
+  context.font = "58px Arial";
+  context.fillText("Verified on Windows", 80, 320);
+
+  const document = await PDFDocument.create();
+  const pdfPage = document.addPage([700, 250]);
+  const image = await document.embedPng(scan.toBuffer("image/png"));
+  pdfPage.drawImage(image, { x: 0, y: 0, width: 700, height: 250 });
+  const bytes = await document.save({ useObjectStreams: false });
+  await page
+    .getByLabel("Import")
+    .first()
+    .setInputFiles({ name: "windows-ocr-scan.pdf", mimeType: "application/pdf", buffer: Buffer.from(bytes) });
+
+  const setup = page.getByRole("dialog", { name: "Choose pages for OCR" });
+  await expect(setup).toBeVisible();
+  await setup.getByRole("button", { name: "Recognize 1 page" }).click();
+
+  const review = page.getByRole("dialog", { name: "Review imported sources" });
+  try {
+    await expect(review).toBeVisible({ timeout: 25_000 });
+  } catch (error) {
+    throw new Error(
+      `${JSON.stringify({ pageErrors, consoleErrors, ocrTraffic, requestFailures, responseFailures }, null, 2)}\n${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  await expect(review).toContainText(/ORBIT LOCAL OCR 2026/iu);
+  await expect(review).toContainText(/OCR transcription/iu);
+  await expect(review).toContainText(/confidence/iu);
+  await review.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(review).toBeHidden();
+  expect(pageErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+  expect(requestFailures).toEqual([]);
+  expect(responseFailures).toEqual([]);
+  expect(externalRequests).toEqual([]);
+  expect(ocrTraffic.some((entry) => entry.includes("/ocr/lang/eng.traineddata.wasm"))).toBe(true);
+  expect(ocrTraffic.some((entry) => entry.includes("/ocr/worker-orbit.js"))).toBe(true);
+  expect(ocrTraffic.some((entry) => entry.includes("/ocr/worker.min.js"))).toBe(true);
 });
 
 test("owns complete keyboard focus in the bottom-left settings menu", async ({ page }) => {

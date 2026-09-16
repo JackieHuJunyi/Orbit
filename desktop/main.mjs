@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, safeStorage, session } from "electron";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -441,6 +441,8 @@ if (!primaryDesktopInstance) {
           getOrigin: () => orbitServer?.url,
           homeDirectory: app.getPath("home"),
           appVersion: app.getVersion(),
+          resolveSystemProxy:
+            process.platform === "win32" ? (url) => session.defaultSession.resolveProxy(url) : undefined,
         })
       : undefined;
     desktopModelDiscovery = createDesktopModelDiscovery({

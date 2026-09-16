@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import {
+  access as fsAccess,
+  mkdir,
+  mkdtemp,
+  readFile as fsReadFile,
+  rm,
+  stat as fsStat,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { PassThrough } from "node:stream";
+import { tmpdir } from "node:os";
 import test from "node:test";
 
 import {
@@ -66,6 +76,17 @@ function runtimeCapabilities(results, calls) {
     },
     async rm() {},
     spawn: processQueue(results, calls),
+  };
+}
+
+function codexRuntimeCapabilities(results, calls) {
+  const capabilities = runtimeCapabilities(results, calls);
+  return {
+    ...capabilities,
+    async access(filePath, mode) {
+      if (!/codex/iu.test(path.basename(filePath))) throw new Error("missing");
+      return capabilities.access(filePath, mode);
+    },
   };
 }
 
@@ -141,6 +162,117 @@ test("discovers account-owned sessions without returning credentials", async () 
   );
 });
 
+test(
+  "executes an installed Windows npm account client through Node without a shell",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "orbit-account-shim-"));
+    const bin = path.join(home, "npm");
+    const packageDirectory = path.join(bin, "node_modules", "@openai", "codex", "bin");
+    const script = path.join(packageDirectory, "codex.js");
+    const shim = path.join(bin, "codex.cmd");
+    await mkdir(packageDirectory, { recursive: true });
+    await writeFile(script, "// test-only codex entrypoint\n");
+    await writeFile(shim, '@ECHO off\n"%_prog%" "%dp0%\\node_modules\\@openai\\codex\\bin\\codex.js" %*\n');
+    const calls = [];
+    const runtime = createDesktopAccountModelRuntime({
+      accountToken: "f".repeat(64),
+      getOrigin: () => "http://127.0.0.1:54321",
+      homeDirectory: home,
+      environment: { PATH: bin },
+      capabilities: {
+        access: fsAccess,
+        stat: fsStat,
+        mkdtemp: async () => path.join(home, "request"),
+        writeFile: async () => undefined,
+        readFile: async (filePath) => {
+          if (filePath.endsWith("result.json")) return '{"ready":true}';
+          return fsReadFile(filePath, "utf8");
+        },
+        rm: async () => undefined,
+        spawn: processQueue(
+          [
+            { code: 0, stderr: "Logged in using ChatGPT" },
+            {
+              code: 0,
+              stdout: `${JSON.stringify({ result: { data: [{ model: "gpt-5.6-luna", isDefault: true }] } })}\n`,
+            },
+          ],
+          calls,
+        ),
+      },
+    });
+    try {
+      const discovered = await runtime.discover();
+      assert.equal(discovered.accounts.find((account) => account.id === "codex")?.status, "ready");
+      assert.equal(calls[0].executable, process.execPath);
+      assert.deepEqual(calls[0].args, [script, "login", "status"]);
+    } finally {
+      await rm(home, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "prefers the native Codex binary from a Windows npm install when the launcher exposes one",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "orbit-account-native-"));
+    const bin = path.join(home, "npm");
+    const packageDirectory = path.join(bin, "node_modules", "@openai", "codex");
+    const script = path.join(packageDirectory, "bin", "codex.js");
+    const platformPackage = process.arch === "arm64" ? "codex-win32-arm64" : "codex-win32-x64";
+    const targetTriple = process.arch === "arm64" ? "aarch64-pc-windows-msvc" : "x86_64-pc-windows-msvc";
+    const native = path.join(
+      packageDirectory,
+      "node_modules",
+      "@openai",
+      platformPackage,
+      "vendor",
+      targetTriple,
+      "bin",
+      "codex.exe",
+    );
+    const shim = path.join(bin, "codex.cmd");
+    await mkdir(path.dirname(script), { recursive: true });
+    await mkdir(path.dirname(native), { recursive: true });
+    await writeFile(script, "// test-only codex entrypoint\n");
+    await writeFile(native, "test-only native binary\n");
+    await writeFile(shim, '@ECHO off\n"%_prog%" "%dp0%\\node_modules\\@openai\\codex\\bin\\codex.js" %*\n');
+    const calls = [];
+    const runtime = createDesktopAccountModelRuntime({
+      accountToken: "9".repeat(64),
+      getOrigin: () => "http://127.0.0.1:54321",
+      homeDirectory: home,
+      environment: { PATH: bin },
+      capabilities: {
+        access: fsAccess,
+        stat: fsStat,
+        readFile: (filePath, encoding) => fsReadFile(filePath, encoding),
+        spawn: processQueue(
+          [
+            { code: 0, stderr: "Logged in using ChatGPT" },
+            {
+              code: 0,
+              stdout:
+                '{"result":{"data":[{"model":"gpt-5.6-luna","isDefault":true,"supportedReasoningEfforts":[{"reasoningEffort":"low"}]}]}}\n',
+            },
+          ],
+          calls,
+        ),
+      },
+    });
+    try {
+      const discovered = await runtime.discover();
+      assert.equal(discovered.accounts.find((account) => account.id === "codex")?.status, "ready");
+      assert.equal(calls[0].executable, native);
+      assert.deepEqual(calls[0].args, ["login", "status"]);
+    } finally {
+      await rm(home, { recursive: true, force: true });
+    }
+  },
+);
+
 test("runs signed-in Codex with ephemeral structured output and model tools disabled", async () => {
   const calls = [];
   const token = "b".repeat(64);
@@ -173,6 +305,134 @@ test("runs signed-in Codex with ephemeral structured output and model tools disa
   assert.equal(invocation.args.includes("shell_tool"), true);
   assert.equal(invocation.args.includes("unified_exec"), true);
   assert.match(invocation.input, /Do not use tools, inspect files, or add commentary/u);
+});
+
+test("prefers proxy environment variables and normalizes them for Codex children", async () => {
+  const calls = [];
+  let systemResolutionCalls = 0;
+  const token = "4".repeat(64);
+  const runtime = createDesktopAccountModelRuntime({
+    accountToken: token,
+    getOrigin: () => "http://127.0.0.1:54321",
+    homeDirectory: "/Users/orbit",
+    environment: {
+      PATH: "/usr/local/bin",
+      HTTPS_PROXY: "env-proxy.example.test:8443",
+      HTTP_PROXY: "",
+    },
+    resolveSystemProxy: async () => {
+      systemResolutionCalls += 1;
+      return "PROXY system-proxy.example.test:8080; DIRECT";
+    },
+    capabilities: codexRuntimeCapabilities(
+      [
+        { code: 0, stderr: "Logged in using ChatGPT" },
+        { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+        { code: 0 },
+      ],
+      calls,
+    ),
+  });
+  await runtime.discover();
+  const request = readinessRequest(token, "codex");
+  const response = await runtime.fetch(request, new URL(request.url));
+  assert.equal(response.status, 200);
+  assert.equal(systemResolutionCalls, 0);
+  const proxyEnvironment = calls.at(-1).options.env;
+  assert.equal(proxyEnvironment.HTTPS_PROXY, "http://env-proxy.example.test:8443");
+  assert.equal(proxyEnvironment.HTTP_PROXY, "http://env-proxy.example.test:8443");
+});
+
+test("uses the Electron-resolved system proxy for Codex children", async () => {
+  const calls = [];
+  const resolvedUrls = [];
+  const token = "5".repeat(64);
+  const runtime = createDesktopAccountModelRuntime({
+    accountToken: token,
+    getOrigin: () => "http://127.0.0.1:54321",
+    homeDirectory: "/Users/orbit",
+    environment: { PATH: "/usr/local/bin" },
+    resolveSystemProxy: async (url) => {
+      resolvedUrls.push(url);
+      return "PROXY system-proxy.example.test:8080; DIRECT";
+    },
+    capabilities: codexRuntimeCapabilities(
+      [
+        { code: 0, stderr: "Logged in using ChatGPT" },
+        { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+        { code: 0 },
+      ],
+      calls,
+    ),
+  });
+  await runtime.discover();
+  const request = readinessRequest(token, "codex");
+  const response = await runtime.fetch(request, new URL(request.url));
+  assert.equal(response.status, 200);
+  assert.deepEqual(resolvedUrls, ["https://chatgpt.com"]);
+  const proxyEnvironment = calls.at(-1).options.env;
+  assert.equal(proxyEnvironment.HTTPS_PROXY, "http://system-proxy.example.test:8080");
+  assert.equal(proxyEnvironment.HTTP_PROXY, "http://system-proxy.example.test:8080");
+});
+
+test("selects the HTTPS entry from a multi-protocol system proxy resolution", async () => {
+  const calls = [];
+  const token = "8".repeat(64);
+  const runtime = createDesktopAccountModelRuntime({
+    accountToken: token,
+    getOrigin: () => "http://127.0.0.1:54321",
+    homeDirectory: "/Users/orbit",
+    environment: { PATH: "/usr/local/bin" },
+    resolveSystemProxy: async () => "http=http-proxy.example.test:8080;https=https-proxy.example.test:8443",
+    capabilities: codexRuntimeCapabilities(
+      [
+        { code: 0, stderr: "Logged in using ChatGPT" },
+        { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+        { code: 0 },
+      ],
+      calls,
+    ),
+  });
+  await runtime.discover();
+  const request = readinessRequest(token, "codex");
+  const response = await runtime.fetch(request, new URL(request.url));
+  assert.equal(response.status, 200);
+  const proxyEnvironment = calls.at(-1).options.env;
+  assert.equal(proxyEnvironment.HTTPS_PROXY, "http://https-proxy.example.test:8443");
+  assert.equal(proxyEnvironment.HTTP_PROXY, "http://https-proxy.example.test:8443");
+});
+
+test("falls back to direct Codex child connections when system proxy resolution is DIRECT", async () => {
+  const calls = [];
+  let systemResolutionCalls = 0;
+  const token = "6".repeat(64);
+  const runtime = createDesktopAccountModelRuntime({
+    accountToken: token,
+    getOrigin: () => "http://127.0.0.1:54321",
+    homeDirectory: "/Users/orbit",
+    environment: { PATH: "/usr/local/bin" },
+    resolveSystemProxy: async () => {
+      systemResolutionCalls += 1;
+      return "DIRECT";
+    },
+    capabilities: codexRuntimeCapabilities(
+      [
+        { code: 0, stderr: "Logged in using ChatGPT" },
+        { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+        { code: 0 },
+      ],
+      calls,
+    ),
+  });
+  await runtime.discover();
+  const request = readinessRequest(token, "codex");
+  const response = await runtime.fetch(request, new URL(request.url));
+  assert.equal(response.status, 200);
+  assert.equal(systemResolutionCalls, 1);
+  const proxyEnvironment = calls.at(-1).options.env;
+  assert.equal(proxyEnvironment.HTTPS_PROXY, undefined);
+  assert.equal(proxyEnvironment.HTTP_PROXY, undefined);
+  assert.equal(proxyEnvironment.ALL_PROXY, undefined);
 });
 
 test("runs Claude OAuth with no tools or session persistence and rejects foreign callers", async () => {
@@ -304,4 +564,40 @@ test("derives a stable private bridge token and publishes strict runtime bounds"
     maximumRequestBytes: 1_000_000,
     statusTimeoutMs: 4_000,
   });
+});
+
+test("retries transient Windows account workspace cleanup without masking a successful response", async () => {
+  const calls = [];
+  let cleanupAttempts = 0;
+  const token = "7".repeat(64);
+  const runtime = createDesktopAccountModelRuntime({
+    accountToken: token,
+    getOrigin: () => "http://127.0.0.1:54321",
+    homeDirectory: "/Users/orbit",
+    environment: { PATH: "/usr/local/bin" },
+    capabilities: {
+      ...runtimeCapabilities(
+        [
+          { code: 0, stderr: "Logged in using ChatGPT" },
+          { code: 0, stdout: '{"loggedIn":true,"authMethod":"oauth_token"}' },
+          {
+            code: 0,
+            stdout:
+              '{"result":{"data":[{"model":"gpt-5.6-luna","isDefault":true,"supportedReasoningEfforts":[{"reasoningEffort":"low"}]}]}}\n',
+          },
+          { code: 0 },
+        ],
+        calls,
+      ),
+      rm: async () => {
+        cleanupAttempts += 1;
+        if (cleanupAttempts === 1) throw Object.assign(new Error("workspace is busy"), { code: "EBUSY" });
+      },
+    },
+  });
+  await runtime.discover();
+  const request = readinessRequest(token, "codex");
+  const response = await runtime.fetch(request, new URL(request.url));
+  assert.equal(response.status, 200);
+  assert.equal(cleanupAttempts, 2);
 });

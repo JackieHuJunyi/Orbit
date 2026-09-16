@@ -359,8 +359,9 @@ test("OCR rejects selectable, missing, empty, and aborted page requests without 
   assert.equal(calls, 0);
 });
 
-test("ships same-origin OCR worker, core variants, and both compressed language models", async () => {
+test("ships same-origin OCR worker, core variants, and both bounded language models", async () => {
   const requiredAssets = [
+    "../public/ocr/worker-orbit.js",
     "../public/ocr/worker.min.js",
     "../public/ocr/core/tesseract-core-lstm.wasm.js",
     "../public/ocr/core/tesseract-core-lstm.wasm",
@@ -368,25 +369,33 @@ test("ships same-origin OCR worker, core variants, and both compressed language 
     "../public/ocr/core/tesseract-core-simd-lstm.wasm",
     "../public/ocr/core/tesseract-core-relaxedsimd-lstm.wasm.js",
     "../public/ocr/core/tesseract-core-relaxedsimd-lstm.wasm",
-    "../public/ocr/lang/eng.traineddata.gz",
-    "../public/ocr/lang/chi_sim.traineddata.gz",
+    "../public/ocr/lang/eng.traineddata.wasm",
+    "../public/ocr/lang/chi_sim.traineddata.wasm",
   ];
   await Promise.all(requiredAssets.map((path) => access(new URL(path, import.meta.url))));
   const clientSource = await readFile(new URL("../app/lib/pdf-import-client.ts", import.meta.url), "utf8");
-  assert.match(clientSource, /workerPath:\s*`\$\{assetBase\}worker\.min\.js`/u);
+  const workerSource = await readFile(new URL("../scripts/ocr-worker-wrapper.js", import.meta.url), "utf8");
+  assert.match(clientSource, /workerPath:\s*`\$\{assetBase\}worker-orbit\.js`/u);
+  assert.match(clientSource, /workerBlobURL:\s*false/u);
   assert.match(
     clientSource,
     /corePath:\s*`\$\{assetBase\}core\/tesseract-core-\$\{detectOcrCoreVariant\(\)\}\.wasm\.js`/u,
   );
-  assert.match(clientSource, /langPath:\s*`\$\{assetBase\}lang\/`/u);
+  assert.match(clientSource, /loadBundledOcrLanguages\(request\.language, assetBase/u);
+  assert.match(workerSource, /action\s*!==\s*["']initialize["']/u);
+  assert.match(workerSource, /language\.code/u);
   assert.doesNotMatch(clientSource, /cdn\.jsdelivr|unpkg/iu);
 });
 
 test("prepares ignored browser runtime assets before the direct unit suite", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  const prepareSource = await readFile(new URL("../scripts/prepare-ocr.mjs", import.meta.url), "utf8");
   assert.match(packageJson.scripts["test:unit"], /^npm run prepare:runtime && node /u);
   assert.equal(
     packageJson.scripts["prepare:runtime"],
     "npm run prepare:ocr && npm run prepare:duckdb && npm run prepare:qpdf && npm run prepare:ghostscript",
   );
+  assert.match(prepareSource, /createHash\("sha256"\)/u);
+  assert.match(prepareSource, /sameContents/u);
+  assert.doesNotMatch(prepareSource, /sameSize/u);
 });

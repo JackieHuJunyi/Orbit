@@ -3,6 +3,7 @@ import { access, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/prom
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { convertWindowsLegacyOffice, exportWindowsLegacyOffice } from "./windows-office.mjs";
 
 const execFileAsync = promisify(execFile);
 export const MAX_LEGACY_BYTES = 12 * 1024 * 1024;
@@ -228,6 +229,7 @@ async function runConversion(source) {
 }
 
 export async function convertLegacyOffice(_event, input) {
+  if (process.platform === "win32") return convertWindowsLegacyOffice(_event, input);
   const kind = exactLegacyKind(input?.fileName ?? "");
   const bytes = coerceBytes(input?.bytes);
   const officeWasRunning = await officeProcessRunning(kind);
@@ -260,6 +262,7 @@ export async function convertLegacyOffice(_event, input) {
 }
 
 export async function exportLegacyOffice(_event, input) {
+  if (process.platform === "win32") return exportWindowsLegacyOffice(_event, input);
   const kind = exactModernKind(input?.fileName ?? "");
   const bytes = coerceBytes(input?.bytes);
   const officeWasRunning = await officeProcessRunning(kind);

@@ -71,6 +71,8 @@ test("protects the desktop model-vault master key with Electron safeStorage", ()
 test("uses signed-in official model clients without reading or persisting their OAuth tokens", () => {
   assert.match(main, /createDesktopAccountModelRuntime/);
   assert.match(main, /accountRuntimeToken\(masterKey\)/);
+  assert.match(main, /session\.defaultSession\.resolveProxy\(url\)/);
+  assert.match(main, /process\.platform === "win32"/);
   assert.match(main, /desktopAccountRuntime\?\.fetch\(webRequest, url\)/);
   assert.match(accountRuntime, /\["login", "status"\]/);
   assert.match(accountRuntime, /\["auth", "status"\]/);

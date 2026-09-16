@@ -18,6 +18,10 @@ const GENERATION_TIMEOUT_MS = 55_000;
 const MODEL_CATALOG_CACHE_MS = 30_000;
 const MAX_CODEX_MODEL_PAGES = 4;
 const MAX_CODEX_MODEL_CHOICES = 800;
+const MAX_WINDOWS_LAUNCHER_BYTES = 64 * 1024;
+const ACCOUNT_PROXY_TARGET_URL = "https://chatgpt.com";
+const ACCOUNT_PROXY_ENVIRONMENT_KEYS = Object.freeze(["HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY"]);
+const ACCOUNT_PROXY_PROTOCOLS = new Set(["http:", "https:", "socks:", "socks4:", "socks4a:", "socks5:", "socks5h:"]);
 
 const ACCOUNT_RUNTIMES = Object.freeze([
   {
@@ -45,6 +49,127 @@ const ACCOUNT_RUNTIMES = Object.freeze([
     model: defaultAccountModel("gemini-account"),
   },
 ]);
+
+function environmentValue(environment, key) {
+  const direct = environment?.[key];
+  if (typeof direct === "string") return direct.trim();
+  const normalizedKey = key.toLowerCase();
+  const matchingKey = Object.keys(environment ?? {}).find((candidate) => candidate.toLowerCase() === normalizedKey);
+  return typeof matchingKey === "string" && typeof environment[matchingKey] === "string"
+    ? environment[matchingKey].trim()
+    : "";
+}
+
+function normalizeProxyUrl(value, fallbackProtocol = "http") {
+  if (typeof value !== "string") return "";
+  const text = value.trim();
+  if (!text || /^DIRECT$/iu.test(text)) return "";
+  const candidate = /^[a-z][a-z\d+.-]*:\/\//iu.test(text) ? text : `${fallbackProtocol}://${text}`;
+  try {
+    const parsed = new URL(candidate);
+    if (!ACCOUNT_PROXY_PROTOCOLS.has(parsed.protocol) || !parsed.hostname) return "";
+    return parsed.href.replace(/\/$/u, "");
+  } catch {
+    return "";
+  }
+}
+
+function proxyProtocolForDirective(directive) {
+  switch (directive.toUpperCase()) {
+    case "PROXY":
+    case "HTTP":
+      return "http";
+    case "HTTPS":
+      return "https";
+    case "SOCKS":
+      return "socks5";
+    case "SOCKS4":
+    case "SOCKS4A":
+      return directive.toLowerCase();
+    case "SOCKS5":
+    case "SOCKS5H":
+      return directive.toLowerCase();
+    default:
+      return "";
+  }
+}
+
+function proxyAssignments(value, targetUrl) {
+  const entries = value
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => entry.match(/^([a-z][a-z\d+.-]*)\s*=\s*(.+)$/iu));
+  if (!entries.length || entries.some((entry) => !entry)) return null;
+  const assignments = new Map(entries.map((entry) => [entry[1].toLowerCase(), entry[2].trim()]));
+  let targetProtocol = "https";
+  try {
+    targetProtocol = new URL(targetUrl).protocol.replace(/:$/u, "").toLowerCase();
+  } catch {
+    // The fixed account target is valid; malformed test input simply uses HTTPS ordering.
+  }
+  const preferredKeys = targetProtocol === "http" ? ["http", "https", "all"] : ["https", "http", "all"];
+  for (const key of preferredKeys) {
+    const assigned = assignments.get(key);
+    if (!assigned) continue;
+    const proxy = normalizeProxyUrl(assigned);
+    if (proxy) return proxy;
+  }
+  return "";
+}
+
+function resolvedProxyUrl(value, targetUrl = ACCOUNT_PROXY_TARGET_URL) {
+  if (typeof value !== "string") return "";
+  const text = value.trim();
+  if (!text || /^DIRECT$/iu.test(text)) return "";
+  const assignments = proxyAssignments(text, targetUrl);
+  if (assignments !== null) return assignments;
+  const firstDirective = text.split(";")[0]?.trim() ?? "";
+  if (/^DIRECT$/iu.test(firstDirective)) return "";
+  const directive = firstDirective.match(/^(PROXY|HTTP|HTTPS|SOCKS(?:4A?|5H?)?)\s+(.+)$/iu);
+  if (directive) {
+    const protocol = proxyProtocolForDirective(directive[1]);
+    return normalizeProxyUrl(directive[2], protocol || "http");
+  }
+  return normalizeProxyUrl(text);
+}
+
+function configuredProxy(environment) {
+  for (const key of ACCOUNT_PROXY_ENVIRONMENT_KEYS) {
+    const value = environmentValue(environment, key);
+    if (!value) continue;
+    if (/^DIRECT$/iu.test(value)) return { explicit: true, proxy: "" };
+    const proxy = resolvedProxyUrl(value);
+    if (proxy) return { explicit: true, proxy };
+  }
+  return null;
+}
+
+function accountEnvironmentWithProxy(environment, proxy) {
+  const safe = accountOnlyEnvironment(environment);
+  if (!proxy) return safe;
+  const configuredHttpsProxy = resolvedProxyUrl(environmentValue(environment, "HTTPS_PROXY"));
+  const configuredHttpProxy = resolvedProxyUrl(environmentValue(environment, "HTTP_PROXY"));
+  const configuredAllProxy = resolvedProxyUrl(environmentValue(environment, "ALL_PROXY"));
+  safe.HTTPS_PROXY = configuredHttpsProxy || proxy;
+  safe.HTTP_PROXY = configuredHttpProxy || proxy;
+  if (configuredAllProxy) safe.ALL_PROXY = configuredAllProxy;
+  return safe;
+}
+
+function createCodexChildEnvironmentResolver(environment, resolveSystemProxy) {
+  if (typeof resolveSystemProxy !== "function") return () => accountOnlyEnvironment(environment);
+  let systemProxyPromise;
+  return async () => {
+    const environmentProxy = configuredProxy(environment);
+    if (environmentProxy) return accountEnvironmentWithProxy(environment, environmentProxy.proxy);
+    systemProxyPromise ??= Promise.resolve()
+      .then(() => resolveSystemProxy(ACCOUNT_PROXY_TARGET_URL))
+      .then((value) => resolvedProxyUrl(value))
+      .catch(() => "");
+    return accountEnvironmentWithProxy(environment, await systemProxyPromise);
+  };
+}
 
 function accountOnlyEnvironment(environment) {
   const safe = { ...environment };
@@ -80,16 +205,15 @@ function cleanText(value, maximum) {
   return text && text.length <= maximum && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(text) ? text : "";
 }
 
-async function findExecutable(name, homeDirectory, environment, capabilities) {
+async function windowsNodeExecutable(shimPath, environment, capabilities) {
+  const shimDirectory = path.dirname(shimPath);
   const candidates = [
+    path.join(shimDirectory, "node.exe"),
     ...(environment.PATH ?? "")
       .split(path.delimiter)
       .filter(Boolean)
-      .map((directory) => path.join(directory, name)),
-    path.join(homeDirectory, ".local", "bin", name),
-    path.join(homeDirectory, ".npm-global", "bin", name),
-    path.join("/opt/homebrew/bin", name),
-    path.join("/usr/local/bin", name),
+      .map((directory) => path.join(directory, "node.exe")),
+    ...(path.basename(process.execPath).toLowerCase() === "node.exe" ? [process.execPath] : []),
   ];
   for (const candidate of [...new Set(candidates)]) {
     try {
@@ -97,17 +221,137 @@ async function findExecutable(name, homeDirectory, environment, capabilities) {
       const metadata = await capabilities.stat(candidate);
       if (metadata.isFile() || metadata.isSymbolicLink()) return candidate;
     } catch {
+      // A Node runtime outside PATH is an ordinary unavailable-client result.
+    }
+  }
+  return "";
+}
+
+async function windowsCodexNativeExecutable(scriptPath, capabilities) {
+  const packageRoot = path.resolve(path.dirname(scriptPath), "..");
+  if (path.basename(packageRoot).toLowerCase() !== "codex" || path.basename(scriptPath).toLowerCase() !== "codex.js") {
+    return "";
+  }
+  const targetTriple = process.arch === "arm64" ? "aarch64-pc-windows-msvc" : "x86_64-pc-windows-msvc";
+  const platformPackage = process.arch === "arm64" ? "codex-win32-arm64" : "codex-win32-x64";
+  const candidates = [
+    path.join(packageRoot, "node_modules", "@openai", platformPackage, "vendor", targetTriple, "bin", "codex.exe"),
+    path.join(packageRoot, "vendor", targetTriple, "bin", "codex.exe"),
+  ];
+  for (const candidate of candidates) {
+    try {
+      await capabilities.access(candidate, constants.X_OK);
+      const metadata = await capabilities.stat(candidate);
+      if (metadata.isFile() || metadata.isSymbolicLink()) return candidate;
+    } catch {
+      // A package without its optional native target falls back to its Node entrypoint.
+    }
+  }
+  return "";
+}
+
+async function resolveWindowsLauncher(candidate, environment, capabilities) {
+  const extension = path.extname(candidate).toLowerCase();
+  if (extension !== ".cmd" && extension !== ".bat") return { executable: candidate, args: [] };
+  try {
+    const metadata = await capabilities.stat(candidate);
+    if (!metadata.isFile() || metadata.size <= 0 || metadata.size > MAX_WINDOWS_LAUNCHER_BYTES) return null;
+    const source = await capabilities.readFile(candidate, "utf8");
+    const scriptMatch = String(source).match(/"%dp0%[\\/]([^"\r\n]+\.m?js)"/iu);
+    if (!scriptMatch) return null;
+    const scriptPath = path.resolve(path.dirname(candidate), scriptMatch[1]);
+    const scriptMetadata = await capabilities.stat(scriptPath);
+    if (!scriptMetadata.isFile() || scriptMetadata.size <= 0) return null;
+    const nativeExecutable = await windowsCodexNativeExecutable(scriptPath, capabilities);
+    if (nativeExecutable) return { executable: nativeExecutable, args: [] };
+    const nodeExecutable = await windowsNodeExecutable(candidate, environment, capabilities);
+    if (!nodeExecutable) return null;
+    return { executable: nodeExecutable, args: [scriptPath] };
+  } catch {
+    return null;
+  }
+}
+
+async function findExecutable(name, homeDirectory, environment, capabilities) {
+  const pathDirectories = (environment.PATH ?? "").split(path.delimiter).filter(Boolean);
+  const names =
+    process.platform === "win32" ? [`${name}.exe`, `${name}.cmd`, `${name}.bat`, `${name}.com`, name] : [name];
+  const candidates = [
+    ...pathDirectories.flatMap((directory) => names.map((candidateName) => path.join(directory, candidateName))),
+    ...names.map((candidateName) => path.join(homeDirectory, ".local", "bin", candidateName)),
+    ...names.map((candidateName) => path.join(homeDirectory, ".npm-global", "bin", candidateName)),
+    ...names.map((candidateName) => path.join("/opt/homebrew/bin", candidateName)),
+    ...names.map((candidateName) => path.join("/usr/local/bin", candidateName)),
+  ];
+  for (const candidate of [...new Set(candidates)]) {
+    try {
+      await capabilities.access(candidate, constants.X_OK);
+      const metadata = await capabilities.stat(candidate);
+      if (!(metadata.isFile() || metadata.isSymbolicLink())) continue;
+      if (process.platform === "win32") {
+        const resolved = await resolveWindowsLauncher(candidate, environment, capabilities);
+        if (resolved) return resolved;
+        continue;
+      }
+      return { executable: candidate, args: [] };
+    } catch {
       // Missing and non-executable candidates are ordinary discovery results.
     }
   }
   return "";
 }
 
-function runBoundedProcess(executable, args, { cwd, environment, input = "", signal, timeoutMs }, capabilities) {
+function spawnInvocation(executable, args) {
+  if (typeof executable === "string") return { executable, args };
+  return { executable: executable.executable, args: [...executable.args, ...args] };
+}
+
+function resolveChildEnvironment({ environment, getCodexChildEnvironment, useCodexProxy = false }) {
+  if (useCodexProxy && typeof getCodexChildEnvironment === "function") {
+    return getCodexChildEnvironment();
+  }
+  return accountOnlyEnvironment(environment);
+}
+
+function runBoundedProcess(executable, args, options, capabilities) {
+  const { cwd, environment, input = "", signal, timeoutMs, getCodexChildEnvironment, useCodexProxy = false } = options;
+  const childEnvironment = resolveChildEnvironment({
+    environment,
+    getCodexChildEnvironment,
+    useCodexProxy,
+  });
+  if (typeof childEnvironment?.then === "function") {
+    return childEnvironment.then((resolvedEnvironment) =>
+      runBoundedProcessWithEnvironment(
+        executable,
+        args,
+        { cwd, input, signal, timeoutMs },
+        capabilities,
+        resolvedEnvironment,
+      ),
+    );
+  }
+  return runBoundedProcessWithEnvironment(
+    executable,
+    args,
+    { cwd, input, signal, timeoutMs },
+    capabilities,
+    childEnvironment,
+  );
+}
+
+function runBoundedProcessWithEnvironment(
+  executable,
+  args,
+  { cwd, input = "", signal, timeoutMs },
+  capabilities,
+  childEnvironment,
+) {
   return new Promise((resolve, reject) => {
-    const child = capabilities.spawn(executable, args, {
+    const invocation = spawnInvocation(executable, args);
+    const child = capabilities.spawn(invocation.executable, invocation.args, {
       cwd,
-      env: accountOnlyEnvironment(environment),
+      env: childEnvironment,
       shell: false,
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -164,10 +408,25 @@ function runBoundedProcess(executable, args, { cwd, environment, input = "", sig
 }
 
 function runBoundedJsonRpcProcess(executable, args, messages, responseId, context) {
+  const childEnvironment = resolveChildEnvironment({
+    environment: context.environment,
+    getCodexChildEnvironment: context.getCodexChildEnvironment,
+    useCodexProxy: true,
+  });
+  if (typeof childEnvironment?.then === "function") {
+    return childEnvironment.then((resolvedEnvironment) =>
+      runBoundedJsonRpcProcessWithEnvironment(executable, args, messages, responseId, context, resolvedEnvironment),
+    );
+  }
+  return runBoundedJsonRpcProcessWithEnvironment(executable, args, messages, responseId, context, childEnvironment);
+}
+
+function runBoundedJsonRpcProcessWithEnvironment(executable, args, messages, responseId, context, childEnvironment) {
   return new Promise((resolve, reject) => {
-    const child = context.capabilities.spawn(executable, args, {
+    const invocation = spawnInvocation(executable, args);
+    const child = context.capabilities.spawn(invocation.executable, invocation.args, {
       cwd: context.cwd,
-      env: accountOnlyEnvironment(context.environment),
+      env: childEnvironment,
       shell: false,
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -249,7 +508,7 @@ async function accountStatus(runtime, executable, context) {
       const result = await runBoundedProcess(
         executable,
         ["login", "status"],
-        { ...context, timeoutMs: STATUS_TIMEOUT_MS },
+        { ...context, timeoutMs: STATUS_TIMEOUT_MS, useCodexProxy: true },
         context.capabilities,
       );
       return result.code === 0 && /Logged in using ChatGPT/iu.test(`${result.stdout}\n${result.stderr}`)
@@ -384,8 +643,29 @@ function parseJsonValue(value) {
   }
 }
 
+const WINDOWS_CLEANUP_RETRY_ATTEMPTS = 5;
+const WINDOWS_CLEANUP_RETRYABLE_CODES = new Set(["EBUSY", "ENOTEMPTY", "EPERM"]);
+
+async function removeTemporaryDirectory(directory, capabilities) {
+  let lastError;
+  for (let attempt = 0; attempt < WINDOWS_CLEANUP_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      await capabilities.rm(directory, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (!WINDOWS_CLEANUP_RETRYABLE_CODES.has(error?.code) || attempt === WINDOWS_CLEANUP_RETRY_ATTEMPTS - 1) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 async function runCodex(runtime, executable, prompt, schema, selection, context) {
   const directory = await context.capabilities.mkdtemp(path.join(context.tmpDirectory, "orbit-codex-account-"));
+  let operationError;
   try {
     const schemaPath = path.join(directory, "schema.json");
     const outputPath = path.join(directory, "result.json");
@@ -426,7 +706,13 @@ async function runCodex(runtime, executable, prompt, schema, selection, context)
     const result = await runBoundedProcess(
       executable,
       args,
-      { ...context, cwd: directory, input: prompt, timeoutMs: GENERATION_TIMEOUT_MS },
+      {
+        ...context,
+        cwd: directory,
+        input: prompt,
+        timeoutMs: GENERATION_TIMEOUT_MS,
+        useCodexProxy: true,
+      },
       context.capabilities,
     );
     if (result.code !== 0) throw new Error("Codex could not use the signed-in ChatGPT account.");
@@ -435,8 +721,15 @@ async function runCodex(runtime, executable, prompt, schema, selection, context)
       throw new Error("Codex returned an invalid structured result.");
     }
     return { output: parseJsonValue(await context.capabilities.readFile(outputPath, "utf8")), usage: null };
+  } catch (error) {
+    operationError = error;
+    throw error;
   } finally {
-    await context.capabilities.rm(directory, { recursive: true, force: true });
+    try {
+      await removeTemporaryDirectory(directory, context.capabilities);
+    } catch (cleanupError) {
+      if (!operationError) throw cleanupError;
+    }
   }
 }
 
@@ -522,6 +815,7 @@ export function createDesktopAccountModelRuntime({
   homeDirectory,
   appVersion = "1",
   environment = process.env,
+  resolveSystemProxy,
   capabilities: overrides = {},
 } = {}) {
   if (!/^[a-f0-9]{64}$/u.test(accountToken ?? "")) throw new Error("Account runtime requires one private token.");
@@ -531,6 +825,7 @@ export function createDesktopAccountModelRuntime({
     capabilities,
     cwd: home || process.cwd(),
     environment,
+    getCodexChildEnvironment: createCodexChildEnvironmentResolver(environment, resolveSystemProxy),
     tmpDirectory: tmpdir(),
   };
   let latest = [];

@@ -9,6 +9,8 @@ import {
 } from "./pdf-import";
 import type { PdfJsLibrary, PdfOcrProgress, PdfOcrRequest, PdfPageOcrRecognizer } from "./pdf-import";
 import { detectOcrCoreVariant } from "./ocr-core";
+import { loadBundledOcrLanguages } from "./ocr-language-data";
+import { raceWithAbort } from "./abortable";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -91,14 +93,18 @@ export async function convertPdfFileWithOcr(
     totalPages: request.pageNumbers.length,
     progress: 0,
   });
+  const languages = await loadBundledOcrLanguages(request.language, assetBase, { signal: options.signal });
+  options.signal?.throwIfAborted();
   let activePageNumber: number | undefined;
   let activeCompletedPages = 0;
-  const worker = await createWorker(request.language, undefined, {
-    workerPath: `${assetBase}worker.min.js`,
+  const workerPromise = createWorker(languages, undefined, {
+    workerPath: `${assetBase}worker-orbit.js`,
+    // The Orbit wrapper resolves the pinned Tesseract worker relative to its
+    // own URL, so keep it as a real same-origin worker rather than a Blob URL.
+    workerBlobURL: false,
     // Resolve one core variant up front so the worker fetches a single wasm
     // loader instead of probing the whole directory.
     corePath: `${assetBase}core/tesseract-core-${detectOcrCoreVariant()}.wasm.js`,
-    langPath: `${assetBase}lang/`,
     logger(message) {
       if (!message.status.includes("recogniz")) return;
       options.onProgress?.({
@@ -110,6 +116,15 @@ export async function convertPdfFileWithOcr(
       });
     },
   });
+  let worker: Awaited<typeof workerPromise>;
+  try {
+    worker = await raceWithAbort(workerPromise, options.signal, "OCR cancelled");
+  } catch (error) {
+    // Tesseract does not expose its Worker until initialization resolves. If
+    // cancellation wins the race, terminate it as soon as it becomes available.
+    void workerPromise.then((lateWorker) => lateWorker.terminate()).catch(() => undefined);
+    throw error;
+  }
   const terminateOnAbort = () => {
     void worker.terminate();
   };
@@ -143,7 +158,7 @@ export async function convertPdfFileWithOcr(
     pageInput.signal?.addEventListener("abort", cancelRender, { once: true });
     let recognitionCanvas = canvas;
     try {
-      await renderTask.promise;
+      await raceWithAbort(renderTask.promise, pageInput.signal, "OCR cancelled");
       pageInput.onProgress?.({
         stage: "recognizing-page",
         pageNumber: pageInput.pageNumber,
@@ -160,7 +175,11 @@ export async function convertPdfFileWithOcr(
         if (!context) throw new Error("This browser cannot crop the selected OCR region.");
         context.drawImage(canvas, left, top, width, height, 0, 0, width, height);
       }
-      const result = await worker.recognize(recognitionCanvas, { rotateAuto: true });
+      const result = await raceWithAbort(
+        worker.recognize(recognitionCanvas, { rotateAuto: true }),
+        pageInput.signal,
+        "OCR cancelled",
+      );
       return { text: result.data.text, confidence: result.data.confidence };
     } finally {
       pageInput.signal?.removeEventListener("abort", cancelRender);

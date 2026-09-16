@@ -16,6 +16,7 @@ import {
 } from "./query-snapshot.ts";
 import { parseQueryDataSourceDirective } from "./query-source.ts";
 import { parseDataSource, type WorkspaceArtifact } from "./workspace.ts";
+import { workspaceRowsToArrowTable } from "./duckdb-import.ts";
 
 export type { QueryCell, WorkspaceQueryResult, WorkspaceQuerySnapshot } from "./query-snapshot.ts";
 
@@ -162,7 +163,7 @@ function quoteSqlIdentifier(value: string) {
 async function executeQuery(
   sql: string,
   dataSource: string,
-  dataFormat: "CSV" | "JSON",
+  _dataFormat: "CSV" | "JSON",
   signal?: AbortSignal,
 ): Promise<WorkspaceQueryResult> {
   signal?.throwIfAborted();
@@ -172,12 +173,7 @@ async function executeQuery(
   let importOrderColumn = "__orbit_import_order__";
   const canonicalColumnNames = new Set(parsedData.columns.map((column) => column.toLowerCase()));
   while (canonicalColumnNames.has(importOrderColumn.toLowerCase())) importOrderColumn += "_";
-  const canonicalRows = parsedData.rows.map((row, index) => ({ ...row, [importOrderColumn]: index }));
-  const fileName = `orbit-workspace-${dataFormat.toLocaleLowerCase()}.json`;
   const database = await getDatabase();
-  signal?.throwIfAborted();
-  await database.dropFiles();
-  await database.registerFileText(fileName, JSON.stringify(canonicalRows));
   signal?.throwIfAborted();
   const connection = await database.connect();
 
@@ -185,9 +181,16 @@ async function executeQuery(
     signal?.throwIfAborted();
     if (parsedData.rows.length) {
       const projection = parsedData.columns.map(quoteSqlIdentifier).join(", ");
-      await connection.query(
-        `CREATE OR REPLACE TABLE workspace_data AS SELECT ${projection} FROM read_json_auto('${fileName}', format = 'array') ORDER BY ${quoteSqlIdentifier(importOrderColumn)}`,
+      const stagingTable = "orbit_workspace_import";
+      await connection.query(`DROP TABLE IF EXISTS ${stagingTable}`);
+      await connection.insertArrowTable(
+        workspaceRowsToArrowTable(parsedData.columns, parsedData.rows, importOrderColumn),
+        { name: stagingTable, create: true },
       );
+      await connection.query(
+        `CREATE OR REPLACE TABLE workspace_data AS SELECT ${projection} FROM ${stagingTable} ORDER BY ${quoteSqlIdentifier(importOrderColumn)}`,
+      );
+      await connection.query(`DROP TABLE ${stagingTable}`);
     } else {
       const columns = parsedData.columns.map((column) => `${quoteSqlIdentifier(column)} VARCHAR`).join(", ");
       await connection.query(`CREATE OR REPLACE TABLE workspace_data (${columns})`);
