@@ -5,6 +5,7 @@ Orbit is a source-native workspace where people and AI create documents, data, c
 ## Latest release
 
 - **Orbit v1.64** — Signed-in Codex accounts now expose their real model and reasoning catalog inside a calmer, animated ChatGPT-style Composer; see [ADR 0083](docs/decisions/0083-signed-in-model-catalogs-are-account-authoritative.md).
+- **Windows compatibility update** — Windows gained cross-platform startup, local OCR and DuckDB support, proxy-aware Codex account connections, and legacy Word and PowerPoint conversion with safeguards for open documents; see the [Windows development notes](WINDOWS-CHECKPOINT.md).
 
 ## Recent releases
 
