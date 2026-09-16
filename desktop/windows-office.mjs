@@ -12,6 +12,71 @@ export const WINDOWS_OFFICE_TIMEOUT_MS = 60_000;
 export const WINDOWS_OFFICE_SCRIPT = new URL("./windows/convert-office.vbs", import.meta.url);
 
 const WINDOWS_SCRIPT_HOST = "cscript.exe";
+const WINDOWS_OFFICE_PROCESS_NAMES = Object.freeze({ doc: "WINWORD.EXE", ppt: "POWERPNT.EXE" });
+const WINDOWS_OFFICE_CLEANUP_OPTIONS = Object.freeze({
+  timeout: 10_000,
+  windowsHide: true,
+  maxBuffer: 128 * 1024,
+});
+
+function windowsOfficeDisplayName(kind) {
+  return kind === "doc" ? "Word" : "PowerPoint";
+}
+
+export async function isWindowsOfficeApplicationRunning(kind, run = execFileAsync) {
+  const processName = WINDOWS_OFFICE_PROCESS_NAMES[kind];
+  if (!processName) throw new Error("Windows Office conversion kind must be doc or ppt.");
+  try {
+    const result = await run("tasklist.exe", ["/FI", `IMAGENAME eq ${processName}`, "/FO", "CSV", "/NH"], {
+      windowsHide: true,
+      maxBuffer: 128 * 1024,
+    });
+    return String(result?.stdout ?? "")
+      .split(/\r?\n/u)
+      .some((line) => line.trimStart().toUpperCase().startsWith(`"${processName}"`));
+  } catch {
+    throw new Error(`Orbit could not safely determine whether Microsoft ${windowsOfficeDisplayName(kind)} is running.`);
+  }
+}
+
+function windowsOfficeCleanupCommand({
+  kind,
+  inputPath,
+  outputPath,
+  ownershipPath,
+  scriptPath = fileURLToPath(WINDOWS_OFFICE_SCRIPT),
+}) {
+  return {
+    file: WINDOWS_SCRIPT_HOST,
+    args: ["//nologo", scriptPath, kind, "cleanup", inputPath, outputPath, ...(ownershipPath ? [ownershipPath] : [])],
+    options: WINDOWS_OFFICE_CLEANUP_OPTIONS,
+  };
+}
+
+async function cleanupOfficeDocumentSafely({
+  kind,
+  inputPath,
+  outputPath,
+  ownershipPath,
+  scriptPath,
+  cleanupRun = execFileAsync,
+}) {
+  const cleanupCommand = windowsOfficeCleanupCommand({
+    kind,
+    inputPath,
+    outputPath,
+    ownershipPath,
+    scriptPath,
+  });
+  try {
+    await cleanupRun(cleanupCommand.file, cleanupCommand.args, cleanupCommand.options);
+  } catch (error) {
+    const detail = error instanceof Error && error.message ? `: ${error.message}` : "";
+    throw new Error(
+      `Orbit could not complete safe ${windowsOfficeDisplayName(kind)} cleanup; no Office process was force-terminated${detail}`,
+    );
+  }
+}
 
 function exactLegacyKind(fileName) {
   if (typeof fileName === "string" && /^[^/\\\0]+\.doc$/i.test(fileName)) return "doc";
@@ -50,6 +115,7 @@ export function windowsOfficeCommand({
   direction,
   inputPath,
   outputPath,
+  ownershipPath,
   scriptPath = fileURLToPath(WINDOWS_OFFICE_SCRIPT),
 }) {
   if (kind !== "doc" && kind !== "ppt") throw new Error("Windows Office conversion kind must be doc or ppt.");
@@ -58,7 +124,7 @@ export function windowsOfficeCommand({
   }
   return {
     file: WINDOWS_SCRIPT_HOST,
-    args: ["//nologo", scriptPath, kind, direction, inputPath, outputPath],
+    args: ["//nologo", scriptPath, kind, direction, inputPath, outputPath, ...(ownershipPath ? [ownershipPath] : [])],
     options: {
       timeout: WINDOWS_OFFICE_TIMEOUT_MS,
       maxBuffer: 128 * 1024,
@@ -73,16 +139,49 @@ export async function runWindowsOfficeConversion({
   inputPath,
   outputPath,
   scriptPath,
+  ownershipPath,
   run = execFileAsync,
+  detect = isWindowsOfficeApplicationRunning,
+  cleanupRun = execFileAsync,
 }) {
-  const command = windowsOfficeCommand({ kind, direction, inputPath, outputPath, scriptPath });
+  let applicationRunning;
+  try {
+    applicationRunning = await detect(kind);
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : `Orbit could not safely determine whether Microsoft ${windowsOfficeDisplayName(kind)} is running.`,
+    );
+  }
+  if (applicationRunning) {
+    throw new Error(
+      `Microsoft ${windowsOfficeDisplayName(kind)} is already running; close it before Orbit converts legacy Office files to protect open documents.`,
+    );
+  }
+  const command = windowsOfficeCommand({ kind, direction, inputPath, outputPath, ownershipPath, scriptPath });
   try {
     await run(command.file, command.args, command.options);
   } catch (error) {
-    if (error?.killed || error?.signal || error?.code === "ETIMEDOUT") {
-      throw new Error("The local Office conversion exceeded Orbit's 60 second limit and was stopped.");
+    const conversionError =
+      error?.killed || error?.signal || error?.code === "ETIMEDOUT"
+        ? new Error("The local Office conversion exceeded Orbit's 60 second limit and was stopped.")
+        : error;
+    try {
+      await cleanupOfficeDocumentSafely({
+        kind,
+        inputPath,
+        outputPath,
+        ownershipPath,
+        scriptPath: command.args[1],
+        cleanupRun,
+      });
+    } catch (cleanupError) {
+      throw new Error(
+        `${conversionError instanceof Error ? conversionError.message : "The local Office conversion failed."} Cleanup: ${cleanupError instanceof Error ? cleanupError.message : "Orbit could not clean up the private Office process."}`,
+      );
     }
-    throw error;
+    throw conversionError;
   }
 }
 
@@ -104,6 +203,7 @@ async function convertWindowsOffice(input, direction, options = {}) {
   const inputPath = path.join(privateDirectory, `source.${inputExtension}`);
   const outputName = `${baseNameWithoutExtension(input.fileName, inputExtension)}.${outputExtension}`;
   const outputPath = path.join(privateDirectory, outputName);
+  const ownershipPath = path.join(privateDirectory, "office-ownership.txt");
   const scriptPath = path.join(privateDirectory, "convert-office.vbs");
   try {
     await writeFile(inputPath, bytes, { mode: 0o600 });
@@ -114,7 +214,10 @@ async function convertWindowsOffice(input, direction, options = {}) {
       inputPath,
       outputPath,
       scriptPath,
+      ownershipPath,
       run: options.run,
+      detect: options.detect,
+      cleanupRun: options.cleanupRun,
     });
     const converted = await readFile(outputPath);
     if (!converted.length || converted.length > MAX_WINDOWS_LEGACY_BYTES) {
