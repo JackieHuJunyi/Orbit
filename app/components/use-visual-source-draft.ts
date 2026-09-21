@@ -9,6 +9,11 @@ export type VisualSourceDraft = {
   start: number;
   end: number;
   errors: string[];
+  /**
+   * Direct drafts come from native in-place typing. They update the Source
+   * surface without turning the workspace into a modal review state.
+   */
+  mode?: "review" | "direct";
 };
 
 export type VisualSourceDraftHandler = (draft: VisualSourceDraft | null) => void;

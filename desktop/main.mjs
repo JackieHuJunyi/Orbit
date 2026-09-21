@@ -462,7 +462,12 @@ if (!primaryDesktopInstance) {
   });
 
   app.on("window-all-closed", () => {
-    orbitServer?.server?.close();
-    if (process.platform !== "darwin") app.quit();
+    // macOS keeps the application process alive after its last window closes.
+    // Keep the private loopback server alive as well so a later Dock/Spotlight
+    // activation can create a new window against the same stable origin.
+    if (process.platform !== "darwin") {
+      orbitServer?.server?.close();
+      app.quit();
+    }
   });
 }

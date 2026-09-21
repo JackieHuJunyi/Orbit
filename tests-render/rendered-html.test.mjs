@@ -73,8 +73,8 @@ test("server-renders the Orbit artifact workbench", async () => {
   assert.match(html, /data-document-fragment-type="list-item"/);
   assert.match(html, /data-document-fragment-type="table-header-cell"/);
   assert.match(html, /data-document-fragment-type="table-cell"/);
-  assert.match(html, /Select exact Bold · live value source/);
-  assert.match(html, /class="contains-task-list"/);
+  assert.match(html, /document-inline-edit-fragment locked-binding/);
+  assert.match(html, /class="[^"]*contains-task-list/);
   assert.match(html, /class="document-block-edit"/);
   assert.match(html, /class="document-block-locate"/);
   assert.match(html, /Edit Q2 Business Review heading/);
@@ -221,7 +221,9 @@ test("ships one complete-source live mirror boundary for every revision-bound vi
   assert.match(previewSource, /projectVisualDeckSlideDraft/);
   assert.match(previewSource, /onEditSemanticHtmlSlide/);
   assert.match(previewSource, /projectVisualChartSpecDraft/);
-  assert.equal(previewSource.split("useVisualSourceDraftMirror(").length - 1, 4);
+  assert.equal(previewSource.split("useVisualSourceDraftMirror(").length - 1, 3);
+  assert.match(previewSource, /mode: "direct"/);
+  assert.match(previewSource, /NativeDataCellEditor/);
   assert.match(semanticHtmlEditor, /useVisualSourceDraftMirror\(visualSourceDraft, onVisualSourceDraftChange\)/);
   assert.match(draftMirror, /draft !== undefined/);
   assert.match(draftMirror, /onDraftChange\?\.\(null\)/);
@@ -319,7 +321,7 @@ test("renders a complete read-only Agent proposal through the live source and ou
   assert.match(workbench, /prepareWorkspaceProposalSurface\(\{/);
   assert.match(workbench, /requestedArtifactId: pendingReviewId \|\| undefined/);
   assert.match(workbench, /presentedArtifact,[\s\S]*presentedArtifacts,[\s\S]*= useMemo/);
-  assert.match(workbench, /readOnly=\{Boolean\(activeVisualSourceDraft\) \|\| proposalReviewActive\}/);
+  assert.match(workbench, /readOnly=\{Boolean\(activeReviewVisualSourceDraft\) \|\| proposalReviewActive\}/);
   assert.match(workbench, /artifact=\{presentedArtifact\}/);
   assert.match(workbench, /artifacts=\{presentedArtifacts\}/);
   assert.match(workbench, /activeSelection=\{proposalReviewActive \? null : activePreviewTarget\}/);
@@ -444,7 +446,7 @@ test("ships a review-before-write import surface in the client", async () => {
   assert.match(clientSource, /Select or edit one exact section/);
   assert.match(clientSource, /One revision-bound section.*live bindings stay fixed.*save writes canonical source/);
   assert.match(clientSource, /Verifying .* against the complete workspace/);
-  assert.match(clientSource, /Verifying .* against every live Data consumer/);
+  assert.match(clientSource, /Type directly in one Data cell/);
   assert.match(clientSource, /row number for the full record/);
   assert.match(clientSource, /Select the exact/);
   assert.match(clientSource, /Select the complete canonical row/);

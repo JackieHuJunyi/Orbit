@@ -118,8 +118,8 @@ test("compact Preview selection opens and centers its exact Source range", async
   await expect(workspace).toHaveClass(/view-preview/);
 
   await page
-    .locator('.document-source-block[data-document-block-type="heading"] h2')
-    .filter({ hasText: "Next actions" })
+    .getByRole("navigation", { name: "Select or edit a document section" })
+    .getByRole("button", { name: "Select Next actions in canonical source for Agent context" })
     .click();
   await expect(workspace).toHaveClass(/view-source/);
   const selection = await page.locator("textarea.source-editor").evaluate((element: HTMLTextAreaElement) => ({

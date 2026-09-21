@@ -133,6 +133,10 @@ test("desktop navigation remains pinned to Orbit's restart-stable loopback origi
   assert.match(main, /const workspaceOrigin = new URL\(orbitServer\.url\)\.origin/);
   assert.match(main, /if \(new URL\(target\)\.origin !== workspaceOrigin\) event\.preventDefault\(\)/);
   assert.match(main, /app\.on\("activate"/);
+  assert.match(
+    main,
+    /app\.on\("window-all-closed"[\s\S]*if \(process\.platform !== "darwin"\) \{[\s\S]*orbitServer\?\.server\?\.close\(\)/,
+  );
   assert.match(main, /async function loadDesktopWorkspace/);
   assert.match(main, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/);
   assert.match(main, /dialog\.showErrorBox/);

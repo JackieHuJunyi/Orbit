@@ -520,7 +520,7 @@ test("reads the signed-in Codex model catalog and each model's supported reasoni
     accountToken: token,
     getOrigin: () => "http://127.0.0.1:54321",
     homeDirectory: "/Users/orbit",
-    appVersion: "1.64.0",
+    appVersion: "1.65.0",
     environment: { PATH: "/usr/local/bin" },
     capabilities: runtimeCapabilities(
       [

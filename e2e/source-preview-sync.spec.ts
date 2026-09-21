@@ -74,7 +74,7 @@ test("keeps long CSV Source and Preview mutually positioned down to an exact cel
     .toEqual([finalValueStart, finalValueStart + "Record-80".length]);
   await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
-  const firstCell = page.locator("td.preview-data-cell").filter({ hasText: "Record-01" }).first();
+  const firstCell = page.getByRole("textbox", { name: "Edit Row 1 · Label", exact: true }).locator("..");
   const firstValueStart = source.indexOf("Record-01");
   await moveSourceCaret(editor, firstValueStart + 1);
   await expect(firstCell).toHaveClass(/active/);
@@ -118,7 +118,7 @@ test("keeps long JSON Source and Preview mutually positioned down to a typed sca
     .toEqual([finalValueStart, finalValueStart + '"Record-80"'.length]);
   await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
-  const firstCell = page.locator("td.preview-data-cell").filter({ hasText: "Record-01" }).first();
+  const firstCell = page.getByRole("textbox", { name: "Edit Row 1 · Label", exact: true }).locator("..");
   const firstValueStart = source.indexOf('"Record-01"');
   await moveSourceCaret(editor, firstValueStart + 2);
   await expect(firstCell).toHaveClass(/active/);

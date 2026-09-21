@@ -6,12 +6,16 @@ import {
   createElement,
   useCallback,
   useContext,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
+  type CompositionEvent,
   type ElementType,
+  type FocusEvent,
+  type FormEvent,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -49,6 +53,7 @@ import { orbitUICopy, type OrbitLocale, type OrbitUICopy } from "../lib/localiza
 import {
   compileArtifactSource,
   compiledSourceRangeToCanonical,
+  parseMetricBindings,
   queryMetricSourceIdsForArtifact,
 } from "../lib/bindings";
 import {
@@ -80,13 +85,10 @@ import {
 } from "../lib/preview-targets";
 import type { SourceSelection } from "../lib/source-selection";
 import {
-  MAX_VISUAL_DATA_CELL_CHARS,
   canVisualEditDataCell,
+  prepareVisualDataCellEdit,
   projectVisualDataCellDraft,
-  visualDataCellDraft,
-  visualDataCellValueType,
   type VisualDataCellEditInput,
-  type VisualDataCellValueType,
 } from "../lib/visual-data-edit";
 import {
   MAX_VISUAL_DOCUMENT_SECTION_CHARS,
@@ -122,6 +124,8 @@ import {
 } from "../lib/visual-deck-edit";
 import {
   canVisualEditSemanticHtmlSlide,
+  prepareVisualSemanticHtmlSlideEdit,
+  projectVisualSemanticHtmlSlideDraft,
   type VisualSemanticHtmlSlideEditInput,
 } from "../lib/visual-semantic-html-slide-edit";
 import {
@@ -134,6 +138,7 @@ import {
 } from "../lib/visual-chart-edit";
 import { SemanticHtmlSlideEditor } from "./semantic-html-slide-editor";
 import { PresentationFrame } from "./presentation-frame";
+import { NativeDataCellEditor } from "./native-data-cell-editor";
 import {
   useVisualSourceDraftMirror,
   type VisualSourceDraft,
@@ -145,11 +150,11 @@ type PreviewTargetHandler = (artifact: WorkspaceArtifact, target: PreviewSourceT
 
 export type LocalAssetUrlResolver = (reference: string) => string | null;
 
-export type DataCellEditHandler = (
+export type DirectDataCellEditHandler = (
   artifact: WorkspaceArtifact,
   target: DataCellPreviewSourceTarget,
   input: VisualDataCellEditInput,
-) => Promise<string | null>;
+) => string | null;
 
 export type DocumentSectionEditHandler = (
   artifact: WorkspaceArtifact,
@@ -162,6 +167,12 @@ export type DocumentBlockEditHandler = (
   target: DocumentBlockPreviewSourceTarget,
   input: VisualDocumentBlockEditInput,
 ) => Promise<string | null>;
+
+export type DirectDocumentBlockEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: DocumentBlockPreviewSourceTarget,
+  input: VisualDocumentBlockEditInput,
+) => string | null;
 
 export type DocumentBlockStructureReviewHandler = (
   artifact: WorkspaceArtifact,
@@ -181,6 +192,12 @@ export type SemanticHtmlSlideEditHandler = (
   input: VisualSemanticHtmlSlideEditInput,
 ) => Promise<string | null>;
 
+export type DirectSemanticHtmlSlideEditHandler = (
+  artifact: WorkspaceArtifact,
+  target: PreviewSourceTarget,
+  input: VisualSemanticHtmlSlideEditInput,
+) => string | null;
+
 export type SemanticHtmlEditableCopyHandler = (artifact: WorkspaceArtifact) => void | Promise<void>;
 
 export type ChartSpecEditHandler = (
@@ -198,6 +215,49 @@ export const LARGE_DOCUMENT_PREVIEW_SOURCE_CHARS = 24_000;
 export const LARGE_DOCUMENT_SOURCE_CHARS = 250_000;
 
 const PreviewCopyContext = createContext<OrbitUICopy["preview"]>(orbitUICopy("en").preview);
+
+type MarkdownBlockTag =
+  "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "ul" | "ol" | "blockquote" | "pre" | "table" | "hr";
+type MarkdownFragmentTag = "li" | "th" | "td" | "strong" | "em" | "del" | "code" | "a" | "img";
+type MarkdownInteractionRoutes = {
+  renderBlock: (
+    tag: MarkdownBlockTag,
+    props: Record<string, unknown> & { node?: unknown; children?: ReactNode },
+  ) => ReactNode;
+  renderFragment: (
+    tag: MarkdownFragmentTag,
+    props: Record<string, unknown> & { node?: unknown; children?: ReactNode },
+  ) => ReactNode;
+};
+
+const MarkdownInteractionContext = createContext<MarkdownInteractionRoutes | null>(null);
+
+function RoutedMarkdownBlock({ tag, ...props }: { tag: MarkdownBlockTag } & Record<string, unknown>) {
+  const routes = useContext(MarkdownInteractionContext);
+  return routes?.renderBlock(tag, props) ?? null;
+}
+
+function RoutedMarkdownFragment({ tag, ...props }: { tag: MarkdownFragmentTag } & Record<string, unknown>) {
+  const routes = useContext(MarkdownInteractionContext);
+  return routes?.renderFragment(tag, props) ?? null;
+}
+
+const ROUTED_MARKDOWN_COMPONENTS = Object.fromEntries([
+  ...(["p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr"] as const).map((tag) => [
+    tag,
+    (props: Record<string, unknown>) => <RoutedMarkdownBlock tag={tag} {...props} />,
+  ]),
+  ...(["li", "th", "td", "strong", "em", "del", "code", "a", "img"] as const).map((tag) => [
+    tag,
+    (props: Record<string, unknown>) => <RoutedMarkdownFragment tag={tag} {...props} />,
+  ]),
+  [
+    "input",
+    ({ checked }: { checked?: boolean }) => (
+      <input type="checkbox" disabled checked={Boolean(checked)} aria-label="task" />
+    ),
+  ],
+]) as Components;
 
 function usePreviewCopy() {
   return useContext(PreviewCopyContext);
@@ -767,6 +827,197 @@ function MarkdownSourcePart({
   );
 }
 
+const DIRECT_DOCUMENT_BLOCK_TYPES = new Set(["heading", "paragraph", "quote", "list"]);
+
+function directDocumentBlockEditable(artifact: WorkspaceArtifact, target: DocumentBlockPreviewSourceTarget) {
+  if (!DIRECT_DOCUMENT_BLOCK_TYPES.has(target.blockType) || !canVisualEditDocumentBlock(artifact, target)) return false;
+  const source = visualDocumentBlockDraft(artifact, target);
+  return !/!\[[^\]]*\]\([^)]+\)/u.test(source);
+}
+
+function directSemanticHtmlSlideEditable(artifact: WorkspaceArtifact, target: PreviewSourceTarget) {
+  return canVisualEditSemanticHtmlSlide(artifact, target);
+}
+
+function escapeInlineMarkdown(value: string) {
+  return value
+    .replaceAll("\u00a0", " ")
+    .replace(/[\u200b-\u200d\ufeff]/gu, "")
+    .replace(/\\/gu, "\\\\")
+    .replace(/([`*_\[\]<>])/gu, "\\$1");
+}
+
+function editableNodeMarkdown(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return escapeInlineMarkdown(node.textContent ?? "");
+  if (!(node instanceof HTMLElement)) return "";
+  if (node.dataset.editMarkdown) return node.dataset.editMarkdown;
+  const tag = node.tagName.toLocaleLowerCase();
+  if (tag === "br") return "\n";
+  if (tag === "input" && node.getAttribute("type") === "checkbox") {
+    return `${(node as HTMLInputElement).checked ? "[x]" : "[ ]"} `;
+  }
+  const content = Array.from(node.childNodes).map(editableNodeMarkdown).join("");
+  if (tag === "strong" || tag === "b") return `**${content}**`;
+  if (tag === "em" || tag === "i") return `*${content}*`;
+  if (tag === "del" || tag === "s") return `~~${content}~~`;
+  if (tag === "code") {
+    const fence = content.includes("`") ? "``" : "`";
+    return `${fence}${content}${fence}`;
+  }
+  if (tag === "a") {
+    const href = node.dataset.editHref || node.getAttribute("href") || "";
+    return href ? `[${content}](${href.replace(/[()\s]/gu, (value) => encodeURIComponent(value))})` : content;
+  }
+  if (tag === "div" || tag === "p") return `${content}\n`;
+  return content;
+}
+
+function restoreInlineMetricBindings(
+  draft: string,
+  originalBlock: string,
+  artifacts: WorkspaceArtifact[],
+  queryRuntime: QueryRuntime,
+) {
+  let restored = draft;
+  let cursor = 0;
+  for (const binding of parseMetricBindings(originalBlock).bindings) {
+    const token = originalBlock.slice(binding.start, binding.end);
+    const replacement = compileArtifactSource(token, artifacts, readyQuerySnapshots(queryRuntime)).source;
+    const index = replacement ? restored.indexOf(replacement, cursor) : -1;
+    if (index < 0) continue;
+    restored = `${restored.slice(0, index)}${token}${restored.slice(index + replacement.length)}`;
+    cursor = index + token.length;
+  }
+  return restored;
+}
+
+function editableListMarkdown(list: HTMLElement, depth = 0): string {
+  const ordered = list.tagName.toLocaleLowerCase() === "ol";
+  const start = Number(list.getAttribute("start") ?? "1");
+  const lines: string[] = [];
+  const items = Array.from(list.children).filter((child): child is HTMLLIElement => child instanceof HTMLLIElement);
+  items.forEach((item, index) => {
+    const nestedLists = Array.from(item.children).filter(
+      (child): child is HTMLElement => child instanceof HTMLElement && ["UL", "OL"].includes(child.tagName),
+    );
+    const body = Array.from(item.childNodes)
+      .filter((node) => !(node instanceof HTMLElement && ["UL", "OL"].includes(node.tagName)))
+      .map(editableNodeMarkdown)
+      .join("")
+      .trim();
+    const marker = ordered ? `${start + index}.` : "-";
+    lines.push(`${"  ".repeat(depth)}${marker} ${body}`.trimEnd());
+    nestedLists.forEach((nested) => lines.push(editableListMarkdown(nested, depth + 1)));
+  });
+  return lines.join("\n");
+}
+
+function editableDocumentBlockMarkdown(element: HTMLElement, target: DocumentBlockPreviewSourceTarget): string {
+  if (target.blockType === "list") return editableListMarkdown(element).trim();
+  const content = Array.from(element.childNodes).map(editableNodeMarkdown).join("").trim();
+  if (target.blockType === "heading") return `${"#".repeat(target.headingLevel ?? 1)} ${content}`;
+  if (target.blockType === "quote")
+    return content
+      .split("\n")
+      .map((line) => `> ${line}`.trimEnd())
+      .join("\n");
+  return content;
+}
+
+function NativeDocumentBlockEditor({
+  tag,
+  elementProps,
+  inheritedClassName,
+  target,
+  children,
+  label,
+  draftFromElement,
+  onDraftChange,
+  onCommit,
+  onCancel,
+}: {
+  tag: "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "ul" | "ol" | "blockquote";
+  elementProps: Record<string, unknown>;
+  inheritedClassName: string;
+  target: DocumentBlockPreviewSourceTarget;
+  children?: ReactNode;
+  label: string;
+  draftFromElement: (element: HTMLElement) => string;
+  onDraftChange?: (target: DocumentBlockPreviewSourceTarget, draft: string) => string | null;
+  onCommit?: (target: DocumentBlockPreviewSourceTarget, draft: string) => string | null;
+  onCancel?: () => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [focusedChildren, setFocusedChildren] = useState<ReactNode>(children);
+
+  return createElement(
+    tag,
+    {
+      ...elementProps,
+      className: `${inheritedClassName} document-inline-editor`.trim(),
+      contentEditable: true,
+      suppressContentEditableWarning: true,
+      spellCheck: true,
+      role: "textbox",
+      "aria-label": label,
+      "aria-multiline": target.blockType !== "heading" ? true : undefined,
+      "data-inline-document-editor": target.id,
+      onFocus: (event: FocusEvent<HTMLElement>) => {
+        event.currentTarget.dataset.orbitOriginalHtml = event.currentTarget.innerHTML;
+        setFocusedChildren(children);
+        setFocused(true);
+      },
+      onCompositionStart: (event: CompositionEvent<HTMLElement>) => {
+        event.currentTarget.dataset.orbitComposing = "true";
+      },
+      onCompositionEnd: (event: CompositionEvent<HTMLElement>) => {
+        delete event.currentTarget.dataset.orbitComposing;
+        const editor = event.currentTarget;
+        window.queueMicrotask(() => onDraftChange?.(target, draftFromElement(editor)));
+      },
+      onInput: (event: FormEvent<HTMLElement>) => {
+        if (
+          event.currentTarget.dataset.orbitComposing === "true" ||
+          (event.nativeEvent instanceof InputEvent && event.nativeEvent.isComposing)
+        )
+          return;
+        const error = onDraftChange?.(target, draftFromElement(event.currentTarget));
+        event.currentTarget.toggleAttribute("aria-invalid", Boolean(error));
+        if (error) event.currentTarget.dataset.directEditError = error;
+        else delete event.currentTarget.dataset.directEditError;
+      },
+      onBlur: (event: FocusEvent<HTMLElement>) => {
+        if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+        setFocused(false);
+        if (event.currentTarget.dataset.orbitCancelled === "true") {
+          delete event.currentTarget.dataset.orbitCancelled;
+          delete event.currentTarget.dataset.orbitOriginalHtml;
+          return;
+        }
+        const error = onCommit?.(target, draftFromElement(event.currentTarget));
+        if (error) {
+          event.currentTarget.setAttribute("aria-invalid", "true");
+          event.currentTarget.dataset.directEditError = error;
+        } else {
+          delete event.currentTarget.dataset.orbitOriginalHtml;
+        }
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+        event.stopPropagation();
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.currentTarget.dataset.orbitCancelled = "true";
+        if (event.currentTarget.dataset.orbitOriginalHtml != null) {
+          event.currentTarget.innerHTML = event.currentTarget.dataset.orbitOriginalHtml;
+        }
+        onCancel?.();
+        event.currentTarget.blur();
+      },
+    },
+    focused ? focusedChildren : children,
+  );
+}
+
 function MarkdownSource({
   source,
   sourceOffsets,
@@ -779,6 +1030,9 @@ function MarkdownSource({
   activeSelection,
   onTargetSource,
   onEditDocumentBlock,
+  onDirectDocumentBlockDraftChange,
+  onCommitDirectDocumentBlockEdit,
+  onCancelDirectDocumentBlockEdit,
   onBeginDocumentBlockEdit,
   onBeginDocumentBlockStructure,
   resolveLocalAssetUrl,
@@ -794,6 +1048,9 @@ function MarkdownSource({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
+  onDirectDocumentBlockDraftChange?: (target: DocumentBlockPreviewSourceTarget, draft: string) => string | null;
+  onCommitDirectDocumentBlockEdit?: (target: DocumentBlockPreviewSourceTarget, draft: string) => string | null;
+  onCancelDirectDocumentBlockEdit?: () => void;
   onBeginDocumentBlockEdit?: (target: DocumentBlockPreviewSourceTarget) => void;
   onBeginDocumentBlockStructure?: (
     target: DocumentBlockPreviewSourceTarget,
@@ -869,6 +1126,41 @@ function MarkdownSource({
       const target = node ? fragmentTargetForNode(node) : undefined;
       const renderElement = (nextProps: Record<string, unknown>) =>
         tag === "img" ? createElement(tag, nextProps) : createElement(tag, nextProps, children);
+      const insideDirectEditor = Boolean(
+        target &&
+        targetArtifact &&
+        documentBlockTargets?.some(
+          (block) =>
+            block.start <= target.start &&
+            target.end <= block.end &&
+            directDocumentBlockEditable(targetArtifact, block),
+        ),
+      );
+      if (insideDirectEditor) {
+        const canonicalSource = targetArtifact?.source.slice(target!.start, target!.end) ?? "";
+        const lockedBinding = /\{\{\s*(?:metric|chart)\s*\(/u.test(canonicalSource);
+        return renderElement({
+          ...renderedElementProps,
+          ...(tag === "a"
+            ? {
+                href: undefined,
+                "data-edit-href": typeof renderedElementProps.href === "string" ? renderedElementProps.href : "",
+              }
+            : {}),
+          className:
+            `${typeof renderedElementProps.className === "string" ? renderedElementProps.className : ""} document-inline-edit-fragment ${lockedBinding ? "locked-binding" : ""}`.trim(),
+          "data-preview-source-target": target?.kind,
+          "data-preview-source-id": target?.id,
+          "data-document-fragment-type": target?.fragmentType,
+          contentEditable: lockedBinding ? false : undefined,
+          "data-edit-markdown": lockedBinding ? canonicalSource : undefined,
+          tabIndex: undefined,
+          role: undefined,
+          title: undefined,
+          onClick: undefined,
+          onKeyDown: undefined,
+        });
+      }
       if (!target || !targetArtifact || !onTargetSource) return renderElement(renderedElementProps);
       const active = previewTargetIsActive(target, activeSelection);
       const inheritedClassName =
@@ -901,7 +1193,15 @@ function MarkdownSource({
         },
       });
     },
-    [activeSelection, copy, fragmentTargetForNode, onTargetSource, resolveLocalAssetUrl, targetArtifact],
+    [
+      activeSelection,
+      copy,
+      documentBlockTargets,
+      fragmentTargetForNode,
+      onTargetSource,
+      resolveLocalAssetUrl,
+      targetArtifact,
+    ],
   );
 
   const interactiveBlock = useCallback(
@@ -925,30 +1225,51 @@ function MarkdownSource({
       const editable = Boolean(
         onEditDocumentBlock && onBeginDocumentBlockEdit && canVisualEditDocumentBlock(targetArtifact, target),
       );
+      const directEditable = Boolean(editable && directDocumentBlockEditable(targetArtifact, target));
       const structure = onBeginDocumentBlockStructure
         ? documentBlockStructureCapabilities(targetArtifact, target)
         : null;
       const inheritedClassName = typeof elementProps.className === "string" ? elementProps.className : "";
       const selectSource = () => onTargetSource?.(targetArtifact, target);
-      const block = createElement(
-        tag,
-        {
-          ...elementProps,
-          className: inheritedClassName || undefined,
-        },
-        children,
-      );
+      const inlineDraftFromElement = (element: HTMLElement) =>
+        restoreInlineMetricBindings(
+          editableDocumentBlockMarkdown(element, target),
+          targetArtifact.source.slice(target.start, target.end),
+          artifacts,
+          queryRuntime,
+        );
+      const block = directEditable
+        ? createElement(
+            NativeDocumentBlockEditor,
+            {
+              tag: tag as Parameters<typeof NativeDocumentBlockEditor>[0]["tag"],
+              elementProps,
+              inheritedClassName,
+              target,
+              label: copy.editMarkdownBlock(target.label, target.blockType),
+              draftFromElement: inlineDraftFromElement,
+              onDraftChange: onDirectDocumentBlockDraftChange,
+              onCommit: onCommitDirectDocumentBlockEdit,
+              onCancel: onCancelDirectDocumentBlockEdit,
+            },
+            children,
+          )
+        : createElement(tag, elementProps, children);
       return createElement(
         "div",
         {
           className:
-            `document-source-block ${onTargetSource ? "targetable" : ""} ${editable ? "editable" : ""} ${structure?.available ? "structurable" : ""} ${active ? "active" : ""}`.trim(),
+            `document-source-block ${onTargetSource ? "targetable" : ""} ${editable ? "editable" : ""} ${directEditable ? "direct-editable" : ""} ${structure?.available ? "structurable" : ""} ${active ? "active" : ""}`.trim(),
           "data-preview-source-target": target.kind,
           "data-preview-source-id": target.id,
           "data-preview-section-id": sectionTarget?.id,
           "data-document-block-type": target.blockType,
           "data-document-heading-level": target.headingLevel,
-          title: onTargetSource ? copy.selectExact(target.label) : undefined,
+          title: directEditable
+            ? copy.editBlockTarget(target.label, target.blockType)
+            : onTargetSource
+              ? copy.selectExact(target.label)
+              : undefined,
           onClick: (event: ReactMouseEvent<HTMLElement>) => {
             const clicked = event.target;
             if (
@@ -1117,42 +1438,31 @@ function MarkdownSource({
     },
     [
       activeSelection,
+      artifacts,
       copy,
+      onCancelDirectDocumentBlockEdit,
       onBeginDocumentBlockEdit,
       onBeginDocumentBlockStructure,
+      onCommitDirectDocumentBlockEdit,
+      onDirectDocumentBlockDraftChange,
       onEditDocumentBlock,
       onTargetSource,
+      queryRuntime,
       sectionByFirstBlockId,
       targetArtifact,
       targetForNode,
     ],
   );
 
-  const markdownComponents = useMemo(
-    () =>
-      Object.fromEntries([
-        ...["p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "blockquote", "pre", "table", "hr"].map((tag) => [
-          tag,
-          (props: Record<string, unknown>) => interactiveBlock(tag as Parameters<typeof interactiveBlock>[0], props),
-        ]),
-        ...["li", "th", "td", "strong", "em", "del", "code", "a", "img"].map((tag) => [
-          tag,
-          (props: Record<string, unknown>) =>
-            interactiveFragment(tag as Parameters<typeof interactiveFragment>[0], props),
-        ]),
-        // GFM task-list checkboxes are read-only in the preview; give them an
-        // accessible name so screen readers announce the task state.
-        [
-          "input",
-          ({ checked }: { checked?: boolean }) => (
-            <input type="checkbox" disabled checked={Boolean(checked)} aria-label="task" />
-          ),
-        ],
-      ]) as Components,
+  const interactionRoutes = useMemo<MarkdownInteractionRoutes>(
+    () => ({
+      renderBlock: (tag, props) => interactiveBlock(tag, props as Parameters<typeof interactiveBlock>[1]),
+      renderFragment: (tag, props) => interactiveFragment(tag, props as Parameters<typeof interactiveFragment>[1]),
+    }),
     [interactiveBlock, interactiveFragment],
   );
   return (
-    <>
+    <MarkdownInteractionContext.Provider value={interactionRoutes}>
       {parts.map((part, index) => (
         <Fragment key={`${part.type}-${index}`}>
           {part.type === "source" ? (
@@ -1160,7 +1470,7 @@ function MarkdownSource({
               key={`${part.type}-${index}`}
               source={part.value}
               sourceOffset={part.start}
-              components={markdownComponents}
+              components={ROUTED_MARKDOWN_COMPONENTS}
             />
           ) : (
             <EmbeddedChart
@@ -1172,7 +1482,7 @@ function MarkdownSource({
           )}
         </Fragment>
       ))}
-    </>
+    </MarkdownInteractionContext.Provider>
   );
 }
 
@@ -1185,6 +1495,7 @@ function DocumentPreview({
   onTargetSource,
   onEditDocumentSection,
   onEditDocumentBlock,
+  onDirectEditDocumentBlock,
   onReviewDocumentBlockStructure,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
@@ -1197,12 +1508,16 @@ function DocumentPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
+  onDirectEditDocumentBlock?: DirectDocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
 }) {
   const copy = usePreviewCopy();
-  const compiled = compileArtifactSource(artifact.source, artifacts, readyQuerySnapshots(queryRuntime));
+  const compiled = useMemo(
+    () => compileArtifactSource(artifact.source, artifacts, readyQuerySnapshots(queryRuntime)),
+    [artifact.source, artifacts, queryRuntime],
+  );
   const blockTargets = useMemo(() => deriveDocumentBlockPreviewSourceTargets(artifact), [artifact]);
   const fragmentTargets = useMemo(() => deriveDocumentFragmentPreviewSourceTargets(artifact), [artifact]);
   const [editingSection, setEditingSection] = useState<{
@@ -1300,6 +1615,32 @@ function DocumentPreview({
     return null;
   }, [artifact, editingBlock, editingSection]);
 
+  const submitBlockEdit = useCallback(
+    async (target: DocumentBlockPreviewSourceTarget, draftOverride?: string) => {
+      if (!editingBlock || !onEditDocumentBlock || editingBlock.submitting) return;
+      const draft = draftOverride ?? editingBlock.draft;
+      const prepared = prepareVisualDocumentBlockEdit(artifact, target, { draft });
+      if (prepared.errors[0] === "The edited block is unchanged.") {
+        setEditingBlock(null);
+        return;
+      }
+      if (prepared.errors.length) {
+        setEditingBlock((current) =>
+          current ? { ...current, draft, error: prepared.errors[0], submitting: false } : current,
+        );
+        return;
+      }
+      setEditingBlock((current) => (current ? { ...current, draft, error: "", submitting: true } : current));
+      const error = await onEditDocumentBlock(artifact, target, { draft });
+      if (error) {
+        setEditingBlock((current) => (current ? { ...current, error, submitting: false } : current));
+        return;
+      }
+      setEditingBlock(null);
+    },
+    [artifact, editingBlock, onEditDocumentBlock],
+  );
+
   useVisualSourceDraftMirror(documentVisualSourceDraft, onVisualSourceDraftChange);
 
   useEffect(() => {
@@ -1308,7 +1649,7 @@ function DocumentPreview({
       blockEditorRef.current?.scrollIntoView({ block: "nearest" });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [editingBlockTarget]);
+  }, [editingBlock?.error, editingBlock?.submitting, editingBlockTarget]);
 
   function beginSectionEdit(target: PreviewSourceTarget) {
     if (!onEditDocumentSection || !canVisualEditDocumentSection(artifact, target)) return;
@@ -1328,6 +1669,12 @@ function DocumentPreview({
 
   function beginBlockEdit(target: DocumentBlockPreviewSourceTarget) {
     if (!onEditDocumentBlock || !canVisualEditDocumentBlock(artifact, target)) return;
+    if (directDocumentBlockEditable(artifact, target)) {
+      document
+        .querySelector<HTMLElement>(`[data-inline-document-editor="${CSS.escape(target.id)}"]`)
+        ?.focus({ preventScroll: true });
+      return;
+    }
     setEditingSection(null);
     setInsertingBlock(null);
     setStructureError("");
@@ -1495,15 +1842,28 @@ function DocumentPreview({
     setEditingSection(null);
   }
 
-  async function submitBlockEdit(target: DocumentBlockPreviewSourceTarget) {
-    if (!editingBlock || !onEditDocumentBlock || !blockDraftCanSave) return;
-    setEditingBlock((current) => (current ? { ...current, error: "", submitting: true } : current));
-    const error = await onEditDocumentBlock(artifact, target, { draft: editingBlock.draft });
-    if (error) {
-      setEditingBlock((current) => (current ? { ...current, error, submitting: false } : current));
-      return;
+  function publishDirectBlockDraft(target: DocumentBlockPreviewSourceTarget, draft: string) {
+    const projection = projectVisualDocumentBlockDraft(artifact, target, { draft });
+    onVisualSourceDraftChange?.({
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      ...projection,
+      mode: "direct",
+    });
+    return projection.errors[0] ?? null;
+  }
+
+  function commitDirectBlockEdit(target: DocumentBlockPreviewSourceTarget, draft: string) {
+    if (!onDirectEditDocumentBlock) return "Direct editing is unavailable for this Document.";
+    const prepared = prepareVisualDocumentBlockEdit(artifact, target, { draft });
+    if (prepared.errors[0] === "The edited block is unchanged.") {
+      onVisualSourceDraftChange?.(null);
+      return null;
     }
-    setEditingBlock(null);
+    if (prepared.errors.length) return prepared.errors[0];
+    const error = onDirectEditDocumentBlock(artifact, target, { draft });
+    if (!error) onVisualSourceDraftChange?.(null);
+    return error;
   }
 
   return (
@@ -1899,6 +2259,9 @@ function DocumentPreview({
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
             onEditDocumentBlock={onEditDocumentBlock}
+            onDirectDocumentBlockDraftChange={publishDirectBlockDraft}
+            onCancelDirectDocumentBlockEdit={() => onVisualSourceDraftChange?.(null)}
+            onCommitDirectDocumentBlockEdit={commitDirectBlockEdit}
             resolveLocalAssetUrl={resolveLocalAssetUrl}
             onBeginDocumentBlockEdit={beginBlockEdit}
             onBeginDocumentBlockStructure={
@@ -1926,7 +2289,7 @@ function ResultGrid({
   activeSelection,
   onTargetSource,
   editableFormat,
-  onEditDataCell,
+  onDirectEditDataCell,
   onVisualSourceDraftChange,
 }: {
   columns: string[];
@@ -1941,7 +2304,7 @@ function ResultGrid({
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
   editableFormat?: "CSV" | "JSON";
-  onEditDataCell?: DataCellEditHandler;
+  onDirectEditDataCell?: DirectDataCellEditHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
@@ -1954,64 +2317,34 @@ function ResultGrid({
   const cellsByCoordinate = new Map(
     cellTargets?.map((target) => [`${target.rowIndex}:${target.columnIndex}`, target] as const),
   );
-  const [editingCell, setEditingCell] = useState<{
-    key: string;
-    sourceRevision: string;
-    draft: string;
-    valueType: VisualDataCellValueType;
-    error: string;
-    submitting: boolean;
-  } | null>(null);
-
-  const dataVisualSourceDraft = useMemo<VisualSourceDraft | null>(() => {
-    if (!editingCell || !targetArtifact) {
-      return null;
-    }
-    const [rowIndex, columnIndex] = editingCell.key.split(":").map(Number);
-    const target = cellTargets?.find(
-      (candidate) => candidate.rowIndex === rowIndex && candidate.columnIndex === columnIndex,
-    );
-    if (!target) {
-      return null;
-    }
-    return {
+  function publishDirectCellDraft(target: DataCellPreviewSourceTarget, input: VisualDataCellEditInput) {
+    if (!targetArtifact) return "This Data source is unavailable.";
+    const projection = projectVisualDataCellDraft(targetArtifact, target, input);
+    onVisualSourceDraftChange?.({
       artifactId: targetArtifact.id,
       sourceRevision: targetArtifact.source,
-      ...projectVisualDataCellDraft(targetArtifact, target, {
-        draft: editingCell.draft,
-        valueType: editingCell.valueType,
-      }),
-    };
-  }, [cellTargets, editingCell, targetArtifact]);
-
-  useVisualSourceDraftMirror(dataVisualSourceDraft, onVisualSourceDraftChange);
-
-  function beginCellEdit(target: DataCellPreviewSourceTarget, value: GridCell) {
-    if (!targetArtifact || !editableFormat || !onEditDataCell || !canVisualEditDataCell(targetArtifact, target)) return;
-    const scalar =
-      value == null || ["string", "number", "boolean"].includes(typeof value) ? (value as DataCell) : String(value);
-    setEditingCell({
-      key: `${target.rowIndex}:${target.columnIndex}`,
-      sourceRevision: targetArtifact.source,
-      draft: visualDataCellDraft(scalar),
-      valueType: visualDataCellValueType(scalar, editableFormat),
-      error: "",
-      submitting: false,
+      ...projection,
+      mode: "direct",
     });
+    return projection.errors[0] ?? null;
   }
 
-  async function submitCellEdit(target: DataCellPreviewSourceTarget) {
-    if (!editingCell || !targetArtifact || !onEditDataCell) return;
-    setEditingCell((current) => (current ? { ...current, error: "", submitting: true } : current));
-    const error = await onEditDataCell(targetArtifact, target, {
-      draft: editingCell.draft,
-      valueType: editingCell.valueType,
-    });
-    if (error) {
-      setEditingCell((current) => (current ? { ...current, error, submitting: false } : current));
-      return;
+  function commitDirectCellEdit(target: DataCellPreviewSourceTarget, input: VisualDataCellEditInput) {
+    if (!targetArtifact || !onDirectEditDataCell) return "Direct Data editing is unavailable.";
+    const prepared = prepareVisualDataCellEdit(targetArtifact, target, input);
+    if (prepared.errors[0] === "The edited cell is unchanged.") {
+      onVisualSourceDraftChange?.(null);
+      return null;
     }
-    setEditingCell(null);
+    if (prepared.errors.length) return prepared.errors[0];
+    const error = onDirectEditDataCell(targetArtifact, target, input);
+    if (!error) onVisualSourceDraftChange?.(null);
+    return error;
+  }
+
+  function focusNextDataRow(target: DataCellPreviewSourceTarget) {
+    const next = `${target.rowIndex + 1}:${target.columnIndex}`;
+    document.querySelector<HTMLInputElement>(`[data-data-cell-editor="${CSS.escape(next)}"]`)?.focus();
   }
 
   return (
@@ -2081,157 +2414,59 @@ function ResultGrid({
                       editableCellTarget &&
                       targetArtifact &&
                       editableFormat &&
-                      onEditDataCell &&
+                      onDirectEditDataCell &&
                       canVisualEditDataCell(targetArtifact, editableCellTarget),
                     );
                     const cellActive = Boolean(cellTarget && previewTargetIsActive(cellTarget, activeSelection));
                     const displayValue = value == null ? "—" : String(value);
-                    const editKey = `${rowIndex}:${columnIndex}`;
-                    const editing = Boolean(
-                      cellTarget &&
-                      editingCell?.key === editKey &&
-                      editingCell.sourceRevision === targetArtifact?.source,
-                    );
                     return (
                       <td
                         key={`${column}-${columnIndex}`}
                         className={
-                          `${numeric ? "numeric" : ""} ${activateCell ? "preview-data-cell" : ""} ${cellActive ? "active" : ""} ${cellEditable ? "editable" : ""} ${editing ? "editing" : ""}`.trim() ||
+                          `${numeric ? "numeric" : ""} ${activateCell ? "preview-data-cell" : ""} ${cellActive ? "active" : ""} ${cellEditable ? "editable direct-editable" : ""}`.trim() ||
                           undefined
                         }
                         data-preview-source-id={cellTarget?.id}
                       >
-                        {editing && editableCellTarget && editingCell ? (
-                          <form
-                            className="visual-cell-editor"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              void submitCellEdit(editableCellTarget);
-                            }}
-                          >
-                            <div className="visual-cell-fields">
-                              <select
-                                aria-label={copy.valueType(editableCellTarget.label)}
-                                value={editingCell.valueType}
-                                disabled={editingCell.submitting || editableFormat === "CSV"}
-                                onChange={(event) => {
-                                  const valueType = event.target.value as VisualDataCellValueType;
-                                  setEditingCell((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          valueType,
-                                          draft:
-                                            valueType === "null"
-                                              ? ""
-                                              : valueType === "boolean" && !["true", "false"].includes(current.draft)
-                                                ? "true"
-                                                : current.draft,
-                                          error: "",
-                                        }
-                                      : current,
-                                  );
-                                }}
-                              >
-                                {editableFormat === "CSV" ? (
-                                  <option value="auto">{copy.auto}</option>
-                                ) : (
-                                  <>
-                                    <option value="string">{copy.text}</option>
-                                    <option value="number">{copy.number}</option>
-                                    <option value="boolean">{copy.boolean}</option>
-                                    <option value="null">{copy.empty}</option>
-                                  </>
-                                )}
-                              </select>
-                              {editingCell.valueType === "boolean" ? (
-                                <select
-                                  autoFocus
-                                  aria-label={`Edit ${editableCellTarget.label}`}
-                                  value={editingCell.draft}
-                                  disabled={editingCell.submitting}
-                                  onChange={(event) =>
-                                    setEditingCell((current) =>
-                                      current ? { ...current, draft: event.target.value, error: "" } : current,
-                                    )
-                                  }
-                                >
-                                  <option value="true">true</option>
-                                  <option value="false">false</option>
-                                </select>
-                              ) : editingCell.valueType === "null" ? (
-                                <span className="visual-null-value">null</span>
-                              ) : (
-                                <input
-                                  autoFocus
-                                  aria-label={`Edit ${editableCellTarget.label}`}
-                                  value={editingCell.draft}
-                                  disabled={editingCell.submitting}
-                                  maxLength={MAX_VISUAL_DATA_CELL_CHARS}
-                                  onChange={(event) =>
-                                    setEditingCell((current) =>
-                                      current ? { ...current, draft: event.target.value, error: "" } : current,
-                                    )
-                                  }
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Escape") {
-                                      event.preventDefault();
-                                      setEditingCell(null);
-                                    }
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <div className="visual-cell-actions">
-                              <button
-                                type="submit"
-                                aria-label={copy.saveCell(editableCellTarget.label)}
-                                disabled={editingCell.submitting}
-                                title={copy.saveCanonical}
-                              >
-                                {editingCell.submitting ? <LoaderCircle className="agent-spinner" /> : <Check />}
-                              </button>
-                              <button
-                                type="button"
-                                aria-label={copy.cancelCell}
-                                disabled={editingCell.submitting}
-                                onClick={() => setEditingCell(null)}
-                              >
-                                <X />
-                              </button>
-                            </div>
-                            {editingCell.error && <small role="alert">{editingCell.error}</small>}
-                          </form>
-                        ) : activateCell ? (
+                        {cellEditable && editableCellTarget && editableFormat ? (
                           <>
-                            <button
-                              className="preview-cell-select"
-                              type="button"
-                              data-preview-source-target={cellTarget?.kind}
-                              aria-label={copy.selectForAgent(cellTarget?.label ?? "")}
-                              aria-pressed={cellActive}
-                              title={copy.selectCellTitle(cellTarget?.label ?? "", cellEditable)}
-                              onClick={activateCell}
-                              onKeyDown={(event) => {
-                                if (event.key !== "Enter" || !editableCellTarget || !cellEditable) return;
-                                event.preventDefault();
-                                beginCellEdit(editableCellTarget, value);
-                              }}
-                            >
-                              <span>{displayValue}</span>
-                            </button>
-                            {cellEditable && editableCellTarget && (
+                            <NativeDataCellEditor
+                              key={`${editableCellTarget.id}:${displayValue}`}
+                              format={editableFormat}
+                              target={editableCellTarget}
+                              value={value as DataCell}
+                              onDraftChange={(input) => publishDirectCellDraft(editableCellTarget, input)}
+                              onCommit={(input) => commitDirectCellEdit(editableCellTarget, input)}
+                              onCancel={() => onVisualSourceDraftChange?.(null)}
+                              onMove={() => focusNextDataRow(editableCellTarget)}
+                            />
+                            {activateCell && (
                               <button
                                 className="visual-cell-edit-trigger"
                                 type="button"
-                                aria-label={copy.editTarget(editableCellTarget.label)}
-                                title={copy.editCell}
-                                onClick={() => beginCellEdit(editableCellTarget, value)}
+                                data-preview-source-target={cellTarget?.kind}
+                                aria-label={copy.selectForAgent(cellTarget?.label ?? "")}
+                                aria-pressed={cellActive}
+                                tabIndex={-1}
+                                title={copy.selectExact(cellTarget?.label ?? "")}
+                                onClick={activateCell}
                               >
-                                <PencilLine aria-hidden="true" />
+                                <MousePointer2 aria-hidden="true" />
                               </button>
                             )}
                           </>
+                        ) : activateCell ? (
+                          <button
+                            className="preview-cell-select"
+                            type="button"
+                            data-preview-source-target={cellTarget?.kind}
+                            aria-label={copy.selectForAgent(cellTarget?.label ?? "")}
+                            aria-pressed={cellActive}
+                            title={copy.selectCellTitle(cellTarget?.label ?? "", false)}
+                            onClick={activateCell}
+                          >
+                            <span>{displayValue}</span>
+                          </button>
                         ) : (
                           displayValue
                         )}
@@ -2258,7 +2493,7 @@ function DataPreview({
   cellTargets,
   activeSelection,
   onTargetSource,
-  onEditDataCell,
+  onDirectEditDataCell,
   onVisualSourceDraftChange,
 }: {
   artifact: WorkspaceArtifact;
@@ -2266,7 +2501,7 @@ function DataPreview({
   cellTargets: DataCellPreviewSourceTarget[];
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
-  onEditDataCell?: DataCellEditHandler;
+  onDirectEditDataCell?: DirectDataCellEditHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
 }) {
   const copy = usePreviewCopy();
@@ -2282,7 +2517,7 @@ function DataPreview({
         { icon: "format", label: parsed.format },
       ]}
       footnote={
-        onEditDataCell && cellTargets.some((target) => canVisualEditDataCell(artifact, target))
+        onDirectEditDataCell && cellTargets.some((target) => canVisualEditDataCell(artifact, target))
           ? copy.dataFootnote("edit")
           : onTargetSource && cellTargets.length
             ? copy.dataFootnote("cell")
@@ -2296,7 +2531,7 @@ function DataPreview({
       activeSelection={activeSelection}
       onTargetSource={onTargetSource}
       editableFormat={parsed.format}
-      onEditDataCell={onEditDataCell}
+      onDirectEditDataCell={onDirectEditDataCell}
       onVisualSourceDraftChange={onVisualSourceDraftChange}
     />
   );
@@ -2708,6 +2943,7 @@ function SlidesPreview({
   onTargetSource,
   onEditDeckSlide,
   onEditSemanticHtmlSlide,
+  onDirectEditSemanticHtmlSlide,
   onCreateEditableDeckCopy,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
@@ -2721,6 +2957,7 @@ function SlidesPreview({
   onTargetSource?: PreviewTargetHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
   onEditSemanticHtmlSlide?: SemanticHtmlSlideEditHandler;
+  onDirectEditSemanticHtmlSlide?: DirectSemanticHtmlSlideEditHandler;
   onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
@@ -2866,6 +3103,30 @@ function SlidesPreview({
       return;
     }
     setEditingSlide(null);
+  }
+
+  function publishDirectSemanticHtmlDraft(target: PreviewSourceTarget, draft: string) {
+    const projection = projectVisualSemanticHtmlSlideDraft(artifact, target, { draft });
+    onVisualSourceDraftChange?.({
+      artifactId: artifact.id,
+      sourceRevision: artifact.source,
+      ...projection,
+      mode: "direct",
+    });
+    return projection.errors[0] ?? null;
+  }
+
+  function commitDirectSemanticHtmlEdit(target: PreviewSourceTarget, draft: string) {
+    if (!onDirectEditSemanticHtmlSlide) return "Direct slide editing is unavailable.";
+    const prepared = prepareVisualSemanticHtmlSlideEdit(artifact, target, { draft });
+    if (prepared.errors[0] === "The edited semantic HTML slide is unchanged.") {
+      onVisualSourceDraftChange?.(null);
+      return null;
+    }
+    if (prepared.errors.length) return prepared.errors[0];
+    const error = onDirectEditSemanticHtmlSlide(artifact, target, { draft });
+    if (!error) onVisualSourceDraftChange?.(null);
+    return error;
   }
 
   return (
@@ -3082,6 +3343,12 @@ function SlidesPreview({
           {renderedPreviewSlides.map((slide, slideIndex) => {
             const target = targets[slideIndex];
             const active = Boolean(target && previewTargetIsActive(target, activeSelection));
+            const directEditable = Boolean(
+              !deckCompilation &&
+              target &&
+              onDirectEditSemanticHtmlSlide &&
+              directSemanticHtmlSlideEditable(artifact, target),
+            );
             return (
               <section className="deck-slide-page" key={`${artifact.id}-${slide.index}`}>
                 <header className="deck-slide-page-meta">
@@ -3096,8 +3363,19 @@ function SlidesPreview({
                 >
                   <PresentationFrame
                     className="slides-frame"
+                    editable={
+                      directEditable && target
+                        ? {
+                            label: `Edit ${target.label}`,
+                            source: artifact.source.slice(target.start, target.end),
+                            onDraftChange: (draft) => publishDirectSemanticHtmlDraft(target, draft),
+                            onCommit: (draft) => commitDirectSemanticHtmlEdit(target, draft),
+                            onCancel: () => onVisualSourceDraftChange?.(null),
+                          }
+                        : undefined
+                    }
                     srcDoc={slide.html}
-                    sandbox=""
+                    sandbox={directEditable ? "allow-same-origin" : ""}
                     loading="lazy"
                     tabIndex={-1}
                     title={
@@ -3106,7 +3384,7 @@ function SlidesPreview({
                         : `${copy.renderedPresentation} ${slideIndex + 1}`
                     }
                   />
-                  {onTargetSource && target && (
+                  {onTargetSource && target && !directEditable && (
                     <button
                       className="deck-slide-source-hit"
                       data-preview-source-target={target.kind}
@@ -3140,44 +3418,59 @@ function SlidesPreview({
 }
 
 export function ArtifactPreview({
-  artifact,
-  artifacts,
+  artifact: currentArtifact,
+  artifacts: currentArtifacts,
   locale,
   activeSelection,
   onTargetSource,
-  onEditDataCell,
+  onDirectEditDataCell,
   onEditDocumentSection,
   onEditDocumentBlock,
+  onDirectEditDocumentBlock,
   onReviewDocumentBlockStructure,
   onEditDeckSlide,
   onEditSemanticHtmlSlide,
+  onDirectEditSemanticHtmlSlide,
   onCreateEditableDeckCopy,
   onEditChartSpec,
   onEnterChartConfiguration,
   onVisualSourceDraftChange,
   resolveLocalAssetUrl,
   queryRuntimeEnabled = true,
+  deferUpdates = false,
 }: {
   artifact: WorkspaceArtifact;
   artifacts: WorkspaceArtifact[];
   locale: OrbitLocale;
   activeSelection?: SourceSelection | null;
   onTargetSource?: PreviewTargetHandler;
-  onEditDataCell?: DataCellEditHandler;
+  onDirectEditDataCell?: DirectDataCellEditHandler;
   onEditDocumentSection?: DocumentSectionEditHandler;
   onEditDocumentBlock?: DocumentBlockEditHandler;
+  onDirectEditDocumentBlock?: DirectDocumentBlockEditHandler;
   onReviewDocumentBlockStructure?: DocumentBlockStructureReviewHandler;
   onEditDeckSlide?: DeckSlideEditHandler;
   onEditSemanticHtmlSlide?: SemanticHtmlSlideEditHandler;
+  onDirectEditSemanticHtmlSlide?: DirectSemanticHtmlSlideEditHandler;
   onCreateEditableDeckCopy?: SemanticHtmlEditableCopyHandler;
   onEditChartSpec?: ChartSpecEditHandler;
   onEnterChartConfiguration?: () => void;
   onVisualSourceDraftChange?: VisualSourceDraftHandler;
   resolveLocalAssetUrl?: LocalAssetUrlResolver;
   queryRuntimeEnabled?: boolean;
+  deferUpdates?: boolean;
 }) {
+  const deferredArtifact = useDeferredValue(currentArtifact);
+  const deferredArtifacts = useDeferredValue(currentArtifacts);
+  const deferCurrentSource = deferUpdates && deferredArtifact.id === currentArtifact.id;
+  const artifact = deferCurrentSource ? deferredArtifact : currentArtifact;
+  const artifacts = deferCurrentSource ? deferredArtifacts : currentArtifacts;
   const queryRuntime = usePreviewQueryRuntime(artifact, artifacts, queryRuntimeEnabled);
   const copy = useMemo(() => orbitUICopy(locale).preview, [locale]);
+  const compiled = useMemo(
+    () => compileArtifactSource(artifact.source, artifacts, readyQuerySnapshots(queryRuntime)),
+    [artifact.source, artifacts, queryRuntime],
+  );
   let content: ReactNode;
   if (!artifact.source.trim()) {
     content = <EmptyPreview message={copy.startWriting} />;
@@ -3191,7 +3484,6 @@ export function ArtifactPreview({
       />
     );
   } else {
-    const compiled = compileArtifactSource(artifact.source, artifacts, readyQuerySnapshots(queryRuntime));
     const previewRenderers: Record<WorkspaceArtifact["kind"], () => ReactNode> = {
       document: () => {
         const targets = derivePreviewSourceTargets(artifact);
@@ -3206,6 +3498,7 @@ export function ArtifactPreview({
             onTargetSource={onTargetSource}
             onEditDocumentSection={onEditDocumentSection}
             onEditDocumentBlock={onEditDocumentBlock}
+            onDirectEditDocumentBlock={onDirectEditDocumentBlock}
             onReviewDocumentBlockStructure={onReviewDocumentBlockStructure}
             onVisualSourceDraftChange={onVisualSourceDraftChange}
             resolveLocalAssetUrl={resolveLocalAssetUrl}
@@ -3221,7 +3514,7 @@ export function ArtifactPreview({
             cellTargets={targets.cells}
             activeSelection={activeSelection}
             onTargetSource={onTargetSource}
-            onEditDataCell={onEditDataCell}
+            onDirectEditDataCell={onDirectEditDataCell}
             onVisualSourceDraftChange={onVisualSourceDraftChange}
           />
         );
@@ -3266,6 +3559,7 @@ export function ArtifactPreview({
             onTargetSource={onTargetSource}
             onEditDeckSlide={onEditDeckSlide}
             onEditSemanticHtmlSlide={onEditSemanticHtmlSlide}
+            onDirectEditSemanticHtmlSlide={onDirectEditSemanticHtmlSlide}
             onCreateEditableDeckCopy={onCreateEditableDeckCopy}
             onVisualSourceDraftChange={onVisualSourceDraftChange}
             resolveLocalAssetUrl={resolveLocalAssetUrl}

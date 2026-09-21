@@ -7,16 +7,180 @@ test("recompiles Document, Data, and semantic HTML Preview from each canonical S
   await openWorkbench(page);
 
   const editor = page.locator("textarea.source-editor");
-  await editor.fill((await editor.inputValue()).replace("Q2 Business Review", "Q2 Business Review — live"));
+  const initialDocument = await editor.inputValue();
+  const titleEnd = initialDocument.indexOf("\n");
+  await editor.evaluate((element, offset) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(offset, offset);
+  }, titleEnd);
+  await editor.pressSequentially(" — live");
+  await expect(editor).toBeFocused();
+  await expect(editor).toHaveValue(/Q2 Business Review — live/u);
   await expect(page.locator(".document-paper .markdown-body")).toContainText("Q2 Business Review — live");
 
   await selectWorkspaceFile(page, "regional-revenue.csv");
   await editor.fill((await editor.inputValue()).replace("Europe,970000", "Europe,980000"));
-  await expect(page.locator("td.preview-data-cell").filter({ hasText: "980000" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue", exact: true })).toHaveValue("980000");
 
   await selectWorkspaceFile(page, "board-briefing.html");
+  for (let slideIndex = 0; slideIndex < 4; slideIndex += 1) {
+    await expect(
+      page.frameLocator("iframe.slides-frame").nth(slideIndex).locator('[data-orbit-slide-text-editor="true"]').first(),
+    ).toBeVisible();
+  }
+  const editableSlideText = async (slideIndex: number) =>
+    page
+      .frameLocator("iframe.slides-frame")
+      .nth(slideIndex)
+      .locator('[data-orbit-slide-text-editor="true"]')
+      .allTextContents();
+  expect(await editableSlideText(0)).toEqual(
+    expect.arrayContaining([
+      "Q2 · Board Briefing",
+      "Growth became more durable.",
+      "A shared story compiled from the same source as the operating data and written report.",
+      "01 / 04",
+    ]),
+  );
+  expect(await editableSlideText(1)).toEqual(
+    expect.arrayContaining([
+      "The quarter at a glance",
+      "Momentum with healthier economics.",
+      "Q2 revenue",
+      "Quarter over quarter",
+      "Gross margin",
+      "02 / 04",
+    ]),
+  );
+  expect(await editableSlideText(2)).toEqual(
+    expect.arrayContaining([
+      "Regional signal",
+      "is now the growth engine.",
+      "Partner distribution created a repeatable acquisition channel.",
+      "03 / 04",
+    ]),
+  );
+  expect(await editableSlideText(3)).toEqual(
+    expect.arrayContaining([
+      "Query-backed signal",
+      "Margin varies by region.",
+      "This chart is computed from readable DuckDB SQL, not copied into the deck.",
+      "04 / 04",
+    ]),
+  );
+  const boundSlideHeading = page
+    .frameLocator("iframe.slides-frame")
+    .nth(1)
+    .locator('h1 [data-orbit-slide-text-editor="true"]');
+  await boundSlideHeading.fill("Momentum with healthier economics, refined.");
+  await editor.click();
+  await expect(editor).toHaveValue(/Momentum with healthier economics, refined\./u);
+  expect((await editor.inputValue()).match(/\{\{\s*metric/gu)?.length).toBe(4);
+  const chartSlideHeading = page
+    .frameLocator("iframe.slides-frame")
+    .nth(3)
+    .locator('h1 [data-orbit-slide-text-editor="true"]');
+  await chartSlideHeading.fill("Margin by region, refined.");
+  await editor.click();
+  await expect(editor).toHaveValue(/Margin by region, refined\./u);
+  expect((await editor.inputValue()).match(/\{\{\s*chart/gu)?.length).toBe(2);
   await editor.fill((await editor.inputValue()).replace("Growth became more durable.", "Growth is live from Source."));
   await expect(page.locator("iframe.slides-frame").first()).toHaveAttribute("srcdoc", /Growth is live from Source\./u);
+  expect(pageErrors).toEqual([]);
+});
+
+test("edits ordinary Document text directly in Preview while mirroring complete Source", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await openWorkbench(page);
+
+  const editor = page.locator("textarea.source-editor");
+  const originalSource = await editor.inputValue();
+  const headingBlock = page
+    .locator('.document-source-block[data-document-block-type="heading"]')
+    .filter({ hasText: "What changed" })
+    .first();
+
+  let inlineEditor = headingBlock.locator('[contenteditable="true"]');
+  await expect(inlineEditor).toBeEditable();
+  const restingBox = await inlineEditor.boundingBox();
+  expect(restingBox).not.toBeNull();
+  await inlineEditor.click();
+  await inlineEditor.press("ControlOrMeta+A");
+  await inlineEditor.pressSequentially("What changed today", { delay: 8 });
+  await expect(inlineEditor).toBeFocused();
+  await expect(editor).toHaveValue(/## What changed today/u);
+  await expect(editor).toBeEditable();
+  await expect(page.getByText("Visual edit · complete source draft synced live")).toHaveCount(0);
+  const typingBox = await inlineEditor.boundingBox();
+  expect(typingBox).not.toBeNull();
+  expect(Math.abs((typingBox?.x ?? 0) - (restingBox?.x ?? 0))).toBeLessThanOrEqual(1);
+  expect(Math.abs((typingBox?.width ?? 0) - (restingBox?.width ?? 0))).toBeLessThanOrEqual(1);
+  expect(Math.abs((typingBox?.height ?? 0) - (restingBox?.height ?? 0))).toBeLessThanOrEqual(1);
+
+  await inlineEditor.press("Escape");
+  await expect(editor).toHaveValue(originalSource);
+  await expect(headingBlock).toContainText("What changed");
+  await expect(inlineEditor).not.toHaveAttribute("data-orbit-cancelled");
+
+  inlineEditor = headingBlock.locator('[contenteditable="true"]');
+  await inlineEditor.click();
+  await inlineEditor.fill("What changed today");
+  await expect(inlineEditor).toBeFocused();
+  await editor.click();
+
+  await expect(editor).toHaveValue(/## What changed today/u);
+  await expect(editor).toBeEditable();
+  await expect(editor).toBeFocused();
+  await expect(inlineEditor).toBeVisible();
+  await expect(page.locator(".document-paper .markdown-body")).toContainText("What changed today");
+
+  inlineEditor = headingBlock.locator('[contenteditable="true"]');
+  await inlineEditor.click();
+  await inlineEditor.evaluate((element) => {
+    element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "中" }));
+    element.textContent = "What changed today 中文输入";
+    element.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        data: "中文输入",
+        inputType: "insertCompositionText",
+        isComposing: true,
+      }),
+    );
+  });
+  await expect(editor).not.toHaveValue(/中文输入/u);
+  await inlineEditor.evaluate((element) => {
+    element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "中文输入" }));
+  });
+  await expect(editor).toHaveValue(/## What changed today 中文输入/u);
+  await page.locator(".paper-meta").click();
+  await expect(editor).toHaveValue(/## What changed today 中文输入/u);
+
+  const metricParagraph = page
+    .locator('.document-source-block[data-document-block-type="paragraph"]')
+    .filter({ hasText: "Revenue reached" })
+    .first();
+  const metricEditor = metricParagraph.locator('[contenteditable="true"]');
+  await expect(metricEditor).toBeEditable();
+  await metricEditor.click();
+  await expect(metricEditor.locator(".locked-binding")).toHaveCount(4);
+  await metricEditor.evaluate((element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      if (node.textContent?.includes("Revenue reached")) {
+        node.textContent = node.textContent.replace("Revenue reached", "Verified revenue reached");
+        break;
+      }
+      node = walker.nextNode();
+    }
+    element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText" }));
+  });
+  await expect(editor).toHaveValue(/Verified revenue reached \*\*\{\{ metric/u);
+  await metricEditor.press("Escape");
+
   expect(pageErrors).toEqual([]);
 });
 
@@ -71,32 +235,45 @@ test("mirrors an exact Data-cell draft into complete Source, then cancels or sav
 
   const editor = page.locator("textarea.source-editor");
   const originalSource = await editor.inputValue();
-  const editCell = page.getByRole("button", { name: "Edit Row 3 · Q2 Revenue", exact: true });
-  await editCell.click();
-
-  const cellEditor = page.locator("form.visual-cell-editor");
-  const draft = cellEditor.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue" });
+  const draft = page.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue", exact: true });
   await draft.fill("990000");
 
   await expect(editor).toHaveValue(/Europe,990000,920000,690000,84/u);
-  await expect(editor).not.toBeEditable();
+  await expect(editor).toBeEditable();
   await expect(draft).toHaveValue("990000");
-  await expect(page.getByText("Visual edit · complete source draft synced live")).toBeVisible();
+  await expect(page.getByText("Visual edit · complete source draft synced live")).toHaveCount(0);
 
-  await cellEditor.getByRole("button", { name: "Cancel cell edit" }).click();
-  await expect(cellEditor).toBeHidden();
+  await draft.press("Escape");
   await expect(editor).toHaveValue(originalSource);
   await expect(editor).toBeEditable();
+  await expect(draft).toHaveValue("970000");
 
-  await editCell.click();
-  await cellEditor.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue" }).fill("990000");
-  await cellEditor.getByRole("button", { name: "Save Row 3 · Q2 Revenue" }).click();
+  await draft.fill("990000");
+  await editor.click();
 
-  // A first Data save can cold-start DuckDB/WASM to revalidate every downstream consumer.
-  await expect(cellEditor).toBeHidden({ timeout: 35_000 });
   await expect(editor).toHaveValue(/Europe,990000,920000,690000,84/u);
   await expect(editor).toBeEditable();
-  await expect(page.locator("td.preview-data-cell").filter({ hasText: "990000" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue", exact: true })).toHaveValue("990000");
+
+  const region = page.getByRole("textbox", { name: "Edit Row 3 · Region", exact: true });
+  await region.focus();
+  await region.press("Tab");
+  await expect(page.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue", exact: true })).toBeFocused();
+  await region.focus();
+  await region.evaluate((element) => {
+    element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "欧" }));
+    (element as HTMLInputElement).value = "欧洲";
+    element.dispatchEvent(
+      new InputEvent("input", { bubbles: true, data: "欧洲", inputType: "insertCompositionText", isComposing: true }),
+    );
+  });
+  await expect(editor).not.toHaveValue(/欧洲/u);
+  await region.evaluate((element) =>
+    element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "欧洲" })),
+  );
+  await expect(editor).toHaveValue(/"欧洲",990000/u);
+  await region.press("Escape");
+  await expect(editor).toHaveValue(/Europe,990000/u);
   expect(pageErrors).toEqual([]);
 });
 
@@ -121,46 +298,37 @@ test("keeps typed JSON canonical while Source and Data Preview edit the same sca
   const editor = page.locator("textarea.source-editor");
   const sourceEdited = importedSource.replace('"Revenue": 240', '"Revenue": 260');
   await editor.fill(sourceEdited);
-  await expect(page.locator("td.preview-data-cell").filter({ hasText: "260" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Edit Row 2 · Revenue", exact: true })).toHaveValue("260");
 
-  const editRevenue = page.getByRole("button", { name: "Edit Row 2 · Revenue", exact: true });
-  await editRevenue.click();
-  const cellEditor = page.locator("form.visual-cell-editor");
-  await expect(cellEditor.getByRole("combobox", { name: "Value type for Row 2 · Revenue" })).toHaveValue("number");
-  await cellEditor.getByRole("textbox", { name: "Edit Row 2 · Revenue" }).fill("275");
+  const editRevenue = page.getByRole("textbox", { name: "Edit Row 2 · Revenue", exact: true });
+  await editRevenue.fill("275");
 
   const revenueDraftSource = sourceEdited.replace('"Revenue": 260', '"Revenue": 275');
   await expect(editor).toHaveValue(revenueDraftSource);
-  await expect(editor).not.toBeEditable();
-  await expect(page.getByText("Visual edit · complete source draft synced live")).toBeVisible();
+  await expect(editor).toBeEditable();
+  await expect(page.getByText("Visual edit · complete source draft synced live")).toHaveCount(0);
 
-  await cellEditor.getByRole("button", { name: "Cancel cell edit" }).click();
-  await expect(cellEditor).toBeHidden();
+  await editRevenue.press("Escape");
   await expect(editor).toHaveValue(sourceEdited);
   await expect(editor).toBeEditable();
 
-  await editRevenue.click();
-  await cellEditor.getByRole("textbox", { name: "Edit Row 2 · Revenue" }).fill("275");
-  await cellEditor.getByRole("button", { name: "Save Row 2 · Revenue" }).click();
-  await expect(cellEditor).toBeHidden();
+  await editRevenue.fill("275");
+  await editor.click();
   await expect(editor).toHaveValue(revenueDraftSource);
-  await expect(page.locator("td.preview-data-cell").filter({ hasText: "275" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Edit Row 2 · Revenue", exact: true })).toHaveValue("275");
 
-  const editActive = page.getByRole("button", { name: "Edit Row 2 · Active", exact: true });
-  await editActive.click();
-  await expect(cellEditor.getByRole("combobox", { name: "Value type for Row 2 · Active" })).toHaveValue("boolean");
-  await cellEditor.getByRole("combobox", { name: "Edit Row 2 · Active" }).selectOption("true");
+  const editActive = page.getByRole("textbox", { name: "Edit Row 2 · Active", exact: true });
+  await editActive.fill("true");
   const finalSource = revenueDraftSource.replace('"Active": false', '"Active": true');
   await expect(editor).toHaveValue(finalSource);
-  await cellEditor.getByRole("button", { name: "Save Row 2 · Active" }).click();
-  await expect(cellEditor).toBeHidden();
+  await editor.click();
   await expect(editor).toHaveValue(finalSource);
 
   await page.reload();
   await expect(page.locator('main[data-orbit-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.locator("textarea.source-editor")).toHaveValue(finalSource);
-  await expect(page.locator("td.preview-data-cell").filter({ hasText: "275" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Edit Row 2 · Revenue", exact: true })).toHaveValue("275");
   expect(pageErrors).toEqual([]);
 });
 

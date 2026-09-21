@@ -257,17 +257,81 @@
 .agent-model-family-section button:hover { background: var(--orbit-material-control); color: var(--ink); }
 .agent-model-family-section button.selected { background: color-mix(in srgb, var(--theme-accent) 10%, var(--orbit-material-solid)); color: var(--ink); }
 .agent-model-family-section button svg { width: 14px; height: 14px; color: var(--theme-accent); }
-.agent-model-reasoning-section { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--orbit-material-divider); }
+.agent-model-reasoning-section {
+  --agent-reasoning-progress: 0%;
+  --agent-reasoning-color: var(--theme-accent);
+  --agent-reasoning-glow: 4px;
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid var(--orbit-material-divider);
+}
+.agent-model-reasoning-heading {
+  display: flex;
+  min-height: 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.agent-model-reasoning-heading output {
+  color: var(--agent-reasoning-color);
+  font-size: 10px;
+  font-weight: 700;
+  transition: color 180ms ease, transform 180ms var(--orbit-ease-spring);
+}
+.agent-model-reasoning-heading h3 { margin: 0; }
 .agent-model-reasoning-section input[type="range"] {
+  appearance: none;
   width: 100%;
-  height: 24px;
+  height: 26px;
   margin: 0;
-  accent-color: var(--theme-accent);
+  outline: 0;
+  background: transparent;
   cursor: ew-resize;
+}
+.agent-model-reasoning-section input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--agent-reasoning-color) 0 var(--agent-reasoning-progress),
+    var(--orbit-material-divider) var(--agent-reasoning-progress) 100%
+  );
+  transition: background 180ms ease;
+}
+.agent-model-reasoning-section input[type="range"]::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -5.5px;
+  border: 2px solid var(--orbit-material-solid);
+  border-radius: 50%;
+  appearance: none;
+  background: var(--agent-reasoning-color);
+  box-shadow: 0 0 0 var(--agent-reasoning-glow) color-mix(in srgb, var(--agent-reasoning-color) 16%, transparent), 0 2px 7px rgba(24, 24, 28, .18);
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms var(--orbit-ease-spring);
+}
+.agent-model-reasoning-section input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
+.agent-model-reasoning-section input[type="range"]::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--orbit-material-divider);
+}
+.agent-model-reasoning-section input[type="range"]::-moz-range-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--agent-reasoning-color);
+}
+.agent-model-reasoning-section input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--orbit-material-solid);
+  border-radius: 50%;
+  background: var(--agent-reasoning-color);
+  box-shadow: 0 0 0 var(--agent-reasoning-glow) color-mix(in srgb, var(--agent-reasoning-color) 16%, transparent), 0 2px 7px rgba(24, 24, 28, .18);
 }
 .agent-model-reasoning-labels { display: flex; justify-content: space-between; gap: 5px; margin-top: 1px; }
 .agent-model-reasoning-labels span { min-width: 0; color: var(--subtle); font-size: 9px; font-weight: 580; text-align: center; white-space: nowrap; }
-.agent-model-reasoning-labels span.active { color: var(--ink); font-weight: 700; }
+.agent-model-reasoning-labels span { transition: color 180ms ease, font-weight 180ms ease, transform 180ms var(--orbit-ease-spring); }
+.agent-model-reasoning-labels span.active { color: var(--agent-reasoning-color); font-weight: 720; transform: translateY(-1px); }
 .agent-model-connect-card,
 .agent-model-local-card {
   display: grid;
@@ -885,6 +949,29 @@ body.agent-dragging * { cursor: grabbing !important; user-select: none !importan
 .markdown-body pre { border-radius: 16px; }
 .markdown-body img.orbit-local-image { border-radius: var(--orbit-radius-card); }
 
+.markdown-body .document-source-block.direct-editable { cursor: text; }
+.markdown-body .document-source-block.direct-editable,
+.markdown-body .document-source-block.direct-editable:hover,
+.markdown-body .document-source-block.direct-editable:focus-within,
+.markdown-body .document-source-block.direct-editable.active {
+  background: transparent;
+  box-shadow: none;
+  outline: 0;
+}
+.markdown-body .document-inline-editor {
+  min-height: 1.35em;
+  outline: 0;
+  caret-color: var(--theme-accent);
+  cursor: text;
+  user-select: text;
+}
+.markdown-body .document-inline-editor .document-inline-edit-fragment { cursor: text; }
+.markdown-body .document-inline-editor .document-inline-edit-fragment.locked-binding {
+  border-bottom: 1px dashed color-mix(in srgb, var(--theme-accent) 42%, transparent);
+  color: inherit;
+  cursor: default;
+  user-select: all;
+}
 @container (max-width: 620px) {
   .document-paper { padding: clamp(22px, 6.5cqi, 36px); border-radius: 10px; }
   .paper-meta { margin-bottom: 30px; }
@@ -907,6 +994,27 @@ html[data-locale="ar"] .markdown-body { line-height: 1.82; letter-spacing: 0; }
 .data-grid thead th,
 .chart-card figcaption span,
 .chart-card footer { font-size: var(--orbit-type-caption); }
+.data-grid td.preview-data-cell.direct-editable { padding: 0; }
+.native-data-cell-editor {
+  box-sizing: border-box;
+  width: 100%;
+  height: 37px;
+  padding: 0 34px 0 11px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  caret-color: var(--theme-accent);
+  font: inherit;
+  text-align: inherit;
+  transition: background-color var(--orbit-duration-micro) ease, box-shadow var(--orbit-duration-micro) ease;
+}
+.native-data-cell-editor:hover { background: color-mix(in srgb, var(--theme-soft) 44%, transparent); }
+.native-data-cell-editor:focus {
+  background: color-mix(in srgb, var(--theme-soft) 72%, var(--orbit-material-solid));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--theme-accent) 72%, transparent);
+}
 .semantic-html-slide-editor .visual-deck-fields { grid-template-rows: minmax(0, 1fr); }
 .semantic-html-slide-editor .visual-deck-fields textarea { min-height: 274px; }
 

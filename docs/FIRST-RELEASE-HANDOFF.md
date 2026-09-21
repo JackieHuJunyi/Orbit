@@ -1,6 +1,6 @@
 # Orbit first-release handoff
 
-> Originally audited 2026-08-21 and refreshed 2026-09-14 against Orbit v1.64. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
+> Originally audited 2026-08-21 and refreshed 2026-09-20 against Orbit v1.65. This document separates repository completion from product-market evidence so the next iteration starts from a real gap rather than rebuilding shipped capability.
 
 ## Completion decision
 
@@ -47,4 +47,4 @@ Do not add collaboration, cloud sync, a connector, richer charts, more OCR packa
 
 ## Reproduction gate
 
-From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Orbit v1.64 passes 745 unit tests, 30 render/architecture tests, 83 scenarios in each of Chromium, Firefox, and WebKit (249 browser executions), the 20/20 synthetic Golden Task Eval, 1,129 English interface strings across six generated locale catalogs plus Simplified/Traditional Chinese, formatting, lint, typecheck, production build, and zero-finding production/tooling dependency audits. Real desktop QA additionally proves account-authoritative Codex model/effort discovery and Composer switching. The arm64 internal-QA macOS package passes ASAR/hash/fuse/architecture and hydrated-renderer validation; Developer ID and notarization facts remain exclusive to the credentialed tagged workflow.
+From a clean checkout, the handoff is reproducible with the repository verification sequence in [`DELIVERY-READINESS.md`](DELIVERY-READINESS.md). Orbit v1.65 passes 771 unit checks on macOS (769 passed and two Windows-only checks skipped), 30 render/architecture tests, and 85 scenarios in each of Chromium, Firefox, and WebKit: 253 passed browser executions plus the two intentionally non-Chromium OCR-runtime skips. It also passes the 20/20 synthetic Golden Task Eval, 1,129 English interface strings across six generated locale catalogs plus Simplified/Traditional Chinese, formatting, lint, typecheck, and a production build. Real desktop QA additionally covers account-authoritative Codex discovery, direct Preview editing, window reactivation, and Composer switching. The arm64 internal-QA package must still pass its final ASAR/hash/fuse/architecture and hydrated-renderer checks before handoff; Developer ID and notarization facts remain exclusive to the credentialed tagged workflow.

@@ -1,5 +1,6 @@
 # Progress
 
+- 2026-09-20 — Completed Orbit v1.65 with native IME-safe Document, CSV/JSON, and static HTML slide editing in Preview, an always-editable Source whose urgent keystrokes precede interruptible memoized Preview compilation, progressively deeper reasoning-strength motion, reliable macOS window reactivation, and one current local app/build.
 - 2026-09-14 — Completed Orbit v1.64 with account-authoritative Codex App Server model discovery, per-model reasoning catalogs and defaults, server-side save/execution rechecks, a calmer animated ChatGPT-style Composer, immediate family switching, and the restored responsive spectrum-pencil “Welcome to Orbit” replay.
 - 2026-09-14 — Completed Orbit v1.63 with swipeable provider/model rails, a draggable supported-effort control, verified API/local catalog switching, a restart-stable desktop origin, found-only discovery after skipped setup, and the restored MIT-licensed continuous English “Hello” gesture.
 - 2026-09-14 — Completed Orbit v1.62 with one thirty-six-tool PDF workspace, local page/edit/security/render runtimes, PDF/A and encryption workers, existing reviewed conversion/OCR/Agent continuations, and chat-to-deterministic-tool routing.

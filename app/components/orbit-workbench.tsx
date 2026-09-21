@@ -52,7 +52,6 @@ import {
 import {
   ArtifactPreview,
   type ChartSpecEditHandler,
-  type DataCellEditHandler,
   type DeckSlideEditHandler,
   type DocumentBlockEditHandler,
   type DocumentBlockStructureReviewHandler,
@@ -74,6 +73,7 @@ import { usePdfToolFlow } from "./use-pdf-tool-flow";
 import { EmptyWorkspace } from "./empty-workspace";
 import { WorkspaceSplitter, WorkspaceViewSwitch } from "./workspace-frame-controls";
 import { useSourcePreviewScroll } from "./use-source-preview-scroll";
+import { useDirectVisualSourceDraft } from "./use-direct-visual-source-draft";
 import type { VisualSourceDraft } from "./use-visual-source-draft";
 import type { PdfOcrSelection } from "./pdf-ocr-setup-dialog";
 import { WelcomeExperience, type WelcomeAction, type WelcomeStep } from "./welcome-experience";
@@ -248,9 +248,9 @@ import {
   type OrbitWorkspaceView,
 } from "../lib/workspace-layout";
 import { sourceEditorPresentation, sourceSelectionScrollTop } from "../lib/source-editor-scroll";
+import { createDirectPreviewEditHandlers } from "../lib/direct-document-edit";
 import { prepareSourceNavigation, type PreparedSourceNavigation } from "../lib/source-navigation";
 import { portableSourceRevision } from "../lib/source-revision";
-import { prepareVisualDataCellEdit } from "../lib/visual-data-edit";
 import { prepareVisualDocumentSectionEdit } from "../lib/visual-document-edit";
 import { prepareVisualDocumentBlockEdit } from "../lib/visual-document-block-edit";
 import {
@@ -1207,30 +1207,38 @@ export function OrbitWorkbench() {
     return () => window.removeEventListener("resize", keepFloatingAgentVisible);
   }, [agentDockPlacement]);
 
-  const handleVisualSourceDraftChange = useCallback((draft: VisualSourceDraft | null) => {
-    setVisualSourceDraft((current) => {
-      if (!current || !draft) return current === draft ? current : draft;
-      return current.artifactId === draft.artifactId &&
-        current.sourceRevision === draft.sourceRevision &&
-        current.nextSource === draft.nextSource &&
-        current.start === draft.start &&
-        current.end === draft.end &&
-        current.errors.length === draft.errors.length &&
-        current.errors.every((error, index) => error === draft.errors[index])
-        ? current
-        : draft;
-    });
-    if (!draft) return;
-    window.requestAnimationFrame(() => {
-      const editor = sourceEditorRef.current;
-      if (!editor || editor.value !== draft.nextSource) return;
-      editor.setSelectionRange(draft.start, draft.end, "forward");
-      const line = draft.nextSource.slice(0, draft.start).split("\n").length;
-      editor.scrollTop = Math.max(0, (line - 3) * 20.4);
-      if (gutterRef.current) gutterRef.current.scrollTop = editor.scrollTop;
-      if (sourceDraftMirrorRef.current) sourceDraftMirrorRef.current.scrollTop = editor.scrollTop;
-    });
-  }, []);
+  const { consumeDirectVisualSourceDraft, handleDirectVisualSourceDraftChange } = useDirectVisualSourceDraft(
+    artifactsRef,
+    sourceEditorRef,
+  );
+  const handleVisualSourceDraftChange = useCallback(
+    (draft: VisualSourceDraft | null) => {
+      if (handleDirectVisualSourceDraftChange(draft)) return;
+      setVisualSourceDraft((current) => {
+        if (!current || !draft) return current === draft ? current : draft;
+        return current.artifactId === draft.artifactId &&
+          current.sourceRevision === draft.sourceRevision &&
+          current.nextSource === draft.nextSource &&
+          current.start === draft.start &&
+          current.end === draft.end &&
+          current.errors.length === draft.errors.length &&
+          current.errors.every((error, index) => error === draft.errors[index])
+          ? current
+          : draft;
+      });
+      if (!draft) return;
+      window.requestAnimationFrame(() => {
+        const editor = sourceEditorRef.current;
+        if (!editor || editor.value !== draft.nextSource) return;
+        editor.setSelectionRange(draft.start, draft.end, "forward");
+        const line = draft.nextSource.slice(0, draft.start).split("\n").length;
+        editor.scrollTop = Math.max(0, (line - 3) * 20.4);
+        if (gutterRef.current) gutterRef.current.scrollTop = editor.scrollTop;
+        if (sourceDraftMirrorRef.current) sourceDraftMirrorRef.current.scrollTop = editor.scrollTop;
+      });
+    },
+    [handleDirectVisualSourceDraftChange],
+  );
 
   const selectedArtifact = artifacts.find((artifact) => artifact.id === deferredSelectedId) ?? artifacts[0];
   const artifactSwitchPending = selectedArtifact?.id !== selectedId;
@@ -1240,6 +1248,7 @@ export function OrbitWorkbench() {
     visualSourceDraft.sourceRevision === selectedArtifact.source
       ? visualSourceDraft
       : null;
+  const activeReviewVisualSourceDraft = activeVisualSourceDraft?.mode === "direct" ? null : activeVisualSourceDraft;
   const selectedExportCapabilities = selectedArtifact ? workspaceFileExportCapabilities(selectedArtifact) : [];
   const selectedExportCapability = (destination: WorkspaceFileExportDestination) =>
     selectedExportCapabilities.find((capability) => capability.destination === destination) ?? null;
@@ -1489,7 +1498,7 @@ export function OrbitWorkbench() {
           "directory-sync": Boolean(pendingDirectorySync),
           "document-structure": Boolean(pendingDocumentStructure),
           "local-image": Boolean(pendingLocalImage),
-          "visual-draft": Boolean(activeVisualSourceDraft),
+          "visual-draft": Boolean(activeReviewVisualSourceDraft),
         },
         busy: {
           "agent-planning": agentState !== "idle",
@@ -1505,7 +1514,7 @@ export function OrbitWorkbench() {
         },
       }),
     [
-      activeVisualSourceDraft,
+      activeReviewVisualSourceDraft,
       agentModelSwitching,
       agentState,
       deliveryOutcomeState,
@@ -1843,7 +1852,7 @@ export function OrbitWorkbench() {
   if (!selectedArtifact || !presentedArtifact) return null;
 
   function selectArtifact(id: string) {
-    if (activeVisualSourceDraft) return;
+    if (activeReviewVisualSourceDraft) return;
     setSaveState("saving");
     setSelectedId(id);
     if (pendingChange) setPendingReviewId(id);
@@ -1857,7 +1866,7 @@ export function OrbitWorkbench() {
   }
 
   function closeCurrentArtifact() {
-    if (activeVisualSourceDraft) return;
+    if (activeReviewVisualSourceDraft) return;
     setEmptyWorkspace(true);
     setHistoryOpen(false);
     setSourceSelection(null);
@@ -2009,6 +2018,7 @@ export function OrbitWorkbench() {
 
   function updateSource(source: string, cursor?: SourceSelection) {
     if (!workbenchOperationGate.canStartOperation) return;
+    if (activeVisualSourceDraft?.mode === "direct") setVisualSourceDraft(null);
     setSaveState("saving");
     setArtifacts((current) =>
       current.map((artifact) => (artifact.id === selectedArtifact.id ? { ...artifact, source } : artifact)),
@@ -2254,7 +2264,7 @@ export function OrbitWorkbench() {
     const replacingOwner: WorkbenchOperationOwner | undefined =
       allowDocumentStructureReview && pendingDocumentStructure
         ? "document-structure"
-        : activeVisualSourceDraft
+        : activeReviewVisualSourceDraft
           ? "visual-draft"
           : undefined;
     if (!canStartOrReplaceOperation(replacingOwner)) {
@@ -2361,16 +2371,6 @@ export function OrbitWorkbench() {
     }
   }
 
-  const commitVisualDataCellEdit: DataCellEditHandler = async (targetArtifact, target, input) =>
-    commitVisualSourceEdit({
-      targetArtifact,
-      targetLabel: target.label,
-      targetNoun: "cell",
-      detail: "Replace one proven scalar literal through the visual Data editor.",
-      verificationNotice: `Verifying ${target.label} against every live Data consumer…`,
-      compile: (currentArtifact) => prepareVisualDataCellEdit(currentArtifact, target, input),
-    });
-
   const commitVisualDocumentSectionEdit: DocumentSectionEditHandler = async (targetArtifact, target, input) =>
     commitVisualSourceEdit({
       targetArtifact,
@@ -2390,6 +2390,26 @@ export function OrbitWorkbench() {
       verificationNotice: `Verifying ${target.label} against the complete workspace…`,
       compile: (currentArtifact) => prepareVisualDocumentBlockEdit(currentArtifact, target, input),
     });
+  const directPreviewEditHandlers = createDirectPreviewEditHandlers(
+    workbenchOperationGate.canStartOperation,
+    artifactsRef,
+    checkpointsRef,
+    (nextArtifacts, nextCheckpoints) => {
+      persistDeviceWorkspace(
+        nextArtifacts,
+        selectedIdRef.current,
+        nextCheckpoints,
+        savedOperatingReviewsRef.current,
+        taskEvidenceRef.current,
+      );
+      artifactsRef.current = nextArtifacts;
+      checkpointsRef.current = nextCheckpoints;
+      setArtifacts(nextArtifacts);
+      setCheckpoints(nextCheckpoints);
+      if (agentScope === "selection") setAgentScope("artifact");
+      setSaveState("saved");
+    },
+  );
 
   const reviewVisualDocumentBlockStructure: DocumentBlockStructureReviewHandler = async (
     targetArtifact,
@@ -2514,7 +2534,7 @@ export function OrbitWorkbench() {
     });
 
   function captureSourceSelection(event: SyntheticEvent<HTMLTextAreaElement>) {
-    if (activeVisualSourceDraft) return;
+    if (activeReviewVisualSourceDraft) return;
     const start = event.currentTarget.selectionStart;
     const end = event.currentTarget.selectionEnd;
     const sourceRevision = event.currentTarget.value;
@@ -5187,7 +5207,7 @@ export function OrbitWorkbench() {
                   new Map([...documentBriefingTargetsById].map(([id, target]) => [id, target.freshness] as const))
                 }
                 copy={ui}
-                locked={Boolean(activeVisualSourceDraft)}
+                locked={Boolean(activeReviewVisualSourceDraft)}
                 creationDisabled={artifactCreationDisabled}
                 renderIcon={(artifact) => <ArtifactIcon kind={artifact.kind} />}
                 onSelect={selectArtifact}
@@ -5383,7 +5403,7 @@ export function OrbitWorkbench() {
                               <button
                                 type="button"
                                 className="task-evidence-target"
-                                disabled={!openArtifact || Boolean(activeVisualSourceDraft)}
+                                disabled={!openArtifact || Boolean(activeReviewVisualSourceDraft)}
                                 onClick={() => openArtifact && selectArtifact(openArtifact.id)}
                               >
                                 {output?.name ?? ui.documentBriefingTask}
@@ -5568,7 +5588,7 @@ export function OrbitWorkbench() {
                               <span className="checkpoint-current">{ui.current}</span>
                             ) : (
                               <button
-                                disabled={Boolean(activeVisualSourceDraft)}
+                                disabled={Boolean(activeReviewVisualSourceDraft)}
                                 onClick={() => void reviewCheckpointRestore(checkpoint)}
                               >
                                 {ui.restore}
@@ -5587,21 +5607,21 @@ export function OrbitWorkbench() {
               <div className="editor-wrap" data-large-source={largeSourceMode ? "true" : "false"}>
                 <pre
                   ref={gutterRef}
-                  className={`line-gutter ${activeVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()}
+                  className={`line-gutter ${activeReviewVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()}
                   aria-hidden="true"
                 >
                   {lineNumbers}
                 </pre>
-                {activeVisualSourceDraft && (
+                {activeReviewVisualSourceDraft && (
                   <div
-                    className={`visual-source-sync-state ${activeVisualSourceDraft.errors.length ? "has-error" : "valid"}`}
+                    className={`visual-source-sync-state ${activeReviewVisualSourceDraft.errors.length ? "has-error" : "valid"}`}
                     role="status"
                   >
                     <span>{ui.unsavedVisualDraft}</span>
                     <strong>
-                      {activeVisualSourceDraft.errors.length
+                      {activeReviewVisualSourceDraft.errors.length
                         ? ui.draftNeedsFix
-                        : activeVisualSourceDraft.nextSource === activeVisualSourceDraft.sourceRevision
+                        : activeReviewVisualSourceDraft.nextSource === activeReviewVisualSourceDraft.sourceRevision
                           ? ui.draftUnchanged
                           : ui.draftReady}
                     </strong>
@@ -5622,8 +5642,16 @@ export function OrbitWorkbench() {
                 )}
                 <textarea
                   ref={sourceEditorRef}
-                  className={`source-editor ${activeVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()}
+                  className={`source-editor ${activeReviewVisualSourceDraft ? "visual-source-draft" : ""} ${proposalReviewActive ? "proposal-source-preview" : ""}`.trim()}
                   value={editorSource}
+                  onFocus={() => {
+                    const directDraft = consumeDirectVisualSourceDraft();
+                    if (
+                      directDraft?.artifactId === selectedArtifact.id &&
+                      directDraft.sourceRevision === selectedArtifact.source
+                    )
+                      updateSource(directDraft.nextSource);
+                  }}
                   onChange={(event) =>
                     updateSource(event.target.value, {
                       start: event.currentTarget.selectionStart,
@@ -5640,7 +5668,7 @@ export function OrbitWorkbench() {
                   }}
                   spellCheck={false}
                   wrap="off"
-                  readOnly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
+                  readOnly={Boolean(activeReviewVisualSourceDraft) || proposalReviewActive}
                   disabled={
                     artifactSwitchPending ||
                     visualEditState !== "idle" ||
@@ -5657,22 +5685,23 @@ export function OrbitWorkbench() {
                     Boolean(pendingDirectorySync) ||
                     Boolean(pendingDocumentStructure)
                   }
-                  aria-readonly={Boolean(activeVisualSourceDraft) || proposalReviewActive}
+                  aria-readonly={Boolean(activeReviewVisualSourceDraft) || proposalReviewActive}
                   aria-label={
                     proposalReviewActive
                       ? `${ui.proposalSource} · ${presentedArtifact.name}`
-                      : activeVisualSourceDraft
+                      : activeReviewVisualSourceDraft
                         ? ui.syncedDraftSource(selectedArtifact.name)
                         : ui.editSource(selectedArtifact.name)
                   }
                 />
-                {activeVisualSourceDraft && (
+                {activeReviewVisualSourceDraft && (
                   <pre ref={sourceDraftMirrorRef} className="source-draft-mirror" aria-hidden="true">
-                    {editorSource.slice(0, activeVisualSourceDraft.start)}
+                    {editorSource.slice(0, activeReviewVisualSourceDraft.start)}
                     <mark>
-                      {editorSource.slice(activeVisualSourceDraft.start, activeVisualSourceDraft.end) || "\u200b"}
+                      {editorSource.slice(activeReviewVisualSourceDraft.start, activeReviewVisualSourceDraft.end) ||
+                        "\u200b"}
                     </mark>
-                    {editorSource.slice(activeVisualSourceDraft.end)}
+                    {editorSource.slice(activeReviewVisualSourceDraft.end)}
                   </pre>
                 )}
               </div>
@@ -6202,11 +6231,10 @@ export function OrbitWorkbench() {
                     artifacts={presentedArtifacts}
                     locale={locale}
                     queryRuntimeEnabled={hydrated && !welcomeOpen}
+                    deferUpdates={hydrated && sourceEditorRef.current === document.activeElement}
                     activeSelection={proposalReviewActive ? null : activePreviewTarget}
                     onTargetSource={proposalReviewActive ? undefined : focusPreviewTarget}
-                    onEditDataCell={
-                      !proposalReviewActive && visualEditState === "idle" ? commitVisualDataCellEdit : undefined
-                    }
+                    {...(!proposalReviewActive && visualEditState === "idle" ? directPreviewEditHandlers : {})}
                     onEditDocumentSection={
                       !proposalReviewActive && visualEditState === "idle" ? commitVisualDocumentSectionEdit : undefined
                     }

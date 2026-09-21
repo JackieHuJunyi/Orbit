@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronDown, Cpu, LoaderCircle, RefreshCw, Settings2, Sparkles } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import type { AgentModelOption } from "../lib/agent-model-options";
 
 type ModelPickerPosition = Readonly<{ left: number; top: number; width: number }>;
@@ -78,6 +78,12 @@ export function AgentModelPicker({
     0,
     reasoningOptions.findIndex((option) => option.value === focusedDraft?.value),
   );
+  const reasoningStrength = reasoningOptions.length <= 1 ? 0 : reasoningIndex / (reasoningOptions.length - 1);
+  const reasoningStyle = {
+    "--agent-reasoning-progress": `${reasoningStrength * 100}%`,
+    "--agent-reasoning-color": `color-mix(in srgb, var(--theme-accent) ${Math.round(100 - reasoningStrength * 30)}%, var(--ink))`,
+    "--agent-reasoning-glow": `${Math.round(4 + reasoningStrength * 5)}px`,
+  } as CSSProperties;
 
   useEffect(() => {
     if (!open) return;
@@ -300,8 +306,17 @@ export function AgentModelPicker({
                   </div>
                 </section>
                 {reasoningOptions.length > 1 && (
-                  <section className="agent-model-reasoning-section">
-                    <h3>{labels.reasoning}</h3>
+                  <section
+                    className="agent-model-reasoning-section"
+                    data-reasoning-strength={reasoningIndex}
+                    style={reasoningStyle}
+                  >
+                    <div className="agent-model-reasoning-heading">
+                      <h3>{labels.reasoning}</h3>
+                      <output aria-live="polite">
+                        {effortLabel(reasoningOptions[reasoningIndex]?.effort, labels.efforts)}
+                      </output>
+                    </div>
                     <input
                       type="range"
                       min={0}

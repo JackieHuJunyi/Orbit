@@ -592,7 +592,21 @@ test("switches model and reasoning level inside one signed-in account profile", 
   await expect(modelMenu.getByRole("radio", { name: "GPT-5.6 Sol" })).toBeVisible();
   await expect(modelMenu.getByRole("radio", { name: "GPT-5.6 Terra" })).toBeVisible();
   await modelMenu.getByRole("radio", { name: "GPT-5.6 Luna" }).click();
-  await modelMenu.getByRole("slider", { name: "Reasoning" }).press("End");
+  const reasoningSection = modelMenu.locator(".agent-model-reasoning-section");
+  const initialReasoningStyle = await reasoningSection.evaluate((element) => ({
+    progress: element.style.getPropertyValue("--agent-reasoning-progress"),
+    color: element.style.getPropertyValue("--agent-reasoning-color"),
+  }));
+  const reasoningSlider = modelMenu.getByRole("slider", { name: "Reasoning" });
+  await reasoningSlider.fill((await reasoningSlider.getAttribute("max")) ?? "0");
+  const finalReasoningStyle = await reasoningSection.evaluate((element) => ({
+    progress: element.style.getPropertyValue("--agent-reasoning-progress"),
+    color: element.style.getPropertyValue("--agent-reasoning-color"),
+  }));
+  expect(initialReasoningStyle.progress).not.toBe("100%");
+  expect(finalReasoningStyle.progress).toBe("100%");
+  expect(finalReasoningStyle.color).not.toBe(initialReasoningStyle.color);
+  await reasoningSlider.press("End");
   await expect
     .poll(() => writes.at(-1))
     .toEqual({
@@ -1486,7 +1500,7 @@ test("creates and renders a source-ordered area Chart", async ({ page }) => {
   expect(pageErrors).toEqual([]);
 });
 
-test("creates semantic HTML as the readable default presentation source", async ({ page }) => {
+test("creates semantic HTML as the readable default presentation source", async ({ page, browserName }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openWorkbench(page);
@@ -1506,15 +1520,39 @@ test("creates semantic HTML as the readable default presentation source", async 
   await expect(editor).toHaveValue(/<span class="number">01 \/ 01<\/span>/u);
   await expect(page.locator(".deck-slide-page")).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Edit Launch narrative", exact: true }).click();
-  const htmlEditor = page.locator("form.semantic-html-slide-editor");
-  const htmlDraft = htmlEditor.getByRole("textbox", { name: "Slide HTML · Launch narrative" });
-  const currentSection = await htmlDraft.inputValue();
-  await htmlDraft.fill(currentSection.replace("Launch narrative", "Launch narrative refined"));
+  const directTitle = page.frameLocator("iframe.slides-frame").locator('h1 [data-orbit-slide-text-editor="true"]');
+  if (browserName === "chromium") {
+    await directTitle.focus();
+    await directTitle.evaluate((element) => {
+      element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "发" }));
+      element.textContent = "发布计划";
+      element.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          data: "发布计划",
+          inputType: "insertCompositionText",
+          isComposing: true,
+        }),
+      );
+    });
+    await expect(editor).not.toHaveValue(/发布计划/u);
+    await directTitle.evaluate((element) =>
+      element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "发布计划" })),
+    );
+  } else {
+    await directTitle.evaluate((element) => {
+      element.textContent = "发布计划";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+  await expect(editor).toHaveValue(/<h1>发布计划<\/h1>/u);
+  await directTitle.press("Escape");
+  await expect(editor).toHaveValue(/<h1>Launch narrative<\/h1>/u);
+
+  await directTitle.fill("Launch narrative refined");
   await expect(editor).toHaveValue(/<h1>Launch narrative refined<\/h1>/u);
-  await expect(editor).not.toBeEditable();
-  await htmlEditor.getByRole("button", { name: "Save HTML slide" }).click();
-  await expect(htmlEditor).toBeHidden();
+  await expect(editor).toBeEditable();
+  await editor.click();
   await expect(page.locator("iframe.slides-frame")).toHaveAttribute("srcdoc", /Launch narrative refined/u);
   expect(pageErrors).toEqual([]);
 });
@@ -1576,7 +1614,7 @@ ${firstBody}
 
   const secondSectionStart = source.indexOf('<section class="decision">');
   const secondSectionEnd = source.indexOf("</section>", secondSectionStart) + "</section>".length;
-  await flow.getByRole("button", { name: "Select Commit now in canonical source for Agent context" }).click();
+  await page.getByRole("button", { name: "02 Commit now", exact: true }).click();
   const editor = page.locator("textarea.source-editor");
   await expect
     .poll(() =>

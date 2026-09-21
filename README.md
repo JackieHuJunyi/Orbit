@@ -4,11 +4,12 @@ Orbit is a source-native workspace where people and AI create documents, data, c
 
 ## Latest release
 
-- **Orbit v1.64** — Signed-in Codex accounts now expose their real model and reasoning catalog inside a calmer, animated ChatGPT-style Composer; see [ADR 0083](docs/decisions/0083-signed-in-model-catalogs-are-account-authoritative.md).
+- **Orbit v1.65** — Document text, CSV/JSON cells, and safe HTML slide text are directly editable in Preview; reasoning strength gains a progressively deeper Codex-style track, and reopening the macOS window is reliable. See [ADR 0084](docs/decisions/0084-preview-text-editing-is-direct-and-source-safe.md).
 - **Windows compatibility update** — Windows gained cross-platform startup, local OCR and DuckDB support, proxy-aware Codex account connections, and legacy Word and PowerPoint conversion with safeguards for open documents; see the [Windows development notes](WINDOWS-CHECKPOINT.md).
 
 ## Recent releases
 
+- **v1.64** — Signed-in Codex accounts expose their real model and reasoning catalog inside a calmer, animated ChatGPT-style Composer; see [ADR 0083](docs/decisions/0083-signed-in-model-catalogs-are-account-authoritative.md).
 - **v1.63** — Chat became the persistent model entry point, desktop state gained a stable origin, and the continuous English “Hello” returned; see [ADR 0082](docs/decisions/0082-chat-is-the-persistent-model-entry-point.md).
 - **v1.62** — One reviewed local workspace now covers thirty-six PDF organization, conversion, editing, security, and intelligence tools; see [ADR 0081](docs/decisions/0081-pdf-tools-share-one-reviewed-local-runtime.md).
 - **v1.61** — Found-only discovery expanded to nineteen provider patterns while slow model and large-file work became visible and stoppable; see [ADR 0080](docs/decisions/0080-discovery-and-slow-work-remain-evidence-led.md).
