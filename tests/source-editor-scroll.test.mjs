@@ -84,7 +84,7 @@ test("Deck preview exposes every slide in one continuous source-linked flow", as
   assert.match(preview, /className="deck-slide-source-hit"/);
   assert.match(preview, /data-preview-source-primary="true"/);
   assert.match(preview, /onClick=\{\(\) => onTargetSource\(artifact, target\)\}/);
-  assert.match(preview, /loading="lazy"/);
+  assert.match(preview, /loading=\{directEditable \? "eager" : "lazy"\}/);
   assert.doesNotMatch(preview, /visibleSlideIndex/);
   assert.match(content, /\.deck-slide-flow\s*\{[^}]*display:\s*grid[^}]*gap:/s);
   assert.match(content, /\.deck-slide-flow \.deck-slide-canvas\s*\{[^}]*aspect-ratio:\s*16 \/ 9[^}]*flex:\s*none/s);
