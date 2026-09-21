@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type CompositionEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, type CompositionEvent, type FormEvent, type KeyboardEvent } from "react";
 import type { DataCellPreviewSourceTarget } from "../lib/preview-targets";
 import type { VisualDataCellEditInput, VisualDataCellValueType } from "../lib/visual-data-edit";
 import type { DataCell } from "../lib/workspace";
@@ -25,7 +25,7 @@ export function NativeDataCellEditor({
   format: "CSV" | "JSON";
   target: DataCellPreviewSourceTarget;
   value: DataCell;
-  onCancel: () => void;
+  onCancel: (input: VisualDataCellEditInput) => void;
   onCommit: (input: VisualDataCellEditInput) => string | null;
   onDraftChange: (input: VisualDataCellEditInput) => string | null;
   onMove: (direction: "next-row") => void;
@@ -41,6 +41,14 @@ export function NativeDataCellEditor({
     valueType: directValueType(value, format, draft),
   });
 
+  const cancelInput = (element: HTMLInputElement) => {
+    cancelledRef.current = true;
+    dirtyRef.current = false;
+    element.value = originalValue;
+    onCancel({ draft: originalValue, valueType: directValueType(value, format, originalValue) });
+    element.blur();
+  };
+
   const publish = (element: HTMLInputElement) => {
     dirtyRef.current = element.value !== originalValue;
     const error = onDraftChange(editInput(element.value));
@@ -48,6 +56,19 @@ export function NativeDataCellEditor({
     if (error) element.dataset.directEditError = error;
     else delete element.dataset.directEditError;
   };
+
+  useEffect(() => {
+    const element = inputRef.current;
+    if (!element) return;
+    const cancelEdit = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      cancelInput(element);
+    };
+    element.addEventListener("keydown", cancelEdit, true);
+    return () => element.removeEventListener("keydown", cancelEdit, true);
+  }, [format, onCancel, originalValue, value]);
 
   return (
     <input
@@ -80,7 +101,7 @@ export function NativeDataCellEditor({
           return;
         }
         if (!dirtyRef.current) {
-          onCancel();
+          onCancel(editInput(originalValue));
           return;
         }
         const error = onCommit(editInput(event.currentTarget.value));
@@ -93,11 +114,7 @@ export function NativeDataCellEditor({
       onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Escape") {
           event.preventDefault();
-          cancelledRef.current = true;
-          dirtyRef.current = false;
-          event.currentTarget.value = originalValue;
-          onCancel();
-          event.currentTarget.blur();
+          cancelInput(event.currentTarget);
           return;
         }
         if (event.key !== "Enter" || composingRef.current) return;

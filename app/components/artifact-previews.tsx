@@ -2332,7 +2332,7 @@ function ResultGrid({
   function commitDirectCellEdit(target: DataCellPreviewSourceTarget, input: VisualDataCellEditInput) {
     if (!targetArtifact || !onDirectEditDataCell) return "Direct Data editing is unavailable.";
     const prepared = prepareVisualDataCellEdit(targetArtifact, target, input);
-    if (prepared.errors[0] === "The edited cell is unchanged.") {
+    if (prepared.errors[0] === "The edited value is unchanged.") {
       onVisualSourceDraftChange?.(null);
       return null;
     }
@@ -2437,7 +2437,10 @@ function ResultGrid({
                               value={value as DataCell}
                               onDraftChange={(input) => publishDirectCellDraft(editableCellTarget, input)}
                               onCommit={(input) => commitDirectCellEdit(editableCellTarget, input)}
-                              onCancel={() => onVisualSourceDraftChange?.(null)}
+                              onCancel={(input) => {
+                                publishDirectCellDraft(editableCellTarget, input);
+                                onVisualSourceDraftChange?.(null);
+                              }}
                               onMove={() => focusNextDataRow(editableCellTarget)}
                             />
                             {activateCell && (
@@ -3376,7 +3379,7 @@ function SlidesPreview({
                     }
                     srcDoc={slide.html}
                     sandbox={directEditable ? "allow-same-origin" : ""}
-                    loading="lazy"
+                    loading={directEditable ? "eager" : "lazy"}
                     tabIndex={-1}
                     title={
                       target

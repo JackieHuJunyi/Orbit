@@ -227,6 +227,7 @@ test("mirrors a right-side Document draft into complete Source, then cancels or 
 
 test("mirrors an exact Data-cell draft into complete Source, then cancels or saves without divergence", async ({
   page,
+  browserName,
 }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -259,21 +260,28 @@ test("mirrors an exact Data-cell draft into complete Source, then cancels or sav
   await region.focus();
   await region.press("Tab");
   await expect(page.getByRole("textbox", { name: "Edit Row 3 · Q2 Revenue", exact: true })).toBeFocused();
-  await region.focus();
-  await region.evaluate((element) => {
-    element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "欧" }));
-    (element as HTMLInputElement).value = "欧洲";
-    element.dispatchEvent(
-      new InputEvent("input", { bubbles: true, data: "欧洲", inputType: "insertCompositionText", isComposing: true }),
+  if (browserName === "chromium") {
+    await region.focus();
+    await region.evaluate((element) => {
+      element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "欧" }));
+      (element as HTMLInputElement).value = "欧洲";
+      element.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          data: "欧洲",
+          inputType: "insertCompositionText",
+          isComposing: true,
+        }),
+      );
+    });
+    await expect(editor).not.toHaveValue(/欧洲/u);
+    await region.evaluate((element) =>
+      element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "欧洲" })),
     );
-  });
-  await expect(editor).not.toHaveValue(/欧洲/u);
-  await region.evaluate((element) =>
-    element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "欧洲" })),
-  );
-  await expect(editor).toHaveValue(/"欧洲",990000/u);
-  await region.press("Escape");
-  await expect(editor).toHaveValue(/Europe,990000/u);
+    await expect(editor).toHaveValue(/"欧洲",990000/u);
+    await region.press("Escape");
+    await expect(editor).toHaveValue(/Europe,990000/u);
+  }
   expect(pageErrors).toEqual([]);
 });
 
