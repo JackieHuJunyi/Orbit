@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type CompositionEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, type CompositionEvent, type FormEvent, type KeyboardEvent } from "react";
 import type { DataCellPreviewSourceTarget } from "../lib/preview-targets";
 import type { VisualDataCellEditInput, VisualDataCellValueType } from "../lib/visual-data-edit";
 import type { DataCell } from "../lib/workspace";
@@ -41,13 +41,16 @@ export function NativeDataCellEditor({
     valueType: directValueType(value, format, draft),
   });
 
-  const cancelInput = (element: HTMLInputElement) => {
-    cancelledRef.current = true;
-    dirtyRef.current = false;
-    element.value = originalValue;
-    onCancel({ draft: originalValue, valueType: directValueType(value, format, originalValue) });
-    element.blur();
-  };
+  const cancelInput = useCallback(
+    (element: HTMLInputElement) => {
+      cancelledRef.current = true;
+      dirtyRef.current = false;
+      element.value = originalValue;
+      onCancel({ draft: originalValue, valueType: directValueType(value, format, originalValue) });
+      element.blur();
+    },
+    [format, onCancel, originalValue, value],
+  );
 
   const publish = (element: HTMLInputElement) => {
     dirtyRef.current = element.value !== originalValue;
@@ -68,7 +71,7 @@ export function NativeDataCellEditor({
     };
     element.addEventListener("keydown", cancelEdit, true);
     return () => element.removeEventListener("keydown", cancelEdit, true);
-  }, [format, onCancel, originalValue, value]);
+  }, [cancelInput]);
 
   return (
     <input
