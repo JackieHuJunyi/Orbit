@@ -382,7 +382,7 @@ export function PresentationFrame({
 
   useLayoutEffect(() => {
     const source = props.srcDoc;
-    if (editable || typeof source !== "string") return;
+    if (typeof source !== "string") return;
     const delay = presentationSrcDocReplayDelay(source, navigator.userAgent);
     if (delay == null) return;
     const frame = frameRef.current;

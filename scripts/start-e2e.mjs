@@ -57,7 +57,8 @@ async function serveDuckDbAsset(request, response, url) {
     "cache-control": "no-cache",
     "content-length": metadata.size,
     "content-type": contentType,
-    "cross-origin-resource-policy": "same-origin",
+    "access-control-allow-origin": "*",
+    "cross-origin-resource-policy": "cross-origin",
     "x-content-type-options": "nosniff",
   });
   response.end(bytes ?? undefined);
