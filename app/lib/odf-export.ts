@@ -122,7 +122,7 @@ function packageOdf(
   styles: string,
   images = new Map<string, OrbitExportImageAsset>(),
 ) {
-  const timestamp = new Date(Date.UTC(1980, 0, 1));
+  const timestamp = new Date(1980, 0, 1);
   const packagedImages = [...images.values()].map((asset) => ({
     path: `Pictures/orbit-${asset.id}.${orbitImageExtension(asset.mimeType)}`,
     asset,

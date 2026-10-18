@@ -100,7 +100,7 @@ function zipPackage(parts: Record<string, string | Uint8Array>) {
   );
   const bytes = zipSync(encoded, {
     level: 6,
-    mtime: new Date(Date.UTC(1980, 0, 1)),
+    mtime: new Date(1980, 0, 1),
   });
   if (bytes.length > MAX_OFFICE_EXPORT_BYTES)
     throw new Error("The generated Office package exceeds Orbit's 12 MB export limit.");
