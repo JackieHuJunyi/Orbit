@@ -2,6 +2,7 @@
   "name": "orbit-office",
   "version": "1.65.0",
   "private": true,
+  "license": "MIT",
   "productName": "Orbit",
   "main": "desktop/main.mjs",
   "repository": "https://github.com/JackieHuJunyi/Orbit.git",
@@ -35,7 +36,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
     "audit:production": "npm audit --omit=dev --audit-level=moderate",
-    "audit:tooling": "npm audit --audit-level=high",
+    "audit:tooling": "node scripts/audit-tooling.mjs",
     "locales:generate": "node scripts/generate-traditional-chinese.mjs",
     "locales:check": "node scripts/generate-traditional-chinese.mjs --check && node --experimental-strip-types scripts/generate-interface-locales.mjs --check && node --experimental-strip-types scripts/compile-interface-locales.mjs --check",
     "locales:interface:generate": "node --experimental-strip-types scripts/generate-interface-locales.mjs && npm run locales:runtime:generate",
@@ -59,7 +60,7 @@
     "fflate": "0.8.3",
     "harfbuzzjs": "1.4.0",
     "lucide-react": "1.31.0",
-    "next": "16.3.5",
+    "next": "16.4.2",
     "openai": "7.4.0",
     "papaparse": "5.5.4",
     "pdf-lib": "1.17.1",
@@ -77,8 +78,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@cloudflare/vite-plugin": "1.54.8",
-    "@cloudflare/workers-types": "5.20260911.1",
+    "@cloudflare/vite-plugin": "1.64.0",
+    "@cloudflare/workers-types": "5.20261006.1",
     "@electron/asar": "4.3.0",
     "@electron/fuses": "2.1.3",
     "@electron/get": "5.1.0",
@@ -92,9 +93,9 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.34",
-    "electron": "43.2.0",
+    "electron": "43.8.0",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.4.2",
     "opencc-js": "1.4.1",
     "plist": "3.1.1",
     "prettier": "3.9.6",
@@ -103,11 +104,11 @@
     "typescript": "5.9.3",
     "vinext": "1.0.0-beta.9",
     "vite": "8.2.1",
-    "wrangler": "4.131.1"
+    "wrangler": "4.151.0"
   },
   "type": "module",
   "overrides": {
     "browserslist": "4.28.8",
-    "fast-uri": "3.1.6"
+    "fast-uri": "3.1.8"
   }
 }

@@ -20,7 +20,7 @@ test("keeps product, package, release notes, progress, and handoff on one curren
   assert.equal(packageJson.version, `${ORBIT_PRODUCT_VERSION}.0`);
   assert.equal(packageJson.scripts["start:e2e"], "npm run prepare:runtime && node scripts/start-e2e.mjs");
   assert.equal(packageJson.scripts["audit:production"], "npm audit --omit=dev --audit-level=moderate");
-  assert.equal(packageJson.scripts["audit:tooling"], "npm audit --audit-level=high");
+  assert.equal(packageJson.scripts["audit:tooling"], "node scripts/audit-tooling.mjs");
   assert.match(workflow, /npm run audit:production[\s\S]*npm run audit:tooling/u);
   assert.match(readme.slice(0, 4_000), new RegExp(`Orbit v${ORBIT_PRODUCT_VERSION.replace(".", "\\.")}`));
   assert.match(changelog.slice(0, 4_000), new RegExp(`Orbit v${ORBIT_PRODUCT_VERSION.replace(".", "\\.")}`));
