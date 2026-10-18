@@ -44,4 +44,4 @@ The workflow imports the certificate into a temporary keychain, runs all code an
 4. Wait for **macOS release** to pass.
 5. Download one DMG on a second Mac, verify Gatekeeper identifies the expected Developer ID, install by dragging Orbit to Applications, and run a real import/model/export smoke test.
 
-The package script rejects a mismatched tag and rejects release mode when signing or notarization credentials are incomplete. GitHub Release publication occurs only after both architectures pass. Automatic updates remain intentionally disabled until Orbit has an approved public update URL, signature-retention policy, rollback policy, and release owner; a private repository release is not a public update channel.
+The package script rejects a mismatched tag and rejects release mode when signing or notarization credentials are incomplete. GitHub Release publication occurs only after both architectures pass. Automatic updates remain intentionally disabled until Orbit has an approved public update URL, signature-retention policy, rollback policy, and release owner. Repository visibility alone does not publish a signed installer.
