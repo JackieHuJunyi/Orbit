@@ -17,7 +17,7 @@ const MIME = {
   ods: "application/vnd.oasis.opendocument.spreadsheet",
   odp: "application/vnd.oasis.opendocument.presentation",
 };
-const timestamp = new Date(Date.UTC(1980, 0, 1));
+const timestamp = new Date(1980, 0, 1);
 
 function manifest(kind, encrypted = false) {
   return `<?xml version="1.0" encoding="UTF-8"?>
